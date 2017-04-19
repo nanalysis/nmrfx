@@ -19,13 +19,15 @@ case "`uname`" in
     MINGW*) ismsys=true ;;
 esac
 
-if [ -n "$NMRFXP_MEMORY" ] ; then
-    HEAP_MEM=$NMRFXP_MEMORY
-else
-    HEAP_MEM="2048"
-fi
-
 JAVA=java
+if [ -n "$JAVA_HOME" ] ; then
+    if [ -x "$JAVA_HOME/jre/sh/java"  ] ; then
+        # AIX location
+        JAVA="$JAVA_HOME/jre/sh/java"
+    else
+        JAVA="$JAVA_HOME/bin/java"
+    fi
+fi
 
 # get the directory path of this script
 # resolve script symlink, if any
@@ -40,25 +42,15 @@ while [ -h "$pgm" ]; do
     fi
 done
 
-dir=`dirname "$pgm"`
-CLASSPATH=${dir}"/lib/Manifest.jar"
-
-if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
-    JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
-    CLASSPATH="$dir/lib/processor-$nvjver.jar:$CLASSPATH"
-elif [ -d "${dir}/jre/bin" ] ; then
-    JAVA="${dir}/jre/bin/java"
-    CLASSPATH="$dir/lib/processor-$nvjver.jar:$CLASSPATH"
-else
-    if [ -n "$JAVA_HOME" ] ; then
-        if [ -x "$JAVA_HOME/jre/sh/java"  ] ; then
-            # AIX location
-            JAVA="$JAVA_HOME/jre/sh/java"
-        else
-            JAVA="$JAVA_HOME/bin/java"
-        fi
+dir=`dirname $pgm`
+CLASSPATH=${classpath}
+# set classpath, or add to existing
+if [ -z "$CLASSPATH" ] ; then
+    CLASSPATH="$dir/processor-$nvjver.jar"
+    if $iscygwin ; then
+        CLASSPATH=`cygpath -pw "$CLASSPATH"`
     fi
-
+else
     if $ismsys ; then
         nvjdir=`$dir/echopath "$dir"`
         CLASSPATH="$nvjdir/processor-$nvjver.jar;$CLASSPATH"
@@ -72,9 +64,4 @@ else
 fi
 
 export CLASSPATH
-if [ "$#" -eq 0 ]; then
-    exec "$JAVA" -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
-else
-    exec "$JAVA" -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain -c "import dispatchnvfx" ${1+"$@"}
-fi
-
+exec "$JAVA" -Djava.awt.headless=true -DTCLLIBPATH="$TCLLIBPATH" -mx768m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}

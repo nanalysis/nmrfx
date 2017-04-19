@@ -17,7 +17,7 @@
  */
 package org.nmrfx.processor.optimization;
 
-import org.nmrfx.peaks.CouplingItem;
+import org.nmrfx.processor.datasets.peaks.CouplingItem;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

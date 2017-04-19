@@ -25,6 +25,7 @@ import org.apache.commons.math3.optim.SimpleBounds;
 import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
@@ -51,13 +52,13 @@ public class FDSignalOpt implements MultivariateFunction {
     private double finalValue = 0.0;
     private double finalDelta = 0.0;
     private double[] weights;
-    private final int[] parMap;
+    private int[] parMap;
 
     public FDSignalOpt(double[] testVec, int vecSize, ArrayList<Signal> signals, boolean constrainWidth, int leftEdge, int rightEdge) {
         this.testVec = testVec;
         this.values = new double[vecSize];
         this.vecSize = vecSize;
-        this.signals = new ArrayList<>();
+        this.signals = new ArrayList<Signal>();
         this.parMap = new int[3 * signals.size()];
         this.leftEdge = leftEdge;
         this.rightEdge = rightEdge;
@@ -196,7 +197,7 @@ public class FDSignalOpt implements MultivariateFunction {
         return rss;
     }
 
-    public final void calcWeights() {
+    public void calcWeights() {
         weights = new double[testVec.length];
         for (int i = 0; i < weights.length; i++) {
             weights[i] = 1.0;
@@ -239,7 +240,6 @@ public class FDSignalOpt implements MultivariateFunction {
         return maxDelta;
     }
 
-    @Override
     public double value(final double[] opars) {
         denormalize(opars, parameters);
         toSignal(parameters);
@@ -268,7 +268,7 @@ public class FDSignalOpt implements MultivariateFunction {
 
         normalize(parameters, normValues);
 
-        PointValuePair result;
+        PointValuePair result = null;
         try {
             result = optimizer.optimize(
                     new MaxEval(nSteps),

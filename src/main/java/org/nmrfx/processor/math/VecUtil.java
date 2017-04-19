@@ -18,8 +18,6 @@
 package org.nmrfx.processor.math;
 
 import static org.nmrfx.processor.math.Vec.pascalrow;
-
-import org.nmrfx.math.VecException;
 import org.nmrfx.processor.operations.Asmooth;
 import org.nmrfx.processor.optimization.NNLSMat;
 import org.apache.commons.math3.complex.Complex;
@@ -30,25 +28,19 @@ import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import java.util.Arrays;
-import org.apache.commons.math3.analysis.solvers.BisectionSolver;
-import org.apache.commons.math3.analysis.UnivariateFunction;
-import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
-import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import static org.nmrfx.processor.math.Vec.apache_ift;
 
 /**
- * A compilation of static methods which do not explicitly use Vec objects but
- * are related to processing Vec objects and generally operate on arrays of
- * double or Complex instead of Vec objects directly.
+ * A compilation of static methods which do not explicitly use Vec objects but are related to processing Vec objects and
+ * generally operate on arrays of double or Complex instead of Vec objects directly.
  *
  * @author johnsonb
  */
 public class VecUtil {
 
     /**
-     * Do a non-negative least squares fit of AX=B to find X given A and B.
-     * Results are returned in an AmplitudeFitResult object which provides
-     * statistical information on quality of fit
+     * Do a non-negative least squares fit of AX=B to find X given A and B. Results are returned in an
+     * AmplitudeFitResult object which provides statistical information on quality of fit
      *
      * @param AR the A matrix
      * @param BR the B matrix
@@ -92,101 +84,8 @@ public class VecUtil {
         return afR;
     }
 
-    public static double[] fitLinear(double[] x, double[] y, double[] sigmaY) {
-
-        double s = 0.0;
-        double sumX = 0.0;
-        double sumY = 0.0;
-        double sumXX = 0.0;
-        double sumXY = 0.0;
-
-        for (int i = 0; i < x.length; i++) {
-            double sigma2 = sigmaY == null ? 1.0 : sigmaY[i] * sigmaY[i];
-            s += 1.0 / sigma2;
-            sumX += x[i] / sigma2;
-            sumY += y[i] / sigma2;
-            sumXX += (x[i] * x[i]) / sigma2;
-            sumXY += (x[i] * y[i]) / sigma2;
-        }
-
-        double delta = s * sumXX - sumX * sumX;
-
-        double intercept = (sumXX * sumY - sumX * sumXY) / delta;
-        double slope = (s * sumXY - sumX * sumY) / delta;
-
-        double interceptErr = sumXX / delta;
-        double slopeErr = s / delta;
-
-        double[] result = {intercept, slope, interceptErr, slopeErr};
-        return result;
-    }
-
-    static class AbsDevBFunc implements UnivariateFunction {
-
-        double[] x = null;
-        double[] y = null;
-        int n = 0;
-        double a = 0.0;
-        double sumAbsDev = 0.0;
-
-        AbsDevBFunc(double[] x, double[] y, int numPoints) {
-            this.n = numPoints;
-            this.x = x;
-            this.y = y;
-        }
-
-        public double value(double b) {
-            double sum = 0;
-            for (int i = 0; i < n; i++) {
-                double delta = y[i] - (x[i] * b);
-                sumAbsDev += Math.abs(delta);
-                sum += x[i] * Math.signum(delta);
-            }
-            return sum;
-
-        }
-
-        public double getA() {
-            return a;
-        }
-
-        public double getMeanDev() {
-            return sumAbsDev / n;
-        }
-    }
-
-    public static double[] fitAbsDev(double[] x, double[] y, double[] sigmaY) {
-        double[] parameters = fitLinear(x, y, sigmaY);
-
-        double b = parameters[1];
-        double b1Dev = parameters[3];
-        double b1 = b - 2.0 * b1Dev - Math.abs(b) * 0.1;
-        double b2 = b + 2.0 * b1Dev + Math.abs(b) * 0.1;
-
-        AbsDevBFunc abF = new AbsDevBFunc(x, y, x.length);
-        double f1 = abF.value(b1);
-        double f2 = abF.value(b2);
-        double a = 0.0;
-        try {
-            if (f1 * f2 > 0) {
-                double[] brackets = UnivariateSolverUtils.bracket(abF, b, -1.0e6, 1.0e6, 1000);
-                b1 = brackets[0];
-                b2 = brackets[1];
-            }
-            BisectionSolver bisect = new BisectionSolver();
-            b = bisect.solve(100, abF, b1, b2);
-            a = abF.getA();
-        } catch (MathIllegalArgumentException fE) {
-            System.out.println("function evaluation failure " + fE.getMessage());
-        }
-        parameters[0] = a;
-        parameters[1] = b;
-        return parameters;
-    }
-
     /**
-     * Analyze a vector of complex values to determine the frequencies and decay
-     * rates
+     * Analyze a vector of complex values to determine the frequencies and decay rates
      *
      * @param x1 the complex values
      * @param winSize The size of window that the values came from
@@ -224,8 +123,8 @@ public class VecUtil {
     }
 
     /**
-     * Use an abbreviated Hilbert transform to convert a spectrum with real
-     * values to a time domain signal with complex values
+     * Use an abbreviated Hilbert transform to convert a spectrum with real values to a time domain signal with complex
+     * values
      *
      * @param x The real spectrum
      * @param n The number of valid points in spectrum
@@ -254,12 +153,11 @@ public class VecUtil {
     }
 
     /**
-     * Use an abbreviated Hilbert transform to convert a spectrum with real
-     * values to a time domain signal with complex values
+     * Use an abbreviated Hilbert transform to convert a spectrum with real values to a time domain signal with complex
+     * values
      *
-     * @param x The real spectrum as the first row of a 2D array. The time
-     * domain signal will replace the original values with real values in the
-     * first row and imaginary values in second.
+     * @param x The real spectrum as the first row of a 2D array. The time domain signal will replace the original
+     * values with real values in the first row and imaginary values in second.
      * @param n The number of valid points in spectrum
      */
     public static void hift(final double[][] x, final int n, double fpMul) {
@@ -318,9 +216,8 @@ public class VecUtil {
     /**
      * Perform a Hilbert transform of data.
      *
-     * @param x The real spectrum as the first row of a 2D array. The time
-     * domain signal will replace the original values with real values in the
-     * first row and imaginary values in second.
+     * @param x The real spectrum as the first row of a 2D array. The time domain signal will replace the original
+     * values with real values in the first row and imaginary values in second.
      * @param n The number of valid points in spectrum
      */
     public static void hft(final double[][] x, final int n) {
@@ -468,8 +365,7 @@ public class VecUtil {
     }
 
     /**
-     * Negate all the values of the provided Complex array. The sign of both
-     * real and imaginary components are changed.
+     * Negate all the values of the provided Complex array. The sign of both real and imaginary components are changed.
      *
      * @param roots the Complex array
      */

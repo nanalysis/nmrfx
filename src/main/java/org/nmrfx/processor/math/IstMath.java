@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.math;
 
-import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 import org.apache.commons.math3.complex.Complex;
@@ -37,25 +36,25 @@ public class IstMath {
      * @see #ist
      * @see #cutAboveThreshold
      */
-    private final double threshold;
+    private double threshold;
 
     /**
      * Number of loops to iterate over : e.g. 300.
      *
      * @see #ist
      */
-    private final int loops;
+    private int loops;
 
     /**
      * Adjust threshold based on loop count.
      *
      * @see #ist
      */
-    private final boolean adjustThreshold;
+    private boolean adjustThreshold;
 
-    private final boolean allValues;
+    private boolean allValues;
 
-    private final boolean scaleValues = false;
+    private boolean scaleValues = false;
 
     /**
      * Sample schedule used for non-uniform sampling. Specifies array elements where data is present.
@@ -146,7 +145,7 @@ public class IstMath {
         }
         if (timeDomain) {
             orig = new Complex[len];
-            VecBase.complexCopy(input, orig);
+            Vec.complexCopy(input, orig);
         }
         // fixme is this necessary and does it work
         //Vec.arrayCheckPowerOfTwo(input);
@@ -168,14 +167,14 @@ public class IstMath {
             Vec.apache_ift(add);
             copyValues(orig, add);  // copy orig non-zero values
         }
-        VecBase.complexCopy(add, input);
+        Vec.complexCopy(add, input);
     }
 
     public void calculateWithHFT(Complex[] input) {
         int len = input.length;
         zeroSample(input); // might have done phase or could be demo
         Complex[] orig = new Complex[len];
-        VecBase.complexCopy(input, orig);
+        Vec.complexCopy(input, orig);
 
         double[] add = new double[len];
         double[] realResidual = new double[len];
@@ -187,14 +186,14 @@ public class IstMath {
             cutAboveThreshold(realResidual, add, loop);
             if (loop < loops - 1) {
                 Complex[] cutFID = VecUtil.hift(realResidual, realResidual.length, 0.5f);
-                VecBase.complexCopy(cutFID, input);
+                Vec.complexCopy(cutFID, input);
                 zeroSample(input);  // rezero initial schedule
             }
         }
 
         if (timeDomain) {
             Complex[] newFID = VecUtil.hift(add, realResidual.length, 0.5);
-            VecBase.complexCopy(newFID, input);
+            Vec.complexCopy(newFID, input);
             if (scaleValues) {
                 double scale = scale(orig, input, len / 2);
             }
@@ -203,15 +202,15 @@ public class IstMath {
             }
         } else {
             Complex[] complexAdd = VecUtil.hft(add, add.length);
-            VecBase.complexCopy(complexAdd, input);
+            Vec.complexCopy(complexAdd, input);
         }
     }
 
     private double scale(Complex[] origFid, Complex[] newFid, int n) {
         double sum = 0.0;
         int[][] samples = sampleSchedule.getSamples();
-        for (int[] sample : samples) {
-            int j = sample[0];
+        for (int i = 0; i < samples.length; i++) {
+            int j = samples[i][0];
             sum += newFid[j].abs() / origFid[j].abs();
         }
         double scale = sum / samples.length;
@@ -239,9 +238,8 @@ public class IstMath {
             //for (i = 0, k = 0; i < vsize / 2; i++) {
             for (int i = 0, k = 0; i < vsize; i++) {
                 boolean found = false;
-                for (int[] sample : samples) {
-                    if (i == sample[0]) {
-                        // 2D index only
+                for (int j = 0; j < samples.length; j++) {
+                    if (i == samples[j][0]) {  // 2D index only
                         found = true;
                         break;
                     }
@@ -279,8 +277,8 @@ public class IstMath {
     private void copyValues(Complex[] source, Complex[] target) {
         if (sampleSchedule != null) {
             int[][] samples = sampleSchedule.getSamples();
-            for (int[] sample : samples) {
-                int k = sample[0];
+            for (int j = 0; j < samples.length; j++) {
+                int k = samples[j][0];
                 target[k] = source[k];
             }
         }
@@ -311,17 +309,13 @@ public class IstMath {
      * @see #alg
      */
     private void cutAboveThreshold(Complex[] input, Complex[] add, int nIterations) {
-        switch (alg) {
-            case "phased":
-                cutAboveComplexPhasedThreshold(input, add, nIterations);
-                break;
-            case "phasedpos":
-                cutAboveComplexPhasedPosThreshold(input, add, nIterations);
-                break;
-        // if (alg.equals("abs"))
-            default:
-                cutAboveComplexAbsThreshold(input, add, nIterations);
-                break;
+        if (alg.equals("phased")) {
+            cutAboveComplexPhasedThreshold(input, add, nIterations);
+        } else if (alg.equals("phasedpos")) {
+            cutAboveComplexPhasedPosThreshold(input, add, nIterations);
+        } else // if (alg.equals("abs"))
+        {
+            cutAboveComplexAbsThreshold(input, add, nIterations);
         }
     }
 

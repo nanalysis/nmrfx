@@ -41,7 +41,6 @@ public class TestBasePoints implements MultivariateFunction {
 
     int winSize = 0;
     double totalPhase = 0.0;
-    double negativePenalty = 1.0e-5;
     Vec testVec = null;
     double[] rvec = null;
     double[] ivec = null;
@@ -67,10 +66,9 @@ public class TestBasePoints implements MultivariateFunction {
     ArrayList<BRegionData> b2List = new ArrayList<>();
     static HashMap<String, TestBasePoints> tbMap = new HashMap<>();
 
-    public TestBasePoints(Vec vector, int winSize, double ratio, int mode, double negativePenalty) {
+    public TestBasePoints(Vec vector, int winSize, double ratio, int mode) {
         this.winSize = winSize;
         this.mode = mode;
-        this.negativePenalty = negativePenalty;
         addVector(vector, false, ratio);
     }
 
@@ -243,10 +241,6 @@ public class TestBasePoints implements MultivariateFunction {
     }
 
     public final void addVector(Vec vector, final boolean maxMode, double ratio) {
-        addVector(vector, maxMode, ratio, IDBaseline2.ThreshMode.SDEV);
-    }
-
-    public final void addVector(Vec vector, final boolean maxMode, double ratio, IDBaseline2.ThreshMode threshMode) {
         this.vector = vector;
         testVec = new Vec(vector.getSize());
         Vec phaseVec = new Vec(vector.getSize());
@@ -272,7 +266,7 @@ public class TestBasePoints implements MultivariateFunction {
 
         int[] limits = new int[2];
         int edgeSize = 5;
-        IDBaseline2 idbase = new IDBaseline2(edgeSize, limits, ratio, threshMode);
+        IDBaseline2 idbase = new IDBaseline2(edgeSize, limits, ratio);
         idbase.eval(dVec);
         hasSignal = idbase.getResult();
 
@@ -926,6 +920,7 @@ public class TestBasePoints implements MultivariateFunction {
     public double getEntropyMeasure(double p0, double p1) {
         int n = bList.size();
         double sumAbs = 0.0;
+        double penalty = 0.0;
         double dDelta = p1 / (vector.getSize() - 1);
         RegionPositions rPos1 = bList.get(0);
         RegionPositions rPos2 = bList.get(n - 1);
@@ -963,12 +958,15 @@ public class TestBasePoints implements MultivariateFunction {
             double value = rvec[j] * re - ivec[j] * im;
 
             double delta = value - meanBase;
+            if (delta < 0.0) {
+                penalty += delta * delta;
+            }
             double adelta = FastMath.abs(delta);
             sumAbs += adelta;
-            values[k++] = delta;
+            values[k++] = adelta;
         }
 
-        double penalty = 0.0;
+        penalty *= 1.0e-5;
         double entropy = 0.0;
         for (int i = 0; i < k; i++) {
             double value = values[i];
@@ -977,13 +975,8 @@ public class TestBasePoints implements MultivariateFunction {
                 continue;
             }
             double h = value / sumAbs;
-            if (h < 0.0) {
-                penalty += h * h;
-                h = -h;
-            }
             entropy -= h * FastMath.log(h);
         }
-        penalty *= negativePenalty * 1.0e7;
         double result = entropy + penalty;
         //System.out.println(n + " " + p0 + " " + p1 + " " + penalty + " " + entropy + " " + result);
 

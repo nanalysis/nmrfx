@@ -43,7 +43,7 @@ public class CoAdd extends Operation {
     }
 
     @Override
-    public CoAdd eval(List<Vec> vectors) throws OperationException {
+    public CoAdd eval(ArrayList<Vec> vectors) throws OperationException {
         if (vectors.isEmpty()) {
             throw new OperationException("CoAdd cannot combine 0 vectors.");
         } else if (vectors.size() % (numInputVec) != 0) {
@@ -56,8 +56,6 @@ public class CoAdd extends Operation {
             ArrayList<Vec> subList = new ArrayList<>();
             for (int i = 0; i < vectors.size() / numInputVec; ++i) {
                 subList.clear();
-                int[][] pt = vectors.get(iVec).getPt();
-                int[] dim = vectors.get(iVec).getDim();
                 for (int j = 0; j < numInputVec; j++) {
                     subList.add(vectors.get(iVec++));
                 }
@@ -69,7 +67,7 @@ public class CoAdd extends Operation {
                 } else {
                     vec.copy(outVec);
                 }
-                vec.setPt(pt, dim);
+                Vec.copyLocation(subList.get(0), vec);
             }
         }
         int newSize = vectors.size() / numInputVec;

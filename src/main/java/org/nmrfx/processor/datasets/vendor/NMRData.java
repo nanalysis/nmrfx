@@ -28,27 +28,23 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.math3.complex.Complex;
 
 /**
- * The <i>NMRData</i> interface contains methods for retrieving data and
- * parameters from a vendor-supplied NMR data set. The method signatures are
- * generic, but the method implementations are vendor-specific. A valid
- * <i>NMRData</i>
+ * The <i>NMRData</i> interface contains methods for retrieving data and parameters from a vendor-supplied NMR data set.
+ * The method signatures are generic, but the method implementations are vendor-specific. A valid <i>NMRData</i>
  * instance may be obtained using the <i>getFID</i>
  * method in the <i>NMRDataUtil</i> helper class. An <i>NMRData</i>
- * class should implement a constructor with a <i>String</i> path argument,
- * which reads a parameter file and a data header. The class should also
- * implement two static boolean methods: <i>findFID</i> and <i>findFIDFiles</i>.
- * See source code for examples.
+ * class should implement a constructor with a <i>String</i> path argument, which reads a parameter file and a data
+ * header. The class should also implement two static boolean methods: <i>findFID</i> and <i>findFIDFiles</i>. See
+ * source code for examples.
  * <p>
- * If an argument is specified, e.g. <i>getParameter(int dim)</i>, parameter
- * values are returned for a dimension
+ * If an argument is specified, e.g. <i>getParameter(int dim)</i>, parameter values are returned for a dimension
  * <i>dim</i>, which is 0-based, e.g. 0, 1, 2, 3, 4. </p>
  *
  * @see NMRDataUtil
@@ -98,8 +94,6 @@ public interface NMRData {
      * @return the parameter value
      */
     public Integer getParInt(String parname);
-    
-    public List<VendorPar> getPars();
 
     /**
      * Return the number of vectors in the direct dimension.
@@ -141,10 +135,9 @@ public interface NMRData {
     }
 
     /**
-     * Set the acquisition size of a dimension. This should correspond to the
-     * actual size of measured dataset and is used when the data was obtained
-     * before completetion of experiment so the actual size is less than that
-     * indicated by parameters.
+     * Set the acquisition size of a dimension. This should correspond to the actual size of measured dataset and is
+     * used when the data was obtained before completetion of experiment so the actual size is less than that indicated
+     * by parameters.
      *
      * @param dim dimension
      * @param size the acquisition size of data
@@ -201,8 +194,8 @@ public interface NMRData {
     public double getSF(int dim);
 
     /**
-     * Set the spectrometer frequency for the specified dimension. Used to
-     * overwrite a value loaded by analysis of parameter files.
+     * Set the spectrometer frequency for the specified dimension. Used to overwrite a value loaded by analysis of
+     * parameter files.
      *
      * @param dim data dimension index
      * @param value new value for spectrometer frequency
@@ -210,8 +203,7 @@ public interface NMRData {
     public void setSF(int dim, double value);
 
     /**
-     * Reset object so next call to getSF will return the spectrometer frequency
-     * stored in par file.
+     * Reset object so next call to getSF will return the spectrometer frequency stored in par file.
      *
      * @param dim data dimension index
      */
@@ -226,8 +218,7 @@ public interface NMRData {
     public double getSW(int dim);
 
     /**
-     * Set the sweep width for the specified dimension. Used to overwrite a
-     * value loaded by analysis of parameter files.
+     * Set the sweep width for the specified dimension. Used to overwrite a value loaded by analysis of parameter files.
      *
      * @param dim data dimension index
      * @param value new value for sweep width
@@ -235,8 +226,7 @@ public interface NMRData {
     public void setSW(int dim, double value);
 
     /**
-     * Reset object so next call to getSW will return the sweep width stored in
-     * par file.
+     * Reset object so next call to getSW will return the sweep width stored in par file.
      *
      * @param dim data dimension index
      */
@@ -251,8 +241,8 @@ public interface NMRData {
     public double getRef(int dim);
 
     /**
-     * Set the reference value for the specified dimension. Used to overwrite a
-     * value loaded by analysis of parameter files.
+     * Set the reference value for the specified dimension. Used to overwrite a value loaded by analysis of parameter
+     * files.
      *
      * @param dim data dimension index
      * @param ref new value for reference value
@@ -260,8 +250,7 @@ public interface NMRData {
     public void setRef(int dim, double ref);
 
     /**
-     * Reset object so next call to getRef will return the reference value
-     * stored in par file.
+     * Reset object so next call to getRef will return the reference value stored in par file.
      *
      * @param dim data dimension index
      */
@@ -289,32 +278,10 @@ public interface NMRData {
      * @param dim data dimension index
      * @return true if data is complex
      */
-    /**
-     * Return the sweep width for the specified dimension
-     *
-     * @param dim data dimension index
-     * @return sweep width
-     */
-    default public boolean getFixDSP() {
-        return false;
-    }
-
-    /**
-     * Set the sweep width for the specified dimension. Used to overwrite a
-     * value loaded by analysis of parameter files.
-     *
-     * @param dim data dimension index
-     * @param value new value for sweep width
-     */
-    default public void setFixDSP(boolean value) {
-        
-    }
-
     public boolean isComplex(int dim);
 
     /**
-     * Return whether alternate real/imaginary pairs of data should be negated
-     * during processing.
+     * Return whether alternate real/imaginary pairs of data should be negated during processing.
      *
      * @param dim data dimension index
      * @return true if pairs should be negated
@@ -324,8 +291,7 @@ public interface NMRData {
     }
 
     /**
-     * Return whether imaginary values should be negated. Negating the imaginary
-     * value reverses the spectrum.
+     * Return whether imaginary values should be negated. Negating the imaginary value reverses the spectrum.
      *
      * @param dim data dimension index
      * @return true if imaginary values should be negated.
@@ -335,8 +301,7 @@ public interface NMRData {
     }
 
     /**
-     * Return the array of coefficients that should be used for combining
-     * vectors during processing.
+     * Return the array of coefficients that should be used for combining vectors during processing.
      *
      * @param dim data dimension index
      * @return array of coefficients
@@ -344,8 +309,8 @@ public interface NMRData {
     public double[] getCoefs(int dim);
 
     /**
-     * Return a symbolic name (like hyper, echo-antiecho) for the data
-     * combination that should be done during processing.
+     * Return a symbolic name (like hyper, echo-antiecho) for the data combination that should be done during
+     * processing.
      *
      * @param dim data dimension index
      * @return spectrometer frequency
@@ -384,8 +349,7 @@ public interface NMRData {
     public int getLeftShift(int dim);
 
     /**
-     * Return the exponential decay value (line broadening) value from parameter
-     * file.
+     * Return the exponential decay value (line broadening) value from parameter file.
      *
      * @param dim data dimension index
      * @return spectrometer frequency
@@ -417,8 +381,7 @@ public interface NMRData {
     public FPMult getFPMult(int dim);
 
     /**
-     * Return an object describing Linear Prediction parameters for the
-     * specified dimension
+     * Return an object describing Linear Prediction parameters for the specified dimension
      *
      * @param dim data dimension index
      * @return LP parameters
@@ -426,16 +389,14 @@ public interface NMRData {
     public LPParams getLPParams(int dim);
 
     /**
-     * Return an array of names of parameters used to store spectrometer
-     * frequencies in vendor parameter files.
+     * Return an array of names of parameters used to store spectrometer frequencies in vendor parameter files.
      *
      * @return array of parameter names
      */
     public String[] getSFNames();
 
     /**
-     * Return an array of names of parameters used to store sweep widths in
-     * vendor parameter files.
+     * Return an array of names of parameters used to store sweep widths in vendor parameter files.
      *
      * @return array of parameter names
      */
@@ -467,9 +428,8 @@ public interface NMRData {
     }
 
     /**
-     * Return a string describing the location of the sample in a sample
-     * changer. The format of the returned string depends on vendor and sample
-     * changer.
+     * Return a string describing the location of the sample in a sample changer. The format of the returned string
+     * depends on vendor and sample changer.
      *
      * @return sample position descriptor
      */
@@ -478,8 +438,7 @@ public interface NMRData {
     }
 
     /**
-     * Return the data of data acquisition, in typical Unix format (seconds
-     * since January 1, 1910).
+     * Return the data of data acquisition, in typical Unix format (seconds since January 1, 1910).
      *
      * @return date and time of acquistion
      */
@@ -500,21 +459,8 @@ public interface NMRData {
     }
 
     /**
-     * Return an optional list of doubles associated with a dimension of
-     * dataset. This might be, for example, relaxation delays.
-     *
-     * @param dim data dimension index
-     * @return list of values
-     */
-    public default List<Double> getValues(int dim) {
-        return new ArrayList<>();
-    }
-
-    /**
-     * Read i'th vector from an <i>NMRData</i> file. This method is the main
-     * entry point to read data. Other
-     * <i>readVector</i> method signatures are used by this method, depending on
-     * the <i>Vec</i> data storage type.
+     * Read i'th vector from an <i>NMRData</i> file. This method is the main entry point to read data. Other
+     * <i>readVector</i> method signatures are used by this method, depending on the <i>Vec</i> data storage type.
      *
      * @param iVec integer index of vector to read
      * @param dvec <i>Vec</i> vector to store data
@@ -531,8 +477,7 @@ public interface NMRData {
     public void readVector(int iVec, Complex[] cdata);
 
     /**
-     * Read i'th vector from an <i>NMRData</i> file and store in two double
-     * arrays.
+     * Read i'th vector from an <i>NMRData</i> file and store in two double arrays.
      *
      * @param iVec integer index of vector to read
      * @param idata array of double to put real values in
@@ -549,8 +494,7 @@ public interface NMRData {
     public void readVector(int iVec, double[] data);
 
     /**
-     * Read i'th vector along iDim from an <i>NMRData</i> file and store in Vec
-     * object.
+     * Read i'th vector along iDim from an <i>NMRData</i> file and store in Vec object.
      *
      * @param iDim dimension index to read data from
      * @param iVec integer index of vector to read
@@ -568,8 +512,7 @@ public interface NMRData {
     }
 
     /**
-     * Set flags before FID data is read using readVector. A no-op except for
-     * Bruker data.
+     * Set flags before FID data is read using readVector. A no-op except for Bruker data.
      *
      * @param flags a Map of String / boolean key value pairs
      */
@@ -583,24 +526,22 @@ public interface NMRData {
     public void resetAcqOrder();
 
     /**
-     * Return an array of values indicating the order in which data dimensions
-     * were acquired.
+     * Return an array of values indicating the order in which data dimensions were acquired.
      *
      * @return the acquisition order of the various data dimensions
      */
     public String[] getAcqOrder();
 
     /**
-     * Set an array of values indicating the order in which data dimensions were
-     * acquired.
+     * Set an array of values indicating the order in which data dimensions were acquired.
      *
      * @param acqOrder the array of acquisition order values
      */
     public void setAcqOrder(String[] acqOrder);
 
     /**
-     * Get a summary string (like "321") indicating the order in which the data
-     * dimensions were acquired. The format is vendor specific.
+     * Get a summary string (like "321") indicating the order in which the data dimensions were acquired. The format is
+     * vendor specific.
      *
      * @return the acquisition order string
      */
@@ -609,9 +550,6 @@ public interface NMRData {
         StringBuilder builder = new StringBuilder();
         for (int i = acqOrderArray.length - 1; i >= 0; i--) {
             String elem = acqOrderArray[i];
-            if (elem.substring(0, 1).equals("a")) {
-                return ("");
-            }
             if (elem.length() == 0) {
                 return ("");
             }
@@ -622,21 +560,8 @@ public interface NMRData {
         return builder.toString();
     }
 
-    public default boolean isFID() {
-        return true;
-    }
-
-    public default boolean isFrequencyDim(int iDim) {
-        return true;
-    }
-    
-    public default double getTrim() {
-        return 0.0;
-    }
-
     /**
-     * Return an object describing the sample schedule used for non-uniform
-     * sampling.
+     * Return an object describing the sample schedule used for non-uniform sampling.
      *
      * @return the sample schedule
      */
@@ -650,35 +575,28 @@ public interface NMRData {
     public void setSampleSchedule(SampleSchedule sampleSchedule);
 
     /**
-     * Read a text file containing the sample schedule and return a new
-     * SampleSchedule object.
+     * Read a text file containing the sample schedule and return a new SampleSchedule object.
      *
      * @param path The path to the file containing the sampling schedule
-     * @param demo set to true to indicate that dataset actually has full
-     * sampling. We just want to simulate NUS.
+     * @param demo set to true to indicate that dataset actually has full sampling. We just want to simulate NUS.
+     * @param nmrdata The NMRData object that this schedule will be associated with
      * @return the SampleSchedule object
      * @throws IOException if an I/O error occurs
      * @throws ProcessingException if a processing error occurs
      */
-    public default SampleSchedule readSampleSchedule(String path, boolean demo)
+    public static SampleSchedule readSampleSchedule(String path, boolean demo, NMRData nmrdata)
             throws IOException, ProcessingException {
         if ((new java.io.File(path)).exists()) {
             SampleSchedule schedule = new SampleSchedule(path, demo);
-            setSampleSchedule(schedule);
-            return schedule;
+            if (nmrdata != null) {
+                nmrdata.setSampleSchedule(schedule);
+                return schedule;
+            } else {
+                throw new ProcessingException("Sample schedule read, but no FID object found.");
+            }
         } else {
             throw new IOException("Cannot find sample schedule file " + path);
         }
-    }
-
-    public default SampleSchedule createUniformSchedule(List<Integer> nSizes) {
-        int[] nSArray = new int[nSizes.size()];
-        for (int i = 0; i < nSArray.length; i++) {
-            nSArray[i] = nSizes.get(i);
-        }
-        SampleSchedule schedule = SampleSchedule.createUniformSchedule(nSArray);
-        setSampleSchedule(schedule);
-        return schedule;
     }
 
     /**
@@ -687,10 +605,8 @@ public interface NMRData {
      * @param z Full size of acquistion
      * @param fraction fraction of total points actually sampled
      * @param path Path to a sample file to create
-     * @param demo set to true to indicate that dataset actually has full
-     * sampling. We just want to simulate NUS.
-     * @param nmrdata The NMRData object that this schedule will be associated
-     * with
+     * @param demo set to true to indicate that dataset actually has full sampling. We just want to simulate NUS.
+     * @param nmrdata The NMRData object that this schedule will be associated with
      * @return the SampleSchedule object
      * @throws ProcessingException if a processing error occurs
      */
@@ -707,8 +623,7 @@ public interface NMRData {
     }
 
     /**
-     * Get the values as a name-value map for a specified set of parameter
-     * names.
+     * Get the values as a name-value map for a specified set of parameter names.
      *
      * @param parNames List of parameter names to get values for.
      * @param values Map in which to put parameter name and parameter value
@@ -729,25 +644,25 @@ public interface NMRData {
                     values.put(parName, getSequence());
                     break;
                 case "sf":
-                    values.put(parName, getSF(0));
+                    values.put(parName, Double.valueOf(getSF(1)));
                     break;
                 case "sw":
-                    values.put(parName, getSW(0));
+                    values.put(parName, Double.valueOf(getSW(1)));
                     break;
                 case "te":
-                    values.put(parName, getTempK());
+                    values.put(parName, Double.valueOf(getTempK()));
                     break;
                 case "nd":
-                    values.put(parName, getNDim());
+                    values.put(parName, Integer.valueOf(getNDim()));
                     break;
                 case "tn":
-                    values.put(parName, getTN(0));
+                    values.put(parName, getTN(1));
                     break;
                 case "vnd":
                     values.put(parName, getVendor());
                     break;
                 case "nv":
-                    values.put(parName, getNVectors());
+                    values.put(parName, Integer.valueOf(getNVectors()));
                     break;
                 case "time":
                     String dateTime = getZonedDate().format(DateTimeFormatter.ISO_DATE_TIME);

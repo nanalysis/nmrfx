@@ -17,7 +17,7 @@
  */
 package org.nmrfx.processor.processing;
 
-import org.nmrfx.processor.processing.processes.ProcessOps;
+import org.nmrfx.processor.processing.processes.Process;
 import org.nmrfx.processor.operations.WriteVector;
 import org.nmrfx.processor.operations.Hft;
 import org.nmrfx.processor.operations.Phase;
@@ -34,7 +34,7 @@ public class Test {
         double p0 = 25.0, p1 = 10.0;
 
         Processor processor = Processor.getProcessor();
-        ProcessOps defaultProcess = processor.getDefaultProcess();
+        Process defaultProcess = processor.getDefaultProcess();
 
         processor.opendata("/home/johnsonb/Development/NMRView/9.1/dcengine/target/dcengine-9.1.0-b1-bin/dcengine-9.1.0-b1/cnnoe-py.nv", true);
 

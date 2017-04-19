@@ -5,12 +5,12 @@ import re
 import os.path
 import sys
 import subprocess
-from org.nmrfx.math.units import Fraction
-from org.nmrfx.math.units import Frequency
-from org.nmrfx.math.units import Index
-from org.nmrfx.math.units import PPM
-from org.nmrfx.math.units import Point
-from org.nmrfx.math.units import Time
+from org.nmrfx.processor.math.units import Fraction
+from org.nmrfx.processor.math.units import Frequency
+from org.nmrfx.processor.math.units import Index
+from org.nmrfx.processor.math.units import PPM
+from org.nmrfx.processor.math.units import Point
+from org.nmrfx.processor.math.units import Time
 from org.nmrfx.processor.operations import Add
 from org.nmrfx.processor.operations import Asmooth
 from org.nmrfx.processor.operations import AutoPhase
@@ -19,7 +19,6 @@ from org.nmrfx.processor.operations import BcMed
 from org.nmrfx.processor.operations import BcPoly
 from org.nmrfx.processor.operations import BcSine
 from org.nmrfx.processor.operations import Bcwhit
-from org.nmrfx.processor.operations import Blackman
 from org.nmrfx.processor.operations import Bucket
 from org.nmrfx.processor.operations import Bz
 from org.nmrfx.processor.operations import CShift
@@ -27,7 +26,6 @@ from org.nmrfx.processor.operations import CoAdd
 from org.nmrfx.processor.operations import Cwtd
 from org.nmrfx.processor.operations import Combine
 from org.nmrfx.processor.operations import Dc
-from org.nmrfx.processor.operations import Dept
 from org.nmrfx.processor.operations import Dcfid
 from org.nmrfx.processor.operations import Dx
 from org.nmrfx.processor.operations import Exp
@@ -54,10 +52,8 @@ from org.nmrfx.processor.operations import Integrate
 from org.nmrfx.processor.operations import IO
 from org.nmrfx.processor.operations import IstMatrix
 from org.nmrfx.processor.operations import IstVec
-from org.nmrfx.processor.operations import Kaiser
 from org.nmrfx.processor.operations import Mag
 from org.nmrfx.processor.operations import Measure
-from org.nmrfx.processor.operations import Merge
 from org.nmrfx.processor.operations import Mult
 from org.nmrfx.processor.operations import NESTANMREx
 from org.nmrfx.processor.operations import NESTANMR
@@ -89,11 +85,10 @@ from org.nmrfx.processor.operations import VecRef
 from org.nmrfx.processor.operations import WriteVector
 from org.nmrfx.processor.operations import Zeros
 from org.nmrfx.processor.operations import Zf
-from org.nmrfx.processor.processing.processes import ProcessOps
+from org.nmrfx.processor.processing.processes import Process
 from org.nmrfx.processor.processing import Processor
 from org.nmrfx.processor.datasets.vendor import NMRDataUtil
-from org.nmrfx.processor.datasets.vendor import NMRData
-from org.nmrfx.math.units import UnitFactory
+from org.nmrfx.processor.math.units import UnitFactory
 from org.nmrfx.processor.math import Vec
 from org.nmrfx.processor.datasets import DatasetPhaser
 from java.util.concurrent import ConcurrentHashMap
@@ -103,13 +98,11 @@ from java.util import HashMap
 import java.lang.Double as Double
 import java.lang.Integer as Integer
 
-import psspecial
 from nmrpar import getFdSizes
 from nmrpar import getTdSizes
 from nmrpar import getBzSize
 from nmrpar import getExtendSize
 from nmrpar import getExtractSize
-from nmrpar import getExtractSizeP
 from nmrpar import getFilterSize
 from nmrpar import getZfSize
 from nmrpar import refByRatio
@@ -202,9 +195,6 @@ class FIDInfo:
     def setFlags(self,flags):
         NMRDataUtil.setFlags(self.fidObj,flags)
 
-    def setFixDSP(self,value):
-        self.fidObj.setFixDSP(value)
-        
     def setSW(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
@@ -290,12 +280,14 @@ class FIDInfo:
         '''return whether or not to negatePairs for FT for current dimension'''
         fidObj = self.fidObj
         negate = fidObj.getNegatePairs(dim)   # dim is 1-based
+        print "  dim", dim+1, "FT auto negatePairs", negate
         return negate
 
     def negateImagFT(self,dim):
         '''return whether or not to negateImag for FT for current dimension'''
         fidObj = self.fidObj
         negate = fidObj.getNegateImag(dim)   # dim is 1-based
+        print "  dim", dim+1, "FT auto negateImag", negate
         return negate
 
     def getSymbolicCoefs(self,dim):
@@ -355,11 +347,6 @@ def printInfo():
 def printDataInfo():
     '''Print out reference info. Useful to see what values the automatic parameter extraction found.'''
     dataInfo.printInfo()
-
-def fixdsp(value):
-    ''' Set whether to fix dsp charge-up when reading FID.  Only used for Bruker data.
-    '''
-    fidInfo.setFixDSP(value)
  
 def sw(*pars):
     ''' Sweep width values to set for each dimension.<br>
@@ -408,10 +395,6 @@ def label(*pars):
 
     fidInfo.setLabel(pars)
 
-def genLSCatalog(lwMin, lwMax,  nLw, nKeep, nFrac):
-    datasetName = dataInfo.filename
-    processor.setupSim(lwMin, lwMax, nLw, nKeep, nFrac, datasetName)
-
 def flags(**keywords):
     fidInfo.setFlags(keywords)
 
@@ -431,39 +414,6 @@ def acqOrder(*order):
         fidInfo.acqOrder.append(par)
     fidInfo.fidObj.resetAcqOrder() 
     fidInfo.fidObj.setAcqOrder(order)
-    processor.setAcqOrder(fidInfo.fidObj.getAcqOrder())
-
-def setupScanTable(fileName):
-    global scanTableName
-    global scanTable
-    scanTableName = fileName
-    scanTable = None
-
-def closeScanTable():
-    global scanTableName
-    global scanTable
-    if scanTable != None:
-        scanTable.close()
-        scanTable = None
-
-
-def writeToScanTable(iFile, filePath, dataName, map):
-    global scanTableName
-    global scanTable
-    if scanTable == None:
-        scanTable = open(scanTableName,'w')
-        # write header
-        scanTable.write('index\tfid\tdataset')
-        if map != None:
-            header = getMeasureMapHeader(map)
-            if header != None:
-                scanTable.write(header)
-        scanTable.write('\n')
-
-    outStr = str(iFile) + '\t' + filePath + '\t' + dataName
-    if map != None:
-        outStr += getMeasureMapData(map)
-    scanTable.write(outStr + '\n')
 
 def setMeasureMap(map):
     global gmap
@@ -478,34 +428,6 @@ def getMeasureMap():
         gmap = ConcurrentHashMap()
 
     return gmap
-
-def getMeasureMapHeader(map):
-    # loop over keys in measure map and get values
-    result = ""
-    for key in map:
-       if key.startswith('measures_'):
-           dataValues =  map.get(key)
-           for (i,dataValue) in enumerate(dataValues):
-               outStr = "\tIntegral%d_%.3f_%.3f\tMax%d_%.3f_%.3f" % (i,dataValue.getStartPPM(),dataValue.getEndPPM(),i,dataValue.getStartPPM(),dataValue.getEndPPM())
-               result += outStr
-           return result
-    return None
-
-
-def getMeasureMapData(map):
-    # loop over keys in measure map and get values
-    result = ""
-    for key in map:
-       if key.startswith('measures_'):
-           dataValues =  map.get(key)
-           for (i,dataValue) in enumerate(dataValues):
-               dataValue.setScale(1.0)
-               outStr = "\t%.3f\t%.3f" % (dataValue.getCorrectedSum(),dataValue.getMax())
-               result += outStr
-
-    # clear map for next spectrum
-    map.clear()
-    return result
 
 def inMemory(mode=True):
     global dataInfo
@@ -551,12 +473,24 @@ def acqsize(*pars):
         processor.setSizes(size)
         processor.adjustSizes();
         newSizes = processor.getNewSizes()
+        print 'newsizes',newSizes
         size = [s for s in newSizes]
 
-    fidInfo.size = list(size)
-    fidInfo.useSize = list(size)
-    dataInfo.size = list(size)
-    dataInfo.msize = initMSize(fidInfo, size)
+    print 'acqsize is ',size
+    tdSize = list(size)
+    fidInfo.size = list(tdSize)
+    fidInfo.useSize = list(fidInfo.size)
+    dataInfo.size = list(fidInfo.size)
+    dataInfo.useSize = list(fidInfo.size)
+    dataInfo.msize = [s * 2 for s in dataInfo.size]
+    dataInfo.msize = []
+    for i,sz in enumerate(dataInfo.size):
+        nsz = sz
+        if fidInfo.isComplex(i):
+            nsz = sz * 2;
+        dataInfo.msize.append(nsz)
+
+    print 'msizes acq ',dataInfo.msize
             
 # set fid size limits 
 def tdsize(*size):
@@ -567,6 +501,7 @@ def tdsize(*size):
         a certain point.
     '''
     global fidInfo
+    global dataInfo
     fidInfo.useSize = []
     for i,par in enumerate(size):
         #  at present, can't change size of direct dimension
@@ -578,6 +513,22 @@ def tdsize(*size):
             fidInfo.useSize.append(fidInfo.size[i])
         else:
             fidInfo.useSize.append(par)
+    dataInfo.size = list(fidInfo.useSize)
+    dataInfo.useSize = list(fidInfo.useSize)
+    for i,size in enumerate(fidInfo.useSize):
+        if dataInfo.size[i] < 1:
+            dataInfo.size[i] = fidInfo.size[i]
+            dataInfo.useSize[i] = fidInfo.size[i]
+        elif dataInfo.size[i] > fidInfo.size[i]:
+            dataInfo.size[i] = fidInfo.size[i]
+            dataInfo.useSize[i] = fidInfo.size[i]
+    dataInfo.msize = []
+    for i,sz in enumerate(dataInfo.size):
+        nsz = sz
+        if fidInfo.isComplex(i):
+            nsz = sz * 2;
+        dataInfo.msize.append(nsz)
+    print 'msizes td ',dataInfo.msize
 
 def p(par):
     return fidInfo.getPar(par)
@@ -596,17 +547,6 @@ def clearLocalProcess():
     if localProcess:
         localProcess.clearOps()
 
-def readNUS(fileName, demo=True):
-    global fidInfo
-    fidObj = fidInfo.fidObj
-    fidObj.readSampleSchedule(fileName, demo)
-
-def genNUS(sizes):
-    global fidInfo
-    fidObj = fidInfo.fidObj
-    print "gen ",sizes
-    fidObj.createUniformSchedule(sizes)
-
 class genericOperation(object):
     def __init__(self, f):
         self.f = f
@@ -618,6 +558,7 @@ class genericOperation(object):
         self.arguments = inspect.getargspec(self.f)[0]
 
     def __call__(self,*args,**kwargs):
+        print "Entering", self.f.__name__
         if argFile != None:
             self.dumpArgs(argFile,self.f.__name__,*args,**kwargs)
         op = self.f(*args,**kwargs)
@@ -626,6 +567,7 @@ class genericOperation(object):
                 op.eval(kwargs['vector'])
             else:
                 process.add(op)
+        print "Exited", self.f.__name__
         return op
 
     def dumpArgs(self,argFile,opName,*args,**kwargs):
@@ -655,10 +597,9 @@ class DataInfo:
 
     def printInfo(self):
         print "     size", self.size
-        print "    msize", self.msize
         print "  useSize", self.useSize
-        print "resizable", self.resizeable
-        print "    extra", self.extra
+        nDim = self.dataset.getNDim()
+        print "     nDim", nDim
 
 
 
@@ -671,7 +612,7 @@ def initLocal():
     dataInfo = DataInfo()
     dataInfo.curDim = 1
     dataInfo.resizeable = False
-    localProcess = ProcessOps()
+    localProcess = Process()
 
 def useLocal():
     global useLocalProcess
@@ -696,7 +637,7 @@ def useProcessor(inNMRFx=False):
     dataInfo.resizeable = True
 
 # should FID be done by open with testing for file type
-def FID(fidFileName, tdSize=None, nusFileName=None, **keywords):
+def FID(fidFileName, tdSize=None, **keywords):
     ''' Open a raw  NMR dataset (FID file).<br>
     Parameters
     ---------
@@ -709,9 +650,9 @@ def FID(fidFileName, tdSize=None, nusFileName=None, **keywords):
     '''
 
     if (tdSize):
-        fidObj = processor.openfid(fidFileName, nusFileName, tdSize)
+        fidObj = processor.openfid(fidFileName, tdSize)
     else:
-        fidObj = processor.openfid(fidFileName, nusFileName)
+        fidObj = processor.openfid(fidFileName)
 
     fidInfo = makeFIDInfo(fidObj,tdSize)
     if (keywords):  # may use keywords for flags
@@ -719,6 +660,8 @@ def FID(fidFileName, tdSize=None, nusFileName=None, **keywords):
     return fidInfo
 
 def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
+    global tdSizes
+    global vecSizes
     global fidInfo
     fidInfo = FIDInfo()
     if (not fidObj):
@@ -727,10 +670,12 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
         return None
     if (not tdSize):
         tdSize = getTdSizes(fidObj)
-    fidInfo.size = list(tdSize)
-    fidInfo.useSize = list(tdSize)
 
+    fidInfo.size = list(tdSize)
+    fidInfo.useSize = list(fidInfo.size)
     fidInfo.fidObj = fidObj 
+    tdSizes = fidInfo.size
+    vecSizes=tdSizes
 
     fidInfo.solvent = fidObj.getSolvent()
     fidInfo.nd = fidObj.getNDim()
@@ -782,34 +727,22 @@ def CREATE(nvFileName, dSize=None, extra=0):
     global nmrFxMode
     try:
         if nmrFxMode:
-            #nvFileName += ".tmp"
-            pass
+            nvFileName += ".tmp"
     except:
         pass
     dataInfo.filename = nvFileName
+    dataInfo.useSize = fidInfo.useSize
     if (dSize == None):
-        dSize = fidInfo.size
-        dataInfo.size = list(dSize)
-        dataInfo.msize = initMSize(fidInfo, dSize)
+        dataInfo.size = list(fidInfo.size)
+        dataInfo.msize = [s * 2 for s in fidInfo.size]
     else:
         dataInfo.size = list(dSize)
-        dataInfo.msize = initMSize(fidInfo, dSize)
+        dataInfo.msize = list(dSize)
         createDataset()
-
     dataInfo.extra = extra
     if dataInfo.extra != 0:
         processor.keepDatasetOpen(True)
     DIM(1)  # default start dim
-
-def initMSize(fidInfo, size):
-    msize = []
-    for i,sz in enumerate(size):
-        nsz = sz
-        if fidInfo.isComplex(i):
-            nsz = sz * 2;
-        msize.append(nsz)
-    return msize
-
 
 def createDataset(nvFileName=None, datasetSize=None):
     global fidInfo
@@ -829,15 +762,23 @@ def createDataset(nvFileName=None, datasetSize=None):
     for i,datasetSize in enumerate(datasetSize):
         if (fidInfo.mapToDatasetList[i] >= 0) and (datasetSize > 1):
             newDatasetSize.append(datasetSize)
-            useSize.append(fidInfo.useSize[i])
+            if dataInfo.useSize:
+                if dataInfo.useSize[i] < 1:
+                    useSize.append(fidInfo.size[i])
+                else:
+                    useSize.append(dataInfo.useSize[i])
+            else:
+                useSize.append(fidInfo.size[i])
             j += 1
         else:
             useSize.append(1)
     if dataInfo.extra != 0:
         useSize.append(dataInfo.extra)
         newDatasetSize.append(dataInfo.extra)
+    print 'use',useSize
     #useSize = [956,1,32]
     datasetSize = list(newDatasetSize)
+    dataInfo.useSize = useSize
         
     dataInfo.createdSize = datasetSize
     if not processor.isDatasetOpen():
@@ -852,16 +793,18 @@ def createDataset(nvFileName=None, datasetSize=None):
         except OSError:
             pass
         if dataInfo.inMemory:
-            processor.createNVInMemory(nvFileName, datasetSize, useSize)
+            processor.createNVInMemory(nvFileName, datasetSize, dataInfo.useSize)
         elif (fidInfo and fidInfo.flags):
-            processor.createNV(nvFileName, datasetSize, useSize, fidInfo.flags)
-            print 'exists',os.path.exists(nvFileName)
+            print 'cr1'
+            processor.createNV(nvFileName, datasetSize, dataInfo.useSize, fidInfo.flags)
+            print 'create1',nvFileName
+            dataset = processor.getDataset()
+            parFileName = dataset.getParFileName()
         else:
-            processor.createNV(nvFileName, datasetSize, useSize)
+            print 'cr2',datasetSize
+            processor.createNV(nvFileName, datasetSize, dataInfo.useSize)
+            print 'create2',nvFileName
             print 'exists',os.path.exists(nvFileName)
-
-        dataset = processor.getDataset()
-        psspecial.datasetMods(dataset, fidInfo)
 
     dataInfo.resizeable = False  # dataInfo.size is fixed, createNV has been run
     setDataInfo(datasetSize)
@@ -907,6 +850,7 @@ def setDataInfoSize(curDim, size):
     global fidInfo
     if fidInfo.mapToDatasetList[curDim] != -1:
         dataInfo.size[curDim] = size
+        print 'setdatainfo',curDim,size,dataInfo.msize[curDim]
         if size > dataInfo.msize[curDim]:
             dataInfo.msize[curDim] = size
 
@@ -958,7 +902,6 @@ def DIM(*args):
             processor.addDimProcess(dataInfo.curDim)
         else:
             dims = []
-            dataInfo.curDims = [dim-1 for dim in args]
             for dim in args:
                 if (dim < 1 or dim > maxDim):
                     raise Exception("DIM("+str(dim)+"): should be between 1 and "+str(maxDim))
@@ -968,13 +911,12 @@ def DIM(*args):
 def UNDODIM(iDim):
     ''' Adds a process which undoes the operations in the last instance of the specified dimension number.'''
     global dataInfo
-    global fidInfo
     maxDim = len(dataInfo.size)
     if (iDim < 1 or iDim > maxDim):
         raise Exception("DIM("+str(iDim)+"): should be between 1 and "+str(maxDim))
     dataInfo.curDim = iDim-1
     processor.addUndoDimProcess(dataInfo.curDim)
-    dataInfo.size[dataInfo.curDim] = fidInfo.size[dataInfo.curDim]
+    dataInfo.size[dataInfo.curDim] = dataInfo.useSize[dataInfo.curDim]
 
 def generic_operation(operation):
     '''decorator to make a basic operation function easier.  Code ends up looking like:
@@ -1143,7 +1085,7 @@ def AUTOREGIONS(mode='sdev', winSize=16, minBase=12, ratio=10.0, disabled=False,
     '''Baseline correction using a polynomial fit.
     Parameters
     ---------
-    mode : {'sdev','cwtd','cwtdf'}
+    mode : {'sdev','cwtd'}
         Specify the mode for auto identifying baseline regions.
     winSize : int
         min : 4
@@ -1157,7 +1099,7 @@ def AUTOREGIONS(mode='sdev', winSize=16, minBase=12, ratio=10.0, disabled=False,
         amin : 1.0
         min : 1.0
         max : 100.0
-        Ratio relative to noise used in determining if region is signal or baseline, or percent baseline in cwtdf mode.
+        Ratio relative to noise used in determining if region is signal or baseline.
     '''
     if disabled:
         return None
@@ -1195,10 +1137,16 @@ def BCPOLY(order=2, winSize=16, disabled=False, vector=None, process=None):
         process.addOperation(op)   
     return op
 
-def BCSINE(order=1, winSize=16,  disabled=False, vector=None, process=None):
+def BCSINE(regions=None, type='pts', invert=False, order=1, winSize=16, ratio=0.0, disabled=False, vector=None, process=None):
     '''Baseline correction using a sine curve.
     Parameters
     ---------
+    regions : []
+        Specify the points of the vector to perform baseline correction on.
+    type : {'pts','ppms'}
+        Specify the units for the region values.
+    invert : bool
+        Specify the boundary of peaks instead of the baseline.
     order : int
         min : 1
         max : 8
@@ -1207,12 +1155,30 @@ def BCSINE(order=1, winSize=16,  disabled=False, vector=None, process=None):
         min : 4
         max : 256
         Size of window used in searching for baseline regions;
+    ratio : real
+        amin : 1.0
+        min : 1.0
+        max : 100.0
+        Ratio relative to noise used in determining if region is signal or baseline.
     '''
     if disabled:
         return None
     process = process or getCurrentProcess()
 
-    op = BcSine(order, winSize)
+    nonBaseRegions = ArrayList()
+    realPoints = ArrayList()
+
+    realPoints = ArrayList()
+
+    #pts, nonBaseRegions add
+    if regions == None:
+        print "no regions specified"
+        pass
+    else:
+        for value in regions:
+            realPoints.add(float(value))
+
+    op = BcSine(order, winSize, ratio, realPoints, invert, type)
 
     if (vector != None):
         op.eval(vector)
@@ -1366,30 +1332,26 @@ def TDCOMB(dim=2,coef=None, numInVec=0, numOutVec=0, inVec=None, outVec=None, di
     return op
 
 @generic_operation
-def CSHIFT(shift=0, adjref=False, disabled=False, vector=None, process=None):
+def CSHIFT(shift=0, disabled=False, vector=None, process=None):
     '''Circular shift of the data points in the vector by the specified amount.
     Parameters
     ---------
-    shift : position
-        min : -128
-        max : 128
-        Amount to shift the vector by.  If float or int use points.  If string, convert units
-    adjref : bool
-        If true, adjust the referencing of the vector based on shift
+    shift : int
+        min : -2048 
+        max : 2048 
+        Amount of points to shift the vector by.
 '''
     if disabled:
         return None
-    shiftObj = convertUnitStringToObject(shift)
-    op = CShift(shiftObj, adjref)
+    op = CShift(shift)
     return op
 
 @generic_operation
-def COADD(coef=None, disabled=False, vector=None, process=None):
+def COADD(coef=None):
     '''Coaddition of a set of vectors to yield one result vector.
     Parameters
     ---------
     coef : []
-        List of coefficients to scale each vector by.
 '''
     if disabled:
         return None
@@ -1638,34 +1600,6 @@ def LPR(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
             setDataInfoSize(curDim,getExtendSize(dataInfo.size[curDim],predictEnd,True))
     return op
 
-def EXTRACTP(fstart=0.0, fend=0.0,  disabled=False, vector=None, process=None):
-    '''Extract a specified range of points.
-    Parameters
-    ---------
-    fstart : real
-        min : 0
-        max : size-1
-        Start point of region to extract
-    fend : real
-        min : 0
-        max : size-1
-        End point of region to extract
-'''
-    global fidInfo
-    if disabled:
-        return None
-    process = process or getCurrentProcess()
-    op = Extract(fstart,fend,True)
-    if (vector != None):
-        op.eval(vector)
-    else:
-        process.addOperation(op)
-        if (dataInfo.resizeable):
-            curDim = dataInfo.curDim
-            setDataInfoSize(curDim, getExtractSizeP(dataInfo.size[curDim],fidInfo,curDim,fstart,fend))
-
-
-
 def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=None):
     '''Extract a specified range of points.
     Parameters
@@ -1726,32 +1660,6 @@ def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=No
                 if end == 0:
                     end = dataInfo.size[curDim]-1
                 setDataInfoSize(curDim, end - start + 1)
-def TRIM(ftrim=0.1, disabled=False, vector=None, process=None):
-    '''Trim a fraction of vector from each end.
-    Parameters
-    ---------
-    ftrim : real
-        amin : 0
-        min : 0
-        max : 0.4
-        amax : 0.4
-        Fraction of size to trim on each side
-'''
-    if disabled:
-        return None
-    process = process or getCurrentProcess()
-    fmode = True
-    fstart = ftrim
-    fend = 1.0-ftrim
-    op = Extract(fstart,fend)
-
-    if (vector != None):
-        op.eval(vector)
-    else:
-        process.addOperation(op)
-        if (dataInfo.resizeable):
-            curDim = dataInfo.curDim
-            setDataInfoSize(curDim, getExtractSize(dataInfo.size[curDim],fstart,fend))
 
 def DCFID(fraction=0.06, disabled=False, vector=None, process=None):
     ''' Correct DC offset of FID real and imaginary channels 
@@ -1860,7 +1768,6 @@ def BZ(alg='ph', phase=0.0, scale=1.0, pt2=0.0, delay=None, disabled=False, vect
         try:
             delay = p('GRPDLY,1')  # read from Bruker pars
         except:
-            delay = 0.0
             pass
     if (dataInfo.resizeable):
         try:
@@ -2336,27 +2243,23 @@ def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph
         process.addOperation(op)
     return op
 
-def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
+def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, zeroAtStart=True, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for NUS processing.  This version
     requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
    
     Parameters
     ---------
-    nOuter : int
+    iterations : int
         min : 1
         max : 100
-        Number of outer iterations (continuations) to perform.
-    nInner : int
-        min : 1
-        max : 100
-        Number of inner iterations to perform.
-    tolFinal : real
+        Number of iterations to perform.
+    tolFinal : int
         amin : 0
         min : 0
         max : 10
         amax : 10
         Final tolerance for inner iterations is 10 raised to the negative of this number.  For example, 5 gives 1.0e-5.
-    muFinal : real
+    muFinal : int
         amin : -2
         min : -2
         max : 9
@@ -2367,9 +2270,6 @@ def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=Fa
         Write log files containing information about progress of NESTA.
     zeroAtStart : bool
         Set unsampled values to zero at start of operation
-    threshold : real
-        min : 0
-        Threshold for absolute value.  If less than  this skip this hyperplane.
     '''
     if disabled:
         return None
@@ -2382,6 +2282,9 @@ def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=Fa
     tolFinalReal = math.pow(10.0,-tolFinal)
     muFinalReal = math.pow(10.0,-muFinal)
     process = process or getCurrentProcess()
+    print 'iter',iterations
+    print 'ph',phase
+    print 'ph',phaseList
     global fidInfo
     logFileName = None
     if fidInfo == None or fidInfo.fidObj == None:
@@ -2395,7 +2298,7 @@ def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=Fa
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
-    op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, schedule, phaseList, zeroAtStart, threshold, logFileName)
+    op = NESTANMR(iterations, tolFinalReal, muFinalReal, schedule, phaseList, zeroAtStart, logFileName)
 
     if (vector != None):
         op.eval(vector)
@@ -2701,7 +2604,7 @@ def WRITE(index=-1, dimag=True, isabled=False, disabled=False, vector=None, proc
         process.addOperation(op)
     return op
 
-def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat', ph1Limit=45.0, negativePenalty=1.0, disabled=False, vector=None, process=None):
+def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat', ph1Limit=45.0, disabled=False, vector=None, process=None):
     '''Auto Phase shift.
     Parameters
     ---------
@@ -2727,12 +2630,6 @@ def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat
         max : 100.0
         amax :540.0
         Limit ph1 value so its absolute value is less than this range.
-    negativePenalty : real
-        amin : 0.01
-        min : 0.1
-        max : 100.0
-        amax : 200.0
-        How much to weight to use in penalizing negative values in entropy mode (actual value is multiplied by 1.0e-5).
 '''
     if disabled:
         return None
@@ -2742,7 +2639,7 @@ def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat
     if mode == 'entropy':
         imode = 1
 
-    op = AutoPhase(firstOrder, maxMode, winSize, ratio, imode, ph1Limit, negativePenalty)
+    op = AutoPhase(firstOrder, maxMode, winSize, ratio, imode, ph1Limit)
 
     if (vector != None):
         op.eval(vector)
@@ -2788,26 +2685,7 @@ def DPHASE(dim=0,firstOrder=False, winSize=2, ratio=25.0, ph1Limit=45.0, disable
         process.addOperation(op)
     return op
 
-
-def DEPT( disabled=False, dataset=None, process=None):
-    ''' DEPT : combine rows.
-    Parameters
-    ---------
-'''
-    if disabled:
-        return None
-
-    process = process or getCurrentProcess()
-
-    op = Dept()
-
-    if (dataset != None):
-        op.eval(dataset)
-    else:
-        process.addOperation(op)
-    return op
-
-def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None):
+def DGRINS(noise=5, phase=None, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
@@ -2831,6 +2709,13 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
+    phaseList = ArrayList()
+    if phase == None:
+        pass
+    else:
+        for value in phase:
+            phaseList.add(float(value))
+
     process = process or getCurrentProcess()
 
     op = DGRINSOp(schedule, noise)
@@ -2841,13 +2726,13 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
         process.addOperation(op)
     return op
 
-def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noise=5, scale=1.0, preserve=False, synthetic=False, phase=None, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
     noise : real
         amin : 0.0
-        min : 0.0
+        min : 1.0
         max : 100.0
         Noise estimate
     scale : real
@@ -2856,18 +2741,12 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
         max : 2.0
         amax : 10.0
         Parabola to Lorentzian scale 
-    zf : int
-        amin : 0
-        min : 0
-        max : 2
-        amax : 2
-        Zero fill factor 
-    phase : []
-        Array of phase values, 2 per indirect dimension.
     preserve : bool
         Add fitted signals to the residual signal (rather than replacing it)
     synthetic : bool
         Replace measured values with synthetic values. 
+    phase : []
+        Array of phase values, 2 per indirect dimension.
     logToFile : bool
         Write log files containing information about progress of NESTA.
 '''
@@ -2875,13 +2754,6 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
         return None
 
     global fidInfo
-
-    phaseList = ArrayList()
-    if phase == None:
-        pass
-    else:
-        for value in phase:
-            phaseList.add(float(value))
 
     logFileName = None
 
@@ -2896,21 +2768,21 @@ def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=Fals
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
+    phaseList = ArrayList()
+    if phase == None:
+        pass
+    else:
+        for value in phase:
+            phaseList.add(float(value))
+
     process = process or getCurrentProcess()
 
-    op = GRINSOp(noise, scale, zf, phaseList, preserve, synthetic, schedule, logFileName)
+    op = GRINSOp(noise, scale, preserve, synthetic, schedule, phaseList, logFileName)
 
     if (dataset != None):
         op.eval(dataset)
     else:
         process.addOperation(op)
-        curDims = dataInfo.curDims
-        print 'curdims', curDims
-        if (dataInfo.resizeable):
-            for curDim in curDims:
-                print zf,curDim,zf,dataInfo.size[curDim]
-                setDataInfoSize(curDim, getZfSize(dataInfo.size[curDim],zf,-1))
-                print dataInfo.size[curDim]
     return op
 
 
@@ -2919,14 +2791,12 @@ def PHASE(ph0=0.0, ph1=0.0, dimag=False, disabled=False, vector=None, process=No
     Parameters
     ---------
     ph0 : real
-        min : -90.0
-        max : 90.0
-        slider : 0
+        min : -360.0
+        max : 360.0
         Zero order phase value
     ph1 : real
-        min : -180.0
-        max : 180.0
-        slider : 0
+        min : -360.0
+        max : 360.0
         First order phase value
     dimag : bool
         Discard imaginary values
@@ -2957,44 +2827,42 @@ def PHASE(ph0=0.0, ph1=0.0, dimag=False, disabled=False, vector=None, process=No
         process.addOperation(op)
     return op
 
-def PHASE2D(phase=None, disabled=False, process=None):
+def PHASE2D(f2ph0=0.0, f2ph1=0.0, f3ph0=0.0, f3ph1=0.0, f4ph0=0.0, f4ph1=0.0, disabled=False, process=None):
     '''Phase ND matrix.
     Parameters
     ---------
-    phase : []
-        Array of phase values, 2 per indirect dimension.
+    f2ph0 : real
+        min : -360.0
+        max : 360.0
+        F2 Zero order phase value
+    f2ph1 : real
+        min : -360.0
+        max : 360.0
+        F2 First order phase value
+    f3ph0 : real
+        min : -360.0
+        max : 360.0
+        F3 Zero order phase value
+    f3ph1 : real
+        min : -360.0
+        max : 360.0
+        F3 First order phase value
+    f4ph0 : real
+        min : -360.0
+        max : 360.0
+        F4 Zero order phase value
+    f4ph1 : real
+        min : -360.0
+        max : 360.0
+        F4 First order phase value
 '''
     if disabled:
         return None
 
     process = process or getCurrentProcess()
-    op = Phase2d(phase)
+    op = Phase2d(f2ph0, f2ph1, f3ph0, f3ph1, f4ph0, f4ph1)
     process.addOperation(op)
     return op
-
-def PHASEND(ph0=0.0,ph1=0.0,dim=0, disabled=False, process=None):
-    '''Phase ND matrix.
-    Parameters
-    ---------
-    ph0 : real
-        min : -360.0
-        max : 360.0
-        Zero order phase value
-    ph1 : real
-        min : -360.0
-        max : 360.0
-        First order phase value
-    dim : {0,1,2,3,4,5,6}
-        Dataset dimension to phase. (0 does all dimensions)
-'''
-    if disabled:
-        return None
-    dim -= 1
-    process = process or getCurrentProcess()
-    op = Phase2d(ph0, ph1, dim)
-    process.addOperation(op)
-    return op
-
 
 @generic_operation
 def RAND(disabled=False, vector=None, process=None):
@@ -3033,18 +2901,6 @@ def RANGE(value=0 + 0j, first=0, last=-1,  max=False, min=False, disabled=False,
         value = Double.MAX_VALUE
 
     op = Range(first, last, value.real, value.imag)
-    return op
-
-def MERGE(disabled=False, process=None, vector=None):
-    '''Make the vector complex, by merging alternate values into a complex number'''
-    if disabled:
-        return None
-    process = process or getCurrentProcess()
-    op = Merge()
-    if (vector != None):
-        op.eval(vector)
-    else:
-        process.addOperation(op)
     return op
     
 def REAL(disabled=False, process=None, vector=None):
@@ -3108,19 +2964,16 @@ def REVERSE(disabled=False, process=None, vector=None):
         process.addOperation(op)
     return op
 
-def RFT(inverse=False, negatePairs=False, disabled=False, process=None, vector=None):
+def RFT(inverse=False, disabled=False, process=None, vector=None):
     '''Real fourier transform
     Parameters
     ---------
     inverse : bool
-        True if inverse RFT, False if forward RFT.
-    negatePairs : bool
-        Negate alternate complex real/imaginary values before the FT
-'''
+        True if inverse RFT, False if forward RFT.'''
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = Rft(inverse, negatePairs)
+    op = Rft(inverse)
     if (vector != None):
         op.eval(vector)
     else:
@@ -3187,123 +3040,37 @@ def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=Fal
         process.addOperation(op)
     return op
 
-def BLACKMAN(offset=0.5,end=1.0,c=1.0,apodSize=0,dim=1, inverse=False,disabled=False, vector=None, process=None):
-    '''Blackman Apodization
-    Parameters
-    ---------
-    offset : real
-        amin : 0.0
-        min : 0.0
-        max : 0.5
-        Offset of Blackman window.
-    end : real
-        amin : 0.5
-        min : 0.5
-        max : 1.0
-        amax : 1.0
-        End value of Blackman window argument.
-    c : real
-        amin : 0.5
-        min : 0.5
-        max : 1.0
-        amax : 1.0
-        First point multiplier.
-    apodSize : int
-        min : 0
-        max : size
-        Size of apodization window.  Default 0f 0 uses entire FID.
-    dim : {1,2,3,4,5,6}
-        Dataset dimension to apodize. Only applicable for matrix operations.
-    '''
-    if disabled:
-        return None
-    process = process or getCurrentProcess()
-    op = Blackman(offset, end, c, apodSize, dim-1, inverse)
-    if (vector != None):
-        op.eval(vector)
-    else:
-        process.addOperation(op)
-    return op
-
-def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False,disabled=False, vector=None, process=None):
-    '''Kaiser Apodization
-    Parameters
-    ---------
-    offset : real
-        amin : 0.0
-        min : 0.0
-        max : 0.5
-        Offset of Kaiser window.
-    beta : real
-        amin : 0.0
-        min : 0.0
-        max : 20.0
-        amax : 20.0
-        Beta.
-    end : real
-        amin : 0.5
-        min : 0.5
-        max : 1.0
-        amax : 1.0
-        End value of window 
-    c : real
-        amin : 0.5
-        min : 0.5
-        max : 1.0
-        amax : 1.0
-        First point multiplier.
-    apodSize : int
-        min : 0
-        max : size
-        Size of apodization window.  Default 0f 0 uses entire FID.
-    dim : {1,2,3,4,5,6}
-        Dataset dimension to apodize. Only applicable for matrix operations.
-    '''
-    if disabled:
-        return None
-    process = process or getCurrentProcess()
-    op = Kaiser(offset, beta, end, c, apodSize, dim-1, inverse)
-    if (vector != None):
-        op.eval(vector)
-    else:
-        process.addOperation(op)
-    return op
-
 @generic_operation
-def SHIFT(shift=0, adjref=False, disabled=False, vector=None, process=None):
+def SHIFT(shift=1, disabled=False, vector=None, process=None):
     '''Left or right shift of the data points in the vector by the specified amount.
     Parameters
     ---------
     shift : int
-        min : -2048
-        max : 2048
+        min : -16
+        max : 16
         Amount of points to shift the vector by.
-    adjref : bool
-        If true, adjust the referencing of the vector based on shift
 '''
     if disabled:
         return None
 
-    op = Shift(shift, adjref)
+    op = Shift(shift)
     return op
 
-def SCRIPT(script="", initialScript="", execFileName="", encapsulate=False, disabled=False, vector=None, process=None):
+def SCRIPT(script="", initialScript="", encapsulate=False, disabled=False, vector=None, process=None):
     '''Execute a Python script as an Operation. Current vector is available as object named "vec". 
     Parameters
     ---------
-    script : wstring
+    script : str
         The script that will be run on each Vec at the stage in the processing queue.
-    initialScript : wstring
+    initialScript : str
         Any initial declarations that will be executed on initialization.
-    execFileName : file
-        An initial file that will be executed on initialization.
     encapsulate : bool
         Whether the interpreter should persist between evaluations or be reinitialized for each evaluation.
 '''
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op=PythonScript(script, initialScript, execFileName, encapsulate)
+    op=PythonScript(script, initialScript, encapsulate)
     if (vector != None):
         op.eval(vector)
     else:
@@ -3471,7 +3238,7 @@ A size can be specified instead of a factor which will be the exact number of po
             setDataInfoSize(curDim, getZfSize(dataInfo.size[curDim],factor,size))
     return op
 
-def makeDataNames(filePath,baseDir=None,outDir=None,iFile=None,baseName='data',multiMode=False):
+def makeDataNames(filePath,baseDir=None,iFile=None,baseName='data',multiMode=False):
    (dirName,tail) = os.path.split(filePath)
    (rootName,ext) = os.path.splitext(tail)
    print 'fp',filePath
@@ -3488,13 +3255,10 @@ def makeDataNames(filePath,baseDir=None,outDir=None,iFile=None,baseName='data',m
    print 'da',dataName
    if (baseDir):
        fullFidName = os.path.join(baseDir,filePath)
+       fullDataName = os.path.join(baseDir,dataName)
    else:
        fullFidName = filePath
-   if (outDir):
-       fullDataName = os.path.join(outDir,dataName)
-   else:
        fullDataName = os.path.join(dirName,dataName)
-
    return fullFidName,filePath,fullDataName,dataName
 
 
@@ -3507,7 +3271,7 @@ def addvector(vector,process=None):
     process.addVec(vector)
 
 def copy(process=None):
-    '''return a new ProcessOps instance that is a copy of process'''
+    '''return a new Process that is a copy of process'''
     process = process or getCurrentProcess()
     temp = processor.createProcess()
     return process.cloneProcess(temp)
@@ -3620,7 +3384,7 @@ coefs3d = [1, 0, 1, 0, 0, 0, 0, 0,
            0, 0, 0, 0, 0,-1, 0, 1]
 
 def convertUnitStringToObject(unitString):
-    '''Return a Unit object (Fraction, Frequency, Index, PPM, Point, Time) from a string of the unit.  Proper format is a number, with optional decimal place, followed by a token.  f for Fraction, h for frequency (Hz), no token for index, P for PPM, p or no token for point, s for second.'''
+    '''Return a Unit object (Fraction, Frequency, Index, PPM, Point, Time) from a string of the unit.  Proper format is a number, with optional decimal place, followed by a token.  f for Fraction, p for frequency, no token for index, p for PPM, no token for point, s for second.'''
     #token = unitString.strip(' \t')[-1]
     if isinstance(unitString,(float,int)):
         return unitString
@@ -3644,11 +3408,8 @@ def convertUnitStringToObject(unitString):
     elif token == 'h':
         unit = Frequency(num)
 
-    elif token == 'P':
-        unit = PPM(num)
-
     elif token == 'p':
-        unit = Point(num)
+        unit = PPM(num)
 
     elif token == 's':
         unit = Time(num)
@@ -3660,30 +3421,24 @@ def convertUnitStringToObject(unitString):
             unit = Index(num)
     return unit
 
-def genScript(arrayed=False):
+def genScript():
     global fidInfo
     script = ''
-    sequence = fidInfo.fidObj.getSequence()
     if fidInfo.nd < 2:
         script += 'DIM(1)\n'
         script += 'EXPD(lb=0.5)\n'
         script += 'ZF()\n'
         script += 'FT()\n'
-        trim = fidInfo.fidObj.getTrim()
-        if trim > 1.0e-3:
-            script += 'TRIM(ftrim=' + str(trim) +')\n'
         script += 'AUTOPHASE(firstOrder=True)\n'
     else:
-        script += psspecial.scriptMods(fidInfo, 0)
         script += 'DIM(1)\n'
         for iDim in range(2,fidInfo.nd+1):
-            if not fidInfo.fidObj.isFrequencyDim(iDim-1):
-                continue
             if not fidInfo.isComplex(iDim-1):
                 continue
             if fidInfo.mapToDatasetList[iDim-1] == -1:
                 continue
             fCoef = fidInfo.getSymbolicCoefs(iDim-1)
+            print iDim,fCoef
             if fCoef != None and fCoef != 'hyper' and fCoef != 'sep':
                 script += 'TDCOMB('
                 script += "dim="+str(iDim)
@@ -3695,27 +3450,19 @@ def genScript(arrayed=False):
         script += 'FT()\n'
         script += 'PHASE(ph0=0.0,ph1=0.0)\n'
         fCoef = fidInfo.getSymbolicCoefs(1)
-        if fCoef != None and fCoef == 'sep' and not arrayed:
+        if fCoef != None and fCoef == 'sep':
             script += "COMB(coef='sep')\n"
         if fidInfo.nd > 2 and fidInfo.fidObj.getSampleSchedule() != None:
-            multiDim = 'DIM(2'
-            for mDim in range(2,fidInfo.nd):
-                multiDim += ',' + str(mDim+1)
-            multiDim += ')'
-            script += multiDim + '\n'
-            script += 'NESTA()\n'
+            script += 'DIM(2,3)\n'
+            script += 'ISTMATRIX()\n'
     for iDim in range(2,fidInfo.nd+1):
         if fidInfo.size[iDim-1] < 2:
             continue
         if fidInfo.mapToDatasetList[iDim-1] == -1:
             continue
-        if not fidInfo.fidObj.isFrequencyDim(iDim-1):
-            continue
-        if (iDim >= fidInfo.nd) and arrayed:
-            continue
         script += 'DIM('+str(iDim)+')\n'
         if iDim == 2 and fidInfo.nd == 2 and fidInfo.fidObj.getSampleSchedule() != None:
-            script += 'NESTA()\n'
+            script += 'IST()\n'
         script += 'SB(c=0.5)\n'
         script += 'ZF()\n'
         script += 'FT('
@@ -3753,24 +3500,6 @@ def ddoc(op,opList):
    opDesc = ''
    opMap = HashMap()
    opList.add(op.__name__)
-   example = op.__name__+"("
-   nNoDefaults = len(argNames)
-   if defaults != None:
-      nNoDefaults -= len(defaults)
-   for i in range(nNoDefaults):
-       example += argNames[i]+','
-
-   if defaults != None :
-       for (argName,defaultValue) in zip(argNames[nNoDefaults:],defaults):
-           if argName == "disabled":
-               break
-           if isinstance(defaultValue,str):
-               example += argName+"="+"'" + defaultValue + "'"
-           else:
-               example += argName+"="+str(defaultValue)
-           example += ","
-   example = example.strip(',')+")"
-   opList.add(example)
    parList = ArrayList()
    opList.add(parList)
    for line in s:

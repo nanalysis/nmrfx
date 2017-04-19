@@ -34,11 +34,9 @@ import org.apache.commons.math3.complex.Complex;
 public class Shift extends Operation {
 
     private final int shiftValue;
-    private final boolean adjustRef;
 
-    public Shift(int shift, boolean adjustRef) {
+    public Shift(int shift) {
         this.shiftValue = shift;
-        this.adjustRef = adjustRef;
     }
 
     @Override
@@ -75,10 +73,6 @@ public class Shift extends Operation {
                     }
                 }
             }
-            if (adjustRef) {
-                vector.adjustRef(-shiftValue, size);
-            }
-
         }
 
         return this;

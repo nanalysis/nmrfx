@@ -50,7 +50,7 @@ public class TDCombine extends Operation {
     }
 
     @Override
-    public TDCombine eval(List<Vec> vectors) throws OperationException {
+    public TDCombine eval(ArrayList<Vec> vectors) throws OperationException {
         if (vectors.isEmpty()) {
             throw new OperationException("TDCombine cannot combine 0 vectors.");
         } else if (vectors.size() % (numInputVec) != 0) {

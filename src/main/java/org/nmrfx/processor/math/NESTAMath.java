@@ -28,10 +28,9 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 public class NESTAMath {
 
     final int outerIterations;
-    final int innerIterations;
+    final int innerIterations = 500;
     final int statWinSize = 10;
     final boolean zeroAtStart;
-    final double threshold;
     double tolFinal;
     double muFinal;
     final MatrixND matrix;
@@ -43,16 +42,14 @@ public class NESTAMath {
     double finalL1Norm = 0.0;
     FileWriter fileWriter = null;
 
-    public NESTAMath(MatrixND matrix, int[] zeroList, int iterations, int innerIterations, double tolFinal, double muFinal, double[] phase, boolean zeroAtStart, double threshold, String logFileName) {
+    public NESTAMath(MatrixND matrix, int[] zeroList, int iterations, double tolFinal, double muFinal, double[] phase, boolean zeroAtStart, String logFileName) {
         this.matrix = matrix;
         this.zeroList = zeroList;
         this.outerIterations = iterations;
-        this.innerIterations = innerIterations;
         this.tolFinal = tolFinal;
         this.muFinal = muFinal;
         this.phase = phase;
         this.zeroAtStart = zeroAtStart;
-        this.threshold = threshold;
         if (logFileName != null) {
             try {
                 fileWriter = new FileWriter(logFileName);
@@ -84,18 +81,15 @@ public class NESTAMath {
         gradMatrix.doFTtoReal();
         SummaryStatistics sStats = gradMatrix.calcRealStats();
         initialL1Norm = sStats.getSum();
-        double maxAbs = sStats.getMax();
-        if (maxAbs < threshold) {
-            return;
-        }
 
+        double largestValue = sStats.getMax();
         int n = matrix.getNElems();
         double[] zValues = new double[n];  // zk of page 5
         double[] yValues = new double[n];  // yk of page 5
         double[] wValues = new double[n];  // cumulative gradient
         double[] xPlug = new double[n];    // matrix values at beginning of inner loop
 
-        double muStart = maxAbs * 0.9;  // based on page 11 of NESTA paper
+        double muStart = largestValue * 0.9;  // based on page 11 of NESTA paper
         // fixme  good value for muFinal?/ should this be an argument?
         // or should it be set automatically from data (fraction of largest value accounting for dynamic range)
         //   or based on noise
@@ -121,7 +115,7 @@ public class NESTAMath {
         totalIterations = 0;
         double mu = muStart;
         double tol = tolStart;
-        matrix.copyDataTo(xPlug);
+        System.arraycopy(matrix.data, 0, xPlug, 0, n);
 
         // Outer iterations are the so-called Continuation Steps of the NESTA paper
         for (int oIter = 0; oIter < outerIterations; oIter++) {
@@ -174,17 +168,15 @@ public class NESTAMath {
                 // Effectively then the Langrangian multiplier (lambda) is 0.0 and all we need is the value for q
                 // fixme could just use zeroList here
                 for (int i = 0; i < n; i++) {
-                    double mValue = matrix.getValueAtIndex(i);
-                    double gValue = gradMatrix.getValueAtIndex(i);
-                    yValues[i] = mValue - mu * gValue; // compare to q of eq 3.7
-                    wValues[i] += alpha * gValue;
+                    yValues[i] = matrix.data[i] - mu * gradMatrix.data[i]; // compare to q of eq 3.7
+                    wValues[i] += alpha * gradMatrix.data[i];
                     zValues[i] = xPlug[i] - mu * wValues[i];  // compare to q of eq 3.12
                 }
                 for (int i : zeroList) {
-                    matrix.setValueAtIndex(i, tau * zValues[i] + (1.0 - tau) * yValues[i]);
+                    matrix.data[i] = tau * zValues[i] + (1.0 - tau) * yValues[i];
                 }
             }
-            matrix.copyDataTo(xPlug);
+            System.arraycopy(matrix.data, 0, xPlug, 0, n);
         }
         if (fileWriter != null) {
             fileWriter.write(String.format("iNorm %10.5f fNorm %10.5f nIter %d\n", initialL1Norm, finalL1Norm, totalIterations));

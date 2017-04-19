@@ -52,9 +52,7 @@ public class AutoPhaseDataset extends DatasetOperation {
         if (iDim == -1) {
             int nDims = dataset.getNDim();
             for (int phaseDim = 0; phaseDim < nDims; phaseDim++) {
-                if (dataset.getFreqDomain(phaseDim)) {
-                    phaseDim(dataset, phaseDim);
-                }
+                phaseDim(dataset, phaseDim);
             }
         } else {
             phaseDim(dataset, iDim);
@@ -64,13 +62,13 @@ public class AutoPhaseDataset extends DatasetOperation {
     void phaseDim(Dataset dataset, int phaseDim) throws ProcessingException {
         DatasetPhaser phaser = new DatasetPhaser(dataset);
         try {
-            phaser.setup(phaseDim, winSize, ratio, IDBaseline2.ThreshMode.SDEV);
+            phaser.setup(phaseDim, winSize, ratio);
             if (firstOrder) {
                 double[] phases = phaser.getPhase(ph1Limit);
-                phaser.applyPhases2(phaseDim, phases[0], phases[1]);
+                phaser.applyPhases(phaseDim, phases[0], phases[1]);
             } else {
                 double phase = phaser.getPhaseZero();
-                phaser.applyPhases2(phaseDim, phase, 0.0);
+                phaser.applyPhases(phaseDim, phase, 0.0);
             }
         } catch (IOException ioE) {
             throw new ProcessingException(ioE.getMessage());

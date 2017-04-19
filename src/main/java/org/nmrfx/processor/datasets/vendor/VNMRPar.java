@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 
 public class VNMRPar {
 
-    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+    static Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
     static Map<String, Map> parGroups = new HashMap<String, Map>();
     static long nParGroups = 0;
     public String name = null;
@@ -124,7 +124,7 @@ public class VNMRPar {
             }
             removeParGroup(handle);
         } catch (NMRParException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            logger.log(Level.WARNING, ex.getMessage());
         }
         return hmap;
     }
@@ -150,7 +150,7 @@ public class VNMRPar {
             }
             removeParGroup(handle);
         } catch (NMRParException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            logger.log(Level.WARNING, ex.getMessage());
         }
         return hmap;
     }
@@ -223,7 +223,7 @@ public class VNMRPar {
                 } else {
                     StringBuilder result = new StringBuilder();
                     for (int i = 1; i < values.length; i++) {
-                        result.append(values[i]).append("\n");
+                        result.append(values[i] + "\n");
                     }
                     return result.toString();
                 }
@@ -235,11 +235,11 @@ public class VNMRPar {
                 StringBuilder result = new StringBuilder();
                 int quotePos1 = valueLines[0].indexOf('"');
                 int quotePos2 = valueLines[0].lastIndexOf('"');
-                result.append(valueLines[0].substring(quotePos1 + 1, quotePos2)).append("\n");
+                result.append(valueLines[0].substring(quotePos1 + 1, quotePos2) + "\n");
                 for (int i = 1; i < valueLines.length; i++) {
                     quotePos1 = valueLines[i].indexOf('"');
                     quotePos2 = valueLines[i].lastIndexOf('"');
-                    result.append(valueLines[i].substring(quotePos1 + 1, quotePos2)).append("\n");
+                    result.append(valueLines[i].substring(quotePos1 + 1, quotePos2) + "\n");
                 }
                 return result.toString();
             }
@@ -270,7 +270,8 @@ public class VNMRPar {
     static String processVNMRPar(String data)
             throws NMRParException {
         String handle;
-        LineNumberReader lineReader = new LineNumberReader(new StringReader(data));
+        LineNumberReader lineReader = null;
+        lineReader = new LineNumberReader(new StringReader(data));
         handle = processVNMRPar(lineReader);
         try {
             lineReader.close();
@@ -300,7 +301,7 @@ public class VNMRPar {
                 String parName = fields[0];
                 String type = fields[2];
                 String s1 = getValueLine(lineReader);
-                String[] valueLines;
+                String[] valueLines = null;
 
                 if (type.equals("2")) {
                     String[] values = s1.split("\\s");
@@ -329,8 +330,9 @@ public class VNMRPar {
 
     static String getValueLine(LineNumberReader lineReader)
             throws NMRParException {
+        String s1 = "";
         try {
-            String s1 = lineReader.readLine();
+            s1 = lineReader.readLine();
 
             if (s1 == null) {
                 throw new NMRParException(
@@ -341,7 +343,7 @@ public class VNMRPar {
             int lastQuote = s1.lastIndexOf('"');
 
             if ((firstQuote != -1) && (firstQuote == lastQuote)) {
-                StringBuilder sbuf = new StringBuilder();
+                StringBuffer sbuf = new StringBuffer();
                 sbuf.append(s1);
 
                 while (true) {

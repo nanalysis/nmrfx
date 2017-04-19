@@ -31,7 +31,6 @@ public class DimCounter implements Iterable<int[]> {
             counter[0] = -1;
         }
 
-        @Override
         public boolean hasNext() {
             for (int i = 0; i < nDim; i++) {
                 if (counter[i] < (size[i] - 1)) {
@@ -41,7 +40,6 @@ public class DimCounter implements Iterable<int[]> {
             return false;
         }
 
-        @Override
         public int[] next() {
             for (int i = 0; i < nDim; i++) {
                 if (counter[i] == size[i] - 1) {
@@ -55,7 +53,6 @@ public class DimCounter implements Iterable<int[]> {
             return counter.clone();
         }
 
-        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -71,7 +68,6 @@ public class DimCounter implements Iterable<int[]> {
         counterSize = sizeTemp;
     }
 
-    @Override
     public Iterator iterator() {
         return new Iterator();
     }

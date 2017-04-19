@@ -23,15 +23,12 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  *
  * @author brucejohnson
  *
- * The MultiVecCounter class converts an index (from 0 to nGroups-1) to a
- * VecIndex object that stores the input positions in FID at which to read the
- * vectors and the output positions in the dataset at which to write the
- * vectors. A group represents all the vectors that have the same time value in
- * the indirect dimensions.
+ * The MultiVecCounter class converts an index (from 0 to nGroups-1) to a VecIndex object that stores the input
+ * positions in FID at which to read the vectors and the output positions in the dataset at which to write the vectors.
+ * A group represents all the vectors that have the same time value in the indirect dimensions.
  */
 public class MultiVecCounter {
 
-    public static boolean showDebugInfo = false;
     int[] osizes;
     int[] isizes;
     int[] inPhases;
@@ -46,23 +43,17 @@ public class MultiVecCounter {
     MultidimensionalCounter.Iterator iterator;
 
     /**
-     * Construct a new MultiVecCounter with specified parameters describing
-     * input and output data.
+     * Construct a new MultiVecCounter with specified parameters describing input and output data.
      *
-     * @param tdSizes an array of integers representing the size of the input
-     * data in each dimension. Output data sizes are set equal to the input data
-     * sizes.
-     * @param complex an array of booleans representing whether the input FID is
-     * complex in each dimension.
-     * @param modes an array of string values representing the order in which
-     * data was acquired. The first character of each mode is either a 'p',
-     * representing phase information, or 'd' representing time delay. The
-     * second character represents the dimension, with '1' representing the
-     * first indirect dimension. For example, "p1","p2","d1","d2" represents a
-     * typical Agilent 3D dataset with array value = "phase2,phase" and
-     * "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
-     * @param datasetNDim number of dimensions in final dataset, could be
-     * smaller than original data dimensions.
+     * @param tdSizes an array of integers representing the size of the input data in each dimension. Output data sizes
+     * are set equal to the input data sizes.
+     * @param complex an array of booleans representing whether the input FID is complex in each dimension.
+     * @param modes an array of string values representing the order in which data was acquired. The first character of
+     * each mode is either a 'p', representing phase information, or 'd' representing time delay. The second character
+     * represents the dimension, with '1' representing the first indirect dimension. For example, "p1","p2","d1","d2"
+     * represents a typical Agilent 3D dataset with array value = "phase2,phase" and "p1","d1","p2","d2" would represent
+     * a typical Bruker 3D dataset.
+     * @param datasetNDim number of dimensions in final dataset, could be smaller than original data dimensions.
      */
     public MultiVecCounter(int[] tdSizes, boolean[] complex, String[] modes, int datasetNDim) {
         nDim = tdSizes.length;
@@ -73,24 +64,17 @@ public class MultiVecCounter {
     }
 
     /**
-     * Construct a new MultiVecCounter with specified parameters describing
-     * input and output data.
+     * Construct a new MultiVecCounter with specified parameters describing input and output data.
      *
-     * @param tdSizes an array of integers representing the size of the input
-     * data in each dimension
-     * @param outSizes an array of integers representing the size of the output
-     * dataset in each dimension
-     * @param complex an array of booleans representing whether the input FID is
-     * complex in each dimension.
-     * @param modes an array of string values representing the order in which
-     * data was acquired. The first character of each mode is either a 'p',
-     * representing phase information, or 'd' representing time delay. The
-     * second character represents the dimension, with '1' representing the
-     * first indirect dimension. For example, "p1","p2","d1","d2" represents a
-     * typical Agilent 3D dataset with array value = "phase2,phase" and
-     * "p1","d1","p2","d2" would represent a typical Bruker 3D dataset.
-     * @param datasetNDim number of dimensions in final dataset, could be
-     * smaller than original data dimensions.
+     * @param tdSizes an array of integers representing the size of the input data in each dimension
+     * @param outSizes an array of integers representing the size of the output dataset in each dimension
+     * @param complex an array of booleans representing whether the input FID is complex in each dimension.
+     * @param modes an array of string values representing the order in which data was acquired. The first character of
+     * each mode is either a 'p', representing phase information, or 'd' representing time delay. The second character
+     * represents the dimension, with '1' representing the first indirect dimension. For example, "p1","p2","d1","d2"
+     * represents a typical Agilent 3D dataset with array value = "phase2,phase" and "p1","d1","p2","d2" would represent
+     * a typical Bruker 3D dataset.
+     * @param datasetNDim number of dimensions in final dataset, could be smaller than original data dimensions.
      */
     public MultiVecCounter(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes, int datasetNDim) {
         nDim = tdSizes.length;
@@ -102,19 +86,9 @@ public class MultiVecCounter {
 
     void init(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes) {
         int nIDim = tdSizes.length - 1;  // number of indirect dimensions
-
-        // the index of the values in the multi-dimensional counter that references the phase increment
-        //  of the input data
         inPhases = new int[nIDim];
-        // the index of the values in the multi-dimensional counter that references the time increment 
-        //  of the input data
         inPoints = new int[nIDim];
-
-        // the index of the values in the multi-dimensional counter that references the phase increment
-        //  of the output dataset
         outPhases = new int[nIDim];
-        // the index of the values in the multi-dimensional counter that references the time increment 
-        //  of the output data
         outPoints = new int[nIDim];
         boolean matchIn = false;
 
@@ -128,30 +102,21 @@ public class MultiVecCounter {
 //        for (int i=0;i<outSizes.length;i++) {
 //            System.out.println("ou size " + i + " " + outSizes[i]);
 //        }
-
         for (String mode : modes) {
-            // dim is the indirect dimension index running from 1 (for indirect dim 1, 2nd dim) up
             int dim = Integer.parseInt(mode.substring(1));
-            // argIndex runs backwards from 2*niDim-1 downto 0
-            // so for a 3D file it would be 3,2,1,0
-
-            int argIndex = 2 * nIDim - 1 - iArg;
             if (mode.charAt(0) == 'd') {
-                inPoints[dim - 1] = argIndex;
-                isizes[argIndex] = tdSizes[dim];
+                inPoints[dim - 1] = 2 * nIDim - 1 - iArg;
+                isizes[2 * nIDim - 1 - iArg] = tdSizes[dim];
+//                isizes[2 * nIDim - 1 - iArg] = tdSizes[iSize++];
+//                isizes[2 * nIDim - 2 * (dim-1) -2] = tdSizes[iSize++];
+
             } else if (mode.charAt(0) == 'p') {
-                inPhases[dim - 1] = argIndex;
-                isizes[argIndex] = complex[dim] ? 2 : 1;
+                inPhases[dim - 1] = 2 * nIDim - 1 - iArg;
                 groupSize *= complex[iPhase] ? 2 : 1;
-            } else if (mode.charAt(0) == 'a') {
-                if (inPhases.length >= dim) {
-                    inPhases[dim - 1] = argIndex;
-                    inPoints[dim - 1] = argIndex - 1;
-                    isizes[argIndex] = 1;
-                    isizes[argIndex - 1] = tdSizes[dim];
-                    groupSize *= 1;
-                    iArg++;
-                }
+                isizes[2 * nIDim - 1 - iArg] = complex[dim] ? 2 : 1;
+//                isizes[2 * nIDim - 1 - iArg] = complex[iPhase++] ? 2 : 1;
+//                isizes[2 * nIDim - 2 * (dim-1) -1] = complex[iPhase++] ? 2 : 1;
+
             } else {
                 throw new IllegalArgumentException("bad mode " + mode);
             }
@@ -182,40 +147,52 @@ public class MultiVecCounter {
                 }
             }
         }
-        if (showDebugInfo) {
-            System.out.println("  MultiVecCounter: ");
-            for (int i = 0; i < outPhases.length; i++) {
-                System.out.print("ouPh[" + i + "]=" + outPhases[i] + " ");
-            }
-            System.out.println("");
-
-            for (int i = 0; i < outPoints.length; i++) {
-                System.out.print("ouPt[" + i + "]=" + outPoints[i] + " ");
-            }
-            System.out.println("");
-
-            for (int i = 0; i < inPhases.length; i++) {
-                System.out.print("inPh[" + i + "]=" + inPhases[i] + " ");
-            }
-            System.out.println("");
-
-            for (int i = 0; i < inPoints.length; i++) {
-                System.out.print("inPt[" + i + "]=" + inPoints[i] + " ");
-            }
-            System.out.println("");
-
-            for (int i = 0; i < isizes.length; i++) {
-                System.out.print(" inSz[" + i + "]=" + isizes[i]);
-            }
-            System.out.println("");
-            for (int i = 0; i < osizes.length; i++) {
-                System.out.print(" ouSz[" + i + "]=" + osizes[i]);
-            }
-            System.out.println("");
-            System.out.println("groupsize " + groupSize);
+        /*
+        System.out.println("  MultiVecCounter: ");
+        for (int i = 0; i < outPhases.length; i++) {
+            System.out.print("ouPh[" + i + "]=" + outPhases[i] + " ");
         }
+        System.out.println("");
+
+        for (int i = 0; i < outPoints.length; i++) {
+            System.out.print("ouPt[" + i + "]=" + outPoints[i] + " ");
+        }
+        System.out.println("");
+
+        for (int i = 0; i < inPhases.length; i++) {
+            System.out.print("inPh[" + i + "]=" + inPhases[i] + " ");
+        }
+        System.out.println("");
+
+        for (int i = 0; i < inPoints.length; i++) {
+            System.out.print("inPt[" + i + "]=" + inPoints[i] + " ");
+        }
+        System.out.println("");
+
+        for (int i = 0; i < isizes.length; i++) {
+            System.out.print(" inSz[" + i + "]=" + isizes[i]);
+        }
+        System.out.println("");
+        for (int i = 0; i < osizes.length; i++) {
+            System.out.print(" ouSz[" + i + "]=" + osizes[i]);
+        }
+        System.out.println("");
+        System.out.println("groupsize " + groupSize);
+         */
         outCounter = new MultidimensionalCounter(osizes);
         inCounter = new MultidimensionalCounter(isizes);
+//        iterator = outCounter.iterator();
+//        int i = 0;
+//        while (iterator.hasNext()) {
+//            iterator.next();
+//            int[] counts = iterator.getCounts();
+//            System.out.print("i " + i);
+//            for (int j = 0; j < counts.length; j++) {
+//                System.out.print(" " + counts[j]);
+//            }
+//            System.out.println("");
+//            i++;
+//        }
         iterator = outCounter.iterator();
     }
 
@@ -230,8 +207,8 @@ public class MultiVecCounter {
     }
 
     /**
-     * Returns the size of a group of vectors that should be loaded together so
-     * that they can be combined together with various schemes.
+     * Returns the size of a group of vectors that should be loaded together so that they can be combined together with
+     * various schemes.
      *
      * @return the group size
      */
@@ -240,13 +217,12 @@ public class MultiVecCounter {
     }
 
     /**
-     * Converts an array of positions that represent output indices in the new
-     * dataset to the corresponding locations of the raw data in the FID file.
+     * Converts an array of positions that represent output indices in the new dataset to the corresponding locations of
+     * the raw data in the FID file.
      *
-     * @param counts an array of integers corresponding to output dataset
-     * indices (with a phase and time increment position for each dimension)
-     * @return an integer array of input positions at which to load vector from
-     * FID file.
+     * @param counts an array of integers corresponding to output dataset indices (with a phase and time increment
+     * position for each dimension)
+     * @return an integer array of input positions at which to load vector from FID file.
      */
     public int[] outToInCounter(int[] counts) {
         int[] icounts = new int[counts.length];
@@ -258,12 +234,11 @@ public class MultiVecCounter {
     }
 
     /**
-     * Converts an array of positions that represent output groups in the new
-     * dataset to the corresponding output positions (row, plane etc.) in the
-     * dataset.
+     * Converts an array of positions that represent output groups in the new dataset to the corresponding output
+     * positions (row, plane etc.) in the dataset.
      *
-     * @param counts an array of integers corresponding to output dataset
-     * indices (with a phase and time increment position for each dimension)
+     * @param counts an array of integers corresponding to output dataset indices (with a phase and time increment
+     * position for each dimension)
      * @return an array of output positions in dataset.
      */
     public int[] getOffsets(int[] counts) {
@@ -278,10 +253,9 @@ public class MultiVecCounter {
     }
 
     /**
-     * Returns a VecIndex object containing the output positions in new dataset
-     * and input positions in raw FID file that correspond to a particular
-     * group. A group represents all the vectors that have the same time value
-     * in the indirect dimensions.
+     * Returns a VecIndex object containing the output positions in new dataset and input positions in raw FID file that
+     * correspond to a particular group. A group represents all the vectors that have the same time value in the
+     * indirect dimensions.
      *
      * @param vecNum
      * @return VecIndex with positions corresponding to specified group number.

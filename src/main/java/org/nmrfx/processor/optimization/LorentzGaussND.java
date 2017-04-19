@@ -19,17 +19,12 @@ package org.nmrfx.processor.optimization;
 
 import java.util.Random;
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.exception.MathIllegalStateException;
-import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.optimization.GoalType;
+import org.apache.commons.math3.optimization.PointValuePair;
+import org.apache.commons.math3.optimization.direct.BOBYQAOptimizer;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
-import org.apache.commons.math3.optim.InitialGuess;
-import org.apache.commons.math3.optim.MaxEval;
-import org.apache.commons.math3.optim.SimpleBounds;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
-import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
 
 public class LorentzGaussND implements MultivariateFunction {
 
@@ -39,10 +34,9 @@ public class LorentzGaussND implements MultivariateFunction {
     int[] sigStarts = null;
     int nSignals;
     int nDelays = 1;
-    int[][] positions;
+    double[][] positions;
     double[][] intensities;
     double[] delays;
-    boolean fitC = false;
     double[] guesses;
     double[][] boundaries;
     double[] newStart;
@@ -50,7 +44,6 @@ public class LorentzGaussND implements MultivariateFunction {
     double[] scaledPars;
     int[] mapToAll;
     int[] mapFromAll;
-    int[][] syncPars;
     double[][] uniformBoundaries = new double[2][];
     PointValuePair best = null;
     boolean calcGauss = false;
@@ -58,10 +51,10 @@ public class LorentzGaussND implements MultivariateFunction {
     double fracLorentz = 1.0;
     Random generator = null;
 
-    public LorentzGaussND(final int[][] positions) {
+    public LorentzGaussND(final double[][] positions) {
         int nPoints = positions.length;
         nDim = positions[0].length;
-        this.positions = new int[nPoints][];
+        this.positions = new double[nPoints][];
         for (int i = 0; i < nPoints; i++) {
             this.positions[i] = positions[i].clone();
         }
@@ -74,7 +67,7 @@ public class LorentzGaussND implements MultivariateFunction {
         for (int size : sizes) {
             nPoints *= size;
         }
-        this.positions = new int[nPoints][sizes.length];
+        this.positions = new double[nPoints][sizes.length];
         MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
         MultidimensionalCounter.Iterator iterator = counter.iterator();
         i = 0;
@@ -94,8 +87,7 @@ public class LorentzGaussND implements MultivariateFunction {
         nDelays = intensities.length;
     }
 
-    public void setDelays(final double[] delays, boolean fitC) {
-        this.fitC = fitC;
+    public void setDelays(final double[] delays) {
         this.delays = delays;
     }
 
@@ -111,19 +103,11 @@ public class LorentzGaussND implements MultivariateFunction {
         PointValuePair result = null;
         BOBYQAOptimizer optimizer = new BOBYQAOptimizer(nInterpolationPoints, 10.0, 1.0e-2);
         try {
-            result = optimizer.optimize(
-                    new MaxEval(nSteps),
-                    new ObjectiveFunction(this), GoalType.MINIMIZE,
-                    new SimpleBounds(uniformBoundaries[0], uniformBoundaries[1]),
-                    new InitialGuess(newStart));
+            result = optimizer.optimize(nSteps, this, GoalType.MINIMIZE, newStart, uniformBoundaries[0], uniformBoundaries[1]);
             result = new PointValuePair(unscalePar(result.getPoint()), result.getValue());
-        } catch (TooManyEvaluationsException e) {
-            result = best;
-        } catch (MathIllegalStateException e) {
-            System.out.println("illegals state " + optimizer.getEvaluations());
+        } catch (TooManyEvaluationsException tmE) {
             result = best;
         }
-
         return result;
     }
 
@@ -197,7 +181,7 @@ public class LorentzGaussND implements MultivariateFunction {
         return null;
     }
 
-    public double calculate(double[] a, int[] x, int iDelay) {
+    public double calculate(double[] a, double[] x, int iDelay) {
         double y = a[0];
         for (int k = 0; k < nSignals; k++) {
             y += calculateOneSig(a, k, x, iDelay);
@@ -206,24 +190,14 @@ public class LorentzGaussND implements MultivariateFunction {
         return y;
     }
 
-    public double calculateOneSig(double[] a, int iSig, int[] x, int iDelay) {
+    public double calculateOneSig(double[] a, int iSig, double[] x, int iDelay) {
         double y = 1.0;
         int iPar = sigStarts[iSig];
-        double amplitude;
+        double amplitude = a[iPar++];
         double base = 0.0;
         if (intensities.length > 1) {
-            if (delays != null) {
-                amplitude = a[iPar++];
-                amplitude *= FastMath.exp(-1.0 * delays[iDelay] / a[iPar++]);
-                if (fitC) {
-                    base = a[iPar++];
-                }
-            } else {
-                amplitude = a[iPar + iDelay];
-                iPar += nDelays;
-            }
-        } else {
-            amplitude = a[iPar++];
+            amplitude *= FastMath.exp(-1.0 * delays[iDelay] / a[iPar++]);
+            base = a[iPar++];
         }
         for (int iDim = 0; iDim < nDim; iDim++) {
             double lw = a[iPar++];
@@ -257,13 +231,6 @@ public class LorentzGaussND implements MultivariateFunction {
             double up = boundaries[1][i];
             unscaledPars[mapToAll[i]] = f * (up - low) + low;
         }
-        if (syncPars != null) {
-            for (int i = 0; i < syncPars.length; i++) {
-                int j = syncPars[i][1];
-                int k = syncPars[i][0];
-                unscaledPars[k] = unscaledPars[j];
-            }
-        }
         return unscaledPars;
     }
 
@@ -276,18 +243,10 @@ public class LorentzGaussND implements MultivariateFunction {
         return scaledPars;
     }
 
-    public void setOffsets(final double[] start, final double[] lower, final double[] upper, boolean[] floating, int[][] syncPars) {
+    public final void setOffsets(final double[] start, final double[] lower, final double[] upper, boolean[] floating) {
         int nRelaxPar = 0;
         if (intensities.length > 1) {
-            if (delays != null) {
-                if (fitC) {
-                    nRelaxPar = 2;
-                } else {
-                    nRelaxPar = 1;
-                }
-            } else {
-                nRelaxPar = nDelays - 1;
-            }
+            nRelaxPar = 2;
         }
         nSignals = (start.length - 1) / (nDim * 2 + 1 + nRelaxPar);
         if (nSignals * (nDim * 2 + 1 + nRelaxPar) != start.length - 1) {
@@ -317,9 +276,6 @@ public class LorentzGaussND implements MultivariateFunction {
         boundaries = new double[2][];
         boundaries[0] = new double[nFloating];
         boundaries[1] = new double[nFloating];
-        if (syncPars != null) {
-            this.syncPars = new int[syncPars.length][2];
-        }
         int j = 0;
         for (int i = 0; i < nParDim; i++) {
             if (floating[i]) {
@@ -330,20 +286,12 @@ public class LorentzGaussND implements MultivariateFunction {
                 uniformBoundaries[1][j] = 100.0;
                 boundaries[0][j] = lower[i];
                 boundaries[1][j] = upper[i];
+                unscaledPars[i] = start[i];
                 mapToAll[j] = i;
                 mapFromAll[i] = j;
                 j++;
             }
-            unscaledPars[i] = start[i];
         }
-        if (syncPars != null) {
-            for (int i = 0; i < syncPars.length; i++) {
-                this.syncPars[i][0] = syncPars[i][0];
-                this.syncPars[i][1] = syncPars[i][1];
-                System.out.println(i + " " + syncPars[i][0] + " " + syncPars[i][1]);
-            }
-        }
-
     }
 
     public static void main(String[] args) {
@@ -356,7 +304,7 @@ public class LorentzGaussND implements MultivariateFunction {
         int[] sizes = {20, 20};
         LorentzGaussND peakFit = new LorentzGaussND(sizes);
 
-        peakFit.setOffsets(start, lower, upper, floating, null);
+        peakFit.setOffsets(start, lower, upper, floating);
         peakFit.simulate(a, 0.01);
         peakFit.value(peakFit.scalePar(a));
         int nSteps = 1000;

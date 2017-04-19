@@ -18,107 +18,77 @@
 package org.nmrfx.processor.datasets;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.FloatBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.datasets.DatasetHeaderIO;
-import org.nmrfx.datasets.DatasetLayout;
-import org.nmrfx.datasets.DatasetStorageInterface;
-import org.nmrfx.processor.math.Vec;
+import sun.misc.Cleaner;
+import sun.nio.ch.DirectBuffer;
 
 /**
  * Create a memory-mapped interface to a Dataset file
  *
  * @author brucejohnson
  */
-public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
+public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
 
-    private RandomAccessFile raFile;
-    private final Dataset dataset;
-    private final File file;
+    private final RandomAccessFile raFile;
+    private final int[] sizes;
     private final long[] strides;
-    private long totalSize;
+    private final long totalSize;
+    private final int[] blockSize;
+    private final int[] nBlocks;
+    private final int[] offsetBlocks;
+    private final int[] offsetPoints;
+    private final long blockElements;
+    private final long blockPoints;
     private final int dataType;
+    private final int headerSize;
     final boolean writable;
-    private MappedByteBuffer mappedBuffer;
-    DatasetLayout layout;
-    FloatBuffer floatBuffer;
+    private final MappedByteBuffer mappedBuffer;
     private final long BYTES = 4;
 
     /**
-     * An object that represents a mapping of specified dataset with a memory
-     * map.
+     * An object that represents a mapping of specified dataset with a memory map.
      *
      * @param dataset Dataset object that uses this mapped matrix file
      * @param raFile The Random access file that actually stores data
      * @param writable true if the mapping should be writable
      * @throws IOException if an I/O error occurs
      */
-    public MappedMatrixFile(final Dataset dataset, File file, final DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
+    public MappedMatrixFile(final Dataset dataset, final RandomAccessFile raFile, final boolean writable) throws IOException {
         this.raFile = raFile;
-        this.dataset = dataset;
-        this.file = file;
-        this.layout = layout;
+        blockSize = dataset.getBlockSizes();
         dataType = dataset.getDataType();
+        offsetBlocks = dataset.getOffsetBlocks();
+        offsetPoints = dataset.getOffsetPoints();
+        nBlocks = dataset.getNBlocks();
+        blockElements = dataset.getBlockElements();
+        blockPoints = blockElements / BYTES;
+        headerSize = dataset.getFileHeaderSize();
+        sizes = new int[dataset.getNDim()];
         strides = new long[dataset.getNDim()];
         this.writable = writable;
-        init();
-    }
-
-    void init() throws IOException {
-        long size = 1;
-        for (int i = 0; i < layout.nDim; i++) {
-            size *= layout.sizes[i];
-            if (i == 0) {
-                strides[i] = 1;
-            } else {
-                strides[i] = strides[i - 1] * layout.sizes[i - 1];
-            }
-            System.err.println("mapped " + i + " " + dataset.getSize(i) + " " + strides[i]);
-        }
-        //System.out.println("size " + totalSize);
-        totalSize = size;
         try {
-            long size2 = totalSize * Float.BYTES;
+            long matSize = BYTES;
+            System.out.println(dataset.getFileName());
+            for (int i = 0; i < dataset.getNDim(); i++) {
+                System.out.println(i + " " + blockSize[i] + " " + nBlocks[i] + " " + dataset.getSize(i));
+                matSize *= blockSize[i] * nBlocks[i];
+                strides[i] = blockSize[i] * nBlocks[i];
+            }
+            totalSize = matSize / BYTES;
+            long size2 = matSize;
             FileChannel.MapMode mapMode = FileChannel.MapMode.READ_ONLY;
             if (writable) {
                 mapMode = FileChannel.MapMode.READ_WRITE;
             }
-            mappedBuffer = this.raFile.getChannel().map(mapMode, layout.getFileHeaderSize(), size2);
+
+            mappedBuffer = this.raFile.getChannel().map(mapMode, headerSize, size2);
             mappedBuffer.order(dataset.getByteOrder());
-            floatBuffer = mappedBuffer.asFloatBuffer();
         } catch (IOException e) {
             this.raFile.close();
             throw e;
-        }
-    }
-
-    @Override
-    public final synchronized void writeHeader(boolean nvExtra) {
-        if (file != null) {
-            DatasetHeaderIO headerIO = new DatasetHeaderIO(dataset);
-            if (file.getPath().contains(".ucsf")) {
-                headerIO.writeHeaderUCSF(layout, raFile, nvExtra);
-            } else {
-                headerIO.writeHeader(layout, raFile);
-            }
-        }
-    }
-
-    @Override
-    public void setWritable(boolean state) throws IOException {
-        if (writable != state) {
-            if (state) {
-                raFile = new RandomAccessFile(file, "rw");
-            } else {
-                force();
-                raFile = new RandomAccessFile(file, "r");
-            }
-            init();
         }
     }
 
@@ -132,28 +102,32 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
-    public long bytePosition(int... offsets) {
+    public long position(int... offsets) {
         long position;
-        position = offsets[0];
-        for (int iDim = 1; iDim < offsets.length; iDim++) {
-            position += offsets[iDim] * strides[iDim];
-        }
-        return position * BYTES;
-    }
-
-    @Override
-    public long pointPosition(int... offsets) {
-        long position;
-        position = offsets[0];
-        for (int iDim = 1; iDim < offsets.length; iDim++) {
-            position += offsets[iDim] * strides[iDim];
+        boolean subMatrix = true;
+        if (subMatrix) {
+            long blockNum = 0;
+            long offsetInBlock = 0;
+            for (int iDim = 0; iDim < offsets.length; iDim++) {
+                blockNum += ((offsets[iDim] / blockSize[iDim]) * offsetBlocks[iDim]);
+                offsetInBlock += ((offsets[iDim] % blockSize[iDim]) * offsetPoints[iDim]);
+//System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock);
+            }
+            position = blockNum * blockPoints + offsetInBlock;
+//System.out.println(position);
+            return position;
+        } else {
+            position = offsets[0];
+            for (int iDim = 1; iDim < offsets.length; iDim++) {
+                position += offsets[iDim] * strides[iDim];
+            }
         }
         return position;
     }
 
     @Override
     public int getSize(final int dim) {
-        return layout.sizes[dim];
+        return sizes[dim];
     }
 
     @Override
@@ -163,7 +137,7 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     @Override
     public float getFloat(int... offsets) {
-        int p = (int) bytePosition(offsets);
+        int p = (int) (position(offsets) * BYTES);
         if (dataType == 0) {
             return mappedBuffer.getFloat(p);
         } else {
@@ -173,7 +147,7 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     @Override
     public void setFloat(float d, int... offsets) {
-        int p = (int) bytePosition(offsets);
+        int p = (int) (position(offsets) * BYTES);
         try {
             if (dataType == 0) {
                 mappedBuffer.putFloat(p, d);
@@ -187,14 +161,12 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     @Override
     public void close() throws IOException {
-        if (raFile != null) {
-            clean(mappedBuffer);
-            raFile.close();
-        }
+        clean(mappedBuffer);
+        raFile.close();
     }
 
     @Override
-    public double sumValues() {
+    public double sum() {
         return sumFast();
     }
 
@@ -227,49 +199,9 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
         if (mapping == null) {
             return;
         }
-        MapInfo.closeDirectBuffer(mapping);
-    }
-
-    public void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
-        int j = 0;
-        point[dim] = first;
-        int position = (int) pointPosition(point);
-        int stride = (int) strides[dim];
-        if (vector.isComplex()) {
-            for (int i = first; i <= last; i += 2) {
-                Complex c = vector.getComplex(j++);
-                floatBuffer.put(position, (float) (c.getReal() * scale));
-                position += stride;
-                floatBuffer.put(position, (float) (c.getImaginary() * scale));
-                position += stride;
-            }
-        } else {
-            for (int i = first; i <= last; i++) {
-                floatBuffer.put(position, (float) (vector.getReal(j++) * scale));
-                position += stride;
-            }
-        }
-    }
-
-    public void readVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
-        int j = 0;
-        point[dim] = first;
-        int position = (int) pointPosition(point);
-        int stride = (int) strides[dim];
-        if (vector.isComplex()) {
-            for (int i = first; i <= last; i += 2) {
-                double real = floatBuffer.get(position) / scale;
-                position += stride;
-                double imag = floatBuffer.get(position) / scale;
-                position += stride;
-                vector.set(j++, new Complex(real, imag));
-            }
-        } else {
-            for (int i = first; i <= last; i++) {
-                double real = floatBuffer.get(position) / scale;
-                position += stride;
-                vector.set(j++, real);
-            }
+        Cleaner cleaner = ((DirectBuffer) mapping).cleaner();
+        if (cleaner != null) {
+            cleaner.clean();
         }
     }
 }

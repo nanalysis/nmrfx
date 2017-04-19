@@ -17,8 +17,6 @@
  */
 package org.nmrfx.processor.math;
 
-import org.nmrfx.math.VecBase;
-
 /**
  *
  * @author brucejohnson
@@ -26,7 +24,7 @@ import org.nmrfx.math.VecBase;
 // redundant with Combine.java,  kept for use from VecCmd
 public class VecCombine {
 
-    public static void comb2(double[] coef, Vec[] inVec,
+    static void comb2(double[] coef, Vec[] inVec,
             boolean inComplex, Vec[] outVec) throws IllegalArgumentException {
         int nIn = inVec.length;
         int nOut = outVec.length;
@@ -47,7 +45,7 @@ public class VecCombine {
         for (int j = 0; j < nOut; j++) {
             outVec[j].resize(n, false);
             outVec[j].zeros();
-            VecBase.copyRef(inVec[0], outVec[j]);
+            Vec.copyRef(inVec[0], outVec[j]);
         }
 
         /* 1 0 0 0 0 0 1 0 */

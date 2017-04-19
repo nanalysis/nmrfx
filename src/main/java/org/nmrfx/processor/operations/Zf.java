@@ -45,12 +45,10 @@ public class Zf extends Operation implements Invertible {
     }
 
     /**
-     * Zero Fill. Arguments are optional. If factor is provided, it will zero
-     * fill the vector to have a total number of points equal to 'factor' powers
-     * of 2. If newSize is provided it will increase the vector to have a total
-     * of 'newSize' number of points, all new points being zero in both cases.
-     * If pad is provided and greater than 0 size will be increased by this
-     * amount from old size.
+     * Zero Fill. Arguments are optional. If factor is provided, it will zero fill the vector to have a total number of
+     * points equal to 'factor' powers of 2. If newSize is provided it will increase the vector to have a total of
+     * 'newSize' number of points, all new points being zero in both cases. If pad is provided and greater than 0 size
+     * will be increased by this amount from old size.
      *
      * @param newSize
      * @throws OperationException
@@ -92,11 +90,11 @@ public class Zf extends Operation implements Invertible {
                     Math.ceil((Math.log(size) / Math.log(2)) + factor)));
         }
 
-        vector.zf(newSize);
+        vector.resize(newSize);
     }
 
     private void izf(Vec vector) throws OperationException {
         int size = vector.getTDSize();
         vector.resize(size);
     }
-    }
+}

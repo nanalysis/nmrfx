@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -25,11 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Base64.Encoder;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
@@ -77,29 +72,23 @@ public final class NMRDataUtil {
      * @see NMRData
      */
     public static NMRData getFID(String fpath) throws IOException {
-        return getFID(fpath, null);
-    }
-
-    public static NMRData getFID(String fpath, File nusFile) throws IOException {
         StringBuilder bpath = new StringBuilder(fpath);
         try {
             if (NMRViewData.findFID(bpath)) {
                 return new NMRViewData(bpath.toString());
             } else if (BrukerData.findFID(bpath)) {
-                return new BrukerData(bpath.toString(), nusFile);
+                return new BrukerData(bpath.toString());
             } else if (VarianData.findFID(bpath)) {
                 return new VarianData(bpath.toString());
             } else if (JCAMPData.findFID(bpath)) {
                 return new JCAMPData(bpath.toString());
             } else if (NMRPipeData.findFID(bpath)) {
-                return new NMRPipeData(bpath.toString(), nusFile);
-            } else if (JeolDelta.findFID(bpath)) {
-                return new JeolDelta(bpath.toString());
+                return new NMRPipeData(bpath.toString());
             } else {
                 throw new IOException("FID not found: " + fpath);
             }
         } catch (NullPointerException nullE) {
-            throw new IOException("Null pointer when reading " + fpath + " " + nullE.getMessage());
+            return null;
         }
     } // end getFID
 
@@ -122,7 +111,7 @@ public final class NMRDataUtil {
             if (NMRViewData.findFID(bpath)) {
                 return new NMRViewData(bpath.toString());
             } else if (BrukerData.findData(bpath)) {
-                return new BrukerData(bpath.toString(), null);
+                return new BrukerData(bpath.toString());
             } else if (VarianData.findFID(bpath)) {
                 return new VarianData(bpath.toString());
             } else if (JCAMPData.findData(bpath)) {
@@ -276,12 +265,5 @@ public final class NMRDataUtil {
         }
         return fileList;
 
-    }
-
-    public static String calculateHash(String input) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        digest.update(input.getBytes());
-        Encoder base64 = Base64.getEncoder();
-        return base64.encodeToString(digest.digest());
     }
 }

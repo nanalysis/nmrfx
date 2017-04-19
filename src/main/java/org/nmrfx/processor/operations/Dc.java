@@ -44,7 +44,7 @@ public class Dc extends Operation {
         double mean = 0.0;
 
         if (vector.isComplex()) {
-            vector.makeReal();
+            throw new OperationException("Dc: vector must be real");
         }
 
         int size = vector.getSize();

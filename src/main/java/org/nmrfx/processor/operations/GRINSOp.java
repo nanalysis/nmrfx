@@ -18,14 +18,14 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.MatrixND;
-import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.math.GRINS;
 import org.nmrfx.processor.math.Vec;
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 import java.io.File;
-import java.util.List;
+import java.util.ArrayList;
 
 /**
  *
@@ -39,8 +39,6 @@ public class GRINSOp extends MatrixOperation {
      */
     private final double noise;
     private final double scale;
-    private final int zfFactor;
-    private final double[] phase;  // init zero values
     /**
      * Preserve the residual noise
      *
@@ -52,32 +50,27 @@ public class GRINSOp extends MatrixOperation {
      */
     private final boolean synthetic;
     /**
-     * Sample schedule used for non-uniform sampling. Specifies array elements
-     * where data is present.
+     * Sample schedule used for non-uniform sampling. Specifies array elements where data is present.
      *
      * @see #ist
      * @see #zero_samples
      * @see SampleSchedule
      */
+    /**
+     * 2D phase array: [f1ph0, f1ph1, f2ph0, f2ph1].
+     */
+    private final double[] phase;  // init zero values
+
     private final SampleSchedule sampleSchedule;
 
     private final File logHome;
 
-    public GRINSOp(double noise, double scale, int zfFactor,
-            List<Double> phaseList, boolean preserve, boolean synthetic,
-            SampleSchedule schedule, String logHomeName)
-            throws ProcessingException {
+    public GRINSOp(double noise, double scale, boolean preserve, boolean synthetic, SampleSchedule schedule, ArrayList phaseList, String logHomeName) throws ProcessingException {
         this.noise = noise;
         this.scale = scale;
         this.preserve = preserve;
-        this.zfFactor = zfFactor;
         this.synthetic = synthetic;
         this.sampleSchedule = schedule;
-        if (logHomeName == null) {
-            this.logHome = null;
-        } else {
-            this.logHome = new File(logHomeName);
-        }
         if (!phaseList.isEmpty()) {
             this.phase = new double[phaseList.size()];
             for (int i = 0; i < phaseList.size(); i++) {
@@ -85,6 +78,11 @@ public class GRINSOp extends MatrixOperation {
             }
         } else {
             phase = null;
+        }
+        if (logHomeName == null) {
+            this.logHome = null;
+        } else {
+            this.logHome = new File(logHomeName);
         }
     }
 
@@ -110,8 +108,8 @@ public class GRINSOp extends MatrixOperation {
             int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
             int[] srcTargetMap = genSrcTargetMap(schedule, matrixND);
 
-            GRINS grins = new GRINS(matrixND, noise, scale, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
-            grins.exec();
+            GRINS smile = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, phase, logFile);
+            smile.exec();
             for (int i = 0; i < vector.getSize(); i++) {
                 double real = matrixND.getValue(i * 2);
                 double imag = matrixND.getValue(i * 2 + 1);
@@ -127,18 +125,8 @@ public class GRINSOp extends MatrixOperation {
 
     @Override
     public Operation evalMatrix(MatrixType matrix) {
-        if (sampleSchedule == null) {
-            throw new ProcessingException("No sample schedule");
-        }
-
         try {
             MatrixND matrixND = (MatrixND) matrix;
-            if (zfFactor > 0) {
-                matrixND.zeroFill(zfFactor);
-            }
-            for (int i = 0; i < matrixND.getNDim(); i++) {
-                matrixND.setVSizes(matrixND.getSizes());
-            }
             int[] zeroList = IstMatrix.genZeroList(sampleSchedule, matrixND);
             int[] srcTargetMap = genSrcTargetMap(sampleSchedule, matrixND);
             String logFile = null;
@@ -146,11 +134,8 @@ public class GRINSOp extends MatrixOperation {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
             }
 //            if (matrixND.getIndex() == 381) {
-            GRINS grins = new GRINS(matrixND, noise, scale, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
-            grins.exec();
-//            }
-//            if (matrixND.getIndex() == 94) {
-//                matrixND.dump("junk.txt");
+            GRINS smile = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, phase, logFile);
+            smile.exec();
 //            }
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());

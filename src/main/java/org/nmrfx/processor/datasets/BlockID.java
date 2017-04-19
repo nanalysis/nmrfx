@@ -36,7 +36,10 @@ public final class BlockID {
         if (this.fileBlock != thatID.fileBlock) {
             return false;
         }
-        return this.theFile.getFileName().equals(thatID.theFile.getFileName());
+        if (!this.theFile.getFileName().equals(thatID.theFile.getFileName())) {
+            return false;
+        }
+        return true;
     }
 
     @Override

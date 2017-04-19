@@ -18,21 +18,21 @@
 package org.nmrfx.processor.datasets;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.utilities.NvUtil;
+import org.nmrfx.processor.utilities.NvUtil;
+import java.awt.Color;
 import java.io.IOException;
 import java.util.*;
-import org.nmrfx.utilities.NMRFxColor;
 
 public class FileDataGenerator extends DataGenerator implements Cloneable {
 
     public Dataset theFile;
     public String fileName = null;
-    private final HashMap<String, Float> extremes = new HashMap<>();
+    private Hashtable extremes = new Hashtable();
     public double level = 0.3e6;
     public double clm = 1.2;
     public int nlevels = 20;
     public int mChunk = 0;
-    public NMRFxColor[] color = {NMRFxColor.BLACK, NMRFxColor.RED};
+    public Color[] color = {Color.black, Color.red};
     public boolean[] drawOn = {true, false};
     public boolean masked = false;
     public float[] lineWidth = {0.5f, 0.5f};
@@ -63,15 +63,15 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
     }
 
     @Override
-    public Object clone() throws CloneNotSupportedException {
+    public Object clone() {
         Object o = null;
 
         try {
             o = super.clone();
-            ((FileDataGenerator) o).color = new NMRFxColor[2];
-            ((FileDataGenerator) o).color[0] = new NMRFxColor(color[0].getRed(),
+            ((FileDataGenerator) o).color = new Color[2];
+            ((FileDataGenerator) o).color[0] = new Color(color[0].getRed(),
                     color[0].getGreen(), color[0].getBlue());
-            ((FileDataGenerator) o).color[1] = new NMRFxColor(color[1].getRed(),
+            ((FileDataGenerator) o).color[1] = new Color(color[1].getRed(),
                     color[1].getGreen(), color[1].getBlue());
             ((FileDataGenerator) o).lineWidth = lineWidth.clone();
             ((FileDataGenerator) o).level = level;
@@ -145,7 +145,7 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         color[1] = NvUtil.color(theFile.getColor(false));
 
         if ((theFile.getPosneg() & 2) == 2) {
-            color[1] = NMRFxColor.RED;
+            color[1] = Color.red;
             drawOn[1] = true;
         }
 
@@ -156,8 +156,11 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
     }
 
     public boolean valid() {
-        return !((Dataset.getDataset(theFile.getFileName()) == null)
-                || (theFile.getVec() == null) && (theFile.getDataFile() == null));
+        if ((Dataset.getDataset(theFile.getFileName()) == null) || (theFile.getVec() == null) && (theFile.dataFile == null)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public void setDrawListSize(final int size) {
@@ -421,7 +424,6 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         return true;
     }
 
-    @Override
     public float[][] Matrix(int iChunk, int[] offset) throws IOException {
         chunkSize[0] = 64;
 
@@ -474,16 +476,15 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         return (matrix);
     }
 
-    @Override
-    public int getMatrixRegion(int iChunk, int maxChunkSize, int mode, int[][] apt,
+    public int getMatrixRegion(int iChunk, int mode, int[][] apt,
             double[] offset, StringBuffer chunkLabel) {
         Float extremeValue;
         boolean fastMode = false;
-        chunkLabel.append(dim[0]).append(".");
-        chunkSize[0] = maxChunkSize;
+        chunkLabel.append(dim[0] + ".");
+        chunkSize[0] = 64;
 
         if (theFile.getNDim() > 1) {
-            chunkSize[1] = maxChunkSize;
+            chunkSize[1] = 64;
         }
 
         chunkOffset[0] = 1;
@@ -492,7 +493,7 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         int i;
 
         for (i = 1; i < theFile.getNDim(); i++) {
-            chunkLabel.append(dim[i]).append(".");
+            chunkLabel.append(dim[i] + ".");
             int dimSize = theFile.getSize(dim[i - 1]);
 
             if (i > 1) {
@@ -573,12 +574,12 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
                     break;
                 }
 
-                extremeValue = extremes.get(chunkLabel.toString()
+                extremeValue = (Float) extremes.get(chunkLabel.toString()
                         + iChunk);
 
                 if (extremeValue == null) {
                     break;
-                } else if (extremeValue > level) {
+                } else if (extremeValue.floatValue() > level) {
                     break;
                 }
             }
@@ -591,15 +592,11 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         return (0);
     }
 
-    @Override
-    public float[][] readMatrix(int iChunk, String chunkLabelStr, int[][] apt, float[][] matrix) throws IOException {
-        int ny = apt[1][1] - apt[1][0] + 1;
-        int nx = apt[0][1] - apt[0][0] + 1;
-        if ((matrix == null) || (matrix.length != ny) || (matrix[0].length != nx)) {
-            matrix = new float[ny][nx];
-        }
+    public float[][] Matrix2(int iChunk, String chunkLabelStr, int[][] apt) throws IOException {
+        float[][] matrix = new float[apt[1][1] - apt[1][0] + 1][apt[0][1]
+                - apt[0][0] + 1];
         float maxValue = theFile.readMatrix(theFile, apt, dim, matrix);
-        extremes.put(chunkLabelStr + iChunk, maxValue);
+        extremes.put(chunkLabelStr + iChunk, new Float(maxValue));
 
         return (matrix);
     }
@@ -673,12 +670,10 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         return ptData;
     }
 
-    @Override
     public int[][] bounds(int iChunk) {
         return (pt);
     }
 
-    @Override
     public DataCoordTransformer setBounds(double[][] limits) {
         int i;
         double hz[][] = new double[limits.length][2];
@@ -780,12 +775,10 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         return (limit);
     }
 
-    @Override
     public int nRows(int iChunk) {
         return (32);
     }
 
-    @Override
     public int nCols(int iChunk) {
         return (32);
     }
@@ -843,7 +836,7 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
     public int[] getSelected() {
         int[] result = new int[0];
         if ((selectionList != null) && (selectionList.length != 0)) {
-            ArrayList<Integer> resultList = new ArrayList<>();
+            ArrayList<Integer> resultList = new ArrayList<Integer>();
             for (int i = 0; i < selectionList.length; i++) {
                 if (selectionList[i]) {
                     if (drawList != null) {
@@ -869,7 +862,7 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
     }
 
     public boolean isSelected(int iElem) {
-        boolean value;
+        boolean value = false;
         if ((selectionList != null) && (iElem < selectionList.length) && (iElem >= 0)) {
             value = selectionList[iElem];
         } else {

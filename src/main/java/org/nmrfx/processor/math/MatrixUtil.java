@@ -198,30 +198,20 @@ public class MatrixUtil {
     static double transformVector(RealVector vector, String centerMode, String scaleMode) {
         DescriptiveStatistics stats = new DescriptiveStatistics(vector.toArray());
         double scale = 1.0;
-        switch (centerMode) {
-            case "positive":
-                {
-                    UnivariateFunction offsetFunction = new PositiveFunction();
-                    vector.mapToSelf(offsetFunction);
-                    break;
-                }
-            case "sqrt":
-                {
-                    UnivariateFunction scaleFunction = new SqrtFunction();
-                    vector.mapToSelf(scaleFunction);
-                    UnivariateFunction offsetFunction = new OffsetFunction(stats, centerMode);
-                    vector.mapToSelf(offsetFunction);
-                    break;
-                }
-            default:
-                {
-                    UnivariateFunction offsetFunction = new OffsetFunction(stats, centerMode);
-                    vector.mapToSelf(offsetFunction);
-                    ScaleFunction scaleFunction = new ScaleFunction(stats, scaleMode);
-                    scale = scaleFunction.getScale();
-                    vector.mapToSelf(scaleFunction);
-                    break;
-                }
+        if (centerMode.equals("positive")) {
+            UnivariateFunction offsetFunction = new PositiveFunction();
+            vector.mapToSelf(offsetFunction);
+        } else if (centerMode.equals("sqrt")) {
+            UnivariateFunction scaleFunction = new SqrtFunction();
+            vector.mapToSelf(scaleFunction);
+            UnivariateFunction offsetFunction = new OffsetFunction(stats, centerMode);
+            vector.mapToSelf(offsetFunction);
+        } else {
+            UnivariateFunction offsetFunction = new OffsetFunction(stats, centerMode);
+            vector.mapToSelf(offsetFunction);
+            ScaleFunction scaleFunction = new ScaleFunction(stats, scaleMode);
+            scale = scaleFunction.getScale();
+            vector.mapToSelf(scaleFunction);
         }
         return scale;
 
@@ -295,7 +285,6 @@ public class MatrixUtil {
         RealMatrix Vt = svd.getVT().getSubMatrix(0, newSize - 1, 0, nColumns - 1);
         final double[] svs = svd.getSingularValues();
         U.walkInOptimizedOrder(new DefaultRealMatrixChangingVisitor() {
-            @Override
             public double visit(int row, int column, double value) {
                 return value * svs[column];
             }

@@ -17,82 +17,158 @@
  */
 package org.nmrfx.processor.datasets;
 
-import org.nmrfx.datasets.*;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.operations.Util;
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.*;
-
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
-import org.nmrfx.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.operations.IDBaseline2;
-import org.nmrfx.processor.processing.LineShapeCatalog;
-import org.nmrfx.project.ProjectBase;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
- * Instances of this class represent NMR datasets. The class is typically used
- * for processed NMR spectra (rather than FID data). The actual data values are
- * either stored in random access file, a memory based representation of a file,
+ * Instances of this class represent NMR datasets. The class is typically used for processed NMR spectra (rather than
+ * FID data). The actual data values are either stored in random access file, a memory based representation of a file,
  * or an NMRView Vec object.
  *
  * @author brucejohnson
  */
-public class Dataset extends DatasetBase implements Comparable<Dataset> {
+public class Dataset {
 
-    static boolean useCacheFile = false;
+    private static final Logger LOGGER = LogManager.getLogger();
 
+//    static {
+//        try {
+//            logger.addHandler(new FileHandler("%t/nmrview%g.log"));
+//        } catch (IOException ioE) {
+//        }
+//    }
+    private static HashMap<String, Dataset> theFiles = new HashMap<>();
+    private final static int NV_HEADER_SIZE = 2048;
+    private final static int UCSF_HEADER_SIZE = 180;
+    MappedMatrixInterface dataFile = null;
+    String details = "";
+    private Vec vecMat = null;
+    private String fileName;
+    private String canonicalName;
+    private String title;
+    private File file = null;
+    private int blockHeaderSize;
+    private int fileHeaderSize;
+    private int blockElements;
+    private int nDim;
+    private int[] size;
+    private int[] fileDimSizes;
+    private int[] vsize;
+    private int[] vsize_r;
+    private int[] tdSize;
+    private long fileSize;
+    private int magic;
+    private int[] blockSize;
+    private int[] offsetPoints;
+    private int[] offsetBlocks;
+    private int[] nBlocks;
+    private double[] sf;
+    private double[] sw;
+    private double[] refPt;
+    private double[] refValue;
+    private double[] ph0;
+    private double[] ph1;
+    private double[] sw_r;
+    private double[] refPt_r;
+    private double[] refValue_r;
+    private double[] ph0_r;
+    private double[] ph1_r;
+    private int[] refUnits;
+    private double[] foldUp;
+    private double[] foldDown;
+    private String[] label;
+    private String[] dlabel;
+    private Nuclei[] nucleus;
+    private boolean[] complex;
+    private boolean[] complex_r;
+    private boolean[] freqDomain;
+    private boolean[] freqDomain_r;
+    private double[][] rmsd;
+    private int posneg;
+    private double lvl;
+    private double scale = 1.0e6;
+    private int rdims;
+    private String solvent = null;
+    private boolean littleEndian = false;
+    private boolean gotByteOrder = false;
+    private int dataType = 0;
     private boolean initialized = false;
     private boolean hasBeenWritten = false;
     private HashMap paths = null;
+    private HashMap properties = new HashMap();
+    private String posColor = "black";
+    private String negColor = "red";
+    private List<DatasetListener> observers = new ArrayList<>();
+    private Double noiseLevel = null;
     static private LRUMap vectorBuffer = new LRUMap(512);
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
-    LineShapeCatalog simVecs = null;
-    Map<String, double[]> buffers = new HashMap<>();
+    private RandomAccessFile raFile = null;
 
-    public int length() {
-        int length = 1;
-        for (int i = 0; i < nDim; i++) {
-            length *= layout.getSize(i);
-        }
-        return length;
-    }
+    /**
+     * Enum for possible file types consistent with structure available in the Dataset format
+     */
+    public static enum FFORMAT {
 
-    @Override
-    public int compareTo(Dataset o) {
-        return getName().compareTo(o.getName());
+        /**
+         * Indicates dataset is in NMRView format
+         */
+        NMRVIEW,
+        /**
+         * Indicates dataset is in UCSF format
+         */
+        UCSF;
     }
 
     /**
-     * Create a new Dataset object that refers to an existing random access file
-     * in a format that can be described by this class.
+     *
+     */
+    public FFORMAT fFormat = FFORMAT.NMRVIEW;
+
+    /**
+     * Create a new Dataset object that refers to an existing random access file in a format that can be described by
+     * this class.
      *
      * @param fullName The full path to the file
-     * @param name The short name (and initial title) to be used for the
-     * dataset.
+     * @param name The short name (and initial title) to be used for the dataset.
      * @param writable true if the file should be opened in a writable mode.
-     * @param useCacheFile true if the file will use StorageCache rather than
-     * memory mapping file. You should not use StorageCache if the file is to be
-     * opened for drawing in NMRFx (as thread interrupts may cause it to be
-     * closed)
      * @throws IOException if an I/O error occurs
      */
-    public Dataset(String fullName, String name, boolean writable, boolean useCacheFile)
+    public Dataset(String fullName, String name, boolean writable)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
-        super(fullName, name, writable, useCacheFile);
+        file = new File(fullName);
 
-        RandomAccessFile raFile;
+        String newName;
+
+        if ((name == null) || name.equals("") || name.equals(fullName)) {
+            newName = file.getName();
+        } else {
+            newName = name;
+        }
+        canonicalName = file.getCanonicalPath();
+        fileName = newName;
+
+        if (!file.exists()) {
+            throw new IllegalArgumentException(
+                    "File " + fullName + " doesn't exist");
+        }
+
         if (file.canWrite()) {
             raFile = new RandomAccessFile(file, "rw");
         } else {
@@ -106,36 +182,21 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         initialized = true;
         title = fileName;
 
-        scale = 1.0;
+        scale = 1.0e6;
         lvl = 0.1;
         posneg = 1;
-        DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
+        int headerStatus;
         if (fullName.contains(".ucsf")) {
-            layout = headerIO.readHeaderUCSF(raFile);
+            headerStatus = readHeaderUCSF();
         } else {
-            layout = headerIO.readHeader(raFile);
+            headerStatus = readHeader();
         }
-        DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
+        DatasetParameterFile parFile = new DatasetParameterFile(this);
         parFile.readFile();
-        if (layout != null) {
-            if (useCacheFile) {
-                dataFile = new SubMatrixFile(this, file, layout, raFile, writable);
-            } else {
-                if (layout.getNDataBytes() > 512e6) {
-                    dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
-                } else {
-                    if (layout.isSubMatrix()) {
-                        dataFile = new MappedSubMatrixFile(this, file, layout, raFile, writable);
-                    } else {
-                        dataFile = new MappedMatrixFile(this, file, layout, raFile, writable);
-                    }
-                }
-            }
+        if (headerStatus == 0) {
+            dataFile = new BigMappedMatrixFile(this, raFile, writable);
         }
-
-        setStrides();
         addFile(fileName);
-        loadLSCatalog();
     }
 
     /**
@@ -149,25 +210,25 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         this.vecMat = vector;
         fileName = vector.getName();
         canonicalName = vector.getName();
-        dataFile = vector;
         title = fileName;
         nDim = 1;
-        strides = new int[1];
+        size = new int[1];
         fileDimSizes = new int[1];
         vsize = new int[1];
         vsize_r = new int[1];
         tdSize = new int[1];
-        zfSize = new int[1];
-        extFirst = new int[1];
-        extLast = new int[1];
-        strides[0] = 1;
+        size[0] = vector.getSize();
         vsize[0] = 0;
         vsize_r[0] = 0;
         tdSize[0] = vector.getTDSize();
-        fileSize = vector.getSize();
-        layout = DatasetLayout.createFullMatrix(vsize);
+        fileSize = size[0];
         newHeader();
-
+        fileHeaderSize = NV_HEADER_SIZE;
+        blockSize[0] = vector.getSize();
+        nBlocks[0] = 1;
+        offsetBlocks[0] = 1;
+        offsetPoints[0] = 1;
+        blockElements = blockSize[0] * 4;
         foldUp[0] = 0.0;
         foldDown[0] = 0.0;
         scale = 1.0;
@@ -190,92 +251,65 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         freqDomain_r[0] = vector.freqDomain();
         refUnits[0] = 3;
         rmsd = new double[1][1];
-        values = new double[1][];
         //System.err.println("Opened file " + fileName + " with " + this.nDim + " dimensions");
         initialized = true;
         addFile(fileName);
     }
 
     private Dataset(String fullName, String title,
-            int[] dimSizes, boolean closeDataset) throws DatasetException {
-        //LOGGER.info("Make dataset {}", fullName);
+            int[] dimSizes) throws DatasetException {
+        LOGGER.info("Make dataset {}", fullName);
         try {
-            RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
+            raFile = new RandomAccessFile(fullName, "rw");
             file = new File(fullName);
 
             canonicalName = file.getCanonicalPath();
-            fileName = file.getName().replace(' ', '_');
+            fileName = file.getName();
 
             this.nDim = dimSizes.length;
 
             int i;
-            this.strides = new int[this.nDim];
+            this.size = new int[this.nDim];
             this.fileDimSizes = new int[this.nDim];
             this.vsize = new int[this.nDim];
             this.vsize_r = new int[this.nDim];
             this.tdSize = new int[this.nDim];
-            this.zfSize = new int[this.nDim];
-            this.extFirst = new int[this.nDim];
-            this.extLast = new int[this.nDim];
             rmsd = new double[nDim][];
-            values = new double[nDim][];
             int nBytes = 4;
             fileSize = 1;
 
             for (i = 0; i < this.nDim; i++) {
+                this.size[i] = dimSizes[i];
                 fileDimSizes[i] = dimSizes[i];
-                fileSize *= dimSizes[i];
+                fileSize *= this.size[i];
                 nBytes *= dimSizes[i];
             }
-            layout = new DatasetLayout(dimSizes);
-            layout.setBlockSize(4096);
-            layout.dimDataset();
 
             this.title = title;
             newHeader();
-            int fileHeaderSize;
             if (fullName.contains(".ucsf")) {
                 fileHeaderSize = UCSF_HEADER_SIZE + 128 * nDim;
             } else {
                 fileHeaderSize = NV_HEADER_SIZE;
             }
-            if (layout != null) {
-                layout.setFileHeaderSize(fileHeaderSize);
-                if (useCacheFile) {
-                    dataFile = new SubMatrixFile(this, file, layout, raFile, true);
-                    raFile.setLength(layout.getTotalSize());
-                } else {
-                    if (layout.getNDataBytes() > 512e6) {
-                        dataFile = new BigMappedMatrixFile(this, file, layout, raFile, true);
-                    } else {
-                        if (layout.isSubMatrix()) {
-                            dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
-                        } else {
-                            dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
-                        }
-                    }
-                }
-            }
-            setStrides();
+            setBlockSize(4096);
+            dimDataset();
             writeHeader();
-            if (closeDataset) {
-                dataFile.zero();
-                dataFile.close();
-            } else {
-                addFile(fileName);
-            }
-            DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
+            dataFile = new BigMappedMatrixFile(this, raFile, true);
+            dataFile.zero();
+            dataFile.close();
+            DatasetParameterFile parFile = new DatasetParameterFile(this);
             parFile.remove();
         } catch (IOException ioe) {
-            //LOGGER.error(ioe.getMessage());
+            LOGGER.error(ioe.getMessage());
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
     }
 
     // create in memory file
     /**
-     * Create a dataset in memory for fast access. This is an experimental mode,
-     * and the dataset is not currently written to disk so can't be persisted.
+     * Create a dataset in memory for fast access. This is an experimental mode, and the dataset is not currently
+     * written to disk so can't be persisted.
      *
      * @param title Dataset title
      * @param dimSizes Sizes of the dataset dimensions
@@ -286,26 +320,32 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             this.nDim = dimSizes.length;
 
             int i;
-            setNDim(nDim);
+            this.size = new int[this.nDim];
+            this.fileDimSizes = new int[this.nDim];
+            this.vsize = new int[this.nDim];
+            this.vsize_r = new int[this.nDim];
+            this.tdSize = new int[this.nDim];
+            rmsd = new double[nDim][];
+            int nBytes = 4;
+            fileSize = 1;
 
             for (i = 0; i < this.nDim; i++) {
+                this.size[i] = dimSizes[i];
                 fileDimSizes[i] = dimSizes[i];
+                fileSize *= this.size[i];
+                nBytes *= dimSizes[i];
             }
-            layout = DatasetLayout.createFullMatrix(dimSizes);
+
             this.title = title;
-            this.fileName = title;
-            setStrides();
             newHeader();
+            fileHeaderSize = NV_HEADER_SIZE;
+            setBlockSize(4096);
+            dimDataset();
             dataFile = new MemoryFile(this, true);
             dataFile.zero();
         } catch (IOException ioe) {
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
-    }
-
-    @Override
-    public String toString() {
-        return fileName;
     }
 
     /**
@@ -314,37 +354,98 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param fullName The full path to the new file
      * @param title The title to be used for the new dataset
      * @param dimSizes The sizes of the new dataset.
-     * @param closeDataset If true, close dataset after creating
      * @throws DatasetException if an I/O error occurred when writing out file
      */
-    public static Dataset createDataset(String fullName, String title, int[] dimSizes, boolean closeDataset) throws DatasetException {
-        Dataset dataset = new Dataset(fullName, title, dimSizes, closeDataset);
-        if (closeDataset) {
-            dataset.close();
-            dataset = null;
-        }
-        return dataset;
+    public static void createDataset(String fullName, String title, int[] dimSizes) throws DatasetException {
+        Dataset dataset = new Dataset(fullName, title, dimSizes);
+        dataset.close();
+    }
+
+    public void readParFile() {
+        DatasetParameterFile parFile = new DatasetParameterFile(this);
+        parFile.readFile();
+    }
+
+    public void writeParFile(String fileName) {
+        DatasetParameterFile parFile = new DatasetParameterFile(this);
+        parFile.writeFile(fileName);
+    }
+
+    public void writeParFile() {
+        DatasetParameterFile parFile = new DatasetParameterFile(this);
+        parFile.writeFile();
     }
 
     /**
-     * Set cacheFile mode. If true data will be written to a Random access file
-     * buffered through the Storage Cache. If false, data will be written to a
-     * Random Access File using memory mapping.
+     * Set the type of the data values. At present, only single precision float values are used in the dataset. This is
+     * indicated with a return value of 0.
      *
-     * @param value the cacheFile mode
+     * @param value the datatype to set
      */
-    public static void useCacheFile(boolean value) {
-        useCacheFile = value;
-    }
-
-    public boolean isCacheFile() {
-        return dataFile instanceof SubMatrixFile;
+    public void setDataType(int value) {
+        dataType = value;
     }
 
     /**
-     * Return whether the dataset is writable. Datasets that store data in a Vec
-     * object are always writable. Datasets that store data in a file are only
-     * writable if the underlying file has been opened writable.
+     * Check if there is an open file with the specified name.
+     *
+     * @param name the name to check
+     * @return true if there is an open file with that name
+     */
+    public static boolean checkExistingName(final String name) {
+        boolean exists = false;
+        Dataset existingFile = (Dataset) theFiles.get(name);
+        if (existingFile != null) {
+            exists = true;
+        }
+        return exists;
+    }
+
+    /**
+     * Check if there is an open file with the specified file path
+     *
+     * @param fullName the full path name to check
+     * @return true if the file is open
+     * @throws IOException if an I/O error occurs
+     */
+    public static ArrayList<String> checkExistingFile(final String fullName) throws IOException {
+        File file = new File(fullName);
+        String testPath;
+        testPath = file.getCanonicalPath();
+        ArrayList<String> names = new ArrayList<>();
+        theFiles.values().stream().filter((dataset) -> (dataset.canonicalName.equals(testPath))).forEach((dataset) -> {
+            names.add(dataset.getName());
+        });
+        return names;
+    }
+
+    /**
+     * Get a a name that can be used for the file that hasn't already been used
+     *
+     * @param fileName The root part of the name. An integer number will be appended so that the name is unique among
+     * open files.
+     * @return the new name
+     */
+    public static String getUniqueName(final String fileName) {
+        String newName;
+        int dot = fileName.lastIndexOf('.');
+        String ext = "";
+        String rootName = fileName;
+        if (dot != -1) {
+            ext = rootName.substring(dot);
+            rootName = rootName.substring(0, dot);
+        }
+        int index = 0;
+        do {
+            index++;
+            newName = rootName + "_" + index + ext;
+        } while (theFiles.get(newName) != null);
+        return newName;
+    }
+
+    /**
+     * Return whether the dataset is writable. Datasets that store data in a Vec object are always writable. Datasets
+     * that store data in a file are only writable if the underlying file has been opened writable.
      *
      * @return true if the dataset can be written to.
      */
@@ -362,25 +463,44 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * Change the writable state of the file to the specified value
      *
      * @param writable The new writable state for the file
-     * @throws java.io.IOException
      */
-    public void changeWriteMode(boolean writable) throws IOException {
+    public void changeWriteMode(boolean writable) {
         if (dataFile != null) {
             if (writable != dataFile.isWritable()) {
                 if (dataFile.isWritable()) {
                     dataFile.force();
                 }
-                dataFile.setWritable(writable);
+                dataFile = new BigMappedMatrixFile(this, raFile, writable);
             }
         }
     }
 
-    /*
-      
+    /**
+     * Writes out 0 bytes into full dataset size, thereby taking up appropriate space in file system.
+     */
+    public void initialize() {
+        int nBytes = 4;
+
+        for (int i = 0; i < this.nDim; i++) {
+            nBytes *= this.getSize(i);
+        }
+
+        byte[] buffer = new byte[4096];
+
+        for (int i = 0; i < (nBytes / 4096); i++) {
+            DataUtilities.writeBytes(raFile, buffer, fileHeaderSize + (i * 4096), 4096);
+        }
+
+        initialized = true;
+        hasBeenWritten = true;
+    }
+
+    /**
      * Resize the file to the specified sizes
      *
      * @param dimSizes The new sizes
      * @throws IOException if an I/O error occurs
+     */
     public void resize(int[] dimSizes) throws IOException {
         if (nDim != dimSizes.length) {
             throw new IllegalArgumentException("Can't change dataset dimensions when resizing");
@@ -426,46 +546,229 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         hasBeenWritten = true;
     }
 
-     */
     /**
-     * Get the Vec object. Null if the dataset stores data in a data file,
-     * rather than Vec object.
+     * Get the Vec object. Null if the dataset stores data in a data file, rather than Vec object.
      *
      * @return Vec storing data or null if data file mode.
      */
     public Vec getVec() {
-        return (Vec) vecMat;
+        return vecMat;
     }
 
     /**
-     * Get the size of the dataset along the specified dimension.
+     * Get the File object corresponding to the data file for this Dataset
+     *
+     * @return File object, null if data stored in Vec
+     */
+    public File getFile() {
+        return file;
+    }
+
+    /**
+     * Get the canonical file path for this Dataset
+     *
+     * @return String object, null if data stored in Vec
+     */
+    public String getCanonicalFile() {
+        return canonicalName;
+    }
+
+    /**
+     * Get the file name
+     *
+     * @return the file name
+     */
+    public String getFileName() {
+        return fileName;
+    }
+
+    /**
+     * Get the block size of the dataset along the specified dimension.
      *
      * @param iDim Dataset dimension index
      * @return the size
      */
-    public int getSize(int iDim) {
-        return vecMat == null ? layout.getSize(iDim) : vecMat.getSize();
+    public int getBlockSize(int iDim) {
+        final int value;
+        if (vecMat == null) {
+            value = blockSize[iDim];
+        } else {
+            value = size[iDim];
+        }
+        return value;
     }
 
     /**
-     * Set the size of the dataset along the specified dimension.
+     * Get array containing size of block in each dimension
      *
-     * @param iDim Dataset dimension index
-     * @param size the size to set
+     * @return array of block sizes
      */
-    public void setSize(final int iDim, final int size) {
-        layout.setSize(iDim, size);
+    public int[] getBlockSizes() {
+        return blockSize.clone();
     }
 
-    private void addFile(String datasetName) {
-        ProjectBase.getActive().addDataset(this, datasetName);
-        for (DatasetListener observer : observers) {
-            try {
-                observer.datasetAdded(this);
-            } catch (RuntimeException e) {
+    /**
+     * Get the type of the data values. At present, only single precision float values are used in the dataset. This is
+     * indicated with a return value of 0.
+     *
+     * @return the data value, 0 for single precision floats
+     */
+    public int getDataType() {
+        return dataType;
+    }
+
+    /**
+     * Get the offsets for blocks in each dimension
+     *
+     * @return the offsets as an int array
+     */
+    public int[] getOffsetBlocks() {
+        return offsetBlocks.clone();
+    }
+
+    /**
+     * Get the offsets for points for each dimension within a block.
+     *
+     * @return the offsets as an int array
+     */
+    public int[] getOffsetPoints() {
+        return offsetPoints.clone();
+    }
+
+    /**
+     * Return the number of blocks along each dataset dimension
+     *
+     * @return an array containing the number of blocks
+     */
+    public int[] getNBlocks() {
+        return nBlocks.clone();
+    }
+
+    /**
+     * Return the number of elements in each block
+     *
+     * @return the number of elements
+     */
+    public int getBlockElements() {
+        return blockElements;
+    }
+
+    /**
+     * Return the file header size
+     *
+     * @return the size
+     */
+    public int getFileHeaderSize() {
+        return fileHeaderSize;
+    }
+
+    /**
+     * Set the file header size
+     *
+     * @param the size
+     */
+    public void setFileHeaderSize(int size) {
+        fileHeaderSize = size;
+    }
+
+    /**
+     * Set the block header size
+     *
+     * @param the size
+     */
+    public void setBlockHeaderSize(int size) {
+        blockHeaderSize = size;
+    }
+
+    /**
+     * Return the block header size
+     *
+     * @return the size
+     */
+    public int getBlockHeaderSize() {
+        return blockHeaderSize;
+    }
+
+    /**
+     * Is data file in Big Endian mode
+     *
+     * @return true if Big Endian
+     */
+    public boolean isBigEndian() {
+        return littleEndian == false;
+    }
+
+    /**
+     * Is data file in Little Endian mode
+     *
+     * @return true if Little Endian
+     */
+    public boolean isLittleEndian() {
+        return littleEndian == true;
+    }
+
+    /**
+     * Set mode to be Big Endian. This does not change actual data file, so the existing data format must be consistent
+     * with this.
+     */
+    public void setBigEndian() {
+        littleEndian = false;
+    }
+
+    /**
+     * Set mode to be Little Endian This does not change actual data file, so the existing data format must be
+     * consistent with this.
+     */
+    public void setLittleEndian() {
+        littleEndian = true;
+    }
+
+    /**
+     * Set the byte order. This does not change the actual data file, so the existing data format must be consistent
+     * with the specified value.
+     *
+     * @param order Byte Order
+     */
+    public void setByteOrder(ByteOrder order) {
+        littleEndian = order == ByteOrder.LITTLE_ENDIAN;
+    }
+
+    /**
+     * Get the byte order for this dataset.
+     *
+     * @return the byte order
+     */
+    public ByteOrder getByteOrder() {
+        return littleEndian ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
+    }
+
+    private void addFile(String fileName) {
+        theFiles.put(fileName, this);
+    }
+
+    private void removeFile(String fileName) {
+        theFiles.remove(fileName);
+    }
+
+    /**
+     * Change the name (and title) of this dataset
+     *
+     * @param newName the name to be used.
+     */
+    synchronized public void rename(String newName) {
+        if (null != theFiles.remove(fileName)) {
+            fileName = newName;
+            title = fileName;
+            theFiles.put(newName, this);
+            for (DatasetListener observer : observers) {
+                try {
+                    observer.datasetRenamed(this);
+                } catch (RuntimeException e) {
+                    // FIXME log this!
+                    observers.remove(observer);
+                }
             }
         }
-
     }
 
     /**
@@ -473,16 +776,16 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      *
      * @param datasetListener the DatasetListener object
      */
-    public static void addObserver(DatasetListener datasetListener) {
+    public void addObserver(DatasetListener datasetListener) {
         observers.add(datasetListener);
     }
 
     /**
-     * Remove a DatasetListener from list of listeners.
+     * Add a listener to be notified when Datasets are removed.
      *
      * @param datasetListener the DatasetListener object
      */
-    public static void removeObserver(DatasetListener datasetListener) {
+    public void removeObserver(DatasetListener datasetListener) {
         observers.remove(datasetListener);
     }
 
@@ -499,8 +802,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 dataFile.close();
             }
             dataFile = null;
-        } catch (IOException e) {
-            //LOGGER.warn(e.getMessage());
+            raFile = null;
+        } catch (Exception e) {
+            LOGGER.warn(e.getMessage());
         }
 
         for (DatasetListener observer : observers) {
@@ -514,7 +818,16 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
     }
 
-    //    if {$parfile eq ""} {
+    /**
+     * Get the file name of this dataset
+     *
+     * @return file name
+     */
+    public String getName() {
+        return fileName;
+    }
+
+//    if {$parfile eq ""} {
 //        eval set fullName [nv_dataset name $dataset]
 //        set parfile [file root $fullName].par
 //    }
@@ -562,6 +875,837 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 //        }
 //    }
 //    close $f1
+    /**
+     * Convert width in points to width in PPM
+     *
+     * @param iDim dataset dimension index
+     * @param pt width to convert
+     * @return width in ppm
+     */
+    public double ptWidthToPPM(int iDim, double pt) {
+        return ((pt * (getSw(iDim) / size(iDim))) / getSf(iDim));
+    }
+
+    /**
+     * Convert width in Hz to width in points
+     *
+     * @param iDim dataset dimension index
+     * @param hz width in Hz
+     * @return width in points
+     */
+    public double hzWidthToPoints(int iDim, double hz) {
+        return (hz / getSw(iDim) * size(iDim));
+    }
+
+    /**
+     * Convert width in points to width in Hz
+     *
+     * @param iDim dataset dimension index
+     * @param pts width in points
+     * @return width in Hz
+     */
+    public double ptWidthToHz(int iDim, double pts) {
+        return (pts / size(iDim) * getSw(iDim));
+    }
+
+    /**
+     * Convert dataset position in points to position in PPM
+     *
+     * @param iDim dataset dimension index
+     * @param pt position in points
+     * @return position in PPM
+     */
+    public double pointToPPM(int iDim, double pt) {
+        double ppm = 0.0;
+        double aa;
+
+        aa = (getSf(iDim) * size(iDim));
+
+        if (aa == 0.0) {
+            ppm = 0.0;
+
+            return ppm;
+        }
+
+        if (getRefUnits(iDim) == 3) {
+            ppm = (-(pt - refPt[iDim]) * (getSw(iDim) / aa)) + getRefValue(iDim);
+        } else if (getRefUnits(iDim) == 1) {
+            ppm = pt + 1;
+        }
+
+        return (ppm);
+    }
+
+    /**
+     * Convert dataset position in PPM to rounded position in points
+     *
+     * @param iDim dataset dimension index
+     * @param ppm position in PPM
+     * @return position in points
+     */
+    public int ppmToPoint(int iDim, double ppm) {
+        int pt = 0;
+
+        if (iDim < refUnits.length) {
+            if (getRefUnits(iDim) == 3) {
+                pt = (int) (((getRefValue(iDim) - ppm) * ((getSf(iDim) * size(iDim)) / getSw(iDim)))
+                        + getRefPt(iDim) + 0.5);
+            } else if (getRefUnits(iDim) == 1) {
+                pt = (int) (ppm - 0.5);
+            }
+
+            if (pt < 0) {
+                pt = 0;
+            }
+
+            if (pt > (size(iDim) - 1)) {
+                pt = size(iDim) - 1;
+            }
+        }
+
+        return (pt);
+    }
+
+    /**
+     * Convert a chemical shift to a point position. The point is always aliased so that it is within the size of the
+     * specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param ppm position in PPM
+     * @return position in points
+     */
+    public int ppmToFoldedPoint(int iDim, double ppm) {
+        double pt = 0;
+
+        if (iDim < refUnits.length) {
+            if (getRefUnits(iDim) == 3) {
+                pt = ((getRefValue(iDim) - ppm) * ((getSf(iDim) * size(iDim)) / getSw(iDim)))
+                        + getRefPt(iDim);
+            } else if (getRefUnits(iDim) == 1) {
+                pt = ppm;
+            }
+            pt = fold(iDim, pt);
+        }
+
+        return ((int) (pt + 0.5));
+    }
+
+    /**
+     * Convert dataset position in PPM to position in points.
+     *
+     * @param iDim dataset dimension index
+     * @param ppm position in PPM
+     * @return position in points
+     */
+    public double ppmToDPoint(int iDim, double ppm) {
+        double pt = 0;
+
+        if (getRefUnits(iDim) == 3) {
+            pt = ((getRefValue(iDim) - ppm) * ((getSf(iDim) * size(iDim)) / getSw(iDim)))
+                    + getRefPt(iDim);
+        } else if (getRefUnits(iDim) == 1) {
+            pt = ppm;
+        }
+
+        return (pt);
+    }
+
+    /**
+     * Convert dataset position in PPM to position in Hz
+     *
+     * @param iDim dataset dimension index
+     * @param ppm position in PPM
+     * @return position in Hz
+     */
+    public double ppmToHz(int iDim, double ppm) {
+        double pt = ppmToDPoint(iDim, ppm);
+        double hz = pt / (getSize(iDim) - 1) * getSw(iDim);
+
+        return (hz);
+    }
+
+    /**
+     * Get size of dataset along specified dimension
+     *
+     * @param iDim dataset dimension index
+     * @return size of dataset dimension
+     */
+    synchronized public int size(int iDim) {
+        if ((iDim == 0) && (vecMat != null)) {
+            setSize(0, vecMat.getSize());
+
+            return (vecMat.getSize());
+        } else {
+            return (getSize(iDim));
+        }
+    }
+
+    int fold(int iDim, int pt) {
+        while (pt < 0) {
+            pt += getSize(iDim);
+        }
+        while (pt >= getSize(iDim)) {
+            pt -= getSize(iDim);
+        }
+        return pt;
+    }
+
+    double fold(int iDim, double pt) {
+        while (pt < 0) {
+            pt += getSize(iDim);
+        }
+        while (pt >= getSize(iDim)) {
+            pt -= getSize(iDim);
+        }
+        return pt;
+    }
+
+    /**
+     * Get the valid size for the specified dimension. Valid size is the index of the last vector written to, plus 1.
+     *
+     * @param iDim Dimension number.
+     * @return the valid size of this dimension
+     */
+    public int getVSize(int iDim) {
+        final int value;
+        if (vecMat == null) {
+            value = vsize[iDim];
+        } else {
+            value = vecMat.getSize();
+        }
+        return value;
+    }
+
+    /**
+     * Get the valid size for the specified dimension after last parameter sync. Valid size is the index of the last
+     * vector written to, plus 1.
+     *
+     * @param iDim Dimension number.
+     * @return the valid size of this dimension
+     */
+    public int getVSize_r(int iDim) {
+        final int value;
+        if (vecMat == null) {
+            value = vsize_r[iDim];
+        } else {
+            value = vecMat.getSize();
+        }
+        return value;
+    }
+
+    /**
+     * Get the size of the dataset along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the size
+     */
+    public int getSize(int iDim) {
+        final int value;
+        if (vecMat == null) {
+            value = size[iDim];
+        } else {
+            value = vecMat.getSize();
+        }
+        return value;
+    }
+
+    /**
+     * Set the size of the dataset along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param size the size to set
+     */
+    public void setSize(final int iDim, final int size) {
+        this.size[iDim] = size;
+    }
+
+    /**
+     * Get the size of the dataset along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the size
+     */
+    public int getFileDimSize(int iDim) {
+        int value = fileDimSizes[iDim];
+        if (value == 0) {
+            value = size[iDim];
+        }
+        return value;
+    }
+
+    /**
+     * Get the size of the time domain data along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the tdSize
+     */
+    public int getTDSize(int iDim) {
+        final int value;
+        if (vecMat == null) {
+            value = tdSize[iDim];
+        } else {
+            value = vecMat.getTDSize();
+        }
+        return value;
+    }
+
+    /**
+     * Set the size of the time domain data along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param size the tdSize to set
+     */
+    public void setTDSize(final int iDim, final int size) {
+        this.tdSize[iDim] = size;
+    }
+
+    /**
+     * Get an array containing the sizes of all dimensions.
+     *
+     * @return the size array
+     */
+    public int[] getSizes() {
+        int dims = size.length;
+        int[] sizes = new int[dims];
+        for (int i = 0; i < dims; i++) {
+            sizes[i] = getSize(i);
+        }
+        return sizes;
+    }
+
+    /**
+     * Get the spectrometer frequency for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the spectrometer frequency
+     */
+    public double getSf(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = sf[iDim];
+        } else {
+            value = vecMat.centerFreq;
+        }
+        return value;
+    }
+
+    /**
+     * Set the spectrometer frequency for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param sf the sf to set
+     */
+    public void setSf(final int iDim, final double sf) {
+        this.sf[iDim] = sf;
+        if (vecMat != null) {
+            vecMat.centerFreq = sf;
+        }
+    }
+
+    /**
+     * Get the sweep width for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the sweep width
+     */
+    public double getSw(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = sw[iDim];
+        } else {
+            value = 1.0 / vecMat.dwellTime;
+        }
+        return value;
+    }
+
+    /**
+     * Set the sweep width for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param sw the sweep width to set
+     */
+    public void setSw(final int iDim, final double sw) {
+        this.sw[iDim] = sw;
+        if (vecMat != null) {
+            vecMat.dwellTime = 1.0 / sw;
+        }
+    }
+
+    /**
+     * Get the dataset point at which the reference value is set for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the reference point
+     */
+    public double getRefPt(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = refPt[iDim];
+        } else {
+            value = refPt[0];
+        }
+        return value;
+    }
+
+    /**
+     * Set the dataset point at which the reference value is set for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param refPt the reference point to set
+     */
+    public void setRefPt(final int iDim, final double refPt) {
+        this.refPt[iDim] = refPt;
+        if (vecMat != null) {
+            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSize(iDim);
+            vecMat.refValue = refValue[iDim] + delRef;
+        }
+
+    }
+
+    /**
+     * Get the reference value for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the reference value.
+     */
+    public double getRefValue(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = refValue[iDim];
+        } else {
+            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSize(iDim);
+            value = vecMat.refValue - delRef;
+        }
+        return value;
+    }
+
+    /**
+     * Set the reference value for the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @param refValue the reference value to set
+     */
+    public void setRefValue(final int iDim, final double refValue) {
+        this.refValue[iDim] = refValue;
+        if (vecMat != null) {
+            double delRef = getRefPt(iDim) * getSw(iDim) / getSf(iDim) / getSize(iDim);
+            vecMat.refValue = refValue + delRef;
+        }
+    }
+
+    /**
+     * Get the zero order phase parameter that was used in processing the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @return the phase value
+     */
+    public double getPh0(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = ph0[iDim];
+        } else {
+            value = vecMat.getPH0();
+        }
+        return value;
+    }
+
+    /**
+     * Set the zero order phase parameter that was used in processing the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @param ph0 the phase value to set
+     */
+    public void setPh0(final int iDim, final double ph0) {
+        this.ph0[iDim] = ph0;
+        if (vecMat != null) {
+            vecMat.setPh0(ph0);
+        }
+    }
+
+    /**
+     * Get the first order phase parameter that was used in processing the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @return the first order phase
+     */
+    public double getPh1(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = ph1[iDim];
+        } else {
+            value = vecMat.getPH1();
+        }
+        return value;
+    }
+
+    /**
+     * Set the first order phase parameter that was used in processing the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @param ph1 the first order phase
+     */
+    public void setPh1(final int iDim, final double ph1) {
+        this.ph1[iDim] = ph1;
+        if (vecMat != null) {
+            vecMat.setPh1(ph1);
+        }
+    }
+
+    /**
+     * Get the sweep width for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the sweep width
+     */
+    public double getSw_r(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = sw_r[iDim];
+        } else {
+            value = 1.0 / vecMat.dwellTime;
+        }
+        return value;
+    }
+
+    /**
+     * Set the sweep width for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param sw_r the sweep width to set
+     */
+    public void setSw_r(final int iDim, final double sw_r) {
+        this.sw_r[iDim] = sw_r;
+        if (vecMat != null) {
+            vecMat.dwellTime = 1.0 / sw_r;
+        }
+    }
+
+    /**
+     * Get the dataset point at which the reference value is set for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the reference point
+     */
+    public double getRefPt_r(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = refPt_r[iDim];
+        } else {
+            value = refPt_r[0];
+        }
+        return value;
+    }
+
+    /**
+     * Set the dataset point at which the reference value is set for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param refPt_r the reference point to set
+     */
+    public void setRefPt_r(final int iDim, final double refPt_r) {
+        this.refPt_r[iDim] = refPt_r;
+        if (vecMat != null) {
+            double delRef = getRefPt_r(iDim) * getSw(iDim) / getSf(iDim) / getSize(iDim);
+            vecMat.refValue = refValue_r[iDim] + delRef;
+        }
+    }
+
+    /**
+     * Get the reference value for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the reference value
+     */
+    public double getRefValue_r(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = refValue_r[iDim];
+        } else {
+            double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSize(iDim);
+            value = vecMat.refValue - delRef;
+        }
+        return value;
+    }
+
+    /**
+     * Set the reference value for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param refValue_r the reference value to set
+     */
+    public void setRefValue_r(final int iDim, final double refValue_r) {
+        this.refValue_r[iDim] = refValue_r;
+        if (vecMat != null) {
+            double delRef = getRefPt_r(iDim) * getSw_r(iDim) / getSf(iDim) / getSize(iDim);
+            vecMat.refValue = refValue_r + delRef;
+        }
+    }
+
+    /**
+     * Get the zero order phase parameter that was used in processing the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @return the zeroth order phase
+     */
+    public double getPh0_r(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = ph0_r[iDim];
+        } else {
+            value = vecMat.getPH0();
+        }
+        return value;
+    }
+
+    /**
+     * Set the zero order phase parameter that was used in processing the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @param ph0_r the zeroth order phase to set
+     */
+    public void setPh0_r(final int iDim, final double ph0_r) {
+        this.ph0_r[iDim] = ph0_r;
+        if (vecMat != null) {
+            vecMat.setPh0(ph0_r);
+        }
+    }
+
+    /**
+     * Get the first order phase parameter that was used in processing the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @return the first order phase
+     */
+    public double getPh1_r(final int iDim) {
+        final double value;
+        if (vecMat == null) {
+            value = ph1_r[iDim];
+        } else {
+            value = vecMat.getPH1();
+        }
+        return value;
+    }
+
+    /**
+     * Set the first order phase parameter that was used in processing the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @param ph1_r the first order phase to set
+     */
+    public void setPh1_r(final int iDim, final double ph1_r) {
+        this.ph1_r[iDim] = ph1_r;
+        if (vecMat != null) {
+            vecMat.setPh0(ph1_r);
+        }
+    }
+
+    /**
+     * Get the units used for the reference value
+     *
+     * @param iDim Dataset dimension index
+     * @return the refUnits
+     */
+    public int getRefUnits(final int iDim) {
+        return refUnits[iDim];
+    }
+
+    /**
+     * Set the units used for the reference value
+     *
+     * @param iDim Dataset dimension index
+     * @param refUnits the refUnits to set
+     */
+    public void setRefUnits(final int iDim, final int refUnits) {
+        this.refUnits[iDim] = refUnits;
+    }
+
+    /**
+     * Get the complex mode for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return true if data in the specified dimension is complex
+     */
+    public boolean getComplex(final int iDim) {
+        final boolean value;
+        if (vecMat == null) {
+            value = complex[iDim];
+        } else {
+            value = vecMat.isComplex();
+        }
+        return value;
+    }
+
+    /**
+     * Set the complex mode for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param complex the complex to set
+     */
+    public void setComplex(final int iDim, final boolean complex) {
+        this.complex[iDim] = complex;
+    }
+
+    /**
+     * Get the complex mode for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return true if data in the specified dimension is complex
+     */
+    public boolean getComplex_r(final int iDim) {
+        final boolean value;
+        if (vecMat == null) {
+            value = complex_r[iDim];
+        } else {
+            value = vecMat.isComplex();
+        }
+        return value;
+    }
+
+    /**
+     * Set the complex mode for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param complex_r the complex_r to set
+     */
+    public void setComplex_r(final int iDim, final boolean complex_r) {
+        this.complex_r[iDim] = complex_r;
+    }
+
+    /**
+     * Get the frequency domain mode of the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @return true if the data in the specified dimension is in the frequency domain
+     */
+    public boolean getFreqDomain(final int iDim) {
+        final boolean value;
+        if (vecMat == null) {
+            value = freqDomain[iDim];
+        } else {
+            value = vecMat.freqDomain();
+        }
+        return value;
+    }
+
+    /**
+     * Set the frequency domain mode of the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @param freqDomain value to set
+     */
+    public void setFreqDomain(final int iDim, final boolean freqDomain) {
+        if (vecMat == null) {
+            this.freqDomain[iDim] = freqDomain;
+        } else {
+            this.vecMat.setFreqDomain(freqDomain);
+        }
+    }
+
+    /**
+     * Get the frequency domain mode of the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @return true if the data in the specified dimension is in the frequency domain
+     */
+    public boolean getFreqDomain_r(final int iDim) {
+        final boolean value;
+        if (vecMat == null) {
+            value = freqDomain_r[iDim];
+        } else {
+            value = vecMat.freqDomain();
+        }
+        return value;
+    }
+
+    /**
+     * Set the frequency domain mode of the specified dimension
+     *
+     * @param iDim Dataset dimension index
+     * @param freqDomain_r the freqDomain_r to set
+     */
+    public void setFreqDomain_r(final int iDim, final boolean freqDomain_r) {
+        this.freqDomain_r[iDim] = freqDomain_r;
+    }
+
+    /**
+     * Get the display label to be used on the axis for this dataset dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the displayLabel
+     */
+    public String getDlabel(final int iDim) {
+        if (dlabel[iDim] == null) {
+            return (getStdLabel(iDim));
+        } else {
+            return dlabel[iDim];
+        }
+    }
+
+    /**
+     * Set the display label to be used on the axis for this dataset dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param dlabel the display label to set
+     */
+    public void setDlabel(final int iDim, final String dlabel) {
+        this.dlabel[iDim] = dlabel;
+    }
+
+    /**
+     * Get the nucleus detected on this dimension of the dataset
+     *
+     * @param iDim Dataset dimension index
+     * @return the nucleus
+     */
+    public Nuclei getNucleus(final int iDim) {
+        String labelTest = label[iDim];
+        if ((nucleus[iDim] == null)) {
+            if (labelTest.length() == 0) {
+                nucleus = Nuclei.findNuclei(sf);
+            } else if ((labelTest.charAt(0) == 'F') && (labelTest.length() == 2) && (Character.isDigit(labelTest.charAt(1)))) {
+                nucleus = Nuclei.findNuclei(sf);
+            } else if ((labelTest.charAt(0) == 'D') && (labelTest.length() == 2) && (Character.isDigit(labelTest.charAt(1)))) {
+                nucleus = Nuclei.findNuclei(sf);
+            } else {
+                for (Nuclei nucValue : Nuclei.values()) {
+                    if (labelTest.contains(nucValue.getNameNumber())) {
+                        nucleus[iDim] = nucValue;
+                        break;
+                    } else if (labelTest.contains(nucValue.getNumberName())) {
+                        nucleus[iDim] = nucValue;
+                        break;
+                    } else if (labelTest.contains(nucValue.getName())) {
+                        nucleus[iDim] = nucValue;
+                        break;
+                    }
+                }
+            }
+        }
+        if ((nucleus[iDim] == null)) {
+            nucleus[iDim] = Nuclei.H1;
+        }
+        return nucleus[iDim];
+    }
+
+    /**
+     * Set the nucleus that was used for detection of this dataset dimension
+     *
+     * @param iDim Dataset dimension index
+     * @param nucleus the name of the nucleus to set
+     */
+    public void setNucleus(final int iDim, final String nucleus) {
+        this.nucleus[iDim] = Nuclei.findNuclei(nucleus);
+    }
+
+    /**
+     * Set the nucleus that was used for detection of this dataset dimension
+     *
+     * @param iDim Dataset dimension index
+     * @param nucleus the nucleus to set
+     */
+    public void setNucleus(final int iDim, final Nuclei nucleus) {
+        this.nucleus[iDim] = nucleus;
+    }
 
     /**
      * Return whether dataset has a data file.
@@ -573,12 +1717,115 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Return whether dataset is a memory file.
+     * Get value indicating whether default drawing mode should include positive and/or negative contours. 0: no
+     * contours, 1: positive, 2: negative, 3: both
      *
-     * @return true if this dataset has a data file associated with it.
+     * @return the mode
      */
-    public boolean isMemoryFile() {
-        return file == null;
+    public int getPosneg() {
+        return posneg;
+    }
+
+    /**
+     * Set value indicating whether default drawing mode should include positive and/or negative contours. 0: no
+     * contours, 1: positive, 2: negative, 3: both
+     *
+     * @param posneg the posneg to set
+     */
+    public void setPosneg(int posneg) {
+        this.posneg = posneg;
+    }
+
+    /**
+     * Get the display level (contour level or 1D scale) to be used as a default when displaying dataset.
+     *
+     * @return the default display level
+     */
+    public double getLvl() {
+        return lvl;
+    }
+
+    /**
+     * Set the display level (contour level or 1D scale) to be used as a default when displaying dataset.
+     *
+     * @param lvl the display level to set
+     */
+    public void setLvl(double lvl) {
+        this.lvl = lvl;
+    }
+
+    /**
+     * Get the scale value used to divide intensity values in dataset.
+     *
+     * @return the scale
+     */
+    public double getScale() {
+        return scale;
+    }
+
+    /**
+     * Set the scale value used to divide intensity values in dataset.
+     *
+     * @param scale the scale to set
+     */
+    public void setScale(double scale) {
+        this.scale = scale;
+    }
+
+    /**
+     * Get the default color to be used for positive contours and 1D vectors
+     *
+     * @return name of color
+     */
+    public String getPosColor() {
+        return posColor;
+    }
+
+    /**
+     * Set the default color to be used for positive contours and 1D vectors
+     *
+     * @param posColor name of the color
+     */
+    public void setPosColor(String posColor) {
+        this.posColor = posColor;
+    }
+
+    /**
+     * Get the default color to be used for negative contours
+     *
+     * @return name of color
+     */
+    public String getNegColor() {
+        return negColor;
+    }
+
+    /**
+     * Set the default color to be used for negative contours
+     *
+     * @param negColor name of the color
+     */
+    public void setNegColor(String negColor) {
+        this.negColor = negColor;
+    }
+
+    /**
+     * Get the stored noise level for this dataset
+     *
+     * @return noise level
+     */
+    public Double getNoiseLevel() {
+        return noiseLevel == null ? null : noiseLevel / scale;
+    }
+
+    /**
+     * Store a noise level for dataset
+     *
+     * @param level noise level
+     */
+    public void setNoiseLevel(Double level) {
+        if (level != null) {
+            noiseLevel = level * scale;
+        }
     }
 
     double[] optCenter(int[] maxPoint, int[] dim) throws IOException {
@@ -599,12 +1846,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
             f[1] = readPoint(points, dim);
             double fPt = maxPoint[j];
-            double delta = ((f[1] - f[0]) / (2.0 * ((2.0 * centerValue) - f[1]
+            fPt += ((f[1] - f[0]) / (2.0 * ((2.0 * centerValue) - f[1]
                     - f[0])));
-            // Polynomial interpolated max should never be more than half a point from grid max
-            if (Math.abs(delta) < 0.5) {
-                fPt += delta;
-            }
             dmaxPoint[j] = fPt;
 
         }
@@ -656,9 +1899,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     //    }
 
     /**
-     * Calculate a noise level for the dataset by analyzing the rms value of
-     * data points in a corner of dataset. The resulting value is stored and can
-     * be retrieved with getNoiseLevel
+     * Calculate a noise level for the dataset by analyzing the rms value of data points in a corner of dataset. The
+     * resulting value is stored and can be retrieved with getNoiseLevel
      *
      * @return the noise level
      */
@@ -689,16 +1931,13 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Calculate basic descriptive statistics on the specified region of the
-     * dataset.
+     * Calculate basic descriptive statistics on the specified region of the dataset.
      *
      * @param pt The bounds of the region in dataset points
      * @param cpt The center point of each region
      * @param width the width of each region
-     * @param dim the dataset dimensions that the pt, cpt, and width parameters
-     * use
-     * @return RegionData with statistical information about the specified
-     * region
+     * @param dim the dataset dimensions that the pt, cpt, and width parameters use
+     * @return RegionData with statistical information about the specified region
      * @throws java.io.IOException if an I/O error ocurrs
      */
     synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)
@@ -714,8 +1953,9 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 
         if (vecMat != null) {
             setSize(0, vecMat.getSize());
+            blockSize[0] = vecMat.getSize();
+            blockElements = blockSize[0] * 4;
         }
-
         int[] counterSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             if (pt[i][1] >= pt[i][0]) {
@@ -728,8 +1968,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         RegionData rData = new RegionData(this);
         for (pass2 = 0; pass2 < 2; pass2++) {
             if (pass2 == 1) {
-                rData.setSVar(0.0);
-                rData.setMean(rData.getVolume_r() / rData.getNpoints());
+                rData.svar = 0.0;
+                rData.mean = rData.getVolume_r() / rData.getNpoints();
                 threshold = threshRatio * rData.getCenter();
             }
             DimCounter counter = new DimCounter(counterSizes);
@@ -743,7 +1983,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                     }
                     iPointAbs[i] = points[i];
                 }
-                rData.setValue( readPoint(points, dim));
+                rData.value = readPoint(points, dim);
 
                 if (rData.getValue() == Double.MAX_VALUE) {
                     continue;
@@ -758,11 +1998,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             }
 
         }
-        rData.setMaxDPoint(optCenter(rData.getMaxPoint(), dim));
+        rData.dmaxPoint = optCenter(rData.maxPoint, dim);
         if (rData.getNpoints() == 1) {
-            rData.setRMS(0.0);
+            rData.rms = 0.0;
         } else {
-            rData.setRMS(Math.sqrt(rData.getSumSq() / (rData.getNpoints() - 1)));
+            rData.rms = Math.sqrt(rData.getSumSq() / (rData.getNpoints() - 1));
         }
         return rData;
     }
@@ -848,84 +2088,10 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 //
 //        interp.setResult(list);
 //    }
-    public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOException {
-        PSquarePercentile pSquarePos = new PSquarePercentile(p);
-        PSquarePercentile pSquareNeg = new PSquarePercentile(p);
-
-        int[] counterSizes = new int[nDim];
-        for (int i = 0; i < nDim; i++) {
-            if (pt[i][1] >= pt[i][0]) {
-                counterSizes[i] = pt[i][1] - pt[i][0] + 1;
-            } else {
-                counterSizes[i] = getSize(dim[i]) + (pt[i][1] - pt[i][0] + 1);
-            }
-        }
-        DimCounter counter = new DimCounter(counterSizes);
-        DimCounter.Iterator cIter = counter.iterator();
-        while (cIter.hasNext()) {
-            int[] points = cIter.next();
-            for (int i = 0; i < nDim; i++) {
-                points[i] += pt[i][0];
-                if (points[i] >= getSize(dim[i])) {
-                    points[i] = points[i] - getSize(dim[i]);
-                }
-            }
-            double value = readPoint(points, dim);
-
-            if ((value != Double.MAX_VALUE) && (value >= 0.0)) {
-                pSquarePos.increment(value);
-            } else if ((value != Double.MAX_VALUE) && (value <= 0.0)) {
-                pSquareNeg.increment(value);
-            }
-        }
-        double[] result = {pSquarePos.getResult(), pSquareNeg.getResult()};
-        return result;
-
-    }
-
-    synchronized public double measureSDev(int[][] pt, int[] dim, double sDevIn, double ratio)
-            throws IOException {
-
-        int[] counterSizes = new int[nDim];
-        for (int i = 0; i < nDim; i++) {
-            if (pt[i][1] >= pt[i][0]) {
-                counterSizes[i] = pt[i][1] - pt[i][0] + 1;
-            } else {
-                counterSizes[i] = getSize(dim[i]) + (pt[i][1] - pt[i][0] + 1);
-            }
-        }
-        DimCounter counter = new DimCounter(counterSizes);
-        DimCounter.Iterator cIter = counter.iterator();
-        double sumSq = 0.0;
-        double sum = 0.0;
-        int n = 0;
-        while (cIter.hasNext()) {
-            int[] points = cIter.next();
-            for (int i = 0; i < nDim; i++) {
-                points[i] += pt[i][0];
-                if (points[i] >= getSize(dim[i])) {
-                    points[i] = points[i] - getSize(dim[i]);
-                }
-            }
-            double value = readPoint(points, dim);
-            if (value != Double.MAX_VALUE) {
-                sum += value;
-                sumSq += value * value;
-                n++;
-            }
-        }
-        double sDev = 0.0;
-        if (n > 1) {
-            sDev = Math.sqrt(sumSq / n - ((sum / n) * (sum / n)));
-        }
-        return sDev;
-    }
-
     /**
-     * Get an array representing the dimensions that will be used in specifying
-     * slices through the dataset. The specified dimension will be in the first
-     * position [0] of array and remaining dimensions in increasing order in the
-     * rest of the array.
+     * Get an array representing the dimensions that will be used in specifying slices through the dataset. The
+     * specified dimension will be in the first position [0] of array and remaining dimensions in increasing order in
+     * the rest of the array.
      *
      * @param iDim Dataset dimension index
      * @return Array of dimension indices
@@ -948,8 +2114,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Measure the rmsd value of vectors along the specified dataset dimension.
-     * These values can be used to form a local threshold during peak picking
+     * Measure the rmsd value of vectors along the specified dataset dimension. These values can be used to form a local
+     * threshold during peak picking
      *
      * @param iDim index of the dataset dimension
      * @throws java.io.IOException if an I/O error ocurrs
@@ -1006,8 +2172,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Check if dataset has stored rmsd values along each dimension as
-     * calculated by measureSliceRMSD
+     * Check if dataset has stored rmsd values along each dimension as calculated by measureSliceRMSD
      *
      * @return true if has stored rmsd values
      *
@@ -1040,9 +2205,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Get the rmsd value for a point in the dataset. The value is calculated as
-     * the maximum value of all the rmsd values for vectors that intersect at
-     * the specified point
+     * Get the rmsd value for a point in the dataset. The value is calculated as the maximum value of all the rmsd
+     * values for vectors that intersect at the specified point
      *
      * @param pt indices of point
      * @return rmsd value for point
@@ -1068,9 +2232,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Calculate ratio of slice based rmsd to a specified level. The ratio is
-     * used in peak picker to determine if a point should be picked at specified
-     * point.
+     * Calculate ratio of slice based rmsd to a specified level. The ratio is used in peak picker to determine if a
+     * point should be picked at specified point.
      *
      * @param level Peak picking level
      * @param pt indices of dataset
@@ -1210,33 +2373,24 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Get a list of positions that are within an elliptical region around a set
-     * of points. Used to find points that should be included when doing peak
-     * fitting.
+     * Get a list of positions that are within an elliptical region around a set of points. Used to find points that
+     * should be included when doing peak fitting.
      *
      * @param p2 Bounds of peak regions
      * @param cpt Array of centers of peak positions
      * @param width Array of widths of peaks
-     * @param pdim Array of integers indicating mapping of peak dimension to
-     * dataset dimension
      * @param multiplier unused?? should multiply width of regions
      * @return List of points near peak centers
      */
-    public ArrayList<int[]> getFilteredPositions(final int[][] p2, final int[][] cpt, final double[][] width, int[] pdim, double multiplier) {
+    public static ArrayList<int[]> getFilteredPositions(final int[][] p2, final int[][] cpt, final double[][] width, double multiplier) {
         int[] sizes = new int[p2.length];
         for (int iDim = 0; iDim < p2.length; iDim++) {
-            if (p2[iDim][1] >= p2[iDim][0]) {
-                sizes[iDim] = p2[iDim][1] - p2[iDim][0] + 1;
-            } else {
-                sizes[iDim] = layout.getSize(iDim) - p2[iDim][0] - p2[iDim][1] + 1;
-            }
-//            System.out.println("size " + iDim + " " + p2[iDim][0] + " " + p2[iDim][1] + " " + sizes[iDim]);
+            sizes[iDim] = p2[iDim][1] - p2[iDim][0] + 1;
         }
         int nPoints = 1;
-        for (int dimSize : sizes) {
-            nPoints *= dimSize;
+        for (int size : sizes) {
+            nPoints *= size;
         }
-//        System.out.println("np " + nPoints);
         ArrayList<int[]> posArray = new ArrayList<>();
         DimCounter counter = new DimCounter(sizes);
         DimCounter.Iterator iterator = counter.iterator();
@@ -1244,48 +2398,105 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             int[] counts = iterator.next();
             int[] aCounts = new int[counts.length];
             int j = 0;
-            boolean inDataset = true;
             for (int value : counts) {
                 aCounts[j] = value + p2[j][0];
-                if (aCounts[j] >= getSize(j)) {
-                    aCounts[j] -= getSize(j);
-                } else if (aCounts[j] < 0) {
-                    aCounts[j] += getSize(j);
-                }
                 j++;
             }
-            if (inDataset) {
-                boolean ok = false;
-                for (int iPeak = 0; iPeak < cpt.length; iPeak++) {
-                    int iDim = 0;
-                    double delta2 = 0.0;
-                    for (int value : aCounts) {
-                        if ((iDim >= sizes.length) || (iPeak > width.length)) {
-                            System.out.println(iPeak + " " + sizes.length + " " + width.length);
-                            posArray.clear();
-                            return posArray;
-                        }
-                        if (width[iPeak][iDim] != 0.0) {
-                            delta2 += ((value - cpt[iPeak][iDim]) * (value - cpt[iPeak][iDim])) / (0.47 * width[iPeak][iDim] * width[iPeak][iDim]);
-                        }
-                        iDim++;
-                    }
-                    if (delta2 < 1.0) {
-                        ok = true;
-                        break;
-                    }
+            boolean ok = false;
+            for (int k = 0; k < cpt.length; k++) {
+                int i = 0;
+                double delta2 = 0.0;
+                for (int value : aCounts) {
+                    delta2 += ((value - cpt[k][i]) * (value - cpt[k][i])) / (0.47 * width[k][i] * width[k][i]);
+                    i++;
                 }
-                if (ok) {
-                    posArray.add(aCounts);
+                if (delta2 < 1.0) {
+                    ok = true;
+                    break;
                 }
+            }
+            if (ok) {
+                posArray.add(aCounts);
             }
         }
         return posArray;
     }
 
     /**
-     * Set size of dataset to valid size for specified dimension (only used for
-     * dimensions above the first)
+     * Set the number of dimensions for this dataset. Will reset all reference information.
+     *
+     * @param nDim Number of dataset dimensions
+     */
+    public void setNDim(int nDim) {
+        this.nDim = nDim;
+        setNDim();
+    }
+
+    /**
+     * Will reset all reference fields so they are sized corresponding to current dataset dimension.
+     *
+     */
+    public void setNDim() {
+        size = new int[nDim];
+        fileDimSizes = new int[nDim];
+        vsize = new int[nDim];
+        vsize_r = new int[nDim];
+        tdSize = new int[nDim];
+        blockSize = new int[nDim];
+        offsetPoints = new int[nDim];
+
+        offsetBlocks = new int[nDim];
+        nBlocks = new int[nDim];
+
+        sf = new double[nDim];
+        sw = new double[nDim];
+        sw_r = new double[nDim];
+        refPt = new double[nDim];
+        refPt_r = new double[nDim];
+        refValue = new double[nDim];
+        refValue_r = new double[nDim];
+        refUnits = new int[nDim];
+        ph0 = new double[nDim];
+        ph0_r = new double[nDim];
+        ph1 = new double[nDim];
+        ph1_r = new double[nDim];
+        label = new String[nDim];
+        dlabel = new String[nDim];
+        nucleus = new Nuclei[nDim];
+
+        foldUp = new double[nDim];
+        foldDown = new double[nDim];
+        complex = new boolean[nDim];
+        complex_r = new boolean[nDim];
+        freqDomain = new boolean[nDim];
+        freqDomain_r = new boolean[nDim];
+    }
+
+    /**
+     * Some parameters (complex, refvalue, refpt, sw, phase,valid size) have two copies. One that is set when writing to
+     * file, and one that is read from file. This command synchronizes the two by copying the written values to the read
+     * values.
+     *
+     * @param iDim Datatset dimension index
+     */
+    public void syncPars(int iDim) {
+        setFreqDomain_r(iDim, getFreqDomain(iDim));
+
+        if (getFreqDomain(iDim)) {
+            setRefUnits(iDim, 3);
+        }
+
+        setComplex_r(iDim, getComplex(iDim));
+        setRefValue_r(iDim, getRefValue(iDim));
+        setRefPt_r(iDim, getRefPt(iDim));
+        setSw_r(iDim, getSw(iDim));
+        setPh0_r(iDim, getPh0(iDim));
+        setPh1_r(iDim, getPh1(iDim));
+        setVSize_r(iDim, getVSize(iDim));
+    }
+
+    /**
+     * Set size of dataset to valid size for specified dimension (only used for dimensions above the first)
      *
      * @param iDim Dataset dimension index
      */
@@ -1295,11 +2506,470 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
-    public DatasetLayout getLayout() {
-        return layout;
+    /**
+     * Get the number of data points i file
+     *
+     * @return the number of data points.
+     */
+    public long getFileSize() {
+        return fileSize;
+    }
+
+    /**
+     * Set size of file along specified dimension. Causes reset of various size related parameters.
+     *
+     * @param iDim Dataset dimension index
+     * @param newSize new size for dimension.
+     */
+    public void setNewSize(int iDim, int newSize) {
+        if ((iDim >= 0) && (iDim < nDim) && (newSize > 0)) {
+            setSize(iDim, newSize);
+        }
+
+        dimDataset();
+    }
+
+    /**
+     * Set valid size for specified dimension. Normally used to track number of rows, columns etc. that have had valid
+     * data written to.
+     *
+     * @param iDim Dataset dimension index
+     * @param newSize Valid size for dimension.
+     */
+    public void setVSize(int iDim, int newSize) {
+        if ((iDim >= 0) && (iDim < nDim) && (newSize >= 0)) {
+            vsize[iDim] = newSize;
+        }
+    }
+
+    /**
+     * Set valid size for specified dimension. Normally used to track number of rows, columns etc. that have had valid
+     * data written to.
+     *
+     * @param iDim Dataset dimension index
+     * @param newSize Valid size for dimension
+     */
+    public void setVSize_r(int iDim, int newSize) {
+        if ((iDim >= 0) && (iDim < nDim) && (newSize >= 0)) {
+            vsize_r[iDim] = newSize;
+        }
+    }
+
+    /**
+     * Set the size of blocks along the specified dimension. Setting this will reset various size related parameters.
+     *
+     * @param iDim Dataset dimension index
+     * @param newSize New block size
+     */
+    public void setBlockSize(int iDim, int newSize) {
+        if ((iDim >= 0) && (iDim < nDim) && (newSize > 0)) {
+            blockSize[iDim] = newSize;
+        }
+
+        dimDataset();
+    }
+
+    /**
+     * Set the size of blocks along the specified dimension. Doesn't call dimDataset;
+     *
+     * @param iDim Dataset dimension index
+     * @param newSize New block size
+     */
+    public void setBlockSizeValue(int iDim, int newSize) {
+        if ((iDim >= 0) && (iDim < nDim) && (newSize > 0)) {
+            blockSize[iDim] = newSize;
+        }
+
+    }
+
+    /**
+     * Read the header of an NMRView format dataset file into the fields of this Dataset object.
+     *
+     * @return 0 if successful, 1 if there was an error
+     */
+    public final synchronized int readHeader() {
+        int i;
+        byte[] buffer;
+        buffer = new byte[NV_HEADER_SIZE];
+
+        boolean checkSwap;
+        DataUtilities.readBytes(raFile, buffer, 0, NV_HEADER_SIZE);
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(buffer);
+        DataInputStream dis;
+
+        try {
+            dis = new DataInputStream(bis);
+            checkSwap = false;
+            magic = DataUtilities.readSwapInt(dis, checkSwap);
+
+            if (magic != 874032077) {
+                bis = new ByteArrayInputStream(buffer);
+                dis = new DataInputStream(bis);
+                checkSwap = true;
+
+                magic = DataUtilities.readSwapInt(dis, checkSwap);
+
+                if (magic != 874032077) {
+                    System.err.println("couldn't read header");
+
+                    return 1;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+
+            return 1;
+        }
+
+        littleEndian = checkSwap;
+        gotByteOrder = true;
+
+        try {
+            //read spare1
+            DataUtilities.readSwapInt(dis, checkSwap);
+            // read spare2
+            DataUtilities.readSwapInt(dis, checkSwap);
+            fileHeaderSize = DataUtilities.readSwapInt(dis, checkSwap);
+            blockHeaderSize = DataUtilities.readSwapInt(dis, checkSwap);
+            blockElements = DataUtilities.readSwapInt(dis, checkSwap) * 4;
+            nDim = DataUtilities.readSwapInt(dis, checkSwap);
+            setNDim();
+
+            dis.skip(996);
+
+            byte[] labelBytes = new byte[16];
+            StringBuilder labelBuffer = new StringBuilder();
+            offsetPoints[0] = 1;
+
+            offsetBlocks[0] = 1;
+
+            for (i = 0; i < nDim; i++) {
+                setSize(i, DataUtilities.readSwapInt(dis, checkSwap));
+                fileDimSizes[i] = size[i];
+                blockSize[i] = DataUtilities.readSwapInt(dis, checkSwap);
+                nBlocks[i] = DataUtilities.readSwapInt(dis, checkSwap);
+                nBlocks[i] = getSize(i) / blockSize[i];
+
+                if ((blockSize[i] * nBlocks[i]) < getSize(i)) {
+                    nBlocks[i] += 1;
+                }
+
+                if (i > 0) {
+                    offsetPoints[i] = offsetPoints[i - 1] * blockSize[i - 1];
+                    offsetBlocks[i] = offsetBlocks[i - 1] * nBlocks[i - 1];
+                }
+
+                // read offblk
+                DataUtilities.readSwapInt(dis, checkSwap);
+                // read blkmask
+                DataUtilities.readSwapInt(dis, checkSwap);
+                // read offpt
+                DataUtilities.readSwapInt(dis, checkSwap);
+                setSf(i, DataUtilities.readSwapFloat(dis, checkSwap));
+                setSw(i, DataUtilities.readSwapFloat(dis, checkSwap));
+                setSw_r(i, getSw(i));
+                refPt[i] = DataUtilities.readSwapFloat(dis, checkSwap);
+                refPt_r[i] = refPt[i];
+                setRefValue(i, DataUtilities.readSwapFloat(dis, checkSwap));
+                setRefValue_r(i, getRefValue(i));
+                setRefUnits(i, DataUtilities.readSwapInt(dis, checkSwap));
+                foldUp[i] = DataUtilities.readSwapFloat(dis, checkSwap);
+                foldDown[i] = DataUtilities.readSwapFloat(dis, checkSwap);
+                dis.read(labelBytes);
+
+                int j;
+                labelBuffer.setLength(0);
+
+                for (j = 0; (j < 16) && (labelBytes[j] != '\0'); j++) {
+                    labelBuffer.append((char) labelBytes[j]);
+                }
+
+                label[i] = labelBuffer.toString();
+                nucleus[i] = null;
+
+                setComplex(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
+                setComplex_r(i, getComplex(i));
+                setFreqDomain(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
+                setPh0(i, DataUtilities.readSwapFloat(dis, checkSwap));
+                setPh0_r(i, getPh0(i));
+                setPh1(i, DataUtilities.readSwapFloat(dis, checkSwap));
+                setPh1_r(i, getPh1(i));
+                setVSize(i, DataUtilities.readSwapInt(dis, checkSwap));
+                setVSize_r(i, getVSize(i));
+                dis.skip(10 * 4);
+            }
+
+            rmsd = new double[nDim][];
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+
+            return 1;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Read the header of an UCSF format dataset file into the fields of this Dataset object.
+     *
+     * @return 0 if successful, 1 if there was an error
+     */
+    public final synchronized int readHeaderUCSF() {
+        byte[] buffer;
+        buffer = new byte[UCSF_HEADER_SIZE];
+        fFormat = FFORMAT.UCSF;
+
+        DataUtilities.readBytes(raFile, buffer, 0, UCSF_HEADER_SIZE);
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(buffer);
+        DataInputStream dis;
+
+        try {
+            byte[] magicBytes = new byte[10];
+            dis = new DataInputStream(bis);
+            dis.read(magicBytes);
+
+            for (int j = 0; j < 8; j++) {
+                if (magicBytes[j] != (byte) "UCSF NMR".charAt(j)) {
+                    return 1;
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+
+            return 1;
+        }
+
+        try {
+            nDim = dis.readByte();
+            int nDataComp = dis.readByte();
+            dis.readByte();
+            int version = dis.readByte();
+            System.out.println(nDim + " " + nDataComp + " " + version);
+            if ((nDim < 1) || (nDim > 4)) {
+                return 1;
+            }
+            setNDim();
+
+            dis.skip(UCSF_HEADER_SIZE - 14);
+
+            byte[] labelBytes = new byte[8];
+            StringBuilder labelBuffer = new StringBuilder();
+            offsetPoints[0] = 1;
+
+            offsetBlocks[0] = 1;
+            boolean checkSwap = false;
+
+            for (int iDim = 0; iDim < nDim; iDim++) {
+                int i = nDim - iDim - 1;
+                buffer = new byte[128];
+
+                DataUtilities.readBytes(raFile, buffer, UCSF_HEADER_SIZE + i * 128, 128);
+                bis = new ByteArrayInputStream(buffer);
+                dis = new DataInputStream(bis);
+                labelBuffer.setLength(0);
+                dis.read(labelBytes);
+
+                for (int j = 0; (j < 8) && (labelBytes[j] != '\0'); j++) {
+                    labelBuffer.append((char) labelBytes[j]);
+                }
+
+                label[iDim] = labelBuffer.toString();
+
+                setSize(iDim, DataUtilities.readSwapInt(dis, checkSwap));
+                fileDimSizes[iDim] = size[iDim];
+                // skip empty entry
+                DataUtilities.readSwapInt(dis, checkSwap);
+                blockSize[iDim] = DataUtilities.readSwapInt(dis, checkSwap);
+                nBlocks[iDim] = getSize(iDim) / blockSize[iDim];
+
+                if ((blockSize[iDim] * nBlocks[iDim]) < getSize(iDim)) {
+                    nBlocks[iDim] += 1;
+                }
+                System.out.println(size[iDim] + " " + blockSize[iDim] + " " + nBlocks[iDim]);
+
+                if (iDim > 0) {
+                    offsetPoints[iDim] = offsetPoints[iDim - 1] * blockSize[iDim - 1];
+                    offsetBlocks[iDim] = offsetBlocks[iDim - 1] * nBlocks[iDim - 1];
+                }
+
+                setSf(iDim, DataUtilities.readSwapFloat(dis, checkSwap));
+                setSw(iDim, DataUtilities.readSwapFloat(dis, checkSwap));
+                setSw_r(iDim, getSw(iDim));
+                refPt[iDim] = size[iDim] / 2 + 1;
+                refPt_r[iDim] = refPt[iDim];
+                setRefValue(iDim, DataUtilities.readSwapFloat(dis, checkSwap));
+                setRefValue_r(iDim, getRefValue(iDim));
+
+                if (version == 87) {
+                    setComplex(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
+                    setComplex_r(i, getComplex(i));
+                    setFreqDomain(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
+                    setPh0(i, DataUtilities.readSwapFloat(dis, checkSwap));
+                    setPh0_r(i, getPh0(i));
+                    setPh1(i, DataUtilities.readSwapFloat(dis, checkSwap));
+                    setPh1_r(i, getPh1(i));
+                    setVSize(i, DataUtilities.readSwapInt(dis, checkSwap));
+                    setVSize_r(i, getVSize(i));
+                } else {
+                    complex[iDim] = false;
+                    setRefUnits(iDim, 3);
+                    setVSize_r(iDim, getSize(iDim));
+                    setVSize(iDim, getSize(iDim));
+                    setFreqDomain(iDim, true);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Can't read header ", e);
+            return 1;
+        }
+        blockElements = 4;
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            blockElements = blockElements * blockSize[iDim];
+        }
+
+        fileHeaderSize = UCSF_HEADER_SIZE + 128 * nDim;
+        blockHeaderSize = 0;
+        rmsd = new double[nDim][];
+        dataType = 0;
+        rdims = nDim;
+
+        return 0;
+    }
+
+    /**
+     * Get the name of the solvent.
+     *
+     * @return solvent name
+     */
+    public String getSolvent() {
+        if (solvent == null) {
+            return "";
+        } else {
+            return (solvent);
+        }
+    }
+
+    /**
+     * Set the name of the solvent.
+     *
+     * @param solvent Name of solvent
+     */
+    public void setSolvent(String solvent) {
+        this.solvent = solvent;
+    }
+
+    /**
+     * Get the title of the dataset.
+     *
+     * @return title of dataset
+     */
+    public String getTitle() {
+        if (title == null) {
+            return "";
+        } else {
+            return (title);
+        }
+    }
+
+    /**
+     * Get the title of the dataset.
+     *
+     * @param title The title to set
+     */
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    /**
+     * Initialize headers to default values based on currently set number of dimensions
+     */
+    public final synchronized void newHeader() {
+        magic = 0x3418abcd;
+        fileHeaderSize = 0;
+        blockHeaderSize = 0;
+        blockSize = new int[nDim];
+        offsetPoints = new int[nDim];
+
+        offsetBlocks = new int[nDim];
+        nBlocks = new int[nDim];
+
+        sf = new double[nDim];
+        sw = new double[nDim];
+        sw_r = new double[nDim];
+        refPt = new double[nDim];
+        refPt_r = new double[nDim];
+        refValue = new double[nDim];
+        refValue_r = new double[nDim];
+        refUnits = new int[nDim];
+        ph0 = new double[nDim];
+        ph0_r = new double[nDim];
+        ph1 = new double[nDim];
+        ph1_r = new double[nDim];
+
+        foldUp = new double[nDim];
+        foldDown = new double[nDim];
+        complex = new boolean[nDim];
+        complex_r = new boolean[nDim];
+        freqDomain = new boolean[nDim];
+        freqDomain_r = new boolean[nDim];
+        label = new String[nDim];
+        dlabel = new String[nDim];
+        nucleus = new Nuclei[nDim];
+        rmsd = new double[nDim][];
+
+        int i;
+
+        for (i = 0; i < nDim; i++) {
+            refUnits[i] = 3;
+            sw[i] = 7000.0;
+            sw_r[i] = 7000.0;
+            sf[i] = 600.0;
+            refPt[i] = size[i] / 2;
+            refPt_r[i] = size[i] / 2;
+            refValue[i] = 4.73;
+            refValue_r[i] = 4.73;
+            complex[i] = true;
+            complex_r[i] = true;
+            freqDomain[i] = false;
+            freqDomain_r[i] = false;
+            label[i] = "D" + i;
+            nucleus[i] = null;
+        }
+
+        freqDomain[0] = true;
+        freqDomain_r[0] = true;
+        lvl = 0.0;
+        scale = 1.0;
+        rdims = nDim;
+        posneg = 1;
+
+        //rdims = 0;
+        //theFile.dataType = 0;
+    }
+
+    /**
+     * Get a standard label for the specified dimension. The label is based on the name of the nucleus detected on this
+     * dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return The name of the nucleus
+     */
+    public String getStdLabel(final int iDim) {
+        return getNucleus(iDim).toString();
     }
 
     synchronized private void reInitHeader() {
+        magic = 0x3418abcd;
+        fileHeaderSize = 0;
+        blockHeaderSize = 0;
+        blockSize = new int[nDim];
+        offsetPoints = new int[nDim];
+
+        offsetBlocks = new int[nDim];
+        nBlocks = new int[nDim];
 
         //sf = new double[nDim];
         //sw = new double[nDim];
@@ -1341,7 +3011,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         setFreqDomain(0, true);
         setFreqDomain_r(0, true);
         lvl = 0.0;
-        scale = 1.0;
+        scale = 1.0e6;
         rdims = nDim;
         posneg = 1;
 
@@ -1349,30 +3019,609 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         //dataType = 0;
     }
 
+    final void dimDataset() {
+        int iDim;
+
+        blockElements = 4;
+
+        for (iDim = 0; iDim < nDim; iDim++) {
+            if ((getSize(iDim) == 0) || (blockSize[iDim] == 0)) {
+                return;
+            }
+        }
+
+        for (iDim = 0; iDim < nDim; iDim++) {
+            nBlocks[iDim] = size(iDim) / blockSize[iDim];
+
+            if ((blockSize[iDim] * nBlocks[iDim]) < size(
+                    iDim)) {
+                nBlocks[iDim] += 1;
+            }
+
+            if (iDim > 0) {
+                offsetBlocks[iDim] = nBlocks[iDim - 1] * offsetBlocks[iDim
+                        - 1];
+                offsetPoints[iDim] = blockSize[iDim - 1] * offsetPoints[iDim
+                        - 1];
+            } else {
+                offsetBlocks[iDim] = 1;
+                offsetPoints[iDim] = 1;
+            }
+
+            blockElements = blockElements * blockSize[iDim];
+
+            foldUp[iDim] = 0.0;
+            foldDown[iDim] = 0.0;
+        }
+        rmsd = new double[nDim][];
+    }
+
+    /**
+     * Set the block sizes based on the specified size of a block.
+     *
+     * @param blockPoints the size of the block
+     */
+    public final synchronized void setBlockSize(int blockPoints) {
+        long npoints;
+        int blksize;
+        int blkspdim;
+        int blog;
+        int[] tsize;
+        int[] nbdim;
+        int[] bsize;
+        int i;
+        int j;
+        int nblks;
+        int imin = 0;
+        int imax = 0;
+        int bmax;
+        int bmin;
+        npoints = 1;
+        tsize = new int[nDim];
+        bsize = new int[nDim];
+        nbdim = new int[nDim];
+
+        //Calculate total points in file
+        for (i = 0; i < nDim; i++) {
+            tsize[i] = getSize(i);
+            blog = (int) ((Math.log((double) tsize[i]) / Math.log(2.0)) + 0.5);
+            bsize[i] = (int) (Math.exp(blog * Math.log(2.0)) + 0.5);
+
+            if (bsize[i] < tsize[i]) {
+                bsize[i] *= 2;
+            }
+
+            npoints *= bsize[i];
+        }
+
+        /*
+         * Use blockPoints as number of points/block.
+         */
+        nblks = (int) (npoints / blockPoints);
+        if ((nblks * blockPoints) < npoints) {
+            nblks++;
+        }
+
+        /*
+         * printf("nblks %d\n",nblks);
+         */
+ /*
+         * With small files block size is dim size
+         */
+        if (nblks < 2) {
+            for (i = 0; i < nDim; i++) {
+                blockSize[i] = getSize(i);
+            }
+
+            return;
+        }
+
+        /*
+         * Calculate trial blocks per dim based on total number of blocks and
+         * the number of dimensions.
+         */
+        blkspdim = (int) (Math.exp((1.0 / nDim) * Math.log(
+                (double) nblks)));
+        blog = (int) ((Math.log((double) blkspdim) / Math.log(2.0)) + 0.5);
+        blkspdim = (int) (Math.exp(blog * Math.log(2.0)) + 0.5);
+
+        for (i = 0; i < nDim; i++) {
+            nbdim[i] = blkspdim;
+
+            if (nbdim[i] > bsize[i]) {
+                nbdim[i] = bsize[i];
+            }
+        }
+
+        /*
+         * Adjust trial block sizes for each dimension so that the number of
+         * points per block is blockPoints. If too big, divide the dimension
+         * with largest block size in half. If too small, double the size of
+         * dimension with largest block size.
+         */
+        for (j = 0; j < 2; j++) {
+            blksize = 1;
+            bmax = 0;
+            bmin = 100000;
+
+            for (i = 0; i < nDim; i++) {
+                if ((bsize[i] / nbdim[i]) > 0) {
+                    blksize *= (bsize[i] / nbdim[i]);
+                }
+
+                if (bsize[i] == 1) {
+                    continue;
+                }
+
+                if (nbdim[i] > bmax) {
+                    bmax = nbdim[i];
+                    imax = i;
+                }
+
+                if (nbdim[i] < bmin) {
+                    bmin = nbdim[i];
+                    imin = i;
+                }
+            }
+
+            /*
+             * ConsoleWrite( "%d\n", blksize);
+             */
+            if (blksize > blockPoints) {
+                nbdim[imax] = nbdim[imax] * 2;
+            }
+
+            if (blksize < blockPoints) {
+                nbdim[imax] = nbdim[imax] / 2;
+            }
+
+            if (nbdim[imin] < 2) {
+                nbdim[imin] = 2;
+                nbdim[imax] = nbdim[imax] / 2;
+            }
+        }
+
+        for (i = 0; i < nDim; i++) {
+            blockSize[i] = bsize[i] / nbdim[i];
+        }
+    }
+
     /**
      * Flush the header values out to the dataset file.
      */
     public final synchronized void writeHeader() {
-        writeHeader(true);
+        if (file.getPath().contains(".ucsf")) {
+            writeHeaderUCSF(raFile, true);
+        } else {
+            writeHeader(raFile);
+        }
     }
 
     /**
-     * Flush the header values out to the dataset file.
-     */
-    public final synchronized void writeHeader(boolean nvExtra) {
-        dataFile.writeHeader(nvExtra);
-    }
-
-    /**
-     * Read an N dimensional matrix of values within the specified region of the
-     * matrix
+     * Flush the header values out to the specified file.
      *
-     * @param theFile The dataset to read. Redundant since this is an instance
-     * method. fixme
+     * @param outFile The file to write to.
+     */
+    synchronized private void writeHeader(RandomAccessFile outFile) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(NV_HEADER_SIZE);
+        if (littleEndian) {
+            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        }
+
+        int labelMaxBytes = 16;
+        byte[] labelBytes = new byte[labelMaxBytes];
+        try {
+            magic = 0x3418abcd;
+            byteBuffer.putInt(magic);
+            byteBuffer.putInt(0);
+            byteBuffer.putInt(0);
+            byteBuffer.putInt(fileHeaderSize);
+            byteBuffer.putInt(blockHeaderSize);
+            byteBuffer.putInt(blockElements / 4);
+            byteBuffer.putInt(nDim);
+
+            for (int i = 0; i < nDim; i++) {
+                byteBuffer.position(1024 + i * 128);
+                byteBuffer.putInt(getSize(i));
+                byteBuffer.putInt(blockSize[i]);
+                byteBuffer.putInt(nBlocks[i]);
+                byteBuffer.putInt(0);
+                byteBuffer.putInt(0);
+                byteBuffer.putInt(0);
+                byteBuffer.putFloat((float) getSf(i));
+                byteBuffer.putFloat((float) getSw(i));
+                byteBuffer.putFloat((float) getRefPt(i));
+                byteBuffer.putFloat((float) getRefValue(i));
+                byteBuffer.putInt(getRefUnits(i));
+                byteBuffer.putFloat((float) foldUp[i]);
+                byteBuffer.putFloat((float) foldDown[i]);
+
+                String labelString = label[i];
+                int nBytes = labelString.length();
+                for (int j = 0; j < labelMaxBytes; j++) {
+                    if (j < nBytes) {
+                        labelBytes[j] = (byte) labelString.charAt(j);
+                    } else {
+                        labelBytes[j] = 0;
+                    }
+                }
+
+                byteBuffer.put(labelBytes);
+
+                if (getComplex(i)) {
+                    byteBuffer.putInt(1);
+                } else {
+                    byteBuffer.putInt(0);
+                }
+
+                if (getFreqDomain(i)) {
+                    byteBuffer.putInt(1);
+                } else {
+                    byteBuffer.putInt(0);
+                }
+                byteBuffer.putFloat((float) getPh0(i));
+                byteBuffer.putFloat((float) getPh1(i));
+                byteBuffer.putInt(getVSize(i));
+            }
+
+            if (outFile != null) {
+                DataUtilities.writeBytes(outFile, byteBuffer.array(), 0, NV_HEADER_SIZE);
+            }
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+    }
+
+    /**
+     * Get the header parameters as a string of text.
+     *
+     * @return the header as a string
+     */
+    synchronized public String getHeader() {
+        StringBuilder sBuilder = new StringBuilder();
+        String sepChar = " ";
+        sBuilder.append(littleEndian);
+        sBuilder.append(sepChar);
+
+        int labelMaxBytes = 16;
+        byte[] labelBytes = new byte[labelMaxBytes];
+        magic = 0x3418abcd;
+        sBuilder.append("magic");
+        sBuilder.append(sepChar);
+        sBuilder.append(magic);
+        sBuilder.append(sepChar);
+        sBuilder.append("skip");
+        sBuilder.append(sepChar);
+        sBuilder.append(0);
+        sBuilder.append(sepChar);
+        sBuilder.append("skip");
+        sBuilder.append(sepChar);
+        sBuilder.append(0);
+        sBuilder.append(sepChar);
+        sBuilder.append("fileHeaderSize");
+        sBuilder.append(sepChar);
+        sBuilder.append(fileHeaderSize);
+        sBuilder.append(sepChar);
+        sBuilder.append("blockHeaderSize");
+        sBuilder.append(sepChar);
+        sBuilder.append(blockHeaderSize);
+        sBuilder.append(sepChar);
+        sBuilder.append("blockElements");
+        sBuilder.append(sepChar);
+        sBuilder.append(blockElements / 4);
+        sBuilder.append(sepChar);
+        sBuilder.append("nDim");
+        sBuilder.append(sepChar);
+        sBuilder.append(nDim);
+        sBuilder.append("\n");
+
+        for (int i = 0; i < nDim; i++) {
+            sBuilder.append("dim");
+            sBuilder.append(sepChar);
+            sBuilder.append(i);
+            sBuilder.append(sepChar);
+            sBuilder.append("offset");
+            sBuilder.append(sepChar);
+            sBuilder.append(1024 + i * 128);
+            sBuilder.append(sepChar);
+            sBuilder.append("size");
+            sBuilder.append(sepChar);
+            sBuilder.append(getSize(i));
+            sBuilder.append(sepChar);
+            sBuilder.append("blocksize");
+            sBuilder.append(sepChar);
+            sBuilder.append(blockSize[i]);
+            sBuilder.append(sepChar);
+
+            sBuilder.append("offpoints");
+            sBuilder.append(sepChar);
+            sBuilder.append(offsetPoints[i]);
+            sBuilder.append(sepChar);
+
+            sBuilder.append("offblocks");
+            sBuilder.append(sepChar);
+            sBuilder.append(offsetBlocks[i]);
+            sBuilder.append(sepChar);
+
+            sBuilder.append("nBlocks");
+            sBuilder.append(sepChar);
+            sBuilder.append(nBlocks[i]);
+            sBuilder.append(sepChar);
+            sBuilder.append("skip");
+            sBuilder.append(sepChar);
+            sBuilder.append(0);
+            sBuilder.append(sepChar);
+            sBuilder.append("skip");
+            sBuilder.append(sepChar);
+            sBuilder.append(0);
+            sBuilder.append(sepChar);
+            sBuilder.append("skip");
+            sBuilder.append(sepChar);
+            sBuilder.append(0);
+            sBuilder.append(sepChar);
+            sBuilder.append("sf");
+            sBuilder.append(sepChar);
+            sBuilder.append((float) getSf(i));
+            sBuilder.append(sepChar);
+            sBuilder.append("sw");
+            sBuilder.append(sepChar);
+            sBuilder.append((float) getSw(i));
+            sBuilder.append(sepChar);
+            sBuilder.append("refpt");
+            sBuilder.append(sepChar);
+            sBuilder.append((float) getRefPt(i));
+            sBuilder.append(sepChar);
+            sBuilder.append("refval");
+            sBuilder.append(sepChar);
+            sBuilder.append((float) getRefValue(i));
+            sBuilder.append(sepChar);
+            sBuilder.append("refunits");
+            sBuilder.append(sepChar);
+            sBuilder.append(getRefUnits(i));
+            sBuilder.append(sepChar);
+            sBuilder.append("foldup");
+            sBuilder.append(sepChar);
+            sBuilder.append((float) foldUp[i]);
+            sBuilder.append(sepChar);
+            sBuilder.append("folddown");
+            sBuilder.append(sepChar);
+            sBuilder.append((float) foldDown[i]);
+            sBuilder.append(sepChar);
+            sBuilder.append("label");
+            sBuilder.append(sepChar);
+
+            String labelString = label[i];
+            int nBytes = labelString.length();
+            for (int j = 0; j < labelMaxBytes; j++) {
+                if (j < nBytes) {
+                    labelBytes[j] = (byte) labelString.charAt(j);
+                } else {
+                    labelBytes[j] = 0;
+                }
+            }
+
+            sBuilder.append(labelBytes);
+            sBuilder.append(sepChar);
+            sBuilder.append("complex");
+            sBuilder.append(sepChar);
+
+            if (getComplex(i)) {
+                sBuilder.append(1);
+            } else {
+                sBuilder.append(0);
+            }
+            sBuilder.append(sepChar);
+            sBuilder.append("freqdomain");
+            sBuilder.append(sepChar);
+
+            if (getFreqDomain(i)) {
+                sBuilder.append(1);
+            } else {
+                sBuilder.append(0);
+            }
+            sBuilder.append(sepChar);
+            sBuilder.append("ph0");
+            sBuilder.append(sepChar);
+            sBuilder.append((float) getPh0(i));
+            sBuilder.append(sepChar);
+            sBuilder.append("ph1");
+            sBuilder.append(sepChar);
+            sBuilder.append((float) getPh1(i));
+            sBuilder.append(sepChar);
+            sBuilder.append("vsize");
+            sBuilder.append(sepChar);
+            sBuilder.append(getVSize(i));
+            sBuilder.append("\n");
+        }
+        return sBuilder.toString();
+    }
+
+    /**
+     * Write out the header of file in UCSF format
+     *
+     * @param nvExtra include extra information in header needed for processing
+     */
+    public final synchronized void writeHeaderUCSF(boolean nvExtra) {
+        writeHeaderUCSF(raFile, nvExtra);
+    }
+
+//    The 180 byte header contains:
+//
+//position	bytes	contents	required value
+//0	10	file type	= UCSF NMR (8 character null terminated string)
+//10	1	dimension of spectrum
+//11	1	number of data components	= 1 for real data
+//13	1	format version number	= 2 for current format
+//The first byte in the file is position 0. A complex spectrum has two components. Sparky only reads real data and I will only describe below the layout for real data so set the number of components to 1. Use format version number 2.
+//
+//For each axis of the spectrum write a 128 byte header of the following form:
+//
+//position	bytes	contents
+//0	6	nucleus name (1H, 13C, 15N, 31P, ...) null terminated ASCII
+//8	4	integer number of data points along this axis
+//16	4	integer tile size along this axis
+//20	4	float spectrometer frequency for this nucleus (MHz)
+//24	4	float spectral width (Hz)
+//28	4	float center of data (ppm)
+    synchronized private void writeHeaderUCSF(RandomAccessFile outFile, boolean nvExtra) {
+        int ucsfFileHeaderSize = UCSF_HEADER_SIZE + nDim * 128;
+        ByteBuffer byteBuffer = ByteBuffer.allocate(ucsfFileHeaderSize);
+        if (littleEndian) {
+            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        }
+
+        int version = nvExtra ? 87 : 2;
+
+        try {
+            byte[] magicBytes = new byte[10];
+            for (int i = 0; i < 8; i++) {
+                magicBytes[i] = (byte) "UCSF NMR".charAt(i);
+            }
+
+            byteBuffer.put(magicBytes);
+            byteBuffer.put((byte) nDim);
+            byteBuffer.put((byte) 1);  // real data
+            byteBuffer.put((byte) 0);
+            byteBuffer.put((byte) version);  // version number
+
+            for (int i = 0; i < nDim; i++) {
+                int iDim = nDim - i - 1;
+                byteBuffer.position(UCSF_HEADER_SIZE + i * 128);
+                String nucName = getNucleus(iDim).getNumberName();
+                for (int j = 0; j < nucName.length(); j++) {
+                    byteBuffer.put((byte) nucName.charAt(j));
+                }
+                for (int j = nucName.length(); j < 8; j++) {
+                    byteBuffer.put((byte) 0);
+                }
+                byteBuffer.putInt(getSize(iDim));
+                byteBuffer.putInt(0);
+                byteBuffer.putInt(blockSize[iDim]);
+                byteBuffer.putFloat((float) getSf(iDim));
+                byteBuffer.putFloat((float) getSw(iDim));
+                byteBuffer.putFloat((float) getRefValue(iDim));
+
+                if (version == 87) {
+                    if (getComplex(i)) {
+                        byteBuffer.putInt(1);
+                    } else {
+                        byteBuffer.putInt(0);
+                    }
+
+                    if (getFreqDomain(i)) {
+                        byteBuffer.putInt(1);
+                    } else {
+                        byteBuffer.putInt(0);
+                    }
+                    byteBuffer.putFloat((float) getPh0(i));
+                    byteBuffer.putFloat((float) getPh1(i));
+                    byteBuffer.putInt(getVSize(i));
+                }
+            }
+
+            if (outFile != null) {
+                DataUtilities.writeBytes(outFile, byteBuffer.array(), 0, ucsfFileHeaderSize);
+            }
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+    }
+
+    /**
+     * Get the value of the dataset at a specified point
+     *
+     * @param pt indices of point to read
+     * @return the dataset value
+     * @throws IOException if an I/O error occurs
+     * @throws IllegalArgumentException if point is outside the range of dataset ( less than 0 or greater than or equal
+     * to size)
+     */
+    public double readPoint(int[] pt) throws IOException, IllegalArgumentException {
+        int i;
+
+        if (vecMat != null) {
+            i = pt[0];
+            return vecMat.getReal(i) / scale;
+        }
+
+        for (i = 0; i < nDim; i++) {
+            if (pt[i] < 0) {
+                throw new IllegalArgumentException("point < 0 " + i + " " + pt[i]);
+            } else if (pt[i] >= getSize(i)) {
+                throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSize(i));
+            }
+        }
+        return dataFile.getFloat(pt) / scale;
+
+    }
+
+    /**
+     * Get the value of the dataset at a specified point
+     *
+     * @param pt indices of point to read
+     * @param dim dimension indices that used for the point values
+     * @return the dataset value
+     * @throws java.io.IOException if an I/O error occurs
+     * @throws IllegalArgumentException if point is outside range of dataset ( less than 0 or greater than or equal to
+     * size)
+     */
+    public double readPoint(int[] pt, int[] dim) throws IOException, IllegalArgumentException {
+        int i;
+
+        if (vecMat != null) {
+            i = pt[0];
+            return vecMat.getReal(i) / scale;
+        }
+
+        for (i = 0; i < nDim; i++) {
+            if (pt[i] < 0) {
+                throw new IllegalArgumentException("pointd < 0 " + i + " " + pt[i]);
+            } else if (pt[i] >= getSize(dim[i])) {
+                throw new IllegalArgumentException("pointd >= size " + i + " " + dim[i] + " " + pt[i] + " " + getSize(dim[i]));
+            }
+        }
+        int[] rPt = new int[nDim];
+        for (i = 0; i < nDim; i++) {
+            rPt[dim[i]] = pt[i];
+        }
+        return dataFile.getFloat(rPt) / scale;
+
+    }
+
+    /**
+     * Write a value into the dataset at the specified point
+     *
+     * @param pt indices of point to write
+     * @param value to write
+     * @throws java.io.IOException if an I/O error occurs
+     * @throws IllegalArgumentException if point is outside range of dataset ( less than 0 or greater than or equal to
+     * size)
+     */
+    public void writePoint(int[] pt, double value) throws IOException, IllegalArgumentException {
+        int i;
+
+        if (vecMat != null) {
+            i = pt[0];
+            vecMat.setReal(i, value * scale);
+        } else {
+            for (i = 0; i < nDim; i++) {
+                if (pt[i] < 0) {
+                    throw new IllegalArgumentException("point < 0 " + i + " " + pt[i]);
+                } else if (pt[i] >= getSize(i)) {
+                    throw new IllegalArgumentException("point >= size " + i + " " + pt[i] + " " + getSize(i));
+                }
+            }
+            dataFile.setFloat((float) (value * scale), pt);
+        }
+    }
+
+    /**
+     * Read an N dimensional matrix of values within the specified region of the matrix
+     *
+     * @param theFile The dataset to read. Redundant since this is an instance method. fixme
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
-     * @param matrix A matrix in which to store the read values. Must be at
-     * least as big as region.
+     * @param matrix A matrix in which to store the read values. Must be at least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
@@ -1406,15 +3655,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Read an N dimensional matrix of values within the specified region of the
-     * matrix
+     * Read an N dimensional matrix of values within the specified region of the matrix
      *
-     * @param theFile The dataset to read. Redundant since this is an instance
-     * method. fixme
+     * @param theFile The dataset to read. Redundant since this is an instance method. fixme
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
-     * @param matrix A matrix in which to store the read values. Must be at
-     * least as big as region.
+     * @param matrix A matrix in which to store the read values. Must be at least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
@@ -1451,13 +3697,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Read an N dimensional matrix of values within the specified region of the
-     * matrix
+     * Read an N dimensional matrix of values within the specified region of the matrix
      *
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
-     * @param matrix A matrix in which to store the read values. Must be at
-     * least as big as region.
+     * @param matrix A matrix in which to store the read values. Must be at least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error occurs
      */
@@ -1468,9 +3712,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int[] point = new int[nDim];
         point[dim[nDim - 1]] = pt[nDim - 1][0];
         int[] mPoint = new int[nDim - 1];
-        // fixme should mPoint be pt +1 
         for (int i = 0; i < nDim - 1; i++) {
-            mPoint[i] = pt[i][1] + 1;
+            mPoint[i] = pt[i][1];
         }
 //        for (int i = 0; i < nDim; i++) {
 //            if (i < (nDim - 1)) {
@@ -1502,8 +3745,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Write the data values to a file. Only works if the dataset values are in
-     * a Vec object (not dataset file)
+     * Write the data values to a file. Only works if the dataset values are in a Vec object (not dataset file)
      *
      * @param fullName Name of file to write
      * @throws java.io.IOException if an I/O error ocurrs
@@ -1512,9 +3754,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         File newFile = new File(fullName);
         try (RandomAccessFile outFile = new RandomAccessFile(newFile, "rw")) {
             byte[] buffer = vecMat.getBytes();
-            DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
-            headerIO.writeHeader(layout, outFile);
-            DataUtilities.writeBytes(outFile, buffer, layout.getFileHeaderSize(), buffer.length);
+            writeHeader(outFile);
+            DataUtilities.writeBytes(outFile, buffer, fileHeaderSize, buffer.length);
         }
     }
 
@@ -1568,15 +3809,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int[] point = new int[nDim];
         point[dim[nDim - 1]] = pt[nDim - 1][0];
         int[] mPoint = new int[nDim - 1];
-        int[] matVSizes = matrix.getVSizes();
         for (int i = 0; i < nDim - 1; i++) {
-            mPoint[i] = pt[i][1] + 1;
-            setVSize(dim[i], matVSizes[i]);
-            setPh0(dim[i], matrix.getPh0(i));
-            setPh1(dim[i], matrix.getPh1(i));
-            setPh0_r(dim[i], matrix.getPh0(i));
-            setPh1_r(dim[i], matrix.getPh1(i));
-//            System.out.println("write ph " +i + " " + dim[i] + " " +  matrix.getPh0(i) + " " + matrix.getPh1(i));
+            mPoint[i] = pt[i][1];
         }
 
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
@@ -1601,17 +3835,24 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         if (fileName == null) {
             return null;
         } else {
-            return (Dataset) ProjectBase.getActive().getDataset(fileName);
+            return ((Dataset) theFiles.get(fileName));
         }
     }
 
     /**
      * Return a list of the names of open datasets
      *
-     * @return List of names.
+     * @return String of space separated names.
      */
-    synchronized public static List<String> names() {
-        return ProjectBase.getActive().getDatasetNames();
+    synchronized public static String listDatasets() {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+
+        theFiles.keySet().stream().forEach((key) -> {
+            result.append(key).append(sep);
+        });
+
+        return (result.toString());
     }
 
     /**
@@ -1649,6 +3890,87 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         }
     }
 
+    /**
+     * Return a Set containing all the property names used by open datasets
+     *
+     * @return TreeSet containing the property names
+     */
+    public static TreeSet getPropertyNames() {
+        TreeSet nameSet = new TreeSet();
+
+        for (Dataset dataset : theFiles.values()) {
+            Iterator iter = dataset.properties.keySet().iterator();
+            while (iter.hasNext()) {
+                String propName = (String) iter.next();
+                nameSet.add(propName);
+            }
+        }
+        return nameSet;
+    }
+
+    /**
+     * Get the properties used by this dataset
+     *
+     * @return A map containing property names as keys and properties as values.
+     */
+    public Map getPropertyList() {
+        return properties;
+    }
+
+    /**
+     * Add a new property to this file
+     *
+     * @param name The name of the property
+     * @param value The value for the property
+     */
+    public void addProperty(String name, String value) {
+        properties.put(name, value);
+    }
+
+    /**
+     * Return the value for a specified property
+     *
+     * @param name The name of the property
+     * @return the value for the property or empty string if property doesn't exist
+     */
+    public String getProperty(String name) {
+        String value = (String) properties.get(name);
+
+        if (value == null) {
+            value = "";
+        }
+
+        return value;
+    }
+
+    /**
+     * Get the default color to be used in displaying dataset.
+     *
+     * @param getPositive true if the color for positive values should be returned and false if the color for negative
+     * values should be returned
+     * @return the color
+     */
+    public String getColor(boolean getPositive) {
+        if (getPositive) {
+            return posColor;
+        } else {
+            return negColor;
+        }
+    }
+
+    /**
+     * Set the default color.
+     *
+     * @param setPositive If true set the color for positive values, if false set the value for negative values.
+     * @param newColor the new color
+     */
+    public void setColor(boolean setPositive, String newColor) {
+        if (setPositive) {
+            posColor = newColor;
+        } else {
+            negColor = newColor;
+        }
+    }
     static String[] exptListLoopString = {
         "_Experiment.ID",
         "_Experiment.Name",
@@ -1824,7 +4146,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         long[] times = new long[7];
         times[0] = System.currentTimeMillis();
         System.out.println("xxx");
-        dataFile.sumValues();
+        dataFile.sum();
         times[1] = System.currentTimeMillis();
         System.out.println("xxx");
 
@@ -1842,7 +4164,15 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         DimCounter.Iterator cIter = counter.iterator();
         while (cIter.hasNext()) {
             int[] points = cIter.next();
-            dataFile.bytePosition(points);
+        }
+        times[3] = System.currentTimeMillis();
+        System.out.println("xxx");
+
+        counter = new DimCounter(counterSizes);
+        cIter = counter.iterator();
+        while (cIter.hasNext()) {
+            int[] points = cIter.next();
+            dataFile.position(points);
         }
         times[4] = System.currentTimeMillis();
         System.out.println("xxx");
@@ -1889,24 +4219,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         rwVector.resize(rwVector.getSize(), getComplex_r(dim[0]));
         rwVector.centerFreq = getSf(dim[0]);
         rwVector.dwellTime = 1.0 / getSw_r(dim[0]);
-        // if reading a vector that is not full size we need to adjust the sweep width.
-        //   used when reading integral vectors etc.
-        //   Only do this adjustment when the dataset is not complex.  If it is complex we're probably processing it and
-        //   it's possible we'll change a correct sweep width if we don't check sizes properly
-        //   It is important to check the valid size, not full dataset size or we'll
-        //     incorrectly adjust sweep width
-        if (getComplex_r(dim[0])) {
-            int dSize = getComplex_r(dim[0]) ? getVSize_r(dim[0]) / 2 : getVSize_r(dim[0]);
-            if (rwVector.getSize() != dSize) {
-                rwVector.dwellTime *= (double) dSize / rwVector.getSize();
-            }
-        } else {
-            int dSize = getSize(dim[0]);
-            if (rwVector.getSize() != dSize) {
-                rwVector.dwellTime *= (double) dSize / rwVector.getSize();
-            }
-
-        }
         rwVector.setPh0(getPh0_r(dim[0]));
         rwVector.setPh1(getPh1_r(dim[0]));
         rwVector.setTDSize(getTDSize(dim[0]));
@@ -1925,34 +4237,21 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
 //        for (int i = 0; i < nDim; i++) {
 //            System.out.printf("rv i %4d dim %4d pt0 %4d pt1 %4d size %4d vsize %4d fsize %4d\n",i,dim[i],pt[i][0],pt[i][1],size[dim[i]],vsize[dim[i]],fileDimSizes[dim[i]]);
 //        }
-        if (vecMat != null) {
-            int j = 0;
-            for (int i = pt[0][0]; i <= pt[0][1]; i++) {
-                if (rwVector.isComplex()) {
-                    rwVector.set(j, vecMat.getComplex(i));
-                } else {
-                    rwVector.setReal(j, vecMat.getReal(i));
-                }
-                j++;
-            }
-
-        } else {
-            double dReal = 0.0;
-            int j = 0;
-            for (int i = pt[0][0]; i <= pt[0][1]; i++) {
-                point[dim[0]] = i;
-                if (rwVector.isComplex()) {
-                    if ((i % 2) != 0) {
-                        double dImaginary = readPoint(point);
-                        rwVector.set(j, new Complex(dReal, dImaginary));
-                        j++;
-                    } else {
-                        dReal = readPoint(point);
-                    }
-                } else {
-                    rwVector.set(j, readPoint(point));
+        double dReal = 0.0;
+        int j = 0;
+        for (int i = pt[0][0]; i <= pt[0][1]; i++) {
+            point[dim[0]] = i;
+            if (rwVector.isComplex()) {
+                if ((i % 2) != 0) {
+                    double dImaginary = readPoint(point);
+                    rwVector.set(j, new Complex(dReal, dImaginary));
                     j++;
+                } else {
+                    dReal = readPoint(point);
                 }
+            } else {
+                rwVector.set(j, readPoint(point));
+                j++;
             }
         }
         //System.out.println("done reading vector from dataset file");
@@ -1978,8 +4277,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Read specified values along specified row. Only appropriate for 2D
-     * datasets
+     * Read specified values along specified row. Only appropriate for 2D datasets
      *
      * @param row the row to read
      * @param indices List of points to read along row
@@ -2022,8 +4320,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Read specified values along specified column. Only appropriate for 2D
-     * datasets
+     * Read specified values along specified column. Only appropriate for 2D datasets
      *
      * @param column the column of dataset to read
      * @param indices List of points to read along column
@@ -2053,8 +4350,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param columnIndices List of columns
      * @return the matrix of values
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if row or column indices is null or
-     * empty
+     * @throws IllegalArgumentException if row or column indices is null or empty
      */
     public Array2DRowRealMatrix getSubMatrix(ArrayList<Integer> rowIndices, ArrayList<Integer> columnIndices) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || rowIndices.isEmpty()) {
@@ -2084,8 +4380,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param columnIndices List of columns
      * @return the matrix of values
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if row or column indices is null or
-     * empty
+     * @throws IllegalArgumentException if row or column indices is null or empty
      */
     public Array2DRowRealMatrix getSubMatrix(int[] rowIndices, int[] columnIndices) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || (rowIndices.length == 0)) {
@@ -2123,7 +4418,8 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         int nColumns = matrix.getColumnDimension();
         int[] dimSizes = {nRows, nColumns};
         int[] pt = new int[2];
-        Dataset dataset = createDataset(fullName, datasetName, dimSizes, false);
+        createDataset(fullName, datasetName, dimSizes);
+        Dataset dataset = new Dataset(fullName, datasetName, true);
         for (int i = 0; i < nRows; i++) {
             for (int j = 0; j < nColumns; j++) {
                 pt[0] = i;
@@ -2143,8 +4439,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @param dataTbl Names for rows and columns
      * @return a BucketMatrix object containing the bucket values from dataset
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if row or column indices is null or
-     * empty
+     * @throws IllegalArgumentException if row or column indices is null or empty
      */
     public BucketedMatrix getBucketedSubMatrix(int[] rowIndices, int[] columnIndices, int bucketSize, String[][] dataTbl) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || (rowIndices.length == 0)) {
@@ -2228,6 +4523,57 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
+     * Read data values into a Vec object from specified location in dataset
+     *
+     * @param pt indices of values to read
+     * @param dim Dataset dimensions used by indices
+     * @param rwVector the Vec object in which to put values
+     * @throws IOException if an I/O error occurs
+     */
+    public void readVecFromDatasetFile(int[][] pt, int[] dim, Vec rwVector) throws IOException {
+        //System.out.println("reading vector from dataset file");
+        int n = 0;
+
+        if (vecMat != null) {
+            throw new IllegalArgumentException("Don't call this method on a vector type dataset");
+        }
+        rwVector.resize(rwVector.getSize(), getComplex_r(dim[0]));
+        rwVector.centerFreq = getSf(dim[0]);
+        rwVector.dwellTime = 1.0 / getSw_r(dim[0]);
+        rwVector.setPh0(getPh0_r(dim[0]));
+        rwVector.setPh1(getPh1_r(dim[0]));
+        rwVector.setTDSize(getTDSize(dim[0]));
+
+        double delRef = ((getRefPt_r(dim[0]) - pt[0][0]) * getSw_r(dim[0])) / getSf(dim[0]) / size[dim[0]];
+        rwVector.refValue = getRefValue_r(dim[0]) + delRef;
+        rwVector.setFreqDomain(getFreqDomain_r(dim[0]));
+
+        //System.err.println("read sw "+dim[0]+" "+(1.0/rwVector.dwellTime)+" " +getRefValue_r(dim[0]) + " "  +(rwVector.refValue-delRef)+ " " + rwVector.refValue+" "+delRef+" "+refPt_r[dim[0]]+" "+rwVector.isComplex()+" " + size[dim[0]]+ " " + pt[0][0] + " " + (getSw_r(dim[0])/getSf(dim[0])));
+        int[] point = new int[nDim];
+        for (int i = 1; i < nDim; i++) {
+            point[dim[i]] = pt[i][0];
+        }
+        double dReal = 0.0;
+        int j = 0;
+        for (int i = pt[0][0]; i <= pt[0][1]; i++) {
+            point[dim[0]] = i;
+            if (rwVector.isComplex()) {
+                if ((i % 2) != 0) {
+                    double dImaginary = readPoint(point);
+                    rwVector.set(j, new Complex(dReal, dImaginary));
+                    j++;
+                } else {
+                    dReal = readPoint(point);
+                }
+            } else {
+                rwVector.set(j, readPoint(point));
+                j++;
+            }
+        }
+        //System.out.println("done reading vector from dataset file");
+    }
+
+    /**
      * Read vector from dataset
      *
      * @param vector Store dataset values in this vec
@@ -2242,11 +4588,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             dim[i] = i;
             if (iDim == i) {
                 pt[i][0] = 0;
-                if (vector.isComplex()) {
-                    pt[i][1] = 2 * vector.getSize() - 1;
-                } else {
-                    pt[i][1] = vector.getSize() - 1;
-                }
+                pt[i][1] = vector.getSize() - 1;
             } else {
                 pt[i][0] = index;
                 pt[i][1] = index;
@@ -2256,41 +4598,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Read vector from dataset
-     *
-     * @param vector Store dataset values in this vec
-     * @param indices the indices of vector to read
-     * @param iDim read values along this dimension index
-     * @throws IOException if an I/O error occurs
-     */
-    public void readVector(Vec vector, int[] indices, int iDim) throws IOException {
-        int[] dim = new int[nDim];
-        int[][] pt = new int[nDim][2];
-        for (int i = 0; i < nDim; i++) {
-            dim[i] = i;
-            if (iDim == i) {
-                pt[i][0] = 0;
-                if (vector.isComplex()) {
-                    pt[i][1] = 2 * vector.getSize() - 1;
-                } else {
-                    pt[i][1] = vector.getSize() - 1;
-                }
-            } else {
-                pt[i][0] = indices[i];
-                pt[i][1] = indices[i];
-            }
-        }
-        readVectorFromDatasetFile(pt, dim, vector);
-    }
-
-    /**
-     * Read a vector from the dataset at the location stored in the vector's
-     * header
+     * Read a vector from the dataset at the location stored in the vector's header
      *
      * @param vector Store data values in this vector object.
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException If the vector doesn't have a location in
-     * header.
+     * @throws IllegalArgumentException If the vector doesn't have a location in header.
      */
     public void readVector(Vec vector) throws IOException, IllegalArgumentException {
         if ((vector.getPt() == null) || (vector.getDim() == null)) {
@@ -2300,45 +4612,15 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Write vector to dataset
-     *
-     * @param vector Store dataset values in this vec
-     * @param index the index of vector to write
-     * @param iDim write values along this dimension index
-     * @throws IOException if an I/O error occurs
-     */
-    public void writeVector(Vec vector, int index, int iDim) throws IOException {
-        int[] dim = new int[nDim];
-        int[][] pt = new int[nDim][2];
-        for (int i = 0; i < nDim; i++) {
-            dim[i] = i;
-            if (iDim == i) {
-                pt[i][0] = 0;
-                if (vector.isComplex()) {
-                    pt[i][1] = 2 * vector.getSize() - 1;
-                } else {
-                    pt[i][1] = vector.getSize() - 1;
-                }
-            } else {
-                pt[i][0] = index;
-                pt[i][1] = index;
-            }
-        }
-        writeVecToDatasetFile(pt, dim, vector);
-    }
-
-    /**
-     * Write vector to the dataset at the specified location. The location is
-     * specified with indices indicating the offset for each dimension and the
-     * vector is written along the specified dimension. The location at which
-     * the vector is written is stored in the vector header.
+     * Write vector to the dataset at the specified location. The location is specified with indices indicating the
+     * offset for each dimension and the vector is written along the specified dimension. The location at which the
+     * vector is written is stored in the vector header.
      *
      * @param vector the vector to write
      * @param indices The location at which to write the vector.
      * @param iDim Vector is written parallel to this dimension.
      * @throws IOException if an I/O exception occurs
-     * @throws IllegalArgumentException if dataset stores data in a Vec object
-     * (not dataset file)
+     * @throws IllegalArgumentException if dataset stores data in a Vec object (not dataset file)
      */
     public void writeVector(Vec vector, int[] indices, int iDim) throws IOException, IllegalArgumentException {
         int[] dim = new int[nDim];
@@ -2346,12 +4628,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         for (int i = 0, j = 0; i < nDim; i++) {
             if (iDim == i) {
                 pt[i][0] = 0;
-                if (vector.isComplex()) {
-                    pt[i][1] = 2 * vector.getSize() - 1;
-                } else {
-                    pt[i][1] = vector.getSize() - 1;
-
-                }
+                pt[i][1] = vector.getSize() - 1;
                 dim[0] = iDim;
             } else {
                 dim[j + 1] = i;
@@ -2364,22 +4641,12 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         writeVector(vector);
     }
 
-    public void writeMatrixType(MatrixType matrixType) throws IOException {
-        if (matrixType instanceof Vec) {
-            writeVector((Vec) matrixType);
-        } else {
-            MatrixND matrix = (MatrixND) matrixType;
-            writeMatrixNDToDatasetFile(matrix.getDim(), matrix);
-        }
-    }
-
     /**
      * Write the vector to the dataset at the location stored in the vector.
      *
      * @param vector the vector to write
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if dataset stores data in a Vec object
-     * (not dataset file)
+     * @throws IllegalArgumentException if dataset stores data in a Vec object (not dataset file)
      */
     public void writeVector(Vec vector) throws IOException, IllegalArgumentException {
         if ((vector.getPt() == null) || (vector.getDim() == null)) {
@@ -2389,13 +4656,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Write the vector out to the specified location of dataset. The vector is
-     * written along the dimension specified in the first entry of the dim
-     * array.
+     * Write the vector out to the specified location of dataset. The vector is written along the dimension specified in
+     * the first entry of the dim array.
      *
      * @param pt index in points where vector should be written.
-     * @param dim Specify the dimension that each entry in the pt array refers
-     * to
+     * @param dim Specify the dimension that each entry in the pt array refers to
      * @param vector the vector to write
      * @throws IOException if an I/O error occurs
      */
@@ -2431,7 +4696,23 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
                 setVSize(dim[i], (pt[i][1] - pt[i][0] + 1));
             }
         }
-        dataFile.writeVector(pt[0][0], pt[0][1], point, dim[0], scale, vector);
+
+        int j = 0;
+        for (int i = pt[0][0]; i <= pt[0][1]; i++) {
+            point[dim[0]] = i;
+            if (vector.isComplex()) {
+                if ((i % 2) != 0) {
+                    dataFile.setFloat((float) (vector.getImag(j) * scale), point);
+                    j++;
+                } else {
+                    dataFile.setFloat((float) (vector.getReal(j) * scale), point);
+                }
+            } else {
+                dataFile.setFloat((float) (vector.getReal(j) * scale), point);
+                j++;
+            }
+
+        }
 
         setSf(dim[0], vector.centerFreq);
         setSw(dim[0], 1.0 / vector.dwellTime);
@@ -2449,12 +4730,64 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         setComplex(dim[0], vector.isComplex());
         setPh0(dim[0], vector.getPH0());
         setPh1(dim[0], vector.getPH1());
-        setExtFirst(dim[0], vector.getExtFirst());
-        setExtLast(dim[0], vector.getExtLast());
-        setZFSize(dim[0], vector.getZFSize());
-        setTDSize(dim[0], vector.getTDSize());
 
 //        System.err.printf("write %d %d %4d %4d %4d %4d %7.3f %7.3f %7.3f %7.3f %7.3f cmplx %b fd %b\n", dim[0],dim[1],pt[0][0],pt[0][1],pt[1][0],pt[1][1],(1.0/rwVector.dwellTime),(rwVector.refValue-delRef),rwVector.refValue,delRef,refPt_r[dim[0]],rwVector.isComplex(),rwVector.getFreqDomain());
+    }
+
+    /**
+     * Get the number of blocks along each dimension.
+     *
+     * @return array containing the number of blocks
+     */
+    public int[] getnBlocks() {
+        return nBlocks;
+    }
+
+    /**
+     * Get the number of dimensions in this dataset.
+     *
+     * @return the number of dimensions
+     */
+    public int getNDim() {
+        return nDim;
+    }
+
+    /**
+     * Get the number of dimensions represent frequencies (as opposed to, for example, relaxation time increments).
+     *
+     * @return the number of frequency dimensions.
+     */
+    public int getNFreqDims() {
+        return rdims;
+    }
+
+    /**
+     * Set the number of dimensions represent frequencies (as opposed to, for example, relaxation time increments).
+     *
+     * @param rdims the number of frequency dimensions.
+     */
+    public void setNFreqDims(int rdims) {
+        this.rdims = rdims;
+    }
+
+    /**
+     * Set the label for the specified axis
+     *
+     * @param iDim Dataset dimension index
+     * @param label the display label to set
+     */
+    public void setLabel(final int iDim, final String label) {
+        this.label[iDim] = label;
+    }
+
+    /**
+     * Get the label for the specified axis
+     *
+     * @param iDim Dataset dimension index
+     * @return label
+     */
+    public String getLabel(final int iDim) {
+        return this.label[iDim];
     }
 
     /**
@@ -2464,38 +4797,27 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     public void copyHeader(Dataset targetDataset) {
         for (int i = 0; i < nDim; i++) {
-            copyHeader(targetDataset, i);
+            targetDataset.setSf(i, getSf(i));
+            targetDataset.setSw(i, getSw(i));
+            targetDataset.setSw_r(i, getSw_r(i));
+            targetDataset.setRefValue_r(i, getRefValue_r(i));
+            targetDataset.setRefValue(i, getRefValue(i));
+            targetDataset.setRefPt_r(i, getRefPt_r(i));
+            targetDataset.setRefPt(i, getRefPt(i));
+            targetDataset.setRefUnits(i, getRefUnits(i));
+            targetDataset.setLabel(i, getLabel(i));
+            targetDataset.setDlabel(i, getDlabel(i));
+            targetDataset.setNucleus(i, getNucleus(i));
+            targetDataset.setFreqDomain(i, getFreqDomain(i));
+            targetDataset.setFreqDomain_r(i, getFreqDomain_r(i));
+            targetDataset.setComplex(i, getComplex(i));
+            targetDataset.setComplex_r(i, getComplex_r(i));
+            targetDataset.setVSize_r(i, getVSize_r(i));
+            targetDataset.setVSize(i, getVSize(i));
         }
         targetDataset.setSolvent(getSolvent());
         targetDataset.setTitle(getTitle());
         targetDataset.writeHeader();
-    }
-
-    public void copyHeader(Dataset targetDataset, int iDim) {
-        targetDataset.setSf(iDim, getSf(iDim));
-        targetDataset.setSw(iDim, getSw(iDim));
-        targetDataset.setSw_r(iDim, getSw_r(iDim));
-        targetDataset.setRefValue_r(iDim, getRefValue_r(iDim));
-        targetDataset.setRefValue(iDim, getRefValue(iDim));
-        targetDataset.setRefPt_r(iDim, getRefPt_r(iDim));
-        targetDataset.setRefPt(iDim, getRefPt(iDim));
-        targetDataset.setRefUnits(iDim, getRefUnits(iDim));
-        targetDataset.setLabel(iDim, getLabel(iDim));
-        targetDataset.setDlabel(iDim, getDlabel(iDim));
-        targetDataset.setNucleus(iDim, getNucleus(iDim));
-        targetDataset.setFreqDomain(iDim, getFreqDomain(iDim));
-        targetDataset.setFreqDomain_r(iDim, getFreqDomain_r(iDim));
-        targetDataset.setComplex(iDim, getComplex(iDim));
-        targetDataset.setComplex_r(iDim, getComplex_r(iDim));
-        targetDataset.setVSize_r(iDim, getVSize_r(iDim));
-        targetDataset.setVSize(iDim, getVSize(iDim));
-
-    }
-
-    public void saveMemoryFile() throws IOException, DatasetException {
-        if (isMemoryFile()) {
-            copyDataset(fileName);
-        }
     }
 
     /**
@@ -2506,26 +4828,32 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      * @throws DatasetException if an I/O error occured while creating dataset
      */
     public void copyDataset(String newFileName) throws IOException, DatasetException {
+        int iDim = 0;
         int[][] pt = new int[nDim][2];
         int[] dim = new int[nDim];
-        dim[0] = 0;
+        dim[0] = iDim;
         pt[0][0] = 0;
         pt[0][1] = 0;
 
+        int faceSize = 1;
         int[] datasetSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             dim[i] = i;
             pt[i][0] = 0;
             pt[i][1] = getSize(i) - 1;
+            faceSize *= getSize(i);
             datasetSizes[i] = getSize(i);
         }
         int newSize = pt[0][1] - pt[0][0] + 1;
 
-        Dataset newDataset = Dataset.createDataset(newFileName, newFileName, datasetSizes, false);
+        Dataset.createDataset(newFileName, newFileName, datasetSizes);
+        Dataset newDataset = new Dataset(newFileName, newFileName, true);
 
         Vec scanVec = new Vec(newSize, false);
         ScanRegion scanRegion = new ScanRegion(pt, dim, this);
         int nEntries = scanRegion.buildIndex();
+        int winSize = getSize(iDim) / 32;
+        int nWin = 4;
         int origSize = pt[0][1];
         for (int iEntry = 0; iEntry < nEntries; iEntry++) {
             int[] iE = scanRegion.getIndexEntry(iEntry);
@@ -2549,20 +4877,11 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
             newDataset.setLabel(i, getLabel(i));
             newDataset.setDlabel(i, getDlabel(i));
             newDataset.setNucleus(i, getNucleus(i));
-            newDataset.setValues(i, getValues(i));
-            newDataset.setComplex(i, getComplex(i));
-            newDataset.setFreqDomain(i, getFreqDomain(i));
-            newDataset.setPh0(i, getPh0(i));
-            newDataset.setPh1(i, getPh1(i));
-            newDataset.setPh0_r(i, getPh0_r(i));
-            newDataset.setPh1_r(i, getPh1_r(i));
         }
-        newDataset.setNFreqDims(getNFreqDims());
         newDataset.setSolvent(getSolvent());
         newDataset.setTitle(getTitle());
 
         newDataset.writeHeader();
-        newDataset.writeParFile();
         newDataset.close();
     }
 
@@ -2613,7 +4932,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         /**
          *
          */
-        public synchronized void nextVector() {
+        public void nextVector() {
             int[] iE = scanRegion.nextPoint();
             if (iE.length == 0) {
                 vec = null;
@@ -2633,75 +4952,7 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
     }
 
     /**
-     * Iterator for looping over vectors in dataset
-     */
-    private class VecIndexIterator implements Iterator<int[][]> {
-
-        ScanRegion scanRegion;
-        int[][] pt = new int[nDim][2];
-        int[] dim = new int[nDim];
-        int origSize;
-
-        VecIndexIterator(Dataset dataset, int iDim) {
-            dim[0] = iDim;
-            pt[0][0] = 0;
-            pt[0][1] = 0;
-            int j = 0;
-            for (int i = 1; i < nDim; i++) {
-                if (j == iDim) {
-                    j++;
-                }
-
-                dim[i] = j;
-                pt[i][0] = 0;
-                pt[i][1] = getSize(dim[i]) - 1;
-                j++;
-            }
-            pt[0][1] = getSize(iDim) - 1;
-            origSize = pt[0][1];
-            int newSize = pt[0][1] - pt[0][0] + 1;
-            scanRegion = new ScanRegion(pt, dim, dataset);
-        }
-
-        public int[] getDim() {
-            return dim;
-        }
-
-        @Override
-        public boolean hasNext() {
-            nextVector();
-            return pt != null;
-        }
-
-        @Override
-        public int[][] next() {
-            int[][] result = new int[pt.length][2];
-            for (int i = 0; i < pt.length; i++) {
-                result[i] = pt[i].clone();
-            }
-            return result;
-        }
-
-        /**
-         *
-         */
-        public synchronized void nextVector() {
-            int[] iE = scanRegion.nextPoint();
-            if (iE.length == 0) {
-                pt = null;
-            } else {
-                pt[0][1] = origSize;
-                for (int jDim = 1; jDim < nDim; jDim++) {
-                    pt[jDim][0] = iE[jDim];
-                    pt[jDim][1] = iE[jDim];
-                }
-            }
-        }
-    }
-
-    /**
-     * Get iterator that allows iterating over all the vectors along the
-     * specified dimension of the dataset.
+     * Get iterator that allows iterating over all the vectors along the specified dimension of the dataset.
      *
      * @param iDim Index of dataset dimension to read vectors from
      * @return iterator an Iterator to iterate over vectors in dataset
@@ -2709,19 +4960,6 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
      */
     synchronized public Iterator<Vec> vectors(int iDim) throws IOException {
         VecIterator vecIter = new VecIterator(this, iDim);
-        return vecIter;
-    }
-
-    /**
-     * Get iterator that allows iterating over the indices of all the vectors
-     * along the specified dimension of the dataset.
-     *
-     * @param iDim Index of dataset dimension to read vectors from
-     * @return iterator an Iterator to iterate over vectors in dataset
-     * @throws IOException if an I/O error occurs
-     */
-    synchronized public Iterator<int[][]> indexer(int iDim) throws IOException {
-        VecIndexIterator vecIter = new VecIndexIterator(this, iDim);
         return vecIter;
     }
 
@@ -2740,171 +4978,4 @@ public class Dataset extends DatasetBase implements Comparable<Dataset> {
         MultidimensionalCounter.Iterator iter = counter.iterator();
         return iter;
     }
-
-    public List<int[][]> getIndices(int iDim, int start, int end) throws IOException {
-        Iterator<int[][]> iter = indexer(iDim);
-        List<int[][]> indices = new ArrayList<>();
-        if (start < 0) {
-            start = 0;
-        }
-        if (end >= getSize(iDim)) {
-            end = getSize(iDim) - 1;
-        }
-        while (iter.hasNext()) {
-            int[][] pt = iter.next();
-            pt[0][0] = start;
-            pt[0][1] = end;
-            indices.add(pt);
-        }
-        return indices;
-    }
-
-    public LineShapeCatalog getLSCatalog() {
-        return simVecs;
-    }
-
-    public final void loadLSCatalog() throws IOException {
-        String dirName = file.getParent();
-        String datasetFileName = file.getName();
-
-        int index = datasetFileName.lastIndexOf(".");
-        String shapeName = datasetFileName.substring(0, index) + "_lshapes.txt";
-        String shapeFileName = dirName + File.separator + shapeName;
-        File shapeFile = new File(shapeFileName);
-        if (shapeFile.exists() && shapeFile.canRead()) {
-            simVecs = LineShapeCatalog.loadSimFids(shapeFileName, nDim);
-            System.out.println("simVecs " + simVecs);
-        }
-    }
-
-    public void subtractPeak(Peak peak) throws IOException {
-        if (simVecs != null) {
-            simVecs.addToDataset(this, peak, -1.0);
-        }
-    }
-
-    public void addPeakList(PeakList peakList, double scale) throws IOException {
-        if (simVecs != null) {
-            simVecs.addToDataset(this, peakList, scale);
-        }
-
-    }
-
-    DimCounter.Iterator getPointIterator() {
-        int[] counterSizes = new int[nDim];
-        int[] dim = new int[nDim];
-        for (int i = 0; i < nDim; i++) {
-            counterSizes[i] = getSize(i);
-            dim[i] = i;
-        }
-        DimCounter counter = new DimCounter(counterSizes);
-        DimCounter.Iterator cIter = counter.iterator();
-        return cIter;
-    }
-
-    public void clear() throws IOException {
-        DimCounter.Iterator cIter = getPointIterator();
-        while (cIter.hasNext()) {
-            int[] points = cIter.next();
-            writePoint(points, 0.0);
-        }
-    }
-
-    public boolean bufferExists(String bufferName) {
-        return buffers.containsKey(bufferName);
-    }
-
-    public boolean removeBuffer(String bufferName) {
-        return buffers.remove(bufferName) != null;
-    }
-
-    public double[] getBuffer(String bufferName) {
-        double[] buffer = buffers.get(bufferName);
-        int bufferSize = 1;
-        for (int i = 0; i < nDim; i++) {
-            bufferSize *= getSize(i);
-        }
-        if ((buffer == null) || (buffer.length != bufferSize)) {
-            buffer = new double[bufferSize];
-            buffers.put(bufferName, buffer);
-        }
-        return buffer;
-    }
-
-    public void toBuffer(String bufferName) throws IOException {
-        double[] buffer = getBuffer(bufferName);
-        DimCounter.Iterator cIter = getPointIterator();
-        int j = 0;
-        while (cIter.hasNext()) {
-            int[] points = cIter.next();
-            double value = readPoint(points);
-            buffer[j++] = value;
-        }
-    }
-
-    public void fromBuffer(String bufferName) throws IOException {
-        if (bufferExists(bufferName)) {
-            double[] buffer = getBuffer(bufferName);
-            DimCounter.Iterator cIter = getPointIterator();
-            int j = 0;
-            while (cIter.hasNext()) {
-                int[] points = cIter.next();
-                double value = buffer[j++];
-                writePoint(points, value);
-            }
-        } else {
-            throw new IllegalArgumentException("No buffer named " + bufferName);
-        }
-    }
-
-    public void phaseDim(int iDim, double ph0, double ph1) throws IOException {
-        Iterator<Vec> vecIter = vectors(iDim);
-        if (!isWritable()) {
-            changeWriteMode(true);
-        }
-        while (vecIter.hasNext()) {
-            Vec vec = vecIter.next();
-            if (vec.isReal()) {
-                vec.hft();
-            }
-            vec.phase(ph0, ph1, false, true);
-            writeVector(vec);
-        }
-        double dph0 = Util.phaseMin(getPh0(iDim) + ph0);
-        double dph1 = Util.phaseMin(getPh1(iDim) + ph1);
-        setPh0(iDim, dph0);
-        setPh0_r(iDim, dph0);
-        setPh1(iDim, dph1);
-        setPh1_r(iDim, dph1);
-        writeHeader();
-        dataFile.force();
-    }
-
-    public double[] autoPhase(int iDim, boolean firstOrder, int winSize, double ratio, double ph1Limit, IDBaseline2.ThreshMode threshMode) throws IOException {
-        if (!isWritable()) {
-            changeWriteMode(true);
-        }
-        DatasetPhaser phaser = new DatasetPhaser(this);
-        phaser.setup(iDim, winSize, ratio, threshMode);
-        double dph0 = 0.0;
-        double dph1 = 0.0;
-        if (firstOrder) {
-            double[] phases = phaser.getPhase(ph1Limit);
-            phaser.applyPhases2(iDim, phases[0], phases[1]);
-            dph0 = phases[0];
-            dph1 = phases[1];
-        } else {
-            dph0 = phaser.getPhaseZero();
-            phaser.applyPhases2(iDim, dph0, 0.0);
-        }
-        setPh0(iDim, dph0);
-        setPh0_r(iDim, dph0);
-        setPh1(iDim, dph1);
-        setPh1_r(iDim, dph1);
-        writeHeader();
-        dataFile.force();
-        double[] result = {dph0, dph1};
-        return result;
-    }
-
 }

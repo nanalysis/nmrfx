@@ -18,14 +18,14 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.datasets.MatrixType;
+import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
  *
  * @author johnsonb
  */
-public abstract class Apodization extends MatrixOperation {
+public abstract class Apodization extends Operation {
 
     protected double[] apodVec;
 
@@ -33,10 +33,6 @@ public abstract class Apodization extends MatrixOperation {
         for (int i = 0; i < vStart; i++) {
             apodVec[i] = 1.0;
         }
-    }
-
-    public Operation evalMatrix(MatrixType matrix) throws ProcessingException {
-        return this;
     }
 
     protected void applyApod(Vec vector) {

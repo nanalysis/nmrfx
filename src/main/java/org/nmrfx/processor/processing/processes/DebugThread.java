@@ -38,8 +38,8 @@ public class DebugThread implements Callable<Object> {
         while (!processor.getEndOfFile()) {
             try {
                 System.out.println("Unprocessed | Processed");
-//                System.out.println(processor.getUnprocessedVectorQueueSize() + " | "
-//                        + processor.getProcessedVectorQueueSize());
+                System.out.println(processor.getUnprocessedVectorQueueSize() + " | "
+                        + processor.getProcessedVectorQueueSize());
                 Thread.sleep(50);
             } catch (InterruptedException ex) {
                 Logger.getLogger(DebugThread.class.getName()).log(Level.SEVERE, null, ex);

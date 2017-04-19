@@ -89,10 +89,8 @@ public class Regions extends Operation {
             if (mode.equals("sdev")) {
                 positions = Util.idBaseLineBySDev(vector, winSize, ratio);
                 isInSignalRegion = Util.getSignalRegion(vecSize, positions);
-            } else if (mode.equals("cwtd")) {
-                isInSignalRegion = Util.getSignalRegionByCWTD(vector, winSize, minBase, ratio, IDBaseline2.ThreshMode.SDEV);
             } else {
-                isInSignalRegion = Util.getSignalRegionByCWTD(vector, winSize, minBase, ratio, IDBaseline2.ThreshMode.FRACTION);
+                isInSignalRegion = Util.getSignalRegionByCWTD(vector, winSize, minBase, ratio);
             }
         } else {
             isInSignalRegion = Util.getSignalRegion(vecSize, positions);

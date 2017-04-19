@@ -29,6 +29,10 @@ public class BracketMinimizer {
         this.gridEnd = gridEnd;
         this.gridDelta = gridDelta;
         this.tol = tol;
+        initialize();
+    }
+
+    void initialize() {
     }
 
     double getScore(double value) {
@@ -37,9 +41,10 @@ public class BracketMinimizer {
 
     public double minimize() {
         double minValue = 0.0;
+        double value = 0.0;
         double minScore = Double.MAX_VALUE;
 
-        double value = gridStart;
+        value = gridStart;
         while (value < gridEnd) {
             double score = getScore(value);
             //System.out.println(value+" "+score);
@@ -51,8 +56,10 @@ public class BracketMinimizer {
         }
         //System.out.println(minValue+" min  "+minScore);
 
-        double x1;
-        double x2;
+        double x1 = 0.0;
+        double x2 = 0.0;
+        double f1 = 0.0;
+        double f2 = 0.0;
         double r = 0.3819660;
         double c = 1.0 - r;
         double ax = minValue - gridDelta;
@@ -69,8 +76,8 @@ public class BracketMinimizer {
             x1 = bx - (c * (bx - ax));
         }
 
-        double f1 = getScore(x1);
-        double f2 = getScore(x2);
+        f1 = getScore(x1);
+        f2 = getScore(x2);
 
         while (Math.abs(x3 - x0) > 1.0) {
             //System.out.println(x1+" "+f1+ " "+x2+" "+f2);

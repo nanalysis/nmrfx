@@ -27,7 +27,50 @@ import java.util.regex.Pattern;
 
 public class BrukerPar {
 
-    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+    static Map parGroups = new HashMap();
+    static long nParGroups = 0;
+    private String name = null;
+    private String value = null;
+
+    static Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+
+    public BrukerPar(String handle, String newName, String newValue) {
+        name = newName.intern();
+        value = newValue.intern();
+
+        Map parMap = (Map) parGroups.get(handle);
+
+        if (parMap == null) {
+            parMap = new HashMap();
+            parGroups.put(handle, parMap);
+        }
+
+        parMap.put(newName, this);
+    }
+
+    public static boolean handleExists(String handleName) {
+        return parGroups.containsKey(handleName);
+    }
+
+    public static String getNextHandle() {
+        nParGroups++;
+
+        return "bpar" + nParGroups;
+    }
+
+    public static void removeParGroup(String handle) {
+        parGroups.remove(handle);
+    }
+
+    public static BrukerPar getPar(String handle, String name) {
+        Map parMap = (Map) parGroups.get(handle);
+
+        if (parMap == null) {
+            return null;
+        }
+
+        return (BrukerPar) parMap.get(name);
+    }
 
     /**
      * parse a Bruker parameter file
@@ -35,8 +78,7 @@ public class BrukerPar {
      * @param pmap : HashMap to store parameters
      * @param filename : parameter file to read
      * @param iDim : data dimension
-     * @param strict: convert parameter names to JCAMP standard (strip space
-     * etc.)
+     * @param strict: convert parameter names to JCAMP standard (strip space etc.)
      */
     static void processBrukerParFile(final HashMap<String, String> pmap, final String filename, final int iDim, final boolean strict)
             throws NMRParException {
@@ -49,7 +91,7 @@ public class BrukerPar {
         String value = "";
         int pageNum = 0;
         // fixme what about NTUPLES
-        ArrayList<String> values = new ArrayList<>();
+        ArrayList<String> values = new ArrayList<String>();
         try (LineNumberReader lineReader = new LineNumberReader(new FileReader(filename))) {
             // multi-line arrays need a little work
             while (lineReader.ready()) {
@@ -64,11 +106,11 @@ public class BrukerPar {
                 }
                 attrLine = attrLine.trim();
                 boolean gotPar = false;
-                for (Pattern pattern : patterns) {
-                    Matcher m = pattern.matcher(attrLine);
+                for (int i = 0; i < patterns.length; i++) {
+                    Matcher m = patterns[i].matcher(attrLine);
                     if (m.matches() && (m.groupCount() == 4)) {
                         if (haveParameter) {
-                            storeParameter(pmap, parName + "," + iDim, values, " ");
+                            storeParameter(pmap, parName + "," + iDim, values);
                         }
                         values.clear();
                         parName = m.group(2);
@@ -114,16 +156,16 @@ public class BrukerPar {
      * @param parName : parameter name
      * @param values : parameter value list
      */
-    static void storeParameter(final HashMap<String, String> pmap, final String parName, List<String> values, String sepChar) {
+    static void storeParameter(final HashMap<String, String> pmap, final String parName, ArrayList<String> values) {
         int nValues = values.size();
-        String value;
+        String value = "";
         if (nValues == 1) {
             value = values.get(0);
         } else {
-            StringBuilder sBuf = new StringBuilder();
+            StringBuffer sBuf = new StringBuffer();
             for (int i = 0; i < nValues; i++) {
                 if (i > 0) {
-                    sBuf.append(sepChar);
+                    sBuf.append(" ");
                 }
                 sBuf.append(values.get(i));
 
@@ -132,5 +174,19 @@ public class BrukerPar {
         }
         pmap.put(parName, value);
 //        pmap.put(parName, new BrukerPar(parName, value));
+    }
+
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @return the value
+     */
+    public String getValue() {
+        return value;
     }
 }

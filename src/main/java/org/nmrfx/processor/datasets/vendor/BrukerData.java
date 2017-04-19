@@ -44,28 +44,24 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 
 /**
- * BrukerData implements NMRData methods for opening and reading parameters and
- * FID data acquired using a Bruker instrument.
+ * BrukerData implements NMRData methods for opening and reading parameters and FID data acquired using a Bruker
+ * instrument.
  *
  * @author bfetler
  * @see NMRData
  * @see NMRDataUtil
  */
-public class BrukerData implements NMRData {
+class BrukerData implements NMRData {
 
-    private final static int MAXDIM = 10;
     private int tbytes = 0;             // TD,1
     private int np;                   // TD,1
     private int nvectors;             // NS,1
@@ -78,18 +74,18 @@ public class BrukerData implements NMRData {
     private boolean negatePairs = false;
     private boolean fixDSP = true;
     private boolean fixByShift = false;
-    private final boolean[] complexDim = new boolean[MAXDIM];
-    private final double[] f1coef[] = new double[MAXDIM][];   // FnMODE,2 MC2,2
-    private final String[] f1coefS = new String[MAXDIM];   // FnMODE,2 MC2,2
-    private final String fttype[] = new String[MAXDIM];
-    private final int tdsize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
-    private final int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
-    private final int maxSize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
+    private boolean[] complexDim = new boolean[5];
+    private double[] f1coef[] = new double[5][];   // FnMODE,2 MC2,2
+    private String[] f1coefS = new String[5];   // FnMODE,2 MC2,2
+    private String fttype[] = new String[5];
+    private int tdsize[] = new int[5];  // TD,1 TD,2 etc.
+    private int arraysize[] = new int[5];  // TD,1 TD,2 etc.
+    private int maxSize[] = new int[5];  // TD,1 TD,2 etc.
     private double deltaPh0_2 = 0.0;
     // fixme dynamically determine size
-    private final Double[] Ref = new Double[MAXDIM];
-    private final Double[] Sw = new Double[MAXDIM];
-    private final Double[] Sf = new Double[MAXDIM];
+    private Double[] Ref = new Double[5];
+    private Double[] Sw = new Double[5];
+    private Double[] Sf = new Double[5];
     private String text = null;
 
     private final String fpath;
@@ -98,47 +94,40 @@ public class BrukerData implements NMRData {
     private static HashMap<String, Double> phaseTable = null;
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
-    final static Logger LOGGER = Logger.getLogger("com.onemoonsci.datachord.datasets.Dataset");
+    final static Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
     private final double scale;
     boolean hasFID = false;
     boolean hasSpectrum = false;
-    List<Double> arrayValues = new ArrayList<>();
-    File nusFile = null;
 
     /**
      * Open Bruker parameter and data files.
      *
      * @param path full path to the fid directory or file
-     * @param nusFile The name of a NUS file to load
-     * @throws java.io.IOException
      */
-    public BrukerData(String path, File nusFile) throws IOException {
+    public BrukerData(String path) {
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.length() - 1);
         }
         this.fpath = path;
-        this.nusFile = nusFile;
         openParFile(path);
         openDataFile(path);
         if (dim < 2) {
             scale = 1.0e6;
         } else {
-            scale = 1.0e6;
+            scale = 1.0;
         }
     }
 
-    @Override
     public void close() {
         try {
             fc.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
         }
     }
 
     /**
-     * Finds data, given a path to search for vendor-specific files and
-     * directories.
+     * Finds data, given a path to search for vendor-specific files and directories.
      *
      * @param bpath full path for data
      * @return if data was successfully found or not
@@ -187,7 +176,7 @@ public class BrukerData implements NMRData {
                     } catch (DirectoryIteratorException | IOException ex) {
                         // I/O error encounted during the iteration, the cause is an IOException
                         //                    throw ex.getCause();
-                        LOGGER.log(Level.WARNING, ex.getMessage());
+                        logger.log(Level.WARNING, ex.getMessage());
                     }
                 }
             }
@@ -196,8 +185,7 @@ public class BrukerData implements NMRData {
     } // findData
 
     /**
-     * Finds FID data, given a path to search for vendor-specific files and
-     * directories.
+     * Finds FID data, given a path to search for vendor-specific files and directories.
      *
      * @param bpath full path for FID data
      * @return if FID data was successfully found or not
@@ -238,7 +226,8 @@ public class BrukerData implements NMRData {
                     } catch (DirectoryIteratorException | IOException ex) {
 // I/O error encounted during the iteration, the cause is an IOException
 //                    throw ex.getCause();
-                        LOGGER.log(Level.WARNING, ex.getMessage());
+                        logger.log(Level.WARNING, ex.getMessage());
+                        ex.printStackTrace();
                     }
                 }
             }
@@ -297,15 +286,6 @@ public class BrukerData implements NMRData {
     }
 
     @Override
-    public List<VendorPar> getPars() {
-        List<VendorPar> vendorPars = new ArrayList<>();
-        for (Entry<String, String> par : parMap.entrySet()) {
-            vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
-        }
-        return vendorPars;
-    }
-
-    @Override
     public String getPar(String parname) {
         if (parMap == null) {
             return null;
@@ -331,22 +311,6 @@ public class BrukerData implements NMRData {
         } else {
             return Integer.parseInt(parMap.get(parname));
         }
-    }
-
-    public List<Double> getDoubleListPar(String parName) {
-        List<Double> result = new ArrayList<>();
-        if ((parMap != null) && (parMap.get(parName) != null)) {
-            String[] sValues = parMap.get(parName).split(" ");
-            for (String sValue : sValues) {
-                try {
-                    result.add(Double.parseDouble(sValue));
-                } catch (NumberFormatException nFE) {
-                    result = null;
-                    break;
-                }
-            }
-        }
-        return result;
     }
 
     @Override
@@ -378,7 +342,11 @@ public class BrukerData implements NMRData {
     @Override
     public boolean getNegateImag(int iDim) {
         if (iDim > 0) {
-            return !f1coefS[iDim].equals("sep");
+            if (f1coefS[iDim].equals("sep")) {
+                return false;
+            } else {
+                return true;
+            }
         } else {
             return false;
         }
@@ -444,7 +412,7 @@ public class BrukerData implements NMRData {
 
     @Override
     public void setSF(int iDim, double value) {
-        Sf[iDim] = value;
+        Sf[iDim] = Double.valueOf(value);
     }
 
     @Override
@@ -471,7 +439,7 @@ public class BrukerData implements NMRData {
 
     @Override
     public void setSW(int iDim, double value) {
-        Sw[iDim] = value;
+        Sw[iDim] = Double.valueOf(value);
     }
 
     @Override
@@ -509,7 +477,7 @@ public class BrukerData implements NMRData {
 
     @Override
     public void setRef(int iDim, double ref) {
-        Ref[iDim] = ref;
+        Ref[iDim] = Double.valueOf(ref);
     }
 
     @Override
@@ -550,7 +518,8 @@ public class BrukerData implements NMRData {
 
     @Override
     public String getTN(int iDim) {
-        String s = getPar("NUC1," + (iDim + 1));
+        String s = "";
+        s = getPar("NUC1," + (iDim + 1));
         if (s == null || s.equals("off")) {
             s = getPar("NUCLEUS," + (iDim + 1));
             if (s == null) {
@@ -577,10 +546,8 @@ public class BrukerData implements NMRData {
     public double getTempK() {
         Double d;
         if ((d = getParDouble("TEMP,1")) == null) {
-            if ((d = getParDouble("TE,1")) == null) {
 // fixme what should we return if not present, is it ever not present
-                d = 298.0;
-            }
+            d = 298.0;
         }
         return d;
     }
@@ -594,14 +561,13 @@ public class BrukerData implements NMRData {
         return s;
     }
 
-    @Override
     public long getDate() {
         String s;
         long seconds = 0;
         if ((s = getPar("DATE,1")) != null) {
             try {
                 seconds = Long.parseLong(s);
-            } catch (NumberFormatException e) {
+            } catch (Exception e) {
             }
         } else {
             System.out.println("no date");
@@ -610,10 +576,11 @@ public class BrukerData implements NMRData {
     }
 
     // open and read Bruker text file
-    @Override
     public String getText() {
         if (text == null) {
-            String textPath = fpath + "/pdata/1/title";
+            String textPath = "";
+            text = "";
+            textPath = fpath + "/pdata/1/title";
             if ((new File(textPath)).exists()) {
                 try {
                     Path path = FileSystems.getDefault().getPath(textPath);
@@ -621,8 +588,6 @@ public class BrukerData implements NMRData {
                 } catch (IOException ex) {
                     text = "";
                 }
-            } else {
-                text = "";
             }
         }
         return text;
@@ -699,25 +664,22 @@ public class BrukerData implements NMRData {
     }
 
     // open Bruker parameter file(s)
-    private void openParFile(String parpath) throws IOException {
-        parMap = new LinkedHashMap<>(200);
+    private void openParFile(String parpath) {
+        parMap = new LinkedHashMap<String, String>(200);
         // process proc files if they exist
+        int procdim = 0;
         String path = parpath + File.separator + "pdata";
         if ((new File(path)).exists()) {
+            final String[] procfiles = {"procs", "proc2s", "proc3s", "proc4s"};
             Path bdir = Paths.get(path);
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(bdir, "[0-9]")) {
                 for (Path entry : stream) {
                     String s = entry.toString();
                     if (new File(s + File.separator + "procs").exists()) {
-                        for (int i = 0; i < MAXDIM; i++) {
-                            String procfile;
-                            if (i == 0) {
-                                procfile = "procs";
-                            } else {
-                                procfile = "proc" + (i + 1) + "s";
-                            }
-                            path = s + File.separator + procfile;
+                        for (int i = 0; i < procfiles.length; i++) {
+                            path = s + File.separator + procfiles[i];
                             if ((new File(path)).exists()) {
+                                procdim = i + 1;
                                 BrukerPar.processBrukerParFile(parMap, path, i + 1, false);
                             }
                         }
@@ -725,51 +687,26 @@ public class BrukerData implements NMRData {
                     }
                 }
             } catch (DirectoryIteratorException | IOException ex) {
-                LOGGER.log(Level.WARNING, ex.getMessage());
+                logger.log(Level.WARNING, ex.getMessage());
             }
         }
         // process acqu files if they exist
         int acqdim = 0;
-        for (int i = 0; i < MAXDIM; i++) {
-            String acqfile;
-            if (i == 0) {
-                acqfile = "acqus";
-            } else {
-                acqfile = "acqu" + (i + 1) + "s";
-            }
-            path = parpath + File.separator + acqfile;
+        final String[] acqfiles = {"acqus", "acqu2s", "acqu3s", "acqu4s"};
+        for (int i = 0; i < acqfiles.length; i++) {
+            path = parpath + File.separator + acqfiles[i];
             try {
                 if ((new File(path)).exists()) {
                     BrukerPar.processBrukerParFile(parMap, path, i + 1, false);
                     Integer iPar;
                     if ((iPar = getParInt("TD," + (i + 1))) != null) {
-                        if (iPar > 1) {
+                        if (iPar > 0) {
                             acqdim++;
-                        } else {
-                            if ((iPar = getParInt("NusTD," + (i + 1))) != null) {
-                                if (iPar > 1) {
-                                    acqdim++;
-                                } else {
-                                    acqdim++;
-                                }
-                            } else {
-                                acqdim++;
-                            }
                         }
                     }
-                } else {
-                    break;
                 }
             } catch (NMRParException ex) {
-                LOGGER.log(Level.WARNING, ex.getMessage());
-            }
-        }
-        String[] listTypes = {"vd", "vc", "vp", "fq3"};
-        for (String listType : listTypes) {
-            Path listPath = Paths.get(parpath, listType + "list");
-            if (Files.exists(listPath)) {
-                List<String> lines = Files.readAllLines(listPath);
-                BrukerPar.storeParameter(parMap, listType, lines, "\t");
+                logger.log(Level.WARNING, ex.getMessage());
             }
         }
         this.dim = acqdim;
@@ -784,7 +721,7 @@ public class BrukerData implements NMRData {
 //                swapBits+" dspph="+dspph);
     }
 
-    private void setPars() throws IOException {
+    private void setPars() {
         // need to get (or calculate)  groupDelay before calculating shiftAmount below
         setDspph();
         Integer ipar;
@@ -803,6 +740,7 @@ public class BrukerData implements NMRData {
             } else {
                 tbytes = np * bytesPerWord;
             }
+            System.out.println("np " + np + " bpw " + bytesPerWord + " tbytes " + tbytes);
             int shiftAmount = 0;
             Double dpar;
             if (groupDelay > 0) {
@@ -812,15 +750,13 @@ public class BrukerData implements NMRData {
         }
         String tdpar = "TD,";
         boolean gotSchedule = false;
-        if (nusFile == null) {
-            nusFile = new File(fpath + File.separator + "nuslist");
-        }
-        if (nusFile.exists()) {
-            readSampleSchedule(nusFile.getPath(), false);
-            if (sampleSchedule.getTotalSamples() == 0) {
-                throw new IOException("nuslist file exists, but is empty");
-            } else {
+        if ((new File(fpath + File.separator + "nuslist")).exists()) {
+            File nusFile = new File(fpath + File.separator + "nuslist");
+            try {
+                NMRData.readSampleSchedule(nusFile.getPath(), false, this);
                 gotSchedule = true;
+            } catch (IOException ioE) {
+                gotSchedule = false;
             }
         }
         if (gotSchedule) {
@@ -837,7 +773,6 @@ public class BrukerData implements NMRData {
                 }
             }
         }
-        arrayValues = getArrayValues();
         setArrayPars(dim);  // must be before setFTpars()
         if ((ipar = getParInt("BYTORDA,1")) != null) {
             if (ipar == 0) {
@@ -845,82 +780,6 @@ public class BrukerData implements NMRData {
             }
         }
         setFTpars();
-    }
-
-    private List<Double> getArrayValues() {
-        List<Double> result = new ArrayList<>();
-        // kluge  find smallest dimension.  This is the most likely one to use an array of values
-        int smallDim = getMinDim();
-        if (parMap != null) {
-            String[] listTypes = {"vd", "vc", "vp", "fq3"};
-
-            for (String listType : listTypes) {
-                String parValue;
-                if ((parValue = parMap.get(listType)) != null) {
-                    String[] sValues = parValue.split("\t");
-                    if (sValues.length > 0) {
-                        List<String> sList = Arrays.asList(sValues);
-                        int dimSize = getSize(smallDim);
-                        if (listType.startsWith("fq")) {
-                            System.out.println(listType + " " + getSequence());
-                            // first line of fqlist can start with value like "bf ppm", so remove that line
-                            if (getSequence().contains("cest")) {
-                                System.out.println("is cest");
-                                sList.set(0, "0.0");
-                                System.out.println(sList.toString());
-                            }
-                        }
-
-                        for (String sValue : sList) {
-                            try {
-                                double scale = 1.0;
-                                if (sValue.endsWith("m")) {
-                                    sValue = sValue.substring(0, sValue.length() - 1);
-                                    scale = 1.0e-3;
-                                } else if (sValue.endsWith("u")) {
-                                    sValue = sValue.substring(0, sValue.length() - 1);
-                                    scale = 1.0e-6;
-                                } else if (sValue.endsWith("s")) {
-                                    sValue = sValue.substring(0, sValue.length() - 1);
-                                    scale = 1.0;
-                                }
-                                result.add(Double.parseDouble(sValue) * scale);
-                            } catch (NumberFormatException nFE) {
-                                System.out.println("bad double " + sValue);
-                                result = null;
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-            if ((result != null) && !result.isEmpty()) {
-                result = fixArraySize(result, smallDim);
-            }
-        }
-        return result;
-    }
-
-    private List<Double> fixArraySize(List<Double> values, int iDim) {
-        int dimSize = getSize(iDim);
-        if (values.size() * 2 == dimSize) {
-            List<Double> newValues = new ArrayList<>();
-            for (int i = 0; i < dimSize; i++) {
-                newValues.add(values.get(i / 2));
-            }
-            values.clear();
-            values.addAll(newValues);
-        } else if (values.size() < dimSize) {
-            int n = values.size();
-            if (n != 0) {
-                for (int i = n; i < dimSize; i++) {
-                    int j = i % n;
-                    values.add(values.get(j));
-                }
-            }
-        }
-        return values;
     }
 
     private void setArrayPars(int nDim) {
@@ -964,7 +823,6 @@ public class BrukerData implements NMRData {
                         f1coefS[i - 1] = "hyper-r";
                         tdsize[i - 1] = tdsize[i - 1] / 2;
                         break;
-                    case 0:
                     case 5: // f1coef[i-1] = "1 0 0 0 0 0 1 0";
                         f1coef[i - 1] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
                         complexDim[i - 1] = true;
@@ -980,13 +838,7 @@ public class BrukerData implements NMRData {
                         break;
                     case 1: // f1coef[i-1] = "1 0 0 1";
                         f1coefS[i - 1] = "sep";
-                        if (getValues(i - 1).size() > 0) {
-                            complexDim[i - 1] = false;
-                        } else {
-                            complexDim[i - 1] = true;
-                            tdsize[i - 1] = tdsize[i - 1] / 2;
-                        }
-
+                        complexDim[i - 1] = false;
                         break;
                     default:
                         f1coef[i - 1] = new double[]{1, 0, 0, 1};
@@ -1007,12 +859,10 @@ public class BrukerData implements NMRData {
     }
 
     /**
-     * Set flags before FID data is read using readVector. Flags are only active
-     * on BrukerData. Allowable flags are 'fixdsp', 'exchange', 'swapbits',
-     * 'negatepairs', with values of True or False. For example, in python:
+     * Set flags before FID data is read using readVector. Flags are only active on BrukerData. Allowable flags are
+     * 'fixdsp', 'exchange', 'swapbits', 'negatepairs', with values of True or False. For example, in python:
      * <p>
-     * f = FID(serDir) f.flags = {'fixdsp':True,
-     * 'shiftdsp':True,'exchange':True, 'swapbits':True, 'negatepairs':False}
+     * f = FID(serDir) f.flags = {'fixdsp':True, 'shiftdsp':True,'exchange':True, 'swapbits':True, 'negatepairs':False}
      * CREATE(serDir+'hmqc.nv', dSizes, f)
      * </p>
      *
@@ -1086,16 +936,6 @@ public class BrukerData implements NMRData {
         negatePairs = false;
     }
 
-    @Override
-    public void setFixDSP(boolean value) {
-        fixDSP = value;
-    }
-
-    @Override
-    public boolean getFixDSP() {
-        return fixDSP;
-    }
-
     private void setFixDSPOn() {
         fixDSP = true;
     }
@@ -1126,7 +966,7 @@ public class BrukerData implements NMRData {
             String t;
             if (((s = getPar("DECIM,1")) != null) && ((t = getPar("DSPFVS,1")) != null)) {
                 initPhaseTable();
-                Double dd;
+                Double dd = null;
                 if ((dd = phaseTable.get(s + "," + t)) != null) {
                     dspph = -dd * 360.0;
                     groupDelay = dd;
@@ -1138,7 +978,7 @@ public class BrukerData implements NMRData {
     private static void initPhaseTable() {
 // see nspinit.tcl for phaseTable details 
         if (phaseTable == null) {
-            phaseTable = new HashMap<>();
+            phaseTable = new HashMap<String, Double>();
 
             phaseTable.put("1,0", 0.0);
             phaseTable.put("2,10", 44.75);
@@ -1209,12 +1049,12 @@ public class BrukerData implements NMRData {
         try {
             fc = FileChannel.open(Paths.get(datapath), StandardOpenOption.READ);
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            logger.log(Level.WARNING, ex.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, e.getMessage());
+                    logger.log(Level.WARNING, e.getMessage());
                 }
             }
         }
@@ -1357,30 +1197,30 @@ public class BrukerData implements NMRData {
     // read i'th data block
     private void readVecBlock(int i, byte[] dataBuf) {
         try {
-            int skips = i * tbytes;
+            int nread = 0, skips = i * tbytes;
             ByteBuffer buf = ByteBuffer.wrap(dataBuf);
-            int nread = fc.read(buf, skips);
+            nread = fc.read(buf, skips);
             if (nread < tbytes) // nread < tbytes, nread < np
             {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " out of bounds " + nread + " " + tbytes);
             }
             //System.out.println("readVecBlock read "+nread+" bytes");
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    logger.log(Level.WARNING, ex.getMessage());
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    logger.log(Level.WARNING, ex.getMessage());
                 }
             }
         }
@@ -1397,21 +1237,21 @@ public class BrukerData implements NMRData {
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2, 4 * 2);
             nread = fc.read(buf, skips);
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    logger.log(Level.WARNING, ex.getMessage());
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    logger.log(Level.WARNING, ex.getMessage());
                 }
             }
         }
@@ -1538,6 +1378,7 @@ public class BrukerData implements NMRData {
             if (fixByShift) {
                 dspPhase(dvec);
             } else {
+//                dvec.fixWithPhasedHFT(45.0);
                 dvec.fixWithPhasedHFT();
             }
         }
@@ -1574,18 +1415,9 @@ public class BrukerData implements NMRData {
                     acqOrder[i * 2 + 1] = "d" + (j + 1);
                 }
             } else {
-                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
-                    for (int i = 0; i < nDim; i++) {
-                        acqOrder[i] = "p" + (i + 1);
-                    }
-                    for (int i = 0; i < nDim; i++) {
-                        acqOrder[i + nDim] = "d" + (i + 1);
-                    }
-                } else {
-                    for (int i = 0; i < nDim; i++) {
-                        acqOrder[i * 2] = "p" + (i + 1);
-                        acqOrder[i * 2 + 1] = "d" + (i + 1);
-                    }
+                for (int i = 0; i < nDim; i++) {
+                    acqOrder[i * 2] = "p" + (i + 1);
+                    acqOrder[i * 2 + 1] = "d" + (i + 1);
                 }
             }
         }
@@ -1607,61 +1439,32 @@ public class BrukerData implements NMRData {
             if ((len == nDim) || (len == nIDim)) {
                 acqOrder = new String[nIDim * 2];
                 int j = 0;
-                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                        }
-                    }
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                } else {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                            acqOrder[j++] = "d" + dimStr;
-                        }
+                for (int i = (len - 1); i >= 0; i--) {
+                    String dimStr = s.substring(i, i + 1);
+                    if (!dimStr.equals(nDim + "")) {
+                        acqOrder[j++] = "p" + dimStr;
+                        acqOrder[j++] = "d" + dimStr;
                     }
                 }
             } else if (len > nDim) {
                 acqOrder = new String[(len - 1) * 2];
                 int j = 0;
-                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                        }
-                    }
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                } else {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                            acqOrder[j++] = "d" + dimStr;
-                        }
+                for (int i = (len - 1); i >= 0; i--) {
+                    String dimStr = s.substring(i, i + 1);
+                    if (!dimStr.equals((nDim + 1) + "")) {
+                        acqOrder[j++] = "p" + dimStr;
+                        acqOrder[j++] = "d" + dimStr;
                     }
                 }
             }
         } else {
             this.acqOrder = new String[newOrder.length];
-            System.arraycopy(newOrder, 0, this.acqOrder, 0, newOrder.length);
+            for (int i = 0; i < newOrder.length; i++) {
+                this.acqOrder[i] = newOrder[i];
+            }
         }
     }
 
-    @Override
     public String getAcqOrderShort() {
         String[] acqOrderArray = getAcqOrder();
         StringBuilder builder = new StringBuilder();
@@ -1675,48 +1478,9 @@ public class BrukerData implements NMRData {
             String elem = acqOrderArray[i];
             if (elem.substring(0, 1).equals("p")) {
                 builder.append(elem.substring(1, 2));
-            } else if (elem.substring(0, 1).equals("a")) {
-                return "";
             }
         }
         return builder.toString();
-    }
-
-    @Override
-    public List<Double> getValues(int dim) {
-        List<Double> result;
-        if (dim == (getNDim() - 1)) {
-            result = arrayValues;
-        } else {
-            result = new ArrayList<>();
-        }
-        return result;
-    }
-
-    int getMinDim() {
-        int minSize = getSize(0);
-        int minDim = 0;
-        for (int i = 1; i < getNDim(); i++) {
-            if (getSize(i) < minSize) {
-                minSize = getSize(i);
-                minDim = i;
-            }
-        }
-        return minDim;
-    }
-
-    @Override
-    public boolean isFrequencyDim(int iDim) {
-        boolean result = true;
-        int minDim = getMinDim();
-        if (!isComplex(iDim)) {
-            // second test is because sometimes the vclist/vdlist can be smaller than the td for the dimension
-            // so we assume we assume if there are arrayed values the smallest dim is the one that is arrayed
-            if ((arrayValues != null) && ((arrayValues.size() == getSize(iDim)) || (iDim == minDim))) {
-                result = false;
-            }
-        }
-        return result;
     }
 
     @Override
@@ -1732,67 +1496,69 @@ public class BrukerData implements NMRData {
     // write binary data into text file, using header info
     public void fileoutraw() {
         try {
-            try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/bwraw.txt"), Charset.forName("US-ASCII"),
-                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-                String dpath = fpath;
-                if ((new File(dpath + File.separator + "ser")).exists()) {
-                    dpath += File.separator + "ser";
-                } else if ((new File(dpath + File.separator + "fid")).exists()) {
-                    dpath += File.separator + "fid";
-                }
-                DataInputStream in = new DataInputStream(new FileInputStream(dpath));
-                bw.write("rawfile header");
-                bw.newLine();
-                int px;
-                for (int i = 0; i < nvectors; i++) {
-                    bw.write("block " + i + " ");
-                    for (int j = 0; j < np * 2; j++) {  // data
-                        if (j % 512 == 0) {
-                            bw.write("\n  block " + i + ":" + (j / 512) + " : ");
-                        }
-                        px = in.readInt();
-                        if (swapBits) {
-                            px = Integer.reverseBytes(px);
-                        }
-                        bw.write(px + " ");
-                    }
-                    bw.write(": endblock " + i);
-                    bw.newLine();
-                    bw.flush();
-                }
-//            bw.write(in.readInt() + " ");  // extra point, overflow
+            BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/bwraw.txt"), Charset.forName("US-ASCII"),
+                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+
+            String dpath = fpath;
+            if ((new File(dpath + File.separator + "ser")).exists()) {
+                dpath += File.separator + "ser";
+            } else if ((new File(dpath + File.separator + "fid")).exists()) {
+                dpath += File.separator + "fid";
             }
+            DataInputStream in = new DataInputStream(new FileInputStream(dpath));
+            bw.write("rawfile header");
+            bw.newLine();
+            int px;
+            for (int i = 0; i < nvectors; i++) {
+                bw.write("block " + i + " ");
+                for (int j = 0; j < np * 2; j++) {  // data
+                    if (j % 512 == 0) {
+                        bw.write("\n  block " + i + ":" + (j / 512) + " : ");
+                    }
+                    px = in.readInt();
+                    if (swapBits) {
+                        px = Integer.reverseBytes(px);
+                    }
+                    bw.write(px + " ");
+                }
+                bw.write(": endblock " + i);
+                bw.newLine();
+                bw.flush();
+            }
+//            bw.write(in.readInt() + " ");  // extra point, overflow
+            bw.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage());
         }
     }  // end fileoutraw
 
     // output file after dspPhase etc.
     private void fileout2() {
         try {
-            try (BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/dwraw.txt"), Charset.forName("US-ASCII"),
-                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-                bw.write("rawfile header");
-                bw.newLine();
-                for (int i = 0; i < nvectors; i++) {
-                    bw.write("block " + i + " ");
-                    Vec vc = new Vec(np, true);
-                    Complex[] cdata;
-                    readVector(i, vc);
-                    cdata = vc.getCvec();
-                    for (int j = 0; j < vc.getSize(); j++) {  // data
-                        if (j % 512 == 0) {
-                            bw.write("\n  block " + i + ":" + (j / 512) + " : ");
-                        }
-                        bw.write(cdata[j] + " ");
+            BufferedWriter bw = Files.newBufferedWriter(Paths.get("/tmp/dwraw.txt"), Charset.forName("US-ASCII"),
+                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            bw.write("rawfile header");
+            bw.newLine();
+            for (int i = 0; i < nvectors; i++) {
+                bw.write("block " + i + " ");
+                Vec vc = new Vec(np, true);
+                Complex[] cdata;
+                readVector(i, vc);
+                cdata = vc.getCvec();
+                for (int j = 0; j < vc.getSize(); j++) {  // data
+                    if (j % 512 == 0) {
+                        bw.write("\n  block " + i + ":" + (j / 512) + " : ");
                     }
-                    bw.write(": endblock " + i);
-                    bw.newLine();
-                    bw.flush();
+                    bw.write(cdata[j] + " ");
                 }
+                bw.write(": endblock " + i);
+                bw.newLine();
+                bw.flush();
             }
+            bw.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
         }
     } // end fileout2
 
@@ -1990,11 +1756,11 @@ public class BrukerData implements NMRData {
             bruker = NMRDataUtil.getFID(root + "HMQC/");
             System.out.println(" dim=" + bruker.getNDim() + " nvectors=" + bruker.getNVectors()
                     + " npoints=" + bruker.getNPoints() + " toString " + bruker.toString());
-            System.out.println(" get f1coef: " + Arrays.toString(bruker.getCoefs(2)) + " scooby: " + bruker.getParDouble("SCOOBY,3"));
+            System.out.println(" get f1coef: " + bruker.getCoefs(2) + " scooby: " + bruker.getParDouble("SCOOBY,3"));
             System.out.println("find NOESY");
             bruker = NMRDataUtil.getFID(root + "NOESY");
             System.out.println(" dim=" + bruker.getNDim() + " nvectors=" + bruker.getNVectors()
-                    + " npoints=" + bruker.getNPoints() + " f1coef=" + Arrays.toString(bruker.getCoefs(2)) + " toString " + bruker.toString());
+                    + " npoints=" + bruker.getNPoints() + " f1coef=" + bruker.getCoefs(2) + " toString " + bruker.toString());
             System.out.println(" expd=" + bruker.getExpd(1));
             SinebellWt sb = bruker.getSinebellWt(2);
             System.out.print(" sinebell: exists=" + sb.exists() + " power=" + sb.power() + " sb=" + sb.sb() + " sbs=" + sb.sbs());
@@ -2013,7 +1779,7 @@ public class BrukerData implements NMRData {
             System.out.println(" dim=" + bruker.getNDim() + " nvectors=" + bruker.getNVectors()
                     + " npoints=" + bruker.getNPoints());
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, ex.getMessage());
+            logger.log(Level.WARNING, ex.getMessage());
         }
 
     }

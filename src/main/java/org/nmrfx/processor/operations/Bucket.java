@@ -40,7 +40,46 @@ public class Bucket extends Operation {
 
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
-        vector.bucket(nBuckets);
+        boolean complex = vector.isComplex();
+        boolean freqDomain = vector.freqDomain();
+        int size = vector.getSize();
+
+        if (freqDomain) {
+            vector.adjustRef(0, nBuckets);
+        }
+
+        if (complex) {
+            throw new ProcessingException("bucket: vector must be real");
+        }
+
+        if (size < nBuckets) {
+            throw new ProcessingException(
+                    "bucket: nBuckets must be smaller than size");
+        }
+
+        if ((size % nBuckets) != 0) {
+            throw new ProcessingException(
+                    "bucket: size must be multiple of nBuckets");
+        }
+
+        int bucketSize = size / nBuckets;
+
+        int k = 0;
+        double bucketVal = 0.0;
+        double[] vec = vector.rvec;
+
+        for (int i = 0; i < nBuckets; i++) {
+            bucketVal = 0.0;
+            k = i * bucketSize;
+
+            for (int j = 0; j < bucketSize; j++) {
+                bucketVal += vec[k++];
+            }
+
+            vec[i] = bucketVal;
+        }
+
+        size = nBuckets;
         return this;
     }
 

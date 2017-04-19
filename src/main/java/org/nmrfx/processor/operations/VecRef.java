@@ -47,7 +47,6 @@ public class VecRef extends Operation {
     public Operation eval(Vec vector) throws ProcessingException {
         if (size != null) {
             vector.resize(size);
-            vector.setTDSize(size);
         }
         if (sf != null) {
             vector.centerFreq = sf;
@@ -56,7 +55,6 @@ public class VecRef extends Operation {
             vector.dwellTime = 1.0 / sw;
         }
         vector.schedule = null;
-        vector.clearAnnotation();
         return this;
     }
 

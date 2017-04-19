@@ -24,12 +24,8 @@ public class JeolDeltaAxis {
 
     public enum AxisType {
 
-        NONE("none", 0),
-        REAL("real", 1),
-        TPPI("tppi", 1),
-        COMPLEX("complex", 2),
-        REAL_COMPLEX("real_complex", 1),
-        ENVELOPE("envelope", 1);
+        COMPLEX("complex", 2) {
+        };
         String name;
         int sectionCount;
 
@@ -42,7 +38,6 @@ public class JeolDeltaAxis {
             return sectionCount;
         }
     }
-    final int iDim;
     final int nPoints;
     final int start;
     final int stop;
@@ -50,8 +45,7 @@ public class JeolDeltaAxis {
     final int nSubMatrices;
     final int subMatrixEdge;
 
-    public JeolDeltaAxis(final int iDim, final int nPoints, final int subMatrixEdge, final int start, final int stop, final int iType) {
-        this.iDim = iDim;
+    public JeolDeltaAxis(final int nPoints, final int subMatrixEdge, final int start, final int stop, final AxisType type) {
         this.nPoints = nPoints;
         this.subMatrixEdge = subMatrixEdge;
         this.nSubMatrices = nPoints / subMatrixEdge;
@@ -61,29 +55,6 @@ public class JeolDeltaAxis {
         } else {
             this.stop = stop;
         }
-        this.type = AxisType.values()[iType];
-    }
-
-    public boolean isComplex(int iDim) {
-        boolean value = type == AxisType.COMPLEX;
-        if (!value) {
-            if (iDim == 0) {
-                value = type == AxisType.REAL_COMPLEX;
-            }
-        }
-        return value;
-
-    }
-
-    public int getSectionCount() {
-        if (type == AxisType.REAL_COMPLEX) {
-            if (iDim == 0) {
-                return 2;
-            } else {
-                return 1;
-            }
-        } else {
-            return type.sectionCount;
-        }
+        this.type = type;
     }
 }

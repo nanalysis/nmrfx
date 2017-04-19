@@ -24,7 +24,7 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.MatrixND;
-import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.math.NESTAMath;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
@@ -39,20 +39,13 @@ import java.util.ArrayList;
 public class NESTANMR extends MatrixOperation {
 
     /**
-     * Number of outer iterations (continuations) to iterate over : e.g. 10.
+     * Number of iterations to iterate over : e.g. 300.
      *
      * @see #ist
      */
-    private final int outerIterations;
+    private final int iterations;
     /**
-     * Number of inner iterations to iterate over : e.g. 20.
-     *
-     * @see #ist
-     */
-    private final int innerIterations;
-    /**
-     * Sample schedule used for non-uniform sampling. Specifies array elements
-     * where data is present.
+     * Sample schedule used for non-uniform sampling. Specifies array elements where data is present.
      *
      * @see #ist
      * @see #zero_samples
@@ -60,7 +53,6 @@ public class NESTANMR extends MatrixOperation {
      */
     private final double tolFinal;
     private final double muFinal;
-    private final double threshold;
     private final boolean zeroAtStart;
     /**
      * 2D phase array: [f1ph0, f1ph1, f2ph0, f2ph1].
@@ -71,9 +63,8 @@ public class NESTANMR extends MatrixOperation {
 
     private final File logHome;
 
-    public NESTANMR(int outerIterations, int innerIterations, double tolFinal, double muFinal, SampleSchedule schedule, ArrayList phaseList, boolean zeroAtStart, double threshold, String logHomeName) throws ProcessingException {
-        this.outerIterations = outerIterations;
-        this.innerIterations = innerIterations;
+    public NESTANMR(int iterations, double tolFinal, double muFinal, SampleSchedule schedule, ArrayList phaseList, boolean zeroAtStart, String logHomeName) throws ProcessingException {
+        this.iterations = iterations;
         this.sampleSchedule = schedule;
         if (!phaseList.isEmpty()) {
             this.phase = new double[phaseList.size()];
@@ -90,7 +81,6 @@ public class NESTANMR extends MatrixOperation {
         }
         this.tolFinal = tolFinal;
         this.muFinal = muFinal;
-        this.threshold = threshold;
         this.zeroAtStart = zeroAtStart;
     }
 
@@ -113,13 +103,11 @@ public class NESTANMR extends MatrixOperation {
                 if (logHome != null) {
                     logFile = logHome.toString() + vector.getIndex() + ".log";
                 }
-            }
-            if (schedule == null) {
-                return this;
+
             }
             int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
 
-            NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, logFile);
+            NESTAMath nesta = new NESTAMath(matrixND, zeroList, iterations, tolFinal, muFinal, phase, zeroAtStart, logFile);
             nesta.doNESTA();
             if (vector.getSize() != origSize) {
                 vector.resize(origSize);
@@ -130,6 +118,7 @@ public class NESTANMR extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new ProcessingException(e.getLocalizedMessage());
         }
         //PyObject obj = interpreter.get("a");
@@ -138,26 +127,18 @@ public class NESTANMR extends MatrixOperation {
 
     @Override
     public Operation evalMatrix(MatrixType matrix) {
-        if (sampleSchedule == null) {
-            throw new ProcessingException("No sample schedule");
-        }
         try {
             MatrixND matrixND = (MatrixND) matrix;
-            for (int i = 0; i < matrixND.getNDim(); i++) {
-                matrixND.setVSizes(matrixND.getSizes());
-            }
             int[] zeroList = IstMatrix.genZeroList(sampleSchedule, matrixND);
             String logFile = null;
             if (logHome != null) {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
             }
 
-            NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, logFile);
+            NESTAMath nesta = new NESTAMath(matrixND, zeroList, iterations, tolFinal, muFinal, phase, zeroAtStart, logFile);
             nesta.doNESTA();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new ProcessingException(e.getLocalizedMessage());
-
         }
 
         return this;

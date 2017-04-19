@@ -24,13 +24,12 @@
 package org.nmrfx.processor.datasets;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.math.VecBase.IndexValue;
+import org.nmrfx.processor.math.Vec.IndexValue;
 import org.nmrfx.processor.operations.TestBasePoints;
 import org.nmrfx.processor.operations.Util;
 import java.io.IOException;
 import java.util.Iterator;
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.processor.operations.IDBaseline2;
 
 /**
  *
@@ -78,11 +77,9 @@ public class DatasetPhaser {
      * Calculate phasing along the specified dataset dimension.
      *
      * @param iDim index of the dataset dimension
-     * @param phaseWinSize size of window to use in analysis
-     * @param phaseRatio ratio of signal to noise to use in finding baseline
      * @throws java.io.IOException if an I/O error occurs
      */
-    public void setup(int iDim, int phaseWinSize, double phaseRatio, IDBaseline2.ThreshMode threshMode) throws IOException {
+    public void setup(int iDim, int phaseWinSize, double phaseRatio) throws IOException {
         int[][] pt = new int[nDim][2];
         int[] dim = new int[nDim];
         int[] dimSize = new int[nDim];
@@ -161,7 +158,7 @@ public class DatasetPhaser {
         for (int i = 0; i < nTotal; i++) {
             if (regionMax[i] != null) {
                 dataset.readVectorFromDatasetFile(regionMax[i].pt, dim, phaseVec);
-                testBase.addVector(phaseVec, false, phaseRatio, threshMode);
+                testBase.addVector(phaseVec, false, phaseRatio);
 //                System.out.println(i + " " + regionMax[i].toString() + " " + testBase.getRegionCount());
             }
 
@@ -226,16 +223,13 @@ public class DatasetPhaser {
 
     public void applyPhases2(int iDim, double ph0, double ph1) throws IOException {
         Iterator<Vec> vectors = dataset.vectors(iDim);
-        double dataPh0 = dataset.getPh0(iDim) + ph0;
-        double dataPh1 = dataset.getPh1(iDim) + ph1;
         while (vectors.hasNext()) {
             Vec phaseVec = vectors.next();
             phaseVec.hft();
             phaseVec.phase(ph0, ph1);
             phaseVec.makeReal();
             dataset.writeVector(phaseVec);
+
         }
-        dataset.setPh0(iDim, dataPh0);
-        dataset.setPh1(iDim, dataPh1);
     }
 }

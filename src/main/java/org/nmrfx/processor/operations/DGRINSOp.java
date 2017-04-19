@@ -17,11 +17,10 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.GRINS;
-
+import org.nmrfx.processor.math.Vec;
 import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
@@ -36,13 +35,11 @@ public class DGRINSOp extends DatasetOperation {
     private final SampleSchedule schedule;
     private final double noise;
     private final double scale;
-    private final double[] phase;
 
     public DGRINSOp(SampleSchedule schedule, double noise, double scale) {
         this.schedule = schedule;
         this.noise = noise;
         this.scale = scale;
-        this.phase = null;
 
     }
 
@@ -58,11 +55,12 @@ public class DGRINSOp extends DatasetOperation {
             dim[i] = i + 1;
         }
         int size0 = dataset.getSize(0);
+        double[] phase = new double[0];
         for (int i = 0; i < size0; i++) {
             MatrixND matrix = getMatrixNDFromFile(dataset, dim, i);
             int[] zeroList = IstMatrix.genZeroList(schedule, matrix);
             int[] srcTargetMap = genSrcTargetMap(schedule, matrix);
-            GRINS smile = new GRINS(matrix, noise, scale, phase,  true, false, zeroList, srcTargetMap, null);
+            GRINS smile = new GRINS(matrix, noise, scale, true, false, zeroList, srcTargetMap, phase, null);
             smile.exec();
             try {
                 dataset.writeMatrixNDToDatasetFile(dim, matrix);
@@ -81,7 +79,7 @@ public class DGRINSOp extends DatasetOperation {
         int[] matrixSizes = new int[pt.length - 1];
         for (int i = 0; i < pt.length - 1; i++) {
             int k = pt.length - i - 2;
-            matrixSizes[k] = VecBase.checkPowerOf2(1 + pt[i][1]);
+            matrixSizes[k] = Vec.checkPowerOf2(1 + pt[i][1]);
             writePt[i][1] = matrixSizes[pt.length - i - 2] - 1;
             System.out.print(writePt[i][1] + " ");
         }

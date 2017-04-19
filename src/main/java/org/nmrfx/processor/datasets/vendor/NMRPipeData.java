@@ -27,7 +27,6 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -39,36 +38,28 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.processor.datasets.Dataset;
 
 public class NMRPipeData implements NMRData {
 
     static private final int DIMSIZE = 4;
-    static private final int MAXDIM = 10;
     static private final int MAX_FILECHANNELS = 16;
     private final String dirName;
     private final String fpath;
     private FileChannel fc = null;
     private double groupDelay = 0.0;
-    private final double scale = 1.0e6;
-    String template = "%03d.ft";
-    private Double[] Ref = new Double[MAXDIM];
-    private Double[] Sw = new Double[MAXDIM];
-    private Double[] Sf = new Double[MAXDIM];
+    private final double scale = 1.0;
+    String template = "plane%03d.fid";
 
     Header fileHeader;
     private SampleSchedule sampleSchedule = null;
     Map<Integer, FileChannel> fcMap;
 
-    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+    static final Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
     boolean swapBits = true;
     /**
      * open Varian parameter and data files
@@ -82,34 +73,13 @@ public class NMRPipeData implements NMRData {
     boolean isFloat = true;
     boolean isShort = false;
     int[] sizes;
-    Dataset dataSource = null;
-    File nusFile = null;
 
-    public NMRPipeData(String path, File nusFile) throws IOException {
-        this.nusFile = nusFile;
+    public NMRPipeData(String path) {
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.length() - 1);
         }
         Path filePath = Paths.get(path);
         dirName = filePath.getParent().toString();
-        template = "test%03d.fid";
-
-        String fileName = filePath.getFileName().toString();
-        if (fileName.contains("%")) {
-            template = fileName;
-            fileName = String.format(fileName, 1);
-            path = Paths.get(dirName, fileName).toString();
-        } else {
-            Pattern pattern = Pattern.compile("(.+\\D)(\\d+)(\\..+)");
-            Matcher matcher = pattern.matcher(fileName);
-            if (matcher.matches()) {
-                // fixme  only works for 3d
-                template = matcher.group(1) + "%0" + matcher.group(2).length() + "d" + matcher.group(3);
-                System.out.println("template " + template);
-            }
-            // fixme use regex to come up with a pattern
-        }
-
         this.fpath = path;
         fcMap = Collections.synchronizedMap(new FileChannelMap(MAX_FILECHANNELS));
 
@@ -120,73 +90,8 @@ public class NMRPipeData implements NMRData {
         np = getSize(0) * 2;
         getDimMap();
         getSizes();
-        groupDelay = getDMXValue();
         tbytes = np * ebytes;
 //        checkAndOpenSampleSchedule(path);
-    }
-
-    public NMRPipeData() {
-        ByteBuffer bBuffer = ByteBuffer.allocate(2048);
-        dirName = "";
-        fpath = "";
-        fileHeader = new Header(bBuffer);
-    }
-
-    public NMRPipeData(Dataset dataset) throws IOException {
-        ByteBuffer bBuffer = ByteBuffer.allocate(2048).order(ByteOrder.LITTLE_ENDIAN);
-        dirName = "";
-        fpath = "";
-        fileHeader = new Header(bBuffer);
-        setFromDataset(dataset);
-        dataSource = dataset;
-    }
-
-    private void setFromDataset(Dataset dataset) throws IOException {
-        setNDim(dataset.getNDim());
-        for (int iDim = 0; iDim < getNDim(); iDim++) {
-            setDimOrder(iDim, iDim + 1);
-        }
-        getDimMap();
-        FIELDS.setInt(fileHeader, "QUADFLAG", 1);
-        FIELDS.setInt(fileHeader, "2DPHASE", 2);
-        FIELDS.setFloat(fileHeader, "TEMPERATURE", (float) dataset.getTempK());
-        for (int iDim = 0; iDim < getNDim(); iDim++) {
-            setSize(iDim, dataset.getSize(iDim));
-            FIELDS.setFloat(fileHeader, iDim, "OBS", (float) dataset.getSf(iDim));
-            FIELDS.setFloat(fileHeader, iDim, "SW", (float) dataset.getSw(iDim));
-            FIELDS.setInt(fileHeader, iDim, "TDSIZE", dataset.getTDSize(iDim));
-            FIELDS.setInt(fileHeader, iDim, "ZF", dataset.getZFSize(iDim));
-            FIELDS.setInt(fileHeader, iDim, "FTSIZE", dataset.getZFSize(iDim));
-            int x1 = dataset.getExtFirst(iDim) + 1;
-            int x2 = dataset.getExtLast(iDim) + 1;
-            int centerPt = dataset.getZFSize(iDim) / 2 + 1;
-            if (x1 == x2) {
-                x1 = 0;
-                x2 = 0;
-            } else {
-                centerPt -= (x1 - 1);
-            }
-
-            double ref = dataset.pointToPPM(iDim, centerPt - 1);
-            setRef(iDim, ref);
-
-            FIELDS.setInt(fileHeader, iDim, "CENTER", centerPt);
-            FIELDS.setInt(fileHeader, iDim, "X1", x1);
-            FIELDS.setInt(fileHeader, iDim, "XN", x2);
-
-            FIELDS.setInt(fileHeader, iDim, "TDSIZE", dataset.getTDSize(iDim));
-            FIELDS.setInt(fileHeader, iDim, "QUADFLAG", 1);
-            FIELDS.setInt(fileHeader, iDim, "FTFLAG", 1);
-            double origenPPM = dataset.pointToPPM(iDim, dataset.getSize(iDim) - 1);
-            double origenHz = origenPPM * dataset.getSf(iDim);
-            FIELDS.setFloat(fileHeader, iDim, "ORIG", (float) origenHz);
-            FIELDS.setFloat(fileHeader, iDim, "P0", (float) dataset.getPh0(iDim));
-            FIELDS.setFloat(fileHeader, iDim, "P1", (float) dataset.getPh1(iDim));
-            FIELDS.setString(fileHeader, iDim, "LABEL", dataset.getLabel(iDim));
-        }
-        getSizes();
-        np = getSize(0) * 2;
-        tbytes = np * ebytes;
     }
 
     public static boolean findFID(StringBuilder bpath) {
@@ -196,12 +101,6 @@ public class NMRPipeData implements NMRData {
     public static boolean findFIDFiles(String dpath) {
         boolean found = false;
         File file = new File(dpath);
-        String dirName = file.getParent();
-        String fileName = file.getName();
-        if (fileName.contains("%")) {
-            fileName = String.format(fileName, 1);
-            file = Paths.get(dirName, fileName).toFile();
-        }
         if (file.exists()) {
             try (FileReader reader = new FileReader(file)) {
                 boolean ok = true;
@@ -225,12 +124,12 @@ public class NMRPipeData implements NMRData {
         try {
             fileChannel = FileChannel.open(path, StandardOpenOption.READ);
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, "{0}/n{1}", new String[]{fpath, ex.getMessage()});
+            logger.log(Level.WARNING, (fpath + "/n" + ex.getMessage()));
             if (fileChannel != null) {
                 try {
                     fileChannel.close();
                 } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, e.getMessage());
+                    logger.log(Level.WARNING, e.getMessage());
                 }
             }
         }
@@ -242,12 +141,12 @@ public class NMRPipeData implements NMRData {
         try {
             fc = FileChannel.open(Paths.get(datapath), StandardOpenOption.READ);
         } catch (IOException ex) {
-            LOGGER.log(Level.WARNING, "{0}/n{1}", new String[]{fpath, ex.getMessage()});
+            logger.log(Level.WARNING, (fpath + "/n" + ex.getMessage()));
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException e) {
-                    LOGGER.log(Level.WARNING, e.getMessage());
+                    logger.log(Level.WARNING, e.getMessage());
                 }
             }
         }
@@ -258,22 +157,13 @@ public class NMRPipeData implements NMRData {
         try {
             fc.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
         }
     }
 
     @Override
     public String getFilePath() {
         return fpath;
-    }
-
-    @Override
-    public List<VendorPar> getPars() {
-        List<VendorPar> vendorPars = new ArrayList<>();
-        for (FIELDS field : FIELDS.values()) {
-            vendorPars.add(new VendorPar(field.name(), field.getString(fileHeader)));
-        }
-        return vendorPars;
     }
 
     @Override
@@ -302,20 +192,12 @@ public class NMRPipeData implements NMRData {
     }
 
     @Override
-    public final int getNDim() {
+    public int getNDim() {
         return FIELDS.FDDIMCOUNT.getInt(fileHeader);
     }
 
-    public void setNDim(int value) {
-        FIELDS.FDDIMCOUNT.setInt(fileHeader, value);
-    }
-
-    public void setDimOrder(int dim, int value) {
-        FIELDS.setDimOrder(fileHeader, dim, value);
-    }
-
     @Override
-    public final int getSize(int dim) {
+    public int getSize(int dim) {
         int size = FIELDS.getSize(fileHeader, dim);
         if (dim > 0) {
             size /= 2;
@@ -338,81 +220,51 @@ public class NMRPipeData implements NMRData {
         return FIELDS.FDTEMPERATURE.getFloat(fileHeader);
     }
 
-    public final double getDMXValue() {
-        return FIELDS.FDDMXVAL.getFloat(fileHeader);
-    }
-
     @Override
     public String getSequence() {
         return "";
     }
 
-    public String getLabel(int dim) {
-        return FIELDS.getString(fileHeader, dim, "LABEL");
+    @Override
+    public double getSF(int dim) {
+        return FIELDS.getFloat(fileHeader, dim, "OBS");
     }
 
     @Override
-    public double getSF(int iDim) {
-        double sf;
-        if (Sf[iDim] != null) {
-            sf = Sf[iDim];
-        } else {
-            sf = FIELDS.getFloat(fileHeader, iDim, "OBS");
-        }
-        return sf;
+    public void setSF(int dim, double value) {
+        FIELDS.setFloat(fileHeader, dim, "OBS", (float) value);
     }
 
     @Override
-    public void setSF(int iDim, double value) {
-        Sf[iDim] = value;
+    public void resetSF(int dim) {
     }
 
     @Override
-    public void resetSF(int iDim) {
-        Sf[iDim] = null;
+    public double getSW(int dim) {
+        return FIELDS.getFloat(fileHeader, dim, "SW");
     }
 
     @Override
-    public double getSW(int iDim) {
-        double sw;
-        if (Sw[iDim] != null) {
-            sw = Sw[iDim];
-        } else {
-            sw = FIELDS.getFloat(fileHeader, iDim, "SW");
-        }
-        return sw;
+    public void setSW(int dim, double value) {
+        FIELDS.setFloat(fileHeader, dim, "SW", (float) value);
     }
 
     @Override
-    public void setSW(int iDim, double value) {
-        Sw[iDim] = value;
+    public void resetSW(int dim) {
     }
 
     @Override
-    public void resetSW(int iDim) {
-        Sw[iDim] = null;
+    public double getRef(int dim) {
+        return FIELDS.getFloat(fileHeader, dim, "CAR");
     }
 
     @Override
-    public double getRef(int iDim) {
-        double ref;
-        if (Ref[iDim] != null) {
-            ref = Ref[iDim];
-        } else {
-            ref = FIELDS.getFloat(fileHeader, iDim, "CAR");
-            setRef(iDim, ref);
-        }
-        return ref;
-    }
-
-    @Override
-    public void setRef(int iDim, double ref) {
-        Ref[iDim] = ref;
+    public void setRef(int dim, double ref) {
+        FIELDS.setFloat(fileHeader, dim, "CAR", (float) ref);
     }
 
     @Override
     public void resetRef(int dim) {
-        Ref[dim] = null;
     }
 
     @Override
@@ -497,8 +349,7 @@ public class NMRPipeData implements NMRData {
         int nDim = getNDim();
         String[] names = new String[nDim];
         for (int i = 0; i < nDim; i++) {
-            int j = fileHeader.getDim(i);
-            names[i] = "FDF" + (j + 1) + "OBS";
+            names[i] = "FDF" + (i + 1) + "OBS";
         }
         return names;
     }
@@ -508,8 +359,7 @@ public class NMRPipeData implements NMRData {
         int nDim = getNDim();
         String[] names = new String[nDim];
         for (int i = 0; i < nDim; i++) {
-            int j = fileHeader.getDim(i);
-            names[i] = "FDF" + (j + 1) + "SW";
+            names[i] = "FDF" + (i + 1) + "SW";
         }
         return names;
     }
@@ -519,7 +369,11 @@ public class NMRPipeData implements NMRData {
         int nDim = getNDim();
         ArrayList<String> names = new ArrayList<>();
         for (int i = 0; i < nDim; i++) {
-            names.add(getLabel(i));
+            String name = getTN(i);
+            if (names.contains(name)) {
+                name = name + "_" + (i + 1);
+            }
+            names.add(name);
         }
 
         return names.toArray(new String[names.size()]);
@@ -527,7 +381,6 @@ public class NMRPipeData implements NMRData {
 
     @Override
     public void readVector(int iVec, Vec dvec) {
-        dvec.setGroupDelay(groupDelay);
         if (dvec.isComplex()) {
             if (dvec.useApache()) {
                 readVector(iVec, dvec.getCvec());
@@ -537,7 +390,6 @@ public class NMRPipeData implements NMRData {
         } else {
             readVector(iVec, dvec.rvec);
         }
-        dvec.fixWithPhasedHFT();
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
         double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
@@ -572,6 +424,7 @@ public class NMRPipeData implements NMRData {
             // fixme which is correct (use ceil or not)
             //shiftAmount = (int)Math.round(Math.ceil(groupDelay));
             shiftAmount = (int) Math.round(groupDelay);
+            System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
         }
         if (dvec.isComplex()) {
             if (dvec.useApache()) {
@@ -657,12 +510,11 @@ public class NMRPipeData implements NMRData {
 
     @Override
     public SampleSchedule getSampleSchedule() {
-        return sampleSchedule;
+        return null;
     }
 
     @Override
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
-        this.sampleSchedule = sampleSchedule;
     }
 
     FileChannel getFileChannel(int i) {
@@ -672,7 +524,8 @@ public class NMRPipeData implements NMRData {
         int planeIndex = getPlaneIndex(i);
         FileChannel fileChan = fcMap.get(planeIndex);
         if (fileChan == null) {
-            String templateFile = getTemplateFile(planeIndex);
+            String templateFile = getTemplateFile(i);
+            System.out.println("open " + templateFile);
             fileChan = openDataFile(dirName, templateFile);
             fcMap.put(planeIndex, fileChan);
         }
@@ -692,21 +545,21 @@ public class NMRPipeData implements NMRData {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " / " + index + " out of bounds");
             }
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             if (iFC != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    logger.log(Level.WARNING, ex.getMessage());
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             if (iFC != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    logger.log(Level.WARNING, ex.getMessage());
                 }
             }
         }
@@ -720,26 +573,27 @@ public class NMRPipeData implements NMRData {
         try {
             //int skips = fileIndex * tbytes + xCol * 4 * 2;
             int skips = fileIndex * stride + xCol * 4 * 2;
+            //System.out.println(fileIndex + " " + xCol + " " + (skips/4));
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2, 4);
             int nread = fc.read(buf, skips);
             buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2 + 4, 4);
             nread = fc.read(buf, skips + stride / 2);
         } catch (EOFException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    logger.log(Level.WARNING, ex.getMessage());
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, e.getMessage());
+            logger.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    LOGGER.log(Level.WARNING, ex.getMessage());
+                    logger.log(Level.WARNING, ex.getMessage());
                 }
             }
         }
@@ -751,17 +605,17 @@ public class NMRPipeData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) fbuf.get(j) / scale;
+                data[j] = (double) fbuf.get(j);
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) sbuf.get(j) / scale;
+                data[j] = (double) sbuf.get(j);
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) ibuf.get(j) / scale;
+                data[j] = (double) ibuf.get(j);
             }
         }
     }  // end copyVecData
@@ -774,17 +628,17 @@ public class NMRPipeData implements NMRData {
             buf.order(ByteOrder.LITTLE_ENDIAN);
             FloatBuffer fbuf = buf.asFloatBuffer();
             for (int j = 0; j < nComplex; j++) {
-                data[j] = new Complex((double) fbuf.get(j) / scale, (double) -fbuf.get(j + nComplex) / scale);
+                data[j] = new Complex((double) fbuf.get(j), (double) fbuf.get(j + nComplex));
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (int j = 0; j < nComplex; j++) {
-                data[j] = new Complex((double) sbuf.get(j) / scale, (double) -sbuf.get(j + nComplex) / scale);
+                data[j] = new Complex((double) sbuf.get(j), (double) sbuf.get(j + nComplex));
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (int j = 0; j < nComplex; j++) {
-                data[j] = new Complex((double) ibuf.get(j) / scale, (double) -ibuf.get(j + nComplex) / scale);
+                data[j] = new Complex((double) ibuf.get(j), (double) ibuf.get(j + nComplex));
             }
         }
     }  // end copyVecData
@@ -795,20 +649,20 @@ public class NMRPipeData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (int j = 0; j < nComplex; j++) {
-                rdata[j] = (double) fbuf.get(j) / scale;
-                idata[j] = (double) -fbuf.get(j + nComplex) / scale;
+                rdata[j] = (double) fbuf.get(j);
+                idata[j] = (double) fbuf.get(j + nComplex);
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (int j = 0; j < nComplex; j++) {
-                rdata[j] = (double) sbuf.get(j) / scale;
-                idata[j] = (double) -sbuf.get(j + nComplex) / scale;
+                rdata[j] = (double) sbuf.get(j);
+                idata[j] = (double) sbuf.get(j + nComplex);
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (int j = 0; j < nComplex; j++) {
-                rdata[j] = (double) ibuf.get(j) / scale;
-                idata[j] = (double) -ibuf.get(j + nComplex) / scale;
+                rdata[j] = (double) ibuf.get(j);
+                idata[j] = (double) ibuf.get(j + nComplex);
             }
         }
     }  // end copyVecData
@@ -819,44 +673,18 @@ public class NMRPipeData implements NMRData {
         }
     }
 
-    final void getSizes() throws IOException {
+    void getSizes() {
         sizes = new int[DIMSIZE];
         for (int dim = 0; dim < DIMSIZE; dim++) {
             int size = FIELDS.getSize(fileHeader, dim);
             sizes[dim] = size > 0 ? size : 1;
+            System.out.println(dim + " size " + sizes[dim]);
         }
-        boolean gotSchedule = false;
-        if (nusFile == null) {
-            nusFile = new File(fpath + File.separator + "nuslist");
-        }
-        if (nusFile.exists()) {
-            readSampleSchedule(nusFile.getPath(), false);
-            if (sampleSchedule.getTotalSamples() == 0) {
-                throw new IOException("nuslist file exists, but is empty");
-            } else {
-                gotSchedule = true;
-            }
-        }
-//        if (gotSchedule) {
-//            int[] dims = sampleSchedule.getDims();
-//            for (int i = 0; i < dims.length; i++) {
-//                tdsize[i + 1] = dims[i] * 2;
-//                dim = i + 2;
-//            }
-//        } else {
-//            for (int i = 2; i <= dim; i++) {
-//                tdsize[i - 1] = 1;
-//                if ((ipar = getParInt(tdpar + i)) != null) {
-//                    tdsize[i - 1] = ipar;
-//                }
-//            }
-//        }
-
     }
 
     String getTemplateFile(int index) {
         int cube = index / (sizes[1] * sizes[2]);
-        int plane = index;
+        int plane = getPlaneIndex(index);
         String fileName = String.format(template, plane + 1);
         return fileName;
     }
@@ -877,8 +705,8 @@ public class NMRPipeData implements NMRData {
             super(maxEntries);
         }
 
-        @Override
         protected boolean removeLRU(LinkEntry<Integer, FileChannel> entry) {
+            System.out.println("remove " + entry.getKey());
             FileChannel fileChannel = entry.getValue();
             try {
                 fileChannel.close();
@@ -910,7 +738,9 @@ public class NMRPipeData implements NMRData {
 
         Header(ByteBuffer bBuffer) {
             this.bBuffer = bBuffer;
+            System.out.println(bBuffer.capacity());
             fBuffer = bBuffer.asFloatBuffer();
+            System.out.println(fBuffer.capacity());
         }
 
         byte[] getByteArray(int index, int size) {
@@ -919,15 +749,6 @@ public class NMRPipeData implements NMRData {
                 bytes[i] = bBuffer.get(index + i);
             }
             return bytes;
-        }
-
-        void setByteArray(int index, int size, byte[] bytes, int maxLen) {
-            for (int i = 0; i < size; i++) {
-                bBuffer.put(index + i, bytes[i]);
-            }
-            for (int i = size; i < maxLen; i++) {
-                bBuffer.put(index + i, (byte) 0);
-            }
         }
 
         String getString(int index, int size) {
@@ -966,21 +787,18 @@ public class NMRPipeData implements NMRData {
 
     enum FTYPES {
         INT {
-            @Override
             String toString(FIELDS field, Header header) {
                 int value = field.getInt(header);
                 return String.format("%d", value);
             }
         },
         FLOAT {
-            @Override
             String toString(FIELDS field, Header header) {
                 float value = field.getFloat(header);
                 return String.format("%.5f", value);
             }
         },
         STRING {
-            @Override
             String toString(FIELDS field, Header header) {
                 return header.getString(field.offset * 4, field.stringLen);
             }
@@ -1085,23 +903,19 @@ public class NMRPipeData implements NMRData {
         FDF2GB(374),
         FDF2GOFF(382),
         FDF2C1(418) {
-            @Override
             float getFloat(Header header) {
                 return header.getFloat(offset) + 1.0f;
             }
 
-            @Override
             void setFloat(Header header, float value) {
                 header.setFloat(offset, value - 1.0f);
             }
         },
         FDF2ZF(108, FTYPES.INT) {
-            @Override
             int getInt(Header header) {
                 return -header.getInt(offset);
             }
 
-            @Override
             void setInt(Header header, int value) {
                 header.setInt(offset, -value);
             }
@@ -1136,23 +950,19 @@ public class NMRPipeData implements NMRData {
         FDF1GB(375),
         FDF1GOFF(383),
         FDF1C1(423) {
-            @Override
             float getFloat(Header header) {
                 return header.getFloat(offset) + 1.0f;
             }
 
-            @Override
             void setFloat(Header header, float value) {
                 header.setFloat(offset, value - 1.0f);
             }
         },
         FDF1ZF(437, FTYPES.INT) {
-            @Override
             int getInt(Header header) {
                 return -header.getInt(offset);
             }
 
-            @Override
             void setInt(Header header, int value) {
                 header.setInt(offset, -value);
             }
@@ -1185,23 +995,19 @@ public class NMRPipeData implements NMRData {
         FDF3GB(376),/* Added for NMRPipe. */
         FDF3GOFF(384),/* Added for NMRPipe. */
         FDF3C1(404) {
-            @Override
             float getFloat(Header header) {
                 return header.getFloat(offset) + 1.0f;
             }
 
-            @Override
             void setFloat(Header header, float value) {
                 header.setFloat(offset, value - 1.0f);
             }
         },
         FDF3ZF(438, FTYPES.INT) {
-            @Override
             int getInt(Header header) {
                 return -header.getInt(offset);
             }
 
-            @Override
             void setInt(Header header, int value) {
                 header.setInt(offset, -value);
             }
@@ -1234,23 +1040,19 @@ public class NMRPipeData implements NMRData {
         FDF4GB(377),/* Added for NMRPipe. */
         FDF4GOFF(385),/* Added for NMRPipe. */
         FDF4C1(409) {
-            @Override
             float getFloat(Header header) {
                 return header.getFloat(offset) + 1.0f;
             }
 
-            @Override
             void setFloat(Header header, float value) {
                 header.setFloat(offset, value - 1.0f);
             }
         },
         FDF4ZF(439, FTYPES.INT) {
-            @Override
             int getInt(Header header) {
                 return -header.getInt(offset);
             }
 
-            @Override
             void setInt(Header header, int value) {
                 header.setInt(offset, -value);
             }
@@ -1302,10 +1104,6 @@ public class NMRPipeData implements NMRData {
 
         byte[] getByteArray(Header header, int nBytes) {
             return header.getByteArray(offset * 4, nBytes);
-        }
-
-        void setByteArray(Header header, byte[] bytes, int maxLen) {
-            header.setByteArray(offset * 4, bytes.length, bytes, maxLen);
         }
 
         static int getSize(Header header, int iDim) {
@@ -1369,10 +1167,6 @@ public class NMRPipeData implements NMRData {
             valueOf("FDF" + (jDim + 1) + name).setFloat(header, value);
         }
 
-        static void setFloat(Header header, String name, float value) {
-            valueOf("FD" + name).setFloat(header, value);
-        }
-
         static float getFloat(Header header, String name) {
             return valueOf("FD" + name).getFloat(header);
         }
@@ -1400,25 +1194,9 @@ public class NMRPipeData implements NMRData {
             return string;
         }
 
-        static void setString(Header header, int iDim, String name, String value) {
-            int jDim = header.getDim(iDim);
-            byte[] bytes = value.getBytes();
-            int maxLen = valueOf("FDF" + (jDim + 1) + name).stringLen;
-            valueOf("FDF" + (jDim + 1) + name).setByteArray(header, bytes, maxLen);
-        }
-
         void setValue(Header header, int iDim, String name, float value) {
             int jDim = header.getDim(iDim);
             valueOf("FDF" + (jDim + 1) + name).setFloat(header, value);
-        }
-
-        static void setDimOrder(Header header, int iDim, int value) {
-            valueOf("FDDIMORDER" + (iDim + 1)).setInt(header, value);
-        }
-
-        static void setInt(Header header, int iDim, String name, int value) {
-            int jDim = header.getDim(iDim);
-            valueOf("FDF" + (jDim + 1) + name).setInt(header, value);
         }
 
         static int getInt(Header header, int iDim, String name) {
@@ -1430,45 +1208,16 @@ public class NMRPipeData implements NMRData {
             return (int) Math.round(valueOf("FD" + name).getInt(header));
         }
 
-        static void setInt(Header header, String name, int value) {
-            valueOf("FD" + name).setInt(header, value);
-        }
-
     }
 
-    public void saveFile(String template) throws IOException {
-        this.template = template;
-        ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
-        int[] indices = new int[3];
-        int nBytes = dataSource.getSize(0) * Float.BYTES;
-        int nPlanes = dataSource.getNDim() > 2 ? dataSource.getSize(2) : 1;
-        for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
-            indices[2] = iPlane;
-            String fileName = getTemplateFile(iPlane);
-            try (RandomAccessFile outFile = new RandomAccessFile(fileName, "rw")) {
-                outFile.write(fileHeader.bBuffer.array());
-                ByteBuffer byteBuffer = ByteBuffer.allocate(nBytes);
-                FloatBuffer floatBuffer = byteBuffer.order(byteOrder).asFloatBuffer();
-                Vec vec = new Vec(dataSource.getSize(0));
-                for (int i = 0, nRows = dataSource.getSize(1); i < nRows; i++) {
-                    indices[1] = i;
-                    dataSource.readVector(vec, indices, 0);
-                    for (int j = 0, n = vec.getSize(); j < n; j++) {
-                        floatBuffer.put(j, (float) vec.getReal(j));
-                    }
-                    outFile.write(byteBuffer.array());
-                }
-            }
-        }
-    }
-
-    public final void readHeader(String fileName) {
+    public void readHeader(String fileName) {
         ByteBuffer buffer = null;
         try (FileChannel fileChannel = FileChannel.open(Paths.get(fileName), StandardOpenOption.READ)) {
             buffer = ByteBuffer.allocate(2048);
             int nBytes = fileChannel.read(buffer);
             buffer.position(0);
             buffer.order(ByteOrder.LITTLE_ENDIAN);
+            System.out.println("read " + nBytes);
         } catch (IOException ioE) {
             throw new IllegalArgumentException("File doesn't exist");
         }
@@ -1476,11 +1225,7 @@ public class NMRPipeData implements NMRData {
     }
 
     public void dumpHeader() {
-        dumpHeader(fileHeader);
-
-    }
-
-    private void dumpHeader(Header header) {
+        Header header = fileHeader;
         int nDim = FIELDS.FDDIMCOUNT.getInt(header);
         String[] pars = {"MAGIC", "FLTFORMAT", "FLTORDER", "SIZE", "SPECNUM", "QUADFLAG", "2DPHASE", "TRANSPOSED", "DIMCOUNT",
             "DIMORDER", "DIMORDER1", "DIMORDER2", "DIMORDER3", "DIMORDER4", "NUSDIM",
@@ -1507,5 +1252,6 @@ public class NMRPipeData implements NMRData {
             System.out.printf("%12s", FIELDS.getString(header, par));
             System.out.println("");
         }
+
     }
 }

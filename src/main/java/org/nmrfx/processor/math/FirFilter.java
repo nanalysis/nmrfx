@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.math;
 
-import org.nmrfx.math.VecBase;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.apache.commons.math3.complex.Complex;
 
@@ -236,7 +235,7 @@ public class FirFilter {
             throw new ProcessingException("filter error: new vector size less than factor " + factor);
         }
         Vec outVec = new Vec(size, vector.isComplex());
-        VecBase.copyRef(vector, outVec);
+        Vec.copyRef(vector, outVec);
         if (offset != 0.0) {
             vector.multiplyByFrequency(offset, ncoefs / 2);
         }

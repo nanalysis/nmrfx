@@ -17,12 +17,7 @@
  */
 package org.nmrfx.processor.datasets;
 
-import org.nmrfx.datasets.DatasetHeaderIO;
-import org.nmrfx.datasets.DatasetLayout;
-import org.nmrfx.datasets.DatasetStorageInterface;
-
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
@@ -36,55 +31,56 @@ import java.util.List;
  *
  * @author brucejohnson
  */
-public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
+public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     private static int MAPPING_SIZE = 1 << 30;
-    private File file;
-    Dataset dataset;
-    private RandomAccessFile raFile;
-    DatasetLayout layout;
+    private final RandomAccessFile raFile;
+    private final int[] sizes;
     private final long[] strides;
-    private long totalSize;
+    private final long totalSize;
+    private final int[] blockSize;
+    private final int[] nBlocks;
+    private final int[] offsetBlocks;
+    private final int[] offsetPoints;
+    private final long blockElements;
+    private final long blockPoints;
     private final int dataType;
+    private final int headerSize;
+    private final int blockHeaderSize;
     final boolean writable;
     private final int mapSize;
-    private final List<MapInfo> mappings = new ArrayList<>();
+    private final List<MapInfo> mappings = new ArrayList<MapInfo>();
     private final int BYTES = 4;
 
     /**
-     * Create a memory-mapped interface to a large Dataset file that will
-     * require multiple mappings to span whole file.
+     * Create a memory-mapped interface to a large Dataset file that will require multiple mappings to span whole file.
      *
      * @param dataset Dataset object that uses this mapped matrix file
      * @param raFile The Random access file that actually stores data
      * @param writable true if the mapping should be writable
-     * @throws java.io.IOException
      */
-    public BigMappedMatrixFile(final Dataset dataset, File file, DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
-        this.dataset = dataset;
+    public BigMappedMatrixFile(final Dataset dataset, final RandomAccessFile raFile, final boolean writable) {
         this.raFile = raFile;
-        this.file = file;
-        this.layout = layout;
+        blockSize = dataset.getBlockSizes();
         dataType = dataset.getDataType();
+        offsetBlocks = dataset.getOffsetBlocks();
+        offsetPoints = dataset.getOffsetPoints();
+        nBlocks = dataset.getNBlocks();
+        blockElements = dataset.getBlockElements();
+        blockPoints = blockElements / BYTES;
+        headerSize = dataset.getFileHeaderSize();
+        blockHeaderSize = dataset.getBlockHeaderSize() / BYTES;
+        sizes = new int[dataset.getNDim()];
         strides = new long[dataset.getNDim()];
         this.writable = writable;
         mapSize = MAPPING_SIZE;
-        init();
-    }
-
-    void init() throws IOException {
-        int blockHeaderSize = layout.getBlockHeaderSize() / BYTES;
         long matSize = BYTES;
         System.err.println(dataset.getFileName());
-        System.err.println("header size " + layout.getFileHeaderSize());
-        strides[0] = 1;
         for (int i = 0; i < dataset.getNDim(); i++) {
-            System.err.println("big map " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSize(i));
-            matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
-            // strides only relevant if no block header and not submatrix
-            if (i > 0) {
-                strides[i] = strides[i - 1] * layout.sizes[i - 1];
-            }
+            System.err.println(i + " " + blockSize[i] + " " + nBlocks[i] + " " + dataset.getSize(i));
+            matSize *= (blockSize[i] + blockHeaderSize) * nBlocks[i];
+            strides[i] = (blockSize[i] + blockHeaderSize) * nBlocks[i];
+            sizes[i] = dataset.getSize(i);
         }
         totalSize = matSize / BYTES;
         for (long offset = 0; offset < matSize; offset += mapSize) {
@@ -94,8 +90,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
                 mapMode = FileChannel.MapMode.READ_WRITE;
             }
             ByteOrder byteOrder = dataset.getByteOrder();
-            MapInfo mapInfo = new MapInfo(offset + layout.getFileHeaderSize(), size2, mapMode, byteOrder);
-            mapInfo.mapIt(raFile);
+            MapInfo mapInfo = new MapInfo(offset + headerSize, size2, mapMode, byteOrder);
             mappings.add(mapInfo);
         }
     }
@@ -119,31 +114,6 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
-    public final synchronized void writeHeader(boolean nvExtra) {
-        if (file != null) {
-            DatasetHeaderIO headerIO = new DatasetHeaderIO(dataset);
-            if (file.getPath().contains(".ucsf")) {
-                headerIO.writeHeaderUCSF(layout, raFile, nvExtra);
-            } else {
-                headerIO.writeHeader(layout, raFile);
-            }
-        }
-    }
-
-    @Override
-    public void setWritable(boolean state) throws IOException {
-        if (writable != state) {
-            if (state) {
-                raFile = new RandomAccessFile(file, "rw");
-            } else {
-                force();
-                raFile = new RandomAccessFile(file, "r");
-            }
-            init();
-        }
-    }
-
-    @Override
     public boolean isWritable() {
         return writable;
     }
@@ -153,45 +123,32 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
     }
 
     @Override
-    public long bytePosition(int... offsets) {
+    public long position(int... offsets) {
         long position;
         boolean subMatrix = true;
         if (subMatrix) {
             long blockNum = 0;
             long offsetInBlock = 0;
             for (int iDim = 0; iDim < offsets.length; iDim++) {
-                blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
-                offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
-//                System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock + " " + layout.offsetPoints[iDim] + " " + layout.offsetBlocks[iDim]);
+                blockNum += ((offsets[iDim] / blockSize[iDim]) * offsetBlocks[iDim]);
+                offsetInBlock += ((offsets[iDim] % blockSize[iDim]) * offsetPoints[iDim]);
+//System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock);
             }
-            position = blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES;
-//            System.out.println(position + " " + layout.blockPoints);
+            position = blockNum * (blockPoints + blockHeaderSize) + offsetInBlock + blockHeaderSize;
+//System.out.println(position);
             return position;
         } else {
             position = offsets[0];
             for (int iDim = 1; iDim < offsets.length; iDim++) {
                 position += offsets[iDim] * strides[iDim];
             }
-            position *= BYTES;
         }
-        return position;
-    }
-
-    @Override
-    public long pointPosition(int... offsets) {
-        long blockNum = 0;
-        long offsetInBlock = 0;
-        for (int iDim = 0; iDim < offsets.length; iDim++) {
-            blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
-            offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
-        }
-        long position = blockNum * layout.blockPoints + offsetInBlock;
         return position;
     }
 
     @Override
     public int getSize(final int dim) {
-        return layout.sizes[dim];
+        return sizes[dim];
     }
 
     @Override
@@ -211,7 +168,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     @Override
     public float getFloat(int... offsets) throws IOException {
-        long p = bytePosition(offsets);
+        long p = position(offsets) * BYTES;
         int mapN = (int) (p / mapSize);
         int offN = (int) (p % mapSize);
         try {
@@ -220,21 +177,21 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
             } else {
                 return getMapping(mapN).getInt(offN);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             StringBuilder sBuilder = new StringBuilder();
             for (int offset : offsets) {
                 sBuilder.append(offset).append(" ");
             }
-            for (int size : layout.sizes) {
+            for (int size : sizes) {
                 sBuilder.append(size).append(" ");
             }
-            throw new IOException("getFloat map range error offsets " + sBuilder.toString() + "pos " + p + " " + mapN + " " + offN + " " + totalSize + " " + e.getMessage());
+            throw new IOException("getFloat map range error offsets " + sBuilder.toString() + "pos " + p + " " + mapN + " " + offN + " " + totalSize);
         }
     }
 
     @Override
     public void setFloat(float d, int... offsets) throws IOException {
-        long p = bytePosition(offsets);
+        long p = position(offsets) * BYTES;
         int mapN = (int) (p / mapSize);
         int offN = (int) (p % mapSize);
 //        if (mapN > 0) {
@@ -246,12 +203,12 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
             } else {
                 getMapping(mapN).putInt(offN, (int) d);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             StringBuilder sBuilder = new StringBuilder();
             for (int offset : offsets) {
                 sBuilder.append(offset).append(" ");
             }
-            for (int size : layout.sizes) {
+            for (int size : sizes) {
                 sBuilder.append(size).append(" ");
             }
             throw new IOException("setFloat: map range error offsets " + sBuilder.toString() + "pos " + p + " " + mapN + " " + offN + " " + totalSize);
@@ -260,22 +217,18 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     @Override
     public void close() throws IOException {
-        if (raFile != null) {
-            try {
-                for (MapInfo mapInfo : mappings) {
-                    mapInfo.clean();
-                }
-            } catch (Exception e) {
-            } finally {
-                System.out.println("close rafile");
-                raFile.close();
-                raFile = null;
+        try {
+            for (MapInfo mapInfo : mappings) {
+                mapInfo.clean();
             }
+        } catch (Exception e) {
+        } finally {
+            raFile.close();
         }
     }
 
     @Override
-    public double sumValues() throws IOException {
+    public double sum() throws IOException {
         double sum = 0.0;
         for (int i = 0; i < totalSize; i++) {
             long p = i * BYTES;
@@ -283,9 +236,10 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
             int offN = (int) (p % mapSize);
             try {
                 sum += getMapping(mapN).getFloat(offN);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 MappedByteBuffer mapping = getMapping(mapN);
                 System.out.println(mapN + " Err " + offN + " " + mapping.capacity() + " " + mapping.limit());
+                e.printStackTrace();
                 System.exit(0);
             }
         }
@@ -303,6 +257,7 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
                 sum += mapping.getFloat(p);
             } catch (Exception e) {
                 System.out.println(p + " Err " + mapping.capacity() + " " + mapping.limit());
+                e.printStackTrace();
                 System.exit(0);
             }
         }
@@ -333,5 +288,4 @@ public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
             mapInfo.force();
         }
     }
-
 }

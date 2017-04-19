@@ -26,11 +26,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.regex.Pattern;
 //import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.math3.random.Well19937c;
-import org.apache.commons.math3.util.MultidimensionalCounter;
 
 /**
  * A SampleSchedule specifies the sequence of increments or array elements used to acquire data in a non-uniformly
@@ -67,16 +65,16 @@ public class SampleSchedule {
     /**
      * Number of sampled points (must be less than z_total).
      *
-     * @see #nPoints
+     * @see #z_total
      */
-    private int nSamples;
+    private int p_sampled;
 
     /**
      * Total number of transformed points.
      *
-     * @see #nSamples
+     * @see #p_sampled
      */
-    private int nPoints;
+    private int z_total;
 
     private int[] dimSizes;
 
@@ -129,7 +127,7 @@ public class SampleSchedule {
     /**
      * Array of sample schedule elements.
      */
-    int[] sampleIndices = null;
+    int[] sampleArray = null;
 
     /**
      * Full path file name.
@@ -141,24 +139,24 @@ public class SampleSchedule {
      * <p>
      * Used by SAMPLE_SCHEDULE(mode='create') in python script <i>pyproc</i>.
      *
-     * @param nSamples number of sampled points (must be less than total)
-     * @param nPoints total number of points
+     * @param sample number of sampled points (must be less than total)
+     * @param total total number of points
      * @param path full path file name
      * @param demo set true if nmr dataset not NUS acquisition
      *
      * @see Ist
-     * @see #nSamples
-     * @see #nPoints
+     * @see #p_sampled
+     * @see #z_total
      * @see #fpath
      */
-    public SampleSchedule(int nSamples, int nPoints, String path, boolean demo) {
-        if (nSamples > nPoints) {
-            nSamples = nPoints / 2;
+    public SampleSchedule(int sample, int total, String path, boolean demo) {
+        if (sample > total) {
+            sample = total / 2;
         }
-        this.nSamples = nSamples;
-        this.nPoints = nPoints;
+        this.p_sampled = sample;
+        this.z_total = total;
         this.dimSizes = new int[1];
-        this.dimSizes[0] = nPoints;
+        this.dimSizes[0] = total;
         this.nDim = 2;
         this.fpath = path;
         this.demo = demo;
@@ -184,15 +182,11 @@ public class SampleSchedule {
         this.demo = demo;
     }
 
-    public SampleSchedule() {
-
-    }
-
     /**
      */
     public SampleSchedule(int p, int z) {
-        this.nSamples = p;
-        this.nPoints = z;
+        this.p_sampled = p;
+        this.z_total = z;
         this.dimSizes = new int[1];
         this.dimSizes[0] = z;
         createArray();
@@ -201,8 +195,8 @@ public class SampleSchedule {
     /**
      */
     public SampleSchedule(int p, int z, boolean endOnly) {
-        this.nSamples = p;
-        this.nPoints = z;
+        this.p_sampled = p;
+        this.z_total = z;
         this.dimSizes = new int[1];
         this.dimSizes[0] = z;
         this.endOnly = endOnly;
@@ -221,47 +215,13 @@ public class SampleSchedule {
         this.seed = seed;
     }
 
-    public static SampleSchedule createUniformSchedule(int[] dims) {
-        SampleSchedule sampleSchedule = new SampleSchedule();
-        int n = 1;
-        for (int i = 0; i < dims.length; i++) {
-            n *= dims[i];
-        }
-        sampleSchedule.demo = true;
-        sampleSchedule.nSamples = n;
-        sampleSchedule.v_samples = new int[n][dims.length - 1];
-        MultidimensionalCounter mCounter = new MultidimensionalCounter(dims);
-        MultidimensionalCounter.Iterator iter = mCounter.iterator();
-        int i = 0;
-        while (iter.hasNext()) {
-            iter.next();
-            int[] pt = iter.getCounts();
-            sampleSchedule.v_samples[i++] = pt;
-        }
-        sampleSchedule.calcDims();
-        sampleSchedule.calcSampleHash();
-        sampleSchedule.calcSampleIndices();
-
-        return sampleSchedule;
-    }
-
-    public void dumpSchedule() {
-        for (int i = 0; i < v_samples.length; i++) {
-            System.out.print(i);
-            for (int j = 0; j < v_samples[i].length; j++) {
-                System.out.print(" " + v_samples[i][j]);
-            }
-            System.out.println("");
-        }
-    }
-
     /**
      * Get the total number of elements in the sample schedule.
      *
      * @return total number of vectors to be read
      */
     public int getTotalSamples() {
-        return nSamples;
+        return p_sampled;
     }
 
     /**
@@ -325,44 +285,6 @@ public class SampleSchedule {
     }
 
     /**
-     * Modifies a VecIndex object that represents position in non-NUS dataset to be consistent with sample schedule for
-     * this dataset. If the object represents a value that was not sampled it returns null.
-     *
-     * @param fullIndex VecIndex assuming the dataset doesn't have NUS sampling
-     * @return vecIndex consistent with sampling schedule, or null if point not sampled.
-     * @see MultiVecCounter
-     * @see VecIndex
-     */
-    
-    public VecIndex convertToNUSGroup(VecIndex fullIndex, int groupNum) {
-        int groupSize = fullIndex.inVecs.length;
-        int[] inVecs = fullIndex.inVecs;
-        //System.out.print("next index ");
-        boolean ok = true;
-        for (int i = 0; i < groupSize; i++) {
-            //System.out.print(inVecs[i]+" ");
-            int j = inVecs[i];
-            int phOff = j % groupSize;
-            j /= groupSize;
-            int index = sampleIndices[groupNum];
-            if (index == -1) {
-                ok = false;
-                break;
-            } else if (!demo) {
-                inVecs[i] = groupSize * index + phOff;
-            }
-        }
-        //System.out.print(inVecs[i]+" ");
-
-        //System.out.println(groupSize);
-        VecIndex nusIndex = null;
-        if (ok) {
-            nusIndex = fullIndex;
-        }
-        return nusIndex;
-    }
-
-    /**
      * Get next group of Vecs for processing. Input and output locations depend on demo mode. If demo, tmult contains
      * correct input and output, but location depends on sample schedule (v_samples). If not demo, two MultiVecCounters
      * are needed: tmult for input and outMult for output.
@@ -382,7 +304,7 @@ public class SampleSchedule {
             // inVecs[i] = vecIndex.inVecs[i];  // store inVecs, non-demo
             inVecs[i] = vecGroup * groupSize + i;
         }
-        if (k < nSamples) {
+        if (k < p_sampled) {
             int[] oSizes;
             if (demo) {
                 oSizes = tmult.getOutSizes();
@@ -416,7 +338,7 @@ public class SampleSchedule {
 
     public synchronized boolean reloadFile(String path, int vecSize) {
         boolean recreate = false;
-        if (!fpath.equals(path) || vecSize != nPoints) {
+        if (!fpath.equals(path) || vecSize != z_total) {
             fpath = path;
             readFile();
             recreate = true;
@@ -426,9 +348,9 @@ public class SampleSchedule {
 
     public synchronized boolean recreateArray(int nSamples, int vecSize, boolean doEndOnly) {
         boolean recreate = false;
-        if ((this.nSamples != nSamples) || (vecSize != nPoints) || (endOnly != doEndOnly)) {
-            this.nSamples = nSamples;
-            nPoints = vecSize;
+        if ((nSamples != p_sampled) || (vecSize != z_total) || (endOnly != doEndOnly)) {
+            p_sampled = nSamples;
+            z_total = vecSize;
             endOnly = doEndOnly;
             recreate = true;
             if (endOnly) {
@@ -441,11 +363,11 @@ public class SampleSchedule {
     }
 
     private void createEndOnlyArray() {
-        v_samples = new int[nSamples][1];
-        for (int i = 0; i < (nSamples - 1); i++) {
+        v_samples = new int[p_sampled][1];
+        for (int i = 0; i < (p_sampled - 1); i++) {
             v_samples[i][0] = i;
         }
-        v_samples[nSamples - 1][0] = nPoints - 1;
+        v_samples[p_sampled - 1][0] = z_total - 1;
     }
 
     /**
@@ -454,11 +376,11 @@ public class SampleSchedule {
     private void createArray() {
         int i, j, k, n = 0;
         int count = 0;
-        double ld = (double) nPoints / (double) nSamples;
+        double ld = (double) z_total / (double) p_sampled;
         double adj = 2.0 * (ld - 1.0);
         double arg;
 
-        v_samples = new int[nSamples][1];
+        v_samples = new int[p_sampled][1];
         if (seed > 0) {
             randomWell = new Well19937c(seed);
         } else {
@@ -470,12 +392,12 @@ public class SampleSchedule {
             i = 0;
             n = 0;
 //            System.out.print("iter "+count+":");
-            while (i < nPoints) {
-                if (n < nSamples) {
+            while (i < z_total) {
+                if (n < p_sampled) {
                     v_samples[n][0] = i;  // no need to assign if bigger than array
                 }
                 i++;
-                arg = adj * Math.sin(HALF_PI * (double) (i + 0.5) / (double) (nPoints + 1.0));
+                arg = adj * Math.sin(HALF_PI * (double) (i + 0.5) / (double) (z_total + 1.0));
                 k = poisson(arg);
 //                k = (int) rData.nextPoisson(arg);  // alternate to poisson()
 //                System.out.print(" "+k);
@@ -484,17 +406,17 @@ public class SampleSchedule {
                 n++;
             }
 //            System.out.println(": n="+n+" adj="+adj);
-            if (n > nSamples) {
+            if (n > p_sampled) {
                 adj *= 1.02;
             } // too many points
-            else if (n < nSamples) {
+            else if (n < p_sampled) {
                 adj /= 1.02;
             } // too few points
             count++;
-        } while (n != nSamples && count < MAX_TRY);
+        } while (n != p_sampled && count < MAX_TRY);
 
         if (count >= MAX_TRY) {  // avoid infinite loop
-            nSamples = n;
+            p_sampled = n;
             System.err.println("sample schedule created with " + n + " samples, max tries reached");
         }
     }
@@ -532,16 +454,16 @@ public class SampleSchedule {
      */
     public void display() {
         System.out.print("sample schedule:");
-        for (int j = 0; j < nSamples; j++) {
+        for (int j = 0; j < p_sampled; j++) {
             for (int k : v_samples[j]) {
                 System.out.print(" " + k);
             }
-            if (j < nSamples - 1) {
+            if (j < p_sampled - 1) {
                 System.out.print(",");
             }
         }
         System.out.println();
-        System.out.println("  " + nSamples + " points out of " + nPoints + " total");
+        System.out.println("  " + p_sampled + " points out of " + z_total + " total");
     }
 
     /**
@@ -556,7 +478,7 @@ public class SampleSchedule {
             System.out.println("writing new sample schedule: " + fpath);
 //            bw.write("sizes "+z_total);
 //            bw.newLine();
-            for (int j = 0; j < nSamples; j++) {
+            for (int j = 0; j < p_sampled; j++) {
                 bw.write(v_samples[j][0] + " ");
                 bw.newLine();
             }
@@ -577,7 +499,7 @@ public class SampleSchedule {
             if (br.ready()) {
                 String[] sa;
                 int k;
-                nPoints = 0;
+                z_total = 0;
                 String line;
                 ArrayList<int[]> sampList = new ArrayList();
                 int sampLen = 0;
@@ -588,7 +510,7 @@ public class SampleSchedule {
                     if (line.startsWith("sizes")) {  // parse first line for sizes
                         sa = line.split("[\\s,]+");
                         sampLen = sa.length - 1;
-                        nPoints = 1;
+                        z_total = 1;
                         for (int i = 1; i < sa.length; i++) {
                             k = -1;
                             try {
@@ -597,7 +519,7 @@ public class SampleSchedule {
                                 throw new ProcessingException(e.getMessage());
                             }
                             if (k > -1) {
-                                nPoints *= k;
+                                z_total *= k;
                             }
                         }
                         line = br.readLine();
@@ -625,17 +547,17 @@ public class SampleSchedule {
                     sampList.add(samp);
                     ct++;
                 }
-                nSamples = ct;
+                p_sampled = ct;
                 if (sampLen < 1) {
                     sampLen = 1;
                 }
                 // samp values are in order row, plane ...
-                v_samples = new int[nSamples][sampLen];
+                v_samples = new int[p_sampled][sampLen];
                 sampList.toArray(v_samples);
                 calcDims();
                 calcSampleHash();
-                calcSampleIndices();
-                System.out.println("sample schedule read " + nSamples + " points from " + fpath);
+                calcSampleArray();
+                System.out.println("sample schedule read " + p_sampled + " points from " + fpath);
             }
             br.close();
         } catch (IOException e) {
@@ -677,35 +599,35 @@ public class SampleSchedule {
         return r;
     }
 
-    private void calcSampleIndices() {
+    private void calcSampleArray() {
         int j = dimSizes.length - 1;
         int size = dimSizes[j];
         while (j > 0) {
             j--;
             size = size * dimSizes[j];
         }
-        sampleIndices = new int[size];
+        sampleArray = new int[size];
         for (int i = 0; i < size; i++) {
-            sampleIndices[i] = -1;
+            sampleArray[i] = -1;
         }
-        for (int i = 0; i < nSamples; i++) {
+        for (int i = 0; i < p_sampled; i++) {
             int key = calcKey(v_samples[i]);
-            sampleIndices[key] = i;
+            sampleArray[key] = i;
         }
     }
 
     public int getIndex(int[] point) {
         int key = calcKey(point);
         int index = -1;
-        if (key < sampleIndices.length) {
-            index = sampleIndices[key];
+        if (key < sampleArray.length) {
+            index = sampleArray[key];
         }
         return index;
     }
 
     private void calcSampleHash() {
-        sampleHash = new HashMap<>(nSamples * 3 / 2);  // bigger than needed
-        for (int i = 0; i < nSamples; i++) {
+        sampleHash = new HashMap<>(p_sampled * 3 / 2);  // bigger than needed
+        for (int i = 0; i < p_sampled; i++) {
             int key = calcKey(v_samples[i]);
             sampleHash.put(key, i);
         }

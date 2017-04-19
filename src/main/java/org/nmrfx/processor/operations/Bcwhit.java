@@ -39,7 +39,41 @@ public class Bcwhit extends Operation {
 
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
-        vector.bcWhit(lambda, order, baselineMode);
+        int vecSize = vector.getSize();
+
+        boolean[] isInSignalRegion = vector.getSignalRegion();
+
+        if ((isInSignalRegion != null) && (isInSignalRegion.length > 4)) {
+            double[] w = new double[vecSize + 1];
+            double[] z = new double[vecSize + 1];
+            double[] y = new double[vecSize + 1];
+            if (vector.isComplex()) {
+                vector.makeReal();
+            }
+            for (int i = 0; i < vecSize; i++) {
+                y[i + 1] = vector.rvec[i];
+                if (isInSignalRegion[i]) {
+                    w[i + 1] = 0;
+                } else {
+                    w[i + 1] = 1;
+                }
+            }
+            double[] a = new double[order + 1];
+
+            Util.pascalrow(a, order);
+
+            //is this fine?
+            Util.asmooth(w, y, z, a, lambda, vecSize, order);
+            if (baselineMode) {
+                for (int i = 0; i < vecSize; i++) {
+                    vector.rvec[i] = z[i + 1];
+                }
+            } else {
+                for (int i = 0; i < vecSize; i++) {
+                    vector.rvec[i] -= z[i + 1];
+                }
+            }
+        }
         return this;
     }
 }

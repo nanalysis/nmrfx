@@ -1,0 +1,763 @@
+/*
+ * NMRFx Processor : A Program for Processing NMR Data 
+ * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+ /*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.nmrfx.processor.datasets.peaks;
+
+import org.nmrfx.processor.utilities.Format;
+import org.nmrfx.processor.utilities.NvUtil;
+import java.awt.geom.Line2D;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ *
+ * @author brucejohnson
+ */
+public class Multiplet implements PeakOrMulti, Comparable {
+
+    private double center = 0.0;
+    private double intensity = 0.0;
+    private double volume;
+    private int idNum;
+    private Coupling coupling = new Singlet(this);
+    HashSet<PeakDim> peakDims = new HashSet<PeakDim>();
+    PeakDim myPeakDim;
+
+    public int compareTo(Object o) {
+//       int result = 1;
+//       if (o instanceof Multiplet) {
+//           Multiplet multiplet2 = (Multiplet) o;
+//           PeakDim peakDim1 = getPeakDim();
+//           PeakDim peakDim2 = multiplet2.getPeakDim();
+//           Peak peak1 = peakDim1.getPeak();
+//           Peak peak2 = peakDim2.getPeak();
+//           result = peak1.peakList.getName().compareTo(peak2.peakList.getName());
+//           if (result == 0) {
+//               int idNum = peak1.getIdNum();
+//
+//               if (idNum > peak2.getIdNum()) {
+//                    result = 1;
+//               } else if (idNum < peak2.getIdNum()) {
+//                    result = -1;
+//               } else {
+//                    result = 0;
+//               }
+//           }
+//       }
+        int result = 1;
+        updateCenter();
+        if (o instanceof Multiplet) {
+            Multiplet multiplet2 = (Multiplet) o;
+            multiplet2.updateCenter();
+            if (center < multiplet2.center) {
+                result = 1;
+            } else if (center > multiplet2.center) {
+                result = -1;
+            } else {
+                result = 0;
+            }
+        }
+        return result;
+    }
+
+    public Multiplet(PeakDim peakDim) {
+        peakDims.add(peakDim);
+        myPeakDim = peakDim;
+        peakDim.getPeak().peakList.addMultiplet(this);
+    }
+
+    public int getStatus() {
+        int status = -1;
+        if (myPeakDim != null) {
+            status = myPeakDim.getPeak().getStatus();
+        }
+        return status;
+    }
+
+    public boolean isValid() {
+        boolean valid = false;
+        if (myPeakDim != null) {
+            valid = myPeakDim.getPeak().isValid();
+        }
+        return valid;
+    }
+
+    public void setIDNum(int value) {
+        idNum = value;
+    }
+
+    public int getIDNum() {
+        return idNum;
+    }
+
+    public PeakList getPeakList() {
+        PeakList peakList = null;
+        if (myPeakDim != null) {
+            peakList = myPeakDim.getPeak().peakList;
+        }
+        return peakList;
+
+    }
+
+    public double getCenter() {
+        if (peakDims.size() == 1) {
+            return myPeakDim.getChemShiftValue();
+        }
+        return center;
+    }
+
+    public double getCenter(int iDim) {
+        if (peakDims.size() == 1) {
+            return myPeakDim.getChemShiftValue();
+        }
+        return center;
+    }
+
+    public void setCoupling(double values[], double intensities[]) {
+        coupling = coupling.update(values, intensities);
+        setMultipletComponentValues();
+    }
+
+    public void setCoupling(double values[], double intensity, double[] sin2Thetas) {
+        coupling = coupling.update(values, intensity, sin2Thetas);
+        setMultipletComponentValues();
+    }
+
+//    public TclObject getCouplingsAsTclObject(Interp interp) throws TclException {
+//        return coupling.getCouplingsAsTclObject(interp);
+//    }
+    public String getCouplingsAsString() {
+        return coupling.getCouplingsAsString();
+    }
+
+    public String getCouplingsAsSimpleString() {
+        return coupling.getCouplingsAsSimpleString();
+    }
+
+    /*
+     public int getNCouplingValues() {
+     return coupling.getNValues();
+     }
+     public double getCouplingValue(int i) {
+     double value = coupling.getValueAt(i);
+     return value;
+     }
+     public int getCouplingN(int i) {
+     return coupling.getNValue(i);
+     }
+     public int[] getCouplingNs() {
+     return coupling.getNs();
+     }
+     */
+    public void setCenter(final double value) {
+        center = value;
+        if (peakDims.size() == 1) {
+            myPeakDim.setChemShiftValue((float) center);
+        } else {
+            setMultipletComponentValues();
+        }
+    }
+
+    public double getIntensity() {
+        if (coupling instanceof Singlet) {
+            intensity = myPeakDim.getPeak().getIntensity();
+        }
+        return intensity;
+    }
+
+    public void setIntensity(final double value) {
+        if (coupling instanceof Singlet) {
+            myPeakDim.getPeak().setIntensity((float) value);
+        }
+        intensity = value;
+    }
+
+    public PeakDim getPeakDim() {
+        return myPeakDim;
+    }
+
+    public Set<PeakDim> getPeakDims() {
+        return peakDims;
+    }
+
+    public double getVolume() {
+        if (coupling instanceof Singlet) {
+            volume = myPeakDim.getPeak().getVolume1();
+        }
+        return volume;
+    }
+
+    public void setVolume(final double value) {
+        volume = value;
+    }
+
+    public void addPeakDim(PeakDim peakDim) {
+        peakDims.add(peakDim);
+        myPeakDim = peakDim;
+    }
+
+    public static void merge(PeakDim peakDimA, PeakDim peakDimB) {
+        Multiplet mA = peakDimA.getMultiplet();
+        Multiplet mB = peakDimB.getMultiplet();
+        if (mA.peakDims.size() >= mB.peakDims.size()) {
+            peakDimB.setMultiplet(mA);
+            mA.addPeakDim(peakDimB);
+            mA.updateCenter();
+            mA.setGenericMultiplet();
+        } else {
+            peakDimA.setMultiplet(mB);
+            mB.addPeakDim(peakDimA);
+            mB.updateCenter();
+            mB.setGenericMultiplet();
+        }
+    }
+
+    public void removePeakDim(PeakDim peakDim) {
+        peakDims.remove(peakDim);
+        if (peakDims.isEmpty()) {
+            peakDim.getPeak().peakList.removeMultiplet(this);
+            this.myPeakDim = null;
+        } else if (peakDim == myPeakDim) {
+            for (PeakDim pD : peakDims) {
+                myPeakDim = pD;
+                break;
+            }
+        }
+    }
+
+    protected void adjustCouplings(int iCoupling, double newValue) {
+        if (coupling != null) {
+            coupling = coupling.adjustCouplings(this, iCoupling, newValue);
+            if (isCoupled()) {
+                setMultipletComponentValues();
+            }
+        }
+    }
+
+    public double[] getIntensities() {
+        if (peakDims.size() == 0) {
+            return new double[0];
+        } else {
+            double[] intensities = new double[peakDims.size()];
+            int j = 0;
+            for (PeakDim peakDim : peakDims) {
+                Peak peak = peakDim.myPeak;
+                intensities[j++] = peak.getIntensity();
+
+            }
+            return intensities;
+        }
+    }
+
+    public String getMultiplicity() {
+        return coupling.getMultiplicity();
+    }
+
+    public String getSummary() {
+        double normVal = 0;
+        String summary = "";
+        // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
+        PeakList peakList = myPeakDim.getPeak().getPeakList();
+        if (peakList.scale > 0.0) {
+            normVal = getVolume() / peakList.scale;
+        }
+
+        String couplings = getCouplingsAsSimpleString();
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(Format.format3(getCenter()));
+        sBuilder.append(" ");
+        sBuilder.append(getMultiplicity());
+        sBuilder.append(" ");
+        sBuilder.append(couplings);
+        sBuilder.append(" ");
+        sBuilder.append(Format.format2(normVal));
+
+        return sBuilder.toString();
+    }
+
+    public Peak getOrigin() {
+        Peak origin = myPeakDim.myPeak;
+        return origin;
+    }
+
+    public void setGenericMultiplet() {
+        double[] fOValues = getFrequencyOffsets();
+        double[] intensities = getIntensities();
+        coupling = new ComplexCoupling(this, fOValues, intensities);
+        myPeakDim.peakDimUpdated();
+    }
+
+    public void setSinglet() {
+        coupling = new Singlet(this);
+    }
+
+    public boolean isGenericMultiplet() {
+        boolean result = false;
+
+        if (!isCoupled() && myPeakDim.isLinked()) {
+            coupling = getCoupling();
+
+            if (coupling == null) {
+                setGenericMultiplet();
+            }
+
+            result = true;
+        }
+
+        return result;
+    }
+
+    public boolean isCoupled() {
+        if (getCoupling() == null) {
+            return false;
+        } else {
+            return (getCoupling() instanceof CouplingPattern);
+        }
+    }
+
+    public void setCouplingValues(double[] values, int[] n) {
+        setCouplingValues(values, n, null);
+    }
+
+    public void setCouplingValues(double[] values, int[] n, double[] intensities) {
+        if ((intensities == null) || (intensities.length == 0)) {
+            coupling = new CouplingPattern(this, values, n);
+        } else {
+            coupling = new CouplingPattern(this, values, n, intensities);
+        }
+        FreqIntensities fiValues = getFreqIntensitiesFromSplittings();
+        Arrays.sort(fiValues.freqs);
+        int nFreqs = getFrequencyOffsets().length;
+        int nExtra = nFreqs - fiValues.freqs.length;
+        if (nExtra > 0) {
+            removeExtraLinkedPeaks(nExtra);
+            setMultipletComponentValues();
+        } else if (nExtra < 0) {
+            nExtra = -nExtra;
+            addExtraLinkedPeaks(nExtra);
+            if ((intensities == null) || (intensities.length == 0)) {
+                coupling = new CouplingPattern(this, values, n);
+            } else {
+                coupling = new CouplingPattern(this, values, n, intensities);
+            }
+            setMultipletComponentValues();
+        } else {
+            setMultipletComponentValues();
+        }
+
+        myPeakDim.peakDimUpdated();
+    }
+
+    public void setCouplingValues(double[] values, int[] n, double intensity, double[] sin2Thetas) {
+        coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
+        FreqIntensities fiValues = getFreqIntensitiesFromSplittings();
+        Arrays.sort(fiValues.freqs);
+        int nFreqs = getFrequencyOffsets().length;
+        int nExtra = nFreqs - fiValues.freqs.length;
+        if (nExtra > 0) {
+            removeExtraLinkedPeaks(nExtra);
+            setMultipletComponentValues();
+        } else if (nExtra < 0) {
+            nExtra = -nExtra;
+            addExtraLinkedPeaks(nExtra);
+            coupling = new CouplingPattern(this, values, n);
+            setMultipletComponentValues();
+        } else {
+            setMultipletComponentValues();
+        }
+
+        myPeakDim.peakDimUpdated();
+    }
+
+    public void removeExtraLinkedPeaks(int nExtra) {
+        ArrayList<PeakDim> links = myPeakDim.getLinkedPeakDims();
+        int nRemoved = 0;
+        for (int i = 0; i < links.size(); i++) {
+            PeakDim peakDim = links.get(i);
+            PeakList.unLinkPeak(peakDim.myPeak);
+            peakDim.myPeak.setStatus(-1);
+            nRemoved++;
+
+            if (nRemoved >= nExtra) {
+                break;
+            }
+        }
+        myPeakDim.myPeak.peakList.compress();
+    }
+
+    public void addExtraLinkedPeaks(int nExtra) {
+        Peak lPeak = myPeakDim.myPeak;
+        double holdCenter = center;
+        for (int i = 0; i < nExtra; i++) {
+            Peak peak = lPeak.copy(lPeak.peakList);
+            lPeak.peakList.addPeak(peak);
+            PeakList.couplePeakDims(myPeakDim, peak.getPeakDim(0));
+        }
+        center = holdCenter;
+        setMultipletComponentValues();
+    }
+
+    public void setCoupling(Coupling coupling) {
+        this.coupling = coupling;
+        myPeakDim.peakDimUpdated();
+    }
+
+    public Coupling getCoupling() {
+        return coupling;
+    }
+
+    public void setCouplingValues(String arg) {
+        String[] args = arg.split(" ");
+        setCouplingValues(args);
+    }
+
+    public void setCouplingValues(String[] args) {
+        double[] values = null;
+        int[] n = null;
+        if (args.length == 0) {
+            return;
+        } else if (args.length == 1) {
+            values = new double[1];
+
+            if (args[0].toString().equals("m")) {
+                values[0] = 0.0;
+            } else {
+                values[0] = Math.abs(NvUtil.toDouble(args[0]));
+            }
+
+            n = new int[1];
+
+            n[0] = 2;
+
+            if (values[0] < 0.02) {
+                if (myPeakDim.isCoupled()) {
+                    setGenericMultiplet();
+                } else {
+                    setSinglet();
+                }
+            } else {
+                setCouplingValues(values, n);
+            }
+        } else if (args[0].toString().equals("m")) {
+            if (((args.length - 1) % 2) != 0) {
+                throw new IllegalArgumentException("multiplet coupling values must have a multiple of 2 values");
+            }
+
+            double[] intensities = new double[(args.length - 1) / 2];
+            double[] freqs = new double[(args.length - 1) / 2];
+            int j = 0;
+            double max = Double.NEGATIVE_INFINITY;
+
+            for (int i = 1; i < args.length; i += 2) {
+                freqs[j] = NvUtil.toDouble(args[i]);
+                intensities[j] = NvUtil.toDouble(args[i + 1]);
+                if (intensities[j] > max) {
+                    max = intensities[j];
+                }
+                j++;
+            }
+            setCoupling(freqs, intensities);
+            setIntensity(getMultipletMax());
+        } else {
+            ArrayList valuesList = new ArrayList();
+            ArrayList nList = new ArrayList();
+            boolean intensityState = false;
+            boolean sin2ThetaState = false;
+            int j = 0;
+            double[] intensities = null;
+            double rootIntensity = 0.0;
+            for (int i = 0; i < args.length; i++) {
+                if (intensityState) {
+                    intensities[j++] = NvUtil.toDouble(args[i]);
+                } else if (sin2ThetaState) {
+                    if (j == 0) {
+                        rootIntensity = NvUtil.toDouble(args[i]);
+                    } else {
+                        intensities[j - 1] = NvUtil.toDouble(args[i]);
+                    }
+                    j++;
+                } else if (args[i].toString().equals("i")) {
+                    intensityState = true;
+                    intensities = new double[args.length - i - 1];
+                } else if (args[i].toString().equals("s")) {
+                    sin2ThetaState = true;
+                    intensities = new double[args.length - i - 2];
+                } else {
+                    double value = Math.abs(NvUtil.toDouble(args[i]));
+                    i++;
+
+                    if (i >= args.length) {
+                        throw new IllegalArgumentException("coupling values must have 1, or multiple of 2, values");
+                    }
+
+                    int nValue = NvUtil.toInt(args[i]) + 1;
+                    valuesList.add(new Double(value));
+                    nList.add(Integer.valueOf(nValue));
+                }
+            }
+
+            values = new double[valuesList.size()];
+            n = new int[nList.size()];
+
+            for (int i = 0; i < valuesList.size(); i++) {
+                values[i] = Math.abs(((Double) valuesList.get(i)).doubleValue());
+                n[i] = ((Integer) nList.get(i)).intValue();
+
+                if (n[i] <= 1) {
+                    throw new IllegalArgumentException("coupling number must be greater than zero");
+                }
+            }
+            if (sin2ThetaState) {
+                setCouplingValues(values, n, rootIntensity, intensities);
+            } else {
+                setCouplingValues(values, n, intensities);
+
+            }
+
+        }
+        myPeakDim.peakDimUpdated();
+    }
+
+    public void updateCenter() {
+        double sum = 0.0;
+        for (PeakDim peakDim : peakDims) {
+            sum += peakDim.getChemShiftValue();
+        }
+        center = sum / peakDims.size();
+    }
+
+    public double[] getFrequencyOffsets() {
+        double[] offsets = null;
+        offsets = new double[peakDims.size()];
+        int i = 0;
+        for (PeakDim peakDim : peakDims) {
+            offsets[i++] = (center - peakDim.getChemShiftValue()) * myPeakDim.myPeak.peakList.getSpectralDim(0).getSf();
+        }
+
+        return offsets;
+    }
+
+    // Adjust peak component positons and intensities to correspond to values calculated from
+    //    couplings (centered on current multiplet center)
+    public void setMultipletComponentValues() {
+        if (coupling != null) {
+            FreqIntensities fiValues = getFreqIntensitiesFromSplittings();
+            int nFreqs = fiValues.freqs.length;
+            if (nFreqs != fiValues.intensities.length) {
+                fiValues = new FreqIntensities(fiValues.freqs, getIntensities());
+            }
+            int nExtra = fiValues.freqs.length - peakDims.size();
+
+            if (nExtra > 0) {
+                double[] amplitudeJunk = new double[fiValues.freqs.length];
+                PeakList.trimFreqs(fiValues.freqs, amplitudeJunk, nExtra);
+            }
+
+            //System.out.println("setMultipletComponentValues "+nFreqs+" "+nExtra+" "+" "+fiValues.intensities.length);
+            //  fixme freqs length can be inconistent
+            if (peakDims.size() == fiValues.intensities.length) {
+                intensity = 0.0;
+                double sumV = 0.0;
+
+                int j = 0;
+                for (PeakDim lPeakDim : peakDims) {
+                    lPeakDim.setChemShiftValueNoCheck((float) (center - fiValues.freqs[j]));
+                    //fixme lPeakDim.setLineWidthValue(getLineWidthValue());
+                    lPeakDim.myPeak.setIntensity((float) fiValues.intensities[j]);
+                    //lPeakDim.myPeak.setFlag(4, true);
+                    // XXX 1.05 is a fudge factor to make the volume calculated here closer to those from
+                    // summing data points across peak, not unreasonable because you have to sum out to infinity
+                    // to get the whole integral
+                    lPeakDim.myPeak.setVolume1((float) (lPeakDim.myPeak.getIntensity() * Math.abs(lPeakDim.myPeak.peakDim[0].getLineWidthValue()) * Math.PI / 2.0 / 1.05));
+                    sumV += lPeakDim.myPeak.getVolume1();
+                    j++;
+
+                }
+                volume = sumV;
+                intensity = getMultipletMax();
+            }
+            myPeakDim.peakDimUpdated();
+        }
+    }
+
+    public double getMultipletMax() {
+        double maxIntensity = 0.0;
+        for (PeakDim peakDim : peakDims) {
+            double hSum = 0.0;
+            double ctr = peakDim.getChemShift();
+            for (PeakDim peakDim2 : peakDims) {
+                double ctr2 = peakDim2.getChemShiftValue();
+                double lw2 = peakDim2.getLineWidthValue();
+                double h2 = peakDim2.myPeak.getIntensity();
+                double contrib = h2 * lw2 * lw2 / (lw2 * lw2 + (ctr2 - ctr) * (ctr2 - ctr) * 4.0);
+                hSum += contrib;
+                // System.out.println(ctr+" "+ctr2+" "+lw2+" "+h2+" "+contrib+" "+hSum);
+            }
+            if (hSum > maxIntensity) {
+                maxIntensity = hSum;
+            }
+        }
+        return maxIntensity;
+
+    }
+
+    private FreqIntensities getFreqIntensitiesFromSplittings() {
+        return coupling.getFreqIntensitiesFromSplittings();
+    }
+
+    public ArrayList<Line2D> getSplittingGraph() {
+        return coupling.getSplittingGraph();
+    }
+
+    public boolean inRegion(double[][] limits, double[][] foldLimits, int[] dim) {
+        int nSearchDim = limits.length;
+        if (false) {
+            return true;
+        }
+        boolean ok = true;
+        for (int j = 0; j < nSearchDim; j++) {
+            if ((dim.length <= j) || (dim[j] == -1)) {
+                continue;
+            }
+            double ctr = getCenter();
+
+            if ((ctr < limits[j][0]) || (ctr > limits[j][1])) {
+                ok = false;
+//                System.out.println(j + " " + limits[j][0] + " " + limits[j][1] + " " + ctr);
+                break;
+            }
+
+        }
+        return ok;
+
+    }
+
+    public float getBoundsValue() {
+        ArrayList<PeakDim> links = myPeakDim.getLinkedPeakDims();
+        float max = Float.NEGATIVE_INFINITY;
+        float min = Float.MAX_VALUE;
+        for (PeakDim peakDim : links) {
+            float value = peakDim.getChemShiftValue();
+            if (value > max) {
+                max = value;
+            }
+            if (value < min) {
+                min = value;
+            }
+        }
+        return (max - min);
+    }
+
+    public void makeSinglet() {
+        coupling = new Singlet(this);
+    }
+
+    public void removeCoupling() {
+        double[] intensities = getIntensities();
+        System.out.println("remove " + coupling.getCouplingsAsString());
+        if (coupling instanceof CouplingPattern) {
+            CouplingPattern cPattern = (CouplingPattern) coupling;
+            int[] nValues = cPattern.getNValues();
+            double[] values = cPattern.getValues();
+            int nSplittings = nValues.length - 1;
+            System.out.println("remove n " + nSplittings);
+            if (nSplittings > 0) {
+                int[] newN = new int[nSplittings];
+                System.arraycopy(nValues, 0, newN, 0, nSplittings);
+                double[] newValues = new double[nSplittings];
+                System.arraycopy(values, 0, newValues, 0, nSplittings);
+                setCouplingValues(newValues, newN);
+            } else {
+                coupling = new Singlet(this);
+            }
+        }
+    }
+
+    public void addCoupling(Coupling oldCoupling, String couplingType, double couplingValue) throws IllegalArgumentException {
+        int nType = "sdtqph".indexOf(couplingType) + 1;
+        if (nType < 1) {
+            throw new IllegalArgumentException("Invalid coupling type: " + couplingType);
+        }
+        double[] intensities = getIntensities();
+        if (oldCoupling == null) {
+            oldCoupling = coupling;
+        }
+        if (oldCoupling instanceof CouplingPattern) {
+            System.out.println(" coupling pattern " + couplingType + " " + couplingValue + " " + nType);
+            CouplingPattern cPattern = (CouplingPattern) oldCoupling;
+            int[] nValues = cPattern.getNValues();
+            double[] values = cPattern.getValues();
+            int nSplittings = nValues.length + 1;
+            int[] newN = new int[nSplittings];
+            double[] newValues = new double[nSplittings];
+            System.arraycopy(nValues, 0, newN, 0, nValues.length);
+            System.arraycopy(values, 0, newValues, 0, nValues.length);
+            newN[nSplittings - 1] = nType;
+            newValues[nSplittings - 1] = couplingValue;
+            setCouplingValues(newValues, newN);
+        } else if (oldCoupling instanceof Singlet) {
+            System.out.println(" singlet " + nType);
+            int[] newN = {nType};
+            double[] newValues = {couplingValue};
+            setCouplingValues(newValues, newN);
+        } else {
+            System.out.println(" complex pattern ");
+
+        }
+    }
+
+    public void expandCoupling(int limit) throws IllegalArgumentException {
+        double[] intensities = getIntensities();
+        if (coupling instanceof CouplingPattern) {
+            CouplingPattern cPattern = (CouplingPattern) coupling;
+            int[] nValues = cPattern.getNValues();
+            int newLength = 0;
+            double[] values = cPattern.getValues();
+            for (int nValue : nValues) {
+                if (nValue > limit) {
+                    nValue = limit;
+                }
+                newLength += nValue - 1;
+            }
+            System.out.println("expand coupling " + newLength);
+            int[] newN = new int[newLength];
+            double[] newValues = new double[newLength];
+            for (int i = 0, j = 0; i < nValues.length; i++) {
+                int nValue = nValues[i];
+                if (nValue > limit) {
+                    nValue = limit;
+                }
+                double mult = 1.1;
+                for (int k = 1; k < nValue; k++) {
+                    System.out.println(i + " " + k + " " + j + " " + values[i] + " " + mult);
+                    newN[j] = 2;
+                    newValues[j] = values[i] * mult;
+                    mult *= 0.9;
+                    j++;
+                }
+            }
+            setCouplingValues(newValues, newN);
+        }
+    }
+}

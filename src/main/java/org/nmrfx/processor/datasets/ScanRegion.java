@@ -17,8 +17,7 @@
  */
 package org.nmrfx.processor.datasets;
 
-import org.nmrfx.datasets.DatasetLayout;
-import org.nmrfx.utilities.NvUtil;
+import org.nmrfx.processor.utilities.NvUtil;
 import java.util.ArrayList;
 
 public class ScanRegion {
@@ -31,14 +30,14 @@ public class ScanRegion {
     private int[] iVec;
     private int[] iBlock;
     private int[] iPointAbs = null;
-    private final ArrayList<int[]> scanVector = new ArrayList<>(512);
+    private ArrayList<int[]> scanVector = new ArrayList<int[]>(512);
     private int scanIn = 0;
     private int[][] pt = null;
     private int[] dim = null;
-    private final int[] blockSize;
-    private final int[] nBlocks;
+    private int[] blockSize;
+    private int[] nBlocks;
     private int[] offsetBlocks;
-    private final int[] vecRange;
+    private int[] vecRange;
     ArrayList<int[]> indexList = null;
 
     public ScanRegion(final int[][] pt, final int[] dim, final String datasetName) {
@@ -52,14 +51,9 @@ public class ScanRegion {
         vecRange[1] = pt[0][1];
         this.dim = dim.clone();
         Dataset dataset = Dataset.getDataset(datasetName);
-        DatasetLayout layout = dataset.getLayout();
         nDim = dataset.getNDim();
-        this.blockSize = new int[nDim];
-        this.nBlocks = new int[nDim];
-        for (int i = 0; i < nDim; i++) {
-            this.blockSize[i] = layout.getBlockSize(i);
-            this.nBlocks[i] = layout.getNBlocks(i);
-        }
+        this.blockSize = dataset.getBlockSizes();
+        this.nBlocks = dataset.getNBlocks();
         setup();
     }
 
@@ -73,13 +67,8 @@ public class ScanRegion {
         vecRange = new int[2];
         vecRange[0] = pt[0][0];
         vecRange[1] = pt[0][1];
-        DatasetLayout layout = dataset.getLayout();
-        this.blockSize = new int[nDim];
-        this.nBlocks = new int[nDim];
-        for (int i = 0; i < nDim; i++) {
-            this.blockSize[i] = layout.getBlockSize(i);
-            this.nBlocks[i] = layout.getNBlocks(i);
-        }
+        this.blockSize = dataset.getBlockSizes();
+        this.nBlocks = dataset.getNBlocks();
         setup();
     }
 
@@ -98,7 +87,7 @@ public class ScanRegion {
         setup();
     }
 
-    private void setup() {
+    public void setup() {
         scanIn = 0;
         offsetBlocks = new int[nDim];
         block = new int[nDim][2];
@@ -256,7 +245,7 @@ public class ScanRegion {
     }
 
     public int buildIndex() {
-        indexList = new ArrayList<>(16384);
+        indexList = new ArrayList<int[]>(16384);
         reset();
         while (true) {
             int[] nextPoint = nextPoint();

@@ -18,10 +18,10 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.math.VecException;
+import org.nmrfx.processor.math.VecException;
 import org.nmrfx.processor.processing.ProcessingException;
-
-import java.util.List;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 
 /**
  * A subclass of Operation is a function which performs a computation involving a Vec. The expected behavior of an
@@ -50,7 +50,7 @@ public abstract class Operation implements Cloneable {//extends ForkJoinTask<Arr
      * @param vectors
      * @throws ProcessingException
      */
-    public Operation eval(List<Vec> vectors) throws ProcessingException, VecException, IllegalArgumentException {
+    public Operation eval(ArrayList<Vec> vectors) throws ProcessingException, VecException, IllegalArgumentException {
         for (Vec v : vectors) {
             eval(v);
         }

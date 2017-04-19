@@ -22,7 +22,7 @@
  */
 package org.nmrfx.processor.operations;
 
-import org.nmrfx.datasets.MatrixType;
+import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.python.core.PyObject;
@@ -46,11 +46,6 @@ public class PythonScript extends MatrixOperation {
     private final String initialScript;
 
     /**
-     * An optional fileName to exec when initializing the interpreter.
-     */
-    private final String execFileName;
-
-    /**
      * If True, each evaluation creates a new interpreter; no variable sharing between an Operation's evaluation on a
      * different vector.
      */
@@ -58,7 +53,7 @@ public class PythonScript extends MatrixOperation {
     private PythonInterpreter interpreter;
 
     public PythonScript(String script) {
-        this(script, "", "", true);
+        this(script, "", true);
     }
 
     /**
@@ -67,19 +62,13 @@ public class PythonScript extends MatrixOperation {
      * @param initialScript An optional script to run when initializing the interpreter
      * @param encapsulate Whether the interpreter should persist between evaluations
      */
-    public PythonScript(String script, String initialScript, String execFileName, boolean encapsulate) {
+    public PythonScript(String script, String initialScript, boolean encapsulate) {
         this.script = script;
         this.encapsulate = encapsulate;
         this.initialScript = initialScript;
-        this.execFileName = execFileName;
         if (!this.encapsulate) {
             interpreter = new PythonInterpreter();
-            if (execFileName.length() != 0) {
-                interpreter.execfile(execFileName);
-            }
-            if (initialScript.length() != 0) {
-                interpreter.exec(initialScript);
-            }
+            interpreter.exec(initialScript);
         }
     }
 
@@ -91,12 +80,7 @@ public class PythonScript extends MatrixOperation {
          */
         if (encapsulate) {
             interpreter = new PythonInterpreter();
-            if (execFileName.length() != 0) {
-                interpreter.execfile(execFileName);
-            }
-            if (initialScript.length() != 0) {
-                interpreter.exec(initialScript);
-            }
+            interpreter.exec(initialScript);
         }
         PyObject pyObject = PyJavaType.wrapJavaObject(vector);
         try {
@@ -134,7 +118,7 @@ public class PythonScript extends MatrixOperation {
     }
 
     public PythonScript clone() {
-        return new PythonScript(script, initialScript, execFileName, encapsulate);
+        return new PythonScript(script, initialScript, encapsulate);
     }
 
 }

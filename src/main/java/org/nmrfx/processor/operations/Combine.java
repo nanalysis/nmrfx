@@ -52,7 +52,7 @@ public class Combine extends Operation {
     }
 
     @Override
-    public Combine eval(List<Vec> vectors) throws OperationException {
+    public Combine eval(ArrayList<Vec> vectors) throws OperationException {
         if (vectors.isEmpty()) {
             throw new OperationException("Combine cannot combine 0 vectors.");
         } else if (vectors.size() % (numInputVec) != 0) {
@@ -60,7 +60,7 @@ public class Combine extends Operation {
                     + vectors.size() + " vectors, taking " + numInputVec
                     + " Vectors.");
         } else {
-            List<Vec> outVectors = null;
+            ArrayList<Vec> outVectors = null;
             if (numOutputVec > numInputVec) {
                 int newSize = vectors.size() * numOutputVec / numInputVec;
                 outVectors = new ArrayList<>(newSize);

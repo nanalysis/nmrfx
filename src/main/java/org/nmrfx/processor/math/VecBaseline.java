@@ -69,6 +69,7 @@ public class VecBaseline {
         }
         boolean[] nonBaseLinePts = new boolean[vec.getSize()];
         int first = 0;
+        int last = 0;
         for (int i = minSize; i < (vec.getSize() - minSize - 1); i++) {
             boolean nonBase = false;
             for (int j = -minSize; j <= minSize; j++) {
@@ -81,6 +82,9 @@ public class VecBaseline {
                 if ((i > (vec.getSize() / 16)) && (first == 0)) {
                     first = i;
                 }
+                if (i < (vec.getSize() - vec.getSize() / 16)) {
+                    last = i;
+                }
             }
             nonBaseLinePts[i] = nonBase;
         }
@@ -89,7 +93,7 @@ public class VecBaseline {
             nonBaseLinePts[vec.getSize() - j - 1] = true;
         }
         first = minSize + 1;
-        int last = vec.getSize() - minSize;
+        last = vec.getSize() - minSize;
         limits[0] = first;
         limits[1] = last;
         return nonBaseLinePts;

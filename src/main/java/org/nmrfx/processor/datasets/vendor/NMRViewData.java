@@ -18,7 +18,6 @@
 package org.nmrfx.processor.datasets.vendor;
 
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.datasets.DatasetBase;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -29,13 +28,9 @@ import org.nmrfx.processor.processing.SampleSchedule;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.processor.project.Project;
 
 /**
  * @author bfetler
@@ -66,11 +61,6 @@ public class NMRViewData implements NMRData {
         }
         this.fpath = path;
         openDataFile(path);
-    }
-
-    public NMRViewData(Dataset dataset) {
-        this.dataset = dataset;
-        this.fpath = dataset.getFileName();
     }
 
     public void close() {
@@ -108,17 +98,6 @@ public class NMRViewData implements NMRData {
     @Override
     public String getFilePath() {
         return fpath;
-    }
-
-    @Override
-    public List<VendorPar> getPars() {
-        List<VendorPar> vendorPars = new ArrayList<>();
-        if (parMap != null) {
-            for (Map.Entry<String, String> par : parMap.entrySet()) {
-                vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
-            }
-        }
-        return vendorPars;
     }
 
     @Override
@@ -160,11 +139,7 @@ public class NMRViewData implements NMRData {
 
     @Override
     public int getNPoints() {  // points per vector
-        int np = dataset.getSize(0);
-        if (dataset.getComplex(0)) {
-            np /= 2;
-        }
-        return np;
+        return dataset.getSize(0);
     }
 
     public boolean isSpectrum() {
@@ -183,81 +158,12 @@ public class NMRViewData implements NMRData {
 
     @Override
     public String[] getAcqOrder() {
-        if (acqOrder == null) {
-            int nDim = getNDim() - 1;
-            acqOrder = new String[nDim * 2];
-            for (int i = 0; i < nDim; i++) {
-                acqOrder[i * 2] = "p" + (i + 1);
-                acqOrder[i * 2 + 1] = "d" + (i + 1);
-            }
-        }
         return acqOrder;
     }
 
     @Override
-    public void setAcqOrder(String[] newOrder) {
-        if (newOrder.length == 1) {
-            String s = newOrder[0];
-            final int len = s.length();
-            int nDim = getNDim();
-            int nIDim = nDim - 1;
-            if ((len == nDim) || (len == nIDim)) {
-                acqOrder = new String[nIDim * 2];
-                int j = 0;
-                if (sampleSchedule != null) {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                        }
-                    }
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                } else {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals(nDim + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                }
-            } else if (len > nDim) {
-                acqOrder = new String[(len - 1) * 2];
-                int j = 0;
-                if (sampleSchedule != null) {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                        }
-                    }
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                } else {
-                    for (int i = (len - 1); i >= 0; i--) {
-                        String dimStr = s.substring(i, i + 1);
-                        if (!dimStr.equals((nDim + 1) + "")) {
-                            acqOrder[j++] = "p" + dimStr;
-                            acqOrder[j++] = "d" + dimStr;
-                        }
-                    }
-                }
-            }
-        } else {
-            this.acqOrder = new String[newOrder.length];
-            for (int i = 0; i < newOrder.length; i++) {
-                this.acqOrder[i] = newOrder[i];
-            }
-        }
+    public void setAcqOrder(String[] acqOrder) {
+        this.acqOrder = acqOrder;
     }
 
     @Override
@@ -272,7 +178,7 @@ public class NMRViewData implements NMRData {
 
     @Override
     public String getSymbolicCoefs(int idim) {
-        return null;
+        return "";
     }
 
     @Override
@@ -443,11 +349,7 @@ public class NMRViewData implements NMRData {
 
     @Override
     public int getSize(int iDim) {
-        int size = dataset.getSize(iDim);
-        if (dataset.getComplex(iDim)) {
-            size /= 2;
-        }
-        return size;
+        return dataset.getSize(iDim);
     }
 
     @Override
@@ -456,26 +358,8 @@ public class NMRViewData implements NMRData {
     }
 
     @Override
-    public boolean isFID() {
-        return !dataset.getFreqDomain(0);
-    }
-
-    @Override
-    public boolean isFrequencyDim(int iDim) {
-        boolean result = true;
-        double[] values = dataset.getValues(iDim);
-        if (!isComplex(iDim) && (iDim == getNDim() - 1)) {
-            if ((values != null) && (values.length == getSize(iDim))) {
-                result = false;
-            }
-        }
-        return result;
-
-    }
-
-    @Override
     public boolean isComplex(int idim) {
-        return dataset.getComplex(idim);
+        return dataset.getComplex(idim - 1);
     }
 
     @Override
@@ -539,19 +423,6 @@ public class NMRViewData implements NMRData {
         return null;
     }
 
-    public List<Double> getValues(int dim) {
-        double[] values = dataset.getValues(dim);
-        if (values == null) {
-            return Collections.EMPTY_LIST;
-        } else {
-            List<Double> valueList = new ArrayList<>();
-            for (int i = 0; i < values.length; i++) {
-                valueList.add(values[i]);
-            }
-            return valueList;
-        }
-    }
-
     @Override
     public void readVector(int iVec, Vec dvec) {
         int nDim = getNDim();
@@ -559,20 +430,8 @@ public class NMRViewData implements NMRData {
         int[] dim = new int[nDim];
         pt[0][0] = 0;
         pt[0][1] = dataset.getSize(0) - 1;
-        int offset = iVec;
-        int[] strides = new int[nDim];
-        strides[0] = 1;
-        int nIndirect = nDim - 1;
-
-        for (int i = 1; i < nIndirect; i++) {
-            strides[i] = strides[i - 1] * dataset.getSize(i);
-        }
-        for (int i = nIndirect; i > 0; i--) {
-            int index = iVec / strides[i - 1];
-            pt[i][0] = index;
-            pt[i][1] = index;
-            iVec = iVec % strides[i - 1];
-        }
+        pt[1][0] = iVec;
+        pt[1][1] = iVec;
         for (int i = 0; i < nDim; i++) {
             dim[i] = i;
         }
@@ -604,14 +463,12 @@ public class NMRViewData implements NMRData {
     // open NMRView data file, read header
     private void openDataFile(String datapath) throws IOException {
         System.out.println("open data file " + datapath);
-        File file = new File(datapath);
-
-        List<DatasetBase> currentDatasets = Project.getActive().getDatasetsWithFile(file);
-        if (!currentDatasets.isEmpty()) {
+        ArrayList<String> existingFiles = Dataset.checkExistingFile(datapath);
+        if (!existingFiles.isEmpty()) {
             System.out.println("already open");
-            dataset = (Dataset) currentDatasets.get(0);
+            dataset = Dataset.getDataset(existingFiles.get(0));
         } else {
-            dataset = new Dataset(datapath, datapath, true, false);
+            dataset = new Dataset(datapath, datapath, false);
         }
     }
 

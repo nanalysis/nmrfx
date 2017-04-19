@@ -21,7 +21,7 @@ public class Minimizer {
     // epsmch is the machine precision
     //static final double epsmch = 2.22044604926e-16;
 
-    static final double EPSMCH = 2.22044604926e-9;
+    static final double epsmch = 2.22044604926e-9;
     int nfev = 0;
     public double[] xv = null;
     public double[] yv = null;
@@ -125,13 +125,16 @@ public class Minimizer {
 
         int[] info = new int[2];
 
+        int[] ma = new int[61];
+        int[] na = new int[61];
+        int[] nf = new int[61];
 
         double factor;
         double tol;
 
         double[] fvec = new double[xv.length + 1];
 
-        tol = Math.sqrt(EPSMCH);
+        tol = Math.sqrt(epsmch);
 
         m = yv.length;
         n = lmdifFunc.getN();
@@ -151,9 +154,12 @@ public class Minimizer {
                 //lmdiftest.nfev = 0;
                 lmdifFunc.clearEvaluationCount();
                 Minpack_f77.lmdif1_f77(lmdifFunc, m, n, a, fvec, tol, info);
-                lmdifFunc.getEvaluationCount();
+                nf[k] = lmdifFunc.getEvaluationCount();
                 lmdifFunc.fcn(m, n, a, fvec, iflag);
 
+                na[k] = n;
+                ma[k] = m;
+                na[k] = info[1];
 
                 /*
                  System.out.print("\n Initial rms of the residuals: " + rms1 +

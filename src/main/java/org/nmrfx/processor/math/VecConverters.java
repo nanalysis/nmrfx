@@ -382,19 +382,22 @@ public class VecConverters {
             return;
         }
 
+        long longVal = 0;
+        long longVal0 = 0;
         long mask = 0xFF;
         mask <<= 56;
 
         int i0 = 0;
+        short shift = 0;
 
         for (int i = 0; i < n; i++) {
-            short shift = 64 - 8;
-            long longVal = 0;
+            shift = 64 - 8;
+            longVal = 0;
             mask = 0xFF;
             mask <<= 56;
 
             for (int j = 0; j < 8; j++) {
-                long longVal0 = byteArray[i0];
+                longVal0 = byteArray[i0];
                 longVal += ((longVal0 << shift) & mask);
                 i0++;
                 mask >>= 8;
