@@ -40,12 +40,6 @@ def getExtendSize(vecSize,predictEnd,insert):
         size = predictEnd+1
     return size
 
-def getExtractSizeP(vsize,fidInfo,curDim,fstart,fend):
-    sw = fidInfo.sw[curDim]
-    sf = fidInfo.sf[curDim]
-    size = int((fstart-fend)*sf/sw*vsize+0.5)+2
-    return size
-
 def getExtractSize(vsize,fstart,fend):
     start=0
     end=0
@@ -80,7 +74,7 @@ def refByRatio(refSF,refCenter,sf,nucleus):
 def getWaterPPM (temp):
     a = -0.009552
     b = 5.011718
-    ppm =   a*(temp - 273.15) + b
+    ppm =   a*(temp - 273.0) + b
     return ppm
 
 def pairList(alist):
