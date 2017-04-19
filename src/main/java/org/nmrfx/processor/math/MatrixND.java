@@ -1,0 +1,906 @@
+/*
+ * NMRFx Processor : A Program for Processing NMR Data 
+ * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package org.nmrfx.processor.math;
+
+import org.nmrfx.processor.processing.ProcessingException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.apache.commons.math3.transform.DftNormalization;
+import org.apache.commons.math3.transform.FastFourierTransformer;
+import org.apache.commons.math3.transform.TransformType;
+import org.apache.commons.math3.util.FastMath;
+
+public class MatrixND implements MatrixType {
+
+    final double[] data;
+    final int[] sizes;
+    final int[] strides;
+    final int nDim;
+    final int nElems;
+    /**
+     * Output point to write matrix.
+     */
+    private int[][] pt = null;
+
+    public MatrixND(int... sizes) {
+        this.sizes = sizes.clone();
+        this.strides = calcStrides(sizes);
+        nDim = sizes.length;
+        int n = 1;
+        for (int i = 0; i < nDim; i++) {
+            n *= sizes[i];
+        }
+        nElems = n;
+        data = new double[n];
+    }
+
+    public MatrixND(int[][] pt, int... sizes) {
+        this(sizes);
+        this.pt = pt;
+    }
+
+    public MatrixND(MatrixND source) {
+        this(source.sizes);
+        for (int i = 0; i < data.length; i++) {
+            data[i] = source.data[i];
+        }
+    }
+
+    public MatrixND(double[][] data2D) {
+        this(data2D.length, data2D[0].length);
+        int n = data2D.length;
+        int m = data2D[0].length;
+        int k = 0;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                data[k++] = data2D[i][j];
+            }
+        }
+    }
+
+    @Override
+    public String exportData(String rootName, String suffix) throws IOException {
+        return exportData(rootName, suffix, false);
+    }
+
+    @Override
+    public String exportData(String rootName, String suffix, boolean littleEndian) throws IOException {
+        int index = getIndex();
+
+        String parFileName = String.format("%s%04d.%s.par", rootName, index + 1, suffix);
+        try (FileOutputStream oStream = new FileOutputStream(parFileName)) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate((1 + nDim) * Integer.SIZE / 8);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+            IntBuffer intBuffer = byteBuffer.asIntBuffer();
+            intBuffer.put(0, nDim);
+            for (int i = 0; i < nDim; i++) {
+                intBuffer.put(1 + i, sizes[i] / 2);
+            }
+            FileChannel channel = oStream.getChannel();
+            channel.write(byteBuffer);
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+
+        String outFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
+
+        try (FileOutputStream oStream = new FileOutputStream(outFileName)) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * Double.SIZE / 8);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
+            doubleBuffer.put(data);
+            FileChannel channel = oStream.getChannel();
+            channel.write(byteBuffer);
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+        return outFileName;
+    }
+
+    @Override
+    public String importData(String rootName, String suffix) throws IOException {
+        return importData(rootName, suffix, false);
+    }
+
+    @Override
+    public String importData(String rootName, String suffix, boolean littleEndian) throws IOException {
+        int index = getIndex();
+        String inFileName = String.format("%s%04d.%s", rootName, index + 1, suffix);
+        try (FileInputStream oStream = new FileInputStream(inFileName)) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(data.length * Double.SIZE / 8);
+            if (littleEndian) {
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+            DoubleBuffer doubleBuffer = byteBuffer.asDoubleBuffer();
+            FileChannel channel = oStream.getChannel();
+            channel.read(byteBuffer);
+            doubleBuffer.get(data);
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+        return inFileName;
+    }
+
+    public void dump() throws IOException {
+        dump(null);
+    }
+
+    public void dump(String outName) throws IOException {
+
+        FileWriter fileWriter = null;
+        if (outName != null) {
+            fileWriter = new FileWriter(outName);
+        }
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        int i = 0;
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            for (int count : counts) {
+                if (fileWriter != null) {
+                    fileWriter.write(String.format("%3d ", count));
+                } else {
+                    System.out.printf("%3d ", count);
+                }
+            }
+            if (fileWriter != null) {
+                fileWriter.write(String.format("%3d %.5f\n", i, data[i++]));
+            } else {
+                System.out.printf("%3d %.5f\n", i, data[i++]);
+            }
+        }
+        if (fileWriter != null) {
+            fileWriter.close();
+        }
+    }
+
+    public int getIndex() {
+        if (pt == null) {
+            return 0;
+        } else {
+            return pt[pt.length - 1][0];
+        }
+    }
+
+    public void setPt(int[][] pt) {
+        this.pt = pt;
+    }
+
+    public int[][] getPt() {
+        return pt;
+    }
+
+    public int getNElems() {
+        return nElems;
+    }
+
+    public int[] getSizes() {
+        return sizes.clone();
+    }
+
+    public int getNDim() {
+        return nDim;
+    }
+
+    private final static int[] calcStrides(int[] shape) {
+        int[] strides = new int[shape.length];
+        int stride = 1;
+        for (int i = shape.length - 1; i >= 0; i--) {
+            strides[i] = stride;
+            stride *= shape[i];
+        }
+        return strides;
+    }
+
+    public final double[] getVector(int axis, int... index) {
+        int offset = 0;
+        for (int k = 0, i = 0; i < nDim; i++) {
+            if (i != axis) {
+                offset += index[k++] * strides[i];
+            }
+        }
+        int n = sizes[axis];
+        double[] result = new double[n];
+        for (int i = 0; i < n; i++) {
+            result[i] = data[offset];
+            offset += strides[axis];
+        }
+        return result;
+    }
+
+    private void getVectorRI(int axis, double[][] riVec, int... index) {
+        int offset = 0;
+        for (int k = 0, i = 0; i < nDim; i++) {
+            if (i != axis) {
+                offset += index[k++] * strides[i];
+            }
+        }
+        int n = sizes[axis] / 2;
+        for (int i = 0; i < n; i++) {
+            riVec[0][i] = data[offset];
+            offset += strides[axis];
+            riVec[1][i] = data[offset];
+            offset += strides[axis];
+        }
+    }
+
+    private void getVectorR(int axis, double[][] riVec, int... index) {
+        int offset = 0;
+        for (int k = 0, i = 0; i < nDim; i++) {
+            if (i != axis) {
+                offset += index[k++] * strides[i];
+            }
+        }
+        int n = riVec[0].length;
+        for (int i = 0; i < n; i++) {
+            riVec[0][i] = data[offset];
+            offset += strides[axis];
+        }
+    }
+
+    public final void getVectorZF(int axis, double[][] riVec, int... index) {
+        int offset = 0;
+        for (int k = 0, i = 0; i < nDim; i++) {
+            if (i != axis) {
+                offset += index[k++] * strides[i];
+            }
+        }
+        int n = sizes[axis] / 2;
+        for (int i = 0; i < n; i++) {
+            riVec[0][i] = data[offset];
+            offset += strides[axis];
+            riVec[1][i] = data[offset];
+            offset += strides[axis];
+        }
+        for (int i = n; i < riVec[0].length; i++) {
+            riVec[0][i] = 0.0;
+            riVec[1][i] = 0.0;
+        }
+    }
+
+    public final void putVectorReal(int axis, double[][] riVec, int... index) {
+        int offset = 0;
+        for (int k = 0, i = 0; i < nDim; i++) {
+            if (i != axis) {
+                offset += index[k++] * strides[i];
+            }
+        }
+        int n = riVec[0].length;
+        for (int i = 0; i < n; i++) {
+            data[offset] = riVec[0][i];;
+            offset += strides[axis];
+        }
+    }
+
+    public final void putVectorRI(int axis, double[][] riVec, int... index) {
+        int offset = 0;
+        for (int k = 0, i = 0; i < nDim; i++) {
+            if (i != axis) {
+                offset += index[k++] * strides[i];
+            }
+        }
+        int n = sizes[axis] / 2;
+        for (int i = 0; i < n; i++) {
+            data[offset] = riVec[0][i];;
+            offset += strides[axis];
+            data[offset] = riVec[1][i];;
+            offset += strides[axis];
+        }
+    }
+
+    public final int getOffset(int... index) {
+        int offset = 0;
+        for (int i = 0; i < strides.length; i++) {
+            offset += index[i] * strides[i];
+        }
+        return offset;
+    }
+
+    public int[] getSubSizes(int axis) {
+        int[] subSizes;
+        if (nDim > 1) {
+            subSizes = new int[nDim - 1];
+            for (int k = 0, i = 0; i < nDim; i++) {
+                if (i != axis) {
+                    subSizes[k++] = sizes[i];
+                }
+            }
+        } else {
+            subSizes = new int[1];
+            subSizes[0] = 1;
+        }
+        return subSizes;
+    }
+
+    private void fft(double[][] riVec) {
+        FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.FORWARD);
+    }
+
+    private void ifft(double[][] riVec) {
+        FastFourierTransformer.transformInPlace(riVec, DftNormalization.STANDARD, TransformType.INVERSE);
+    }
+
+    private void fftShuffle(double[][] riVec) {
+        int mid = riVec[0].length / 2;
+        double tmp;
+        for (int i = 0; i < mid; i++) {
+            tmp = riVec[0][i];
+            riVec[0][i] = riVec[0][i + mid];
+            riVec[0][i + mid] = tmp;
+            tmp = riVec[1][i];
+            riVec[1][i] = riVec[1][i + mid];
+            riVec[1][i + mid] = tmp;
+        }
+    }
+
+    private void phase(double[][] riVec, double p0, double p1) {
+        double degtorad = Math.PI / 180.0;
+        int size = riVec[0].length;
+
+        p0 *= degtorad;
+        p1 *= degtorad;
+
+        double tol = 0.0001;
+
+        if (Math.abs(p1) < tol) {
+            if (Math.abs(p0) < tol) {
+                return;
+            }
+            if (Math.abs(p0 - Math.PI) < tol) {
+            }
+
+            double fReal = Math.cos(p0);
+            double fImag = -Math.sin(p0);
+
+            for (int i = 0; i < size; i++) {
+                double rVal = riVec[0][i];
+                double iVal = riVec[1][i];
+
+                riVec[0][i] = rVal * fReal - iVal * fImag;
+                riVec[1][i] = rVal * fImag + iVal * fReal;
+            }
+
+            return;
+        }
+
+        double dDelta = p1 / (size - 1);
+        for (int i = 0; i < size; i++) {
+            double fReal = Math.cos(p0 + i * dDelta);
+            double fImag = -Math.sin(p0 + i * dDelta);
+            double rVal = riVec[0][i];
+            double iVal = riVec[1][i];
+
+            riVec[0][i] = rVal * fReal - iVal * fImag;
+            riVec[1][i] = rVal * fImag + iVal * fReal;
+        }
+
+    }
+
+    private void sineBell(double[][] riVec) {
+        int size = riVec[0].length;
+        int apodSize = size / 2;
+        double offset = 0.5;
+        double end = 0.99;
+        double start = offset * Math.PI;
+        double delta = ((end - offset) * Math.PI) / (apodSize - 1);
+        for (int i = 0; i < apodSize; i++) {
+            double rVal = riVec[0][i];
+            double iVal = riVec[1][i];
+            double scale = Math.sin(start + (i * delta));
+            riVec[0][i] = rVal * scale;
+            riVec[1][i] = iVal * scale;
+        }
+    }
+
+    public void doFTtoReal() {
+        for (int i = 0; i < nDim; i++) {
+            doFTtoReal(i);
+        }
+    }
+
+    public void doFTtoReal(int axis) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis]];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            /*
+             for (int count : counts) {
+             System.out.print(count);
+             }
+             System.out.println("getvec");
+             */
+            getVectorZF(axis, riVec, counts);
+            fft(riVec);
+            putVectorReal(axis, riVec, counts);
+        }
+    }
+
+    public void phase(double[] phase) {
+        doPhaseTD(phase);
+    }
+
+    public void doPhaseTD(double[] phaseValues) {
+        for (int i = 0; i < nDim; i++) {
+            double ph0 = 0.0;
+            double ph1 = 0.0;
+            if (i * 2 < phaseValues.length) {
+                ph0 = phaseValues[i * 2];
+            }
+            if ((i * 2 + 1) < phaseValues.length) {
+                ph1 = phaseValues[i * 2 + 1];
+            }
+            doPhaseTD(i, ph0, ph1);
+        }
+    }
+
+    public void doSineBell() {
+        for (int i = 0; i < nDim; i++) {
+            doSineBell(i);
+        }
+    }
+
+    public void doSineBell(int axis) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis]];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        double tol = 0.0001;
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorRI(axis, riVec, counts);
+            sineBell(riVec);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    public void doPhaseTD(int axis, double ph0, double ph1) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis]];
+        double tol = 0.0001;
+        if ((Math.abs(ph0) < tol) && (Math.abs(ph1) < tol)) {
+            return;
+        }
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            /*
+             for (int count : counts) {
+             System.out.print(count);
+             }
+             System.out.println("getvec");
+             */
+            getVectorRI(axis, riVec, counts);
+            if (Math.abs(ph1) < tol) {
+                phase(riVec, ph0, 0.0);
+            } else {
+                fft(riVec);
+                fftShuffle(riVec);
+                phase(riVec, ph0, ph1);
+                fftShuffle(riVec);
+                ifft(riVec);
+            }
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    public void doHIFT(double fpMul) {
+        for (int i = nDim - 1; i >= 0; i--) {
+            doHIFT(i, fpMul);
+        }
+    }
+
+    public void doHIFT(int axis, double fpMul) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis]];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            /*
+             for (int count : counts) {
+             System.out.print(count);
+             }
+             System.out.println("getvec");
+             */
+            getVectorR(axis, riVec, counts);
+            VecUtil.hift(riVec, riVec[0].length, fpMul);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    public MatrixND zeroFill() {
+        int[] newSizes = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            newSizes[i] = sizes[i] * 2;
+        }
+        MatrixND zfMatrix = new MatrixND(newSizes);
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            zfMatrix.setValue(getValue(counts), counts);
+
+        }
+        return zfMatrix;
+    }
+
+    boolean checkShapes(MatrixND matrixND) {
+        boolean value = true;
+        if (matrixND.nDim != nDim) {
+            value = false;
+        } else {
+            int[] srcSizes = matrixND.getSizes();
+            for (int i = 0; i < nDim; i++) {
+                if (srcSizes[i] != sizes[i]) {
+                    value = false;
+                    break;
+                }
+            }
+        }
+
+        return value;
+    }
+
+    public void copyFrom(MatrixND src) {
+        if (!checkShapes(src)) {
+            throw new ProcessingException("copyMatrix dimensions not equal");
+        }
+        for (int i = 0; i < data.length; i++) {
+            data[i] = src.data[i];
+        }
+
+    }
+
+    public static void zeroValues(double[] values, int[] zeroList) {
+        for (int i : zeroList) {
+            values[i] = 0.0;
+        }
+    }
+
+    public void zeroValues(int[] zeroList) {
+        for (int i : zeroList) {
+            data[i] = 0.0;
+        }
+    }
+
+    /**
+     * Get maximum of absolute value of a matrix.
+     *
+     * @param input
+     * @return position of maximum in input matrix
+     * @see Matrix
+     */
+    private static double getAbsMaxReal(double[] values) {
+        double max = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < values.length; i++) {
+            double val = values[i];
+            double aval = Math.abs(val);
+            if (aval > max) {
+                max = aval;
+            }
+        }
+        return max;
+    }
+
+    private static void cutRealAboveThreshold(double[] in, double[] add, double threshold) {
+        double cutoff = getAbsMaxReal(in);
+        double th = threshold * cutoff;
+        int n = in.length;
+        for (int i = 0; i < n; i++) {
+            double value = in[i];
+            double avalue = Math.abs(value);
+            if (avalue > th) {
+                if (value > 0.0) {
+                    add[i] += (avalue - th);
+                    in[i] = th;
+                } else {
+                    add[i] -= (avalue - th);
+                    in[i] = -th;
+                }
+            }
+        }
+    }
+
+    public void cutRealAboveThreshold(double[] add, double threshold) {
+        cutRealAboveThreshold(data, add, threshold);
+    }
+
+    public static void copyValues(double[] source, double[] target, int[] srcTargetMap) {
+        for (int i = 0; i < srcTargetMap.length; i++) {
+            target[srcTargetMap[i]] = source[i];
+        }
+    }
+
+    public void copyValuesFrom(MatrixND source, int[] srcTargetMap) {
+        for (int i : srcTargetMap) {
+            data[i] = source.data[i];
+        }
+    }
+
+    public double calcDifference(MatrixND source, int[] srcTargetMap) {
+        double sum = 0.0;
+        for (int i : srcTargetMap) {
+            double v1 = source.data[i];
+            double v2 = data[i];
+            sum += FastMath.abs(v1 - v2);
+        }
+        return sum / srcTargetMap.length;
+    }
+
+    public double calcSumAbs() {
+        double sum = 0.0;
+        for (double value : data) {
+            sum += FastMath.abs(value);
+        }
+        return sum / data.length;
+    }
+
+    public static void copyData(double[] source, double[] target) {
+        System.arraycopy(source, 0, target, 0, target.length);
+    }
+
+    public void copyDataFrom(double[] values) {
+        System.arraycopy(values, 0, data, 0, data.length);
+    }
+
+    public void addDataFrom(double[] values) {
+        for (int i = 0; i < nElems; i++) {
+            data[i] += values[i];
+        }
+    }
+
+    ArrayIndexOutOfBoundsException getOffsetException(int offset, int[] indices) {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append("Out of bounds for offset ").append(offset);
+        int i = 0;
+
+        for (int index : indices) {
+            sBuilder.append(" ").append(index);
+            sBuilder.append(" ").append(sizes[i++]);
+        }
+        return new ArrayIndexOutOfBoundsException(sBuilder.toString());
+    }
+
+    public void setValue(double value, int... indices) {
+        int offset = getOffset(indices);
+        try {
+            data[offset] = value;
+        } catch (ArrayIndexOutOfBoundsException aE) {
+            throw getOffsetException(offset, indices);
+        }
+    }
+
+    public double getValue(int... indices) {
+        int offset = getOffset(indices);
+        return data[offset];
+    }
+
+    int[] genOffsets(int nDim) {
+        int[] twoSizes = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            twoSizes[i] = 2;
+        }
+        int n = (int) Math.pow(2, nDim);
+        int[] result = new int[n];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(twoSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        int i = 0;
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            result[i] = 0;
+            for (int j = 0; j < nDim; j++) {
+                result[i] += counts[j] * strides[j];
+            }
+            i++;
+        }
+        return result;
+    }
+
+    public double calcL1AndGradient(double mu) {
+        int[] offsets = genOffsets(sizes.length);
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        double l1Norm = 0.0;
+        int i = 0;
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            boolean realPt = true;
+            for (int count : counts) {
+                if ((count % 2) == 1) {
+                    realPt = false;
+                    break;
+                }
+            }
+            if (realPt) {
+                double sumSq = 0.0;
+                for (int offset : offsets) {
+                    int index = i + offset;
+                    double value = data[index];
+                    sumSq += value * value;
+                }
+                double absValue = Math.sqrt(sumSq);
+                l1Norm += absValue;
+                double divisor = absValue < mu ? mu : absValue;
+                for (int offset : offsets) {
+                    int index = i + offset;
+                    data[index] /= divisor;
+                }
+            }
+            i++;
+        }
+        return l1Norm;
+    }
+
+    public double calcRealL1AndGradient(double mu) {
+        double l1Norm = 0.0;
+        for (int i = 0; i < data.length; i++) {
+            double absValue = FastMath.abs(data[i]);
+            l1Norm += absValue;
+            double divisor = absValue < mu ? mu : absValue;  // Equation 3.1 in NESTA paper
+            data[i] /= divisor;
+        }
+        return l1Norm;
+    }
+
+    public SummaryStatistics calcRealStats() {
+        SummaryStatistics sStats = new SummaryStatistics();
+        for (int i = 0; i < data.length; i++) {
+            double absValue = FastMath.abs(data[i]);
+            sStats.addValue(absValue);
+        }
+        return sStats;
+    }
+
+    public double[] measure(boolean isComplex) {
+        double[] measures = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY};
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        for (int i = 0; iterator.hasNext(); i++) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            boolean realPt = true;
+            if (isComplex) {
+                for (int count : counts) {
+                    if ((count % 2) == 1) {
+                        realPt = false;
+                        break;
+                    }
+                }
+            }
+            if (realPt) {
+                if (data[i] < measures[0]) {
+                    measures[0] = data[i];
+                }
+                if (data[i] > measures[1]) {
+                    measures[1] = data[i];
+                }
+            }
+        }
+        return measures;
+    }
+
+    public ArrayList<MatrixPeak> peakPick(double globalThreshold, double noiseThreshold, boolean includeNegative, boolean isComplex, double scale) {
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        ArrayList<MatrixPeak> peaks = new ArrayList<>();
+        int[][] pts = new int[nDim + 1][3];
+        int[][] indices = new int[nDim + 1][3];
+        double[][] intensities = new double[nDim + 1][3];
+        double threshold = FastMath.max(globalThreshold, noiseThreshold);
+        int step = isComplex ? 2 : 1;
+        double maxValue = Double.NEGATIVE_INFINITY;
+        int nPossible = 0;
+        for (int i = 0; iterator.hasNext(); i++) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            boolean realPt = true;
+            if (isComplex) {
+                for (int count : counts) {
+                    if ((count % 2) == 1) {
+                        realPt = false;
+                        break;
+                    }
+                }
+            }
+            if (realPt) {
+                double ptValue = data[i];
+                double sign = 1.0;
+                if (ptValue < 0.0) {
+                    if (!includeNegative) {
+                        continue;
+                    } else {
+                        ptValue *= -1.0;
+                        sign = -1.0;
+                    }
+                }
+                if (ptValue > maxValue) {
+                    maxValue = ptValue;
+                }
+                if (ptValue > threshold) {
+                    nPossible++;
+                    boolean ok = true;
+                    pts[0][1] = getIndex();
+                    indices[0][1] = getIndex();
+                    intensities[0][1] = ptValue * sign;
+
+                    for (int jDim = 0; jDim < nDim; jDim++) {
+                        int kDim = jDim + 1;
+                        pts[kDim][1] = counts[jDim];
+                        indices[kDim][1] = i;
+                        intensities[kDim][1] = ptValue * sign;
+                        if (counts[jDim] > 0) {
+                            int index = i - strides[jDim] * step; // 2 assumes complex                       
+                            double testValue = sign * data[index];
+                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
+//                                System.out.println(jDim + " < " + i + " " +index + " " + ptValue + " " + testValue + " " + noiseThreshold);
+                                ok = false;
+                                break;
+                            }
+                            pts[kDim][0] = counts[jDim] - 1;
+                            indices[kDim][0] = index;
+                            intensities[kDim][0] = testValue * sign;
+                        }
+                        if (ok && counts[jDim] < (sizes[jDim] - 1)) {
+                            int index = i + strides[jDim] * step; // 2 assumes complex                       
+                            double testValue = sign * data[index];
+                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
+//                                System.out.println(jDim + " > " + i + " " +index + " " + ptValue + " " + testValue + " " + noiseThreshold);
+                                ok = false;
+                                break;
+                            }
+                            pts[kDim][2] = counts[jDim] + 1;
+                            indices[kDim][2] = index;
+                            intensities[kDim][2] = testValue * sign;
+                        }
+                    }
+
+                    if (ok) {
+                        peaks.add(new MatrixPeak(intensities, indices, pts, scale));
+                    }
+                }
+            }
+        }
+//        System.out.println("max value " + maxValue + " " + threshold + " " + peaks.size() + " " + nPossible);
+        return peaks;
+    }
+}

@@ -1,0 +1,61 @@
+ ----
+ Swank Differences
+ ----
+
+Swank Differences from Tk 8.4
+
+  While Swank is very similar to Tk 8.4, there are differences
+  compared to the C/Tcl version. 
+
+  * Configuration Options
+
+     *  All Tk/Swank widgets have a set of configuration options (colors, borders, relief, size etc.).  The set of configuration options used
+       for a given widget in Swank is a union of a subset of the ones used by the corresponding Tk widget and a subset of the ones used
+       by the Swing class used to implement the widget.  Some of the Tk options are not included, either because the coding hasn't yet
+       been done, or the option doesn't readily correspond to something done by the Swing class.  Some of the more obscure Swing configuration
+       options are not included as we wanted to preserve some level of simplicity.  The options that correspond to Tk options are 
+       often implemented by a call to the getters and setters for similar fields in the Swing classes.  Where the names are different,
+       the Tk style name is used in preference to the field name of the Swing class.
+
+     *  When Tk widgets are configured the actual string used to set them is generally maintained in memory.  With Swank, the 
+        widget configuration may directly modifiy a field of the underlying Swing class.  When one requests the value for the option
+        the returned value, as a string, may be different than what was set.  This is particularly true of colors.  For example,
+        you could set the background color of a widget to be "255 0 0", or "#FF0000" or "red".  In all three cases, when querying the
+        background color of the widget you will get "red".  This is because if there is an exact color name match to the Java Color
+        class object, you will get that name as a string.
+
+
+  *  Create menubars with jmenubar, instead of menu.
+
+  * Scrolling of widgets in Tk is done by arranging the target widget and one or two scrollbars in the same frame.  Then a 
+    somewhat complex interaction between the scrollbars and the widget is configured.  Swank supports this mode, but we find
+    the performance somewhat glitchy.  A better solution in Swank is to embed the desired widget into a jscrollpane component.  Then
+    scrolling is done in a very satisfactory method by the underlying Swing components.  This is done, as shown in the example below,
+    by creating a scrollpane and the desired widdget.  Use a geometry manager to manage the scrollpane (here we use pack) and 
+    add the widget (here a text widget) to the scrollpane.
+
+
+----------------
+         jscrollpane .spane
+         pack .spane
+         text .text
+         .spane add .txt
+
+----------------
+
+
+  * Various commands present in Tk are not present in Swank.  See the main documentation page for details. 
+
+  * Swank provides access to some widgets that are not present in Tk.  Some of these widgets may have analogs in Tk extensions
+    (the table widget, for example), but the behaviour of the Swank version has not been explicitly designed to match the behaviour
+     of the Tk extension. 
+
+  * There is no support for the Tk option database which allows you to store widget configuration options in a text file.
+
+  * Threading.  A fundamental constraint of using the Java Swing components is that they must only be accessed 
+    by a single thread, and this thread should generally be the event-dispatching thread.  Tcl scripts are, however,
+    not run on the event-dispatching thread.  This means that Swank involves some fairly complex code to ensure that actions initiated by
+    commands running on the Tcl thread are propagated to the event thread, and then access the components.  The low level code
+    interacts with the event dispatching thread in two ways.  One of which involves queing an event onto the event dispatching thread
+    and returning to the Tcl interpreter.  The other involves queing an event on the thread and waiting for a result.  Code working
+    in the former way may return before the widget is updated, whereas analagous Tcl/Tk code might not return until after the widget is updated.

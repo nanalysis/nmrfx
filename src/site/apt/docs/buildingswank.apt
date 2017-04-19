@@ -1,0 +1,40 @@
+ ----
+ Building Swank
+ ----
+ 
+Building Swank
+ 
+   Swank builds with  {{{http://maven.apache.org/}Maven}}.  
+   
+Building with Maven
+
+	Maven will download all the dependencies needed to build Swank, except for jtcl-2.0.0-a1.jar and jcommon-1.0.16.jar.  For some reason the
+	correct version of jfreechart (1.0.13) is in the maven repository, but not version 1.0.16 of its dependancy jcommon-1.0.16.jar.
+
+	So get JTcl from the Jtcl project and jcommon from JFree project.  The following commands will install these two dependancies into your
+        local maven repository (you'll need to adjust the paths in the -Dfile argument to wherever you placed the jar files.
+ 
+------------------------
+mvn install:install-file -DgroupId=jtcl -DartifactId=jtcl -Dversion=2.0.0-a1  
+    -Dpackaging=jar -Dfile=../jtcl~jtcl-main/target/jtcl-2.0.0-a1.jar
+ 
+mvn install:install-file -DgroupId=jfree -DartifactId=jcommon -Dversion=1.0.16 
+    -Dpackaging=jar -Dfile=../jfreechart-1.0.13/lib/jcommon-1.0.16.jar
+------------------------
+
+Once these are installed you can go ahead and build Swank
+
+ 
+------------------------
+mvn clean
+mvn -DskipTests package
+------------------------
+   
+Creating a development environment
+
+   Install Java JDK 1.5, if not already installed.
+   The Swank project uses the {{{http://mercurial.selenic.com/}Mercurial}} version control system. 
+
+------------------------
+hg clone https://hg.kenai.com/hg/swank~swank-main 
+------------------------

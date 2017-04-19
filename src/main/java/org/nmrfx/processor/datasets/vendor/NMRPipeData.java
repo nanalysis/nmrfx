@@ -1,0 +1,1257 @@
+/*
+ * NMRFx Processor : A Program for Processing NMR Data 
+ * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package org.nmrfx.processor.datasets.vendor;
+
+import org.nmrfx.processor.datasets.parameters.FPMult;
+import org.nmrfx.processor.datasets.parameters.GaussianWt;
+import org.nmrfx.processor.datasets.parameters.LPParams;
+import org.nmrfx.processor.datasets.parameters.SinebellWt;
+import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.processing.SampleSchedule;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.collections4.map.LRUMap;
+import org.apache.commons.math3.complex.Complex;
+
+public class NMRPipeData implements NMRData {
+
+    static private final int DIMSIZE = 4;
+    static private final int MAX_FILECHANNELS = 16;
+    private final String dirName;
+    private final String fpath;
+    private FileChannel fc = null;
+    private double groupDelay = 0.0;
+    private final double scale = 1.0;
+    String template = "plane%03d.fid";
+
+    Header fileHeader;
+    private SampleSchedule sampleSchedule = null;
+    Map<Integer, FileChannel> fcMap;
+
+    static final Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+    boolean swapBits = true;
+    /**
+     * open Varian parameter and data files
+     *
+     * @param path : full path to the .fid directory, fid file or spectrum
+     */
+    static final private int FILEHEADERSIZE = 2048;
+    int ebytes = 4;
+    int tbytes;
+    int np;
+    boolean isFloat = true;
+    boolean isShort = false;
+    int[] sizes;
+
+    public NMRPipeData(String path) {
+        if (path.endsWith(File.separator)) {
+            path = path.substring(0, path.length() - 1);
+        }
+        Path filePath = Paths.get(path);
+        dirName = filePath.getParent().toString();
+        this.fpath = path;
+        fcMap = Collections.synchronizedMap(new FileChannelMap(MAX_FILECHANNELS));
+
+        readHeader(fpath);
+        openDataFile(path);
+        // force caching nDim and sizes
+        getNDim();
+        np = getSize(0) * 2;
+        getDimMap();
+        getSizes();
+        tbytes = np * ebytes;
+//        checkAndOpenSampleSchedule(path);
+    }
+
+    public static boolean findFID(StringBuilder bpath) {
+        return findFIDFiles(bpath.toString());
+    }
+
+    public static boolean findFIDFiles(String dpath) {
+        boolean found = false;
+        File file = new File(dpath);
+        if (file.exists()) {
+            try (FileReader reader = new FileReader(file)) {
+                boolean ok = true;
+                for (int i = 0; i < 4; i++) {
+                    if (reader.read() != 0) {
+                        ok = false;
+                        break;
+                    }
+                }
+                found = ok;
+            } catch (IOException ioE) {
+
+            }
+        }
+        return found;
+    } // findFIDFiles
+
+    private FileChannel openDataFile(String dirPath, String templateFileName) {
+        Path path = Paths.get(dirPath, templateFileName);
+        FileChannel fileChannel = null;
+        try {
+            fileChannel = FileChannel.open(path, StandardOpenOption.READ);
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, (fpath + "/n" + ex.getMessage()));
+            if (fileChannel != null) {
+                try {
+                    fileChannel.close();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, e.getMessage());
+                }
+            }
+        }
+        return fileChannel;
+    }
+
+    // open Varian data file, read header
+    private void openDataFile(String datapath) {
+        try {
+            fc = FileChannel.open(Paths.get(datapath), StandardOpenOption.READ);
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, (fpath + "/n" + ex.getMessage()));
+            if (fc != null) {
+                try {
+                    fc.close();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, e.getMessage());
+                }
+            }
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            fc.close();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, e.getMessage());
+        }
+    }
+
+    @Override
+    public String getFilePath() {
+        return fpath;
+    }
+
+    @Override
+    public String getPar(String parname) {
+        return FIELDS.valueOf(parname).getString(fileHeader);
+    }
+
+    @Override
+    public Double getParDouble(String parname) {
+        return Double.valueOf(FIELDS.valueOf(parname).getFloat(fileHeader));
+    }
+
+    @Override
+    public Integer getParInt(String parname) {
+        return FIELDS.valueOf(parname).getInt(fileHeader);
+    }
+
+    @Override
+    public int getNVectors() {
+        return FIELDS.FDSPECNUM.getInt(fileHeader);
+    }
+
+    @Override
+    public int getNPoints() {
+        return FIELDS.FDSIZE.getInt(fileHeader);
+    }
+
+    @Override
+    public int getNDim() {
+        return FIELDS.FDDIMCOUNT.getInt(fileHeader);
+    }
+
+    @Override
+    public int getSize(int dim) {
+        int size = FIELDS.getSize(fileHeader, dim);
+        if (dim > 0) {
+            size /= 2;
+        }
+        return size;
+    }
+
+    @Override
+    public void setSize(int dim, int size) {
+        FIELDS.setSize(fileHeader, dim, size);
+    }
+
+    @Override
+    public String getSolvent() {
+        return "";
+    }
+
+    @Override
+    public double getTempK() {
+        return FIELDS.FDTEMPERATURE.getFloat(fileHeader);
+    }
+
+    @Override
+    public String getSequence() {
+        return "";
+    }
+
+    @Override
+    public double getSF(int dim) {
+        return FIELDS.getFloat(fileHeader, dim, "OBS");
+    }
+
+    @Override
+    public void setSF(int dim, double value) {
+        FIELDS.setFloat(fileHeader, dim, "OBS", (float) value);
+    }
+
+    @Override
+    public void resetSF(int dim) {
+    }
+
+    @Override
+    public double getSW(int dim) {
+        return FIELDS.getFloat(fileHeader, dim, "SW");
+    }
+
+    @Override
+    public void setSW(int dim, double value) {
+        FIELDS.setFloat(fileHeader, dim, "SW", (float) value);
+    }
+
+    @Override
+    public void resetSW(int dim) {
+    }
+
+    @Override
+    public double getRef(int dim) {
+        return FIELDS.getFloat(fileHeader, dim, "CAR");
+    }
+
+    @Override
+    public void setRef(int dim, double ref) {
+        FIELDS.setFloat(fileHeader, dim, "CAR", (float) ref);
+    }
+
+    @Override
+    public void resetRef(int dim) {
+    }
+
+    @Override
+    public double getRefPoint(int dim) {
+        double refpt = getSize(dim) / 2;
+        return refpt;
+    }
+
+    @Override
+    public String getTN(int dim) {
+        return "H";
+    }
+
+    @Override
+    public boolean isComplex(int dim) {
+        return true; // fixme
+    }
+
+    @Override
+    public double[] getCoefs(int dim) {
+        double dcoefs[] = {1, 0, 0, 0, 0, 0, -1, 0}; // fixme
+        return dcoefs;
+
+    }
+
+    @Override
+    public String getSymbolicCoefs(int dim) {
+        return "hyper";
+    }
+
+    @Override
+    public String getVendor() {
+        return "nmrPipe";
+    }
+
+    @Override
+    public double getPH0(int dim) {
+        double phase0 = FIELDS.getFloat(fileHeader, dim, "P0");
+        return phase0;
+    }
+
+    @Override
+    public double getPH1(int dim) {
+        double phase1 = FIELDS.getFloat(fileHeader, dim, "P1");
+        return phase1;
+    }
+
+    @Override
+    public int getLeftShift(int dim) {
+        return 0;
+    }
+
+    @Override
+    public double getExpd(int dim) {
+        // fixme lb or decay rate
+        return FIELDS.getFloat(fileHeader, dim, "LB");
+
+    }
+
+    @Override
+    public SinebellWt getSinebellWt(int dim) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public GaussianWt getGaussianWt(int dim) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public FPMult getFPMult(int dim) {
+        return new NMRPipeFPMult(dim);
+    }
+
+    @Override
+    public LPParams getLPParams(int dim) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public String[] getSFNames() {
+        int nDim = getNDim();
+        String[] names = new String[nDim];
+        for (int i = 0; i < nDim; i++) {
+            names[i] = "FDF" + (i + 1) + "OBS";
+        }
+        return names;
+    }
+
+    @Override
+    public String[] getSWNames() {
+        int nDim = getNDim();
+        String[] names = new String[nDim];
+        for (int i = 0; i < nDim; i++) {
+            names[i] = "FDF" + (i + 1) + "SW";
+        }
+        return names;
+    }
+
+    @Override
+    public String[] getLabelNames() {
+        int nDim = getNDim();
+        ArrayList<String> names = new ArrayList<>();
+        for (int i = 0; i < nDim; i++) {
+            String name = getTN(i);
+            if (names.contains(name)) {
+                name = name + "_" + (i + 1);
+            }
+            names.add(name);
+        }
+
+        return names.toArray(new String[names.size()]);
+    }
+
+    @Override
+    public void readVector(int iVec, Vec dvec) {
+        if (dvec.isComplex()) {
+            if (dvec.useApache()) {
+                readVector(iVec, dvec.getCvec());
+            } else {
+                readVector(iVec, dvec.rvec, dvec.ivec);
+            }
+        } else {
+            readVector(iVec, dvec.rvec);
+        }
+        dvec.dwellTime = 1.0 / getSW(0);
+        dvec.centerFreq = getSF(0);
+        double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
+        dvec.refValue = getRef(0) + delRef;
+    }
+
+    @Override
+    public void readVector(int iVec, Complex[] cdata) {
+        byte[] dataBuf = new byte[tbytes];
+        readVecBlock(iVec, dataBuf);
+        copyVecData(dataBuf, cdata);
+    }
+
+    @Override
+    public void readVector(int iVec, double[] rdata, double[] idata) {
+        byte[] dataBuf = new byte[tbytes];
+        readVecBlock(iVec, dataBuf);
+        copyVecData(dataBuf, rdata, idata);
+    }
+
+    @Override
+    public void readVector(int iVec, double[] data) {
+        byte[] dataBuf = new byte[tbytes];
+        readVecBlock(iVec, dataBuf);
+        copyVecData(dataBuf, data);
+    }
+
+    @Override
+    public void readVector(int iDim, int iVec, Vec dvec) {
+        int shiftAmount = 0;
+        if (groupDelay > 0) {
+            // fixme which is correct (use ceil or not)
+            //shiftAmount = (int)Math.round(Math.ceil(groupDelay));
+            shiftAmount = (int) Math.round(groupDelay);
+            System.out.println(iVec + " " + groupDelay + " " + shiftAmount);
+        }
+        if (dvec.isComplex()) {
+            if (dvec.useApache()) {
+                readVector(iDim, iVec + shiftAmount, dvec.getCvec());
+            } else {
+// fixme
+                readVector(iVec + shiftAmount, dvec.rvec, dvec.ivec);
+            }
+        } else {
+// fixme
+            readVector(iVec, dvec.rvec);
+        }
+        dvec.dwellTime = 1.0 / getSW(iDim);
+        dvec.centerFreq = getSF(iDim);
+//        double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
+        double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
+        dvec.refValue = getRef(iDim) + delRef;
+        dvec.setPh0(getPH0(iDim));
+        dvec.setPh1(getPH1(iDim));
+        if (iDim == 0) {
+            dvec.setGroupDelay(groupDelay);
+        } else {
+            dvec.setGroupDelay(0.0);
+        }
+    }
+
+    public void readVector(int iDim, int iVec, Complex[] cdata) {
+        int size = getSize(iDim);
+        int nPer = 1;
+        if (isComplex(iDim)) {
+            nPer = 2;
+        }
+        int nPoints = size * nPer;
+        byte[] dataBuf = new byte[nPoints * 4 * 2];
+        ByteBuffer buf = ByteBuffer.wrap(dataBuf);
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+        FloatBuffer fbuf = buf.asFloatBuffer();
+        for (int j = 0; j < (nPoints * 2); j++) {
+            fbuf.put(j, 0);
+        }
+        int stride = tbytes;
+        for (int i = 1; i < iDim; i++) {
+            stride *= getSize(i) * 2;
+        }
+
+        for (int i = 0; i < (nPoints); i++) {
+            if (sampleSchedule != null) {
+                int[] point = {i / 2};
+                int index = sampleSchedule.getIndex(point);
+                if (index != -1) {
+                    index = index * 2 + (i % 2);
+                    readValue(iDim, stride, index, i, iVec, dataBuf);
+                }
+            } else {
+                readValue(iDim, stride, i, i, iVec, dataBuf);
+            }
+        }
+        for (int j = 0; j < (nPoints * 2); j += 2) {
+            double px = fbuf.get(j);
+            double py = fbuf.get(j + 1);
+            cdata[j / 2] = new Complex(px / scale, py / scale);
+        }
+    }
+
+    @Override
+    public void resetAcqOrder() {
+    }
+
+    @Override
+    public String[] getAcqOrder() {
+        int nDim = getNDim() - 1;
+        String[] acqOrder = new String[nDim * 2];
+        for (int i = 0; i < nDim; i++) {
+            acqOrder[i * 2] = "p" + (i + 1);
+            acqOrder[i * 2 + 1] = "d" + (i + 1);
+        }
+        return acqOrder;
+    }
+
+    @Override
+    public void setAcqOrder(String[] acqOrder) {
+    }
+
+    @Override
+    public SampleSchedule getSampleSchedule() {
+        return null;
+    }
+
+    @Override
+    public void setSampleSchedule(SampleSchedule sampleSchedule) {
+    }
+
+    FileChannel getFileChannel(int i) {
+        if (i == 0) {
+            return fc;
+        }
+        int planeIndex = getPlaneIndex(i);
+        FileChannel fileChan = fcMap.get(planeIndex);
+        if (fileChan == null) {
+            String templateFile = getTemplateFile(i);
+            System.out.println("open " + templateFile);
+            fileChan = openDataFile(dirName, templateFile);
+            fcMap.put(planeIndex, fileChan);
+        }
+        return fileChan;
+    }
+
+    // read i'th data block
+    private void readVecBlock(int i, byte[] dataBuf) {
+        FileChannel iFC = null;
+        try {
+            iFC = getFileChannel(i);
+            int index = getIndexInFile(i);
+            int skips = FILEHEADERSIZE + np * ebytes * index;
+            ByteBuffer buf = ByteBuffer.wrap(dataBuf);
+            int nread = iFC.read(buf, skips);
+            if (nread < np) {
+                throw new ArrayIndexOutOfBoundsException("file index " + i + " / " + index + " out of bounds");
+            }
+        } catch (EOFException e) {
+            logger.log(Level.WARNING, e.getMessage());
+            if (iFC != null) {
+                try {
+                    fc.close();
+                } catch (IOException ex) {
+                    logger.log(Level.WARNING, ex.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, e.getMessage());
+            if (iFC != null) {
+                try {
+                    fc.close();
+                } catch (IOException ex) {
+                    logger.log(Level.WARNING, ex.getMessage());
+                }
+            }
+        }
+    }  // end readVecBlock
+
+    // read value along dim
+    // fixme only works for 2nd dim
+    // read value along dim
+    // fixme only works for 2nd dim
+    private void readValue(int iDim, int stride, int fileIndex, int vecIndex, int xCol, byte[] dataBuf) {
+        try {
+            //int skips = fileIndex * tbytes + xCol * 4 * 2;
+            int skips = fileIndex * stride + xCol * 4 * 2;
+            //System.out.println(fileIndex + " " + xCol + " " + (skips/4));
+            ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2, 4);
+            int nread = fc.read(buf, skips);
+            buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2 + 4, 4);
+            nread = fc.read(buf, skips + stride / 2);
+        } catch (EOFException e) {
+            logger.log(Level.WARNING, e.getMessage());
+            if (fc != null) {
+                try {
+                    fc.close();
+                } catch (IOException ex) {
+                    logger.log(Level.WARNING, ex.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            logger.log(Level.WARNING, e.getMessage());
+            if (fc != null) {
+                try {
+                    fc.close();
+                } catch (IOException ex) {
+                    logger.log(Level.WARNING, ex.getMessage());
+                }
+            }
+        }
+    }
+
+    // copy read data into double array
+    private void copyVecData(byte[] dataBuf, double[] data) {
+        int j;
+        if (isFloat) {
+            FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
+            for (j = 0; j < np; j++) {
+                data[j] = (double) fbuf.get(j);
+            }
+        } else if (isShort) {
+            ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
+            for (j = 0; j < np; j++) {
+                data[j] = (double) sbuf.get(j);
+            }
+        } else {
+            IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
+            for (j = 0; j < np; j++) {
+                data[j] = (double) ibuf.get(j);
+            }
+        }
+    }  // end copyVecData
+
+    // copy read data into Complex array
+    private void copyVecData(byte[] dataBuf, Complex[] data) {
+        int nComplex = np / 2;
+        if (isFloat) {
+            ByteBuffer buf = ByteBuffer.wrap(dataBuf);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+            FloatBuffer fbuf = buf.asFloatBuffer();
+            for (int j = 0; j < nComplex; j++) {
+                data[j] = new Complex((double) fbuf.get(j), (double) fbuf.get(j + nComplex));
+            }
+        } else if (isShort) {
+            ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
+            for (int j = 0; j < nComplex; j++) {
+                data[j] = new Complex((double) sbuf.get(j), (double) sbuf.get(j + nComplex));
+            }
+        } else {
+            IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
+            for (int j = 0; j < nComplex; j++) {
+                data[j] = new Complex((double) ibuf.get(j), (double) ibuf.get(j + nComplex));
+            }
+        }
+    }  // end copyVecData
+
+    // copy read data into double arrays of real, imaginary
+    private void copyVecData(byte[] dataBuf, double[] rdata, double[] idata) {
+        int nComplex = np / 2;
+        if (isFloat) {
+            FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
+            for (int j = 0; j < nComplex; j++) {
+                rdata[j] = (double) fbuf.get(j);
+                idata[j] = (double) fbuf.get(j + nComplex);
+            }
+        } else if (isShort) {
+            ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
+            for (int j = 0; j < nComplex; j++) {
+                rdata[j] = (double) sbuf.get(j);
+                idata[j] = (double) sbuf.get(j + nComplex);
+            }
+        } else {
+            IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
+            for (int j = 0; j < nComplex; j++) {
+                rdata[j] = (double) ibuf.get(j);
+                idata[j] = (double) ibuf.get(j + nComplex);
+            }
+        }
+    }  // end copyVecData
+
+    private void getDimMap() {
+        for (int iDim = 0; iDim < DIMSIZE; iDim++) {
+            fileHeader.dimMap[iDim] = FIELDS.getInt(fileHeader, "DIMORDER" + (iDim + 1)) - 1;
+        }
+    }
+
+    void getSizes() {
+        sizes = new int[DIMSIZE];
+        for (int dim = 0; dim < DIMSIZE; dim++) {
+            int size = FIELDS.getSize(fileHeader, dim);
+            sizes[dim] = size > 0 ? size : 1;
+            System.out.println(dim + " size " + sizes[dim]);
+        }
+    }
+
+    String getTemplateFile(int index) {
+        int cube = index / (sizes[1] * sizes[2]);
+        int plane = getPlaneIndex(index);
+        String fileName = String.format(template, plane + 1);
+        return fileName;
+    }
+
+    int getIndexInFile(int index) {
+        int newIndex = index % (sizes[1]);
+        return newIndex;
+    }
+
+    int getPlaneIndex(int index) {
+        int planeIndex = index / (sizes[1]);
+        return planeIndex;
+    }
+
+    class FileChannelMap extends LRUMap<Integer, FileChannel> {
+
+        public FileChannelMap(int maxEntries) {
+            super(maxEntries);
+        }
+
+        protected boolean removeLRU(LinkEntry<Integer, FileChannel> entry) {
+            System.out.println("remove " + entry.getKey());
+            FileChannel fileChannel = entry.getValue();
+            try {
+                fileChannel.close();
+            } catch (IOException ioE) {
+
+            }
+            return true;  // actually delete entry
+        }
+    }
+
+    class NMRPipeFPMult extends FPMult {
+
+        NMRPipeFPMult(int iDim) {
+            float value = FIELDS.getFloat(fileHeader, iDim, "C1");
+            if (value != 0.0) {
+                value += 1.0f;
+                fpmult = value;
+                exists = true;
+            }
+
+        }
+    }
+
+    class Header {
+
+        FloatBuffer fBuffer;
+        ByteBuffer bBuffer;
+        private int[] dimMap = new int[DIMSIZE];
+
+        Header(ByteBuffer bBuffer) {
+            this.bBuffer = bBuffer;
+            System.out.println(bBuffer.capacity());
+            fBuffer = bBuffer.asFloatBuffer();
+            System.out.println(fBuffer.capacity());
+        }
+
+        byte[] getByteArray(int index, int size) {
+            byte[] bytes = new byte[size];
+            for (int i = 0; i < size; i++) {
+                bytes[i] = bBuffer.get(index + i);
+            }
+            return bytes;
+        }
+
+        String getString(int index, int size) {
+            byte[] bytes = getByteArray(index, size);
+            int length = bytes.length;
+            for (int i = 0; i < bytes.length; i++) {
+                if (bytes[i] == 0) {
+                    length = i;
+                    break;
+                }
+            }
+            String string = new String(bytes, 0, length);
+            return string;
+        }
+
+        float getFloat(int index) {
+            return fBuffer.get(index);
+        }
+
+        void setFloat(int index, float value) {
+            fBuffer.put(index, value);
+        }
+
+        int getInt(int index) {
+            return (int) Math.round(fBuffer.get(index));
+        }
+
+        void setInt(int index, int value) {
+            fBuffer.put(index, value);
+        }
+
+        int getDim(int iDim) {
+            return dimMap[iDim];
+        }
+    }
+
+    enum FTYPES {
+        INT {
+            String toString(FIELDS field, Header header) {
+                int value = field.getInt(header);
+                return String.format("%d", value);
+            }
+        },
+        FLOAT {
+            String toString(FIELDS field, Header header) {
+                float value = field.getFloat(header);
+                return String.format("%.5f", value);
+            }
+        },
+        STRING {
+            String toString(FIELDS field, Header header) {
+                return header.getString(field.offset * 4, field.stringLen);
+            }
+
+        };
+
+        abstract String toString(FIELDS field, Header header);
+    }
+
+    public enum FIELDS {
+        FDMAGIC(0, FTYPES.INT),/* Should be zero in valid NMRPipe data.            */
+        FDFLTFORMAT(1, FTYPES.INT),/* Constant defining floating point format.         */
+        FDFLTORDER(2, FTYPES.INT),/* Constant defining byte order.                    */
+        FDSIZE(99, FTYPES.INT),/* Number of points in current dim R|I.             */
+        FDF2SIZE(99, FTYPES.INT),
+        FDREALSIZE(97, FTYPES.INT),/* Number of valid time-domain pts (obsolete).      */
+        FDSPECNUM(219, FTYPES.INT),/* Number of complex 1D slices in file.             */
+        FDF1SIZE(219, FTYPES.INT),
+        FDQUADFLAG(106, FTYPES.INT),/* See Data Type codes below.                       */
+        FD2DPHASE(256, FTYPES.INT),/* See 2D Plane Type codes below.                   */
+        FDTRANSPOSED(221, FTYPES.INT),/* 1=Transposed, 0=Not Transposed. (                */
+        FDDIMCOUNT(9, FTYPES.INT),/* Number of dimensions in complete data.           */
+        FDDIMORDER(24, FTYPES.INT),/* Array describing dimension order.                */
+        FDDIMORDER1(24, FTYPES.INT),/* Dimension stored in X-Axis.                      */
+        FDDIMORDER2(25, FTYPES.INT),/* Dimension stored in Y-Axis.                      */
+        FDDIMORDER3(26, FTYPES.INT),/* Dimension stored in Z-Axis.                      */
+        FDDIMORDER4(27, FTYPES.INT),/* Dimension stored in A-Axis.                      */
+        FDNUSDIM(45, FTYPES.INT),/* Unexpanded NUS dimensions.                       */
+        FDPIPEFLAG(57, FTYPES.INT),/* Dimension code of data stream.                  */
+        FDCUBEFLAG(447, FTYPES.INT),/* Data is 3D cube file series.                    */
+        FDPIPECOUNT(75, FTYPES.INT),/* Number of functions in pipe.                    */
+        FDSLICECOUNT0(443, FTYPES.INT),/* Encodes number of 1D slices in stream. (        */
+        FDSLICECOUNT1(446, FTYPES.INT),/* Encodes number of 1D slices in stream. (        */
+        FDFILECOUNT(442, FTYPES.INT),/* Number of files in complete data.               */
+        FDTHREADCOUNT(444, FTYPES.INT),/* Multi-Thread Mode: Number of Threads. (         */
+        FDTHREADID(445, FTYPES.INT),/* Multi-Thread Mode: Thread ID, First = 0.        */
+        FDFIRSTPLANE(77, FTYPES.INT),/* First Z-Plane in subset.       Added for NMRPipe. */
+        FDLASTPLANE(78, FTYPES.INT),/* Last Z-Plane in subset.        Added for NMRPipe. */
+        FDPARTITION(65, FTYPES.INT),/* Slice count for server mode.   Added for NMRPipe. */
+        FDPLANELOC(14, FTYPES.INT),/* Location of this plane; currently unused.         */
+        FDMAX(247),/* Max value in real part of data.                  */
+        FDMIN(248),/* Min value in real part of data.                  */
+        FDSCALEFLAG(250, FTYPES.INT),/* 1 if FDMAX and FDMIN are valid.                  */
+        FDDISPMAX(251),/* Max value, used for display generation.          */
+        FDDISPMIN(252),/* Min value, used for display generation.          */
+        FDPTHRESH(253),/* Positive threshold for peak detection.           */
+        FDNTHRESH(254),/* Negative threshold for peak detection.           */
+        FDUSER1(70),
+        FDUSER2(71),
+        FDUSER3(72),
+        FDUSER4(73),
+        FDUSER5(74),
+        FDUSER6(76),
+        FDLASTBLOCK(359, FTYPES.INT),
+        FDCONTBLOCK(360, FTYPES.INT),
+        FDBASEBLOCK(361, FTYPES.INT),
+        FDPEAKBLOCK(362, FTYPES.INT),
+        FDBMAPBLOCK(363, FTYPES.INT),
+        FDHISTBLOCK(364, FTYPES.INT),
+        FD1DBLOCK(365, FTYPES.INT),
+        FDMONTH(294, FTYPES.INT),
+        FDDAY(295, FTYPES.INT),
+        FDYEAR(296, FTYPES.INT),
+        FDHOURS(283, FTYPES.INT),
+        FDMINS(284, FTYPES.INT),
+        FDSECS(285, FTYPES.INT),
+        FDMCFLAG(135, FTYPES.INT),/* Magnitude Calculation performed.               */
+        FDNOISE(153),/* Used to contain an RMS noise estimate.         */
+        FDRANK(180, FTYPES.INT),/* Estimate of matrix rank; Added for NMRPipe.    */
+        FDTEMPERATURE(157),/* Temperature, degrees C. (                      */
+        FD2DVIRGIN(399, FTYPES.INT),/* 0=Data never accessed, header never adjusted.  */
+        FDTAU(199),/* A Tau value (for spectral series).             */
+        FDDOMINFO(266, FTYPES.INT),/* Spectral/Spatial Flags. Added for NMRPipe.     */
+        FDMETHINFO(267, FTYPES.INT),/* FT/Direct Flags. Added for NMRPipe.            */
+        FDSCORE(370),/* Added for screening score etc.                 */
+        FDSCANS(371, FTYPES.INT),/* Number of Scans per 1D.                        */
+        FDSRCNAME(286, FTYPES.STRING, 16),/* char srcFile[16]  286-289 */
+        FDUSERNAME(290, FTYPES.STRING, 16),/* char uName[16]    290-293 */
+        FDOPERNAME(464, FTYPES.STRING, 32),/* char oName[32]    464-471 */
+        FDTITLE(297, FTYPES.STRING, 60),/* char title[60]    297-311 */
+        FDCOMMENT(312, FTYPES.STRING, 160),/* char comment[160] 312-351 */
+        FDF2LABEL(16, FTYPES.STRING, 8),
+        FDF2APOD(95, FTYPES.INT),
+        FDF2SW(100),
+        FDF2OBS(119),
+        FDF2OBSMID(378),
+        FDF2ORIG(101),
+        FDF2UNITS(152, FTYPES.INT),
+        FDF2QUADFLAG(56, FTYPES.INT),/* Added for NMRPipe. */
+        FDF2FTFLAG(220, FTYPES.INT),
+        FDF2AQSIGN(64),/* Added for NMRPipe. */
+        FDF2CAR(66),/* Added for NMRPipe. */
+        FDF2CENTER(79),/* Added for NMRPipe. */
+        FDF2OFFPPM(480),/* Added for NMRPipe. */
+        FDF2P0(109),
+        FDF2P1(110),
+        FDF2APODCODE(413, FTYPES.INT),
+        FDF2APODQ1(415),
+        FDF2APODQ2(416),
+        FDF2APODQ3(417),
+        FDF2LB(111),
+        FDF2GB(374),
+        FDF2GOFF(382),
+        FDF2C1(418) {
+            float getFloat(Header header) {
+                return header.getFloat(offset) + 1.0f;
+            }
+
+            void setFloat(Header header, float value) {
+                header.setFloat(offset, value - 1.0f);
+            }
+        },
+        FDF2ZF(108, FTYPES.INT) {
+            int getInt(Header header) {
+                return -header.getInt(offset);
+            }
+
+            void setInt(Header header, int value) {
+                header.setInt(offset, -value);
+            }
+        },
+        FDF2X1(257, FTYPES.INT),/* Added for NMRPipe. */
+        FDF2XN(258, FTYPES.INT),/* Added for NMRPipe. */
+        FDF2FTSIZE(96, FTYPES.INT),/* Added for NMRPipe. */
+        FDF2TDSIZE(386, FTYPES.INT),/* Added for NMRPipe. */
+        FDDMXVAL(40),/* Added for NMRPipe. */
+        FDDMXFLAG(41),/* Added for NMRPipe. */
+        FDDELTATR(42),/* Added for NMRPipe. */
+        FDF1LABEL(18, FTYPES.STRING, 8),
+        FDF1APOD(428, FTYPES.INT),
+        FDF1SW(229),
+        FDF1OBS(218),
+        FDF1OBSMID(379),
+        FDF1ORIG(249),
+        FDF1UNITS(234, FTYPES.INT),
+        FDF1FTFLAG(222, FTYPES.INT),
+        FDF1AQSIGN(475),/* Added for NMRPipe. */
+        FDF1QUADFLAG(55, FTYPES.INT),/* Added for NMRPipe. */
+        FDF1CAR(67),/* Added for NMRPipe. */
+        FDF1CENTER(80),/* Added for NMRPipe. */
+        FDF1OFFPPM(481),/* Added for NMRPipe. */
+        FDF1P0(245),
+        FDF1P1(246),
+        FDF1APODCODE(414, FTYPES.INT),
+        FDF1APODQ1(420),
+        FDF1APODQ2(421),
+        FDF1APODQ3(422),
+        FDF1LB(243),
+        FDF1GB(375),
+        FDF1GOFF(383),
+        FDF1C1(423) {
+            float getFloat(Header header) {
+                return header.getFloat(offset) + 1.0f;
+            }
+
+            void setFloat(Header header, float value) {
+                header.setFloat(offset, value - 1.0f);
+            }
+        },
+        FDF1ZF(437, FTYPES.INT) {
+            int getInt(Header header) {
+                return -header.getInt(offset);
+            }
+
+            void setInt(Header header, int value) {
+                header.setInt(offset, -value);
+            }
+        },
+        FDF1X1(259, FTYPES.INT),/* Added for NMRPipe. */
+        FDF1XN(260, FTYPES.INT),/* Added for NMRPipe. */
+        FDF1FTSIZE(98, FTYPES.INT),/* Added for NMRPipe. */
+        FDF1TDSIZE(387, FTYPES.INT),/* Added for NMRPipe. */
+        FDF3LABEL(20, FTYPES.STRING, 8),
+        FDF3APOD(50, FTYPES.INT),/* Added for NMRPipe. */
+        FDF3OBS(10),
+        FDF3OBSMID(380),
+        FDF3SW(11),
+        FDF3ORIG(12),
+        FDF3FTFLAG(13, FTYPES.INT),
+        FDF3AQSIGN(476, FTYPES.INT),/* Added for NMRPipe. */
+        FDF3SIZE(15, FTYPES.INT),
+        FDF3QUADFLAG(51, FTYPES.INT),/* Added for NMRPipe. */
+        FDF3UNITS(58),/* Added for NMRPipe. */
+        FDF3P0(60),/* Added for NMRPipe. */
+        FDF3P1(61),/* Added for NMRPipe. */
+        FDF3CAR(68),/* Added for NMRPipe. */
+        FDF3CENTER(81),/* Added for NMRPipe. */
+        FDF3OFFPPM(482),/* Added for NMRPipe. */
+        FDF3APODCODE(400, FTYPES.INT),/* Added for NMRPipe. */
+        FDF3APODQ1(401),/* Added for NMRPipe. */
+        FDF3APODQ2(402),/* Added for NMRPipe. */
+        FDF3APODQ3(403),/* Added for NMRPipe. */
+        FDF3LB(372),/* Added for NMRPipe. */
+        FDF3GB(376),/* Added for NMRPipe. */
+        FDF3GOFF(384),/* Added for NMRPipe. */
+        FDF3C1(404) {
+            float getFloat(Header header) {
+                return header.getFloat(offset) + 1.0f;
+            }
+
+            void setFloat(Header header, float value) {
+                header.setFloat(offset, value - 1.0f);
+            }
+        },
+        FDF3ZF(438, FTYPES.INT) {
+            int getInt(Header header) {
+                return -header.getInt(offset);
+            }
+
+            void setInt(Header header, int value) {
+                header.setInt(offset, -value);
+            }
+        },
+        FDF3X1(261, FTYPES.INT),/* Added for NMRPipe. */
+        FDF3XN(262, FTYPES.INT),/* Added for NMRPipe. */
+        FDF3FTSIZE(200, FTYPES.INT),/* Added for NMRPipe. */
+        FDF3TDSIZE(388, FTYPES.INT),/* Added for NMRPipe. */
+        FDF4LABEL(22, FTYPES.STRING, 8),
+        FDF4APOD(53, FTYPES.INT),/* Added for NMRPipe. */
+        FDF4OBS(28),
+        FDF4OBSMID(381),
+        FDF4SW(29),
+        FDF4ORIG(30),
+        FDF4FTFLAG(31),
+        FDF4AQSIGN(477),/* Added for NMRPipe. */
+        FDF4SIZE(32),
+        FDF4QUADFLAG(54, FTYPES.INT),/* Added for NMRPipe. */
+        FDF4UNITS(59),/* Added for NMRPipe. */
+        FDF4P0(62),/* Added for NMRPipe. */
+        FDF4P1(63),/* Added for NMRPipe. */
+        FDF4CAR(69),/* Added for NMRPipe. */
+        FDF4CENTER(82),/* Added for NMRPipe. */
+        FDF4OFFPPM(483),/* Added for NMRPipe. */
+        FDF4APODCODE(405, FTYPES.INT),/* Added for NMRPipe. */
+        FDF4APODQ1(406),/* Added for NMRPipe. */
+        FDF4APODQ2(407),/* Added for NMRPipe. */
+        FDF4APODQ3(408),/* Added for NMRPipe. */
+        FDF4LB(373),/* Added for NMRPipe. */
+        FDF4GB(377),/* Added for NMRPipe. */
+        FDF4GOFF(385),/* Added for NMRPipe. */
+        FDF4C1(409) {
+            float getFloat(Header header) {
+                return header.getFloat(offset) + 1.0f;
+            }
+
+            void setFloat(Header header, float value) {
+                header.setFloat(offset, value - 1.0f);
+            }
+        },
+        FDF4ZF(439, FTYPES.INT) {
+            int getInt(Header header) {
+                return -header.getInt(offset);
+            }
+
+            void setInt(Header header, int value) {
+                header.setInt(offset, -value);
+            }
+        },
+        FDF4X1(263, FTYPES.INT),/* Added for NMRPipe. */
+        FDF4XN(264, FTYPES.INT),/* Added for NMRPipe. */
+        FDF4FTSIZE(201, FTYPES.INT),/* Added for NMRPipe. */
+        FDF4TDSIZE(389, FTYPES.INT);/* Added for NMRPipe. *//* Added for NMRPipe. */
+
+        int offset;
+        FTYPES type;
+        int stringLen;
+
+        FIELDS(int fieldIndex) {
+            offset = fieldIndex;
+            this.type = FTYPES.FLOAT;
+        }
+
+        FIELDS(int fieldIndex, FTYPES type) {
+            offset = fieldIndex;
+            this.type = type;
+        }
+
+        FIELDS(int fieldIndex, FTYPES type, int stringLen) {
+            offset = fieldIndex;
+            this.type = type;
+            this.stringLen = stringLen;
+        }
+
+        String getString(Header header) {
+            return type.toString(this, header);
+        }
+
+        float getFloat(Header header) {
+            return header.getFloat(offset);
+        }
+
+        int getInt(Header header) {
+            return header.getInt(offset);
+        }
+
+        void setInt(Header header, int value) {
+            header.setInt(offset, value);
+        }
+
+        void setFloat(Header header, float value) {
+            header.setFloat(offset, value);
+        }
+
+        byte[] getByteArray(Header header, int nBytes) {
+            return header.getByteArray(offset * 4, nBytes);
+        }
+
+        static int getSize(Header header, int iDim) {
+            int size = 0;
+            switch (iDim) {
+                case 0:
+                    size = FDSIZE.getInt(header);
+                    break;
+                case 1:
+                    size = FDSPECNUM.getInt(header);
+                    break;
+                case 2:
+                    size = FDF3SIZE.getInt(header);
+                    break;
+                case 3:
+                    size = FDF4SIZE.getInt(header);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid dimension " + iDim);
+
+            }
+            return size;
+        }
+
+        static void setSize(Header header, int iDim, int size) {
+            switch (iDim) {
+                case 0:
+                    FDSIZE.setInt(header, size);
+                    break;
+                case 1:
+                    FDSPECNUM.setInt(header, size);
+                    break;
+                case 2:
+                    FDF3SIZE.setInt(header, size);
+                    break;
+                case 3:
+                    FDF4SIZE.setInt(header, size);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid dimension " + iDim);
+            }
+        }
+
+        static float getSW(Header header, int iDim) {
+            int jDim = header.getDim(iDim);
+            return valueOf("FDF" + (jDim + 1) + "SW").getFloat(header);
+        }
+
+        void setSW(Header header, int iDim, float value) {
+            int jDim = header.getDim(iDim);
+            valueOf("FDF" + (jDim + 1) + "SW").setFloat(header, value);
+        }
+
+        static float getFloat(Header header, int iDim, String name) {
+            int jDim = header.getDim(iDim);
+            return valueOf("FDF" + (jDim + 1) + name).getFloat(header);
+        }
+
+        static void setFloat(Header header, int iDim, String name, float value) {
+            int jDim = header.getDim(iDim);
+            valueOf("FDF" + (jDim + 1) + name).setFloat(header, value);
+        }
+
+        static float getFloat(Header header, String name) {
+            return valueOf("FD" + name).getFloat(header);
+        }
+
+        static String getString(Header header, int iDim, String name) {
+            int jDim = header.getDim(iDim);
+            return valueOf("FDF" + (jDim + 1) + name).getString(header);
+        }
+
+        static String getString(Header header, String name) {
+            return valueOf("FD" + name).getString(header);
+        }
+
+        static String getString(Header header, int iDim, String name, int size) {
+            int jDim = header.getDim(iDim);
+            byte[] bytes = valueOf("FDF" + (jDim + 1) + name).getByteArray(header, size);
+            int length = bytes.length;
+            for (int i = 0; i < bytes.length; i++) {
+                if (bytes[i] == 0) {
+                    length = i;
+                    break;
+                }
+            }
+            String string = new String(bytes, 0, length);
+            return string;
+        }
+
+        void setValue(Header header, int iDim, String name, float value) {
+            int jDim = header.getDim(iDim);
+            valueOf("FDF" + (jDim + 1) + name).setFloat(header, value);
+        }
+
+        static int getInt(Header header, int iDim, String name) {
+            int jDim = header.getDim(iDim);
+            return (int) Math.round(valueOf("FDF" + (jDim + 1) + name).getInt(header));
+        }
+
+        static int getInt(Header header, String name) {
+            return (int) Math.round(valueOf("FD" + name).getInt(header));
+        }
+
+    }
+
+    public void readHeader(String fileName) {
+        ByteBuffer buffer = null;
+        try (FileChannel fileChannel = FileChannel.open(Paths.get(fileName), StandardOpenOption.READ)) {
+            buffer = ByteBuffer.allocate(2048);
+            int nBytes = fileChannel.read(buffer);
+            buffer.position(0);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            System.out.println("read " + nBytes);
+        } catch (IOException ioE) {
+            throw new IllegalArgumentException("File doesn't exist");
+        }
+        fileHeader = new Header(buffer);
+    }
+
+    public void dumpHeader() {
+        Header header = fileHeader;
+        int nDim = FIELDS.FDDIMCOUNT.getInt(header);
+        String[] pars = {"MAGIC", "FLTFORMAT", "FLTORDER", "SIZE", "SPECNUM", "QUADFLAG", "2DPHASE", "TRANSPOSED", "DIMCOUNT",
+            "DIMORDER", "DIMORDER1", "DIMORDER2", "DIMORDER3", "DIMORDER4", "NUSDIM",
+            "PIPEFLAG", "PIPECOUNT", "SLICECOUNT0", "SLICECOUNT1", "FILECOUNT", "THREADCOUNT", "THREADID",
+            "FIRSTPLANE", "LASTPLANE", "PARTITION", "MAX", "MIN", "SCALEFLAG", "DISPMAX", "DISPMIN", "PTHRESH",
+            "NTHRESH", "MONTH", "DAY", "YEAR", "HOURS", "MINS", "SECS", "MCFLAG", "NOISE", "TEMPERATURE",
+            "TAU", "TITLE", "COMMENT"
+        };
+        String[] dimPars = {"SIZE", "APOD", "SW", "OBS", "SW", "ORIG", "FTFLAG", "QUADFLAG", "LABEL", "OBSMID", "AQSIGN", "P0", "P1",
+            "CAR", "CENTER", "OFFPPM", "APODQ1", "APODQ2", "APODQ3", "LB", "GB", "GOFF", "C1",
+            "UNITS",
+            "APODCODE", "ZF",
+            "X1", "XN", "FTSIZE", "TDSIZE"};
+        System.out.println("ndim " + nDim);
+        for (String par : dimPars) {
+            System.out.printf("%-10s", par + ":");
+            for (int i = 0; i < nDim; i++) {
+                System.out.printf("%12s", FIELDS.getString(header, i, par));
+            }
+            System.out.println("");
+        }
+        for (String par : pars) {
+            System.out.printf("%-10s", par + ":");
+            System.out.printf("%12s", FIELDS.getString(header, par));
+            System.out.println("");
+        }
+
+    }
+}

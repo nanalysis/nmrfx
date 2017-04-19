@@ -1,0 +1,13 @@
+ ----
+ Documentation
+ ----
+ 
+ Swank Documentation resources
+ 
+   * {{{swankdifferences.html}Swank differences}} from Tk 8.4
+   
+   * {{{documentation.html}Swank documentation}} 
+
+   * JTcl {{{http://jtcl.kenai.com/docs/index.html}command reference}} (via the JTcl project)
+   
+   * {{{buildingswank.html}Building Swank}}

@@ -1,0 +1,42 @@
+ -----
+ Swank Project
+ -----
+
+Swank - A Tk-like interface to the Java Swing Widgets.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ Swank is an implementation of the {{{http://www.tcl.tk}Tk GUI Toolkit}} 
+ written in Java.  Swank implements a large extent of the Tk 8.4 syntax and 
+ commands, plus some additional widgets.  Swank is a companion project to, and requires code from,
+ the {{{http://jtcl.kenai.com}JTcl Project}}.  Together Jacl and Swank are analagous to
+ Tcl and Tk.
+
+ The primary goals of the Swank Project are:
+
+   * Produce a GUI toolkit that makes scripting Java Swing widgets easy and fast.
+
+   * Use of Swank should be very familiar to a Tk programmer, but it is not
+     designed to be an exact replacement for Tk.  Because it relies on the underlying
+     Swing widgets it is not always possible, nor necessarily desirable,
+     to get the exact behavour of Tk widgets.
+ 
+   * We do aim to be able to use as much of the Tk test suite as possible.  Swank is 
+     currently very useful, but does still fail many Tk tests.
+
+   * Swank should also implement interfaces to Swing widgets that don't 
+     have an exact correspondence to Tk widgets.
+
+   * Promote more community involvement.  Bug fixes, additional feature 
+     implementations, Swank specific libraries, etc. are welcomed.
+  
+
+ Swank is licensed under terms of the BSD open source license.  See the 
+ {{{licenses.html}License}} page for details.
+
+Major features of Swank
+
+ * Implement Tk 8.4 commands, arguments, options and semantics.  The major 
+   {{{docs/jtcldifferences.html}exceptions}} are widget features that differ
+   because all widgets rely on underlying Swing widgets whose behaviour is 
+   not identical to that of Tk widgets.
+
