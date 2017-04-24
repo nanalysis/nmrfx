@@ -1,0 +1,1181 @@
+/*
+ * NMRFx Processor : A Program for Processing NMR Data 
+ * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package org.nmrfx.processor.gui;
+
+import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.processor.gui.controls.FileTableItem;
+import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
+import org.nmrfx.processor.processing.Processor;
+import org.nmrfx.processor.processing.ProgressUpdater;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ResourceBundle;
+import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
+import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
+import javafx.geometry.Point2D;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.text.Text;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.util.Callback;
+import org.controlsfx.control.PopOver;
+import org.controlsfx.control.PropertySheet;
+import org.controlsfx.control.StatusBar;
+import org.controlsfx.control.table.TableFilter;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.python.util.PythonInterpreter;
+import org.fxmisc.richtext.CodeArea;
+
+public class ProcessorController implements Initializable, ProgressUpdater {
+
+    protected Stage stage;
+    @FXML
+    private VBox opBox;
+    @FXML
+    private TextField opTextField;
+
+    @FXML
+    private ChoiceBox dimChoice;
+
+    @FXML
+    private ListView scriptView;
+    @FXML
+    private TableView<FileTableItem> tableView;
+    @FXML
+    private StatusBar statusBar;
+    private Circle statusCircle = new Circle(10.0, Color.GREEN);
+
+    @FXML
+    private MenuButton opMenuButton;
+    final ObservableList<String> operationList = FXCollections.observableArrayList();
+    EventHandler<ActionEvent> menuHandler;
+    PopOver popOver = new PopOver();
+
+    ChangeListener<String> dimListener;
+    ChangeListener<Number> refDimListener;
+
+    PropertyManager propertyManager;
+    RefManager refManager;
+
+    @FXML
+    CheckBox combineFiles;
+
+    @FXML
+    PropertySheet propertySheet;
+
+    @FXML
+    PropertySheet refSheet;
+
+    // script tab fields
+    @FXML
+    CodeArea textArea;
+    @FXML
+    CodeArea outputArea;
+    @FXML
+    CheckBox autoProcess;
+
+    //PopOver propOver = new PopOver();
+    //PropertySheet propSheet = new PropertySheet();
+    static String[] basicOps = {"SB ZF FT", "SB(c=0.5) ZF FT", "EXPD ZF FT", "VECREF GEN"};
+    static String[] eaOps = {"TDCOMB(coef='ea2d')", "SB", "ZF", "FT"};
+    String scanDir = null;
+    ChartProcessor chartProcessor;
+    FXMLController fxmlController;
+    DocWindowController dwc = null;
+    SpecAttrWindowController specAttrWindowController = null;
+    PolyChart chart;
+    private boolean isProcessing = false;
+    private boolean doProcessWhenDone = false;
+    private boolean processable = false;
+    private ProcessDataset processDataset = new ProcessDataset();
+
+    TableFilter fileTableFilter;
+    TableFilter.Builder builder = null;
+    final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
+    Throwable processingThrowable;
+
+    public static ProcessorController create(FXMLController fxmlController, Stage parent, PolyChart chart) {
+        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
+        ProcessorController controller = null;
+        Stage stage = new Stage(StageStyle.DECORATED);
+
+        try {
+            Scene scene = new Scene((Pane) loader.load());
+            stage.setScene(scene);
+            scene.getStylesheets().add("/styles/Styles.css");
+
+            controller = loader.<ProcessorController>getController();
+            controller.fxmlController = fxmlController;
+            controller.stage = stage;
+            controller.chart = chart;
+            stage.setTitle("NMRFx Processor");
+
+            stage.initOwner(parent);
+            chart.setProcessorController(controller);
+            controller.chartProcessor.setChart(chart);
+            controller.chartProcessor.fxmlController = fxmlController;
+            stage.show();
+        } catch (IOException ioE) {
+            ioE.printStackTrace();
+            System.out.println(ioE.getMessage());
+        }
+
+        return controller;
+
+    }
+    @FXML
+    private VBox mainBox;
+    @FXML
+    private ChoiceBox viewMode;
+    @FXML
+    private Button processDatasetButton;
+    @FXML
+    private Button haltProcessButton;
+    @FXML
+    private Button viewDatasetButton;
+    @FXML
+    private Button scanDirChooserButton;
+    @FXML
+    private Button processScanDirButton;
+    @FXML
+    private Button opDocButton;
+
+    ProcessingCodeAreaUtil codeAreaUtil;
+    ConsoleUtil consoleUtil;
+
+    public Stage getStage() {
+        return stage;
+    }
+
+    public PropertyManager getPropertyManager() {
+        return propertyManager;
+    }
+
+    @FXML
+    private void openSelectedListFile(MouseEvent mouseEvent) {
+        if (mouseEvent.getClickCount() == 2) {
+            String scriptString = textArea.getText();
+            int selItem = tableView.getSelectionModel().getSelectedIndex();
+            if (selItem >= 0) {
+                FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
+                String fileName = fileTableItem.getFileName();
+                String filePath = Paths.get(scanDir, fileName).toString();
+                chart.controller.openFile(filePath, false, false);
+                parseScript(scriptString);
+            }
+        }
+    }
+
+    protected void clearOperationList() {
+        operationList.clear();
+    }
+
+    protected void setOperationList(ArrayList<String> scriptList) {
+        operationList.setAll(scriptList);
+    }
+
+    public void setScripts(List<String> headerList, Map<String, List<String>> mapOps) {
+        chartProcessor.setScripts(headerList, mapOps);
+    }
+
+    protected List<String> getOperationList() {
+        return operationList;
+    }
+
+    protected String getFlagString() {
+        return "";
+    }
+
+    protected String getFullScript() {
+        return chartProcessor.buildScript();
+    }
+
+    public void updateProgress(double f) {
+        if (Platform.isFxApplicationThread()) {
+            statusBar.setProgress(f);
+        } else {
+            Platform.runLater(() -> {
+                statusBar.setProgress(f);
+            });
+        }
+    }
+
+    public void updateStatus(String s) {
+        if (Platform.isFxApplicationThread()) {
+            setProcessingStatus(s, true);
+        } else {
+            Platform.runLater(() -> {
+                setProcessingStatus(s, true);
+            });
+        }
+    }
+
+    protected void updateDimChoice(int nDim) {
+        if (nDim > 1) {
+            dimChoice.getSelectionModel().selectedItemProperty().removeListener(dimListener);
+            ObservableList<String> dimList = FXCollections.observableArrayList();
+            for (int i = 1; i <= nDim; i++) {
+                dimList.add("D" + String.valueOf(i));
+                if ((i == 1) && (nDim > 2)) {
+                    StringBuilder sBuilder = new StringBuilder();
+                    sBuilder.append("D2");
+                    for (int j = 3; j <= nDim; j++) {
+                        sBuilder.append(",");
+                        sBuilder.append(j);
+                    }
+                    dimList.add(sBuilder.toString());
+                }
+            }
+            dimList.add("D_ALL");
+            for (int i = 1; i <= nDim; i++) {
+                dimList.add("P" + String.valueOf(i));
+                if ((i == 1) && (nDim > 2)) {
+                    dimList.add("P2,3");
+                }
+            }
+            dimChoice.setItems(dimList);
+            dimChoice.getSelectionModel().select(0);
+            dimChoice.getSelectionModel().selectedItemProperty().addListener(dimListener);
+
+            chart.controller.getStatusBar().updateVecNumChoice(nDim);
+        }
+    }
+
+    @FXML
+    void viewMode() {
+        if (viewMode.getSelectionModel().getSelectedIndex() == 1) {
+            if (chart.controller.isFIDActive()) {
+                viewDatasetInApp();
+            }
+        } else if (!chart.controller.isFIDActive()) {
+            viewFID();
+        }
+    }
+
+    @FXML
+    void viewDatasetInApp() {
+        if (chartProcessor.datasetFile != null) {
+            String datasetPath = chartProcessor.datasetFile.getPath();
+            chart.controller.openFile(datasetPath, false, false);
+            viewMode.getSelectionModel().select(1);
+        }
+    }
+
+    void viewingDataset(boolean state) {
+        if (state) {
+            viewMode.getSelectionModel().select(1);
+        } else {
+            viewMode.getSelectionModel().select(0);
+        }
+    }
+
+    boolean isViewingDataset() {
+        return viewMode.getSelectionModel().getSelectedIndex() == 1;
+    }
+
+    @FXML
+    void viewFID() {
+        dimChoice.getSelectionModel().select(0);
+        chartProcessor.setVecDim("D1");
+        viewMode.setValue("FID");
+    }
+
+    protected String getScript() {
+        StringBuilder script = new StringBuilder();
+        for (Object obj : operationList) {
+            script.append(obj.toString());
+            script.append("\n");
+        }
+        return script.toString();
+    }
+
+    @FXML
+    void handleScriptKey(KeyEvent event) {
+        if ((event.getCode() == KeyCode.DELETE) || (event.getCode() == KeyCode.BACK_SPACE)) {
+            if (!operationList.isEmpty()) {
+                int index = scriptView.getSelectionModel().getSelectedIndex();
+
+                /**
+                 *
+                 * If we are deleting the last element, select the previous, else select the next element. If this is
+                 * the first element, then unselect the scriptView.
+                 */
+                if (index + 1 == operationList.size()) {
+                    scriptView.getSelectionModel().selectPrevious();
+                } else {
+                    scriptView.getSelectionModel().selectNext();
+                }
+
+                operationList.remove(index);
+
+                chartProcessor.execScript(getScript(), true, false);
+                chart.layoutPlotChildren();
+            }
+        }
+    }
+
+    @FXML
+    void handleOpKey(KeyEvent event) {
+        if (!(event.getCode() == KeyCode.ESCAPE)) {
+            TextField textField = (TextField) event.getSource();
+            String opString = textField.getText();
+            Text text = ((Text) popOver.getContentNode());
+            List<String> opCandidates = OperationInfo.getOps(opString);
+            StringBuilder opStrings = new StringBuilder();
+            for (String opCandidate : opCandidates) {
+                opStrings.append(opCandidate);
+                opStrings.append("\n");
+            }
+            text.setText(opStrings.toString());
+            if (opString.length() == 0) {
+                popOver.hide();
+            } else if (!popOver.isShowing()) {
+                final Point2D nodeCoord = textField.localToScreen(textField.getLayoutBounds().getMaxX(), textField.getLayoutBounds().getMaxY());
+                popOver.setArrowLocation(PopOver.ArrowLocation.BOTTOM_LEFT);
+                popOver.setAnchorLocation(PopOver.AnchorLocation.WINDOW_BOTTOM_RIGHT);
+                popOver.show(textField, nodeCoord.getX(), nodeCoord.getY());
+            }
+            //text.setFill(Color.RED);
+
+        }
+
+    }
+
+    @FXML
+    private void handleNewOp(ActionEvent event) {
+        TextField textField = (TextField) event.getSource();
+        String op = textField.getText();
+        boolean appendOp = false;
+        if (op.charAt(0) == '+') {
+            appendOp = true;
+            op = op.substring(1);
+        }
+        if (OperationInfo.isOp(op)) {
+            int index = -1;
+            if (appendOp) {
+                index = scriptView.getSelectionModel().getSelectedIndex() + 1;
+            }
+            propertyManager.setOp(op, appendOp, index);
+        } else {
+            List<String> opCandidates = OperationInfo.getOps(op);
+            if (opCandidates.size() == 1) {
+                propertyManager.setOp(opCandidates.get(0));
+            }
+        }
+    }
+
+    @FXML
+    private void showOpDoc(ActionEvent event) {
+        if (dwc == null) {
+            dwc = new DocWindowController();
+        }
+        dwc.load();
+    }
+
+    private void opMenuAction(ActionEvent event) {
+        MenuItem menuItem = (MenuItem) event.getSource();
+        String op = menuItem.getText();
+        int index = propertyManager.getCurrentPosition(op);
+        if (index != -1) {
+            index = scriptView.getSelectionModel().getSelectedIndex() + 1;
+            propertyManager.setOp(menuItem.getText(), true, index);
+        } else {
+            propertyManager.setOp(menuItem.getText(), false, -1);
+
+        }
+    }
+
+    private void opSequenceMenuAction(ActionEvent event) {
+        MenuItem menuItem = (MenuItem) event.getSource();
+        String[] ops = menuItem.getText().split(" ");
+        for (String op : ops) {
+            propertyManager.setOp(op);
+        }
+    }
+
+    @FXML
+    private void loadScriptTab(Event event) {
+        updateScriptDisplay();
+    }
+
+    void updateScriptDisplay() {
+        //textArea.setText(getFullScript());
+        textArea.replaceText(getFullScript());
+
+        chartProcessor.setScriptValid(true);
+    }
+
+    @FXML
+    private void openDefaultScriptAction(ActionEvent event) {
+        String parent = chartProcessor.getScriptDir();
+        if (parent != null) {
+            File scriptFile = new File(parent, chartProcessor.getDefaultScriptName());
+            openScript(scriptFile);
+        } else {
+            openScriptAction(event);
+        }
+    }
+
+    @FXML
+    private void openScriptAction(ActionEvent event) {
+        String initialDir = chartProcessor.getScriptDir();
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Script");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Python Script", "*.py", "py"),
+                new FileChooser.ExtensionFilter("Any File", "*")
+        );
+        if (initialDir != null) {
+            fileChooser.setInitialDirectory(new File(initialDir));
+        }
+        File selectedFile = fileChooser.showOpenDialog(stage);
+        if (selectedFile != null) {
+            openScript(selectedFile);
+        }
+    }
+
+    @FXML
+    private void openVecScriptAction(ActionEvent event) {
+        String initialDir = chartProcessor.getScriptDir();
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Vector Script");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Python Script", "*.py", "py"),
+                new FileChooser.ExtensionFilter("Any File", "*")
+        );
+        if (initialDir != null) {
+            fileChooser.setInitialDirectory(new File(initialDir));
+        }
+        File selectedFile = fileChooser.showOpenDialog(stage);
+        if (selectedFile != null) {
+            openVecScript(selectedFile);
+        }
+    }
+
+    private void openVecScript(File file) {
+        String scriptString = null;
+        try {
+            byte[] encoded = Files.readAllBytes(Paths.get(file.toString()));
+            scriptString = new String(encoded);
+        } catch (IOException ioe) {
+            System.out.println("Can't read script");
+        }
+        if (scriptString != null) {
+            String[] ops = scriptString.split("\n");
+            for (String op : ops) {
+                op = op.trim();
+                propertyManager.setOp(op, true, -1);
+            }
+        }
+    }
+
+    private void openScript(File file) {
+        try {
+            byte[] encoded = Files.readAllBytes(Paths.get(file.toString()));
+            String scriptString = new String(encoded);
+            parseScript(scriptString);
+        } catch (IOException ioe) {
+            System.out.println("Can't read script");
+        }
+    }
+
+    @FXML
+    private void genDefaultScript() {
+        String scriptString = chartProcessor.getGenScript();
+        parseScript(scriptString);
+    }
+
+    public void parseScript(String scriptString) {
+        HashSet<String> refOps = new HashSet<>();
+        refOps.add("skip");
+        refOps.add("sw");
+        refOps.add("sf");
+        refOps.add("ref");
+        refOps.add("label");
+        refOps.add("acqOrder");
+        refOps.add("acqsize");
+        refOps.add("tdsize");
+        //textArea.setText(scriptString);
+        textArea.replaceText(scriptString);
+        String[] lines = scriptString.split("\n");
+        List<String> headerList = new ArrayList<>();
+        List<String> dimList = null;
+        Map<String, List<String>> mapOpLists = new TreeMap<>();
+
+        String dimNum = "";
+        for (String line : lines) {
+            line = line.trim();
+            if (line.equals("")) {
+                continue;
+            }
+            if (line.charAt(0) == '#') {
+                continue;
+            }
+            int index = line.indexOf('(');
+            boolean lastIsClosePar = line.charAt(line.length() - 1) == ')';
+            if ((index != -1) && lastIsClosePar) {
+                String opName = line.substring(0, index);
+                String args = line.substring(index + 1, line.length() - 1);
+                //System.out.println(opName);
+                if (opName.equals("run")) {
+                    continue;
+                }
+                //System.out.println(line);
+                //System.out.println(args);
+                if (opName.equals("DIM")) {
+                    String newDim = args;
+                    if (newDim.equals("")) {
+                        newDim = "_ALL";
+                    }
+                    if (!newDim.equals(dimNum)) {
+                        dimList = new ArrayList<>();
+                        String prefix = "D";
+                        if (mapOpLists.containsKey("D" + newDim)) {
+                            prefix = "P";
+                        }
+                        mapOpLists.put(prefix + newDim, dimList);
+                        dimNum = newDim;
+                    }
+                } else if (dimList != null) {
+                    dimList.add(line);
+                } else if (refOps.contains(opName)) {
+                    headerList.add(line);
+                }
+            }
+        }
+        chartProcessor.setScripts(headerList, mapOpLists);
+        //textArea.setText(getFullScript());
+        textArea.replaceText(getFullScript());
+        chartProcessor.setScriptValid(true);
+    }
+
+    @FXML
+    private void writeDefaultScriptAction(ActionEvent event) {
+        String parent = chartProcessor.getScriptDir();
+        if (parent != null) {
+            File scriptFile = new File(parent, chartProcessor.getDefaultScriptName());
+            String script = textArea.getText();
+            chartProcessor.writeScript(script, scriptFile);
+        } else {
+            writeScriptAction(event);
+        }
+    }
+
+    @FXML
+    private void writeScriptAction(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        String initialDir = chartProcessor.getScriptDir();
+        if (initialDir != null) {
+            fileChooser.setInitialDirectory(new File(initialDir));
+        }
+        File saveFile = fileChooser.showSaveDialog(stage);
+        if (saveFile != null) {
+            String script = textArea.getText();
+            chartProcessor.writeScript(script, saveFile);
+        }
+    }
+
+    public void writeOutput(String text) {
+        outputArea.appendText(text);
+    }
+
+    public void clearOutput() {
+        outputArea.clear();
+    }
+
+    synchronized void setProcessingOn() {
+        isProcessing = true;
+        doProcessWhenDone = false;
+    }
+
+    synchronized void setProcessingOff() {
+        isProcessing = false;
+    }
+
+    boolean isProcessing() {
+        return isProcessing;
+    }
+
+    void doProcessWhenDone() {
+        doProcessWhenDone = true;
+    }
+
+    void finishProcessing() {
+        Platform.runLater(() -> {
+            try {
+                chartProcessor.renameDataset();
+                viewDatasetInApp();
+            } catch (IOException ioE) {
+                setProcessingStatus(ioE.getMessage(), false, ioE);
+            }
+        });
+    }
+
+    void processIfIdle() {
+        if (autoProcess.isSelected()) {
+            if (processable) {
+                if (isProcessing()) {
+                    doProcessWhenDone();
+                } else {
+                    doProcessWhenDone = false;
+                    processDataset();
+                }
+            }
+        }
+    }
+
+    @FXML
+    private void processDatasetAction(ActionEvent event) {
+        processDataset();
+    }
+
+    private void processDataset() {
+        setProcessingOn();
+        processable = false;
+        statusBar.setProgress(0.0);
+        Processor.setUpdater(this);
+        if (!chartProcessor.isScriptValid()) {
+            updateScriptDisplay();
+        }
+        ((Service) processDataset.worker).restart();
+    }
+
+    @FXML
+    private void haltProcessAction(ActionEvent event) {
+        processDataset.worker.cancel();
+        Processor.getProcessor().setProcessorError();
+    }
+
+    private class ProcessDataset {
+
+        String script;
+        public Worker<Integer> worker;
+
+        private ProcessDataset() {
+            worker = new Service<Integer>() {
+
+                protected Task createTask() {
+                    return new Task() {
+                        protected Object call() {
+                            script = textArea.getText();
+                            PythonInterpreter processInterp = new PythonInterpreter();
+                            updateStatus("Start processing");
+                            updateTitle("Start Processing");
+                            processInterp.exec("from pyproc import *");
+                            processInterp.exec("useProcessor(inNMRFx=True)");
+                            processInterp.exec(script);
+                            return 0;
+                        }
+                    };
+                }
+            };
+
+            ((Service<Integer>) worker).setOnSucceeded(event -> {
+                processable = true;
+                finishProcessing();
+                writeScript(script);
+                setProcessingOff();
+                if (doProcessWhenDone) {
+                    processIfIdle();
+                }
+            });
+            ((Service<Integer>) worker).setOnCancelled(event -> {
+                setProcessingOff();
+                setProcessingStatus("cancelled", false);
+            });
+            ((Service<Integer>) worker).setOnFailed(event -> {
+                setProcessingOff();
+                final Throwable exception = worker.getException();
+                setProcessingStatus(exception.getMessage(), false, exception);
+
+            });
+
+        }
+    }
+
+    @FXML
+    private void processScanDir(ActionEvent event) {
+        ObservableList<FileTableItem> fileTableItems = tableView.getItems();
+        ArrayList<String> fileNames = new ArrayList<>();
+        for (FileTableItem fileTableItem : fileTableItems) {
+            fileNames.add(fileTableItem.getFileName());
+        }
+        boolean combineFileMode = combineFiles.isSelected();
+        String script = chartProcessor.buildMultiScript(scanDir, fileNames, combineFileMode);
+        System.out.println(script);
+        PythonInterpreter processInterp = new PythonInterpreter();
+        processInterp.exec("from pyproc import *");
+        processInterp.exec("useProcessor()");
+        processInterp.exec(script);
+        viewDatasetInApp();
+    }
+
+    @FXML
+    private void scanDirAction(ActionEvent event) {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Select Scan Directory");
+        File selectedDir = directoryChooser.showDialog(stage);
+        if (selectedDir != null) {
+            scanDir = selectedDir.getPath();
+            int beginIndex = scanDir.length() + 1;
+            ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
+            String[] headers = {};
+            updateTable(headers);
+            loadScanFiles(nmrFiles, beginIndex);
+        }
+    }
+
+    @FXML
+    private void loadTableAction(ActionEvent event) {
+        loadScanTable();
+    }
+
+    private void loadScanFiles(ArrayList<String> nmrFiles, int beginIndex) {
+        fileTableFilter.getBackingList().clear();
+        ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
+        long firstDate = Long.MAX_VALUE;
+        for (String filePath : nmrFiles) {
+            NMRData nmrData = null;
+            try {
+                nmrData = NMRDataUtil.getNMRData(filePath);
+            } catch (IOException ioE) {
+
+            }
+            if (nmrData != null) {
+                long date = nmrData.getDate();
+                if (date < firstDate) {
+                    firstDate = date;
+                }
+                fileListItems.add(new FileTableItem(filePath.substring(beginIndex), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate()));
+            }
+        }
+        for (FileTableItem item : fileListItems) {
+            item.setDate(item.getDate() - firstDate);
+        }
+        fileTableFilter.getBackingList().addAll(fileListItems);
+    }
+
+    private void loadScanTable() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(("Open Table File"));
+        File file = fileChooser.showOpenDialog(popOver);
+        loadScanTable(file);
+    }
+
+    private void loadScanTable(File file) {
+        ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
+        scanDir = file.getParent();
+        long firstDate = Long.MAX_VALUE;
+        int iLine = 0;
+        String[] headers = null;
+        HashMap<String, String> fieldMap = new HashMap();
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (iLine == 0) {
+                    headers = line.split("\t");
+                    updateTable(headers);
+                } else {
+                    String[] fields = line.split("\t");
+                    for (int iField = 0; iField < fields.length; iField++) {
+                        fieldMap.put(headers[iField], fields[iField]);
+                    }
+                    String fileName = fieldMap.get("FileName");
+                    if (fileName == null) {
+                        System.out.println("No FileName");
+                        return;
+                    }
+                    fieldMap.remove("fid");
+                    Path filePath = FileSystems.getDefault().getPath(scanDir, fileName);
+                    NMRData nmrData = null;
+                    try {
+                        nmrData = NMRDataUtil.getNMRData(filePath.toString());
+                    } catch (IOException ioE) {
+
+                    }
+                    if (nmrData != null) {
+                        long date = nmrData.getDate();
+                        if (date < firstDate) {
+                            firstDate = date;
+                        }
+                        fileListItems.add(new FileTableItem(fileName, nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), fieldMap));
+                    }
+                }
+
+                iLine++;
+            }
+        } catch (IOException ioE) {
+
+        }
+        for (FileTableItem item : fileListItems) {
+            item.setDate(item.getDate() - firstDate);
+        }
+        fileTableFilter.getBackingList().addAll(fileListItems);
+
+    }
+
+    public void writeScript(String script) {
+        chartProcessor.writeScript(script);
+    }
+
+    public void setProcessingStatus(String s, boolean ok) {
+        setProcessingStatus(s, ok, null);
+    }
+
+    public void setProcessingStatus(String s, boolean ok, Throwable throwable) {
+        if (s == null) {
+            statusBar.setText("");
+        } else {
+            statusBar.setText(s);
+        }
+        if (ok) {
+            statusCircle.setFill(Color.GREEN);
+            processingThrowable = null;
+        } else {
+            statusCircle.setFill(Color.RED);
+            System.out.println("error: " + s);
+            processingThrowable = throwable;
+        }
+        statusBar.setProgress(0.0);
+    }
+
+    public void clearProcessingTextLabel() {
+        statusBar.setText("");
+        statusCircle.setFill(Color.GREEN);
+    }
+
+    private void setupRefItems() {
+        ObservableList<PropertySheet.Item> newItems = FXCollections.observableArrayList();
+        refSheet.getItems().setAll(newItems);
+    }
+
+    @Override
+    public void initialize(URL url, ResourceBundle rb
+    ) {
+        chartProcessor = new ChartProcessor(this);
+        scriptView.setItems(operationList);
+        List<MenuItem> menuItems = new ArrayList<>();
+        menuHandler = new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                System.out.println("menu action ");
+            }
+        };
+        List<MenuItem> subMenuItems = null;
+        Menu menu = null;
+
+        menu = new Menu("Common Op Lists");
+        menuItems.add(menu);
+        subMenuItems = new ArrayList<>();
+        for (String op : basicOps) {
+            MenuItem menuItem = new MenuItem(op);
+            menuItem.addEventHandler(ActionEvent.ACTION, event -> opSequenceMenuAction(event));
+            subMenuItems.add(menuItem);
+        }
+        menu.getItems().addAll(subMenuItems);
+
+        subMenuItems = null;
+        for (String op : OperationInfo.opOrders) {
+            if (op.startsWith("Cascade-")) {
+                if (subMenuItems != null) {
+                    menu.getItems().addAll(subMenuItems);
+                }
+                menu = new Menu(op.substring(8));
+                subMenuItems = new ArrayList<>();
+                menuItems.add(menu);
+            } else {
+                MenuItem menuItem = new MenuItem(op);
+                menuItem.addEventHandler(ActionEvent.ACTION, event -> opMenuAction(event));
+                subMenuItems.add(menuItem);
+            }
+        }
+        if (menu != null) {
+            menu.getItems().addAll(subMenuItems);
+        }
+        opMenuButton.getItems().addAll(menuItems);
+        popOver.setContentNode(new Text("hello"));
+
+        scriptView.setOnMousePressed(new EventHandler() {
+            public void handle(Event d) {
+                MouseEvent mEvent = (MouseEvent) d;
+                if (mEvent.getClickCount() == 2) {
+                    Node node = (Node) d.getSource();
+
+                }
+            }
+        });
+
+        operationList.addListener(new ListChangeListener<String>() {
+            @Override
+            public void onChanged(ListChangeListener.Change<? extends String> change) {
+                OperationListCell.updateCells();
+                chartProcessor.updateOpList();
+            }
+        });
+
+        scriptView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
+            @Override
+            public ListCell<String> call(ListView<String> p) {
+                OperationListCell<String> olc = new OperationListCell<String>(scriptView) {
+                    @Override
+                    public void updateItem(String s, boolean empty) {
+                        super.updateItem(s, empty);
+                        setText(s);
+                    }
+                };
+                return olc;
+            }
+
+        });
+
+        dimListener = new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observableValue, String dimName, String dimName2) {
+
+                System.out.println("dim " + dimName2);
+                chartProcessor.setVecDim(dimName2);
+                try {
+                    int vecDim = Integer.parseInt(dimName2.substring(1));
+                    refManager.setupItems(vecDim - 1);
+
+                } catch (NumberFormatException nfE) {
+
+                }
+            }
+        };
+        refManager = new RefManager(this, refSheet);
+        refDimListener = new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
+                int vecDimOld = (Integer) number;
+                int vecDim = (Integer) number2;
+                System.out.println("refdim " + vecDim);
+                refManager.setupItems(vecDim);
+            }
+        };
+        propertyManager = new PropertyManager(this, scriptView, propertySheet, operationList, opTextField, popOver);
+        propertyManager.setupItems();
+        refManager.setupItems(0);
+        statusBar.setProgress(0.0);
+
+        statusBar.getLeftItems().add(statusCircle);
+
+        processDatasetButton.disableProperty().bind(stateProperty.isEqualTo(Worker.State.RUNNING).or(chartProcessor.nmrDataProperty().isNull()));
+        haltProcessButton.disableProperty().bind(stateProperty.isNotEqualTo(Worker.State.RUNNING));
+
+        codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
+        outputArea.appendText("Logging to:\n" + System.getProperty("java.io.tmpdir") + "/dcengine.log\n");
+        consoleUtil = new ConsoleUtil();
+        consoleUtil.addHandler(outputArea, chartProcessor.getInterpreter());
+        consoleUtil.banner();
+        consoleUtil.prompt();
+        ObservableList<FileTableItem> data = FXCollections.observableArrayList();
+        tableView.itemsProperty().setValue(data);
+        TableColumn<FileTableItem, String> fileColumn = new TableColumn<>("FileName");
+        TableColumn<FileTableItem, String> seqColumn = new TableColumn<>("Sequence");
+        TableColumn<FileTableItem, String> nDimColumn = new TableColumn<>("nDim");
+        TableColumn<FileTableItem, Long> dateColumn = new TableColumn<>("Date");
+
+        fileColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getFileName()));
+        seqColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getSeqName()));
+        nDimColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getNDim())));
+        dateColumn.setCellValueFactory(new PropertyValueFactory<FileTableItem, Long>("Date"));
+
+        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn);
+//        TableFilter.Builder builder = TableFilter.forTableView(tableView);
+//        fileTableFilter = builder.apply();
+        setDragHandlers(tableView);
+
+        statusCircle.setOnMousePressed((Event d) -> {
+            if (processingThrowable != null) {
+                ExceptionDialog dialog = new ExceptionDialog(processingThrowable);
+                dialog.showAndWait();
+            }
+        });
+
+    }
+
+    private void updateTable(String[] headers) {
+        ObservableList<FileTableItem> data = FXCollections.observableArrayList();
+        tableView.itemsProperty().setValue(data);
+
+        TableColumn<FileTableItem, String> fileColumn = new TableColumn<>("FileName");
+        TableColumn<FileTableItem, String> seqColumn = new TableColumn<>("Sequence");
+        TableColumn<FileTableItem, String> nDimColumn = new TableColumn<>("nDim");
+        TableColumn<FileTableItem, Long> dateColumn = new TableColumn<>("Date");
+
+        fileColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getFileName()));
+        seqColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getSeqName()));
+        nDimColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getNDim())));
+        dateColumn.setCellValueFactory(new PropertyValueFactory<FileTableItem, Long>("Date"));
+        tableView.getColumns().clear();
+        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn);
+        for (String header : headers) {
+            if (header.equalsIgnoreCase("FileName") || header.equalsIgnoreCase("Sequence") || header.equalsIgnoreCase("nDim") || header.equalsIgnoreCase("Date") || header.equalsIgnoreCase("fid")) {
+                continue;
+            }
+            TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
+            extraColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
+            tableView.getColumns().add(extraColumn);
+        }
+        builder = TableFilter.forTableView(tableView);
+        fileTableFilter = builder.apply();
+        fileTableFilter.resetFilter();
+    }
+
+    final protected void setDragHandlers(Node mouseNode) {
+
+        mouseNode.setOnDragOver(new EventHandler<DragEvent>() {
+            @Override
+            public void handle(DragEvent event) {
+                mouseDragOver(event);
+            }
+        }
+        );
+        mouseNode.setOnDragDropped(new EventHandler<DragEvent>() {
+            @Override
+            public void handle(DragEvent event) {
+                mouseDragDropped(event);
+            }
+        }
+        );
+        mouseNode.setOnDragExited(new EventHandler<DragEvent>() {
+            @Override
+            public void handle(DragEvent event) {
+                mouseNode.setStyle("-fx-border-color: #C6C6C6;");
+            }
+        }
+        );
+    }
+
+    private void mouseDragDropped(final DragEvent e) {
+        final Dragboard db = e.getDragboard();
+        boolean success = false;
+        if (db.hasFiles()) {
+            success = true;
+
+            // Only get the first file from the list
+            final File file = db.getFiles().get(0);
+            if (file.isDirectory()) {
+                scanDir = file.getAbsolutePath();
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        int beginIndex = scanDir.length() + 1;
+                        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
+                        String[] headers = {};
+                        updateTable(headers);
+                        loadScanFiles(nmrFiles, beginIndex);
+                    }
+                });
+            } else {
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadScanTable(file);
+                    }
+                });
+
+            }
+        }
+        e.setDropCompleted(success);
+        e.consume();
+    }
+
+    private void mouseDragOver(final DragEvent e) {
+        final Dragboard db = e.getDragboard();
+
+        List<File> files = db.getFiles();
+        if (db.hasFiles()) {
+            if (files.size() > 0) {
+                boolean isAccepted = false;
+                if (files.get(0).isDirectory()) {
+                    isAccepted = true;
+                } else if (files.get(0).toString().endsWith(".txt")) {
+                    isAccepted = true;
+                }
+                if (isAccepted) {
+                    tableView.setStyle("-fx-border-color: green;"
+                            + "-fx-border-width: 1;");
+                    e.acceptTransferModes(TransferMode.COPY);
+                }
+            }
+        } else {
+            e.consume();
+        }
+    }
+
+    public PolyChart getChart() {
+        return chart;
+    }
+}

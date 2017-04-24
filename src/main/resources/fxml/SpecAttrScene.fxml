@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.*?>
+<?import org.controlsfx.control.spreadsheet.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" fx:id="attrBorderPane" fx:controller="org.nmrfx.processor.gui.SpecAttrWindowController">
+    <top>
+        <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <items>
+            </items>
+        </ToolBar>
+    </top>
+    <center>
+        <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+            <tabs>
+                <Tab text="Selector" fx:id="datasetTab">
+                    <content>
+                        
+                    </content>
+                </Tab>
+
+                <Tab text="Datasets">
+                    <content>
+                        <BorderPane layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+                            <top>
+                                <ToolBar fx:id="viewToolBar" orientation="HORIZONTAL" BorderPane.alignment="CENTER">
+                                    <items>
+                                    </items>
+                                </ToolBar>
+                            </top>
+                            <center>
+                                <TableView fx:id="datasetTableView">
+                                    <columns>
+                                    </columns>
+                                </TableView>
+                            </center>
+                        </BorderPane>
+                    </content>
+                </Tab>
+                <Tab text="View">
+                    <content>
+                        <GridPane fx:id="viewGrid" layoutX="110.0" layoutY="70.0" prefHeight="272.0" prefWidth="537.0">
+                        </GridPane>
+                    </content>
+                </Tab>
+                <Tab text="Style">
+                    <content>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                    </content>
+                </Tab>
+                <Tab text="Slices">
+                    <content>
+                        <BorderPane>
+                            <center>
+                                <GridPane BorderPane.alignment="CENTER">
+                                    <columnConstraints>
+                                        <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
+                                        <ColumnConstraints minWidth="10.0" prefWidth="200.0" fillWidth="true"  />
+                                    </columnConstraints>
+                                    <rowConstraints>
+                                        <RowConstraints />
+                                        <RowConstraints minHeight="10.0" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" />
+                                    </rowConstraints>
+                                    <children>
+                                        <Label  text="Vertical" GridPane.rowIndex="1" />
+                                        <Label text="Horizontal" GridPane.rowIndex="2" />
+                                        <Slider fx:id="xOffsetSlider" blockIncrement="0.1" max="1.0" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="1" onValueChange="#sliceAction"/>
+                                        <Slider fx:id="yOffsetSlider" blockIncrement="0.1" max="1.0" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="2"  onValueChange="#sliceAction"/>
+                                        <Label text="Orientation" />
+                                        <Label text="Offset" GridPane.columnIndex="1" />
+                                    </children>
+                                    <padding>
+                                        <Insets top="20.0" />
+                                    </padding>
+                                </GridPane>
+                            </center>
+                            <top>
+                                <ToolBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                                    <items>
+                                        <CheckBox fx:id="offsetTrackingCheckBox" mnemonicParsing="false" text="Offset Tracking"  onAction="#sliceAction" />
+                                        <Label text="     Slice Color" />
+
+                                        <ColorPicker fx:id="sliceColorPicker" promptText="Slice Color" onAction="#sliceAction" /> 
+                                    </items>
+                                </ToolBar>
+                            </top>
+                            <left>
+                                <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+                                    <children>
+                                        <Label text="Scale" />
+                                        <Slider fx:id="scaleSlider" blockIncrement="1.0" min="1.0" minorTickCount="5" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" value="10.0" onValueChange="#sliceAction" />
+                                    </children>
+                                    <padding>
+                                        <Insets left="20.0" top="20.0" />
+                                    </padding>
+                                </VBox>
+                            </left>
+                        </BorderPane>
+                    </content>
+                </Tab>
+                <Tab text="Peaks">
+                    <content>
+                        <BorderPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                        <top>
+                            <CheckBox fx:id="peakStatusCheckBox" selected="true" text="ShowPeaks"  onAction="#peakStatusAction" />
+
+                        </top>
+                          <center>
+                                <TableView fx:id="peakListTableView">
+                                    <columns>
+                                    </columns>
+                                </TableView>
+                            </center>
+                          </BorderPane>
+                    </content>
+                </Tab>
+
+            </tabs>
+        </TabPane>
+    </center>
+</BorderPane>

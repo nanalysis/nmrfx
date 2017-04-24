@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.collections.FXCollections?>
+<?import org.controlsfx.control.*?>
+<?import org.nmrfx.processor.gui.*?>
+<?import org.fxmisc.richtext.CodeArea?>
+
+
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="mainBox" prefHeight="600.0" prefWidth="400.0" styleClass="mainFxmlClass"  fx:controller="org.nmrfx.processor.gui.ProcessorController">
+    <stylesheets>
+        <URL value="@/styles/Styles.css" />
+    </stylesheets>
+    <children>
+        <VBox fx:id="opBox" VBox.vgrow="ALWAYS">
+            <children>
+                <HBox BorderPane.alignment="CENTER" spacing="12">
+                    <children>
+                                        <MenuButton  mnemonicParsing="false" text="Scripts">
+                                            <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#genDefaultScript" text="Auto Generate" />
+                                                <MenuItem mnemonicParsing="false" onAction="#openDefaultScriptAction" text="Open (process.py)" />
+                                                <MenuItem mnemonicParsing="false" onAction="#openScriptAction" text="Open..." />
+                                                <MenuItem mnemonicParsing="false" onAction="#writeDefaultScriptAction" text="Save (process.py)" />
+                                                <MenuItem mnemonicParsing="false" onAction="#writeScriptAction" text="Save As..." />
+                                            </items>
+                                        </MenuButton>
+                        <ChoiceBox fx:id="dimChoice" value=""/>
+                        <ChoiceBox fx:id="viewMode" value="FID" onAction="#viewMode">
+                                            <items>
+        <FXCollections fx:factory="observableArrayList">
+            <String fx:value="FID" />
+            <String fx:value="Dataset" />
+        </FXCollections>
+                                            </items>
+                                        </ChoiceBox>
+                        <SegmentedButton>
+                            <buttons>
+                            </buttons>           
+                        </SegmentedButton>
+                    </children>
+                </HBox>
+                <TabPane minWidth="400" minHeight="100" VBox.vgrow="ALWAYS">
+                    <Tab text="Parameters" closable="false">
+                        <VBox>
+                            <children>
+                                <PropertySheet fx:id="refSheet" prefHeight="0" minHeight="0.0" VBox.vgrow="ALWAYS"/>
+                            </children>
+                        </VBox>
+                    </Tab>
+                    <Tab text="Operations" closable="false">
+                        <VBox>
+                            <children>
+                                <HBox VBox.vgrow="NEVER">
+                                    <children>
+                                        <MenuButton fx:id="opMenuButton" mnemonicParsing="false" text="+">
+                                            <items>
+                                            </items>
+                                        </MenuButton>
+                                        <TextField fx:id="opTextField" onAction="#handleNewOp" onKeyReleased="#handleOpKey" HBox.hgrow="ALWAYS" />
+                                        <Button fx:id="opDocButton" text="OpDocs" onAction="#showOpDoc"/>
+                                    </children>
+                                </HBox>
+                                <ListView fx:id="scriptView" prefHeight="0.0" minHeight="0.0" VBox.vgrow="ALWAYS" onKeyReleased="#handleScriptKey"/>
+                                <PropertySheet fx:id="propertySheet" prefHeight="0.0" minHeight="0.0" VBox.vgrow="ALWAYS" minWidth="300.0"/>
+                            </children>
+                        </VBox>
+                    </Tab>
+                    <Tab text="Script" closable="false" onSelectionChanged="#loadScriptTab" >
+                        <VBox>
+                            <children>
+                                <CodeArea fx:id="textArea" prefHeight="0" minHeight="0.0" VBox.vgrow="ALWAYS"/>
+                            </children>
+                        </VBox>
+                    </Tab>
+                    <Tab text="Scanner" closable="false" onSelectionChanged="#loadScriptTab" >
+                        <VBox>
+                            <children>
+                                <ToolBar prefWidth="200.0">
+                                    <items>
+                                        <Button fx:id="scanDirChooserButton" mnemonicParsing="false" onAction="#scanDirAction" styleClass="toolButton" text="Scan" />
+                                        <Button fx:id="loadTableChooserButton" mnemonicParsing="false" onAction="#loadTableAction" styleClass="toolButton" text="Load" />
+                                        <Button fx:id="processScanDirButton" mnemonicParsing="false" styleClass="toolButton" text="Process All" onAction="#processScanDir"/>
+                                        <CheckBox fx:id="combineFiles" mnemonicParsing="false" text="Combine Output" />
+                                    </items>
+                                </ToolBar>
+                                <TableView fx:id="tableView" prefHeight="0" minHeight="0.0"  VBox.vgrow="ALWAYS" onMouseClicked="#openSelectedListFile" />
+                            </children>
+                        </VBox>
+                    </Tab>
+                    <Tab text="Console" closable="false" onSelectionChanged="#loadScriptTab" >
+                        <VBox>
+                            <children>
+                                <CodeArea fx:id="outputArea" prefHeight="0" minHeight="0.0" VBox.vgrow="ALWAYS"/>
+                            </children>
+                        </VBox>
+                    </Tab>
+                </TabPane>
+            </children>
+        </VBox>
+        <HBox>
+            <children>
+                <Button fx:id="processDatasetButton" mnemonicParsing="false" onAction="#processDatasetAction" text="Process" />
+                <Button fx:id="haltProcessButton" mnemonicParsing="false" onAction="#haltProcessAction" text="Halt" />
+                <CheckBox fx:id="autoProcess" mnemonicParsing="false" text="Auto Update" />
+
+            </children>
+        </HBox>
+        <HBox>
+            <children>
+                <StatusBar fx:id="statusBar" HBox.hgrow="ALWAYS"/>
+            </children>
+        </HBox>
+    </children>
+</VBox>
