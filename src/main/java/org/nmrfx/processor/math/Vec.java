@@ -922,13 +922,15 @@ public class Vec extends PySequence implements MatrixType {
 //            ph = c.getArgument();
             ph = 0;
 // only even points in sync with 1st real point, 1st half of precharge
+            int n = 0;
             for (int i = start - 2; i > start / 2; i -= 2) {
                 c = getComplex(i);
                 if (c.abs() > 0.0) {
                     ph += c.getArgument();
+                    n++;
                 }
             }
-            ph /= (start - 2 - start / 2) * 0.5;  // take average
+            ph /= n;
             c = ComplexUtils.polar2Complex(amp, ph);
         }
         return c;
