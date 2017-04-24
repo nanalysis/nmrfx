@@ -550,6 +550,9 @@ public interface NMRData {
         StringBuilder builder = new StringBuilder();
         for (int i = acqOrderArray.length - 1; i >= 0; i--) {
             String elem = acqOrderArray[i];
+            if (elem.substring(0, 1).equals("a")) {
+                return ("");
+            }
             if (elem.length() == 0) {
                 return ("");
             }
