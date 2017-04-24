@@ -1,4 +1,4 @@
-# NMRFx Processor GUI#
+# NMRFx Processor GUI
 
 ### About nmrfx processor ###
 
