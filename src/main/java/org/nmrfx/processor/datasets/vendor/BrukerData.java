@@ -94,7 +94,7 @@ class BrukerData implements NMRData {
     private static HashMap<String, Double> phaseTable = null;
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
-    final static Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+    final static Logger logger = Logger.getLogger("com.onemoonsci.datachord.datasets.Dataset");
     private final double scale;
     boolean hasFID = false;
     boolean hasSpectrum = false;
@@ -1478,6 +1478,8 @@ class BrukerData implements NMRData {
             String elem = acqOrderArray[i];
             if (elem.substring(0, 1).equals("p")) {
                 builder.append(elem.substring(1, 2));
+            } else if (elem.substring(0, 1).equals("a")) {
+                return "";
             }
         }
         return builder.toString();

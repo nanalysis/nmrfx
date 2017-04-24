@@ -3695,6 +3695,9 @@ public class Vec extends PySequence implements MatrixType {
 
         if (Math.abs(p1) < tol) {
             if (Math.abs(p0) < tol) {
+              if (discardImaginary) {
+                    makeReal();
+                }
                 return (this);
             }
             if (Math.abs(p0 - Math.PI) < tol) {

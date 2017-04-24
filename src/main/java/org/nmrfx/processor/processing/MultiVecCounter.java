@@ -29,6 +29,7 @@ import org.apache.commons.math3.util.MultidimensionalCounter;
  */
 public class MultiVecCounter {
 
+    public static boolean showDebugInfo = false;
     int[] osizes;
     int[] isizes;
     int[] inPhases;
@@ -86,9 +87,19 @@ public class MultiVecCounter {
 
     void init(int[] tdSizes, int[] outSizes, boolean[] complex, String[] modes) {
         int nIDim = tdSizes.length - 1;  // number of indirect dimensions
+
+        // the index of the values in the multi-dimensional counter that references the phase increment
+        //  of the input data
         inPhases = new int[nIDim];
+        // the index of the values in the multi-dimensional counter that references the time increment 
+        //  of the input data
         inPoints = new int[nIDim];
+
+        // the index of the values in the multi-dimensional counter that references the phase increment
+        //  of the output dataset
         outPhases = new int[nIDim];
+        // the index of the values in the multi-dimensional counter that references the time increment 
+        //  of the output data
         outPoints = new int[nIDim];
         boolean matchIn = false;
 
@@ -102,21 +113,30 @@ public class MultiVecCounter {
 //        for (int i=0;i<outSizes.length;i++) {
 //            System.out.println("ou size " + i + " " + outSizes[i]);
 //        }
+
         for (String mode : modes) {
+            // dim is the indirect dimension index running from 1 (for indirect dim 1, 2nd dim) up
             int dim = Integer.parseInt(mode.substring(1));
+            // argIndex runs backwards from 2*niDim-1 downto 0
+            // so for a 3D file it would be 3,2,1,0
+
+            int argIndex = 2 * nIDim - 1 - iArg;
             if (mode.charAt(0) == 'd') {
-                inPoints[dim - 1] = 2 * nIDim - 1 - iArg;
-                isizes[2 * nIDim - 1 - iArg] = tdSizes[dim];
-//                isizes[2 * nIDim - 1 - iArg] = tdSizes[iSize++];
-//                isizes[2 * nIDim - 2 * (dim-1) -2] = tdSizes[iSize++];
-
+                inPoints[dim - 1] = argIndex;
+                isizes[argIndex] = tdSizes[dim];
             } else if (mode.charAt(0) == 'p') {
-                inPhases[dim - 1] = 2 * nIDim - 1 - iArg;
+                inPhases[dim - 1] = argIndex;
+                isizes[argIndex] = complex[dim] ? 2 : 1;
                 groupSize *= complex[iPhase] ? 2 : 1;
-                isizes[2 * nIDim - 1 - iArg] = complex[dim] ? 2 : 1;
-//                isizes[2 * nIDim - 1 - iArg] = complex[iPhase++] ? 2 : 1;
-//                isizes[2 * nIDim - 2 * (dim-1) -1] = complex[iPhase++] ? 2 : 1;
-
+            } else if (mode.charAt(0) == 'a') {
+                if (inPhases.length >= dim) {
+                    inPhases[dim - 1] = argIndex;
+                    inPoints[dim - 1] = argIndex - 1;
+                    isizes[argIndex] = 1;
+                    isizes[argIndex - 1] = tdSizes[dim];
+                    groupSize *= 1;
+                    iArg++;
+                }
             } else {
                 throw new IllegalArgumentException("bad mode " + mode);
             }
@@ -147,52 +167,40 @@ public class MultiVecCounter {
                 }
             }
         }
-        /*
-        System.out.println("  MultiVecCounter: ");
-        for (int i = 0; i < outPhases.length; i++) {
-            System.out.print("ouPh[" + i + "]=" + outPhases[i] + " ");
-        }
-        System.out.println("");
+        if (showDebugInfo) {
+            System.out.println("  MultiVecCounter: ");
+            for (int i = 0; i < outPhases.length; i++) {
+                System.out.print("ouPh[" + i + "]=" + outPhases[i] + " ");
+            }
+            System.out.println("");
 
-        for (int i = 0; i < outPoints.length; i++) {
-            System.out.print("ouPt[" + i + "]=" + outPoints[i] + " ");
-        }
-        System.out.println("");
+            for (int i = 0; i < outPoints.length; i++) {
+                System.out.print("ouPt[" + i + "]=" + outPoints[i] + " ");
+            }
+            System.out.println("");
 
-        for (int i = 0; i < inPhases.length; i++) {
-            System.out.print("inPh[" + i + "]=" + inPhases[i] + " ");
-        }
-        System.out.println("");
+            for (int i = 0; i < inPhases.length; i++) {
+                System.out.print("inPh[" + i + "]=" + inPhases[i] + " ");
+            }
+            System.out.println("");
 
-        for (int i = 0; i < inPoints.length; i++) {
-            System.out.print("inPt[" + i + "]=" + inPoints[i] + " ");
-        }
-        System.out.println("");
+            for (int i = 0; i < inPoints.length; i++) {
+                System.out.print("inPt[" + i + "]=" + inPoints[i] + " ");
+            }
+            System.out.println("");
 
-        for (int i = 0; i < isizes.length; i++) {
-            System.out.print(" inSz[" + i + "]=" + isizes[i]);
+            for (int i = 0; i < isizes.length; i++) {
+                System.out.print(" inSz[" + i + "]=" + isizes[i]);
+            }
+            System.out.println("");
+            for (int i = 0; i < osizes.length; i++) {
+                System.out.print(" ouSz[" + i + "]=" + osizes[i]);
+            }
+            System.out.println("");
+            System.out.println("groupsize " + groupSize);
         }
-        System.out.println("");
-        for (int i = 0; i < osizes.length; i++) {
-            System.out.print(" ouSz[" + i + "]=" + osizes[i]);
-        }
-        System.out.println("");
-        System.out.println("groupsize " + groupSize);
-         */
         outCounter = new MultidimensionalCounter(osizes);
         inCounter = new MultidimensionalCounter(isizes);
-//        iterator = outCounter.iterator();
-//        int i = 0;
-//        while (iterator.hasNext()) {
-//            iterator.next();
-//            int[] counts = iterator.getCounts();
-//            System.out.print("i " + i);
-//            for (int j = 0; j < counts.length; j++) {
-//                System.out.print(" " + counts[j]);
-//            }
-//            System.out.println("");
-//            i++;
-//        }
         iterator = outCounter.iterator();
     }
 
