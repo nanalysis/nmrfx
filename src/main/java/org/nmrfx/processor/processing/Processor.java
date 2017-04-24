@@ -49,6 +49,7 @@ import java.util.logging.Logger;
  */
 public class Processor {
 
+    public static boolean showDebugInfo = false;
     private String fileName;
     private Dataset dataset;
     public ScanRegion scanregion;
@@ -398,10 +399,8 @@ public class Processor {
         }
         int nDim = nmrData.getNDim();
         int nArray = 0;
-        System.out.println("nDi " + nDim);
         for (int i = 1; i < nDim; i++) {
             int arraySize = nmrData.getArraySize(i);
-            System.out.println("array " + arraySize);
             if (arraySize != 0) {
                 nArray++;
             }
@@ -410,7 +409,6 @@ public class Processor {
         if (nArray > 0) {
             newTDSizes = new int[nDim + nArray];
             newComplex = new boolean[nDim + nArray];
-            newAcqOrder = new String[2 * ((nDim - 1) + nArray)];
             newTDSizes[0] = tdSizes[0];
             newComplex[0] = complex[0];
             int j = 1;
@@ -421,29 +419,27 @@ public class Processor {
                     newTDSizes[j + 1] = arraySize;
                     newComplex[j] = complex[i];
                     newComplex[j + 1] = false;
-                    newAcqOrder[2 * (j - 1)] = "p2";
-                    newAcqOrder[2 * (j - 1) + 1] = "d2";
-                    newAcqOrder[2 * (j - 1) + 2] = acqOrder[2 * (i - 1)];
-                    newAcqOrder[2 * (j - 1) + 3] = acqOrder[2 * (i - 1) + 1];
                     j += 2;
                 } else {
                     newTDSizes[j++] = tdSizes[i];
                     newComplex[j - 1] = complex[i];
                 }
             }
+            newAcqOrder = acqOrder;
             useSizes = newTDSizes;
         } else {
             newTDSizes = tdSizes;
             newComplex = complex;
             newAcqOrder = acqOrder;
         }
-        for (int i = 0; i < (nDim + nArray); i++) {
-            System.out.print("new td " + newTDSizes[i] + " " + newComplex[i] + " ");
-            if (i > 0) {
-                System.out.println(newAcqOrder[2 * (i - 1)] + " " + newAcqOrder[2 * (i - 1) + 1]);
-            } else {
-                System.out.println("");
+        if (showDebugInfo) {
+            for (int i = 0; i < (nDim + nArray); i++) {
+                System.out.println("new td " + i + " " + newTDSizes[i] + " " + newComplex[i] + " ");
             }
+            for (int i = 0; i < newAcqOrder.length; i++) {
+                System.out.print(newAcqOrder[i] + " ");
+            }
+            System.out.println("");
         }
 
         tdSizes = new int[newTDSizes.length];
@@ -1060,8 +1056,9 @@ public class Processor {
                     break;
                 }
                 VecIndex vecIndex = getNextGroup(vecGroup);
-//                vecIndex.printMe(vecGroup, tdSizes[1]);
-//                vecIndex.printMe(vecGroup, 1);
+                if (showDebugInfo) {
+                    vecIndex.printMe(vecGroup, 1);
+                }
                 for (int j = 0; j < vectorsPerGroup; j++) {
                     try {
                         for (NMRData nmrData : nmrDataSets) {
