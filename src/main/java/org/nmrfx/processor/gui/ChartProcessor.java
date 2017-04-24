@@ -333,6 +333,57 @@ public class ChartProcessor {
         }
     }
 
+    public String getArraySizes() {
+        String arraySizes = "";
+        NMRData nmrData = getNMRData();
+
+        if (nmrData != null) {
+            int nDim = nmrData.getNDim();
+            StringBuilder sBuilder = new StringBuilder();
+            for (int i = 0; i < nDim; i++) {
+                if (i != 0) {
+                    sBuilder.append(',');
+                }
+                sBuilder.append(nmrData.getArraySize(i));
+            }
+            arraySizes = sBuilder.toString();
+
+        }
+        return arraySizes;
+    }
+
+    public void setArraySize(String arraySizes) {
+        NMRData nmrData = getNMRData();
+        System.out.println("set array size " + arraySizes);
+
+        if (nmrData != null) {
+            String[] arraySizeArray = arraySizes.split(",");
+            int iDim = -1;
+            for (String sizeArg : arraySizeArray) {
+                iDim++;
+                if (sizeArg.length() == 0) {
+                    continue;
+                }
+                try {
+                    int size = Integer.parseInt(sizeArg);
+                    System.out.println("set array size " + iDim + " " + size);
+                    setArraySize(iDim, size);
+                } catch (NumberFormatException nfE) {
+                    System.out.println(nfE.getMessage());
+                }
+            }
+        }
+    }
+
+    public void setArraySize(int dim, int arraySize) {
+        System.out.println("chartdddddddd processor " + dim + " " + arraySize);
+        NMRData nmrData = getNMRData();
+        if (nmrData != null) {
+            nmrData.setArraySize(dim, arraySize);
+            updateCounter();
+        }
+    }
+
     public boolean getEchoAntiEcho() {
         return (acqMode[vecDim] != null) && acqMode[vecDim].equals("ea");
     }
@@ -923,12 +974,17 @@ public class ChartProcessor {
 
         int nDim = nmrData.getNDim();
         int nArray = 0;
-        System.out.println("nDi " + nDim);
-        for (int i = 1; i < nDim; i++) {
-            int arraySize = nmrData.getArraySize(i);
-            System.out.println("array " + arraySize);
-            if (arraySize != 0) {
+        for (int i = 0; i < acqOrder.length; i++) {
+            if (acqOrder[i].charAt(0) == 'a') {
                 nArray++;
+            }
+        }
+        if (nArray == 0) {
+            for (int i = 1; i < nDim; i++) {
+                int arraySize = nmrData.getArraySize(i);
+                if (arraySize != 0) {
+                    nArray++;
+                }
             }
         }
 
@@ -949,10 +1005,9 @@ public class ChartProcessor {
             j++;
         }
         for (int i = 0; i < tdSizes.length; i++) {
-            System.out.println("size " + i + " " + tdSizes[i] + " " + complex[i]);
-        }
-        for (int i = 0; i < acqOrder.length; i++) {
-            System.out.println("i " + acqOrder[i]);
+            if (tdSizes[i] == 0) {
+                tdSizes[i] = 1;
+            }
         }
         if (nDim > 1) {
             multiVecCounter = new MultiVecCounter(tdSizes, complex, acqOrder, nDim + nArray);

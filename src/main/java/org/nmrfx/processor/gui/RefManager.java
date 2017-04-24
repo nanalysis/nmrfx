@@ -145,10 +145,10 @@ public class RefManager {
                 dim = Integer.parseInt(dimName);
                 dim--;
                 arraySize = Integer.parseInt(acqArray);
+                chartProcessor.setArraySize(dim, arraySize);
             } catch (NumberFormatException nFE) {
+                System.out.println("set array size error " + nFE.getMessage());
             }
-            System.out.println("set acqarray " + acqArray + " " + dimName + " " + dim + " " + arraySize);
-            //chartProcessor.setAcqArray(acqArray);
         }
         chartProcessor.setScriptValid(false);
         if (refresh) {
@@ -171,7 +171,15 @@ public class RefManager {
         sBuilder.append(chartProcessor.getAcqOrder(true));
         sBuilder.append(")");
         sBuilder.append(System.lineSeparator());
+        sBuilder.append(indent);
+        sBuilder.append("acqarray(");
+        sBuilder.append(chartProcessor.getArraySizes());
+        sBuilder.append(")");
+        sBuilder.append(System.lineSeparator());
         for (String propName : propNames) {
+            if (propName.equals("acqarray")) {
+                continue;
+            }
             sBuilder.append(indent);
             sBuilder.append(propName);
             sBuilder.append("(");
@@ -344,7 +352,7 @@ public class RefManager {
                 }
                 String comment = " (default is " + defaultValue + ")";
                 newItems.add(new MenuTextOperationItem(stringListener, value, dimName, propName, "Select the " + propName + comment));
-            } else if (propName.contains("size") || propName.equals("acqarray")) {
+            } else if (propName.contains("size")) {
                 String value = getPropValue(dim, propName, false);
                 int iValue = 0;
                 try {
@@ -355,6 +363,13 @@ public class RefManager {
                 String defaultValue = getPropValue(dim, propName, true);
                 String comment = " (default is " + defaultValue + ")";
                 newItems.add(new IntOperationItem(intListener, iValue, 0, 1000000, dimName, propName, "Enter the " + propName + comment));
+            } else if (propName.equals("acqarray")) {
+                int arraySize = 0;
+                if (nmrData != null) {
+                    arraySize = nmrData.getArraySize(dim);
+                }
+                String comment = " (default is " + 0 + ")";
+                newItems.add(new IntOperationItem(intListener, arraySize, 0, 1000000, dimName, propName, "Enter the " + propName + comment));
             } else {
                 String value = getPropValue(dim, propName, false);
                 String defaultValue = getPropValue(dim, propName, true);
@@ -376,6 +391,8 @@ public class RefManager {
                 List<String> parValues = CSVLineParse.parseLine(args);
                 if (propName.equals("acqOrder")) {
                     chartProcessor.setAcqOrder(args);
+                } else if (propName.equals("acqarray")) {
+                    chartProcessor.setArraySize(args);
                 } else {
                     int dim = 0;
                     for (String parValue : parValues) {

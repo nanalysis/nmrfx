@@ -563,6 +563,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         refOps.add("ref");
         refOps.add("label");
         refOps.add("acqOrder");
+        refOps.add("acqarray");
         refOps.add("acqsize");
         refOps.add("tdsize");
         //textArea.setText(scriptString);
