@@ -15,13 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.*;
+import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.structure.chemistry.Point3;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.chemistry.constraints.AtomDistancePair;
-import org.nmrfx.chemistry.constraints.DistanceConstraint;
 
 /**
  * This program performs various calculations with an atom
@@ -170,15 +170,15 @@ public class AtomMath {
         return Vector3D.distance(pt1, pt2);
     }
 
-    public static double calcDistanceSumAvg(DistanceConstraint distancePair, double avgN) {
+    public static double calcDistanceSumAvg(DistancePair distancePair, double avgN) {
 // fixme
         final double distance;
-        if ((distancePair.getAtomPairs().length == 1)) {
-            distance = distancePair.getAtomPairs()[0].getDistance();
+        if ((distancePair.atomPairs.length == 1)) {
+            distance = distancePair.atomPairs[0].getDistance();
         } else {
             int nMono = 1;
             double sum = 0.0;
-            for (AtomDistancePair atomDistancePair : distancePair.getAtomPairs()) {
+            for (AtomDistancePair atomDistancePair : distancePair.atomPairs) {
                 double distance1 = atomDistancePair.getDistance();
                 sum += FastMath.pow(distance1, -avgN);
             }
@@ -292,22 +292,6 @@ public class AtomMath {
         return result;
     }
 
-    public static double calcDeltaShift(Atom atom) {
-        PPMv refPPM = atom.getRefPPM(0);
-        PPMv ppm = atom.getPPM(0);
-        double diff;
-        if (refPPM == null || ppm == null) {
-            diff = 0.0;
-        } else {
-            diff = refPPM.getValue() - ppm.getValue();
-        }
-        return diff;
-    }
-
-    public static double calcShiftEnergy(Double deltaShift, ForceWeight forceWeight) {
-        return deltaShift * deltaShift * forceWeight.getShift();
-    }
-
     public static AtomEnergy calcBond(final Point3 pt1, final Point3 pt2, final BondPair bondPair, final ForceWeight forceWeight, final boolean calcDeriv) {
         double r = Vector3D.distance(pt1, pt2);
         final AtomEnergy result;
@@ -329,7 +313,7 @@ public class AtomMath {
     }
 
     //Uses Distance Contraints to Calculate Energy
-    public static AtomEnergy calcDistanceEnergy(final DistanceConstraint distancePair, final ForceWeight forceWeight, final boolean calcDeriv) {
+    public static AtomEnergy calcDistanceEnergy(final DistancePair distancePair, final ForceWeight forceWeight, final boolean calcDeriv) {
         //distance between atoms
         double r = calcDistanceSumAvg(distancePair, sumAvgN);
 
@@ -341,16 +325,14 @@ public class AtomMath {
         final AtomEnergy result;
 
         /**
-         * upper bounds for distance between two atoms atom cannot exceed this
-         * distance - provided by NMR data
+         * upper bounds for distance between two atoms atom cannot exceed this distance - provided by NMR data
          */
-        double upper = distancePair.getUpper();
+        double upper = distancePair.rUp;
 
         /**
-         * lower bounds for distance between two atoms atom cannot be lower than
-         * this distance - provided by NMR data
+         * lower bounds for distance between two atoms atom cannot be lower than this distance - provided by NMR data
          */
-        double lower = distancePair.getLower();
+        double lower = distancePair.rLow;
         double noeWeight = forceWeight.getNOE();
         double bSwitch = 1.0;
         double aSwitch = 1.0;
@@ -358,8 +340,7 @@ public class AtomMath {
         int noeClass = 1;
 
         /**
-         * viol initially set to distance between r (current distance) and upper
-         * bounds
+         * viol initially set to distance between r (current distance) and upper bounds
          */
         double viol = upper - r;
         switch (noeClass) {
@@ -453,61 +434,38 @@ public class AtomMath {
         return (result);
     }
 
-    public static AtomEnergy calcDihedralEnergy(double dihedral, double lower, double upper, final ForceWeight forceWeight, final boolean calcDeriv) {
-        dihedral = Util.reduceAngle(dihedral);
+    public static AtomEnergy calcDihedralEnergy(AngleBoundary boundary, final ForceWeight forceWeight, final boolean calcDeriv) {
+        double dihedral = boundary.atom.dihedralAngle;
+        dihedral = Dihedral.reduceAngle(dihedral);
 
+        double upper = boundary.upper;
+        double lower = boundary.lower;
         final AtomEnergy result;
-//        if (upper > Math.PI) {
-//            if (dihedral < 0.0) {
-//                dihedral += 2.0 * Math.PI;
-//            }
-//        }
-
-        // 100  80   101 - 359 - 79
-        // 80  100   
-        if ((lower < upper) && ((dihedral <= upper) && (dihedral >= lower))) {
-            result = AtomEnergy.ZERO;
-        } else if ((lower > upper) && ((dihedral >= lower))) {
-            result = AtomEnergy.ZERO;
-        } else if ((lower > upper) && ((dihedral <= upper))) {
+        if (upper > Math.PI) {
+            if (dihedral < 0.0) {
+                dihedral += 2.0 * Math.PI;
+            }
+        }
+        if ((dihedral < upper) && (dihedral > lower)) {
             result = AtomEnergy.ZERO;
         } else {
-            double range = lower < upper ? upper - lower : Math.PI - (lower - upper);
+            double range = upper - lower;
             double halfRange = Math.PI - (range / 2.0);
             double halfRange2 = halfRange * halfRange;
             double delta = 0.0;
-            double deltaU = upper - dihedral;
-            double deltaL = lower - dihedral;
-            if (deltaU > Math.PI) {
-                deltaU = deltaU - 2.0 * Math.PI;
-            }
-            if (deltaL > Math.PI) {
-                deltaL = deltaL - 2.0 * Math.PI;
-            }
-            if (deltaU < -Math.PI) {
-                deltaU = deltaU + 2.0 * Math.PI;
-            }
-            if (deltaL < -Math.PI) {
-                deltaL = deltaL + 2.0 * Math.PI;
-            }
-            if (Math.abs(deltaU) < Math.abs(deltaL)) {
-                delta = deltaU;
+            if (dihedral > upper) {
+                delta = upper - dihedral;
+                double deltaR = 2.0 * Math.PI - (range - delta);
+                if (Math.abs(delta) > deltaR) {
+                    delta = deltaR;
+                }
             } else {
-                delta = deltaL;
+                delta = lower - dihedral;
+                double deltaR = 2.0 * Math.PI - (range + delta);
+                if (delta > deltaR) {
+                    delta = -deltaR;
+                }
             }
-//            if (dihedral > upper) {
-//                delta = upper - dihedral;
-//                double deltaR = 2.0 * Math.PI - (range - delta);
-//                if (Math.abs(delta) > deltaR) {
-//                    delta = deltaR;
-//                }
-//            } else {
-//                delta = lower - dihedral;
-//                double deltaR = 2.0 * Math.PI - (range + delta);
-//                if (delta > deltaR) {
-//                    delta = -deltaR;
-//                }
-//            }
             double delta2 = delta * delta;
             double energy = forceWeight.getDihedral() * (1.0 - 0.5 * delta2 / halfRange2) * delta2;
             //System.out.printf("%.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",lower,dihedral,upper,delta, halfRange,(delta/halfRange),energy);
@@ -529,7 +487,7 @@ public class AtomMath {
             result = AtomEnergy.ZERO;
         } else {
             double angle = atom.dihedralAngle;
-            angle = Util.reduceAngle(angle);
+            angle = Dihedral.reduceAngle(angle);
             double v = IrpParameters[irpIndex].v;
             double s = IrpParameters[irpIndex].s;
             double n = IrpParameters[irpIndex].n;
@@ -543,25 +501,28 @@ public class AtomMath {
         return result;
     }
 
-    public static AtomEnergy calcTorsionAngleEnergy(AngleProp angleProp, final ForceWeight forceWeight) {
+    public static AtomEnergy calcTorsionAngleEnergy(AngleBoundary boundary, final ForceWeight forceWeight) {
         final AtomEnergy result;
-        double energy = 0.0;
-//        if (angleProp != null) {
-//            AngleProp temp = angleProp;
-//            int indexValue = 0;
-//            double dihedral = grabDihedral(boundary);
-//            double dis = FastMath.abs(dihedral - temp.target[0]);
-//            for (int i = 1; i < temp.target.length; i++) {
-//                double newdis = FastMath.abs(dihedral - temp.target[i]);
-//                if (newdis < dis) {
-//                    dis = newdis;
-//                    indexValue = i;
-//                }
-//            }
-//            energy = 1 - temp.height[indexValue] * FastMath.exp((-dis * dis) / (2 * temp.sigma[indexValue] * temp.sigma[indexValue]));
-//        } else {
-//            energy = 0;
-//        }
+        double energy = Double.MAX_VALUE;
+        if (boundary != null) {
+            if (boundary.angleProp != null) {
+                AngleProp temp = boundary.angleProp;
+                int indexValue = 0;
+                double dis = FastMath.abs(boundary.atom.dihedralAngle - temp.target[0]);
+                for (int i = 1; i < temp.target.length; i++) {
+                    double newdis = FastMath.abs(boundary.atom.dihedralAngle - temp.target[i]);
+                    if (newdis < dis) {
+                        dis = newdis;
+                        indexValue = i;
+                    }
+                }
+                energy = 1 - temp.height[indexValue] * FastMath.exp((-dis * dis) / (2 * temp.sigma[indexValue] * temp.sigma[indexValue]));
+            } else {
+                energy = 0;
+            }
+        } else {
+            energy = 0;
+        }
         result = new AtomEnergy(energy);
         return result;
 

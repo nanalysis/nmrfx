@@ -18,10 +18,9 @@
 
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.AtomEnergyProp;
-import org.nmrfx.chemistry.EnergyPair;
-import org.nmrfx.chemistry.SpatialSet;
+import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.structure.chemistry.SpatialSet;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 
 /**

@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.chemistry.energy;
 
 public class ForceWeight {
@@ -25,23 +26,17 @@ public class ForceWeight {
     private final double robson;
     private final double repel;
     private final double noe;
-    private final double shift;
     private final double bond = 5000.0;
-    private final double bondWt;
     private final double irp;
-    private final double stacking;
     final double cutoffSq = 64.0;
     final double cutoffSwitchSq = 36.0;
     final double cutoffDem = 28.0;
 
     public ForceWeight() {
-        this(-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0);
+        this(-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0);
     }
 
-    public ForceWeight(final double electrostatic, final double robson,
-            final double repel, final double noe, double tortionAngle,
-            double dihedral, double irp, double shift, double bond,
-            double stacking) {
+    public ForceWeight(final double electrostatic, final double robson, final double repel, final double noe, double tortionAngle, double dihedral, double irp) {
         this.electrostatic = electrostatic;
         this.robson = robson;
         this.repel = repel;
@@ -49,9 +44,6 @@ public class ForceWeight {
         this.dihedralProb = tortionAngle;
         this.dihedral = dihedral;
         this.irp = irp;
-        this.shift = shift;
-        this.bondWt = bond;
-        this.stacking = stacking;
     }
 
     /**
@@ -87,17 +79,5 @@ public class ForceWeight {
 
     public double getIrp() {
         return irp;
-    }
-
-    public double getShift() {
-        return shift;
-    }
-
-    public double getBondWt() {
-        return bondWt;
-    }
-
-    public double getStacking() {
-        return stacking;
     }
 }

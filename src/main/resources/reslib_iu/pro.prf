@@ -1,34 +1,26 @@
 LNAME Proline
 SNAME pro
 RCHAR P
-ATOM   N      N     1.32  114.00  -120.0  -0.25480
-ATOM   H2     H2    1.08  109.00  60.0    0.27190 start
-ATOM   H3     H3    1.08  109.00  60.0    0.27190 start
-ATOM   CA     CX    1.47  126.35  180.0   -0.02660
-ATOM   HA     H1    1.08  109.47  -120.0  0.06410
-ATOM   CB     CT    1.53  106.00  -121.5  -0.00700
-ATOM   HB2    HC    1.08  109.47  -120.0  0.02530
-ATOM   HB3    HC    1.08  109.47  -120.0  0.02530
-ATOM   CG     CT    1.53  106.00  22.5    0.01890
-ATOM   HG2    HC    1.08  109.47  -120.0  0.02130
-ATOM   HG3    HC    1.08  109.47  -120.0  0.02130
-ATOM   CD     CT    1.47  123.00  18.6    0.01920
-ATOM   HD2    H1    1.08  109.47  120.0   0.03910
-ATOM   HD3    H1    1.08  109.47  -61.5   0.03910
-ATOM   C      C     1.53  113.88  -65.5   0.58960
-ATOM   O      O     1.24  121.00  180.0   -0.57480 start
-ATOM   O      O     1.24  121.00  180.0   -0.57480 middle
-ATOM   O      O     1.24  180.00  120.0   -0.57480 end
-ATOM   OXT    OH    1.24  180.00  120.0   -0.57480 end
-FAMILY   -      N      CD     CA    middle
-FAMILY   -      N      CD     CA    end
-FAMILY   -      N      H2     H3     CD    CA    start       
-FAMILY   N      CD     HD3    HD2
+ATOM   N      N'   1.32  114.00  -120.0
+ATOM   CA     C1   1.47  126.35   180.0
+ATOM   HA     H    1.08  109.47  -120.0
+ATOM   CB     C2   1.53  106.00  -121.5
+ATOM   HB2    H    1.08  109.47  -120.0
+ATOM   HB3    H    1.08  109.47  -120.0
+ATOM   CG     C2   1.53  106.00    22.5
+ATOM   HG2    H    1.08  109.47  -120.0
+ATOM   HG3    H    1.08  109.47  -120.0
+ATOM   CD     C2   1.53  106.00   -13.3
+ATOM   HD2    H    1.08  109.47  -120.0
+ATOM   HD3    H    1.08  109.47  -120.0
+ATOM   C      C'   1.53  113.88   -65.5
+ATOM   O      O'   1.24  121.00   180.0
+FAMILY   -      N      CA     -CD    
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
-FAMILY   CB     CG     HG3    HG2   -CD
-FAMILY   CA     C      +      =O  
-FAMILY   CA     C      OXT    =O  end   
+FAMILY   CB     CG     CD     HG3    HG2    
+FAMILY   CG     CD     HD3    HD2    
+FAMILY   CA     C      +      O      
 ANGLE     C       PSI 1
 ATREE  C  +  
 PSEUDO QB HB2 HB3

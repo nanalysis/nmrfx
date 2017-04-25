@@ -18,37 +18,13 @@
 
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.chemistry.Compound;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.SpatialSet;
-import org.nmrfx.chemistry.utilities.Format;
+import org.nmrfx.structure.utilities.Format;
 
 public class IdResult {
 
-    /**
-     * @return the dismin
-     */
-    public double getDisMin() {
-        return dismin;
-    }
-
-    /**
-     * @return the dismax
-     */
-    public double getDisMax() {
-        return dismax;
-    }
-
-    /**
-     * @return the dis
-     */
-    public double getDis() {
-        return dis;
-    }
-
-    public double dismin = 0.0;
-    public double dismax = 0.0;
-    public double dis = 0.0;
+    double dismin = 0.0;
+    double dismax = 0.0;
+    double dis = 0.0;
     double[] dp;
     SpatialSet[] spatialSets;
     double inRange = 0;
@@ -92,7 +68,7 @@ public class IdResult {
                 oneLetter = ((Residue) spatialSets[j].atom.entity).getOneLetter();
                 cName = ((Residue) spatialSets[j].atom.entity).polymer.getName();
             }
-            strResult.append(String.format("%s", cName)).append(" ");
+            strResult.append(String.format("%s", cName) + " ");
             strResult.append(String.format("%s", oneLetter) + " ");
             strResult.append(String.format("%3s", rNum) + ".");
             strResult.append(String.format("%-4s", aName) + " ");

@@ -21,7 +21,6 @@ package org.nmrfx.structure.chemistry.energy;
 import org.apache.commons.math3.util.FastMath;
 
 import org.apache.commons.math3.analysis.MultivariateVectorFunction;
-import org.nmrfx.chemistry.Util;
 
 public class DihedralGradient implements MultivariateVectorFunction {
 
@@ -33,7 +32,7 @@ public class DihedralGradient implements MultivariateVectorFunction {
 
     public double[] value(double[] point) {
         for (int i = 0; i < point.length; i++) {
-            point[i] = Util.reduceAngle(point[i]);
+            point[i] = Dihedral.reduceAngle(point[i]);
         }
 
         double[] derivatives = gradRefine.nonNormDeriv(point);

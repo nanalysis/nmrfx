@@ -67,9 +67,5 @@ public class AngleProp {
         map.put(name, this);
 
     }
-    
-    public double[] getTarget() {
-        return target;
-    }
 
 }

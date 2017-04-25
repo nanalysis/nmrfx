@@ -15,65 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Compound;
-import org.nmrfx.chemistry.CoordSet;
-import org.nmrfx.chemistry.Entity;
-import org.nmrfx.chemistry.PPMv;
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.chemistry.Polymer;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.SpatialSet;
+import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.structure.chemistry.Compound;
+import org.nmrfx.structure.chemistry.CoordSet;
+import org.nmrfx.structure.chemistry.Entity;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.PPMv;
+import org.nmrfx.structure.chemistry.Point3;
+import org.nmrfx.structure.chemistry.Polymer;
+import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.structure.chemistry.SpatialSet;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Iterator;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.threed.Plane;
 import org.apache.commons.math3.geometry.euclidean.threed.Line;
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.chemistry.MoleculeBase;
 
 public class RingCurrentShift {
 
     private ArrayList<FusedRing> fusedRingList = new ArrayList<FusedRing>();
     private static HashMap<String, Ring> stdRings = new HashMap<String, Ring>();
-    private static final HashMap<String, PPMv> refShifts = new HashMap<String, PPMv>();
-
-    static {
-        refShifts.put("U.H6", new PPMv(8.00));
-        refShifts.put("U.H3'", new PPMv(4.56));
-        refShifts.put("U.H5", new PPMv(5.80));
-        refShifts.put("U.H5'", new PPMv(4.36));
-        refShifts.put("A.H5'", new PPMv(4.36));
-        refShifts.put("G.H5''", new PPMv(4.11));
-        refShifts.put("U.H1'", new PPMv(5.49));
-        refShifts.put("A.H3'", new PPMv(4.56));
-        refShifts.put("G.H1'", new PPMv(5.43));
-        refShifts.put("G.H3'", new PPMv(4.56));
-        refShifts.put("G.H5'", new PPMv(4.36));
-        refShifts.put("A.H5''", new PPMv(4.11));
-        refShifts.put("C.H2'", new PPMv(4.48));
-        refShifts.put("C.H4'", new PPMv(4.38));
-        refShifts.put("G.H8", new PPMv(7.77));
-        refShifts.put("A.H1'", new PPMv(5.51));
-        refShifts.put("U.H4'", new PPMv(4.38));
-        refShifts.put("A.H8", new PPMv(8.21));
-        refShifts.put("C.H6", new PPMv(7.94));
-        refShifts.put("C.H5''", new PPMv(4.11));
-        refShifts.put("C.H5", new PPMv(5.85));
-        refShifts.put("U.H2'", new PPMv(4.48));
-        refShifts.put("A.H4'", new PPMv(4.38));
-        refShifts.put("G.H2'", new PPMv(4.48));
-        refShifts.put("A.H2", new PPMv(7.79));
-        refShifts.put("C.H5'", new PPMv(4.36));
-        refShifts.put("G.H4'", new PPMv(4.38));
-        refShifts.put("U.H5''", new PPMv(4.11));
-        refShifts.put("C.H1'", new PPMv(5.46));
-        refShifts.put("C.H3'", new PPMv(4.56));
-        refShifts.put("A.H2'", new PPMv(4.48));
-    }
 
     static class RingType {
 
@@ -182,7 +148,7 @@ public class RingCurrentShift {
         makeBenzene();
     }
 
-    private MoleculeBase molecule;
+    private Molecule molecule;
 
     static void makeBenzene() {
         final String[] benAtoms0 = {"C1", "C2", "C3", "C4", "C5", "C6"};
@@ -217,13 +183,18 @@ public class RingCurrentShift {
         return ringType.ringFactor;
     }
 
+    public void makeRingList(final String molName) {
+        molecule = Molecule.get(molName);
+        makeRingList(molecule);
+    }
+
     public static void setRingConformation(Ring ring, int iStruct) {
         ArrayList<SpatialSet> spatialSets = ring.spatialSets;
         ring.points.clear();
         for (SpatialSet spatialSet : spatialSets) {
             Point3 pt = spatialSet.getPoint(iStruct);
             if (pt == null) {
-                System.out.println("Null point for " + spatialSet.getFullName() + " for struct " + iStruct);
+                System.out.println("Null point for " + spatialSet.getFullName());
             }
             ring.points.add(pt);
         }
@@ -244,30 +215,6 @@ public class RingCurrentShift {
         Vector3D pt = new Vector3D(x, y, z);
         Ring ring = stdRings.get("benzene");
         return calcRingContributions(ring, pt, targetFactor, iStruct);
-    }
-
-    public static List<SpatialSet> refSP = null;
-
-    public void setBasePPMs(List<SpatialSet> targetSpatialSets) {
-        for (SpatialSet sp : targetSpatialSets) {
-            String nucName = sp.atom.getEntity().getName();
-            String aName = sp.atom.getName();
-            PPMv ppm = refShifts.get(nucName + "." + aName);
-            if (ppm != null) {
-                sp.setPPM(1, ppm.getValue(), false);
-            }
-        }
-        refSP = targetSpatialSets;
-    }
-
-    public void predictShifts() {
-        for (SpatialSet sp : refSP) {
-            double ringRatio = 0.475;
-            double basePPM = sp.getPPM(1).getValue();
-            double ringPPM = calcRingContributions(sp, 0, ringRatio);
-            double ppm = basePPM + ringPPM;
-            sp.setRefPPM(0, ppm);
-        }
     }
 
     public void calcRingContributions(ArrayList<SpatialSet> targetSpatialSets, ArrayList<Integer> structs, final int ppmSet, final double ringRatio) {
@@ -303,41 +250,27 @@ public class RingCurrentShift {
         }
     }
 
-    /**
-     * Calculate the chemical shift contribution to this atom from ring current
-     * shifts of surrounding aromatic rings. The output of this method should be
-     * added to the calibrated reference shift for the atoms type. Before
-     * calling this method the list of aromatic rings in the molecule needs to
-     * me set up.
-     *
-     * @see makeRingList
-     * @param targetSpatialSet The spatial set for the target atom
-     * @param iStruct The structure set to get coordinates from
-     * @param ringRatio An empirically calibrated ratio from our fitting
-     * algorithm
-     * @return
-     */
     public double calcRingContributions(SpatialSet targetSpatialSet, int iStruct, final double ringRatio) {
-        double targetFactor = 5.45 * ringRatio;  // 5.45 from Osapay & Case JACS 1991
+        double targetFactor = 5.45 * ringRatio;
         Vector3D targetPoint = targetSpatialSet.getPoint(iStruct);
         double sum = 0.0;
-        if (targetPoint != null) {
-            Atom parent = targetSpatialSet.atom.getParent();
-            if (parent != null) {
-                SpatialSet targetParent = parent.getSpatialSet();
-                for (FusedRing fusedRing : fusedRingList) {
-                    if (!fusedRing.hasSpatialSet(targetParent)) {
-                        for (Ring ring : fusedRing.rings) {
-                            sum += calcRingContributions(ring, targetPoint, targetFactor, iStruct);
-                        }
+        Atom parent = targetSpatialSet.atom.getParent();
+        if (parent != null) {
+            SpatialSet targetParent = parent.getSpatialSet();
+            for (FusedRing fusedRing : fusedRingList) {
+                if (!fusedRing.hasSpatialSet(targetParent)) {
+                    for (Ring ring : fusedRing.rings) {
+                        sum += calcRingContributions(ring, targetPoint, targetFactor, iStruct);
                     }
                 }
             }
+        } else {
+            System.out.println("null parent " + targetSpatialSet.atom.getFullName());
         }
         return sum;
     }
 
-    private double calcRingContributions(Ring ring, Vector3D targetPoint, final double targetFactor, final int iStruct) {
+    public double calcRingContributions(Ring ring, Vector3D targetPoint, final double targetFactor, final int iStruct) {
         if (!ring.isPlaneSet()) {
             setRingConformation(ring, iStruct);
         }
@@ -404,7 +337,7 @@ public class RingCurrentShift {
         return geoSum;
     }
 
-    public void makeRingList(MoleculeBase molecule) {
+    public void makeRingList(Molecule molecule) {
         Residue firstResidue;
         Residue lastResidue = null;
         Compound compound;
@@ -413,9 +346,9 @@ public class RingCurrentShift {
             for (Entity entity : coordSet.getEntities().values()) {
                 if (entity instanceof Polymer) {
                     Polymer polymer = (Polymer) entity;
-                    firstResidue = polymer.getFirstResidue();
+                    firstResidue = polymer.firstResidue;
 
-                    lastResidue = polymer.getLastResidue();
+                    lastResidue = polymer.lastResidue;
                     compound = (Compound) firstResidue;
                 } else {
                     compound = (Compound) entity;

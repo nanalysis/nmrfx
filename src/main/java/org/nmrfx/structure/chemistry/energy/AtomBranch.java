@@ -18,7 +18,7 @@
 
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.Atom;
+import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.fastlinear.FastDiagonalMatrix;
 import org.nmrfx.structure.fastlinear.FastMatrix;
 import org.nmrfx.structure.fastlinear.FastVector;

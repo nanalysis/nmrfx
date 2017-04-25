@@ -15,20 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.chemistry.energy;
 
-import java.io.IOException;
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.AtomEnergyProp;
+import org.nmrfx.structure.chemistry.Atom;
+import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.structure.chemistry.Molecule;
+import org.apache.commons.math3.util.FastMath;
 
 /**
  *
@@ -36,79 +31,52 @@ import org.nmrfx.structure.chemistry.Molecule;
  */
 public class EnergyCoords {
 
-    static final double PI32 = Math.PI * Math.sqrt(Math.PI);
-
     private static final int[][] offsets = {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0}, {-1, 1, 0}, {0, 0, 1},
     {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
     {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
     };
+
+    final static private int DEFAULTSIZE = 160000;
     FastVector3D[] vecCoords = null;
-    EnergyDistancePairs eDistancePairs;
-    EnergyConstraintPairs eConstraintPairs;
-    EnergyShiftPairs eShiftPairs;
-    EnergyBaseStacking eBaseStackingPairs;
     int[] resNums = null;
     Atom[] atoms = null;
-    int[] mAtoms = null;
-    int[] shiftClass = null;
-    double[] baseShifts = null;
-    double[] shifts = null;
-    double[] refShifts = null;
-    boolean[] swapped = null;
     int[] hBondable = null;
+    boolean[] hasBondConstraint = null;
     double[] contactRadii = null;
-    double[] aValues = null;
-    double[] bValues = null;
-    double[] cValues = null;
     int[] cellIndex = null;
+    int[] iAtoms = new int[DEFAULTSIZE];
+    int[] jAtoms = new int[DEFAULTSIZE];
+    int[] iUnits = new int[DEFAULTSIZE];
+    int[] jUnits = new int[DEFAULTSIZE];
+    double[] rLow2 = new double[DEFAULTSIZE];
+    double[] rLow = new double[DEFAULTSIZE];
+    double[] rUp2 = new double[DEFAULTSIZE];
+    double[] rUp = new double[DEFAULTSIZE];
+    double[] viol = new double[DEFAULTSIZE];
+    double[] derivs = new double[DEFAULTSIZE];
+    int repelStart = 5000;
+    int repelEnd = repelStart;
+    int disEnd = 0;
     int nAtoms = 0;
     boolean[][] fixed;
-    Map<Integer, Set<Integer>> kSwap = null;
-    boolean setupShifts = false;
-
     private static double hbondDelta = 0.60;
-
-    public EnergyCoords() {
-        eDistancePairs = new EnergyDistancePairs(this);
-        eConstraintPairs = new EnergyConstraintPairs(this);
-        eShiftPairs = new EnergyShiftPairs(this);
-        eBaseStackingPairs = new EnergyBaseStacking(this);
-
-    }
 
     public FastVector3D[] getVecCoords(int size) {
         if ((vecCoords == null) || (vecCoords.length != size)) {
             vecCoords = new FastVector3D[size];
             resNums = new int[size];
             atoms = new Atom[size];
-            mAtoms = new int[size];
-            swapped = new boolean[size];
             contactRadii = new double[size];
-            aValues = new double[size];
-            bValues = new double[size];
-            cValues = new double[size];
+            hasBondConstraint = new boolean[size];
             hBondable = new int[size];
             cellIndex = new int[size];
-            shiftClass = new int[size];
-            baseShifts = new double[size];
-            shifts = new double[size];
-            refShifts = new double[size];
             for (int i = 0; i < size; i++) {
                 vecCoords[i] = new FastVector3D();
-                shiftClass[i] = -1;
             }
         }
         nAtoms = size;
 
         return vecCoords;
-    }
-
-    public void setComplexFFMode(boolean complexFFMode) {
-        if (complexFFMode && !(eDistancePairs instanceof EnergyFFPairs)) {
-            eDistancePairs = new EnergyFFPairs(this);
-        } else if (!complexFFMode && (eDistancePairs instanceof EnergyFFPairs)) {
-            eDistancePairs = new EnergyDistancePairs(this);
-        }
     }
 
     public FastVector3D[] getVecCoords() {
@@ -119,143 +87,215 @@ public class EnergyCoords {
         vecCoords[i].set(x, y, z);
         resNums[i] = resNum;
         atoms[i] = atomType;
-        atomType.eAtom = i;
     }
 
-    public void setupShifts() {
-        eShiftPairs.setupShifts();
+    public void clear() {
+        repelEnd = repelStart;
     }
 
-    public void exportConstraintPairs(String fileName) {
-        if (eConstraintPairs != null) {
-            eConstraintPairs.dumpRestraints(fileName);
-        }
+    public void clearDist() {
+        disEnd = 0;
     }
 
     public int getNNOE() {
-        return eConstraintPairs.nPairs;
-    }
-
-    public int getNStacking() {
-        return eBaseStackingPairs.nPairs;
+        return disEnd;
     }
 
     public int getNContacts() {
-        return eDistancePairs.nPairs;
+        return repelEnd - repelStart;
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double r0) {
-        eDistancePairs.addPair(i, j, iUnit, jUnit, r0);
+        iAtoms[repelEnd] = i;
+        jAtoms[repelEnd] = j;
+        iUnits[repelEnd] = iUnit;
+        jUnits[repelEnd] = jUnit;
+
+        this.rLow[repelEnd] = r0;
+        rLow2[repelEnd] = r0 * r0;
+        rUp2[repelEnd] = Double.MAX_VALUE;
+        repelEnd++;
     }
 
-    public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group, double weight) {
-        eConstraintPairs.addPair(i, j, iUnit, jUnit, rLow, rUp, isBond, group, weight);
+    public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group) {
+        iAtoms[disEnd] = i;
+        jAtoms[disEnd] = j;
+        iUnits[disEnd] = iUnit;
+        jUnits[disEnd] = jUnit;
+
+        this.rLow[disEnd] = rLow;
+        rLow2[disEnd] = rLow * rLow;
+        this.rUp[disEnd] = rUp;
+        rUp2[disEnd] = rUp * rUp;
+
+        hasBondConstraint[i] = isBond;
+        hasBondConstraint[j] = isBond;
+
+        disEnd++;
     }
 
-    public EnergyShiftPairs getShiftPairs() {
-        return eShiftPairs;
-    }
+    public double calcRepelOff(boolean calcDeriv, double weight) {
 
-    public void updateGroups() {
-        eConstraintPairs.updateGroups();
-    }
+        double sum = 0.0;
+        for (int i = 0; i < repelEnd; i++) {
+            int iAtom = iAtoms[i];
+            int jAtom = jAtoms[i];
+            FastVector3D iV = vecCoords[iAtom];
+            FastVector3D jV = vecCoords[jAtom];
+            double r2 = iV.disSq(jV);
+            derivs[i] = 0.0;
+            viol[i] = 0.0;
 
-    public void doSwaps() {
-        eConstraintPairs.doSwaps();
-    }
-
-    public double calcNOE(boolean calcDeriv, double weight) {
-        return eConstraintPairs.calcEnergy(calcDeriv, weight);
+            if (r2 <= rLow2[i]) {
+                double r = FastMath.sqrt(r2);
+                double dif = rLow[i] - r;
+                viol[i] = weight * dif * dif;
+                sum += viol[i];
+                if (calcDeriv) {
+                    //  what is needed is actually the derivitive/r, therefore
+                    // we divide by r
+                    derivs[i] = -2.0 * weight * dif / r;
+                }
+            }
+        }
+        return sum;
     }
 
     public double calcRepel(boolean calcDeriv, double weight) {
-        return eDistancePairs.calcEnergy(calcDeriv, weight);
+        return calcEnergy(calcDeriv, weight, 1);
     }
 
-    public double calcStacking(boolean calcDeriv, double weight) {
-        return eBaseStackingPairs.calcEnergy(calcDeriv, weight);
+    public double calcNOE(boolean calcDeriv, double weight) {
+        return calcEnergy(calcDeriv, weight, 0);
     }
 
-    public double calcDistShifts(boolean calcDeriv, double rMax, double intraScale, double weight) {
-        return eShiftPairs.calcDistShifts(calcDeriv, rMax, intraScale, weight);
+    public String getRepelError(int i, double limitVal, double weight) {
+        return getError(i, limitVal, weight, 1);
     }
 
-    public ViolationStats getRepelError(int i, double limitVal, double weight) {
-        return eDistancePairs.getError(i, limitVal, weight);
+    public String getNOEError(int i, double limitVal, double weight) {
+        return getError(i, limitVal, weight, 0);
     }
 
-    public ViolationStats getNOEError(int i, double limitVal, double weight) {
-        return eConstraintPairs.getError(i, limitVal, weight);
-    }
-
-    public ViolationStats getStackError(int i, double limitVal, double weight) {
-        return eBaseStackingPairs.getError(i, limitVal, weight);
-    }
-
-    private char ijWild(String iAtomOld, String jAtomOld, String iAtomNew, String jAtomNew) {
-        /* Returns i, j, or n depending if it was found to wild. 
-            the char return is i or j if there was a suitable wild found and 
-            n if no wild is found.*/
-        String iAtomOldSub = iAtomOld.substring(0, iAtomOld.length() - 1);
-        String iAtomNewSub = iAtomNew.substring(0, iAtomNew.length() - 1);
-
-        String atomName = iAtomNewSub.substring(iAtomNewSub.indexOf(".") + 1);
-        if (atomName.length() < 1) {
-            return 'n';
-        };
-
-        if (iAtomOldSub.equals(iAtomNewSub) && jAtomNew.equals(jAtomOld)) {
-            return 'i';
+    public String getError(int i, double limitVal, double weight, int mode) {
+        String modeType = "Dis";
+        if (mode == 1) {
+            i += repelStart;
+            modeType = "Rep";
+        }
+        int iAtom = iAtoms[i];
+        int jAtom = jAtoms[i];
+        FastVector3D iV = vecCoords[iAtom];
+        FastVector3D jV = vecCoords[jAtom];
+        double r2 = iV.disSq(jV);
+        double r = FastMath.sqrt(r2);
+        double dif = 0.0;
+        double constraintDis = 0.0;
+        if (r2 <= rLow2[i]) {
+            r = FastMath.sqrt(r2);
+            dif = rLow[i] - r;
+            constraintDis = rLow[i];
+        } else if (r2 >= rUp2[i]) {
+            r = FastMath.sqrt(r2);
+            dif = rUp[i] - r;
+            constraintDis = rUp[i];
+        }
+        String result = "";
+        if (Math.abs(dif) > limitVal) {
+            double energy = weight * dif * dif;
+            result = String.format("%s: %10s %10s %5.2f %5.2f %5.2f %7.3f\n", modeType, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), constraintDis, r, dif, energy);
         }
 
-        String jAtomOldSub = jAtomOld.substring(0, jAtomOld.length() - 1);
-        String jAtomNewSub = jAtomNew.substring(0, jAtomNew.length() - 1);
+        return result;
 
-        atomName = jAtomNewSub.substring(jAtomNewSub.indexOf(".") + 1);
-        if (atomName.length() < 1) {
-            return 'n';
+    }
+
+    public double calcEnergy(boolean calcDeriv, double weight, int mode) {
+        double sum = 0.0;
+        int start = 0;
+        int end = disEnd;
+        if (mode != 0) {
+            start = repelStart;
+            end = repelEnd;
         }
-        if (jAtomOldSub.equals(jAtomNewSub) && iAtomNew.equals(iAtomOld)) {
-            return 'j';
+        for (int i = start; i < end; i++) {
+            int iAtom = iAtoms[i];
+            int jAtom = jAtoms[i];
+            FastVector3D iV = vecCoords[iAtom];
+            FastVector3D jV = vecCoords[jAtom];
+            double r2 = iV.disSq(jV);
+            derivs[i] = 0.0;
+            viol[i] = 0.0;
+            final double dif;
+            final double r;
+            if (r2 <= rLow2[i]) {
+                r = FastMath.sqrt(r2);
+                dif = rLow[i] - r;
+            } else if (r2 >= rUp2[i]) {
+                r = FastMath.sqrt(r2);
+                dif = rUp[i] - r;
+            } else {
+                continue;
+            }
+            viol[i] = weight * dif * dif;
+            sum += viol[i];
+            if (calcDeriv) {
+                //  what is needed is actually the derivitive/r, therefore
+                // we divide by r
+                // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
+                derivs[i] = -2.0 * weight * dif / (r + RADJ);
+            }
+
         }
-        return 'n';
+        return sum;
     }
 
     public void addRepelDerivs(AtomBranch[] branches) {
-        eDistancePairs.addDerivs(branches);
+        addDerivs(branches, 1);
     }
 
     public void addNOEDerivs(AtomBranch[] branches) {
-        eConstraintPairs.addDerivs(branches);
+        addDerivs(branches, 0);
     }
 
-    public void addStackingDerivs(AtomBranch[] branches) {
-        eBaseStackingPairs.addDerivs(branches);
-    }
+    public void addDerivs(AtomBranch[] branches, int mode) {
+        int start = 0;
+        int end = disEnd;
+        if (mode != 0) {
+            start = repelStart;
+            end = repelEnd;
+        }
+        FastVector3D v1 = new FastVector3D();
+        FastVector3D v2 = new FastVector3D();
+        for (int i = start; i < end; i++) {
+            double deriv = derivs[i];
+            if (deriv == 0.0) {
+                continue;
+            }
+            int iAtom = iAtoms[i];
+            int jAtom = jAtoms[i];
 
-    public double calcDihedral(int a, int b, int c, int d) {
-        FastVector3D av = vecCoords[a];
-        FastVector3D bv = vecCoords[b];
-        FastVector3D cv = vecCoords[c];
-        FastVector3D dv = vecCoords[d];
-        return calcDihedral(av, bv, cv, dv);
-    }
+            FastVector3D pv1 = vecCoords[iAtom];
+            FastVector3D pv2 = vecCoords[jAtom];
 
-    /**
-     * Calculates the dihedral angle
-     *
-     * @param a first point
-     * @param b second point
-     * @param c third point
-     * @param d fourth point
-     * @return angle
-     */
-    public static double calcDihedral(final FastVector3D a, final FastVector3D b, final FastVector3D c, final FastVector3D d) {
-        Point3 a3 = new Point3(a.getX(), a.getY(), a.getZ());
-        Point3 b3 = new Point3(b.getX(), b.getY(), b.getZ());
-        Point3 c3 = new Point3(c.getX(), c.getY(), c.getZ());
-        Point3 d3 = new Point3(d.getX(), d.getY(), d.getZ());
-        return AtomMath.calcDihedral(a3, b3, c3, d3);
+            pv1.crossProduct(pv2, v1);
+            v1.multiply(derivs[i]);
+
+            pv1.subtract(pv2, v2);
+            v2.multiply(derivs[i]);
+            int iUnit = iUnits[i];
+            int jUnit = jUnits[i];
+
+            if (iUnit >= 0) {
+                branches[iUnit].addToF(v1.getValues());
+                branches[iUnit].addToG(v2.getValues());
+
+            }
+            if (jUnit >= 0) {
+                branches[jUnit].subtractToF(v1.getValues());
+                branches[jUnit].subtractToG(v2.getValues());
+            }
+        }
     }
 
     double[][] getBoundaries() {
@@ -278,13 +318,7 @@ public class EnergyCoords {
         return bounds;
     }
 
-    public void setRadii(double hardSphere, boolean includeH,
-            double shrinkValue, double shrinkHValue, boolean useFF) {
-        try {
-            AtomEnergyProp.readPropFile();
-        } catch (IOException ex) {
-            Logger.getLogger(EnergyCoords.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    public void setRadii(double hardSphere, boolean includeH, double shrinkValue, double shrinkHValue) {
         for (int i = 0; i < nAtoms; i++) {
             Atom atom1 = atoms[i];
             AtomEnergyProp iProp = (AtomEnergyProp) atom1.atomEnergyProp;
@@ -307,31 +341,142 @@ public class EnergyCoords {
                         rh1 += hardSphere;
                     }
                 }
-                double rMin = iProp.getR();
-                double eMin = Math.abs(iProp.getE());
-                contactRadii[i] = useFF ? Math.pow(2.0, -1.0 / 6) * rMin / 2.0 : rh1;
-                aValues[i] = 2.0 * eMin * Math.pow(rMin, 9);
-                bValues[i] = 3.0 * eMin * Math.pow(rMin, 6);
-                cValues[i] = atom1.getCharge();
-                double lambda = 3.5; // fixme should use 6.0 for ionic side chains
-                double sigma2 = rMin; // fixme use sigma
-                //  double alpha2 = iProp.getVol() * iProp.getDeltaGFree() / (2 * PI32 * lambda );
+                contactRadii[i] = rh1;
             }
         }
     }
 
-    public void setCells(EnergyPairs ePairs, int deltaEnd, double limit,
-            double hardSphere, boolean includeH, double shrinkValue,
-            double shrinkHValue, boolean useFF) {
+    public void setCellsOld(int deltaEnd, double limit, double hardSphere, boolean includeH, double shrinkValue, double shrinkHValue) {
         double limit2 = limit * limit;
         double[][] bounds = getBoundaries();
         int[] nCells = new int[3];
+        setRadii(hardSphere, includeH, shrinkValue, shrinkHValue);
 
-        setRadii(hardSphere, includeH, shrinkValue, shrinkHValue, useFF);
-//        System.out.println("set cells");
+        clear();
 
-        ePairs.clear();
-        eBaseStackingPairs.clear();
+        for (int j = 0; j < 3; j++) {
+            nCells[j] = 1 + (int) Math.floor(bounds[j][1] / limit);
+        }
+        ArrayList<Integer>[][][] cells = new ArrayList[nCells[0]][nCells[1]][nCells[2]];
+
+        for (int i = 0; i < nAtoms; i++) {
+            double[] data = vecCoords[i].getValues();
+            int[] indices = new int[3];
+            for (int j = 0; j < 3; j++) {
+                indices[j] = (int) Math.floor((data[j] - bounds[j][0]) / limit);
+            }
+            if (cells[indices[0]][indices[1]][indices[2]] == null) {
+                cells[indices[0]][indices[1]][indices[2]] = new ArrayList<>();
+            }
+            cells[indices[0]][indices[1]][indices[2]].add(i);
+        }
+        for (int[] offset : offsets) {
+            for (int i = 0; i < nCells[0]; i++) {
+                int dI = i + offset[0];
+                if ((dI < 0) || (dI >= nCells[0])) {
+                    continue;
+                }
+                for (int j = 0; j < nCells[1]; j++) {
+                    int dJ = j + offset[1];
+                    if ((dJ < 0) || (dJ >= nCells[1])) {
+                        continue;
+                    }
+                    for (int k = 0; k < nCells[2]; k++) {
+                        int dK = k + offset[2];
+                        if ((dK < 0) || (dK >= nCells[2])) {
+                            continue;
+                        }
+                        ArrayList<Integer> pts0 = cells[i][j][k];
+                        ArrayList<Integer> pts1 = cells[dI][dJ][dK];
+                        if ((pts0 == null) || (pts1 == null)) {
+                            continue;
+                        }
+                        for (int ip : pts0) {
+                            if ((atoms[ip].getAtomicNumber() == 1) && !includeH) {
+                                continue;
+                            }
+                            for (int jp : pts1) {
+                                if ((atoms[jp].getAtomicNumber() == 1) && !includeH) {
+                                    continue;
+                                }
+                                if (ip != jp) {
+                                    int iAtom;
+                                    int jAtom;
+                                    if (ip < jp) {
+                                        iAtom = ip;
+                                        jAtom = jp;
+                                    } else {
+                                        iAtom = jp;
+                                        jAtom = ip;
+                                    }
+                                    Atom atom1 = atoms[iAtom];
+                                    Atom atom2 = atoms[jAtom];
+                                    double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
+                                    if (disSq < limit2) {
+                                        int iRes = resNums[iAtom];
+                                        int jRes = resNums[jAtom];
+                                        int deltaRes = jRes - iRes;
+                                        if (deltaRes >= deltaEnd) {
+                                            continue;
+                                        }
+                                        boolean notFixed = true;
+                                        double adjustClose = 0.0;
+                                        if ((iRes == jRes) || (deltaRes == 1)) {
+                                            if (fixed[iAtom][jAtom - iAtom - 1]) {
+                                                notFixed = false;
+                                            }
+                                            if (checkCloseAtoms(atom1, atom2)) {
+                                                adjustClose = 0.2;
+                                            }
+                                        }
+//                                        if (ok && (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6)) {
+//                                            double rH = contactRadii[iAtom] + contactRadii[jAtom];
+                                        boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
+                                        //boolean interactable2 = AtomEnergyProp.interact(atom1, atom2);
+
+                                        if (notFixed && interactable1) {
+                                            int iUnit;
+                                            int jUnit;
+                                            if (atom1.rotGroup != null) {
+                                                iUnit = atom1.rotGroup.rotUnit;
+                                            } else {
+                                                iUnit = -1;
+                                            }
+                                            if (atom2.rotGroup != null) {
+                                                jUnit = atom2.rotGroup.rotUnit;
+                                            } else {
+                                                jUnit = -1;
+                                            }
+
+                                            //double rH = ePair.getRh();
+                                            double rH = contactRadii[iAtom] + contactRadii[jAtom];
+                                            if (hBondable[iAtom] * hBondable[jAtom] < 0) {
+                                                rH -= hbondDelta;
+                                            }
+                                            rH -= adjustClose;
+
+                                            addPair(iAtom, jAtom, iUnit, jUnit, rH);
+
+                                        }
+                                    }
+                                }
+//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + dis);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        //System.out.println("nrep " + (repelEnd-repelStart) + " " + includeH + " " + limit);
+    }
+
+    public void setCells(EnergyLists eList, int deltaEnd, double limit, double hardSphere, boolean includeH, double shrinkValue, double shrinkHValue) {
+        double limit2 = limit * limit;
+        double[][] bounds = getBoundaries();
+        int[] nCells = new int[3];
+        setRadii(hardSphere, includeH, shrinkValue, shrinkHValue);
+
+        clear();
 
         for (int j = 0; j < 3; j++) {
             nCells[j] = 1 + (int) Math.floor(bounds[j][1] / limit);
@@ -349,7 +494,6 @@ public class EnergyCoords {
             int index = idx[0] + idx[1] * strides[1] + idx[2] * strides[2];
             cellCounts[index]++;
             cellIndex[i] = index;
-//            System.out.println(i + " index " + index + " " + atoms[i].getShortName() + " " + idx[0] + " " + idx[1] + " " + idx[2]);
         }
         int[] offsets1 = new int[offsets.length];
         int start = 0;
@@ -366,165 +510,96 @@ public class EnergyCoords {
         for (int i = 0; i < nAtoms; i++) {
             int index = cellIndex[i];
             atomIndex[cellStarts[index] + nAdded[index]] = i;
-//            System.out.println("index " + i + " " + index + " " + (cellStarts[index] + nAdded[index]));
             nAdded[index]++;
         }
-        for (int ix = 0; ix < nCells[0]; ix++) {
-            for (int iy = 0; iy < nCells[1]; iy++) {
-                for (int iz = 0; iz < nCells[2]; iz++) {
-                    int iCell = ix + iy * strides[1] + iz * strides[2];
-                    int iStart = cellStarts[iCell];
-                    int iEnd = iStart + cellCounts[iCell];
-//                    System.out.println("iCell " + iCell + " " + iStart + " " + iEnd + " " + ix + " " + iy + " " + iz);
-                    int jOffset = 0;
-                    for (int iOff = 0; iOff < offsets.length; iOff++) {
-                        int dX = offsets[iOff][0];
-                        int dY = offsets[iOff][1];
-                        int dZ = offsets[iOff][2];
-                        int jx = ix + dX;
-                        int jy = iy + dY;
-                        int jz = iz + dZ;
-//                        System.out.println(dX + " " + dY + " " + dZ + "iCell jCell");
-                        if ((jx < 0) || (jx >= nCells[0])) {
-                            continue;
-                        }
-                        if ((jy < 0) || (jy >= nCells[1])) {
-                            continue;
-                        }
-                        if ((jz < 0) || (jz >= nCells[2])) {
-                            continue;
-                        }
-                        int jCell = jx + jy * strides[1] + jz * strides[2];
-//                        System.out.println(iCell + " cell " + jCell + " offset " + iOff + " " + jOffset++);
-                        int jStart = cellStarts[jCell];
-                        int jEnd = jStart + cellCounts[jCell];
-//                        System.out.println("iCell " + iCell + " jCell " + jCell + " " + jStart + " " + jEnd);
+        for (int iCell = 0; iCell < nCellsTotal; iCell++) {
+            int iStart = cellStarts[iCell];
+            int iEnd = iStart + cellCounts[iCell];
+            for (int offset : offsets1) {
+                int jCell = iCell + offset;
+                if ((jCell < 0) || (jCell >= nCellsTotal)) {
+                    continue;
+                }
+                int jStart = cellStarts[jCell];
+                int jEnd = jStart + cellCounts[jCell];
 
-                        for (int i = iStart; i < iEnd; i++) {
-                            int ip = atomIndex[i];
-                            if ((atoms[ip].getAtomicNumber() == 1) && !includeH) {
-                                continue;
+                for (int i = iStart; i < iEnd; i++) {
+                    int ip = atomIndex[i];
+                    if ((atoms[ip].getAtomicNumber() == 1) && !includeH) {
+                        continue;
+                    }
+                    for (int j = jStart; j < jEnd; j++) {
+                        int jp = atomIndex[j];
+                        if ((atoms[jp].getAtomicNumber() == 1) && !includeH) {
+                            continue;
+                        }
+                        if (ip != jp) {
+                            int iAtom;
+                            int jAtom;
+                            if (ip < jp) {
+                                iAtom = ip;
+                                jAtom = jp;
+                            } else {
+                                iAtom = jp;
+                                jAtom = ip;
                             }
-                            if (iCell == jCell) {
-                                jStart = i + 1;
-                            }
-                            for (int j = jStart; j < jEnd; j++) {
-                                int jp = atomIndex[j];
-                                if ((atoms[jp].getAtomicNumber() == 1) && !includeH) {
+                            Atom atom1 = atoms[iAtom];
+                            Atom atom2 = atoms[jAtom];
+                            double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
+                            if (disSq < limit2) {
+                                int iRes = resNums[iAtom];
+                                int jRes = resNums[jAtom];
+                                int deltaRes = jRes - iRes;
+                                if (deltaRes >= deltaEnd) {
                                     continue;
                                 }
-                                if (ip != jp) {
-                                    int iAtom;
-                                    int jAtom;
-                                    if (ip < jp) {
-                                        iAtom = ip;
-                                        jAtom = jp;
-                                    } else {
-                                        iAtom = jp;
-                                        jAtom = ip;
+                                boolean notFixed = true;
+                                double adjustClose = 0.0;
+                                if ((iRes == jRes) || (deltaRes == 1)) {
+                                    if (fixed[iAtom][jAtom - iAtom - 1]) {
+                                        notFixed = false;
                                     }
-                                    Atom atom1 = atoms[iAtom];
-                                    Atom atom2 = atoms[jAtom];
-                                    double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
-//                                    System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
-
-                                    double limit2R = limit2;
-                                    boolean stackCheck = (atom1.getEntity() != atom2.getEntity()) && atom1.getFlag(Atom.RING) && !atom1.getName().contains("'")
-                                            && atom2.getFlag(Atom.RING) && !atom2.getName().contains("'");
-                                    Atom[] planeAtoms1 = null;
-                                    Atom[] planeAtoms2 = null;
-                                    if (stackCheck) {
-                                        limit2R = 36.0;
-                                        planeAtoms1 = atom1.getPlaneAtoms();
-                                        planeAtoms2 = atom2.getPlaneAtoms();
-                                    }
-                                    if (disSq < limit2R) {
-                                        int iRes = resNums[iAtom];
-                                        int jRes = resNums[jAtom];
-                                        int deltaRes = Math.abs(jRes - iRes);
-                                        if (deltaRes >= deltaEnd) {
-                                            continue;
-                                        }
-                                        boolean notFixed = true;
-                                        double adjustClose = 0.0;
-                                        // fixme could we have invalid jAtom-iAtom-1, if res test inappropriate
-                                        if ((iRes == jRes) || (deltaRes == 1)) {
-                                            if (checkCloseAtoms(atom1, atom2)) {
-                                                adjustClose = 0.2;
-                                            }
-                                        }
-                                        notFixed = !getFixed(iAtom, jAtom);
-                                        boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
-                                        // fixme  this is fast, but could miss interactions for atoms that are not bonded
-                                        // as it doesn't test for an explicit bond between the pairs
-                                        // boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
-//                                        System.out.println("        " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes + " "
-//                                                + interactable1 + " " + notConstrained);
-                                        if (notFixed && interactable1) {
-                                            int iUnit;
-                                            int jUnit;
-                                            if (atom1.rotGroup != null) {
-                                                iUnit = atom1.rotGroup.rotUnit;
-                                            } else {
-                                                iUnit = -1;
-                                            }
-                                            if (atom2.rotGroup != null) {
-                                                jUnit = atom2.rotGroup.rotUnit;
-                                            } else {
-                                                jUnit = -1;
-                                            }
-
-                                            //double rH = ePair.getRh();
-                                            double rH = contactRadii[iAtom] + contactRadii[jAtom];
-                                            if (disSq < limit2) {
-                                                if (useFF) {
-                                                    double a = Math.sqrt(aValues[iAtom] * aValues[jAtom]);
-                                                    double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
-                                                    double c = cValues[iAtom] * cValues[jAtom];
-                                                    c *= 322.0 / 6.0;
-                                                    if (adjustClose > 0.01) {
-                                                        a *= 0.5;
-                                                        b *= 0.5;
-                                                    }
-                                                    ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH,
-                                                            a, b, c);
-                                                } else {
-                                                    if (hBondable[iAtom] * hBondable[jAtom] < 0) {
-                                                        rH -= hbondDelta;
-                                                    }
-                                                    rH -= adjustClose;
-                                                    ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
-                                                }
-                                            }
-                                            if (stackCheck && (planeAtoms1 != null) && (planeAtoms2 != null)) {
-
-                                                eBaseStackingPairs.addPair(iAtom,
-                                                        jAtom, iUnit, jUnit, rH,
-                                                        planeAtoms1[0].eAtom,
-                                                        planeAtoms1[1].eAtom,
-                                                        planeAtoms2[0].eAtom,
-                                                        planeAtoms2[1].eAtom
-                                                );
-                                            }
-                                        }
+                                    if (checkCloseAtoms(atom1, atom2)) {
+                                        adjustClose = 0.2;
                                     }
                                 }
-//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + disSq);
+                                boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
+                                // fixme  this is fast, but could miss interactions for atoms that are not bonded
+                                // as it doesn't test for an explicit bond between the pairs
+                                boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
+
+                                if (notFixed && interactable1 && notConstrained) {
+                                    int iUnit;
+                                    int jUnit;
+                                    if (atom1.rotGroup != null) {
+                                        iUnit = atom1.rotGroup.rotUnit;
+                                    } else {
+                                        iUnit = -1;
+                                    }
+                                    if (atom2.rotGroup != null) {
+                                        jUnit = atom2.rotGroup.rotUnit;
+                                    } else {
+                                        jUnit = -1;
+                                    }
+
+                                    //double rH = ePair.getRh();
+                                    double rH = contactRadii[iAtom] + contactRadii[jAtom];
+                                    if (hBondable[iAtom] * hBondable[jAtom] < 0) {
+                                        rH -= hbondDelta;
+                                    }
+                                    rH -= adjustClose;
+
+                                    addPair(iAtom, jAtom, iUnit, jUnit, rH);
+
+                                }
                             }
                         }
+//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + dis);
                     }
                 }
             }
         }
 //System.out.println("nrep " + (repelEnd-repelStart) + " " + includeH + " " + limit);
-    }
-
-    boolean getFixed(int i, int j) {
-        return fixed[i][j];
-    }
-
-    void setFixed(int i, int j, boolean state) {
-        fixed[i][j] = state;
     }
 
     public double[][][] getFixedRange() {
@@ -547,21 +622,19 @@ public class EnergyCoords {
                 resStarts[j++] = i;
             }
         }
-        double[][][] disRange = new double[2][nAtoms][nAtoms];
-        fixed = new boolean[nAtoms][nAtoms];
+        double[][][] disRange = new double[2][nAtoms][];
+        fixed = new boolean[nAtoms][];
         for (int i = 0; i < nAtoms; i++) {
             int resNum = resNums[i];
-            int lastAtom = i + 500;
-            if (lastAtom >= nAtoms) {
-                lastAtom = nAtoms - 1;
+            int nResAtoms = resCounts[resNum];
+            nResAtoms -= (i - resStarts[resNum]) + 1;
+            if (resNum < (nResidues - 1)) {
+                nResAtoms += resCounts[resNum + 1];
             }
-            int nResAtoms = lastAtom - i;
-//            int nResAtoms = resCounts[resNum];
-//            nResAtoms -= (i - resStarts[resNum]) + 1;
-//            if (resNum < (nResidues - 1)) {
-//                nResAtoms += resCounts[resNum + 1];
-//            }
+            disRange[0][i] = new double[nResAtoms];
+            fixed[i] = new boolean[nResAtoms];
             Arrays.fill(disRange[0][i], Double.MAX_VALUE);
+            disRange[1][i] = new double[nResAtoms];
             Arrays.fill(disRange[1][i], Double.NEGATIVE_INFINITY);
 
         }
@@ -571,8 +644,8 @@ public class EnergyCoords {
     public void updateRanges(double[][][] disRanges) {
         for (int i = 0; i < nAtoms; i++) {
             FastVector3D v1 = vecCoords[i];
-            for (int j = 0; j < nAtoms; j++) {
-                FastVector3D v2 = vecCoords[j];
+            for (int j = 0, len = disRanges[0][i].length; j < len; j++) {
+                FastVector3D v2 = vecCoords[i + j + 1];
                 double dis = v1.dis(v2);
                 disRanges[0][i][j] = Math.min(dis, disRanges[0][i][j]);
                 disRanges[1][i][j] = Math.max(dis, disRanges[1][i][j]);
@@ -584,59 +657,26 @@ public class EnergyCoords {
         double tol = 0.2;
         int nFixed = 0;
         for (int i = 0; i < nAtoms; i++) {
-            for (int j = 0; j < nAtoms; j++) {
-                double delta = Math.abs(disRanges[1][i][j] - disRanges[0][i][j]);
-                //System.out.println(i + " " + j + " " + atoms[i].getShortName() + " " + atoms[i + j + 1].getShortName() + " " + delta);
-                if (delta < tol) {
-                    setFixed(i, j, true);
-                }
-                if (getFixed(i, j)) {
+//            System.out.print(i);
+            for (int j = 0, len = disRanges[0][i].length; j < len; j++) {
+                double delta = disRanges[1][i][j] - disRanges[0][i][j];
+                fixed[i][j] = delta < tol;
+                if (fixed[i][j]) {
                     nFixed++;
                 }
+                Atom atom1 = atoms[i];
+                Atom atom2 = atoms[i + j + 1];
 //                if (fixed[i][j]) {
 //                    System.out.print(" " + j);
 //                }
             }
 //            System.out.println("");
         }
-        //dumpFixed();
-    }
-
-    public void dumpFixed() {
-        for (int i = 0; i < fixed.length; i++) {
-            String rName1 = ((Residue) atoms[i].getEntity()).getName();
-            String aName1 = atoms[i].getName();
-            String name1;
-            if (aName1.contains("'")) {
-                name1 = aName1;
-            } else {
-                name1 = rName1 + "." + aName1;
-            }
-            for (int j = 0; j < fixed[i].length; j++) {
-
-                if ((i != j) && fixed[i][j]) {
-                    String rName2 = ((Residue) atoms[j].getEntity()).getName();
-                    String aName2 = atoms[j].getName();
-                    String name2;
-                    if (aName2.contains("'")) {
-                        name2 = aName2;
-                    } else {
-                        name2 = rName2 + "." + aName2;
-                    }
-                    if (name1.compareTo(name2) <= 0) {
-                        System.out.println("fix " + name1 + " " + name2);
-                    } else {
-                        System.out.println("fix " + name2 + " " + name1);
-
-                    }
-                }
-            }
-        }
+        System.out.println("nfix " + nFixed);
     }
 
     public boolean fixedCurrent() {
-        boolean status = (fixed != null) && (fixed.length == nAtoms);
-        return status;
+        return (fixed != null) && (fixed.length == nAtoms);
     }
 
     public boolean checkCloseAtoms(Atom atom1, Atom atom2) {

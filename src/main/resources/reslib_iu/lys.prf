@@ -1,46 +1,36 @@
 LNAME Lysine
 SNAME lys
 RCHAR K
-ATOM   N      N     1.32  114.00  -120.0  -0.34790
-ATOM   H      H     1.00  123.00  0.0     0.27190 middle
-ATOM   H      H     1.00  123.00  0.0     0.27190 end
-ATOM   H1     H1    1.08  109.00  60.0    0.27190 start
-ATOM   H2     H2    1.08  109.00  60.0    0.27190 start
-ATOM   H3     H3    1.08  109.00  60.0    0.27190 start
-ATOM   CA     CX    1.47  123.00  180.0   -0.24000
-ATOM   HA     H1    1.08  109.47  -120.0  0.14260
-ATOM   CB     C8    1.53  109.47  -121.5  -0.00940
-ATOM   HB2    HC    1.08  109.47  -120.0  0.03620
-ATOM   HB3    HC    1.08  109.47  -120.0  0.03620
-ATOM   CG     C8    1.53  109.47  0.0     0.01870
-ATOM   HG2    HC    1.08  109.47  -120.0  0.01030
-ATOM   HG3    HC    1.08  109.47  -120.0  0.01030
-ATOM   CD     C8    1.53  109.47  0.0     -0.04790
-ATOM   HD2    HC    1.08  109.47  -120.0  0.06210
-ATOM   HD3    HC    1.08  109.47  -120.0  0.06210
-ATOM   CE     C8    1.53  109.47  0.0     -0.01430
-ATOM   HE2    HP    1.08  109.47  -120.0  0.11350
-ATOM   HE3    HP    1.08  109.47  -120.0  0.11350
-ATOM   NZ     N3    1.47  109.47  0.0     -0.38540
-ATOM   HZ1    H     1.00  109.47  0.0     0.34000
-ATOM   HZ2    H     1.00  109.47  -120.0  0.34000
-ATOM   HZ3    H     1.00  109.47  -120.0  0.34000
-ATOM   C      C     1.53  109.47  120.0   0.73410
-ATOM   O      O     1.24  120.00  180.0   -0.58940 start
-ATOM   O      O     1.24  120.00  180.0   -0.58940 middle
-ATOM   O      O     1.24  180.00  120.0   -0.58940 end
-ATOM   OXT    OH    1.24  180.00  120.0   -0.58940 end
-FAMILY   -      N      H      CA    middle
-FAMILY   -      N      H      CA    end
-FAMILY   -      N      H1     H2     H3    CA    start    
+ATOM   N      N'   1.32  114.00  -120.0
+ATOM   H      H'   1.00  123.00     0.0
+ATOM   CA     C1   1.47  123.00   180.0
+ATOM   HA     H    1.08  109.47  -120.0
+ATOM   CB     C2   1.53  109.47  -121.5
+ATOM   HB2    H    1.08  109.47  -120.0
+ATOM   HB3    H    1.08  109.47  -120.0
+ATOM   CG     C2   1.53  109.47     0.0
+ATOM   HG2    H    1.08  109.47  -120.0
+ATOM   HG3    H    1.08  109.47  -120.0
+ATOM   CD     C2   1.53  109.47     0.0
+ATOM   HD2    H    1.08  109.47  -120.0
+ATOM   HD3    H    1.08  109.47  -120.0
+ATOM   CE     C2   1.53  109.47     0.0
+ATOM   HE2    H    1.08  109.47  -120.0
+ATOM   HE3    H    1.08  109.47  -120.0
+ATOM   NZ     N+   1.47  109.47     0.0
+ATOM   HZ1    H+   1.00  109.47     0.0
+ATOM   HZ2    H+   1.00  109.47  -120.0
+ATOM   HZ3    H+   1.00  109.47  -120.0
+ATOM   C      C'   1.53  109.47   120.0
+ATOM   O      O'   1.24  120.00   180.0
+FAMILY   -      N      H      CA     
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
 FAMILY   CB     CG     CD     HG3    HG2    
 FAMILY   CG     CD     CE     HD3    HD2    
 FAMILY   CD     CE     NZ     HE3    HE2    
 FAMILY   CE     NZ     HZ1    HZ2    HZ3    
-FAMILY   CA     C      +      =O  
-FAMILY   CA     C      OXT    =O  end     
+FAMILY   CA     C      +      O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 2

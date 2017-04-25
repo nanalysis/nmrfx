@@ -15,12 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.SpatialSet;
+package org.nmrfx.structure.chemistry;
 
 /**
  *
@@ -44,18 +40,11 @@ public class ElectrostaticInteraction {
     public static boolean validate(SpatialSet target, SpatialSet source, int structureNum) {
         boolean valid = false;
         Atom donor = target.atom.getParent();
-        boolean hasLigand = false;
-        boolean adjacent = false;
-        if (!(source.atom.entity instanceof Residue) || !(target.atom.entity instanceof Residue)) {
-            hasLigand = true;
-        } else {
-            Residue sourceRes = (Residue) source.atom.entity;
-            Residue targetRes = (Residue) target.atom.entity;
-            adjacent = (targetRes.previous == sourceRes) || (sourceRes.previous == targetRes);
-        }
         Atom sourceParent = source.atom.getParent();
         if ((sourceParent != null) && (donor != null)) {
-            if ((sourceParent.entity != donor.entity) && (!adjacent || hasLigand)) {
+            Residue sourceRes = (Residue) source.atom.entity;
+            Residue targetRes = (Residue) target.atom.entity;
+            if ((sourceParent.entity != donor.entity) && (targetRes.previous != sourceRes) && (sourceRes.previous != targetRes)) {
                 Point3 donorPt = donor.getPoint(structureNum);
                 Point3 targetPt = target.atom.getPoint(structureNum);
                 if (donorPt != null) {

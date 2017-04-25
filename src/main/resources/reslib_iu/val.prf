@@ -1,38 +1,28 @@
 LNAME Valine
 SNAME val
 RCHAR V
-ATOM   N      N     1.32  114.00  -120.0  -0.41570
-ATOM   H      H     1.00  123.00  0.0     0.27190 middle
-ATOM   H      H     1.00  123.00  0.0     0.27190 end
-ATOM   H1     H1    1.08  109.00  60.0    0.27190 start
-ATOM   H2     H2    1.08  109.00  60.0    0.27190 start
-ATOM   H3     H3    1.08  109.00  60.0    0.27190 start
-ATOM   CA     CX    1.47  123.00  180.0   -0.08750
-ATOM   HA     H1    1.08  109.47  -120.0  0.09690
-ATOM   CB     3C    1.53  109.47  -121.5  0.29850
-ATOM   HB     HC    1.08  109.47  120.0   -0.02970
-ATOM   CG2    CT    1.53  109.47  120.0   -0.31920
-ATOM   HG21   HC    1.08  109.00  120.0   0.07910
-ATOM   HG22   HC    1.08  109.00  120.0   0.07910
-ATOM   HG23   HC    1.08  109.00  120.0   0.07910
-ATOM   CG1    CT    1.53  109.47  180.0   -0.31920
-ATOM   HG11   HC    1.08  109.00  120.0   0.07910
-ATOM   HG12   HC    1.08  109.00  120.0   0.07910
-ATOM   HG13   HC    1.08  109.00  120.0   0.07910
-ATOM   C      C     1.53  109.47  120.0   0.59730
-ATOM   O      O     1.24  121.00  180.0   -0.56790 start
-ATOM   O      O     1.24  121.00  180.0   -0.56790 middle
-ATOM   O      O     1.24  180.00  120.0   -0.56790 end
-ATOM   OXT    OH    1.24  180.00  120.0   -0.56790 end
-FAMILY   -      N      H      CA    middle
-FAMILY   -      N      H      CA    end
-FAMILY   -      N      H1     H2     H3    CA    start   
+ATOM   N      N'   1.32  114.00  -120.0
+ATOM   H      H'   1.00  123.00     0.0
+ATOM   CA     C1   1.47  123.00   180.0
+ATOM   HA     H    1.08  109.47  -120.0
+ATOM   CB     C1   1.53  109.47  -121.5
+ATOM   HB     H    1.08  109.47   120.0
+ATOM   CG2    C3   1.53  109.47   120.0
+ATOM   HG21   M    1.08  109.00   120.0
+ATOM   HG22   M    1.08  109.00   120.0
+ATOM   HG23   M    1.08  109.00   120.0
+ATOM   CG1    C3   1.53  109.47   180.0
+ATOM   HG11   M    1.08  109.00   120.0
+ATOM   HG12   M    1.08  109.00   120.0
+ATOM   HG13   M    1.08  109.00   120.0
+ATOM   C      C'   1.53  109.47   120.0
+ATOM   O      O'   1.24  121.00   180.0
+FAMILY   -      N      H      CA     
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG1    CG2    HB
 FAMILY   CB     CG2    HG23   HG22   HG21
 FAMILY   CB     CG1    HG13   HG12   HG11
-FAMILY   CA     C      +      =O  
-FAMILY   CA     C      OXT    =O  end    
+FAMILY   CA     C      +      O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG1     CHI21 1
@@ -43,7 +33,7 @@ ATREE  CB CG1 CG2
 ATREE  CG1
 ATREE  CG2
 ATREE  C  +  
-PSEUDO MG1 HG11 HG12 HG13
-PSEUDO MG2 HG21 HG22 HG23
-PSEUDO QG HG11 HG12 HG13 HG21 HG22 HG23
+PSEUDO QG1 HG11 HG12 HG13
+PSEUDO QG2 HG21 HG22 HG23
+PSEUDO QQG HG11 HG12 HG13 HG21 HG22 HG23
 CRAD CB   3.5

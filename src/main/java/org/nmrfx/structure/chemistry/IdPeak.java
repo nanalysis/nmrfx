@@ -15,18 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.chemistry.CoordSet;
-import org.nmrfx.chemistry.*;
-import org.nmrfx.chemistry.utilities.NvUtil;
-import org.nmrfx.chemistry.Util;
+import org.nmrfx.structure.utilities.NvUtil;
+import org.nmrfx.structure.utilities.Util;
 import java.util.*;
 
 public class IdPeak {
 
     static final int N_PEAK_ID = 500;
-    private MoleculeBase molecule;
+    private Molecule molecule;
     Vector atomList = new Vector();
     ArrayList[] protonList = new ArrayList[2];
     double keepThresh = 10000.0;
@@ -202,13 +201,9 @@ public class IdPeak {
                                 } else {
                                     String[] heavyPatterns = matchCriteria[iDim + 2].getAtomPats();
                                     Atom parent = sSet.atom.getParent();
-                                    if (parent == null) {
-                                        System.out.println("null parent " + sSet.atom.getShortName());
-                                    } else {
-                                        SpatialSet sSet2 = parent.spatialSet;
-                                        if (checkPPM(sSet2, matchCriteria[iDim + 2], jFold)) {
-                                            atomMatch = matchName(parent.getName().toLowerCase(), heavyPatterns);
-                                        }
+                                    SpatialSet sSet2 = parent.spatialSet;
+                                    if (checkPPM(sSet2, matchCriteria[iDim + 2], jFold)) {
+                                        atomMatch = matchName(parent.getName().toLowerCase(), heavyPatterns);
                                     }
                                 }
                                 if (atomMatch) {
@@ -228,13 +223,9 @@ public class IdPeak {
                                 } else {
                                     String[] heavyPatterns = matchCriteria[iDim + 2].getAtomPats();
                                     Atom parent = sSet.atom.getParent();
-                                    if (parent == null) {
-                                        System.out.println("null parent " + sSet.atom.getShortName());
-                                    } else {
-                                        SpatialSet sSet2 = parent.spatialSet;
-                                        if (checkPPM(sSet2, matchCriteria[iDim + 2], jFold)) {
-                                            atomMatch = matchName(parent.getName().toLowerCase(), heavyPatterns);
-                                        }
+                                    SpatialSet sSet2 = parent.spatialSet;
+                                    if (checkPPM(sSet2, matchCriteria[iDim + 2], jFold)) {
+                                        atomMatch = matchName(parent.getName().toLowerCase(), heavyPatterns);
                                     }
                                 }
                                 if (atomMatch) {
@@ -255,14 +246,14 @@ public class IdPeak {
     /**
      * @return the molecule
      */
-    public MoleculeBase getMolecule() {
+    public Molecule getMolecule() {
         return molecule;
     }
 
     /**
      * @param molecule the molecule to set
      */
-    public void setMolecule(MoleculeBase molecule) {
+    public void setMolecule(Molecule molecule) {
         this.molecule = molecule;
     }
 

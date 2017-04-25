@@ -15,9 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.Atom;
+import org.nmrfx.structure.chemistry.Atom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -149,8 +150,8 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
     }
 
     public void printAtomValues() {
-        List<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
-        List<Atom> angleAtoms = molecule.getAngleAtoms();
+        ArrayList<Atom> pseudoAngleAtoms = molecule.getPseudoAngleAtoms();
+        ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
 
         int nPseudoAngles = pseudoAngleAtoms.size() / 3;
         for (int i = 0; i < dihedrals.angleValues.length;) {
@@ -160,7 +161,7 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
                 atom = pseudoAngleAtoms.get(i / 2 * 3);
                 incrementByTwo = true;
             } else {
-                atom = angleAtoms.get(i - 2 * nPseudoAngles).daughterAtom;
+                atom = angleAtoms.get(i - 2 * nPseudoAngles);
             }
             System.out.println(i + ": " + "Atom name: " + atom.getFullName() + " Angle Value = " + dihedrals.angleValues[i]);
 
@@ -183,8 +184,7 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
 
         double energyStart = value(dihedrals);
         System.out.println("energyStart: " + energyStart);
-        double energyDelta = Math.abs(energyStart) < 0.2 ? 0.2 : energyStart;
-        double energyLim = energyStart + Math.abs(energyDelta * limMul);
+        double energyLim = energyStart + Math.abs(energyStart * limMul);
         double ranfact = 1.0;
         int nSamples = 10;
         int nTries = 20;
@@ -210,11 +210,11 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
                     energyMax = energy;
                 }
             }
-            double f = (double) nAbove / nSamples;
-            System.out.printf("%.2f %.3f %8.2f %8.2f %8.2f\n", f, ranfact, energyStart, energyMin, energyMax);
-            if (f > 0.5) {
+            if (nAbove > (nSamples / 2)) {
                 ranfact *= 0.64;
-            } else {
+            }
+            System.out.printf("%2d %.3f %.1f %.1f %.1f\n", nAbove, ranfact, energyStart, energyMin, energyMax);
+            if (nAbove < (nSamples / 2)) {
                 break;
             }
         }

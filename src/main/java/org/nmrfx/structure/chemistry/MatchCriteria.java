@@ -15,12 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.peaks.Peak;
-
-
-public class MatchCriteria { 
+public class MatchCriteria {
 
     private final int dim;
     private final String relation;
@@ -45,10 +43,6 @@ public class MatchCriteria {
 
     public void setPPM(double value) {
         ppm = value;
-    }
-
-    public void setPPM(Peak peak) {
-        ppm = peak.getPeakDim(dim).getChemShiftValue();
     }
 
     /**

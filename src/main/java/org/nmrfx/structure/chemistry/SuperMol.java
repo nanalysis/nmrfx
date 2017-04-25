@@ -15,14 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.chemistry.SpatialSet;
-
 import java.util.*;
-import org.nmrfx.chemistry.MoleculeBase;
 
 public class SuperMol {
 
@@ -32,9 +28,9 @@ public class SuperMol {
     double[] xCenter;
     double[] yCenter;
     double rms;
-    MoleculeBase molecule;
+    Molecule molecule;
 
-    public SuperMol(MoleculeBase molecule) {
+    public SuperMol(Molecule molecule) {
         this.molecule = molecule;
     }
 
@@ -48,7 +44,8 @@ public class SuperMol {
         Point3 pt1;
         Point3 pt2;
         double t_rms = 0.0;
-        List<SpatialSet> selected = molecule.getAtomsByProp(Atom.SUPER);
+        Vector selected = molecule.getAtomsByProp(Atom.SUPER);
+        System.out.println("size is " + selected.size());
         x = new double[selected.size()][3];
         y = new double[selected.size()][3];
         ArrayList<SuperResult> superRMS = new ArrayList<SuperResult>();
@@ -70,7 +67,7 @@ public class SuperMol {
                 }
                 j = 0;
                 for (int i = 0; i < selected.size(); i++) {
-                    spatialSet = selected.get(i);
+                    spatialSet = (SpatialSet) selected.elementAt(i);
 
                     pt1 = (Point3) spatialSet.getPoint(iFix);
 
@@ -95,6 +92,7 @@ public class SuperMol {
 
                 if (j >= 3) {
                     cal_super(x, y, j);
+                    System.out.println("rms is " + rms);
                     SuperResult sResult = new SuperResult(iFix, iMov, rms);
                     superRMS.add(sResult);
                     t_rms += rms;

@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.fastlinear;
 
 import org.apache.commons.math3.util.FastMath;
-import org.apache.commons.math3.util.MathArrays;
 
 /**
  *
@@ -43,18 +43,6 @@ public class FastVector3D extends FastVector {
         return new FastVector3D(data[0], data[1], data[2]);
     }
 
-    public double getX() {
-        return data[0];
-    }
-
-    public double getY() {
-        return data[1];
-    }
-
-    public double getZ() {
-        return data[2];
-    }
-
     public void set(double x, double y, double z) {
         data[0] = x;
         data[1] = y;
@@ -74,14 +62,6 @@ public class FastVector3D extends FastVector {
 
     public double sumSq() {
         return data[0] * data[0] + data[1] * data[1] + data[2] * data[2];
-    }
-
-    public static double distance(FastVector3D v1, FastVector3D v2) {
-        return v1.dis(v2);
-    }
-
-    public static double distanceSq(FastVector3D v1, FastVector3D v2) {
-        return v1.disSq(v2);
     }
 
     public double dis(FastVector3D v2) {
@@ -119,42 +99,4 @@ public class FastVector3D extends FastVector {
         target.data[2] = data[2] + dz;
     }
 
-    public void subtract(double dx, double dy, double dz, FastVector3D target) {
-        target.data[0] = data[0] - dx;
-        target.data[1] = data[1] - dy;
-        target.data[2] = data[2] - dz;
-    }
-
-    public void subtract(FastVector3D v2, FastVector3D target) {
-        target.data[0] = data[0] - v2.getX();
-        target.data[1] = data[1] - v2.getY();
-        target.data[2] = data[2] - v2.getZ();
-    }
-
-    public void crossProduct(FastVector3D v1, FastVector3D v2, FastVector3D target) {
-        target.data[0] = MathArrays.linearCombination(v1.data[1], v2.data[2], -v1.data[2], v2.data[1]);
-        target.data[1] = MathArrays.linearCombination(v1.data[2], v2.data[0], -v1.data[0], v2.data[2]);
-        target.data[2] = MathArrays.linearCombination(v1.data[0], v2.data[1], -v1.data[1], v2.data[0]);
-    }
-
-    public double norm() {
-        return Math.sqrt(
-                data[0] * data[0]
-                + data[1] * data[1]
-                + data[2] * data[2]);
-    }
-
-    public double dotProduct(FastVector3D v2) {
-        return MathArrays.linearCombination(
-                data[0], v2.data[0],
-                data[1], v2.data[1],
-                data[2], v2.data[2]);
-    }
-
-    public static double angle(FastVector3D v1, FastVector3D v2) {
-
-        double normProduct = v1.norm() * v2.norm();
-        double dot = v1.dotProduct(v2);
-        return Math.acos(dot / normProduct);
-    }
 }

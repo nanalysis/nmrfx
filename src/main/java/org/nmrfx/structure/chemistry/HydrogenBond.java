@@ -15,11 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.chemistry.SpatialSet;
+package org.nmrfx.structure.chemistry;
 
 /**
  *
@@ -29,8 +26,6 @@ public class HydrogenBond {
 
     static final double toleranceHN = 3.5;
     static final double toleranceHA = 2.77;
-    static final double toleranceRNA = 2.9;
-
     final SpatialSet hydrogen;
     final SpatialSet acceptor;
 
@@ -41,43 +36,6 @@ public class HydrogenBond {
 
     public boolean validate(int structureNum) {
         return validate(hydrogen, acceptor, structureNum);
-    }
-
-    /**
-     * Test if two atoms have the correct geometry to be in a hydrogen bond
-     *
-     * @param hydrogen SpatialSet for the hydrogen
-     * @param acceptor SpatialSet for the hydrogen bond acceptor (typically O or
-     * N)
-     * @param structureNum
-     * @return boolean depending on whether the geometry is correct
-     */
-    public static boolean validateRNA(SpatialSet hydrogen, SpatialSet acceptor, int structureNum) {
-        boolean valid = false;
-        Atom donor = hydrogen.atom.getParent();
-        Atom acceptorParent = acceptor.atom.getParent();
-        if ((acceptorParent != null) && (donor != null)) {
-            if (acceptorParent.entity != donor.entity) {
-                Point3 donorPt = donor.getPoint(structureNum);
-                Point3 hydrogenPt = hydrogen.atom.getPoint(structureNum);
-                if (donorPt != null) {
-                    Point3 acceptorPt = acceptor.getPoint(structureNum);
-                    if (acceptorPt != null) {
-                        double distance = Atom.calcDistance(hydrogenPt, acceptorPt);
-                        if (distance < toleranceRNA) {
-                            double angle = getRNAAngle(hydrogen, acceptor, structureNum);
-                            if (angle > 1.85) {
-//                                System.out.println(angle + "  " +distance + "  " + hydrogen.atom.getResidueName()+ hydrogen.atom.getResidueNumber()+ " " +hydrogen.atom.getName() + "   " +  acceptor.atom.getResidueName()+acceptor.atom.getResidueNumber()+ " " +acceptor.atom.getName());
-                                valid = true;
-
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-        return valid;
     }
 
     public static boolean validate(SpatialSet hydrogen, SpatialSet acceptor, int structureNum) {
@@ -124,16 +82,6 @@ public class HydrogenBond {
         double dz = acceptorParentPt.getZ() - hydrogenParentPt.getZ();
         Point3 acceptorOffsetPt = new Point3(acceptorPt.getX() - dx, acceptorPt.getY() - dy, acceptorPt.getZ() - dz);
         double angle = Atom.calcAngle(hydrogenPt, hydrogenParentPt, acceptorOffsetPt);
-        return angle;
-
-    }
-
-    public static double getRNAAngle(SpatialSet hydrogen, SpatialSet acceptor, int structureNum) {
-        Point3 hydrogenPt = hydrogen.getPoint(structureNum);
-        Point3 acceptorPt = acceptor.getPoint(structureNum);
-        SpatialSet hydrogenParent = hydrogen.atom.getParent().spatialSet;
-        Point3 hydrogenParentPt = hydrogenParent.getPoint(structureNum);
-        double angle = Atom.calcAngle(acceptorPt, hydrogenPt, hydrogenParentPt);
         return angle;
 
     }

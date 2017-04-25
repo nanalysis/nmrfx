@@ -15,11 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.chemistry.energy;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.AtomEnergyProp;
-import org.nmrfx.chemistry.Util;
+import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.MissingCoordinatesException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.SuperMol;
@@ -28,10 +27,8 @@ import org.nmrfx.structure.fastlinear.FastMatrix;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.math3.util.FastMath;
 import java.util.Random;
-import org.nmrfx.utilities.ProgressUpdater;
 import org.python.core.PyFloat;
 import org.python.core.PyFunction;
 import org.python.core.PyObject;
@@ -71,7 +68,6 @@ public class RotationalDynamics {
     Random rand = null;
     public static boolean firstRun = true;
     public TrajectoryWriter trajectoryWriter = null;
-    private static ProgressUpdater progressUpdater = null;
     PyObject tempFunction;
     PyObject econFunction;
 
@@ -93,10 +89,6 @@ public class RotationalDynamics {
         // makeInertias now
     }
 
-    public static void setUpdater(ProgressUpdater updater) {
-        progressUpdater = updater;
-    }
-
     public void setTrajectoryWriter(TrajectoryWriter trajWriter) {
         this.trajectoryWriter = trajWriter;
     }
@@ -110,7 +102,7 @@ public class RotationalDynamics {
     }
 
     final void getBranchAtoms() {
-        List<Atom> atoms = molecule.getAtomArray();
+        ArrayList<Atom> atoms = molecule.getAtomArray();
         int i = 0;
         for (AtomBranch branch : branches) {
             for (Atom atom : atoms) {
@@ -156,6 +148,60 @@ public class RotationalDynamics {
         }
     }
 
+    public void calcAcceleration(int prev) {
+        if (prev < 0) {
+            prev = 0;
+        }
+        if (prev > 2) {
+            prev = 2;
+        }
+        for (AtomBranch branch : branches) {
+            //System.out.println(branch.inertia[0] + " " + branch.inertia[1] + " " + branch.force + " " + branch.atom.getFullName());
+            branch.accel[0][0] = branch.accel[0][1];
+            branch.accel[0][1] = branch.accel[0][2];
+            if (branch.inertia[0] < 1.0e-4) {
+                branch.accel[0][2] = 0.0;
+            } else {
+                branch.accel[0][2] = -branch.force / branch.inertia[0] * 418.6;
+            }
+            for (int j = 0; j < prev; j++) {
+                branch.accel[0][j] = branch.accel[0][prev];
+            }
+            branch.accel[1][0] = branch.accel[1][1];
+            branch.accel[1][1] = branch.accel[1][2];
+            if (branch.inertia[1] < 1.0e-4) {
+                branch.accel[1][2] = 0.0;
+            } else {
+                branch.accel[1][2] = -branch.force / branch.inertia[1] * 418.6;
+            }
+            //System.out.println(branch.atom.getShortName() + " accel0 " + branch.accel[0][2] + " " + branch.inertia[0] + " " + branch.force);
+            //System.out.println(branch.atom.getShortName() + " accel1 " + branch.accel[1][2] + " " + branch.inertia[1]);
+            for (int j = 0; j < prev; j++) {
+                branch.accel[1][j] = branch.accel[1][prev];
+            }
+
+        }
+    }
+
+    public void initVelocities(double temp) {
+        for (AtomBranch branch : branches) {
+            if (branch.inertia[0] < 1.0e-6) {
+                branch.vel[0] = 0.0;
+            } else {
+                double v2 = temp / branch.inertia[0] * 0.4;
+                branch.vel[0] = velScale * Math.sqrt(v2) * (1.0 + rand.nextGaussian()) * Math.signum(rand.nextGaussian());
+            }
+            if (branch.inertia[1] < 1.0e-6) {
+                branch.vel[1] = 0.0;
+            } else {
+                double v2 = temp / branch.inertia[1] * 0.4;
+                branch.vel[1] = velScale * Math.sqrt(v2) * (1.0 + rand.nextGaussian()) * Math.signum(rand.nextGaussian());
+            }
+            //branch.vel[0] = 0.0;
+            //branch.vel[1] = 0.0;
+        }
+    }
+
     public void initVelocities2(double temp) {
         for (AtomBranch branch : branches) {
             if (branch.mass < 1.0e-6) {
@@ -177,6 +223,33 @@ public class RotationalDynamics {
         System.out.println("init vel " + temp + " " + outtemp);
     }
 
+    public void advanceDihedrals(double timestep) {
+        double[] delAngle = new double[2];
+        double sumSq = 0.0;
+        double max = 0.0;
+        for (AtomBranch branch : branches) {
+            for (int j = 0; j < 2; j++) {
+                double v = branch.vel[j];
+                double a0 = branch.accel[j][1];
+                double a1 = branch.accel[j][2];
+                delAngle[j] = v * timestep + (4.0 * a1 - a0) * timestep * timestep / 6.0;
+            }
+            Atom diAtom = branch.atom;
+            Atom daughter = diAtom.getAngleChild();
+            double deltaSum = delAngle[0] + delAngle[1];
+            double absDelta = FastMath.abs(deltaSum);
+            if (absDelta > max) {
+                max = absDelta;
+            }
+            sumSq += deltaSum * deltaSum;
+            //System.out.println(deltaSum);
+            daughter.dihedralAngle += deltaSum;
+            daughter.dihedralAngle = (float) Dihedral.reduceAngle(daughter.dihedralAngle);
+        }
+        sumDeltaSq += FastMath.sqrt(sumSq / branches.size());
+        sumMaxDelta += max;
+    }
+
     public void advanceDihedrals2(double timestep) {
         double delAngle;
         double sumSq = 0.0;
@@ -187,21 +260,37 @@ public class RotationalDynamics {
             double a1 = branch.rotAccel.getEntry(2);
             delAngle = v * timestep + (4.0 * a1 - a0) * timestep * timestep / 6.0;
             Atom diAtom = branch.atom;
-            Atom daughter = diAtom.daughterAtom;
+            Atom daughter = diAtom.getAngleChild();
             double absDelta = FastMath.abs(delAngle);
             if (absDelta > max) {
                 max = absDelta;
             }
             sumSq += delAngle * delAngle;
             //System.out.println(deltaSum);
-            if (daughter == null) {
-                System.out.println("daughter atom is null " + diAtom.getShortName());
-            }
             daughter.dihedralAngle += delAngle;
-            daughter.dihedralAngle = (float) Util.reduceAngle(daughter.dihedralAngle);
+            daughter.dihedralAngle = (float) Dihedral.reduceAngle(daughter.dihedralAngle);
         }
         sumDeltaSq += FastMath.sqrt(sumSq / branches.size());
         sumMaxDelta += max;
+    }
+
+    public void saveVelocities() {
+        if ((velStore == null) || (velStore.length != branches.size() * 2)) {
+            velStore = new double[branches.size() * 2];
+        }
+        int k = 0;
+        for (AtomBranch branch : branches) {
+            velStore[k++] = branch.vel[0];
+            velStore[k++] = branch.vel[1];
+        }
+    }
+
+    public void restoreVelocities() {
+        int k = 0;
+        for (AtomBranch branch : branches) {
+            branch.vel[0] = velStore[k++];
+            branch.vel[1] = velStore[k++];
+        }
     }
 
     public void saveVelocities2() {
@@ -237,6 +326,19 @@ public class RotationalDynamics {
         }
     }
 
+    public void advanceVelocities(double timestep) {
+        for (AtomBranch branch : branches) {
+            for (int j = 0; j < 2; j++) {
+                double a0 = branch.accel[j][0];
+                double a1 = branch.accel[j][1];
+                double a2 = branch.accel[j][2];
+                double delVelocity = (2.0 * a2 + 5.0 * a1 - a0) * timestep / 6.0;
+                //System.out.println(branch.atom.getShortName() + " vel " + j + " " + branch.vel[j] + " " + delVelocity + " " + a0 + " " + a1 + " " + a2 + " " + timestep);
+                branch.vel[j] += delVelocity;
+            }
+        }
+    }
+
     public void advanceVelocities2(double timestep) {
         double maxChange = 0.0;
         AtomBranch maxBranch = branches.get(0);
@@ -256,6 +358,33 @@ public class RotationalDynamics {
 //        double accel = maxBranch.epsk / maxBranch.dk - maxBranch.gkVec.dotProduct(maxBranch.alphaVec);
 
 //        System.out.printf("max change in velocity is %10.6g %10.6g %10.6g accel %10.6g %10.6g %10.6g %10.6g %10.6g %10.6g %10.6g\n", maxChange, maxBranch.rotAccel.getEntry(0), maxBranch.rotAccel.getEntry(1), maxBranch.rotAccel.getEntry(2), maxBranch.force, maxBranch.epsk, maxBranch.dk, maxBranch.gkVec.dotProduct(maxBranch.alphaVec), maxBranch.epsk / maxBranch.dk, accel);
+    }
+
+    double calcTemp(double timestep, double temp0) {
+        double temp = 0.0;
+        double time_c = 0.005;
+        double lambda;
+        for (AtomBranch branch : branches) {
+            for (int j = 0; j < 2; j++) {
+                temp += branch.inertia[j] * branch.vel[j] * branch.vel[j] / (velScale * velScale * 0.400);
+            }
+
+        }
+        temp = temp / ((branches.size() - 2) * 2.0);
+        //System.out.println("temp " + temp);
+
+        lambda = 1.0 + (timestep / time_c) * (temp0 / temp - 1.0);
+        if (lambda > 4.0) {
+            lambda = 4.0;
+        }
+        //System.out.println("temp " + temp + " " + lambda);
+        for (AtomBranch branch : branches) {
+            for (int j = 0; j < 2; j++) {
+                branch.vel[j] = branch.vel[j] * lambda;
+
+            }
+        }
+        return (temp);
     }
 
     double calcKineticEnergy() {
@@ -612,9 +741,7 @@ public class RotationalDynamics {
             if (((iStep + 1) % dihedrals.updateAt) == 0) {
                 dihedrals.energyList.makeAtomListFast();
             }
-            if ((dihedrals.energyList.getSwap() != 0) && (((iStep + 1) % dihedrals.energyList.getSwap()) == 0)) {
-                molecule.getEnergyCoords().doSwaps();
-            }
+
             lastSteps++;
             saveState();
 
@@ -633,15 +760,8 @@ public class RotationalDynamics {
             timeStep = currentTimeStep;
             //if ((((iStep + 1) % reportAt) == 0) || (deltaEnergy > 0.01)) {
             if (((iStep + 1) % reportAt) == 0) {
-                if ((progressUpdater != null) || (trajectoryWriter != null)) {
-                    molecule.updateFromVecCoords();
-
-                    if (trajectoryWriter != null) {
-                        trajectoryWriter.writeStructure();
-                    }
-                    if (progressUpdater != null) {
-                        progressUpdater.updateStatus(String.format("Step: %6d Energy: %7.1f", currentStep, lastTotalEnergy));
-                    }
+                if (trajectoryWriter != null) {
+                    trajectoryWriter.writeStructure();
                 }
                 double rms = 180.0 * (sumDeltaSq / lastSteps) / Math.PI;
                 double maxDelta = 180.0 * (sumMaxDelta / lastSteps) / Math.PI;

@@ -15,17 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Residue;
-import org.nmrfx.chemistry.Util;
+import org.nmrfx.structure.utilities.Util;
+
 
 public class AtomUtil {
     // FIXME  modify to use new atom data expression  like i.c{int < 0}
 
     public static int checkPattern(Atom[] atoms,
-                                   String[] pattern, String[] relation) throws IllegalArgumentException {
+            String[] pattern, String[] relation) throws IllegalArgumentException {
         {
             int i;
             int idel;
@@ -57,7 +57,7 @@ public class AtomUtil {
                     parent[i]--;
 
                     /*printf("Parent %d %d %d\n",parent[i],atoms[atmNums[i]].parent,atmNums[parent[i]]);*/
-                    if (((atoms[i].bonds.get(0))).end != atoms[parent[i]]) {
+                    if (((Bond) (atoms[i].bonds.elementAt(0))).end != atoms[parent[i]]) {
                         return (0);
                     }
                 }
@@ -81,8 +81,12 @@ public class AtomUtil {
                 atomPattern[i] = pattern[i].substring(dotPos + 1,
                         pattern[i].length()).toLowerCase();
 
-                patternIsSym[i] = resPattern[i].startsWith("i")
-                        || resPattern[i].startsWith("j");
+                if (resPattern[i].startsWith("i")
+                        || resPattern[i].startsWith("j")) {
+                    patternIsSym[i] = true;
+                } else {
+                    patternIsSym[i] = false;
+                }
             }
 
             for (iPass = 0; iPass < 2; iPass++) {

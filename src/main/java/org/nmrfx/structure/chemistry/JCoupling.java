@@ -15,11 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.chemistry.Atom;
-import org.nmrfx.chemistry.Point3;
-import org.nmrfx.chemistry.SpatialSet;
+package org.nmrfx.structure.chemistry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,18 +93,6 @@ public class JCoupling {
             updateDihedral(0);
         }
         return dihedral;
-    }
-
-    public Atom getAtom(int index) {
-        return spatialSets.get(index).atom;
-    }
-    
-    public int getNAtoms() {
-        return spatialSets.size();
-    }
-    
-    public int getShell() {
-        return shell;
     }
 
     public String toString() {
