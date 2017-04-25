@@ -1,0 +1,53 @@
+LNAME Lysine
+SNAME lys
+RCHAR K
+ATOM   N      N'   1.32  114.00  -120.0
+ATOM   H      H'   1.00  123.00     0.0
+ATOM   CA     C1   1.47  123.00   180.0
+ATOM   HA     H    1.08  109.47  -120.0
+ATOM   CB     C2   1.53  109.47  -121.5
+ATOM   HB2    H    1.08  109.47  -120.0
+ATOM   HB3    H    1.08  109.47  -120.0
+ATOM   CG     C2   1.53  109.47     0.0
+ATOM   HG2    H    1.08  109.47  -120.0
+ATOM   HG3    H    1.08  109.47  -120.0
+ATOM   CD     C2   1.53  109.47     0.0
+ATOM   HD2    H    1.08  109.47  -120.0
+ATOM   HD3    H    1.08  109.47  -120.0
+ATOM   CE     C2   1.53  109.47     0.0
+ATOM   HE2    H    1.08  109.47  -120.0
+ATOM   HE3    H    1.08  109.47  -120.0
+ATOM   NZ     N+   1.47  109.47     0.0
+ATOM   HZ1    H+   1.00  109.47     0.0
+ATOM   HZ2    H+   1.00  109.47  -120.0
+ATOM   HZ3    H+   1.00  109.47  -120.0
+ATOM   C      C'   1.53  109.47   120.0
+ATOM   O      O'   1.24  120.00   180.0
+FAMILY   -      N      H      CA     
+FAMILY   N      CA     C      CB     HA     
+FAMILY   CA     CB     CG     HB3    HB2    
+FAMILY   CB     CG     CD     HG3    HG2    
+FAMILY   CG     CD     CE     HD3    HD2    
+FAMILY   CD     CE     NZ     HE3    HE2    
+FAMILY   CE     NZ     HZ1    HZ2    HZ3    
+FAMILY   CA     C      +      O      
+ANGLE     CA      PHI 1
+ANGLE     CB     CHI1 2
+ANGLE     CG     CHI2 2
+ANGLE     CD     CHI3 2
+ANGLE     CE     CHI4 2
+ANGLE     NZ     CHI5 8
+ANGLE     C       PSI 1
+ATREE  CA  CB  C  
+ATREE  CB  CG  
+ATREE  CG  CD  
+ATREE  CD  CE  
+ATREE  CE  NZ  
+ATREE  NZ  
+ATREE  C  +  
+PSEUDO QB HB2 HB3
+PSEUDO QG HG2 HG3
+PSEUDO QD HD2 HD3
+PSEUDO QE HE2 HE3
+PSEUDO QZ HZ1 HZ2 HZ3
+CRAD CG   5.0

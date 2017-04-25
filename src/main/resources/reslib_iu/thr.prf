@@ -1,0 +1,35 @@
+LNAME Threonine
+SNAME thr
+RCHAR T
+ATOM   N      N'   1.32  114.00  -120.0
+ATOM   H      H'   1.00  123.00     0.0
+ATOM   CA     C1   1.47  123.00   180.0
+ATOM   HA     H    1.08  109.47  -120.0
+ATOM   CB     C2   1.53  109.47  -121.5
+ATOM   HB     H    1.08  109.47  -120.0
+ATOM   CG2    C3   1.53  109.47  -120.0
+ATOM   HG21   M    1.08  109.00   120.0
+ATOM   HG22   M    1.08  109.00   120.0
+ATOM   HG23   M    1.08  109.00   120.0
+ATOM   OG1    O    1.42  109.47     0.0
+ATOM   HG1    HO   1.00  110.00     0.0
+ATOM   C      C'   1.53  109.47   120.0
+ATOM   O      O'   1.24  121.00   180.0
+FAMILY   -      N      H     CA     
+FAMILY   N      CA     C      CB     HA     
+FAMILY   CA     CB     OG1    CG2    HB     
+FAMILY   CB     CG2    HG23   HG22   HG21
+FAMILY   CB     OG1    HG1    
+FAMILY   CA     C      +      O      
+ANGLE     CA      PHI 1
+ANGLE     CB     CHI1 2
+ANGLE     OG1    CHI21 6
+ANGLE     CG2    CHI22 1
+ANGLE     C       PSI 1
+ATREE  CA  CB  C  
+ATREE  CB  OG1 CG2
+ATREE  OG1  
+ATREE  CG2  
+ATREE  C  +  
+PSEUDO QG2 HG21 HG22 HG23
+CRAD CB   4.0

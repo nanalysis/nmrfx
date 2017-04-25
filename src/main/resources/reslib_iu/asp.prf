@@ -1,0 +1,30 @@
+LNAME Aspartate
+SNAME asp
+RCHAR D
+ATOM   N      N'   1.32  114.00  -120.0
+ATOM   H      H'   1.00  123.00     0.0
+ATOM   CA     C1   1.47  123.00   180.0
+ATOM   HA     H    1.08  109.47  -121.5
+ATOM   CB     C2   1.53  109.47  -121.5
+ATOM   HB2    H    1.08  109.47  -121.5
+ATOM   HB3    H    1.08  109.47  -121.5
+ATOM   CG     C-   1.53  109.47     0.0
+ATOM   OD1    O-   1.24  120.00     0.0
+ATOM   OD2    O-   1.24  120.00   180.0
+ATOM   C      C'   1.53  109.47   120.0
+ATOM   O      O'   1.24  120.00   180.0
+FAMILY   -      N      H      CA     
+FAMILY   N      CA     C      CB     HA     
+FAMILY   CA     CB     CG     HB3    HB2    
+FAMILY   CB     CG     OD1    OD2    
+FAMILY   CA     C      +      O      
+ANGLE     CA      PHI 1
+ANGLE     CB     CHI1 2
+ANGLE     CG     CHI2 4
+ANGLE     C       PSI 1
+ATREE  CA  CB  C  
+ATREE  CB  CG  
+ATREE  CG  
+ATREE  C  +  
+PSEUDO QB HB2 HB3
+CRAD CB   3.5

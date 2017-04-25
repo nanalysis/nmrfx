@@ -1,0 +1,26 @@
+LNAME Proline
+SNAME pro
+RCHAR P
+ATOM   N      N'   1.32  114.00     0.0
+ATOM   CA     C1   1.47  126.35   180.0
+ATOM   HA     H    1.08  109.47  -120.0
+ATOM   CB     C2   1.53  106.00  -121.5
+ATOM   HB2    H    1.08  109.47  -120.0
+ATOM   HB1    H    1.08  109.47  -120.0
+ATOM   CG     C2   1.53  106.00    22.5
+ATOM   HG2    H    1.08  109.47  -120.0
+ATOM   HG1    H    1.08  109.47  -120.0
+ATOM   CD     C2   1.53  106.00   -13.3
+ATOM   OE     O'   1.24  121.00   180.0
+ATOM   C      C'   1.53  113.88   -65.5
+ATOM   O      O'   1.24  121.00   180.0
+FAMILY   -      N      CA     -CD    
+FAMILY   N      CA     C      CB     HA     
+FAMILY   CA     CB     CG     HB1    HB2    
+FAMILY   CB     CG     CD     HG1    HG2    
+FAMILY   CG     CD     OE
+FAMILY   CD     OE     -N
+FAMILY   CA     C      +      O      
+ANGLE     C       PSI 1
+ATREE  C  +  
+CRAD CB   5.0

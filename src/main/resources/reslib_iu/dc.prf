@@ -1,0 +1,66 @@
+LNAME Cytosine
+SNAME dcyt
+RCHAR c
+ATOM   P      P    1.60  121.12  -156.6
+ATOM   OP1    O    1.48  108.13  -116.9
+ATOM   OP2    O    1.48  108.48  -127.0
+ATOM   O5'    O    1.61  105.68   -63.3
+ATOM   C5'    C2   1.42  121.55   -72.8
+ATOM   H5'    H    1.09  110.16  -120.9
+ATOM   H5''   H    1.09  109.42  -118.4
+ATOM   C4'    C1   1.54  112.02   171.0
+ATOM   H4'    H    1.09  107.75  -119.2
+ATOM   C3'    C1   1.53  114.24    65.0
+ATOM   H3'    H    1.09  109.29   114.4
+ATOM   C2'    C2   1.54  100.07   121.6
+ATOM   H2'    H    1.09  111.51   119.7
+ATOM   H2''   H    1.09  111.51   119.7
+ATOM   C1'    C1   1.53  101.00    37.8
+ATOM   H1'    H    1.09  109.67   120.0
+ATOM   O4'    O    1.43  113.05  -121.7
+ATOM   N1     N    1.50  109.80    93.1
+ATOM   C2     CB   1.40  118.25    83.5
+ATOM   O2     O    1.23  121.97   179.7
+ATOM   N3     N    1.35  120.83  -179.6
+ATOM   C4     CB   1.31  119.42    -0.1
+ATOM   N4     N    1.30  114.39  -179.7
+ATOM   H41    H    1.01  116.78    -0.2
+ATOM   H42    H    1.01  120.44  -179.7
+ATOM   C5     CA   1.42  122.74    -0.7
+ATOM   H5     H    1.08  122.69   178.4
+ATOM   C6     CA   1.36  117.40     1.4
+ATOM   H6     H    1.08  119.86   179.1
+ATOM   O3'    O    1.42  112.25    75.0
+
+FAMILY  -    P    O5'  OP1  OP2
+FAMILY  P    O5'  C5'
+FAMILY  O5'  C5'  C4' H5' H5''
+FAMILY  C5'  C4'  C3'  O4' H4'
+FAMILY  C4'  C3'  O3'  C2' H3'
+FAMILY  C3'  C2'  C1' H2' H2''
+FAMILY  C2'  C1'  N1   -O4' H1'
+FAMILY  C1'  N1   C2
+FAMILY  N1   C2   N3   O2
+FAMILY  C2   N3   C4
+FAMILY  N3   C4   C5   N4
+FAMILY  C4   N4   H41 H42
+FAMILY  C4   C5   C6 H5
+FAMILY  C5   C6   -N1 H6
+FAMILY  C3'  O3'   +
+
+ANGLE     O5'      ANG1 2
+ANGLE     C5'     ANG2 2
+ANGLE     C4'     ANG3 2
+ANGLE     N1      ANG4 2
+ANGLE     O3'    ANG5 2
+
+ATREE  O5' C5'
+ATREE C5' C4'
+ATREE C4' N1
+ATREE N1 O3'
+ATREE O3' +
+PSEUDO Q2' H2' H2''
+PSEUDO Q5' H5' H5''
+PSEUDO Q4 H41 H42
+CRAD N1 5.0
+

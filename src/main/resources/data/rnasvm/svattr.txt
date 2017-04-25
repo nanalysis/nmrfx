@@ -1,0 +1,380 @@
+AH8 nuc1 Pp PP pP pp P- p- Pm pm -
+AH8 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AH8 nuc3 AA AC AG AU A-
+AH8 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AH8 nuc5 Pp PP pP pp P- p- Pm pm -
+AH8 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH8 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH8 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH8 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH8 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH8 nuc1 Pp PP pP pp P- p- Pm pm -
+GH8 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GH8 nuc3 GA GC GG GU G-
+GH8 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GH8 nuc5 Pp PP pP pp P- p- Pm pm -
+GH8 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH8 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH8 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH8 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH8 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH2 nuc1 Pp PP pP pp P- p- Pm pm -
+AH2 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AH2 nuc3 AA AC AG AU A-
+AH2 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AH2 nuc5 Pp PP pP pp P- p- Pm pm -
+AH2 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH2 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH2 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH2 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH2 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH5 nuc1 Pp PP pP pp P- p- Pm pm -
+CH5 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CH5 nuc3 CA CC CG CU C-
+CH5 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CH5 nuc5 Pp PP pP pp P- p- Pm pm -
+CH5 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH5 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH5 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH5 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH5 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH5 nuc1 Pp PP pP pp P- p- Pm pm -
+UH5 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UH5 nuc3 UA UC UG UU U-
+UH5 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UH5 nuc5 Pp PP pP pp P- p- Pm pm -
+UH5 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH5 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH5 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH5 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH5 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH6 nuc1 Pp PP pP pp P- p- Pm pm -
+CH6 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CH6 nuc3 CA CC CG CU C-
+CH6 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CH6 nuc5 Pp PP pP pp P- p- Pm pm -
+CH6 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH6 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH6 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH6 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH6 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH6 nuc1 Pp PP pP pp P- p- Pm pm -
+UH6 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UH6 nuc3 UA UC UG UU U-
+UH6 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UH6 nuc5 Pp PP pP pp P- p- Pm pm -
+UH6 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH6 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH6 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH6 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH6 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH1p nuc1 Pp PP pP pp P- p- Pm pm -
+AH1p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AH1p nuc3 AA AC AG AU A-
+AH1p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AH1p nuc5 Pp PP pP pp P- p- Pm pm -
+AH1p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH1p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH1p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH1p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH1p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH1p nuc1 Pp PP pP pp P- p- Pm pm -
+GH1p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GH1p nuc3 GA GC GG GU G-
+GH1p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GH1p nuc5 Pp PP pP pp P- p- Pm pm -
+GH1p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH1p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH1p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH1p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH1p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH1p nuc1 Pp PP pP pp P- p- Pm pm -
+CH1p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CH1p nuc3 CA CC CG CU C-
+CH1p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CH1p nuc5 Pp PP pP pp P- p- Pm pm -
+CH1p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH1p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH1p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH1p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH1p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH1p nuc1 Pp PP pP pp P- p- Pm pm -
+UH1p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UH1p nuc3 UA UC UG UU U-
+UH1p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UH1p nuc5 Pp PP pP pp P- p- Pm pm -
+UH1p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH1p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH1p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH1p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH1p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH2p nuc1 Pp PP pP pp P- p- Pm pm -
+AH2p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AH2p nuc3 AA AC AG AU A-
+AH2p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AH2p nuc5 Pp PP pP pp P- p- Pm pm -
+AH2p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH2p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH2p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH2p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH2p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH2p nuc1 Pp PP pP pp P- p- Pm pm -
+GH2p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GH2p nuc3 GA GC GG GU G-
+GH2p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GH2p nuc5 Pp PP pP pp P- p- Pm pm -
+GH2p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH2p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH2p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH2p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH2p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH2p nuc1 Pp PP pP pp P- p- Pm pm -
+CH2p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CH2p nuc3 CA CC CG CU C-
+CH2p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CH2p nuc5 Pp PP pP pp P- p- Pm pm -
+CH2p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH2p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH2p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH2p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH2p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH2p nuc1 Pp PP pP pp P- p- Pm pm -
+UH2p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UH2p nuc3 UA UC UG UU U-
+UH2p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UH2p nuc5 Pp PP pP pp P- p- Pm pm -
+UH2p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH2p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH2p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH2p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH2p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH3p nuc1 Pp PP pP pp P- p- Pm pm -
+AH3p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AH3p nuc3 AA AC AG AU A-
+AH3p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AH3p nuc5 Pp PP pP pp P- p- Pm pm -
+AH3p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH3p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH3p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH3p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AH3p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH3p nuc1 Pp PP pP pp P- p- Pm pm -
+GH3p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GH3p nuc3 GA GC GG GU G-
+GH3p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GH3p nuc5 Pp PP pP pp P- p- Pm pm -
+GH3p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH3p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH3p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH3p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GH3p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH3p nuc1 Pp PP pP pp P- p- Pm pm -
+CH3p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CH3p nuc3 CA CC CG CU C-
+CH3p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CH3p nuc5 Pp PP pP pp P- p- Pm pm -
+CH3p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH3p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH3p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH3p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CH3p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH3p nuc1 Pp PP pP pp P- p- Pm pm -
+UH3p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UH3p nuc3 UA UC UG UU U-
+UH3p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UH3p nuc5 Pp PP pP pp P- p- Pm pm -
+UH3p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH3p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH3p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH3p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UH3p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2 nuc1 Pp PP pP pp P- p- Pm pm -
+AC2 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC2 nuc3 AA AC AG AU A-
+AC2 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC2 nuc5 Pp PP pP pp P- p- Pm pm -
+AC2 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC8 nuc1 Pp PP pP pp P- p- Pm pm -
+AC8 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC8 nuc3 AA AC AG AU A-
+AC8 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC8 nuc5 Pp PP pP pp P- p- Pm pm -
+AC8 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC8 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC8 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC8 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC8 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC8 nuc1 Pp PP pP pp P- p- Pm pm -
+GC8 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC8 nuc3 GA GC GG GU G-
+GC8 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC8 nuc5 Pp PP pP pp P- p- Pm pm -
+GC8 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC8 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC8 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC8 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC8 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC5 nuc1 Pp PP pP pp P- p- Pm pm -
+CC5 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC5 nuc3 CA CC CG CU C-
+CC5 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC5 nuc5 Pp PP pP pp P- p- Pm pm -
+CC5 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC5 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC5 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC5 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC5 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC5 nuc1 Pp PP pP pp P- p- Pm pm -
+UC5 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC5 nuc3 UA UC UG UU U-
+UC5 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC5 nuc5 Pp PP pP pp P- p- Pm pm -
+UC5 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC5 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC5 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC5 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC5 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC6 nuc1 Pp PP pP pp P- p- Pm pm -
+CC6 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC6 nuc3 CA CC CG CU C-
+CC6 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC6 nuc5 Pp PP pP pp P- p- Pm pm -
+CC6 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC6 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC6 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC6 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC6 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC6 nuc1 Pp PP pP pp P- p- Pm pm -
+UC6 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC6 nuc3 UA UC UG UU U-
+UC6 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC6 nuc5 Pp PP pP pp P- p- Pm pm -
+UC6 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC6 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC6 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC6 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC6 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC1p nuc1 Pp PP pP pp P- p- Pm pm -
+AC1p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC1p nuc3 AA AC AG AU A-
+AC1p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC1p nuc5 Pp PP pP pp P- p- Pm pm -
+AC1p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC1p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC1p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC1p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC1p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC1p nuc1 Pp PP pP pp P- p- Pm pm -
+GC1p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC1p nuc3 GA GC GG GU G-
+GC1p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC1p nuc5 Pp PP pP pp P- p- Pm pm -
+GC1p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC1p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC1p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC1p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC1p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC1p nuc1 Pp PP pP pp P- p- Pm pm -
+CC1p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC1p nuc3 CA CC CG CU C-
+CC1p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC1p nuc5 Pp PP pP pp P- p- Pm pm -
+CC1p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC1p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC1p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC1p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC1p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC1p nuc1 Pp PP pP pp P- p- Pm pm -
+UC1p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC1p nuc3 UA UC UG UU U-
+UC1p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC1p nuc5 Pp PP pP pp P- p- Pm pm -
+UC1p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC1p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC1p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC1p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC1p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2p nuc1 Pp PP pP pp P- p- Pm pm -
+AC2p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC2p nuc3 AA AC AG AU A-
+AC2p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC2p nuc5 Pp PP pP pp P- p- Pm pm -
+AC2p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC2p nuc1 Pp PP pP pp P- p- Pm pm -
+GC2p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC2p nuc3 GA GC GG GU G-
+GC2p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC2p nuc5 Pp PP pP pp P- p- Pm pm -
+GC2p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC2p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC2p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC2p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC2p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC2p nuc1 Pp PP pP pp P- p- Pm pm -
+CC2p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC2p nuc3 CA CC CG CU C-
+CC2p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC2p nuc5 Pp PP pP pp P- p- Pm pm -
+CC2p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC2p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC2p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC2p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC2p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC2p nuc1 Pp PP pP pp P- p- Pm pm -
+UC2p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC2p nuc3 UA UC UG UU U-
+UC2p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC2p nuc5 Pp PP pP pp P- p- Pm pm -
+UC2p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC2p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC2p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC2p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC2p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC3p nuc1 Pp PP pP pp P- p- Pm pm -
+AC3p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC3p nuc3 AA AC AG AU A-
+AC3p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC3p nuc5 Pp PP pP pp P- p- Pm pm -
+AC3p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC3p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC3p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC3p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC3p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC3p nuc1 Pp PP pP pp P- p- Pm pm -
+GC3p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC3p nuc3 GA GC GG GU G-
+GC3p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC3p nuc5 Pp PP pP pp P- p- Pm pm -
+GC3p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC3p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC3p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC3p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC3p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC3p nuc1 Pp PP pP pp P- p- Pm pm -
+CC3p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC3p nuc3 CA CC CG CU C-
+CC3p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC3p nuc5 Pp PP pP pp P- p- Pm pm -
+CC3p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC3p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC3p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC3p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC3p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC3p nuc1 Pp PP pP pp P- p- Pm pm -
+UC3p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC3p nuc3 UA UC UG UU U-
+UC3p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC3p nuc5 Pp PP pP pp P- p- Pm pm -
+UC3p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC3p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC3p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC3p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC3p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5

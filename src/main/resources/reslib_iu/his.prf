@@ -1,0 +1,40 @@
+LNAME Histidine
+SNAME his
+RCHAR H
+ATOM   N      N'   1.32  114.00  -120.0
+ATOM   H      H'   1.00  123.00     0.0
+ATOM   CA     C1   1.47  123.00   180.0
+ATOM   HA     H    1.08  109.47  -120.0
+ATOM   CB     C2   1.53  109.47  -121.5
+ATOM   HB2    H    1.08  109.47  -120.0
+ATOM   HB3    H    1.08  109.47  -120.0
+ATOM   CG     CA   1.52  115.10     0.0
+ATOM   CD2    CB   1.36  129.86   180.0
+ATOM   HD2    H    1.08  120.00   180.0
+ATOM   NE2    N+   1.39  109.32   180.0
+ATOM   HE2    H'   1.00  126.44   180.0
+ATOM   CE1    CB   1.32  105.83     0.0
+ATOM   HE1    H    1.08  120.00   180.0
+ATOM   ND1    N+   1.34  110.98     0.0
+ATOM   HD1    H'   1.00  126.44   180.0
+ATOM   C      C'   1.53  109.47   120.0
+ATOM   O      O'   1.24  121.00   180.0
+FAMILY   -      N      H      CA     
+FAMILY   N      CA     C      CB     HA     
+FAMILY   CA     CB     CG     HB3    HB2    
+FAMILY   CB     CG     CD2    -ND1
+FAMILY   CG     CD2    NE2    HD2    
+FAMILY   CD2    NE2    CE1    HE2
+FAMILY   NE2    CE1    ND1    HE1    
+FAMILY   CE1    ND1    HD1    
+FAMILY   CA     C      +      O      
+ANGLE     CA      PHI 1
+ANGLE     CB     CHI1 2
+ANGLE     CG     CHI2 3
+ANGLE     C       PSI 1
+ATREE  CA  CB  C  
+ATREE  CB  CG  
+ATREE  CG  
+ATREE  C  +  
+PSEUDO QB HB2 HB3
+CRAD CG   5.0

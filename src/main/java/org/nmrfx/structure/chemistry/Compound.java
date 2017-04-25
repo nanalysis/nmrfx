@@ -1,0 +1,161 @@
+/*
+ * NMRFx Structure : A Program for Calculating Structures 
+ * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package org.nmrfx.structure.chemistry;
+
+import org.nmrfx.structure.utilities.Util;
+import java.util.*;
+
+public class Compound extends Entity implements AtomContainer {
+
+    protected HashMap atomMap;
+    public String number = "";
+    public int iRes;
+    public int labelNum = 1;
+
+    protected Compound() {
+    }
+
+    public Compound(String number, String name) {
+        this.name = name;
+        this.number = number;
+        this.label = name;
+        atomMap = new HashMap();
+    }
+
+    public Compound(String number, String name, String label) {
+        this.name = name;
+        this.number = number;
+        this.label = label;
+        atomMap = new HashMap();
+    }
+
+    public Iterator iterator() {
+        return atoms.iterator();
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public String getNumber() {
+        return number;
+    }
+
+    public void setNumber(final String number) {
+        this.number = number;
+    }
+
+    @Override
+    public int getIDNum() {
+        return entityID;
+    }
+
+    public void removeAtom(Atom atom) {
+        super.removeAtom(atom);
+        atomMap.remove(atom.getName().toLowerCase());
+        Molecule.atomList = null;
+        setHasEquivalentAtoms(false);
+    }
+
+    public void addAtom(Atom afterAtom, Atom atom) {
+        super.addAtom(afterAtom, atom);
+        atom.entity = this;
+        atomMap.put(atom.name.toLowerCase(), atom);
+        Molecule.atomList = null;
+        setHasEquivalentAtoms(false);
+    }
+
+    public void addAtom(Atom atom) {
+        addAtom(null, atom);
+    }
+
+    public Atom getAtom(String name) {
+        return ((Atom) atomMap.get(name.toLowerCase()));
+    }
+
+    public Atom getAtomLoose(String name) {
+        return getAtom(name);
+    }
+
+    public ArrayList<Atom> getAtoms(String match) {
+        ArrayList<Atom> atomList = new ArrayList<Atom>();
+        match = match.toLowerCase();
+        for (Atom atom : atoms) {
+            String aName = atom.getName().toLowerCase();
+            if (Util.stringMatch(aName, match)) {
+                atomList.add(atom);
+            }
+        }
+        return atomList;
+    }
+
+    public ArrayList<Bond> getBonds() {
+        ArrayList<Bond> bondList = new ArrayList<>(bonds);
+        return bondList;
+    }
+
+    public void calcAllBonds() {
+        int result;
+        int nBonds = 0;
+        for (int i = 0; i < atoms.size(); i++) {
+            for (int j = i + 1; j < atoms.size(); j++) {
+                Atom atom1 = atoms.get(i);
+                Atom atom2 = atoms.get(j);
+                if (!atom1.isBonded(atom2)) {
+                    result = Atom.calcBond(atom1, atom2, 1);
+                    if (result == 2) {
+                        break;
+                    }
+                    if (result == 0) {
+                        nBonds++;
+                    }
+                }
+            }
+        }
+        System.err.println("Added " + nBonds + " bonds");
+    }
+
+    public int renameAtom(String oldName, String newName) {
+        Atom test = getAtom(newName);
+
+        if (test != null) {
+            return (1);
+        } else {
+            Atom atom = getAtom(oldName);
+            if (atom == null) {
+                return (1);
+            }
+            atom.name = newName;
+            atomMap.remove(oldName.toLowerCase());
+            atomMap.put(atom.name.toLowerCase(), atom);
+
+            return (0);
+        }
+    }
+
+    public void updateNames() {
+        HashMap newMap = new HashMap();
+        for (Atom atom : atoms) {
+            newMap.put(atom.name.toLowerCase(), atom);
+        }
+        atomMap = newMap;
+    }
+
+}
