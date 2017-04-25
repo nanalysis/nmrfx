@@ -62,6 +62,8 @@ import org.python.core.PyComplex;
 import org.python.core.PyObject;
 import org.python.core.PySequence;
 import org.python.core.PyType;
+import org.renjin.sexp.AtomicVector;
+import org.renjin.sexp.DoubleVector;
 
 /**
  * A class for representing vectors of data (typically for NMR). The data is stored as real or complex values. If
@@ -76,7 +78,7 @@ import org.python.core.PyType;
  *
  * @author michael
  */
-public class Vec extends PySequence implements MatrixType {
+public class Vec extends PySequence implements MatrixType, RAtomicVector {
 
     String name = "";
 
@@ -332,6 +334,72 @@ public class Vec extends PySequence implements MatrixType {
         return result;
     }
 
+    @Override
+    public double getElementAsDouble(int index) {
+        return getReal(index);
+    }
+
+    @Override
+    public org.apache.commons.math.complex.Complex getElementAsComplex(int i) {
+        return new org.apache.commons.math.complex.Complex(getReal(i), getImag(i));
+    }
+
+    @Override
+    public double[] toDoubleArray() {
+        double[] d = new double[length()];
+        for (int i = 0; i != d.length; ++i) {
+            d[i] = getReal(i);
+        }
+        return d;
+    }
+
+    @Override
+    public int length() {
+        return size;
+    }
+
+    @Override
+    public int indexOfNA() {
+        for (int i = 0, len = length(); i < len; i++) {
+            if (DoubleVector.isNA(getReal(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    public int indexOf(AtomicVector vector, int vectorIndex, int startIndex) {
+        if (!isComplex) {
+            double value = vector.getElementAsDouble(vectorIndex);
+            for (int i = startIndex; i < length(); ++i) {
+                if (value == getReal(i)) {
+                    return i;
+                }
+            }
+            return -1;
+
+        } else {
+            org.apache.commons.math.complex.Complex value = vector.getElementAsComplex(vectorIndex);
+            for (int i = startIndex; i < length(); ++i) {
+                if (getElementAsComplex(i).equals(value)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+    }
+
+    @Override
+    public int compare(int index1, int index2) {
+        if (!isComplex) {
+            return Double.compare(getElementAsDouble(index1), getElementAsDouble(index2));
+        } else {
+            throw new UnsupportedOperationException("implement me");
+
+        }
+    }
+
     /**
      * Objects of this class store an index and value. Typically used for getting the location and value of the maximum
      * or minimum in the vector.
@@ -390,7 +458,7 @@ public class Vec extends PySequence implements MatrixType {
      *
      * @return the list of names
      */
-    public static ArrayList<String> getNames() {
+    public static ArrayList<String> getVectorNames() {
         ArrayList<String> names = new ArrayList<>();
         names.addAll(vecMap.keySet());
         return names;
@@ -3697,7 +3765,7 @@ public class Vec extends PySequence implements MatrixType {
 
         if (Math.abs(p1) < tol) {
             if (Math.abs(p0) < tol) {
-              if (discardImaginary) {
+                if (discardImaginary) {
                     makeReal();
                 }
                 return (this);
