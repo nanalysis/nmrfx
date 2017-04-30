@@ -429,8 +429,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
         try {
             o = super.clone();
-            ((DatasetAttributes) o).posColor.set(posColor.get());
-            ((DatasetAttributes) o).negColor.set(negColor.get());
+            ((DatasetAttributes) o).setPosColor(getPosColor());
+            ((DatasetAttributes) o).setNegColor(getNegColor());
             ((DatasetAttributes) o).setPosLineWidth(getPosLineWidth());
             ((DatasetAttributes) o).setNegLineWidth(getNegLineWidth());
             ((DatasetAttributes) o).setLevel(getLevel());
@@ -439,8 +439,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ((DatasetAttributes) o).nDim = nDim;
             ((DatasetAttributes) o).fileName = fileName;
             ((DatasetAttributes) o).theFile = theFile;
-            ((DatasetAttributes) o).posDrawOn.set(posDrawOn.get());
-            ((DatasetAttributes) o).negDrawOn.set(negDrawOn.get());
+            ((DatasetAttributes) o).setPosDrawOn(getPosDrawOn());
+            ((DatasetAttributes) o).setNegDrawOn(getNegDrawOn());
             if (drawList != null) {
                 ((DatasetAttributes) o).drawList = drawList.clone();
             }
