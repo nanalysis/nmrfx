@@ -582,6 +582,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 double y = event.getDeltaY();
                 if (event.isControlDown()) {
                     scaleY(y);
+                } else if (event.isAltDown()) {
+                    zoom(-y / 10.0 + 1.0);
                 } else {
                     scroll(x, y);
                 }
