@@ -384,7 +384,7 @@ class refine:
                 try:
                     self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
                 except:
-                    pass
+                    print 'error adding ribose restraint',atomName1,atomName2,lower,upper
 #DELTA: C5'-C4'-C3'-O3'            60 140
 #NU2:  C4'-C3'-C2'-C1'             -40 40
 #NU1:  C3'-C2'-C1'-N9'             60 140
