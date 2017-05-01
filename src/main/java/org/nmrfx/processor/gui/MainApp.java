@@ -266,7 +266,8 @@ public class MainApp extends Application {
     public static String getVersion() {
         if (version == null) {
             String cp = System.getProperty("java.class.path");
-            String jarPattern = ".*nvfx-([0-9\\.\\-abcr]+)\\.jar.*";
+            // processorgui-10.1.2.jar
+            String jarPattern = ".*processorgui-([0-9\\.\\-abcr]+)\\.jar.*";
             Pattern pat = Pattern.compile(jarPattern);
             Matcher match = pat.matcher(cp);
             version = "0.0.0";
