@@ -1,7 +1,7 @@
 LNAME Link
 SNAME ln2
 RCHAR X
-ATOM   L      L   2.00  90.00  90.0
+ATOM   L      L   2.00 135.00  90.0
 FAMILY   -      L      +
 ANGLE     L      PHI 1
 ATREE  L  +  
