@@ -898,7 +898,7 @@ class refine:
 
         self.updateAt(dOpt.update)
         irp = dOpt.irpWeight
-        self.setForces(repel=0.5,dis=1.0,dih=5,irp=irp)
+        self.setForces(repel=0.5,dis=1.0,dih=1,irp=irp)
         self.setPars(end=1000,useh=False,hardSphere=0.15,shrinkValue=0.20)
         self.setPars(optDict=stage1)
         energy = self.energy()
