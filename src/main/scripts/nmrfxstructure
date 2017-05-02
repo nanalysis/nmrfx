@@ -29,6 +29,12 @@ if [ -n "$JAVA_HOME" ] ; then
     fi
 fi
 
+if [ -n "$NMRFXSTR_MEMORY" ] ; then
+    HEAP_MEM=$NMRFXSTR_MEMORY
+else
+    HEAP_MEM="512"
+fi
+
 # get the directory path of this script
 # resolve script symlink, if any
 pgm="$0"
@@ -64,4 +70,4 @@ else
 fi
 
 export CLASSPATH
-exec "$JAVA" -Djava.awt.headless=true -DTCLLIBPATH="$TCLLIBPATH" -mx768m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
+exec "$JAVA" -Djava.awt.headless=true -DTCLLIBPATH="$TCLLIBPATH" -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}

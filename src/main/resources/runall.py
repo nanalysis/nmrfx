@@ -18,14 +18,15 @@ finDir = os.path.join(homeDir,'final')
 def makeDirs():
     if not os.path.exists(outDir):
         os.mkdir(outDir)
-    else:
+    if not os.path.exists(finDir):
+        os.mkdir(finDir)
+
+def cleanDirs():
+    if os.path.exists(outDir):
         existingFiles = glob.glob(os.path.join(outDir,'*'))
         for file in existingFiles:
             os.remove(file)
-
-    if not os.path.exists(finDir):
-        os.mkdir(finDir)
-    else:
+    if os.path.exists(finDir):
         existingFiles = glob.glob(os.path.join(finDir,'*'))
         for file in existingFiles:
             os.remove(file)
@@ -37,35 +38,46 @@ def getCmd():
     dir = os.path.dirname(jarPath)
     dir = os.path.dirname(dir)
     print dir
-    cmd = os.path.join(dir,'dcchem')
+    cmd = os.path.join(dir,'nmrfxstructure')
     return cmd
 
-def calcStructures(calcScript,nStructures,nProcesses=4):
+def calcStructures(calcScript,startStructure,nStructures,nProcesses=4, heapMemory=512):
     makeDirs()
     cmd = getCmd()
     print cmd
     nSubmitted = 0
     processes = [None]*nProcesses
     fOut = [None]*nProcesses
+    myEnv = os.environ.copy()
+    myEnv["NMRFXSTR_MEMORY"] = str(heapMemory)
     while (True):
-        gotProcess = False
         for i in range(nProcesses):
             if (processes[i]==None):
                 if nSubmitted < nStructures:
-                    strNum = str(nSubmitted)
-                    fOut[i] = open(os.path.join(outDir,'cmdout_'+strNum+'.txt'),'w')
-                    processes[i] = subprocess.Popen([cmd,calcScript,strNum],stdout=fOut[i],stderr=subprocess.STDOUT)
-                    print "submit",nSubmitted,'of',str(nStructures)
+                    strNum = nSubmitted+startStructure
+                    fOutName = os.path.join(outDir,'cmdout_'+str(strNum)+'.txt')
+                    fOut[i] = open(fOutName,'w')
+                    processes[i] = subprocess.Popen([cmd,calcScript,str(strNum)],stdout=fOut[i],stderr=subprocess.STDOUT,env=myEnv)
+                    pid = processes[i].pid
+                    outStr =  "submit %d seed: %3d Structure # %3d of %3d pid %7d" % (i,strNum,(nSubmitted+1),nStructures,pid)
+                    print outStr
                     nSubmitted += 1
+                else:
+                    print "Submitted all",nStructures
+        gotProcess = False
+        for i in range(nProcesses):
             if (processes[i] != None):
-                if (processes[i].poll() != None):
+                if (processes[i].poll() == None):
+                    # still running
+                    gotProcess = True
+                else:
+                    print "Finished",i,processes[i].pid
                     processes[i] = None
                     fOut[i].close()
-                else:
-                    gotProcess = True
         if not gotProcess:
-             print "Done"
-             break
+            if  (nSubmitted == nStructures):
+                print "Done"
+                break
         time.sleep(1)
 
 def keepStructures(nStructures,newName='final',rootName=''):
@@ -106,22 +118,33 @@ def parseArgs():
     global nStructures
     global nProcesses
     global nKeep
+    global clean
 
     nProcesses = Runtime.getRuntime().availableProcessors()
 
     parser = OptionParser()
     parser.add_option("-n", "--nstructures", dest="nStructures",default='0', help="Number of structures to calculate (0)")
-    parser.add_option("-k", "--nkeep", dest="nKeep",default='0', help="Number of structures to keep (nstructures/4)")
+    parser.add_option("-k", "--nkeep", dest="nKeep",default='-1', help="Number of structures to keep (nstructures/4)")
     parser.add_option("-s", "--start", dest="start",default='0', help="Starting number for structures (0)")
     parser.add_option("-p", "--nprocesses", dest="nProcesses",default=nProcesses, help="Number of simultaneous processes (nCpu)")
     parser.add_option("-a", "--align", action="store_true", dest="align", default=False, help="Align structures (False)")
     parser.add_option("-b", "--base", dest="base",default='super', help="Base name for superimposed files (super)")
+    parser.add_option("-c", "--clean", action="store_true", dest="clean", default=False, help="Clean Directories (False)")
+    parser.add_option("-m", "--memory", dest="heapMemory",default='512', help="Amount of heap memory to use in MBytes")
 
     (options, args) = parser.parse_args()
     print 'args',args
 
     nStructures = int(options.nStructures)
+    clean = options.clean
+
+    if clean:
+        cleanDirs()
+        if nStructures == 0:
+            exit(0)
+
     nKeep = int(options.nKeep)
+    heapMemory = int(options.heapMemory)
     start = int(options.start)
     nProcesses = int(options.nProcesses)
     align = options.align
@@ -145,7 +168,7 @@ def parseArgs():
         else:
            print 'Must specify script'
            exit()
-        calcStructures(calcScript,nStructures,nProcesses)
+        calcStructures(calcScript,start,nStructures,nProcesses,heapMemory)
     if nKeep > 0:
         keepStructures(nKeep)
     if align:
