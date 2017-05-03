@@ -415,6 +415,36 @@ def acqOrder(*order):
     fidInfo.fidObj.resetAcqOrder() 
     fidInfo.fidObj.setAcqOrder(order)
 
+def setupScanTable(fileName):
+    global scanTableName
+    global scanTable
+    scanTableName = fileName
+    scanTable = None
+
+def closeScanTable():
+    global scanTableName
+    global scanTable
+    if scanTable != None:
+        scanTable.close()
+        scanTable = None
+
+
+def writeToScanTable(iFile, filePath, dataName, map):
+    global scanTableName
+    global scanTable
+    if scanTable == None:
+        scanTable = open(scanTableName,'w')
+        # write header
+        scanTable.write('index\tfid\tdataset')
+        if map != None:
+            scanTable.write(getMeasureMapHeader(map))
+        scanTable.write('\n')
+
+    outStr = str(iFile) + '\t' + filePath + '\t' + dataName
+    if map != None:
+        outStr += getMeasureMapData(map)
+    scanTable.write(outStr + '\n')
+
 def setMeasureMap(map):
     global gmap
     gmap = map
@@ -429,21 +459,32 @@ def getMeasureMap():
 
     return gmap
 
-def getMeasureMapData():
-    gmap = getMeasureMap()
-
+def getMeasureMapHeader(map):
     # loop over keys in measure map and get values
     result = ""
-    for key in gmap:
+    for key in map:
        if key.startswith('measures_'):
-           dataValues =  gmap.get(key)
+           dataValues =  map.get(key)
+           for (i,dataValue) in enumerate(dataValues):
+               outStr = "\tIntegral%d_%.3f_%.3f\tMax%d_%.3f_%.3f" % (i,dataValue.getStartPPM(),dataValue.getEndPPM(),i,dataValue.getStartPPM(),dataValue.getEndPPM())
+               result += outStr
+           return result
+    return None
+
+
+def getMeasureMapData(map):
+    # loop over keys in measure map and get values
+    result = ""
+    for key in map:
+       if key.startswith('measures_'):
+           dataValues =  map.get(key)
            for (i,dataValue) in enumerate(dataValues):
                dataValue.setScale(1.0)
-               outStr = "%.3f %.3f" % (dataValue.getCorrectedSum(),dataValue.getMax())
-               result += '\t' + outStr
+               outStr = "\t%.3f\t%.3f" % (dataValue.getCorrectedSum(),dataValue.getMax())
+               result += outStr
 
     # clear map for next spectrum
-    gmap.clear()
+    map.clear()
     return result
 
 def inMemory(mode=True):
@@ -3255,7 +3296,7 @@ A size can be specified instead of a factor which will be the exact number of po
             setDataInfoSize(curDim, getZfSize(dataInfo.size[curDim],factor,size))
     return op
 
-def makeDataNames(filePath,baseDir=None,iFile=None,baseName='data',multiMode=False):
+def makeDataNames(filePath,baseDir=None,outDir=None,iFile=None,baseName='data',multiMode=False):
    (dirName,tail) = os.path.split(filePath)
    (rootName,ext) = os.path.splitext(tail)
    print 'fp',filePath
@@ -3272,10 +3313,13 @@ def makeDataNames(filePath,baseDir=None,iFile=None,baseName='data',multiMode=Fal
    print 'da',dataName
    if (baseDir):
        fullFidName = os.path.join(baseDir,filePath)
-       fullDataName = os.path.join(baseDir,dataName)
    else:
        fullFidName = filePath
+   if (outDir):
+       fullDataName = os.path.join(outDir,dataName)
+   else:
        fullDataName = os.path.join(dirName,dataName)
+
    return fullFidName,filePath,fullDataName,dataName
 
 
