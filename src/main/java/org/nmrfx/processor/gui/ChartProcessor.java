@@ -376,7 +376,6 @@ public class ChartProcessor {
     }
 
     public void setArraySize(int dim, int arraySize) {
-        System.out.println("chartdddddddd processor " + dim + " " + arraySize);
         NMRData nmrData = getNMRData();
         if (nmrData != null) {
             nmrData.setArraySize(dim, arraySize);
@@ -766,6 +765,7 @@ public class ChartProcessor {
         StringBuilder scriptBuilder = new StringBuilder();
         scriptBuilder.append("import os").append(lineSep);
         scriptBuilder.append("from pyproc import *").append(lineSep);
+        scriptBuilder.append("getMeasureMap().clear()").append(lineSep);
         scriptBuilder.append("fileNames=[").append(lineSep);
         int i = 0;
         int nPerLine = 5;
@@ -810,7 +810,6 @@ public class ChartProcessor {
         } else {
             scriptBuilder.append(indent).append("CREATE(").append("fullDataName").append(")").append(lineSep);
         }
-        scriptBuilder.append(indent).append("tableFile.write(str(iFile) + '\\t' + filePath + '\\t' + dataName + '\\n')").append(lineSep);
 
         scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
         String scriptCmds = getScriptCmds(nDim, indent, false);
@@ -819,6 +818,7 @@ public class ChartProcessor {
             scriptBuilder.append(indent).append("WRITE(index=iFile)").append(lineSep);
         }
         scriptBuilder.append(indent).append("run()").append(lineSep);
+        scriptBuilder.append(indent).append("tableFile.write(str(iFile) + '\\t' + filePath + '\\t' + dataName + '\\t' + getMeasureMapData() + '\\n')").append(lineSep);
         scriptBuilder.append(lineSep);
         if (combineFiles) {
             scriptBuilder.append("closeDataset()").append(lineSep);
