@@ -437,7 +437,9 @@ def writeToScanTable(iFile, filePath, dataName, map):
         # write header
         scanTable.write('index\tfid\tdataset')
         if map != None:
-            scanTable.write(getMeasureMapHeader(map))
+            header = getMeasureMapHeader(map)
+            if header != None:
+                scanTable.write(header)
         scanTable.write('\n')
 
     outStr = str(iFile) + '\t' + filePath + '\t' + dataName
