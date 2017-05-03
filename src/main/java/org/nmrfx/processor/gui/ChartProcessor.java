@@ -757,7 +757,7 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
-    String buildMultiScript(String baseDir, ArrayList<String> fileNames, boolean combineFiles) {
+    String buildMultiScript(String baseDir, String outputDir, ArrayList<String> fileNames, boolean combineFiles) {
         boolean useIFile = true;
         String baseName = "data";
         int nDim = getNMRData().getNDim();
@@ -785,13 +785,13 @@ public class ChartProcessor {
         }
         int nFIDs = fileNames.size();
         scriptBuilder.append("]").append(lineSep);
-        scriptBuilder.append("tableFile=open(");
-        scriptBuilder.append("'").append(baseDir).append("/scantbl.txt','w')").append(lineSep);
-        scriptBuilder.append("tableFile.write('index\\tfid\\tdataset\\n')").append(lineSep);
+        scriptBuilder.append("setupScanTable(");
+        scriptBuilder.append("'").append(outputDir).append("/scantbl.txt')").append(lineSep);
         String indent = "    ";
         scriptBuilder.append("for (iFile,fileName) in enumerate(fileNames):").append(lineSep);
         scriptBuilder.append(indent).append("(fullFileName,filePath,fullDataName,dataName)=makeDataNames(fileName,baseDir=");
         scriptBuilder.append("'").append(baseDir).append("'");
+        scriptBuilder.append(",outDir='").append(outputDir).append("'");
         if (useIFile) {
             scriptBuilder.append(",iFile=").append("iFile");
         }
@@ -818,13 +818,13 @@ public class ChartProcessor {
             scriptBuilder.append(indent).append("WRITE(index=iFile)").append(lineSep);
         }
         scriptBuilder.append(indent).append("run()").append(lineSep);
-        scriptBuilder.append(indent).append("tableFile.write(str(iFile) + '\\t' + filePath + '\\t' + dataName + '\\t' + getMeasureMapData() + '\\n')").append(lineSep);
+        scriptBuilder.append(indent).append("writeToScanTable(iFile,filePath,dataName,getMeasureMap())").append(lineSep);
         scriptBuilder.append(lineSep);
         if (combineFiles) {
             scriptBuilder.append("closeDataset()").append(lineSep);
-            datasetFile = new File(baseDir, "multi.nv");
+            datasetFile = new File(outputDir, "multi.nv");
         }
-        scriptBuilder.append("tableFile.close()").append(lineSep);
+        scriptBuilder.append("closeScanTable()").append(lineSep);
         // System.out.println(scriptBuilder.toString());
         return scriptBuilder.toString();
     }

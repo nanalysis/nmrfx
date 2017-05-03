@@ -149,6 +149,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     static String[] basicOps = {"SB ZF FT", "SB(c=0.5) ZF FT", "EXPD ZF FT", "VECREF GEN"};
     static String[] eaOps = {"TDCOMB(coef='ea2d')", "SB", "ZF", "FT"};
     String scanDir = null;
+    String scanOutputDir = null;
     ChartProcessor chartProcessor;
     FXMLController fxmlController;
     DocWindowController dwc = null;
@@ -766,19 +767,25 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     private void processScanDir(ActionEvent event) {
-        ObservableList<FileTableItem> fileTableItems = tableView.getItems();
-        ArrayList<String> fileNames = new ArrayList<>();
-        for (FileTableItem fileTableItem : fileTableItems) {
-            fileNames.add(fileTableItem.getFileName());
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Select Scan Output Directory");
+        File selectedDir = directoryChooser.showDialog(stage);
+        if (selectedDir != null) {
+            scanOutputDir = selectedDir.getPath();
+            ObservableList<FileTableItem> fileTableItems = tableView.getItems();
+            ArrayList<String> fileNames = new ArrayList<>();
+            for (FileTableItem fileTableItem : fileTableItems) {
+                fileNames.add(fileTableItem.getFileName());
+            }
+            boolean combineFileMode = combineFiles.isSelected();
+            String script = chartProcessor.buildMultiScript(scanDir, scanOutputDir, fileNames, combineFileMode);
+            System.out.println(script);
+            PythonInterpreter processInterp = new PythonInterpreter();
+            processInterp.exec("from pyproc import *");
+            processInterp.exec("useProcessor()");
+            processInterp.exec(script);
+            viewDatasetInApp();
         }
-        boolean combineFileMode = combineFiles.isSelected();
-        String script = chartProcessor.buildMultiScript(scanDir, fileNames, combineFileMode);
-        System.out.println(script);
-        PythonInterpreter processInterp = new PythonInterpreter();
-        processInterp.exec("from pyproc import *");
-        processInterp.exec("useProcessor()");
-        processInterp.exec(script);
-        viewDatasetInApp();
     }
 
     @FXML
