@@ -429,6 +429,23 @@ def getMeasureMap():
 
     return gmap
 
+def getMeasureMapData():
+    gmap = getMeasureMap()
+
+    # loop over keys in measure map and get values
+    result = ""
+    for key in gmap:
+       if key.startswith('measures_'):
+           dataValues =  gmap.get(key)
+           for (i,dataValue) in enumerate(dataValues):
+               dataValue.setScale(1.0)
+               outStr = "%.3f %.3f" % (dataValue.getCorrectedSum(),dataValue.getMax())
+               result += '\t' + outStr
+
+    # clear map for next spectrum
+    gmap.clear()
+    return result
+
 def inMemory(mode=True):
     global dataInfo
     dataInfo.inMemory = mode
