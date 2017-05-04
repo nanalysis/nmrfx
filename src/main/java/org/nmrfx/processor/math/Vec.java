@@ -64,6 +64,12 @@ import org.python.core.PySequence;
 import org.python.core.PyType;
 import org.renjin.sexp.AtomicVector;
 import org.renjin.sexp.DoubleVector;
+import org.renjin.sexp.SEXP;
+import org.renjin.eval.Context;
+import org.renjin.sexp.AttributeMap;
+
+
+
 
 /**
  * A class for representing vectors of data (typically for NMR). The data is stored as real or complex values. If
@@ -79,6 +85,11 @@ import org.renjin.sexp.DoubleVector;
  * @author michael
  */
 public class Vec extends PySequence implements MatrixType, RAtomicVector {
+    public static final String TYPE_NAME = "nmrfxvector";
+
+    protected AttributeMap attributes;
+
+
 
     String name = "";
 
@@ -162,6 +173,7 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
     private Vec(int size, String name, boolean complex) {
         this(size, complex);
         this.name = name;
+        this.attributes = AttributeMap.EMPTY;
     }
 
     /**
@@ -172,6 +184,7 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
      */
     public Vec(int size, boolean complex) {
         super(ATYPE);
+        this.attributes = AttributeMap.EMPTY;
         this.isComplex = complex;
         useApache = true;
         rvec = new double[size];
@@ -333,6 +346,25 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
         }
         return result;
     }
+    @Override
+    public String getTypeName() {
+      return TYPE_NAME;
+    }
+
+    @Override
+    public String getImplicitClass() {
+      return "numeric";
+    }
+
+    @Override
+    public AttributeMap getAttributes() {
+        return attributes;
+    }
+
+    @Override
+    public SEXP force(Context cntxt) {
+        return this;
+    }
 
     @Override
     public double getElementAsDouble(int index) {
@@ -344,7 +376,6 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
         return new org.apache.commons.math.complex.Complex(getReal(i), getImag(i));
     }
 
-    @Override
     public double[] toDoubleArray() {
         double[] d = new double[length()];
         for (int i = 0; i != d.length; ++i) {
@@ -358,7 +389,6 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
         return size;
     }
 
-    @Override
     public int indexOfNA() {
         for (int i = 0, len = length(); i < len; i++) {
             if (DoubleVector.isNA(getReal(i))) {
@@ -368,7 +398,6 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
         return -1;
     }
 
-    @Override
     public int indexOf(AtomicVector vector, int vectorIndex, int startIndex) {
         if (!isComplex) {
             double value = vector.getElementAsDouble(vectorIndex);
@@ -390,7 +419,6 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
         }
     }
 
-    @Override
     public int compare(int index1, int index2) {
         if (!isComplex) {
             return Double.compare(getElementAsDouble(index1), getElementAsDouble(index2));

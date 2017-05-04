@@ -23,7 +23,7 @@ import org.renjin.sexp.Vector;
  *
  * @author Bruce Johnson
  */
-public interface RAtomicVector extends AtomicVector {
+public interface RAtomicVector extends Vector {
 
     @Override
     public default int getElementAsInt(int index) {
@@ -83,22 +83,22 @@ public interface RAtomicVector extends AtomicVector {
 
     @Override
     public default boolean contains(Vector vector, int i) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yetA."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default Builder newBuilderWithInitialSize(int index) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yetB."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default Builder newBuilderWithInitialCapacity(int index) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yetC."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default Type getVectorType() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.D"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -108,22 +108,22 @@ public interface RAtomicVector extends AtomicVector {
 
     @Override
     public default Builder newCopyBuilder() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.E"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default Builder newCopyBuilder(Type type) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.F"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default boolean isElementNA(int index) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.G"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default boolean isElementNaN(int index) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.H"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -133,7 +133,7 @@ public interface RAtomicVector extends AtomicVector {
 
     @Override
     public default boolean isDeferred() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.I"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -153,18 +153,13 @@ public interface RAtomicVector extends AtomicVector {
     }
 
     @Override
-    public default AttributeMap getAttributes() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public default String getTypeName() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.K"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default void accept(SexpVisitor sv) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.L"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -188,22 +183,22 @@ public interface RAtomicVector extends AtomicVector {
 
     @Override
     public default boolean isObject() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.M"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default StringVector getS3Class() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.N"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default String getImplicitClass() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.O"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default boolean inherits(String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.P"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -221,12 +216,12 @@ public interface RAtomicVector extends AtomicVector {
 
     @Override
     public default int getIndexByName(String string) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.Q"); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public default SEXP getAttribute(Symbol symbol) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return getAttributes().get(symbol);
     }
 
     @Override
@@ -259,20 +254,13 @@ public interface RAtomicVector extends AtomicVector {
 
     @Override
     public default <S extends SEXP> S getElementAsSEXP(int index) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("Not supported yet.S"); //To change body of generated methods, choose Tools | Templates.
     }
 
-    @Override
-    public default SEXP force(Context cntxt) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public default boolean containsNA() {
-        return indexOfNA() != -1;
+        throw new UnsupportedOperationException("Not supported yet.S"); //To change body of generated methods, choose Tools | Templates.
     }
 
-    @Override
     public default boolean contains(AtomicVector vector, int vectorIndex) {
         if (vector instanceof AtomicVector) {
             return contains((AtomicVector) vector, vectorIndex);
@@ -281,7 +269,6 @@ public interface RAtomicVector extends AtomicVector {
         }
     }
 
-    @Override
     public default int[] toIntArray() {
         int[] array = new int[length()];
         for (int i = 0; i != array.length; ++i) {
