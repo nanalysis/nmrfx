@@ -35,6 +35,11 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.renjin.sexp.AttributeMap;
+import org.renjin.sexp.DoubleVector;
+import org.renjin.sexp.DoubleArrayVector;
+import org.renjin.sexp.IntArrayVector;
+import org.renjin.sexp.SEXP;
 
 /**
  * Instances of this class represent NMR datasets. The class is typically used for processed NMR spectra (rather than
@@ -43,7 +48,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author brucejohnson
  */
-public class Dataset {
+public class Dataset extends DoubleVector {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
@@ -68,6 +73,7 @@ public class Dataset {
     private int blockElements;
     private int nDim;
     private int[] size;
+    private int[] strides;
     private int[] fileDimSizes;
     private int[] vsize;
     private int[] vsize_r;
@@ -119,6 +125,50 @@ public class Dataset {
     static private LRUMap vectorBuffer = new LRUMap(512);
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     private RandomAccessFile raFile = null;
+
+    @Override
+    protected SEXP cloneWithNewAttributes(AttributeMap newAttributes) {
+        // fixme should clone to in-memory Dataset or Dataset pointing to same raFile etc. not DoubleArrayVector??
+        double[] values = toDoubleArray();
+        DoubleArrayVector clone = DoubleArrayVector.unsafe(values, newAttributes);
+        return clone;
+    }
+
+
+    void setDimAttributes() {
+        attributes = AttributeMap.builder().addAllFrom(attributes).setDim(new IntArrayVector(size)).build();
+    }
+
+    @Override
+    public double getElementAsDouble(int offset) {
+        int[] indices = new int[nDim];
+        double value;
+        for (int i=nDim-1;i>=0;i--) {
+            indices[i] = offset / strides[i];
+            offset = offset % strides[i];
+        }
+
+        try {
+            value = readPoint(indices);
+        } catch (IOException ioE) {
+            value = DoubleVector.NA;
+        }
+        return value;
+    }
+
+    @Override
+    public int length() {
+        int length = 1;
+        for (int sz : size) {
+            length *= sz;
+        }
+        return length;
+    }
+
+    @Override
+    public boolean isConstantAccessTime() {
+        return true;
+    }
 
     /**
      * Enum for possible file types consistent with structure available in the Dataset format
@@ -197,6 +247,7 @@ public class Dataset {
             dataFile = new BigMappedMatrixFile(this, raFile, writable);
         }
         addFile(fileName);
+        setDimAttributes();
     }
 
     /**
@@ -213,11 +264,13 @@ public class Dataset {
         title = fileName;
         nDim = 1;
         size = new int[1];
+        strides = new int[1];
         fileDimSizes = new int[1];
         vsize = new int[1];
         vsize_r = new int[1];
         tdSize = new int[1];
         size[0] = vector.getSize();
+        strides[0] = 1;
         vsize[0] = 0;
         vsize_r[0] = 0;
         tdSize[0] = vector.getTDSize();
@@ -270,6 +323,7 @@ public class Dataset {
 
             int i;
             this.size = new int[this.nDim];
+            this.strides = new int[this.nDim];
             this.fileDimSizes = new int[this.nDim];
             this.vsize = new int[this.nDim];
             this.vsize_r = new int[this.nDim];
@@ -321,6 +375,7 @@ public class Dataset {
 
             int i;
             this.size = new int[this.nDim];
+            this.strides = new int[this.nDim];
             this.fileDimSizes = new int[this.nDim];
             this.vsize = new int[this.nDim];
             this.vsize_r = new int[this.nDim];
@@ -2438,6 +2493,7 @@ public class Dataset {
      */
     public void setNDim() {
         size = new int[nDim];
+        strides = new int[nDim];
         fileDimSizes = new int[nDim];
         vsize = new int[nDim];
         vsize_r = new int[nDim];
@@ -2706,6 +2762,7 @@ public class Dataset {
 
             return 1;
         }
+        setStrides();
 
         return 0;
     }
@@ -2835,6 +2892,7 @@ public class Dataset {
         rmsd = new double[nDim][];
         dataType = 0;
         rdims = nDim;
+        setStrides();
 
         return 0;
     }
@@ -3019,6 +3077,13 @@ public class Dataset {
         //dataType = 0;
     }
 
+    void setStrides() {
+        strides[0] = 1;
+        for (int i=1;i<nDim;i++) {
+            strides[i] = strides[i-1]*size[i-1];
+        }
+    }
+
     final void dimDataset() {
         int iDim;
 
@@ -3054,6 +3119,8 @@ public class Dataset {
             foldDown[iDim] = 0.0;
         }
         rmsd = new double[nDim][];
+        setStrides();
+        setDimAttributes();
     }
 
     /**
