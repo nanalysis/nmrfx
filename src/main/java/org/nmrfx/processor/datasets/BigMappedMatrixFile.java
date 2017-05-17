@@ -76,11 +76,15 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
         mapSize = MAPPING_SIZE;
         long matSize = BYTES;
         System.err.println(dataset.getFileName());
+        strides[0] = 1;
         for (int i = 0; i < dataset.getNDim(); i++) {
             System.err.println(i + " " + blockSize[i] + " " + nBlocks[i] + " " + dataset.getSize(i));
             matSize *= (blockSize[i] + blockHeaderSize) * nBlocks[i];
-            strides[i] = (blockSize[i] + blockHeaderSize) * nBlocks[i];
             sizes[i] = dataset.getSize(i);
+            // strides only relevant if no block header and not submatrix
+            if (i > 0) {
+                strides[i] = strides[i-1]*sizes[i-1];
+            }
         }
         totalSize = matSize / BYTES;
         for (long offset = 0; offset < matSize; offset += mapSize) {
