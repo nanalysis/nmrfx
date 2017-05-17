@@ -245,7 +245,7 @@ public interface RAtomicVector extends Vector {
         return cloneWithNewAttributes(attributes.validateAndBuildForVectorOfLength(length()));
     }
 
-    default SEXP cloneWithNewAttributes(AttributeMap attributes) {
+    public default SEXP cloneWithNewAttributes(AttributeMap attributes) {
         if (attributes != AttributeMap.EMPTY) {
             throw new EvalException("cannot change/set attributes on " + getClass().getName());
         }
