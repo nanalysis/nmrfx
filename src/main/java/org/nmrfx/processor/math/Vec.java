@@ -202,6 +202,11 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
     public Vec(int size) {
         this(size, false);
     }
+    
+    public Vec(double[] values) {
+        this(values.length, false);
+        System.arraycopy(values,0,rvec,0,values.length);
+    }
 
     /**
      * Create a new Vec object for real data and with the specified size and specified dataset location.
