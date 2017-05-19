@@ -45,6 +45,8 @@ import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
 import static org.fxmisc.wellbehaved.event.EventPattern.keyTyped;
 import org.python.util.InteractiveConsole;
 import org.python.util.InteractiveInterpreter;
+import org.renjin.script.RenjinScriptEngine;
+import org.renjin.script.RenjinScriptEngineFactory;
 
 /**
  *
@@ -53,6 +55,7 @@ import org.python.util.InteractiveInterpreter;
 public class ConsoleUtil {
 
     static Clipboard clipBoard = Clipboard.getSystemClipboard();
+    static RenjinScriptEngine renjinEngine = null;
 
     InteractiveInterpreter interpreter;
     CodeArea outputArea;
@@ -60,6 +63,7 @@ public class ConsoleUtil {
     protected final List<String> history = new ArrayList<>();
     protected int historyPointer = 0;
     String prompt = ">>>";
+    boolean renjinMode = false;
 
     class ConsoleOutputStream extends OutputStream {
 
@@ -161,6 +165,14 @@ public class ConsoleUtil {
         clipBoard.setContent(content);
     }
 
+    public RenjinScriptEngine getRenjin() {
+        if (renjinEngine == null) {
+            RenjinScriptEngineFactory renjinFactory = new RenjinScriptEngineFactory();
+            renjinEngine = renjinFactory.getScriptEngine();
+        }
+        return renjinEngine;
+    }
+
     public void enter() {
         int nParagraphs = outputArea.getParagraphs().size();
         Paragraph para = outputArea.getParagraph(nParagraphs - 1);
@@ -176,9 +188,22 @@ public class ConsoleUtil {
         outputArea.appendText("\n");
         if (command.equals("clear()")) {
             outputArea.clear();
+        } else if (command.equals("renjin()")) {
+            renjinMode = true;
+        } else if (command.equals("jython()")) {
+            renjinMode = false;
         } else {
             try {
-                boolean more = interpreter.runsource(command);
+                if (renjinMode) {
+                    RenjinScriptEngine engine = getRenjin();
+                    Object result = engine.eval(command);
+                    if (result != null) {
+                        outputArea.appendText(result.toString());
+                        outputArea.appendText("\n");
+                    }
+                } else {
+                    boolean more = interpreter.runsource(command);
+                }
             } catch (Exception e) {
                 System.out.println("err " + e.getMessage());
                 e.printStackTrace();

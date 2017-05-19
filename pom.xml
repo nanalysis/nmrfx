@@ -74,7 +74,7 @@
                         </goals>
                         <configuration>
                             <excludeScope>system</excludeScope>
-                            <excludeGroupIds>junit,org.mockito,org.hamcrest</excludeGroupIds>
+                            <excludeGroupIds>junit,org.mockito,org.hamcrest,com.github.fommil.netlib</excludeGroupIds>
                             <outputDirectory>${project.build.directory}/classes</outputDirectory>
                         </configuration>
                     </execution>
