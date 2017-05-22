@@ -141,6 +141,7 @@ public class FXMLController implements Initializable {
     DocWindowController dwc = null;
     static SpecAttrWindowController specAttrWindowController = null;
     ProcessorController processorController = null;
+    ScannerController scannerController = null;
     Stage stage;
     String delImagString = "False";
     boolean isFID = true;
@@ -318,6 +319,14 @@ public class FXMLController implements Initializable {
 
     }
 
+    public ProcessorController getProcessorController() {
+        return processorController;
+    }
+
+    public ChartProcessor getChartProcessor() {
+        return chartProcessor;
+    }
+
     public boolean isFIDActive() {
         return isFID;
     }
@@ -435,6 +444,18 @@ public class FXMLController implements Initializable {
         }
         if (processorController != null) {
             processorController.getStage().show();
+        } else {
+            System.out.println("Coudn't make controller");
+        }
+    }
+
+    @FXML
+    void showScannerAction(ActionEvent event) {
+        if (scannerController == null) {
+            scannerController = ScannerController.create(this, stage, getActiveChart());
+        }
+        if (scannerController != null) {
+            scannerController.getStage().show();
         } else {
             System.out.println("Coudn't make controller");
         }

@@ -54,6 +54,7 @@ import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.ProcessorController;
+import org.nmrfx.processor.gui.ScannerController;
 import org.python.util.PythonInterpreter;
 
 /**
@@ -62,7 +63,7 @@ import org.python.util.PythonInterpreter;
  */
 public class ScanTable {
 
-    ProcessorController processorController;
+    ScannerController scannerController;
     TableView<FileTableItem> tableView;
     TableFilter fileTableFilter;
     TableFilter.Builder builder = null;
@@ -70,8 +71,8 @@ public class ScanTable {
     String scanOutputDir = null;
     PopOver popOver = new PopOver();
 
-    public ScanTable(ProcessorController controller, TableView<FileTableItem> tableView) {
-        this.processorController = controller;
+    public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
+        this.scannerController = controller;
         this.tableView = tableView;
     }
 
@@ -208,6 +209,8 @@ public class ScanTable {
             processInterp.exec("from pyproc import *");
             processInterp.exec("useProcessor()");
             processInterp.exec(script);
+            ProcessorController processorController = scannerController.getFXMLController().getProcessorController();
+
             processorController.viewDatasetInApp();
         }
     }
@@ -219,7 +222,8 @@ public class ScanTable {
             String fileName = fileTableItem.getFileName();
             String filePath = Paths.get(scanDir, fileName).toString();
 
-            processorController.getChart().getFXMLController().openFile(filePath, false, false);
+            scannerController.getChart().getFXMLController().openFile(filePath, false, false);
+            ProcessorController processorController = scannerController.getFXMLController().getProcessorController();
             processorController.parseScript(scriptString);
         }
     }

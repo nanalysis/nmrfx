@@ -18,7 +18,6 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
-import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProgressUpdater;
@@ -60,7 +59,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListCell;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -80,7 +78,6 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.python.util.PythonInterpreter;
 import org.fxmisc.richtext.CodeArea;
-import org.nmrfx.processor.gui.controls.ScanTable;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
@@ -95,8 +92,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     private ListView scriptView;
-    @FXML
-    private TableView<FileTableItem> tableView;
     @FXML
     private StatusBar statusBar;
     private Circle statusCircle = new Circle(10.0, Color.GREEN);
@@ -146,8 +141,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
     Throwable processingThrowable;
-
-    ScanTable scanTable;
 
     public static ProcessorController create(FXMLController fxmlController, Stage parent, PolyChart chart) {
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
@@ -204,14 +197,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     public PropertyManager getPropertyManager() {
         return propertyManager;
-    }
-
-    @FXML
-    private void openSelectedListFile(MouseEvent mouseEvent) {
-        if (mouseEvent.getClickCount() == 2) {
-            String scriptString = textArea.getText();
-            scanTable.openSelectedListFile(scriptString);
-        }
     }
 
     protected void clearOperationList() {
@@ -624,6 +609,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
+    public String getCurrentScript() {
+        return textArea.getText();
+    }
+
     public void writeOutput(String text) {
         outputArea.appendText(text);
     }
@@ -740,21 +729,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             });
 
         }
-    }
-
-    @FXML
-    private void processScanDir(ActionEvent event) {
-        scanTable.processScanDir(stage, chartProcessor, combineFiles.isSelected());
-    }
-
-    @FXML
-    private void scanDirAction(ActionEvent event) {
-        scanTable.loadScanFiles(stage);
-    }
-
-    @FXML
-    private void loadTableAction(ActionEvent event) {
-        scanTable.loadScanTable();
     }
 
     public void writeScript(String script) {
@@ -919,7 +893,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 dialog.showAndWait();
             }
         });
-        scanTable = new ScanTable(this, tableView);
 
     }
 
