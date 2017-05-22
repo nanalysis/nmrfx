@@ -238,6 +238,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         activeChart = this;
         setCursor(Cursor.CROSSHAIR);
     }
+    
+    public FXMLController getFXMLController() {
+        return controller;
+    }
 
     public void close() {
         charts.remove(this);

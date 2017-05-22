@@ -268,7 +268,7 @@ public class FXMLController implements Initializable {
         }
     }
 
-    protected void openFile(String filePath, boolean clearOps, boolean appendFile) {
+    public void openFile(String filePath, boolean clearOps, boolean appendFile) {
         boolean reload = false;
         try {
             File newFile = new File(filePath);

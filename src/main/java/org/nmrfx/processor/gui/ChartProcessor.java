@@ -757,7 +757,7 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
-    String buildMultiScript(String baseDir, String outputDir, ArrayList<String> fileNames, boolean combineFiles) {
+    public String buildMultiScript(String baseDir, String outputDir, ArrayList<String> fileNames, boolean combineFiles) {
         boolean useIFile = true;
         String baseName = "data";
         int nDim = getNMRData().getNDim();
