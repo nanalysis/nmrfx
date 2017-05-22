@@ -700,8 +700,10 @@ class BrukerData implements NMRData {
                     BrukerPar.processBrukerParFile(parMap, path, i + 1, false);
                     Integer iPar;
                     if ((iPar = getParInt("TD," + (i + 1))) != null) {
-                        if (iPar > 0) {
+                        if (iPar > 1) {
                             acqdim++;
+                        } else {
+                            break;
                         }
                     }
                 }
