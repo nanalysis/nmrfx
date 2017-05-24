@@ -302,7 +302,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    boolean isViewingDataset() {
+    public boolean isViewingDataset() {
         return viewMode.getSelectionModel().getSelectedIndex() == 1;
     }
 
