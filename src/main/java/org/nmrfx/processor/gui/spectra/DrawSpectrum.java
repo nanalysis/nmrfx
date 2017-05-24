@@ -408,7 +408,6 @@ public class DrawSpectrum {
                     break;
                 }
             }
-
             draw1DSpectrum(specVec, orientation, 0, axMode, drawReal, ph0, ph1, nList, bcPath,
                     (index, intensity) -> axes[0].getDisplayPosition(index),
                     (index, intensity) -> axes[1].getDisplayPosition(intensity), offsetMode);
