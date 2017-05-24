@@ -1568,7 +1568,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         }
     }
 
-    protected void refresh() {
+    public void refresh() {
         layoutPlotChildren();
     }
 
