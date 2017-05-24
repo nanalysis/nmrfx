@@ -32,14 +32,18 @@ public class FileTableItem {
     private SimpleStringProperty fileName;
     private SimpleStringProperty seqName;
     private SimpleIntegerProperty nDim;
+    private SimpleIntegerProperty row;
     private SimpleLongProperty date;
     private HashMap<String, String> extras = new HashMap<>();
+    private HashMap<String, Integer> intExtras = new HashMap<>();
+    private HashMap<String, Double> doubleExtras = new HashMap<>();
 
     public FileTableItem(String fileName, String seqName, int nDim, long date) {
         this.fileName = new SimpleStringProperty(fileName);
         this.seqName = new SimpleStringProperty(seqName);
         this.nDim = new SimpleIntegerProperty(nDim);
         this.date = new SimpleLongProperty(date);
+        this.row = new SimpleIntegerProperty(0);
     }
 
     public FileTableItem(String fileName, String seqName, int nDim, long date, HashMap<String, String> extras) {
@@ -79,6 +83,14 @@ public class FileTableItem {
         this.nDim.set(nDim);
     }
 
+    public Integer getRow() {
+        return row.get();
+    }
+
+    public void setRow(int rowNum) {
+        this.row.set(rowNum);
+    }
+
     public Long getDate() {
         return date.get();
     }
@@ -92,6 +104,40 @@ public class FileTableItem {
         return extra == null ? "" : extra;
     }
 
+    public Double getDoubleExtra(String eName) {
+        Double extra = doubleExtras.get(eName);
+        return extra == null ? 0.0 : extra;
+    }
+
+    public Integer getIntegerExtra(String eName) {
+        Integer extra = intExtras.get(eName);
+        return extra == null ? 0 : extra;
+    }
+
+    public void setExtra(String name, String value) {
+        extras.put(name, value);
+    }
+
+    public void setExtra(String name, Integer value) {
+        intExtras.put(name, value);
+    }
+
+    public void setExtra(String name, Double value) {
+        doubleExtras.put(name, value);
+    }
+
     public void setNDim(String eName, String value) {
+    }
+
+    public void setTypes(String[] headers, boolean[] notDouble, boolean[] notInteger) {
+        for (int i = 0; i < headers.length; i++) {
+            if (!notInteger[i]) {
+                intExtras.put(headers[i], Integer.parseInt(headers[i]));
+                extras.remove(headers[i]);
+            } else if (!notDouble[i]) {
+                doubleExtras.put(headers[i], Double.parseDouble(headers[i]));
+                extras.remove(headers[i]);
+            }
+        }
     }
 }

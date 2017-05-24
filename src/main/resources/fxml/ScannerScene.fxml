@@ -15,18 +15,33 @@
         <URL value="@/styles/Styles.css" />
     </stylesheets>
     <children>
-        <VBox fx:id="opBox" VBox.vgrow="ALWAYS">
-            <children>
-                <ToolBar prefWidth="200.0">
-                    <items>
-                        <Button fx:id="scanDirChooserButton" mnemonicParsing="false" onAction="#scanDirAction" styleClass="toolButton" text="Scan" />
-                        <Button fx:id="loadTableChooserButton" mnemonicParsing="false" onAction="#loadTableAction" styleClass="toolButton" text="Load" />
-                        <Button fx:id="processScanDirButton" mnemonicParsing="false" styleClass="toolButton" text="Process All" onAction="#processScanDir"/>
-                        <CheckBox fx:id="combineFiles" mnemonicParsing="false" text="Combine Output" />
-                    </items>
-                </ToolBar>
-                <TableView fx:id="tableView" prefHeight="0" minHeight="0.0"  VBox.vgrow="ALWAYS" onMouseClicked="#openSelectedListFile" />
-            </children>
-        </VBox>
+        <TabPane minWidth="400" minHeight="100" VBox.vgrow="ALWAYS">
+            <Tab text="Table" closable="false">
+                <VBox fx:id="opBox" VBox.vgrow="ALWAYS">
+                    <children>
+                        <ToolBar prefWidth="200.0">
+                            <items>
+                                <Button fx:id="scanDirChooserButton" mnemonicParsing="false" onAction="#scanDirAction" styleClass="toolButton" text="Scan" />
+                                <Button fx:id="loadTableChooserButton" mnemonicParsing="false" onAction="#loadTableAction" styleClass="toolButton" text="Load" />
+                                <Button fx:id="processScanDirButton" mnemonicParsing="false" styleClass="toolButton" text="Process All" onAction="#processScanDir"/>
+                                <CheckBox fx:id="combineFiles" mnemonicParsing="false" text="Combine Output" />
+                                <Button fx:id="measureButton" mnemonicParsing="false" styleClass="toolButton" text="Measure" onAction="#measure"/>
+                            </items>
+                        </ToolBar>
+                        <TableView fx:id="tableView" prefHeight="0" minHeight="0.0"  VBox.vgrow="ALWAYS" onMouseClicked="#openSelectedListFile" />
+                    </children>
+                </VBox>
+            </Tab>
+            <Tab text="Parameters" closable="false">
+                <VBox>
+                    <children>
+                        <PropertySheet fx:id="parSheet" prefHeight="0" minHeight="0.0" VBox.vgrow="ALWAYS">
+                            
+                            
+                        </PropertySheet>
+                    </children>
+                </VBox>
+            </Tab>
+        </TabPane>
     </children>
 </VBox>

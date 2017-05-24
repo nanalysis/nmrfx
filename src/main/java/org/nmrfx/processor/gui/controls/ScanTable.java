@@ -34,6 +34,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -70,15 +72,16 @@ public class ScanTable {
     String scanDir = null;
     String scanOutputDir = null;
     PopOver popOver = new PopOver();
+    ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
+    HashMap<String, String> columnTypes = new HashMap<>();
 
     public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
         this.scannerController = controller;
         this.tableView = tableView;
+        init();
     }
 
-    void init() {
-        ObservableList<FileTableItem> data = FXCollections.observableArrayList();
-        tableView.itemsProperty().setValue(data);
+    private void init() {
         TableColumn<FileTableItem, String> fileColumn = new TableColumn<>("FileName");
         TableColumn<FileTableItem, String> seqColumn = new TableColumn<>("Sequence");
         TableColumn<FileTableItem, String> nDimColumn = new TableColumn<>("nDim");
@@ -87,13 +90,12 @@ public class ScanTable {
         fileColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getFileName()));
         seqColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getSeqName()));
         nDimColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getNDim())));
-        dateColumn.setCellValueFactory(new PropertyValueFactory<FileTableItem, Long>("Date"));
+        dateColumn.setCellValueFactory(new PropertyValueFactory<>("Date"));
 
         tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn);
 //        TableFilter.Builder builder = TableFilter.forTableView(tableView);
 //        fileTableFilter = builder.apply();
         setDragHandlers(tableView);
-
     }
 
     final protected void setDragHandlers(Node mouseNode) {
@@ -200,8 +202,10 @@ public class ScanTable {
             scanOutputDir = selectedDir.getPath();
             ObservableList<FileTableItem> fileTableItems = tableView.getItems();
             ArrayList<String> fileNames = new ArrayList<>();
+            int rowNum = 1;
             for (FileTableItem fileTableItem : fileTableItems) {
                 fileNames.add(fileTableItem.getFileName());
+                fileTableItem.setRow(rowNum++);
             }
             String script = chartProcessor.buildMultiScript(scanDir, scanOutputDir, fileNames, combineFileMode);
             System.out.println(script);
@@ -229,8 +233,7 @@ public class ScanTable {
     }
 
     private void loadScanFiles(ArrayList<String> nmrFiles, int beginIndex) {
-        fileTableFilter.getBackingList().clear();
-        ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
+        fileListItems.clear();
         long firstDate = Long.MAX_VALUE;
         for (String filePath : nmrFiles) {
             NMRData nmrData = null;
@@ -250,7 +253,7 @@ public class ScanTable {
         for (FileTableItem item : fileListItems) {
             item.setDate(item.getDate() - firstDate);
         }
-        fileTableFilter.getBackingList().addAll(fileListItems);
+        fileTableFilter.resetFilter();
     }
 
     public void loadScanTable() {
@@ -261,26 +264,41 @@ public class ScanTable {
     }
 
     private void loadScanTable(File file) {
-        ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
+        fileListItems.clear();
         scanDir = file.getParent();
         long firstDate = Long.MAX_VALUE;
         int iLine = 0;
         String[] headers = null;
         HashMap<String, String> fieldMap = new HashMap();
+        boolean[] notDouble = null;
+        boolean[] notInteger = null;
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
                 if (iLine == 0) {
                     headers = line.split("\t");
+                    notDouble = new boolean[headers.length];
+                    notInteger = new boolean[headers.length];
                     updateTable(headers);
                 } else {
                     String[] fields = line.split("\t");
                     for (int iField = 0; iField < fields.length; iField++) {
+                        fields[iField] = fields[iField].trim();
+                        try {
+                            int fieldValue = Integer.parseInt(fields[iField]);
+                        } catch (NumberFormatException nfE) {
+                            notInteger[iField] = true;
+                            try {
+                                double fieldValue = Double.parseDouble(fields[iField]);
+                            } catch (NumberFormatException nfE2) {
+                                notDouble[iField] = true;
+                            }
+                        }
                         fieldMap.put(headers[iField], fields[iField]);
                     }
-                    String fileName = fieldMap.get("FileName");
+                    String fileName = fieldMap.get("path");
                     if (fileName == null) {
-                        System.out.println("No FileName");
+                        System.out.println("No path field");
                         return;
                     }
                     fieldMap.remove("fid");
@@ -305,43 +323,101 @@ public class ScanTable {
         } catch (IOException ioE) {
 
         }
+        for (int i = 0; i < headers.length; i++) {
+            if (!notInteger[i]) {
+                columnTypes.put(headers[i], "I");
+            } else if (!notDouble[i]) {
+                columnTypes.put(headers[i], "D");
+            } else {
+                columnTypes.put(headers[i], "S");
+            }
+            System.out.println("type " + headers[i] + " " + columnTypes.get(headers[i]));
+        }
+
         for (FileTableItem item : fileListItems) {
             item.setDate(item.getDate() - firstDate);
+            item.setTypes(headers, notDouble, notInteger);
         }
-        fileTableFilter.getBackingList().addAll(fileListItems);
+        fileTableFilter.resetFilter();
 
     }
 
-    private void addTableColumn(String name) {
+    public void addTableColumn(String newName, String type) {
+        ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
+        boolean present = false;
+        String[] headers = new String[columns.size() + 1];
+        int i = 0;
+        for (TableColumn column : columns) {
+            String name = column.getText();
+            if (name.equals(newName)) {
+                present = true;
+                break;
+            }
+            headers[i++] = name;
+        }
+
+        if (!present) {
+            columnTypes.put(headers[i], type);
+            headers[i] = newName;
+            updateTable(headers);
+        } else {
+        }
 
     }
 
     private void updateTable(String[] headers) {
-        ObservableList<FileTableItem> data = FXCollections.observableArrayList();
-        tableView.itemsProperty().setValue(data);
-
-        TableColumn<FileTableItem, String> fileColumn = new TableColumn<>("FileName");
-        TableColumn<FileTableItem, String> seqColumn = new TableColumn<>("Sequence");
-        TableColumn<FileTableItem, String> nDimColumn = new TableColumn<>("nDim");
-        TableColumn<FileTableItem, Long> dateColumn = new TableColumn<>("Date");
+        TableColumn<FileTableItem, String> fileColumn = new TableColumn<>("path");
+        TableColumn<FileTableItem, String> seqColumn = new TableColumn<>("sequence");
+        TableColumn<FileTableItem, Number> nDimColumn = new TableColumn<>("ndim");
+        TableColumn<FileTableItem, Long> dateColumn = new TableColumn<>("etime");
+        TableColumn<FileTableItem, Number> rowColumn = new TableColumn<>("row");
 
         fileColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getFileName()));
         seqColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getSeqName()));
-        nDimColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getNDim())));
-        dateColumn.setCellValueFactory(new PropertyValueFactory<FileTableItem, Long>("Date"));
+        nDimColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getNDim()));
+        rowColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getRow()));
+        dateColumn.setCellValueFactory(new PropertyValueFactory<>("Date"));
         tableView.getColumns().clear();
-        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn);
+        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn);
         for (String header : headers) {
-            if (header.equalsIgnoreCase("FileName") || header.equalsIgnoreCase("Sequence") || header.equalsIgnoreCase("nDim") || header.equalsIgnoreCase("Date") || header.equalsIgnoreCase("fid")) {
+            if (header.equalsIgnoreCase("path") || header.equalsIgnoreCase("Sequence") || header.equalsIgnoreCase("nDim") || header.equalsIgnoreCase("eTime") || header.equalsIgnoreCase("row") || header.equalsIgnoreCase("fid")) {
                 continue;
             }
-            TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
-            extraColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
-            tableView.getColumns().add(extraColumn);
+            String type = columnTypes.get(header);
+            if (type == null) {
+                type = "S";
+                System.out.println("No type for " + header);
+            }
+            if (type.equals("D")) {
+                TableColumn<FileTableItem, Number> doubleExtraColumn = new TableColumn<>(header);
+                doubleExtraColumn.setCellValueFactory((e) -> new SimpleDoubleProperty(e.getValue().getDoubleExtra(header)));
+                tableView.getColumns().add(doubleExtraColumn);
+            } else if (type.equals("I")) {
+                TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);
+                intExtraColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getIntegerExtra(header)));
+                tableView.getColumns().add(intExtraColumn);
+            } else {
+                TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
+                extraColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
+                tableView.getColumns().add(extraColumn);
+
+            }
         }
+        updateFilter();
+    }
+
+    public void saveFilters() {
+        fileTableFilter.getColumnFilters();
+    }
+
+    public void updateFilter() {
+        tableView.setItems(fileListItems);
         builder = TableFilter.forTableView(tableView);
         fileTableFilter = builder.apply();
         fileTableFilter.resetFilter();
     }
 
+    public ObservableList<FileTableItem> getItems() {
+        return fileListItems;
+    }
 }
