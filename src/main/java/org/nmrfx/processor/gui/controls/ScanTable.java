@@ -55,6 +55,7 @@ import org.controlsfx.control.table.TableFilter;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.ChartProcessor;
+import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.ScannerController;
 import org.python.util.PythonInterpreter;
@@ -96,6 +97,25 @@ public class ScanTable {
 //        TableFilter.Builder builder = TableFilter.forTableView(tableView);
 //        fileTableFilter = builder.apply();
         setDragHandlers(tableView);
+        tableView.getSelectionModel().selectedIndexProperty().addListener(e -> {
+            ObservableList<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
+            selectionChanged(selected);
+
+        });
+    }
+
+    final protected void selectionChanged(ObservableList<Integer> selected) {
+        if (!selected.isEmpty()) {
+            PolyChart chart = scannerController.getChart();
+            int index = selected.get(0);
+            FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
+            Integer row = fileTableItem.getRow();
+            if (row != null) {
+                chart.setDrawlist(row - 1);
+                chart.refresh();
+            }
+        }
+
     }
 
     final protected void setDragHandlers(Node mouseNode) {
@@ -357,8 +377,8 @@ public class ScanTable {
         }
 
         if (!present) {
-            columnTypes.put(headers[i], type);
             headers[i] = newName;
+            columnTypes.put(headers[i], type);
             updateTable(headers);
         } else {
         }
