@@ -1218,6 +1218,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         layoutPlotChildren();
         hideCrossHairs();
     }
+    
+    public double[] getVerticalCrosshairPositions() {
+        double[] positions = new double[2];
+        positions[0] = crossHairPositions[0][1];
+        positions[1] = crossHairPositions[1][1];
+        return positions;
+    }
 
     protected double getRefPositionFromCrossHair(double newPPM) {
         Dataset dataset = getDataset();
