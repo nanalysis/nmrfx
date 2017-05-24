@@ -43,8 +43,19 @@
                 </Tab>
                 <Tab text="View">
                     <content>
-                        <GridPane fx:id="viewGrid" layoutX="110.0" layoutY="70.0" prefHeight="272.0" prefWidth="537.0">
-                        </GridPane>
+                        <VBox>
+                            <children>
+                                <ToolBar fx:id="viewToolBar2" orientation="HORIZONTAL" BorderPane.alignment="CENTER">
+                                    <items>
+                                        <ComboBox fx:id="disDimCombo">
+                                          
+                                        </ComboBox>
+                                    </items>
+                                </ToolBar>
+                                <GridPane fx:id="viewGrid" layoutX="110.0" layoutY="70.0" prefHeight="272.0" prefWidth="537.0">
+                                </GridPane>
+                            </children>
+                        </VBox>
                     </content>
                 </Tab>
                 <Tab text="Style">
@@ -106,17 +117,17 @@
                 <Tab text="Peaks">
                     <content>
                         <BorderPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                        <top>
-                            <CheckBox fx:id="peakStatusCheckBox" selected="true" text="ShowPeaks"  onAction="#peakStatusAction" />
+                            <top>
+                                <CheckBox fx:id="peakStatusCheckBox" selected="true" text="ShowPeaks"  onAction="#peakStatusAction" />
 
-                        </top>
-                          <center>
+                            </top>
+                            <center>
                                 <TableView fx:id="peakListTableView">
                                     <columns>
                                     </columns>
                                 </TableView>
                             </center>
-                          </BorderPane>
+                        </BorderPane>
                     </content>
                 </Tab>
 
