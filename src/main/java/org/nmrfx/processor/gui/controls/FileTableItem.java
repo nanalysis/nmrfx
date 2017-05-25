@@ -18,6 +18,8 @@
 package org.nmrfx.processor.gui.controls;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -132,12 +134,71 @@ public class FileTableItem {
     public void setTypes(String[] headers, boolean[] notDouble, boolean[] notInteger) {
         for (int i = 0; i < headers.length; i++) {
             if (!notInteger[i]) {
-                intExtras.put(headers[i], Integer.parseInt(headers[i]));
+                intExtras.put(headers[i], Integer.parseInt(extras.get(headers[i])));
                 extras.remove(headers[i]);
             } else if (!notDouble[i]) {
-                doubleExtras.put(headers[i], Double.parseDouble(headers[i]));
+                doubleExtras.put(headers[i], Double.parseDouble(extras.get(headers[i])));
                 extras.remove(headers[i]);
             }
         }
+    }
+
+    /*
+        private SimpleStringProperty fileName;
+    private SimpleStringProperty seqName;
+    private SimpleIntegerProperty nDim;
+    private SimpleIntegerProperty row;
+    private SimpleLongProperty date;
+
+     */
+    public String toString(List<String> headers, Map<String, String> columnTypes) {
+        StringBuilder sBuilder = new StringBuilder();
+        char sepChar = '\t';
+        for (String header : headers) {
+            if (sBuilder.length() > 0) {
+                sBuilder.append(sepChar);
+            }
+            switch (header.toLowerCase()) {
+                case "path": {
+                    sBuilder.append(getFileName());
+                    break;
+                }
+                case "sequence": {
+                    sBuilder.append(getSeqName());
+                    break;
+                }
+                case "row": {
+                    sBuilder.append(getRow());
+                    break;
+                }
+                case "ndim": {
+                    sBuilder.append(getNDim());
+                    break;
+                }
+                case "etime": {
+                    sBuilder.append(getDate());
+                    break;
+                }
+                default: {
+                    String type = columnTypes.get(header);
+                    switch (type) {
+                        case "D": {
+                            sBuilder.append(getDoubleExtra(header));
+                            break;
+                        }
+                        case "I": {
+                            sBuilder.append(getIntegerExtra(header));
+                            break;
+                        }
+                        default: {
+                            sBuilder.append(getExtra(header));
+                        }
+
+                    }
+
+                }
+            }
+        }
+        return sBuilder.toString();
     }
 }
