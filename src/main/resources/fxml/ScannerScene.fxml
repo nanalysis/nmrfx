@@ -15,33 +15,53 @@
         <URL value="@/styles/Styles.css" />
     </stylesheets>
     <children>
-        <TabPane minWidth="400" minHeight="100" VBox.vgrow="ALWAYS">
-            <Tab text="Table" closable="false">
-                <VBox fx:id="opBox" VBox.vgrow="ALWAYS">
+        <BorderPane VBox.vgrow="ALWAYS">
+            <top>
+                <HBox BorderPane.alignment="CENTER" spacing="12">
                     <children>
-                        <ToolBar prefWidth="200.0">
+                        <MenuButton  mnemonicParsing="false" text="File">
                             <items>
-                                <Button fx:id="scanDirChooserButton" mnemonicParsing="false" onAction="#scanDirAction" styleClass="toolButton" text="Scan" />
-                                <Button fx:id="loadTableChooserButton" mnemonicParsing="false" onAction="#loadTableAction" styleClass="toolButton" text="Load" />
-                                <Button fx:id="processScanDirButton" mnemonicParsing="false" styleClass="toolButton" text="Process All" onAction="#processScanDir"/>
-                                <CheckBox fx:id="combineFiles" mnemonicParsing="false" text="Combine Output" />
-                                <Button fx:id="measureButton" mnemonicParsing="false" styleClass="toolButton" text="Measure" onAction="#measure"/>
+                                <MenuItem mnemonicParsing="false" onAction="#scanDirAction" text="Scan Directory..." />
+                                <MenuItem mnemonicParsing="false" onAction="#loadTableAction" text="Open Table..." />
+                                <MenuItem mnemonicParsing="false" onAction="#saveTableAction" text="Save Table..." />
+                                <MenuItem mnemonicParsing="false" onAction="#processScanDirAndCombine" text="Process and Combine" />
+                                <MenuItem mnemonicParsing="false" onAction="#processScanDir" text="Process" />
                             </items>
-                        </ToolBar>
-                        <TableView fx:id="tableView" prefHeight="0" minHeight="0.0"  VBox.vgrow="ALWAYS" onMouseClicked="#openSelectedListFile" />
+                        </MenuButton>
+                        <MenuButton  mnemonicParsing="false" text="Table">
+                            <items>
+                                <MenuItem mnemonicParsing="false" onAction="#purgeInactive" text="Use Current State" />
+                            </items>
+                        </MenuButton>
+                        <MenuButton  mnemonicParsing="false" text="Analyze">
+                            <items>
+                                <MenuItem mnemonicParsing="false" onAction="#measure" text="Measure" />
+                            </items>
+                        </MenuButton>
                     </children>
-                </VBox>
-            </Tab>
-            <Tab text="Parameters" closable="false">
-                <VBox>
-                    <children>
-                        <PropertySheet fx:id="parSheet" prefHeight="0" minHeight="0.0" VBox.vgrow="ALWAYS">
+                </HBox>
+            </top>
+            <center>
+                <TabPane minWidth="400" minHeight="100" VBox.vgrow="ALWAYS">
+                    <Tab text="Table" closable="false">
+                        <VBox fx:id="opBox" VBox.vgrow="ALWAYS">
+                            <children>
+                                <TableView fx:id="tableView" prefHeight="0" minHeight="0.0"  VBox.vgrow="ALWAYS" onMouseClicked="#openSelectedListFile" />
+                            </children>
+                        </VBox>
+                    </Tab>
+                    <Tab text="Parameters" closable="false">
+                        <VBox>
+                            <children>
+                                <PropertySheet fx:id="parSheet" prefHeight="0" minHeight="0.0" VBox.vgrow="ALWAYS">
                             
                             
-                        </PropertySheet>
-                    </children>
-                </VBox>
-            </Tab>
-        </TabPane>
+                                </PropertySheet>
+                            </children>
+                        </VBox>
+                    </Tab>
+                </TabPane>
+            </center>
+        </BorderPane>
     </children>
 </VBox>

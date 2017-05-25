@@ -24,10 +24,13 @@
 package org.nmrfx.processor.gui.controls;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -105,14 +108,17 @@ public class ScanTable {
     }
 
     final protected void selectionChanged(ObservableList<Integer> selected) {
-        if (!selected.isEmpty()) {
-            PolyChart chart = scannerController.getChart();
-            int index = selected.get(0);
-            FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
-            Integer row = fileTableItem.getRow();
-            if (row != null) {
-                chart.setDrawlist(row - 1);
-                chart.refresh();
+        ProcessorController processorController = scannerController.getFXMLController().getProcessorController();
+        if (processorController.isViewingDataset()) {
+            if (!selected.isEmpty()) {
+                PolyChart chart = scannerController.getChart();
+                int index = selected.get(0);
+                FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
+                Integer row = fileTableItem.getRow();
+                if (row != null) {
+                    chart.setDrawlist(row - 1);
+                    chart.refresh();
+                }
             }
         }
 
@@ -280,7 +286,9 @@ public class ScanTable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(("Open Table File"));
         File file = fileChooser.showOpenDialog(popOver);
-        loadScanTable(file);
+        if (file != null) {
+            loadScanTable(file);
+        }
     }
 
     private void loadScanTable(File file) {
@@ -292,6 +300,7 @@ public class ScanTable {
         HashMap<String, String> fieldMap = new HashMap();
         boolean[] notDouble = null;
         boolean[] notInteger = null;
+        String[] standardHeaders = {"path", "seq", "row", "etime", "ndim"};
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -316,26 +325,59 @@ public class ScanTable {
                         }
                         fieldMap.put(headers[iField], fields[iField]);
                     }
-                    String fileName = fieldMap.get("path");
-                    if (fileName == null) {
-                        System.out.println("No path field");
-                        return;
-                    }
-                    fieldMap.remove("fid");
-                    Path filePath = FileSystems.getDefault().getPath(scanDir, fileName);
-                    NMRData nmrData = null;
-                    try {
-                        nmrData = NMRDataUtil.getNMRData(filePath.toString());
-                    } catch (IOException ioE) {
-
-                    }
-                    if (nmrData != null) {
-                        long date = nmrData.getDate();
-                        if (date < firstDate) {
-                            firstDate = date;
+                    boolean hasAll = true;
+                    int nDim = 1;
+                    long eTime = 0;
+                    String sequence = "";
+                    for (String standardHeader : standardHeaders) {
+                        if (!fieldMap.containsKey(standardHeader)) {
+                            hasAll = false;
+                        } else {
+                            switch (standardHeader) {
+                                case "ndim":
+                                    nDim = Integer.parseInt(fieldMap.get(standardHeader));
+                                    break;
+                                case "etime":
+                                    eTime = Long.parseLong(fieldMap.get(standardHeader));
+                                    break;
+                                case "seq":
+                                    sequence = fieldMap.get(standardHeader);
+                                    break;
+                            }
                         }
-                        fileListItems.add(new FileTableItem(fileName, nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), fieldMap));
                     }
+                    String fileName = fieldMap.get("path");
+                    if (!hasAll) {
+                        if ((fileName == null) || (fileName.length() == 0)) {
+                            System.out.println("No path field or value");
+                            return;
+                        }
+                        Path filePath = FileSystems.getDefault().getPath(scanDir, fileName);
+
+                        NMRData nmrData = null;
+                        try {
+                            nmrData = NMRDataUtil.getNMRData(filePath.toString());
+                        } catch (IOException ioE) {
+                            return;
+                        }
+
+                        if (nmrData != null) {
+                            if (!fieldMap.containsKey("etime")) {
+                                eTime = nmrData.getDate();
+                            }
+                            if (!fieldMap.containsKey("seq")) {
+                                sequence = nmrData.getSequence();
+                            }
+                            if (!fieldMap.containsKey("ndim")) {
+                                nDim = nmrData.getNDim();
+                            }
+                        }
+                    }
+                    if (eTime < firstDate) {
+                        firstDate = eTime;
+                    }
+
+                    fileListItems.add(new FileTableItem(fileName, sequence, nDim, eTime, fieldMap));
                 }
 
                 iLine++;
@@ -360,6 +402,43 @@ public class ScanTable {
         }
         fileTableFilter.resetFilter();
 
+    }
+
+    public void saveScanTable() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Table File");
+        File file = fileChooser.showSaveDialog(popOver);
+        if (file != null) {
+            saveScanTable(file);
+        }
+    }
+
+    private void saveScanTable(File file) {
+        Charset charset = Charset.forName("US-ASCII");
+        ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
+        List<String> headers = new ArrayList<>();
+        for (TableColumn column : columns) {
+            String name = column.getText();
+            headers.add(name);
+        }
+
+        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
+            boolean first = true;
+            for (String header : headers) {
+                if (!first) {
+                    writer.write('\t');
+                } else {
+                    first = false;
+                }
+                writer.write(header, 0, header.length());
+            }
+            for (FileTableItem item : tableView.getItems()) {
+                writer.write('\n');
+                String s = item.toString(headers, columnTypes);
+                writer.write(s, 0, s.length());
+            }
+        } catch (IOException x) {
+        }
     }
 
     public void addTableColumn(String newName, String type) {

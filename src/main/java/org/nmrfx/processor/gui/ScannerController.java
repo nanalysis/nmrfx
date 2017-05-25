@@ -15,6 +15,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -263,9 +264,15 @@ public class ScannerController implements Initializable {
     }
 
     @FXML
+    private void processScanDirAndCombine(ActionEvent event) {
+        ChartProcessor chartProcessor = fxmlController.getChartProcessor();
+        scanTable.processScanDir(stage, chartProcessor, true);
+    }
+
+    @FXML
     private void processScanDir(ActionEvent event) {
         ChartProcessor chartProcessor = fxmlController.getChartProcessor();
-        scanTable.processScanDir(stage, chartProcessor, combineFiles.isSelected());
+        scanTable.processScanDir(stage, chartProcessor, false);
     }
 
     @FXML
@@ -276,6 +283,24 @@ public class ScannerController implements Initializable {
     @FXML
     private void loadTableAction(ActionEvent event) {
         scanTable.loadScanTable();
+    }
+
+    @FXML
+    private void saveTableAction(ActionEvent event) {
+        scanTable.saveScanTable();
+    }
+
+    @FXML
+    private void freezeSort(ActionEvent event) {
+
+    }
+
+    @FXML
+    private void purgeInactive(ActionEvent event) {
+        ObservableList<FileTableItem> tempItems = FXCollections.observableArrayList();
+        tempItems.addAll(tableView.getItems());
+        scanTable.getItems().clear();
+        scanTable.getItems().addAll(tempItems);
     }
 
     @FXML
