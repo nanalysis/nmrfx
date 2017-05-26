@@ -44,6 +44,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -100,6 +101,7 @@ public class ScanTable {
 //        TableFilter.Builder builder = TableFilter.forTableView(tableView);
 //        fileTableFilter = builder.apply();
         setDragHandlers(tableView);
+        tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         tableView.getSelectionModel().selectedIndexProperty().addListener(e -> {
             ObservableList<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
             selectionChanged(selected);
@@ -109,16 +111,18 @@ public class ScanTable {
 
     final protected void selectionChanged(ObservableList<Integer> selected) {
         ProcessorController processorController = scannerController.getFXMLController().getProcessorController();
-        if (processorController.isViewingDataset()) {
+        if ((processorController != null) && processorController.isViewingDataset()) {
             if (!selected.isEmpty()) {
                 PolyChart chart = scannerController.getChart();
-                int index = selected.get(0);
-                FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
-                Integer row = fileTableItem.getRow();
-                if (row != null) {
-                    chart.setDrawlist(row - 1);
-                    chart.refresh();
+                List<Integer> rows = new ArrayList<>();
+                for (Integer index : selected) {
+                    FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
+                    Integer row = fileTableItem.getRow();
+                    if (row != null) {
+                        rows.add(row);                    }
                 }
+                chart.setDrawlist(rows);
+                chart.refresh();
             }
         }
 
@@ -273,7 +277,7 @@ public class ScanTable {
                 if (date < firstDate) {
                     firstDate = date;
                 }
-                fileListItems.add(new FileTableItem(filePath.substring(beginIndex), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate()));
+                fileListItems.add(new FileTableItem(filePath.substring(beginIndex), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), 0));
             }
         }
         for (FileTableItem item : fileListItems) {
@@ -329,6 +333,7 @@ public class ScanTable {
                     int nDim = 1;
                     long eTime = 0;
                     String sequence = "";
+                    int row = 0;
                     for (String standardHeader : standardHeaders) {
                         if (!fieldMap.containsKey(standardHeader)) {
                             hasAll = false;
@@ -336,6 +341,9 @@ public class ScanTable {
                             switch (standardHeader) {
                                 case "ndim":
                                     nDim = Integer.parseInt(fieldMap.get(standardHeader));
+                                    break;
+                                case "row":
+                                    row = Integer.parseInt(fieldMap.get(standardHeader));
                                     break;
                                 case "etime":
                                     eTime = Long.parseLong(fieldMap.get(standardHeader));
@@ -377,7 +385,7 @@ public class ScanTable {
                         firstDate = eTime;
                     }
 
-                    fileListItems.add(new FileTableItem(fileName, sequence, nDim, eTime, fieldMap));
+                    fileListItems.add(new FileTableItem(fileName, sequence, nDim, eTime, row, fieldMap));
                 }
 
                 iLine++;

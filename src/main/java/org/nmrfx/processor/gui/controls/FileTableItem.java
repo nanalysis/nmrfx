@@ -40,16 +40,16 @@ public class FileTableItem {
     private HashMap<String, Integer> intExtras = new HashMap<>();
     private HashMap<String, Double> doubleExtras = new HashMap<>();
 
-    public FileTableItem(String fileName, String seqName, int nDim, long date) {
+    public FileTableItem(String fileName, String seqName, int nDim, long date, int row) {
         this.fileName = new SimpleStringProperty(fileName);
         this.seqName = new SimpleStringProperty(seqName);
         this.nDim = new SimpleIntegerProperty(nDim);
         this.date = new SimpleLongProperty(date);
-        this.row = new SimpleIntegerProperty(0);
+        this.row = new SimpleIntegerProperty(row);
     }
 
-    public FileTableItem(String fileName, String seqName, int nDim, long date, HashMap<String, String> extras) {
-        this(fileName, seqName, nDim, date);
+    public FileTableItem(String fileName, String seqName, int nDim, long date, int row, HashMap<String, String> extras) {
+        this(fileName, seqName, nDim, date, row);
         this.extras.putAll(extras);
     }
 

@@ -390,7 +390,7 @@ public class DrawSpectrum {
 
     public void draw1DSpectrum(DatasetAttributes dataAttributes, int orientation, AXMODE axMode, double ph0, double ph1, ArrayList<Double> nList, Path bcPath) {
         Vec specVec = new Vec(32);
-        int iChunk = 0;
+        int iChunk = dataAttributes.getLastChunk(1);
         boolean drawReal = dataAttributes.getDrawReal();
         boolean offsetMode = true;
         while (true) {

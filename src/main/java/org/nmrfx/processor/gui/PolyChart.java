@@ -1467,11 +1467,21 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         return datasetAttributes;
     }
 
-    public void setDrawlist(int item) {
+    public void setDrawlist(int selected) {
         if (!datasetAttributesList.isEmpty()) {
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
             datasetAttributes.setDrawListSize(1);
-            datasetAttributes.drawList[0] = item;
+            datasetAttributes.drawList[0] = selected;
+        }
+    }
+
+    public void setDrawlist(List<Integer> selected) {
+        if (!datasetAttributesList.isEmpty()) {
+            DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+            datasetAttributes.setDrawListSize(selected.size());
+            for (int i = 0, n = selected.size(); i < n; i++) {
+                datasetAttributes.drawList[i] = selected.get(i);
+            }
         }
 
     }
@@ -1617,7 +1627,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     }
                 }
                 if (disDimProp.get() != DISDIM.TwoD) {
-                    System.out.println("draw1d");
                     for (int iMode = 0; iMode < 2; iMode++) {
                         if (iMode == 0) {
                             datasetAttributes.setDrawReal(true);
