@@ -47,6 +47,7 @@ import org.apache.commons.math3.complex.Complex;
 import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
 import javafx.scene.shape.StrokeLineCap;
+import org.nmrfx.processor.gui.PolyChart.DISDIM;
 
 /**
  *
@@ -65,6 +66,7 @@ public class DrawSpectrum {
     final Canvas canvas;
     DrawTask drawTask;
     AXMODE[] axModes;
+    DISDIM disDim = DISDIM.TwoD;
 
     public DrawSpectrum(NMRAxis[] axes, Canvas canvas) {
         this.axes = axes;
@@ -81,6 +83,10 @@ public class DrawSpectrum {
             ((Service) drawTask.worker).cancel();
         });
         cancelButton.disableProperty().bind(((Service) drawTask.worker).stateProperty().isNotEqualTo(Task.State.RUNNING));
+    }
+
+    public void setDisDim(DISDIM disDim) {
+        this.disDim = disDim;
     }
 
     public void setAxes(NMRAxis[] axes) {
@@ -369,7 +375,7 @@ public class DrawSpectrum {
                 } else {
                     offset = bounds.getHeight() * (1.0 - sliceAttr.getOffsetYValue());
                 }
-                draw1DSpectrum(sliceVec, orientation, 0, AXMODE.PPM, drawReal, ph0, ph1, nList, null,
+                drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, ph0, ph1, nList, null,
                         (index, intensity) -> axes[0].getDisplayPosition(index),
                         (index, intensity) -> intensity * scale + offset, false);
             } else {
@@ -379,7 +385,7 @@ public class DrawSpectrum {
                 } else {
                     offset = bounds.getWidth() * sliceAttr.getOffsetXValue();
                 }
-                draw1DSpectrum(sliceVec, orientation, 0, AXMODE.PPM, drawReal, ph0, ph1, nList, null,
+                drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, ph0, ph1, nList, null,
                         (index, intensity) -> -intensity * scale + offset,
                         (index, intensity) -> axes[1].getDisplayPosition(index), false);
             }
@@ -390,7 +396,8 @@ public class DrawSpectrum {
 
     public void draw1DSpectrum(DatasetAttributes dataAttributes, int orientation, AXMODE axMode, double ph0, double ph1, ArrayList<Double> nList, Path bcPath) {
         Vec specVec = new Vec(32);
-        int iChunk = dataAttributes.getLastChunk(1);
+        int iChunk = dataAttributes.getLastChunk(0);
+        System.out.println("iChunk is " + iChunk);
         boolean drawReal = dataAttributes.getDrawReal();
         boolean offsetMode = true;
         while (true) {
@@ -408,7 +415,8 @@ public class DrawSpectrum {
                     break;
                 }
             }
-            draw1DSpectrum(specVec, orientation, 0, axMode, drawReal, ph0, ph1, nList, bcPath,
+            System.out.println("draw now");
+            drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, nList, bcPath,
                     (index, intensity) -> axes[0].getDisplayPosition(index),
                     (index, intensity) -> axes[1].getDisplayPosition(intensity), offsetMode);
             if (iChunk < 0) {
@@ -422,13 +430,7 @@ public class DrawSpectrum {
         return point;
     }
 
-    public void draw1DSpectrum(Vec vec, int orientation, AXMODE axMode, boolean drawReal, double ph0, double ph1, ArrayList<Double> nList, Path bcPath) {
-        draw1DSpectrum(vec, orientation, 0, axMode, drawReal, ph0, ph1, nList, bcPath,
-                (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> axes[1].getDisplayPosition(intensity), true);
-    }
-
-    public void draw1DSpectrum(Vec vec, int orientation, int dataOffset, AXMODE axMode, boolean drawReal, double ph0, double ph1, ArrayList<Double> nList, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec) {
+    public void drawVector(Vec vec, int orientation, int dataOffset, AXMODE axMode, boolean drawReal, double ph0, double ph1, ArrayList<Double> nList, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec) {
         int size = vec.getSize();
         double phase1Delta = ph1 / (size - 1);
         NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
@@ -455,41 +457,10 @@ public class DrawSpectrum {
             vecEndPoint = hold;
             dValue = indexAxis.getUpperBound();
         }
-        draw1DSpectrumCore(vec, dataOffset, drawReal, ph0, ph1, nList, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
-    }
-//            draw1DSpectrum(vec, orientation, 0, axMode, drawReal, ph0, ph1, nList, bcPath,
-//                (index, intensity) -> axes[0].getDisplayPosition(index),
-//                (index, intensity) -> axes[1].getDisplayPosition(intensity), true);
-
-    public static ArrayList<Double> draw1DSpectrum2(Vec vec, double xScale, double xOffset, double yScale, double yOffset) {
-        int size = vec.getSize();
-
-        int vecEndPoint = vec.getSize() - 1;
-        int vecStartPoint = 0;
-        return draw1DSpectrum2(vec, vecStartPoint, vecEndPoint, xScale, xOffset, yScale, yOffset);
+        drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, nList, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
     }
 
-    public static ArrayList<Double> draw1DSpectrum2(Vec vec, int vecStartPoint, int vecEndPoint, double xScale, double xOffset,
-            double yScale, double yOffset) {
-        int size = vec.getSize();
-        int dataOffset = 0;
-        int indexAxisDelta = 1;
-        double dValue = 0;
-        boolean drawReal = true;
-        double ph0 = 0.0;
-        double ph1 = 0.0;
-        boolean offsetVec = false;
-        double phase1Delta = ph1 / (size - 1);
-        ArrayList<Double> nList = new ArrayList<>();
-        Path bcPath = null;
-        DoubleBinaryOperator xFunction = (index, intensity) -> (index * xScale + xOffset);
-        DoubleBinaryOperator yFunction = (index, intensity) -> (intensity * yScale + yOffset);
-
-        draw1DSpectrumCore(vec, dataOffset, drawReal, ph0, ph1, nList, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
-        return nList;
-    }
-
-    public static ArrayList<Double> draw1DSpectrum2(Vec vec, NMRAxisIO xAxis, NMRAxisIO yAxis, AXMODE axMode) {
+    public static ArrayList<Double> drawVector(Vec vec, NMRAxisIO xAxis, NMRAxisIO yAxis, AXMODE axMode) {
         int dataOffset = 0;
         NMRAxisIO indexAxis = xAxis;
 
@@ -526,42 +497,11 @@ public class DrawSpectrum {
         ArrayList<Double> nList = new ArrayList<>();
         Path bcPath = null;
 
-        draw1DSpectrumCore(vec, dataOffset, drawReal, ph0, ph1, nList, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
+        drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, nList, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
         return nList;
     }
 
-    public static ArrayList<Double> draw1DSpectrum3(Vec vec, int vecStartPoint, int vecEndPoint, NMRAxisIO xAxis, NMRAxisIO yAxis) {
-        int size = vec.getSize();
-        int dataOffset = 0;
-        vecStartPoint = vec.getSize() - 1;
-        vecEndPoint = 0;
-        dataOffset = 0;
-        double indexAxisDelta = (xAxis.getLowerBound() - xAxis.getUpperBound()) / vecStartPoint;
-        double dValue = xAxis.getLowerBound();
-        if (vecStartPoint > vecEndPoint) {
-            int hold = vecStartPoint;
-            vecStartPoint = vecEndPoint;
-            vecEndPoint = hold;
-            dValue = xAxis.getUpperBound();
-        }
-
-        boolean drawReal = true;
-        double ph0 = 0.0;
-        double ph1 = 0.0;
-        boolean offsetVec = false;
-        double phase1Delta = ph1 / (size - 1);
-        ArrayList<Double> nList = new ArrayList<>();
-        Path bcPath = null;
-//        DoubleBinaryOperator xFunction = (index, intensity) -> (index * xScale + xOffset);
-//        DoubleBinaryOperator yFunction = (index, intensity) -> (intensity * yScale + yOffset);
-        DoubleBinaryOperator xFunction = (index, intensity) -> xAxis.getDisplayPosition(index);
-        DoubleBinaryOperator yFunction = (index, intensity) -> yAxis.getDisplayPosition(intensity);
-
-        draw1DSpectrumCore(vec, dataOffset, drawReal, ph0, ph1, nList, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
-        return nList;
-    }
-
-    public static void draw1DSpectrumCore(Vec vec, int dataOffset, boolean drawReal, double ph0, double ph1, ArrayList<Double> nList, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec, int start, int end, int size, double dValue, double dDelta, double delta) {
+    private static void drawVectoreCore(Vec vec, int dataOffset, boolean drawReal, double ph0, double ph1, ArrayList<Double> nList, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec, int start, int end, int size, double dValue, double dDelta, double delta) {
 
         if ((start - dataOffset) < 0) {
             start = dataOffset;

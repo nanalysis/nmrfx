@@ -137,10 +137,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     int phaseAxis = 0;
     double phaseFraction = 0.0;
 
-    enum DISDIM {
+    public enum DISDIM {
         OneDX, OneDY, TwoD;
     };
-    ObjectProperty disDimProp = new SimpleObjectProperty(OneDX);
+    ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(OneDX);
     final ContextMenu specMenu = new ContextMenu();
 
     KeyMonitor keyMonitor = new KeyMonitor();
@@ -1501,7 +1501,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
 
     void updateDatasetAttributeBounds() {
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-            datasetAttributes.updateBounds(axModes, axes);
+            datasetAttributes.updateBounds(axModes, axes, disDimProp.getValue());
         }
     }
 
@@ -1533,6 +1533,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
 
             }
             drawSpectrum.setAxes(axes);
+            drawSpectrum.setDisDim(disDimProp.getValue());
         }
         if (dataset.getFreqDomain(0)) {
             axModes[0] = AXMODE.PPM;
