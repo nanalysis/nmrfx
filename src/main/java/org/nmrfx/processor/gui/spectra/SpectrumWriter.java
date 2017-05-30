@@ -85,10 +85,11 @@ public class SpectrumWriter {
             drawHorizontalAxis(writer, xAxis, yAxis.getStart());
 
             writer.clipRect(xAxis.getStart(), yAxis.getStart(), width, height);
+            double[][] xy = new double[2][];
             for (Vec vec : vecs) {
-                ArrayList<Double> nlist = DrawSpectrum.drawVector(vec, xAxis, yAxis, axModes[0]);
+                DrawSpectrum.drawVector(vec, xAxis, yAxis, axModes[0], xy);
                 writer.setLineWidth(datasetAttributes.getPosLineWidth());
-                writer.drawPolyLine(nlist);
+                writer.drawPolyLine(xy[0], xy[1]);
             }
         } catch (GraphicsIOException ioE) {
             return null;

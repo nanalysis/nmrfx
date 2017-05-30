@@ -1593,7 +1593,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         bcPath.getElements().clear();
         bcPath.setStroke(Color.ORANGE);
         bcPath.setStrokeWidth(3.0);
-        nList.clear();
         bcList.clear();
         double width = xAxis.getWidth();
         double height = yAxis.getHeight();
@@ -1637,14 +1636,17 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                             }
                             datasetAttributes.setDrawReal(false);
                         }
-                        nList.clear();
                         bcList.clear();
-                        drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), nList, bcPath);
-                        drawSpecLine(datasetAttributes, gC, iMode);
+                        drawSpectrum.setToLastChunk(datasetAttributes);
+                        boolean ok;
+                        do {
+                            ok = drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
+                            double[][] xy = drawSpectrum.getXY();
+                            int nPoints = drawSpectrum.getNPoints();
+                            drawSpecLine(datasetAttributes, gC, iMode, nPoints, xy);
+                        } while (ok);
                     }
-                    nList.clear();
-                    drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0], nList);
-                    drawSpecLine(datasetAttributes, gC, 0);
+                    drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
                 } else {
                     draw2DList.add(datasetAttributes);
                 }
@@ -1656,16 +1658,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         }
         if (!datasetAttributesList.isEmpty()) {
             drawPeakLists(true);
-
         }
 
         refreshCrossHairs();
     }
 
-    void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContext gC, int iMode) {
-        if (nList.size() > 1) {
-            double x = nList.get(0);
-            double y = nList.get(1);
+    void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContext gC, int iMode, int nPoints, double[][] xy) {
+        if (nPoints > 1) {
             if (iMode == 0) {
                 gC.setStroke(datasetAttributes.getPosColor());
                 gC.setLineWidth(datasetAttributes.getPosLineWidth());
@@ -1674,14 +1673,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 gC.setLineWidth(datasetAttributes.getNegLineWidth());
             }
             gC.setLineCap(StrokeLineCap.BUTT);
-            gC.beginPath();
-            gC.moveTo(x, y);
-            for (int i = 2; i < nList.size(); i += 2) {
-                x = nList.get(i);
-                y = nList.get(i + 1);
-                gC.lineTo(x, y);
-            }
-            gC.stroke();
+            gC.strokePolyline(xy[0], xy[1], nPoints);
         }
 
     }
@@ -2315,7 +2307,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     xSliceLine.setStroke(sliceAttributes.getSliceColor());
                     nList.clear();
                     for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(0), getPh1(0), nList);
+                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(0), getPh1(0));
                     }
                     xSliceLine.getPoints().addAll(nList);
                 }
@@ -2326,7 +2318,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     ySliceLine.setStroke(sliceAttributes.getSliceColor());
                     nList.clear();
                     for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(1), getPh1(1), nList);
+                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(1), getPh1(1));
                     }
                     ySliceLine.getPoints().addAll(nList);
                 }
