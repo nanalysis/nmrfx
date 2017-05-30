@@ -201,4 +201,21 @@ public class FileTableItem {
         }
         return sBuilder.toString();
     }
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(seqName.get());
+        sBuilder.append(" ");
+        sBuilder.append(nDim.get());
+        sBuilder.append(" ");
+        sBuilder.append(row.get());
+        sBuilder.append(" ");
+        sBuilder.append(date.get());
+        sBuilder.append(" ");
+        sBuilder.append(extras.toString());
+        sBuilder.append(" ");
+        sBuilder.append(doubleExtras.toString());
+        sBuilder.append(" ");
+        sBuilder.append(intExtras.toString());
+        return sBuilder.toString(); 
+    }
 }
