@@ -306,8 +306,8 @@ public class ScannerController implements Initializable {
     @FXML
     private void openSelectedListFile(MouseEvent mouseEvent) {
         if (mouseEvent.getClickCount() == 2) {
-            ProcessorController processorController = fxmlController.getProcessorController();
-            if (!processorController.isViewingDataset()) {
+            ProcessorController processorController = fxmlController.getProcessorController(false);
+            if ((processorController != null) && !processorController.isViewingDataset()) {
                 String scriptString = processorController.getCurrentScript();
                 scanTable.openSelectedListFile(scriptString);
             }

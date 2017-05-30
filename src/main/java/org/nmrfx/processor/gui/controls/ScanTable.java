@@ -110,8 +110,8 @@ public class ScanTable {
     }
 
     final protected void selectionChanged(ObservableList<Integer> selected) {
-        ProcessorController processorController = scannerController.getFXMLController().getProcessorController();
-        if ((processorController != null) && processorController.isViewingDataset()) {
+        ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
+        if ((processorController == null) || processorController.isViewingDataset()) {
             if (!selected.isEmpty()) {
                 PolyChart chart = scannerController.getChart();
                 List<Integer> rows = new ArrayList<>();
@@ -119,7 +119,8 @@ public class ScanTable {
                     FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
                     Integer row = fileTableItem.getRow();
                     if (row != null) {
-                        rows.add(row);                    }
+                        rows.add(row - 1); // rows index from 1
+                    }
                 }
                 chart.setDrawlist(rows);
                 chart.refresh();
@@ -243,7 +244,7 @@ public class ScanTable {
             processInterp.exec("from pyproc import *");
             processInterp.exec("useProcessor()");
             processInterp.exec(script);
-            ProcessorController processorController = scannerController.getFXMLController().getProcessorController();
+            ProcessorController processorController = scannerController.getFXMLController().getProcessorController(true);
 
             processorController.viewDatasetInApp();
         }
@@ -257,7 +258,7 @@ public class ScanTable {
             String filePath = Paths.get(scanDir, fileName).toString();
 
             scannerController.getChart().getFXMLController().openFile(filePath, false, false);
-            ProcessorController processorController = scannerController.getFXMLController().getProcessorController();
+            ProcessorController processorController = scannerController.getFXMLController().getProcessorController(true);
             processorController.parseScript(scriptString);
         }
     }
@@ -408,6 +409,7 @@ public class ScanTable {
             item.setDate(item.getDate() - firstDate);
             item.setTypes(headers, notDouble, notInteger);
         }
+        updateTable(headers);
         fileTableFilter.resetFilter();
 
     }

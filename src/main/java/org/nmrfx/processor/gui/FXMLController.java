@@ -319,7 +319,10 @@ public class FXMLController implements Initializable {
 
     }
 
-    public ProcessorController getProcessorController() {
+    public ProcessorController getProcessorController(boolean createIfNull) {
+        if ((processorController == null) && createIfNull) {
+            processorController = ProcessorController.create(this, stage, getActiveChart());
+        }
         return processorController;
     }
 
