@@ -62,6 +62,7 @@ import org.apache.commons.math3.util.Precision;
  */
 class BrukerData implements NMRData {
 
+    private final static int MAXDIM = 10;
     private int tbytes = 0;             // TD,1
     private int np;                   // TD,1
     private int nvectors;             // NS,1
@@ -74,18 +75,18 @@ class BrukerData implements NMRData {
     private boolean negatePairs = false;
     private boolean fixDSP = true;
     private boolean fixByShift = false;
-    private boolean[] complexDim = new boolean[5];
-    private double[] f1coef[] = new double[5][];   // FnMODE,2 MC2,2
-    private String[] f1coefS = new String[5];   // FnMODE,2 MC2,2
-    private String fttype[] = new String[5];
-    private int tdsize[] = new int[5];  // TD,1 TD,2 etc.
-    private int arraysize[] = new int[5];  // TD,1 TD,2 etc.
-    private int maxSize[] = new int[5];  // TD,1 TD,2 etc.
+    private boolean[] complexDim = new boolean[MAXDIM];
+    private double[] f1coef[] = new double[MAXDIM][];   // FnMODE,2 MC2,2
+    private String[] f1coefS = new String[MAXDIM];   // FnMODE,2 MC2,2
+    private String fttype[] = new String[MAXDIM];
+    private int tdsize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
+    private int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
+    private int maxSize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
     private double deltaPh0_2 = 0.0;
     // fixme dynamically determine size
-    private Double[] Ref = new Double[5];
-    private Double[] Sw = new Double[5];
-    private Double[] Sf = new Double[5];
+    private Double[] Ref = new Double[MAXDIM];
+    private Double[] Sw = new Double[MAXDIM];
+    private Double[] Sf = new Double[MAXDIM];
     private String text = null;
 
     private final String fpath;
@@ -667,19 +668,22 @@ class BrukerData implements NMRData {
     private void openParFile(String parpath) {
         parMap = new LinkedHashMap<String, String>(200);
         // process proc files if they exist
-        int procdim = 0;
         String path = parpath + File.separator + "pdata";
         if ((new File(path)).exists()) {
-            final String[] procfiles = {"procs", "proc2s", "proc3s", "proc4s"};
             Path bdir = Paths.get(path);
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(bdir, "[0-9]")) {
                 for (Path entry : stream) {
                     String s = entry.toString();
                     if (new File(s + File.separator + "procs").exists()) {
-                        for (int i = 0; i < procfiles.length; i++) {
-                            path = s + File.separator + procfiles[i];
+                        for (int i = 0; i < MAXDIM; i++) {
+                            String procfile;
+                            if (i == 0) {
+                                procfile = "procs";
+                            } else {
+                                procfile = "proc" + (i + 1) + "s";
+                            }
+                            path = s + File.separator + procfile;
                             if ((new File(path)).exists()) {
-                                procdim = i + 1;
                                 BrukerPar.processBrukerParFile(parMap, path, i + 1, false);
                             }
                         }
@@ -692,9 +696,14 @@ class BrukerData implements NMRData {
         }
         // process acqu files if they exist
         int acqdim = 0;
-        final String[] acqfiles = {"acqus", "acqu2s", "acqu3s", "acqu4s"};
-        for (int i = 0; i < acqfiles.length; i++) {
-            path = parpath + File.separator + acqfiles[i];
+        for (int i = 0; i < MAXDIM; i++) {
+            String acqfile;
+            if (i == 0) {
+                acqfile = "acqus";
+            } else {
+                acqfile = "acqu" + (i + 1) + "s";
+            }
+            path = parpath + File.separator + acqfile;
             try {
                 if ((new File(path)).exists()) {
                     BrukerPar.processBrukerParFile(parMap, path, i + 1, false);
@@ -703,9 +712,19 @@ class BrukerData implements NMRData {
                         if (iPar > 1) {
                             acqdim++;
                         } else {
-                            break;
+                            if ((iPar = getParInt("NusTD," + (i + 1))) != null) {
+                                if (iPar > 1) {
+                                    acqdim++;
+                                } else {
+                                    break;
+                                }
+                            } else {
+                                break;
+                            }
                         }
                     }
+                } else {
+                    break;
                 }
             } catch (NMRParException ex) {
                 logger.log(Level.WARNING, ex.getMessage());
