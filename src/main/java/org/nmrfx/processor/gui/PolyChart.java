@@ -84,7 +84,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
-import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
+import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
 public class PolyChart<X, Y> extends XYChart<X, Y> {
 
@@ -140,7 +140,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     public enum DISDIM {
         OneDX, OneDY, TwoD;
     };
-    ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(OneDX);
+    ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(TwoD);
     final ContextMenu specMenu = new ContextMenu();
 
     KeyMonitor keyMonitor = new KeyMonitor();
@@ -1410,11 +1410,16 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         //System.out.println("set datset");
         SpectrumStatusBar statusBar = controller.getStatusBar();
         DatasetAttributes datasetAttributes = null;
+        System.out.println("set datset");
         if (dataset != null) {
+            System.out.println("nda " + dataset.getNDim() + " " + dataset.getNFreqDims());
             if ((dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1)) {
+                System.out.println("ndb " + dataset.getNDim() + " " + dataset.getNFreqDims());
                 disDimProp.set(DISDIM.OneDX);
                 //statusBar.sliceStatus.setSelected(false);
                 setSliceStatus(false);
+            } else {
+                disDimProp.set(DISDIM.TwoD);
             }
             if (append) {
                 datasetAttributes = new DatasetAttributes(dataset);
@@ -1647,6 +1652,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                         } while (ok);
                     }
                     drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
+                    double[][] xy = drawSpectrum.getXY();
+                    int nPoints = drawSpectrum.getNPoints();
+                    drawSpecLine(datasetAttributes, gC, 0, nPoints, xy);
+
                 } else {
                     draw2DList.add(datasetAttributes);
                 }
@@ -2308,6 +2317,12 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     nList.clear();
                     for (DatasetAttributes datasetAttributes : datasetAttributesList) {
                         drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(0), getPh1(0));
+                        double[][] xy = drawSpectrum.getXY();
+                        int nPoints = drawSpectrum.getNPoints();
+                        for (int iPoint = 0; iPoint < nPoints; iPoint++) {
+                            nList.add(xy[0][iPoint]);
+                            nList.add(xy[1][iPoint]);
+                        }
                     }
                     xSliceLine.getPoints().addAll(nList);
                 }
@@ -2319,6 +2334,12 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     nList.clear();
                     for (DatasetAttributes datasetAttributes : datasetAttributesList) {
                         drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(1), getPh1(1));
+                        double[][] xy = drawSpectrum.getXY();
+                        int nPoints = drawSpectrum.getNPoints();
+                        for (int iPoint = 0; iPoint < nPoints; iPoint++) {
+                            nList.add(xy[0][iPoint]);
+                            nList.add(xy[1][iPoint]);
+                        }
                     }
                     ySliceLine.getPoints().addAll(nList);
                 }
