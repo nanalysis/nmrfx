@@ -191,7 +191,7 @@ public class SpecAttrWindowController implements Initializable {
 
     private void createViewGrid() {
         disDimCombo.getItems().addAll(OneDX, TwoD);
-        disDimCombo.setValue(OneDX);
+        //disDimCombo.setValue(OneDX);
         limitFields = new StringProperty[rowNames.length][2];
         int iRow = 1;
         dimCombos = new ComboBox[rowNames.length];
@@ -316,7 +316,7 @@ public class SpecAttrWindowController implements Initializable {
 
     public void setChart(PolyChart chart) {
         this.chart = chart;
-        disDimCombo.valueProperty().addListener(e -> setDisDim());
+       // disDimCombo.valueProperty().addListener(e -> setDisDim());
         updateDatasetTableView();
         updatePeakListTableView();
         clearDimActions();
@@ -853,6 +853,7 @@ public class SpecAttrWindowController implements Initializable {
         polyChart.sliceAttributes.scaleValueProperty().bindBidirectional(scaleSlider.valueProperty());
         sliceColorPicker.setValue(polyChart.sliceAttributes.sliceColorProperty().get());
         polyChart.peakStatus.bindBidirectional(peakStatusCheckBox.selectedProperty());
+        disDimCombo.setValue((DISDIM) polyChart.disDimProp.get());
 
         polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
