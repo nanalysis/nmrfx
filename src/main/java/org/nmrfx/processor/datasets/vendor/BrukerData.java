@@ -1417,9 +1417,18 @@ class BrukerData implements NMRData {
                     acqOrder[i * 2 + 1] = "d" + (j + 1);
                 }
             } else {
-                for (int i = 0; i < nDim; i++) {
-                    acqOrder[i * 2] = "p" + (i + 1);
-                    acqOrder[i * 2 + 1] = "d" + (i + 1);
+                if (sampleSchedule != null) {
+                    for (int i = 0; i < nDim; i++) {
+                        acqOrder[i] = "p" + (i + 1);
+                    }
+                    for (int i = 0; i < nDim; i++) {
+                        acqOrder[i + nDim] = "d" + (i + 1);
+                    }
+                } else {
+                    for (int i = 0; i < nDim; i++) {
+                        acqOrder[i * 2] = "p" + (i + 1);
+                        acqOrder[i * 2 + 1] = "d" + (i + 1);
+                    }
                 }
             }
         }
