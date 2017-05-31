@@ -54,6 +54,9 @@ public class BcSine extends Operation {
             throw new OperationException(
                     "bcsine: order must be <= 16 and >= 1 and <= (nRegions/2)");
         }
+        if (vector.isComplex()) {
+            vector.makeReal();
+        }
 
         boolean[] isInSignalRegion = vector.getSignalRegion();
 
