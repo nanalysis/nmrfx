@@ -285,6 +285,43 @@ public class SampleSchedule {
     }
 
     /**
+     * Modifies a VecIndex object that represents position in non-NUS dataset to be consistent with sample schedule for
+     * this dataset. If the object represents a value that was not sampled it returns null.
+     *
+     * @param fullIndex VecIndex assuming the dataset doesn't have NUS sampling
+     * @return vecIndex consistent with sampling schedule, or null if point not sampled.
+     * @see MultiVecCounter
+     * @see VecIndex
+     */
+    public VecIndex convertToNUSGroup(VecIndex fullIndex) {
+        int groupSize = fullIndex.inVecs.length;
+        int[] inVecs = fullIndex.inVecs;
+        //System.out.print("next index ");
+        boolean ok = true;
+        for (int i = 0; i < groupSize; i++) {
+            //System.out.print(inVecs[i]+" ");
+            int j = inVecs[i];
+            int phOff = j % groupSize;
+            j /= groupSize;
+            int index = sampleArray[j];
+            if (index == -1) {
+                ok = false;
+                break;
+            } else if (!demo) {
+                inVecs[i] = groupSize * index + phOff;
+            }
+        }
+        //System.out.print(inVecs[i]+" ");
+
+        //System.out.println(groupSize);
+        VecIndex nusIndex = null;
+        if (ok) {
+            nusIndex = fullIndex;
+        }
+        return nusIndex;
+    }
+
+    /**
      * Get next group of Vecs for processing. Input and output locations depend on demo mode. If demo, tmult contains
      * correct input and output, but location depends on sample schedule (v_samples). If not demo, two MultiVecCounters
      * are needed: tmult for input and outMult for output.
