@@ -635,6 +635,7 @@ public class DrawSpectrum {
 
     public void drawVecAnno(DatasetAttributes dataAttributes, int orientation, AXMODE axMode) {
         Dataset dataset = dataAttributes.theFile;
+        nPoints = 0;
         if (dataset.getVec() != null) {
             Vec vec = dataset.getVec();
             NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
@@ -648,7 +649,7 @@ public class DrawSpectrum {
                     if (annoEnd >= ve.length) {
                         annoEnd = ve.length - 1;
                     }
-                    drawScaledLine(ve, vecStartPoint, annoEnd, vecEndPoint);
+                    nPoints = drawScaledLine(ve, vecStartPoint, annoEnd, vecEndPoint);
                 }
             }
         }
