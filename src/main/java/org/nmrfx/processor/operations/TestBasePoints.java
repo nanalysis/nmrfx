@@ -41,6 +41,7 @@ public class TestBasePoints implements MultivariateFunction {
 
     int winSize = 0;
     double totalPhase = 0.0;
+    double negativePenalty = 1.0e-5;
     Vec testVec = null;
     double[] rvec = null;
     double[] ivec = null;
@@ -66,9 +67,10 @@ public class TestBasePoints implements MultivariateFunction {
     ArrayList<BRegionData> b2List = new ArrayList<>();
     static HashMap<String, TestBasePoints> tbMap = new HashMap<>();
 
-    public TestBasePoints(Vec vector, int winSize, double ratio, int mode) {
+    public TestBasePoints(Vec vector, int winSize, double ratio, int mode, double negativePenalty) {
         this.winSize = winSize;
         this.mode = mode;
+        this.negativePenalty = negativePenalty;
         addVector(vector, false, ratio);
     }
 
@@ -920,7 +922,6 @@ public class TestBasePoints implements MultivariateFunction {
     public double getEntropyMeasure(double p0, double p1) {
         int n = bList.size();
         double sumAbs = 0.0;
-        double penalty = 0.0;
         double dDelta = p1 / (vector.getSize() - 1);
         RegionPositions rPos1 = bList.get(0);
         RegionPositions rPos2 = bList.get(n - 1);
@@ -958,15 +959,12 @@ public class TestBasePoints implements MultivariateFunction {
             double value = rvec[j] * re - ivec[j] * im;
 
             double delta = value - meanBase;
-            if (delta < 0.0) {
-                penalty += delta * delta;
-            }
             double adelta = FastMath.abs(delta);
             sumAbs += adelta;
-            values[k++] = adelta;
+            values[k++] = delta;
         }
 
-        penalty *= 1.0e-5;
+        double penalty = 0.0;
         double entropy = 0.0;
         for (int i = 0; i < k; i++) {
             double value = values[i];
@@ -975,8 +973,13 @@ public class TestBasePoints implements MultivariateFunction {
                 continue;
             }
             double h = value / sumAbs;
+            if (h < 0.0) {
+                penalty += h * h;
+                h = -h;
+            }
             entropy -= h * FastMath.log(h);
         }
+        penalty *= negativePenalty * 1.0e7;
         double result = entropy + penalty;
         //System.out.println(n + " " + p0 + " " + p1 + " " + penalty + " " + entropy + " " + result);
 
