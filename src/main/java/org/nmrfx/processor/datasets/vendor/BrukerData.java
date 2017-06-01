@@ -1469,21 +1469,51 @@ class BrukerData implements NMRData {
             if ((len == nDim) || (len == nIDim)) {
                 acqOrder = new String[nIDim * 2];
                 int j = 0;
-                for (int i = (len - 1); i >= 0; i--) {
-                    String dimStr = s.substring(i, i + 1);
-                    if (!dimStr.equals(nDim + "")) {
-                        acqOrder[j++] = "p" + dimStr;
-                        acqOrder[j++] = "d" + dimStr;
+                if (sampleSchedule != null) {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                        }
+                    }
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                } else {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                            acqOrder[j++] = "d" + dimStr;
+                        }
                     }
                 }
             } else if (len > nDim) {
                 acqOrder = new String[(len - 1) * 2];
                 int j = 0;
-                for (int i = (len - 1); i >= 0; i--) {
-                    String dimStr = s.substring(i, i + 1);
-                    if (!dimStr.equals((nDim + 1) + "")) {
-                        acqOrder[j++] = "p" + dimStr;
-                        acqOrder[j++] = "d" + dimStr;
+                if (sampleSchedule != null) {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                        }
+                    }
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                } else {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                            acqOrder[j++] = "d" + dimStr;
+                        }
                     }
                 }
             }
