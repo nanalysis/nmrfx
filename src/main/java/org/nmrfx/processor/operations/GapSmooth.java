@@ -62,6 +62,9 @@ public class GapSmooth extends Operation {
 
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
+        if (vector.isComplex()) {
+            vector.makeReal();
+        }
         int vCenter = center;
         int vStart = start;
         int vEnd = end;
