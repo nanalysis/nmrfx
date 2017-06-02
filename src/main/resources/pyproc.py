@@ -2664,7 +2664,7 @@ def WRITE(index=-1, dimag=True, isabled=False, disabled=False, vector=None, proc
         process.addOperation(op)
     return op
 
-def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat', ph1Limit=45.0, disabled=False, vector=None, process=None):
+def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat', ph1Limit=45.0, negativePenalty=1.0, disabled=False, vector=None, process=None):
     '''Auto Phase shift.
     Parameters
     ---------
@@ -2690,6 +2690,12 @@ def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat
         max : 100.0
         amax :540.0
         Limit ph1 value so its absolute value is less than this range.
+    negativePenalty : real
+        amin : 0.01
+        min : 0.1
+        max : 100.0
+        amax : 200.0
+        How much to weight to use in penalizing negative values in entropy mode (actual value is multiplied by 1.0e-5).
 '''
     if disabled:
         return None
@@ -2699,7 +2705,7 @@ def AUTOPHASE(firstOrder=False, maxMode=False, winSize=2, ratio=25.0, mode='flat
     if mode == 'entropy':
         imode = 1
 
-    op = AutoPhase(firstOrder, maxMode, winSize, ratio, imode, ph1Limit)
+    op = AutoPhase(firstOrder, maxMode, winSize, ratio, imode, ph1Limit, negativePenalty)
 
     if (vector != None):
         op.eval(vector)
