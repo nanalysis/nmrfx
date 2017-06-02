@@ -55,7 +55,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -82,6 +84,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
+import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
 public class PolyChart<X, Y> extends XYChart<X, Y> {
 
@@ -133,7 +136,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     int phaseDim = 0;
     int phaseAxis = 0;
     double phaseFraction = 0.0;
-    int disDim = 1;
+
+    public enum DISDIM {
+        OneDX, OneDY, TwoD;
+    };
+    ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(TwoD);
     final ContextMenu specMenu = new ContextMenu();
 
     KeyMonitor keyMonitor = new KeyMonitor();
@@ -239,6 +246,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         setCursor(Cursor.CROSSHAIR);
     }
 
+    public FXMLController getFXMLController() {
+        return controller;
+    }
+
     public void close() {
         charts.remove(this);
         if (this == activeChart) {
@@ -313,7 +324,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                         full();
                         requestFocus();
                     } else {
-                        incrementPlane(2, -1);
+                        if (is1D()) {
+                            incrementRow(-1);
+                        } else {
+                            incrementPlane(2, -1);
+                        }
                     }
                     event.consume();
 
@@ -326,7 +341,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                         full();
                         requestFocus();
                     } else {
-                        incrementPlane(2, 1);
+                        if (is1D()) {
+                            incrementRow(1);
+                        } else {
+                            incrementPlane(2, 1);
+                        }
                     }
                     event.consume();
                 } else if (code == KeyCode.RIGHT) {
@@ -964,6 +983,29 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         }
     }
 
+    void incrementRow(int amount) {
+        DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+        Dataset dataset = getDataset();
+        if (dataset.getNDim() < 2) {
+            return;
+        }
+        int[] drawList = datasetAttributes.drawList;
+        if ((drawList == null) || (drawList.length == 0)) {
+            setDrawlist(0);
+        } else {
+            int value = drawList[0] + amount;
+
+            if (value < 0) {
+                value = 0;
+            }
+            if (value >= dataset.getSize(1)) {
+                value = dataset.getSize(1) - 1;
+            }
+            setDrawlist(value);
+        }
+        layoutPlotChildren();
+    }
+
     void incrementPlane(int axis, int amount) {
         if (axes.length > axis) {
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
@@ -983,7 +1025,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         if (!datasetAttributesList.isEmpty()) {
             double[] limits = getRange(0);
             setXAxis(limits[0], limits[1]);
-            if (disDim > 1) {
+            if (disDimProp.get() == DISDIM.TwoD) {
                 limits = getRange(1);
                 setYAxis(limits[0], limits[1]);
             }
@@ -1052,7 +1094,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
 
     public boolean is1D() {
         Dataset dataset = getDataset();
-        return ((dataset != null) && (dataset.getNDim() == 1));
+        return ((dataset != null) && (dataset.getNDim() == 1) || (disDimProp.get() != DISDIM.TwoD));
     }
 
     public int getNDim() {
@@ -1060,6 +1102,9 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         Dataset dataset = getDataset();
         if (dataset != null) {
             nDim = dataset.getNDim();
+        }
+        if (is1D()) {
+            nDim = 1;
         }
         return nDim;
     }
@@ -1147,7 +1192,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             return;
         }
         Vec vec = dataset.getVec();
-        double[] phases = vec.autoPhase(doFirst, 0, 0, 0, 45.0);
+        double[] phases = vec.autoPhase(doFirst, 0, 0, 0, 45.0,1.0);
         setPh0(phases[0]);
         setPh1(0.0);
         if (phases.length == 2) {
@@ -1207,12 +1252,19 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         expand(VERTICAL);
         Dataset dataset = getDataset();
         if (dataset != null) {
-            if (disDim > 1) {
+            if (disDimProp.get() == DISDIM.TwoD) {
                 expand(HORIZONTAL);
             }
         }
         layoutPlotChildren();
         hideCrossHairs();
+    }
+
+    public double[] getVerticalCrosshairPositions() {
+        double[] positions = new double[2];
+        positions[0] = crossHairPositions[0][1];
+        positions[1] = crossHairPositions[1][1];
+        return positions;
     }
 
     protected double getRefPositionFromCrossHair(double newPPM) {
@@ -1358,10 +1410,16 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         //System.out.println("set datset");
         SpectrumStatusBar statusBar = controller.getStatusBar();
         DatasetAttributes datasetAttributes = null;
+        System.out.println("set datset");
         if (dataset != null) {
-            if (dataset.getNDim() == 1) {
+            System.out.println("nda " + dataset.getNDim() + " " + dataset.getNFreqDims());
+            if ((dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1)) {
+                System.out.println("ndb " + dataset.getNDim() + " " + dataset.getNFreqDims());
+                disDimProp.set(DISDIM.OneDX);
                 //statusBar.sliceStatus.setSelected(false);
                 setSliceStatus(false);
+            } else {
+                disDimProp.set(DISDIM.TwoD);
             }
             if (append) {
                 datasetAttributes = new DatasetAttributes(dataset);
@@ -1410,7 +1468,27 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             controller.specAttrWindowController.updateDims();
         }
         hideCrossHairs();
+        datasetAttributes.drawList = null;
         return datasetAttributes;
+    }
+
+    public void setDrawlist(int selected) {
+        if (!datasetAttributesList.isEmpty()) {
+            DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+            datasetAttributes.setDrawListSize(1);
+            datasetAttributes.drawList[0] = selected;
+        }
+    }
+
+    public void setDrawlist(List<Integer> selected) {
+        if (!datasetAttributesList.isEmpty()) {
+            DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+            datasetAttributes.setDrawListSize(selected.size());
+            for (int i = 0, n = selected.size(); i < n; i++) {
+                datasetAttributes.drawList[i] = selected.get(i);
+            }
+        }
+
     }
 
     public ArrayList<String> getDimNames() {
@@ -1428,7 +1506,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
 
     void updateDatasetAttributeBounds() {
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-            datasetAttributes.updateBounds(axModes, axes);
+            datasetAttributes.updateBounds(axModes, axes, disDimProp.getValue());
         }
     }
 
@@ -1437,11 +1515,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
         int nDim = dataset.getNDim();
         int nAxes = nDim;
-        if (nDim == 1) {
-            disDim = 1;
+        if (is1D()) {
             nAxes = 2;
         }
-        if (axes.length != nDim) {
+        if (axes.length != nAxes) {
             axes = new NMRAxis[nAxes];
             axes[0] = xAxis;
             axes[1] = yAxis;
@@ -1461,6 +1538,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
 
             }
             drawSpectrum.setAxes(axes);
+            drawSpectrum.setDisDim(disDimProp.getValue());
         }
         if (dataset.getFreqDomain(0)) {
             axModes[0] = AXMODE.PPM;
@@ -1477,8 +1555,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         if (!xLabel.equals(xAxis.getLabel())) {
             xAxis.setLabel(xLabel);
         }
-        if (nDim > 1) {
-            disDim = 2;
+        if (!is1D()) {
             if (dataset.getFreqDomain(1)) {
                 axModes[1] = AXMODE.PPM;
             } else {
@@ -1507,7 +1584,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         }
     }
 
-    protected void refresh() {
+    public void refresh() {
         layoutPlotChildren();
     }
 
@@ -1521,7 +1598,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         bcPath.getElements().clear();
         bcPath.setStroke(Color.ORANGE);
         bcPath.setStrokeWidth(3.0);
-        nList.clear();
         bcList.clear();
         double width = xAxis.getWidth();
         double height = yAxis.getHeight();
@@ -1555,8 +1631,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                         }
                     }
                 }
-                if (dataset.getNDim() == 1) {
-                    //System.out.println("draw1d");
+                if (disDimProp.get() != DISDIM.TwoD) {
                     for (int iMode = 0; iMode < 2; iMode++) {
                         if (iMode == 0) {
                             datasetAttributes.setDrawReal(true);
@@ -1566,14 +1641,21 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                             }
                             datasetAttributes.setDrawReal(false);
                         }
-                        nList.clear();
                         bcList.clear();
-                        drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), nList, bcPath);
-                        drawSpecLine(datasetAttributes, gC, iMode);
+                        drawSpectrum.setToLastChunk(datasetAttributes);
+                        boolean ok;
+                        do {
+                            ok = drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
+                            double[][] xy = drawSpectrum.getXY();
+                            int nPoints = drawSpectrum.getNPoints();
+                            drawSpecLine(datasetAttributes, gC, iMode, nPoints, xy);
+                        } while (ok);
                     }
-                    nList.clear();
-                    drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0], nList);
-                    drawSpecLine(datasetAttributes, gC, 0);
+                    drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
+                    double[][] xy = drawSpectrum.getXY();
+                    int nPoints = drawSpectrum.getNPoints();
+                    drawSpecLine(datasetAttributes, gC, 0, nPoints, xy);
+
                 } else {
                     draw2DList.add(datasetAttributes);
                 }
@@ -1581,21 +1663,17 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         }
         );
         if (!draw2DList.isEmpty()) {
-            disDim = 2;
             drawSpectrum.drawSpectrum(draw2DList, axModes, false);
         }
         if (!datasetAttributesList.isEmpty()) {
             drawPeakLists(true);
-
         }
 
         refreshCrossHairs();
     }
 
-    void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContext gC, int iMode) {
-        if (nList.size() > 1) {
-            double x = nList.get(0);
-            double y = nList.get(1);
+    void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContext gC, int iMode, int nPoints, double[][] xy) {
+        if (nPoints > 1) {
             if (iMode == 0) {
                 gC.setStroke(datasetAttributes.getPosColor());
                 gC.setLineWidth(datasetAttributes.getPosLineWidth());
@@ -1604,14 +1682,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 gC.setLineWidth(datasetAttributes.getNegLineWidth());
             }
             gC.setLineCap(StrokeLineCap.BUTT);
-            gC.beginPath();
-            gC.moveTo(x, y);
-            for (int i = 2; i < nList.size(); i += 2) {
-                x = nList.get(i);
-                y = nList.get(i + 1);
-                gC.lineTo(x, y);
-            }
-            gC.stroke();
+            gC.strokePolyline(xy[0], xy[1], nPoints);
         }
 
     }
@@ -2245,7 +2316,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     xSliceLine.setStroke(sliceAttributes.getSliceColor());
                     nList.clear();
                     for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(0), getPh1(0), nList);
+                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(0), getPh1(0));
+                        double[][] xy = drawSpectrum.getXY();
+                        int nPoints = drawSpectrum.getNPoints();
+                        for (int iPoint = 0; iPoint < nPoints; iPoint++) {
+                            nList.add(xy[0][iPoint]);
+                            nList.add(xy[1][iPoint]);
+                        }
                     }
                     xSliceLine.getPoints().addAll(nList);
                 }
@@ -2256,7 +2333,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     ySliceLine.setStroke(sliceAttributes.getSliceColor());
                     nList.clear();
                     for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(1), getPh1(1), nList);
+                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(1), getPh1(1));
+                        double[][] xy = drawSpectrum.getXY();
+                        int nPoints = drawSpectrum.getNPoints();
+                        for (int iPoint = 0; iPoint < nPoints; iPoint++) {
+                            nList.add(xy[0][iPoint]);
+                            nList.add(xy[1][iPoint]);
+                        }
                     }
                     ySliceLine.getPoints().addAll(nList);
                 }

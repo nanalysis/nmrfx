@@ -37,6 +37,7 @@ import javax.swing.SwingUtilities;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.printing.PDFPageable;
+import org.nmrfx.processor.gui.PolyChart.DISDIM;
 
 /**
  *
@@ -84,10 +85,11 @@ public class SpectrumWriter {
             drawHorizontalAxis(writer, xAxis, yAxis.getStart());
 
             writer.clipRect(xAxis.getStart(), yAxis.getStart(), width, height);
+            double[][] xy = new double[2][];
             for (Vec vec : vecs) {
-                ArrayList<Double> nlist = DrawSpectrum.draw1DSpectrum2(vec, xAxis, yAxis, axModes[0]);
+                DrawSpectrum.drawVector(vec, xAxis, yAxis, axModes[0], xy);
                 writer.setLineWidth(datasetAttributes.getPosLineWidth());
-                writer.drawPolyLine(nlist);
+                writer.drawPolyLine(xy[0], xy[1]);
             }
         } catch (GraphicsIOException ioE) {
             return null;
@@ -155,7 +157,7 @@ public class SpectrumWriter {
                 lineWidth[0] = fileData.posLineWidthProperty().get();
                 lineWidth[1] = fileData.negLineWidthProperty().get();
                 float[] levels = DrawSpectrum.getLevels(fileData);
-                fileData.updateBounds(axModes, axes);
+                fileData.updateBounds(axModes, axes, drawSpectrum.disDim);
                 fileData.mChunk = -1;
                 do {
                     int iChunk = fileData.mChunk + 1;

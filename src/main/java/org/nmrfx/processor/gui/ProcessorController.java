@@ -17,24 +17,16 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.vendor.NMRData;
-import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
-import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.controls.ProcessingCodeAreaUtil;
 import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProgressUpdater;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.HashSet;
@@ -42,7 +34,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -68,22 +59,15 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ListCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -91,7 +75,6 @@ import javafx.util.Callback;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
-import org.controlsfx.control.table.TableFilter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.python.util.PythonInterpreter;
 import org.fxmisc.richtext.CodeArea;
@@ -109,8 +92,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     private ListView scriptView;
-    @FXML
-    private TableView<FileTableItem> tableView;
     @FXML
     private StatusBar statusBar;
     private Circle statusCircle = new Circle(10.0, Color.GREEN);
@@ -148,8 +129,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     //PropertySheet propSheet = new PropertySheet();
     static String[] basicOps = {"SB ZF FT", "SB(c=0.5) ZF FT", "EXPD ZF FT", "VECREF GEN"};
     static String[] eaOps = {"TDCOMB(coef='ea2d')", "SB", "ZF", "FT"};
-    String scanDir = null;
-    String scanOutputDir = null;
     ChartProcessor chartProcessor;
     FXMLController fxmlController;
     DocWindowController dwc = null;
@@ -160,8 +139,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private boolean processable = false;
     private ProcessDataset processDataset = new ProcessDataset();
 
-    TableFilter fileTableFilter;
-    TableFilter.Builder builder = null;
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
     Throwable processingThrowable;
 
@@ -220,21 +197,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     public PropertyManager getPropertyManager() {
         return propertyManager;
-    }
-
-    @FXML
-    private void openSelectedListFile(MouseEvent mouseEvent) {
-        if (mouseEvent.getClickCount() == 2) {
-            String scriptString = textArea.getText();
-            int selItem = tableView.getSelectionModel().getSelectedIndex();
-            if (selItem >= 0) {
-                FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
-                String fileName = fileTableItem.getFileName();
-                String filePath = Paths.get(scanDir, fileName).toString();
-                chart.controller.openFile(filePath, false, false);
-                parseScript(scriptString);
-            }
-        }
     }
 
     protected void clearOperationList() {
@@ -324,7 +286,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     @FXML
-    void viewDatasetInApp() {
+    public void viewDatasetInApp() {
         if (chartProcessor.datasetFile != null) {
             String datasetPath = chartProcessor.datasetFile.getPath();
             chart.controller.openFile(datasetPath, false, false);
@@ -340,7 +302,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
-    boolean isViewingDataset() {
+    public boolean isViewingDataset() {
         return viewMode.getSelectionModel().getSelectedIndex() == 1;
     }
 
@@ -647,6 +609,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
+    public String getCurrentScript() {
+        return textArea.getText();
+    }
+
     public void writeOutput(String text) {
         outputArea.appendText(text);
     }
@@ -763,133 +729,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             });
 
         }
-    }
-
-    @FXML
-    private void processScanDir(ActionEvent event) {
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setTitle("Select Scan Output Directory");
-        File selectedDir = directoryChooser.showDialog(stage);
-        if (selectedDir != null) {
-            scanOutputDir = selectedDir.getPath();
-            ObservableList<FileTableItem> fileTableItems = tableView.getItems();
-            ArrayList<String> fileNames = new ArrayList<>();
-            for (FileTableItem fileTableItem : fileTableItems) {
-                fileNames.add(fileTableItem.getFileName());
-            }
-            boolean combineFileMode = combineFiles.isSelected();
-            String script = chartProcessor.buildMultiScript(scanDir, scanOutputDir, fileNames, combineFileMode);
-            System.out.println(script);
-            PythonInterpreter processInterp = new PythonInterpreter();
-            processInterp.exec("from pyproc import *");
-            processInterp.exec("useProcessor()");
-            processInterp.exec(script);
-            viewDatasetInApp();
-        }
-    }
-
-    @FXML
-    private void scanDirAction(ActionEvent event) {
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setTitle("Select Scan Directory");
-        File selectedDir = directoryChooser.showDialog(stage);
-        if (selectedDir != null) {
-            scanDir = selectedDir.getPath();
-            int beginIndex = scanDir.length() + 1;
-            ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
-            String[] headers = {};
-            updateTable(headers);
-            loadScanFiles(nmrFiles, beginIndex);
-        }
-    }
-
-    @FXML
-    private void loadTableAction(ActionEvent event) {
-        loadScanTable();
-    }
-
-    private void loadScanFiles(ArrayList<String> nmrFiles, int beginIndex) {
-        fileTableFilter.getBackingList().clear();
-        ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
-        long firstDate = Long.MAX_VALUE;
-        for (String filePath : nmrFiles) {
-            NMRData nmrData = null;
-            try {
-                nmrData = NMRDataUtil.getNMRData(filePath);
-            } catch (IOException ioE) {
-
-            }
-            if (nmrData != null) {
-                long date = nmrData.getDate();
-                if (date < firstDate) {
-                    firstDate = date;
-                }
-                fileListItems.add(new FileTableItem(filePath.substring(beginIndex), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate()));
-            }
-        }
-        for (FileTableItem item : fileListItems) {
-            item.setDate(item.getDate() - firstDate);
-        }
-        fileTableFilter.getBackingList().addAll(fileListItems);
-    }
-
-    private void loadScanTable() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle(("Open Table File"));
-        File file = fileChooser.showOpenDialog(popOver);
-        loadScanTable(file);
-    }
-
-    private void loadScanTable(File file) {
-        ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
-        scanDir = file.getParent();
-        long firstDate = Long.MAX_VALUE;
-        int iLine = 0;
-        String[] headers = null;
-        HashMap<String, String> fieldMap = new HashMap();
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (iLine == 0) {
-                    headers = line.split("\t");
-                    updateTable(headers);
-                } else {
-                    String[] fields = line.split("\t");
-                    for (int iField = 0; iField < fields.length; iField++) {
-                        fieldMap.put(headers[iField], fields[iField]);
-                    }
-                    String fileName = fieldMap.get("FileName");
-                    if (fileName == null) {
-                        System.out.println("No FileName");
-                        return;
-                    }
-                    fieldMap.remove("fid");
-                    Path filePath = FileSystems.getDefault().getPath(scanDir, fileName);
-                    NMRData nmrData = null;
-                    try {
-                        nmrData = NMRDataUtil.getNMRData(filePath.toString());
-                    } catch (IOException ioE) {
-
-                    }
-                    if (nmrData != null) {
-                        long date = nmrData.getDate();
-                        if (date < firstDate) {
-                            firstDate = date;
-                        }
-                        fileListItems.add(new FileTableItem(fileName, nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), fieldMap));
-                    }
-                }
-
-                iLine++;
-            }
-        } catch (IOException ioE) {
-
-        }
-        for (FileTableItem item : fileListItems) {
-            item.setDate(item.getDate() - firstDate);
-        }
-        fileTableFilter.getBackingList().addAll(fileListItems);
-
     }
 
     public void writeScript(String script) {
@@ -1047,22 +886,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         consoleUtil.addHandler(outputArea, chartProcessor.getInterpreter());
         consoleUtil.banner();
         consoleUtil.prompt();
-        ObservableList<FileTableItem> data = FXCollections.observableArrayList();
-        tableView.itemsProperty().setValue(data);
-        TableColumn<FileTableItem, String> fileColumn = new TableColumn<>("FileName");
-        TableColumn<FileTableItem, String> seqColumn = new TableColumn<>("Sequence");
-        TableColumn<FileTableItem, String> nDimColumn = new TableColumn<>("nDim");
-        TableColumn<FileTableItem, Long> dateColumn = new TableColumn<>("Date");
-
-        fileColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getFileName()));
-        seqColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getSeqName()));
-        nDimColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getNDim())));
-        dateColumn.setCellValueFactory(new PropertyValueFactory<FileTableItem, Long>("Date"));
-
-        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn);
-//        TableFilter.Builder builder = TableFilter.forTableView(tableView);
-//        fileTableFilter = builder.apply();
-        setDragHandlers(tableView);
 
         statusCircle.setOnMousePressed((Event d) -> {
             if (processingThrowable != null) {
@@ -1071,116 +894,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             }
         });
 
-    }
-
-    private void updateTable(String[] headers) {
-        ObservableList<FileTableItem> data = FXCollections.observableArrayList();
-        tableView.itemsProperty().setValue(data);
-
-        TableColumn<FileTableItem, String> fileColumn = new TableColumn<>("FileName");
-        TableColumn<FileTableItem, String> seqColumn = new TableColumn<>("Sequence");
-        TableColumn<FileTableItem, String> nDimColumn = new TableColumn<>("nDim");
-        TableColumn<FileTableItem, Long> dateColumn = new TableColumn<>("Date");
-
-        fileColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getFileName()));
-        seqColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getSeqName()));
-        nDimColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getNDim())));
-        dateColumn.setCellValueFactory(new PropertyValueFactory<FileTableItem, Long>("Date"));
-        tableView.getColumns().clear();
-        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn);
-        for (String header : headers) {
-            if (header.equalsIgnoreCase("FileName") || header.equalsIgnoreCase("Sequence") || header.equalsIgnoreCase("nDim") || header.equalsIgnoreCase("Date") || header.equalsIgnoreCase("fid")) {
-                continue;
-            }
-            TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
-            extraColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
-            tableView.getColumns().add(extraColumn);
-        }
-        builder = TableFilter.forTableView(tableView);
-        fileTableFilter = builder.apply();
-        fileTableFilter.resetFilter();
-    }
-
-    final protected void setDragHandlers(Node mouseNode) {
-
-        mouseNode.setOnDragOver(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseDragOver(event);
-            }
-        }
-        );
-        mouseNode.setOnDragDropped(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseDragDropped(event);
-            }
-        }
-        );
-        mouseNode.setOnDragExited(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseNode.setStyle("-fx-border-color: #C6C6C6;");
-            }
-        }
-        );
-    }
-
-    private void mouseDragDropped(final DragEvent e) {
-        final Dragboard db = e.getDragboard();
-        boolean success = false;
-        if (db.hasFiles()) {
-            success = true;
-
-            // Only get the first file from the list
-            final File file = db.getFiles().get(0);
-            if (file.isDirectory()) {
-                scanDir = file.getAbsolutePath();
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        int beginIndex = scanDir.length() + 1;
-                        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
-                        String[] headers = {};
-                        updateTable(headers);
-                        loadScanFiles(nmrFiles, beginIndex);
-                    }
-                });
-            } else {
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        loadScanTable(file);
-                    }
-                });
-
-            }
-        }
-        e.setDropCompleted(success);
-        e.consume();
-    }
-
-    private void mouseDragOver(final DragEvent e) {
-        final Dragboard db = e.getDragboard();
-
-        List<File> files = db.getFiles();
-        if (db.hasFiles()) {
-            if (files.size() > 0) {
-                boolean isAccepted = false;
-                if (files.get(0).isDirectory()) {
-                    isAccepted = true;
-                } else if (files.get(0).toString().endsWith(".txt")) {
-                    isAccepted = true;
-                }
-                if (isAccepted) {
-                    tableView.setStyle("-fx-border-color: green;"
-                            + "-fx-border-width: 1;");
-                    e.acceptTransferModes(TransferMode.COPY);
-                }
-            }
-        } else {
-            e.consume();
-        }
     }
 
     public PolyChart getChart() {

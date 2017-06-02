@@ -23,7 +23,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.datasets.Dataset;
 import java.text.DecimalFormat;
 import java.util.List;
 import javafx.beans.property.StringProperty;

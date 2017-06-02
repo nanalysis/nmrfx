@@ -153,8 +153,10 @@ public class RefManager {
         chartProcessor.setScriptValid(false);
         if (refresh) {
             ProcessorController pController = processorController;
-            if (pController.isViewingDataset() && pController.autoProcess.isSelected()) {
-                processorController.processIfIdle();
+            if (pController.isViewingDataset()) {
+                if  (pController.autoProcess.isSelected()) {
+                    processorController.processIfIdle();
+                }
             } else {
                 chartProcessor.execScriptList(true);
                 chartProcessor.getChart().layoutPlotChildren();

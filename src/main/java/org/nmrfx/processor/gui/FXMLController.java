@@ -141,6 +141,7 @@ public class FXMLController implements Initializable {
     DocWindowController dwc = null;
     static SpecAttrWindowController specAttrWindowController = null;
     ProcessorController processorController = null;
+    ScannerController scannerController = null;
     Stage stage;
     String delImagString = "False";
     boolean isFID = true;
@@ -268,7 +269,7 @@ public class FXMLController implements Initializable {
         }
     }
 
-    protected void openFile(String filePath, boolean clearOps, boolean appendFile) {
+    public void openFile(String filePath, boolean clearOps, boolean appendFile) {
         boolean reload = false;
         try {
             File newFile = new File(filePath);
@@ -316,6 +317,17 @@ public class FXMLController implements Initializable {
         } catch (IOException ioE) {
         }
 
+    }
+
+    public ProcessorController getProcessorController(boolean createIfNull) {
+        if ((processorController == null) && createIfNull) {
+            processorController = ProcessorController.create(this, stage, getActiveChart());
+        }
+        return processorController;
+    }
+
+    public ChartProcessor getChartProcessor() {
+        return chartProcessor;
     }
 
     public boolean isFIDActive() {
@@ -435,6 +447,18 @@ public class FXMLController implements Initializable {
         }
         if (processorController != null) {
             processorController.getStage().show();
+        } else {
+            System.out.println("Coudn't make controller");
+        }
+    }
+
+    @FXML
+    void showScannerAction(ActionEvent event) {
+        if (scannerController == null) {
+            scannerController = ScannerController.create(this, stage, getActiveChart());
+        }
+        if (scannerController != null) {
+            scannerController.getStage().show();
         } else {
             System.out.println("Coudn't make controller");
         }

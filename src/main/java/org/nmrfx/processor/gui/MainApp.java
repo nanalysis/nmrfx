@@ -222,7 +222,10 @@ public class MainApp extends Application {
         MenuItem procMenuItem = new MenuItem("Show Processor");
         procMenuItem.setOnAction(e -> FXMLController.getActiveController().showProcessorAction(e));
 
-        viewMenu.getItems().addAll(dataMenuItem, attrMenuItem, procMenuItem);
+        MenuItem scannerMenuItem = new MenuItem("Show Scanner");
+        scannerMenuItem.setOnAction(e -> FXMLController.getActiveController().showScannerAction(e));
+
+        viewMenu.getItems().addAll(dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem);
         // Window Menu
         // TBD standard window menu items
         // Help Menu (items TBD)

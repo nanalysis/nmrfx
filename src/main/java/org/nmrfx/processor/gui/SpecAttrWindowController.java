@@ -85,6 +85,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.SegmentedButton;
+import org.nmrfx.processor.gui.PolyChart.DISDIM;
+import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
+import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 
 /**
  *
@@ -107,6 +110,8 @@ public class SpecAttrWindowController implements Initializable {
     private TableView<PeakListAttributes> peakListTableView;
     @FXML
     private GridPane viewGrid;
+    @FXML
+    private ComboBox<DISDIM> disDimCombo;
     @FXML
     private Tab datasetTab;
 
@@ -151,7 +156,6 @@ public class SpecAttrWindowController implements Initializable {
                 }
             }
         };
-
     }
 
     public Stage getStage() {
@@ -171,7 +175,23 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
+    private void setDisDim() {
+//        switch (disDimCombo.getValue()) {
+//            case "1Dx":
+//                chart.disDim = 0;
+//                break;
+//            case "2D":
+//                chart.disDim = 2;
+//                break;
+//            default:
+//        }
+//        System.out.println("set dis dim " + disDimCombo.getValue() + " " + chart.disDim);
+
+    }
+
     private void createViewGrid() {
+        disDimCombo.getItems().addAll(OneDX, TwoD);
+        //disDimCombo.setValue(OneDX);
         limitFields = new StringProperty[rowNames.length][2];
         int iRow = 1;
         dimCombos = new ComboBox[rowNames.length];
@@ -296,6 +316,7 @@ public class SpecAttrWindowController implements Initializable {
 
     public void setChart(PolyChart chart) {
         this.chart = chart;
+       // disDimCombo.valueProperty().addListener(e -> setDisDim());
         updateDatasetTableView();
         updatePeakListTableView();
         clearDimActions();
@@ -832,6 +853,9 @@ public class SpecAttrWindowController implements Initializable {
         polyChart.sliceAttributes.scaleValueProperty().bindBidirectional(scaleSlider.valueProperty());
         sliceColorPicker.setValue(polyChart.sliceAttributes.sliceColorProperty().get());
         polyChart.peakStatus.bindBidirectional(peakStatusCheckBox.selectedProperty());
+        disDimCombo.setValue((DISDIM) polyChart.disDimProp.get());
+
+        polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
 
     void unifyWidth(boolean pos) {

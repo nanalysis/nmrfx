@@ -30,6 +30,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
+import org.nmrfx.processor.gui.PolyChart.DISDIM;
 
 public class DatasetAttributes extends DataGenerator implements Cloneable {
 
@@ -689,12 +690,11 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return rowIndex;
     }
 
-    public void updateBounds(AXMODE[] axModes, NMRAxis[] axes) {
+    public void updateBounds(AXMODE[] axModes, NMRAxis[] axes, DISDIM disDim) {
         int[][] localPt;
         double[][] limits;
         localPt = new int[nDim][2];
         limits = new double[nDim][2];
-
         double[] planeThickness = new double[nDim];
         for (int i = 0; i < nDim; i++) {
             planeThickness[i] = getPlaneThickness(i);
@@ -702,8 +702,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 localPt[i][0] = axModes[i].getIndex(this, i, axes[0].getLowerBound());
                 localPt[i][1] = axModes[i].getIndex(this, i, axes[0].getUpperBound());
             } else if (i == 1) {
-                localPt[i][0] = axModes[i].getIndex(this, i, axes[1].getLowerBound());
-                localPt[i][1] = axModes[i].getIndex(this, i, axes[1].getUpperBound());
+                if (disDim == DISDIM.TwoD) {
+                    localPt[i][0] = axModes[i].getIndex(this, i, axes[1].getLowerBound());
+                    localPt[i][1] = axModes[i].getIndex(this, i, axes[1].getUpperBound());
+                } else {
+                    localPt[i][0] = 0;
+                    localPt[i][0] = theFile.getSize(dim[i]) - 1;
+                }
             } else if (axModes.length <= i) {
                 localPt[i][0] = theFile.getSize(dim[i]) / 2;
                 localPt[i][1] = theFile.getSize(dim[i]) / 2;
@@ -1212,6 +1217,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ptd[i][1] = theFile.ppmToDPoint(dim[i], limits[i][1]);
             hz[i][0] = theFile.ppmToHz(dim[i], limits[i][0]);
             hz[i][1] = theFile.ppmToHz(dim[i], limits[i][1]);
+   //         System.out.println("set bounds " + i + " " + pt[i][0] + " " + pt[i][1] + " " + limits[i][0] + " " + limits[i][1]);
 
             if (pt[i][0] > pt[i][1]) {
                 int hold;
@@ -1244,6 +1250,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ptf = (double) pt[i][1];
             limits[i][1] = (double) theFile.pointToPPM(dim[i], ptf);
             pt[i][1] = theFile.ppmToPoint(dim[i], limits[i][1]);
+          //  System.out.println("set pt bounds " + i + " " + pt[i][0] + " " + pt[i][1] + " " + limits[i][0] + " " + limits[i][1]);
 
             if (pt[i][0] > pt[i][1]) {
                 int hold;

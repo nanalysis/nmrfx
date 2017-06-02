@@ -19,24 +19,24 @@
             <children>
                 <HBox BorderPane.alignment="CENTER" spacing="12">
                     <children>
-                                        <MenuButton  mnemonicParsing="false" text="Scripts">
-                                            <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#genDefaultScript" text="Auto Generate" />
-                                                <MenuItem mnemonicParsing="false" onAction="#openDefaultScriptAction" text="Open (process.py)" />
-                                                <MenuItem mnemonicParsing="false" onAction="#openScriptAction" text="Open..." />
-                                                <MenuItem mnemonicParsing="false" onAction="#writeDefaultScriptAction" text="Save (process.py)" />
-                                                <MenuItem mnemonicParsing="false" onAction="#writeScriptAction" text="Save As..." />
-                                            </items>
-                                        </MenuButton>
+                        <MenuButton  mnemonicParsing="false" text="Scripts">
+                            <items>
+                                <MenuItem mnemonicParsing="false" onAction="#genDefaultScript" text="Auto Generate" />
+                                <MenuItem mnemonicParsing="false" onAction="#openDefaultScriptAction" text="Open (process.py)" />
+                                <MenuItem mnemonicParsing="false" onAction="#openScriptAction" text="Open..." />
+                                <MenuItem mnemonicParsing="false" onAction="#writeDefaultScriptAction" text="Save (process.py)" />
+                                <MenuItem mnemonicParsing="false" onAction="#writeScriptAction" text="Save As..." />
+                            </items>
+                        </MenuButton>
                         <ChoiceBox fx:id="dimChoice" value=""/>
                         <ChoiceBox fx:id="viewMode" value="FID" onAction="#viewMode">
-                                            <items>
-        <FXCollections fx:factory="observableArrayList">
-            <String fx:value="FID" />
-            <String fx:value="Dataset" />
-        </FXCollections>
-                                            </items>
-                                        </ChoiceBox>
+                            <items>
+                                <FXCollections fx:factory="observableArrayList">
+                                    <String fx:value="FID" />
+                                    <String fx:value="Dataset" />
+                                </FXCollections>
+                            </items>
+                        </ChoiceBox>
                         <SegmentedButton>
                             <buttons>
                             </buttons>           
@@ -73,21 +73,6 @@
                         <VBox>
                             <children>
                                 <CodeArea fx:id="textArea" prefHeight="0" minHeight="0.0" VBox.vgrow="ALWAYS"/>
-                            </children>
-                        </VBox>
-                    </Tab>
-                    <Tab text="Scanner" closable="false" onSelectionChanged="#loadScriptTab" >
-                        <VBox>
-                            <children>
-                                <ToolBar prefWidth="200.0">
-                                    <items>
-                                        <Button fx:id="scanDirChooserButton" mnemonicParsing="false" onAction="#scanDirAction" styleClass="toolButton" text="Scan" />
-                                        <Button fx:id="loadTableChooserButton" mnemonicParsing="false" onAction="#loadTableAction" styleClass="toolButton" text="Load" />
-                                        <Button fx:id="processScanDirButton" mnemonicParsing="false" styleClass="toolButton" text="Process All" onAction="#processScanDir"/>
-                                        <CheckBox fx:id="combineFiles" mnemonicParsing="false" text="Combine Output" />
-                                    </items>
-                                </ToolBar>
-                                <TableView fx:id="tableView" prefHeight="0" minHeight="0.0"  VBox.vgrow="ALWAYS" onMouseClicked="#openSelectedListFile" />
                             </children>
                         </VBox>
                     </Tab>
