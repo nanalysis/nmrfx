@@ -466,7 +466,7 @@ public class Processor {
                 tmult = new MultiVecCounter(newTDSizes, newComplex, newAcqOrder, dataset.getNDim());
             } else if (newTDSizes == null) {
                 adjustSizes();
-                System.out.println("use newTDSize and useSizes " + useSizes.length);
+                System.out.println("use newTDSize and useSizes " + useSizes.length + " new acqorder " + newAcqOrder.length);
 // fixme
                 tmult = new MultiVecCounter(newTDSizes, useSizes, newComplex, newAcqOrder, dataset.getNDim());
             } else if (useSizes.length <= newTDSizes.length) {
@@ -481,24 +481,21 @@ public class Processor {
             }
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
-                totalVecGroups = sampleSchedule.getTotalSamples();
-                vectorsToWrite = totalVecGroups * tmult.getGroupSize();
-                sampleSchedule.setOutMult(complex, acqOrder);
-            } else {
-                vectorsToWrite = nmrData.getNVectors();
-                if (useSizes != null) {
-                    vectorsToWrite = 1;
-                    for (int i = 1; i < useSizes.length; i++) {
-                        System.out.println("use " + i + " " + useSizes[i] + " " + newComplex.length);
-                        if ((i < newComplex.length) && newComplex[i]) {
-                            vectorsToWrite *= useSizes[i] * 2;
-                        } else {
-                            vectorsToWrite *= useSizes[i];
-                        }
+                sampleSchedule.setOutMult(complex, newAcqOrder);
+            } 
+            vectorsToWrite = nmrData.getNVectors();
+            if (useSizes != null) {
+                vectorsToWrite = 1;
+                for (int i = 1; i < useSizes.length; i++) {
+                    System.out.println("use " + i + " " + useSizes[i] + " " + newComplex.length);
+                    if ((i < newComplex.length) && newComplex[i]) {
+                        vectorsToWrite *= useSizes[i] * 2;
+                    } else {
+                        vectorsToWrite *= useSizes[i];
                     }
                 }
-                totalVecGroups = vectorsToWrite / tmult.getGroupSize();
             }
+            totalVecGroups = vectorsToWrite / tmult.getGroupSize();
         } else {
             totalVecGroups = 1;
         }
@@ -1049,28 +1046,31 @@ public class Processor {
                 vectorsPerGroup = tmult.getGroupSize();
             }
             int nSteps = vectorsPerProcess / vectorsPerGroup;
-            for (int i = 0; i < nSteps; ++i) {
+            for (int iStep = 0; iStep < nSteps;) {
                 int vecGroup = incrementVecGroupsRead();
                 if (vecGroup > getTotalVecGroups() - 1) {
                     setEndOfFile();
                     break;
                 }
                 VecIndex vecIndex = getNextGroup(vecGroup);
-                if (showDebugInfo) {
-                    vecIndex.printMe(vecGroup, 1);
-                }
-                for (int j = 0; j < vectorsPerGroup; j++) {
-                    try {
-                        for (NMRData nmrData : nmrDataSets) {
-                            temp = new Vec(vectorSize, nmrData.isComplex(dim[0]));
-                            nmrData.readVector(vecIndex.inVecs[j], temp);
-                            temp.setPt(vecIndex.outVecs[j], dim);
-                            vectors.add(temp);
-                        }
-                    } catch (Exception e) {
-                        throw new ProcessingException(e.getMessage());
+                if (vecIndex != null) {
+                    iStep++;
+                    if (showDebugInfo) {
+                        vecIndex.printMe(vecGroup, 1);
                     }
-                    addVecReadCount();
+                    for (int j = 0; j < vectorsPerGroup; j++) {
+                        try {
+                            for (NMRData nmrData : nmrDataSets) {
+                                temp = new Vec(vectorSize, nmrData.isComplex(dim[0]));
+                                nmrData.readVector(vecIndex.inVecs[j], temp);
+                                temp.setPt(vecIndex.outVecs[j], dim);
+                                vectors.add(temp);
+                            }
+                        } catch (Exception e) {
+                            throw new ProcessingException(e.getMessage());
+                        }
+                        addVecReadCount();
+                    }
                 }
             }
         }
@@ -1089,7 +1089,8 @@ public class Processor {
     private VecIndex getNextGroup(final int vecNum) {
         if (nDim > 1) {
             if (isNUS()) {
-                return sampleSchedule.getNextGroup(vecNum, tmult);
+                VecIndex vecIndex = tmult.getNextGroup(vecNum);
+                return sampleSchedule.convertToNUSGroup(vecIndex);
             } else {
                 return tmult.getNextGroup(vecNum);
             }

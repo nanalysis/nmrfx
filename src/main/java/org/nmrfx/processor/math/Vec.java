@@ -3604,7 +3604,7 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
      * @param ph1Limit Set limit on first order phase. Can prevent unreasonable results
      * @return an array of 1 or two phase values (depending on whether first order mode is used)
      */
-    public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode, double ph1Limit) {
+    public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
         int pivot = 0;
         double p1PenaltyWeight = 1.0;
         if (winSize < 1) {
@@ -3615,10 +3615,10 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
         }
         double[] phaseResult;
         if (!doFirst) {
-            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode);
+            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
             phaseResult = tbPoints.autoPhaseZero();
         } else {
-            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode);
+            TestBasePoints tbPoints = new TestBasePoints(this, winSize, ratio, mode, negativePenalty);
             tbPoints.setP1PenaltyWeight(p1PenaltyWeight);
             phaseResult = tbPoints.autoPhase(ph1Limit);
         }
