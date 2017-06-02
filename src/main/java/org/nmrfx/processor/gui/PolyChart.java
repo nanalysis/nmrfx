@@ -1192,7 +1192,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             return;
         }
         Vec vec = dataset.getVec();
-        double[] phases = vec.autoPhase(doFirst, 0, 0, 0, 45.0);
+        double[] phases = vec.autoPhase(doFirst, 0, 0, 0, 45.0,1.0);
         setPh0(phases[0]);
         setPh1(0.0);
         if (phases.length == 2) {
