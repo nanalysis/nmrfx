@@ -888,7 +888,7 @@ class refine:
             self.gmin(nsteps=steps,tolerance=1.0e-6)
 
         if self.eFileRoot != None:
-            self.dump(0.1,self.eFileRoot+'_prep.txt')
+            self.dump(-1.0,self.eFileRoot+'_prep.txt')
 
     def anneal(self,dOpt=None,stage1={},stage2={}):
         if (dOpt==None):
@@ -898,7 +898,7 @@ class refine:
 
         self.updateAt(dOpt.update)
         irp = dOpt.irpWeight
-        self.setForces(repel=0.5,dis=1.0,dih=1,irp=irp)
+        self.setForces(repel=0.5,dis=1.0,dih=5,irp=irp)
         self.setPars(end=1000,useh=False,hardSphere=0.15,shrinkValue=0.20)
         self.setPars(optDict=stage1)
         energy = self.energy()
@@ -1116,6 +1116,7 @@ def doAnneal(seed,dOpt=None,homeDir=None):
     osfiles.setOutFiles(refiner,dataDir, seed)
     osfiles.guessFiles(refiner, homeDir)
     refiner.molecule.setMethylRotationActive(True)
+    refiner.molecule.setRiboseActive(True)
     refiner.setup(dataDir,seed)
     refiner.rootName = "temp"
     if dOpt == None:
