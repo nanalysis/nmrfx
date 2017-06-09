@@ -50,6 +50,7 @@ FAMILY  N3   C4   C5   N4
 FAMILY  C4   N4   H41 H42
 FAMILY  C4   C5   C6 H5
 FAMILY  C5   C6   -N1 H6
+FAMILY  C1'  O4'  -C4'
 FAMILY  C3'  O3'   +
 ANGLE     P      ZETA 2
 ANGLE     O5'      ALPHA 2
