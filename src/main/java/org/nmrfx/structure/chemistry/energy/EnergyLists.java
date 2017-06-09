@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.Atom;
@@ -42,6 +41,7 @@ import java.util.Map;
 import java.util.Iterator;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.structure.chemistry.energy.EnergyCoords.ViolationStats;
 
 public class EnergyLists {
 
@@ -605,8 +605,9 @@ public class EnergyLists {
                 repelEnergy = eCoords.calcRepel(false, forceWeight.getRepel());
                 nRepel = eCoords.getNContacts();
                 for (int i = 0; i < nRepel; i++) {
-                    String errMsg = eCoords.getRepelError(i, limitVal, forceWeight.getRepel());
-                    if (!errMsg.equals("")) {
+                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getNOE());
+                    if (stat != null) {
+                        String errMsg = stat.toString();
                         writer.print(errMsg);
                     }
                 }
@@ -623,8 +624,12 @@ public class EnergyLists {
                 distanceEnergy = eCoords.calcNOE(false, forceWeight.getNOE());
                 nDistance = eCoords.getNNOE();
                 for (int i = 0; i < nDistance; i++) {
-                    String errMsg = eCoords.getNOEError(i, limitVal, forceWeight.getNOE());
-                    if (!errMsg.equals("")) {
+                    ViolationStats stat = eCoords.getNOEError(i, limitVal, forceWeight.getNOE());
+                    if (stat != null) {
+                        if (Math.abs(stat.getViol()) > Math.abs(maxDis)) {
+                            maxDis = stat.getViol();
+                        }
+                        String errMsg = stat.toString();
                         writer.print(errMsg);
                     }
                 }
@@ -868,6 +873,7 @@ public class EnergyLists {
             }
             iGroup++;
         }
+        eCoords.updateGroups();
     }
 
     public EnergyDeriv energyAndDeriv() {

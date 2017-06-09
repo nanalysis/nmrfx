@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.Atom;
@@ -44,17 +43,20 @@ public class EnergyCoords {
     boolean[] hasBondConstraint = null;
     double[] contactRadii = null;
     int[] cellIndex = null;
+    int[] iGroups = new int[DEFAULTSIZE];
+    int[] groupSizes = new int[DEFAULTSIZE];
     int[] iAtoms = new int[DEFAULTSIZE];
     int[] jAtoms = new int[DEFAULTSIZE];
     int[] iUnits = new int[DEFAULTSIZE];
     int[] jUnits = new int[DEFAULTSIZE];
+    double[] disSq = new double[DEFAULTSIZE];
     double[] rLow2 = new double[DEFAULTSIZE];
     double[] rLow = new double[DEFAULTSIZE];
     double[] rUp2 = new double[DEFAULTSIZE];
     double[] rUp = new double[DEFAULTSIZE];
     double[] viol = new double[DEFAULTSIZE];
     double[] derivs = new double[DEFAULTSIZE];
-    int repelStart = 5000;
+    int repelStart = 10000;
     int repelEnd = repelStart;
     int disEnd = 0;
     int nAtoms = 0;
@@ -118,6 +120,7 @@ public class EnergyCoords {
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group) {
+        iGroups[disEnd] = group;
         iAtoms[disEnd] = i;
         jAtoms[disEnd] = j;
         iUnits[disEnd] = iUnit;
@@ -169,15 +172,61 @@ public class EnergyCoords {
         return calcEnergy(calcDeriv, weight, 0);
     }
 
-    public String getRepelError(int i, double limitVal, double weight) {
+    public ViolationStats getRepelError(int i, double limitVal, double weight) {
         return getError(i, limitVal, weight, 1);
     }
 
-    public String getNOEError(int i, double limitVal, double weight) {
+    public ViolationStats getNOEError(int i, double limitVal, double weight) {
         return getError(i, limitVal, weight, 0);
     }
 
-    public String getError(int i, double limitVal, double weight, int mode) {
+    class ViolationStats {
+
+        int mode;
+        String aName1;
+        String aName2;
+        double dis;
+        double rUp;
+        double rLow;
+        double energy;
+        double constraintDis = 0.0;
+        double dif;
+
+        ViolationStats(int mode, String aName1, String aName2, double dis, double rLow, double rUp, double energy) {
+            this.mode = mode;
+            this.aName1 = aName1;
+            this.aName2 = aName2;
+            this.dis = dis;
+            this.rLow = rLow;
+            this.rUp = rUp;
+            this.energy = energy;
+            dif = 0.0;
+            if (dis < rLow) {
+                constraintDis = rLow;
+                dif = dis - rLow;
+            } else {
+                constraintDis = rUp;
+                dif = dis - rUp;
+            }
+        }
+        
+        double getViol() {
+            return dif;
+        }
+
+        public String toString() {
+            String modeType = "Dis";
+            if (mode == 1) {
+                modeType = "Rep";
+            }
+            String result = String.format("%s: %10s %10s %5.2f %5.2f %5.2f %7.3f\n", modeType, aName1, aName2, constraintDis, dis, dif, energy);
+            return result;
+
+        }
+
+    }
+
+    public ViolationStats getError(int i, double limitVal, double weight, int mode) {
         String modeType = "Dis";
         if (mode == 1) {
             i += repelStart;
@@ -185,9 +234,7 @@ public class EnergyCoords {
         }
         int iAtom = iAtoms[i];
         int jAtom = jAtoms[i];
-        FastVector3D iV = vecCoords[iAtom];
-        FastVector3D jV = vecCoords[jAtom];
-        double r2 = iV.disSq(jV);
+        double r2 = disSq[i];
         double r = FastMath.sqrt(r2);
         double dif = 0.0;
         double constraintDis = 0.0;
@@ -201,16 +248,17 @@ public class EnergyCoords {
             constraintDis = rUp[i];
         }
         String result = "";
+        ViolationStats stat = null;
         if (Math.abs(dif) > limitVal) {
             double energy = weight * dif * dif;
-            result = String.format("%s: %10s %10s %5.2f %5.2f %5.2f %7.3f\n", modeType, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), constraintDis, r, dif, energy);
+            stat = new ViolationStats(mode, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rLow[i], rUp[i], energy);
         }
 
-        return result;
+        return stat;
 
     }
 
-    public double calcEnergy(boolean calcDeriv, double weight, int mode) {
+    public double dumpRestrants(boolean calcDeriv, double weight, int mode) {
         double sum = 0.0;
         int start = 0;
         int end = disEnd;
@@ -246,6 +294,100 @@ public class EnergyCoords {
                 derivs[i] = -2.0 * weight * dif / (r + RADJ);
             }
 
+        }
+        return sum;
+    }
+
+    public void updateGroups() {
+        int start = 0;
+        int end = disEnd;
+        for (int i = start; i < end;) {
+            groupSizes[i] = 1;
+            int j = i + 1;
+            while (iGroups[j] == iGroups[i]) {
+                groupSizes[i]++;
+                j++;
+            }
+            i = j;
+        }
+    }
+
+    public double calcEnergy(boolean calcDeriv, double weight, int mode) {
+        double sum = 0.0;
+        int start = 0;
+        int end = disEnd;
+        if (mode != 0) {
+            start = repelStart;
+            end = repelEnd;
+        }
+        for (int i = start; i < end; i++) {
+            int groupSize = groupSizes[i];
+            int nMono = 1;
+            double r2;
+            if (groupSize > 1) {
+                double sum2 = 0.0;
+                for (int j = 0; j < groupSize; j++) {
+                    int iAtom = iAtoms[i + j];
+                    int jAtom = jAtoms[i + j];
+                    FastVector3D iV = vecCoords[iAtom];
+                    FastVector3D jV = vecCoords[jAtom];
+                    double r2Temp = iV.disSq(jV);
+                    double r = FastMath.sqrt(r2Temp);
+                    sum2 += FastMath.pow(r, -6);
+                    derivs[i + j] = 0.0;
+                    viol[i + j] = 0.0;
+                }
+                sum2 /= nMono;
+                double r = FastMath.pow(sum2, -1.0 / 6);
+                r2 = r * r;
+                for (int j = 0; j < groupSize; j++) {
+                    disSq[i + j] = r2;
+                }
+            } else {
+                int iAtom = iAtoms[i];
+                int jAtom = jAtoms[i];
+                FastVector3D iV = vecCoords[iAtom];
+                FastVector3D jV = vecCoords[jAtom];
+                r2 = iV.disSq(jV);
+                disSq[i] = r2;
+                derivs[i] = 0.0;
+                viol[i] = 0.0;
+            }
+            final double dif;
+            final double r;
+            if (r2 <= rLow2[i]) {
+                r = FastMath.sqrt(r2);
+                dif = rLow[i] - r;
+            } else if (r2 >= rUp2[i]) {
+                r = FastMath.sqrt(r2);
+                dif = rUp[i] - r;
+            } else {
+                if (groupSize > 1) {
+                    i += groupSize - 1;
+                }
+                continue;
+            }
+            viol[i] = weight * dif * dif;
+            sum += viol[i];
+            if (calcDeriv) {
+                //  what is needed is actually the derivative/r, therefore
+                // we divide by r
+                // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
+                derivs[i] = -2.0 * weight * dif / (r + RADJ);
+            }
+            if (groupSize > 1) {
+                for (int j = 1; j < groupSize; j++) {
+                    viol[i + j] = viol[i];
+                    sum += viol[i + j];
+                    if (calcDeriv) {
+                        //  what is needed is actually the derivative/r, therefore
+                        // we divide by r
+                        // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
+                        derivs[i + j] = derivs[i];
+                    }
+                }
+                i += groupSize - 1;
+            }
         }
         return sum;
     }
@@ -460,7 +602,7 @@ public class EnergyCoords {
                                         }
                                     }
                                 }
-//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + dis);
+//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + disSq);
                             }
                         }
                     }
@@ -594,7 +736,7 @@ public class EnergyCoords {
                                 }
                             }
                         }
-//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + dis);
+//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + disSq);
                     }
                 }
             }

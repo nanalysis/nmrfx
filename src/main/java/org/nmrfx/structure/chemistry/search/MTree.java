@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.search;
 
 import java.util.*;
@@ -23,6 +22,7 @@ import java.util.*;
 public class MTree {
 
     Vector nodes = null;
+    MNode lastRotatable = null;
     ArrayList<MNode> pathNodes = new ArrayList<>();
 
     public MTree() {
@@ -198,30 +198,46 @@ public class MTree {
         }
 
         MNode sNode = (MNode) nodes.elementAt(start);
-        ArrayList path = new ArrayList();
-        path.add(sNode);
+        pathNodes.add(sNode);
         sNode.shell = 0;
-        depthFirstPath(sNode, path);
+        depthFirstPath(sNode, pathNodes);
 
-        int[] iPath = new int[path.size()];
+        int[] iPath = new int[pathNodes.size()];
 
-        for (int i = 0, n = path.size(); i < n; i++) {
-            MNode cNode = (MNode) path.get(i);
+        for (int i = 0, n = pathNodes.size(); i < n; i++) {
+            MNode cNode = pathNodes.get(i);
             iPath[i] = cNode.getID() + ((cNode.shell) << 8);
         }
 
         return iPath;
     }
 
-    public void depthFirstPath(MNode cNode, ArrayList path) {
+    public int depthFirstPath(MNode cNode, ArrayList<MNode> path) {
+        int maxShell = 0;
+        cNode.lastRotatable = lastRotatable;
+        if ((cNode.atom.irpIndex > 0) && (cNode.atom.rotActive)) {
+            lastRotatable = cNode;
+        }
         for (int i = 0; i < cNode.nodes.size(); i++) {
+            if ((cNode.atom.irpIndex > 0) && (cNode.atom.rotActive)) {
+                lastRotatable = cNode;
+            }
             MNode nNode = ((MNode) cNode.nodes.get(i));
 
             if (nNode.shell == -1) {
                 nNode.shell = cNode.shell + 1;
+                if (nNode.shell > maxShell) {
+                    maxShell = nNode.shell;
+                }
                 path.add(nNode);
-                depthFirstPath(nNode, path);
+                nNode.parent = cNode;
+                int max = depthFirstPath(nNode, path);
+                if (max > maxShell) {
+                    maxShell = max;
+                }
             }
         }
+        cNode.maxShell = maxShell;
+        return maxShell;
     }
 }

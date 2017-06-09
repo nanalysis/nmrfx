@@ -253,6 +253,10 @@ public class Atom {
     public String getName() {
         return name;
     }
+    
+    public int getIndex() {
+        return iAtom;
+    }
 
     public String getShortName() {
         if (entity instanceof Residue) {

@@ -15,10 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
-import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords;
 import org.nmrfx.structure.chemistry.search.*;
@@ -3044,10 +3042,8 @@ public class Molecule implements Serializable {
                                         }
                                         for (Atom atom2 : pseudoAtoms) {
                                             if (atom.name.equalsIgnoreCase(atom2.name)) {
-                                                if (!atom.isMethyl() || atom.isFirstInMethyl()) {
-                                                    selected.add(atom);
-                                                    break;
-                                                }
+                                                selected.add(atom);
+                                                break;
                                             }
 
                                         }
@@ -3106,7 +3102,6 @@ public class Molecule implements Serializable {
                 }
             }
         }
-
         return (selected);
     }
 
@@ -3259,6 +3254,19 @@ public class Molecule implements Serializable {
                 }
             }
         }
+        genAngleBranches();
+    }
+
+    public void setRiboseActive(boolean state) {
+        updateAtomArray();
+        atoms.stream().filter((iAtom) -> (iAtom.getName().equalsIgnoreCase("C3'")
+                || iAtom.getName().equalsIgnoreCase("C2'")
+                || iAtom.getName().equalsIgnoreCase("C1'"))).forEachOrdered((iAtom) -> {
+            boolean current = iAtom.rotActive;
+            iAtom.rotActive = state;
+        });
+        setupRotGroups();
+        setupAngles();
     }
 
     public void setMethylRotationActive(boolean state) {
@@ -3888,6 +3896,81 @@ public class Molecule implements Serializable {
                     atoms[1] = atomEnd;
                     JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, 2, shell);
                     tocsyLinks.add(jCoupling);
+                }
+            }
+        }
+
+    }
+
+    public void genAngleBranches() {
+        getAtomTypes();
+
+        MTree mTree = new MTree();
+        HashMap<Atom, Integer> hash = new HashMap<>();
+        ArrayList<Atom> eAtomList = new ArrayList<>();
+        int i = 0;
+
+        for (Atom atom : atoms) {
+            hash.put(atom, i);
+            eAtomList.add(atom);
+
+            MNode mNode = mTree.addNode();
+            mNode.setAtom(atom);
+            i++;
+        }
+
+        for (Atom atom : atoms) {
+            for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
+                Bond bond = (Bond) atom.bonds.elementAt(iBond);
+                if (((bond.begin == atom) && (bond.end.iAtom > atom.iAtom)) || ((bond.end == atom) && (bond.begin.iAtom > atom.iAtom))) {
+                    Integer iNodeBegin = hash.get(bond.begin);
+                    Integer iNodeEnd = hash.get(bond.end);
+                    if ((iNodeBegin != null) && (iNodeEnd != null)) {
+                        mTree.addEdge(iNodeBegin, iNodeEnd);
+                    }
+                }
+            }
+        }
+
+        HashMap<Atom, ArrayList<Atom>> atomBranches = new HashMap<>();
+        mTree.depthFirstPath(0);
+        ArrayList<MNode> pathNodes = mTree.getPathNodes();
+        for (MNode mNode : pathNodes) {
+            Atom atomEnd = mNode.getAtom();
+            if (mNode.getParent() != null) {
+                Atom atomStart = mNode.getParent().getAtom();
+                if (atomStart != null) {
+                    if ((atomEnd.irpIndex > 0) && (atomEnd.rotActive)) {
+                        Atom lastRot = mNode.getLastRotatableAtom();
+                        String lastRotName = "na";
+                        if (lastRot != null) {
+                            if (!atomBranches.containsKey(lastRot)) {
+                                ArrayList<Atom> branch = new ArrayList<>();
+                                atomBranches.put(lastRot, branch);
+                            }
+                            ArrayList<Atom> branch = atomBranches.get(lastRot);
+                            branch.add(atomEnd);
+                            lastRotName = lastRot.getShortName();
+                        }
+                        //  System.out.println(atomStart.getShortName() + " " + atomEnd.getShortName() + " " + mNode.getShell() + " " + mNode.getMaxShell() + " " + lastRotName);
+                    }
+                }
+            }
+            for (Atom atom : atoms) {
+                if (atomBranches.containsKey(atom)) {
+                    //  System.out.print(atom.getShortName());
+                    ArrayList<Atom> branch = atomBranches.get(atom);
+                    Collections.sort(branch, (a, b) -> Integer.compare(a.getIndex(), b.getIndex()));
+//                    for (Atom branchAtom : branch) {
+//                        System.out.print(" " + branchAtom.getShortName());
+//
+//                    }
+                    atom.branchAtoms = new Atom[branch.size()];
+                    branch.toArray(atom.branchAtoms);
+//                    System.out.println("");
+
+                } else {
+                    atom.branchAtoms = new Atom[0];
                 }
             }
         }

@@ -31,6 +31,8 @@ public class MNode implements Comparable, Comparator {
     int pathPos = -1;
     Atom atom = null;
     int indexInShell = -1;
+    int maxShell = 0;
+    MNode lastRotatable = null;
 
     public MNode() {
         nodes = new ArrayList();
@@ -54,8 +56,20 @@ public class MNode implements Comparable, Comparator {
         return (id);
     }
 
+    public Atom getLastRotatableAtom() {
+        Atom lAtom = null;
+        if (lastRotatable != null) {
+            lAtom = lastRotatable.atom;
+        }
+        return lAtom;
+    }
+    
     public int getShell() {
         return (shell);
+    }
+    
+    public int getMaxShell() {
+        return maxShell;
     }
 
     public MNode getParent() {
