@@ -222,6 +222,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     protected String getFullScript() {
         return chartProcessor.buildScript();
     }
+    
+    public ChartProcessor getChartProcessor() {
+        return chartProcessor;
+    }
 
     public void updateProgress(double f) {
         if (Platform.isFxApplicationThread()) {
@@ -313,7 +317,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         viewMode.setValue("FID");
     }
 
-    protected String getScript() {
+    public String getScript() {
         StringBuilder script = new StringBuilder();
         for (Object obj : operationList) {
             script.append(obj.toString());
@@ -886,6 +890,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         consoleUtil.addHandler(outputArea, chartProcessor.getInterpreter());
         consoleUtil.banner();
         consoleUtil.prompt();
+        outputArea.setEditable(true);
 
         statusCircle.setOnMousePressed((Event d) -> {
             if (processingThrowable != null) {
