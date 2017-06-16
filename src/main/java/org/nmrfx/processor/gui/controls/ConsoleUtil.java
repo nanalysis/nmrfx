@@ -55,7 +55,7 @@ import org.renjin.script.RenjinScriptEngineFactory;
 public class ConsoleUtil {
 
     static Clipboard clipBoard = Clipboard.getSystemClipboard();
-    static RenjinScriptEngine renjinEngine = null;
+    public static RenjinScriptEngine renjinEngine = null;
 
     InteractiveInterpreter interpreter;
     CodeArea outputArea;
@@ -90,6 +90,7 @@ public class ConsoleUtil {
 
     public void prompt() {
         runOnFxThread(() -> outputArea.appendText(prompt));
+        runOnFxThread(() -> outputArea.positionCaret(outputArea.getLength()));
     }
 
     public void save() {
@@ -165,7 +166,7 @@ public class ConsoleUtil {
         clipBoard.setContent(content);
     }
 
-    public RenjinScriptEngine getRenjin() {
+    public static RenjinScriptEngine getRenjin() {
         if (renjinEngine == null) {
             RenjinScriptEngineFactory renjinFactory = new RenjinScriptEngineFactory();
             renjinEngine = renjinFactory.getScriptEngine();
