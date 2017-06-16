@@ -36,6 +36,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Function;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -63,6 +64,15 @@ import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.ScannerController;
 import org.python.util.PythonInterpreter;
+import org.renjin.primitives.vector.RowNamesVector;
+import org.renjin.sexp.AttributeMap;
+import org.renjin.sexp.DoubleVector;
+import org.renjin.sexp.IntVector;
+import org.renjin.sexp.ListVector;
+import org.renjin.sexp.SEXP;
+import org.renjin.sexp.StringArrayVector;
+import org.renjin.sexp.StringVector;
+import org.renjin.sexp.Symbols;
 
 /**
  *
@@ -107,6 +117,12 @@ public class ScanTable {
             selectionChanged(selected);
 
         });
+        columnTypes.put("path", "S");
+        columnTypes.put("sequence", "S");
+        columnTypes.put("ndim", "I");
+        columnTypes.put("row", "I");
+        columnTypes.put("etime", "I");
+
     }
 
     final protected void selectionChanged(ObservableList<Integer> selected) {
@@ -305,7 +321,7 @@ public class ScanTable {
         HashMap<String, String> fieldMap = new HashMap();
         boolean[] notDouble = null;
         boolean[] notInteger = null;
-        String[] standardHeaders = {"path", "seq", "row", "etime", "ndim"};
+        String[] standardHeaders = {"path", "sequence", "row", "etime", "ndim"};
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -349,7 +365,7 @@ public class ScanTable {
                                 case "etime":
                                     eTime = Long.parseLong(fieldMap.get(standardHeader));
                                     break;
-                                case "seq":
+                                case "sequence":
                                     sequence = fieldMap.get(standardHeader);
                                     break;
                             }
@@ -374,7 +390,7 @@ public class ScanTable {
                             if (!fieldMap.containsKey("etime")) {
                                 eTime = nmrData.getDate();
                             }
-                            if (!fieldMap.containsKey("seq")) {
+                            if (!fieldMap.containsKey("sequence")) {
                                 sequence = nmrData.getSequence();
                             }
                             if (!fieldMap.containsKey("ndim")) {
@@ -404,6 +420,11 @@ public class ScanTable {
             }
             System.out.println("type " + headers[i] + " " + columnTypes.get(headers[i]));
         }
+        columnTypes.put("path", "S");
+        columnTypes.put("sequence", "S");
+        columnTypes.put("ndim", "I");
+        columnTypes.put("row", "I");
+        columnTypes.put("etime", "I");
 
         for (FileTableItem item : fileListItems) {
             item.setDate(item.getDate() - firstDate);
@@ -411,6 +432,7 @@ public class ScanTable {
         }
         updateTable(headers);
         fileTableFilter.resetFilter();
+        updateDataFrame();
 
     }
 
@@ -513,6 +535,7 @@ public class ScanTable {
             }
         }
         updateFilter();
+        updateDataFrame();
     }
 
     public void saveFilters() {
@@ -528,5 +551,193 @@ public class ScanTable {
 
     public ObservableList<FileTableItem> getItems() {
         return fileListItems;
+    }
+
+    class DoubleColumnVector extends DoubleVector {
+
+        String name;
+        Function<FileTableItem, Double> getter;
+
+        public DoubleColumnVector(AttributeMap attributes) {
+            super(attributes);
+        }
+
+        DoubleColumnVector(String name, Function<FileTableItem, Double> getter) {
+            this.name = name;
+            this.getter = getter;
+        }
+
+        @Override
+        protected SEXP cloneWithNewAttributes(AttributeMap am) {
+            DoubleColumnVector clone = new DoubleColumnVector(am);
+            clone.name = name;
+            clone.getter = getter;
+            return clone;
+        }
+
+        @Override
+        public double getElementAsDouble(int i) {
+            FileTableItem item = fileListItems.get(i);
+            return getter.apply(item);
+        }
+
+        @Override
+        public int length() {
+            return fileListItems.size();
+        }
+
+        @Override
+        public boolean isConstantAccessTime() {
+            return true;
+        }
+
+    }
+
+    class IntColumnVector extends IntVector {
+
+        String name;
+        Function<FileTableItem, Integer> getter;
+
+        public IntColumnVector(AttributeMap attributes) {
+            super(attributes);
+        }
+
+        IntColumnVector(String name, Function<FileTableItem, Integer> getter) {
+            this.name = name;
+            this.getter = getter;
+        }
+
+        @Override
+        protected SEXP cloneWithNewAttributes(AttributeMap am) {
+            IntColumnVector clone = new IntColumnVector(am);
+            clone.name = name;
+            clone.getter = getter;
+            return clone;
+        }
+
+        @Override
+        public int getElementAsInt(int i) {
+            FileTableItem item = fileListItems.get(i);
+            return getter.apply(item);
+        }
+
+        @Override
+        public int length() {
+            return fileListItems.size();
+        }
+
+        @Override
+        public boolean isConstantAccessTime() {
+            return true;
+        }
+
+    }
+
+    class StringColumnVector extends StringVector {
+
+        String name;
+        Function<FileTableItem, String> getter;
+
+        public StringColumnVector(AttributeMap attributes) {
+            super(attributes);
+        }
+
+        public StringColumnVector(String name, Function<FileTableItem, String> getter) {
+            super(AttributeMap.EMPTY);
+            this.name = name;
+            this.getter = getter;
+        }
+
+        @Override
+        public int length() {
+            return fileListItems.size();
+        }
+
+        @Override
+        public boolean isConstantAccessTime() {
+            return true;
+        }
+
+        @Override
+        public String getElementAsString(int i) {
+            FileTableItem item = fileListItems.get(i);
+            if (item == null) {
+                System.out.println("null item " + i + " column " + name);
+                return NA;
+            }
+            return getter.apply(item);
+        }
+
+        @Override
+        protected StringColumnVector cloneWithNewAttributes(AttributeMap am) {
+            StringColumnVector clone = new StringColumnVector(am);
+            clone.name = name;
+            clone.getter = getter;
+            return clone;
+        }
+
+    }
+
+    public void updateDataFrame() {
+        System.out.println("get dataframe");
+        ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
+
+        ListVector.NamedBuilder builder = new ListVector.NamedBuilder();
+
+        int iCol = 0;
+        for (TableColumn column : columns) {
+            String name = column.getText();
+            String type = columnTypes.get(name);
+            if (type == null) {
+                System.out.println("null type " + name);
+                type = "S";
+            }
+            switch (type) {
+                case "D": {
+                    DoubleColumnVector dVec = new DoubleColumnVector(name, item -> item.getDoubleExtra(name));
+                    builder.add(name, dVec);
+                    break;
+                }
+                case "I": {
+                    IntColumnVector iVec;
+                    if (name.equalsIgnoreCase("row")) {
+                        iVec = new IntColumnVector(name, item -> item.getRow());
+                    } else if (name.equalsIgnoreCase("ndim")) {
+                        iVec = new IntColumnVector(name, item -> item.getNDim());
+                    } else if (name.equalsIgnoreCase("etime")) {
+                        iVec = new IntColumnVector(name, item -> item.getDate().intValue());
+                    } else {
+                        iVec = new IntColumnVector(name, item -> item.getIntegerExtra(name));
+                    }
+                    builder.add(name, iVec);
+                    break;
+                }
+
+                case "S": {
+                    StringColumnVector sVec;
+                    if (name.equalsIgnoreCase("path")) {
+                        sVec = new StringColumnVector(name, item -> item.getFileName());
+                    } else if (name.equalsIgnoreCase("sequence")) {
+                        sVec = new StringColumnVector(name, item -> item.getSeqName());
+                    } else {
+                        sVec = new StringColumnVector(name, item -> item.getExtra(name));
+                    }
+                    builder.add(name, sVec);
+                    break;
+                }
+                default: {
+                    throw new IllegalArgumentException("Invalid column type");
+                }
+
+            }
+            iCol++;
+        }
+        builder.setAttribute(Symbols.ROW_NAMES, new RowNamesVector(fileListItems.size()));
+        builder.setAttribute(Symbols.CLASS, StringArrayVector.valueOf("data.frame"));
+
+        ListVector dFrame = builder.build();
+
+        System.out.println("set scantable");
+        ConsoleUtil.getRenjin().put("scantable", dFrame);
     }
 }
