@@ -346,7 +346,9 @@ public class ScannerController implements Initializable {
             Logger.getLogger(ScannerController.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
-        String newColumnName = getColumnName(ppms[0], ppms[1], wppms[0], wppms[1]);
+        String columnDescriptor = getColumnDescriptor(ppms[0], ppms[1], wppms[0], wppms[1]);
+        String newColumnName = scanTable.getNextColumnName(columnDescriptor);
+
         ObservableList<FileTableItem> items = scanTable.getItems();
         Map<Integer, FileTableItem> map = new HashMap<>();
         for (FileTableItem item : items) {
@@ -364,7 +366,8 @@ public class ScannerController implements Initializable {
         scanTable.addTableColumn(newColumnName, "D");
     }
 
-    public String getColumnName(double ppm1, double ppm2, double ppm1w, double ppm2w) {
+    
+    public String getColumnDescriptor(double ppm1, double ppm2, double ppm1w, double ppm2w) {
         String newColumnName = measureItem.getValue().toString().substring(0, 3).toLowerCase();
         if (null == offsetItem.getValue()) {
             newColumnName = String.format("%s_%.4f_%.4f%s", newColumnName, ppm1, ppm2, "_no_");

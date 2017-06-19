@@ -67,6 +67,7 @@ import org.python.util.PythonInterpreter;
 import org.renjin.primitives.vector.RowNamesVector;
 import org.renjin.sexp.AttributeMap;
 import org.renjin.sexp.DoubleVector;
+import org.renjin.sexp.Environment;
 import org.renjin.sexp.IntVector;
 import org.renjin.sexp.ListVector;
 import org.renjin.sexp.SEXP;
@@ -89,6 +90,7 @@ public class ScanTable {
     PopOver popOver = new PopOver();
     ObservableList<FileTableItem> fileListItems = FXCollections.observableArrayList();
     HashMap<String, String> columnTypes = new HashMap<>();
+    HashMap<String, String> columnDescriptors = new HashMap<>();
 
     public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
         this.scannerController = controller;
@@ -329,6 +331,10 @@ public class ScanTable {
                     headers = line.split("\t");
                     notDouble = new boolean[headers.length];
                     notInteger = new boolean[headers.length];
+                    for (int i = 0; i < headers.length; i++) {
+                        headers[i] = getNextColumnName(headers[i]);
+
+                    }
                     updateTable(headers);
                 } else {
                     String[] fields = line.split("\t");
@@ -462,6 +468,9 @@ public class ScanTable {
                 } else {
                     first = false;
                 }
+                if (columnDescriptors.containsKey(header)) {
+                    header = columnDescriptors.get(header);
+                }
                 writer.write(header, 0, header.length());
             }
             for (FileTableItem item : tableView.getItems()) {
@@ -471,6 +480,40 @@ public class ScanTable {
             }
         } catch (IOException x) {
         }
+    }
+
+    public String getNextColumnName(String columnDescriptor) {
+        int nChars = columnDescriptor.length();
+        boolean measureType = false;
+        if ((nChars > 4)) {
+            String start = columnDescriptor.substring(0, 4);
+            if (start.equals("vol_") || start.equals("min_") || start.equals("max_") || start.equals("ext_")) {
+                measureType = true;
+            }
+        }
+        if (!measureType) {
+            return columnDescriptor;
+        }
+        String columnName = columnDescriptors.get(columnDescriptor);
+        int maxColumn = -1;
+        if (columnName == null) {
+            for (String name : columnTypes.keySet()) {
+                Integer columnNum = null;
+                if (name.startsWith("V.")) {
+                    try {
+                        columnNum = Integer.parseInt(name.substring(2));
+                        if (columnNum > maxColumn) {
+                            maxColumn = columnNum;
+                        }
+                    } catch (NumberFormatException nfE) {
+                        columnNum = null;
+                    }
+                }
+            }
+            columnName = "V." + (maxColumn + 1);
+            columnDescriptors.put(columnDescriptor, columnName);
+        }
+        return columnName;
     }
 
     public void addTableColumn(String newName, String type) {
@@ -737,7 +780,17 @@ public class ScanTable {
 
         ListVector dFrame = builder.build();
 
-        System.out.println("set scantable");
-        ConsoleUtil.getRenjin().put("scantable", dFrame);
+        System.out.println("set scantable " + dFrame);
+        ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
+        if (processorController == null) {
+            System.out.println("null proccon");
+        } else {
+            Environment env = processorController.getREnvironment();
+            if (env == null) {
+                System.out.println("null env");
+            } else {
+                env.setVariableUnsafe("scntbl", dFrame);
+            }
+        }
     }
 }

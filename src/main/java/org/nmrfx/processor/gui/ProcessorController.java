@@ -23,6 +23,7 @@ import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProgressUpdater;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -78,6 +79,11 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.python.util.PythonInterpreter;
 import org.fxmisc.richtext.CodeArea;
+import org.fxmisc.richtext.InlineCssTextArea;
+import org.python.util.InteractiveInterpreter;
+import org.renjin.sexp.Environment;
+import org.renjin.studiofx.StudioSession;
+import org.renjin.studiofx.console.ConsoleFx;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
@@ -121,7 +127,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     CodeArea textArea;
     @FXML
-    CodeArea outputArea;
+    InlineCssTextArea consoleArea;
     @FXML
     CheckBox autoProcess;
 
@@ -141,6 +147,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
     Throwable processingThrowable;
+    StudioSession session = null;
 
     public static ProcessorController create(FXMLController fxmlController, Stage parent, PolyChart chart) {
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
@@ -222,7 +229,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     protected String getFullScript() {
         return chartProcessor.buildScript();
     }
-    
+
     public ChartProcessor getChartProcessor() {
         return chartProcessor;
     }
@@ -618,11 +625,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     public void writeOutput(String text) {
-        outputArea.appendText(text);
+        consoleArea.appendText(text);
     }
 
     public void clearOutput() {
-        outputArea.clear();
+        consoleArea.clear();
     }
 
     synchronized void setProcessingOn() {
@@ -770,6 +777,33 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         refSheet.getItems().setAll(newItems);
     }
 
+    public Environment getREnvironment() {
+        return session.getTopLevelContext().getEnvironment();
+    }
+
+    public void initializeConsole() {
+        ConsoleFx consoleFx;
+        consoleFx = new ConsoleFx();
+        consoleFx.setOutputArea(consoleArea);
+        consoleFx.addHandler();
+        consoleArea.setEditable(true);
+
+        session = new StudioSession();
+        session.setStdOut(new PrintWriter(consoleFx.getOut()));
+        consoleFx.initInterpreter(session);
+        InteractiveInterpreter interpreter = chartProcessor.getInterpreter();
+        interpreter.setOut(consoleFx.getOut());
+        interpreter.setErr(consoleFx.getErr());
+        consoleFx.addInterpreter("jython", this::runJython);
+    }
+
+    public String runJython(String command) {
+        System.out.println("run " + command);
+        InteractiveInterpreter interpreter = chartProcessor.getInterpreter();
+        interpreter.runsource(command);
+        return "";
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle rb
     ) {
@@ -885,12 +919,13 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         haltProcessButton.disableProperty().bind(stateProperty.isNotEqualTo(Worker.State.RUNNING));
 
         codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
-        outputArea.appendText("Logging to:\n" + System.getProperty("java.io.tmpdir") + "/dcengine.log\n");
-        consoleUtil = new ConsoleUtil();
-        consoleUtil.addHandler(outputArea, chartProcessor.getInterpreter());
-        consoleUtil.banner();
-        consoleUtil.prompt();
-        outputArea.setEditable(true);
+        consoleArea.appendText("Logging to:\n" + System.getProperty("java.io.tmpdir") + "/dcengine.log\n");
+//        consoleUtil = new ConsoleUtil();
+//        consoleUtil.addHandler(consoleArea, chartProcessor.getInterpreter());
+//        consoleUtil.banner();
+//        consoleUtil.prompt();
+//        consoleArea.setEditable(true);
+        initializeConsole();
 
         statusCircle.setOnMousePressed((Event d) -> {
             if (processingThrowable != null) {
