@@ -127,8 +127,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     CodeArea textArea;
     @FXML
-    InlineCssTextArea consoleArea;
-    @FXML
     CheckBox autoProcess;
 
     //PopOver propOver = new PopOver();
@@ -147,7 +145,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
     Throwable processingThrowable;
-    StudioSession session = null;
 
     public static ProcessorController create(FXMLController fxmlController, Stage parent, PolyChart chart) {
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ProcessorScene.fxml"));
@@ -624,13 +621,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         return textArea.getText();
     }
 
-    public void writeOutput(String text) {
-        consoleArea.appendText(text);
-    }
-
-    public void clearOutput() {
-        consoleArea.clear();
-    }
 
     synchronized void setProcessingOn() {
         isProcessing = true;
@@ -777,33 +767,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         refSheet.getItems().setAll(newItems);
     }
 
-    public Environment getREnvironment() {
-        return session.getTopLevelContext().getEnvironment();
-    }
-
-    public void initializeConsole() {
-        ConsoleFx consoleFx;
-        consoleFx = new ConsoleFx();
-        consoleFx.setOutputArea(consoleArea);
-        consoleFx.addHandler();
-        consoleArea.setEditable(true);
-
-        session = new StudioSession();
-        session.setStdOut(new PrintWriter(consoleFx.getOut()));
-        consoleFx.initInterpreter(session);
-        InteractiveInterpreter interpreter = chartProcessor.getInterpreter();
-        interpreter.setOut(consoleFx.getOut());
-        interpreter.setErr(consoleFx.getErr());
-        consoleFx.addInterpreter("jython", this::runJython);
-    }
-
-    public String runJython(String command) {
-        System.out.println("run " + command);
-        InteractiveInterpreter interpreter = chartProcessor.getInterpreter();
-        interpreter.runsource(command);
-        return "";
-    }
-
+  
     @Override
     public void initialize(URL url, ResourceBundle rb
     ) {
@@ -919,13 +883,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         haltProcessButton.disableProperty().bind(stateProperty.isNotEqualTo(Worker.State.RUNNING));
 
         codeAreaUtil = new ProcessingCodeAreaUtil(textArea);
-        consoleArea.appendText("Logging to:\n" + System.getProperty("java.io.tmpdir") + "/dcengine.log\n");
 //        consoleUtil = new ConsoleUtil();
 //        consoleUtil.addHandler(consoleArea, chartProcessor.getInterpreter());
 //        consoleUtil.banner();
 //        consoleUtil.prompt();
 //        consoleArea.setEditable(true);
-        initializeConsole();
 
         statusCircle.setOnMousePressed((Event d) -> {
             if (processingThrowable != null) {

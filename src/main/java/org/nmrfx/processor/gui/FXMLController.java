@@ -1056,6 +1056,7 @@ public class FXMLController implements Initializable {
 //        l.layoutBoundsProperty().addListener(e -> boundsUpdated(l));
 //        l2.layoutBoundsProperty().addListener(e -> boundsUpdated(l2));
         statusBar.setMode(0);
+        ConsoleController consoleController = ConsoleController.create();
 
     }
 

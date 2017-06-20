@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.nmrfx.processor.gui.*?>
+<?import org.fxmisc.richtext.InlineCssTextArea?>
+<?import org.controlsfx.control.*?>
+
+
+<BorderPane id="AnchorPane" prefHeight="200.0" prefWidth="600.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.ConsoleController">
+    <stylesheets>
+        <URL value="@/styles/consolescene.css"/>
+    </stylesheets>
+    <top>
+        <HBox>
+            <children>
+                <SegmentedButton>
+                    <buttons>
+                        <ToggleButton text="Renjin" onAction="#toggleInterp"/>
+                        <ToggleButton text="Jython" selected="true" onAction="#toggleInterp"/>
+                    </buttons>
+                </SegmentedButton>
+            </children>
+        </HBox>
+    </top>
+    <center>
+        <InlineCssTextArea fx:id="consoleArea" prefHeight="400" minHeight="200.0" VBox.vgrow="ALWAYS"/>
+    </center>
+</BorderPane>

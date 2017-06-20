@@ -8,7 +8,6 @@
 <?import org.controlsfx.control.*?>
 <?import org.nmrfx.processor.gui.*?>
 <?import org.fxmisc.richtext.CodeArea?>
-<?import org.fxmisc.richtext.InlineCssTextArea?>
 
 
 <VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="mainBox" prefHeight="600.0" prefWidth="400.0" styleClass="mainFxmlClass"  fx:controller="org.nmrfx.processor.gui.ProcessorController">
@@ -74,13 +73,6 @@
                         <VBox>
                             <children>
                                 <CodeArea fx:id="textArea" prefHeight="0" minHeight="0.0" VBox.vgrow="ALWAYS"/>
-                            </children>
-                        </VBox>
-                    </Tab>
-                    <Tab text="Console" closable="false" onSelectionChanged="#loadScriptTab" >
-                        <VBox>
-                            <children>
-                                <InlineCssTextArea fx:id="consoleArea" prefHeight="400" minHeight="200.0" VBox.vgrow="ALWAYS"/>
                             </children>
                         </VBox>
                     </Tab>

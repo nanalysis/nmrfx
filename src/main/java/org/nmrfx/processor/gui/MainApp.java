@@ -47,7 +47,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.image.Image;
 import org.apache.commons.lang3.SystemUtils;
-import static javafx.application.Application.launch;
 import org.controlsfx.dialog.ExceptionDialog;
 import static javafx.application.Application.launch;
 
@@ -65,6 +64,7 @@ public class MainApp extends Application {
     private static MenuBar mainMenuBar = null;
     Boolean isMac = null;
     static MainApp mainApp = null;
+    static ConsoleController consoleController = null;
 
     public static void removeStage(Stage stage) {
         synchronized (stages) {
@@ -216,6 +216,9 @@ public class MainApp extends Application {
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
         dataMenuItem.setOnAction(e -> showDatasetsTable(e));
 
+        MenuItem consoleMenuItem = new MenuItem("Show Console");
+        consoleMenuItem.setOnAction(e -> showConsole(e));
+
         MenuItem attrMenuItem = new MenuItem("Show Attributes");
         attrMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpecAttrAction(e));
 
@@ -225,7 +228,7 @@ public class MainApp extends Application {
         MenuItem scannerMenuItem = new MenuItem("Show Scanner");
         scannerMenuItem.setOnAction(e -> FXMLController.getActiveController().showScannerAction(e));
 
-        viewMenu.getItems().addAll(dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem);
+        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem);
         // Window Menu
         // TBD standard window menu items
         // Help Menu (items TBD)
@@ -281,6 +284,10 @@ public class MainApp extends Application {
         return version;
     }
 
+    private void showConsole(ActionEvent event) {
+        MainApp.getConsoleController().show();
+    }
+    
     @FXML
     private void showPreferences(ActionEvent event) {
         if (preferencesController == null) {
@@ -322,6 +329,26 @@ public class MainApp extends Application {
                 dialog.showAndWait();
             }
         });
+    }
+
+    public static InteractiveInterpreter getInterpreter() {
+        return interpreter;
+    }
+
+    public static ConsoleController getConsoleController() {
+        return consoleController;
+    }
+
+    public static void setConsoleController(ConsoleController controller) {
+        consoleController = controller;
+    }
+
+    public static void writeOutput(String string) {
+        if (consoleController == null) {
+            System.out.println(string);
+        } else {
+            consoleController.writeOutput(string);
+        }
     }
 
 }

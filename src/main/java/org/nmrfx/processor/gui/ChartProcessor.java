@@ -840,7 +840,7 @@ public class ChartProcessor {
             Path parPath = Paths.get(parFileName);
             Files.deleteIfExists(parPath);
         } catch (IOException ioE) {
-            processorController.writeOutput(ioE.getMessage() + "\n");
+            MainApp.writeOutput(ioE.getMessage() + "\n");
             throw ioE;
         } finally {
         }
