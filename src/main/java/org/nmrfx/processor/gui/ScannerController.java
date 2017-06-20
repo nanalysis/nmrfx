@@ -347,7 +347,7 @@ public class ScannerController implements Initializable {
             return;
         }
         String columnDescriptor = getColumnDescriptor(ppms[0], ppms[1], wppms[0], wppms[1]);
-        String newColumnName = scanTable.getNextColumnName(columnDescriptor);
+        String newColumnName = scanTable.getNextColumnName(columnDescriptor) + ":" + columnDescriptor;
 
         ObservableList<FileTableItem> items = scanTable.getItems();
         Map<Integer, FileTableItem> map = new HashMap<>();
@@ -359,7 +359,6 @@ public class ScannerController implements Initializable {
         }
         for (int i = 0; i < values.size(); i++) {
             double value = values.get(i);
-            System.out.println(value);
             FileTableItem item = map.get(i);
             item.setExtra(newColumnName, value);
         }

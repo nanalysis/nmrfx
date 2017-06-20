@@ -60,6 +60,8 @@ import org.controlsfx.control.table.TableFilter;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.ChartProcessor;
+import org.nmrfx.processor.gui.ConsoleController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.ScannerController;
@@ -331,11 +333,11 @@ public class ScanTable {
                     headers = line.split("\t");
                     notDouble = new boolean[headers.length];
                     notInteger = new boolean[headers.length];
-                    for (int i = 0; i < headers.length; i++) {
-                        headers[i] = getNextColumnName(headers[i]);
-
-                    }
-                    updateTable(headers);
+//                    for (int i = 0; i < headers.length; i++) {
+//                        headers[i] = getNextColumnName(headers[i]);
+//
+//                    }
+//                    updateTable(headers);
                 } else {
                     String[] fields = line.split("\t");
                     for (int iField = 0; iField < fields.length; iField++) {
@@ -468,9 +470,6 @@ public class ScanTable {
                 } else {
                     first = false;
                 }
-                if (columnDescriptors.containsKey(header)) {
-                    header = columnDescriptors.get(header);
-                }
                 writer.write(header, 0, header.length());
             }
             for (FileTableItem item : tableView.getItems()) {
@@ -492,7 +491,7 @@ public class ScanTable {
             }
         }
         if (!measureType) {
-            return columnDescriptor;
+            return "";
         }
         String columnName = columnDescriptors.get(columnDescriptor);
         int maxColumn = -1;
@@ -501,7 +500,8 @@ public class ScanTable {
                 Integer columnNum = null;
                 if (name.startsWith("V.")) {
                     try {
-                        columnNum = Integer.parseInt(name.substring(2));
+                        int colonPos = name.indexOf(":");
+                        columnNum = Integer.parseInt(name.substring(2,colonPos));
                         if (columnNum > maxColumn) {
                             maxColumn = columnNum;
                         }
@@ -729,15 +729,22 @@ public class ScanTable {
 
         int iCol = 0;
         for (TableColumn column : columns) {
-            String name = column.getText();
-            String type = columnTypes.get(name);
+            String fullName = column.getText();
+            int colonPos = fullName.indexOf(":");
+            final String name;
+            if (colonPos != -1) {
+                name = fullName.substring(0,colonPos);
+            } else {
+                name = fullName;
+            }
+            String type = columnTypes.get(fullName);
             if (type == null) {
                 System.out.println("null type " + name);
                 type = "S";
             }
             switch (type) {
                 case "D": {
-                    DoubleColumnVector dVec = new DoubleColumnVector(name, item -> item.getDoubleExtra(name));
+                    DoubleColumnVector dVec = new DoubleColumnVector(name, item -> item.getDoubleExtra(fullName));
                     builder.add(name, dVec);
                     break;
                 }
@@ -750,7 +757,7 @@ public class ScanTable {
                     } else if (name.equalsIgnoreCase("etime")) {
                         iVec = new IntColumnVector(name, item -> item.getDate().intValue());
                     } else {
-                        iVec = new IntColumnVector(name, item -> item.getIntegerExtra(name));
+                        iVec = new IntColumnVector(name, item -> item.getIntegerExtra(fullName));
                     }
                     builder.add(name, iVec);
                     break;
@@ -763,7 +770,7 @@ public class ScanTable {
                     } else if (name.equalsIgnoreCase("sequence")) {
                         sVec = new StringColumnVector(name, item -> item.getSeqName());
                     } else {
-                        sVec = new StringColumnVector(name, item -> item.getExtra(name));
+                        sVec = new StringColumnVector(name, item -> item.getExtra(fullName));
                     }
                     builder.add(name, sVec);
                     break;
@@ -780,12 +787,12 @@ public class ScanTable {
 
         ListVector dFrame = builder.build();
 
-        System.out.println("set scantable " + dFrame);
         ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
-        if (processorController == null) {
+        ConsoleController consoleController = MainApp.getConsoleController();
+        if (consoleController == null) {
             System.out.println("null proccon");
         } else {
-            Environment env = processorController.getREnvironment();
+            Environment env = consoleController.getREnvironment();
             if (env == null) {
                 System.out.println("null env");
             } else {
