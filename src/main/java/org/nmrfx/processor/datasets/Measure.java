@@ -84,16 +84,16 @@ public class Measure {
         pt[0][0] = pt1;
         pt[0][1] = pt2;
         // fixme  need to switch dim for iDim != 0
-        if (offsetType == OffsetTypes.WINDOW) {
-            edge1[0] = wpt1 - extra;
-            edge2[0] = wpt2 - extra;
-        } else {
-            edge1[0] = pt1 - extra;
-            edge2[0] = pt2 - extra;
-
-        }
         List<Double> values = new ArrayList<>();
         for (int i = 0; i < size; i++) {
+            if (offsetType == OffsetTypes.WINDOW) {
+                edge1[0] = wpt1 - extra;
+                edge2[0] = wpt2 - extra;
+            } else {
+                edge1[0] = pt1 - extra;
+                edge2[0] = pt2 - extra;
+
+            }
             pt[1][0] = i;
             pt[1][1] = i;
             for (int j = 0; j < nDim; j++) {
