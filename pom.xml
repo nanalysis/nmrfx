@@ -26,6 +26,11 @@
             <version>0.1</version>
         </dependency>
         <dependency>
+            <groupId>org.jfxplot</groupId>
+            <artifactId>plot</artifactId>
+            <version>0.1</version>
+        </dependency>
+        <dependency>
             <groupId>org.controlsfx</groupId>
             <artifactId>controlsfx</artifactId>
             <version>8.40.11</version>
