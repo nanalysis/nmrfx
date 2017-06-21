@@ -18,9 +18,10 @@
     <top>
         <HBox>
             <children>
+                <Button text="Clear" onAction="#clearOutput"/>
                 <SegmentedButton>
                     <buttons>
-                        <ToggleButton text="Renjin" onAction="#toggleInterp"/>
+                        <ToggleButton text="R" onAction="#toggleInterp"/>
                         <ToggleButton text="Jython" selected="true" onAction="#toggleInterp"/>
                     </buttons>
                 </SegmentedButton>
