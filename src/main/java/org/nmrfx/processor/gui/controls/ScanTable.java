@@ -259,7 +259,6 @@ public class ScanTable {
                 fileTableItem.setRow(rowNum++);
             }
             String script = chartProcessor.buildMultiScript(scanDir, scanOutputDir, fileNames, combineFileMode);
-            System.out.println(script);
             PythonInterpreter processInterp = new PythonInterpreter();
             processInterp.exec("from pyproc import *");
             processInterp.exec("useProcessor()");
@@ -426,7 +425,6 @@ public class ScanTable {
             } else {
                 columnTypes.put(headers[i], "S");
             }
-            System.out.println("type " + headers[i] + " " + columnTypes.get(headers[i]));
         }
         columnTypes.put("path", "S");
         columnTypes.put("sequence", "S");
@@ -722,7 +720,6 @@ public class ScanTable {
     }
 
     public void updateDataFrame() {
-        System.out.println("get dataframe");
         ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
 
         ListVector.NamedBuilder builder = new ListVector.NamedBuilder();
