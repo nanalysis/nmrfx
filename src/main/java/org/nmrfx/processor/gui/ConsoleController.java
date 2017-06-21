@@ -35,7 +35,9 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.fxmisc.richtext.InlineCssTextArea;
 import org.python.util.InteractiveInterpreter;
+import org.renjin.parser.RParser;
 import org.renjin.sexp.Environment;
+import org.renjin.sexp.SEXP;
 import org.renjin.studiofx.StudioSession;
 import org.renjin.studiofx.console.ConsoleFx;
 
@@ -51,6 +53,13 @@ public class ConsoleController implements Initializable {
     StudioSession session = null;
     Stage stage;
     ConsoleFx consoleFx;
+
+    static String initialRCode = "import(org.jfxplot.PlotApp)\n"
+            + "import(org.jfxplot.PlotManager)\n"
+            + "import(org.jfxplot.StageManager)\n"
+            + "import(org.jfxplot.GraphicsState)\n"
+            + "import(org.nmrfx.processor.datasets.Dataset)\n"
+            + "library(org.jfxplot.plot)\n";
 
     /**
      * Initializes the controller class.
@@ -111,6 +120,9 @@ public class ConsoleController implements Initializable {
         Font font = new Font("monospace", 12);
         consoleArea.setFont(font);
         consoleArea.appendText("Logging to:\n" + System.getProperty("java.io.tmpdir") + "/dcengine.log\n");
+        SEXP expr = RParser.parseInlineSource(initialRCode);
+        session.getTopLevelContext().evaluate(expr);
+
     }
 
     void close() {
@@ -123,7 +135,6 @@ public class ConsoleController implements Initializable {
     }
 
     public String runJython(String command) {
-        System.out.println("run " + command);
         InteractiveInterpreter interpreter = MainApp.getInterpreter();
         interpreter.runsource(command);
         return "";
@@ -135,13 +146,14 @@ public class ConsoleController implements Initializable {
 
     public void clearOutput() {
         consoleArea.clear();
+        consoleArea.appendText("> ");
     }
 
     @FXML
     public void toggleInterp(ActionEvent e) {
         String interpName = ((ToggleButton) e.getSource()).getText().toLowerCase();
         consoleFx.setInterpreter(interpName);
-        
+
     }
 
 }
