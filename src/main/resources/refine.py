@@ -368,10 +368,11 @@ class refine:
             lower = 1.44
             restraints = []
             restraints.append(("C4'", "O4'",1.44, 1.46))
-            restraints.append(("C4'", "C1'",2.40, 2.76))
-            restraints.append(("C5'", "O4'",2.32,  2.42))
+            restraints.append(("C4'", "C1'",2.30, 2.36))
+            restraints.append(("C5'", "O4'",2.37,  2.43))
             restraints.append(("C5'", "C3'",2.48, 2.58))
-            restraints.append(("C3'", "O4'",2.32,  2.58))
+            restraints.append(("C3'", "O4'",2.32,  2.35))
+
 #            if resName in ('C','U'):
 #                restraints.append(("N1", "O4'",2.40, 2.68))
 #            else:
@@ -837,7 +838,8 @@ class refine:
         self.seed = seed
         self.eTimeStart = time.time()
         self.useDegrees = False
-        print 'settting up'
+        print 'setting up'
+
         self.setupEnergy(self.molName,usePseudo=usePseudo)
         self.loadDihedrals(self.angleStrings)
         self.readAngleFiles()
@@ -875,7 +877,8 @@ class refine:
     def annealPrep(self,dOpt, steps=100):
         ranfact=20.0
         self.setSeed(self.seed)
-        self.putPseudo(18.0,45.0)
+        #self.putPseudo(18.0,45.0)
+
         self.randomizeAngles()
         energy = self.energy()
         irp = dOpt.irpWeight
