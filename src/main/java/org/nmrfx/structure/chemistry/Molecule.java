@@ -512,6 +512,31 @@ public class Molecule implements Serializable {
         return (Atom.calcAngle(pt1, pt2, pt3));
     }
 
+    public double calcAngle(final String aname0, final String aname1, final String aname2){
+        int structureNum = 0;
+        Atom[] atoms = new Atom[3];
+        atoms[0] = getAtom(aname0);
+        atoms[1] = getAtom(aname1);
+        atoms[2] = getAtom(aname2);
+        SpatialSet[] spSets = new SpatialSet[3];
+        Point3[] pts = new Point3[3];
+        int i = 0;
+        for (Atom atom : atoms){
+            if (atom == null){
+                 System.out.println(aname0 + " " + aname1 + " " + aname2);
+                 throw new IllegalArgumentException("No atom for " + i);
+            }
+            spSets[i] = atom.spatialSet;
+            pts[i] = spSets[i].getPoint(structureNum);
+            if (pts[i] == null){
+                throw new IllegalArgumentException("No coordinates for atom " + atom.getFullName());
+            }
+            i++;
+        }
+        return (Atom.calcAngle(pts[0],pts[1],pts[2]));
+
+    }
+
     public static double calcDihedral(MolFilter molFilter1,
             MolFilter molFilter2, MolFilter molFilter3, MolFilter molFilter4) throws IllegalArgumentException {
         MolFilter[] molFilters = new MolFilter[4];
