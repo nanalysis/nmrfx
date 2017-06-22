@@ -55,6 +55,8 @@ public class EnergyCoords {
     double[] rUp2 = new double[DEFAULTSIZE];
     double[] rUp = new double[DEFAULTSIZE];
     double[] viol = new double[DEFAULTSIZE];
+    double[] weights = new double[DEFAULTSIZE];
+
     double[] derivs = new double[DEFAULTSIZE];
     int repelStart = 10000;
     int repelEnd = repelStart;
@@ -116,6 +118,8 @@ public class EnergyCoords {
         this.rLow[repelEnd] = r0;
         rLow2[repelEnd] = r0 * r0;
         rUp2[repelEnd] = Double.MAX_VALUE;
+        weights[repelEnd] = 1.0;
+
         repelEnd++;
     }
 
@@ -133,7 +137,11 @@ public class EnergyCoords {
 
         hasBondConstraint[i] = isBond;
         hasBondConstraint[j] = isBond;
-
+        if (isBond){
+            weights[disEnd] = 25.0;
+        }else{
+            weights[disEnd] = 1.0;
+        }
         disEnd++;
     }
 
@@ -250,7 +258,7 @@ public class EnergyCoords {
         String result = "";
         ViolationStats stat = null;
         if (Math.abs(dif) > limitVal) {
-            double energy = weight * dif * dif;
+            double energy = weights[i]*weight * dif * dif;
             stat = new ViolationStats(mode, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rLow[i], rUp[i], energy);
         }
 
@@ -285,13 +293,13 @@ public class EnergyCoords {
             } else {
                 continue;
             }
-            viol[i] = weight * dif * dif;
+            viol[i] = weights[i]*weight * dif * dif;
             sum += viol[i];
             if (calcDeriv) {
                 //  what is needed is actually the derivitive/r, therefore
                 // we divide by r
                 // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                derivs[i] = -2.0 * weight * dif / (r + RADJ);
+                derivs[i] = -2.0 * weights[i]*weight * dif / (r + RADJ);
             }
 
         }
@@ -367,13 +375,13 @@ public class EnergyCoords {
                 }
                 continue;
             }
-            viol[i] = weight * dif * dif;
+            viol[i] = weights[i]*weight * dif * dif;
             sum += viol[i];
             if (calcDeriv) {
                 //  what is needed is actually the derivative/r, therefore
                 // we divide by r
                 // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                derivs[i] = -2.0 * weight * dif / (r + RADJ);
+                derivs[i] = -2.0 * weights[i]*weight * dif / (r + RADJ);
             }
             if (groupSize > 1) {
                 for (int j = 1; j < groupSize; j++) {
@@ -709,7 +717,6 @@ public class EnergyCoords {
                                 // fixme  this is fast, but could miss interactions for atoms that are not bonded
                                 // as it doesn't test for an explicit bond between the pairs
                                 boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
-
                                 if (notFixed && interactable1 && notConstrained) {
                                     int iUnit;
                                     int jUnit;
