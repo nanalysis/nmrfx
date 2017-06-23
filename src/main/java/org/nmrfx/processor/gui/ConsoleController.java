@@ -59,7 +59,8 @@ public class ConsoleController implements Initializable {
             + "import(org.jfxplot.StageManager)\n"
             + "import(org.jfxplot.GraphicsState)\n"
             + "import(org.nmrfx.processor.datasets.Dataset)\n"
-            + "library(org.jfxplot.plot)\n";
+            + "library(org.jfxplot.plot)\n"
+            + "PlotApp$setLaunched()\n";
 
     /**
      * Initializes the controller class.
@@ -87,7 +88,6 @@ public class ConsoleController implements Initializable {
             Screen screen = Screen.getPrimary();
             Rectangle2D screenSize = screen.getBounds();
             stage.toFront();
-            System.out.println(screenSize.getHeight() + " " + stage.getHeight());
             stage.setY(screenSize.getHeight() - stage.getHeight());
             ConsoleController consoleController = controller;
             stage.setOnCloseRequest(e -> consoleController.close());
