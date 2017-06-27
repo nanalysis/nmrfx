@@ -62,14 +62,7 @@ import org.python.core.PyComplex;
 import org.python.core.PyObject;
 import org.python.core.PySequence;
 import org.python.core.PyType;
-import org.renjin.sexp.AtomicVector;
-import org.renjin.sexp.DoubleVector;
-import org.renjin.sexp.SEXP;
-import org.renjin.eval.Context;
 import org.renjin.sexp.AttributeMap;
-
-
-
 
 /**
  * A class for representing vectors of data (typically for NMR). The data is stored as real or complex values. If
@@ -84,12 +77,11 @@ import org.renjin.sexp.AttributeMap;
  *
  * @author michael
  */
-public class Vec extends PySequence implements MatrixType, RAtomicVector {
+public class Vec extends PySequence implements MatrixType {
+
     public static final String TYPE_NAME = "nmrfxvector";
 
     protected AttributeMap attributes;
-
-
 
     String name = "";
 
@@ -202,10 +194,10 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
     public Vec(int size) {
         this(size, false);
     }
-    
+
     public Vec(double[] values) {
         this(values.length, false);
-        System.arraycopy(values,0,rvec,0,values.length);
+        System.arraycopy(values, 0, rvec, 0, values.length);
     }
 
     /**
@@ -350,87 +342,6 @@ public class Vec extends PySequence implements MatrixType, RAtomicVector {
             result.add(c);
         }
         return result;
-    }
-    @Override
-    public String getTypeName() {
-      return TYPE_NAME;
-    }
-
-    @Override
-    public String getImplicitClass() {
-      return "numeric";
-    }
-
-    @Override
-    public AttributeMap getAttributes() {
-        return attributes;
-    }
-
-    @Override
-    public SEXP force(Context cntxt) {
-        return this;
-    }
-
-    @Override
-    public double getElementAsDouble(int index) {
-        return getReal(index);
-    }
-
-    @Override
-    public org.apache.commons.math.complex.Complex getElementAsComplex(int i) {
-        return new org.apache.commons.math.complex.Complex(getReal(i), getImag(i));
-    }
-
-    public double[] toDoubleArray() {
-        double[] d = new double[length()];
-        for (int i = 0; i != d.length; ++i) {
-            d[i] = getReal(i);
-        }
-        return d;
-    }
-
-    @Override
-    public int length() {
-        return size;
-    }
-
-    public int indexOfNA() {
-        for (int i = 0, len = length(); i < len; i++) {
-            if (DoubleVector.isNA(getReal(i))) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public int indexOf(AtomicVector vector, int vectorIndex, int startIndex) {
-        if (!isComplex) {
-            double value = vector.getElementAsDouble(vectorIndex);
-            for (int i = startIndex; i < length(); ++i) {
-                if (value == getReal(i)) {
-                    return i;
-                }
-            }
-            return -1;
-
-        } else {
-            org.apache.commons.math.complex.Complex value = vector.getElementAsComplex(vectorIndex);
-            for (int i = startIndex; i < length(); ++i) {
-                if (getElementAsComplex(i).equals(value)) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-    }
-
-    public int compare(int index1, int index2) {
-        if (!isComplex) {
-            return Double.compare(getElementAsDouble(index1), getElementAsDouble(index2));
-        } else {
-            throw new UnsupportedOperationException("implement me");
-
-        }
     }
 
     /**
