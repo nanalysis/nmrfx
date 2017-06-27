@@ -1,13 +1,23 @@
 #!/bin/sh
-cps=`ls -d ../nmrfxprocessor/target/processor*-bin/processor*/lib/*.jar`
+cps=`ls -d ../nmrfxprocessorgui/target/processor*-bin/processor*/lib/*.jar`
 #cps=`ls ${dir}/*.jar`
-CLASSPATH=""
+CLASSPATH="target/classes"
 for cp in $cps
     do
        CLASSPATH=${CLASSPATH}:$cp
     done
 
 m2dir=/Users/brucejohnson/.m2/repository
-CLASSPATH=${CLASSPATH}:${m2dir}/de/jensd/fontawesomefx/8.6/fontawesomefx-8.6.jar:${m2dir}/de/codecentric/centerdevice/centerdevice-nsmenufx/2.1.5/centerdevice-nsmenufx-2.1.5.jar:${m2dir}/org/apache/commons/commons-lang3/3.5/commons-lang3-3.5.jar:${m2dir}/org/apache/commons/commons-collections4/4.1/commons-collections4-4.1.jar:${m2dir}/org/apache/pdfbox/pdfbox/2.0.0-RC3/pdfbox-2.0.0-RC3.jar:${m2dir}/org/apache/pdfbox/fontbox/2.0.0-RC3/fontbox-2.0.0-RC3.jar:/Users/brucejohnson/.m2/repository/org/controlsfx/controlsfx/8.40.11/controlsfx-8.40.11.jar:${m2dir}/org/fxmisc/richtext/richtextfx/0.6.10/richtextfx-0.6.10.jar:target/classes:classes
-
-java -cp ${CLASSPATH} org.nmrfx.processor.gui.MainApp
+CLASSPATH=${CLASSPATH}:${m2dir}/de/jensd/fontawesomefx/8.6/fontawesomefx-8.6.jar:
+CLASSPATH=${CLASSPATH}:${m2dir}/de/codecentric/centerdevice/centerdevice-nsmenufx/2.1.5/centerdevice-nsmenufx-2.1.5.jar
+CLASSPATH=${CLASSPATH}:${m2dir}/org/apache/commons/commons-lang3/3.5/commons-lang3-3.5.jar
+CLASSPATH=${CLASSPATH}:${m2dir}/org/apache/commons/commons-collections4/4.1/commons-collections4-4.1.jar
+CLASSPATH=${CLASSPATH}:${m2dir}/org/apache/pdfbox/pdfbox/2.0.0-RC3/pdfbox-2.0.0-RC3.jar
+CLASSPATH=${CLASSPATH}:${m2dir}/org/apache/pdfbox/fontbox/2.0.0-RC3/fontbox-2.0.0-RC3.jar
+CLASSPATH=${CLASSPATH}:/Users/brucejohnson/.m2/repository/org/controlsfx/controlsfx/8.40.11/controlsfx-8.40.11.jar
+CLASSPATH=${CLASSPATH}:${m2dir}/org/fxmisc/richtext/richtextfx/0.6.10/richtextfx-0.6.10.jar
+CLASSPATH=${CLASSPATH}:${m2dir}/org/reactfx/reactfx/2.0-M4u1/reactfx-2.0-M4u1.jar
+CLASSPATH=${CLASSPATH}:../nmrfxprocessorgui/target/classes
+echo $CLASSPATH
+#java -cp ${CLASSPATH} org.nmrfx.processor.gui.MainApp
+java -cp ${CLASSPATH} org.nmrfx.processor.gui.NMRApp
