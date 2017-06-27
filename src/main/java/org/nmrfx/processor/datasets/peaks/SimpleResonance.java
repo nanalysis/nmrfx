@@ -82,4 +82,19 @@ public class SimpleResonance implements Resonance {
         pdCs.add(pdC);
     }
 
+    public List<PeakDim> getPeakDims() {
+        ArrayList<PeakDim> peakDims = new ArrayList<>();
+        Iterator iter = getIterator();
+        while (iter.hasNext()) {
+            PeakDimContrib pdc = (PeakDimContrib) iter.next();
+            PeakDim peakDim = pdc.getPeakDim();
+            peakDims.add(peakDim);
+        }
+        /*for (int i=0;i<peakDimContribs.size();i++) {
+         PeakDim peakDim = ((PeakDimContrib) peakDimContribs.get(i)).getPeakDim();
+         peakDims.add(peakDim);
+         }*/
+        return peakDims;
+    }
+
 }
