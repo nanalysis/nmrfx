@@ -120,6 +120,11 @@ public class MainApp extends Application {
         return mainApp.makeMenuBar(appName);
     }
 
+    public void quit() {
+        Platform.exit();
+        System.exit(0);
+    }
+
     Stage makeAbout(String appName) {
         AboutStageBuilder aboutStageBuilder = AboutStageBuilder.start("About " + appName)
                 .withAppName(appName).withCloseOnFocusLoss().withHtml("<i>Processing for NMR Data</i>")
@@ -159,7 +164,7 @@ public class MainApp extends Application {
                     new SeparatorMenuItem(), quitItem);
         } else {
             quitItem = new MenuItem("Quit");
-            quitItem.setOnAction(e -> Platform.exit());
+            quitItem.setOnAction(e -> quit());
         }
         // File Menu (items TBD)
         Menu fileMenu = new Menu("File");
@@ -287,7 +292,7 @@ public class MainApp extends Application {
     private void showConsole(ActionEvent event) {
         MainApp.getConsoleController().show();
     }
-    
+
     @FXML
     private void showPreferences(ActionEvent event) {
         if (preferencesController == null) {
