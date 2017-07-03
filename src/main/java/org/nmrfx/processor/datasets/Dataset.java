@@ -134,7 +134,6 @@ public class Dataset extends DoubleVector {
         return clone;
     }
 
-
     void setDimAttributes() {
         attributes = AttributeMap.builder().addAllFrom(attributes).setDim(new IntArrayVector(size)).build();
     }
@@ -143,7 +142,7 @@ public class Dataset extends DoubleVector {
     public double getElementAsDouble(int offset) {
         int[] indices = new int[nDim];
         double value;
-        for (int i=nDim-1;i>=0;i--) {
+        for (int i = nDim - 1; i >= 0; i--) {
             indices[i] = offset / strides[i];
             offset = offset % strides[i];
         }
@@ -3079,8 +3078,8 @@ public class Dataset extends DoubleVector {
 
     void setStrides() {
         strides[0] = 1;
-        for (int i=1;i<nDim;i++) {
-            strides[i] = strides[i-1]*size[i-1];
+        for (int i = 1; i < nDim; i++) {
+            strides[i] = strides[i - 1] * size[i - 1];
         }
     }
 
@@ -4999,7 +4998,7 @@ public class Dataset extends DoubleVector {
         /**
          *
          */
-        public void nextVector() {
+        public synchronized void nextVector() {
             int[] iE = scanRegion.nextPoint();
             if (iE.length == 0) {
                 vec = null;
@@ -5019,6 +5018,73 @@ public class Dataset extends DoubleVector {
     }
 
     /**
+     * Iterator for looping over vectors in dataset
+     */
+    private class VecIndexIterator implements Iterator<int[][]> {
+
+        ScanRegion scanRegion;
+        int[][] pt = new int[nDim][2];
+        int[] dim = new int[nDim];
+        int origSize;
+
+        VecIndexIterator(Dataset dataset, int iDim) {
+            dim[0] = iDim;
+            pt[0][0] = 0;
+            pt[0][1] = 0;
+            int j = 0;
+            for (int i = 1; i < nDim; i++) {
+                if (j == iDim) {
+                    j++;
+                }
+
+                dim[i] = j;
+                pt[i][0] = 0;
+                pt[i][1] = getSize(dim[i]) - 1;
+                j++;
+            }
+            pt[0][1] = getSize(iDim) - 1;
+            origSize = pt[0][1];
+            int newSize = pt[0][1] - pt[0][0] + 1;
+            scanRegion = new ScanRegion(pt, dim, dataset);
+        }
+        
+        public int[] getDim() {
+            return dim;
+        }
+
+        @Override
+        public boolean hasNext() {
+            nextVector();
+            return pt != null;
+        }
+
+        @Override
+        public int[][] next() {
+            int[][] result = new int[pt.length][2];
+            for (int i = 0; i < pt.length; i++) {
+                result[i] = pt[i].clone();
+            }
+            return result;
+        }
+
+        /**
+         *
+         */
+        public synchronized void nextVector() {
+            int[] iE = scanRegion.nextPoint();
+            if (iE.length == 0) {
+                pt = null;
+            } else {
+                pt[0][1] = origSize;
+                for (int jDim = 1; jDim < nDim; jDim++) {
+                    pt[jDim][0] = iE[jDim];
+                    pt[jDim][1] = iE[jDim];
+                }
+            }
+        }
+    }
+
+    /**
      * Get iterator that allows iterating over all the vectors along the specified dimension of the dataset.
      *
      * @param iDim Index of dataset dimension to read vectors from
@@ -5027,6 +5093,17 @@ public class Dataset extends DoubleVector {
      */
     synchronized public Iterator<Vec> vectors(int iDim) throws IOException {
         VecIterator vecIter = new VecIterator(this, iDim);
+        return vecIter;
+    }
+    /**
+     * Get iterator that allows iterating over the indices of all the vectors along the specified dimension of the dataset.
+     *
+     * @param iDim Index of dataset dimension to read vectors from
+     * @return iterator an Iterator to iterate over vectors in dataset
+     * @throws IOException if an I/O error occurs
+     */
+    synchronized public Iterator<int[][]> indexer(int iDim) throws IOException {
+        VecIndexIterator vecIter = new VecIndexIterator(this, iDim);
         return vecIter;
     }
 
