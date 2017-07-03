@@ -22,7 +22,7 @@ public class PositionValue {
     private final int position;
     private final double value;
 
-    PositionValue(final int position, final double value) {
+    public PositionValue(final int position, final double value) {
         this.position = position;
         this.value = value;
     }
