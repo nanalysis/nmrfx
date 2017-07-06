@@ -42,6 +42,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
@@ -116,11 +117,11 @@ public class ScanTable {
 //        fileTableFilter = builder.apply();
         setDragHandlers(tableView);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        tableView.getSelectionModel().selectedIndexProperty().addListener(e -> {
+        ListChangeListener selectionListener = (ListChangeListener) (ListChangeListener.Change c) -> {
             ObservableList<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
             selectionChanged(selected);
-
-        });
+        };
+        tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         columnTypes.put("path", "S");
         columnTypes.put("sequence", "S");
         columnTypes.put("ndim", "I");
@@ -499,7 +500,7 @@ public class ScanTable {
                 if (name.startsWith("V.")) {
                     try {
                         int colonPos = name.indexOf(":");
-                        columnNum = Integer.parseInt(name.substring(2,colonPos));
+                        columnNum = Integer.parseInt(name.substring(2, colonPos));
                         if (columnNum > maxColumn) {
                             maxColumn = columnNum;
                         }
@@ -730,7 +731,7 @@ public class ScanTable {
             int colonPos = fullName.indexOf(":");
             final String name;
             if (colonPos != -1) {
-                name = fullName.substring(0,colonPos);
+                name = fullName.substring(0, colonPos);
             } else {
                 name = fullName;
             }
