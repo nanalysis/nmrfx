@@ -383,6 +383,15 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             switch (shortString) {
                 case "c":
                     break;
+
+                case "c1":
+                    hasMiddleMouseButton = false;
+                    keyMonitor.clear();
+                    break;
+                case "c3":
+                    hasMiddleMouseButton = true;
+                    keyMonitor.clear();
+                    break;
                 case "cc":
                     SpectrumStatusBar statusBar = controller.getStatusBar();
                     if (statusBar != null) {
