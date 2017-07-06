@@ -2014,6 +2014,22 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
+     * Get an array of the real values in a region of this vector. The values are copied so changes in the returned
+     * array do not effect this vector.
+     *
+     * @param values a double array in which to put the real values
+     * @param start the starting position of the Vec at which to read values
+     */
+    public void getReal(double[] values, int start) throws IllegalArgumentException {
+        if (values.length + start >= size) {
+            throw new IllegalArgumentException("invalid positions for getReal");
+        }
+        for (int i = 0, n = values.length; i < n; i++) {
+            values[i] = getReal(i + start);
+        }
+    }
+
+    /**
      * Return real or imaginary value at specified index. It's preferred to use getReal or getImag unless choice of real
      * or imaginary needs to be made programmatically as its easy to use make errors by wrong choice of true/false with
      * this method.
