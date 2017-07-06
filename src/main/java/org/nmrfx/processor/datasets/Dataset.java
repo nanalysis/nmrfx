@@ -2746,6 +2746,7 @@ public class Dataset extends DoubleVector {
                 setComplex(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
                 setComplex_r(i, getComplex(i));
                 setFreqDomain(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
+                setFreqDomain_r(i, getFreqDomain(i));
                 setPh0(i, DataUtilities.readSwapFloat(dis, checkSwap));
                 setPh0_r(i, getPh0(i));
                 setPh1(i, DataUtilities.readSwapFloat(dis, checkSwap));
@@ -2863,6 +2864,7 @@ public class Dataset extends DoubleVector {
                     setComplex(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
                     setComplex_r(i, getComplex(i));
                     setFreqDomain(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
+                    setFreqDomain_r(i, getFreqDomain(i));
                     setPh0(i, DataUtilities.readSwapFloat(dis, checkSwap));
                     setPh0_r(i, getPh0(i));
                     setPh1(i, DataUtilities.readSwapFloat(dis, checkSwap));
@@ -2875,6 +2877,7 @@ public class Dataset extends DoubleVector {
                     setVSize_r(iDim, getSize(iDim));
                     setVSize(iDim, getSize(iDim));
                     setFreqDomain(iDim, true);
+                    setFreqDomain_r(iDim, true);
                 }
             }
         } catch (Exception e) {
@@ -5047,7 +5050,7 @@ public class Dataset extends DoubleVector {
             int newSize = pt[0][1] - pt[0][0] + 1;
             scanRegion = new ScanRegion(pt, dim, dataset);
         }
-        
+
         public int[] getDim() {
             return dim;
         }
@@ -5095,8 +5098,10 @@ public class Dataset extends DoubleVector {
         VecIterator vecIter = new VecIterator(this, iDim);
         return vecIter;
     }
+
     /**
-     * Get iterator that allows iterating over the indices of all the vectors along the specified dimension of the dataset.
+     * Get iterator that allows iterating over the indices of all the vectors along the specified dimension of the
+     * dataset.
      *
      * @param iDim Index of dataset dimension to read vectors from
      * @return iterator an Iterator to iterate over vectors in dataset
@@ -5122,4 +5127,23 @@ public class Dataset extends DoubleVector {
         MultidimensionalCounter.Iterator iter = counter.iterator();
         return iter;
     }
+
+    public List<int[][]> getIndices(int iDim, int start, int end) throws IOException {
+        Iterator<int[][]> iter = indexer(iDim);
+        List<int[][]> indices = new ArrayList<>();
+        if (start < 0) {
+            start = 0;
+        }
+        if (end >= getSize(iDim)) {
+            end = getSize(iDim) - 1;
+        }
+        while (iter.hasNext()) {
+            int[][] pt = iter.next();
+            pt[0][0] = start;
+            pt[0][1] = end;
+            indices.add(pt);
+        }
+        return indices;
+    }
+
 }
