@@ -420,6 +420,15 @@ public class Atom {
 
         return ppmV;
     }
+    
+    public PPMv getRefPPM(int i){
+        PPMv ppmV = null;
+        if (spatialSet == null) {
+        } else if (spatialSet != null){
+            ppmV = spatialSet.getRefPPM();
+        }
+        return ppmV;
+    }
 
     public void setPPM(double value) {
         spatialSet.setPPM(0, value, false);
@@ -428,6 +437,14 @@ public class Atom {
     public void setPPM(int i, double value) {
         spatialSet.setPPM(i, value, false);
     }
+    
+    public void setRefPPM(double value) {
+        spatialSet.setRefPPM(0,value);
+    }
+    
+    public void setRefPPM(int i, double value) {
+        spatialSet.setRefPPM(i, value);    
+    }    
 
     public void setPPMValidity(int i, boolean validity) {
         spatialSet.setPPMValidity(i, validity);
