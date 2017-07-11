@@ -194,7 +194,7 @@ public class RingCurrentShift {
         for (SpatialSet spatialSet : spatialSets) {
             Point3 pt = spatialSet.getPoint(iStruct);
             if (pt == null) {
-                System.out.println("Null point for " + spatialSet.getFullName());
+                System.out.println("Null point for " + spatialSet.getFullName() + " for struct " + iStruct);
             }
             ring.points.add(pt);
         }
