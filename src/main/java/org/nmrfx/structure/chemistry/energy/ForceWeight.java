@@ -26,6 +26,7 @@ public class ForceWeight {
     private final double robson;
     private final double repel;
     private final double noe;
+    private final double shift;
     private final double bond = 5000.0;
     private final double irp;
     final double cutoffSq = 64.0;
@@ -33,10 +34,10 @@ public class ForceWeight {
     final double cutoffDem = 28.0;
 
     public ForceWeight() {
-        this(-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0);
+        this(-1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, -1.0);
     }
 
-    public ForceWeight(final double electrostatic, final double robson, final double repel, final double noe, double tortionAngle, double dihedral, double irp) {
+    public ForceWeight(final double electrostatic, final double robson, final double repel, final double noe, double tortionAngle, double dihedral, double irp, double shift) {
         this.electrostatic = electrostatic;
         this.robson = robson;
         this.repel = repel;
@@ -44,6 +45,7 @@ public class ForceWeight {
         this.dihedralProb = tortionAngle;
         this.dihedral = dihedral;
         this.irp = irp;
+        this.shift = shift;
     }
 
     /**
@@ -79,5 +81,9 @@ public class ForceWeight {
 
     public double getIrp() {
         return irp;
+    }
+    
+    public double getShift() {
+        return shift;
     }
 }
