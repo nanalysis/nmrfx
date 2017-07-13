@@ -948,7 +948,7 @@ class refine:
             self.gmin(nsteps=steps,tolerance=1.0e-6)
 
         if self.eFileRoot != None:
-            self.dump(-1.0,self.eFileRoot+'_prep.txt')
+            self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 
     def anneal(self,dOpt=None,stage1={},stage2={}):
         if (dOpt==None):
@@ -1106,7 +1106,7 @@ class refine:
             savePDB(self.molecule, pdbFile)
             strOutput = "%d %.2f\n" % (self.seed,energy)
             osfiles.logEnergy(self, strOutput)
-            self.dump(0.1,energyFile)
+            self.dump(0.1,0.2,energyFile)
 
         eTimeTotal = time.time()-self.eTimeStart
         print 'energy is', energy
