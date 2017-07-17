@@ -259,7 +259,7 @@ class refine:
 
         energy=energyLists.energy()
         print(energy)
-        
+        print usePseudo
         self.dihedral = Dihedral(energyLists,usePseudo)
 
     def usePseudo(self,usePseudo):
@@ -373,7 +373,7 @@ class refine:
             restraints.append(("C5'", "O4'",2.37,  2.43))
             restraints.append(("C5'", "C3'",2.48, 2.58))
             restraints.append(("C3'", "O4'",2.32,  2.35))
-            restraints.append(("O4'", "H4'", 1.97, 2.05))
+            #	restraints.append(("O4'", "H4'", 1.97, 2.05))
 #            if resName in ('C','U'):
 #                restraints.append(("N1", "O4'",2.40, 2.68))
 #            else:
@@ -673,7 +673,39 @@ class refine:
                 resJName = residues[iEndPair+i+1].getName()
                 if (resJName == "A"):
                     self.energyLists.addDistanceConstraint(str(resI)+".H1'", str(resJ)+".H2",1.8, 5.0)
-        
+    def findHelices(self,vienna,indexDiff):
+        pairs = self.getPairs(vienna)
+      
+        i = 0
+        sets = []
+
+        helix = False
+        beginSet=[]
+        endSet=[]
+        while i != len(pairs)-1:
+            if pairs[i] != -1:
+                if i > pairs[i]:
+                    i+=1
+                    continue
+                if not helix:
+                    helix = True
+                    beginSet.append(i+indexDiff)
+                    endSet.append(pairs[i]+indexDiff)
+            else:
+                if helix:
+                    helix = False
+                    beginSet.append(i-1+indexDiff)
+                    endSet.insert(0,pairs[i-1]+indexDiff)
+                    sets.append(beginSet+endSet)
+                    beginSet = []
+                    endSet = []
+            i+=1
+        polymers = mol.getPolymers()
+        for polymer in polymers:
+            for set in sets:
+                refiner.addHelix(polymer,set[0],set[3],set[1],set[2])
+
+    
     def addBasePair(self, polymer, resNumI, resNumJ):
         resNumI = str(resNumI)
         resNumJ = str(resNumJ)
