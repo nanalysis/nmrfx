@@ -237,7 +237,7 @@ class refine:
         if (dislim >=0):
             self.energyLists.setDistanceLimit(dislim)
 
-    def setupEnergy(self,molName,eList=None, useH=False,usePseudo=True,useCourseGrain=False):
+    def setupEnergy(self,molName,eList=None, useH=False,usePseudo=True,useCourseGrain=False,useShifts=False):
         #creates a EnergyList object
         if eList == None:
             energyLists = EnergyLists()
@@ -256,7 +256,8 @@ class refine:
         energyLists.setDeltaStart(0)
         energyLists.setDeltaEnd(1000)
         energyLists.makeAtomListFast()
-
+        if useShifts:
+            energyLists.setRingShifts()
         energy=energyLists.energy()
         print(energy)
         print usePseudo
@@ -281,7 +282,9 @@ class refine:
         self.refiner.gradMinimize(nsteps, tolerance)
 
     def refine(self,nsteps=10000,stopFitness=0.0,radius=0.01,alg="cmaes",ninterp=1.2,lambdaMul=1, nFireflies=18, diagOnly=1.0,useDegrees=False):
+        print self.energyLists.energy()
         self.energyLists.makeAtomListFast()
+        print self.energyLists.energy()
         diagOnly = int(round(nsteps*diagOnly))
         if (alg == "cmaes"):
             self.refiner = CmaesRefinement(self.dihedral)
@@ -700,10 +703,10 @@ class refine:
                     beginSet = []
                     endSet = []
             i+=1
-        polymers = mol.getPolymers()
+        polymers = self.molecule.getPolymers()
         for polymer in polymers:
             for set in sets:
-                refiner.addHelix(polymer,set[0],set[3],set[1],set[2])
+                self.addHelix(polymer,set[0],set[3],set[1],set[2])
 
     
     def addBasePair(self, polymer, resNumI, resNumJ):
@@ -904,17 +907,10 @@ class refine:
         return shifts
 
     def setBasePPMs(self,filterString="*.H8,H6,H5,H2,H1',H2',H3'"):
-        from org.nmrfx.structure.chemistry import MolFilter
-        from org.nmrfx.structure.chemistry.energy import RingCurrentShift
-        molFilter = MolFilter(filterString)
-        spatialSets = ArrayList(Molecule.matchAtoms(molFilter))
-       
-        ringShifts = RingCurrentShift()
-        ringShifts.makeRingList(self.molecule)
-        ringShifts.setBasePPMs(spatialSets)
-        for sp in spatialSets:
-            print sp.getFullName(), sp.getPPM(1).getValue()
-        return ringShifts
+        self.energyLists.setRingShifts(filterString)
+        atoms = self.energyLists.getRefAtoms()
+        for atom in atoms:
+            print atom.getFullName(), atom.getPPM(1).getValue()
 
     def setShifts(self,shiftFile):
         file = open(shiftFile,"r")
@@ -936,13 +932,13 @@ class refine:
 
 
 
-    def setup(self,homeDir,seed,writeTrajectory=False,usePseudo=False):
+    def setup(self,homeDir,seed,writeTrajectory=False,usePseudo=False, useShifts = False):
         self.seed = seed
         self.eTimeStart = time.time()
         self.useDegrees = False
         print 'setting up'
 
-        self.setupEnergy(self.molName,usePseudo=usePseudo)
+        self.setupEnergy(self.molName,usePseudo=usePseudo,useShifts=useShifts)
         self.loadDihedrals(self.angleStrings)
         self.readAngleFiles()
         self.readSuiteAngles()
