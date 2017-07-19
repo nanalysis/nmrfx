@@ -293,18 +293,18 @@ public class AtomMath {
         return result;
     }
     
-    public static double calcShift(Atom atom) {
+    public static double calcDeltaShift(Atom atom) {
         PPMv refPPM = atom.getRefPPM(0);
         PPMv ppm = atom.getPPM(0);
         if (refPPM == null || ppm == null) {
-            return -1.0;
+            throw new NullPointerException("ppm is null");
         } else {
             double diff = refPPM.getValue() - ppm.getValue();
             return diff;
         }
     }
 
-    public static double calcShiftEn(Double shift, ForceWeight forceWeight){
+    public static double calcShiftEnergy(Double shift, ForceWeight forceWeight){
         return FastMath.pow(shift,2)*forceWeight.getShift();
     }
 

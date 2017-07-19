@@ -601,13 +601,13 @@ public class EnergyLists {
             }
             if (forceWeight.getShift() > 0.0) {
                 for (Atom atom : refAtoms) {
-                    double shift = AtomMath.calcShift(atom);
-                    if (shift != -1.0) {
-                        double shiftEnergy = AtomMath.calcShiftEn(shift,forceWeight);
-                        shiftTotEnergy += AtomMath.calcShiftEn(shift,forceWeight);
+                    double deltaShift = AtomMath.calcDeltaShift(atom);
+                    if (deltaShift != -1.0) {
+                        double shiftEnergy = AtomMath.calcShiftEnergy(deltaShift,forceWeight);
+                        shiftTotEnergy += shiftEnergy;
                         nShift++;
-                        if (Math.abs(shift) > shiftVal) {
-                            writer.format("Shi: %10s %10s %5.2f %5.2f %5.2f %5.3f\n", atom.getFullName(), "",atom.getPPM(0).getValue(), atom.getRefPPM(0).getValue(), shift, shiftEnergy);
+                        if (Math.abs(deltaShift) > shiftVal) {
+                            writer.format("Shi: %10s %10s %5.2f %5.2f %5.2f %5.3f\n", atom.getFullName(), "",atom.getPPM(0).getValue(), atom.getRefPPM(0).getValue(), deltaShift, shiftEnergy);
                         }
                     }
                 }
@@ -751,8 +751,8 @@ public class EnergyLists {
             return -1.0;
         }
         for (Atom atom : refAtoms) {
-            double shift = AtomMath.calcShift(atom);
-            totalEnergy += AtomMath.calcShiftEn(shift,forceWeight);
+            double deltaShift = AtomMath.calcDeltaShift(atom);
+            totalEnergy += AtomMath.calcShiftEnergy(deltaShift,forceWeight);
         }
         return totalEnergy;
     }
