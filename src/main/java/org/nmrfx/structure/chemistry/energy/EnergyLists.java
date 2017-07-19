@@ -29,6 +29,7 @@ import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.SpatialSet;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
+import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
+import java.util.Vector;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords.ViolationStats;
@@ -66,6 +68,7 @@ public class EnergyLists {
     private double shrinkValue = 0.0;
     private double shrinkHValue = 0.0;
     private ForceWeight forceWeight = new ForceWeight();
+    private RingCurrentShift ringShifts = new RingCurrentShift();
     AtomBranch[] branches = null;
     static final double toDeg = 180.0 / FastMath.PI;
     static final double toRad = FastMath.PI / 180;
@@ -224,6 +227,23 @@ public class EnergyLists {
 
     public int getStructure() {
         return iStruct;
+    }
+    
+    public void setRingShifts(String filterString){
+        ringShifts = new RingCurrentShift();
+        ringShifts.makeRingList(molecule);
+        
+        MolFilter molFilter = new MolFilter(filterString);
+        Vector<SpatialSet> spatialSets = Molecule.matchAtoms(molFilter,molecule);
+        ringShifts.setBasePPMs(spatialSets);
+    }
+    
+    public void setRingShifts(){
+        setRingShifts("*.H8,H6,H5,H2,H1',H2',H3'");
+    }
+    
+    public void updateShifts(){
+        ringShifts.predictShifts();
     }
 
     public static double calcDistance(Point3 pt1, Point3 pt2) {
@@ -535,7 +555,7 @@ public class EnergyLists {
         }
         eCoords.updateFixed(dRange);
     }
-
+    
     public void clear() {
         atomList.clear();
         bondList.clear();
@@ -600,6 +620,7 @@ public class EnergyLists {
                 }
             }
             if (forceWeight.getShift() > 0.0) {
+                updateShifts();
                 for (Atom atom : refAtoms) {
                     double deltaShift = AtomMath.calcDeltaShift(atom);
                     if (deltaShift != -1.0) {
@@ -675,7 +696,7 @@ public class EnergyLists {
 
             }
 
-            double energySum = dihEnergy + robsonEnergy + repelEnergy + distanceEnergy + irpEnergy;
+            double energySum = dihEnergy + robsonEnergy + repelEnergy + distanceEnergy + irpEnergy + shiftTotEnergy;
             writer.format("Irp %5d %.3f Dih %5d %.3f Robson %5d %.3f Repel %5d %.3f Distance %5d %.3f %.3f Shift %5d %.3f Total %.3f\n", nIrp, irpEnergy, nDih, dihEnergy, nRobson, robsonEnergy, nRepel, repelEnergy, nDistance, distanceEnergy, maxDis, nShift, shiftTotEnergy, energySum);
         } catch (Exception e) {
             e.printStackTrace();
@@ -750,6 +771,7 @@ public class EnergyLists {
             //fixme calcDerive should not be on
             return -1.0;
         }
+        updateShifts();
         for (Atom atom : refAtoms) {
             double deltaShift = AtomMath.calcDeltaShift(atom);
             totalEnergy += AtomMath.calcShiftEnergy(deltaShift,forceWeight);

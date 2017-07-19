@@ -30,6 +30,7 @@ import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.SpatialSet;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Vector;
 import java.util.Iterator;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.threed.Plane;
@@ -241,9 +242,9 @@ public class RingCurrentShift {
         return calcRingContributions(ring, pt, targetFactor, iStruct);
     }
     
-    public static ArrayList<SpatialSet> refSP;
+    public static Vector<SpatialSet> refSP = null;
     
-    public void setBasePPMs(ArrayList<SpatialSet> targetSpatialSets){
+    public void setBasePPMs(Vector<SpatialSet> targetSpatialSets){
         for (SpatialSet sp : targetSpatialSets){
             String nucName = sp.atom.getEntity().getName();
             String aName = sp.atom.getName();
