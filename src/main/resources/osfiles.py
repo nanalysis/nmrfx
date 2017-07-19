@@ -115,7 +115,7 @@ def writeLines(data, outFile,header):
 fileTypeLine = {'shift': ['atom','data'],
                 'dis': ['atom','atom','data','data'],
                 'seq': ['data','index']}
-fileName = {'shift': 'ppm.out', 'dis':'dis.tbl'}
+fileName = {'shift': 'ppm.out', 'dis':'dis.tbl','seq':'sequence.seq'}
 def getPatternRanges(inputPattern):
     #Parses the input range as a string and returns a nested list of integers for residue indices
     ranges = inputPattern.split(',')
@@ -227,7 +227,7 @@ def convertSeqFile(inFile,dataDir):
         residue.append(resIndex)
         data.append(residue)
         resIndex += 1
-    outFile = dataDir + 'sl2.seq'
+    outFile = dataDir + fileName['seq']
     writeLines(data,outFile,'')
     return outFile
 
