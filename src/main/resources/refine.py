@@ -903,6 +903,19 @@ class refine:
             shifts.append(shift)
         return shifts
 
+    def setBasePPMs(self,filterString="*.H8,H6,H5,H2,H1',H2',H3'"):
+        from org.nmrfx.structure.chemistry import MolFilter
+        from org.nmrfx.structure.chemistry.energy import RingCurrentShift
+        molFilter = MolFilter(filterString)
+        spatialSets = ArrayList(Molecule.matchAtoms(molFilter))
+       
+        ringShifts = RingCurrentShift()
+        ringShifts.makeRingList(self.molecule)
+        ringShifts.setBasePPMs(spatialSets)
+        for sp in spatialSets:
+            print sp.getFullName(), sp.getPPM(1).getValue()
+        return ringShifts
+
     def setShifts(self,shiftFile):
         file = open(shiftFile,"r")
         data = file.read()
