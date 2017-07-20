@@ -1,48 +1,104 @@
 import sys
+import os
 import glob
 import os.path
 from org.nmrfx.structure.chemistry import Molecule
+from org.nmrfx.structure.chemistry.energy import EnergyLists
 from org.nmrfx.structure.chemistry import SuperMol
 from org.nmrfx.structure.chemistry.energy import AtomEnergyProp
 from org.nmrfx.structure.chemistry.io import PDBFile
 from refine import *
+from osfiles import writeLines
+from osfiles import getFileName
+
 homeDir =  os.getcwd( )
-outDir = os.path.join(homeDir,'analysis')
+global outDir;
 
-site.addsitedir(homeDir)
-
-if not os.path.exists(outDir):
-    os.mkdir(outDir)
-
-dataDir = homeDir + '/'
-
-def setupFile(fileName):
+def setupFile(fileName,**op):
+        
     print 'setup',fileName
     refiner = refine()
-    refiner.readPDBFile(fileName)
-    refiner.addDistanceFile('distances',mode='cyana')
+    molecule = refiner.readPDBFile(fileName)
+
+    if 'disFile' in op and op['disFile'] != None:
+        disFile = op['disFile']
+        print 'this gets run'
+        refiner.addDistanceFile(disFile,mode='NV')
+    else:
+        disFile = 'distances'
+        refiner.addDistanceFile(disFile,mode='cyana')
+
     seed = 1
     refiner.setup(homeDir,seed)
+
+    if 'addRibose' in op:
+        if op['addRibose']:
+            polymers = molecule.getPolymers()
+            for polymer in polymers:
+                refiner.addRiboseRestraints(polymer)
     refiner.outDir = outDir
+    refiner.energy()
     return refiner
 
-def loadPDBModels(files):
-    iFile = 1
-    refiner = setupFile(files[0])
+def loadPDBModels(files, *pp, **op):
+    global outDir
+    if 'dataFiles' in op:
+        disFile = op['dataFiles']['disFile']
+        shiftFile = op['dataFiles']['shiftFile']
+        outDir = op['dataFiles']['outDir']
+  
+    outDir = os.path.join(homeDir,outDir)
+    if not os.path.exists(outDir):
+        os.mkdir(outDir)
+    iFile = 1    
+    refiner = setupFile(files[0],disFile=disFile,addRibose=True)
     pdb = PDBFile()
-    outFiles = []
-    for file in files:
-        pdb.readCoordinates(file,0,False)
-        refiner.setPars(coarse=False,useh=True,dislim=5.0,end=10000,hardSphere=0.0,shrinkValue=0.0,shrinkHValue=0.00)
-        refiner.setForces(repel=2.0,dis=1,dih=5,irp=0.001)
+    referenceFile = outDir + '/referenceFile.txt'
 
-        energy = refiner.energy()
+    if shiftFile != None:
+        refiner.setShifts(shiftFile)
+
+    outFiles = []
+    data = []
+    for file in files:
         outFile = os.path.join(outDir,'output'+str(iFile)+'.txt')
+        
+        pdb.readCoordinates(file,0,False)
+        refiner.setPars(coarse=False,useh=True,dislim=5.0,end=10000,hardSphere=0.0,shrinkValue=0.0,shrinkHValue =0.00)
+        
+        if shiftFile != None:
+            refiner.energyLists.setRingShifts()
+            refiner.setForces(repel=2.0,dis=1,dih=-1,irp=0.001, shift=1.0)
+        else:
+            refiner.setForces(repel=2.0,dis=1,dih=-1,irp=0.001, shift=-1)
+        refiner.energy()
+        
+        inFileName=getFileName(file)
+        outFileName=getFileName(outFile)
+        datum = [inFileName,outFileName]
+        
+        if disFile != None:
+            distanceEnergy = refiner.molecule.getEnergyCoords().calcNOE(False,1.0)
+            datum.append(distanceEnergy)
+        
+        if shiftFile != None:
+            shiftEnergy = refiner.energyLists.calcShift(False)
+            datum.append(shiftEnergy)
+        
+        data.append(datum)
+
+        refiner.dump(0.1,.20,outFile)
+
         outFiles.append(outFile)
-        refiner.dump(0.1,outFile)
         iFile += 1
+    data.sort(key=lambda x: x[0])
+    header = ['PDB File Name','Output File']
+    if disFile != None:
+        header.append('Dis Viol')
+    if shiftFile != None:
+        header.append('Shift Viol')
+    writeLines(data,referenceFile, header)
     return outFiles
-#Rep:   .A:412.N   .A:413.N  2.80   0.005  2.70  0.10
 
 class Viol:
     def __init__(self,struct,bound,viol):
@@ -90,5 +146,5 @@ def summary(outFiles):
             (nViol,bound,mean,max,structIndicators) = analyzeViols(nStruct,viols[type][atoms])
             if (nViol > 2):
                 atom1,atom2 = atoms.split("_")
-                print "   %3s %16s - %16s %2d %.2f %.2f %.2f %s" % (type,atom1,atom2,nViol,bound,mean,max,structIndicators)
+                print "   %3s %16s - %16s %2d %.2f %.2f %.2f" % (type,atom1,atom2,nViol,bound,mean,max)
 

@@ -22,6 +22,7 @@ import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Point3;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.structure.chemistry.PPMv;
 
 /**
  * This program performs various calculations with an atom
@@ -290,6 +291,21 @@ public class AtomMath {
             }
         }
         return result;
+    }
+    
+    public static double calcDeltaShift(Atom atom) {
+        PPMv refPPM = atom.getRefPPM(0);
+        PPMv ppm = atom.getPPM(0);
+        if (refPPM == null || ppm == null) {
+            throw new NullPointerException("ppm is null");
+        } else {
+            double diff = refPPM.getValue() - ppm.getValue();
+            return diff;
+        }
+    }
+
+    public static double calcShiftEnergy(Double shift, ForceWeight forceWeight){
+        return FastMath.pow(shift,2)*forceWeight.getShift();
     }
 
     public static AtomEnergy calcBond(final Point3 pt1, final Point3 pt2, final BondPair bondPair, final ForceWeight forceWeight, final boolean calcDeriv) {

@@ -156,7 +156,7 @@ class refine:
     def updateAt(self,n):
         self.dihedral.updateAt(n)
 
-    def setForces(self,robson=None,repel=None,elec=None,dis=None,tors=None,dih=None,irp=None):
+    def setForces(self,robson=None,repel=None,elec=None,dis=None,tors=None,dih=None,irp=None, shift=None):
         forceWeightOrig = self.energyLists.getForceWeight()
         if robson == None:
             robson = forceWeightOrig.getRobson()
@@ -172,8 +172,9 @@ class refine:
             dih = forceWeightOrig.getDihedral()
         if irp == None:
             irp = forceWeightOrig.getIrp()
-            
-        forceWeight = ForceWeight(elec,robson,repel,dis,tors,dih,irp)
+        if shift == None:
+            shift = forceWeightOrig.getShift()
+        forceWeight = ForceWeight(elec,robson,repel,dis,tors,dih,irp,shift)
         self.energyLists.setForceWeight(forceWeight)
 
     def getForces(self):
@@ -181,9 +182,9 @@ class refine:
         output = "robson %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f" % (fW.getRobson(),fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp())
         return output
 
-    def dump(self,limit,fileName):
+    def dump(self,limit,shiftLim, fileName):
         if fileName != None:
-            self.energyLists.dump(limit,fileName)
+            self.energyLists.dump(limit,shiftLim,fileName)
 
     def getEnergyDump(self,limit):
         return self.energyLists.dump(limit)
@@ -236,7 +237,7 @@ class refine:
         if (dislim >=0):
             self.energyLists.setDistanceLimit(dislim)
 
-    def setupEnergy(self,molName,eList=None, useH=False,usePseudo=True,useCourseGrain=False):
+    def setupEnergy(self,molName,eList=None, useH=False,usePseudo=True,useCourseGrain=False,useShifts=False):
         #creates a EnergyList object
         if eList == None:
             energyLists = EnergyLists()
@@ -255,10 +256,11 @@ class refine:
         energyLists.setDeltaStart(0)
         energyLists.setDeltaEnd(1000)
         energyLists.makeAtomListFast()
-
+        if useShifts:
+            energyLists.setRingShifts()
         energy=energyLists.energy()
         print(energy)
-        
+        print usePseudo
         self.dihedral = Dihedral(energyLists,usePseudo)
 
     def usePseudo(self,usePseudo):
@@ -280,7 +282,9 @@ class refine:
         self.refiner.gradMinimize(nsteps, tolerance)
 
     def refine(self,nsteps=10000,stopFitness=0.0,radius=0.01,alg="cmaes",ninterp=1.2,lambdaMul=1, nFireflies=18, diagOnly=1.0,useDegrees=False):
+        print self.energyLists.energy()
         self.energyLists.makeAtomListFast()
+        print self.energyLists.energy()
         diagOnly = int(round(nsteps*diagOnly))
         if (alg == "cmaes"):
             self.refiner = CmaesRefinement(self.dihedral)
@@ -368,10 +372,11 @@ class refine:
             lower = 1.44
             restraints = []
             restraints.append(("C4'", "O4'",1.44, 1.46))
-            restraints.append(("C4'", "C1'",2.40, 2.76))
-            restraints.append(("C5'", "O4'",2.32,  2.42))
+            restraints.append(("C4'", "C1'",2.30, 2.36))
+            restraints.append(("C5'", "O4'",2.37,  2.43))
             restraints.append(("C5'", "C3'",2.48, 2.58))
-            restraints.append(("C3'", "O4'",2.32,  2.58))
+            restraints.append(("C3'", "O4'",2.32,  2.35))
+            #	restraints.append(("O4'", "H4'", 1.97, 2.05))
 #            if resName in ('C','U'):
 #                restraints.append(("N1", "O4'",2.40, 2.68))
 #            else:
@@ -671,7 +676,39 @@ class refine:
                 resJName = residues[iEndPair+i+1].getName()
                 if (resJName == "A"):
                     self.energyLists.addDistanceConstraint(str(resI)+".H1'", str(resJ)+".H2",1.8, 5.0)
-        
+    def findHelices(self,vienna,indexDiff):
+        pairs = self.getPairs(vienna)
+      
+        i = 0
+        sets = []
+
+        helix = False
+        beginSet=[]
+        endSet=[]
+        while i != len(pairs)-1:
+            if pairs[i] != -1:
+                if i > pairs[i]:
+                    i+=1
+                    continue
+                if not helix:
+                    helix = True
+                    beginSet.append(i+indexDiff)
+                    endSet.append(pairs[i]+indexDiff)
+            else:
+                if helix:
+                    helix = False
+                    beginSet.append(i-1+indexDiff)
+                    endSet.insert(0,pairs[i-1]+indexDiff)
+                    sets.append(beginSet+endSet)
+                    beginSet = []
+                    endSet = []
+            i+=1
+        polymers = self.molecule.getPolymers()
+        for polymer in polymers:
+            for set in sets:
+                self.addHelix(polymer,set[0],set[3],set[1],set[2])
+
+    
     def addBasePair(self, polymer, resNumI, resNumJ):
         resNumI = str(resNumI)
         resNumJ = str(resNumJ)
@@ -833,12 +870,75 @@ class refine:
         for file in self.nvDistanceFiles:
             self.loadDistancesFromFile(file)
 
-    def setup(self,homeDir,seed,writeTrajectory=False,usePseudo=False):
+    def predictShifts(self):
+        from org.nmrfx.structure.chemistry.energy import RingCurrentShift
+        from org.nmrfx.structure.chemistry import MolFilter
+        refShifts = {"A.H2":7.93, "A.H8":8.33, "G.H8":7.87, "C.H5":5.84, "U.H5":5.76,
+            "C.H6":8.02, "U.H6":8.01, "A.H1'":5.38, "G.H1'":5.37, "C.H1'":5.45,
+            "U.H1'":5.50, "A.H2'":4.54, "G.H2'":4.59, "C.H2'":4.54, "U.H2'":4.54, 
+            "A.H3'":4.59, "G.H3'":4.59, "C.H3'":4.59, "U.H3'":4.59
+        }
+
+        ringShifts = RingCurrentShift()
+        ringShifts.makeRingList(self.molecule)
+        filterString = "*.H8,H6,H2,H1',H2'"
+  
+        molFilter = MolFilter(filterString)
+        spatialSets = Molecule.matchAtoms(molFilter)
+
+        ringRatio = 0.56
+        shifts = []
+        for sp in spatialSets:
+            name = sp.atom.getShortName()
+            aName = sp.atom.getName()
+            nucName = sp.atom.getEntity().getName()
+
+            basePPM = refShifts[nucName+"."+aName]
+            ringPPM = ringShifts.calcRingContributions(sp,0,ringRatio)
+            ppm = basePPM+ringPPM
+
+            atom = Molecule.getAtomByName(name)
+            atom.setRefPPM(ppm)
+
+            shift = []
+            shift.append(str(name))
+            shift.append(ppm)
+            shifts.append(shift)
+        return shifts
+
+    def setBasePPMs(self,filterString="*.H8,H6,H5,H2,H1',H2',H3'"):
+        self.energyLists.setRingShifts(filterString)
+        atoms = self.energyLists.getRefAtoms()
+        for atom in atoms:
+            print atom.getFullName(), atom.getPPM(1).getValue()
+
+    def setShifts(self,shiftFile):
+        file = open(shiftFile,"r")
+        data = file.read()
+        file.close()
+        lines = data.split('\n')
+        shifts = []
+        for line in lines:
+            if line == "":
+                 continue
+            arr = line.split('\t')
+            atomName = arr[0]
+            atom = Molecule.getAtomByName(atomName)
+            self.energyLists.addAtomRef(atom)
+            ppm = float(arr[1])
+            atom.setPPM(ppm)
+            shifts.append(arr)
+        return shifts
+
+
+
+    def setup(self,homeDir,seed,writeTrajectory=False,usePseudo=False, useShifts = False):
         self.seed = seed
         self.eTimeStart = time.time()
         self.useDegrees = False
-        print 'settting up'
-        self.setupEnergy(self.molName,usePseudo=usePseudo)
+        print 'setting up'
+
+        self.setupEnergy(self.molName,usePseudo=usePseudo,useShifts=useShifts)
         self.loadDihedrals(self.angleStrings)
         self.readAngleFiles()
         self.readSuiteAngles()
@@ -875,7 +975,8 @@ class refine:
     def annealPrep(self,dOpt, steps=100):
         ranfact=20.0
         self.setSeed(self.seed)
-        self.putPseudo(18.0,45.0)
+        #self.putPseudo(18.0,45.0)
+
         self.randomizeAngles()
         energy = self.energy()
         irp = dOpt.irpWeight
@@ -888,7 +989,7 @@ class refine:
             self.gmin(nsteps=steps,tolerance=1.0e-6)
 
         if self.eFileRoot != None:
-            self.dump(-1.0,self.eFileRoot+'_prep.txt')
+            self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 
     def anneal(self,dOpt=None,stage1={},stage2={}):
         if (dOpt==None):
@@ -1046,7 +1147,7 @@ class refine:
             savePDB(self.molecule, pdbFile)
             strOutput = "%d %.2f\n" % (self.seed,energy)
             osfiles.logEnergy(self, strOutput)
-            self.dump(0.1,energyFile)
+            self.dump(0.1,0.2,energyFile)
 
         eTimeTotal = time.time()-self.eTimeStart
         print 'energy is', energy

@@ -21,6 +21,7 @@ package org.nmrfx.structure.chemistry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Hashtable;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.threed.Plane;
 import org.apache.commons.math3.geometry.euclidean.threed.Line;
@@ -30,6 +31,29 @@ public class RingCurrentShift {
 
     private ArrayList<FusedRing> fusedRingList = new ArrayList<FusedRing>();
     private static HashMap<String, Ring> stdRings = new HashMap<String, Ring>();
+    private static final HashMap<String, PPMv> refShifts = new HashMap<String,PPMv>();
+    
+    static{
+        refShifts.put("A.H2",new PPMv(7.93));
+        refShifts.put("A.H8",new PPMv(8.33));
+        refShifts.put("G.H8",new PPMv(7.87));
+        refShifts.put("C.H5",new PPMv(5.84));
+        refShifts.put("U.H5",new PPMv(5.76));
+        refShifts.put("C.H6",new PPMv(8.02));
+        refShifts.put("U.H6",new PPMv(8.01));
+        refShifts.put("A.H1'",new PPMv(5.38));
+        refShifts.put("G.H1'",new PPMv(5.37));
+        refShifts.put("C.H1'",new PPMv(5.45));
+        refShifts.put("U.H1'",new PPMv(5.50));
+        refShifts.put("A.H2'",new PPMv(4.54));
+        refShifts.put("G.H2'",new PPMv(4.59));
+        refShifts.put("C.H2'",new PPMv(4.54));
+        refShifts.put("U.H2'",new PPMv(4.54));
+        refShifts.put("A.H3'",new PPMv(4.59));
+        refShifts.put("G.H3'",new PPMv(4.59));
+        refShifts.put("C.H3'",new PPMv(4.59));
+        refShifts.put("U.H3'",new PPMv(4.59));
+    }
 
     static class RingType {
 
@@ -205,6 +229,17 @@ public class RingCurrentShift {
         Vector3D pt = new Vector3D(x, y, z);
         Ring ring = stdRings.get("benzene");
         return calcRingContributions(ring, pt, targetFactor, iStruct);
+    }
+    
+    public void setBasePPMs(ArrayList<SpatialSet> targetSpatialSets){
+        for (SpatialSet sp : targetSpatialSets){
+            String nucName = sp.atom.getEntity().getName();
+            String aName = sp.atom.getName();
+            PPMv ppm = refShifts.get(nucName+"."+aName);
+            if (ppm != null){
+                sp.setPPM(1, ppm.getValue(), false);
+            }
+        }
     }
 
     public void calcRingContributions(ArrayList<SpatialSet> targetSpatialSets, ArrayList<Integer> structs, final int ppmSet, final double ringRatio) {
