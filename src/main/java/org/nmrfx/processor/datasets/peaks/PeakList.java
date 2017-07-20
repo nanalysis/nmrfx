@@ -827,6 +827,7 @@ public class PeakList {
         result.append('\n');
 
         for (int i = 0; i < nDim; i++) {
+            result.append(getSpectralDim(i).getDimName()).append(".L").append(sep);
             result.append(getSpectralDim(i).getDimName()).append(".P").append(sep);
             result.append(getSpectralDim(i).getDimName()).append(".W").append(sep);
             result.append(getSpectralDim(i).getDimName()).append(".B").append(sep);

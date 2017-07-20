@@ -748,6 +748,11 @@ public class Peak implements Comparable, PeakOrMulti {
 
 //P W B
         for (int i = 0; i < getNDim(); i++) {
+            String label = peakDim[i].getLabel();
+            if (label.contains(" ") || label.equals("")) {
+                label = "{" + label + "}";
+            }
+            result.append(label).append(sep);
             result.append(String.valueOf(peakDim[i].getChemShiftValue())).append(sep);
             result.append(String.valueOf(peakDim[i].getLineWidthValue())).append(sep);
             result.append(String.valueOf(peakDim[i].getBoundsValue())).append(sep);
