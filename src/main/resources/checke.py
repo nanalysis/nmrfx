@@ -67,6 +67,7 @@ def loadPDBModels(files, *pp, **op):
         refiner.setPars(coarse=False,useh=True,dislim=5.0,end=10000,hardSphere=0.0,shrinkValue=0.0,shrinkHValue =0.00)
         
         if shiftFile != None:
+            refiner.energyLists.setRingShifts()
             refiner.setForces(repel=2.0,dis=1,dih=-1,irp=0.001, shift=1.0)
         else:
             refiner.setForces(repel=2.0,dis=1,dih=-1,irp=0.001, shift=-1)
@@ -81,7 +82,6 @@ def loadPDBModels(files, *pp, **op):
             datum.append(distanceEnergy)
         
         if shiftFile != None:
-            refiner.predictShifts()
             shiftEnergy = refiner.energyLists.calcShift(False)
             datum.append(shiftEnergy)
         
