@@ -381,6 +381,8 @@ class refine:
             restraints.append(("C5'", "O4'",2.37,  2.43))
             restraints.append(("C5'", "C3'",2.48, 2.58))
             restraints.append(("C3'", "O4'",2.32,  2.35))
+            #fixme Verify constraints
+            restraints.append(("04'", "H4'", 2.1, 2.2))
             #	restraints.append(("O4'", "H4'", 1.97, 2.05))
 #            if resName in ('C','U'):
 #                restraints.append(("N1", "O4'",2.40, 2.68))
@@ -1049,7 +1051,7 @@ class refine:
         rDyn.continueDynamics2(tempLambda,econLambda,stepsAnneal2,timeStep)
         rDyn.run(switchFrac)
 
-        self.setForces(repel=1.0, irp=-1.0)
+        self.setForces(repel=1.0, irp=-1.0, bondWt = 25.0)
         self.setPars(useh=True,hardSphere=0.0,shrinkValue=0.0,shrinkHValue=0.0)
         self.setPars(optDict=stage2)
 
