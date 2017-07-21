@@ -156,7 +156,7 @@ class refine:
     def updateAt(self,n):
         self.dihedral.updateAt(n)
 
-    def setForces(self,robson=None,repel=None,elec=None,dis=None,tors=None,dih=None,irp=None, shift=None):
+    def setForces(self,robson=None,repel=None,elec=None,dis=None,tors=None,dih=None,irp=None, shift=None, bondWt=None):
         forceWeightOrig = self.energyLists.getForceWeight()
         if robson == None:
             robson = forceWeightOrig.getRobson()
@@ -174,12 +174,17 @@ class refine:
             irp = forceWeightOrig.getIrp()
         if shift == None:
             shift = forceWeightOrig.getShift()
-        forceWeight = ForceWeight(elec,robson,repel,dis,tors,dih,irp,shift)
+        if bondWt == None:
+            bondWt = forceWeightOrig.getBondWt()
+        else:
+            if bondWt < 1:
+                raise ValueError('The bond weight should not be less than 1')
+        forceWeight = ForceWeight(elec,robson,repel,dis,tors,dih,irp,shift,bondWt)
         self.energyLists.setForceWeight(forceWeight)
 
     def getForces(self):
         fW = self.energyLists.getForceWeight()
-        output = "robson %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f" % (fW.getRobson(),fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp())
+        output = "robson %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f shift %5.2f bondWt %5.2f" % (fW.getRobson(),fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp(), fW.getShift(), fW.getBondWt())
         return output
 
     def dump(self,limit,shiftLim, fileName):
