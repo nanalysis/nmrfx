@@ -123,7 +123,7 @@ public class EnergyCoords {
         repelEnd++;
     }
 
-    public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group) {
+    public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group, double weight) {
         iGroups[disEnd] = group;
         iAtoms[disEnd] = i;
         jAtoms[disEnd] = j;
@@ -137,11 +137,12 @@ public class EnergyCoords {
 
         hasBondConstraint[i] = isBond;
         hasBondConstraint[j] = isBond;
-        if (isBond){
-            weights[disEnd] = 25.0;
-        }else{
-            weights[disEnd] = 1.0;
-        }
+        weights[disEnd] = weight;
+        //if (isBond){
+        //    weights[disEnd] = 25.0;
+        //}else{
+        //    weights[disEnd] = 1.0;
+        //}
         disEnd++;
     }
 
