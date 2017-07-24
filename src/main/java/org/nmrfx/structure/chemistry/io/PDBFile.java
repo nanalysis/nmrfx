@@ -264,8 +264,8 @@ public class PDBFile {
                     Atom newAtom = firstAtom.add("OP3", "O", 1);
                     newAtom.setType("O");
                     newAtom.bondLength = 1.48f;
-                    newAtom.dihedralAngle = (float) (120.0 * Math.PI / 180.0);
-                    newAtom.valanceAngle = (float) (109.0 * Math.PI / 180.0);
+                    newAtom.dihedralAngle = (float) (71.58 * Math.PI / 180.0);
+                    newAtom.valanceAngle = (float) (0 * Math.PI / 180.0);
                 }
             }
 
