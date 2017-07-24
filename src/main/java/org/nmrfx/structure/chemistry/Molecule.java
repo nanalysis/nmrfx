@@ -777,6 +777,7 @@ public class Molecule implements Serializable {
 
         structures.add(Integer.valueOf(iStructure));
         resetActiveStructures();
+System.out.println("gena " + fillCoords);
         updateVecCoords();
         return nAngles;
     }
@@ -881,6 +882,7 @@ public class Molecule implements Serializable {
 
         structures.add(Integer.valueOf(0));
         resetActiveStructures();
+System.out.println("genb");
         updateVecCoords();
 
         return nAngles;
@@ -1030,7 +1032,7 @@ public class Molecule implements Serializable {
         if (!a3.getPointValidity()) {
             a3.setPointValidity(true);
         }
-
+System.out.println("gencoordsfast");
         for (int i = 0; i < spSets.length; i++) {
             if (spSets[i].length > 3) {
                 Coordinates coords = new Coordinates(spSets[i][0].getPoint(), spSets[i][1].getPoint(), spSets[i][2].getPoint());
@@ -1062,6 +1064,7 @@ public class Molecule implements Serializable {
 
         structures.add(0);
         resetActiveStructures();
+System.out.println("genc");
         updateVecCoords();
         return nAngles;
     }
@@ -1148,7 +1151,7 @@ public class Molecule implements Serializable {
             }
             Point3 pt = atom.getPoint();
             if (pt == null) {
-                System.out.println("null pt " + atom.getName() + " " + (i - 1));
+                System.out.println("updateVecCoords null pt " + atom.getFullName() + " " + (i - 1));
             } else {
                 eCoords.setCoords(i, pt.getX(), pt.getY(), pt.getZ(), resNum, atom);
             }
@@ -1163,11 +1166,11 @@ public class Molecule implements Serializable {
             atom.iAtom = i;
             Point3 pt = atom.getPoint();
             if (pt == null) {
-                System.out.println("null pt " + atom.getName() + " " + (i - 1));
+                System.out.println("updateFromVecCoords null pt " + atom.getFullName() + " " + (i - 1));
             } else {
                 FastVector3D fVec = vecCoords[i++];
                 if (fVec == null) {
-                    System.out.println("null vec " + atom.getName() + " " + (i - 1));
+                    System.out.println("null vec " + atom.getFullName() + " " + (i - 1));
                 } else {
                     Point3 newPt = new Point3(fVec.getEntry(0), fVec.getEntry(1), fVec.getEntry(2));
                     atom.setPoint(newPt);
