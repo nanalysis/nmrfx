@@ -777,7 +777,6 @@ public class Molecule implements Serializable {
 
         structures.add(Integer.valueOf(iStructure));
         resetActiveStructures();
-System.out.println("gena " + fillCoords);
         updateVecCoords();
         return nAngles;
     }
@@ -882,7 +881,6 @@ System.out.println("gena " + fillCoords);
 
         structures.add(Integer.valueOf(0));
         resetActiveStructures();
-System.out.println("genb");
         updateVecCoords();
 
         return nAngles;
@@ -1032,7 +1030,7 @@ System.out.println("genb");
         if (!a3.getPointValidity()) {
             a3.setPointValidity(true);
         }
-System.out.println("gencoordsfast");
+
         for (int i = 0; i < spSets.length; i++) {
             if (spSets[i].length > 3) {
                 Coordinates coords = new Coordinates(spSets[i][0].getPoint(), spSets[i][1].getPoint(), spSets[i][2].getPoint());
@@ -1064,7 +1062,6 @@ System.out.println("gencoordsfast");
 
         structures.add(0);
         resetActiveStructures();
-System.out.println("genc");
         updateVecCoords();
         return nAngles;
     }
