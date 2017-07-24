@@ -841,6 +841,17 @@ class refine:
         print('molecule is',self.molName)
         return self.molecule
 
+    def readPDBFileNL(self,fileName):
+        pdb = PDBFile()
+        pdb.read(fileName)
+        molName = Molecule.defaultMol
+        self.molecule = Molecule.get(molName)
+ 
+        self.molName = self.molecule.getName()
+        Molecule.selectAtoms('*.*')
+        print('molecule is',self.molName)
+        return self.molecule
+
     def addAngleFile(self,file, mode='nv'):
         if mode == 'cyana':
             self.cyanaAngleFiles.append(file)
