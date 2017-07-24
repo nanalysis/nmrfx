@@ -382,7 +382,7 @@ class refine:
             restraints.append(("C5'", "C3'",2.48, 2.58))
             restraints.append(("C3'", "O4'",2.32,  2.35))
             #fixme Verify constraints
-            restraints.append(("04'", "H4'", 2.1, 2.2))
+            restraints.append(("O4'", "H4'", 2.1, 2.2))
             #	restraints.append(("O4'", "H4'", 1.97, 2.05))
 #            if resName in ('C','U'):
 #                restraints.append(("N1", "O4'",2.40, 2.68))
