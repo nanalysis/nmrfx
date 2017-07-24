@@ -156,7 +156,7 @@ class refine:
     def updateAt(self,n):
         self.dihedral.updateAt(n)
 
-    def setForces(self,robson=None,repel=None,elec=None,dis=None,tors=None,dih=None,irp=None, shift=None):
+    def setForces(self,robson=None,repel=None,elec=None,dis=None,tors=None,dih=None,irp=None, shift=None, bondWt=None):
         forceWeightOrig = self.energyLists.getForceWeight()
         if robson == None:
             robson = forceWeightOrig.getRobson()
@@ -174,12 +174,17 @@ class refine:
             irp = forceWeightOrig.getIrp()
         if shift == None:
             shift = forceWeightOrig.getShift()
-        forceWeight = ForceWeight(elec,robson,repel,dis,tors,dih,irp,shift)
+        if bondWt == None:
+            bondWt = forceWeightOrig.getBondWt()
+        else:
+            if bondWt < 1:
+                raise ValueError('The bond weight should not be less than 1')
+        forceWeight = ForceWeight(elec,robson,repel,dis,tors,dih,irp,shift,bondWt)
         self.energyLists.setForceWeight(forceWeight)
 
     def getForces(self):
         fW = self.energyLists.getForceWeight()
-        output = "robson %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f" % (fW.getRobson(),fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp())
+        output = "robson %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f shift %5.2f bondWt %5.2f" % (fW.getRobson(),fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp(), fW.getShift(), fW.getBondWt())
         return output
 
     def dump(self,limit,shiftLim, fileName):
@@ -376,6 +381,8 @@ class refine:
             restraints.append(("C5'", "O4'",2.37,  2.43))
             restraints.append(("C5'", "C3'",2.48, 2.58))
             restraints.append(("C3'", "O4'",2.32,  2.35))
+            #fixme Verify constraints
+            restraints.append(("04'", "H4'", 2.1, 2.2))
             #	restraints.append(("O4'", "H4'", 1.97, 2.05))
 #            if resName in ('C','U'):
 #                restraints.append(("N1", "O4'",2.40, 2.68))
@@ -1055,7 +1062,7 @@ class refine:
         rDyn.continueDynamics2(tempLambda,econLambda,stepsAnneal2,timeStep)
         rDyn.run(switchFrac)
 
-        self.setForces(repel=1.0, irp=-1.0)
+        self.setForces(repel=1.0, irp=-1.0, bondWt = 25.0)
         self.setPars(useh=True,hardSphere=0.0,shrinkValue=0.0,shrinkHValue=0.0)
         self.setPars(optDict=stage2)
 

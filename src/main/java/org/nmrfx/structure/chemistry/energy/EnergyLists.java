@@ -873,6 +873,12 @@ public class EnergyLists {
         eCoords.clearDist();
         int iGroup = 0;
         for (DistancePair distancePair : distanceList) {
+            double weight;
+            if (distancePair.isBond) {
+                weight = forceWeight.getBondWt();
+            } else {
+                weight = 1.0;
+            }
             if (stochasticMode) {
                 Atom atom1 = distancePair.atomPairs[0].atoms1[0];
                 Atom atom2 = distancePair.atomPairs[0].atoms2[0];
@@ -908,7 +914,7 @@ public class EnergyLists {
                         if (atom2.rotGroup != null) {
                             jUnit = atom2.rotGroup.rotUnit;
                         }
-                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup);
+                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup,weight);
                     }
 
                 }
@@ -928,7 +934,7 @@ public class EnergyLists {
                         int jAtom = atom2.iAtom;
                         int iUnit = atom1.rotGroup.rotUnit;
                         int jUnit = atom2.rotGroup.rotUnit;
-                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup);
+                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup,weight);
                     }
                 }
             }
