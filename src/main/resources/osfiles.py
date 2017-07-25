@@ -19,16 +19,13 @@ def guessFiles(refiner,homeDir):
         pdbFile = os.path.join(homeDir,'*.pdb')
         pdbFiles = glob.glob(pdbFile)
         if (len(pdbFiles) > 0):
-            print pdbFiles[0]
             refiner.readPDBFile(pdbFiles[0])
 
     angleFiles = glob.glob(os.path.join(homeDir,'dihedral*.tbl'))
     for file in angleFiles:
-        print file
         refiner.addAngleFile(file,'nv')
     disFiles = glob.glob(os.path.join(homeDir,'distance*.tbl'))
     for file in disFiles:
-        print file
         refiner.addDistanceFile(file,'nv')
 
     angleFiles = glob.glob(os.path.join(homeDir,'dihedral*.txt'))
@@ -140,7 +137,6 @@ def limResidues(pattern,inFile,dataDir,fileType):
             continue
         limLines.append(fixedLine)
     outFile = dataDir + fileName[fileType]
-    print outFile
     writeLines(limLines,outFile,'')
     return outFile
 

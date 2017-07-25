@@ -954,7 +954,6 @@ class refine:
         self.seed = seed
         self.eTimeStart = time.time()
         self.useDegrees = False
-        print 'setting up'
 
         self.setupEnergy(self.molName,usePseudo=usePseudo,useShifts=useShifts)
         self.loadDihedrals(self.angleStrings)

@@ -16,13 +16,11 @@ global outDir;
 
 def setupFile(fileName,**op):
         
-    print 'setup',fileName
     refiner = refine()
     molecule = refiner.readPDBFile(fileName)
 
     if 'disFile' in op and op['disFile'] != None:
         disFile = op['disFile']
-        print 'this gets run'
         refiner.addDistanceFile(disFile,mode='NV')
     else:
         disFile = 'distances'
