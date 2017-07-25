@@ -127,7 +127,6 @@ public class Dihedral {
      * @param usePseudo
      */
     public void prepareAngles(final boolean usePseudo) {
-        System.out.println("prepare");
         this.usePseudo = usePseudo;
         ArrayList<Atom> angleAtoms = molecule.setupAngles();
         ArrayList<Atom> pseudoAngleAtoms = molecule.setupPseudoAngles();
