@@ -1,3 +1,4 @@
+import sys
 from osfiles import *
 from checke import loadPDBModels
 from optparse import OptionParser
@@ -57,7 +58,10 @@ def runTests():
 
     dataFiles['outDir'] = options.outDir
     pdbFilePath = options.pdbPath
-    pdbFiles = getFiles(pdbFilePath)
+    if pdbFilePath=="":
+        pdbFiles = args
+    else:
+        pdbFiles = getFiles(pdbFilePath)
     loadPDBModels(pdbFiles,dataFiles=dataFiles)
 
 runTests()

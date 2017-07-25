@@ -48,11 +48,6 @@
             <filtered>true</filtered>
             <fileMode>0744</fileMode>
         </file>
-        <file>
-            <source>src/main/scripts/nmrfxstructureb</source>
-            <filtered>true</filtered>
-            <fileMode>0744</fileMode>
-        </file>
     </files>
     <dependencySets>
         <dependencySet>

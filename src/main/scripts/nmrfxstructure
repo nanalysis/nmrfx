@@ -70,4 +70,4 @@ else
 fi
 
 export CLASSPATH
-exec "$JAVA" -Djava.awt.headless=true -DTCLLIBPATH="$TCLLIBPATH" -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
+exec "$JAVA" -Djava.awt.headless=true -DTCLLIBPATH="$TCLLIBPATH" -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain -c "import dispatchnvfx" ${1+"$@"}
