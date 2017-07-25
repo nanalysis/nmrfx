@@ -24,5 +24,5 @@ if "%TCLLIBPATH%" == "" goto nullTcllib
 set tcllibpath=-DTCLLIBPATH="%TCLLIBPATH%"
 :nullTcllib
 
-java %tcllibpath% -Djava.awt.headless=true -cp %cp% %JAVA_OPTS% %nvjpmain% %*
+java %tcllibpath% -Djava.awt.headless=true -cp %cp% %JAVA_OPTS% %nvjpmain% -c "import dispatchnvfx" %*
 
