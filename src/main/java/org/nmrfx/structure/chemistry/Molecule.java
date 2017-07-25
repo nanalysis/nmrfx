@@ -1148,7 +1148,7 @@ public class Molecule implements Serializable {
             }
             Point3 pt = atom.getPoint();
             if (pt == null) {
-                System.out.println("updateVecCoords null pt " + atom.getFullName() + " " + (i - 1));
+                // fixme System.out.println("updateVecCoords null pt " + atom.getFullName() + " " + (i - 1));
             } else {
                 eCoords.setCoords(i, pt.getX(), pt.getY(), pt.getZ(), resNum, atom);
             }
@@ -1167,7 +1167,7 @@ public class Molecule implements Serializable {
             } else {
                 FastVector3D fVec = vecCoords[i++];
                 if (fVec == null) {
-                    System.out.println("null vec " + atom.getFullName() + " " + (i - 1));
+                    // fixme System.out.println("null vec " + atom.getFullName() + " " + (i - 1));
                 } else {
                     Point3 newPt = new Point3(fVec.getEntry(0), fVec.getEntry(1), fVec.getEntry(2));
                     atom.setPoint(newPt);
