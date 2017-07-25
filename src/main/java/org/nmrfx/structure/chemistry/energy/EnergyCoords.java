@@ -822,7 +822,6 @@ public class EnergyCoords {
             }
 //            System.out.println("");
         }
-        System.out.println("nfix " + nFixed);
     }
 
     public boolean fixedCurrent() {
