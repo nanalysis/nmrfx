@@ -1,6 +1,7 @@
 import sys
 from osfiles import *
 from checke import loadPDBModels
+from checke import summary
 from optparse import OptionParser
 import os;
 
@@ -62,7 +63,8 @@ def runTests():
         pdbFiles = args
     else:
         pdbFiles = getFiles(pdbFilePath)
-    loadPDBModels(pdbFiles,dataFiles=dataFiles)
+    outFiles = loadPDBModels(pdbFiles,dataFiles=dataFiles)
+    summary(outFiles)
 
 runTests()
 
