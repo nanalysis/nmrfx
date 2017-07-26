@@ -104,24 +104,32 @@ class Viol:
         self.bound = bound
         self.viol = viol
 
-def analyzeViols(nStruct,viols):
+def analyzeViols(nStruct,viols,limit):
     sum = 0.0
     structIndicators = [' ']*nStruct
     max = 0.0
     bound = viols[0].bound
+    nViol = 0
     for viol in viols:
         sum += viol.viol
-        structIndicators[viol.struct]='+'
-        if abs(viol.viol) > max:
+        aViol = abs(viol.viol)
+        if aViol > max:
             max = viol.viol
+        if aViol > limit:
+            structIndicators[viol.struct]='+'
+            nViol += 1
     mean = sum / nStruct
-    return len(viols),bound,mean,max,''.join(structIndicators)
+    return nViol,bound,mean,max,''.join(structIndicators)
 
-def summary(outFiles):
+def summary(outFiles,limit=0.2):
+    global outDir
     iFile = 0
     viols = {}
     viols['Rep:'] = {}
     viols['Dis:'] = {}
+    viols['Shi:'] = {}
+    summaryFile = os.path.join(outDir,'analysis.txt')
+    fOut = open(summaryFile,'w')
     for outFile in outFiles:
         f1 = open(outFile,'r')
         for line in f1:
@@ -132,17 +140,33 @@ def summary(outFiles):
                 atoms = fields[1]+'_'+fields[2]
                 if not atoms in viols[type]:
                     viols[type][atoms] = []
-                viol = Viol(iFile,float(fields[3]),float(fields[-1]))
+                viol = Viol(iFile,float(fields[3]),float(fields[-2]))
                 viols[type][atoms].append(viol)
                 #print fields
+            elif fields[0] == 'Shi:':
+                type = fields[0]
+                atoms = fields[1]
+                if not atoms in viols[type]:
+                    viols[type][atoms] = []
+                viol = Viol(iFile,float(fields[2]),float(fields[-2]))
+                viols[type][atoms].append(viol)
         iFile += 1
     nStruct = len(outFiles)
-    for type in ['Dis:','Rep:']:
+    for type in ['Dis:','Rep:','Shi:']:
         for atoms in viols[type]:
             #sum
             structIndicators = [' ']*nStruct
-            (nViol,bound,mean,max,structIndicators) = analyzeViols(nStruct,viols[type][atoms])
+            (nViol,bound,mean,max,structIndicators) = analyzeViols(nStruct,viols[type][atoms],limit)
             if (nViol > 2):
-                atom1,atom2 = atoms.split("_")
-                print "   %3s %16s - %16s %2d %.2f %.2f %.2f" % (type,atom1,atom2,nViol,bound,mean,max)
+                if type=="Shi:":
+                    atom1 = atoms
+                    outLine =  "   %3s %16s - %16s %4d %10.2f %10.2f %10.2f" % (type,atom1,"",nViol,bound,mean,max)
+                else:
+                    atom1,atom2 = atoms.split("_")
+                    outLine =  "   %3s %16s - %16s %4d %10.2f %10.2f %10.2f" % (type,atom1,atom2,nViol,bound,mean,max)
+                fOut.write(outLine)
+                if nStruct <= 100:
+                    fOut.write(structIndicators)
+                fOut.write('\n')
+    fOut.close()
 
