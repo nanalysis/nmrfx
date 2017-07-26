@@ -19,6 +19,7 @@
 package org.nmrfx.structure.chemistry;
 
 import java.util.*;
+import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 
 public class ProteinPredictor {
 
