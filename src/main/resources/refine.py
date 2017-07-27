@@ -369,14 +369,12 @@ class refine:
             upper = float(s3)
             self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
  
-    def loadFromYaml(self,fileName, seed):
-        from org.yaml.snakeyaml import Yaml
-        from java.io import FileInputStream
-        input = FileInputStream(fileName)
-        yaml = Yaml()
-        data = yaml.load(input)
-        if 'molecule' in data:
-            self.readMoleculeDict(data['molecule'])
+    def loadFromYaml(self,data, seed, pdbFile=""):
+        if pdbFile != '':
+            self.readPDBFile(pdbFile)
+        else:
+            if 'molecule' in data:
+                self.readMoleculeDict(data['molecule'])
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'])
             print disWt
@@ -384,7 +382,7 @@ class refine:
             angleWt = self.readAngleDict(data['angles'])
 
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
-
+        self.energy()
         if 'shifts' in data:
             self.readShiftDict(data['shifts'])
 
@@ -392,7 +390,8 @@ class refine:
             self.readRNADict(data['rna'])
         if 'anneal' in data:
             self.dOpt = self.readAnnealDict(data['anneal'])
-    
+        self.energy()
+
     def readMoleculeDict(self,molDict):
         if 'sequence' in molDict:
             import java.util.ArrayList
@@ -509,6 +508,7 @@ class refine:
         if type == 'nv':
             self.setShifts(file)
             ringShifts = self.setBasePPMs()
+            self.energyLists.setRingShifts()
         if 'weight' in shiftDict:
             wt = shiftDict['weight']
         return wt
