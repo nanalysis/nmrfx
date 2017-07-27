@@ -14,47 +14,37 @@ from osfiles import getFileName
 homeDir =  os.getcwd( )
 global outDir;
 
-def setupFile(fileName,**op):
+def setupFile(fileName,disFile=''):
         
     refiner = refine()
     molecule = refiner.readPDBFile(fileName)
-
-    if 'disFile' in op and op['disFile'] != None:
-        disFile = op['disFile']
+    if disFile != '':
         refiner.addDistanceFile(disFile,mode='NV')
     else:
         disFile = 'distances'
         refiner.addDistanceFile(disFile,mode='cyana')
 
-    seed = 1
+    seed = 0
     refiner.setup(homeDir,seed)
 
-    if 'addRibose' in op:
-        if op['addRibose']:
-            polymers = molecule.getPolymers()
-            for polymer in polymers:
-                refiner.addRiboseRestraints(polymer)
     refiner.outDir = outDir
     refiner.energy()
     return refiner
 
-def loadPDBModels(files, *pp, **op):
+def loadPDBModels(files, data, out):
     global outDir
-    if 'dataFiles' in op:
-        disFile = op['dataFiles']['disFile']
-        shiftFile = op['dataFiles']['shiftFile']
-        outDir = op['dataFiles']['outDir']
-  
-    outDir = os.path.join(homeDir,outDir)
+    outDir = out
+    outDir += '/'
+ 
+    iFile = 1
+    refiner = refine()
+    refiner.loadFromYaml(data,0,pdbFile=files[0])
+
     if not os.path.exists(outDir):
         os.mkdir(outDir)
-    iFile = 1    
-    refiner = setupFile(files[0],disFile=disFile,addRibose=True)
+
     pdb = PDBFile()
     referenceFile = outDir + '/referenceFile.txt'
-
-    if shiftFile != None:
-        refiner.setShifts(shiftFile)
 
     outFiles = []
     data = []
@@ -62,39 +52,33 @@ def loadPDBModels(files, *pp, **op):
         outFile = os.path.join(outDir,'output'+str(iFile)+'.txt')
         
         pdb.readCoordinates(file,0,False)
+
         refiner.setPars(coarse=False,useh=True,dislim=5.0,end=10000,hardSphere=0.0,shrinkValue=0.0,shrinkHValue =0.00)
         
-        if shiftFile != None:
-            refiner.energyLists.setRingShifts()
-            refiner.setForces(repel=2.0,dis=1,dih=-1,irp=0.001, shift=1.0)
-        else:
-            refiner.setForces(repel=2.0,dis=1,dih=-1,irp=0.001, shift=-1)
+        refiner.setForces(repel=2.0,dis=1.0,dih =-1.0,irp=0.001,shift=1.0)
+        refiner.energyLists.setRingShifts()
+
         refiner.energy()
-        
+
         inFileName=getFileName(file)
         outFileName=getFileName(outFile)
+
         datum = [inFileName,outFileName]
         
-        if disFile != None:
-            distanceEnergy = refiner.molecule.getEnergyCoords().calcNOE(False,1.0)
-            datum.append(distanceEnergy)
-        
-        if shiftFile != None:
-            shiftEnergy = refiner.energyLists.calcShift(False)
-            datum.append(shiftEnergy)
+        distanceEnergy=refiner.molecule.getEnergyCoords().calcNOE(False,1.0)
+        datum.append(distanceEnergy)
+        shiftEnergy = refiner.energyLists.calcShift(False)
+        datum.append(shiftEnergy)
         
         data.append(datum)
 
         refiner.dump(0.1,.20,outFile)
-
         outFiles.append(outFile)
         iFile += 1
     data.sort(key=lambda x: x[0])
     header = ['PDB File Name','Output File']
-    if disFile != None:
-        header.append('Dis Viol')
-    if shiftFile != None:
-        header.append('Shift Viol')
+    header.append('Dis Viol')
+    header.append('Shift Viol')
     writeLines(data,referenceFile, header)
     return outFiles
 
