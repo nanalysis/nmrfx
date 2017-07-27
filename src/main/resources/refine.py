@@ -368,6 +368,150 @@ class refine:
             lower = float(s2)
             upper = float(s3)
             self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
+ 
+    def loadFromYaml(self,fileName, seed):
+        from org.yaml.snakeyaml import Yaml
+        from java.io import FileInputStream
+        input = FileInputStream(fileName)
+        yaml = Yaml()
+        data = yaml.load(input)
+        if 'molecule' in data:
+            self.readMoleculeDict(data['molecule'])
+        if 'distances' in data:
+            disWt = self.readDistanceDict(data['distances'])
+            print disWt
+        if 'angles' in data:
+            angleWt = self.readAngleDict(data['angles'])
+
+        self.setup('./',seed,writeTrajectory=False, usePseudo=False)
+
+        if 'shifts' in data:
+            self.readShiftDict(data['shifts'])
+
+        if 'rna' in data:
+            self.readRNADict(data['rna'])
+        if 'anneal' in data:
+            self.dOpt = self.readAnnealDict(data['anneal'])
+    
+    def readMoleculeDict(self,molDict):
+        if 'sequence' in molDict:
+            import java.util.ArrayList
+            from org.nmrfx.structure.chemistry.io import Sequence
+
+            seqString = molDict['sequence']
+            seq = []
+            for char in seqString:
+                if char == " ":
+                     continue
+                else:
+                    seq.append(char.upper())
+
+            arrayList = ArrayList()
+            arrayList.addAll(seq)
+            sequenceReader = Sequence()
+            self.molecule = sequenceReader.read('p',arrayList,'')
+            self.molName = self.molecule.getName()
+            return
+        file = molDict['file']
+        if 'type' in molDict:
+            type = molDict['type']
+            if type == 'blast':
+                import os
+                import osfiles
+                dir = os.path.dirname(file)+'/'
+                file = osfiles.convertSeqFile(file,dir)
+                type = 'nv'
+        else: 
+            type = 'nv'
+        if type == 'nv':
+            self.readSequence(file)
+
+            
+    def readDistanceDict(self,disDict):
+        wt = -1.0
+        for dic in disDict:
+            file = dic['file']
+            if 'type' in dic:
+                type = dic['type']
+                if type == 'amber':
+                    import os
+                    import osfiles
+                    dir = os.path.dirname(file)+'/'
+                    file = osfiles.convertConstraintFile(file,dir)
+                    type = 'nv'
+            else:
+                type = 'nv'
+            if 'weight' in dic:
+                wt = dic['weight']
+            self.addDistanceFile(file,mode=type)
+        return wt
+
+    def readAngleDict(self,disDict):
+        wt = -1.0
+        for dic in disDict:
+            file = dic['file']
+            if 'type' in dic:
+                type = dic['type']
+            else:
+                type = 'nv'
+            if 'weight' in dic:
+                wt = dic['weight']
+            self.addAngleFile(file,mode=type)
+        return wt
+
+    def readRNADict(self, rnaDict):
+        if 'ribose' in rnaDict:
+            if rnaDict['ribose']:
+                polymers = self.molecule.getPolymers()
+                for polymer in polymers:
+                    self.addRiboseRestraints(polymer)
+        if 'suite' in rnaDict:
+            self.addSuiteAngles(rnaDict['suite'])
+        if 'vienna' in rnaDict:
+            self.findHelices(rnaDict['vienna'],1)
+            print 'adding helices'
+            
+    def readAnnealDict(self, annealDict):
+        steps=10000
+        highTemp=5000
+        highFrac=0.3
+        kinEScale=200.0
+        irpWeight=0.015
+        if 'steps' in annealDict:
+            steps = annealDict['steps']
+        if 'highTemp' in annealDict:
+            highTemp = annealDict['highTemp']
+        if 'highFrac' in annealDict:
+            highFrac = annealDict['highFrac']
+        if 'kinEScale' in annealDict:
+            kinEScale = annealDict['kinEScale']
+        if 'irpWeight' in annealDict:
+            irpWeight = annealDict['irpWeight']
+
+        dOpt = dynOptions(steps=steps,highTemp=highTemp, highFrac=highFrac)
+        dOpt.kinEScale = kinEScale
+        dOpt.irpWeight = irpWeight
+        return dOpt
+
+    def readShiftDict(self, shiftDict):
+        wt = -1.0
+        file = shiftDict['file']
+        if 'type' in shiftDict:
+            type = shiftDict['type']
+            if type == 'str3':
+                import os
+                import osfiles
+                dir = os.path.dirname(file)+'/'
+                file = osfiles.convertStarFile(file,dir)
+                type = 'nv'
+        else: 
+            type = 'nv'
+        if type == 'nv':
+            self.setShifts(file)
+            ringShifts = self.setBasePPMs()
+        if 'weight' in shiftDict:
+            wt = shiftDict['weight']
+        return wt
 
     def addRiboseRestraints(self,polymer):
         for residue in polymer.getResidues():
@@ -927,8 +1071,6 @@ class refine:
     def setBasePPMs(self,filterString="*.H8,H6,H5,H2,H1',H2',H3'"):
         self.energyLists.setRingShifts(filterString)
         atoms = self.energyLists.getRefAtoms()
-        for atom in atoms:
-            print atom.getFullName(), atom.getPPM(1).getValue()
 
     def setShifts(self,shiftFile):
         file = open(shiftFile,"r")
