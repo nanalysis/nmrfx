@@ -316,7 +316,6 @@ public class FXMLController implements Initializable {
             PreferencesController.saveRecentDatasets(filePath);
         } catch (IOException ioE) {
         }
-
     }
 
     public ProcessorController getProcessorController(boolean createIfNull) {
