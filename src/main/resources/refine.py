@@ -91,6 +91,40 @@ def getHelix(pairs,vie):
         print 'helixnum',i,helixStarts[i],helixEnds[i]
     return helixStarts,helixEnds
 
+def checkLengths(resNum,seqString):
+    i = 0
+    arr = seqString.split(' ')
+    for sub in arr:
+        i += len(sub)
+    return resNum != i
+
+def generateResNums(residues,seqString):
+    if isinstance(residues,int):
+        startIndex = residues
+        resNums = range(len(seqString))
+        resNums = list(map(lambda x: str(x+startIndex),resNums))
+    else:
+        arr = residues.split()
+        resNums = []
+        for resIndices in arr:
+            resIndices = resIndices.split(':')
+            if len(resIndices) == 1:
+                resNums += resIndices
+            else:
+                startIndex = int(resIndices[0])
+                endIndex = int(resIndices[1])
+                diff = endIndex - startIndex
+                residues = range(diff+1)
+                residues = list(map(lambda x: str(x+startIndex),residues))
+                resNums += residues
+        indexError = checkLengths(len(resNums),seqString)
+        if indexError:
+            raise IndexError('The residues string does not match the inputted sequence')
+    return resNums 
+
+
+
+
 class dynOptions:    
     def __init__(self,steps=15000,highTemp=5000.0,medFrac=0.05,update=20,highFrac=0.2,toMedFrac=0.5,switchFrac=0.65):
         self.steps = steps
@@ -393,37 +427,48 @@ class refine:
         self.energy()
 
     def readMoleculeDict(self,molDict):
+        #if sequence exists it takes priority over the file and the sequence will be used instead
         if 'sequence' in molDict:
             import java.util.ArrayList
             from org.nmrfx.structure.chemistry.io import Sequence
-
+            
             seqString = molDict['sequence']
+            
+            if 'residues' in molDict:
+                 resNums = generateResNums(molDict['residues'],seqString)
+            else:
+                 resNums = generateResNums(1,seqString)
+
             seq = []
+            i = 0
             for char in seqString:
                 if char == " ":
                      continue
                 else:
-                    seq.append(char.upper())
-
+                    residue = char.upper() + ' ' + resNums[i]   
+                    seq.append(residue)
+                    i += 1;
             arrayList = ArrayList()
             arrayList.addAll(seq)
             sequenceReader = Sequence()
             self.molecule = sequenceReader.read('p',arrayList,'')
             self.molName = self.molecule.getName()
             return
-        file = molDict['file']
-        if 'type' in molDict:
-            type = molDict['type']
-            if type == 'blast':
-                import os
-                import osfiles
-                dir = os.path.dirname(file)
-                file = osfiles.convertSeqFile(file,dir)
+  
+        else:
+            file = molDict['file']
+            if 'type' in molDict:
+                type = molDict['type']
+                if type == 'blast':
+                    import os
+                    import osfiles
+                    dir = os.path.dirname(file)
+                    file = osfiles.convertSeqFile(file,dir)
+                    type = 'nv'
+            else: 
                 type = 'nv'
-        else: 
-            type = 'nv'
-        if type == 'nv':
-            self.readSequence(file)
+            if type == 'nv':
+                self.readSequence(file)
 
             
     def readDistanceDict(self,disDict):
@@ -1086,7 +1131,7 @@ class refine:
         for line in lines:
             if line == "":
                  continue
-            arr = line.split('\t')
+            arr = line.split()
             atomName = arr[0]
             atom = Molecule.getAtomByName(atomName)
             self.energyLists.addAtomRef(atom)
