@@ -41,10 +41,15 @@ def runTests():
         yaml = Yaml() 
         data = yaml.load(input)
     else:
-        data = {}
-    
+        changeRange = (options.resRange != '')
+        range = options.resRange
+        data = {'ribose':True}
+
     if options.shiftFile != None:
         shift = {}
+        if changeRange:
+            shift['range'] = range
+
         arr = options.shiftFile.split(' ')
         if len(arr) == 1:
             shift['type'] = 'nv'
@@ -59,6 +64,9 @@ def runTests():
 
     if options.disFile != None:
         dis = {}
+        if changeRange:
+            dis['range'] = range;
+
         arr = options.disFile.split(' ')
         if len(arr) == 1:
             dis['type'] = 'nv'
@@ -70,11 +78,22 @@ def runTests():
             elif arr[1] == 'n':
                 dis['type'] = 'nv'
         if 'distances' in data:
-            data['distances'].append(dis)
+            included = checkIncluded(data['distances'],dis)
+            if not included:
+                data['distances'].append(dis)
+            else: 
+                print dis['file'] + ' is already included in yaml file. Ignoring Duplicate.'
         else:
             data['distances'] = [dis]
     outFiles = loadPDBModels(pdbFiles,data,outDir)
     summary(outFiles)
+
+def checkIncluded(constraintArray,newDict):
+    newFile = newDict['file']
+    for dict in constraintArray:
+        if newFile == dict['file']:
+            return True
+    return False
 
 runTests()
 
