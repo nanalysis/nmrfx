@@ -209,7 +209,7 @@ def convertStarFile(inFile,dataDir):
             continue
         name = '.'.join([resIndex,aType])
         data.append([name,shift])
-    outFile = dataDir + fileName['shift']
+    outFile = os.path.join(dataDir,fileName['shift'])
     writeLines(data,outFile,'')
     return outFile
 
@@ -223,7 +223,7 @@ def convertSeqFile(inFile,dataDir):
         residue.append(resIndex)
         data.append(residue)
         resIndex += 1
-    outFile = dataDir + fileName['seq']
+    outFile = os.path.join(dataDir,fileName['seq'])
     writeLines(data,outFile,'')
     return outFile
 
@@ -241,7 +241,7 @@ def convertConstraintFile(inFile,dataDir):
         constraint = getConstraint(data)
         constraints.append(constraint)
     
-    outFile = dataDir + fileName['dis']
+    outFile = os.path.join(dataDir,fileName['dis'])
     writeLines(constraints, outFile,'')
     return outFile
 
