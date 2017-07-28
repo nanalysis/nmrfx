@@ -471,25 +471,18 @@ class refine:
             print 'adding helices'
             
     def readAnnealDict(self, annealDict):
-        steps=10000
-        highTemp=5000
-        highFrac=0.3
-        kinEScale=200.0
-        irpWeight=0.015
+        dOpt = dynOptions()
         if 'steps' in annealDict:
-            steps = annealDict['steps']
+            dOpt.steps = annealDict['steps']
         if 'highTemp' in annealDict:
-            highTemp = annealDict['highTemp']
+            dOpt.highTemp = annealDict['highTemp']
         if 'highFrac' in annealDict:
-            highFrac = annealDict['highFrac']
+            dOpt.highFrac = annealDict['highFrac']
         if 'kinEScale' in annealDict:
-            kinEScale = annealDict['kinEScale']
+            dOpt.kinEScale = annealDict['kinEScale']
         if 'irpWeight' in annealDict:
-            irpWeight = annealDict['irpWeight']
+            dOpt.irpWeight = annealDict['irpWeight']
 
-        dOpt = dynOptions(steps=steps,highTemp=highTemp, highFrac=highFrac)
-        dOpt.kinEScale = kinEScale
-        dOpt.irpWeight = irpWeight
         return dOpt
 
     def readShiftDict(self, shiftDict):
@@ -724,15 +717,6 @@ class refine:
         for angleBoundary in angleBoundaries:
             self.dihedral.addBoundary(angleBoundary.getAtom().getFullName(), angleBoundary)
     
-    def assessRNASuite(self):
-        polymers = self.molecule.getPolymers()
-        for polymer in polymers:
-            nResidues = polymer.size()
-            for iRes in range(1,nResidues):
-                rotScore = RNARotamer.scoreResidue(polymer,iRes)
-                print iRes+1, rotScore.toString()
-
-
     def getSuiteAngles(self, molecule):
         angles  = [
               ["0.C5'","0.C4'","0.C3'","0.O3'"],
@@ -836,7 +820,6 @@ class refine:
                 resJName = residues[iEndPair+i+1].getName()
                 if (resJName == "A"):
                     self.energyLists.addDistanceConstraint(str(resI)+".H1'", str(resJ)+".H2",1.8, 5.0)
-
     def findHelices(self,vienna,indexDiff):
         pairs = self.getPairs(vienna)
       
