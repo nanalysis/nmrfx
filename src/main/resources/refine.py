@@ -442,6 +442,12 @@ class refine:
                 type = 'nv'
             if 'weight' in dic:
                 wt = dic['weight']
+            if 'range' in dic and type == 'nv':
+                import os
+                import osfiles
+                range = dic['range']
+                dir = os.path.dirname(file)
+                file = osfiles.limResidues(range,file,dir,'dis')
             self.addDistanceFile(file,mode=type)
         return wt
 
@@ -499,6 +505,12 @@ class refine:
         else: 
             type = 'nv'
         if type == 'nv':
+            if 'range' in shiftDict:
+                import os
+                import osfiles
+                range = shiftDict['range']
+                dir = os.path.dirname(file)
+                file = osfiles.limResidues(range,file,dir,'shift')
             self.setShifts(file)
             ringShifts = self.setBasePPMs()
             self.energyLists.setRingShifts()

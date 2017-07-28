@@ -136,7 +136,7 @@ def limResidues(pattern,inFile,dataDir,fileType):
         if fixedLine == -1:
             continue
         limLines.append(fixedLine)
-    outFile = dataDir + fileName[fileType]
+    outFile = os.path.join(dataDir,fileName[fileType])
     writeLines(limLines,outFile,'')
     return outFile
 
