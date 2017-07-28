@@ -417,7 +417,7 @@ class refine:
             if type == 'blast':
                 import os
                 import osfiles
-                dir = os.path.dirname(file)+'/'
+                dir = os.path.dirname(file)
                 file = osfiles.convertSeqFile(file,dir)
                 type = 'nv'
         else: 
@@ -435,7 +435,7 @@ class refine:
                 if type == 'amber':
                     import os
                     import osfiles
-                    dir = os.path.dirname(file)+'/'
+                    dir = os.path.dirname(file)
                     file = osfiles.convertConstraintFile(file,dir)
                     type = 'nv'
             else:
@@ -493,7 +493,7 @@ class refine:
             if type == 'str3':
                 import os
                 import osfiles
-                dir = os.path.dirname(file)+'/'
+                dir = os.path.dirname(file)
                 file = osfiles.convertStarFile(file,dir)
                 type = 'nv'
         else: 
