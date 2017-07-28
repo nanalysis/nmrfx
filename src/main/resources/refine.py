@@ -724,6 +724,15 @@ class refine:
         for angleBoundary in angleBoundaries:
             self.dihedral.addBoundary(angleBoundary.getAtom().getFullName(), angleBoundary)
     
+    def assessRNASuite(self):
+        polymers = self.molecule.getPolymers()
+        for polymer in polymers:
+            nResidues = polymer.size()
+            for iRes in range(1,nResidues):
+                rotScore = RNARotamer.scoreResidue(polymer,iRes)
+                print iRes+1, rotScore.toString()
+
+
     def getSuiteAngles(self, molecule):
         angles  = [
               ["0.C5'","0.C4'","0.C3'","0.O3'"],
@@ -827,6 +836,7 @@ class refine:
                 resJName = residues[iEndPair+i+1].getName()
                 if (resJName == "A"):
                     self.energyLists.addDistanceConstraint(str(resI)+".H1'", str(resJ)+".H2",1.8, 5.0)
+
     def findHelices(self,vienna,indexDiff):
         pairs = self.getPairs(vienna)
       
