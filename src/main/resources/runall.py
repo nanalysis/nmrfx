@@ -57,7 +57,7 @@ def calcStructures(calcScript,startStructure,nStructures,nProcesses=4, heapMemor
                     strNum = nSubmitted+startStructure
                     fOutName = os.path.join(outDir,'cmdout_'+str(strNum)+'.txt')
                     fOut[i] = open(fOutName,'w')
-                    processes[i] = subprocess.Popen([cmd,calcScript,str(strNum)],stdout=fOut[i],stderr=subprocess.STDOUT,env=myEnv)
+                    processes[i] = subprocess.Popen([cmd,"gen",calcScript,str(strNum)],stdout=fOut[i],stderr=subprocess.STDOUT,env=myEnv)
                     pid = processes[i].pid
                     outStr =  "submit %d seed: %3d Structure # %3d of %3d pid %7d" % (i,strNum,(nSubmitted+1),nStructures,pid)
                     print outStr
