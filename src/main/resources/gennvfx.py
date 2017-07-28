@@ -2,18 +2,23 @@ import sys
 from refine import *
 import os
 import osfiles
+import runpy
 
 homeDir =  os.getcwd( )
 dataDir = homeDir + '/'
 outDir = os.path.join(homeDir,'output')
 
-yamlFile = sys.argv[-2]
+argFile = sys.argv[-2]
 seed = int(sys.argv[-1])
-refiner=refine()
 
-osfiles.setOutFiles(refiner,dataDir, seed)
-refiner.rootName = "temp"
-refiner.loadFromYaml(yamlFile, seed)
+if argFile.endswith('.yaml'):
+    refiner=refine()
 
-refiner.anneal(refiner.dOpt)
-refiner.output()
+    osfiles.setOutFiles(refiner,dataDir, seed)
+    refiner.rootName = "temp"
+    refiner.loadFromYaml(argFile, seed)
+    refiner.anneal(refiner.dOpt)
+    refiner.output()
+
+else:
+    runpy.run_path(argFile)
