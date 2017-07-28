@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -51,12 +52,14 @@ public class PreferencesController implements Initializable {
     ChangeListener<String> stringListener;
     ChangeListener<String> datasetListener;
     ChangeListener<String> locationListener;
+    ChangeListener<Integer> nprocessListener;
     Stage stage;
 
     static File nestaNMR = null;
     static File datasetDir = null;
     static String recentDatasetsString = null;
     static String location = null;
+    static Integer nProcesses = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -74,6 +77,9 @@ public class PreferencesController implements Initializable {
         locationListener = (ObservableValue<? extends String> observableValue, String string, String string2) -> {
             setLocation(string2.trim());
         };
+        nprocessListener = (ObservableValue<? extends Integer> observableValue, Integer n1, Integer n2) -> {
+            setNProcesses(n2);
+        };
         FileOperationItem nestaFileItem = new FileOperationItem(stringListener, getNESTANMR().getPath(), "External Programs", "NESTA-NMR", "desc");
         ArrayList<String> locationChoices = new ArrayList<>();
         locationChoices.add("FID directory");
@@ -82,7 +88,9 @@ public class PreferencesController implements Initializable {
 
         DirectoryOperationItem locationFileItem = new DirectoryOperationItem(datasetListener, getDatasetDirectory().getPath(), "File Locations", "Datasets", "desc");
 
-        prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem);
+        int nProcessesDefault = Runtime.getRuntime().availableProcessors() / 2;
+        IntRangeOperationItem nProcessesItem = new IntRangeOperationItem(nprocessListener, nProcessesDefault, 1, 32, "Processor", "NProcesses", "How many parallel processes to run during processing");
+        prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem, nProcessesItem);
 
     }
 
@@ -274,4 +282,40 @@ public class PreferencesController implements Initializable {
         }
         return result;
     }
+
+    /**
+     * Returns the Directory for datasets,
+     *
+     * @return
+     */
+    public static Integer getNProcesses() {
+        if (nProcesses == null) {
+            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            String value = prefs.get("NPROCESSES", null);
+            if (value != null) {
+                nProcesses = Integer.parseInt(value);
+            } else {
+                nProcesses = Runtime.getRuntime().availableProcessors() / 2;
+            }
+        }
+        return nProcesses;
+    }
+
+    /**
+     * Returns the Directory for datasets,
+     *
+     * @param file the file or null to remove the path
+     */
+    public static void setNProcesses(Integer value) {
+        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        if (value != null) {
+            nProcesses = value;
+            prefs.put("NPROCESSES", String.valueOf(value));
+        } else {
+            nProcesses = null;
+            prefs.remove("NPROCESSES");
+        }
+
+    }
+
 }

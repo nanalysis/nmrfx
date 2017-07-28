@@ -748,6 +748,7 @@ public class ChartProcessor {
         StringBuilder scriptBuilder = new StringBuilder();
         scriptBuilder.append("import os").append(lineSep);
         scriptBuilder.append("from pyproc import *").append(lineSep);
+        scriptBuilder.append("procOpts(nprocess=").append(PreferencesController.getNProcesses()).append(")").append(lineSep);
         scriptBuilder.append("FID('").append(file.getPath().replace("\\", "/")).append("')").append(lineSep);
         scriptBuilder.append("CREATE('").append(datasetFile.getPath().replace("\\", "/")).append("')").append(lineSep);
         String indent = "";
