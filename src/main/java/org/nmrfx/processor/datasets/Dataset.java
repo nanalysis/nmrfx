@@ -50,7 +50,7 @@ import org.renjin.sexp.SEXP;
  */
 public class Dataset extends DoubleVector {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+//    private static final Logger LOGGER = LogManager.getLogger();
 
 //    static {
 //        try {
@@ -310,7 +310,7 @@ public class Dataset extends DoubleVector {
 
     private Dataset(String fullName, String title,
             int[] dimSizes) throws DatasetException {
-        LOGGER.info("Make dataset {}", fullName);
+        //LOGGER.info("Make dataset {}", fullName);
         try {
             raFile = new RandomAccessFile(fullName, "rw");
             file = new File(fullName);
@@ -354,7 +354,7 @@ public class Dataset extends DoubleVector {
             DatasetParameterFile parFile = new DatasetParameterFile(this);
             parFile.remove();
         } catch (IOException ioe) {
-            LOGGER.error(ioe.getMessage());
+            //LOGGER.error(ioe.getMessage());
             throw new DatasetException("Can't create dataset " + ioe.getMessage());
         }
     }
@@ -858,7 +858,7 @@ public class Dataset extends DoubleVector {
             dataFile = null;
             raFile = null;
         } catch (Exception e) {
-            LOGGER.warn(e.getMessage());
+            //LOGGER.warn(e.getMessage());
         }
 
         for (DatasetListener observer : observers) {
@@ -2881,7 +2881,7 @@ public class Dataset extends DoubleVector {
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("Can't read header ", e);
+            //LOGGER.error("Can't read header ", e);
             return 1;
         }
         blockElements = 4;
