@@ -154,6 +154,19 @@ public class FXMLController implements Initializable {
     PolyChart activeChart = null;
     SpectrumStatusBar statusBar;
     BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
+    File initialDir = null;
+
+    public File getInitialDirectory() {
+        if (initialDir == null) {
+            String homeDirName = System.getProperty("user.home");
+            initialDir = new File(homeDirName);
+        }
+        return initialDir;
+    }
+
+    public void setInitialDirectory(File file) {
+        initialDir = file;
+    }
 
     void close() {
         for (PolyChart chart : charts) {
@@ -214,6 +227,7 @@ public class FXMLController implements Initializable {
     @FXML
     void openAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR FID/Dataset");
         fileChooser.getExtensionFilters().addAll(
                 new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx"),
@@ -221,6 +235,7 @@ public class FXMLController implements Initializable {
         );
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
+            setInitialDirectory(selectedFile.getParentFile());
             openFile(selectedFile.toString(), true, false);
         }
         stage.setResizable(true);
@@ -229,6 +244,7 @@ public class FXMLController implements Initializable {
     @FXML
     void addAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Add NMR FID/Dataset");
         fileChooser.getExtensionFilters().addAll(
                 new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx"),
@@ -236,6 +252,7 @@ public class FXMLController implements Initializable {
         );
         File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
+            setInitialDirectory(selectedFile.getParentFile());
             openFile(selectedFile.toString(), true, true);
         }
         stage.setResizable(true);
@@ -244,6 +261,7 @@ public class FXMLController implements Initializable {
     @FXML
     void addNoDrawAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Add NMR FID/Dataset");
         fileChooser.getExtensionFilters().addAll(
                 new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf"),
@@ -253,6 +271,7 @@ public class FXMLController implements Initializable {
         if (selectedFiles != null) {
             try {
                 for (File selectedFile : selectedFiles) {
+                    setInitialDirectory(selectedFile.getParentFile());
                     NMRData nmrData = NMRDataUtil.getFID(selectedFile.toString());
                     if (nmrData instanceof NMRViewData) {
                         PreferencesController.saveRecentDatasets(selectedFile.toString());
@@ -625,6 +644,7 @@ public class FXMLController implements Initializable {
     void exportPDFAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Export to PDF");
+        fileChooser.setInitialDirectory(getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             getActiveChart().exportVectorGraphics(selectedFile.toString());
