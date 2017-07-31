@@ -35,21 +35,21 @@ def runTests():
     else:
         pdbFiles = getFiles(pdbFilePath)
 
+    changeRange = (options.resRange != '')
+    range = options.resRange
 
     if (options.yamlFile != None):
         input = FileInputStream(options.yamlFile)
         yaml = Yaml() 
         data = yaml.load(input)
     else:
-        changeRange = (options.resRange != '')
-        range = options.resRange
         data = {'ribose':True}
+
 
     if options.shiftFile != None:
         shift = {}
         if changeRange:
             shift['range'] = range
-
         arr = options.shiftFile.split(' ')
         if len(arr) == 1:
             shift['type'] = 'nv'
@@ -61,6 +61,9 @@ def runTests():
             elif arr[1] == 'n':
                 shift['type'] = 'nv'
         data['shifts'] = shift
+    else:
+        if changeRange:
+            data['shifts']['range'] = range
 
     if options.disFile != None:
         dis = {}
@@ -85,8 +88,14 @@ def runTests():
                 print dis['file'] + ' is already included in yaml file. Ignoring Duplicate.'
         else:
             data['distances'] = [dis]
+    else:
+        if changeRange:
+            for dict in data['distances']:
+                dict['range'] = range
+ 
     outFiles = loadPDBModels(pdbFiles,data,outDir)
     summary(outFiles)
+
 
 def checkIncluded(constraintArray,newDict):
     newFile = newDict['file']
