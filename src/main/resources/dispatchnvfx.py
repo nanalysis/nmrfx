@@ -8,6 +8,8 @@ if len(sys.argv) > 0:
         import runTests
     elif sys.argv[0] == "gen":
         import gennvfx
+    elif sys.argv[0] == "predict":
+        import predictor
     else:
         scriptName = sys.argv[0]
         runpy.run_path(scriptName)
