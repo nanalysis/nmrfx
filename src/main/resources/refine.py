@@ -2,6 +2,7 @@ import math
 import time
 import array
 import random
+import re
 
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry.energy import EnergyLists
@@ -126,7 +127,7 @@ def generateResNums(residues,seqString):
 
 
 class dynOptions:    
-    def __init__(self,steps=15000,highTemp=5000.0,medFrac=0.05,update=20,highFrac=0.2,toMedFrac=0.5,switchFrac=0.65):
+    def __init__(self,steps=15000,highTemp=5000.0,medFrac=0.05,update=20,highFrac=0.3,toMedFrac=0.5,switchFrac=0.65):
         self.steps = steps
         self.highTemp = highTemp
         self.medFrac = medFrac
@@ -142,8 +143,8 @@ class dynOptions:
         self.timePowerMed = 4.0
         self.minSteps = 100
         self.polishSteps = 500
-        self.irpWeight = 0.0025
-        self.kinEScale = 50.0
+        self.irpWeight = 0.015
+        self.kinEScale = 200.0
 
 class refine:
     def __init__(self):
@@ -511,15 +512,14 @@ class refine:
 
     def readRNADict(self, rnaDict):
         if 'ribose' in rnaDict:
-            if rnaDict['ribose']:
+            if rnaDict['ribose'] == "Constrain":
                 polymers = self.molecule.getPolymers()
                 for polymer in polymers:
                     self.addRiboseRestraints(polymer)
         if 'suite' in rnaDict:
             self.addSuiteAngles(rnaDict['suite'])
         if 'vienna' in rnaDict:
-            self.findHelices(rnaDict['vienna'],1)
-            print 'adding helices'
+            self.findHelices(rnaDict['vienna'])
             
     def readAnnealDict(self, annealDict):
         dOpt = dynOptions()
@@ -835,23 +835,29 @@ class refine:
             endPairRes = residues[endPair].getNumber()
             self.addHelix(polymer,int(startRes),int(startPairRes),int(endRes),int(endPairRes))
 
-    def addHelix(self, polymer, hStart, hStartPair, hEnd, hEndPair):
-        hStart = str(hStart)
-        hStartPair = str(hStartPair)
-        hEnd = str(hEnd)
-        hEndPair = str(hEndPair)
+    def addHelix(self, polymer, hStart, hStartPair, hEnd, hEndPair,convertNums=True):
         residues = polymer.getResidues()
         print 'helix',hStart,hStartPair,hEnd,hEndPair
-        for i,residue in enumerate(residues):
-            resNum = residue.getNumber()
-            if resNum == hStart:
-                iStart = i
-            if resNum == hStartPair:
-                iStartPair = i
-            if resNum == hEnd:
-                iEnd = i
-            if resNum == hEndPair:
-                iEndPair = i
+        if not convertNums:
+            iStart = hStart
+            iEnd = hEnd
+            iStartPair = hStartPair
+            iEndPair = hEndPair
+        else:
+            hStart = str(hStart)
+            hStartPair = str(hStartPair)
+            hEnd = str(hEnd)
+            hEndPair = str(hEndPair)
+            for i,residue in enumerate(residues):
+                resNum = residue.getNumber()
+                if resNum == hStart:
+                    iStart = i
+                if resNum == hStartPair:
+                    iStartPair = i
+                if resNum == hEnd:
+                    iEnd = i
+                if resNum == hEndPair:
+                    iEndPair = i
         length = iEnd-iStart+1
         for i in range(length):
             resI = residues[iStart+i].getNumber()
@@ -877,7 +883,10 @@ class refine:
                 resJName = residues[iEndPair+i+1].getName()
                 if (resJName == "A"):
                     self.energyLists.addDistanceConstraint(str(resI)+".H1'", str(resJ)+".H2",1.8, 5.0)
-    def findHelices(self,vienna,indexDiff):
+    def findHelices(self,vienna):
+        gnraPat = re.compile('G[AGUC][AG]A')
+        uncgPat = re.compile('U[AGUC]CG')
+
         pairs = self.getPairs(vienna)
       
         i = 0
@@ -893,23 +902,42 @@ class refine:
                     continue
                 if not helix:
                     helix = True
-                    beginSet.append(i+indexDiff)
-                    endSet.append(pairs[i]+indexDiff)
+                    beginSet.append(i)
+                    endSet.append(pairs[i])
             else:
                 if helix:
                     helix = False
-                    beginSet.append(i-1+indexDiff)
-                    endSet.insert(0,pairs[i-1]+indexDiff)
+                    beginSet.append(i-1)
+                    endSet.insert(0,pairs[i-1])
                     sets.append(beginSet+endSet)
                     beginSet = []
                     endSet = []
             i+=1
         polymers = self.molecule.getPolymers()
+        allResidues = []
         for polymer in polymers:
+            allResidues += polymer.getResidues()
             for set in sets:
-                self.addHelix(polymer,set[0],set[3],set[1],set[2])
+                self.addHelix(polymer,set[0],set[3],set[1],set[2],False)
+        pat = re.compile('\(\(\.\.\.\.\)\)')
+        for m in pat.finditer(vienna):
+            gnraStart = m.start()+2 
+            tetraLoopSeq = ""
+            tetraLoopRes = []
+            for iRes in range(gnraStart,gnraStart+4):
+                residue = allResidues[iRes]
+                tetraLoopSeq += residue.getName()
+                tetraLoopRes.append(residue.getNumber())
+            if gnraPat.match(tetraLoopSeq):
+                res2 = allResidues[m.start()+3].getNumber()
+                res3 = allResidues[m.start()+4].getNumber()
+                res4 = allResidues[m.start()+5].getNumber()
+                res5 = allResidues[m.start()+6].getNumber()
+                self.addSuiteBoundary(polymer, res2,"1g")
+                self.addSuiteBoundary(polymer, res3,"1a")
+                self.addSuiteBoundary(polymer, res4,"1a")
+                self.addSuiteBoundary(polymer, res5,"1c")
 
-    
     def addBasePair(self, polymer, resNumI, resNumJ):
         resNumI = str(resNumI)
         resNumJ = str(resNumJ)
@@ -948,7 +976,6 @@ class refine:
             print("No data for pair " + pairName)
         else:
             pairs = namePairs[pairName]
-            print 'add bp',resNumI,resNumJ
             for pair in pairs:
                 aNameI, aNameJ,lower,upper = pair
                 atomNameI = resNumI+'.'+aNameI
