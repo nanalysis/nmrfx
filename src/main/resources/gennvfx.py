@@ -10,7 +10,8 @@ from java.io import FileInputStream
 homeDir =  os.getcwd( )
 dataDir = homeDir + '/'
 outDir = os.path.join(homeDir,'output')
-
+if not os.path.exists(outDir):
+    os.mkdir(outDir)
 argFile = sys.argv[-2]
 seed = int(sys.argv[-1])
 
