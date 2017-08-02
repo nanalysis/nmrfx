@@ -92,7 +92,7 @@ def getHelix(pairs,vie):
         print 'helixnum',i,helixStarts[i],helixEnds[i]
     return helixStarts,helixEnds
 
-def generateResNums(residues,seqString):
+def generateResNums(residues,seqString,linker):
     bases = []
     for char in seqString:
         if char == " ":
@@ -122,9 +122,22 @@ def generateResNums(residues,seqString):
         raise IndexError('The residues string does not match the inputted sequence')
 
     residues = []
+    if linker != None:
+        linker = linker.split(':')
+        insertionIndex = int(linker[0])
+        insertionLength = int(linker[1])
+
     for i in xrange(len(bases)):
         residue = bases[i] + " " + resNums[i]
         residues.append(residue)
+        if linker != None:
+            if int(resNums[i]) == insertionIndex:
+                for j in range(insertionLength):
+                    if j == 0 or (j == insertionLength-1):
+                        residue = 'ln2 ' + str(j+1+int(resNums[i]))
+                    else: 
+                        residue = 'ln5 ' + str(j+1+int(resNums[i]))
+                    residues.append(residue)
     return residues 
 
 
@@ -443,10 +456,14 @@ class refine:
             from org.nmrfx.structure.chemistry.io import Sequence
             
             seqString = molDict['sequence']
-            if 'residues' in molDict:
-                 resNums = generateResNums(molDict['residues'],seqString)
+            if 'link' in molDict:
+                linker = molDict['link']
             else:
-                 resNums = generateResNums(1,seqString)
+                linker = None
+            if 'residues' in molDict:
+                 resNums = generateResNums(molDict['residues'],seqString,linker)
+            else:
+                 resNums = generateResNums(1,seqString,linker)
             arrayList = ArrayList()
             arrayList.addAll(resNums)
             sequenceReader = Sequence()
@@ -838,6 +855,8 @@ class refine:
 
     def addHelix(self, polymer, hStart, hStartPair, hEnd, hEndPair,convertNums=True):
         residues = polymer.getResidues()
+        for residue in residues:
+            print residue.getNumber()
         print 'helix',hStart,hStartPair,hEnd,hEndPair
         if not convertNums:
             iStart = hStart
@@ -864,7 +883,11 @@ class refine:
             resI = residues[iStart+i].getNumber()
             resJ = residues[iStartPair-i].getNumber()
             self.addSuiteBoundary(polymer, resI,"1a")
-            self.addSuiteBoundary(polymer, resJ,"1a")
+            import java.lang
+            try:
+                self.addSuiteBoundary(polymer, resJ,"1a")
+            except:
+                print "Preceding residue is not defined"
             resJName = residues[iStartPair-i].getName()
             self.addBasePair(polymer, resI, resJ)
             if (i+3) < length:
