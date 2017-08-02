@@ -123,7 +123,7 @@ def getPatternRanges(inputPattern):
         ranges[i] = resIndices
     return ranges
 
-def limResidues(pattern,inFile,dataDir,fileType):
+def limResidues(pattern,inFile,dataDir,fileType,changeResNums):
 #where fileType will be dis, shift, or seq
     ranges = getPatternRanges(pattern)
     ptrnMap = makePatternMap(ranges)
@@ -132,7 +132,7 @@ def limResidues(pattern,inFile,dataDir,fileType):
     for line in lines:
         if line == "":
             continue
-        fixedLine = correctLine(line,fileType,ptrnMap)
+        fixedLine = correctLine(line,fileType,ptrnMap,changeResNums)
         if fixedLine == -1:
             continue
         limLines.append(fixedLine)
@@ -140,7 +140,7 @@ def limResidues(pattern,inFile,dataDir,fileType):
     writeLines(limLines,outFile,'')
     return outFile
 
-def correctLine(line,fileType,ptrnMap):
+def correctLine(line,fileType,ptrnMap,changeResNums):
     arr = line.split()
     correctArr = []
     lineFormat = fileTypeLine[fileType]
@@ -149,13 +149,11 @@ def correctLine(line,fileType,ptrnMap):
         if lineFormat[i] == 'atom':
             resIndex = arr[i].split('.')[0]
             atomType = arr[i].split('.')[1]
-            resIndex = getNewResidueIndex(resIndex,ptrnMap)
-
+            resIndex = getNewResidueIndex(resIndex,ptrnMap,changeResNums)
             correctArr.append(getAtomName([resIndex,atomType]))
         elif lineFormat[i] == 'index':
             resIndex = arr[i]
-            resIndex = getNewResidueIndex(resIndex,ptrnMap)
-
+            resIndex = getNewResidueIndex(resIndex,ptrnMap,changeResNums)
             correctArr.append(resIndex)
         else:
             correctArr.append(arr[i])
@@ -164,11 +162,15 @@ def correctLine(line,fileType,ptrnMap):
             return -1
     return correctArr
 
-def getNewResidueIndex(resIndex,ptrnMap):
+def getNewResidueIndex(resIndex,ptrnMap,changeResNums):
     resIndex = int(resIndex)
     if resIndex > len(ptrnMap):
         return -1
-    resIndex = ptrnMap[resIndex-1]
+    temp = ptrnMap[resIndex-1]
+    if temp == -1:
+        return -1
+    if changeResNums:
+        return str(temp)
     return str(resIndex)
 
 def makePatternMap(ranges):
