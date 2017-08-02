@@ -92,17 +92,16 @@ def getHelix(pairs,vie):
         print 'helixnum',i,helixStarts[i],helixEnds[i]
     return helixStarts,helixEnds
 
-def checkLengths(resNum,seqString):
-    i = 0
-    arr = seqString.split(' ')
-    for sub in arr:
-        i += len(sub)
-    return resNum != i
-
 def generateResNums(residues,seqString):
+    bases = []
+    for char in seqString:
+        if char == " ":
+            continue
+        else:
+            bases.append(char.upper())
     if isinstance(residues,int):
         startIndex = residues
-        resNums = range(len(seqString))
+        resNums = range(len(bases))
         resNums = list(map(lambda x: str(x+startIndex),resNums))
     else:
         arr = residues.split()
@@ -118,10 +117,15 @@ def generateResNums(residues,seqString):
                 residues = range(diff+1)
                 residues = list(map(lambda x: str(x+startIndex),residues))
                 resNums += residues
-        indexError = checkLengths(len(resNums),seqString)
-        if indexError:
-            raise IndexError('The residues string does not match the inputted sequence')
-    return resNums 
+    indexError = len(resNums) != len(bases)
+    if indexError:
+        raise IndexError('The residues string does not match the inputted sequence')
+
+    residues = []
+    for i in xrange(len(bases)):
+        residue = bases[i] + " " + resNums[i]
+        residues.append(residue)
+    return residues 
 
 
 
@@ -405,21 +409,26 @@ class refine:
             self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
  
     def loadFromYaml(self,data, seed, pdbFile=""):
+ 
         if pdbFile != '':
             self.readPDBFile(pdbFile)
+            residues = None
         else:
             if 'molecule' in data:
+                if 'residues' in data['molecule']:
+                    residues = ','.join(data['molecule']['residues'].split(' '))
+                else:
+                    residues = None
                 self.readMoleculeDict(data['molecule'])
         if 'distances' in data:
-            disWt = self.readDistanceDict(data['distances'])
-            print disWt
+            disWt = self.readDistanceDict(data['distances'],residues)
         if 'angles' in data:
             angleWt = self.readAngleDict(data['angles'])
 
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
         self.energy()
         if 'shifts' in data:
-            self.readShiftDict(data['shifts'])
+            self.readShiftDict(data['shifts'],residues)
 
         if 'rna' in data:
             self.readRNADict(data['rna'])
@@ -434,23 +443,12 @@ class refine:
             from org.nmrfx.structure.chemistry.io import Sequence
             
             seqString = molDict['sequence']
-            
             if 'residues' in molDict:
                  resNums = generateResNums(molDict['residues'],seqString)
             else:
                  resNums = generateResNums(1,seqString)
-
-            seq = []
-            i = 0
-            for char in seqString:
-                if char == " ":
-                     continue
-                else:
-                    residue = char.upper() + ' ' + resNums[i]   
-                    seq.append(residue)
-                    i += 1;
             arrayList = ArrayList()
-            arrayList.addAll(seq)
+            arrayList.addAll(resNums)
             sequenceReader = Sequence()
             self.molecule = sequenceReader.read('p',arrayList,'')
             self.molName = self.molecule.getName()
@@ -472,7 +470,7 @@ class refine:
                 self.readSequence(file)
 
             
-    def readDistanceDict(self,disDict):
+    def readDistanceDict(self,disDict,residues):
         wt = -1.0
         for dic in disDict:
             file = dic['file']
@@ -493,7 +491,9 @@ class refine:
                 import osfiles
                 range = dic['range']
                 dir = os.path.dirname(file)
-                file = osfiles.limResidues(range,file,dir,'dis')
+                
+                changeResNums = residues != range
+                file = osfiles.limResidues(range,file,dir,'dis',changeResNums)
             self.addDistanceFile(file,mode=type)
         return wt
 
@@ -536,7 +536,7 @@ class refine:
 
         return dOpt
 
-    def readShiftDict(self, shiftDict):
+    def readShiftDict(self, shiftDict,residues):
         wt = -1.0
         file = shiftDict['file']
         if 'type' in shiftDict:
@@ -555,7 +555,8 @@ class refine:
                 import osfiles
                 range = shiftDict['range']
                 dir = os.path.dirname(file)
-                file = osfiles.limResidues(range,file,dir,'shift')
+                changeResNums = range!=residues
+                file = osfiles.limResidues(range,file,dir,'shift',changeResNums)
             self.setShifts(file)
             ringShifts = self.setBasePPMs()
             self.energyLists.setRingShifts()
