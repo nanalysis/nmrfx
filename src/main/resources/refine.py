@@ -33,6 +33,14 @@ from java.util import ArrayList
 #tclInterp.eval('java::load org.nmrfx.structure.chemistry.ChemistryExt')
 PDBFile.putReslibDir('IUPAC','resource:/reslib_iu')
 
+protein3To1 = {"ALA":"A","ASP":"D","ASN":"N","ARG":"R","CYS":"C","GLU":"E","GLN":"Q","ILE":"I",
+    "VAL":"V","LEU":"L","PRO":"P","PHE":"F","TYR":"Y","TRP":"W","LYS":"K","MET":"M",
+    "HIS":"H","GLY":"G","SER":"S","THR":"T"}
+
+protein1To3 = {}
+for key in protein3To1:
+   protein1To3[protein3To1[key]] = key
+
 
 def tcl(cmd):
     global tclInterp
@@ -92,13 +100,15 @@ def getHelix(pairs,vie):
         print 'helixnum',i,helixStarts[i],helixEnds[i]
     return helixStarts,helixEnds
 
-def generateResNums(residues,seqString,linker):
+def generateResNums(residues,seqString,linker,polyType):
     bases = []
     for char in seqString:
-        if char == " ":
-            continue
-        else:
-            bases.append(char.upper())
+        if char.isalpha():
+            if polyType == "RNA":
+                bases.append(char.upper())
+            else:
+                bases.append(protein1To3[char.upper()])
+
     if isinstance(residues,int):
         startIndex = residues
         resNums = range(len(bases))
@@ -451,6 +461,9 @@ class refine:
 
     def readMoleculeDict(self,molDict):
         #if sequence exists it takes priority over the file and the sequence will be used instead
+        polyType = "PROTEIN"
+        if 'ptype' in molDict:
+            polyType = molDict['ptype'].upper()
         if 'sequence' in molDict:
             import java.util.ArrayList
             from org.nmrfx.structure.chemistry.io import Sequence
@@ -461,21 +474,19 @@ class refine:
             else:
                 linker = None
             if 'residues' in molDict:
-                 resNums = generateResNums(molDict['residues'],seqString,linker)
+                 resNums = generateResNums(molDict['residues'],seqString,linker,polyType)
             else:
-                 resNums = generateResNums(1,seqString,linker)
+                 resNums = generateResNums(1,seqString,linker,polyType)
             arrayList = ArrayList()
             arrayList.addAll(resNums)
             sequenceReader = Sequence()
             self.molecule = sequenceReader.read('p',arrayList,'')
             self.molName = self.molecule.getName()
-            return
-  
         else:
             file = molDict['file']
             if 'type' in molDict:
                 type = molDict['type']
-                if type == 'blast':
+                if type == 'fasta':
                     import os
                     import osfiles
                     dir = os.path.dirname(file)
@@ -485,7 +496,6 @@ class refine:
                 type = 'nv'
             if type == 'nv':
                 self.readSequence(file)
-
             
     def readDistanceDict(self,disDict,residues):
         wt = -1.0
