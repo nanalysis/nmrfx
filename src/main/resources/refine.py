@@ -450,6 +450,16 @@ class refine:
 
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
         self.energy()
+        if 'molecule' in data:
+            molDict = data['molecule']
+            if 'ss' in molDict:
+                for ss in molDict['ss']:
+                    if 'type' in ss:
+                        type = ss['type']
+                        if type == "helix":
+                            self.setPeptideDihedrals(-60,-60)
+                        elif type == "sheet":
+                            self.setPeptideDihedrals(-120,120)
         if 'shifts' in data:
             self.readShiftDict(data['shifts'],residues)
 
@@ -1479,6 +1489,18 @@ class refine:
                             scale = 0.05
                             outStr = "%s %.1f %.1f %.2f\n" % (atom.getShortName(),lower, upper, scale)
                             fOut.write(outStr)
+
+    def setPeptideDihedrals(self, phi, psi):
+        molecule = self.molecule
+        polymers = self.molecule.getPolymers()
+        for polymer in polymers:
+            for residue in polymer.getResidues():
+                resNum = residue.getNumber()
+                atom = residue.getAtom("C")
+                atom.dihedralAngle = math.pi*phi/180.0
+                atom = residue.getAtom("N")
+                atom.dihedralAngle = math.pi*psi/180.0
+        molecule.genCoords()
 
 def doAnneal(seed,dOpt=None,homeDir=None):
     import osfiles
