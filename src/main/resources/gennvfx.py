@@ -24,8 +24,8 @@ if argFile.endswith('.yaml'):
     osfiles.setOutFiles(refiner,dataDir, seed)
     refiner.rootName = "temp"
     refiner.loadFromYaml(data,seed)
-
-    refiner.anneal(refiner.dOpt)
+    if 'anneal' in data:
+        refiner.anneal(refiner.dOpt)
     refiner.output()
 
 else:
