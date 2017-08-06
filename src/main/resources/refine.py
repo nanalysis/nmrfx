@@ -96,8 +96,6 @@ def getHelix(pairs,vie):
 
         print i,pair,pairs[pair],inHelix,iHelix,vie[i]
     nHelix = len(helixStarts)
-    for i in range(nHelix):
-        print 'helixnum',i,helixStarts[i],helixEnds[i]
     return helixStarts,helixEnds
 
 def generateResNums(residues,seqString,linker,polyType):
@@ -326,8 +324,6 @@ class refine:
         if useShifts:
             energyLists.setRingShifts()
         energy=energyLists.energy()
-        print(energy)
-        print usePseudo
         self.dihedral = Dihedral(energyLists,usePseudo)
 
     def usePseudo(self,usePseudo):
@@ -868,16 +864,12 @@ class refine:
             startRes = residues[start].getNumber()
             startPairRes = residues[startPair].getNumber()
             (end,endPair) = helixEnds[i]
-            print 'helix',i,start,startPair,end,endPair
             endRes = residues[end].getNumber()
             endPairRes = residues[endPair].getNumber()
             self.addHelix(polymer,int(startRes),int(startPairRes),int(endRes),int(endPairRes))
 
     def addHelix(self, polymer, hStart, hStartPair, hEnd, hEndPair,convertNums=True):
         residues = polymer.getResidues()
-        for residue in residues:
-            print residue.getNumber()
-        print 'helix',hStart,hStartPair,hEnd,hEndPair
         if not convertNums:
             iStart = hStart
             iEnd = hEnd
@@ -1099,7 +1091,6 @@ class refine:
         self.molecule = seqReader.read(seqFile)
         Molecule.selectAtoms('*.*')
         self.molName = self.molecule.getName()
-        print('molecule is',self.molName)
         return self.molecule
 
     def readPDBFile(self,fileName):
@@ -1110,7 +1101,6 @@ class refine:
  
         self.molName = self.molecule.getName()
         Molecule.selectAtoms('*.*')
-        print('molecule is',self.molName)
         return self.molecule
 
     def readPDBFileNL(self,fileName):
@@ -1121,7 +1111,6 @@ class refine:
  
         self.molName = self.molecule.getName()
         Molecule.selectAtoms('*.*')
-        print('molecule is',self.molName)
         return self.molecule
 
     def addAngleFile(self,file, mode='nv'):
