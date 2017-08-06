@@ -30,3 +30,4 @@ if argFile.endswith('.yaml'):
 
 else:
     runpy.run_path(argFile)
+sys.exit()
