@@ -292,7 +292,7 @@ public class PDFWriter implements GraphicsIO {
             int n = x.length;
             contentStream.moveTo(tX(x[0]), tY(y[0]));
             for (int i = 1; i < n; i++) {
-                contentStream.moveTo(tX(x[i]), tY(y[i]));
+                contentStream.lineTo(tX(x[i]), tY(y[i]));
             }
             contentStream.stroke();
         } catch (IOException ioE) {
