@@ -78,7 +78,7 @@ public class SpectrumWriter {
             double width = pageWidth - leftBorder - leftBorder;
 
             NMRAxisIO xAxis = new NMRAxisIO(axes[0].getLowerBound(), axes[0].getUpperBound(), leftBorder, leftBorder + width);
-            xAxis.setReverse(true);
+            xAxis.setReverse(axes[0].getReverse());
             xAxis.setLabel(axes[0].getLabel());
             NMRAxisIO yAxis = new NMRAxisIO(axes[1].getLowerBound(), axes[1].getUpperBound(), bottomBorder + height, bottomBorder);
             NMRAxisIO[] axes2 = {xAxis, yAxis};
