@@ -3522,8 +3522,12 @@ def genScript():
         if fCoef != None and fCoef == 'sep':
             script += "COMB(coef='sep')\n"
         if fidInfo.nd > 2 and fidInfo.fidObj.getSampleSchedule() != None:
-            script += 'DIM(2,3)\n'
-            script += 'ISTMATRIX()\n'
+            multiDim = 'DIM(2'
+            for mDim in range(2,fidInfo.nd):
+                multiDim += ',' + str(mDim+1)
+            multiDim += ')'
+            script += multiDim + '\n'
+            script += 'NESTA()\n'
     for iDim in range(2,fidInfo.nd+1):
         if fidInfo.size[iDim-1] < 2:
             continue
@@ -3531,7 +3535,7 @@ def genScript():
             continue
         script += 'DIM('+str(iDim)+')\n'
         if iDim == 2 and fidInfo.nd == 2 and fidInfo.fidObj.getSampleSchedule() != None:
-            script += 'IST()\n'
+            script += 'NESTA()\n'
         script += 'SB(c=0.5)\n'
         script += 'ZF()\n'
         script += 'FT('
