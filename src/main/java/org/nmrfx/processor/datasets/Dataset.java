@@ -135,7 +135,7 @@ public class Dataset extends DoubleVector {
     }
 
     void setDimAttributes() {
-        attributes = AttributeMap.builder().addAllFrom(attributes).setDim(new IntArrayVector(size)).build();
+        unsafeSetAttributes(AttributeMap.builder().addAllFrom(getAttributes()).setDim(new IntArrayVector(size)).build());
     }
 
     @Override
