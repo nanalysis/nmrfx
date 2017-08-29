@@ -1333,8 +1333,8 @@ public class Processor {
                         dimString = "dataset";
                     } else {
                         dimString = String.valueOf(dims[0] + 1);
-                        if ((dims.length > 1) && (dims[1] > 0)) {
-                            dimString = dimString + "," + String.valueOf(dims[1] + 1);
+                        for (int iDim = 1;iDim < dims.length;iDim++) {
+                            dimString = dimString + "," + String.valueOf(dims[iDim] + 1);
                         }
                     }
                     progressUpdater.updateStatus("Process " + dimString);
