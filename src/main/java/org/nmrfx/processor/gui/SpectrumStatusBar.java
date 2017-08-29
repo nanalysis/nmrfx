@@ -92,7 +92,6 @@ public class SpectrumStatusBar {
     ChangeListener<Integer> planeListener;
     Pane filler1 = new Pane();
     Pane filler2 = new Pane();
-    Pane filler3 = new Pane();
     static String[] rowNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
     MenuButton cursorMenuButton = new MenuButton();
     Cursor currentCursor = Cursor.CROSSHAIR;
@@ -429,7 +428,6 @@ public class SpectrumStatusBar {
         }
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);
-        HBox.setHgrow(filler3, Priority.ALWAYS);
         if (mode > 1) {
             nodes.add(dimMenus[0]);
         }
@@ -448,7 +446,9 @@ public class SpectrumStatusBar {
             nodes.add(dimMenus[i]);
             nodes.add(planePPMField[i - 2]);
             nodes.add(planeSpinner[i - 2]);
-            nodes.add(filler3);
+            Pane nodeFiller = new Pane();
+            HBox.setHgrow(nodeFiller, Priority.ALWAYS);
+            nodes.add(nodeFiller);
         }
         if (mode == 0) {
             nodes.add(complexStatus);
