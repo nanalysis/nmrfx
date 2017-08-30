@@ -2432,7 +2432,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         return function;
     }
 
-    protected void exportVectorGraphics(String fileName) {
+    protected void exportVectorGraphics(String fileName) throws IOException {
         Dataset dataset = getDataset();
         if (dataset == null) {
             System.out.println("no dataset");
@@ -2462,7 +2462,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         }
     }
 
-    public void printSpectrum() {
+    public void printSpectrum() throws IOException {
         Dataset dataset = getDataset();
         if (dataset == null) {
             return;
