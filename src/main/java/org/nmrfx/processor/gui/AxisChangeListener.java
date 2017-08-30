@@ -63,8 +63,8 @@ public class AxisChangeListener implements ChangeListener<Number> {
                     limitProp.setValue(formatter.format(newBound));
                 }
                 if (axNum >= 2) {
-                    int pt1 = (int) chart.axes[2].getLowerBound();
-                    int pt2 = (int) chart.axes[2].getUpperBound();
+                    int pt1 = (int) chart.axes[axNum].getLowerBound();
+                    int pt2 = (int) chart.axes[axNum].getUpperBound();
                     int center = (pt1 + pt2) / 2;
                     chart.controller.getStatusBar().updatePlaneSpinner(center, axNum);
                 }
