@@ -83,13 +83,13 @@ public class SpectrumStatusBar {
     TextField[] planePPMField = new TextField[maxSpinners];
     Spinner[] planeSpinner = new Spinner[maxSpinners];
     MenuButton[] dimMenus = new MenuButton[maxSpinners + 2];
+    ChangeListener<Integer>[] planeListeners = new ChangeListener[maxSpinners];
     ToolBar btoolBar;
     StackPane[][] crossTextIcons = new StackPane[2][2];
     StackPane[][] limitTextIcons = new StackPane[2][2];
     boolean[][] iconStates = new boolean[2][2];
     private SpinnerValueFactory.ListSpinnerValueFactory<String> spinFactory = null;
     ChangeListener<String> vecNumListener;
-    ChangeListener<Integer> planeListener;
     Pane filler1 = new Pane();
     Pane filler2 = new Pane();
     static String[] rowNames = {"X", "Y", "Z", "A", "B", "C", "D", "E"};
@@ -146,11 +146,6 @@ public class SpectrumStatusBar {
         Pane filler = new Pane();
         HBox.setHgrow(filler, Priority.ALWAYS);
         btoolBar.getItems().add(filler);
-        planeListener = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
-            if ((newValue != null) && !newValue.equals(oldValue)) {
-                updatePlane(newValue);
-            }
-        };
 
         for (int i = 0; i < planePPMField.length; i++) {
             Spinner spinner = planeSpinner[i];
@@ -158,10 +153,15 @@ public class SpectrumStatusBar {
             spinner.setPrefWidth(75);
             spinner.setOnScroll(e -> scrollPlane(e, spinner));
             planePPMField[i].setPrefWidth(60);
-            final int iPlane = i;
+            final int iPlane = i + 2;
+            planeListeners[i] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
+                if ((newValue != null) && !newValue.equals(oldValue)) {
+                    updatePlane(iPlane, newValue);
+                }
+            };
 
             SpinnerValueFactory<Integer> planeFactory = (SpinnerValueFactory<Integer>) planeSpinner[i].getValueFactory();
-            planeFactory.valueProperty().addListener(planeListener);
+            planeFactory.valueProperty().addListener(planeListeners[i]);
 
             planePPMField[i].setOnScroll(e -> scrollPlane(e, spinner));
         }
@@ -336,7 +336,7 @@ public class SpectrumStatusBar {
 
     public void updatePlaneSpinner(int plane, int axNum) {
         SpinnerValueFactory<Integer> planeFactory = (SpinnerValueFactory<Integer>) planeSpinner[axNum - 2].getValueFactory();
-        planeFactory.valueProperty().removeListener(planeListener);
+        planeFactory.valueProperty().removeListener(planeListeners[axNum - 2]);
         planeFactory.setValue(plane);
         PolyChart chart = controller.getActiveChart();
         ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
@@ -345,7 +345,7 @@ public class SpectrumStatusBar {
             double ppm = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, axNum, plane);
             updatePlanePPM(ppm, axNum);
         }
-        planeFactory.valueProperty().addListener(planeListener);
+        planeFactory.valueProperty().addListener(planeListeners[axNum - 2]);
 
     }
 
@@ -360,15 +360,15 @@ public class SpectrumStatusBar {
         planeFactory.increment(nPlanes);
     }
 
-    void updatePlane(int plane) {
-        int pt1 = (int) controller.getActiveChart().axes[2].getLowerBound();
-        int pt2 = (int) controller.getActiveChart().axes[2].getUpperBound();
+    void updatePlane(int iDim, int plane) {
+        int pt1 = (int) controller.getActiveChart().axes[iDim].getLowerBound();
+        int pt2 = (int) controller.getActiveChart().axes[iDim].getUpperBound();
         int center = (pt1 + pt2) / 2;
         int delta = center - pt1;
         if (pt1 != (plane - delta)) {
             pt1 = plane - delta;
             pt2 = plane + delta;
-            controller.getActiveChart().setAxis(2, pt1, pt2);
+            controller.getActiveChart().setAxis(iDim, pt1, pt2);
             controller.getActiveChart().refresh();
         }
     }
