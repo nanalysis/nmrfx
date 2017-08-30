@@ -59,7 +59,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
      * @param raFile The Random access file that actually stores data
      * @param writable true if the mapping should be writable
      */
-    public BigMappedMatrixFile(final Dataset dataset, final RandomAccessFile raFile, final boolean writable) {
+    public BigMappedMatrixFile(final Dataset dataset, final RandomAccessFile raFile, final boolean writable) throws IOException {
         this.raFile = raFile;
         blockSize = dataset.getBlockSizes();
         dataType = dataset.getDataType();
@@ -83,7 +83,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
             sizes[i] = dataset.getSize(i);
             // strides only relevant if no block header and not submatrix
             if (i > 0) {
-                strides[i] = strides[i-1]*sizes[i-1];
+                strides[i] = strides[i - 1] * sizes[i - 1];
             }
         }
         totalSize = matSize / BYTES;
@@ -95,6 +95,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
             }
             ByteOrder byteOrder = dataset.getByteOrder();
             MapInfo mapInfo = new MapInfo(offset + headerSize, size2, mapMode, byteOrder);
+            mapInfo.mapIt(raFile);
             mappings.add(mapInfo);
         }
     }
@@ -189,7 +190,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
             for (int size : sizes) {
                 sBuilder.append(size).append(" ");
             }
-            throw new IOException("getFloat map range error offsets " + sBuilder.toString() + "pos " + p + " " + mapN + " " + offN + " " + totalSize);
+            throw new IOException("getFloat map range error offsets " + sBuilder.toString() + "pos " + p + " " + mapN + " " + offN + " " + totalSize + " " + e.getMessage());
         }
     }
 
@@ -227,6 +228,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
             }
         } catch (Exception e) {
         } finally {
+            System.out.println("close rafile");
             raFile.close();
         }
     }
