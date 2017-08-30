@@ -518,7 +518,7 @@ public class Dataset extends DoubleVector {
      *
      * @param writable The new writable state for the file
      */
-    public void changeWriteMode(boolean writable) {
+    public void changeWriteMode(boolean writable) throws IOException {
         if (dataFile != null) {
             if (writable != dataFile.isWritable()) {
                 if (dataFile.isWritable()) {
