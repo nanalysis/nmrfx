@@ -188,7 +188,7 @@ public class DrawSpectrum {
             };
         }
 
-        void drawNow(Task task, DatasetAttributes fileData) {
+        void drawNow(Task task, DatasetAttributes fileData) throws IOException {
             int nDrawLevels = 1;
 //        long startTime = System.currentTimeMillis();
             double[] offset = {0, 0};
@@ -244,7 +244,7 @@ public class DrawSpectrum {
         }
     }
 
-    boolean getContours(DatasetAttributes fileData, Contour[] contours, int iChunk, double[] offset, float[] levels) {
+    boolean getContours(DatasetAttributes fileData, Contour[] contours, int iChunk, double[] offset, float[] levels) throws IOException {
         StringBuffer chunkLabel = new StringBuffer();
         chunkLabel.setLength(0);
         int[][] apt = new int[fileData.theFile.getNDim()][2];
@@ -258,8 +258,7 @@ public class DrawSpectrum {
         try {
             z = fileData.Matrix2(fileData.mChunk, chunkLabel.toString(), apt);
         } catch (IOException ioE) {
-            return false;
-
+            throw ioE;
         }
         if (z == null) {
             return false;
