@@ -647,14 +647,24 @@ public class FXMLController implements Initializable {
         fileChooser.setInitialDirectory(getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
-            getActiveChart().exportVectorGraphics(selectedFile.toString());
+            try {
+                getActiveChart().exportVectorGraphics(selectedFile.toString());
+            } catch (IOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+            }
         }
         stage.setResizable(true);
     }
 
     @FXML
     private void printAction(ActionEvent event) {
-        getActiveChart().printSpectrum();
+        try {
+            getActiveChart().printSpectrum();
+        } catch (IOException ex) {
+            ExceptionDialog eDialog = new ExceptionDialog(ex);
+            eDialog.showAndWait();
+        }
     }
 
     @FXML
