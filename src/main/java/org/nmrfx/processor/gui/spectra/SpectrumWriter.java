@@ -98,12 +98,12 @@ public class SpectrumWriter {
 
     }
 
-    public static void printNDSpectrum(DrawSpectrum drawSpectrum) {
+    public static void printNDSpectrum(DrawSpectrum drawSpectrum) throws IOException {
         GraphicsIO gIO = writeNDSpectrum(drawSpectrum);
         printGraphics(gIO);
     }
 
-    public static void writeNDSpectrum(DrawSpectrum drawSpectrum, String fileName) {
+    public static void writeNDSpectrum(DrawSpectrum drawSpectrum, String fileName) throws IOException {
         GraphicsIO gIO = writeNDSpectrum(drawSpectrum);
         if (gIO instanceof PDFWriter) {
             PDFWriter writer = (PDFWriter) gIO;
@@ -116,7 +116,7 @@ public class SpectrumWriter {
 
     }
 
-    public static GraphicsIO writeNDSpectrum(DrawSpectrum drawSpectrum) {
+    public static GraphicsIO writeNDSpectrum(DrawSpectrum drawSpectrum) throws IOException {
         double[] lineWidth = new double[2];
         AXMODE[] axModes = drawSpectrum.getAxModes();
         NMRAxis[] axes = drawSpectrum.getAxes();
