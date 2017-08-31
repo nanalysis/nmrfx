@@ -189,9 +189,11 @@ public class MainApp extends Application {
         }
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
+        MenuItem svgMenuItem = new MenuItem("Export SVG...");
+        svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
         MenuItem savePeakListMenuItem = new MenuItem("Save PeakLists");
         savePeakListMenuItem.setOnAction(e -> savePeakLists());
-        fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), pdfMenuItem, savePeakListMenuItem);
+        fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, savePeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem deleteItem = new MenuItem("Delete Spectrum");

@@ -33,7 +33,7 @@ import javafx.scene.text.Font;
  */
 public interface GraphicsIO {
 
-    public void create(boolean landScape) throws GraphicsIOException;
+    public void create(boolean landScape, String fileName) throws GraphicsIOException;
 
     public void drawText(String text, double x, double y) throws GraphicsIOException;
 
@@ -57,7 +57,7 @@ public interface GraphicsIO {
 
     public void drawRect(double x, double y, double w, double h) throws GraphicsIOException;
 
-    public void saveFile(String fileName) throws GraphicsIOException;
+    public void saveFile() throws GraphicsIOException;
 
     public void clipRect(double x, double y, double w, double h) throws GraphicsIOException;
 

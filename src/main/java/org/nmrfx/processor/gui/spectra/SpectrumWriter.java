@@ -37,7 +37,7 @@ import javax.swing.SwingUtilities;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.printing.PDFPageable;
-import org.nmrfx.processor.gui.PolyChart.DISDIM;
+import org.nmrfx.processor.gui.graphicsio.SVGWriter;
 
 /**
  *
@@ -47,28 +47,46 @@ public class SpectrumWriter {
 
     static double ticSize = 10;
 
-    public static void writeVec(DatasetAttributes datasetAttributes, Vec[] vecs, String fileName, NMRAxisLimits[] axes, AXMODE[] axModes) {
-        GraphicsIO gIO = write(datasetAttributes, vecs, axes, axModes);
+    private static GraphicsIO getGraphicsIO(String fileType) throws GraphicsIOException {
+        GraphicsIO gIO = null;
+        switch (fileType) {
+            case "pdf":
+                gIO = new PDFWriter();
+                break;
+            case "svg":
+                gIO = new SVGWriter();
+                break;
+            default:
+                throw new GraphicsIOException(("Invalid filetype " + fileType));
+        }
+        return gIO;
+    }
+
+    public static void writeVec(DatasetAttributes datasetAttributes, Vec[] vecs, String fileName, NMRAxisLimits[] axes, AXMODE[] axModes, String fileType) throws GraphicsIOException {
+        GraphicsIO gIO = getGraphicsIO(fileType);
+        gIO.create(true, fileName);
+
+        write(gIO, datasetAttributes, vecs, axes, axModes);
         if (gIO instanceof PDFWriter) {
             PDFWriter writer = (PDFWriter) gIO;
             try {
-                writer.saveFile(fileName);
+                writer.saveFile();
             } catch (GraphicsIOException ioE) {
 
             }
         }
     }
 
-    public static void printVec(DatasetAttributes datasetAttributes, Vec[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) {
-        GraphicsIO gIO = write(datasetAttributes, vecs, axes, axModes);
+    public static void printVec(DatasetAttributes datasetAttributes, Vec[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) throws GraphicsIOException {
+        GraphicsIO gIO = new PDFWriter();
+        gIO.create(true, null);
+        write(gIO, datasetAttributes, vecs, axes, axModes);
         printGraphics(gIO);
     }
 
-    public static GraphicsIO write(DatasetAttributes datasetAttributes, Vec[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) {
-        GraphicsIO writer = new PDFWriter();
+    public static void write(GraphicsIO writer, DatasetAttributes datasetAttributes, Vec[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) {
 
         try {
-            writer.create(true);
             double pageWidth = writer.getWidth();
             double pageHeight = writer.getHeight();
             double leftBorder = 100;
@@ -92,42 +110,28 @@ public class SpectrumWriter {
                 writer.drawPolyLine(xy[0], xy[1]);
             }
         } catch (GraphicsIOException ioE) {
-            return null;
+            return;
         }
-        return writer;
-
     }
 
-    public static void printNDSpectrum(DrawSpectrum drawSpectrum) throws IOException {
-        GraphicsIO gIO = writeNDSpectrum(drawSpectrum);
+    public static void printNDSpectrum(DrawSpectrum drawSpectrum) throws IOException, GraphicsIOException {
+        GraphicsIO gIO = new PDFWriter();
+        gIO.create(true, null);
+        writeNDSpectrum(gIO, drawSpectrum);
         printGraphics(gIO);
     }
 
-    public static void writeNDSpectrum(DrawSpectrum drawSpectrum, String fileName) throws IOException {
-        GraphicsIO gIO = writeNDSpectrum(drawSpectrum);
-        if (gIO instanceof PDFWriter) {
-            PDFWriter writer = (PDFWriter) gIO;
-            try {
-                writer.saveFile(fileName);
-            } catch (GraphicsIOException ioE) {
-
-            }
-        }
-
+    public static void writeNDSpectrum(DrawSpectrum drawSpectrum, String fileName, String fileType) throws IOException, GraphicsIOException {
+        GraphicsIO gIO = getGraphicsIO(fileType);
+        gIO.create(true, fileName);
+        writeNDSpectrum(gIO, drawSpectrum);
+        gIO.saveFile();
     }
 
-    public static GraphicsIO writeNDSpectrum(DrawSpectrum drawSpectrum) throws IOException {
+    public static void writeNDSpectrum(GraphicsIO writer, DrawSpectrum drawSpectrum) throws IOException {
         double[] lineWidth = new double[2];
         AXMODE[] axModes = drawSpectrum.getAxModes();
         NMRAxis[] axes = drawSpectrum.getAxes();
-
-        GraphicsIO writer = new PDFWriter();
-
-        try {
-            writer.create(true);
-        } catch (GraphicsIOException ioE) {
-            return null;
-        }
 
         double pageWidth = writer.getWidth();
         double pageHeight = writer.getHeight();
@@ -197,8 +201,6 @@ public class SpectrumWriter {
         } catch (GraphicsIOException ioE) {
 
         }
-        return writer;
-
     }
 
     private static void drawContours(DatasetAttributes dataGenerator, AXMODE[] axModes, Contour contours, final int coordIndex, GraphicsIO g2, NMRAxisLimits[] axes) throws GraphicsIOException {

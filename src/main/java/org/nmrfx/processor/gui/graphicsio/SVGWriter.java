@@ -23,101 +23,343 @@
  */
 package org.nmrfx.processor.gui.graphicsio;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 /**
  *
  * @author brucejohnson
  */
+
+/*
+
+<?xml version="1.0" encoding="utf-8" ?>
+<svg baseProfile="tiny" height="100%" version="1.2" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink"><defs />
+
+<g font-family="Verdana" font-size="45"><text fill="red" x="0" y="0.2"><tspan fill="green">A</tspan><tspan fill="red">B</tspan><tspan fill="blue">C</tspan></text></g></svg>
+ */
 public class SVGWriter implements GraphicsIO {
 
     StringBuilder doc = new StringBuilder();
-    double pageWidth = 800;
-    double pageHeight = 600;
+    double pageWidth = 1024;
+    double pageHeight = 1024;
     double fontSize = 12;
     String fontFamilyName = "Helvetica";
+    Color fill = Color.BLACK;
+    Color stroke = Color.BLACK;
+    Font font = Font.getDefault();
+    double lineWidth = 1.0;
+    StringBuilder sBuilder = new StringBuilder();
+    FileOutputStream stream;
+    XMLStreamWriter writer;
+    String clipPath = "";
 
     @Override
-    public void create(boolean landScape) throws GraphicsIOException {
-        this.pageWidth = 800;
-        this.pageHeight = 600;
+    public void create(boolean landScape, String fileName) throws GraphicsIOException {
+        try {
+            this.pageWidth = 1024;
+            this.pageHeight = 1024;
+            XMLOutputFactory factory = XMLOutputFactory.newFactory();
+            try {
+                stream = new FileOutputStream(fileName);
+            } catch (FileNotFoundException ex) {
+                throw new GraphicsIOException(ex.getMessage());
+            }
+            try {
+                writer = factory.createXMLStreamWriter(stream);
+            } catch (XMLStreamException ex) {
+                throw new GraphicsIOException(ex.getMessage());
+            }
+            writer.writeStartDocument();
+            writer.writeCharacters("\n");
+            writer.writeStartElement("svg");
+            writer.writeAttribute("baseProfile", "tiny");
+            writer.writeAttribute("width", format(pageWidth));
+            writer.writeAttribute("height", format(pageHeight));
+            writer.writeAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
+
     }
 
     @Override
     public void drawText(String text, double x, double y) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            writer.writeStartElement("text");
+            writer.writeAttribute("fill", "black");
+            writer.writeAttribute("x", format(x));
+            writer.writeAttribute("y", format(y));
+            writer.writeCharacters(text);
+            writer.writeEndElement();
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
     }
 
     @Override
     public void drawText(String text, double x, double y, String anchor, double rotate) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        showCenteredText(text, x, y, anchor, rotate);
+    }
+
+    public void showCenteredText(String text, double x, double y, String anchor, double rotate) throws GraphicsIOException, IllegalArgumentException {
+        int aLen = anchor.length();
+        //  <text fill="black" x="295.7" y="708.0" text-anchor="middle" dy="14">8.0</text>
+        String textAnchor = "start";
+        double dYf = 0.0;
+        if (aLen > 0) {
+            switch (anchor) {
+                case "nw":
+                    textAnchor = "start";
+                    dYf = 1.0;
+                    break;
+                case "n":
+                    textAnchor = "middle";
+                    dYf = 1.0;
+                    break;
+                case "ne":
+                    textAnchor = "end";
+                    dYf = 1.0;
+                    break;
+                case "e":
+                    textAnchor = "end";
+                    dYf = 0.5;
+                    break;
+                case "se":
+                    textAnchor = "end";
+                    dYf = 0.0;
+                    break;
+                case "s":
+                    textAnchor = "middle";
+                    dYf = 0.0;
+                    break;
+                case "sw":
+                    textAnchor = "start";
+                    dYf = 0.0;
+                    break;
+                case "w":
+                    textAnchor = "start";
+                    dYf = 0.5;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid anchor \"" + anchor + "\"");
+            }
+        }
+
+        try {
+            writer.writeStartElement("text");
+            writer.writeAttribute("fill", "black");
+            writer.writeAttribute("x", format(x));
+            writer.writeAttribute("y", format(y));
+            writer.writeAttribute("text-anchor", textAnchor);
+            writer.writeAttribute("dy", format(dYf * fontSize));
+            if (rotate != 0.0) {
+                String transform = String.format("rotate(%f,%f,%f)", -rotate, x, y);
+                writer.writeAttribute("transform", transform);
+            }
+            writer.writeCharacters(text);
+            writer.writeEndElement();
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
+
     }
 
     @Override
     public void drawLine(double x1, double y1, double x2, double y2) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        // <line x1="0"  y1="10" x2="0"   y2="100" style="stroke:#006600;"/>
+        try {
+            writer.writeEmptyElement("line");
+            writer.writeAttribute("x1", format(x1));
+            writer.writeAttribute("y1", format(y1));
+            writer.writeAttribute("x2", format(x2));
+            writer.writeAttribute("y2", format(y2));
+            writer.writeAttribute("style", "stroke:black;");
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
     }
 
     @Override
     public void drawPolyLine(double[] x, double[] y) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //<polyline points="0,0  30,0  15,30" style="stroke:#006600;"/>   
+        StringBuilder pointBuilder = new StringBuilder();
+        for (int i = 0; i < x.length; i++) {
+            pointBuilder.append(format(x[i]));
+            pointBuilder.append(',');
+            pointBuilder.append(format(y[i]));
+            pointBuilder.append(' ');
+        }
+        try {
+            writer.writeEmptyElement("polyline");
+            writer.writeAttribute("points", pointBuilder.toString());
+            writer.writeAttribute("style", getStyle());
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
     }
 
     @Override
     public void drawPolyLine(ArrayList<Double> values) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //<polyline points="0,0  30,0  15,30" style="stroke:#006600;"/>   
+        StringBuilder pointBuilder = new StringBuilder();
+        for (int i = 0; i < values.size(); i += 2) {
+            pointBuilder.append(format(values.get(i)));
+            pointBuilder.append(',');
+            pointBuilder.append(format(values.get(i + 1)));
+            pointBuilder.append(' ');
+        }
+        try {
+            writer.writeEmptyElement("polyline");
+            writer.writeAttribute("points", pointBuilder.toString());
+            writer.writeAttribute("style", getStyle());
+
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
     }
 
     @Override
     public void drawPolyLines(ArrayList<Double> values) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        StringBuilder pointBuilder = new StringBuilder();
+        for (int i = 0; i < values.size(); i += 4) {
+            pointBuilder.append('M');
+            pointBuilder.append(format(values.get(i)));
+            pointBuilder.append(',');
+            pointBuilder.append(format(values.get(i + 1)));
+            pointBuilder.append(' ');
+            pointBuilder.append('L');
+            pointBuilder.append(format(values.get(i + 2)));
+            pointBuilder.append(',');
+            pointBuilder.append(format(values.get(i + 3)));
+            pointBuilder.append(' ');
+        }
+        try {
+            writer.writeEmptyElement("path");
+            writer.writeAttribute("d", pointBuilder.toString());
+            writer.writeAttribute("style", getStyle());
+
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
     }
 
     @Override
     public void setFont(Font font) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.font = font;
     }
 
     @Override
     public void setStroke(Color color) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        stroke = color;
+
     }
 
     @Override
     public void setFill(Color color) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        fill = color;
     }
 
     @Override
     public void setLineWidth(double width) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        lineWidth = width;
     }
 
     @Override
     public void drawRect(double x, double y, double w, double h) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            writer.writeEmptyElement("rect");
+            writer.writeAttribute("x", format(x));
+            writer.writeAttribute("y", format(y));
+            writer.writeAttribute("height", format(h));
+            writer.writeAttribute("width", format(w));
+            writer.writeCharacters("\n");
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
     }
 
     @Override
-    public void saveFile(String fileName) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void saveFile() throws GraphicsIOException {
+        try {
+            writer.writeEndDocument();
+            writer.flush();
+            writer.close();
+//            stream.flush();
+//            stream.close();
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
     }
 
     @Override
     public void clipRect(double x, double y, double w, double h) throws GraphicsIOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            writer.writeStartElement("defs");
+            writer.writeStartElement("clipPath");
+            writer.writeAttribute("id", "clipPath1");
+            writer.writeStartElement("rect");
+            writer.writeAttribute("x", String.valueOf(x));
+            writer.writeAttribute("y", String.valueOf(y));
+            writer.writeAttribute("height", String.valueOf(h));
+            writer.writeAttribute("width", String.valueOf(w));
+            writer.writeEndElement();
+//            writer.writeCharacters("\n");
+            writer.writeEndElement();
+//            writer.writeCharacters("\n");
+            writer.writeEndElement();
+//            writer.writeCharacters("\n");
+
+            clipPath = "clip-path: url(#clipPath1);";
+        } catch (XMLStreamException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
     }
 
     @Override
     public double getWidth() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
+        return pageWidth;
     }
 
     @Override
     public double getHeight() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return pageHeight;
     }
 
+    private String format(double value) {
+        return String.format("%.2f", value);
+    }
+
+    private String getStyle() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("stroke: ");
+        builder.append("black");
+        builder.append(';');
+        builder.append("fill: ");
+        builder.append("none");
+        builder.append(';');
+        builder.append("stroke-width: ");
+        builder.append(format(lineWidth));
+        builder.append(';');
+        if (clipPath.length() != 0) {
+            builder.append(clipPath);
+        }
+        return builder.toString();
+
+    }
 }

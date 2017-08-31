@@ -37,6 +37,7 @@ public class PDFWriter implements GraphicsIO {
 
     PDPageContentStream contentStream;
     PDDocument doc = null;
+    String fileName;
     PDFont font = PDType1Font.HELVETICA;
     float fontSize = 12;
     float pageWidth;
@@ -50,9 +51,10 @@ public class PDFWriter implements GraphicsIO {
         super();
     }
 
-    public void create(boolean landScape) throws GraphicsIOException {
+    public void create(boolean landScape, String fileName) throws GraphicsIOException {
         // the document
         this.landScape = landScape;
+        this.fileName = fileName;
         doc = new PDDocument();
         try {
             PDPage page = new PDPage(PDRectangle.LETTER);
@@ -332,11 +334,11 @@ public class PDFWriter implements GraphicsIO {
 
     }
 
-    public void saveFile(String outfile) throws GraphicsIOException {
+    public void saveFile() throws GraphicsIOException {
         try {
             contentStream.close();
 
-            doc.save(outfile);
+            doc.save(fileName);
 
             if (doc != null) {
                 doc.close();

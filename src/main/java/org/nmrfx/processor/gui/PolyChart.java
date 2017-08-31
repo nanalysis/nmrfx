@@ -84,7 +84,9 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
+import org.controlsfx.dialog.ExceptionDialog;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
+import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
 public class PolyChart<X, Y> extends XYChart<X, Y> {
 
@@ -2432,7 +2434,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         return function;
     }
 
-    protected void exportVectorGraphics(String fileName) throws IOException {
+    protected void exportVectorGraphics(String fileName, String fileType) throws IOException {
         Dataset dataset = getDataset();
         if (dataset == null) {
             System.out.println("no dataset");
@@ -2455,10 +2457,20 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             }
             if (specVec != null) {
                 Vec[] vecs = {specVec};
-                SpectrumWriter.writeVec(datasetAttributes, vecs, fileName, axes, axModes);
+                try {
+                    SpectrumWriter.writeVec(datasetAttributes, vecs, fileName, axes, axModes, fileType);
+                } catch (GraphicsIOException ex) {
+                    ExceptionDialog eDialog = new ExceptionDialog(ex);
+                    eDialog.showAndWait();
+                }
             }
         } else {
-            SpectrumWriter.writeNDSpectrum(drawSpectrum, fileName);
+            try {
+                SpectrumWriter.writeNDSpectrum(drawSpectrum, fileName, fileType);
+            } catch (GraphicsIOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+            }
         }
     }
 
@@ -2474,9 +2486,19 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             Vec vec = dataset.getVec();
             Vec[] vecs = {vec};
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-            SpectrumWriter.printVec(datasetAttributes, vecs, axes, axModes);
+            try {
+                SpectrumWriter.printVec(datasetAttributes, vecs, axes, axModes);
+            } catch (GraphicsIOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+            }
         } else {
-            SpectrumWriter.printNDSpectrum(drawSpectrum);
+            try {
+                SpectrumWriter.printNDSpectrum(drawSpectrum);
+            } catch (GraphicsIOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+            }
         }
     }
 

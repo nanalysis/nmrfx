@@ -648,7 +648,24 @@ public class FXMLController implements Initializable {
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                getActiveChart().exportVectorGraphics(selectedFile.toString());
+                getActiveChart().exportVectorGraphics(selectedFile.toString(), "pdf");
+            } catch (IOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+            }
+        }
+        stage.setResizable(true);
+    }
+
+    @FXML
+    void exportSVGAction(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export to SVG");
+        fileChooser.setInitialDirectory(getInitialDirectory());
+        File selectedFile = fileChooser.showSaveDialog(null);
+        if (selectedFile != null) {
+            try {
+                getActiveChart().exportVectorGraphics(selectedFile.toString(),"svg");
             } catch (IOException ex) {
                 ExceptionDialog eDialog = new ExceptionDialog(ex);
                 eDialog.showAndWait();
