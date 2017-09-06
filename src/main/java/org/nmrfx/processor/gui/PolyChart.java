@@ -104,6 +104,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     Polyline ySliceLine = new Polyline();
     Canvas canvas;
     Canvas peakCanvas;
+    Canvas annoCanvas = null;
     Path bcPath = new Path();
     Line[][] crossHairLines = new Line[2][2];
     double[][] crossHairPositions = new double[2][2];
@@ -120,6 +121,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     final DrawPeaks drawPeaks;
     SliceAttributes sliceAttributes = new SliceAttributes();
     DatasetAttributes lastDatasetAttr = null;
+    List<CanvasAnnotation> canvasAnnotations = new ArrayList<>();
 
     int iVec = 0;
 //    Vec vec;
@@ -711,6 +713,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     void setActiveChart() {
         activeChart = this;
         controller.setActiveChart(this);
+    }
+
+    public static PolyChart getActiveChart() {
+        return activeChart;
     }
 
     protected void handleCrossHair(MouseEvent mEvent, boolean selectCrossNum) {
@@ -1621,6 +1627,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
         peakGC.clearRect(0, 0, width, height);
 
+        if (annoCanvas != null) {
+            annoCanvas.setWidth(width);
+            annoCanvas.setHeight(height);
+            GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
+            annoGC.clearRect(0, 0, width, height);
+        }
+
 //        datasetAttributesList.clear();
         ArrayList<DatasetAttributes> draw2DList = new ArrayList<>();
         datasetAttributesList.stream().forEach(datasetAttributes -> {
@@ -1679,8 +1692,18 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         if (!datasetAttributesList.isEmpty()) {
             drawPeakLists(true);
         }
+        double[][] bounds = {{0, canvas.getWidth() - 1}, {0, canvas.getHeight() - 1}};
+        double[][] world = {{axes[0].getLowerBound(), axes[0].getUpperBound()},
+        {axes[1].getLowerBound(), axes[1].getUpperBound()}};
+        canvasAnnotations.forEach((anno) -> {
+            anno.draw(peakCanvas, bounds, world);
+        });
 
         refreshCrossHairs();
+    }
+
+    public void addAnnotation(CanvasAnnotation anno) {
+        canvasAnnotations.add(anno);
     }
 
     void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContext gC, int iMode, int nPoints, double[][] xy) {
@@ -2122,7 +2145,16 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         getPlotChildren().add(3, xSliceLine);
         getPlotChildren().add(4, ySliceLine);
         layoutChildren();
+    }
 
+    public void addAnnoCanvas() {
+        if (annoCanvas != null) {
+            double width = xAxis.getWidth();
+            double height = yAxis.getHeight();
+            annoCanvas = new Canvas(width, height);
+            annoCanvas.setCache(true);
+            annoCanvas.setMouseTransparent(true);
+        }
     }
 
     public void hideCrossHairs() {
