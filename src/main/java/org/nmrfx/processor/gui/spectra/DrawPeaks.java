@@ -671,6 +671,9 @@ public class DrawPeaks {
     }
 
     protected boolean pick1DPeak(PeakListAttributes peakAttr, Peak peak, int[] dim, double hitX, double hitY) {
+        if ((dim[0] < 0) || (dim[0] >= peak.peakDim.length)) {
+            return false;
+        }
         String label = getLabel(peak, peakAttr);
         double x = peak.peakDim[dim[0]].getChemShiftValue();
         double x1 = xAxis.getDisplayPosition(x);
@@ -736,6 +739,9 @@ public class DrawPeaks {
 //    }
     private boolean pick2DPeak(PeakListAttributes peakAttr, DatasetAttributes dataAttr, GraphicsContext g2, int[] dim, Peak peak, double x,
             double y) {
+        if ((dim[0] < 0) || (dim[0] >= peak.peakDim.length)) {
+            return false;
+        }
         double[] ctr = {0.0, 0.0};
         double[] bou = {0.0, 0.0};
 
@@ -847,6 +853,9 @@ public class DrawPeaks {
 //    }
 
     void draw1DPeak(PeakListAttributes peakAttr, GraphicsContext g2, int[] dim, Peak peak, int colorMode, boolean selected) {
+        if ((dim[0] < 0) || (dim[0] >= peak.peakDim.length)) {
+            return;
+        }
         String label = getLabel(peak, peakAttr);
         float x = peak.peakDim[dim[0]].getChemShiftValue();
         float intensity = peak.getIntensity();
