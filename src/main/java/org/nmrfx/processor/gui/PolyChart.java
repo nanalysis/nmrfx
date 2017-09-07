@@ -2472,6 +2472,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             System.out.println("no dataset");
             return;
         }
+        double width = getWidth();
+        double height = getHeight();
         if (is1D()) {
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
 
@@ -2490,7 +2492,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             if (specVec != null) {
                 Vec[] vecs = {specVec};
                 try {
-                    SpectrumWriter.writeVec(datasetAttributes, vecs, fileName, axes, axModes, fileType);
+                    SpectrumWriter.writeVec(datasetAttributes, width, height, vecs, fileName, axes, axModes, fileType);
                 } catch (GraphicsIOException ex) {
                     ExceptionDialog eDialog = new ExceptionDialog(ex);
                     eDialog.showAndWait();
@@ -2498,7 +2500,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             }
         } else {
             try {
-                SpectrumWriter.writeNDSpectrum(drawSpectrum, fileName, fileType);
+                SpectrumWriter.writeNDSpectrum(drawSpectrum, width, height, fileName, fileType);
             } catch (GraphicsIOException ex) {
                 ExceptionDialog eDialog = new ExceptionDialog(ex);
                 eDialog.showAndWait();

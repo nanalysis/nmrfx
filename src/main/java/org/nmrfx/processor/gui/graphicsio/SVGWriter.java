@@ -62,9 +62,14 @@ public class SVGWriter implements GraphicsIO {
 
     @Override
     public void create(boolean landScape, String fileName) throws GraphicsIOException {
+        create(landScape, 1024, 1024, fileName);
+    }
+
+    @Override
+    public void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException {
         try {
-            this.pageWidth = 1024;
-            this.pageHeight = 1024;
+            this.pageWidth = width;
+            this.pageHeight = height;
             XMLOutputFactory factory = XMLOutputFactory.newFactory();
             try {
                 stream = new FileOutputStream(fileName);

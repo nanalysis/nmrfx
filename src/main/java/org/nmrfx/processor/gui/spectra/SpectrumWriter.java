@@ -62,19 +62,12 @@ public class SpectrumWriter {
         return gIO;
     }
 
-    public static void writeVec(DatasetAttributes datasetAttributes, Vec[] vecs, String fileName, NMRAxisLimits[] axes, AXMODE[] axModes, String fileType) throws GraphicsIOException {
+    public static void writeVec(DatasetAttributes datasetAttributes, double width, double height, Vec[] vecs, String fileName, NMRAxisLimits[] axes, AXMODE[] axModes, String fileType) throws GraphicsIOException {
         GraphicsIO gIO = getGraphicsIO(fileType);
-        gIO.create(true, fileName);
+        gIO.create(true, width, height, fileName);
 
         write(gIO, datasetAttributes, vecs, axes, axModes);
-        if (gIO instanceof PDFWriter) {
-            PDFWriter writer = (PDFWriter) gIO;
-            try {
-                writer.saveFile();
-            } catch (GraphicsIOException ioE) {
-
-            }
-        }
+        gIO.saveFile();
     }
 
     public static void printVec(DatasetAttributes datasetAttributes, Vec[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) throws GraphicsIOException {
@@ -84,33 +77,29 @@ public class SpectrumWriter {
         printGraphics(gIO);
     }
 
-    public static void write(GraphicsIO writer, DatasetAttributes datasetAttributes, Vec[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) {
+    public static void write(GraphicsIO writer, DatasetAttributes datasetAttributes, Vec[] vecs, NMRAxisLimits[] axes, AXMODE[] axModes) throws GraphicsIOException {
 
-        try {
-            double pageWidth = writer.getWidth();
-            double pageHeight = writer.getHeight();
-            double leftBorder = 100;
-            double bottomBorder = 100;
+        double pageWidth = writer.getWidth();
+        double pageHeight = writer.getHeight();
+        double leftBorder = 100;
+        double bottomBorder = 100;
 
-            double height = pageHeight - bottomBorder - bottomBorder;
-            double width = pageWidth - leftBorder - leftBorder;
+        double height = pageHeight - bottomBorder - bottomBorder;
+        double width = pageWidth - leftBorder - leftBorder;
 
-            NMRAxisIO xAxis = new NMRAxisIO(axes[0].getLowerBound(), axes[0].getUpperBound(), leftBorder, leftBorder + width);
-            xAxis.setReverse(axes[0].getReverse());
-            xAxis.setLabel(axes[0].getLabel());
-            NMRAxisIO yAxis = new NMRAxisIO(axes[1].getLowerBound(), axes[1].getUpperBound(), bottomBorder + height, bottomBorder);
-            NMRAxisIO[] axes2 = {xAxis, yAxis};
-            drawHorizontalAxis(writer, xAxis, yAxis.getStart());
+        NMRAxisIO xAxis = new NMRAxisIO(axes[0].getLowerBound(), axes[0].getUpperBound(), leftBorder, leftBorder + width);
+        xAxis.setReverse(axes[0].getReverse());
+        xAxis.setLabel(axes[0].getLabel());
+        NMRAxisIO yAxis = new NMRAxisIO(axes[1].getLowerBound(), axes[1].getUpperBound(), bottomBorder + height, bottomBorder);
+        NMRAxisIO[] axes2 = {xAxis, yAxis};
+        drawHorizontalAxis(writer, xAxis, yAxis.getStart());
 
-            writer.clipRect(xAxis.getStart(), yAxis.getStart(), width, height);
-            double[][] xy = new double[2][];
-            for (Vec vec : vecs) {
-                DrawSpectrum.drawVector(vec, xAxis, yAxis, axModes[0], xy);
-                writer.setLineWidth(datasetAttributes.getPosLineWidth());
-                writer.drawPolyLine(xy[0], xy[1]);
-            }
-        } catch (GraphicsIOException ioE) {
-            return;
+        writer.clipRect(xAxis.getStart(), yAxis.getStart(), width, height);
+        double[][] xy = new double[2][];
+        for (Vec vec : vecs) {
+            DrawSpectrum.drawVector(vec, xAxis, yAxis, axModes[0], xy);
+            writer.setLineWidth(datasetAttributes.getPosLineWidth());
+            writer.drawPolyLine(xy[0], xy[1]);
         }
     }
 
@@ -121,14 +110,14 @@ public class SpectrumWriter {
         printGraphics(gIO);
     }
 
-    public static void writeNDSpectrum(DrawSpectrum drawSpectrum, String fileName, String fileType) throws IOException, GraphicsIOException {
+    public static void writeNDSpectrum(DrawSpectrum drawSpectrum, double width, double height, String fileName, String fileType) throws IOException, GraphicsIOException {
         GraphicsIO gIO = getGraphicsIO(fileType);
-        gIO.create(true, fileName);
+        gIO.create(true, width, height, fileName);
         writeNDSpectrum(gIO, drawSpectrum);
         gIO.saveFile();
     }
 
-    public static void writeNDSpectrum(GraphicsIO writer, DrawSpectrum drawSpectrum) throws IOException {
+    public static void writeNDSpectrum(GraphicsIO writer, DrawSpectrum drawSpectrum) throws IOException, GraphicsIOException {
         double[] lineWidth = new double[2];
         AXMODE[] axModes = drawSpectrum.getAxModes();
         NMRAxis[] axes = drawSpectrum.getAxes();
@@ -151,55 +140,50 @@ public class SpectrumWriter {
         int nDrawLevels = 1;
 //        long startTime = System.currentTimeMillis();
         double[] offset = {0, 0};
-        try {
-            drawHorizontalAxis(writer, xAxis, yAxis.getStart());
-            drawVerticalAxis(writer, yAxis, xAxis.getStart());
-            writer.drawLine(xAxis.getStart(), yAxis.getEnd(), xAxis.getEnd(), yAxis.getEnd());
-            writer.drawLine(xAxis.getEnd(), yAxis.getEnd(), xAxis.getEnd(), yAxis.getStart());
-            writer.clipRect(xAxis.getStart(), yAxis.getStart(), width, height);
-            for (DatasetAttributes fileData : drawSpectrum.dataAttrList) {
-                lineWidth[0] = fileData.posLineWidthProperty().get();
-                lineWidth[1] = fileData.negLineWidthProperty().get();
-                float[] levels = DrawSpectrum.getLevels(fileData);
-                fileData.updateBounds(axModes, axes, drawSpectrum.disDim);
-                fileData.mChunk = -1;
-                do {
-                    int iChunk = fileData.mChunk + 1;
-                    final Contour[] contours = new Contour[2];
-                    contours[0] = new Contour();
-                    contours[1] = new Contour();
-                    if (drawSpectrum.getContours(fileData, contours, iChunk, offset, levels)) {
-                        for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
-                            if ((iPosNeg == 0) && !fileData.getPosDrawOn()) {
-                                continue;
-                            } else if ((iPosNeg == 1) && !fileData.getNegDrawOn()) {
-                                continue;
-                            }
-                            if (contours[iPosNeg].getLineCount() != 0) {
-                                final int jPosNeg = iPosNeg;
+        drawHorizontalAxis(writer, xAxis, yAxis.getStart());
+        drawVerticalAxis(writer, yAxis, xAxis.getStart());
+        writer.drawLine(xAxis.getStart(), yAxis.getEnd(), xAxis.getEnd(), yAxis.getEnd());
+        writer.drawLine(xAxis.getEnd(), yAxis.getEnd(), xAxis.getEnd(), yAxis.getStart());
+        writer.clipRect(xAxis.getStart(), yAxis.getStart(), width, height);
+        for (DatasetAttributes fileData : drawSpectrum.dataAttrList) {
+            lineWidth[0] = fileData.posLineWidthProperty().get();
+            lineWidth[1] = fileData.negLineWidthProperty().get();
+            float[] levels = DrawSpectrum.getLevels(fileData);
+            fileData.updateBounds(axModes, axes, drawSpectrum.disDim);
+            fileData.mChunk = -1;
+            do {
+                int iChunk = fileData.mChunk + 1;
+                final Contour[] contours = new Contour[2];
+                contours[0] = new Contour();
+                contours[1] = new Contour();
+                if (drawSpectrum.getContours(fileData, contours, iChunk, offset, levels)) {
+                    for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
+                        if ((iPosNeg == 0) && !fileData.getPosDrawOn()) {
+                            continue;
+                        } else if ((iPosNeg == 1) && !fileData.getNegDrawOn()) {
+                            continue;
+                        }
+                        if (contours[iPosNeg].getLineCount() != 0) {
+                            final int jPosNeg = iPosNeg;
 //                            System.out.println("chunk " + iChunk);
 
-                                writer.setLineWidth(lineWidth[jPosNeg]);
-                                if (jPosNeg == 0) {
-                                    writer.setStroke(fileData.getPosColor());
-                                } else {
-                                    writer.setStroke(fileData.getNegColor());
-                                }
-                                for (int iLevel = 0; iLevel < nDrawLevels; iLevel++) {
-                                    drawContours(fileData, axModes, contours[jPosNeg], iLevel, writer, axes2);
-                                }
-
+                            writer.setLineWidth(lineWidth[jPosNeg]);
+                            if (jPosNeg == 0) {
+                                writer.setStroke(fileData.getPosColor());
+                            } else {
+                                writer.setStroke(fileData.getNegColor());
                             }
+                            for (int iLevel = 0; iLevel < nDrawLevels; iLevel++) {
+                                drawContours(fileData, axModes, contours[jPosNeg], iLevel, writer, axes2);
+                            }
+
                         }
-                    } else {
-                        break;
                     }
+                } else {
+                    break;
+                }
 
-                } while (true);
-            }
-
-        } catch (GraphicsIOException ioE) {
-
+            } while (true);
         }
     }
 

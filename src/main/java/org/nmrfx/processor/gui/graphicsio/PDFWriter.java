@@ -52,6 +52,10 @@ public class PDFWriter implements GraphicsIO {
     }
 
     public void create(boolean landScape, String fileName) throws GraphicsIOException {
+
+    }
+
+    public void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException {
         // the document
         this.landScape = landScape;
         this.fileName = fileName;

@@ -33,6 +33,8 @@ import javafx.scene.text.Font;
  */
 public interface GraphicsIO {
 
+    public void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException;
+
     public void create(boolean landScape, String fileName) throws GraphicsIOException;
 
     public void drawText(String text, double x, double y) throws GraphicsIOException;
