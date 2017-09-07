@@ -38,7 +38,7 @@ public class SDFile {
     static final int FREE = 6;
     static final int VALUE = 7;
 
-    public static void read(String fileName, String fileContent)
+    public static Molecule read(String fileName, String fileContent)
             throws MoleculeIOException {
         String molName = null;
         Molecule molecule = null;
@@ -103,14 +103,14 @@ public class SDFile {
                 Molecule.makeAtomList();
                 molecule.getAtomTypes();
 
-                return;
+                return molecule;
             }
 
             if (string == null) {
                 Molecule.makeAtomList();
                 molecule.getAtomTypes();
 
-                return;
+                return molecule;
             }
 
             if (state == MOLECULE) {
