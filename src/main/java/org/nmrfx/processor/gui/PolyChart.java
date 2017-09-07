@@ -1424,12 +1424,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     }
 
     DatasetAttributes setDataset(Dataset dataset, boolean append) {
-        //System.out.println("set datset");
         SpectrumStatusBar statusBar = controller.getStatusBar();
         DatasetAttributes datasetAttributes = null;
-        System.out.println("set datset");
         if (dataset != null) {
-            System.out.println("nda " + dataset.getNDim() + " " + dataset.getNFreqDims());
+            System.out.println("set dataset with " + dataset.getNDim() + " dims " + dataset.getNFreqDims() + " freq dims");
             if ((dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1)) {
                 System.out.println("ndb " + dataset.getNDim() + " " + dataset.getNFreqDims());
                 disDimProp.set(DISDIM.OneDX);

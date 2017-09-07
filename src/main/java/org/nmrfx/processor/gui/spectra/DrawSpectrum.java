@@ -449,7 +449,6 @@ public class DrawSpectrum {
         int vecStartPoint;
         int vecEndPoint;
         double indexAxisDelta;
-        System.out.println("offset a " + offsetVec);
         if (offsetVec) {
             vecStartPoint = axMode.getIndex(vec, indexAxis.getLowerBound());
             vecEndPoint = axMode.getIndex(vec, indexAxis.getUpperBound());
@@ -492,7 +491,7 @@ public class DrawSpectrum {
         }
         double dValue = indexAxis.getLowerBound();
 
-        System.out.printf("%d %.5f %.5f %d %d %.4f %.4f\n", 0, indexAxis.getLowerBound(), indexAxis.getUpperBound(), vecStartPoint, vecEndPoint, dValue, indexAxisDelta);
+        //System.out.printf("%d %.5f %.5f %d %d %.4f %.4f\n", 0, indexAxis.getLowerBound(), indexAxis.getUpperBound(), vecStartPoint, vecEndPoint, dValue, indexAxisDelta);
         if (vecStartPoint > vecEndPoint) {
             int hold = vecStartPoint;
             vecStartPoint = vecEndPoint;
