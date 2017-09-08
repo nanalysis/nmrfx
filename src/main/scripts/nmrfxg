@@ -64,4 +64,4 @@ else
 fi
 
 export CLASSPATH
-exec "$JAVA" -Djava.awt.headless=true -DTCLLIBPATH="$TCLLIBPATH" -mx768m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
+exec "$JAVA" -Djava.awt.headless=true -DTCLLIBPATH="$TCLLIBPATH" -mx2048m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
