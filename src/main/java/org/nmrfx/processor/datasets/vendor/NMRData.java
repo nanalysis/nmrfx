@@ -647,10 +647,10 @@ public interface NMRData {
                     values.put(parName, getSequence());
                     break;
                 case "sf":
-                    values.put(parName, Double.valueOf(getSF(1)));
+                    values.put(parName, Double.valueOf(getSF(0)));
                     break;
                 case "sw":
-                    values.put(parName, Double.valueOf(getSW(1)));
+                    values.put(parName, Double.valueOf(getSW(0)));
                     break;
                 case "te":
                     values.put(parName, Double.valueOf(getTempK()));
@@ -659,7 +659,7 @@ public interface NMRData {
                     values.put(parName, Integer.valueOf(getNDim()));
                     break;
                 case "tn":
-                    values.put(parName, getTN(1));
+                    values.put(parName, getTN(0));
                     break;
                 case "vnd":
                     values.put(parName, getVendor());
