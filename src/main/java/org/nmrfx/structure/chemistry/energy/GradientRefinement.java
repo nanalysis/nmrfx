@@ -92,6 +92,13 @@ public class GradientRefinement extends Refinement {
         DihedralGradient dihGradient = new DihedralGradient(this);
         report(0, 0, 0, dihedrals.energyList.atomList.size(), dihEnergy.value(dihedrals.angleValues));
         reportAt = 20;
+        if (trajectoryWriter != null) {
+            try {
+                trajectoryWriter.writeStructure();
+            } catch (MissingCoordinatesException ex) {
+                Logger.getLogger(GradientRefinement.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
         try {
             result = optimizer.optimize(
                     new ObjectiveFunctionGradient(dihGradient),
