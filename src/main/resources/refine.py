@@ -1491,7 +1491,7 @@ class refine:
                 atom.dihedralAngle = math.pi*psi/180.0
         molecule.genCoords()
 
-def doAnneal(seed,dOpt=None,homeDir=None):
+def doAnneal(seed,dOpt=None,homeDir=None, writeTrajectory=False):
     import osfiles
     refiner = refine()
     dataDir = osfiles.getDataDir(homeDir)
@@ -1499,7 +1499,7 @@ def doAnneal(seed,dOpt=None,homeDir=None):
     osfiles.guessFiles(refiner, homeDir)
     refiner.molecule.setMethylRotationActive(True)
     refiner.molecule.setRiboseActive(True)
-    refiner.setup(dataDir,seed)
+    refiner.setup(dataDir,seed,writeTrajectory)
     refiner.rootName = "temp"
     if dOpt == None:
         dOpt = dynOptions(highFrac=0.4)
