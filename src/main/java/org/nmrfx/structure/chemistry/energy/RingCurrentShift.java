@@ -313,8 +313,6 @@ public class RingCurrentShift {
                     }
                 }
             }
-        } else {
-            System.out.println("null parent " + targetSpatialSet.atom.getFullName());
         }
         return sum;
     }
