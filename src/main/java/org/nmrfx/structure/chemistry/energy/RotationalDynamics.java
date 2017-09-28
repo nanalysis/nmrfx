@@ -761,6 +761,7 @@ public class RotationalDynamics {
             //if ((((iStep + 1) % reportAt) == 0) || (deltaEnergy > 0.01)) {
             if (((iStep + 1) % reportAt) == 0) {
                 if (trajectoryWriter != null) {
+                    molecule.updateFromVecCoords();
                     trajectoryWriter.writeStructure();
                 }
                 double rms = 180.0 * (sumDeltaSq / lastSteps) / Math.PI;
