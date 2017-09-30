@@ -83,6 +83,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.SegmentedButton;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
@@ -316,7 +317,7 @@ public class SpecAttrWindowController implements Initializable {
 
     public void setChart(PolyChart chart) {
         this.chart = chart;
-       // disDimCombo.valueProperty().addListener(e -> setDisDim());
+        // disDimCombo.valueProperty().addListener(e -> setDisDim());
         updateDatasetTableView();
         updatePeakListTableView();
         clearDimActions();
@@ -413,6 +414,7 @@ public class SpecAttrWindowController implements Initializable {
 
     void initTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
+        IntegerStringConverter isConverter = new IntegerStringConverter();
         datasetTableView.setEditable(true);
         datasetTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         TableColumn<DatasetAttributes, String> fileNameCol = new TableColumn<>("dataset");
@@ -428,6 +430,11 @@ public class SpecAttrWindowController implements Initializable {
         unifyLevelItem.setOnAction(e -> unifyLevel());
         levelCol.setContextMenu(levelMenu);
         levelMenu.getItems().addAll(unifyLevelItem);
+
+        TableColumn<DatasetAttributes, String> nLevelsCol = new TableColumn<>("nLvl");
+        nLevelsCol.setCellValueFactory(new PropertyValueFactory("nLevels"));
+        nLevelsCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
+        nLevelsCol.setPrefWidth(50);
 
         TableColumn<DatasetAttributes, Boolean> posDrawOnCol = new TableColumn<>("on");
         posDrawOnCol.setCellValueFactory(new PropertyValueFactory("posDrawOn"));
@@ -564,7 +571,7 @@ public class SpecAttrWindowController implements Initializable {
         TableColumn negativeColumn = new TableColumn("Negative");
         positiveColumn.getColumns().setAll(posDrawOnCol, posColorCol, posLineWidthCol);
         negativeColumn.getColumns().setAll(negDrawOnCol, negColorCol, negLineWidthCol);
-        datasetTableView.getColumns().setAll(fileNameCol, levelCol, positiveColumn, negativeColumn);
+        datasetTableView.getColumns().setAll(fileNameCol, levelCol, nLevelsCol, positiveColumn, negativeColumn);
     }
 
     void initPeakListTable() {

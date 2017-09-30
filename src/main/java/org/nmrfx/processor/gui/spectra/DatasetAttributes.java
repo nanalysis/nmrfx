@@ -25,8 +25,10 @@ import java.io.IOException;
 import java.util.*;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
@@ -37,7 +39,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public Dataset theFile;
     private Hashtable extremes = new Hashtable();
     public double clm = 1.2;
-    public int nlevels = 20;
     public int mChunk = 0;
     public boolean masked = false;
 
@@ -360,6 +361,24 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public boolean getNegDrawOn() {
         return negDrawOnProperty().get();
     }
+
+    private IntegerProperty nLevels;
+
+    public IntegerProperty nLevelsProperty() {
+        if (nLevels == null) {
+            nLevels = new SimpleIntegerProperty(this, "nlevels", 20);
+        }
+        return nLevels;
+    }
+
+    public void setNLevels(int value) {
+        nLevelsProperty().set(value);
+    }
+
+    public int getNLevels() {
+        return nLevelsProperty().get();
+    }
+
     private StringProperty fileName;
 
     public StringProperty fileNameProperty() {
@@ -436,7 +455,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ((DatasetAttributes) o).setNegLineWidth(getNegLineWidth());
             ((DatasetAttributes) o).setLevel(getLevel());
             ((DatasetAttributes) o).clm = clm;
-            ((DatasetAttributes) o).nlevels = nlevels;
+            ((DatasetAttributes) o).setNLevels(getNLevels());
             ((DatasetAttributes) o).nDim = nDim;
             ((DatasetAttributes) o).fileName = fileName;
             ((DatasetAttributes) o).theFile = theFile;
@@ -1217,7 +1236,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ptd[i][1] = theFile.ppmToDPoint(dim[i], limits[i][1]);
             hz[i][0] = theFile.ppmToHz(dim[i], limits[i][0]);
             hz[i][1] = theFile.ppmToHz(dim[i], limits[i][1]);
-   //         System.out.println("set bounds " + i + " " + pt[i][0] + " " + pt[i][1] + " " + limits[i][0] + " " + limits[i][1]);
+            //         System.out.println("set bounds " + i + " " + pt[i][0] + " " + pt[i][1] + " " + limits[i][0] + " " + limits[i][1]);
 
             if (pt[i][0] > pt[i][1]) {
                 int hold;
@@ -1250,7 +1269,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ptf = (double) pt[i][1];
             limits[i][1] = (double) theFile.pointToPPM(dim[i], ptf);
             pt[i][1] = theFile.ppmToPoint(dim[i], limits[i][1]);
-          //  System.out.println("set pt bounds " + i + " " + pt[i][0] + " " + pt[i][1] + " " + limits[i][0] + " " + limits[i][1]);
+            //  System.out.println("set pt bounds " + i + " " + pt[i][0] + " " + pt[i][1] + " " + limits[i][0] + " " + limits[i][1]);
 
             if (pt[i][0] > pt[i][1]) {
                 int hold;

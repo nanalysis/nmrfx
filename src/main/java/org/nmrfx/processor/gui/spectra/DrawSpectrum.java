@@ -113,7 +113,7 @@ public class DrawSpectrum {
     }
 
     public static float[] getLevels(DatasetAttributes fileData) {
-        int nLevels = fileData.nlevels;
+        int nLevels = fileData.getNLevels();
         double clm = fileData.clm;
 
         float[] levels = new float[nLevels];
