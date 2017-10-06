@@ -434,7 +434,12 @@ public class SpecAttrWindowController implements Initializable {
         TableColumn<DatasetAttributes, String> nLevelsCol = new TableColumn<>("nLvl");
         nLevelsCol.setCellValueFactory(new PropertyValueFactory("nLevels"));
         nLevelsCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
-        nLevelsCol.setPrefWidth(50);
+        nLevelsCol.setPrefWidth(35);
+
+        TableColumn<DatasetAttributes, String> clmCol = new TableColumn<>("clm");
+        clmCol.setCellValueFactory(new PropertyValueFactory("clm"));
+        clmCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
+        clmCol.setPrefWidth(50);
 
         TableColumn<DatasetAttributes, Boolean> posDrawOnCol = new TableColumn<>("on");
         posDrawOnCol.setCellValueFactory(new PropertyValueFactory("posDrawOn"));
@@ -571,7 +576,7 @@ public class SpecAttrWindowController implements Initializable {
         TableColumn negativeColumn = new TableColumn("Negative");
         positiveColumn.getColumns().setAll(posDrawOnCol, posColorCol, posLineWidthCol);
         negativeColumn.getColumns().setAll(negDrawOnCol, negColorCol, negLineWidthCol);
-        datasetTableView.getColumns().setAll(fileNameCol, levelCol, nLevelsCol, positiveColumn, negativeColumn);
+        datasetTableView.getColumns().setAll(fileNameCol, levelCol, nLevelsCol, clmCol, positiveColumn, negativeColumn);
     }
 
     void initPeakListTable() {
