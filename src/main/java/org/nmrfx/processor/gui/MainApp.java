@@ -109,7 +109,7 @@ public class MainApp extends Application {
             mainMenuBar = makeMenuBar(appName);
         }
 
-        interpreter.exec("from pyproc import *\ninitLocal()");
+        interpreter.exec("from pyproc import *\ninitLocal()\nfrom wconfig import *\nnw=nvwin()");
     }
 
     public static boolean isMac() {
