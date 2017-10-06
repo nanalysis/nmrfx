@@ -22,7 +22,11 @@ import org.nmrfx.processor.datasets.DataGenerator;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -32,13 +36,13 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 
 public class DatasetAttributes extends DataGenerator implements Cloneable {
 
-    public Dataset theFile;
+    private Dataset theFile;
     private Hashtable extremes = new Hashtable();
-    public double clm = 1.2;
     public int mChunk = 0;
     public boolean masked = false;
 
@@ -362,21 +366,37 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return negDrawOnProperty().get();
     }
 
-    private IntegerProperty nLevels;
+    private IntegerProperty nlevels;
 
-    public IntegerProperty nLevelsProperty() {
-        if (nLevels == null) {
-            nLevels = new SimpleIntegerProperty(this, "nlevels", 20);
+    public IntegerProperty nlevelsProperty() {
+        if (nlevels == null) {
+            nlevels = new SimpleIntegerProperty(this, "nlevels", 20);
         }
-        return nLevels;
+        return nlevels;
     }
 
-    public void setNLevels(int value) {
-        nLevelsProperty().set(value);
+    public void setNlevels(int value) {
+        nlevelsProperty().set(value);
     }
 
-    public int getNLevels() {
-        return nLevelsProperty().get();
+    public int getNlevels() {
+        return nlevelsProperty().get();
+    }
+    private DoubleProperty clm;
+
+    public DoubleProperty clmProperty() {
+        if (clm == null) {
+            clm = new SimpleDoubleProperty(this, "clm", 1.2);
+        }
+        return clm;
+    }
+
+    public void setClm(double value) {
+        clmProperty().set(value);
+    }
+
+    public double getClm() {
+        return clmProperty().get();
     }
 
     private StringProperty fileName;
@@ -455,7 +475,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ((DatasetAttributes) o).setNegLineWidth(getNegLineWidth());
             ((DatasetAttributes) o).setLevel(getLevel());
             ((DatasetAttributes) o).clm = clm;
-            ((DatasetAttributes) o).setNLevels(getNLevels());
+            ((DatasetAttributes) o).setNlevels(getNlevels());
             ((DatasetAttributes) o).nDim = nDim;
             ((DatasetAttributes) o).fileName = fileName;
             ((DatasetAttributes) o).theFile = theFile;
@@ -1519,5 +1539,68 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
     public boolean getIntegralSelected() {
         return intSelected;
+    }
+
+    /*
+                ((DatasetAttributes) o).setPosColor(getPosColor());
+            ((DatasetAttributes) o).setNegColor(getNegColor());
+            ((DatasetAttributes) o).setPosLineWidth(getPosLineWidth());
+            ((DatasetAttributes) o).setNegLineWidth(getNegLineWidth());
+            ((DatasetAttributes) o).setLevel(getLevel());
+            ((DatasetAttributes) o).clm = clm;
+            ((DatasetAttributes) o).setNLevels(getNLevels());
+            ((DatasetAttributes) o).nDim = nDim;
+            ((DatasetAttributes) o).fileName = fileName;
+            ((DatasetAttributes) o).theFile = theFile;
+            ((DatasetAttributes) o).setPosDrawOn(getPosDrawOn());
+            ((DatasetAttributes) o).setNegDrawOn(getNegDrawOn());
+            if (drawList != null) {
+                ((DatasetAttributes) o).drawList = drawList.clone();
+            }
+
+     */
+    public void config(String name, Object value) {
+        if (Platform.isFxApplicationThread()) {
+            try {
+                PropertyUtils.setSimpleProperty(this, name, value);
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            Platform.runLater(() -> {
+                try {
+                    PropertyUtils.setProperty(this, name, value);
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                    Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            );
+        }
+    }
+
+    public Map<String, Object> config() {
+
+//        BeanInfo info = null;
+//        try {
+//            info = Introspector.getBeanInfo(DatasetAttributes.class);
+//        } catch (IntrospectionException ex) {
+//            Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        if (info != null) {
+//            
+//            for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
+//                System.out.println(pd.getName() + " : " + pd.getReadMethod() + " : " + pd.getWriteMethod());
+//            }
+//        }
+        Map<String, Object> data = new HashMap<>();
+        String[] beanNames = {"nlevels", "clm", "posColor", "negColor", "posLineWidth", "negLineWidth", "level", "posDrawOn", "negDrawOn"};
+        for (String beanName : beanNames) {
+            try {
+                data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return data;
     }
 }

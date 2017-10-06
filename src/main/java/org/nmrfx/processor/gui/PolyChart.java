@@ -33,6 +33,7 @@ import org.nmrfx.processor.gui.spectra.DrawPeaks;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.spectra.SliceAttributes;
 import org.nmrfx.processor.gui.spectra.SpectrumWriter;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import java.io.File;
 import java.util.ArrayList;
 import javafx.scene.chart.Axis;
@@ -122,6 +123,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     SliceAttributes sliceAttributes = new SliceAttributes();
     DatasetAttributes lastDatasetAttr = null;
     List<CanvasAnnotation> canvasAnnotations = new ArrayList<>();
+    private static int lastId = 0;
+    private final int id;
 
     int iVec = 0;
 //    Vec vec;
@@ -211,6 +214,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         charts.add(this);
         activeChart = this;
         setCursor(Cursor.CROSSHAIR);
+        id = getNextId();
     }
 
     /**
@@ -248,6 +252,16 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         charts.add(this);
         activeChart = this;
         setCursor(Cursor.CROSSHAIR);
+        id = getNextId();
+    }
+
+    private synchronized int getNextId() {
+        lastId++;
+        return (lastId);
+    }
+
+    public String getName() {
+        return String.valueOf(id);
     }
 
     public FXMLController getFXMLController() {
@@ -799,15 +813,18 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         return dataSize;
     }
 
-    protected void zoom(double factor) {
-        Dataset dataset = getDataset();
-        if (dataset != null) {
-            xZoom(factor);
-            if (!is1D()) {
-                yZoom(factor);
+    public void zoom(double factor) {
+        ConsoleUtil.runOnFxThread(() -> {
+            Dataset dataset = getDataset();
+            if (dataset != null) {
+                xZoom(factor);
+                if (!is1D()) {
+                    yZoom(factor);
+                }
+                layoutPlotChildren();
             }
-            layoutPlotChildren();
         }
+        );
     }
 
     protected void xZoom(double factor) {
@@ -1038,15 +1055,17 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         }
     }
 
-    protected void full() {
-        if (!datasetAttributesList.isEmpty()) {
-            double[] limits = getRange(0);
-            setXAxis(limits[0], limits[1]);
-            if (disDimProp.get() == DISDIM.TwoD) {
-                limits = getRange(1);
-                setYAxis(limits[0], limits[1]);
+    public void full() {
+        ConsoleUtil.runOnFxThread(() -> {
+            if (!datasetAttributesList.isEmpty()) {
+                double[] limits = getRange(0);
+                setXAxis(limits[0], limits[1]);
+                if (disDimProp.get() == DISDIM.TwoD) {
+                    limits = getRange(1);
+                    setYAxis(limits[0], limits[1]);
+                }
             }
-        }
+        });
     }
 
     protected void full(int axis) {
@@ -1419,6 +1438,51 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         processorController.propertyManager.clearBaselineRegions();
     }
 
+    public void updateDatasets(List<String> targets, List<DatasetAttributes> datasetAttrs) {
+        List<DatasetAttributes> newList = new ArrayList<>();
+        boolean updated = false;
+        int iTarget = 0;
+        for (String s : targets) {
+            int n = newList.size();
+            int jData = 0;
+            int addAt = -1;
+            for (DatasetAttributes datasetAttr : datasetAttrs) {
+                if (datasetAttr.getDataset().getName().equals(s)) {
+                    newList.add(datasetAttr);
+                    addAt = jData;
+                }
+                jData++;
+            }
+            if (iTarget != addAt) {
+                updated = true;
+            }
+            // if didn't add one, then create new DatasetAttributes
+            if (newList.size() == n) {
+                Dataset dataset = Dataset.getDataset(s);
+                DatasetAttributes newAttr = new DatasetAttributes(dataset);
+                newList.add(newAttr);
+                updated = true;
+            }
+            iTarget++;
+        }
+        if (newList.size() != datasetAttrs.size()) {
+            updated = true;
+        }
+        if (updated) {
+            if (!newList.isEmpty() && datasetAttrs.isEmpty()) {
+                // if no datsets present already must use addDataset once to set up
+                // various parameters
+                controller.addDataset(newList.get(0).getDataset(), false, false);
+                newList.remove(0);
+                datasetAttrs.addAll(newList);
+            } else {
+                datasetAttrs.clear();
+                datasetAttrs.addAll(newList);
+            }
+        }
+
+    }
+
     void setDataset(Dataset dataset) {
         setDataset(dataset, false);
     }
@@ -1601,6 +1665,17 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
 
     public void refresh() {
         layoutPlotChildren();
+    }
+
+    public void draw() {
+        if (Platform.isFxApplicationThread()) {
+            refresh();
+        } else {
+            Platform.runLater(() -> {
+                refresh();
+            }
+            );
+        }
     }
 
     /**

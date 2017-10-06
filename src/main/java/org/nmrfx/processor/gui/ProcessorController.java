@@ -510,6 +510,16 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         }
     }
 
+    private void loadOps(File file) {
+        try {
+            byte[] encoded = Files.readAllBytes(Paths.get(file.toString()));
+            String scriptString = new String(encoded);
+            parseScript(scriptString);
+        } catch (IOException ioe) {
+            System.out.println("Can't read script");
+        }
+    }
+
     private void openScript(File file) {
         try {
             byte[] encoded = Files.readAllBytes(Paths.get(file.toString()));
