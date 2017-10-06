@@ -54,6 +54,19 @@ public class FractionPane extends Pane {
 
     }
 
+    public static ORIENTATION getOrientation(String name) {
+        name = name.toUpperCase();
+        if ("HORIZONTAL".startsWith(name)) {
+            return ORIENTATION.HORIZONTAL;
+        } else if ("VERTICAL".startsWith(name)) {
+            return ORIENTATION.VERTICAL;
+        } else if ("GRID".startsWith(name)) {
+            return ORIENTATION.GRID;
+        } else {
+            throw new IllegalArgumentException("Invalid orientation: " + name);
+        }
+    }
+
     public void updateLayout(ORIENTATION newOrient) {
         this.orient = newOrient;
         layoutChildren();
