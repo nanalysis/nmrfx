@@ -37,6 +37,7 @@ import javax.swing.SwingUtilities;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.printing.PDFPageable;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.graphicsio.SVGWriter;
 
 /**
@@ -194,15 +195,16 @@ public class SpectrumWriter {
         double cyOffset = contours.yOffset;
         // g2.beginPath();
         ArrayList<Double> polyLines = new ArrayList<>();
+        Dataset dataset = dataGenerator.getDataset();
         for (int iLine = 0; iLine < lineCount; iLine += 4) {
             double xPoint1 = scale * contours.coords[coordIndex][iLine] + cxOffset;
             double xPoint2 = scale * contours.coords[coordIndex][iLine + 2] + cxOffset;
             double yPoint1 = scale * contours.coords[coordIndex][iLine + 1] + cyOffset;
             double yPoint2 = scale * contours.coords[coordIndex][iLine + 3] + cyOffset;
-            xPoint1 = dataGenerator.theFile.pointToPPM(dataGenerator.dim[0], xPoint1);
-            xPoint2 = dataGenerator.theFile.pointToPPM(dataGenerator.dim[0], xPoint2);
-            yPoint1 = dataGenerator.theFile.pointToPPM(dataGenerator.dim[1], yPoint1);
-            yPoint2 = dataGenerator.theFile.pointToPPM(dataGenerator.dim[1], yPoint2);
+            xPoint1 = dataset.pointToPPM(dataGenerator.dim[0], xPoint1);
+            xPoint2 = dataset.pointToPPM(dataGenerator.dim[0], xPoint2);
+            yPoint1 = dataset.pointToPPM(dataGenerator.dim[1], yPoint1);
+            yPoint2 = dataset.pointToPPM(dataGenerator.dim[1], yPoint2);
 
             double x1 = axes[0].getDisplayPosition(xPoint1);
             double x2 = axes[0].getDisplayPosition(xPoint2);
