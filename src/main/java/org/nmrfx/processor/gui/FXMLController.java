@@ -150,6 +150,8 @@ public class FXMLController implements Initializable {
     static String docString = null;
     static ObservableList<Dataset> datasetList = FXCollections.observableArrayList();
     static List<FXMLController> controllers = new ArrayList<>();
+    static ConsoleController consoleController = null;
+
     ObservableList<PolyChart> charts = FXCollections.observableArrayList();
     PolyChart activeChart = null;
     SpectrumStatusBar statusBar;
@@ -204,7 +206,7 @@ public class FXMLController implements Initializable {
         }
     }
 
-    PolyChart getActiveChart() {
+    public PolyChart getActiveChart() {
         return activeChart;
     }
 
@@ -665,7 +667,7 @@ public class FXMLController implements Initializable {
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                getActiveChart().exportVectorGraphics(selectedFile.toString(),"svg");
+                getActiveChart().exportVectorGraphics(selectedFile.toString(), "svg");
             } catch (IOException ex) {
                 ExceptionDialog eDialog = new ExceptionDialog(ex);
                 eDialog.showAndWait();
@@ -1102,8 +1104,9 @@ public class FXMLController implements Initializable {
 //        l.layoutBoundsProperty().addListener(e -> boundsUpdated(l));
 //        l2.layoutBoundsProperty().addListener(e -> boundsUpdated(l2));
         statusBar.setMode(0);
-        ConsoleController consoleController = ConsoleController.create();
-
+        if (consoleController == null) {
+            consoleController = ConsoleController.create();
+        }
     }
 
     public ChartLabel getLabel(PolyChart chart, String color, String id) {
@@ -1475,5 +1478,14 @@ public class FXMLController implements Initializable {
             }
             chart.refresh();
         }
+    }
+
+    public void config() {
+        ObservableList<DatasetAttributes> datasetAttrList = getActiveChart().getDatasetAttributes();
+        datasetAttrList.stream().forEach(d -> {
+            Map<String, Object> configMap = d.config();
+            System.out.println(configMap);
+        });
+
     }
 }
