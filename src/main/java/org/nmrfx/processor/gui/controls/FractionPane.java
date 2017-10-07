@@ -111,8 +111,14 @@ public class FractionPane extends Pane {
                 nRows = nRowDefaults[nChildren];
             }
         }
+        if (nRows < 1) {
+            nRows = 1;
+        }
         int nCols = nChildren / nRows;
         nCols = nCols * nRows < nChildren ? nCols + 1 : nCols;
+        if (nCols < 1) {
+            nCols = 1;
+        }
 
         double delX = 0.0;
         double delY = 0.0;

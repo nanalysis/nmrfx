@@ -1264,6 +1264,21 @@ public class FXMLController implements Initializable {
 
     }
 
+    public void setNCharts(int nCharts) {
+        int nCurrent = chartGroup.getChildren().size();
+        if (nCurrent > nCharts) {
+            for (int i = nCurrent - 1; i >= nCharts; i--) {
+                PolyChart chart = (PolyChart) chartGroup.getChildren().remove(i);
+                charts.remove(chart);
+            }
+        } else if (nCharts > nCurrent) {
+            int nNew = nCharts - nCurrent;
+            for (int i = 0; i < nNew; i++) {
+                addChart(1);
+            }
+        }
+    }
+
     public void removeChart() {
         if (activeChart != null) {
             removeChart(activeChart);
@@ -1273,7 +1288,7 @@ public class FXMLController implements Initializable {
     public void removeChart(PolyChart chart) {
         if (chart != null) {
             chartGroup.getChildren().remove(chart);
-            charts.remove(this);
+            charts.remove(chart);
             if (chart == activeChart) {
                 if (charts.isEmpty()) {
                     activeChart = null;

@@ -192,10 +192,7 @@ public class GUIScripter {
             FXMLController controller = FXMLController.activeController;
             PolyChart chart = controller.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
-            int nCurrent = controller.charts.size();
-            for (int i = nCurrent; i < nCharts; i++) {
-                controller.addChart(1);
-            }
+            controller.setNCharts(nCharts);
             controller.arrange(rows);
 
             PolyChart chartActive = controller.charts.get(0);
@@ -209,10 +206,7 @@ public class GUIScripter {
             FXMLController controller = FXMLController.activeController;
             PolyChart chart = controller.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
-            int nCurrent = controller.charts.size();
-            for (int i = nCurrent; i < nCharts; i++) {
-                controller.addChart(1);
-            }
+            controller.setNCharts(nCharts);
             controller.arrange(orient);
             PolyChart chartActive = controller.charts.get(0);
             controller.setActiveChart(chartActive);
@@ -225,13 +219,10 @@ public class GUIScripter {
             FXMLController controller = FXMLController.activeController;
             PolyChart chart = controller.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
-            int nCurrent = controller.charts.size();
+            controller.setNCharts(datasetNames.size());
             for (int i = 0; i < datasetNames.size(); i++) {
                 Dataset dataset = Dataset.getDataset(datasetNames.get(i));
                 datasets.add(dataset);
-                if (i >= nCurrent) {
-                    controller.addChart(1);
-                }
             }
             controller.arrange(orient);
             for (int i = 0; i < datasets.size(); i++) {
