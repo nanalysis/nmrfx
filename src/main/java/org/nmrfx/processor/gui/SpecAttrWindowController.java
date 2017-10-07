@@ -745,50 +745,8 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     private void refreshAction() {
-        ObservableList<DatasetAttributes> datasetAttrs = chart.getDatasetAttributes();
         ObservableList<String> targets = datasetView.getTargetItems();
-        List<DatasetAttributes> newList = new ArrayList<>();
-        boolean updated = false;
-        // check to see of order is the same, if not we need to update the chart datasetAttrList
-        int iTarget = 0;
-        for (String s : targets) {
-            int n = newList.size();
-            int jData = 0;
-            int addAt = -1;
-            for (DatasetAttributes datasetAttr : datasetAttrs) {
-                if (datasetAttr.getDataset().getName().equals(s)) {
-                    newList.add(datasetAttr);
-                    addAt = jData;
-                }
-                jData++;
-            }
-            if (iTarget != addAt) {
-                updated = true;
-            }
-            // if didn't add one, then create new DatasetAttributes
-            if (newList.size() == n) {
-                Dataset dataset = Dataset.getDataset(s);
-                DatasetAttributes newAttr = new DatasetAttributes(dataset);
-                newList.add(newAttr);
-                updated = true;
-            }
-            iTarget++;
-        }
-        if (newList.size() != datasetAttrs.size()) {
-            updated = true;
-        }
-        if (updated) {
-            if (!newList.isEmpty() && datasetAttrs.isEmpty()) {
-                // if no datsets present already must use addDataset once to set up
-                // various parameters
-                chart.controller.addDataset(newList.get(0).getDataset(), false, false);
-                newList.remove(0);
-                datasetAttrs.addAll(newList);
-            } else {
-                datasetAttrs.clear();
-                datasetAttrs.addAll(newList);
-            }
-        }
+        chart.updateDatasets(targets);
         try {
             chart.xAxis.lowerBoundProperty().setValue(formatter.parse(limitFields[0][0].get()));
             chart.xAxis.upperBoundProperty().setValue(formatter.parse(limitFields[0][1].get()));

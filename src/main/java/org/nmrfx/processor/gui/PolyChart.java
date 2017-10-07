@@ -1438,7 +1438,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         processorController.propertyManager.clearBaselineRegions();
     }
 
-    public void updateDatasets(List<String> targets, List<DatasetAttributes> datasetAttrs) {
+    public void updateDatasets(List<String> targets) {
+        ObservableList<DatasetAttributes> datasetAttrs = getDatasetAttributes();
         List<DatasetAttributes> newList = new ArrayList<>();
         boolean updated = false;
         int iTarget = 0;
