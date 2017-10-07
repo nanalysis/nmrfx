@@ -161,7 +161,27 @@ public class GUIScripter {
             FXMLController controller = FXMLController.getActiveController();
             controller.arrange(orient);
         });
+    }
 
+    public void grid(int rows, int columns) {
+        int nCharts = rows * columns;
+        FractionPane.ORIENTATION orient = FractionPane.getOrientation("grid");
+        ConsoleUtil.runOnFxThread(() -> {
+            FXMLController controller = FXMLController.activeController;
+            PolyChart chart = controller.getActiveChart();
+            if ((chart != null) && chart.getDataset() != null) {
+                controller = FXMLController.create();
+            }
+            List<Dataset> datasets = new ArrayList<>();
+            int nCurrent = controller.charts.size();
+            for (int i = nCurrent; i < nCharts; i++) {
+                controller.addChart(1);
+            }
+            controller.arrange(rows);
+
+            PolyChart chartActive = controller.charts.get(0);
+            controller.setActiveChart(chartActive);
+        });
     }
 
     public void grid(int nCharts, String orientName) {
@@ -228,6 +248,13 @@ public class GUIScripter {
     }
 
     public void datasets(List<String> datasetNames) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            chart.updateDatasets(datasetNames);
+        });
+    }
+
+    public void gridDatasets(List<String> datasetNames) {
         ConsoleUtil.runOnFxThread(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();

@@ -39,6 +39,7 @@ public class FractionPane extends Pane {
     ORIENTATION orient = null;
     LayoutControlPane controlPane;
     static int[] nRowDefaults = {1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 2, 3, 3, 3, 4};
+    int setRows = -1;
 
     public FractionPane() {
         super();
@@ -67,12 +68,20 @@ public class FractionPane extends Pane {
         }
     }
 
+    public void updateLayout(int nRows) {
+        setRows = nRows;
+        this.orient = ORIENTATION.GRID;
+        layoutChildren();
+    }
+
     public void updateLayout(ORIENTATION newOrient) {
         this.orient = newOrient;
         layoutChildren();
     }
 
     public boolean setOrientation(ORIENTATION newOrient) {
+        setRows = -1;
+
         int nChildren = getChildrenUnmodifiable().size();
         if ((nChildren < 2) || (orient == null)) {
             orient = newOrient;
@@ -89,8 +98,12 @@ public class FractionPane extends Pane {
         double height = bounds.getHeight();
         int nChildren = getChildrenUnmodifiable().size();
         int nRows = 4;
-        if (nChildren < nRowDefaults.length) {
-            nRows = nRowDefaults[nChildren];
+        if (setRows != -1) {
+            nRows = setRows;
+        } else {
+            if (nChildren < nRowDefaults.length) {
+                nRows = nRowDefaults[nChildren];
+            }
         }
         int nCols = nChildren / nRows;
         nCols = nCols * nRows < nChildren ? nCols + 1 : nCols;

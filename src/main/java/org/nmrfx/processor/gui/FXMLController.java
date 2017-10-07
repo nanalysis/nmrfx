@@ -1315,6 +1315,10 @@ public class FXMLController implements Initializable {
         chartGroup.updateLayout(orient);
     }
 
+    public void arrange(int nRows) {
+        chartGroup.updateLayout(nRows);
+    }
+
     public void peakPickActive() {
         PolyChart chart = getActiveChart();
         ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
