@@ -20,6 +20,14 @@ class nvwin:
         chart=activeController.getActiveChart()
         return chart
 
+    def new(self):
+        self.cmd.newStage()
+        return self
+
+    def grid(self, rows=1, columns=1):
+        self.cmd.grid(rows, columns)
+        return self
+
     def active(self, chartName=None):
         if chartName != None:
             self.cmd.active(chartName)

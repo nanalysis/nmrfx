@@ -70,7 +70,10 @@ public class FractionPane extends Pane {
 
     public void updateLayout(int nRows) {
         setRows = nRows;
-        this.orient = ORIENTATION.GRID;
+        orient = ORIENTATION.GRID;
+        if (nRows == 1) {
+            orient = ORIENTATION.HORIZONTAL;
+        }
         layoutChildren();
     }
 
@@ -100,6 +103,9 @@ public class FractionPane extends Pane {
         int nRows = 4;
         if (setRows != -1) {
             nRows = setRows;
+            if ((nChildren > 1) && (nRows == nChildren)) {
+                orient = ORIENTATION.VERTICAL;
+            }
         } else {
             if (nChildren < nRowDefaults.length) {
                 nRows = nRowDefaults[nChildren];

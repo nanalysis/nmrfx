@@ -55,18 +55,34 @@ public class GUIScripter {
         return chart.getName();
     }
 
+    public boolean active(int index) throws IllegalArgumentException {
+        if (useChart != null) {
+            return false;
+        }
+        ConsoleUtil.runOnFxThread(() -> {
+            List<PolyChart> charts = FXMLController.getActiveController().charts;
+            if (charts.size() >= index) {
+                FXMLController.getActiveController().setActiveChart(charts.get(index));
+            } else {
+                // fixme throwing from fx thread
+                throw new IllegalArgumentException("Invalid chart index");
+            }
+        });
+        return true;
+    }
+
     public boolean active(String chartName) {
         if (useChart != null) {
             return false;
         }
-        Optional<PolyChart> chartOpt = FXMLController.getActiveController().charts.stream().filter(c -> c.getName().equals(chartName)).findFirst();
-        boolean success = false;
-        if (chartOpt.isPresent()) {
-            ConsoleUtil.runOnFxThread(() -> {
+        // fixme needs to be set on thread
+        boolean success = true;
+        ConsoleUtil.runOnFxThread(() -> {
+            Optional<PolyChart> chartOpt = FXMLController.getActiveController().charts.stream().filter(c -> c.getName().equals(chartName)).findFirst();
+            if (chartOpt.isPresent()) {
                 FXMLController.getActiveController().setActiveChart(chartOpt.get());
-            });
-            success = true;
-        }
+            }
+        });
         return success;
     }
 
@@ -155,6 +171,12 @@ public class GUIScripter {
 
     }
 
+    public void newStage() {
+        FXMLController controller = FXMLController.create();
+        PolyChart chartActive = controller.charts.get(0);
+        controller.setActiveChart(chartActive);
+    }
+
     public void grid(String orientName) {
         FractionPane.ORIENTATION orient = FractionPane.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
@@ -169,9 +191,6 @@ public class GUIScripter {
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = FXMLController.activeController;
             PolyChart chart = controller.getActiveChart();
-            if ((chart != null) && chart.getDataset() != null) {
-                controller = FXMLController.create();
-            }
             List<Dataset> datasets = new ArrayList<>();
             int nCurrent = controller.charts.size();
             for (int i = nCurrent; i < nCharts; i++) {
@@ -189,9 +208,6 @@ public class GUIScripter {
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = FXMLController.activeController;
             PolyChart chart = controller.getActiveChart();
-            if ((chart != null) && chart.getDataset() != null) {
-                controller = FXMLController.create();
-            }
             List<Dataset> datasets = new ArrayList<>();
             int nCurrent = controller.charts.size();
             for (int i = nCurrent; i < nCharts; i++) {
@@ -208,9 +224,6 @@ public class GUIScripter {
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = FXMLController.activeController;
             PolyChart chart = controller.getActiveChart();
-            if ((chart != null) && chart.getDataset() != null) {
-                controller = FXMLController.create();
-            }
             List<Dataset> datasets = new ArrayList<>();
             int nCurrent = controller.charts.size();
             for (int i = 0; i < datasetNames.size(); i++) {
