@@ -152,6 +152,7 @@ public class GUIScripter {
                     }
                 }
             });
+            chart.refresh();
         });
 
     }
@@ -163,6 +164,7 @@ public class GUIScripter {
             for (DatasetAttributes dataAttr : dataAttrs) {
                 return dataAttr.config();
             }
+            chart.refresh();
             return new HashMap<>();
 
         });
