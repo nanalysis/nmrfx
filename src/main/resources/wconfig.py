@@ -23,7 +23,9 @@ class nvwin:
     def active(self, chartName=None):
         if chartName != None:
             self.cmd.active(chartName)
-        return self
+            return self
+        else:
+            return self.cmd.active()
 
     def config(self, datasets=None, pars=None,  **kwargs):
         if datasets != None:
