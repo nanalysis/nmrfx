@@ -174,6 +174,7 @@ public class FXMLController implements Initializable {
         for (PolyChart chart : charts) {
             chart.close();
         }
+        controllers.remove(this);
     }
 
     boolean isPhaseSliderVisible() {
