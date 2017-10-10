@@ -2,7 +2,7 @@ from org.nmrfx.processor.gui import FXMLController
 from org.nmrfx.processor.gui import GUIScripter
 
 
-class NNMRFxWindowScripting:
+class NMRFxWindowScripting:
     def __init__(self,winName=None):
         if winName==None:
             self.cmd = GUIScripter()
