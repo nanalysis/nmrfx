@@ -376,7 +376,7 @@ public class DatasetsController implements Initializable {
 
     void drawDataset(ActionEvent e) {
         ObservableList<Dataset> datasets = tableView.getSelectionModel().getSelectedItems();
-        FXMLController controller = FXMLController.activeController;
+        FXMLController controller = FXMLController.getActiveController();
         PolyChart chart = controller.getActiveChart();
         if ((chart != null) && chart.getDataset() != null) {
             controller = FXMLController.create();
@@ -390,7 +390,7 @@ public class DatasetsController implements Initializable {
 
     void gridDataset(ActionEvent e, FractionPane.ORIENTATION orient) {
         ObservableList<Dataset> datasets = tableView.getSelectionModel().getSelectedItems();
-        FXMLController controller = FXMLController.activeController;
+        FXMLController controller = FXMLController.getActiveController();
         PolyChart chart = controller.getActiveChart();
         if ((chart != null) && chart.getDataset() != null) {
             controller = FXMLController.create();

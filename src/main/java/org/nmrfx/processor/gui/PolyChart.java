@@ -270,6 +270,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
 
     public void close() {
         charts.remove(this);
+        controller.removeChart(this);
         if (this == activeChart) {
             if (charts.isEmpty()) {
                 activeChart = null;
@@ -733,6 +734,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         return activeChart;
     }
 
+    public FXMLController getController() {
+        return controller;
+    }
+    
     protected void handleCrossHair(MouseEvent mEvent, boolean selectCrossNum) {
         if (mEvent.isPrimaryButtonDown()) {
             if (selectCrossNum) {

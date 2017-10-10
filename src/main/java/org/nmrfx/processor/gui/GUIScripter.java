@@ -50,7 +50,7 @@ public class GUIScripter {
         if (useChart != null) {
             chart = useChart;
         } else {
-            chart = FXMLController.getActiveController().getActiveChart();
+            chart = PolyChart.getActiveChart();
         }
         return chart.getName();
     }
@@ -191,7 +191,7 @@ public class GUIScripter {
         int nCharts = rows * columns;
         FractionPane.ORIENTATION orient = FractionPane.getOrientation("grid");
         ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = FXMLController.activeController;
+            FXMLController controller = FXMLController.getActiveController();
             PolyChart chart = controller.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
             controller.setNCharts(nCharts);
@@ -205,7 +205,7 @@ public class GUIScripter {
     public void grid(int nCharts, String orientName) {
         FractionPane.ORIENTATION orient = FractionPane.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = FXMLController.activeController;
+            FXMLController controller = FXMLController.getActiveController();
             PolyChart chart = controller.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
             controller.setNCharts(nCharts);
@@ -218,7 +218,7 @@ public class GUIScripter {
     public void grid(List<String> datasetNames, String orientName) {
         FractionPane.ORIENTATION orient = FractionPane.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = FXMLController.activeController;
+            FXMLController controller = FXMLController.getActiveController();
             PolyChart chart = controller.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
             controller.setNCharts(datasetNames.size());

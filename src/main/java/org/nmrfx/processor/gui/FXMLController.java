@@ -171,10 +171,18 @@ public class FXMLController implements Initializable {
     }
 
     void close() {
-        for (PolyChart chart : charts) {
+        // need to make copy of charts as the call to chart.close will remove the chart from charts
+        // resulting in a java.util.ConcurrentModificationException
+        List<PolyChart> tempCharts = new ArrayList<>();
+        tempCharts.addAll(charts);
+        for (PolyChart chart : tempCharts) {
             chart.close();
         }
         controllers.remove(this);
+        PolyChart chart = PolyChart.getActiveChart();
+        if (chart != null) {
+            activeController = chart.getController();
+        }
     }
 
     boolean isPhaseSliderVisible() {
@@ -197,6 +205,7 @@ public class FXMLController implements Initializable {
 
     public void setActiveChart(PolyChart chart) {
         activeChart = chart;
+        PolyChart.activeChart = chart;
         if (specAttrWindowController != null) {
             if (specAttrWindowController.getStage().isShowing()) {
                 specAttrWindowController.setChart(activeChart);
