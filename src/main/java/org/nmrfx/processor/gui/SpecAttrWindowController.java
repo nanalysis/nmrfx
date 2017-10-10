@@ -432,7 +432,7 @@ public class SpecAttrWindowController implements Initializable {
         levelMenu.getItems().addAll(unifyLevelItem);
 
         TableColumn<DatasetAttributes, String> nLevelsCol = new TableColumn<>("nLvl");
-        nLevelsCol.setCellValueFactory(new PropertyValueFactory("nLevels"));
+        nLevelsCol.setCellValueFactory(new PropertyValueFactory("nlevels"));
         nLevelsCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
         nLevelsCol.setPrefWidth(35);
 
