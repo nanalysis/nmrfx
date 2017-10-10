@@ -1087,7 +1087,6 @@ public class FXMLController implements Initializable {
         //chartProcessor = new ChartProcessor(chart);
         rightBox.getChildren().remove(phaserBox);
         borderPane.setLeft(null);
-        System.out.println("init fx");
         if (!MainApp.isMac()) {
             MenuBar menuBar = MainApp.getMenuBar();
             topBar.getChildren().add(0, menuBar);
