@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.*;
+import java.util.stream.Collectors;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.linear.ArrayRealVector;
@@ -51,7 +52,6 @@ import org.renjin.sexp.SEXP;
 public class Dataset extends DoubleVector {
 
 //    private static final Logger LOGGER = LogManager.getLogger();
-
 //    static {
 //        try {
 //            logger.addHandler(new FileHandler("%t/nmrview%g.log"));
@@ -3911,17 +3911,21 @@ public class Dataset extends DoubleVector {
     /**
      * Return a list of the names of open datasets
      *
-     * @return String of space separated names.
+     * @return List of names.
      */
-    synchronized public static String listDatasets() {
-        StringBuilder result = new StringBuilder();
-        String sep = " ";
+    synchronized public static List<String> names() {
+        List<String> names = theFiles.keySet().stream().sorted().collect(Collectors.toList());
+        return names;
+    }
 
-        theFiles.keySet().stream().forEach((key) -> {
-            result.append(key).append(sep);
-        });
-
-        return (result.toString());
+    /**
+     * Return a list of the open datasets
+     *
+     * @return List of datasets.
+     */
+    synchronized public static List<Dataset> datasets() {
+        List<Dataset> datasets = theFiles.values().stream().collect(Collectors.toList());
+        return datasets;
     }
 
     /**
