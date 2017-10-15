@@ -29,6 +29,13 @@ if [ -n "$JAVA_HOME" ] ; then
     fi
 fi
 
+if [ -n "$NMRFXP_MEMORY" ] ; then
+    HEAP_MEM=$NMRFXP_MEMORY
+else
+    HEAP_MEM="2048"
+fi
+
+
 # get the directory path of this script
 # resolve script symlink, if any
 pgm="$0"
@@ -64,4 +71,10 @@ else
 fi
 
 export CLASSPATH
-exec "$JAVA" -Djava.awt.headless=true -DTCLLIBPATH="$TCLLIBPATH" -mx2048m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
+
+if [ "$#" -eq 0 ]; then
+    exec "$JAVA" -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
+else
+    exec "$JAVA" -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain -c "import dispatchnvfx" ${1+"$@"}
+fi
+
