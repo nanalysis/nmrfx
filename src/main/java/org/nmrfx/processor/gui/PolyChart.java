@@ -737,7 +737,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     public FXMLController getController() {
         return controller;
     }
-    
+
     protected void handleCrossHair(MouseEvent mEvent, boolean selectCrossNum) {
         if (mEvent.isPrimaryButtonDown()) {
             if (selectCrossNum) {
@@ -1595,6 +1595,25 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         }
     }
 
+    public void setAxisState(boolean leftEdge, boolean bottomEdge) {
+        yAxis.setShowTicsAndLabels(leftEdge);
+        xAxis.setShowTicsAndLabels(bottomEdge);
+    }
+
+    void setAxisState(NMRAxis axis, String axisLabel) {
+        boolean state = axis.getShowTicsAndLabels();
+        axis.setTickLabelsVisible(state);
+        axis.setTickMarkVisible(state);
+        axis.setVisible(true);
+        if (!state) {
+            axis.setLabel("");
+        } else {
+            if (!axisLabel.equals(axis.getLabel())) {
+                axis.setLabel(axisLabel);
+            }
+        }
+    }
+
     void updateAxisType() {
         Dataset dataset = getDataset();
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
@@ -1637,9 +1656,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         }
         xAxis.setReverse(reversedAxis);
         String xLabel = axModes[0].getLabel(datasetAttributes, 0);
-        if (!xLabel.equals(xAxis.getLabel())) {
-            xAxis.setLabel(xLabel);
-        }
+        setAxisState(xAxis, xLabel);
         if (!is1D()) {
             if (dataset.getFreqDomain(1)) {
                 axModes[1] = AXMODE.PPM;
@@ -1653,15 +1670,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
 
             yAxis.setReverse(reversedAxis);
             String yLabel = axModes[0].getLabel(datasetAttributes, 1);
-            if (!yLabel.equals(yAxis.getLabel())) {
-                yAxis.setLabel(yLabel);
-            }
+            setAxisState(yAxis, yLabel);
 
         } else {
             yAxis.setReverse(false);
-            if (!"Intensity".equals(yAxis.getLabel())) {
-                yAxis.setLabel("Intensity");
-            }
+            setAxisState(yAxis, "Intensity");
         }
         if (autoScale) {
             full();
