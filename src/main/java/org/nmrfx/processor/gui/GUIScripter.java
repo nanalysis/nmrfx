@@ -253,6 +253,13 @@ public class GUIScripter {
         datasets(datasetNames);
     }
 
+    public void addDataset(Dataset dataset) {
+        ConsoleUtil.runOnFxThread(() -> {
+            FXMLController controller = FXMLController.getActiveController();
+            controller.addDataset(dataset, true, false);
+        });
+    }
+
     public void datasets(List<String> datasetNames) {
         ConsoleUtil.runOnFxThread(() -> {
             PolyChart chart = getChart();
