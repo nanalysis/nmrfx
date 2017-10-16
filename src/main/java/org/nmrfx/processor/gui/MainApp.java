@@ -108,8 +108,12 @@ public class MainApp extends Application {
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(appName);
         }
+        Parameters parameters = getParameters();
+        System.out.println(parameters.getRaw());
 
-        interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()");
+        interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *");
+        interpreter.set("argv", parameters.getRaw());
+        interpreter.exec("parseArgs(argv)");
     }
 
     public static boolean isMac() {
