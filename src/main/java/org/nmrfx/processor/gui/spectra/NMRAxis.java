@@ -50,6 +50,7 @@ public class NMRAxis extends ValueAxis implements NMRAxisLimits {
     private ReadOnlyDoubleWrapper scale = new ReadOnlyDoubleWrapper(this, "scale", 0);
     StringConverter<Number> defaultFormatter = new NumberStringConverter();
     final NMRAxisBase baseAxis;
+    boolean showTicsAndLabels = true;
 
     public NMRAxis(double lowerBound, double upperBound, double tickUnit) {
         super(lowerBound, upperBound);
@@ -63,6 +64,14 @@ public class NMRAxis extends ValueAxis implements NMRAxisLimits {
 
     public boolean getReverse() {
         return baseAxis.getReverse();
+    }
+
+    public boolean getShowTicsAndLabels() {
+        return showTicsAndLabels;
+    }
+
+    public void setShowTicsAndLabels(boolean state) {
+        showTicsAndLabels = state;
     }
 
     ReadOnlyDoubleWrapper scalePropertyImpl() {
