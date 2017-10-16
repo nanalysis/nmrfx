@@ -1363,7 +1363,6 @@ public class FXMLController implements Initializable {
         if (nCols == 1) {
             xMax = 0.0;
         }
-        System.out.println("ex " + nRows + " " + nCols + " " + xMax + " " + yMax);
         chartGroup.setExtraOnLeft(xMax);
         chartGroup.setExtraOnBottom(yMax);
 

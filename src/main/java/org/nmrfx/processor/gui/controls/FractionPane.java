@@ -202,7 +202,6 @@ public class FractionPane extends Pane {
             itemHeight = (height - extraOnTop - extraOnBottom) / nRows;
             delY = 0.0;
         }
-        System.out.println("layout n " + nChildren + " rows " + nRows + " cols " + nCols);
         FXMLController.setLayoutExtra(this, nRows, nCols);
         double x = 0.0;
         double y = 0.0;
@@ -224,7 +223,7 @@ public class FractionPane extends Pane {
             if (iRow == (nRows - 1)) {
                 extraHeight += extraOnBottom;
             }
-            System.out.printf("%2d %2d %2d %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f\n", iChild, iRow, iCol, x, y, itemWidth, extraWidth, itemHeight, extraHeight);
+//            System.out.printf("%2d %2d %2d %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f\n", iChild, iRow, iCol, x, y, itemWidth, extraWidth, itemHeight, extraHeight);
             node.resizeRelocate(x, y, itemWidth + extraWidth, itemHeight + extraHeight);
             x += delX + extraWidth;
             y += delY;
