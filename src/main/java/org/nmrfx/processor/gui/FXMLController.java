@@ -1324,23 +1324,63 @@ public class FXMLController implements Initializable {
         PolyChart chart = new PolyChart();
         charts.add(chart);
         chart.setController(this);
-        chartGroup.setOrientation(orient);
+        chartGroup.setOrientation(orient, false);
         if ((pos % 2) == 0) {
             chartGroup.getChildren().add(0, chart);
         } else {
             chartGroup.getChildren().add(chart);
         }
+        arrange(orient);
         activeChart = chart;
 
         return 0;
     }
 
     public void arrange(FractionPane.ORIENTATION orient) {
-        chartGroup.updateLayout(orient);
+        chartGroup.setOrientation(orient, true);
+        int nRows = chartGroup.getRows();
+        int nCols = chartGroup.getColumns();
+//        setLayoutExtra(nRows, nCols);
+        chartGroup.layoutChildren();
+    }
+
+    public static void setLayoutExtra(FractionPane chartGroup, int nRows, int nCols) {
+        int iChild = 0;
+        double xMax = 0;
+        double yMax = 0;
+        for (Node node : chartGroup.getChildrenUnmodifiable()) {
+            int iRow = iChild / nCols;
+            int iCol = iChild % nCols;
+            PolyChart chart = (PolyChart) node;
+            chart.setAxisState(iCol == 0, iRow == (nRows - 1));
+            xMax = Math.max(xMax, chart.yAxis.getWidth());
+            yMax = Math.max(yMax, chart.xAxis.getHeight());
+            iChild++;
+        }
+        if (nRows == 1) {
+            yMax = 0.0;
+        }
+        if (nCols == 1) {
+            xMax = 0.0;
+        }
+        System.out.println("ex " + nRows + " " + nCols + " " + xMax + " " + yMax);
+        chartGroup.setExtraOnLeft(xMax);
+        chartGroup.setExtraOnBottom(yMax);
+
+    }
+
+    public static void redrawAll(FractionPane chartGroup) {
+
+        chartGroup.getChildrenUnmodifiable().stream().map((node) -> (PolyChart) node).forEachOrdered((chart) -> {
+            chart.layoutPlotChildren();
+        });
     }
 
     public void arrange(int nRows) {
-        chartGroup.updateLayout(nRows);
+        chartGroup.setRows(nRows);
+        int nCols = chartGroup.getColumns();
+//        setLayoutExtra(nRows, nCols);
+        chartGroup.layoutChildren();
     }
 
     public void peakPickActive() {

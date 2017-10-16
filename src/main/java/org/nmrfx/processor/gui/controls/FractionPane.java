@@ -26,12 +26,41 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Transform;
+import org.nmrfx.processor.gui.FXMLController;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class FractionPane extends Pane {
+
+    /**
+     * @param extraOnLeft the extraOnLeft to set
+     */
+    public void setExtraOnLeft(double extraOnLeft) {
+        this.extraOnLeft = extraOnLeft;
+    }
+
+    /**
+     * @param extraOnRight the extraOnRight to set
+     */
+    public void setExtraOnRight(double extraOnRight) {
+        this.extraOnRight = extraOnRight;
+    }
+
+    /**
+     * @param extraOnTop the extraOnTop to set
+     */
+    public void setExtraOnTop(double extraOnTop) {
+        this.extraOnTop = extraOnTop;
+    }
+
+    /**
+     * @param extraOnBottom the extraOnBottom to set
+     */
+    public void setExtraOnBottom(double extraOnBottom) {
+        this.extraOnBottom = extraOnBottom;
+    }
 
     public enum ORIENTATION {
         HORIZONTAL, VERTICAL, GRID;
@@ -40,6 +69,10 @@ public class FractionPane extends Pane {
     LayoutControlPane controlPane;
     static int[] nRowDefaults = {1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 2, 3, 3, 3, 4};
     int setRows = -1;
+    private double extraOnLeft = 0.0;
+    private double extraOnRight = 0.0;
+    private double extraOnTop = 0.0;
+    private double extraOnBottom = 0.0;
 
     public FractionPane() {
         super();
@@ -68,13 +101,12 @@ public class FractionPane extends Pane {
         }
     }
 
-    public void updateLayout(int nRows) {
+    public void setRows(int nRows) {
         setRows = nRows;
         orient = ORIENTATION.GRID;
         if (nRows == 1) {
             orient = ORIENTATION.HORIZONTAL;
         }
-        layoutChildren();
     }
 
     public void updateLayout(ORIENTATION newOrient) {
@@ -82,11 +114,11 @@ public class FractionPane extends Pane {
         layoutChildren();
     }
 
-    public boolean setOrientation(ORIENTATION newOrient) {
+    public boolean setOrientation(ORIENTATION newOrient, boolean force) {
         setRows = -1;
 
         int nChildren = getChildrenUnmodifiable().size();
-        if ((nChildren < 2) || (orient == null)) {
+        if (force || (nChildren < 2) || (orient == null)) {
             orient = newOrient;
             return true;
         } else {
@@ -94,11 +126,26 @@ public class FractionPane extends Pane {
         }
     }
 
-    @Override
-    public void layoutChildren() {
-        Bounds bounds = getLayoutBounds();
-        double width = bounds.getWidth();
-        double height = bounds.getHeight();
+    public int getRows() {
+        int nChildren = getChildrenUnmodifiable().size();
+        int nRows = 4;
+        if (setRows != -1) {
+            nRows = setRows;
+            if ((nChildren > 1) && (nRows == nChildren)) {
+                orient = ORIENTATION.VERTICAL;
+            }
+        } else {
+            if (nChildren < nRowDefaults.length) {
+                nRows = nRowDefaults[nChildren];
+            }
+        }
+        if (nRows < 1) {
+            nRows = 1;
+        }
+        return nRows;
+    }
+
+    public int getColumns() {
         int nChildren = getChildrenUnmodifiable().size();
         int nRows = 4;
         if (setRows != -1) {
@@ -119,43 +166,77 @@ public class FractionPane extends Pane {
         if (nCols < 1) {
             nCols = 1;
         }
+        return nCols;
+    }
+
+    @Override
+    public void layoutChildren() {
+        Bounds bounds = getLayoutBounds();
+        double width = bounds.getWidth();
+        double height = bounds.getHeight();
+        int nChildren = getChildrenUnmodifiable().size();
+        int nRows = getRows();
+        int nCols = getColumns();
 
         double delX = 0.0;
         double delY = 0.0;
         double itemWidth = 1.0;
         double itemHeight = 1.0;
         if ((orient == null) || (orient == ORIENTATION.HORIZONTAL)) {
-            delX = width / nChildren;
+            delX = (width - extraOnLeft - extraOnRight) / nChildren;
             delY = 0.0;
             itemWidth = delX;
             itemHeight = height;
+            nCols = nChildren;
+            nRows = 1;
         } else if (orient == ORIENTATION.VERTICAL) {
             delX = 0.0;
-            delY = height / nChildren;
+            delY = (height - extraOnTop - extraOnBottom) / nChildren;
             itemHeight = delY;
             itemWidth = width;
+            nRows = nChildren;
+            nCols = 1;
         } else {
-            delX = width / nCols;
+            delX = (width - extraOnLeft - extraOnRight) / nCols;
             itemWidth = delX;
-            itemHeight = height / nRows;
+            itemHeight = (height - extraOnTop - extraOnBottom) / nRows;
             delY = 0.0;
         }
-
+        System.out.println("layout n " + nChildren + " rows " + nRows + " cols " + nCols);
+        FXMLController.setLayoutExtra(this, nRows, nCols);
         double x = 0.0;
         double y = 0.0;
         int iChild = 0;
         for (Node node : getChildrenUnmodifiable()) {
-            node.resizeRelocate(x, y, itemWidth, itemHeight);
-            x += delX;
+            int iRow = iChild / nCols;
+            int iCol = iChild % nCols;
+            double extraWidth = 0.0;
+            if (iCol == 0) {
+                extraWidth += extraOnLeft;
+            }
+            if (iCol == (nCols - 1)) {
+                extraWidth += extraOnRight;
+            }
+            double extraHeight = 0.0;
+            if (iRow == 0) {
+                extraHeight += extraOnTop;
+            }
+            if (iRow == (nRows - 1)) {
+                extraHeight += extraOnBottom;
+            }
+            System.out.printf("%2d %2d %2d %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f\n", iChild, iRow, iCol, x, y, itemWidth, extraWidth, itemHeight, extraHeight);
+            node.resizeRelocate(x, y, itemWidth + extraWidth, itemHeight + extraHeight);
+            x += delX + extraWidth;
             y += delY;
             iChild++;
             if (orient == ORIENTATION.GRID) {
-                if ((iChild % nCols) == 0) {
+                if (iCol == (nCols - 1)) {
                     x = 0.0;
-                    y += itemHeight;
+                    y += itemHeight + extraHeight;
                 }
             }
         }
+        FXMLController.redrawAll(this);
 
     }
 
