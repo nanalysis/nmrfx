@@ -1,5 +1,7 @@
 from org.nmrfx.processor.gui import FXMLController
 from org.nmrfx.processor.gui import GUIScripter
+import argparse
+import dscript
 
 
 class NMRFxWindowScripting:
@@ -71,3 +73,24 @@ class NMRFxWindowScripting:
         chart = self.getActiveChart()
         chart.draw()
 
+def parseArgs(argv):
+    nw = NMRFxWindowScripting()
+    parser = argparse.ArgumentParser(description="Evaluate NMRFx Command Line Args")
+    parser.add_argument("-r", dest="rows",default='1', help="Number of chart rows")
+    parser.add_argument("-c", dest="columns",default='1', help="Number of chart columns")
+    #parser.add_argument("-g", dest="groupList",default='', help="Residues to fit in groups")
+    parser.add_argument("fileNames",nargs="*")
+    args = parser.parse_args(args=argv)
+    rows = int(args.rows)
+    columns = int(args.columns)
+    nw.grid(rows,columns)
+    nWins = rows*columns
+    if (nWins > 1) and len(args.fileNames) != nWins:
+        print "Number of files must equal number of windows if using a grid"
+        exit(1)
+    for i,fileName in enumerate(args.fileNames):
+       dataset = dscript.nd.open(fileName)
+       FXMLController.addDatasetToList(dataset)
+       iWin = i % nWins
+       nw.active(iWin).cmd.addDataset(dataset)
+       
