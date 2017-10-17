@@ -1552,10 +1552,10 @@ public class FXMLController implements FractionPaneChild, Initializable {
 
                 }
             }
-            for (PeakList peakList : deleteLists) {
-                PeakList.remove(peakList.getName());
-            }
             chart.refresh();
+        }
+        for (PeakList peakList : deleteLists) {
+            PeakList.remove(peakList.getName());
         }
     }
 
