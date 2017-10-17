@@ -1897,6 +1897,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
             peakGC.clearRect(0, 0, width, height);
         }
+        final Iterator<PeakListAttributes> peakListIterator = peakListAttributesList.iterator();
+        while (peakListIterator.hasNext()) {
+            PeakListAttributes peakListAttr = peakListIterator.next();
+            if (peakListAttr.getPeakList().peaks() == null) {
+                peakListIterator.remove();
+            }
+        }
         if (peakStatus.get()) {
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
                 if (clear) {
