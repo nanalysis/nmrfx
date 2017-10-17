@@ -1398,16 +1398,18 @@ public class FXMLController implements FractionPaneChild, Initializable {
         PolyChart chart = getActiveChart();
         ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
         dataList.stream().forEach(dataAttr -> {
-            peakPickActive(chart, dataAttr, true);
+            peakPickActive(chart, dataAttr, true, null);
         });
         chart.refresh();
     }
 
-    public PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean saveFile) {
+    public PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean saveFile, String listName) {
         Dataset dataset = dataAttr.getDataset();
         int nDim = dataset.getNDim();
         String datasetName = dataset.getName();
-        String listName = PeakList.getNameForDataset(datasetName);
+        if (listName == null) {
+            listName = PeakList.getNameForDataset(datasetName);
+        }
         double level = dataAttr.getLevel();
         if (nDim == 1) {
             level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
@@ -1488,15 +1490,10 @@ public class FXMLController implements FractionPaneChild, Initializable {
 
     public void alignCenters() {
         DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
-        PeakList refList = PeakList.getPeakListForDataset(activeAttr.getDataset().getName());
         // any peak lists created just for alignmnent should be deleted
-        List<PeakList> deleteLists = new ArrayList<>();
+        PeakList refList = peakPickActive(activeChart, activeAttr, false, "refList");
         if (refList == null) {
-            refList = peakPickActive(activeChart, activeAttr, false);
-            if (refList == null) {
-                return;
-            }
-            deleteLists.add(refList);
+            return;
         }
         String dimName1 = activeAttr.getLabel(0);
         String dimName2 = activeAttr.getLabel(1);
@@ -1515,15 +1512,7 @@ public class FXMLController implements FractionPaneChild, Initializable {
             ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrList) {
                 if (dataAttr != activeAttr) {
-                    PeakList movingList = PeakList.getPeakListForDataset(dataAttr.getDataset().getName());
-                    if (movingList == null) {
-                        movingList = peakPickActive(activeChart, dataAttr, false);
-                        if (movingList == null) {
-                            return;
-                        }
-                        deleteLists.add(movingList);
-                    }
-
+                    PeakList movingList = peakPickActive(activeChart, dataAttr, false, "movingList");
                     movingList.unLinkPeaks();
                     movingList.clearSearchDims();
                     movingList.addSearchDim(dimName1, 0.05);
@@ -1549,14 +1538,13 @@ public class FXMLController implements FractionPaneChild, Initializable {
                             dataAttr.getDataset().writeParFile();
                         }
                     }
+                    PeakList.remove("movingList");
 
                 }
             }
             chart.refresh();
         }
-        for (PeakList peakList : deleteLists) {
-            PeakList.remove(peakList.getName());
-        }
+        PeakList.remove("refList");
     }
 
     public void config() {
