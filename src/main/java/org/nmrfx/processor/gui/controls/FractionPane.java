@@ -73,9 +73,11 @@ public class FractionPane extends Pane {
     private double extraOnRight = 0.0;
     private double extraOnTop = 0.0;
     private double extraOnBottom = 0.0;
+    FractionPaneChild children;
 
-    public FractionPane() {
+    public FractionPane(FractionPaneChild children) {
         super();
+        this.children = children;
 //        getChildrenUnmodifiable().addListener((ListChangeListener.Change<? extends Node> c) -> {
 //            updateLayoutIndicators();
 //        });
@@ -202,7 +204,7 @@ public class FractionPane extends Pane {
             itemHeight = (height - extraOnTop - extraOnBottom) / nRows;
             delY = 0.0;
         }
-        FXMLController.setLayoutExtra(this, nRows, nCols);
+        children.prepareChildren(nRows, nCols);
         double x = 0.0;
         double y = 0.0;
         int iChild = 0;
@@ -235,8 +237,7 @@ public class FractionPane extends Pane {
                 }
             }
         }
-        FXMLController.redrawAll(this);
-
+        children.redrawChildren();
     }
 
     public void setControlPane(LayoutControlPane pane) {

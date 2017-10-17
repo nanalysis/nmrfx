@@ -28,6 +28,7 @@ import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.NMRViewData;
 import org.nmrfx.processor.gui.controls.FractionPane;
 import org.nmrfx.processor.gui.controls.LayoutControlPane;
+import org.nmrfx.processor.gui.controls.FractionPaneChild;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -97,7 +98,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 
-public class FXMLController implements Initializable {
+public class FXMLController implements FractionPaneChild, Initializable {
 
     @FXML
     private VBox topBar;
@@ -107,7 +108,6 @@ public class FXMLController implements Initializable {
     private ToolBar btoolBar;
     @FXML
     private StackPane chartPane;
-    private FractionPane chartGroup;
     @FXML
     private VBox phaserBox;
     @FXML
@@ -157,6 +157,9 @@ public class FXMLController implements Initializable {
     SpectrumStatusBar statusBar;
     BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
     File initialDir = null;
+
+    private FractionPane chartGroup;
+    private boolean minimizeBorders = false;
 
     public File getInitialDirectory() {
         if (initialDir == null) {
@@ -1100,7 +1103,7 @@ public class FXMLController implements Initializable {
 //        PolyChart chart2 = new PolyChart();
 //        charts.add(chart2);
 //        chart2.setController(this);
-        chartGroup = new FractionPane();
+        chartGroup = new FractionPane(this);
         LayoutControlPane layoutControl = new LayoutControlPane(chartGroup);
         chartGroup.setControlPane(layoutControl);
         chartPane.getChildren().addAll(chartGroup, layoutControl);
@@ -1340,11 +1343,17 @@ public class FXMLController implements Initializable {
         chartGroup.setOrientation(orient, true);
         int nRows = chartGroup.getRows();
         int nCols = chartGroup.getColumns();
-//        setLayoutExtra(nRows, nCols);
         chartGroup.layoutChildren();
     }
 
-    public static void setLayoutExtra(FractionPane chartGroup, int nRows, int nCols) {
+    public void setBorderState(boolean state) {
+        minimizeBorders = state;
+        int nRows = chartGroup.getRows();
+        int nCols = chartGroup.getColumns();
+        chartGroup.layoutChildren();
+    }
+
+    public void prepareChildren(int nRows, int nCols) {
         int iChild = 0;
         double xMax = 0;
         double yMax = 0;
@@ -1352,9 +1361,13 @@ public class FXMLController implements Initializable {
             int iRow = iChild / nCols;
             int iCol = iChild % nCols;
             PolyChart chart = (PolyChart) node;
-            chart.setAxisState(iCol == 0, iRow == (nRows - 1));
-            xMax = Math.max(xMax, chart.yAxis.getWidth());
-            yMax = Math.max(yMax, chart.xAxis.getHeight());
+            if (minimizeBorders) {
+                chart.setAxisState(iCol == 0, iRow == (nRows - 1));
+                xMax = Math.max(xMax, chart.yAxis.getWidth());
+                yMax = Math.max(yMax, chart.xAxis.getHeight());
+            } else {
+                chart.setAxisState(true, true);
+            }
             iChild++;
         }
         if (nRows == 1) {
@@ -1368,7 +1381,7 @@ public class FXMLController implements Initializable {
 
     }
 
-    public static void redrawAll(FractionPane chartGroup) {
+    public void redrawChildren() {
 
         chartGroup.getChildrenUnmodifiable().stream().map((node) -> (PolyChart) node).forEachOrdered((chart) -> {
             chart.layoutPlotChildren();
@@ -1378,7 +1391,6 @@ public class FXMLController implements Initializable {
     public void arrange(int nRows) {
         chartGroup.setRows(nRows);
         int nCols = chartGroup.getColumns();
-//        setLayoutExtra(nRows, nCols);
         chartGroup.layoutChildren();
     }
 

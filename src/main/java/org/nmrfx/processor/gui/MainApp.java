@@ -212,8 +212,12 @@ public class MainApp extends Application {
         vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionPane.ORIENTATION.VERTICAL));
         MenuItem gridItem = new MenuItem("Grid");
         gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionPane.ORIENTATION.GRID));
+        MenuItem minimizeItem = new MenuItem("Minimize Borders");
+        minimizeItem.setOnAction(e -> FXMLController.getActiveController().setBorderState(true));
+        MenuItem normalizeItem = new MenuItem("Normal Borders");
+        normalizeItem.setOnAction(e -> FXMLController.getActiveController().setBorderState(false));
 
-        arrangeMenu.getItems().addAll(horizItem, vertItem, gridItem);
+        arrangeMenu.getItems().addAll(horizItem, vertItem, gridItem, minimizeItem, normalizeItem);
         MenuItem alignMenuItem = new MenuItem("Align Spectra");
         alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
 
