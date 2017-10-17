@@ -256,14 +256,17 @@ public class PeakListAttributes {
     }
 
     public void findPeaksInRegion() {
-        double[][] limits = getRegionLimits(dataAttr);
-        int[] peakDim = getPeakDim();
-        List<Peak> peaks = peakList.peaks()
-                .stream()
-                .parallel()
-                .filter(peak -> peak.inRegion(limits, null, peakDim))
-                .collect(Collectors.toList());
-        peaksInRegion = Optional.of(peaks);
+        peaksInRegion = Optional.empty();
+        if ((peakList != null) && (peakList.peaks() != null)) {
+            double[][] limits = getRegionLimits(dataAttr);
+            int[] peakDim = getPeakDim();
+            List<Peak> peaks = peakList.peaks()
+                    .stream()
+                    .parallel()
+                    .filter(peak -> peak.inRegion(limits, null, peakDim))
+                    .collect(Collectors.toList());
+            peaksInRegion = Optional.of(peaks);
+        }
     }
 
     public void findMultipletsInRegion() {
