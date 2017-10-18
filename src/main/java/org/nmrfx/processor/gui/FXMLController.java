@@ -1340,10 +1340,57 @@ public class FXMLController implements FractionPaneChild, Initializable {
     }
 
     public void arrange(FractionPane.ORIENTATION orient) {
+        if (charts.size() == 1) {
+            PolyChart chart = charts.get(0);
+            double xLower = chart.xAxis.getLowerBound();
+            double xUpper = chart.xAxis.getUpperBound();
+            double yLower = chart.yAxis.getLowerBound();
+            double yUpper = chart.yAxis.getUpperBound();
+            List<DatasetAttributes> datasetAttrs = chart.getDatasetAttributes();
+            if (datasetAttrs.size() > 1) {
+                List<DatasetAttributes> current = new ArrayList<>();
+                current.addAll(datasetAttrs);
+                setNCharts(current.size());
+                chart.getDatasetAttributes().clear();
+                chartGroup.setOrientation(orient, true);
+                for (int i = 0; i < charts.size(); i++) {
+                    DatasetAttributes datasetAttr = current.get(i);
+                    PolyChart iChart = charts.get(i);
+                    iChart.getDatasetAttributes().clear();
+                    iChart.getDatasetAttributes().add(datasetAttr);
+                }
+                chart.syncSceneMates();
+                chartGroup.layoutChildren();
+                for (int i = 0; i < charts.size(); i++) {
+                    PolyChart iChart = charts.get(i);
+                    iChart.xAxis.setLowerBound(xLower);
+                    iChart.xAxis.setUpperBound(xUpper);
+                    iChart.yAxis.setLowerBound(yLower);
+                    iChart.yAxis.setUpperBound(yUpper);
+                    iChart.setCrossHairState(true);
+                    iChart.refresh();
+                }
+                chartGroup.layoutChildren();
+                charts.stream().forEach(c -> c.refresh());
+                return;
+            }
+        }
         chartGroup.setOrientation(orient, true);
-        int nRows = chartGroup.getRows();
-        int nCols = chartGroup.getColumns();
         chartGroup.layoutChildren();
+    }
+
+    public void overlay() {
+        List<DatasetAttributes> current = new ArrayList<>();
+        for (PolyChart chart : charts) {
+            current.addAll(chart.getDatasetAttributes());
+        }
+
+        setNCharts(1);
+        PolyChart chart = charts.get(0);
+        List<DatasetAttributes> datasetAttrs = chart.getDatasetAttributes();
+        datasetAttrs.clear();
+        datasetAttrs.addAll(current);
+        arrange(1);
     }
 
     public void setBorderState(boolean state) {
