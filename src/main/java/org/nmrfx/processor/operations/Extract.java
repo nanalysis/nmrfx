@@ -75,8 +75,13 @@ public class Extract extends Operation {
         int newSize = end - start + 1;
         vector.trim(start, newSize);
         int[][] pt = vector.getPt();
+        int[] dim =  vector.getDim();
+        if (pt == null) {
+            pt = new int[1][2];
+            dim = new int[1];
+        }
         pt[0][1] = newSize - 1;
-        vector.setPt(pt, vector.getDim());
+        vector.setPt(pt, dim);
 
         return this;
     }
