@@ -47,8 +47,7 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
     Consumer<Item> f;
     String value;
     String defaultValue;
-    static BackgroundFill fill = new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY);
-    static Background activeBackground = new Background(fill);
+    static Background activeBackground = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
 
     public TextWaitingOperationItem(ChangeListener listener, Consumer<Item> f, String defaultValue, String category, String name, String description) {
