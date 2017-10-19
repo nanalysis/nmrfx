@@ -26,6 +26,8 @@
                                 <MenuItem mnemonicParsing="false" onAction="#openScriptAction" text="Open..." />
                                 <MenuItem mnemonicParsing="false" onAction="#writeDefaultScriptAction" text="Save (process.py)" />
                                 <MenuItem mnemonicParsing="false" onAction="#writeScriptAction" text="Save As..." />
+                                <MenuItem mnemonicParsing="false" onAction="#openVecScriptAction" text="Load Operations..." />
+                                <MenuItem mnemonicParsing="false" onAction="#writeVecScriptAction" text="Save Operations..." />
                             </items>
                         </MenuButton>
                         <ChoiceBox fx:id="dimChoice" value=""/>
