@@ -105,6 +105,7 @@ public class OperationInfo {
         "Cascade-Dataset",
         "DPHASE",
         "Cascade-New",
+        "SCRIPT",
         "CWTD",
         "DX",
         "MULT", //"SCRIPT"
