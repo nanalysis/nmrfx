@@ -51,7 +51,12 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -97,6 +102,8 @@ public class SpectrumStatusBar {
     Cursor currentCursor = Cursor.CROSSHAIR;
     HashMap<Cursor, Text> cursorMap = new HashMap<>();
     HashMap<String, Cursor> cursorNameMap = new HashMap<>();
+    static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
+    Background defaultBackground = null;
 
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
@@ -154,6 +161,7 @@ public class SpectrumStatusBar {
             spinner.setOnScroll(e -> scrollPlane(e, spinner));
             planePPMField[i].setPrefWidth(60);
             final int iPlane = i + 2;
+            planePPMField[i].setOnKeyReleased(e -> planeKeyReleased(e, iPlane));
             planeListeners[i] = (ObservableValue<? extends Integer> observableValue, Integer oldValue, Integer newValue) -> {
                 if ((newValue != null) && !newValue.equals(oldValue)) {
                     updatePlane(iPlane, newValue);
@@ -311,6 +319,33 @@ public class SpectrumStatusBar {
             line.setStroke(Color.BLACK);
         }
         return stackPane;
+    }
+
+    public void planeKeyReleased(KeyEvent event, int axNum) {
+        TextField planeField = (TextField) event.getSource();
+        if (defaultBackground == null) {
+            defaultBackground = planeField.getBackground();
+        }
+
+        String text = planeField.getText().trim();
+        try {
+            if (text.length() > 0) {
+                double planePPM = Double.parseDouble(text);
+                PolyChart chart = controller.getActiveChart();
+                ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
+                if (!dataAttrList.isEmpty()) {
+                    DatasetAttributes dataAttr = dataAttrList.get(0);
+                    int planeIndex = DatasetAttributes.AXMODE.PPM.getIndex(dataAttr, axNum, planePPM);
+                    if (event.getCode() == KeyCode.ENTER) {
+                        updatePlane(axNum, planeIndex);
+                    }
+                }
+            }
+            planeField.setBackground(defaultBackground);
+        } catch (NumberFormatException nfE) {
+            planeField.setBackground(errorBackground);
+        }
+
     }
 
     public void updatePlanePPM(double ppm, int axNum) {
