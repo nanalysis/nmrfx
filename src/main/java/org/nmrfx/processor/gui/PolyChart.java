@@ -1520,6 +1520,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     } else {
                         datasetAttributes = new DatasetAttributes(dataset);
                         datasetAttributes.setLevel(dataset.getLvl());
+                        datasetAttributes.setHasLevel(true);
                     }
                 } else {
                     datasetAttributes = datasetAttributesList.get(0);
@@ -1678,7 +1679,9 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         }
         if (autoScale) {
             full();
-            autoScale();
+            if (!datasetAttributes.getHasLevel()) {
+                autoScale();
+            }
         }
     }
 
