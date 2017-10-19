@@ -3122,21 +3122,23 @@ def SHIFT(shift=1, disabled=False, vector=None, process=None):
     op = Shift(shift)
     return op
 
-def SCRIPT(script="", initialScript="", encapsulate=False, disabled=False, vector=None, process=None):
+def SCRIPT(script="", initialScript="", execFileName="", encapsulate=False, disabled=False, vector=None, process=None):
     '''Execute a Python script as an Operation. Current vector is available as object named "vec". 
     Parameters
     ---------
-    script : str
+    script : wstring
         The script that will be run on each Vec at the stage in the processing queue.
-    initialScript : str
+    initialScript : wstring
         Any initial declarations that will be executed on initialization.
+    execFileName : file
+        An initial file that will be executed on initialization.
     encapsulate : bool
         Whether the interpreter should persist between evaluations or be reinitialized for each evaluation.
 '''
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op=PythonScript(script, initialScript, encapsulate)
+    op=PythonScript(script, initialScript, execFileName, encapsulate)
     if (vector != None):
         op.eval(vector)
     else:
