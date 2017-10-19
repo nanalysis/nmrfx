@@ -481,7 +481,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Vector Script");
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Python Script", "*.py", "py"),
+                new FileChooser.ExtensionFilter("Python Script", "*.txt", "txt"),
                 new FileChooser.ExtensionFilter("Any File", "*")
         );
         if (initialDir != null) {
@@ -490,6 +490,20 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         File selectedFile = fileChooser.showOpenDialog(stage);
         if (selectedFile != null) {
             openVecScript(selectedFile);
+        }
+    }
+
+    @FXML
+    private void writeVecScriptAction(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        String initialDir = chartProcessor.getScriptDir();
+        if (initialDir != null) {
+            fileChooser.setInitialDirectory(new File(initialDir));
+        }
+        File saveFile = fileChooser.showSaveDialog(stage);
+        if (saveFile != null) {
+            String script = getScript();
+            chartProcessor.writeScript(script, saveFile);
         }
     }
 
@@ -505,7 +519,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             String[] ops = scriptString.split("\n");
             for (String op : ops) {
                 op = op.trim();
-                propertyManager.setOp(op, true, -1);
+                propertyManager.setOp(op, true, 9999);
             }
         }
     }
@@ -630,7 +644,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public String getCurrentScript() {
         return textArea.getText();
     }
-
 
     synchronized void setProcessingOn() {
         isProcessing = true;
@@ -777,7 +790,6 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         refSheet.getItems().setAll(newItems);
     }
 
-  
     @Override
     public void initialize(URL url, ResourceBundle rb
     ) {
