@@ -431,7 +431,7 @@ public class PropertyManager {
                 if (types.size() == 1) {
                     String type = (String) types.get(0);
                     switch (type) {
-                        case "string":
+                        case "string": {
                             String defaultString;
                             Object defObj = parMap.get("default");
                             if (defObj instanceof String) {
@@ -442,9 +442,25 @@ public class PropertyManager {
                                 defaultString = defObj.toString();
                             }
                             propItems.add(new TextOperationItem(stringListener, defaultString, op, name, parDesc));
+
                             break;
+                        }
+                        case "wstring": {
+                            String defaultString;
+                            Object defObj = parMap.get("default");
+                            if (defObj instanceof String) {
+                                defaultString = (String) defObj;
+                            } else if (defObj == null) {
+                                defaultString = ""; // fixme  what to do when no default
+                            } else {
+                                defaultString = defObj.toString();
+                            }
+                            propItems.add(new TextWaitingOperationItem(null, this::updateOp, defaultString, op, name, parDesc));
+                            break;
+                        }
                         case "file":
-                            defObj = parMap.get("default");
+                            String defaultString;
+                            Object defObj = parMap.get("default");
                             if (defObj instanceof String) {
                                 defaultString = (String) defObj;
                             } else if (defObj == null) {

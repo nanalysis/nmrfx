@@ -36,6 +36,7 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import org.controlsfx.control.PropertySheet.Item;
@@ -94,6 +95,13 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         } else if (type == TextOperationItem.class) {
             //System.out.println("text item");
             return Editors.createTextEditor(item);
+        } else if (type == TextWaitingOperationItem.class) {
+            //System.out.println("textwait item");
+            TextWaitingOperationItem tItem = (TextWaitingOperationItem) item;
+            PropertyEditor editor = Editors.createTextEditor(item);
+            TextField textField = (TextField) editor.getEditor();
+            textField.setOnKeyReleased(e -> tItem.keyReleased(textField, e));
+            return editor;
         } else if (type == MenuTextOperationItem.class) {
             //System.out.println("text item");
             MenuTextOperationItem tItem = (MenuTextOperationItem) item;
