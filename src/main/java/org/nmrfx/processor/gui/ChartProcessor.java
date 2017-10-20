@@ -758,6 +758,24 @@ public class ChartProcessor {
         return scriptBuilder.toString();
     }
 
+    public String buildScript(int nDim, String fidFilePath, String datasetFilePath) {
+        if (mapOpLists == null) {
+            return "";
+        }
+        String lineSep = System.lineSeparator();
+        StringBuilder scriptBuilder = new StringBuilder();
+        scriptBuilder.append("import os").append(lineSep);
+        scriptBuilder.append("from pyproc import *").append(lineSep);
+        scriptBuilder.append("procOpts(nprocess=").append(PreferencesController.getNProcesses()).append(")").append(lineSep);
+        scriptBuilder.append("FID('").append(fidFilePath.replace("\\", "/")).append("')").append(lineSep);
+        scriptBuilder.append("CREATE('").append(datasetFilePath.replace("\\", "/")).append("')").append(lineSep);
+        String indent = "";
+        scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
+        String scriptCmds = getScriptCmds(nDim, indent, true);
+        scriptBuilder.append(scriptCmds);
+        return scriptBuilder.toString();
+    }
+
     public String buildMultiScript(String baseDir, String outputDir, ArrayList<String> fileNames, boolean combineFiles) {
         boolean useIFile = true;
         String baseName = "data";

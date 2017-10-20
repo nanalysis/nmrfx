@@ -58,10 +58,15 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.table.TableFilter;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetException;
+import org.nmrfx.processor.datasets.DatasetMerger;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.gui.ChartProcessor;
 import org.nmrfx.processor.gui.ConsoleController;
+import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
@@ -128,6 +133,16 @@ public class ScanTable {
         columnTypes.put("row", "I");
         columnTypes.put("etime", "I");
 
+    }
+
+    final protected String getActiveDatasetName() {
+        PolyChart chart = scannerController.getChart();
+        Dataset dataset = chart.getDataset();
+        String name = "";
+        if (dataset != null) {
+            name = dataset.getName();
+        }
+        return name;
     }
 
     final protected void selectionChanged(ObservableList<Integer> selected) {
@@ -253,20 +268,42 @@ public class ScanTable {
         if (selectedDir != null) {
             scanOutputDir = selectedDir.getPath();
             ObservableList<FileTableItem> fileTableItems = tableView.getItems();
-            ArrayList<String> fileNames = new ArrayList<>();
+            List<String> fileNames = new ArrayList<>();
+            PythonInterpreter processInterp = new PythonInterpreter();
+
             int rowNum = 1;
             for (FileTableItem fileTableItem : fileTableItems) {
-                fileNames.add(fileTableItem.getFileName());
+                int nDim = fileTableItem.getNDim();
+                File fidFile = new File(scanDir, fileTableItem.getFileName());
+                String fidFilePath = fidFile.getAbsolutePath();
+                File datasetFile = new File(selectedDir, "process" + rowNum + ".nv");
+                String datasetFilePath = datasetFile.getAbsolutePath();
+                String script = chartProcessor.buildScript(nDim, fidFilePath, datasetFilePath);
+                processInterp.exec("from pyproc import *");
+                processInterp.exec("useProcessor()");
+                processInterp.exec(script);
+                fileNames.add(datasetFilePath);
                 fileTableItem.setRow(rowNum++);
             }
-            String script = chartProcessor.buildMultiScript(scanDir, scanOutputDir, fileNames, combineFileMode);
-            PythonInterpreter processInterp = new PythonInterpreter();
-            processInterp.exec("from pyproc import *");
-            processInterp.exec("useProcessor()");
-            processInterp.exec(script);
-            ProcessorController processorController = scannerController.getFXMLController().getProcessorController(true);
-
-            processorController.viewDatasetInApp();
+            updateFilter();
+            if (combineFileMode) {
+                // merge datasets into single pseudo-nd dataset
+                DatasetMerger merger = new DatasetMerger();
+                String mergedFilepath = new File(selectedDir, "process.nv").getAbsolutePath();
+                try {
+                    merger.merge(fileNames, mergedFilepath);
+                    // load merged dataset
+                    FXMLController.getActiveController().openFile(mergedFilepath, true, true);
+                } catch (IOException | DatasetException ex) {
+                    ExceptionDialog eDialog = new ExceptionDialog(ex);
+                    eDialog.showAndWait();
+                }
+            } else {
+                // load first output dataset
+                File datasetFile = new File(selectedDir, "process" + 1 + ".nv");
+                String datasetFilePath = datasetFile.getAbsolutePath();
+                FXMLController.getActiveController().openFile(datasetFilePath, true, true);
+            }
         }
     }
 
@@ -326,6 +363,7 @@ public class ScanTable {
         boolean[] notDouble = null;
         boolean[] notInteger = null;
         String[] standardHeaders = {"path", "sequence", "row", "etime", "ndim"};
+        String datasetName = "";
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -333,11 +371,12 @@ public class ScanTable {
                     headers = line.split("\t");
                     notDouble = new boolean[headers.length];
                     notInteger = new boolean[headers.length];
-//                    for (int i = 0; i < headers.length; i++) {
-//                        headers[i] = getNextColumnName(headers[i]);
-//
-//                    }
-//                    updateTable(headers);
+                    for (int i = 0; i < headers.length; i++) {
+                        if (headers[i].startsWith("row:")) {
+                            datasetName = headers[i].substring(4);
+                            headers[i] = "row";
+                        }
+                    }
                 } else {
                     String[] fields = line.split("\t");
                     for (int iField = 0; iField < fields.length; iField++) {
@@ -440,6 +479,11 @@ public class ScanTable {
         updateTable(headers);
         fileTableFilter.resetFilter();
         updateDataFrame();
+        if (datasetName.length() > 0) {
+            String dirName = file.getParent();
+            Path path = FileSystems.getDefault().getPath(dirName, datasetName);
+            FXMLController.getActiveController().openFile(path.toString(), true, true);
+        }
 
     }
 
@@ -468,6 +512,12 @@ public class ScanTable {
                     writer.write('\t');
                 } else {
                     first = false;
+                }
+                if (header.equals("row")) {
+                    String datasetName = getActiveDatasetName();
+                    if (datasetName.length() > 0) {
+                        header = header + ":" + datasetName;
+                    }
                 }
                 writer.write(header, 0, header.length());
             }
