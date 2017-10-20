@@ -782,7 +782,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         crossHairStates[1][1] = v2;
     }
 
-    Dataset getDataset() {
+    public Dataset getDataset() {
         Dataset dataset = null;
         if (!datasetAttributesList.isEmpty()) {
             dataset = datasetAttributesList.get(0).getDataset();
