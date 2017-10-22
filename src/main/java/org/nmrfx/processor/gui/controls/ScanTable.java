@@ -248,6 +248,15 @@ public class ScanTable {
         }
     }
 
+    public void setScanDirectory() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Select Scan Directory");
+        File selectedDir = directoryChooser.showDialog(scannerController.getStage());
+        if (selectedDir != null) {
+            scanDir = selectedDir.getPath();
+        }
+    }
+
     public void loadScanFiles(Stage stage) {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Select Scan Directory");
@@ -263,6 +272,9 @@ public class ScanTable {
     }
 
     public void processScanDir(Stage stage, ChartProcessor chartProcessor, boolean combineFileMode) {
+        if (getScanDirectory() == null) {
+            return;
+        }
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Select Scan Output Directory");
         File selectedDir = directoryChooser.showDialog(stage);
@@ -299,7 +311,13 @@ public class ScanTable {
                 DatasetMerger merger = new DatasetMerger();
                 String mergedFilepath = new File(selectedDir, combineFileName).getAbsolutePath();
                 try {
+                    // merge all the 1D files into a pseudo 2D file
                     merger.merge(fileNames, mergedFilepath);
+                    // After merging, remove the 1D files
+                    for (String fileName: fileNames) {
+                        File file = new File(fileName);
+                        Files.deleteIfExists(file.toPath());
+                    }
                     // load merged dataset
                     FXMLController.getActiveController().openFile(mergedFilepath, false, false);
                 } catch (IOException | DatasetException ex) {
@@ -318,6 +336,9 @@ public class ScanTable {
     public void openSelectedListFile(String scriptString) {
         int selItem = tableView.getSelectionModel().getSelectedIndex();
         if (selItem >= 0) {
+            if (getScanDirectory() == null) {
+                return;
+            }
             FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
             String fileName = fileTableItem.getFileName();
             String filePath = Paths.get(scanDir, fileName).toString();
@@ -361,9 +382,17 @@ public class ScanTable {
         }
     }
 
+    String getScanDirectory() {
+        if (scanDir == null) {
+            setScanDirectory();
+        }
+        return scanDir;
+    }
+
     private void loadScanTable(File file) {
+
         fileListItems.clear();
-        scanDir = file.getParent();
+
         long firstDate = Long.MAX_VALUE;
         int iLine = 0;
         String[] headers = null;
@@ -432,6 +461,9 @@ public class ScanTable {
                     if (!hasAll) {
                         if ((fileName == null) || (fileName.length() == 0)) {
                             System.out.println("No path field or value");
+                            return;
+                        }
+                        if (getScanDirectory() == null) {
                             return;
                         }
                         Path filePath = FileSystems.getDefault().getPath(scanDir, fileName);
