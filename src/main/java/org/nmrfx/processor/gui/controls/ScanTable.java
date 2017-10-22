@@ -131,6 +131,7 @@ public class ScanTable {
         columnTypes.put("sequence", "S");
         columnTypes.put("ndim", "I");
         columnTypes.put("row", "I");
+        columnTypes.put("dataset", "S");
         columnTypes.put("etime", "I");
 
     }
@@ -265,6 +266,8 @@ public class ScanTable {
         DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Select Scan Output Directory");
         File selectedDir = directoryChooser.showDialog(stage);
+        String fileRoot = "process";
+        String combineFileName = "process.nv";
         if (selectedDir != null) {
             scanOutputDir = selectedDir.getPath();
             ObservableList<FileTableItem> fileTableItems = tableView.getItems();
@@ -276,7 +279,7 @@ public class ScanTable {
                 int nDim = fileTableItem.getNDim();
                 File fidFile = new File(scanDir, fileTableItem.getFileName());
                 String fidFilePath = fidFile.getAbsolutePath();
-                File datasetFile = new File(selectedDir, "process" + rowNum + ".nv");
+                File datasetFile = new File(selectedDir, fileRoot + rowNum + ".nv");
                 String datasetFilePath = datasetFile.getAbsolutePath();
                 String script = chartProcessor.buildScript(nDim, fidFilePath, datasetFilePath);
                 processInterp.exec("from pyproc import *");
@@ -284,16 +287,21 @@ public class ScanTable {
                 processInterp.exec(script);
                 fileNames.add(datasetFilePath);
                 fileTableItem.setRow(rowNum++);
+                if (combineFileMode) {
+                    fileTableItem.setDatasetName(combineFileName);
+                } else {
+                    fileTableItem.setDatasetName(datasetFile.getName());
+                }
             }
             updateFilter();
             if (combineFileMode) {
                 // merge datasets into single pseudo-nd dataset
                 DatasetMerger merger = new DatasetMerger();
-                String mergedFilepath = new File(selectedDir, "process.nv").getAbsolutePath();
+                String mergedFilepath = new File(selectedDir, combineFileName).getAbsolutePath();
                 try {
                     merger.merge(fileNames, mergedFilepath);
                     // load merged dataset
-                    FXMLController.getActiveController().openFile(mergedFilepath, true, true);
+                    FXMLController.getActiveController().openFile(mergedFilepath, false, false);
                 } catch (IOException | DatasetException ex) {
                     ExceptionDialog eDialog = new ExceptionDialog(ex);
                     eDialog.showAndWait();
@@ -302,7 +310,7 @@ public class ScanTable {
                 // load first output dataset
                 File datasetFile = new File(selectedDir, "process" + 1 + ".nv");
                 String datasetFilePath = datasetFile.getAbsolutePath();
-                FXMLController.getActiveController().openFile(datasetFilePath, true, true);
+                FXMLController.getActiveController().openFile(datasetFilePath, false, false);
             }
         }
     }
@@ -335,7 +343,7 @@ public class ScanTable {
                 if (date < firstDate) {
                     firstDate = date;
                 }
-                fileListItems.add(new FileTableItem(filePath.substring(beginIndex), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), 0));
+                fileListItems.add(new FileTableItem(filePath.substring(beginIndex), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), 0, ""));
             }
         }
         for (FileTableItem item : fileListItems) {
@@ -363,7 +371,7 @@ public class ScanTable {
         boolean[] notDouble = null;
         boolean[] notInteger = null;
         String[] standardHeaders = {"path", "sequence", "row", "etime", "ndim"};
-        String datasetName = "";
+        String firstDatasetName = "";
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -371,12 +379,6 @@ public class ScanTable {
                     headers = line.split("\t");
                     notDouble = new boolean[headers.length];
                     notInteger = new boolean[headers.length];
-                    for (int i = 0; i < headers.length; i++) {
-                        if (headers[i].startsWith("row:")) {
-                            datasetName = headers[i].substring(4);
-                            headers[i] = "row";
-                        }
-                    }
                 } else {
                     String[] fields = line.split("\t");
                     for (int iField = 0; iField < fields.length; iField++) {
@@ -419,6 +421,14 @@ public class ScanTable {
                         }
                     }
                     String fileName = fieldMap.get("path");
+                    String datasetName = "";
+                    if (fieldMap.containsKey("dataset")) {
+                        datasetName = fieldMap.get("dataset");
+                        if (firstDatasetName.equals("")) {
+                            firstDatasetName = datasetName;
+                        }
+                    }
+
                     if (!hasAll) {
                         if ((fileName == null) || (fileName.length() == 0)) {
                             System.out.println("No path field or value");
@@ -449,7 +459,7 @@ public class ScanTable {
                         firstDate = eTime;
                     }
 
-                    fileListItems.add(new FileTableItem(fileName, sequence, nDim, eTime, row, fieldMap));
+                    fileListItems.add(new FileTableItem(fileName, sequence, nDim, eTime, row, datasetName, fieldMap));
                 }
 
                 iLine++;
@@ -470,6 +480,7 @@ public class ScanTable {
         columnTypes.put("sequence", "S");
         columnTypes.put("ndim", "I");
         columnTypes.put("row", "I");
+        columnTypes.put("dataset", "S");
         columnTypes.put("etime", "I");
 
         for (FileTableItem item : fileListItems) {
@@ -479,10 +490,10 @@ public class ScanTable {
         updateTable(headers);
         fileTableFilter.resetFilter();
         updateDataFrame();
-        if (datasetName.length() > 0) {
+        if (firstDatasetName.length() > 0) {
             String dirName = file.getParent();
-            Path path = FileSystems.getDefault().getPath(dirName, datasetName);
-            FXMLController.getActiveController().openFile(path.toString(), true, true);
+            Path path = FileSystems.getDefault().getPath(dirName, firstDatasetName);
+            FXMLController.getActiveController().openFile(path.toString(), false, false);
         }
 
     }
@@ -512,12 +523,6 @@ public class ScanTable {
                     writer.write('\t');
                 } else {
                     first = false;
-                }
-                if (header.equals("row")) {
-                    String datasetName = getActiveDatasetName();
-                    if (datasetName.length() > 0) {
-                        header = header + ":" + datasetName;
-                    }
                 }
                 writer.write(header, 0, header.length());
             }
@@ -594,16 +599,18 @@ public class ScanTable {
         TableColumn<FileTableItem, Number> nDimColumn = new TableColumn<>("ndim");
         TableColumn<FileTableItem, Long> dateColumn = new TableColumn<>("etime");
         TableColumn<FileTableItem, Number> rowColumn = new TableColumn<>("row");
+        TableColumn<FileTableItem, String> datasetColumn = new TableColumn<>("dataset");
 
         fileColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getFileName()));
         seqColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getSeqName()));
         nDimColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getNDim()));
         rowColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getRow()));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("Date"));
+        datasetColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getDatasetName()));
         tableView.getColumns().clear();
-        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn);
+        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn, datasetColumn);
         for (String header : headers) {
-            if (header.equalsIgnoreCase("path") || header.equalsIgnoreCase("Sequence") || header.equalsIgnoreCase("nDim") || header.equalsIgnoreCase("eTime") || header.equalsIgnoreCase("row") || header.equalsIgnoreCase("fid")) {
+            if (header.equalsIgnoreCase("path") || header.equalsIgnoreCase("Sequence") || header.equalsIgnoreCase("nDim") || header.equalsIgnoreCase("eTime") || header.equalsIgnoreCase("row") || header.equalsIgnoreCase("dataset") || header.equalsIgnoreCase("fid")) {
                 continue;
             }
             String type = columnTypes.get(header);
