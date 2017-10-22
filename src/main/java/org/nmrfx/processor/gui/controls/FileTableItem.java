@@ -32,6 +32,7 @@ import javafx.beans.property.StringProperty;
 public class FileTableItem {
 
     private SimpleStringProperty fileName;
+    private SimpleStringProperty datasetName;
     private SimpleStringProperty seqName;
     private SimpleIntegerProperty nDim;
     private SimpleIntegerProperty row;
@@ -40,21 +41,26 @@ public class FileTableItem {
     private HashMap<String, Integer> intExtras = new HashMap<>();
     private HashMap<String, Double> doubleExtras = new HashMap<>();
 
-    public FileTableItem(String fileName, String seqName, int nDim, long date, int row) {
+    public FileTableItem(String fileName, String seqName, int nDim, long date, int row, String datasetName) {
         this.fileName = new SimpleStringProperty(fileName);
         this.seqName = new SimpleStringProperty(seqName);
         this.nDim = new SimpleIntegerProperty(nDim);
         this.date = new SimpleLongProperty(date);
         this.row = new SimpleIntegerProperty(row);
+        this.datasetName = new SimpleStringProperty(datasetName);
     }
 
-    public FileTableItem(String fileName, String seqName, int nDim, long date, int row, HashMap<String, String> extras) {
-        this(fileName, seqName, nDim, date, row);
+    public FileTableItem(String fileName, String seqName, int nDim, long date, int row, String datasetName, HashMap<String, String> extras) {
+        this(fileName, seqName, nDim, date, row, datasetName);
         this.extras.putAll(extras);
     }
 
     public StringProperty fileNameProperty() {
         return fileName;
+    }
+
+    public StringProperty datasetNameProperty() {
+        return datasetName;
     }
 
     public StringProperty seqNameProperty() {
@@ -67,6 +73,14 @@ public class FileTableItem {
 
     public void setFileName(String fileName) {
         this.fileName.set(fileName);
+    }
+
+    public void setDatasetName(String fileName) {
+        this.datasetName.set(fileName);
+    }
+
+    public String getDatasetName() {
+        return datasetName.get();
     }
 
     public String getSeqName() {
@@ -171,6 +185,10 @@ public class FileTableItem {
                     sBuilder.append(getRow());
                     break;
                 }
+                case "dataset": {
+                    sBuilder.append(getDatasetName());
+                    break;
+                }
                 case "ndim": {
                     sBuilder.append(getNDim());
                     break;
@@ -201,6 +219,7 @@ public class FileTableItem {
         }
         return sBuilder.toString();
     }
+
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(seqName.get());
@@ -209,6 +228,8 @@ public class FileTableItem {
         sBuilder.append(" ");
         sBuilder.append(row.get());
         sBuilder.append(" ");
+        sBuilder.append(datasetName.get());
+        sBuilder.append(" ");
         sBuilder.append(date.get());
         sBuilder.append(" ");
         sBuilder.append(extras.toString());
@@ -216,6 +237,6 @@ public class FileTableItem {
         sBuilder.append(doubleExtras.toString());
         sBuilder.append(" ");
         sBuilder.append(intExtras.toString());
-        return sBuilder.toString(); 
+        return sBuilder.toString();
     }
 }
