@@ -365,7 +365,6 @@ public class ScannerController implements Initializable {
         scanTable.addTableColumn(newColumnName, "D");
     }
 
-    
     public String getColumnDescriptor(double ppm1, double ppm2, double ppm1w, double ppm2w) {
         String newColumnName = measureItem.getValue().toString().substring(0, 3).toLowerCase();
         if (null == offsetItem.getValue()) {
