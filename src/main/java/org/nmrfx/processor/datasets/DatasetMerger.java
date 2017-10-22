@@ -63,6 +63,8 @@ public class DatasetMerger {
             }
             iFile++;
         }
+        outputDataset.writeHeader();
+        outputDataset.close();
     }
 
 }
