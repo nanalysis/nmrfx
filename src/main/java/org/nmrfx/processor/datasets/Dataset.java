@@ -2690,8 +2690,12 @@ public class Dataset extends DoubleVector {
             blockElements = DataUtilities.readSwapInt(dis, checkSwap) * 4;
             nDim = DataUtilities.readSwapInt(dis, checkSwap);
             setNDim();
+            rdims = DataUtilities.readSwapInt(dis, checkSwap);
+            if (rdims == 0) {
+                rdims = nDim;
+            }
 
-            dis.skip(996);
+            dis.skip(992);
 
             byte[] labelBytes = new byte[16];
             StringBuilder labelBuffer = new StringBuilder();
@@ -3288,6 +3292,7 @@ public class Dataset extends DoubleVector {
             byteBuffer.putInt(blockHeaderSize);
             byteBuffer.putInt(blockElements / 4);
             byteBuffer.putInt(nDim);
+            byteBuffer.putInt(rdims);
 
             for (int i = 0; i < nDim; i++) {
                 byteBuffer.position(1024 + i * 128);
