@@ -51,8 +51,6 @@ import java.util.logging.Logger;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.time.ZoneId;
-import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
 import org.apache.commons.math3.complex.Complex;
@@ -89,6 +87,7 @@ class VarianData implements NMRData {
     Integer nDimVal = null;
     int[] sizes = null;
     int[] maxSizes = null;
+    double scale = 1.0e6;
 
     static final String parlist = "acqdim apptype array arraydim axis axisf procdim "
             + "solvent seqfil pslabel sfrq dfrq dfrq2 dfrq3 sw sw1 sw2 sw3 "
@@ -889,17 +888,17 @@ class VarianData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (int j = 0; j < (nPoints * 2); j += 2) {
-                cdata[j / 2] = new Complex((double) fbuf.get(j), (double) fbuf.get(j + 1));
+                cdata[j / 2] = new Complex((double) fbuf.get(j) / scale, (double) fbuf.get(j + 1) / scale);
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (int j = 0; j < (nPoints * 2); j += 2) {
-                cdata[j / 2] = new Complex((double) sbuf.get(j), (double) sbuf.get(j + 1));
+                cdata[j / 2] = new Complex((double) sbuf.get(j) / scale, (double) sbuf.get(j + 1) / scale);
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (int j = 0; j < (nPoints * 2); j += 2) {
-                cdata[j / 2] = new Complex((double) ibuf.get(j), (double) ibuf.get(j + 1));
+                cdata[j / 2] = new Complex((double) ibuf.get(j) / scale, (double) ibuf.get(j + 1) / scale);
             }
         }
 
@@ -1212,17 +1211,17 @@ class VarianData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) fbuf.get(j);
+                data[j] = (double) fbuf.get(j) / scale;
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) sbuf.get(j);
+                data[j] = (double) sbuf.get(j) / scale;
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) ibuf.get(j);
+                data[j] = (double) ibuf.get(j) / scale;
             }
         }
     }  // end copyVecData
@@ -1233,17 +1232,17 @@ class VarianData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (j = 0; j < np; j += 2) {
-                data[j / 2] = new Complex((double) fbuf.get(j), (double) fbuf.get(j + 1));
+                data[j / 2] = new Complex((double) fbuf.get(j) / scale, (double) fbuf.get(j + 1) / scale);
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (j = 0; j < np; j += 2) {
-                data[j / 2] = new Complex((double) sbuf.get(j), (double) sbuf.get(j + 1));
+                data[j / 2] = new Complex((double) sbuf.get(j) / scale, (double) sbuf.get(j + 1) / scale);
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (j = 0; j < np; j += 2) {
-                data[j / 2] = new Complex((double) ibuf.get(j), (double) ibuf.get(j + 1));
+                data[j / 2] = new Complex((double) ibuf.get(j) / scale, (double) ibuf.get(j + 1) / scale);
             }
         }
     }  // end copyVecData
@@ -1254,20 +1253,20 @@ class VarianData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (j = 0; j < np; j += 2) {
-                rdata[j / 2] = (double) fbuf.get(j);
-                idata[j / 2] = (double) fbuf.get(j + 1);
+                rdata[j / 2] = (double) fbuf.get(j) / scale;
+                idata[j / 2] = (double) fbuf.get(j + 1) / scale;
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (j = 0; j < np; j += 2) {
-                rdata[j / 2] = (double) sbuf.get(j);
-                idata[j / 2] = (double) sbuf.get(j + 1);
+                rdata[j / 2] = (double) sbuf.get(j) / scale;
+                idata[j / 2] = (double) sbuf.get(j + 1) / scale;
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (j = 0; j < np; j += 2) {  // npoints defined in Varian header
-                rdata[j / 2] = (double) ibuf.get(j);
-                idata[j / 2] = (double) ibuf.get(j + 1);
+                rdata[j / 2] = (double) ibuf.get(j) / scale;
+                idata[j / 2] = (double) ibuf.get(j + 1) / scale;
             }
         }
     }  // end copyVecData
@@ -1276,7 +1275,7 @@ class VarianData implements NMRData {
     public void readBlockHeader(int iVec) {
         try {
             int c = 0, i = 0, size = 7, ct = 0, nread = 0;
-            short scale = 1, stat = 0, index = 0, mode = 0;
+            short iscale = 1, stat = 0, index = 0, mode = 0;
             int hskips = 8, bskips = 7;
             int skips = (hskips + i * bskips * nbheaders) * 4 + i * np * ebytes;
             byte[] hbytes = new byte[4 * size];
@@ -1286,7 +1285,7 @@ class VarianData implements NMRData {
                 c = ibuf.get();
                 switch (i) {
                     case 0:
-                        scale = (short) (c >> 16); // scale
+                        iscale = (short) (c >> 16); // scale
                         stat = (short) c;              // status
                         break;
                     case 1:
@@ -1299,7 +1298,7 @@ class VarianData implements NMRData {
                 }
                 System.out.print(c + " ");
             }
-            System.out.println("blockheader: scale=" + scale + " status=" + stat
+            System.out.println("blockheader: scale=" + iscale + " status=" + stat
                     + " index=" + index + " mode=" + mode + " ct=" + ct);
         } catch (EOFException e) {
             logger.log(Level.WARNING, e.getMessage());
