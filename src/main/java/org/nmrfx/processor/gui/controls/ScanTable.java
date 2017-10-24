@@ -148,13 +148,27 @@ public class ScanTable {
 
     final protected void selectionChanged(ObservableList<Integer> selected) {
         ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
-        if ((processorController == null) || processorController.isViewingDataset()) {
+        if ((processorController == null) || processorController.isViewingDataset() || !processorController.getStage().isShowing()) {
             if (!selected.isEmpty()) {
                 PolyChart chart = scannerController.getChart();
                 List<Integer> rows = new ArrayList<>();
                 for (Integer index : selected) {
                     FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
                     Integer row = fileTableItem.getRow();
+                    String datasetName = fileTableItem.getDatasetName();
+                    Dataset dataset = chart.getDataset();
+                    if ((dataset == null) || (chart.getDatasetAttributes().size() != 1) || !dataset.getName().equals(datasetName)) {
+                        dataset = Dataset.getDataset(datasetName);
+                        if (dataset == null) {
+                            File datasetFile = new File(scanOutputDir, datasetName);
+                            String datasetFilePath = datasetFile.getAbsolutePath();
+                            FXMLController.getActiveController().openFile(datasetFilePath, false, false);
+                        } else {
+                            List<String> datasetNames = new ArrayList<>();
+                            datasetNames.add(datasetName);
+                            chart.updateDatasets(datasetNames);
+                        }
+                    }
                     if (row != null) {
                         rows.add(row - 1); // rows index from 1
                     }
@@ -163,7 +177,6 @@ public class ScanTable {
                 chart.refresh();
             }
         }
-
     }
 
     final protected void setDragHandlers(Node mouseNode) {
@@ -254,34 +267,33 @@ public class ScanTable {
         File selectedDir = directoryChooser.showDialog(scannerController.getStage());
         if (selectedDir != null) {
             scanDir = selectedDir.getPath();
+        } else {
+            scanDir = null;
         }
     }
 
     public void loadScanFiles(Stage stage) {
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setTitle("Select Scan Directory");
-        File selectedDir = directoryChooser.showDialog(stage);
-        if (selectedDir != null) {
-            scanDir = selectedDir.getPath();
-            int beginIndex = scanDir.length() + 1;
-            ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
-            String[] headers = {};
-            updateTable(headers);
-            loadScanFiles(nmrFiles, beginIndex);
+        if (getScanDirectory() == null) {
+            return;
         }
+        int beginIndex = scanDir.length() + 1;
+        ArrayList<String> nmrFiles = NMRDataUtil.findNMRDirectories(scanDir);
+        String[] headers = {};
+        updateTable(headers);
+        loadScanFiles(nmrFiles, beginIndex);
     }
 
     public void processScanDir(Stage stage, ChartProcessor chartProcessor, boolean combineFileMode) {
         if (getScanDirectory() == null) {
             return;
         }
-        DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setTitle("Select Scan Output Directory");
-        File selectedDir = directoryChooser.showDialog(stage);
+        if (getScanOutputDirectory() == null) {
+            return;
+        }
         String fileRoot = "process";
         String combineFileName = "process.nv";
-        if (selectedDir != null) {
-            scanOutputDir = selectedDir.getPath();
+        PolyChart chart = scannerController.getChart();
+        if (scanOutputDir != null) {
             ObservableList<FileTableItem> fileTableItems = tableView.getItems();
             List<String> fileNames = new ArrayList<>();
             PythonInterpreter processInterp = new PythonInterpreter();
@@ -291,7 +303,7 @@ public class ScanTable {
                 int nDim = fileTableItem.getNDim();
                 File fidFile = new File(scanDir, fileTableItem.getFileName());
                 String fidFilePath = fidFile.getAbsolutePath();
-                File datasetFile = new File(selectedDir, fileRoot + rowNum + ".nv");
+                File datasetFile = new File(scanOutputDir, fileRoot + rowNum + ".nv");
                 String datasetFilePath = datasetFile.getAbsolutePath();
                 String script = chartProcessor.buildScript(nDim, fidFilePath, datasetFilePath);
                 processInterp.exec("from pyproc import *");
@@ -309,43 +321,56 @@ public class ScanTable {
             if (combineFileMode) {
                 // merge datasets into single pseudo-nd dataset
                 DatasetMerger merger = new DatasetMerger();
-                String mergedFilepath = new File(selectedDir, combineFileName).getAbsolutePath();
+                String mergedFilepath = new File(scanOutputDir, combineFileName).getAbsolutePath();
                 try {
                     // merge all the 1D files into a pseudo 2D file
                     merger.merge(fileNames, mergedFilepath);
                     // After merging, remove the 1D files
-                    for (String fileName: fileNames) {
+                    for (String fileName : fileNames) {
                         File file = new File(fileName);
                         Files.deleteIfExists(file.toPath());
                     }
                     // load merged dataset
                     FXMLController.getActiveController().openFile(mergedFilepath, false, false);
+                    List<Integer> rows = new ArrayList<>();
+                    rows.add(0);
+                    chart.setDrawlist(rows);
                 } catch (IOException | DatasetException ex) {
                     ExceptionDialog eDialog = new ExceptionDialog(ex);
                     eDialog.showAndWait();
                 }
             } else {
                 // load first output dataset
-                File datasetFile = new File(selectedDir, "process" + 1 + ".nv");
+                File datasetFile = new File(scanOutputDir, "process" + 1 + ".nv");
                 String datasetFilePath = datasetFile.getAbsolutePath();
                 FXMLController.getActiveController().openFile(datasetFilePath, false, false);
             }
+            chart.full();
+            chart.autoScale();
+
+            File saveTableFile = new File(scanOutputDir, "scntbl.txt");
+            saveScanTable(saveTableFile);
         }
     }
 
-    public void openSelectedListFile(String scriptString) {
+    public void openSelectedListFile() {
         int selItem = tableView.getSelectionModel().getSelectedIndex();
         if (selItem >= 0) {
             if (getScanDirectory() == null) {
                 return;
             }
-            FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
-            String fileName = fileTableItem.getFileName();
-            String filePath = Paths.get(scanDir, fileName).toString();
-
-            scannerController.getChart().getFXMLController().openFile(filePath, false, false);
             ProcessorController processorController = scannerController.getFXMLController().getProcessorController(true);
-            processorController.parseScript(scriptString);
+            if (processorController != null) {
+                String scriptString = processorController.getCurrentScript();
+                FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(selItem);
+                String fileName = fileTableItem.getFileName();
+                String filePath = Paths.get(scanDir, fileName).toString();
+
+                scannerController.getChart().getFXMLController().openFile(filePath, false, false);
+
+                processorController.parseScript(scriptString);
+            }
+
         }
     }
 
@@ -389,10 +414,28 @@ public class ScanTable {
         return scanDir;
     }
 
+    public void setScanOutputDirectory() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Select Scan Output Directory");
+        File selectedDir = directoryChooser.showDialog(scannerController.getStage());
+        if (selectedDir != null) {
+            scanOutputDir = selectedDir.getAbsolutePath();
+        } else {
+            scanOutputDir = null;
+        }
+    }
+
+    String getScanOutputDirectory() {
+        if (scanOutputDir == null) {
+            setScanOutputDirectory();
+        }
+        return scanOutputDir;
+    }
+
     private void loadScanTable(File file) {
 
         fileListItems.clear();
-
+ 
         long firstDate = Long.MAX_VALUE;
         int iLine = 0;
         String[] headers = null;
@@ -533,6 +576,9 @@ public class ScanTable {
     public void saveScanTable() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Table File");
+        if (scanOutputDir != null) {
+            fileChooser.setInitialDirectory(new File(scanOutputDir));
+        }
         File file = fileChooser.showSaveDialog(popOver);
         if (file != null) {
             saveScanTable(file);
