@@ -343,7 +343,7 @@ public class ScannerController implements Initializable {
         double[] ppms = chart.getVerticalCrosshairPositions();
         double[] wppms = new double[2];
         wppms[0] = chart.getAxis(0).getLowerBound();
-        wppms[1] = chart.getAxis(0).getLowerBound();
+        wppms[1] = chart.getAxis(0).getUpperBound();
         int extra = 1;
         List<Double> values;
         try {
