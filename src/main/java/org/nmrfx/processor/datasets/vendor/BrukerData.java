@@ -115,7 +115,7 @@ class BrukerData implements NMRData {
         if (dim < 2) {
             scale = 1.0e6;
         } else {
-            scale = 1.0;
+            scale = 1.0e6;
         }
     }
 

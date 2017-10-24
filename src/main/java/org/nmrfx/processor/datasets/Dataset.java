@@ -108,7 +108,7 @@ public class Dataset extends DoubleVector {
     private double[][] rmsd;
     private int posneg;
     private double lvl;
-    private double scale = 1.0e6;
+    private double scale = 1.0;
     private int rdims;
     private String solvent = null;
     private boolean littleEndian = false;
@@ -231,7 +231,7 @@ public class Dataset extends DoubleVector {
         initialized = true;
         title = fileName;
 
-        scale = 1.0e6;
+        scale = 1.0;
         lvl = 0.1;
         posneg = 1;
         int headerStatus;
@@ -3075,7 +3075,7 @@ public class Dataset extends DoubleVector {
         setFreqDomain(0, true);
         setFreqDomain_r(0, true);
         lvl = 0.0;
-        scale = 1.0e6;
+        scale = 1.0;
         rdims = nDim;
         posneg = 1;
 
