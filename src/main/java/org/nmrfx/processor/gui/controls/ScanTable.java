@@ -567,6 +567,9 @@ public class ScanTable {
         updateDataFrame();
         if (firstDatasetName.length() > 0) {
             String dirName = file.getParent();
+            if (scanOutputDir == null) {
+                scanOutputDir = dirName;
+            }
             Path path = FileSystems.getDefault().getPath(dirName, firstDatasetName);
             FXMLController.getActiveController().openFile(path.toString(), false, false);
             PolyChart chart = scannerController.getChart();
