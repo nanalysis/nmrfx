@@ -435,7 +435,7 @@ public class ScanTable {
     private void loadScanTable(File file) {
 
         fileListItems.clear();
- 
+
         long firstDate = Long.MAX_VALUE;
         int iLine = 0;
         String[] headers = null;
@@ -569,6 +569,12 @@ public class ScanTable {
             String dirName = file.getParent();
             Path path = FileSystems.getDefault().getPath(dirName, firstDatasetName);
             FXMLController.getActiveController().openFile(path.toString(), false, false);
+            PolyChart chart = scannerController.getChart();
+            List<Integer> rows = new ArrayList<>();
+            rows.add(0);
+            chart.setDrawlist(rows);
+            chart.full();
+            chart.autoScale();
         }
 
     }
