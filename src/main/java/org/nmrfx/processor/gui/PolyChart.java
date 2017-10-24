@@ -1150,7 +1150,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         return nDim;
     }
 
-    protected void autoScale() {
+    public void autoScale() {
         datasetAttributesList.stream().forEach(dataAttr -> {
             autoScale(dataAttr);
         });
