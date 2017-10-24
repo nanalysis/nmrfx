@@ -21,7 +21,9 @@
                     <children>
                         <MenuButton  mnemonicParsing="false" text="File">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#scanDirAction" text="Scan Directory..." />
+                                <MenuItem mnemonicParsing="false" onAction="#setScanDirAction" text="Set Scan Directory..." />
+                                <MenuItem mnemonicParsing="false" onAction="#setScanOutputDirAction" text="Set Scan Output Directory..." />
+                                <MenuItem mnemonicParsing="false" onAction="#scanDirAction" text="Scan Directory" />
                                 <MenuItem mnemonicParsing="false" onAction="#loadTableAction" text="Open Table..." />
                                 <MenuItem mnemonicParsing="false" onAction="#saveTableAction" text="Save Table..." />
                                 <MenuItem mnemonicParsing="false" onAction="#processScanDirAndCombine" text="Process and Combine" />
