@@ -66,9 +66,9 @@ def loadPDBModels(files, data, out):
         datum = [inFileName,outFileName]
         
         distanceEnergy=refiner.molecule.getEnergyCoords().calcNOE(False,1.0)
-        datum.append(distanceEnergy)
+        datum.append("%.1f" % (distanceEnergy))
         shiftEnergy = refiner.energyLists.calcShift(False)
-        datum.append(shiftEnergy)
+        datum.append("%.1f" % (shiftEnergy))
         
         data.append(datum)
 
