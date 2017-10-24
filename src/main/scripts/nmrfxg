@@ -1,13 +1,12 @@
 #!/bin/sh
 
-# swank [ script  [ arg ... ] ]
+# nmrfxpg [ script  [ arg ... ] ]
 # 
 # optional environment variables:
 #
 # JAVA_HOME  - directory of JDK/JRE, if not set then 'java' must be found on PATH
 # CLASSPATH  - colon separated list of additional jar files & class directories
 # JAVA_OPTS  - list of JVM options, e.g. "-Xmx256m -Dfoo=bar"
-# TCLLIBPATH - space separated list of Tcl libraries directories
 #
 
 nvjver=${project.version}
@@ -20,6 +19,7 @@ case "`uname`" in
 esac
 
 JAVA=java
+
 if [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/jre/sh/java"  ] ; then
         # AIX location
@@ -42,26 +42,18 @@ while [ -h "$pgm" ]; do
     fi
 done
 
-dir=`dirname $pgm`
+dir=`dirname "$pgm"`
 CLASSPATH=${classpath}
-# set classpath, or add to existing
-if [ -z "$CLASSPATH" ] ; then
-    CLASSPATH="$dir/processorgui-$nvjver.jar"
-    if $iscygwin ; then
-        CLASSPATH=`cygpath -pw "$CLASSPATH"`
-    fi
+if $ismsys ; then
+    nvjdir=`$dir/echopath "$dir"`
+    CLASSPATH="$nvjdir/processorgui-$nvjver.jar;$CLASSPATH"
+elif $iscygwin ; then
+    CLASSPATH=`cygpath -pu "$CLASSPATH"`
+    CLASSPATH="$dir/processorgui-$nvjver.jar;$CLASSPATH"
+    CLASSPATH=`cygpath -pw "$CLASSPATH"`
 else
-    if $ismsys ; then
-        nvjdir=`$dir/echopath "$dir"`
-        CLASSPATH="$nvjdir/processorgui-$nvjver.jar;$CLASSPATH"
-    elif $iscygwin ; then
-        CLASSPATH=`cygpath -pu "$CLASSPATH"`
-        CLASSPATH="$dir/processorgui-$nvjver.jar;$CLASSPATH"
-        CLASSPATH=`cygpath -pw "$CLASSPATH"`
-    else
-        CLASSPATH="$dir/processorgui-$nvjver.jar:$CLASSPATH"
-    fi
+    CLASSPATH="$dir/processorgui-$nvjver.jar:$CLASSPATH"
 fi
 
 export CLASSPATH
-exec "$JAVA" -Djava.awt.headless=true -DTCLLIBPATH="$TCLLIBPATH" -mx2048m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
+exec "$JAVA" -mx2048m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
