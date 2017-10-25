@@ -17,7 +17,20 @@ set nvjpmain=org.python.util.jython
 
 set dir=%~dp0
 
+set javaexe=java
 set cp="%dir%\processor-%nvjver%.jar;${wclasspath};%CLASSPATH%"
 
-java -Djava.awt.headless=true -mx2048m -cp %cp% %JAVA_OPTS% %nvjpmain% -c "import dispatchnvfx" %*
+set testjava=%dir%jre\bin\java
+
+if exist %testjava% (
+    set javaexe="%testjava%"
+    set cp="%dir%\lib\processor-%nvjver%.jar;${wclasspath};%CLASSPATH%"
+)
+
+
+if "%1"=="" (
+    %javaexe% -Djava.awt.headless=true -mx2048m -cp %cp% %JAVA_OPTS% %nvjpmain%
+) else (
+    %javaexe% -Djava.awt.headless=true -mx2048m -cp %cp% %JAVA_OPTS% %nvjpmain% -c "import dispatchnvfx" %*
+)
 
