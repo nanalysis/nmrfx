@@ -76,6 +76,7 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -1228,9 +1229,29 @@ public class FXMLController implements FractionPaneChild, Initializable {
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", iconSize, fontSize, ContentDisplay.TOP);
         bButton.setOnAction(e -> getActiveChart().zoom(1.2));
+        bButton.setOnScroll((ScrollEvent event) -> {
+            double x = event.getDeltaX();
+            double y = event.getDeltaY();
+            if (y < 0.0) {
+                getActiveChart().zoom(1.1);
+            } else {
+                getActiveChart().zoom(0.9);
+
+            }
+        });
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", iconSize, fontSize, ContentDisplay.TOP);
         bButton.setOnAction(e -> getActiveChart().zoom(0.8));
+        bButton.setOnScroll((ScrollEvent event) -> {
+            double x = event.getDeltaX();
+            double y = event.getDeltaY();
+            if (y < 0.0) {
+                getActiveChart().zoom(1.1);
+            } else {
+                getActiveChart().zoom(0.9);
+
+            }
+        });
         buttons.add(bButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
@@ -1239,9 +1260,31 @@ public class FXMLController implements FractionPaneChild, Initializable {
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", iconSize, fontSize, ContentDisplay.TOP);
         bButton.setOnAction(e -> getActiveChart().adjustScale(0.8));
+        bButton.setOnScroll((ScrollEvent event) -> {
+            double x = event.getDeltaX();
+            double y = event.getDeltaY();
+            if (y < 0.0) {
+                getActiveChart().adjustScale(0.9);
+            } else {
+                getActiveChart().adjustScale(1.1);
+
+            }
+        });
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", iconSize, fontSize, ContentDisplay.TOP);
         bButton.setOnAction(e -> getActiveChart().adjustScale(1.2));
+
+        bButton.setOnScroll((ScrollEvent event) -> {
+            double x = event.getDeltaX();
+            double y = event.getDeltaY();
+            if (y < 0.0) {
+                getActiveChart().adjustScale(0.9);
+            } else {
+                getActiveChart().adjustScale(1.1);
+
+            }
+        });
+
         buttons.add(bButton);
         buttons.add(new Separator(Orientation.VERTICAL));
 
