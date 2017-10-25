@@ -9,6 +9,12 @@
 # JAVA_OPTS  - list of JVM options, e.g. "-Xmx256m -Dfoo=bar"
 #
 
+if [ -n "$NMRFXP_MEMORY" ] ; then
+    HEAP_MEM=$NMRFXP_MEMORY
+else
+    HEAP_MEM="2048"
+fi
+
 nvjver=${project.version}
 nvjmain=org.nmrfx.processor.gui.MainApp
 iscygwin=false
@@ -66,4 +72,4 @@ else
 fi
 
 export CLASSPATH
-exec "$JAVA" -mx2048m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
+exec "$JAVA" -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
