@@ -1120,6 +1120,8 @@ public class FXMLController implements FractionPaneChild, Initializable {
         if (consoleController == null) {
             consoleController = ConsoleController.create();
         }
+        activeController = this;
+
     }
 
     public ChartLabel getLabel(PolyChart chart, String color, String id) {
