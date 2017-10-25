@@ -1510,6 +1510,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 datasetAttributes = new DatasetAttributes(dataset);
                 datasetAttributesList.add(datasetAttributes);
             } else {
+                peakListAttributesList.clear();;
                 if (datasetAttributesList.isEmpty()) {
                     if ((lastDatasetAttr != null) && (lastDatasetAttr.getDataset().getName().equals(dataset.getName()))) {
                         datasetAttributes = lastDatasetAttr;
