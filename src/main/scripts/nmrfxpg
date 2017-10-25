@@ -20,15 +20,6 @@ esac
 
 JAVA=java
 
-if [ -n "$JAVA_HOME" ] ; then
-    if [ -x "$JAVA_HOME/jre/sh/java"  ] ; then
-        # AIX location
-        JAVA="$JAVA_HOME/jre/sh/java"
-    else
-        JAVA="$JAVA_HOME/bin/java"
-    fi
-fi
-
 # get the directory path of this script
 # resolve script symlink, if any
 pgm="$0"
@@ -43,16 +34,35 @@ while [ -h "$pgm" ]; do
 done
 
 dir=`dirname "$pgm"`
+echo $dir
 CLASSPATH=${classpath}
-if $ismsys ; then
-    nvjdir=`$dir/echopath "$dir"`
-    CLASSPATH="$nvjdir/processorgui-$nvjver.jar;$CLASSPATH"
-elif $iscygwin ; then
-    CLASSPATH=`cygpath -pu "$CLASSPATH"`
-    CLASSPATH="$dir/processorgui-$nvjver.jar;$CLASSPATH"
-    CLASSPATH=`cygpath -pw "$CLASSPATH"`
+
+if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
+    JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
+    CLASSPATH="$dir/lib/processorgui-$nvjver.jar:$CLASSPATH"
+elif [ -d "${dir}/jre/bin" ] ; then
+    JAVA="${dir}/jre/bin/java"
+    CLASSPATH="$dir/lib/processorgui-$nvjver.jar:$CLASSPATH"
 else
-    CLASSPATH="$dir/processorgui-$nvjver.jar:$CLASSPATH"
+    if [ -n "$JAVA_HOME" ] ; then
+        if [ -x "$JAVA_HOME/jre/sh/java"  ] ; then
+            # AIX location
+            JAVA="$JAVA_HOME/jre/sh/java"
+        else
+            JAVA="$JAVA_HOME/bin/java"
+        fi
+    fi
+
+    if $ismsys ; then
+        nvjdir=`$dir/echopath "$dir"`
+        CLASSPATH="$nvjdir/processorgui-$nvjver.jar;$CLASSPATH"
+    elif $iscygwin ; then
+        CLASSPATH=`cygpath -pu "$CLASSPATH"`
+        CLASSPATH="$dir/processorgui-$nvjver.jar;$CLASSPATH"
+        CLASSPATH=`cygpath -pw "$CLASSPATH"`
+    else
+        CLASSPATH="$dir/processorgui-$nvjver.jar:$CLASSPATH"
+    fi
 fi
 
 export CLASSPATH
