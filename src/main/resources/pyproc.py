@@ -858,8 +858,7 @@ def createDataset(nvFileName=None, datasetSize=None):
             print 'cr1'
             processor.createNV(nvFileName, datasetSize, dataInfo.useSize, fidInfo.flags)
             print 'create1',nvFileName
-            dataset = processor.getDataset()
-            parFileName = dataset.getParFileName()
+            print 'exists',os.path.exists(nvFileName)
         else:
             print 'cr2',datasetSize
             processor.createNV(nvFileName, datasetSize, dataInfo.useSize)
