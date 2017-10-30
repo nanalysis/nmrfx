@@ -75,6 +75,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.chart.ValueAxis;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.DragEvent;
@@ -281,35 +282,70 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     }
 
     void makeSpecMenu() {
-        MenuItem cmItem1 = new MenuItem("Add Extract Region");
-        cmItem1.setOnAction(new EventHandler<ActionEvent>() {
+        MenuItem attrItem = new MenuItem("Attributes");
+        attrItem.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
-                addRegionRange();
+                controller.showSpecAttrAction(e);
             }
         });
-        MenuItem cmItem2 = new MenuItem("Add Baseline Region");
-        cmItem2.setOnAction(new EventHandler<ActionEvent>() {
+        Menu viewMenu = new Menu("View");
+        MenuItem expandItem = new MenuItem("Expand");
+        expandItem.setOnAction((ActionEvent e) -> {
+            expand();
+        });
+        viewMenu.getItems().add(expandItem);
+
+        MenuItem fullItem = new MenuItem("Full");
+        fullItem.setOnAction((ActionEvent e) -> {
+            full();
+        });
+        viewMenu.getItems().add(fullItem);
+
+        MenuItem zoomInItem = new MenuItem("Zoom In");
+        zoomInItem.setOnAction((ActionEvent e) -> {
+            zoom(1.2);
+        });
+        viewMenu.getItems().add(zoomInItem);
+        MenuItem zoomOutItem = new MenuItem("Zoom Out");
+        zoomOutItem.setOnAction((ActionEvent e) -> {
+            zoom(0.8);
+        });
+        viewMenu.getItems().add(zoomOutItem);
+
+        Menu baselineMenu = new Menu("Baseline");
+        MenuItem addBaselineItem = new MenuItem("Add Baseline Region");
+        addBaselineItem.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 addBaselineRange(false);
             }
         });
-        MenuItem cmItem3 = new MenuItem("Clear Baseline Region");
-        cmItem3.setOnAction(new EventHandler<ActionEvent>() {
+        MenuItem clearBaselineItem = new MenuItem("Clear Baseline Region");
+        clearBaselineItem.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 addBaselineRange(true);
             }
         });
-        MenuItem cmItem4 = new MenuItem("Clear Baseline Regions");
-        cmItem4.setOnAction(new EventHandler<ActionEvent>() {
+        MenuItem clearAllBaselineItem = new MenuItem("Clear Baseline Regions");
+        clearAllBaselineItem.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
                 clearBaselineRanges();
             }
         });
+        MenuItem extractItem = new MenuItem("Add Extract Region");
+        extractItem.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent e) {
+                addRegionRange();
+            }
+        });
 
-        specMenu.getItems().add(cmItem1);
-        specMenu.getItems().add(cmItem2);
-        specMenu.getItems().add(cmItem3);
-        specMenu.getItems().add(cmItem4);
+        baselineMenu.getItems().add(addBaselineItem);
+        baselineMenu.getItems().add(clearBaselineItem);
+        baselineMenu.getItems().add(clearAllBaselineItem);
+
+        specMenu.getItems().add(attrItem);
+        specMenu.getItems().add(viewMenu);
+        specMenu.getItems().add(baselineMenu);
+        specMenu.getItems().add(extractItem);
     }
 //pic.addEventHandler(MouseEvent.MOUSE_CLICKED,
 //    new EventHandler<MouseEvent>() {
