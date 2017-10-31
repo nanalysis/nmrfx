@@ -45,6 +45,8 @@ import org.apache.commons.math3.optimization.univariate.UnivariatePointValuePair
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.util.FastMath;
 import static java.util.Comparator.comparing;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class PeakList {
@@ -2967,8 +2969,61 @@ public class PeakList {
         return inEllipse;
     }
 
+    public static List<Object> peakFit(Dataset theFile, Peak... peakArray)
+            throws IllegalArgumentException, IOException, PeakFitException {
+        boolean doFit = true;
+        int fitMode = FIT_ALL;
+        boolean updatePeaks = true;
+        double[] delays = null;
+        double multiplier = 0.686;
+        int[] rows = new int[theFile.getNDim()];
+        List<Peak> peaks = Arrays.asList(peakArray);
+        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier);
+    }
+
+    public static List<Object> peakFit(Dataset theFile, Collection<Peak> peaks)
+            throws IllegalArgumentException, IOException, PeakFitException {
+        boolean doFit = true;
+        int fitMode = FIT_ALL;
+        boolean updatePeaks = true;
+        double[] delays = null;
+        double multiplier = 0.686;
+        int[] rows = new int[theFile.getNDim()];
+        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier);
+    }
+
+    public void peakFit(Dataset theFile)
+            throws IllegalArgumentException, IOException, PeakFitException {
+        Set<Set<Peak>> oPeaks = getOverlappingPeaks();
+        oPeaks.stream().forEach(oPeakSet -> {
+            try {
+                peakFit(theFile, oPeakSet);
+            } catch (IllegalArgumentException | IOException | PeakFitException ex) {
+                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        );
+    }
+
     public static List<Object> peakFit(Dataset theFile, String[] argv,
             int start, int[] rows, boolean doFit, int fitMode, final boolean updatePeaks, double[] delays, double multiplier)
+            throws IllegalArgumentException, IOException, PeakFitException {
+
+        List<Peak> peaks = new ArrayList<>();
+
+        for (int iArg = start, iPeak = 0; iArg < argv.length; iArg++, iPeak++) {
+            Peak peak = getAPeak(argv[iArg].toString());
+            if (peak == null) {
+                throw new IllegalArgumentException(
+                        "Couln't find peak \"" + argv[iArg].toString() + "\"");
+            }
+            peaks.add(peak);
+        }
+        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier);
+    }
+
+    public static List<Object> peakFit(Dataset theFile, Collection<Peak> peaks,
+            int[] rows, boolean doFit, int fitMode, final boolean updatePeaks, double[] delays, double multiplier)
             throws IllegalArgumentException, IOException, PeakFitException {
         int dataDim = theFile.getNDim();
         int[] pdim = new int[dataDim];
@@ -2976,7 +3031,7 @@ public class PeakList {
         int[][] p2 = new int[dataDim][2];
         int[] dim = new int[dataDim];
         double[] plane = {0.0, 0.0};
-        int nPeaks = argv.length - start;
+        int nPeaks = peaks.size();
         int[][] cpt = new int[nPeaks][dataDim];
         double[][] width = new double[nPeaks][dataDim];
         int nPeakDim = 0;
@@ -2986,21 +3041,11 @@ public class PeakList {
         }
 
         //int k=0;
-        Peak[] peaks = new Peak[nPeaks];
-        List<Object> peaksResult = new ArrayList<>();
-
-        for (int iArg = start, iPeak = 0; iArg < argv.length; iArg++, iPeak++) {
-            peaks[iPeak] = getAPeak(argv[iArg].toString());
-            if (peaks[iPeak] == null) {
-                throw new IllegalArgumentException(
-                        "Couln't find peak \"" + argv[iArg].toString() + "\"");
-            }
-        }
-
         for (int i = 0; i < dataDim; i++) {
             pdim[i] = -1;
         }
 
+        List<Object> peaksResult = new ArrayList<>();
         ArrayList<GuessValue> guessList = new ArrayList<GuessValue>();
         ArrayList<CenterRef> centerList = new ArrayList<CenterRef>();
         boolean firstPeak = true;

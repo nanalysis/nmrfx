@@ -23,6 +23,8 @@ import java.io.IOException;
 
 import java.util.*;
 import static java.util.Comparator.comparing;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.scene.paint.Color;
 
 public class Peak implements Comparable, PeakOrMulti {
@@ -1238,5 +1240,14 @@ public class Peak implements Comparable, PeakOrMulti {
             }
         }
         return overlaps;
+    }
+
+    public void fit() {
+        Dataset dataset = Dataset.getDataset(this.peakList.fileName);
+        try {
+            PeakList.peakFit(dataset, this);
+        } catch (IllegalArgumentException | IOException | PeakFitException ex) {
+            Logger.getLogger(Peak.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }
