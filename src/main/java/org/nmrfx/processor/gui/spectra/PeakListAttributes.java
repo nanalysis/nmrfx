@@ -269,6 +269,26 @@ public class PeakListAttributes {
         }
     }
 
+    public void findPeaksInRegion(double[][] crossLimits) {
+        peaksInRegion = Optional.empty();
+        if ((peakList != null) && (peakList.peaks() != null)) {
+            double[][] limits = getRegionLimits(dataAttr);
+            limits[0][0] = crossLimits[0][0];
+            limits[0][1] = crossLimits[0][1];
+            if (limits.length > 1) {
+                limits[1][0] = crossLimits[1][0];
+                limits[1][1] = crossLimits[1][1];
+            }
+            int[] peakDim = getPeakDim();
+            List<Peak> peaks = peakList.peaks()
+                    .stream()
+                    .parallel()
+                    .filter(peak -> peak.inRegion(limits, null, peakDim))
+                    .collect(Collectors.toList());
+            peaksInRegion = Optional.of(peaks);
+        }
+    }
+
     public void findMultipletsInRegion() {
         double[][] limits = getRegionLimits(dataAttr);
         int[] peakDim = getPeakDim();

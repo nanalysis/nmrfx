@@ -18,11 +18,8 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
-import org.nmrfx.processor.datasets.peaks.PeakPick;
-import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.NMRViewData;
@@ -33,7 +30,6 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -1291,7 +1287,7 @@ public class FXMLController implements FractionPaneChild, Initializable {
         buttons.add(new Separator(Orientation.VERTICAL));
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> peakPickActive());
+        bButton.setOnAction(e -> PeakPicking.peakPickActive(this));
         buttons.add(bButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
@@ -1486,104 +1482,11 @@ public class FXMLController implements FractionPaneChild, Initializable {
         chartGroup.layoutChildren();
     }
 
-    public void peakPickActive() {
-        PolyChart chart = getActiveChart();
-        ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
-        dataList.stream().forEach(dataAttr -> {
-            peakPickActive(chart, dataAttr, true, null);
-        });
-        chart.refresh();
-    }
-
-    public PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean saveFile, String listName) {
-        Dataset dataset = dataAttr.getDataset();
-        int nDim = dataset.getNDim();
-        String datasetName = dataset.getName();
-        if (listName == null) {
-            listName = PeakList.getNameForDataset(datasetName);
-        }
-        double level = dataAttr.getLevel();
-        if (nDim == 1) {
-            level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
-        }
-        PeakPick peakPickPar = (new PeakPick(dataset, listName)).level(level).mode("replaceif");
-        peakPickPar.pos(dataAttr.getPosDrawOn()).neg(dataAttr.getNegDrawOn());
-        peakPickPar.calcRange();
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            int jDim = dataAttr.getDim(iDim);
-            if (iDim < 2) {
-                peakPickPar.limit(jDim, chart.axes[iDim].getLowerBound(), chart.axes[iDim].getUpperBound());
-            } else {
-                peakPickPar.limit(jDim, (int) chart.axes[iDim].getLowerBound(), (int) chart.axes[iDim].getUpperBound());
-            }
-
-        }
-        PeakPicker picker = new PeakPicker(peakPickPar);
-        String canonFileName = dataset.getCanonicalFile();
-        String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk";
-        PeakList peakList = null;
-        try {
-            peakList = picker.peakPick();
-            chart.setupPeakListAttributes(peakList);
-            if (saveFile) {
-                try (FileWriter writer = new FileWriter(listFileName)) {
-                    peakList.writePeaksXPK(writer);
-                }
-            }
-        } catch (IOException | InvalidPeakException ioE) {
-            ExceptionDialog dialog = new ExceptionDialog(ioE);
-            dialog.showAndWait();
-        }
-        chart.peakStatus.set(true);
-        return peakList;
-    }
-
-    public PeakList pickAtPosition(PolyChart chart, DatasetAttributes dataAttr, double x, double y, boolean fixed, boolean saveFile) {
-        Dataset dataset = dataAttr.getDataset();
-        int nDim = dataset.getNDim();
-        String datasetName = dataset.getName();
-        String listName = PeakList.getNameForDataset(datasetName);
-        double level = dataAttr.getLevel();
-        if (nDim == 1) {
-            level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
-        }
-        PeakPick peakPickPar = (new PeakPick(dataset, listName)).level(level).mode("appendif");
-        peakPickPar.pos(dataAttr.getPosDrawOn()).neg(dataAttr.getNegDrawOn());
-        peakPickPar.region("point").fixed(fixed);
-        peakPickPar.calcRange();
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            int jDim = dataAttr.getDim(iDim);
-            if (iDim < 2) {
-                double pos = iDim == 0 ? x : y;
-                peakPickPar.limit(jDim, pos, pos);
-            } else {
-                peakPickPar.limit(jDim, (int) chart.axes[iDim].getLowerBound(), (int) chart.axes[iDim].getUpperBound());
-            }
-
-        }
-        PeakPicker picker = new PeakPicker(peakPickPar);
-        String canonFileName = dataset.getCanonicalFile();
-        String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk";
-        PeakList peakList = null;
-        try {
-            peakList = picker.peakPick();
-            if (saveFile) {
-                try (FileWriter writer = new FileWriter(listFileName)) {
-                    peakList.writePeaksXPK(writer);
-                }
-            }
-        } catch (IOException | InvalidPeakException ioE) {
-            ExceptionDialog dialog = new ExceptionDialog(ioE);
-            dialog.showAndWait();
-        }
-        chart.peakStatus.set(true);
-        return peakList;
-    }
 
     public void alignCenters() {
         DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
         // any peak lists created just for alignmnent should be deleted
-        PeakList refList = peakPickActive(activeChart, activeAttr, false, "refList");
+        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, "refList");
         if (refList == null) {
             return;
         }
@@ -1604,7 +1507,7 @@ public class FXMLController implements FractionPaneChild, Initializable {
             ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrList) {
                 if (dataAttr != activeAttr) {
-                    PeakList movingList = peakPickActive(activeChart, dataAttr, false, "movingList");
+                    PeakList movingList = PeakPicking.peakPickActive(activeChart, dataAttr, false, false, "movingList");
                     movingList.unLinkPeaks();
                     movingList.clearSearchDims();
                     movingList.addSearchDim(dimName1, 0.05);

@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.DoubleFunction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.application.Platform;
@@ -87,6 +89,7 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.processor.datasets.peaks.PeakFitException;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
@@ -341,9 +344,21 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         baselineMenu.getItems().add(addBaselineItem);
         baselineMenu.getItems().add(clearBaselineItem);
         baselineMenu.getItems().add(clearAllBaselineItem);
+        Menu peakMenu = new Menu("Peaks");
+        MenuItem fitItem = new MenuItem("Fit Selected");
+        fitItem.setOnAction((ActionEvent e) -> {
+            fitPeaks();
+        });
+        peakMenu.getItems().add(fitItem);
+        MenuItem fitListItem = new MenuItem("Fit All Lists");
+        fitListItem.setOnAction((ActionEvent e) -> {
+            fitPeakLists();
+        });
+        peakMenu.getItems().add(fitListItem);
 
         specMenu.getItems().add(attrItem);
         specMenu.getItems().add(viewMenu);
+        specMenu.getItems().add(peakMenu);
         specMenu.getItems().add(baselineMenu);
         specMenu.getItems().add(extractItem);
     }
@@ -468,7 +483,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     DatasetAttributes datasetAttr = datasetAttributesList.get(0);
                     double pickX = xAxis.getValueForDisplay(mouseX).doubleValue();
                     double pickY = yAxis.getValueForDisplay(mouseY).doubleValue();
-                    controller.pickAtPosition(this, datasetAttr, pickX, pickY, shortString.equals("pP"), true);
+                    PeakPicking.pickAtPosition(this, datasetAttr, pickX, pickY, shortString.equals("pP"), true);
                     keyMonitor.clear();
                     this.refresh();
                     break;
@@ -589,12 +604,14 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 if (getCursor().toString().equals("CROSSHAIR")) {
                     handleCrossHair(mouseEvent, true);
                 } else {
-                    double x = mouseEvent.getX();
-                    double y = mouseEvent.getY();
-                    dragStart[0] = x;
-                    dragStart[1] = y;
-                    widthMode = Optional.empty();
-                    selectPeaks(x, y, mouseEvent.isShiftDown());
+                    if (mouseEvent.isPrimaryButtonDown()) {
+                        double x = mouseEvent.getX();
+                        double y = mouseEvent.getY();
+                        dragStart[0] = x;
+                        dragStart[1] = y;
+                        widthMode = Optional.empty();
+                        selectPeaks(x, y, mouseEvent.isShiftDown());
+                    }
                 }
             }
         });
@@ -605,14 +622,16 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 if (getCursor().toString().equals("CROSSHAIR")) {
                     handleCrossHair(mouseEvent, false);
                 } else {
-                    double x = mouseEvent.getX();
-                    double y = mouseEvent.getY();
-                    dragStart[0] = x;
-                    dragStart[1] = y;
-                    if (widthMode.isPresent()) {
-                        dragPeak(x, y, widthMode.get());
+                    if (mouseEvent.isPrimaryButtonDown()) {
+                        double x = mouseEvent.getX();
+                        double y = mouseEvent.getY();
+                        dragStart[0] = x;
+                        dragStart[1] = y;
+                        if (widthMode.isPresent()) {
+                            dragPeak(x, y, widthMode.get());
+                        }
+                        widthMode = Optional.empty();
                     }
-                    widthMode = Optional.empty();
                 }
             }
         });
@@ -1926,6 +1945,49 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 drawSelectedPeaks(peakListAttr);
             }
         }
+    }
+
+    void fitPeaks() {
+        peakListAttributesList.forEach((peakListAttr) -> {
+            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            if (!peaks.isEmpty()) {
+                Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
+                if (dataset != null) {
+                    try {
+                        PeakList.peakFit(dataset, peaks);
+                    } catch (IllegalArgumentException | IOException | PeakFitException ex) {
+                        Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        });
+        drawPeakLists(false);
+        peakListAttributesList.forEach((peakListAttr) -> {
+            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            if (!peaks.isEmpty()) {
+                drawSelectedPeaks(peakListAttr);
+            }
+        });
+    }
+
+    void fitPeakLists() {
+        peakListAttributesList.forEach((peakListAttr) -> {
+            Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
+            if (dataset != null) {
+                try {
+                    peakListAttr.getPeakList().peakFit(dataset);
+                } catch (IllegalArgumentException | IOException | PeakFitException ex) {
+                    Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
+        drawPeakLists(false);
+        peakListAttributesList.forEach((peakListAttr) -> {
+            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            if (!peaks.isEmpty()) {
+                drawSelectedPeaks(peakListAttr);
+            }
+        });
     }
 
     void drawPeakLists(boolean clear) {
