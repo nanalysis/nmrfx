@@ -26,6 +26,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DimCounter;
 import java.io.IOException;
+import java.util.Optional;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 /**
@@ -425,6 +426,10 @@ public class PeakPicker {
         PeakList peakList = PeakList.get(peakPickPar.listName);
         boolean listExists = (peakList != null);
         String mode = peakPickPar.mode;
+        boolean alreadyPeaksInRegion = false;
+        if (listExists) {
+            alreadyPeaksInRegion = anyPeaksInRegion();
+        }
         if (mode.equalsIgnoreCase("replaceif") && listExists) {
             mode = "replace";
         } else if (mode.equalsIgnoreCase("replaceif") && !listExists) {
@@ -432,6 +437,12 @@ public class PeakPicker {
         } else if (mode.equalsIgnoreCase("appendif") && !listExists) {
             mode = "new";
         } else if (mode.equalsIgnoreCase("appendif") && listExists) {
+            mode = "append";
+        } else if (mode.equalsIgnoreCase("appendregion") && !listExists) {
+            mode = "new";
+        } else if (mode.equalsIgnoreCase("appendregion") && alreadyPeaksInRegion) {
+            mode = "replace";
+        } else if (mode.equalsIgnoreCase("appendregion") && !alreadyPeaksInRegion) {
             mode = "append";
         }
 
@@ -608,6 +619,24 @@ public class PeakPicker {
         dataset.setNoiseLevel(noiseLevel);
         peakList.reIndex();
         return peakList;
+    }
+
+    public boolean anyPeaksInRegion() {
+        boolean foundAny = false;
+        PeakList peakList = PeakList.get(peakPickPar.listName);
+        if ((peakList != null) && (peakList.peaks() != null)) {
+            double[][] limits = new double[nDim][2];
+            for (int i = 0; i < nDim; i++) {
+                limits[i][1] = peakPickPar.theFile.pointToPPM(i, peakPickPar.pt[i][0]);
+                limits[i][0] = peakPickPar.theFile.pointToPPM(i, peakPickPar.pt[i][1]);
+            }
+            Optional<Peak> firstPeak = peakList.peaks()
+                    .stream()
+                    .parallel()
+                    .filter(peak -> peak.inRegion(limits, null, peakPickPar.dim)).findFirst();
+            foundAny = firstPeak.isPresent();
+        }
+        return foundAny;
     }
 
 }
