@@ -44,6 +44,8 @@ public interface GraphicsIO {
     public void drawLine(double x1, double y1, double x2, double y2) throws GraphicsIOException;
 
     public void drawPolyLine(double[] x, double[] y) throws GraphicsIOException;
+    
+    public void drawPolyLine(double[] x, double[] y, int n) throws GraphicsIOException;
 
     public void drawPolyLine(ArrayList<Double> values) throws GraphicsIOException;
 

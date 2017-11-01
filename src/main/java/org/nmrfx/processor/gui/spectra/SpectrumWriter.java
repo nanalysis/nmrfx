@@ -98,9 +98,9 @@ public class SpectrumWriter {
         writer.clipRect(xAxis.getStart(), yAxis.getStart(), width, height);
         double[][] xy = new double[2][];
         for (Vec vec : vecs) {
-            DrawSpectrum.drawVector(vec, xAxis, yAxis, axModes[0], xy);
+            int nPoints = DrawSpectrum.drawVector(vec, xAxis, yAxis, axModes[0], xy);
             writer.setLineWidth(datasetAttributes.getPosLineWidth());
-            writer.drawPolyLine(xy[0], xy[1]);
+            writer.drawPolyLine(xy[0], xy[1], nPoints);
         }
     }
 

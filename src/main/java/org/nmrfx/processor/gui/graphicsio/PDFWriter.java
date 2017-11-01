@@ -294,8 +294,12 @@ public class PDFWriter implements GraphicsIO {
     }
 
     public void drawPolyLine(double[] x, double[] y) throws GraphicsIOException {
+        int n = x.length;
+        drawPolyLine(x, y, n);
+    }
+
+    public void drawPolyLine(double[] x, double[] y, int n) throws GraphicsIOException {
         try {
-            int n = x.length;
             contentStream.moveTo(tX(x[0]), tY(y[0]));
             for (int i = 1; i < n; i++) {
                 contentStream.lineTo(tX(x[i]), tY(y[i]));

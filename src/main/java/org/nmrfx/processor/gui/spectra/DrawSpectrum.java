@@ -477,7 +477,7 @@ public class DrawSpectrum {
         nPoints = drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, xy, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
     }
 
-    public static void drawVector(Vec vec, NMRAxisIO xAxis, NMRAxisIO yAxis, AXMODE axMode, double[][] xy) {
+    public static int drawVector(Vec vec, NMRAxisIO xAxis, NMRAxisIO yAxis, AXMODE axMode, double[][] xy) {
         int dataOffset = 0;
         NMRAxisIO indexAxis = xAxis;
 
@@ -513,7 +513,8 @@ public class DrawSpectrum {
         double phase1Delta = ph1 / (size - 1);
         Path bcPath = null;
 
-        drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, xy, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
+        int nPoints = drawVectoreCore(vec, dataOffset, drawReal, ph0, ph1, xy, bcPath, xFunction, yFunction, offsetVec, vecStartPoint, vecEndPoint, size, dValue, phase1Delta, indexAxisDelta);
+        return nPoints;
     }
 
     private static int drawVectoreCore(Vec vec, int dataOffset, boolean drawReal, double ph0, double ph1, double[][] xyValues, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec, int start, int end, int size, double dValue, double dDelta, double delta) {

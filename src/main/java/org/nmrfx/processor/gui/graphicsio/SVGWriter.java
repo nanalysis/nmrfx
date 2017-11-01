@@ -198,9 +198,15 @@ public class SVGWriter implements GraphicsIO {
 
     @Override
     public void drawPolyLine(double[] x, double[] y) throws GraphicsIOException {
+        int n = x.length;
+        drawPolyLine(x, y, n);
+    }
+
+    @Override
+    public void drawPolyLine(double[] x, double[] y, int n) throws GraphicsIOException {
         //<polyline points="0,0  30,0  15,30" style="stroke:#006600;"/>   
         StringBuilder pointBuilder = new StringBuilder();
-        for (int i = 0; i < x.length; i++) {
+        for (int i = 0; i < n; i++) {
             pointBuilder.append(format(x[i]));
             pointBuilder.append(',');
             pointBuilder.append(format(y[i]));
