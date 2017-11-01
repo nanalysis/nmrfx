@@ -482,7 +482,7 @@ public class Processor {
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
                 sampleSchedule.setOutMult(complex, newAcqOrder);
-            } 
+            }
             vectorsToWrite = nmrData.getNVectors();
             if (useSizes != null) {
                 vectorsToWrite = 1;
@@ -700,9 +700,8 @@ public class Processor {
         try {
             nmrData = NMRDataUtil.getFID(filename);
         } catch (IOException ex) {
-            throw new ProcessingException("Cannot open dataset " + filename);
+            throw new ProcessingException("Cannot open dataset \"" + filename + "\" because: " + ex.getMessage());
         }
-
         // read parameters
         int nDim = nmrData.getNDim();
         int tdSizes[] = new int[nDim];
@@ -1333,7 +1332,7 @@ public class Processor {
                         dimString = "dataset";
                     } else {
                         dimString = String.valueOf(dims[0] + 1);
-                        for (int iDim = 1;iDim < dims.length;iDim++) {
+                        for (int iDim = 1; iDim < dims.length; iDim++) {
                             dimString = dimString + "," + String.valueOf(dims[iDim] + 1);
                         }
                     }
