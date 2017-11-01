@@ -427,9 +427,14 @@ public class DrawSpectrum {
                 return false;
             }
         }
+        double level = dataAttributes.levelProperty().get();
+        double height = axes[1].getHeight();
+        double scale = -height / 10.0 / level;
+        double offset = height * (1.0 - dataAttributes.offsetProperty().doubleValue());
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> axes[1].getDisplayPosition(intensity), offsetMode);
+                (index, intensity) -> intensity * scale + offset, offsetMode);
+
         if (iChunk < 0) {
             return false;
         }

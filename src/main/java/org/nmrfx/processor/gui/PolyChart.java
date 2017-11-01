@@ -837,6 +837,14 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         crossHairStates[1][1] = v2;
     }
 
+    public Optional<DatasetAttributes> getFirstDatasetAttributes() {
+        Optional<DatasetAttributes> firstDatasetAttr = Optional.empty();
+        if (!datasetAttributesList.isEmpty()) {
+            firstDatasetAttr = Optional.of(datasetAttributesList.get(0));
+        }
+        return firstDatasetAttr;
+    }
+
     public Dataset getDataset() {
         Dataset dataset = null;
         if (!datasetAttributesList.isEmpty()) {
@@ -962,6 +970,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             center -= y / scale;
             min = center - range / 2.0;
             max = center + range / 2.0;
+            double f = (0.0 - min) / (max - min);
+            datasetAttributesList.stream().forEach(dataAttr -> {
+                dataAttr.setOffset(f);
+            });
+
             setYAxis(min, max);
         } else {
             center += y / scale;
@@ -990,6 +1003,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             range = range * factor;
             min = -f * range;
             max = min + range;
+            double oldLevel = dataAttr.getLevel();
+            dataAttr.setLevel(oldLevel * factor);
             setYAxis(min, max);
         } else if (dataset != null) {
             double scale = factor;
@@ -1015,6 +1030,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 range -= y / scale;
                 min = -f * range;
                 max = min + range;
+                double oldLevel = dataAttr.getLevel();
+                dataAttr.setLevel(oldLevel * scale);
                 setYAxis(min, max);
             } else if (dataset != null) {
                 double scale = (y / 100.0 + 1.0);
@@ -1251,6 +1268,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             }
             max += range / 20.0;
             min -= range / 20.0;
+            double delta = max - min;
+            dataAttr.setLevel(delta / 10.0);
+            double offset = (0.0 - min) / delta;
+            dataAttr.setOffset(offset);
             setYAxis(min, max);
         } else {
             Dataset dataset = dataAttr.getDataset();

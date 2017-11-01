@@ -332,6 +332,24 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public double getLevel() {
         return levelProperty().get();
     }
+
+    private DoubleProperty offset;
+
+    public DoubleProperty offsetProperty() {
+        if (offset == null) {
+            offset = new SimpleDoubleProperty(this, "offset", 0.05);
+        }
+        return offset;
+    }
+
+    public void setOffset(double value) {
+        offsetProperty().set(value);
+    }
+
+    public double getOffset() {
+        return offsetProperty().get();
+    }
+
     private BooleanProperty posDrawOn;
 
     public BooleanProperty posDrawOnProperty() {

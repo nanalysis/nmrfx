@@ -431,6 +431,19 @@ public class SpecAttrWindowController implements Initializable {
         levelCol.setContextMenu(levelMenu);
         levelMenu.getItems().addAll(unifyLevelItem);
 
+        TableColumn<DatasetAttributes, String> offsetCol = new TableColumn<>("offset");
+        offsetCol.setCellValueFactory(new PropertyValueFactory("offset"));
+        offsetCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
+
+        ContextMenu offsetMenu = new ContextMenu();
+        MenuItem unifyOffsetItem = new MenuItem("unify");
+        unifyLevelItem.setOnAction(e -> unifyOffset());
+        MenuItem rampOffsetItem = new MenuItem("ramp");
+        rampOffsetItem.setOnAction(e -> rampOffset());
+        offsetMenu.getItems().addAll(rampOffsetItem);
+        offsetCol.setContextMenu(offsetMenu);
+        offsetCol.setPrefWidth(50);
+
         TableColumn<DatasetAttributes, String> nLevelsCol = new TableColumn<>("nLvl");
         nLevelsCol.setCellValueFactory(new PropertyValueFactory("nlevels"));
         nLevelsCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
@@ -576,7 +589,7 @@ public class SpecAttrWindowController implements Initializable {
         TableColumn negativeColumn = new TableColumn("Negative");
         positiveColumn.getColumns().setAll(posDrawOnCol, posColorCol, posLineWidthCol);
         negativeColumn.getColumns().setAll(negDrawOnCol, negColorCol, negLineWidthCol);
-        datasetTableView.getColumns().setAll(fileNameCol, levelCol, nLevelsCol, clmCol, positiveColumn, negativeColumn);
+        datasetTableView.getColumns().setAll(fileNameCol, levelCol, offsetCol, nLevelsCol, clmCol, positiveColumn, negativeColumn);
     }
 
     void initPeakListTable() {
@@ -841,11 +854,47 @@ public class SpecAttrWindowController implements Initializable {
 
     }
 
+    int getSelected() {
+        int selected = datasetTableView.getSelectionModel().getSelectedIndex();
+        if (selected == -1) {
+            selected = 0;
+        }
+        return selected;
+
+    }
+
     void unifyLevel() {
         ObservableList<DatasetAttributes> items = datasetTableView.getItems();
         items.stream().forEach((dataAttr) -> {
             dataAttr.setLevel(items.get(0).getLevel());
         });
+        datasetTableView.refresh();
+
+    }
+
+    void unifyOffset() {
+        ObservableList<DatasetAttributes> items = datasetTableView.getItems();
+        items.stream().forEach((dataAttr) -> {
+            dataAttr.setOffset(items.get(0).getOffset());
+        });
+        datasetTableView.refresh();
+
+    }
+
+    void rampOffset() {
+        ObservableList<DatasetAttributes> items = datasetTableView.getItems();
+        int nItems = items.size();
+        if (nItems > 0) {
+            double offset = items.get(0).getOffset();
+            double offsetIncr = 0.0;
+            if (nItems > 1) {
+                offsetIncr = 0.8 / (nItems);
+            }
+            for (DatasetAttributes dataAttr : items) {
+                dataAttr.setOffset(offset);
+                offset += offsetIncr;
+            }
+        }
         datasetTableView.refresh();
 
     }
