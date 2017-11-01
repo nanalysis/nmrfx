@@ -105,7 +105,7 @@ class BrukerData implements NMRData {
      *
      * @param path full path to the fid directory or file
      */
-    public BrukerData(String path) {
+    public BrukerData(String path) throws IOException {
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.length() - 1);
         }
@@ -665,7 +665,7 @@ class BrukerData implements NMRData {
     }
 
     // open Bruker parameter file(s)
-    private void openParFile(String parpath) {
+    private void openParFile(String parpath) throws IOException {
         parMap = new LinkedHashMap<String, String>(200);
         // process proc files if they exist
         String path = parpath + File.separator + "pdata";
@@ -742,7 +742,7 @@ class BrukerData implements NMRData {
 //                swapBits+" dspph="+dspph);
     }
 
-    private void setPars() {
+    private void setPars() throws IOException {
         // need to get (or calculate)  groupDelay before calculating shiftAmount below
         setDspph();
         Integer ipar;
@@ -771,13 +771,13 @@ class BrukerData implements NMRData {
         }
         String tdpar = "TD,";
         boolean gotSchedule = false;
-        if ((new File(fpath + File.separator + "nuslist")).exists()) {
-            File nusFile = new File(fpath + File.separator + "nuslist");
-            try {
-                NMRData.readSampleSchedule(nusFile.getPath(), false, this);
+        File nusFile = new File(fpath + File.separator + "nuslist");
+        if (nusFile.exists()) {
+            NMRData.readSampleSchedule(nusFile.getPath(), false, this);
+            if (sampleSchedule.getTotalSamples() == 0) {
+                throw new IOException("nuslist file exists, but is empty");
+            } else {
                 gotSchedule = true;
-            } catch (IOException ioE) {
-                gotSchedule = false;
             }
         }
         if (gotSchedule) {
