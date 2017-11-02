@@ -345,6 +345,18 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         baselineMenu.getItems().add(clearBaselineItem);
         baselineMenu.getItems().add(clearAllBaselineItem);
         Menu peakMenu = new Menu("Peaks");
+        MenuItem tweakPeakItem = new MenuItem("Tweak Selected");
+        tweakPeakItem.setOnAction((ActionEvent e) -> {
+            tweakPeaks();
+        });
+        peakMenu.getItems().add(tweakPeakItem);
+        
+        MenuItem tweakListItem = new MenuItem("Tweak All Lists");
+        tweakListItem.setOnAction((ActionEvent e) -> {
+            tweakPeakLists();
+        });
+        peakMenu.getItems().add(tweakListItem);
+
         MenuItem fitItem = new MenuItem("Fit Selected");
         fitItem.setOnAction((ActionEvent e) -> {
             fitPeaks();
@@ -1998,6 +2010,49 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 try {
                     peakListAttr.getPeakList().peakFit(dataset);
                 } catch (IllegalArgumentException | IOException | PeakFitException ex) {
+                    Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
+        drawPeakLists(false);
+        peakListAttributesList.forEach((peakListAttr) -> {
+            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            if (!peaks.isEmpty()) {
+                drawSelectedPeaks(peakListAttr);
+            }
+        });
+    }
+
+    void tweakPeaks() {
+        peakListAttributesList.forEach((peakListAttr) -> {
+            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            if (!peaks.isEmpty()) {
+                Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
+                if (dataset != null) {
+                    try {
+                        peakListAttr.getPeakList().tweakPeaks(dataset, peaks);
+                    } catch (IllegalArgumentException ex) {
+                        Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        });
+        drawPeakLists(false);
+        peakListAttributesList.forEach((peakListAttr) -> {
+            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            if (!peaks.isEmpty()) {
+                drawSelectedPeaks(peakListAttr);
+            }
+        });
+    }
+
+    void tweakPeakLists() {
+        peakListAttributesList.forEach((peakListAttr) -> {
+            Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
+            if (dataset != null) {
+                try {
+                    peakListAttr.getPeakList().tweakPeaks(dataset);
+                } catch (IllegalArgumentException ex) {
                     Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
