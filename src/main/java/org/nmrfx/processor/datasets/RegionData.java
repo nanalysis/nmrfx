@@ -251,4 +251,13 @@ public class RegionData {
         return maxPoint.clone();
     }
 
+    /**
+     * Return the position in points (in double precision) of the maximum intensity in region
+     *
+     * @return array of double valued indices of the maximum
+     */
+    public double[] getMaxDPoint() {
+        return dmaxPoint.clone();
+    }
+
 }

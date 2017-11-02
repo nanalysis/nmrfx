@@ -2969,6 +2969,30 @@ public class PeakList {
         return inEllipse;
     }
 
+    public void tweakPeaks(Dataset dataset, List<Peak> speaks) {
+        speaks.stream().forEach(peak -> {
+            try {
+                peak.tweak(dataset);
+            } catch (IOException ex) {
+                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
+                return;
+            }
+        });
+
+    }
+
+    public void tweakPeaks(Dataset dataset) {
+        peaks.stream().forEach(peak -> {
+            try {
+                peak.tweak(dataset);
+            } catch (IOException ex) {
+                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
+                return;
+            }
+        });
+
+    }
+
     public static List<Object> peakFit(Dataset theFile, Peak... peakArray)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean doFit = true;
