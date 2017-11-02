@@ -26,6 +26,7 @@ import static java.util.Comparator.comparing;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.scene.paint.Color;
+import org.nmrfx.processor.datasets.RegionData;
 
 public class Peak implements Comparable, PeakOrMulti {
 
@@ -416,7 +417,20 @@ public class Peak implements Comparable, PeakOrMulti {
                 + ((iUpDown * peakList.getSpectralDim(iDim).getSw()) / peakList.getSpectralDim(iDim).getSf())));
     }
 
-    public void analyzePeakRegion(Dataset theFile, int[] planes)
+    public void tweak(Dataset dataset) throws IOException {
+        int[] planes = new int[0];
+        RegionData regionData = analyzePeakRegion(dataset, planes);
+        double[] maxPoint = regionData.getMaxDPoint();
+        for (int i = 0; i < maxPoint.length; i++) {
+            boolean frozen = getFlag(8 + i);
+            if (!frozen) {
+                double position = dataset.pointToPPM(i, maxPoint[i]);
+                getPeakDim(i).setChemShiftValue((float) position);
+            }
+        }
+    }
+
+    public RegionData analyzePeakRegion(Dataset theFile, int[] planes)
             throws IOException {
         int dataDim = theFile.getNDim();
         int[][] p = new int[dataDim][2];
@@ -469,7 +483,8 @@ public class Peak implements Comparable, PeakOrMulti {
             }
         }
 
-        theFile.analyzeRegion(p, cpt, width, dim);
+        RegionData regionData = theFile.analyzeRegion(p, cpt, width, dim);
+        return regionData;
     }
 
     public int getClusterOriginPeakID(int searchDim) {
