@@ -70,6 +70,7 @@ public class DrawSpectrum {
     double[][] xy = new double[2][];
     int nPoints = 0;
     int iChunk = 0;
+    int rowIndex = -1;
 
     public DrawSpectrum(NMRAxis[] axes, Canvas canvas) {
         this.axes = axes;
@@ -405,6 +406,10 @@ public class DrawSpectrum {
         return nPoints;
     }
 
+    public int getRowIndex() {
+        return rowIndex;
+    }
+
     public void setToLastChunk(DatasetAttributes dataAttributes) {
         iChunk = dataAttributes.getLastChunk(0);
     }
@@ -420,6 +425,9 @@ public class DrawSpectrum {
         } else {
             offsetMode = false;
             try {
+                int iDim = 0;
+                rowIndex = dataAttributes.getRowIndex(iDim, iChunk);
+                System.out.println("row in " + rowIndex);
                 if (!dataAttributes.Vector(specVec, iChunk--)) {
                     return false;
                 }

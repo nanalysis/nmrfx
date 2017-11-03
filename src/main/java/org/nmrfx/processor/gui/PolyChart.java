@@ -1856,13 +1856,14 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                             ok = drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
                             double[][] xy = drawSpectrum.getXY();
                             int nPoints = drawSpectrum.getNPoints();
-                            drawSpecLine(datasetAttributes, gC, iMode, nPoints, xy);
+                            int rowIndex = drawSpectrum.getRowIndex();
+                            drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
                         } while (ok);
                     }
                     drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
                     double[][] xy = drawSpectrum.getXY();
                     int nPoints = drawSpectrum.getNPoints();
-                    drawSpecLine(datasetAttributes, gC, 0, nPoints, xy);
+                    drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
 
                 } else {
                     draw2DList.add(datasetAttributes);
@@ -1890,10 +1891,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         canvasAnnotations.add(anno);
     }
 
-    void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContext gC, int iMode, int nPoints, double[][] xy) {
+    void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContext gC, int iMode, int rowIndex, int nPoints, double[][] xy) {
         if (nPoints > 1) {
             if (iMode == 0) {
-                gC.setStroke(datasetAttributes.getPosColor());
+                gC.setStroke(datasetAttributes.getPosColor(rowIndex));
                 gC.setLineWidth(datasetAttributes.getPosLineWidth());
             } else {
                 gC.setStroke(datasetAttributes.getNegColor());

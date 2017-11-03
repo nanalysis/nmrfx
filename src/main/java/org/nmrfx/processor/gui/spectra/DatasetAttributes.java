@@ -45,6 +45,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     private Hashtable extremes = new Hashtable();
     public int mChunk = 0;
     public boolean masked = false;
+    Map<Integer, Color> colorMap = new HashMap<>();
 
     // used to tell if dataset has a level value already so we don't need to call autoLevel.
     // used in processing same dataset multiple times, so it's easier to compare the processing without the level changing
@@ -267,6 +268,18 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public Color getPosColor() {
         return posColorProperty().get();
     }
+
+    public Color getPosColor(int rowIndex) {
+        Color color = null;
+        if (rowIndex != -1) {
+            color = colorMap.get(rowIndex);
+        }
+        if (color == null) {
+            color = posColorProperty().get();
+        }
+        return color;
+    }
+
     private ColorProperty negColor;
 
     public ColorProperty negColorProperty() {
@@ -452,6 +465,30 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
     public Dataset getDataset() {
         return theFile;
+    }
+
+    public void setMapColor(int index, String colorName) {
+        Color color = Color.web(colorName);
+        colorMap.put(index, color);
+    }
+
+    public void setMapColor(int index, Color color) {
+        colorMap.put(index, color);
+    }
+
+    public void clearColors() {
+        colorMap.clear();
+    }
+
+    public Color getMapColor(int index) {
+        Color color = null;
+        if (index != -1) {
+            color = colorMap.get(index);
+        }
+        if (color == null) {
+            color = getPosColor();
+        }
+        return color;
     }
 
     int[] chunkSize;

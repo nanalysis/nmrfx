@@ -123,6 +123,32 @@ public class GUIScripter {
         });
     }
 
+    public void colorMap(String datasetName, int index, String colorName) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
+            for (DatasetAttributes dataAttr : dataAttts) {
+                if ((datasetName == null) || datasetName.equals(dataAttr.getFileName())) {
+                    dataAttr.setMapColor(index, colorName);
+                }
+            }
+        });
+    }
+
+    public void colorMap(String datasetName, List<Integer> indices, String colorName) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
+            for (DatasetAttributes dataAttr : dataAttts) {
+                if ((datasetName == null) || datasetName.equals(dataAttr.getFileName())) {
+                    for (int index : indices) {
+                        dataAttr.setMapColor(index, colorName);
+                    }
+                }
+            }
+        });
+    }
+
     public void config(String datasetName, String key, Object value) {
         ConsoleUtil.runOnFxThread(() -> {
             PolyChart chart = getChart();

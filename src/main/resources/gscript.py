@@ -51,6 +51,9 @@ class NMRFxWindowScripting:
                 configData.update(kwargs)
             self.cmd.config(datasets,configData)
 
+    def colorMap(self, indices, colorName, dataset=None):
+        self.cmd.colorMap(dataset, indices, colorName)
+
     def configOld(self,datasets=None, **kwargs):
         dAttrs = self.getDAttrs()
         if datasets == None:
