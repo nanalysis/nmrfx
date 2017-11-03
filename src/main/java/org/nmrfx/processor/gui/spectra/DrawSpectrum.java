@@ -438,7 +438,7 @@ public class DrawSpectrum {
         double level = dataAttributes.levelProperty().get();
         double height = axes[1].getHeight();
         double scale = -height / 10.0 / level;
-        double offset = height * (1.0 - dataAttributes.offsetProperty().doubleValue());
+        double offset = height * (1.0 - dataAttributes.getMapOffset(rowIndex));
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
                 (index, intensity) -> intensity * scale + offset, offsetMode);

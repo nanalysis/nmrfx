@@ -51,8 +51,11 @@ class NMRFxWindowScripting:
                 configData.update(kwargs)
             self.cmd.config(datasets,configData)
 
-    def colorMap(self, indices, colorName, dataset=None):
+    def colors(self, indices, colorName, dataset=None):
         self.cmd.colorMap(dataset, indices, colorName)
+
+    def offsets(self, indices, offset, dataset=None):
+        self.cmd.offsetMap(dataset, indices, offset)
 
     def configOld(self,datasets=None, **kwargs):
         dAttrs = self.getDAttrs()

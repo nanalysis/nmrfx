@@ -149,6 +149,32 @@ public class GUIScripter {
         });
     }
 
+    public void offsetMap(String datasetName, int index, double offset) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
+            for (DatasetAttributes dataAttr : dataAttts) {
+                if ((datasetName == null) || datasetName.equals(dataAttr.getFileName())) {
+                    dataAttr.setMapOffset(index, offset);
+                }
+            }
+        });
+    }
+
+    public void offsetMap(String datasetName, List<Integer> indices, double offset) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
+            for (DatasetAttributes dataAttr : dataAttts) {
+                if ((datasetName == null) || datasetName.equals(dataAttr.getFileName())) {
+                    for (int index : indices) {
+                        dataAttr.setMapOffset(index, offset);
+                    }
+                }
+            }
+        });
+    }
+
     public void config(String datasetName, String key, Object value) {
         ConsoleUtil.runOnFxThread(() -> {
             PolyChart chart = getChart();

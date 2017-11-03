@@ -46,6 +46,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public int mChunk = 0;
     public boolean masked = false;
     Map<Integer, Color> colorMap = new HashMap<>();
+    Map<Integer, Double> offsetMap = new HashMap<>();
 
     // used to tell if dataset has a level value already so we don't need to call autoLevel.
     // used in processing same dataset multiple times, so it's easier to compare the processing without the level changing
@@ -489,6 +490,25 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             color = getPosColor();
         }
         return color;
+    }
+
+    public void setMapOffset(int index, double offset) {
+        offsetMap.put(index, offset);
+    }
+
+    public void clearOffsets() {
+        offsetMap.clear();
+    }
+
+    public double getMapOffset(int index) {
+        Double offset = null;
+        if (index != -1) {
+            offset = offsetMap.get(index);
+        }
+        if (offset == null) {
+            offset = getOffset();
+        }
+        return offset;
     }
 
     int[] chunkSize;
