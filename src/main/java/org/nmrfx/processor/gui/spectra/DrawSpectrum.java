@@ -427,7 +427,6 @@ public class DrawSpectrum {
             try {
                 int iDim = 0;
                 rowIndex = dataAttributes.getRowIndex(iDim, iChunk);
-                System.out.println("row in " + rowIndex);
                 if (!dataAttributes.Vector(specVec, iChunk--)) {
                     return false;
                 }
