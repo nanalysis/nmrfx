@@ -780,6 +780,32 @@ public class Peak implements Comparable, PeakOrMulti {
         return (result.toString().trim());
     }
 
+    public String toXPK2String(int index) {
+        StringBuilder result = new StringBuilder();
+        String sep = "\t";
+        result.append(String.valueOf(getIdNum())).append(sep);
+        String formatString = "%.5f";
+
+        for (int i = 0; i < getNDim(); i++) {
+            double sf = peakDim[i].getSpectralDimObj().getSf();
+            String label = peakDim[i].getLabel();
+            result.append(label).append(sep);
+            result.append(String.format(formatString, peakDim[i].getChemShiftValue())).append(sep);
+            result.append(String.format(formatString, peakDim[i].getLineWidth() * sf)).append(sep);
+            result.append(String.format(formatString, peakDim[i].getBoundsValue() * sf)).append(sep);
+            result.append(peakDim[i].getError()).append(sep);
+            result.append(peakDim[i].getMultiplet().getCouplingsAsSimpleString()).append(sep);
+            result.append(peakDim[i].getUser()).append(sep);
+        }
+        result.append(String.valueOf(getVolume1())).append(sep);
+        result.append(String.valueOf(getIntensity())).append(sep);
+        result.append(String.valueOf(getStatus())).append(sep);
+        result.append(String.valueOf(getComment())).append(sep);
+        result.append(String.valueOf(getFlag()));
+
+        return (result.toString().trim());
+    }
+
     String toXMLString() {
         StringBuffer result = new StringBuffer();
 

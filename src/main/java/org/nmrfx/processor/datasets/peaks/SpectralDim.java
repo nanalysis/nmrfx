@@ -72,6 +72,8 @@ public class SpectralDim {
     private String relation = "";
     private char foldMode = 'n';
     private int foldCount = 0;
+    private boolean acqDim = false;
+    private boolean absPos = true;
 
     /**
      * Creates a new instance of SpectralDim
@@ -82,6 +84,9 @@ public class SpectralDim {
         magLinkage = iDim;
         dimName = "D" + dataDim;
         encodedSourceDim = iDim;
+        if (iDim == 0) {
+            acqDim = true;
+        }
     }
 
     public SpectralDim copy(PeakList peakList) {
@@ -164,6 +169,49 @@ public class SpectralDim {
         result.append(stringQuote);
         result.append(sep);
         result.append(getPrecision());
+        return result.toString();
+    }
+//     1   ppm   1H    500.13   4.998700337912143    9.898700337912143    circular   true   true
+
+    String toXPK2Dim() {
+        StringBuilder result = new StringBuilder();
+        String sep = "\t";
+
+        result.append(getDimName());
+        result.append(sep);
+
+        result.append("ppm");
+        result.append(sep);
+
+        result.append(getSf());
+        result.append(sep);
+
+        result.append(getSw());
+        result.append(sep);
+
+        result.append(getRef());
+        result.append(sep);
+
+        result.append(getIdTol());
+        result.append(sep);
+
+        result.append(getPattern());
+        result.append(sep);
+
+        result.append(getRelation());
+        result.append(sep);
+
+        result.append(getRef());
+        result.append(sep);
+
+        result.append(getNEFAliasing());
+        result.append(sep);
+
+        result.append(isAbsPosition());
+        result.append(sep);
+
+        result.append(isAcqDim());
+
         return result.toString();
     }
 
@@ -309,6 +357,14 @@ public class SpectralDim {
         return aliasSpecifier;
     }
 
+    public String getNEFAliasing() {
+        String aliasSpecifier = "circular";
+        return aliasSpecifier;
+    }
+
+    public void setNEFAliasing(String aliasing) {
+    }
+
     public double getRef() {
         return ref;
     }
@@ -419,5 +475,21 @@ public class SpectralDim {
 
     public void setDataDim(int dataDim) {
         this.dataDim = dataDim;
+    }
+
+    public boolean isAcqDim() {
+        return acqDim;
+    }
+
+    public void setAcqDim(boolean state) {
+        acqDim = state;
+    }
+
+    public boolean isAbsPosition() {
+        return absPos;
+    }
+
+    public void setAbsPosition(boolean state) {
+        absPos = state;
     }
 }
