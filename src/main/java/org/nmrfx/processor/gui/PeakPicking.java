@@ -62,14 +62,14 @@ public class PeakPicking {
         }
         PeakPicker picker = new PeakPicker(peakPickPar);
         String canonFileName = dataset.getCanonicalFile();
-        String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk";
+        String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk2";
         PeakList peakList = null;
         try {
             peakList = picker.peakPick();
             chart.setupPeakListAttributes(peakList);
             if (saveFile) {
                 try (final FileWriter writer = new FileWriter(listFileName)) {
-                    peakList.writePeaksXPK(writer);
+                    peakList.writePeaksXPK2(writer);
                 }
             }
         } catch (IOException | InvalidPeakException ioE) {
@@ -104,13 +104,13 @@ public class PeakPicking {
         }
         PeakPicker picker = new PeakPicker(peakPickPar);
         String canonFileName = dataset.getCanonicalFile();
-        String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk";
+        String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk2";
         PeakList peakList = null;
         try {
             peakList = picker.peakPick();
             if (saveFile) {
                 try (final FileWriter writer = new FileWriter(listFileName)) {
-                    peakList.writePeaksXPK(writer);
+                    peakList.writePeaksXPK2(writer);
                 }
             }
         } catch (IOException | InvalidPeakException ioE) {
