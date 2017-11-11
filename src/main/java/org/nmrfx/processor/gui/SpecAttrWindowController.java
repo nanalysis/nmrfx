@@ -86,6 +86,7 @@ import javafx.scene.layout.Priority;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.SegmentedButton;
+import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
@@ -721,6 +722,11 @@ public class SpecAttrWindowController implements Initializable {
 
     @FXML
     private void peakStatusAction(Event event) {
+        if (peakStatusCheckBox.isSelected()) {
+            PeakList.peakListTable.values().stream().forEach(peakList -> {
+                chart.setupPeakListAttributes(peakList);
+            });
+        }
         chart.refresh();
     }
 
