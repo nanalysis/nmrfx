@@ -23,6 +23,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.controls.FractionPane;
 import de.codecentric.centerdevice.MenuToolkit;
 import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -197,7 +198,9 @@ public class MainApp extends Application {
         svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
         MenuItem savePeakListMenuItem = new MenuItem("Save PeakLists");
         savePeakListMenuItem.setOnAction(e -> savePeakLists());
-        fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, savePeakListMenuItem);
+        MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
+        loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
+        fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, savePeakListMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
@@ -335,15 +338,46 @@ public class MainApp extends Application {
         PeakList.peakListTable.values().stream().forEach(peakList -> {
             Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
             String canonFileName = dataset.getCanonicalFile();
-            String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk";
-            try {
-                try (FileWriter writer = new FileWriter(listFileName)) {
-                    peakList.writePeaksXPK(writer);
-                    writer.close();
+            File canonFile = new File(canonFileName);
+            if (canonFile.exists()) {
+                int dotIndex = canonFileName.lastIndexOf(".");
+                if (dotIndex != -1) {
+                    String listFileName = canonFileName.substring(0, dotIndex) + ".xpk2";
+                    try {
+                        try (FileWriter writer = new FileWriter(listFileName)) {
+                            peakList.writePeaksXPK2(writer);
+                            writer.close();
+                        }
+                    } catch (IOException | InvalidPeakException ioE) {
+                        ExceptionDialog dialog = new ExceptionDialog(ioE);
+                        dialog.showAndWait();
+                    }
                 }
-            } catch (IOException | InvalidPeakException ioE) {
-                ExceptionDialog dialog = new ExceptionDialog(ioE);
-                dialog.showAndWait();
+            }
+        });
+    }
+
+    void loadPeakLists() {
+        Dataset.datasets().stream().forEach(dataset -> {
+            String canonFileName = dataset.getCanonicalFile();
+            File canonFile = new File(canonFileName);
+            if (canonFile.exists()) {
+                int dotIndex = canonFileName.lastIndexOf(".");
+                if (dotIndex != -1) {
+                    String listFileName = canonFileName.substring(0, dotIndex) + ".xpk2";
+                    File listFile = new File(listFileName);
+                    String listName = listFile.getName();
+                    dotIndex = listName.lastIndexOf('.');
+                    listName = listName.substring(0, dotIndex);
+                    if (PeakList.get(listName) == null) {
+                        try {
+                            PeakList.readXPK2Peaks(listFileName);
+                        } catch (IOException ioE) {
+                            ExceptionDialog dialog = new ExceptionDialog(ioE);
+                            dialog.showAndWait();
+                        }
+                    }
+                }
             }
         });
     }
