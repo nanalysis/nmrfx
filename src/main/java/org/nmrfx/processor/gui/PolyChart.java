@@ -350,7 +350,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             tweakPeaks();
         });
         peakMenu.getItems().add(tweakPeakItem);
-        
+
         MenuItem tweakListItem = new MenuItem("Tweak All Lists");
         tweakListItem.setOnAction((ActionEvent e) -> {
             tweakPeakLists();
@@ -2538,6 +2538,20 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             value = xAxis.getValueForDisplay(value).doubleValue();
         }
         crossHairPositions[iCross][iOrient] = value;
+    }
+
+    public boolean hasCrosshairRegion() {
+        boolean horizontalRegion = crossHairStates[0][VERTICAL] && crossHairLines[0][VERTICAL].isVisible()
+                && crossHairStates[1][VERTICAL] && crossHairLines[1][VERTICAL].isVisible();
+        boolean verticalRegion = crossHairStates[0][HORIZONTAL] && crossHairLines[0][HORIZONTAL].isVisible()
+                && crossHairStates[1][HORIZONTAL] && crossHairLines[1][HORIZONTAL].isVisible();
+        boolean hasRegion = false;
+        if (is1D()) {
+            hasRegion = horizontalRegion;
+        } else {
+            hasRegion = horizontalRegion && verticalRegion;
+        }
+        return hasRegion;
     }
 
     int getCrossHairNum(double x, double y, int iOrient) {
