@@ -50,6 +50,11 @@ import javafx.scene.image.Image;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import static javafx.application.Application.launch;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
+import org.nmrfx.processor.utilities.WebConnect;
 
 public class MainApp extends Application {
 
@@ -253,14 +258,28 @@ public class MainApp extends Application {
         // TBD standard window menu items
         // Help Menu (items TBD)
         Menu helpMenu = new Menu("Help");
+
+        MenuItem webSiteMenuItem = new MenuItem("NMRFx Web Site");
+        webSiteMenuItem.setOnAction(e -> showWebSiteAction(e));
+
         MenuItem docsMenuItem = new MenuItem("Online Documentation");
-        docsMenuItem.setOnAction(e -> FXMLController.getActiveController().showDocAction(e));
+        docsMenuItem.setOnAction(e -> showDocAction(e));
+
+        MenuItem versionMenuItem = new MenuItem("Check Version");
+        versionMenuItem.setOnAction(e -> showVersionAction(e));
+
+        MenuItem mailingListItem = new MenuItem("Mailing List Site");
+        mailingListItem.setOnAction(e -> showMailingListAction(e));
+
         MenuItem refMenuItem = new MenuItem("NMRFx Publication");
         refMenuItem.setOnAction(e -> {
             MainApp.hostServices.showDocument("http://link.springer.com/article/10.1007/s10858-016-0049-6");
         });
 
-        helpMenu.getItems().addAll(docsMenuItem, refMenuItem);
+        // home
+        // mailing list
+        //
+        helpMenu.getItems().addAll(docsMenuItem, webSiteMenuItem, mailingListItem, versionMenuItem, refMenuItem);
 
         if (tk != null) {
             Menu windowMenu = new Menu("Window");
@@ -302,6 +321,36 @@ public class MainApp extends Application {
             }
         }
         return version;
+    }
+
+    static void showDocAction(ActionEvent event) {
+        hostServices.showDocument("http://docs.nmrfx.org");
+    }
+
+    static void showWebSiteAction(ActionEvent event) {
+        hostServices.showDocument("http://nmrfx.org");
+    }
+
+    static void showMailingListAction(ActionEvent event) {
+        hostServices.showDocument("https://groups.google.com/forum/#!forum/nmrfx-processor");
+    }
+
+    public void showVersionAction(ActionEvent event) {
+        String onlineVersion = WebConnect.getVersion();
+        onlineVersion = onlineVersion.replace('_', '.');
+        String currentVersion = getVersion();
+        String text;
+        if (onlineVersion.equals("")) {
+            text = "Sorry, couldn't reach web site";
+        } else if (onlineVersion.equals(currentVersion)) {
+            text = "You're running the latest version: " + currentVersion;
+        } else {
+            text = "You're running " + currentVersion;
+            text += "\nbut the latest is: " + onlineVersion;
+        }
+        Alert alert = new Alert(AlertType.INFORMATION, text);
+        alert.setTitle("NMRFx Processor Version");
+        alert.showAndWait();
     }
 
     private void showConsole(ActionEvent event) {

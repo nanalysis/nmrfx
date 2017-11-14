@@ -452,11 +452,6 @@ public class FXMLController implements FractionPaneChild, Initializable {
     }
 
     @FXML
-    void showDocAction(ActionEvent event) {
-        MainApp.hostServices.showDocument("http://docs.nmrfx.org");
-    }
-
-    @FXML
     void showSpecAttrAction(ActionEvent event) {
         if (specAttrWindowController == null) {
             specAttrWindowController = SpecAttrWindowController.create();
@@ -1481,7 +1476,6 @@ public class FXMLController implements FractionPaneChild, Initializable {
         int nCols = chartGroup.getColumns();
         chartGroup.layoutChildren();
     }
-
 
     public void alignCenters() {
         DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
