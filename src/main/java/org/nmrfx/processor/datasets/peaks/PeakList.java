@@ -1115,7 +1115,7 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
                                                 peak.setComment(value);
                                                 break;
                                             case "flags":
-                                                //peak.setFlag(0,true);
+                                                peak.setFlag(value);
                                                 break;
                                             default:
                                                 throw new IllegalArgumentException("Unknown field " + field);

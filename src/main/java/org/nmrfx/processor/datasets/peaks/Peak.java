@@ -1114,6 +1114,18 @@ public class Peak implements Comparable, PeakOrMulti {
         peakUpdated(this);
     }
 
+    public void setFlag(String flagString) {
+        for (int i = 0; i < flag.length; i++) {
+            flag[i] = false;
+        }
+        for (int i = 0, n = flagString.length(); i < n; i++) {
+            if (flagString.charAt(i) != '0') {
+                this.flag[i] = true;
+            }
+        }
+        peakUpdated(this);
+    }
+
     public String getFlag() {
         StringBuffer flagResult = new StringBuffer();
         boolean nonZero = false;
