@@ -18,16 +18,6 @@ case "`uname`" in
     MINGW*) ismsys=true ;;
 esac
 
-JAVA=java
-if [ -n "$JAVA_HOME" ] ; then
-    if [ -x "$JAVA_HOME/jre/sh/java"  ] ; then
-        # AIX location
-        JAVA="$JAVA_HOME/jre/sh/java"
-    else
-        JAVA="$JAVA_HOME/bin/java"
-    fi
-fi
-
 if [ -n "$NMRFXSTR_MEMORY" ] ; then
     HEAP_MEM=$NMRFXSTR_MEMORY
 else
@@ -47,15 +37,25 @@ while [ -h "$pgm" ]; do
     fi
 done
 
-dir=`dirname $pgm`
+dir=`dirname "$pgm"`
 CLASSPATH=${classpath}
-# set classpath, or add to existing
-if [ -z "$CLASSPATH" ] ; then
-    CLASSPATH="$dir/structure-$nvjver.jar"
-    if $iscygwin ; then
-        CLASSPATH=`cygpath -pw "$CLASSPATH"`
-    fi
+
+if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
+    JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
+    CLASSPATH="$dir/lib/structure-$nvjver.jar:$CLASSPATH"
+elif [ -d "${dir}/jre/bin" ] ; then
+    JAVA="${dir}/jre/bin/java"
+    CLASSPATH="$dir/lib/structure-$nvjver.jar:$CLASSPATH"
 else
+    if [ -n "$JAVA_HOME" ] ; then
+        if [ -x "$JAVA_HOME/jre/sh/java"  ] ; then
+            # AIX location
+            JAVA="$JAVA_HOME/jre/sh/java"
+        else
+            JAVA="$JAVA_HOME/bin/java"
+        fi
+    fi
+
     if $ismsys ; then
         nvjdir=`$dir/echopath "$dir"`
         CLASSPATH="$nvjdir/structure-$nvjver.jar;$CLASSPATH"
@@ -67,7 +67,6 @@ else
         CLASSPATH="$dir/structure-$nvjver.jar:$CLASSPATH"
     fi
 fi
-
 export CLASSPATH
 if [ "$#" -eq 0 ]; then
     #exec "$JAVA"  --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED -Djava.awt.headless=true -mx${HEAP_MEM}m -cp "$CLASSPATH" $JAVA_OPTS $nvjmain ${1+"$@"}
