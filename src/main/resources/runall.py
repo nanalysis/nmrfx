@@ -11,9 +11,6 @@ from super import *
 from java.lang import System
 from java.lang import Runtime
 from optparse import OptionParser
-homeDir =  os.getcwd( )
-outDir = os.path.join(homeDir,'output')
-finDir = os.path.join(homeDir,'final')
 
 def makeDirs():
     if not os.path.exists(outDir):
@@ -41,7 +38,7 @@ def getCmd():
     cmd = os.path.join(dir,'nmrfxstructure')
     return cmd
 
-def calcStructures(calcScript,startStructure,nStructures,nProcesses=4, heapMemory=512):
+def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapMemory=512):
     makeDirs()
     cmd = getCmd()
     print cmd
@@ -57,13 +54,13 @@ def calcStructures(calcScript,startStructure,nStructures,nProcesses=4, heapMemor
                     strNum = nSubmitted+startStructure
                     fOutName = os.path.join(outDir,'cmdout_'+str(strNum)+'.txt')
                     fOut[i] = open(fOutName,'w')
-                    processes[i] = subprocess.Popen([cmd,"gen",calcScript,str(strNum)],stdout=fOut[i],stderr=subprocess.STDOUT,env=myEnv)
+                    processes[i] = subprocess.Popen([cmd,"gen","-d",dir,"-s",str(strNum),calcScript,],stdout=fOut[i],stderr=subprocess.STDOUT,env=myEnv)
                     pid = processes[i].pid
                     outStr =  "submit %d seed: %3d Structure # %3d of %3d pid %7d" % (i,strNum,(nSubmitted+1),nStructures,pid)
                     print outStr
                     nSubmitted += 1
-                else:
-                    print "Submitted all",nStructures
+                #else:
+                    #print "Submitted all",nStructures
         gotProcess = False
         for i in range(nProcesses):
             if (processes[i] != None):
@@ -119,6 +116,10 @@ def parseArgs():
     global nProcesses
     global nKeep
     global clean
+    global homeDir
+    global outDir
+    global finDir
+    homeDir = os.getcwd()
 
     nProcesses = Runtime.getRuntime().availableProcessors()
 
@@ -129,11 +130,15 @@ def parseArgs():
     parser.add_option("-p", "--nprocesses", dest="nProcesses",default=nProcesses, help="Number of simultaneous processes (nCpu)")
     parser.add_option("-a", "--align", action="store_true", dest="align", default=False, help="Align structures (False)")
     parser.add_option("-b", "--base", dest="base",default='super', help="Base name for superimposed files (super)")
+    parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
     parser.add_option("-c", "--clean", action="store_true", dest="clean", default=False, help="Clean Directories (False)")
     parser.add_option("-m", "--memory", dest="heapMemory",default='512', help="Amount of heap memory to use in MBytes")
 
     (options, args) = parser.parse_args()
     print 'args',args
+    homeDir = options.directory
+    outDir = os.path.join(homeDir,'output')
+    finDir = os.path.join(homeDir,'final')
 
     nStructures = int(options.nStructures)
     clean = options.clean
@@ -168,14 +173,14 @@ def parseArgs():
         else:
            print 'Must specify script'
            exit()
-        calcStructures(calcScript,start,nStructures,nProcesses,heapMemory)
+        calcStructures(calcScript,start,nStructures,homeDir,nProcesses,heapMemory)
     if nKeep > 0:
         keepStructures(nKeep)
     if align:
         if nStructures == 0 and len(args) > 0:
             files = args
         else:
-            files = glob.glob(os.path.join('final','final*.pdb'))
+            files = glob.glob(os.path.join(finDir,'final*.pdb'))
         runSuper(files, base)
 
 parseArgs()
