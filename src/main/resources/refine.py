@@ -498,6 +498,8 @@ class refine:
                     dir = os.path.dirname(file)
                     file = osfiles.convertSeqFile(file,dir)
                     type = 'nv'
+                elif type == 'pdb':
+                    self.readPDBFile(file)
             else: 
                 type = 'nv'
             if type == 'nv':
@@ -1430,7 +1432,7 @@ class refine:
         pairs = ssLay.getBasePairs()
         return pairs
 
-    def dumpDis(self, delta, fileName,atomPat='*.H*',maxDis=4.5,prob=1.1,fixLower=0.0):
+    def dumpDis(self, fileName, delta=0.5, atomPat='*.H*',maxDis=4.5,prob=1.1,fixLower=0.0):
         molecule = self.molecule
         Molecule.selectAtoms(atomPat)
         pairs =  molecule.getDistancePairs(maxDis,False)
