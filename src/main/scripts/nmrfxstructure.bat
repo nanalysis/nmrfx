@@ -14,15 +14,23 @@ rem
 if "%OS%" == "Windows_NT" setlocal
 
 set nvjver=${project.version}
-set nvjpmain=tcl.lang.NvLiteShell
+set nvjpmain=org.python.util.jython
 
 set dir=%~dp0
 
+set javaexe=java
 set cp="%dir%\structure-%nvjver%.jar;${wclasspath};%CLASSPATH%"
 
-if "%TCLLIBPATH%" == "" goto nullTcllib
-set tcllibpath=-DTCLLIBPATH="%TCLLIBPATH%"
-:nullTcllib
+set testjava=%dir%jre\bin\java
 
-java %tcllibpath% -Djava.awt.headless=true -cp %cp% %JAVA_OPTS% %nvjpmain% -c "import dispatchnvfx" %*
+if exist %testjava% (
+    set javaexe="%testjava%"
+    set cp="%dir%\lib\processor-%nvjver%.jar;${wclasspath};%CLASSPATH%"
+)
+
+if "%1"=="" (
+    %javaexe% -Djava.awt.headless=true -mx2048m -cp %cp% %JAVA_OPTS% %nvjpmain%
+) else (
+    %javaexe% -Djava.awt.headless=true -mx2048m -cp %cp% %JAVA_OPTS% %nvjpmain% -c "import dispatchnvfx" %*
+)
 
