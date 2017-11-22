@@ -92,6 +92,7 @@ public class Peak implements Comparable, PeakOrMulti {
     private float figureOfMerit = 1.0f;
     private boolean valid = true;
     private int idNum;
+    private int index = -1;
     private float volume1;
     private float intensity;
     private float volume2;
@@ -1027,6 +1028,14 @@ public class Peak implements Comparable, PeakOrMulti {
     public void setIdNum(int idNum) {
         this.idNum = idNum;
         peakUpdated(this);
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
     }
 
     public float getVolume1() {

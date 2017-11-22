@@ -71,8 +71,8 @@ public class PeakList {
     List<SearchDim> searchDims = new ArrayList<>();
     public double scale;
     private List<Peak> peaks;
-    public int[] index;
     public int idLast;
+    private Map<Integer, Peak> indexMap = new HashMap<>();
     private String details = "";
     private String sampleLabel = "";
     private String sampleConditionLabel = "";
@@ -139,7 +139,7 @@ public class PeakList {
         }
 
         peaks = new Vector();
-        index = null;
+        indexMap.clear();
 
         peakListTable.put(listName, this);
         listNum = peakListTable.size();
@@ -407,7 +407,7 @@ public class PeakList {
     }
 
     public void clearIndex() {
-        index = null;
+        indexMap.clear();
     }
 
     public void setFOM(double noiseLevel) {
@@ -438,26 +438,11 @@ public class PeakList {
     }
 
     public void reIndex() {
-        Peak peak;
-        idLast = -1;
-
-        for (int i = 0; i < peaks.size(); i++) {
-            peak = peaks.get(i);
-
-            if (peak.getIdNum() > idLast) {
-                idLast = peak.getIdNum();
-            }
-        }
-
-        index = new int[idLast + 1];
-
-        for (int i = 0; i < idLast; i++) {
-            index[i] = -1;
-        }
-
-        for (int i = 0; i < peaks.size(); i++) {
-            peak = peaks.get(i);
-            index[peak.getIdNum()] = i;
+        int i = 0;
+        indexMap.clear();
+        for (Peak peak : peaks) {
+            peak.setIndex(i++);
+            indexMap.put(peak.getIdNum(), peak);
         }
         peakListUpdated(this);
     }
@@ -1444,7 +1429,7 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
             return null;
         }
 
-        if (peakList.index == null) {
+        if (peakList.indexMap.isEmpty()) {
             peakList.reIndex();
         }
 
@@ -1456,23 +1441,8 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
             idNum = Integer.parseInt(peakSpecifier.substring(dot + 1, lastDot));
         }
 
-        if (idNum >= peakList.index.length) {
-            return (null);
-        }
-
-        if (idNum < 0) {
-            return (null);
-        }
-
-        idNum = peakList.index[idNum];
-
-        if (idNum == -1) {
-            return (null);
-        } else {
-            Peak peak = (Peak) peakList.getPeak(idNum);
-
-            return (peak);
-        }
+        Peak peak = peakList.indexMap.get(idNum);
+        return peak;
     }
 
     public static Peak getAPeak(String peakSpecifier,
@@ -1581,29 +1551,11 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
     }
 
     public Peak getPeakByID(int idNum) throws IllegalArgumentException {
-        if (index == null) {
+        if (indexMap.isEmpty()) {
             reIndex();
         }
-
-        if (idNum >= index.length) {
-            throw new IllegalArgumentException("idNum " + idNum + " for peaklist " + listName
-                    + " greater than index length " + index.length);
-        }
-
-        if (idNum < 0) {
-            throw new IllegalArgumentException("idNum " + idNum + " for peaklist " + listName
-                    + " less than 0");
-        }
-
-        idNum = index[idNum];
-
-        if (idNum == -1) {
-            return (null);
-        } else {
-            Peak peak = (Peak) getPeak(idNum);
-
-            return (peak);
-        }
+        Peak peak = indexMap.get(idNum);
+        return peak;
     }
 
     public int getListDim(String s) {
@@ -1703,13 +1655,13 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
 
     public void addPeakWithoutResonance(Peak newPeak) {
         peaks.add(newPeak);
-        index = null;
+        clearIndex();
     }
 
     public void addPeak(Peak newPeak) {
         newPeak.initPeakDimContribs();
         peaks.add(newPeak);
-        index = null;
+        clearIndex();
     }
 
     public int addPeak() {
@@ -1722,8 +1674,7 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
         if (peaks == null) {
             return null;
         }
-
-        if (index == null) {
+        if (indexMap.isEmpty()) {
             reIndex();
         }
 
@@ -3571,16 +3522,16 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
 
     public Set<Set<Peak>> getOverlappingPeaks() {
         Set<Set<Peak>> result = new HashSet<Set<Peak>>();
-        boolean[] used = new boolean[index.length];
-        for (int i = 0; i < size(); i++) {
+        boolean[] used = new boolean[size()];
+        for (int i = 0, n = size(); i < n; i++) {
             Peak peak = getPeak(i);
-            if (used[index[peak.getIdNum()]]) {
+            if (used[i]) {
                 continue;
             }
             Set<Peak> overlaps = peak.getAllOverlappingPeaks();
             result.add(overlaps);
             for (Peak checkPeak : overlaps) {
-                used[index[checkPeak.getIdNum()]] = true;
+                used[checkPeak.getIndex()] = true;
             }
         }
         return result;
