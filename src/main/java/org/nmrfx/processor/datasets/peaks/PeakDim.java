@@ -487,6 +487,16 @@ public class PeakDim {
         peakDimUpdated();
     }
 
+    public double getLineWidthHz() {
+        double value = 0.0;
+
+        if (lineWidth != null) {
+            return lineWidth.floatValue()*getSpectralDimObj().getSf();
+        } else {
+            return value;
+        }
+    }
+
     public Float getBounds() {
         return bounds;
     }
