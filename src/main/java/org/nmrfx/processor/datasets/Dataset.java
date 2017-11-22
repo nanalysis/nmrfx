@@ -1900,8 +1900,12 @@ public class Dataset extends DoubleVector {
             }
             f[1] = readPoint(points, dim);
             double fPt = maxPoint[j];
-            fPt += ((f[1] - f[0]) / (2.0 * ((2.0 * centerValue) - f[1]
+            double delta = ((f[1] - f[0]) / (2.0 * ((2.0 * centerValue) - f[1]
                     - f[0])));
+            // Polynomial interpolated max should never be more than half a point from grid max
+            if (Math.abs(delta) < 0.5) {
+                fPt += delta;
+            }
             dmaxPoint[j] = fPt;
 
         }
