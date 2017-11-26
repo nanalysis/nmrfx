@@ -1,0 +1,523 @@
+/*
+ * NMRFx Processor : A Program for Processing NMR Data 
+ * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+ /*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.nmrfx.processor.gui;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ResourceBundle;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
+import javafx.scene.Scene;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.util.converter.DoubleStringConverter;
+import java.text.DecimalFormat;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToolBar;
+import javafx.scene.input.KeyCode;
+import javafx.util.converter.IntegerStringConverter;
+import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.processor.datasets.peaks.PeakEvent;
+import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.PeakListener;
+
+/**
+ *
+ * @author johnsonb
+ */
+public class PeakAttrController implements Initializable, PeakListener {
+
+    static final DecimalFormat formatter = new DecimalFormat();
+
+    private Stage stage;
+    @FXML
+    private ToolBar menuBar;
+    @FXML
+    private MenuButton peakListMenuButton;
+    @FXML
+    private TextField peakIdField;
+    @FXML
+    private TableView<PeakDim> peakTableView;
+    @FXML
+    private TextField intensityField;
+    @FXML
+    private TextField volumeField;
+    @FXML
+    private TextField commentField;
+
+    @FXML
+    Slider scaleSlider;
+
+    PeakList peakList;
+    Peak currentPeak;
+
+    @Override
+    public void initialize(URL url, ResourceBundle rb) {
+        initMenuBar();
+        initTable();
+        peakIdField.setOnKeyReleased(kE -> {
+            if (kE.getCode() == KeyCode.ENTER) {
+                gotoPeakId();
+            }
+        });
+        updatePeakListMenu();
+        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
+            updatePeakListMenu();
+        };
+
+        PeakList.peakListTable.addListener(mapChangeListener);
+//        peakListMenuButton.setOnMousePressed(e -> {
+//            updatePeakListMenu();
+//            peakListMenuButton.show();
+//        });
+//        ChangeListener<Dataset> listener = new ChangeListener<Dataset>() {
+//            @Override
+//            public void changed(ObservableValue<? extends Dataset> observable, Dataset oldValue, Dataset newValue) {
+//                System.out.println("datasets changed");
+//                PolyChart chart = PolyChart.activeChart;
+//                if (chart != null) {
+//                    setPeak(chart);
+//                }
+//            }
+//        };
+    }
+
+    public Stage getStage() {
+        return stage;
+    }
+
+    public static PeakAttrController create() {
+        FXMLLoader loader = new FXMLLoader(PeakAttrController.class.getResource("/fxml/PeakAttrScene.fxml"));
+        PeakAttrController controller = null;
+        Stage stage = new Stage(StageStyle.DECORATED);
+        try {
+            Scene scene = new Scene((Pane) loader.load());
+            stage.setScene(scene);
+            scene.getStylesheets().add("/styles/Styles.css");
+
+            controller = loader.<PeakAttrController>getController();
+            controller.stage = stage;
+            stage.setTitle("Peak Attributes");
+            stage.show();
+        } catch (IOException ioE) {
+            ioE.printStackTrace();
+            System.out.println(ioE.getMessage());
+        }
+
+        return controller;
+
+    }
+
+    public void updatePeakListMenu() {
+        peakListMenuButton.getItems().clear();
+
+        for (String peakListName : PeakList.peakListTable.keySet()) {
+            MenuItem menuItem = new MenuItem(peakListName);
+            menuItem.setOnAction(e -> {
+                setPeakList(peakListName);
+            });
+            peakListMenuButton.getItems().add(menuItem);
+        }
+    }
+
+    public void setPeakList(String listName) {
+        peakList = PeakList.get(listName);
+        setPeakList(peakList);
+    }
+
+    public void setPeakList() {
+        peakList = PeakList.get(0);
+        setPeakList(peakList);
+    }
+
+    public void setPeakList(PeakList peakList) {
+        if (peakList != null) {
+            currentPeak = peakList.getPeak(0);
+            stage.setTitle(peakList.getName());
+            peakList.registerListener(this);
+        } else {
+            stage.setTitle("Peak Inspector");
+        }
+        updatePeakTableView();
+    }
+
+    public void updatePeakTableView() {
+        if (peakTableView == null) {
+            System.out.println("null table");
+            return;
+        }
+        boolean clearIt = true;
+        if (peakList != null) {
+            if (currentPeak != null) {
+                ObservableList<PeakDim> peakDimList = FXCollections.observableArrayList();
+                for (PeakDim peakDim : currentPeak.getPeakDims()) {
+                    peakDimList.add(peakDim);
+                }
+                peakTableView.setItems(peakDimList);
+                intensityField.setText(String.valueOf(currentPeak.getIntensity()));
+                volumeField.setText(String.valueOf(currentPeak.getVolume1()));
+                commentField.setText(currentPeak.getComment());
+                clearIt = false;
+            }
+        }
+        if (clearIt) {
+            clearInsepctor();
+        }
+        setPeakIdField();
+    }
+
+    private void clearInsepctor() {
+        peakTableView.getItems().clear();
+        intensityField.setText("");
+        volumeField.setText("");
+        commentField.setText("");
+
+    }
+
+    @FXML
+    public void previousPeak(ActionEvent event) {
+        if (currentPeak != null) {
+            int peakIndex = currentPeak.getIndex();
+            if (peakIndex < 0) {
+                peakIndex = 0;
+            }
+            Peak peak = peakList.getPeak(peakIndex);
+            setPeak(peak);
+        }
+    }
+
+    @FXML
+    public void firstPeak(ActionEvent event) {
+        Peak peak = peakList.getPeak(0);
+        setPeak(peak);
+    }
+
+    @FXML
+    public void nextPeak(ActionEvent event) {
+        if (currentPeak != null) {
+            int peakIndex = currentPeak.getIndex();
+            peakIndex++;
+            if (peakIndex >= peakList.size()) {
+                peakIndex = peakList.size() - 1;
+            }
+            Peak peak = peakList.getPeak(peakIndex);
+            setPeak(peak);
+        }
+    }
+
+    @FXML
+    public void lastPeak(ActionEvent event) {
+        int peakIndex = peakList.size() - 1;
+        Peak peak = peakList.getPeak(peakIndex);
+        setPeak(peak);
+    }
+
+    public void gotoPeakId() {
+        if (peakList != null) {
+            int id = -1;
+            String idString = peakIdField.getText().trim();
+            if (idString.length() != 0) {
+                try {
+                    id = Integer.parseInt(idString);
+                } catch (NumberFormatException nfE) {
+                    peakIdField.setText("");
+                }
+                if (id != -1) {
+                    Peak peak = peakList.getPeakByID(id);
+                    setPeak(peak);
+                }
+            }
+        }
+    }
+
+    private void setPeakIdField() {
+        if (currentPeak == null) {
+            peakIdField.setText("");
+        } else {
+            peakIdField.setText(String.valueOf(currentPeak.getIdNum()));
+        }
+
+    }
+
+    public void setPeak(Peak peak) {
+        currentPeak = peak;
+        if (peakList != peak.getPeakList()) {
+            peakList = peak.getPeakList();
+            stage.setTitle(peakList.getName());
+        }
+        setPeakIdField();
+        updatePeakTableView();
+    }
+
+    void initMenuBar() {
+        MenuButton fileMenu = new MenuButton("File");
+        MenuItem saveList = new MenuItem("Save");
+        fileMenu.getItems().add(saveList);
+        menuBar.getItems().add(fileMenu);
+//        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", iconSize, fontSize, ContentDisplay.TOP);
+//        bButton.setOnAction(e -> refreshAction());
+//        buttons.add(bButton);
+//        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", iconSize, fontSize, ContentDisplay.TOP);
+//        bButton.setOnAction(e -> currentPeak.full());
+//        buttons.add(bButton);
+//        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", iconSize, fontSize, ContentDisplay.TOP);
+//        bButton.setOnAction(e -> currentPeak.expand());
+//        buttons.add(bButton);
+//        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", iconSize, fontSize, ContentDisplay.TOP);
+//        bButton.setOnAction(e -> currentPeak.zoom(1.2));
+//        buttons.add(bButton);
+//        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", iconSize, fontSize, ContentDisplay.TOP);
+//        bButton.setOnAction(e -> currentPeak.zoom(0.8));
+//        buttons.add(bButton);
+//        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", iconSize, fontSize, ContentDisplay.TOP);
+//        bButton.setOnAction(e -> autoScale());
+//        buttons.add(bButton);
+//        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", iconSize, fontSize, ContentDisplay.TOP);
+//        bButton.setOnAction(e -> adjustScale(0.8));
+//        buttons.add(bButton);
+//        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", iconSize, fontSize, ContentDisplay.TOP);
+//        bButton.setOnAction(e -> adjustScale(1.2));
+//        buttons.add(bButton);
+//
+//        for (Button button : buttons) {
+//            button.getStyleClass().add("toolButton");
+//        }
+
+    }
+
+    void initTable() {
+        DoubleStringConverter dsConverter = new DoubleStringConverter();
+        IntegerStringConverter isConverter = new IntegerStringConverter();
+        peakTableView.setEditable(true);
+        TableColumn<PeakDim, String> dimNameCol = new TableColumn<>("Dim");
+        dimNameCol.setCellValueFactory(new PropertyValueFactory("DimName"));
+        dimNameCol.setEditable(false);
+        TableColumn<PeakDim, String> labelCol = new TableColumn<>("Label");
+        labelCol.setCellValueFactory(new PropertyValueFactory("Label"));
+        labelCol.setEditable(true);
+        TableColumn<PeakDim, Float> ppmCol = new TableColumn<>("PPM");
+        ppmCol.setCellValueFactory(new PropertyValueFactory("ChemShift"));
+        ppmCol.setEditable(true);
+        TableColumn<PeakDim, Float> widthCol = new TableColumn<>("Width");
+        widthCol.setCellValueFactory(new PropertyValueFactory("LineWidthHz"));
+        widthCol.setEditable(true);
+        TableColumn<PeakDim, Float> boundsCol = new TableColumn<>("Bounds");
+        boundsCol.setCellValueFactory(new PropertyValueFactory("BoundsHz"));
+        boundsCol.setEditable(true);
+        TableColumn<PeakDim, String> userCol = new TableColumn<>("User");
+        userCol.setCellValueFactory(new PropertyValueFactory("User"));
+        userCol.setEditable(true);
+
+        peakTableView.getColumns().setAll(dimNameCol, labelCol, ppmCol, widthCol, boundsCol, userCol);
+
+//        TableColumn<PeakDim, String> levelCol = new TableColumn<>("level");
+//        levelCol.setCellValueFactory(new PropertyValueFactory("level"));
+//        levelCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
+//
+//        ContextMenu levelMenu = new ContextMenu();
+//        MenuItem unifyLevelItem = new MenuItem("unify");
+//        unifyLevelItem.setOnAction(e -> unifyLevel());
+//        levelCol.setContextMenu(levelMenu);
+//        levelMenu.getItems().addAll(unifyLevelItem);
+//
+//        TableColumn<PeakDim, String> offsetCol = new TableColumn<>("offset");
+//        offsetCol.setCellValueFactory(new PropertyValueFactory("offset"));
+//        offsetCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
+//
+//        ContextMenu offsetMenu = new ContextMenu();
+//        MenuItem unifyOffsetItem = new MenuItem("unify");
+//        unifyLevelItem.setOnAction(e -> unifyOffset());
+//        MenuItem rampOffsetItem = new MenuItem("ramp");
+//        rampOffsetItem.setOnAction(e -> rampOffset());
+//        offsetMenu.getItems().addAll(rampOffsetItem);
+//        offsetCol.setContextMenu(offsetMenu);
+//        offsetCol.setPrefWidth(50);
+//
+//        TableColumn<PeakDim, String> nLevelsCol = new TableColumn<>("nLvl");
+//        nLevelsCol.setCellValueFactory(new PropertyValueFactory("nlevels"));
+//        nLevelsCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
+//        nLevelsCol.setPrefWidth(35);
+//
+//        TableColumn<PeakDim, String> clmCol = new TableColumn<>("clm");
+//        clmCol.setCellValueFactory(new PropertyValueFactory("clm"));
+//        clmCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
+//        clmCol.setPrefWidth(50);
+//
+//        TableColumn<PeakDim, Boolean> posDrawOnCol = new TableColumn<>("on");
+//        posDrawOnCol.setCellValueFactory(new PropertyValueFactory("posDrawOn"));
+//        posDrawOnCol.setCellFactory(tc -> new CheckBoxTableCell<>());
+//        posDrawOnCol.setPrefWidth(25);
+//        posDrawOnCol.setMaxWidth(25);
+//        posDrawOnCol.setResizable(false);
+//
+//        ContextMenu posOnMenu = new ContextMenu();
+//        MenuItem allPosOnItem = new MenuItem("all on");
+//        allPosOnItem.setOnAction(e -> setDrawStatus(true, true));
+//        MenuItem allPosOffItem = new MenuItem("all off");
+//        allPosOffItem.setOnAction(e -> setDrawStatus(true, false));
+//        posDrawOnCol.setContextMenu(posOnMenu);
+//        posOnMenu.getItems().addAll(allPosOnItem, allPosOffItem);
+//
+//        TableColumn<PeakDim, String> posLineWidthCol = new TableColumn<>("width");
+//        posLineWidthCol.setCellValueFactory(new PropertyValueFactory("posLineWidth"));
+//        posLineWidthCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
+//        posLineWidthCol.setPrefWidth(50);
+//
+//        ContextMenu posWidthMenu = new ContextMenu();
+//        MenuItem unifyPosWidthItem = new MenuItem("unify");
+//        unifyPosWidthItem.setOnAction(e -> unifyWidth(true));
+//        posLineWidthCol.setContextMenu(posWidthMenu);
+//        posWidthMenu.getItems().addAll(unifyPosWidthItem);
+//
+//        TableColumn<PeakDim, Color> posColorCol = new TableColumn<>("color");
+//        posColorCol.setPrefWidth(50);
+//        posColorCol.setCellValueFactory(new PropertyValueFactory("posColor"));
+//        posColorCol.setCellValueFactory(cellData -> cellData.getValue().posColorProperty());
+//        posColorCol.setCellFactory(column -> {
+//            return new TableCell<PeakDim, Color>() {
+//                @Override
+//
+//                protected void updateItem(Color item, boolean empty) {
+//                    super.updateItem(item, empty);
+//                    if (item != null) {
+//                        final ColorPicker cp = new ColorPicker();
+//                        cp.setValue(item);
+//                        setGraphic(cp);
+//                        cp.setOnAction(new EventHandler<javafx.event.ActionEvent>() {
+//                            public void
+//                                    handle(javafx.event.ActionEvent t) {
+//                                getTableView().edit(getTableRow().getIndex(), column);
+//                                commitEdit(cp.getValue());
+//                            }
+//                        });
+//                    }
+//                }
+//            };
+//        });
+//
+//        posColorCol.setOnEditCommit(new EventHandler<CellEditEvent<PeakDim, Color>>() {
+//            @Override
+//            public void handle(CellEditEvent<PeakDim, Color> t) {
+//                ((PeakDim) t.getTableView().getItems().get(t.getTablePosition().
+//                        getRow())).setPosColor(t.getNewValue());
+//            }
+//        });
+//        ContextMenu posColorMenu = new ContextMenu();
+//        MenuItem unifyPosColorItem = new MenuItem("unify");
+//        unifyPosColorItem.setOnAction(e -> unifyColor(true));
+//        MenuItem interpPosColor = new MenuItem("interpolate");
+//        interpPosColor.setOnAction(e -> interpolatePosColors());
+//        posColorCol.setContextMenu(posColorMenu);
+//        posColorMenu.getItems().addAll(unifyPosColorItem, interpPosColor);
+//
+//        TableColumn<PeakDim, Boolean> negDrawOnCol = new TableColumn<>("on");
+//        negDrawOnCol.setCellValueFactory(new PropertyValueFactory("negDrawOn"));
+//        negDrawOnCol.setCellFactory(tc -> new CheckBoxTableCell<>());
+//        negDrawOnCol.setPrefWidth(25);
+//        negDrawOnCol.setMaxWidth(25);
+//        negDrawOnCol.setResizable(false);
+//
+//        ContextMenu negOnMenu = new ContextMenu();
+//        MenuItem allNegOnItem = new MenuItem("all on");
+//        allNegOnItem.setOnAction(e -> setDrawStatus(false, true));
+//        MenuItem allNegOffItem = new MenuItem("all off");
+//        allNegOffItem.setOnAction(e -> setDrawStatus(false, false));
+//        negDrawOnCol.setContextMenu(negOnMenu);
+//        negOnMenu.getItems().addAll(allNegOnItem, allNegOffItem);
+//
+//        TableColumn<PeakDim, Double> negLineWidthCol = new TableColumn<>("width");
+//        negLineWidthCol.setCellValueFactory(new PropertyValueFactory("negLineWidth"));
+//        negLineWidthCol.setPrefWidth(50);
+//
+//        ContextMenu negWidthMenu = new ContextMenu();
+//        MenuItem unifyNegWidthItem = new MenuItem("unify");
+//        unifyNegWidthItem.setOnAction(e -> unifyWidth(false));
+//        negLineWidthCol.setContextMenu(negWidthMenu);
+//        negWidthMenu.getItems().addAll(unifyNegWidthItem);
+//
+//        TableColumn<PeakDim, Color> negColorCol = new TableColumn<>("color");
+//        negColorCol.setPrefWidth(50);
+//        negColorCol.setCellValueFactory(cellData -> cellData.getValue().negColorProperty());
+//        negColorCol.setCellFactory(column -> {
+//            return new TableCell<PeakDim, Color>() {
+//                @Override
+//                protected void updateItem(Color item, boolean empty) {
+//                    super.updateItem(item, empty);
+//                    if (item != null) {
+//                        final ColorPicker cp = new ColorPicker();
+//                        cp.setValue(item);
+//                        setGraphic(cp);
+//                        cp.setOnAction(new EventHandler<javafx.event.ActionEvent>() {
+//                            public void
+//                                    handle(javafx.event.ActionEvent t) {
+//                                getTableView().edit(getTableRow().getIndex(), column);
+//                                commitEdit(cp.getValue());
+//                            }
+//                        });
+//                    }
+//                }
+//            };
+//        });
+//
+//        negColorCol.setOnEditCommit(new EventHandler<CellEditEvent<PeakDim, Color>>() {
+//            @Override
+//            public void handle(CellEditEvent<PeakDim, Color> t) {
+//                ((PeakDim) t.getTableView().getItems().get(t.getTablePosition().
+//                        getRow())).setNegColor(t.getNewValue());
+//            }
+//        });
+//        ContextMenu negColorMenu = new ContextMenu();
+//        MenuItem unifyNegColorItem = new MenuItem("unify");
+//        unifyNegColorItem.setOnAction(e -> unifyColor(false));
+//        MenuItem interpNegColorItem = new MenuItem("interpolate");
+//        interpNegColorItem.setOnAction(e -> interpolateNegColors());
+//        negColorCol.setContextMenu(negColorMenu);
+//        negColorMenu.getItems().addAll(unifyNegColorItem, interpNegColorItem);
+//
+//        TableColumn positiveColumn = new TableColumn("Positive");
+//        TableColumn negativeColumn = new TableColumn("Negative");
+//        positiveColumn.getColumns().setAll(posDrawOnCol, posColorCol, posLineWidthCol);
+//        negativeColumn.getColumns().setAll(negDrawOnCol, negColorCol, negLineWidthCol);
+//        peakTableView.getColumns().setAll(dimNameCol, levelCol, offsetCol, nLevelsCol, clmCol, positiveColumn, negativeColumn);
+    }
+
+    @Override
+    public void peakListChanged(PeakEvent peakEvent) {
+        peakTableView.refresh();
+    }
+
+}
