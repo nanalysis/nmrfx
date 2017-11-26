@@ -300,6 +300,23 @@ public class PeakListAttributes {
         multipletsInRegion = Optional.of(multiplets);
     }
 
+    public Optional<Peak> hitPeak(DrawPeaks drawPeaks, double pickX, double pickY) {
+        Optional<Peak> hit = Optional.empty();
+        if (peaksInRegion.isPresent()) {
+            int[] peakDim = getPeakDim();
+            xAxis = (NMRAxis) chart.getXAxis();
+            yAxis = (NMRAxis) chart.getYAxis();
+            if (peakList.nDim > 1) {
+                hit = peaksInRegion.get().stream().parallel()
+                        .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
+            } else {
+                hit = peaksInRegion.get().stream().parallel()
+                        .filter((peak) -> pick1DPeak(peak, pickX, pickY)).findFirst();
+            }
+        }
+        return hit;
+    }
+
     public void selectPeaks(DrawPeaks drawPeaks, double pickX, double pickY, boolean append) {
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
