@@ -163,6 +163,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     double[] dragStart = new double[2];
     double mouseX = 0;
     double mouseY = 0;
+    double mousePressX = 0;
+    double mousePressY = 0;
     Optional<Boolean> widthMode = Optional.empty();
     public static double overlapScale = 1.0;
 
@@ -345,6 +347,14 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         baselineMenu.getItems().add(clearBaselineItem);
         baselineMenu.getItems().add(clearAllBaselineItem);
         Menu peakMenu = new Menu("Peaks");
+
+        MenuItem inspectPeakItem = new MenuItem("Inspect Peak");
+        inspectPeakItem.setOnAction((ActionEvent e) -> {
+            hitPeak(mousePressX, mousePressY);
+        });
+
+        peakMenu.getItems().add(inspectPeakItem);
+
         MenuItem tweakPeakItem = new MenuItem("Tweak Selected");
         tweakPeakItem.setOnAction((ActionEvent e) -> {
             tweakPeaks();
@@ -458,6 +468,14 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             Pattern pattern = Pattern.compile("jz([0-9]+)");
             long time = System.currentTimeMillis();
             String keyChar = keyEvent.getCharacter();
+            if (keyChar.equals(" ")) {
+                String keyString = keyMonitor.getKeyString();
+                if (keyString.equals("")) {
+                    hitPeak(mouseX, mouseY);
+                    keyMonitor.clear();
+                    return;
+                }
+            }
             keyMonitor.storeKey(keyChar);
             String keyString = keyMonitor.getKeyString();
             String shortString = keyString.substring(0, Math.min(2, keyString.length()));
@@ -613,6 +631,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             public void handle(Event event) {
                 mouseNode.requestFocus();
                 MouseEvent mouseEvent = (MouseEvent) event;
+                mousePressX = mouseEvent.getX();
+                mousePressY = mouseEvent.getY();
                 if (getCursor().toString().equals("CROSSHAIR")) {
                     handleCrossHair(mouseEvent, true);
                 } else {
@@ -2092,6 +2112,21 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     drawPeakList(peakListAttr);
                 }
 //                drawSelectedPeaks(peakListAttr);
+            }
+        }
+    }
+
+    void hitPeak(double pickX, double pickY) {
+        drawPeakLists(false);
+        if (peakStatus.get()) {
+            for (PeakListAttributes peakListAttr : peakListAttributesList) {
+                if (peakListAttr.getDrawPeaks()) {
+                    Optional<Peak> hit = peakListAttr.hitPeak(drawPeaks, pickX, pickY);
+                    if (hit.isPresent()) {
+                        FXMLController.getActiveController().showPeakAttr();
+                        FXMLController.peakAttrController.setPeak(hit.get());
+                    }
+                }
             }
         }
     }
