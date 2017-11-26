@@ -253,7 +253,11 @@ public class MainApp extends Application {
         MenuItem scannerMenuItem = new MenuItem("Show Scanner");
         scannerMenuItem.setOnAction(e -> FXMLController.getActiveController().showScannerAction(e));
 
-        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem);
+        MenuItem peakAttrMenuItem = new MenuItem("Show Peak Attributes");
+        peakAttrMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakAttrAction(e));
+
+
+        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem, peakAttrMenuItem);
         // Window Menu
         // TBD standard window menu items
         // Help Menu (items TBD)

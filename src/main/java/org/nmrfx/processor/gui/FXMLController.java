@@ -137,6 +137,7 @@ public class FXMLController implements FractionPaneChild, Initializable {
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     static SpecAttrWindowController specAttrWindowController = null;
+    static PeakAttrController peakAttrController = null;
     ProcessorController processorController = null;
     ScannerController scannerController = null;
     Stage stage;
@@ -463,6 +464,25 @@ public class FXMLController implements FractionPaneChild, Initializable {
             System.out.println("Coudn't make controller");
         }
         stage.setResizable(true);
+    }
+
+    @FXML
+    void showPeakAttrAction(ActionEvent event) {
+        showPeakAttr();
+        peakAttrController.setPeakList();
+    }
+
+    public void showPeakAttr() {
+        if (peakAttrController == null) {
+            peakAttrController = PeakAttrController.create();
+            stage.setResizable(true);
+        }
+        if (peakAttrController != null) {
+            peakAttrController.getStage().show();
+            peakAttrController.getStage().toFront();
+        } else {
+            System.out.println("Coudn't make controller");
+        }
     }
 
     @FXML
