@@ -51,6 +51,8 @@ import static java.util.Comparator.comparing;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
 
 public class PeakList {
 
@@ -59,8 +61,7 @@ public class PeakList {
     public static final int FIT_LW_AMPLITUDES = 1;
     public static final int FIT_MAX_DEV = 3;
     public static final int FIT_RMS = 4;
-
-    public static LinkedHashMap<String, PeakList> peakListTable = new LinkedHashMap<>();
+    public static ObservableMap<String, PeakList> peakListTable = FXCollections.observableMap(new LinkedHashMap<>());
     public static PeakList clusterOrigin = null;
     private String listName;
     public String fileName;
