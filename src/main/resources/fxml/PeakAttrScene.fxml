@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import org.controlsfx.glyphfont.Glyph?>
+
+<BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.PeakAttrController">
+    <top>
+        <ToolBar fx:id="menuBar" BorderPane.alignment="CENTER">
+        </ToolBar>
+    </top>
+    <center>
+        <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+            <tabs>
+                <Tab text="Peaks">
+                    <content>
+                        <BorderPane layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+                            <top>
+                                <ToolBar fx:id="viewToolBar" orientation="HORIZONTAL" BorderPane.alignment="CENTER">
+                                    <items>
+                                        <MenuButton fx:id="peakListMenuButton" text="List" />
+
+                                        <Button fx:id="firstPeakButton" onAction="#firstPeak" text="">
+                                            <graphic>
+                                                <Glyph fontFamily="FontAwesome" icon="FAST_BACKWARD" />
+                                            </graphic>
+                                        </Button>
+                                        <Button fx:id="previousPeakButton" onAction="#previousPeak" text="">
+                                            <graphic>
+                                                <Glyph fontFamily="FontAwesome" icon="BACKWARD" />
+                                            </graphic>
+                                        </Button>
+                                            
+                                        <Button fx:id="nextPeakButton" onAction="#nextPeak" text="">
+                                            <graphic>
+                                                <Glyph fontFamily="FontAwesome" icon="FORWARD" />
+                                            </graphic>
+                                        </Button>
+                                        <Button fx:id="lastPeakButton" onAction="#lastPeak" text="">
+                                            <graphic>
+                                                <Glyph fontFamily="FontAwesome" icon="FAST_FORWARD" />
+                                            </graphic>
+                                        </Button>
+                                        <TextField fx:id="peakIdField" maxWidth="50" minWidth="50" />
+                                    </items>
+                                </ToolBar>
+                            </top>
+                            <center>
+                                <TableView fx:id="peakTableView">
+                                    <columns>
+                                    </columns>
+                                </TableView>
+                            </center>
+                     <bottom>
+                        <GridPane BorderPane.alignment="CENTER">
+                          <columnConstraints>
+                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
+                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="460.0" minWidth="70.0" prefWidth="458.0" />
+                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
+                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="460.0" minWidth="70.0" prefWidth="458.0" />
+                          </columnConstraints>
+                          <rowConstraints>
+                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                          </rowConstraints>
+                           <children>
+                              <Label text="Intensity" GridPane.columnIndex="0" />
+                              <TextField fx:id="intensityField" GridPane.columnIndex="1" />
+                              <Label text="Volume" GridPane.columnIndex="2" />
+                              <TextField fx:id="volumeField" GridPane.columnIndex="3" />
+                              <Label text="Comment" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                              <TextField fx:id="commentField" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="1" />
+                           </children>
+                        </GridPane>
+                     </bottom>
+                        </BorderPane>
+                    </content>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+</BorderPane>
