@@ -2008,7 +2008,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
                 if (dataset != null) {
                     try {
-                        PeakList.peakFit(dataset, peaks);
+                        peakListAttr.getPeakList().peakFit(dataset, peaks);
                     } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                         Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
                     }
