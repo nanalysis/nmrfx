@@ -943,7 +943,7 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
         return map;
     }
 
-    public static void readXPK2Peaks(String fileName) throws IOException {
+    public static PeakList readXPK2Peaks(String fileName) throws IOException {
         Path path = Paths.get(fileName);
         String fileTail = path.getFileName().toString();
         fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
@@ -1115,6 +1115,7 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
                 }
             }
         }
+        return peakList;
     }
 
     public void writePeaks(FileWriter chan)
@@ -3223,7 +3224,7 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
         return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier);
     }
 
-    public static List<Object> peakFit(Dataset theFile, Collection<Peak> peaks)
+    public static List<Object> simPeakFit(Dataset theFile, Collection<Peak> peaks)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean doFit = true;
         int fitMode = FIT_ALL;
@@ -3239,7 +3240,20 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
         Set<Set<Peak>> oPeaks = getOverlappingPeaks();
         oPeaks.stream().forEach(oPeakSet -> {
             try {
-                peakFit(theFile, oPeakSet);
+                simPeakFit(theFile, oPeakSet);
+            } catch (IllegalArgumentException | IOException | PeakFitException ex) {
+                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        );
+    }
+
+    public void peakFit(Dataset theFile, Collection<Peak> peaks)
+            throws IllegalArgumentException, IOException, PeakFitException {
+        Set<Set<Peak>> oPeaks = getOverlappingPeaks(peaks);
+        oPeaks.stream().forEach(oPeakSet -> {
+            try {
+                simPeakFit(theFile, oPeakSet);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -3533,6 +3547,22 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
             result.add(overlaps);
             for (Peak checkPeak : overlaps) {
                 used[checkPeak.getIndex()] = true;
+            }
+        }
+        return result;
+    }
+
+    public Set<Set<Peak>> getOverlappingPeaks(Collection<Peak> fitPeaks) {
+        Set<Set<Peak>> result = new HashSet<Set<Peak>>();
+        Set<Peak> used = new HashSet<>();
+        for (Peak peak : fitPeaks) {
+            if (used.contains(peak)) {
+                continue;
+            }
+            Set<Peak> overlaps = peak.getAllOverlappingPeaks();
+            result.add(overlaps);
+            for (Peak checkPeak : overlaps) {
+                used.add(checkPeak);
             }
         }
         return result;
