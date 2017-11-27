@@ -23,6 +23,8 @@
  */
 package org.nmrfx.processor.gui;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -48,7 +50,10 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
+import javafx.stage.FileChooser;
 import javafx.util.converter.IntegerStringConverter;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
@@ -164,7 +169,8 @@ public class PeakAttrController implements Initializable, PeakListener {
         setPeakList(peakList);
     }
 
-    public void setPeakList(PeakList peakList) {
+    public void setPeakList(PeakList newPeakList) {
+        peakList = newPeakList;
         if (peakList != null) {
             currentPeak = peakList.getPeak(0);
             stage.setTitle(peakList.getName());
@@ -212,6 +218,7 @@ public class PeakAttrController implements Initializable, PeakListener {
     public void previousPeak(ActionEvent event) {
         if (currentPeak != null) {
             int peakIndex = currentPeak.getIndex();
+            peakIndex--;
             if (peakIndex < 0) {
                 peakIndex = 0;
             }
@@ -285,8 +292,14 @@ public class PeakAttrController implements Initializable, PeakListener {
 
     void initMenuBar() {
         MenuButton fileMenu = new MenuButton("File");
-        MenuItem saveList = new MenuItem("Save");
+        MenuItem saveList = new MenuItem("Save...");
+        saveList.setOnAction(e -> saveList());
         fileMenu.getItems().add(saveList);
+
+        MenuItem readListItem = new MenuItem("Open...");
+        readListItem.setOnAction(e -> readList());
+        fileMenu.getItems().add(readListItem);
+
         menuBar.getItems().add(fileMenu);
 //        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", iconSize, fontSize, ContentDisplay.TOP);
 //        bButton.setOnAction(e -> refreshAction());
@@ -520,4 +533,40 @@ public class PeakAttrController implements Initializable, PeakListener {
         peakTableView.refresh();
     }
 
+    void saveList() {
+        if (peakList != null) {
+            try {
+                FileChooser fileChooser = new FileChooser();
+                File file = fileChooser.showSaveDialog(null);
+                if (file != null) {
+                    String listFileName = file.getPath();
+
+                    try (FileWriter writer = new FileWriter(listFileName)) {
+                        peakList.writePeaksXPK2(writer);
+                        writer.close();
+                    }
+                }
+            } catch (IOException | InvalidPeakException ioE) {
+                ExceptionDialog dialog = new ExceptionDialog(ioE);
+                dialog.showAndWait();
+            }
+        }
+    }
+
+    void readList() {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showOpenDialog(null);
+        if (file != null) {
+            String listFileName = file.getPath();
+            try {
+                PeakList newPeakList = PeakList.readXPK2Peaks(listFileName);
+                if (newPeakList != null) {
+                    setPeakList(newPeakList);
+                }
+            } catch (IOException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
+    }
 }
