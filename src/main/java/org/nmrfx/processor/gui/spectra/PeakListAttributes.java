@@ -36,12 +36,14 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import org.nmrfx.processor.datasets.peaks.PeakEvent;
+import org.nmrfx.processor.datasets.peaks.PeakListener;
 
 /**
  *
  * @author Bruce Johnson
  */
-public class PeakListAttributes {
+public class PeakListAttributes implements PeakListener {
 
     PeakList peakList;
     final DatasetAttributes dataAttr;
@@ -489,6 +491,11 @@ public class PeakListAttributes {
             yHeight = y1 - y2;
         }
         return new Rectangle(xMin, yMin, xWidth, yHeight);
+    }
+
+    @Override
+    public void peakListChanged(PeakEvent peakEvent) {
+        peaksInRegion = Optional.empty();
     }
 
 }
