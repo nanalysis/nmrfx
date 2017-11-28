@@ -2961,13 +2961,19 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
 
     public void adjustLabels() {
         if (!datasetAttributesList.isEmpty()) {
-            String[] dimNames = new String[2];
-            dimNames[0] = datasetAttributesList.get(0).getLabel(0);
-            dimNames[1] = datasetAttributesList.get(0).getLabel(1);
+            String[] dimNames;
+            if (is1D()) {
+                dimNames = new String[1];
+                dimNames[0] = datasetAttributesList.get(0).getLabel(0);
+            } else {
+                dimNames = new String[2];
+                dimNames[0] = datasetAttributesList.get(0).getLabel(0);
+                dimNames[1] = datasetAttributesList.get(0).getLabel(1);
+            }
             for (PeakListAttributes peakAttr : peakListAttributesList) {
                 PeakList peakList = peakAttr.getPeakList();
-               // double[] limits = {0.1, 0.8};
-               int nCells = 25;
+                // double[] limits = {0.1, 0.8};
+                int nCells = 25;
                 try {
                     PeakNeighbors peakNeighbors = new PeakNeighbors(peakList, nCells, dimNames);
                     peakNeighbors.findNeighbors2();
@@ -2975,6 +2981,9 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     ExceptionDialog dialog = new ExceptionDialog(iAE);
                     dialog.showAndWait();
                 }
+            }
+            if (!peakListAttributesList.isEmpty()) {
+                refresh();
             }
         }
 
