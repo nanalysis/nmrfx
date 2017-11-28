@@ -90,6 +90,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
+import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
@@ -354,6 +355,12 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         });
 
         peakMenu.getItems().add(inspectPeakItem);
+
+        MenuItem adjustLabelsItem = new MenuItem("Adjust Labels");
+        adjustLabelsItem.setOnAction((ActionEvent e) -> {
+            adjustLabels();
+        });
+        peakMenu.getItems().add(adjustLabelsItem);
 
         MenuItem tweakPeakItem = new MenuItem("Tweak Selected");
         tweakPeakItem.setOnAction((ActionEvent e) -> {
@@ -2952,4 +2959,24 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         return sceneMates;
     }
 
+    public void adjustLabels() {
+        if (!datasetAttributesList.isEmpty()) {
+            String[] dimNames = new String[2];
+            dimNames[0] = datasetAttributesList.get(0).getLabel(0);
+            dimNames[1] = datasetAttributesList.get(0).getLabel(1);
+            for (PeakListAttributes peakAttr : peakListAttributesList) {
+                PeakList peakList = peakAttr.getPeakList();
+               // double[] limits = {0.1, 0.8};
+               int nCells = 25;
+                try {
+                    PeakNeighbors peakNeighbors = new PeakNeighbors(peakList, nCells, dimNames);
+                    peakNeighbors.findNeighbors2();
+                } catch (IllegalArgumentException iAE) {
+                    ExceptionDialog dialog = new ExceptionDialog(iAE);
+                    dialog.showAndWait();
+                }
+            }
+        }
+
+    }
 }
