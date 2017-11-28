@@ -2976,7 +2976,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 int nCells = 25;
                 try {
                     PeakNeighbors peakNeighbors = new PeakNeighbors(peakList, nCells, dimNames);
-                    peakNeighbors.findNeighbors2();
+                    peakNeighbors.optimizePeakLabelPositions();
                 } catch (IllegalArgumentException iAE) {
                     ExceptionDialog dialog = new ExceptionDialog(iAE);
                     dialog.showAndWait();
