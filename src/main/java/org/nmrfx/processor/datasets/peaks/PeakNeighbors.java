@@ -20,6 +20,15 @@ package org.nmrfx.processor.datasets.peaks;
 import java.util.ArrayList;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
+import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.apache.commons.math3.optim.InitialGuess;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.PointValuePair;
+import org.apache.commons.math3.optim.SimpleBounds;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
 
 /**
  *
@@ -27,15 +36,16 @@ import java.util.List;
  */
 public class PeakNeighbors {
 
-    PeakList aPeakList = null;
     String[] dimNames;
     double[] cellSizes;
-    int[] cellCounts;
-    int[] cellStarts;
-    int[] atomIndex;
-    int[] cellIndex;
     int[] strides;
-    int[] iDims;
+    PeakList[] peakLists = new PeakList[2];
+    int[][] cellCounts = new int[2][];
+    int[][] cellStarts = new int[2][];
+    int[][] peakIndex = new int[2][];
+    int[][] cellIndex = new int[2][];
+    double[][] meanWidth = new double[2][];
+    int[][] dims = new int[2][];
 
     int nCells;
 
@@ -47,32 +57,62 @@ public class PeakNeighbors {
     private static final int[][] offsets2dFull = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {0, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}};
 
     public PeakNeighbors(PeakList peakList, int nCells, String[] dimNames) {
-        this.aPeakList = peakList;
+        this.peakLists[0] = peakList;
         this.dimNames = dimNames.clone();
         this.nCells = nCells;
         cellSizes = new double[dimNames.length];
-        setCells();
+        setCells(0);
+    }
 
+    public PeakNeighbors(PeakList peakListA, PeakList peakListB, int nCells, String[] dimNames) {
+        this.peakLists[0] = peakListA;
+        this.peakLists[1] = peakListB;
+        this.dimNames = dimNames.clone();
+        this.nCells = nCells;
+        cellSizes = new double[dimNames.length];
+        setCells(0);
+        setCells(1);
     }
 
     double[][] getBoundaries() {
         int nDim = dimNames.length;
-        iDims = new int[nDim];
+        dims[0] = new int[nDim];
+        meanWidth[0] = new double[nDim];
 
         double[][] limits = new double[nDim][2];
-        double[] meanWidth = new double[nDim];
         for (int i = 0; i < nDim; i++) {
-            iDims[i] = aPeakList.getListDim(dimNames[i]);
-            if (iDims[i] < 0) {
+            dims[0][i] = peakLists[0].getListDim(dimNames[i]);
+            if (dims[0][i] < 0) {
                 throw new IllegalArgumentException("Invalid dimension " + dimNames[i]);
             }
-            SpectralDim sDim = aPeakList.getSpectralDim(iDims[i]);
+            SpectralDim sDim = peakLists[0].getSpectralDim(dims[0][i]);
             double sf = sDim.getSf();
-            DoubleSummaryStatistics shiftStats = aPeakList.shiftStats(iDims[i]);
-            limits[i][0] = shiftStats.getMin();
-            limits[i][1] = shiftStats.getMax();
-            DoubleSummaryStatistics widthStats = aPeakList.widthStats(iDims[i]);
-            meanWidth[i] = widthStats.getAverage() / sf;
+            DoubleSummaryStatistics shiftStatsA = peakLists[0].shiftStats(dims[0][i]);
+            double aMin = shiftStatsA.getMin();
+            double aMax = shiftStatsA.getMax();
+            DoubleSummaryStatistics widthStats = peakLists[0].widthStats(dims[0][i]);
+            meanWidth[0][i] = widthStats.getAverage() / sf;
+            if (peakLists[1] == null) {
+                limits[i][0] = aMin;
+                limits[i][1] = aMax;
+            } else {
+                dims[1] = new int[nDim];
+                meanWidth[1] = new double[nDim];
+                dims[1][i] = peakLists[1].getListDim(dimNames[i]);
+                if (dims[1][i] < 0) {
+                    throw new IllegalArgumentException("Invalid dimension " + dimNames[i]);
+                }
+                SpectralDim sDimB = peakLists[1].getSpectralDim(dims[1][i]);
+                double sfB = sDimB.getSf();
+                DoubleSummaryStatistics shiftStatsB = peakLists[1].shiftStats(dims[1][i]);
+                double bMin = shiftStatsB.getMin();
+                double bMax = shiftStatsB.getMax();
+                limits[i][0] = Math.min(aMin, bMin);
+                limits[i][1] = Math.max(aMax, bMax);
+                DoubleSummaryStatistics widthStatsB = peakLists[1].widthStats(dims[1][i]);
+                meanWidth[1][i] = widthStatsB.getAverage() / sfB;
+            }
+
         }
         for (int i = 0; i < nDim; i++) {
             limits[i][1] = limits[i][1] - limits[i][0];
@@ -82,7 +122,7 @@ public class PeakNeighbors {
 
     }
 
-    final void setCells() {
+    final void setCells(int iP) {
         int nDim = dimNames.length;
         double[][] bounds = getBoundaries();
         int[] nCells = new int[nDim];
@@ -92,7 +132,7 @@ public class PeakNeighbors {
         int nStride = 1;
         int nCellsTotal = 1;
         for (int j = 0; j < nDim; j++) {
-            iDims[j] = aPeakList.getListDim(dimNames[j]);
+            iDims[j] = peakLists[iP].getListDim(dimNames[j]);
             if (iDims[j] < 0) {
                 throw new IllegalArgumentException("Invalid dimension " + dimNames[j]);
             }
@@ -101,12 +141,12 @@ public class PeakNeighbors {
             nStride *= nCells[j];
             nCellsTotal *= nCells[j];
         }
-        List<Peak> listPeaks = aPeakList.peaks();
+        List<Peak> listPeaks = peakLists[iP].peaks();
         int nPeaks = listPeaks.size();
-        cellCounts = new int[nCellsTotal];
-        cellStarts = new int[nCellsTotal];
-        atomIndex = new int[nPeaks];
-        cellIndex = new int[nPeaks];
+        cellCounts[iP] = new int[nCellsTotal];
+        cellStarts[iP] = new int[nCellsTotal];
+        peakIndex[iP] = new int[nPeaks];
+        cellIndex[iP] = new int[nPeaks];
         int iPeak = 0;
         for (Peak peak : listPeaks) {
             int[] idx = new int[nDim];
@@ -116,26 +156,26 @@ public class PeakNeighbors {
                 idx[j] = (int) Math.floor((ppm - bounds[j][0]) / cellSizes[j]);
                 index += idx[j] * strides[j];
             }
-            cellCounts[index]++;
-            cellIndex[iPeak++] = index;
+            cellCounts[iP][index]++;
+            cellIndex[iP][iPeak++] = index;
         }
 
         int start = 0;
         for (int i = 0; i < nCellsTotal; i++) {
-            cellStarts[i] = start;
-            start += cellCounts[i];
+            cellStarts[iP][i] = start;
+            start += cellCounts[iP][i];
         }
         int[] nAdded = new int[nCellsTotal];
         for (int i = 0; i < nPeaks; i++) {
-            int index = cellIndex[i];
-            atomIndex[cellStarts[index] + nAdded[index]] = i;
+            int index = cellIndex[iP][i];
+            peakIndex[iP][cellStarts[iP][index] + nAdded[index]] = i;
             nAdded[index]++;
         }
     }
 
     public void findNeighbors() {
-        List<Peak> listPeaks = aPeakList.peaks();
-        int nCellsTotal = cellCounts.length;
+        List<Peak> listPeaks = peakLists[0].peaks();
+        int nCellsTotal = cellCounts[0].length;
         int[] offsets1 = new int[offsets2d.length];
         int nDim = dimNames.length;
         for (int i = 0; i < offsets1.length; i++) {
@@ -146,19 +186,19 @@ public class PeakNeighbors {
             offsets1[i] = delta;
         }
         for (int iCell = 0; iCell < nCellsTotal; iCell++) {
-            int iStart = cellStarts[iCell];
-            int iEnd = iStart + cellCounts[iCell];
+            int iStart = cellStarts[0][iCell];
+            int iEnd = iStart + cellCounts[0][iCell];
             for (int offset : offsets1) {
                 int jCell = iCell + offset;
                 if ((jCell < 0) || (jCell >= nCellsTotal)) {
                     continue;
                 }
-                int jStart = cellStarts[jCell];
-                int jEnd = jStart + cellCounts[jCell];
+                int jStart = cellStarts[1][jCell];
+                int jEnd = jStart + cellCounts[1][jCell];
                 for (int i = iStart; i < iEnd; i++) {
-                    int ip = atomIndex[i];
+                    int ip = peakIndex[0][i];
                     for (int j = jStart; j < jEnd; j++) {
-                        int jp = atomIndex[j];
+                        int jp = peakIndex[1][j];
                         if ((iCell == jCell) && (ip >= jp)) {
                             continue;
                         }
@@ -173,9 +213,77 @@ public class PeakNeighbors {
         }
     }
 
-    public void findNeighbors2() {
-        List<Peak> listPeaks = aPeakList.peaks();
-        int nCellsTotal = cellCounts.length;
+    public double measureDistance() {
+        return measureDistance(null);
+    }
+
+    public double measureDistance(double[] shiftOffset) {
+        List<Peak> listPeaksA = peakLists[0].peaks();
+        List<Peak> listPeaksB = peakLists[1].peaks();
+        int nCellsTotal = cellCounts[1].length;
+        int[] offsets1 = new int[offsets2dFull.length];
+        int nDim = dimNames.length;
+        if (shiftOffset == null) {
+            shiftOffset = new double[nDim];
+        }
+        for (int i = 0; i < offsets1.length; i++) {
+            int delta = 0;
+            for (int j = 0; j < nDim; j++) {
+                delta += offsets2dFull[i][j] * strides[j];
+            }
+            offsets1[i] = delta;
+        }
+        double sumMinDistance = 0.0;
+        int nLonely = 0;
+        // maxDistance is the maximum of the minimum distance for peaks with neighbors
+        double maxDistance = Double.NEGATIVE_INFINITY;
+        for (int iPeak = 0; iPeak < cellIndex[0].length; iPeak++) {
+            Peak peak1 = listPeaksA.get(iPeak);
+            int iCell = cellIndex[0][iPeak];
+            double minDistance = Double.MAX_VALUE;
+            int nNeighbors = 0;
+            for (int offset : offsets1) {
+                int jCell = iCell + offset;
+                if ((jCell < 0) || (jCell >= nCellsTotal)) {
+                    continue;
+                }
+                int jStart = cellStarts[1][jCell];
+                int jEnd = jStart + cellCounts[1][jCell];
+                for (int j = jStart; j < jEnd; j++) {
+                    int jp = peakIndex[1][j];
+                    if (iPeak == jp) {
+                        continue;
+                    }
+                    Peak peak2 = listPeaksB.get(jp);
+                    if ((peak1.getStatus() >= 0) && (peak1.getStatus() >= 0)) {
+                        double sumSq = 0.0;
+                        for (int k = 0; k < dims[0].length; k++) {
+                            double dx = (peak1.getPeakDim(dims[0][k]).getChemShift()
+                                    - peak2.getPeakDim(dims[1][k]).getChemShift() + shiftOffset[k]) / cellSizes[k];
+                            sumSq += dx * dx;
+                        }
+                        double distance = Math.sqrt(sumSq);
+                        minDistance = Math.min(distance, minDistance);
+                        nNeighbors++;
+                    }
+                }
+            }
+
+            if (nNeighbors > 0) {
+                sumMinDistance += minDistance;
+                maxDistance = Math.max(minDistance, maxDistance);
+            } else {
+                nLonely++;
+            }
+        }
+        // peaks with no neighbors get a distance corresponding to the maximum of all the minimum distances
+        sumMinDistance += nLonely * maxDistance;
+        return sumMinDistance;
+    }
+
+    public void optimizePeakLabelPositions() {
+        List<Peak> listPeaks = peakLists[0].peaks();
+        int nCellsTotal = cellCounts[0].length;
         int[] offsets1 = new int[offsets2dFull.length];
         int nDim = dimNames.length;
         for (int i = 0; i < offsets1.length; i++) {
@@ -186,19 +294,19 @@ public class PeakNeighbors {
             offsets1[i] = delta;
         }
         List<Peak> neighbors = new ArrayList<>();
-        for (int iPeak = 0; iPeak < cellIndex.length; iPeak++) {
+        for (int iPeak = 0; iPeak < cellIndex[0].length; iPeak++) {
             Peak peak1 = listPeaks.get(iPeak);
-            int iCell = cellIndex[iPeak];
+            int iCell = cellIndex[0][iPeak];
             neighbors.clear();
             for (int offset : offsets1) {
                 int jCell = iCell + offset;
                 if ((jCell < 0) || (jCell >= nCellsTotal)) {
                     continue;
                 }
-                int jStart = cellStarts[jCell];
-                int jEnd = jStart + cellCounts[jCell];
+                int jStart = cellStarts[0][jCell];
+                int jEnd = jStart + cellCounts[0][jCell];
                 for (int j = jStart; j < jEnd; j++) {
-                    int jp = atomIndex[j];
+                    int jp = peakIndex[0][j];
                     if (iPeak == jp) {
                         continue;
                     }
@@ -219,10 +327,10 @@ public class PeakNeighbors {
                 }
                 // find closest peak within 8 arcs
                 for (Peak peak2 : neighbors) {
-                    double dx = (peak1.getPeakDim(iDims[0]).getChemShift() - peak2.getPeakDim(iDims[0]).getChemShift()) / cellSizes[0];
+                    double dx = (peak1.getPeakDim(dims[0][0]).getChemShift() - peak2.getPeakDim(dims[0][0]).getChemShift()) / cellSizes[0];
                     double dy = 0.0;
-                    if (iDims.length > 1) {
-                        dy = (peak1.getPeakDim(iDims[1]).getChemShift() - peak2.getPeakDim(iDims[1]).getChemShift()) / cellSizes[1];
+                    if (dims[0].length > 1) {
+                        dy = (peak1.getPeakDim(dims[0][1]).getChemShift() - peak2.getPeakDim(dims[0][1]).getChemShift()) / cellSizes[1];
                     }
                     double angle = Math.atan2(dy, dx);
                     int arcIndex = (int) Math.round(angle / (Math.PI / 4.0)) + 4;
@@ -253,10 +361,10 @@ public class PeakNeighbors {
                 for (int i = 0; i < closestInArc.length; i++) {
                     if (closestInArc[i] != null) {
                         Peak peak2 = closestInArc[i];
-                        double dx = (peak1.getPeakDim(iDims[0]).getChemShift() - peak2.getPeakDim(iDims[0]).getChemShift()) / cellSizes[0];
+                        double dx = (peak1.getPeakDim(dims[0][0]).getChemShift() - peak2.getPeakDim(dims[0][0]).getChemShift()) / cellSizes[0];
                         double dy = 0.0;
-                        if (iDims.length > 1) {
-                            dy = (peak1.getPeakDim(iDims[1]).getChemShift() - peak2.getPeakDim(iDims[1]).getChemShift()) / cellSizes[1];
+                        if (dims[0].length > 1) {
+                            dy = (peak1.getPeakDim(dims[0][1]).getChemShift() - peak2.getPeakDim(dims[0][1]).getChemShift()) / cellSizes[1];
                         }
                         double distance = Math.sqrt(dx * dx + dy * dy);
                         if (distance < tolLimit) {
@@ -277,6 +385,71 @@ public class PeakNeighbors {
                 }
             }
         }
+    }
+
+    public void optimizeMatch(final double[] iOffsets, double min, double max) {
+        class MatchFunction implements MultivariateFunction {
+
+            double[] bestMatch = null;
+            double bestValue;
+
+            MatchFunction() {
+                bestValue = Double.MAX_VALUE;
+            }
+
+            public double value(double[] x) {
+                double[] minOffsets = new double[iOffsets.length];
+                for (int i = 0; i < minOffsets.length; i++) {
+                    minOffsets[i] = iOffsets[i] + x[i];
+                }
+                double score = measureDistance(minOffsets);
+                if (score < bestValue) {
+                    bestValue = score;
+                    if (bestMatch == null) {
+                        bestMatch = new double[x.length];
+                    }
+                    System.arraycopy(x, 0, bestMatch, 0, bestMatch.length);
+                }
+                return score;
+            }
+        }
+
+        MatchFunction f = new MatchFunction();
+
+        int n = iOffsets.length;
+        double initialTrust = 0.5;
+        double stopTrust = 1.0e-4;
+        int nInterp = n + 2;
+        int nSteps = 100;
+        double[][] boundaries = new double[2][n];
+        for (int i = 0; i < n; i++) {
+            boundaries[0][i] = -max;
+            boundaries[1][i] = max;
+        }
+        BOBYQAOptimizer optimizer = new BOBYQAOptimizer(nInterp, initialTrust, stopTrust);
+        double[] initialGuess = new double[iOffsets.length];
+        PointValuePair result = null;
+        try {
+            result = optimizer.optimize(
+                    new MaxEval(nSteps),
+                    new ObjectiveFunction(f), GoalType.MINIMIZE,
+                    new SimpleBounds(boundaries[0], boundaries[1]),
+                    new InitialGuess(initialGuess));
+        } catch (TooManyEvaluationsException e) {
+            result = new PointValuePair(f.bestMatch, f.bestValue);
+        }
+        int nEvaluations = optimizer.getEvaluations();
+        double finalValue = result.getValue();
+        double[] finalPoint = result.getPoint();
+        for (int i = 0; i < finalPoint.length; i++) {
+            iOffsets[i] += finalPoint[i];
+        }
+
+        System.out.println("n " + nEvaluations + " " + finalValue);
+        for (double v : iOffsets) {
+            System.out.println(v);
+        }
+
     }
 
 }
