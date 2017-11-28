@@ -220,7 +220,10 @@ public class PeakNeighbors {
                 // find closest peak within 8 arcs
                 for (Peak peak2 : neighbors) {
                     double dx = (peak1.getPeakDim(iDims[0]).getChemShift() - peak2.getPeakDim(iDims[0]).getChemShift()) / cellSizes[0];
-                    double dy = (peak1.getPeakDim(iDims[1]).getChemShift() - peak2.getPeakDim(iDims[1]).getChemShift()) / cellSizes[1];
+                    double dy = 0.0;
+                    if (iDims.length > 1) {
+                        dy = (peak1.getPeakDim(iDims[1]).getChemShift() - peak2.getPeakDim(iDims[1]).getChemShift()) / cellSizes[1];
+                    }
                     double angle = Math.atan2(dy, dx);
                     int arcIndex = (int) Math.round(angle / (Math.PI / 4.0)) + 4;
                     if (arcIndex >= 8) {
@@ -251,7 +254,10 @@ public class PeakNeighbors {
                     if (closestInArc[i] != null) {
                         Peak peak2 = closestInArc[i];
                         double dx = (peak1.getPeakDim(iDims[0]).getChemShift() - peak2.getPeakDim(iDims[0]).getChemShift()) / cellSizes[0];
-                        double dy = (peak1.getPeakDim(iDims[1]).getChemShift() - peak2.getPeakDim(iDims[1]).getChemShift()) / cellSizes[1];
+                        double dy = 0.0;
+                        if (iDims.length > 1) {
+                            dy = (peak1.getPeakDim(iDims[1]).getChemShift() - peak2.getPeakDim(iDims[1]).getChemShift()) / cellSizes[1];
+                        }
                         double distance = Math.sqrt(dx * dx + dy * dy);
                         if (distance < tolLimit) {
                             sumDx += dx * (1.0 / distance) / sumInvDistance;
@@ -261,9 +267,10 @@ public class PeakNeighbors {
                 }
 
                 double dD = Math.sqrt(sumDx * sumDx + sumDy * sumDy);
+                double scale = 0.7;
                 if (dD > 0.01) {
-                    double dx = sumDx / dD;
-                    double dy = sumDy / dD;
+                    double dx = scale * sumDx / dD;
+                    double dy = scale * sumDy / dD;
                     peak1.setCorner(-dx, dy);
                 } else {
                     peak1.setCorner("ne");
