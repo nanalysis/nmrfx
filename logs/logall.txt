@@ -1,0 +1,212 @@
+1510663141 Update to 10.1.16
+
+NEW	gui	Update the Help menu to add menu items for showing the latest available version and for opening a browser window to the Google Group mailing list site.
+
+1510416984 Update to 10.1.15
+
+IMPROVE	gui	Pick peaks in the whole window if no crosshairs are present.
+
+NEW	gui	Peaks are now saved and loaded in a new format, .xpk2.  This format is an update to the old .xpk format that makes it easier to read without requiring Tcl code.  The latest version of NMRViewJ (9.2.b16) now supports reading these files so picked peaks can be moved from NMRFx Processor to Viewer (NMRViewJ).
+
+IMPROVE	gui	Full control of selecting peak lists for display is not yet ready, but if you click the ShowPeaks checkbox on/off it will scan for available peak lists that match the current dataset. 
+
+
+BUG	gui	Fix line extending back to origin in PDF and SVG plots of 1D spectra, wasn't using count of number of valid points.
+
+IMPROVE	gui	Redo 1d drawing to use scale and (newly added) offset values, rather than using changes in YAxis scale
+
+IMPROVE	gui	Change Peak Pick (from Icon) to allow it to work like picking from NvJ spectrum menu (whether to append or replace depends on whether there are peaks within current region).  If crosshairs present then picking happens within region.
+
+NEW	gui	Add menu items for peak fitting and tweaking.
+
+NEW	cmd	Add code for shifting peaks (tweak) to the nearest maximum (within foot print). 
+
+IMPROVE	cmd	Add and improve existing  methods for fitting and shifting peaks.
+
+IMPROVE	gui	Start adding more entries (like View) to spectrum popup-menu
+
+1508969016 Update to 10.1.14
+
+IMPROVE	cmd	Allow setting heap memory from environment variable
+
+IMPROVE	cmd	Check for bundled jre in windows command file
+
+IMPROVE	cmd	Rename and update shell scripts to find bundled java and provide non-gui version.  MacOS, Linux and Windows installers now bundle shell scripts that can be used to run the software in GUI and command line mode using the bundled Java Runtime Environment.
+
+IMPROVE	gui	Allow scrolling vertical scale and zoom with mouse over icons in toolbar.
+
+IMPROVE	cmd	Change nmrfxp script to locate bundled java (if running after installer)
+
+1508873326 Update to 10.1.13
+
+IMPROVE	cmd	Adjust scales in VarianData and BrukerData so that Dataset can have scale = 1.0 and have reasonable lvl values
+
+BUG	gui	Fix measuring region with window offset (window edge was using position of left edge for both left and right edge)
+
+BUG	gui	Fix setting scanOutputDir when loading table
+
+IMPROVE	gui	Set dataset to first row and autoscale and full when loading scan table
+
+IMPROVE	gui	More work on setting directories for scan tables and data files
+
+IMPROVE	gui	Add setScanDirectory and getScanDirectory.  Check for scanDir when opening table file
+
+IMPROVE	cmd	Read/write rdims (number of frequency based dimensions) from dataset header
+
+IMPROVE	gui	Add datasetName column to ScanTable
+
+IMPROVE	gui	Change scantable processing to do loop over files in the Java code and use new DatasetMerger to combine result (if requested)
+
+IMPROVE	gui	Allow setting plane from plane ppm field in status bar
+
+BUG	 gui	AutoLevel was being called when loading a dataset that has a level
+
+NEW	gui	Add ability to load and write lists of operations.  Menu items are available in the Script menu.  Operation lists should not be considered executable python scripts.  Rather they are text files that contain a list of operations that will be added to the existing operation list.  Loading operations is useful both for importing a set of operations for a particular dataset and for using with (and generating) simulated data.
+
+IMPROVE	gui	Add SCRIPT to list in OperationInfo (so it shows in menu)
+
+IMPROVE	cmd	Add execFileName argument to SCRIPT.  Change script and initalScript types to wstring (waits to update operation till Enter hit in GUI)
+
+BUG	cmd	Extract wasn't working with simulated fids (not tied to a dataset)
+
+IMPROVE	gui	Add overlay method and menu item.  This allows one to switch the spectrum display from a grid to an overlay of all the spectra (and one can switch back with Grid item)
+
+IMPROVE	gui	When doing spectrum alignment use temporary peakLists just for alignment (so as not to change any existing lists)
+
+BUG	gui	Alignment was failing sometimes because peaklists were deleted too soon.
+
+IMPROVE	gui	Add code (and menu items in Spectrum menu) for minimizing axis display (allow only showing axis labels etc. on border windows (left and bottom edges)
+
+IMPROVE	gui	Allow specifying datasets to display on command line when starting up NMRFx Processor from the shell.
+
+IMPROVE	cmd	Add simple jython to R interface
+
+IMPROVE	cmd	Add dispatch method for combining datsets.  Can specify arithmetic arguments to generate a new NMRViewJ dataset fro linear combinations of existing ones.
+
+BUG	gui	Fixes for closing and setting active state for charts and controllers
+
+IMPROVE	gui	First additon of using Python commands to interact with spectra (adding new ones, changing levels etc.).
+
+IMPROVE	gui	Add clm and nlevels columns to spectrum attributes
+
+IMPROVE	gui	Add use of snakeyaml and beanutils for use in saving window state to a .yaml file
+
+IMPROVE	gui	Add nLevels to Spectrum Attributes
+
+1504892607 Update to 10.1.12
+
+IMPROVE	cmd	Update memory max to 2048m
+
+IMPROVE	gui	Up memory max to 2048m
+
+1504891310 Update to 10.1.11
+
+1504795689 Update to 10.1.10
+
+IMPROVE	cmd	Update to jython 2.7.1
+
+BUG	gui	Fixes for graphics export.  
+
+IMPROVE	gui	Get SVG export working (at least working partially)
+
+BUG	cmd	Map all segments of file when opening.  Fixes problem with large files. 
+
+BUG	gui	Spinner and plane listeners weren't getting set properly for 4D
+
+BUG	gui	Axis change listener was always using dim 2 for planes
+
+BUG	gui	PDF export was using moveTo not lineTo for polyline
+
+BUG	cmd	Fix display of Process status for 4D to allow processing 4D spectra.
+
+BUG	cmd	Generating script wasn't getting NUS DIM right for 4D
+
+1501540130 Update to 10.1.9
+
+IMPROVE	gui	Remember initialDir for FileChooser during a session.  Start by default in home directory
+
+1501274125 Update to 10.1.7
+
+IMPROVE	gui	Add support for setting nprocesses in preferences
+
+BUG	cmd	Disable logger till we figure out why it slows initial load of Dataset class startup significantly
+
+IMPROVE	cmd	Open NMRView files as writable (so we can modify them)
+
+BUG	gui	Selecting all rows in scantable wasn't triggering selection change event
+
+NEW	gui	Add keybindings for converting between 3 button and 1 button mouse)
+
+1498584008 Update to 10.1.6
+
+BUG	gui	Adds System.exit when exiting via the Quit File Menu. 
+
+1498046061 Update to 10.1.5
+
+NEW	gui	Add Clear to Console.  Change "Renjin" label to "R"
+
+NEW	gui	Move Console to separate stage.
+
+BUG	cmd	Fix subtracting offset in Measure method
+
+IMPROVE	gui	Load in new console based on StudioFX and change R data.frame generation to use new R engine from R session. Change column names added for measures to be V.0, V.1 etc.
+
+IMPROVE	gui	Make ScanTable into an R (renjin) data.frame
+
+IMPROVE	gui	Change to add negativeWeight value to autoPhase
+
+IMPROVE	cmd	Make negativityPenalty a variable (was set to 1.0e-5) and scale penalty by sum of absolute values (to make it on similar scale as entropy)
+
+BUG	cmd	Fix setting acqOrder in Bruker files with NUS schedule
+
+IMPROVE	cmd	Change BcSine, Dc, and GapSmooth to automatically convert vector to real. Consistent with the way BcPoly etc. already worked. 
+
+BUG	cmd	Bruker files couldn't have more than 4 dimensions. The detector only looked for four acqu?s files.  Now goes up to 10. 
+
+IMPROVE	gui	Default to TwoD mode.  Fix drawing slice and vector annotation (apod line)
+
+BUG	cmd	Make NUS processing loop over vectors same as non-NUS, but convert the VecIndex to be consistent with schedule.  Skip over non-measured rows. 
+
+BUG	cmd	Add convertToNUSGroup method to convert VecIndex to NUS sample schedule
+
+BUG	cmd	Bruker NUS datasets have the phases incremented together before times
+
+BUG	gui	Fix for loading scan table.  And fix for displaying dataset row from table.
+
+IMPROVE	gui	Changes to speed drawing 1D lines (using strokePolyLine)
+
+IMPROVE	gui	Allow multiple selection and drawing multiple rows from scanner. Row column wasn't being updated when loading scanner table from file.
+
+IMPROVE	gui	Add menus to Scanner Scene and corresponding methods (including saving table)
+
+IMPROVE	gui	Changing selection in table changes displayed row of pseudo-2D dataset. Fix setting column type when adding column
+
+IMPROVE	gui	Only allow double-clicking scanner table to open file if in FID mode. Fix column name code for measure
+
+IMPROVE	gui	Add ability to set Display Dimension mode (1D, 2D) from attributes panel
+
+NEW	gui	Move Scanner into separate stage.
+
+IMPROVE	cmd	Ignore dimensions in Bruker files with size 1 or less.  
+
+IMPROVE	cmd	Add new RVec class for wrapping a Vec object to be used via Renjin
+
+BUG	cmd	Fix error in process all when no MEASURE op present
+
+1493830051 Update to 10.1.4
+
+IMPROVE	gui	Changes for saving data to scan table
+
+NEW	gui	Add code for writing measure data to scan table
+
+1493641544 Update to 10.1.3
+
+NEW	gui	Use Alt-MouseWheel for horizontal zoom.  
+
+BUG	gui	Can't hit Process button twice for 1D.  
+
+NEW	cmd	Start adding support for renjin in vectors
+
+BUG	cmd	Improper counting in findBrukerInitialPoint
+
+BUG	cmd	Use specified acqOrder (rather than updating existing).  Part of adding support for arrayed (like  2D w w/o saturation for NOE) Add and use showDebugInfo flag.
