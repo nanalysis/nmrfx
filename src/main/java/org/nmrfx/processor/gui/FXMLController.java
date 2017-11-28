@@ -92,6 +92,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 
@@ -1533,9 +1534,20 @@ public class FXMLController implements FractionPaneChild, Initializable {
                     for (double center : centers) {
                         System.out.println(center);
                     }
-                    PeakNetworkMatch networkMatcher = new PeakNetworkMatch(refList, movingList);
-                    networkMatcher.bpMatchPeaks(dimName1, dimName2, 0.1, 3.0, centers, true, null);
-                    double[] match = networkMatcher.getOptOffset();
+                    double[] match;
+                    if (false) {
+                        PeakNetworkMatch networkMatcher = new PeakNetworkMatch(refList, movingList);
+                        networkMatcher.bpMatchPeaks(dimName1, dimName2, 0.1, 3.0, centers, true, null);
+                        match = networkMatcher.getOptOffset();
+                    } else {
+                        String[] dimNames = {dimName1, dimName2};
+                        double[] nOffset = {centers[0], centers[1]};
+                        PeakNeighbors neighbor = new PeakNeighbors(refList, movingList, 25, dimNames);
+                        neighbor.optimizeMatch(nOffset, 0.0, 1.0);
+                        match = new double[3];
+                        match[0] = nOffset[0];
+                        match[1] = nOffset[1];
+                    }
                     for (int i = 0, j = 0; i < dims.length; i++) {
                         if (dims[i] != -1) {
                             double ref = dataAttr.getDataset().getRefValue(dims[i]);
@@ -1544,9 +1556,9 @@ public class FXMLController implements FractionPaneChild, Initializable {
                             dataAttr.getDataset().setRefValue(dims[i], ref);
                             int pDim = movingList.getListDim(dataAttr.getLabel(i));
                             movingList.shiftPeak(pDim, -delta);
-                            dataAttr.getDataset().writeParFile();
                         }
                     }
+                    dataAttr.getDataset().writeParFile();
                     PeakList.remove("movingList");
 
                 }
