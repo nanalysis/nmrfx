@@ -47,6 +47,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
+import org.nmrfx.processor.datasets.peaks.Peak.Corner;
 
 /**
  *
@@ -1145,12 +1146,32 @@ public class DrawPeaks {
                         }
                     }
                     if (peakAttr.getPeakLabelType() != PeakLabelTypes.None) {
+                        setLabelAlignment(g2, peak.getCorner());
                         g2.setFill(peakAttr.getOnColor());
                         g2.fillText(label, position[0], position[1]);
                     }
                 }
             }
         }
+    }
+
+    private void setLabelAlignment(GraphicsContext g2, Corner corner) {
+        double[] position = corner.getPosition();
+        if (position[0] < -0.1) {
+            g2.setTextAlign(TextAlignment.RIGHT);
+        } else if (position[0] > 0.1) {
+            g2.setTextAlign(TextAlignment.LEFT);
+        } else {
+            g2.setTextAlign(TextAlignment.CENTER);
+        }
+        if (position[1] < -0.25) {
+            g2.setTextBaseline(VPos.BOTTOM);
+        } else if (position[1] > 0.25) {
+            g2.setTextBaseline(VPos.TOP);
+        } else {
+            g2.setTextBaseline(VPos.CENTER);
+        }
+
     }
 
     public static Bounds measureText(String s, Font font, double angle, double x, double y) {
