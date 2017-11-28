@@ -211,6 +211,32 @@ public class Peak implements Comparable, PeakOrMulti {
             return position;
         }
 
+        public double[] getPosition() {
+            double[] position = new double[2];
+            if (cornerChars != null) {
+                if (cornerChars[0] == 'n') {
+                    position[1] = -0.5;
+                } else if (cornerChars[0] == ' ') {
+                    position[1] = 0.0;
+                } else {
+                    position[1] = 0.5;
+                }
+
+                if (cornerChars[1] == 'e') {
+                    position[0] = 0.5;
+                } else if (cornerChars[1] == ' ') {
+                    position[0] = 0.0;
+                } else {
+                    position[0] = -0.5;
+                }
+            } else {
+                position[0] = x;
+                position[1] = y;
+
+            }
+            return position;
+        }
+
         public char[] getAnchor(double px1, double py1, double px2, double py2) {
             char[] anchor = new char[2];
             if (cornerChars != null) {
@@ -1160,6 +1186,10 @@ public class Peak implements Comparable, PeakOrMulti {
     public void setCorner(char[] corner) {
         this.corner = new Corner(corner);
         peakUpdated(this);
+    }
+
+    public void setCorner(double x, double y) {
+        this.corner = new Corner(x, y);
     }
 
     public void setCorner(String cornerStr) {
