@@ -3991,6 +3991,17 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
         return null;
     }
 
+    public DoubleSummaryStatistics shiftStats(int iDim) {
+        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDim[iDim].getChemShift()).summaryStatistics();
+        return stats;
+
+    }
+
+    public DoubleSummaryStatistics widthStats(int iDim) {
+        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDim[iDim].getLineWidthHz()).summaryStatistics();
+        return stats;
+    }
+
     public double center(int iDim) {
         OptionalDouble avg = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDim[iDim].getChemShift()).average();
         return avg.getAsDouble();
