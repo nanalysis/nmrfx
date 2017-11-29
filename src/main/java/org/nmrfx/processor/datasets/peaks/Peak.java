@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import java.util.*;
 import static java.util.Comparator.comparing;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.scene.paint.Color;
@@ -442,6 +443,56 @@ public class Peak implements Comparable, PeakOrMulti {
 
         peakDim[iDim].setChemShiftValueNoCheck((float) (peakDim[iDim].getChemShiftValue()
                 + ((iUpDown * peakList.getSpectralDim(iDim).getSw()) / peakList.getSpectralDim(iDim).getSf())));
+    }
+
+    public double measurePeak(Dataset dataset, int[] planes, Function<RegionData, Double> f) throws IOException {
+        RegionData regionData = analyzePeakRegion(dataset, planes);
+        return f.apply(regionData);
+    }
+
+    public void quantifyPeak(Dataset dataset, Function<RegionData, Double> f, String mode) throws IOException, IllegalArgumentException {
+        int[] planes = new int[0];
+        RegionData regionData = analyzePeakRegion(dataset, planes);
+        double value = f.apply(regionData);
+        if (mode.contains("volume")) {
+            volume1 = (float) value;
+        } else {
+            intensity = (float) value;
+        }
+
+    }
+
+    public static Function<RegionData, Double> getMeasureFunction(String mode) {
+        Function<RegionData, Double> f;
+        switch (mode) {
+            case "center":
+                f = RegionData::getCenter;
+                break;
+            case "jitter":
+                f = RegionData::getJitter;
+                break;
+            case "max":
+                f = RegionData::getMax;
+                break;
+            case "min":
+                f = RegionData::getMin;
+                break;
+            case "extreme":
+                f = RegionData::getExtreme;
+                break;
+            case "volume":
+                f = RegionData::getVolume_r;
+                break;
+            case "evolume":
+                f = RegionData::getVolume_e;
+                break;
+            case "tvolume":
+                f = RegionData::getVolume_t;
+                break;
+            default:
+                f = null;
+        }
+        return f;
     }
 
     public void tweak(Dataset dataset) throws IOException {

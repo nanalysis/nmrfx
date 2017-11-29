@@ -53,6 +53,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
+import org.nmrfx.processor.datasets.RegionData;
+import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
 
 public class PeakList {
 
@@ -3186,6 +3188,95 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
             inEllipse = true;
         }
         return inEllipse;
+    }
+
+    public void quantifyPeaks(String mode) {
+        if (peaks.isEmpty()) {
+            return;
+        }
+        Dataset dataset = Dataset.getDataset(fileName);
+        if (dataset == null) {
+            throw new IllegalArgumentException("No dataset for peak list");
+        }
+        java.util.function.Function<RegionData, Double> f = getMeasureFunction(mode);
+        if (f == null) {
+            throw new IllegalArgumentException("Invalid measurment mode: " + mode);
+        }
+
+        peaks.stream().forEach(peak -> {
+            try {
+                peak.quantifyPeak(dataset, f, mode);
+            } catch (IOException ex) {
+                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
+                return;
+            }
+        });
+    }
+
+    public void measurePeaks(String mode) {
+        if (peaks.isEmpty()) {
+            return;
+        }
+        Dataset dataset = Dataset.getDataset(fileName);
+        if (dataset == null) {
+            throw new IllegalArgumentException("No dataset for peak list");
+        }
+        measurePeaks(dataset, peaks, mode);
+    }
+
+    public void measurePeaks(Dataset dataset, List<Peak> speaks, String mode) {
+        if (speaks.isEmpty()) {
+            return;
+        }
+        final java.util.function.Function<RegionData, Double> f = Peak.getMeasureFunction(mode);
+        if (f == null) {
+            throw new IllegalArgumentException("Unknown measurment type: " + mode);
+        }
+        int[] planes;
+        Peak firstPeak = speaks.get(0);
+        int nPeakDim = firstPeak.getPeakList().nDim;
+        int nDataDim = dataset.getNDim();
+        final int nPlanes;
+        if (nPeakDim > nDataDim) {
+            throw new IllegalArgumentException("Peak list has more dimensions than dataset");
+        } else if (nPeakDim < (nDataDim - 1)) {
+            throw new IllegalArgumentException("Dataset has more than one extra dimension (relative to peak list)");
+        } else {
+            planes = new int[nDataDim - nPeakDim];
+            int scanDim = 2;
+            if (planes.length == 0) {
+                nPlanes = 1;
+            } else {
+                nPlanes = dataset.getSize(scanDim);
+            }
+        }
+        if (nPlanes == 1) {
+            List<Double> result = new ArrayList<>();
+            speaks.stream().forEach(peak -> {
+                for (int i = 0; i < nPlanes; i++) {
+                    if (planes.length == 1) {
+                        planes[0] = i;
+                    }
+                    try {
+                        double value = peak.measurePeak(dataset, planes, f);
+                        result.add(value);
+                    } catch (IOException ex) {
+                        result.add(null);
+                    }
+                }
+            });
+        } else {
+            List<Double> result = new ArrayList<>();
+            speaks.stream().forEach(peak -> {
+                try {
+                    double value = peak.measurePeak(dataset, planes, f);
+                    result.add(value);
+                } catch (IOException ex) {
+                    result.add(null);
+                }
+            });
+
+        }
     }
 
     public void tweakPeaks(Dataset dataset, List<Peak> speaks) {
