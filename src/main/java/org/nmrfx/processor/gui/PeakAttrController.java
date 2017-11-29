@@ -301,6 +301,21 @@ public class PeakAttrController implements Initializable, PeakListener {
         fileMenu.getItems().add(readListItem);
 
         menuBar.getItems().add(fileMenu);
+
+        MenuButton measureMenu = new MenuButton("Measure");
+        MenuItem measureIntensityItem = new MenuItem("Intensities");
+        measureIntensityItem.setOnAction(e -> measureIntensities());
+        measureMenu.getItems().add(measureIntensityItem);
+
+        MenuItem measureVolumeItem = new MenuItem("Volumes");
+        measureVolumeItem.setOnAction(e -> measureVolumes());
+        measureMenu.getItems().add(measureVolumeItem);
+        
+        MenuItem measureEVolumeItem = new MenuItem("EVolumes");
+        measureEVolumeItem.setOnAction(e -> measureEVolumes());
+        measureMenu.getItems().add(measureEVolumeItem);
+
+        menuBar.getItems().add(measureMenu);
 //        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", iconSize, fontSize, ContentDisplay.TOP);
 //        bButton.setOnAction(e -> refreshAction());
 //        buttons.add(bButton);
@@ -568,5 +583,17 @@ public class PeakAttrController implements Initializable, PeakListener {
                 dialog.showAndWait();
             }
         }
+    }
+
+    void measureIntensities() {
+        peakList.quantifyPeaks("center");
+    }
+
+    void measureVolumes() {
+        peakList.quantifyPeaks("volume");
+    }
+    
+    void measureEVolumes() {
+        peakList.quantifyPeaks("evolume");
     }
 }
