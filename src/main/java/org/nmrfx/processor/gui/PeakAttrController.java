@@ -56,16 +56,20 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import javafx.util.StringConverter;
+import javafx.util.converter.FloatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
@@ -109,6 +113,7 @@ public class PeakAttrController implements Initializable, PeakListener {
     ToggleButton deleteButton;
     static Background deleteBackground = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
+    Background defaultCellBackground = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -449,20 +454,68 @@ public class PeakAttrController implements Initializable, PeakListener {
 
     }
 
+    class FloatStringConverter2 extends FloatStringConverter {
+
+        public Float fromString(String s) {
+            Float v;
+            try {
+                v = Float.parseFloat(s);
+            } catch (NumberFormatException nfE) {
+                v = null;
+            }
+            return v;
+        }
+
+    }
+
+    class TextFieldTableCellFloat extends TextFieldTableCell<PeakDim, Float> {
+
+        public TextFieldTableCellFloat(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(Float item, boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+                setText(String.valueOf(item));
+            } else {
+            }
+        }
+    };
+
     void initTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
+        FloatStringConverter fsConverter = new FloatStringConverter2();
+
         IntegerStringConverter isConverter = new IntegerStringConverter();
         peakTableView.setEditable(true);
         TableColumn<PeakDim, String> dimNameCol = new TableColumn<>("Dim");
         dimNameCol.setCellValueFactory(new PropertyValueFactory("DimName"));
         dimNameCol.setEditable(false);
+
         TableColumn<PeakDim, String> labelCol = new TableColumn<>("Label");
         labelCol.setCellValueFactory(new PropertyValueFactory("Label"));
+        labelCol.setCellFactory(TextFieldTableCell.forTableColumn());
         labelCol.setEditable(true);
+        labelCol.setOnEditCommit((CellEditEvent<PeakDim, String> t) -> {
+            String value = t.getNewValue();
+            t.getRowValue().setLabel(value == null ? "" : value);
+        });
+
         TableColumn<PeakDim, Float> ppmCol = new TableColumn<>("PPM");
         ppmCol.setCellValueFactory(new PropertyValueFactory("ChemShift"));
+        ppmCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
+        ppmCol.setOnEditCommit(
+                (CellEditEvent<PeakDim, Float> t) -> {
+                    Float value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setChemShift(value);
+                    }
+                });
 
         ppmCol.setEditable(true);
+
         TableColumn<PeakDim, Float> widthCol = new TableColumn<>("Width");
         widthCol.setCellValueFactory(new PropertyValueFactory("LineWidthHz"));
         widthCol.setEditable(true);
