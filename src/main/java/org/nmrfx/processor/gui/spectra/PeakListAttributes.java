@@ -309,14 +309,40 @@ public class PeakListAttributes implements PeakListener {
             xAxis = (NMRAxis) chart.getXAxis();
             yAxis = (NMRAxis) chart.getYAxis();
             if (peakList.nDim > 1) {
-                hit = peaksInRegion.get().stream().parallel()
+                hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
             } else {
-                hit = peaksInRegion.get().stream().parallel()
+                hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> pick1DPeak(peak, pickX, pickY)).findFirst();
             }
         }
         return hit;
+    }
+
+    public void selectPeak(DrawPeaks drawPeaks, double pickX, double pickY, boolean append) {
+        Optional<Peak> hit = Optional.empty();
+        if (peaksInRegion.isPresent()) {
+            int[] peakDim = getPeakDim();
+            xAxis = (NMRAxis) chart.getXAxis();
+            yAxis = (NMRAxis) chart.getYAxis();
+            if (!append) {
+                selectedPeaks.clear();
+            }
+            if (peakList.nDim > 1) {
+                hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
+                        .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
+                if (hit.isPresent()) {
+                    selectedPeaks.add(hit.get());
+                }
+            } else {
+                hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
+                        .filter((peak) -> pick1DPeak(peak, pickX, pickY)).findFirst();
+                if (hit.isPresent()) {
+                    selectedPeaks.add(hit.get());
+                }
+            }
+
+        }
     }
 
     public void selectPeaks(DrawPeaks drawPeaks, double pickX, double pickY, boolean append) {

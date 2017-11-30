@@ -480,6 +480,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                 if (keyString.equals("")) {
                     hitPeak(mouseX, mouseY);
                     keyMonitor.clear();
+                    controller.stage.requestFocus();
+                    setFocused(true);
                     return;
                 }
             }
@@ -2122,17 +2124,21 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     }
 
     void hitPeak(double pickX, double pickY) {
-        drawPeakLists(false);
+        Optional<Peak> hit = Optional.empty();
         if (peakStatus.get()) {
+            drawPeakLists(false);
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
                 if (peakListAttr.getDrawPeaks()) {
-                    Optional<Peak> hit = peakListAttr.hitPeak(drawPeaks, pickX, pickY);
+                    hit = peakListAttr.hitPeak(drawPeaks, pickX, pickY);
                     if (hit.isPresent()) {
-                        FXMLController.getActiveController().showPeakAttr();
-                        FXMLController.peakAttrController.setPeak(hit.get());
+                        break;
                     }
                 }
             }
+        }
+        if (hit.isPresent()) {
+            FXMLController.getActiveController().showPeakAttr();
+            FXMLController.peakAttrController.setPeak(hit.get());
         }
     }
 
@@ -2141,7 +2147,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         if (peakStatus.get()) {
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
                 if (peakListAttr.getDrawPeaks()) {
-                    peakListAttr.selectPeaks(drawPeaks, pickX, pickY, append);
+                    peakListAttr.selectPeak(drawPeaks, pickX, pickY, append);
                     drawSelectedPeaks(peakListAttr);
                 }
             }
