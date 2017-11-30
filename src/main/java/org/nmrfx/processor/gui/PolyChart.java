@@ -89,12 +89,14 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
+import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
-public class PolyChart<X, Y> extends XYChart<X, Y> {
+public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
@@ -148,6 +150,25 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
     int phaseDim = 0;
     int phaseAxis = 0;
     double phaseFraction = 0.0;
+
+    @Override
+    public void peakListChanged(PeakEvent peakEvent) {
+        Object source = peakEvent.getSource();
+        boolean draw = false;
+        if (peakStatus.get()) {
+            if (source instanceof PeakList) {
+                PeakList peakList = (PeakList) source;
+                for (PeakListAttributes peakListAttr : peakListAttributesList) {
+                    if (peakListAttr.getPeakList() == peakList) {
+                        draw = true;
+                    }
+                }
+            }
+        }
+        if (true) {
+            drawPeakLists(false);
+        }
+    }
 
     public enum DISDIM {
         OneDX, OneDY, TwoD;
@@ -1961,6 +1982,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
                     if (peakList.getName().equals(datasetListName)) {
                         PeakListAttributes peakListAttr = new PeakListAttributes(this, dataAttr, peakList);
                         peakListAttributesList.add(peakListAttr);
+                        peakList.registerListener(this);
                         break;
                     }
                 }
@@ -2107,6 +2129,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
         while (peakListIterator.hasNext()) {
             PeakListAttributes peakListAttr = peakListIterator.next();
             if (peakListAttr.getPeakList().peaks() == null) {
+                peakListAttr.getPeakList().removeListener(this);
                 peakListIterator.remove();
             }
         }
