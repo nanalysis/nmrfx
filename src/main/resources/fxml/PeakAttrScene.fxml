@@ -26,32 +26,8 @@
                     <content>
                         <BorderPane layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
                             <top>
-                                <ToolBar fx:id="viewToolBar" orientation="HORIZONTAL" BorderPane.alignment="CENTER">
+                                <ToolBar fx:id="peakNavigatorToolBar" orientation="HORIZONTAL" BorderPane.alignment="CENTER">
                                     <items>
-                                        <MenuButton fx:id="peakListMenuButton" text="List" />
-
-                                        <Button fx:id="firstPeakButton" onAction="#firstPeak" text="">
-                                            <graphic>
-                                                <Glyph fontFamily="FontAwesome" icon="FAST_BACKWARD" />
-                                            </graphic>
-                                        </Button>
-                                        <Button fx:id="previousPeakButton" onAction="#previousPeak" text="">
-                                            <graphic>
-                                                <Glyph fontFamily="FontAwesome" icon="BACKWARD" />
-                                            </graphic>
-                                        </Button>
-                                            
-                                        <Button fx:id="nextPeakButton" onAction="#nextPeak" text="">
-                                            <graphic>
-                                                <Glyph fontFamily="FontAwesome" icon="FORWARD" />
-                                            </graphic>
-                                        </Button>
-                                        <Button fx:id="lastPeakButton" onAction="#lastPeak" text="">
-                                            <graphic>
-                                                <Glyph fontFamily="FontAwesome" icon="FAST_FORWARD" />
-                                            </graphic>
-                                        </Button>
-                                        <TextField fx:id="peakIdField" maxWidth="50" minWidth="50" />
                                     </items>
                                 </ToolBar>
                             </top>

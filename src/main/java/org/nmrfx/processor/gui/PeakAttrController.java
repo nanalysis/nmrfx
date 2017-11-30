@@ -23,6 +23,8 @@
  */
 package org.nmrfx.processor.gui;
 
+import de.jensd.fx.glyphs.GlyphsDude;
+import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -40,20 +42,29 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.converter.DoubleStringConverter;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Optional;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -76,6 +87,8 @@ public class PeakAttrController implements Initializable, PeakListener {
     @FXML
     private ToolBar menuBar;
     @FXML
+    private ToolBar peakNavigatorToolBar;
+    @FXML
     private MenuButton peakListMenuButton;
     @FXML
     private TextField peakIdField;
@@ -93,10 +106,14 @@ public class PeakAttrController implements Initializable, PeakListener {
 
     PeakList peakList;
     Peak currentPeak;
+    ToggleButton deleteButton;
+    static Background deleteBackground = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
+    Background defaultBackground = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initMenuBar();
+        initPeakNavigator();
         initTable();
         peakIdField.setOnKeyReleased(kE -> {
             if (kE.getCode() == KeyCode.ENTER) {
@@ -190,6 +207,10 @@ public class PeakAttrController implements Initializable, PeakListener {
             System.out.println("null table");
             return;
         }
+        if (defaultBackground == null) {
+            defaultBackground = peakIdField.getBackground();
+        }
+
         boolean clearIt = true;
         if (peakList != null) {
             if (currentPeak != null) {
@@ -201,6 +222,13 @@ public class PeakAttrController implements Initializable, PeakListener {
                 intensityField.setText(String.valueOf(currentPeak.getIntensity()));
                 volumeField.setText(String.valueOf(currentPeak.getVolume1()));
                 commentField.setText(currentPeak.getComment());
+                if (currentPeak.getStatus() < 0) {
+                    deleteButton.setSelected(true);
+                    peakIdField.setBackground(deleteBackground);
+                } else {
+                    deleteButton.setSelected(false);
+                    peakIdField.setBackground(defaultBackground);
+                }
                 clearIt = false;
             }
         }
@@ -292,6 +320,44 @@ public class PeakAttrController implements Initializable, PeakListener {
         }
         setPeakIdField();
         updatePeakTableView();
+    }
+
+    void initPeakNavigator() {
+        peakListMenuButton = new MenuButton("List");
+        peakIdField = new TextField();
+        peakIdField.setMinWidth(50);
+        peakIdField.setMaxWidth(50);
+
+        String iconSize = "12px";
+        String fontSize = "7pt";
+        ArrayList<Button> buttons = new ArrayList<>();
+        Button bButton;
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(e -> firstPeak(e));
+        buttons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(e -> previousPeak(e));
+        buttons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(e -> nextPeak(e));
+        buttons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(e -> lastPeak(e));
+        buttons.add(bButton);
+        deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
+        // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
+        // a second space bar hit would activate
+        deleteButton.setOnKeyPressed(e -> e.consume());
+        deleteButton.setOnAction(e -> setDeleteStatus(deleteButton));
+
+        for (Button button : buttons) {
+            button.getStyleClass().add("toolButton");
+        }
+        peakNavigatorToolBar.getItems().add(peakListMenuButton);
+        peakNavigatorToolBar.getItems().addAll(buttons);
+        peakNavigatorToolBar.getItems().add(peakIdField);
+        peakNavigatorToolBar.getItems().add(deleteButton);
+
     }
 
     void initMenuBar() {
@@ -688,6 +754,17 @@ public class PeakAttrController implements Initializable, PeakListener {
                     setPeakList(newPeakList);
                 }
             }
+        }
+    }
+
+    void setDeleteStatus(ToggleButton button) {
+        if (currentPeak != null) {
+            if (button.isSelected()) {
+                currentPeak.setStatus(-1);
+            } else {
+                currentPeak.setStatus(0);
+            }
+            updatePeakTableView();
         }
     }
 
