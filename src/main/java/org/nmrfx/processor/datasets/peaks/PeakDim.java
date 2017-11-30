@@ -445,6 +445,11 @@ public class PeakDim {
         peakDimUpdated();
     }
 
+    public void setChemShift(Float value) {
+        this.chemShift = value;
+        peakDimUpdated();
+    }
+
     public void setChemShiftValue(float ctr) {
         this.chemShift = new Float(ctr);
 
@@ -491,7 +496,17 @@ public class PeakDim {
         double value = 0.0;
 
         if (lineWidth != null) {
-            return lineWidth.floatValue()*getSpectralDimObj().getSf();
+            return lineWidth * getSpectralDimObj().getSf();
+        } else {
+            return value;
+        }
+    }
+
+    public double getBoundsHz() {
+        double value = 0.0;
+
+        if (bounds != null) {
+            return bounds * getSpectralDimObj().getSf();
         } else {
             return value;
         }
@@ -700,6 +715,12 @@ public class PeakDim {
             i++;
         }
         return sBuf.toString();
+    }
+
+    public void setLabel(String label) {
+        List<String> labelArgs = new ArrayList<>();
+        labelArgs.add(label);
+        setLabel(labelArgs);
     }
 
     public void setLabel(List<String> labelArgs) {
