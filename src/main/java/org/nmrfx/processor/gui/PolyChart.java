@@ -1977,8 +1977,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             for (Peak peak : peaks) {
                 peak.setStatus(-1);
             }
-            peakListAttr.getPeakList().compress();
-            peakListAttr.getPeakList().reNumber();
         }
 
     }
@@ -2193,7 +2191,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> {
             List<Peak> peaks = peakListAttr.getPeaksInRegion();
             int[] dim = peakListAttr.getPeakDim();
             double[] offsets = new double[dim.length];
-            peaks.stream().forEach((peak) -> {
+            peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
                 drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, false);
             });
             List<Multiplet> multiplets = peakListAttr.getMultipletsInRegion();
