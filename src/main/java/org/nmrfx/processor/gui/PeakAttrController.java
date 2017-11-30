@@ -40,14 +40,18 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.converter.DoubleStringConverter;
 import java.text.DecimalFormat;
+import java.util.Optional;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
 import javafx.stage.FileChooser;
@@ -302,6 +306,38 @@ public class PeakAttrController implements Initializable, PeakListener {
 
         menuBar.getItems().add(fileMenu);
 
+        MenuButton editMenu = new MenuButton("Edit");
+
+        MenuItem compressMenuItem = new MenuItem("Compress");
+        compressMenuItem.setOnAction(e -> compressPeakList());
+        editMenu.getItems().add(compressMenuItem);
+
+        MenuItem degapMenuItem = new MenuItem("Degap");
+        degapMenuItem.setOnAction(e -> renumberPeakList());
+        editMenu.getItems().add(degapMenuItem);
+
+        MenuItem compressAndDegapMenuItem = new MenuItem("Compress and Degap");
+        compressAndDegapMenuItem.setOnAction(e -> compressAndDegapPeakList());
+        editMenu.getItems().add(compressAndDegapMenuItem);
+
+        MenuItem deleteMenuItem = new MenuItem("Delete List");
+        deleteMenuItem.setOnAction(e -> deletePeakList());
+        editMenu.getItems().add(deleteMenuItem);
+
+        MenuItem unlinkPeakMenuItem = new MenuItem("Unlink List");
+        unlinkPeakMenuItem.setOnAction(e -> unLinkPeakList());
+        editMenu.getItems().add(unlinkPeakMenuItem);
+
+        MenuItem duplicateMenuItem = new MenuItem("Duplicate");
+        duplicateMenuItem.setOnAction(e -> duplicatePeakList());
+        editMenu.getItems().add(duplicateMenuItem);
+
+        MenuItem clusterMenuItem = new MenuItem("Cluster");
+        clusterMenuItem.setOnAction(e -> clusterPeakList());
+        editMenu.getItems().add(clusterMenuItem);
+
+        menuBar.getItems().add(editMenu);
+
         MenuButton measureMenu = new MenuButton("Measure");
         MenuItem measureIntensityItem = new MenuItem("Intensities");
         measureIntensityItem.setOnAction(e -> measureIntensities());
@@ -310,7 +346,7 @@ public class PeakAttrController implements Initializable, PeakListener {
         MenuItem measureVolumeItem = new MenuItem("Volumes");
         measureVolumeItem.setOnAction(e -> measureVolumes());
         measureMenu.getItems().add(measureVolumeItem);
-        
+
         MenuItem measureEVolumeItem = new MenuItem("EVolumes");
         measureEVolumeItem.setOnAction(e -> measureEVolumes());
         measureMenu.getItems().add(measureEVolumeItem);
@@ -592,8 +628,67 @@ public class PeakAttrController implements Initializable, PeakListener {
     void measureVolumes() {
         peakList.quantifyPeaks("volume");
     }
-    
+
     void measureEVolumes() {
         peakList.quantifyPeaks("evolume");
     }
+
+    void compressPeakList() {
+        if (peakList != null) {
+            peakList.compress();
+        }
+    }
+
+    void renumberPeakList() {
+        if (peakList != null) {
+            peakList.reNumber();
+        }
+    }
+
+    void compressAndDegapPeakList() {
+        if (peakList != null) {
+            peakList.compress();
+            peakList.reNumber();
+        }
+    }
+
+    void deletePeakList() {
+        if (peakList != null) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Delete Peak List");
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    PeakList.remove(peakList.getName());
+                    PeakList list = null;
+                    setPeakList(list);
+                }
+            });
+
+        }
+    }
+
+    void unLinkPeakList() {
+        if (peakList != null) {
+            peakList.unLinkPeaks();
+        }
+    }
+
+    void clusterPeakList() {
+        if (peakList != null) {
+            peakList.clusterPeaks();
+        }
+    }
+
+    void duplicatePeakList() {
+        if (peakList != null) {
+            TextInputDialog dialog = new TextInputDialog();
+            Optional<String> result = dialog.showAndWait();
+            if (result.isPresent()) {
+                PeakList newPeakList = peakList.copy(result.get(), false, false);
+                if (newPeakList != null) {
+                    setPeakList(newPeakList);
+                }
+            }
+        }
+    }
+
 }
