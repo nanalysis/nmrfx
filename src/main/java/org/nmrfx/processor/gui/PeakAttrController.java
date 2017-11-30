@@ -461,6 +461,7 @@ public class PeakAttrController implements Initializable, PeakListener {
         labelCol.setEditable(true);
         TableColumn<PeakDim, Float> ppmCol = new TableColumn<>("PPM");
         ppmCol.setCellValueFactory(new PropertyValueFactory("ChemShift"));
+
         ppmCol.setEditable(true);
         TableColumn<PeakDim, Float> widthCol = new TableColumn<>("Width");
         widthCol.setCellValueFactory(new PropertyValueFactory("LineWidthHz"));
@@ -689,14 +690,17 @@ public class PeakAttrController implements Initializable, PeakListener {
 
     void measureIntensities() {
         peakList.quantifyPeaks("center");
+        updatePeakTableView();
     }
 
     void measureVolumes() {
         peakList.quantifyPeaks("volume");
+        updatePeakTableView();
     }
 
     void measureEVolumes() {
         peakList.quantifyPeaks("evolume");
+        updatePeakTableView();
     }
 
     void compressPeakList() {
@@ -704,6 +708,7 @@ public class PeakAttrController implements Initializable, PeakListener {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Permanently remove deleted peaks");
             alert.showAndWait().ifPresent(response -> {
                 peakList.compress();
+                updatePeakTableView();
             });
         }
     }
@@ -713,6 +718,7 @@ public class PeakAttrController implements Initializable, PeakListener {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Renumber peak list (permanent!)");
             alert.showAndWait().ifPresent(response -> {
                 peakList.reNumber();
+                updatePeakTableView();
             });
         }
     }
@@ -723,6 +729,7 @@ public class PeakAttrController implements Initializable, PeakListener {
             alert.showAndWait().ifPresent(response -> {
                 peakList.compress();
                 peakList.reNumber();
+                updatePeakTableView();
             });
         }
     }
