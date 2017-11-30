@@ -152,6 +152,9 @@ public class PeakList {
         PeakList newPeakList;
         if (merge) {
             newPeakList = get(name);
+            if (newPeakList == null) {
+                throw new IllegalArgumentException("Peak list " + name + " doesn't exist");
+            }
         } else {
             newPeakList = new PeakList(name, nDim);
             newPeakList.searchDims.addAll(searchDims);
