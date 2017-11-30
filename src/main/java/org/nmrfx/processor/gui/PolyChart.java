@@ -150,9 +150,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     int phaseDim = 0;
     int phaseAxis = 0;
     double phaseFraction = 0.0;
+    boolean mouseDown = false;
 
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
+        if (mouseDown) {
+            return;
+        }
         Object source = peakEvent.getSource();
         boolean draw = false;
         if (peakStatus.get()) {
@@ -659,6 +663,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         mouseNode.setOnMousePressed(new EventHandler() {
             @Override
             public void handle(Event event) {
+                mouseDown = true;
                 mouseNode.requestFocus();
                 MouseEvent mouseEvent = (MouseEvent) event;
                 mousePressX = mouseEvent.getX();
@@ -680,6 +685,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         mouseNode.setOnMouseReleased(new EventHandler() {
             @Override
             public void handle(Event event) {
+                mouseDown = false;
                 MouseEvent mouseEvent = (MouseEvent) event;
                 if (getCursor().toString().equals("CROSSHAIR")) {
                     handleCrossHair(mouseEvent, false);
