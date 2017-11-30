@@ -637,17 +637,18 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 if (getCursor().toString().equals("CROSSHAIR")) {
                     handleCrossHair(mouseEvent, false);
                 } else {
-                    double x = mouseEvent.getX();
-                    double y = mouseEvent.getY();
-                    int dragTol = 4;
-                    if ((Math.abs(x - dragStart[0]) > dragTol) || (Math.abs(y - dragStart[1]) > dragTol)) {
-                        if (!widthMode.isPresent()) {
-                            boolean metaDown = mouseEvent.isAltDown();
-                            widthMode = Optional.of(metaDown);
+                    if (mouseEvent.isPrimaryButtonDown()) {
+                        double x = mouseEvent.getX();
+                        double y = mouseEvent.getY();
+                        int dragTol = 4;
+                        if ((Math.abs(x - dragStart[0]) > dragTol) || (Math.abs(y - dragStart[1]) > dragTol)) {
+                            if (!widthMode.isPresent()) {
+                                boolean metaDown = mouseEvent.isAltDown();
+                                widthMode = Optional.of(metaDown);
+                            }
+                            dragPeak(x, y, widthMode.get());
                         }
-                        dragPeak(x, y, widthMode.get());
                     }
-
                 }
             }
         });
