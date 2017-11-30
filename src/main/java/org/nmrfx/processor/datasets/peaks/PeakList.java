@@ -391,8 +391,25 @@ public class PeakList {
         return sortedMultiplets;
     }
 
+    public boolean hasSearchDims() {
+        return !searchDims.isEmpty();
+    }
+
     public void clearSearchDims() {
         searchDims.clear();
+    }
+
+    public void setSearchDims(String s) throws IllegalArgumentException {
+        String[] elements = s.split(" ");
+        if ((elements.length % 2) != 0) {
+            throw new IllegalArgumentException("Invalid search dim string: " + s);
+        }
+        clearSearchDims();
+        for (int i = 0; i < elements.length; i += 2) {
+            double tol = Double.parseDouble(elements[i + 1]);
+            addSearchDim(elements[i], tol);
+        }
+
     }
 
     public void addSearchDim(String dimName, double tol) {
@@ -2203,14 +2220,14 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
         return deltaSqSum;
     }
 
-    public int clusterPeaks() {
+    public int clusterPeaks() throws IllegalArgumentException {
         List<PeakList> peakLists = new ArrayList<>();
         peakLists.add(this);
         return clusterPeaks(peakLists);
 
     }
 
-    public static int clusterPeaks(String[] peakListNames) {
+    public static int clusterPeaks(String[] peakListNames) throws IllegalArgumentException {
         List<PeakList> peakLists = new ArrayList<>();
         for (String peakListName : peakListNames) {
             PeakList peakList = get(peakListName);
