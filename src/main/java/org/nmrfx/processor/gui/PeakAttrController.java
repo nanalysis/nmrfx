@@ -701,20 +701,29 @@ public class PeakAttrController implements Initializable, PeakListener {
 
     void compressPeakList() {
         if (peakList != null) {
-            peakList.compress();
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Permanently remove deleted peaks");
+            alert.showAndWait().ifPresent(response -> {
+                peakList.compress();
+            });
         }
     }
 
     void renumberPeakList() {
         if (peakList != null) {
-            peakList.reNumber();
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Renumber peak list (permanent!)");
+            alert.showAndWait().ifPresent(response -> {
+                peakList.reNumber();
+            });
         }
     }
 
     void compressAndDegapPeakList() {
         if (peakList != null) {
-            peakList.compress();
-            peakList.reNumber();
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Remove deleted peaks and renumber (permanent!)");
+            alert.showAndWait().ifPresent(response -> {
+                peakList.compress();
+                peakList.reNumber();
+            });
         }
     }
 
@@ -728,7 +737,6 @@ public class PeakAttrController implements Initializable, PeakListener {
                     setPeakList(list);
                 }
             });
-
         }
     }
 
