@@ -748,7 +748,22 @@ public class PeakAttrController implements Initializable, PeakListener {
 
     void clusterPeakList() {
         if (peakList != null) {
-            peakList.clusterPeaks();
+            if (peakList.hasSearchDims()) {
+                peakList.clusterPeaks();
+            } else {
+                TextInputDialog dialog = new TextInputDialog();
+                dialog.setHeaderText("Enter dimensions and tolerances (like: HN 0.1 N 0.5)");
+                Optional<String> result = dialog.showAndWait();
+                if (result.isPresent()) {
+                    try {
+                        peakList.setSearchDims(result.get());
+                        peakList.clusterPeaks();
+                    } catch (IllegalArgumentException iE) {
+                        ExceptionDialog edialog = new ExceptionDialog(iE);
+                        edialog.showAndWait();
+                    }
+                }
+            }
         }
     }
 
