@@ -201,9 +201,6 @@ public class SpectralDim {
         result.append(getRelation());
         result.append(sep);
 
-        result.append(getRef());
-        result.append(sep);
-
         result.append(getNEFAliasing());
         result.append(sep);
 
