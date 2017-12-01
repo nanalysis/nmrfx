@@ -120,6 +120,7 @@ public class PeakAttrController implements Initializable, PeakListener {
         initMenuBar();
         initPeakNavigator();
         initTable();
+        setFieldActions();
         peakIdField.setOnKeyReleased(kE -> {
             if (kE.getCode() == KeyCode.ENTER) {
                 gotoPeakId();
@@ -489,15 +490,80 @@ public class PeakAttrController implements Initializable, PeakListener {
 
         TableColumn<PeakDim, Float> widthCol = new TableColumn<>("Width");
         widthCol.setCellValueFactory(new PropertyValueFactory("LineWidthHz"));
+        widthCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
+        widthCol.setOnEditCommit(
+                (CellEditEvent<PeakDim, Float> t) -> {
+                    Float value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setLineWidthHz(value);
+                    }
+                });
         widthCol.setEditable(true);
+
         TableColumn<PeakDim, Float> boundsCol = new TableColumn<>("Bounds");
         boundsCol.setCellValueFactory(new PropertyValueFactory("BoundsHz"));
+        boundsCol.setCellFactory(tc -> new TextFieldTableCellFloat(fsConverter));
+        boundsCol.setOnEditCommit(
+                (CellEditEvent<PeakDim, Float> t) -> {
+                    Float value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setBoundsHz(value);
+                    }
+                });
+
         boundsCol.setEditable(true);
+
+        TableColumn<PeakDim, String> resonanceColumn = new TableColumn<>("ResID");
+        resonanceColumn.setCellValueFactory(new PropertyValueFactory("ResonanceIDsAsString"));
+        resonanceColumn.setEditable(false);
+
         TableColumn<PeakDim, String> userCol = new TableColumn<>("User");
         userCol.setCellValueFactory(new PropertyValueFactory("User"));
+        userCol.setCellFactory(TextFieldTableCell.forTableColumn());
         userCol.setEditable(true);
+        userCol.setOnEditCommit((CellEditEvent<PeakDim, String> t) -> {
+            String value = t.getNewValue();
+            t.getRowValue().setUser(value == null ? "" : value);
+        });
 
-        peakTableView.getColumns().setAll(dimNameCol, labelCol, ppmCol, widthCol, boundsCol, userCol);
+        peakTableView.getColumns().setAll(dimNameCol, labelCol, ppmCol, widthCol, boundsCol, resonanceColumn, userCol);
+    }
+
+    private void setFieldActions() {
+        commentField.setOnKeyPressed(e -> {
+            if (currentPeak != null) {
+                if (e.getCode() == KeyCode.ENTER) {
+                    currentPeak.setComment(commentField.getText().trim());
+
+                }
+            }
+        });
+        intensityField.setOnKeyPressed(e -> {
+            if (currentPeak != null) {
+                if (e.getCode() == KeyCode.ENTER) {
+                    try {
+                        float value = Float.parseFloat(intensityField.getText().trim());
+                        currentPeak.setIntensity(value);
+                    } catch (NumberFormatException nfE) {
+
+                    }
+
+                }
+            }
+        });
+        volumeField.setOnKeyPressed(e -> {
+            if (currentPeak != null) {
+                if (e.getCode() == KeyCode.ENTER) {
+                    try {
+                        float value = Float.parseFloat(volumeField.getText().trim());
+                        currentPeak.setVolume1(value);
+                    } catch (NumberFormatException nfE) {
+
+                    }
+
+                }
+            }
+        });
     }
 
     @Override
