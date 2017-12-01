@@ -26,6 +26,8 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import org.nmrfx.processor.datasets.Nuclei;
+
 /**
  *
  * @author brucejohnson
@@ -57,6 +59,7 @@ public class SpectralDim {
     private int size = 0;
     private int precision = 5;
     private String dimName = "";
+    private String nucName = "";
     private int dataDim = 0;
     private double tol = 0.0;
     private double idTol = 0.0;
@@ -70,6 +73,7 @@ public class SpectralDim {
     private int sDim = 0;
     private String pattern = "";
     private String relation = "";
+    private String spatialRelation = "";
     private char foldMode = 'n';
     private int foldCount = 0;
     private boolean acqDim = false;
@@ -110,6 +114,7 @@ public class SpectralDim {
         newSpectralDim.sDim = sDim;
         newSpectralDim.pattern = pattern;
         newSpectralDim.relation = relation;
+        newSpectralDim.spatialRelation = spatialRelation;
         newSpectralDim.foldMode = foldMode;
         newSpectralDim.foldCount = foldCount;
 
@@ -178,6 +183,9 @@ public class SpectralDim {
         String sep = "\t";
 
         result.append(getDimName());
+        result.append(sep);
+
+        result.append(getNucleus());
         result.append(sep);
 
         result.append("ppm");
@@ -410,6 +418,18 @@ public class SpectralDim {
         this.precision = precision;
     }
 
+    public String getNucleus() {
+        if (nucName.equals("")) {
+            Nuclei[] nuclei = getPeakList().guessNuclei();
+            nucName = nuclei[dataDim].getNumberName();
+        }
+        return nucName;
+    }
+
+    public void setNucleus(String nucName) {
+        this.nucName = nucName;
+    }
+
     public String getDimName() {
         return dimName;
     }
@@ -462,8 +482,48 @@ public class SpectralDim {
         return relation;
     }
 
+    public String getRelationDim() {
+        String dimRelation = "";
+        if (relation.length() == 2) {
+            if (((relation.charAt(0) == 'D') || (relation.charAt(0) == 'P'))
+                    && Character.isDigit(relation.charAt(1))) {
+                int iDim = Integer.valueOf(relation.substring(1)) - 1;
+                dimRelation = getPeakList().getSpectralDim(iDim).getDimName();
+            }
+        }
+        return dimRelation;
+    }
+
     public void setRelation(String relation) {
+        int iDim = getPeakList().getListDim(relation);
+        if (iDim >= 0) {
+            relation = "D" + (iDim + 1);
+        }
         this.relation = relation;
+    }
+
+      public String getSpatialRelation() {
+        return spatialRelation;
+    }
+
+    public String getSpatialRelationDim() {
+        String dimRelation = "";
+        if (spatialRelation.length() == 2) {
+            if (((spatialRelation.charAt(0) == 'D') || (spatialRelation.charAt(0) == 'P'))
+                    && Character.isDigit(spatialRelation.charAt(1))) {
+                int iDim = Integer.valueOf(spatialRelation.substring(1)) - 1;
+                dimRelation = getPeakList().getSpectralDim(iDim).getDimName();
+            }
+        }
+        return dimRelation;
+    }
+
+    public void setSpatialRelation(String relation) {
+        int iDim = getPeakList().getListDim(relation);
+        if (iDim >= 0) {
+            relation = "D" + (iDim + 1);
+        }
+        this.spatialRelation = relation;
     }
 
     public int getDataDim() {

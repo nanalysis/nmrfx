@@ -28,6 +28,7 @@ import org.nmrfx.processor.datasets.DimCounter;
 import java.io.IOException;
 import java.util.Optional;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.nmrfx.processor.datasets.Nuclei;
 
 /**
  *
@@ -401,6 +402,35 @@ public class PeakPicker {
         return (true);
     }
 
+    public void configureDim(SpectralDim sDim, int dDim) {
+        sDim.setDimName(dataset.getLabel(dDim));
+        sDim.setSf(getSf(dDim));
+        sDim.setSw(getSw(dDim));
+        sDim.setSize(getSize(dDim));
+        double minTol = Math.round(100 * 2.0 * getSw(dDim) / getSf(dDim) / getSize(dDim)) / 100.0;
+        double tol = minTol;
+        Nuclei nuc = dataset.getNucleus(dDim);
+        if (null != nuc) switch (nuc) {
+            case H1:
+                tol = 0.05;
+                break;
+            case C13:
+                tol = 0.6;
+                break;
+            case N15:
+                tol = 0.2;
+                break;
+            default:
+                tol = minTol;
+        }
+        tol = Math.min(tol, minTol);
+
+        sDim.setIdTol(tol);
+        sDim.setDataDim(dDim);
+        sDim.setNucleus(dataset.getNucleus(dDim).getNumberName());
+
+    }
+
     public PeakList peakPick()
             throws IOException, IllegalArgumentException {
         int[] dim;
@@ -459,13 +489,8 @@ public class PeakPicker {
                 if (sDim == null) {
                     throw new IllegalArgumentException("Error picking list" + peakPickPar.listName + ", invalid dimension " + pdim[i]);
                 }
-                sDim.setDimName(dataset.getLabel(dim[i]));
-                sDim.setSf(getSf(dim[i]));
-                sDim.setSw(getSw(dim[i]));
-                sDim.setSize(getSize(dim[i]));
-                sDim.setIdTol(getSw(dim[i]) / getSf(dim[i]) / getSize(dim[i]));
-                sDim.setDataDim(dim[i]);
-            }
+                configureDim(sDim, dim[i]);
+             }
         } else if (mode.equalsIgnoreCase("append")) {
             if (!listExists) {
                 throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + "doesn't exist");
@@ -501,13 +526,8 @@ public class PeakPicker {
             peakList.fileName = dataset.getFileName();
             for (int i = 0; i < peakPickPar.nPeakDim; i++) {
                 SpectralDim sDim = peakList.getSpectralDim(pdim[i]);
-                sDim.setDimName(getLabel(dim[i]));
-                sDim.setSf(getSf(dim[i]));
-                sDim.setSw(getSw(dim[i]));
-                sDim.setSize(getSize(dim[i]));
-                sDim.setIdTol(getSw(dim[i]) / getSf(dim[i]) / getSize(dim[i]));
-                sDim.setDataDim(dim[i]);
-            }
+                configureDim(sDim, dim[i]);
+             }
 
         }
         if (!peakPickPar.fixedPick && peakPickPar.region.equalsIgnoreCase("point")) {

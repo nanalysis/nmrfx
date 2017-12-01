@@ -53,6 +53,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
+import org.nmrfx.processor.datasets.Nuclei;
 import org.nmrfx.processor.datasets.RegionData;
 import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
 
@@ -4143,5 +4144,15 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
             shift += value;
             pDim.setChemShiftValue(shift);
         });
+    }
+
+    public Nuclei[] guessNuclei() {
+        double[] sf = new double[nDim];
+        for (int i = 0; i < nDim; i++) {
+            SpectralDim sDim = getSpectralDim(i);
+            sf[i] = sDim.getSf();
+        }
+        Nuclei[] nuclei = Nuclei.findNuclei(sf);
+        return nuclei;
     }
 }
