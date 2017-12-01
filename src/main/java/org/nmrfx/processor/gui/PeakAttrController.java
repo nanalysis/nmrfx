@@ -63,6 +63,7 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -118,6 +119,8 @@ public class PeakAttrController implements Initializable, PeakListener {
     static Background deleteBackground = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
     Background defaultCellBackground = null;
+    ComboTableCell comboTableCell = new ComboTableCell();
+    ObservableList<String> relationChoiceItems = FXCollections.observableArrayList("", "D1", "D2", "D3", "D4");
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -255,10 +258,13 @@ public class PeakAttrController implements Initializable, PeakListener {
             System.out.println("null table");
             return;
         }
+        relationChoiceItems.clear();
         if (peakList != null) {
             ObservableList<SpectralDim> peakDimList = FXCollections.observableArrayList();
+            relationChoiceItems.add("");
             for (int i = 0; i < peakList.nDim; i++) {
                 peakDimList.add(peakList.getSpectralDim(i));
+                relationChoiceItems.add(peakList.getSpectralDim(i).getDimName());
             }
             referenceTableView.setItems(peakDimList);
         } else {
@@ -494,6 +500,14 @@ public class PeakAttrController implements Initializable, PeakListener {
         }
     };
 
+    class ComboTableCell<SpectralDim, String> extends ComboBoxTableCell<SpectralDim, String> {
+
+        @Override
+        public void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+        }
+    };
+
     void initTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
         FloatStringConverter fsConverter = new FloatStringConverter2();
@@ -632,6 +646,15 @@ public class PeakAttrController implements Initializable, PeakListener {
             String value = t.getNewValue();
             t.getRowValue().setDimName(value == null ? "" : value);
         });
+        
+       TableColumn<SpectralDim, String> nucCol = new TableColumn<>("Nucleus");
+        nucCol.setCellValueFactory(new PropertyValueFactory("Nucleus"));
+        nucCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        nucCol.setEditable(true);
+        nucCol.setOnEditCommit((CellEditEvent<SpectralDim, String> t) -> {
+            String value = t.getNewValue();
+            t.getRowValue().setNucleus(value == null ? "" : value);
+        });
 
         TableColumn<SpectralDim, Double> sfCol = new TableColumn<>("SF");
         sfCol.setCellValueFactory(new PropertyValueFactory("Sf"));
@@ -659,13 +682,13 @@ public class PeakAttrController implements Initializable, PeakListener {
         swCol.setEditable(true);
 
         TableColumn<SpectralDim, Double> tolCol = new TableColumn<>("Tol");
-        tolCol.setCellValueFactory(new PropertyValueFactory("Tol"));
+        tolCol.setCellValueFactory(new PropertyValueFactory("IdTol"));
         tolCol.setCellFactory(tc -> new TextFieldRefTableCell(dsConverter));
         tolCol.setOnEditCommit(
                 (CellEditEvent<SpectralDim, Double> t) -> {
                     Double value = t.getNewValue();
                     if (value != null) {
-                        t.getRowValue().setTol(value);
+                        t.getRowValue().setIdTol(value);
                     }
                 });
 
@@ -680,7 +703,24 @@ public class PeakAttrController implements Initializable, PeakListener {
             t.getRowValue().setPattern(value == null ? "" : value);
         });
 
-        referenceTableView.getColumns().setAll(dimNameCol, sfCol, swCol, tolCol, patternCol);
+        TableColumn<SpectralDim, String> relCol = new TableColumn<>("Bonded");
+        relCol.setCellValueFactory(new PropertyValueFactory("RelationDim"));
+        relCol.setCellFactory(ComboBoxTableCell.forTableColumn(relationChoiceItems));
+        relCol.setOnEditCommit(
+                (CellEditEvent<SpectralDim, String> t) -> {
+                    String value = t.getNewValue();
+                    t.getRowValue().setRelation(value == null ? "" : value);
+                });
+        TableColumn<SpectralDim, String> spatialCol = new TableColumn<>("Spatial");
+        spatialCol.setCellValueFactory(new PropertyValueFactory("SpatialRelationDim"));
+        spatialCol.setCellFactory(ComboBoxTableCell.forTableColumn(relationChoiceItems));
+        spatialCol.setOnEditCommit(
+                (CellEditEvent<SpectralDim, String> t) -> {
+                    String value = t.getNewValue();
+                    t.getRowValue().setSpatialRelation(value == null ? "" : value);
+                });
+
+        referenceTableView.getColumns().setAll(dimNameCol, nucCol, sfCol, swCol, tolCol, patternCol, relCol, spatialCol);
     }
 
     @Override

@@ -1979,21 +1979,15 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             for (DatasetAttributes dataAttr : datasetAttributesList) {
                 Dataset dataset = dataAttr.getDataset();
                 String datasetName = dataset.getName();
-                int lastDot = datasetName.lastIndexOf(".");
                 if (datasetName.length() != 0) {
-                    String datasetListName = datasetName;
-                    if (lastDot != -1) {
-                        datasetListName = datasetName.substring(0, lastDot);
-                    }
-
-                    if (peakList.getName().equals(datasetListName)) {
+atasetName + " " + peakList.getDatasetName());
+                    if (peakList.getDatasetName().equals(datasetName)) {
                         PeakListAttributes peakListAttr = new PeakListAttributes(this, dataAttr, peakList);
                         peakListAttributesList.add(peakListAttr);
                         peakList.registerListener(this);
                         break;
                     }
                 }
-
             }
         }
     }
