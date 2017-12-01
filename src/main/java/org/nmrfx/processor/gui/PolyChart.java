@@ -1980,7 +1980,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 Dataset dataset = dataAttr.getDataset();
                 String datasetName = dataset.getName();
                 if (datasetName.length() != 0) {
-atasetName + " " + peakList.getDatasetName());
                     if (peakList.getDatasetName().equals(datasetName)) {
                         PeakListAttributes peakListAttr = new PeakListAttributes(this, dataAttr, peakList);
                         peakListAttributesList.add(peakListAttr);
