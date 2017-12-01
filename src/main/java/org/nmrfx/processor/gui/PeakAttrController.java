@@ -55,8 +55,9 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.Slider;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn.CellEditEvent;
+import javafx.scene.control.TablePosition;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
@@ -78,6 +79,7 @@ import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
+import org.nmrfx.processor.datasets.peaks.SpectralDim;
 
 /**
  *
@@ -106,7 +108,9 @@ public class PeakAttrController implements Initializable, PeakListener {
     private TextField commentField;
 
     @FXML
-    Slider scaleSlider;
+    private ToolBar peakReferenceToolBar;
+    @FXML
+    private TableView<SpectralDim> referenceTableView;
 
     PeakList peakList;
     Peak currentPeak;
@@ -120,6 +124,7 @@ public class PeakAttrController implements Initializable, PeakListener {
         initMenuBar();
         initPeakNavigator();
         initTable();
+        initReferenceTable();
         setFieldActions();
         peakIdField.setOnKeyReleased(kE -> {
             if (kE.getCode() == KeyCode.ENTER) {
@@ -206,6 +211,7 @@ public class PeakAttrController implements Initializable, PeakListener {
             stage.setTitle("Peak Inspector");
         }
         updatePeakTableView();
+        updateRefTableView();
     }
 
     public void updatePeakTableView() {
@@ -242,6 +248,22 @@ public class PeakAttrController implements Initializable, PeakListener {
             clearInsepctor();
         }
         setPeakIdField();
+    }
+
+    public void updateRefTableView() {
+        if (referenceTableView == null) {
+            System.out.println("null table");
+            return;
+        }
+        if (peakList != null) {
+            ObservableList<SpectralDim> peakDimList = FXCollections.observableArrayList();
+            for (int i = 0; i < peakList.nDim; i++) {
+                peakDimList.add(peakList.getSpectralDim(i));
+            }
+            referenceTableView.setItems(peakDimList);
+        } else {
+            referenceTableView.getItems().clear();
+        }
     }
 
     private void clearInsepctor() {
@@ -357,7 +379,7 @@ public class PeakAttrController implements Initializable, PeakListener {
         deleteButton.setOnAction(e -> setDeleteStatus(deleteButton));
 
         for (Button button : buttons) {
-            button.getStyleClass().add("toolButton");
+            // button.getStyleClass().add("toolButton");
         }
         peakNavigatorToolBar.getItems().add(peakListMenuButton);
         peakNavigatorToolBar.getItems().addAll(buttons);
@@ -456,9 +478,26 @@ public class PeakAttrController implements Initializable, PeakListener {
         }
     };
 
+    class TextFieldRefTableCell extends TextFieldTableCell<SpectralDim, Double> {
+
+        public TextFieldRefTableCell(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(Double item, boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+                setText(String.valueOf(item));
+            } else {
+            }
+        }
+    };
+
     void initTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
         FloatStringConverter fsConverter = new FloatStringConverter2();
+        peakTableView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
         IntegerStringConverter isConverter = new IntegerStringConverter();
         peakTableView.setEditable(true);
@@ -473,6 +512,15 @@ public class PeakAttrController implements Initializable, PeakListener {
         labelCol.setOnEditCommit((CellEditEvent<PeakDim, String> t) -> {
             String value = t.getNewValue();
             t.getRowValue().setLabel(value == null ? "" : value);
+            TablePosition tPos = t.getTablePosition();
+            int col = tPos.getColumn();
+            int row = tPos.getRow();
+            row++;
+            if (row < t.getTableView().getItems().size()) {
+                t.getTableView().getSelectionModel().selectBelowCell();
+                t.getTableView().edit(row, labelCol);
+            }
+
         });
 
         TableColumn<PeakDim, Float> ppmCol = new TableColumn<>("PPM");
@@ -564,6 +612,75 @@ public class PeakAttrController implements Initializable, PeakListener {
                 }
             }
         });
+    }
+
+    void initReferenceTable() {
+        DoubleStringConverter dsConverter = new DoubleStringConverter();
+        FloatStringConverter fsConverter = new FloatStringConverter2();
+
+        IntegerStringConverter isConverter = new IntegerStringConverter();
+        referenceTableView.setEditable(true);
+        TableColumn<SpectralDim, String> dimNameCol = new TableColumn<>("Dim");
+        dimNameCol.setCellValueFactory(new PropertyValueFactory("DimName"));
+        dimNameCol.setEditable(false);
+
+        TableColumn<SpectralDim, String> labelCol = new TableColumn<>("Name");
+        labelCol.setCellValueFactory(new PropertyValueFactory("DimName"));
+        labelCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        labelCol.setEditable(true);
+        labelCol.setOnEditCommit((CellEditEvent<SpectralDim, String> t) -> {
+            String value = t.getNewValue();
+            t.getRowValue().setDimName(value == null ? "" : value);
+        });
+
+        TableColumn<SpectralDim, Double> sfCol = new TableColumn<>("SF");
+        sfCol.setCellValueFactory(new PropertyValueFactory("Sf"));
+        sfCol.setCellFactory(tc -> new TextFieldRefTableCell(dsConverter));
+        sfCol.setOnEditCommit(
+                (CellEditEvent<SpectralDim, Double> t) -> {
+                    Double value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setSf(value);
+                    }
+                });
+
+        sfCol.setEditable(true);
+        TableColumn<SpectralDim, Double> swCol = new TableColumn<>("SW");
+        swCol.setCellValueFactory(new PropertyValueFactory("Sw"));
+        swCol.setCellFactory(tc -> new TextFieldRefTableCell(dsConverter));
+        swCol.setOnEditCommit(
+                (CellEditEvent<SpectralDim, Double> t) -> {
+                    Double value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setSw(value);
+                    }
+                });
+
+        swCol.setEditable(true);
+
+        TableColumn<SpectralDim, Double> tolCol = new TableColumn<>("Tol");
+        tolCol.setCellValueFactory(new PropertyValueFactory("Tol"));
+        tolCol.setCellFactory(tc -> new TextFieldRefTableCell(dsConverter));
+        tolCol.setOnEditCommit(
+                (CellEditEvent<SpectralDim, Double> t) -> {
+                    Double value = t.getNewValue();
+                    if (value != null) {
+                        t.getRowValue().setTol(value);
+                    }
+                });
+
+        tolCol.setEditable(true);
+
+        TableColumn<SpectralDim, String> patternCol = new TableColumn<>("Pattern");
+        patternCol.setCellValueFactory(new PropertyValueFactory("Pattern"));
+        patternCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        patternCol.setEditable(true);
+        patternCol.setOnEditCommit((CellEditEvent<SpectralDim, String> t) -> {
+            String value = t.getNewValue();
+            t.getRowValue().setPattern(value == null ? "" : value);
+        });
+
+        referenceTableView.getColumns().setAll(dimNameCol, sfCol, swCol, tolCol, patternCol);
     }
 
     @Override
