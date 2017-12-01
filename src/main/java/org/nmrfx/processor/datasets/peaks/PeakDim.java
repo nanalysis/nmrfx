@@ -487,26 +487,38 @@ public class PeakDim {
         peakDimUpdated();
     }
 
+    public void setLineWidthHz(float wid) {
+        wid /= getSpectralDimObj().getSf();
+        this.lineWidth = new Float(wid);
+        peakDimUpdated();
+    }
+
     public void setLineWidthErrorValue(float wid) {
         this.lineWidthError = new Float(wid);
         peakDimUpdated();
     }
 
-    public double getLineWidthHz() {
-        double value = 0.0;
+    public float getLineWidthHz() {
+        float value = 0.0f;
 
         if (lineWidth != null) {
-            return lineWidth * getSpectralDimObj().getSf();
+            return lineWidth * (float) getSpectralDimObj().getSf();
         } else {
             return value;
         }
     }
 
-    public double getBoundsHz() {
-        double value = 0.0;
+    public void setBoundsHz(float bounds) {
+        bounds /= getSpectralDimObj().getSf();
+        this.bounds = new Float(bounds);
+        peakDimUpdated();
+    }
+
+    public float getBoundsHz() {
+        float value = 0.0f;
 
         if (bounds != null) {
-            return bounds * getSpectralDimObj().getSf();
+            return bounds * (float) getSpectralDimObj().getSf();
         } else {
             return value;
         }
