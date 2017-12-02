@@ -7,6 +7,7 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -37,32 +38,32 @@
                                     </columns>
                                 </TableView>
                             </center>
-                     <bottom>
-                        <GridPane BorderPane.alignment="CENTER">
-                          <columnConstraints>
-                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
-                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="460.0" minWidth="70.0" prefWidth="458.0" />
-                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
-                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="460.0" minWidth="70.0" prefWidth="458.0" />
-                          </columnConstraints>
-                          <rowConstraints>
-                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                          </rowConstraints>
-                           <children>
-                              <Label text="Intensity" GridPane.columnIndex="0" />
-                              <TextField fx:id="intensityField" GridPane.columnIndex="1" />
-                              <Label text="Volume" GridPane.columnIndex="2" />
-                              <TextField fx:id="volumeField" GridPane.columnIndex="3" />
-                              <Label text="Comment" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                              <TextField fx:id="commentField" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="1" />
-                           </children>
-                        </GridPane>
-                     </bottom>
+                            <bottom>
+                                <GridPane BorderPane.alignment="CENTER">
+                                    <columnConstraints>
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="460.0" minWidth="70.0" prefWidth="458.0" />
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="460.0" minWidth="70.0" prefWidth="458.0" />
+                                    </columnConstraints>
+                                    <rowConstraints>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                    </rowConstraints>
+                                    <children>
+                                        <Label text="Intensity" GridPane.columnIndex="0" />
+                                        <TextField fx:id="intensityField" GridPane.columnIndex="1" />
+                                        <Label text="Volume" GridPane.columnIndex="2" />
+                                        <TextField fx:id="volumeField" GridPane.columnIndex="3" />
+                                        <Label text="Comment" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                        <TextField fx:id="commentField" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="1" />
+                                    </children>
+                                </GridPane>
+                            </bottom>
                         </BorderPane>
                     </content>
                 </Tab>
-                                <Tab text="Reference">
+                <Tab text="Reference">
                     <content>
                         <BorderPane layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
                             <top>
@@ -77,22 +78,25 @@
                                     </columns>
                                 </TableView>
                             </center>
-                     <bottom>
-                        <GridPane BorderPane.alignment="CENTER">
-                          <columnConstraints>
-                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
-                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="460.0" minWidth="70.0" prefWidth="458.0" />
-                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
-                            <ColumnConstraints hgrow="SOMETIMES" maxWidth="460.0" minWidth="70.0" prefWidth="458.0" />
-                          </columnConstraints>
-                          <rowConstraints>
-                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                          </rowConstraints>
-                           <children>
-                           </children>
-                        </GridPane>
-                     </bottom>
+                            <bottom>
+                                <GridPane BorderPane.alignment="CENTER">
+                                    <columnConstraints>
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="90.0" minWidth="70.0" prefWidth="70.0" />
+                                        <ColumnConstraints hgrow="ALWAYS" maxWidth="460.0" minWidth="200" prefWidth="458.0" />
+                                    </columnConstraints>
+                                    <rowConstraints>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                    </rowConstraints>
+                                    <children>
+                                        <Label text="List Name" GridPane.columnIndex="0" />
+                                        <TextField fx:id="peakListNameField" GridPane.columnIndex="1" />
+                                        <Label text="Dataset Name" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                        <ComboBox fx:id="datasetNameField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+ 
+                                    </children>
+                                </GridPane>
+                            </bottom>
                         </BorderPane>
                     </content>
                 </Tab>

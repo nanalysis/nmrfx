@@ -52,6 +52,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
@@ -74,6 +75,7 @@ import javafx.util.StringConverter;
 import javafx.util.converter.FloatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
@@ -107,7 +109,10 @@ public class PeakAttrController implements Initializable, PeakListener {
     private TextField volumeField;
     @FXML
     private TextField commentField;
-
+    @FXML
+    private TextField peakListNameField;
+    @FXML
+    private ComboBox datasetNameField;
     @FXML
     private ToolBar peakReferenceToolBar;
     @FXML
@@ -129,6 +134,16 @@ public class PeakAttrController implements Initializable, PeakListener {
         initTable();
         initReferenceTable();
         setFieldActions();
+        datasetNameField.setOnShowing(e -> updateDatasetNames());
+        datasetNameField.setOnAction(e -> {
+            selectDataset();
+        });
+        peakListNameField.setOnKeyReleased(kE -> {
+            if (kE.getCode() == KeyCode.ENTER) {
+                renamePeakList();
+
+            }
+        });
         peakIdField.setOnKeyReleased(kE -> {
             if (kE.getCode() == KeyCode.ENTER) {
                 gotoPeakId();
@@ -253,11 +268,23 @@ public class PeakAttrController implements Initializable, PeakListener {
         setPeakIdField();
     }
 
+    public void updateDatasetNames() {
+        datasetNameField.getItems().clear();
+        Dataset.datasets().stream().forEach(d -> {
+            datasetNameField.getItems().add(d.getName());
+        });
+        if (peakList != null) {
+            datasetNameField.setValue(peakList.getDatasetName());
+        }
+    }
+
     public void updateRefTableView() {
         if (referenceTableView == null) {
             System.out.println("null table");
             return;
         }
+        // fixme  need to update datasets upon dataset list change
+        updateDatasetNames();
         relationChoiceItems.clear();
         if (peakList != null) {
             ObservableList<SpectralDim> peakDimList = FXCollections.observableArrayList();
@@ -267,6 +294,8 @@ public class PeakAttrController implements Initializable, PeakListener {
                 relationChoiceItems.add(peakList.getSpectralDim(i).getDimName());
             }
             referenceTableView.setItems(peakDimList);
+            peakListNameField.setText(peakList.getName());
+            datasetNameField.setValue(peakList.getDatasetName());
         } else {
             referenceTableView.getItems().clear();
         }
@@ -646,8 +675,8 @@ public class PeakAttrController implements Initializable, PeakListener {
             String value = t.getNewValue();
             t.getRowValue().setDimName(value == null ? "" : value);
         });
-        
-       TableColumn<SpectralDim, String> nucCol = new TableColumn<>("Nucleus");
+
+        TableColumn<SpectralDim, String> nucCol = new TableColumn<>("Nucleus");
         nucCol.setCellValueFactory(new PropertyValueFactory("Nucleus"));
         nucCol.setCellFactory(TextFieldTableCell.forTableColumn());
         nucCol.setEditable(true);
@@ -821,6 +850,28 @@ public class PeakAttrController implements Initializable, PeakListener {
                     setPeakList(list);
                 }
             });
+        }
+    }
+
+    void renamePeakList() {
+        if (peakList != null) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Rename Peak List");
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    peakList.setName(peakListNameField.getText());
+                    stage.setTitle(peakListNameField.getText());
+                } else {
+                    peakListNameField.setText(peakList.getName());
+                }
+            });
+        }
+    }
+
+    void selectDataset() {
+        if (peakList != null) {
+            String name = (String) datasetNameField.getValue();
+            System.out.println("set dat " + name);
+            peakList.setDatasetName(name);
         }
     }
 
