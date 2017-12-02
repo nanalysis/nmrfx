@@ -40,6 +40,7 @@ public class PeakPicker {
     private final PeakPick peakPickPar;
     private final int nDim;
     static final private String MSG_PEAK_LIST = "Peak List ";
+    Peak lastPeakPicked = null;
 
     public PeakPicker(PeakPick peakPickPar) {
         this.peakPickPar = peakPickPar;
@@ -445,6 +446,7 @@ public class PeakPicker {
         dim = peakPickPar.dim;
         pt = peakPickPar.pt;
         Double noiseLevel = dataset.getNoiseLevel();
+        lastPeakPicked = null;
 
         if (nDim == peakPickPar.nPeakDim) {
             System.arraycopy(dim, 0, pdim, 0, pdim.length);
@@ -621,6 +623,7 @@ public class PeakPicker {
                                 peakPickPar.nPeakDim, peakPickPar.sDevN, sign, measurePeak)) {
                             nPeaks++;
                             peakList.addPeak(peak);
+                            lastPeakPicked = peak;
                         } else {
                             peakList.idLast--;
                         }
@@ -657,6 +660,10 @@ public class PeakPicker {
             foundAny = firstPeak.isPresent();
         }
         return foundAny;
+    }
+    
+    public Peak getLastPick() {
+        return lastPeakPicked;
     }
 
 }
