@@ -284,7 +284,6 @@ public class PeakAttrController implements Initializable, PeakListener {
             return;
         }
         // fixme  need to update datasets upon dataset list change
-        updateDatasetNames();
         relationChoiceItems.clear();
         if (peakList != null) {
             ObservableList<SpectralDim> peakDimList = FXCollections.observableArrayList();
@@ -380,6 +379,7 @@ public class PeakAttrController implements Initializable, PeakListener {
         if (peakList != peak.getPeakList()) {
             peakList = peak.getPeakList();
             stage.setTitle(peakList.getName());
+            updateRefTableView();
         }
         setPeakIdField();
         updatePeakTableView();

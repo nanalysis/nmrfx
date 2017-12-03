@@ -350,6 +350,20 @@ public class FXMLController implements FractionPaneChild, Initializable {
         } catch (IOException ioE) {
         }
     }
+    
+    public PeakAttrController getPeakAttrController() {
+        return peakAttrController;
+    }
+    
+    public boolean isPeakAttrControllerShowing() {
+        boolean state = false;
+        if (peakAttrController != null) {
+            if (peakAttrController.getStage().isShowing()) {
+                state = true;
+            }
+        }
+        return state;
+    }
 
     public ProcessorController getProcessorController(boolean createIfNull) {
         if ((processorController == null) && createIfNull) {

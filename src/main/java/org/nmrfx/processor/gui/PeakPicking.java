@@ -11,6 +11,7 @@ import javafx.collections.ObservableList;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
+import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPick;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
@@ -106,18 +107,27 @@ public class PeakPicking {
         String canonFileName = dataset.getCanonicalFile();
         String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk2";
         PeakList peakList = null;
+        Peak peak = null;
         try {
             peakList = picker.peakPick();
-            if (saveFile) {
-                try (final FileWriter writer = new FileWriter(listFileName)) {
-                    peakList.writePeaksXPK2(writer);
+            if (peakList != null) {
+                chart.setupPeakListAttributes(peakList);
+                if (saveFile) {
+                    try (final FileWriter writer = new FileWriter(listFileName)) {
+                        peakList.writePeaksXPK2(writer);
+                    }
                 }
+                peak = picker.getLastPick();
             }
         } catch (IOException | InvalidPeakException ioE) {
             ExceptionDialog dialog = new ExceptionDialog(ioE);
             dialog.showAndWait();
         }
         chart.peakStatus.set(true);
+        if ((peak != null) && FXMLController.getActiveController().isPeakAttrControllerShowing()) {
+            PeakAttrController controller = FXMLController.getActiveController().getPeakAttrController();
+            controller.setPeak(peak);
+        }
         return peakList;
     }
 

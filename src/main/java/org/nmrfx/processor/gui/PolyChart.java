@@ -514,7 +514,22 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             String keyString = keyMonitor.getKeyString();
             String shortString = keyString.substring(0, Math.min(2, keyString.length()));
             keyString = keyString.trim();
+            // note always break on a single character that is used in a two character sequence
+            // otherwise the keystring will be cleared and the multiple key event will never be processed
             switch (shortString) {
+                case "a":
+                    break;
+
+                case "aa":
+                case "as":
+                    DatasetAttributes datasetAttr = datasetAttributesList.get(0);
+                    double pickX = xAxis.getValueForDisplay(mouseX).doubleValue();
+                    double pickY = yAxis.getValueForDisplay(mouseY).doubleValue();
+                    PeakPicking.pickAtPosition(this, datasetAttr, pickX, pickY, shortString.equals("as"), true);
+                    peakStatus.set(true);
+                    keyMonitor.clear();
+                    drawPeakLists(true);
+                    break;
                 case "c":
                     break;
 
@@ -541,15 +556,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                     keyMonitor.clear();
                     break;
                 case "p":
-                    break;
-                case "pp":
-                case "pP":
-                    DatasetAttributes datasetAttr = datasetAttributesList.get(0);
-                    double pickX = xAxis.getValueForDisplay(mouseX).doubleValue();
-                    double pickY = yAxis.getValueForDisplay(mouseY).doubleValue();
-                    PeakPicking.pickAtPosition(this, datasetAttr, pickX, pickY, shortString.equals("pP"), true);
-                    keyMonitor.clear();
-                    this.refresh();
                     break;
                 case "v":
                     break;
