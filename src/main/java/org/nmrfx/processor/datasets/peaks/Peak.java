@@ -874,6 +874,7 @@ public class Peak implements Comparable, PeakOrMulti {
             result.append(peakDim[i].getError()).append(sep);
             result.append(peakDim[i].getMultiplet().getCouplingsAsSimpleString()).append(sep);
             result.append(peakDim[i].getUser()).append(sep);
+            result.append(peakDim[i].getResonanceIDsAsString()).append(sep);
         }
         result.append(String.valueOf(getVolume1())).append(sep);
         result.append(String.valueOf(getIntensity())).append(sep);

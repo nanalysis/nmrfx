@@ -572,13 +572,15 @@ public class PeakList {
     // //     1   ppm   1H    500.13   4.998700337912143    9.898700337912143    circular   true   true
     static final String[] xpkPeakDimStrings = {
         "label",
+        "code",
         "units",
         "sf",
         "sw",
         "fp",
         "idtol",
         "pattern",
-        "relation",
+        "bonded",
+        "spatial",
         "folding",
         "abspos",
         "acqdim"};
@@ -906,6 +908,7 @@ public class PeakList {
             result.append(dimName).append(".E").append(sep);
             result.append(dimName).append(".J").append(sep);
             result.append(dimName).append(".U").append(sep);
+            result.append(dimName).append(".r").append(sep);
         }
         result.append("volume").append(sep);
         result.append("intensity").append(sep);
@@ -917,8 +920,8 @@ public class PeakList {
     }
 
     public void writePeaksXPK2(FileWriter chan) throws IOException, InvalidPeakException {
-        chan.write("dataset\tndim\n");
-        chan.write(getDatasetName() + "\t" + nDim + "\n");
+        chan.write("name\tdataset\tndim\n");
+        chan.write(getName() + "\t" + getDatasetName() + "\t" + nDim + "\n");
 
         for (int j = 0; j < xpkPeakDimStrings.length; j++) {
             if (j > 0) {
@@ -996,7 +999,11 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
                         String lineData = fileReader.readLine();
                         String[] data = lineData.split("\t");
                         int nDim = Integer.valueOf(data[map.get("ndim")]);
-                        peakList = new PeakList(fileTail, nDim);
+                        String listName = fileTail;
+                        if (map.get("name") != null) {
+                            listName = data[map.get("name")];
+                        }
+                        peakList = new PeakList(listName, nDim);
                         if (map.get("dataset") != null) {
                             peakList.setDatasetName(data[map.get("dataset")]);
                         }
@@ -1015,6 +1022,9 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
                                     case "label":
                                         sDim.setDimName(value);
                                         break;
+                                    case "code":
+                                        sDim.setNucleus(value);
+                                        break;
                                     case "sf":
                                         sDim.setSf(Double.valueOf(value));
                                         break;
@@ -1030,8 +1040,11 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
                                     case "pattern":
                                         sDim.setPattern(value);
                                         break;
-                                    case "relation":
+                                    case "bonded":
                                         sDim.setRelation(value);
+                                        break;
+                                    case "spatial":
+                                        sDim.setSpatialRelation(value);
                                         break;
                                     case "acqdim":
                                         sDim.setAcqDim(Boolean.valueOf(value));
@@ -1095,6 +1108,9 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
                                                 break;
                                             case "U":
                                                 peakDim.setUser(value);
+                                                break;
+                                            case "r":
+                                                long resNum = Long.valueOf(value);
                                                 break;
                                             default:
                                                 throw new IllegalArgumentException("Unknown field " + field);

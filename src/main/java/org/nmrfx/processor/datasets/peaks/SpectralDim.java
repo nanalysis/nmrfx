@@ -77,7 +77,7 @@ public class SpectralDim {
     private char foldMode = 'n';
     private int foldCount = 0;
     private boolean acqDim = false;
-    private boolean absPos = true;
+    private boolean absPos = false;
 
     /**
      * Creates a new instance of SpectralDim
@@ -207,6 +207,9 @@ public class SpectralDim {
         result.append(sep);
 
         result.append(getRelation());
+        result.append(sep);
+
+        result.append(getSpatialRelation());
         result.append(sep);
 
         result.append(getNEFAliasing());
@@ -502,7 +505,7 @@ public class SpectralDim {
         this.relation = relation;
     }
 
-      public String getSpatialRelation() {
+    public String getSpatialRelation() {
         return spatialRelation;
     }
 
