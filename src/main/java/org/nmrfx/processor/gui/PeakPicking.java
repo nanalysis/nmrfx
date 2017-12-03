@@ -126,7 +126,7 @@ public class PeakPicking {
         chart.peakStatus.set(true);
         if ((peak != null) && FXMLController.getActiveController().isPeakAttrControllerShowing()) {
             PeakAttrController controller = FXMLController.getActiveController().getPeakAttrController();
-            controller.setPeak(peak);
+            controller.gotoPeak(peak);
         }
         return peakList;
     }

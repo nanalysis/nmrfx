@@ -484,7 +484,7 @@ public class FXMLController implements FractionPaneChild, Initializable {
     @FXML
     void showPeakAttrAction(ActionEvent event) {
         showPeakAttr();
-        peakAttrController.setPeakList();
+        peakAttrController.initIfEmpty();
     }
 
     public void showPeakAttr() {

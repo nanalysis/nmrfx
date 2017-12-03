@@ -2167,7 +2167,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
         if (hit.isPresent()) {
             FXMLController.getActiveController().showPeakAttr();
-            FXMLController.peakAttrController.setPeak(hit.get());
+            FXMLController.peakAttrController.gotoPeak(hit.get());
         }
     }
 

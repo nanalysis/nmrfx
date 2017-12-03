@@ -23,8 +23,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -42,18 +40,13 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.converter.DoubleStringConverter;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.Optional;
 import javafx.collections.FXCollections;
-import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
@@ -79,16 +72,14 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
 
 /**
  *
  * @author johnsonb
  */
-public class PeakAttrController implements Initializable, PeakListener {
+public class PeakAttrController implements Initializable, PeakNavigable {
 
     static final DecimalFormat formatter = new DecimalFormat();
 
@@ -97,10 +88,6 @@ public class PeakAttrController implements Initializable, PeakListener {
     private ToolBar menuBar;
     @FXML
     private ToolBar peakNavigatorToolBar;
-    @FXML
-    private MenuButton peakListMenuButton;
-    @FXML
-    private TextField peakIdField;
     @FXML
     private TableView<PeakDim> peakTableView;
     @FXML
@@ -118,19 +105,20 @@ public class PeakAttrController implements Initializable, PeakListener {
     @FXML
     private TableView<SpectralDim> referenceTableView;
 
+    PeakNavigator peakNavigator;
+
     PeakList peakList;
     Peak currentPeak;
     ToggleButton deleteButton;
-    static Background deleteBackground = new Background(new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
-    Background defaultBackground = null;
-    Background defaultCellBackground = null;
     ComboTableCell comboTableCell = new ComboTableCell();
     ObservableList<String> relationChoiceItems = FXCollections.observableArrayList("", "D1", "D2", "D3", "D4");
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initMenuBar();
-        initPeakNavigator();
+        peakNavigator = new PeakNavigator(this);
+        System.out.println("nvbar " + peakNavigatorToolBar);
+        peakNavigator.initPeakNavigator(peakNavigatorToolBar);
         initTable();
         initReferenceTable();
         setFieldActions();
@@ -144,17 +132,6 @@ public class PeakAttrController implements Initializable, PeakListener {
 
             }
         });
-        peakIdField.setOnKeyReleased(kE -> {
-            if (kE.getCode() == KeyCode.ENTER) {
-                gotoPeakId();
-            }
-        });
-        updatePeakListMenu();
-        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
-            updatePeakListMenu();
-        };
-
-        PeakList.peakListTable.addListener(mapChangeListener);
 //        peakListMenuButton.setOnMousePressed(e -> {
 //            updatePeakListMenu();
 //            peakListMenuButton.show();
@@ -197,48 +174,10 @@ public class PeakAttrController implements Initializable, PeakListener {
 
     }
 
-    public void updatePeakListMenu() {
-        peakListMenuButton.getItems().clear();
-
-        for (String peakListName : PeakList.peakListTable.keySet()) {
-            MenuItem menuItem = new MenuItem(peakListName);
-            menuItem.setOnAction(e -> {
-                setPeakList(peakListName);
-            });
-            peakListMenuButton.getItems().add(menuItem);
-        }
-    }
-
-    public void setPeakList(String listName) {
-        peakList = PeakList.get(listName);
-        setPeakList(peakList);
-    }
-
-    public void setPeakList() {
-        peakList = PeakList.get(0);
-        setPeakList(peakList);
-    }
-
-    public void setPeakList(PeakList newPeakList) {
-        peakList = newPeakList;
-        if (peakList != null) {
-            currentPeak = peakList.getPeak(0);
-            stage.setTitle(peakList.getName());
-            peakList.registerListener(this);
-        } else {
-            stage.setTitle("Peak Inspector");
-        }
-        updatePeakTableView();
-        updateRefTableView();
-    }
-
-    public void updatePeakTableView() {
+    public void refreshPeakView() {
         if (peakTableView == null) {
             System.out.println("null table");
             return;
-        }
-        if (defaultBackground == null) {
-            defaultBackground = peakIdField.getBackground();
         }
 
         boolean clearIt = true;
@@ -252,20 +191,12 @@ public class PeakAttrController implements Initializable, PeakListener {
                 intensityField.setText(String.valueOf(currentPeak.getIntensity()));
                 volumeField.setText(String.valueOf(currentPeak.getVolume1()));
                 commentField.setText(currentPeak.getComment());
-                if (currentPeak.getStatus() < 0) {
-                    deleteButton.setSelected(true);
-                    peakIdField.setBackground(deleteBackground);
-                } else {
-                    deleteButton.setSelected(false);
-                    peakIdField.setBackground(defaultBackground);
-                }
                 clearIt = false;
             }
         }
         if (clearIt) {
             clearInsepctor();
         }
-        setPeakIdField();
     }
 
     public void updateDatasetNames() {
@@ -278,7 +209,7 @@ public class PeakAttrController implements Initializable, PeakListener {
         }
     }
 
-    public void updateRefTableView() {
+    public void refreshPeakListView() {
         if (referenceTableView == null) {
             System.out.println("null table");
             return;
@@ -307,71 +238,9 @@ public class PeakAttrController implements Initializable, PeakListener {
         commentField.setText("");
 
     }
-
-    @FXML
-    public void previousPeak(ActionEvent event) {
-        if (currentPeak != null) {
-            int peakIndex = currentPeak.getIndex();
-            peakIndex--;
-            if (peakIndex < 0) {
-                peakIndex = 0;
-            }
-            Peak peak = peakList.getPeak(peakIndex);
-            setPeak(peak);
-        }
-    }
-
-    @FXML
-    public void firstPeak(ActionEvent event) {
-        Peak peak = peakList.getPeak(0);
-        setPeak(peak);
-    }
-
-    @FXML
-    public void nextPeak(ActionEvent event) {
-        if (currentPeak != null) {
-            int peakIndex = currentPeak.getIndex();
-            peakIndex++;
-            if (peakIndex >= peakList.size()) {
-                peakIndex = peakList.size() - 1;
-            }
-            Peak peak = peakList.getPeak(peakIndex);
-            setPeak(peak);
-        }
-    }
-
-    @FXML
-    public void lastPeak(ActionEvent event) {
-        int peakIndex = peakList.size() - 1;
-        Peak peak = peakList.getPeak(peakIndex);
-        setPeak(peak);
-    }
-
-    public void gotoPeakId() {
-        if (peakList != null) {
-            int id = -1;
-            String idString = peakIdField.getText().trim();
-            if (idString.length() != 0) {
-                try {
-                    id = Integer.parseInt(idString);
-                } catch (NumberFormatException nfE) {
-                    peakIdField.setText("");
-                }
-                if (id != -1) {
-                    Peak peak = peakList.getPeakByID(id);
-                    setPeak(peak);
-                }
-            }
-        }
-    }
-
-    private void setPeakIdField() {
-        if (currentPeak == null) {
-            peakIdField.setText("");
-        } else {
-            peakIdField.setText(String.valueOf(currentPeak.getIdNum()));
-        }
-
+    
+    public void gotoPeak(Peak peak) {
+        peakNavigator.setPeak(peak);
     }
 
     public void setPeak(Peak peak) {
@@ -379,47 +248,23 @@ public class PeakAttrController implements Initializable, PeakListener {
         if (peakList != peak.getPeakList()) {
             peakList = peak.getPeakList();
             stage.setTitle(peakList.getName());
-            updateRefTableView();
+            refreshPeakListView();
         }
-        setPeakIdField();
-        updatePeakTableView();
+        refreshPeakView();
+    }
+    
+    public void initIfEmpty() {
+        peakNavigator.initIfEmpty();
     }
 
-    void initPeakNavigator() {
-        peakListMenuButton = new MenuButton("List");
-        peakIdField = new TextField();
-        peakIdField.setMinWidth(50);
-        peakIdField.setMaxWidth(50);
-
-        String iconSize = "12px";
-        String fontSize = "7pt";
-        ArrayList<Button> buttons = new ArrayList<>();
-        Button bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> firstPeak(e));
-        buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> previousPeak(e));
-        buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> nextPeak(e));
-        buttons.add(bButton);
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> lastPeak(e));
-        buttons.add(bButton);
-        deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
-        // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
-        // a second space bar hit would activate
-        deleteButton.setOnKeyPressed(e -> e.consume());
-        deleteButton.setOnAction(e -> setDeleteStatus(deleteButton));
-
-        for (Button button : buttons) {
-            // button.getStyleClass().add("toolButton");
+    public void setPeakList(PeakList peakList) {
+        this.peakList = peakList;
+        if (peakList != null) {
+            currentPeak = peakList.getPeak(0);
+            stage.setTitle(peakList.getName());
+        } else {
+            stage.setTitle("Peak Inspector");
         }
-        peakNavigatorToolBar.getItems().add(peakListMenuButton);
-        peakNavigatorToolBar.getItems().addAll(buttons);
-        peakNavigatorToolBar.getItems().add(peakIdField);
-        peakNavigatorToolBar.getItems().add(deleteButton);
 
     }
 
@@ -752,11 +597,6 @@ public class PeakAttrController implements Initializable, PeakListener {
         referenceTableView.getColumns().setAll(dimNameCol, nucCol, sfCol, swCol, tolCol, patternCol, relCol, spatialCol);
     }
 
-    @Override
-    public void peakListChanged(PeakEvent peakEvent) {
-        peakTableView.refresh();
-    }
-
     void saveList() {
         if (peakList != null) {
             try {
@@ -785,7 +625,7 @@ public class PeakAttrController implements Initializable, PeakListener {
             try {
                 PeakList newPeakList = PeakList.readXPK2Peaks(listFileName);
                 if (newPeakList != null) {
-                    setPeakList(newPeakList);
+                    peakNavigator.setPeakList(newPeakList);
                 }
             } catch (IOException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
@@ -796,17 +636,17 @@ public class PeakAttrController implements Initializable, PeakListener {
 
     void measureIntensities() {
         peakList.quantifyPeaks("center");
-        updatePeakTableView();
+        refreshPeakView();
     }
 
     void measureVolumes() {
         peakList.quantifyPeaks("volume");
-        updatePeakTableView();
+        refreshPeakView();
     }
 
     void measureEVolumes() {
         peakList.quantifyPeaks("evolume");
-        updatePeakTableView();
+        refreshPeakView();
     }
 
     void compressPeakList() {
@@ -814,7 +654,7 @@ public class PeakAttrController implements Initializable, PeakListener {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Permanently remove deleted peaks");
             alert.showAndWait().ifPresent(response -> {
                 peakList.compress();
-                updatePeakTableView();
+                refreshPeakView();
             });
         }
     }
@@ -824,7 +664,7 @@ public class PeakAttrController implements Initializable, PeakListener {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Renumber peak list (permanent!)");
             alert.showAndWait().ifPresent(response -> {
                 peakList.reNumber();
-                updatePeakTableView();
+                refreshPeakView();
             });
         }
     }
@@ -835,7 +675,7 @@ public class PeakAttrController implements Initializable, PeakListener {
             alert.showAndWait().ifPresent(response -> {
                 peakList.compress();
                 peakList.reNumber();
-                updatePeakTableView();
+                refreshPeakView();
             });
         }
     }
@@ -847,7 +687,7 @@ public class PeakAttrController implements Initializable, PeakListener {
                 if (response == ButtonType.OK) {
                     PeakList.remove(peakList.getName());
                     PeakList list = null;
-                    setPeakList(list);
+                    peakNavigator.setPeakList(list);
                 }
             });
         }
@@ -909,21 +749,9 @@ public class PeakAttrController implements Initializable, PeakListener {
             if (result.isPresent()) {
                 PeakList newPeakList = peakList.copy(result.get(), false, false);
                 if (newPeakList != null) {
-                    setPeakList(newPeakList);
+                    peakNavigator.setPeakList(newPeakList);
                 }
             }
         }
     }
-
-    void setDeleteStatus(ToggleButton button) {
-        if (currentPeak != null) {
-            if (button.isSelected()) {
-                currentPeak.setStatus(-1);
-            } else {
-                currentPeak.setStatus(0);
-            }
-            updatePeakTableView();
-        }
-    }
-
 }
