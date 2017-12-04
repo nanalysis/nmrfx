@@ -714,7 +714,6 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     void selectDataset() {
         if (peakList != null) {
             String name = (String) datasetNameField.getValue();
-            System.out.println("set dat " + name);
             peakList.setDatasetName(name);
         }
     }
