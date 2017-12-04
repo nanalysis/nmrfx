@@ -175,25 +175,30 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     }
 
     public void refreshPeakView() {
+        refreshPeakView(currentPeak);
+    }
+
+    public void refreshPeakView(Peak peak) {
         if (peakTableView == null) {
             System.out.println("null table");
             return;
         }
-
         boolean clearIt = true;
-        if (peakList != null) {
-            if (currentPeak != null) {
+        if (peak != null) {
+            if (peak != currentPeak) {
                 ObservableList<PeakDim> peakDimList = FXCollections.observableArrayList();
-                for (PeakDim peakDim : currentPeak.getPeakDims()) {
+                for (PeakDim peakDim : peak.getPeakDims()) {
                     peakDimList.add(peakDim);
                 }
                 peakTableView.setItems(peakDimList);
-                intensityField.setText(String.valueOf(currentPeak.getIntensity()));
-                volumeField.setText(String.valueOf(currentPeak.getVolume1()));
-                commentField.setText(currentPeak.getComment());
-                clearIt = false;
             }
+            peakTableView.refresh();
+            intensityField.setText(String.valueOf(peak.getIntensity()));
+            volumeField.setText(String.valueOf(peak.getVolume1()));
+            commentField.setText(peak.getComment());
+            clearIt = false;
         }
+        currentPeak = peak;
         if (clearIt) {
             clearInsepctor();
         }
@@ -209,13 +214,14 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         }
     }
 
-    public void refreshPeakListView() {
+    public void refreshPeakListView(PeakList refreshPeakList) {
         if (referenceTableView == null) {
             System.out.println("null table");
             return;
         }
         // fixme  need to update datasets upon dataset list change
         relationChoiceItems.clear();
+        peakList = refreshPeakList;
         if (peakList != null) {
             ObservableList<SpectralDim> peakDimList = FXCollections.observableArrayList();
             relationChoiceItems.add("");
@@ -238,7 +244,7 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         commentField.setText("");
 
     }
-    
+
     public void gotoPeak(Peak peak) {
         peakNavigator.setPeak(peak);
     }
@@ -248,11 +254,9 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         if (peakList != peak.getPeakList()) {
             peakList = peak.getPeakList();
             stage.setTitle(peakList.getName());
-            refreshPeakListView();
         }
-        refreshPeakView();
     }
-    
+
     public void initIfEmpty() {
         peakNavigator.initIfEmpty();
     }

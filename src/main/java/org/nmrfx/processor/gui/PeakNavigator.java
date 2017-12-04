@@ -146,24 +146,18 @@ public class PeakNavigator implements PeakListener {
             peakList.registerListener(this);
         } else {
         }
-        peakNavigable.setPeakList(peakList);
-        peakNavigable.refreshPeakView();
-        peakNavigable.refreshPeakListView();
+        peakNavigable.refreshPeakView(currentPeak);
+        peakNavigable.refreshPeakListView(peakList);
     }
 
     public void setPeak(Peak peak) {
         currentPeak = peak;
-        peakNavigable.setPeak(peak);
+        peakNavigable.refreshPeakView(peak);
         if (peakList != peak.getPeakList()) {
             peakList = peak.getPeakList();
-            peakNavigable.refreshPeakView();
-            peakNavigable.setPeakList(peakList);
-
-            //setTitle(peakList.getName());
-            peakNavigable.refreshPeakListView();
+            peakNavigable.refreshPeakListView(peakList);
         }
         setPeakIdField();
-        peakNavigable.refreshPeakView();
         updateDeleteStatus();
     }
 
@@ -250,14 +244,18 @@ public class PeakNavigator implements PeakListener {
             } else {
                 currentPeak.setStatus(0);
             }
-            peakNavigable.refreshPeakView();
+            peakNavigable.refreshPeakView(currentPeak);
         }
         updateDeleteStatus();
     }
 
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
-        peakNavigable.refreshPeakView();
+        if (peakEvent.getSource() instanceof PeakList) {
+            PeakList sourceList = (PeakList) peakEvent.getSource();
+            if (sourceList == peakList) {
+                peakNavigable.refreshPeakView();
+            }
+        }
     }
-
 }
