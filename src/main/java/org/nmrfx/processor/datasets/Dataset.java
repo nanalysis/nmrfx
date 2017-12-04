@@ -108,6 +108,7 @@ public class Dataset extends DoubleVector {
     private double[][] rmsd;
     private int posneg;
     private double lvl;
+    private boolean lvlSet = false;
     private double scale = 1.0;
     private int rdims;
     private String solvent = null;
@@ -1806,7 +1807,18 @@ public class Dataset extends DoubleVector {
      */
     public void setLvl(double lvl) {
         this.lvl = lvl;
+        lvlSet = true;
     }
+
+    /**
+     * Get whether lvl has been set (so that GUI programs can decide to do an auto level)
+     *
+     * @return true if lvl value has been explicitly set. 
+     */
+    public boolean isLvlSet() {
+        return lvlSet;
+    }
+
 
     /**
      * Get the scale value used to divide intensity values in dataset.
