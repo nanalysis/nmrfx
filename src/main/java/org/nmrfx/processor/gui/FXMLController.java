@@ -350,11 +350,11 @@ public class FXMLController implements FractionPaneChild, Initializable {
         } catch (IOException ioE) {
         }
     }
-    
+
     public PeakAttrController getPeakAttrController() {
         return peakAttrController;
     }
-    
+
     public boolean isPeakAttrControllerShowing() {
         boolean state = false;
         if (peakAttrController != null) {
@@ -435,7 +435,12 @@ public class FXMLController implements FractionPaneChild, Initializable {
         if (!reload) {
             if (!datasetAttributes.getHasLevel()) {
                 getActiveChart().full();
-                getActiveChart().autoScale();
+                if (datasetAttributes.getDataset().isLvlSet()) {
+                    datasetAttributes.setLevel(datasetAttributes.getDataset().getLvl());
+                    datasetAttributes.setHasLevel(true);
+                } else {
+                    getActiveChart().autoScale();
+                }
             }
         }
         getActiveChart().layoutPlotChildren();

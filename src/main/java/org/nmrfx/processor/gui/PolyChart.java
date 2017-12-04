@@ -1659,6 +1659,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             }
             if (append) {
                 datasetAttributes = new DatasetAttributes(dataset);
+                if (datasetAttributes.getDataset().isLvlSet()) {
+                    datasetAttributes.setLevel(datasetAttributes.getDataset().getLvl());
+                    datasetAttributes.setHasLevel(true);
+                }
                 datasetAttributesList.add(datasetAttributes);
             } else {
                 peakListAttributesList.clear();;
