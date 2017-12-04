@@ -155,6 +155,7 @@ public class PeakNavigator implements PeakListener {
         peakNavigable.refreshPeakView(peak);
         if (peakList != peak.getPeakList()) {
             peakList = peak.getPeakList();
+            peakList.registerListener(this);
             peakNavigable.refreshPeakListView(peakList);
         }
         setPeakIdField();

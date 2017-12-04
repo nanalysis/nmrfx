@@ -84,10 +84,14 @@
     <right>
     </right>
     <bottom>
-        <ToolBar fx:id="btoolBar" >
-            <items>
-                <Pane HBox.hgrow="ALWAYS" />
-            </items>
-        </ToolBar>
+        <VBox fx:id="bottomBox">
+            <children>
+                <ToolBar fx:id="btoolBar" >
+                    <items>
+                        <Pane HBox.hgrow="ALWAYS" />
+                    </items>
+                </ToolBar>
+            </children>
+        </VBox>
     </bottom>
 </BorderPane>

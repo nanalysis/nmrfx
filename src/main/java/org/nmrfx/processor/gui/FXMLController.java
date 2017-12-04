@@ -92,11 +92,13 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 
-public class FXMLController implements FractionPaneChild, Initializable {
+public class FXMLController implements FractionPaneChild, Initializable, PeakNavigable {
 
     @FXML
     private VBox topBar;
@@ -104,6 +106,8 @@ public class FXMLController implements FractionPaneChild, Initializable {
     private ToolBar toolBar;
     @FXML
     private ToolBar btoolBar;
+    @FXML
+    private VBox bottomBox;
     @FXML
     private StackPane chartPane;
     @FXML
@@ -159,6 +163,8 @@ public class FXMLController implements FractionPaneChild, Initializable {
 
     private FractionPane chartGroup;
     private boolean minimizeBorders = false;
+
+    PeakNavigator peakNavigator;
 
     public File getInitialDirectory() {
         if (initialDir == null) {
@@ -1107,6 +1113,35 @@ public class FXMLController implements FractionPaneChild, Initializable {
         return statusBar;
     }
 
+    @Override
+    public void refreshPeakView(Peak peak) {
+        if (peak != null) {
+            PolyChart chart = getActiveChart();
+            if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
+                DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
+                int cDim = chart.getNDim();
+                int pDim = peak.getPeakList().nDim;
+                int aDim = dataAttr.nDim;
+                Double[] ppms = new Double[cDim];
+                for (int i = 0; i < aDim; i++) {
+                    PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
+                    if (peakDim != null) {
+                        ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
+                    }
+                }
+                chart.moveTo(ppms);
+            }
+        }
+    }
+
+    @Override
+    public void refreshPeakView() {
+    }
+
+    @Override
+    public void refreshPeakListView(PeakList peakList) {
+    }
+
     class ChartLabel extends Label {
 
         PolyChart chart;
@@ -1349,6 +1384,10 @@ public class FXMLController implements FractionPaneChild, Initializable {
 
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);
+        ToolBar navBar = new ToolBar();
+        bottomBox.getChildren().add(navBar);
+        peakNavigator = new PeakNavigator(this);
+        peakNavigator.initPeakNavigator(navBar);
 
     }
 
