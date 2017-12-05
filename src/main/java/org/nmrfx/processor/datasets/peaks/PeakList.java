@@ -1377,77 +1377,68 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
         return (sPeaks);
     }
 
-    public static Vector matchPeaks(final int start, final String[] argv, final boolean useRegExp, final boolean useOrder) {
+    public List<Peak> matchPeaks(final String[] matchStrings, final boolean useRegExp, final boolean useOrder) {
         int j;
         int k;
         int l;
         boolean ok = false;
-        Peak peak;
-        PeakList peakList;
-        Vector result = new Vector();
-        int nPeaks;
-        Pattern[] patterns = new Pattern[argv.length - start - 1];
-        String[] simplePat = new String[argv.length - start - 1];
+        List<Peak> result = new ArrayList<>();
+        Pattern[] patterns = new Pattern[matchStrings.length];
+        String[] simplePat = new String[matchStrings.length];
+        System.out.println("ma " + matchStrings.length);
         if (useRegExp) {
-            for (k = (start + 1); k < argv.length; k++) {
-                patterns[k - start - 1] = Pattern.compile(argv[k].toUpperCase());
+            for (k = 0; k < matchStrings.length; k++) {
+                patterns[k] = Pattern.compile(matchStrings[k].toUpperCase().trim());
             }
         } else {
-            for (k = (start + 1); k < argv.length; k++) {
-                simplePat[k - start - 1] = argv[k].toUpperCase();
+            for (k = 0; k < matchStrings.length; k++) {
+                simplePat[k] = matchStrings[k].toUpperCase().trim();
+                System.out.println(k + " >" + simplePat[k] + "<");
             }
         }
 
-        Iterator iter = iterator();
-
-        while (iter.hasNext()) {
-            peakList = (PeakList) iter.next();
-
-            if (!Util.stringMatch(peakList.listName, argv[start].toString())) {
+        for (Peak peak : peaks) {
+            if (peak.getStatus() < 0) {
                 continue;
             }
 
-            nPeaks = peakList.size();
-
-            for (j = 0; j < nPeaks; j++) {
-                peak = peakList.getPeak(j);
-                if (peak.getStatus() < 0) {
-                    continue;
-                }
-
-                for (k = (start + 1); k < argv.length; k++) {
-                    ok = false;
-                    if (useOrder) {
-                        if (useRegExp) {
-                            Matcher matcher = patterns[k - start - 1].matcher(peak.peakDim[k - start - 1].getLabel().toUpperCase());
-                            if (matcher.find()) {
-                                ok = true;
-                            }
-                        } else if (Util.stringMatch(peak.peakDim[k - start - 1].getLabel().toUpperCase(), simplePat[k - start - 1].toString())) {
+            for (k = 0; k < matchStrings.length; k++) {
+                ok = false;
+                if (useOrder) {
+                    if (useRegExp) {
+                        Matcher matcher = patterns[k].matcher(peak.peakDim[k].getLabel().toUpperCase());
+                        if (matcher.find()) {
                             ok = true;
                         }
-                    } else {
-                        for (l = 0; l < peakList.nDim; l++) {
-                            if (useRegExp) {
-                                Matcher matcher = patterns[k - start - 1].matcher(peak.peakDim[l].getLabel().toUpperCase());
-                                if (matcher.find()) {
-                                    ok = true;
-                                    break;
-                                }
-                            } else if (Util.stringMatch(peak.peakDim[l].getLabel().toUpperCase(), simplePat[k - start - 1].toString())) {
+                    } else if (Util.stringMatch(peak.peakDim[k].getLabel().toUpperCase(), simplePat[k])) {
+                        ok = true;
+                    } else if ((simplePat[k].length() == 0) && (peak.peakDim[k].getLabel().length() == 0)) {
+                        ok = true;
+                    }
+                } else {
+                    for (l = 0; l < nDim; l++) {
+                        if (useRegExp) {
+                            Matcher matcher = patterns[k].matcher(peak.peakDim[l].getLabel().toUpperCase());
+                            if (matcher.find()) {
                                 ok = true;
                                 break;
                             }
+                        } else if (Util.stringMatch(peak.peakDim[l].getLabel().toUpperCase(), simplePat[k])) {
+                            ok = true;
+                            break;
+                        } else if ((simplePat[k].length() == 0) && (peak.peakDim[l].getLabel().length() == 0)) {
+                            ok = true;
+                            break;
                         }
                     }
-                    if (!ok) {
-                        break;
-                    }
                 }
+                if (!ok) {
+                    break;
+                }
+            }
 
-                if (ok) {
-                    result.addElement(peak.getName());
-                }
+            if (ok) {
+                result.add(peak);
             }
         }
 
