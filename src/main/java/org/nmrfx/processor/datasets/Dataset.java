@@ -1813,12 +1813,11 @@ public class Dataset extends DoubleVector {
     /**
      * Get whether lvl has been set (so that GUI programs can decide to do an auto level)
      *
-     * @return true if lvl value has been explicitly set. 
+     * @return true if lvl value has been explicitly set.
      */
     public boolean isLvlSet() {
         return lvlSet;
     }
-
 
     /**
      * Get the scale value used to divide intensity values in dataset.
@@ -2452,10 +2451,14 @@ public class Dataset extends DoubleVector {
      * @param multiplier unused?? should multiply width of regions
      * @return List of points near peak centers
      */
-    public static ArrayList<int[]> getFilteredPositions(final int[][] p2, final int[][] cpt, final double[][] width, double multiplier) {
+    public ArrayList<int[]> getFilteredPositions(final int[][] p2, final int[][] cpt, final double[][] width, int[] pdim, double multiplier) {
         int[] sizes = new int[p2.length];
         for (int iDim = 0; iDim < p2.length; iDim++) {
-            sizes[iDim] = p2[iDim][1] - p2[iDim][0] + 1;
+            if (p2[iDim][1] >= p2[iDim][0]) {
+                sizes[iDim] = p2[iDim][1] - p2[iDim][0] + 1;
+            } else {
+                sizes[iDim] = size[pdim[iDim]] - p2[iDim][0] - p2[iDim][1] + 1;
+            }
         }
         int nPoints = 1;
         for (int size : sizes) {
@@ -2468,25 +2471,33 @@ public class Dataset extends DoubleVector {
             int[] counts = iterator.next();
             int[] aCounts = new int[counts.length];
             int j = 0;
+            boolean inDataset = true;
             for (int value : counts) {
                 aCounts[j] = value + p2[j][0];
+                if (aCounts[j] >= size[pdim[j]]) {
+                    aCounts[j] -= size[pdim[j]];
+                } else if (aCounts[j] < 0) {
+                    aCounts[j] += size[pdim[j]];
+                }
                 j++;
             }
-            boolean ok = false;
-            for (int k = 0; k < cpt.length; k++) {
-                int i = 0;
-                double delta2 = 0.0;
-                for (int value : aCounts) {
-                    delta2 += ((value - cpt[k][i]) * (value - cpt[k][i])) / (0.47 * width[k][i] * width[k][i]);
-                    i++;
+            if (inDataset) {
+                boolean ok = false;
+                for (int k = 0; k < cpt.length; k++) {
+                    int i = 0;
+                    double delta2 = 0.0;
+                    for (int value : aCounts) {
+                        delta2 += ((value - cpt[k][i]) * (value - cpt[k][i])) / (0.47 * width[k][i] * width[k][i]);
+                        i++;
+                    }
+                    if (delta2 < 1.0) {
+                        ok = true;
+                        break;
+                    }
                 }
-                if (delta2 < 1.0) {
-                    ok = true;
-                    break;
+                if (ok) {
+                    posArray.add(aCounts);
                 }
-            }
-            if (ok) {
-                posArray.add(aCounts);
             }
         }
         return posArray;

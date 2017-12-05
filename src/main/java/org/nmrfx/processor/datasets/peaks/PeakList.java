@@ -3523,7 +3523,7 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
             GuessValue gValue = new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false);
             guessList.add(0, gValue);
         }
-        ArrayList<int[]> posArray = Dataset.getFilteredPositions(p2, cpt, width, multiplier);
+        ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, multiplier);
         for (CenterRef centerRef : centerList) {
             GuessValue gValue = guessList.get(centerRef.index);
             int offset = p2[centerRef.dim][0];
