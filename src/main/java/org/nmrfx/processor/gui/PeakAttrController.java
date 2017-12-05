@@ -117,7 +117,6 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     public void initialize(URL url, ResourceBundle rb) {
         initMenuBar();
         peakNavigator = new PeakNavigator(this);
-        System.out.println("nvbar " + peakNavigatorToolBar);
         peakNavigator.initPeakNavigator(peakNavigatorToolBar);
         initTable();
         initReferenceTable();
