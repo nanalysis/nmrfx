@@ -95,6 +95,7 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 
@@ -1116,20 +1117,20 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @Override
     public void refreshPeakView(Peak peak) {
         if (peak != null) {
-            PolyChart chart = getActiveChart();
-            if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
-                int cDim = chart.getNDim();
-                int pDim = peak.getPeakList().nDim;
-                int aDim = dataAttr.nDim;
-                Double[] ppms = new Double[cDim];
-                for (int i = 0; i < aDim; i++) {
-                    PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
-                    if (peakDim != null) {
-                        ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
+            for (PolyChart chart : charts) {
+                if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
+                    DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
+                    int cDim = chart.getNDim();
+                    int aDim = dataAttr.nDim;
+                    Double[] ppms = new Double[cDim];
+                    for (int i = 0; i < aDim; i++) {
+                        PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
+                        if (peakDim != null) {
+                            ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
+                        }
                     }
+                    chart.moveTo(ppms);
                 }
-                chart.moveTo(ppms);
             }
         }
     }
@@ -1139,7 +1140,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @Override
-    public void refreshPeakListView(PeakList peakList) {
+    public void refreshPeakListView(PeakList peakList
+    ) {
     }
 
     class ChartLabel extends Label {
@@ -1384,11 +1386,25 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);
-        ToolBar navBar = new ToolBar();
-        bottomBox.getChildren().add(navBar);
-        peakNavigator = new PeakNavigator(this);
-        peakNavigator.initPeakNavigator(navBar);
 
+    }
+
+    public void showPeakNavigator() {
+        if (peakNavigator == null) {
+            ToolBar navBar = new ToolBar();
+            bottomBox.getChildren().add(navBar);
+            peakNavigator = new PeakNavigator(this);
+            peakNavigator.initPeakNavigator(navBar);
+            peakNavigator.initIfEmpty();
+        }
+    }
+
+    public void removePeakNavigator() {
+        if (peakNavigator != null) {
+            peakNavigator.removePeakList();
+            peakNavigator = null;
+            bottomBox.getChildren().remove(1);
+        }
     }
 
     public void setNCharts(int nCharts) {

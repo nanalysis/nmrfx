@@ -1243,17 +1243,22 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    protected void moveTo(Double[] ppms) {
-        for (int axis = 0; axis < ppms.length; axis++) {
-            if (ppms[axis] != null) {
-                double[] limits = getRange(axis);
-                double lower = axes[axis].getLowerBound();
-                double upper = axes[axis].getUpperBound();
-                double range = Math.abs(upper - lower);
-                double newLower = ppms[axis] - range / 2;
-                double newUpper = ppms[axis] + range / 2;
-                System.out.println(ppms[axis] + " " + newLower + " " + newUpper + " " + limits[0] + " " + limits[1]);
-                setAxis(axis, newLower, newUpper);
+    protected void moveTo(Double[] positions) {
+        for (int axis = 0; axis < positions.length; axis++) {
+            if (positions[axis] != null) {
+                if (axis > 1) {
+                    DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+                    int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, positions[axis]);
+                    setAxis(axis, plane, plane);
+                } else {
+                    double[] limits = getRange(axis);
+                    double lower = axes[axis].getLowerBound();
+                    double upper = axes[axis].getUpperBound();
+                    double range = Math.abs(upper - lower);
+                    double newLower = positions[axis] - range / 2;
+                    double newUpper = positions[axis] + range / 2;
+                    setAxis(axis, newLower, newUpper);
+                }
             }
         }
     }

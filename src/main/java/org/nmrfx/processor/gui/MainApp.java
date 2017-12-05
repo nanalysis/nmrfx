@@ -253,11 +253,21 @@ public class MainApp extends Application {
         MenuItem scannerMenuItem = new MenuItem("Show Scanner");
         scannerMenuItem.setOnAction(e -> FXMLController.getActiveController().showScannerAction(e));
 
+        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem);
+
+        Menu peakMenu = new Menu("Peaks");
+
         MenuItem peakAttrMenuItem = new MenuItem("Show Peak Attributes");
         peakAttrMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakAttrAction(e));
 
+        MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
+        peakNavigatorMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakNavigator());
 
-        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem, peakAttrMenuItem);
+        MenuItem peakNavigatorRemoveMenuItem = new MenuItem("Remove Peak Navigator");
+        peakNavigatorRemoveMenuItem.setOnAction(e -> FXMLController.getActiveController().removePeakNavigator());
+
+        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, peakNavigatorRemoveMenuItem);
+
         // Window Menu
         // TBD standard window menu items
         // Help Menu (items TBD)
@@ -289,13 +299,13 @@ public class MainApp extends Application {
             Menu windowMenu = new Menu("Window");
             windowMenu.getItems().addAll(tk.createMinimizeMenuItem(), tk.createZoomMenuItem(), tk.createCycleWindowsItem(),
                     new SeparatorMenuItem(), tk.createBringAllToFrontItem());
-            menuBar.getMenus().addAll(appMenu, fileMenu, spectraMenu, viewMenu, windowMenu, helpMenu);
+            menuBar.getMenus().addAll(appMenu, fileMenu, spectraMenu, viewMenu, peakMenu, windowMenu, helpMenu);
             tk.autoAddWindowMenuItems(windowMenu);
             tk.setGlobalMenuBar(menuBar);
         } else {
             fileMenu.getItems().add(prefsItem);
             fileMenu.getItems().add(quitItem);
-            menuBar.getMenus().addAll(fileMenu, spectraMenu, viewMenu, helpMenu);
+            menuBar.getMenus().addAll(fileMenu, spectraMenu, viewMenu, peakMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
         return menuBar;

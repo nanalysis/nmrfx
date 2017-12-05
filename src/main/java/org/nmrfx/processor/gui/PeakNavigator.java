@@ -133,6 +133,14 @@ public class PeakNavigator implements PeakListener {
         }
     }
 
+    public void removePeakList() {
+        if (peakList != null) {
+            peakList.removeListener(this);
+        }
+        peakList = null;
+        currentPeak = null;
+    }
+
     public void setPeakList(String listName) {
         peakList = PeakList.get(listName);
         setPeakList(peakList);
@@ -198,8 +206,10 @@ public class PeakNavigator implements PeakListener {
     }
 
     public void firstPeak(ActionEvent event) {
-        Peak peak = peakList.getPeak(0);
-        setPeak(peak);
+        if (peakList != null) {
+            Peak peak = peakList.getPeak(0);
+            setPeak(peak);
+        }
     }
 
     public void nextPeak(ActionEvent event) {
@@ -215,9 +225,11 @@ public class PeakNavigator implements PeakListener {
     }
 
     public void lastPeak(ActionEvent event) {
-        int peakIndex = peakList.size() - 1;
-        Peak peak = peakList.getPeak(peakIndex);
-        setPeak(peak);
+        if (peakList != null) {
+            int peakIndex = peakList.size() - 1;
+            Peak peak = peakList.getPeak(peakIndex);
+            setPeak(peak);
+        }
     }
 
     public void gotoPeakId() {
