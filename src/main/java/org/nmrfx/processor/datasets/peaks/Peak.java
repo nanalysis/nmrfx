@@ -1301,7 +1301,7 @@ public class Peak implements Comparable, PeakOrMulti {
         }
         boolean ok = true;
         for (int j = 0; j < nSearchDim; j++) {
-            if ((dim.length <= j) || (dim[j] == -1)) {
+            if ((dim.length <= j) || (dim[j] == -1)  || (dim[j] >= peakDim.length)) {
                 continue;
             }
             double ctr = peakDim[dim[j]].getChemShiftValue();
