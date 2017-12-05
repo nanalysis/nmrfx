@@ -1385,7 +1385,6 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
         List<Peak> result = new ArrayList<>();
         Pattern[] patterns = new Pattern[matchStrings.length];
         String[] simplePat = new String[matchStrings.length];
-        System.out.println("ma " + matchStrings.length);
         if (useRegExp) {
             for (k = 0; k < matchStrings.length; k++) {
                 patterns[k] = Pattern.compile(matchStrings[k].toUpperCase().trim());
@@ -1393,7 +1392,6 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
         } else {
             for (k = 0; k < matchStrings.length; k++) {
                 simplePat[k] = matchStrings[k].toUpperCase().trim();
-                System.out.println(k + " >" + simplePat[k] + "<");
             }
         }
 
