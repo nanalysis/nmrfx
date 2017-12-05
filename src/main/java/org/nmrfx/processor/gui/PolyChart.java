@@ -525,7 +525,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                     DatasetAttributes datasetAttr = datasetAttributesList.get(0);
                     double pickX = xAxis.getValueForDisplay(mouseX).doubleValue();
                     double pickY = yAxis.getValueForDisplay(mouseY).doubleValue();
-                    PeakPicking.pickAtPosition(this, datasetAttr, pickX, pickY, shortString.equals("as"), true);
+                    PeakPicking.pickAtPosition(this, datasetAttr, pickX, pickY, shortString.equals("as"), false);
                     peakStatus.set(true);
                     keyMonitor.clear();
                     drawPeakLists(true);
