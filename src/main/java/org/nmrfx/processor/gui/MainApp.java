@@ -257,7 +257,7 @@ public class MainApp extends Application {
 
         Menu peakMenu = new Menu("Peaks");
 
-        MenuItem peakAttrMenuItem = new MenuItem("Show Peak Attributes");
+        MenuItem peakAttrMenuItem = new MenuItem("Show Peak Tool");
         peakAttrMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakAttrAction(e));
 
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
