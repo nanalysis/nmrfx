@@ -920,7 +920,7 @@ public class PeakList {
     }
 
     public void writePeaksXPK2(FileWriter chan) throws IOException, InvalidPeakException {
-        chan.write("name\tdataset\tndim\n");
+        chan.write("peaklist\tdataset\tndim\n");
         chan.write(getName() + "\t" + getDatasetName() + "\t" + nDim + "\n");
 
         for (int j = 0; j < xpkPeakDimStrings.length; j++) {
@@ -1000,8 +1000,8 @@ index   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U    N.L     
                         String[] data = lineData.split("\t");
                         int nDim = Integer.valueOf(data[map.get("ndim")]);
                         String listName = fileTail;
-                        if (map.get("name") != null) {
-                            listName = data[map.get("name")];
+                        if (map.get("peaklist") != null) {
+                            listName = data[map.get("peaklist")];
                         }
                         peakList = new PeakList(listName, nDim);
                         if (map.get("dataset") != null) {
