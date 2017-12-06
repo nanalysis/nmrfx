@@ -231,8 +231,10 @@ public class PeakAttrController implements Initializable, PeakNavigable {
             referenceTableView.setItems(peakDimList);
             peakListNameField.setText(peakList.getName());
             datasetNameField.setValue(peakList.getDatasetName());
+            stage.setTitle(peakList.getName());
         } else {
             referenceTableView.getItems().clear();
+            stage.setTitle("Peak Inspector");
         }
     }
 
