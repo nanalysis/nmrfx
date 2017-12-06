@@ -159,11 +159,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
         Object source = peakEvent.getSource();
         boolean draw = false;
+        PeakListAttributes activeAttr = null;
         if (peakStatus.get()) {
             if (source instanceof PeakList) {
                 PeakList peakList = (PeakList) source;
                 for (PeakListAttributes peakListAttr : peakListAttributesList) {
                     if (peakListAttr.getPeakList() == peakList) {
+                        activeAttr = peakListAttr;
                         draw = true;
                     }
                 }
@@ -171,6 +173,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
         if (true) {
             drawPeakLists(false);
+            List<Peak> peaks = activeAttr.getSelectedPeaks();
+            if (!peaks.isEmpty()) {
+                drawSelectedPeaks(activeAttr);
+            }
         }
     }
 
@@ -2074,13 +2080,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 }
             }
         });
-        drawPeakLists(false);
-        peakListAttributesList.forEach((peakListAttr) -> {
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
-            if (!peaks.isEmpty()) {
-                drawSelectedPeaks(peakListAttr);
-            }
-        });
+//        drawPeakLists(false);
+//        peakListAttributesList.forEach((peakListAttr) -> {
+//            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+//            if (!peaks.isEmpty()) {
+//                drawSelectedPeaks(peakListAttr);
+//            }
+//        });
     }
 
     void fitPeakLists() {
@@ -2094,13 +2100,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 }
             }
         });
-        drawPeakLists(false);
-        peakListAttributesList.forEach((peakListAttr) -> {
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
-            if (!peaks.isEmpty()) {
-                drawSelectedPeaks(peakListAttr);
-            }
-        });
+//        drawPeakLists(false);
+//        peakListAttributesList.forEach((peakListAttr) -> {
+//            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+//            if (!peaks.isEmpty()) {
+//                drawSelectedPeaks(peakListAttr);
+//            }
+//        });
     }
 
     void tweakPeaks() {
@@ -2117,13 +2123,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 }
             }
         });
-        drawPeakLists(false);
-        peakListAttributesList.forEach((peakListAttr) -> {
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
-            if (!peaks.isEmpty()) {
-                drawSelectedPeaks(peakListAttr);
-            }
-        });
+//        drawPeakLists(false);
+//        peakListAttributesList.forEach((peakListAttr) -> {
+//            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+//            if (!peaks.isEmpty()) {
+//                drawSelectedPeaks(peakListAttr);
+//            }
+//        });
     }
 
     void tweakPeakLists() {
@@ -2137,13 +2143,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 }
             }
         });
-        drawPeakLists(false);
-        peakListAttributesList.forEach((peakListAttr) -> {
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
-            if (!peaks.isEmpty()) {
-                drawSelectedPeaks(peakListAttr);
-            }
-        });
+//        drawPeakLists(false);
+//        peakListAttributesList.forEach((peakListAttr) -> {
+//            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+//            if (!peaks.isEmpty()) {
+//                drawSelectedPeaks(peakListAttr);
+//            }
+//        });
     }
 
     void drawPeakLists(boolean clear) {
