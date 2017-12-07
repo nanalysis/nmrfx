@@ -74,6 +74,8 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.processor.datasets.peaks.io.PeakReader;
+import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
 
 /**
  *
@@ -611,7 +613,8 @@ public class PeakAttrController implements Initializable, PeakNavigable {
                     String listFileName = file.getPath();
 
                     try (FileWriter writer = new FileWriter(listFileName)) {
-                        peakList.writePeaksXPK2(writer);
+                            PeakWriter peakWriter = new PeakWriter();
+                            peakWriter.writePeaksXPK2(writer, peakList);
                         writer.close();
                     }
                 }
@@ -628,7 +631,7 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         if (file != null) {
             String listFileName = file.getPath();
             try {
-                PeakList newPeakList = PeakList.readXPK2Peaks(listFileName);
+                PeakList newPeakList = PeakReader.readXPK2Peaks(listFileName);
                 if (newPeakList != null) {
                     peakNavigator.setPeakList(newPeakList);
                 }

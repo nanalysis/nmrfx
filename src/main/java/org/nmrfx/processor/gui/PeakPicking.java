@@ -15,6 +15,7 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPick;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
+import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
 /**
@@ -70,7 +71,8 @@ public class PeakPicking {
             chart.setupPeakListAttributes(peakList);
             if (saveFile) {
                 try (final FileWriter writer = new FileWriter(listFileName)) {
-                    peakList.writePeaksXPK2(writer);
+                            PeakWriter peakWriter = new PeakWriter();
+                            peakWriter.writePeaksXPK2(writer, peakList);
                 }
             }
         } catch (IOException | InvalidPeakException ioE) {
@@ -114,7 +116,8 @@ public class PeakPicking {
                 chart.setupPeakListAttributes(peakList);
                 if (saveFile) {
                     try (final FileWriter writer = new FileWriter(listFileName)) {
-                        peakList.writePeaksXPK2(writer);
+                            PeakWriter peakWriter = new PeakWriter();
+                            peakWriter.writePeaksXPK2(writer, peakList);
                     }
                 }
                 peak = picker.getLastPick();

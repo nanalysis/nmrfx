@@ -52,8 +52,8 @@ import org.controlsfx.dialog.ExceptionDialog;
 import static javafx.application.Application.launch;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
+import org.nmrfx.processor.datasets.peaks.io.PeakReader;
+import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
 import org.nmrfx.processor.utilities.WebConnect;
 
 public class MainApp extends Application {
@@ -408,7 +408,8 @@ public class MainApp extends Application {
                     String listFileName = canonFileName.substring(0, dotIndex) + ".xpk2";
                     try {
                         try (FileWriter writer = new FileWriter(listFileName)) {
-                            peakList.writePeaksXPK2(writer);
+                            PeakWriter peakWriter = new PeakWriter();
+                            peakWriter.writePeaksXPK2(writer, peakList);
                             writer.close();
                         }
                     } catch (IOException | InvalidPeakException ioE) {
@@ -434,7 +435,7 @@ public class MainApp extends Application {
                     listName = listName.substring(0, dotIndex);
                     if (PeakList.get(listName) == null) {
                         try {
-                            PeakList.readXPK2Peaks(listFileName);
+                            PeakReader.readXPK2Peaks(listFileName);
                         } catch (IOException ioE) {
                             ExceptionDialog dialog = new ExceptionDialog(ioE);
                             dialog.showAndWait();
