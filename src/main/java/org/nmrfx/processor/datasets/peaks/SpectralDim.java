@@ -129,7 +129,7 @@ public class SpectralDim {
         return peakList;
     }
 
-    String toSTAR3LoopPeakCharString() {
+    public String toSTAR3LoopPeakCharString() {
         StringBuffer result = new StringBuffer();
         String sep = " ";
         char stringQuote = '"';
@@ -178,7 +178,7 @@ public class SpectralDim {
     }
 //     1   ppm   1H    500.13   4.998700337912143    9.898700337912143    circular   true   true
 
-    String toXPK2Dim() {
+    public String toXPK2Dim() {
         StringBuilder result = new StringBuilder();
         String sep = "\t";
 

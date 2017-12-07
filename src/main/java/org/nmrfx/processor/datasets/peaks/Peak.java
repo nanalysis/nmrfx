@@ -31,12 +31,6 @@ import org.nmrfx.processor.datasets.RegionData;
 
 public class Peak implements Comparable, PeakOrMulti {
 
-    static String assignedPeakChemShiftStrings[] = {
-        "_Assigned_peak_chem_shift.Peak_ID",
-        "_Assigned_peak_chem_shift.Spectral_dim_ID",
-        "_Assigned_peak_chem_shift.Val",
-        "_Assigned_peak_chem_shift.Resonance_ID",
-        "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
     static String peakStrings[] = {
         "_Peak.ID",
         "_Peak.Figure_of_merit",
@@ -691,7 +685,7 @@ public class Peak implements Comparable, PeakOrMulti {
         }
     }
 
-    String toSTAR3LoopPeakString() {
+    public String toSTAR3LoopPeakString() {
         StringBuffer result = new StringBuffer();
         String sep = " ";
         char stringQuote = '"';
@@ -717,7 +711,7 @@ public class Peak implements Comparable, PeakOrMulti {
         return result.toString();
     }
 
-    String toSTAR3LoopIntensityString(int mode) {
+    public String toSTAR3LoopIntensityString(int mode) {
         StringBuffer result = new StringBuffer();
         String sep = " ";
 //FIXME  need to add intensity object list to Peak
@@ -740,7 +734,7 @@ public class Peak implements Comparable, PeakOrMulti {
         return result.toString();
     }
 
-    String toNEFString(int id) {
+    public String toNEFString(int id) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
         // need to fix ambiguous
@@ -764,7 +758,7 @@ public class Peak implements Comparable, PeakOrMulti {
         return result.toString();
     }
 
-    String toMyString() {
+    public String toMyString() {
         StringBuffer result = new StringBuffer();
         String sep = " ";
         char stringQuote = '"';
@@ -885,7 +879,7 @@ public class Peak implements Comparable, PeakOrMulti {
         return (result.toString().trim());
     }
 
-    String toXMLString() {
+    public String toXMLString() {
         StringBuffer result = new StringBuffer();
 
         /*

@@ -348,7 +348,7 @@ public class PeakDim {
         peakDimUpdated();
     }
 
-    String toSTAR3LoopAssignedPeakChemShiftString(int iContrib, long resID) {
+    public String toSTAR3LoopAssignedPeakChemShiftString(int iContrib, long resID) {
         StringBuffer result = new StringBuffer();
         String sep = " ";
         result.append(getPeak().getIdNum() + sep);
@@ -363,7 +363,7 @@ public class PeakDim {
         return result.toString();
     }
 
-    String toSTAR3LoopPeakCharString(int contributionID) {
+    public String toSTAR3LoopPeakCharString(int contributionID) {
         StringBuffer result = new StringBuffer();
         String sep = " ";
         char stringQuote = '"';
