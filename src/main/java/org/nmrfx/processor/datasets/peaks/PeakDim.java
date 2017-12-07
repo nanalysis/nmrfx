@@ -879,4 +879,14 @@ public class PeakDim {
             // fixme unused } else if (name.equals("Derivation_method")) {
         }
     }
+
+    void slideDims() {
+        List<PeakDim> links = getLinkedPeakDims();
+        for (PeakDim peakDim : links) {
+            if (peakDim != this) {
+                // use field so we don't fire recursive slideDims
+                peakDim.chemShift = chemShift;
+            }
+        }
+    }
 }
