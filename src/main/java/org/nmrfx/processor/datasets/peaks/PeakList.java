@@ -88,7 +88,7 @@ public class PeakList {
     boolean multipletsSorted = false;
     ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture futureUpdate = null;
-    boolean slideable = true;
+    boolean slideable = false;
 
     class UpdateTask implements Runnable {
 
