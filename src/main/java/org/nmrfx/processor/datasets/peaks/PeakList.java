@@ -88,6 +88,7 @@ public class PeakList {
     boolean multipletsSorted = false;
     ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture futureUpdate = null;
+    boolean slideable = true;
 
     class UpdateTask implements Runnable {
 
@@ -1882,6 +1883,14 @@ public class PeakList {
                 }
             }
         }
+    }
+    
+    public boolean isSlideable() {
+        return slideable;
+    }
+    
+    public void setSlideable(boolean state) {
+        slideable = state;
     }
 
     public static void unLinkPeak(Peak peak, int iDim) {

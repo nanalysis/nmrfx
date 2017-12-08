@@ -76,6 +76,8 @@ public class Peak implements Comparable, PeakOrMulti {
     static final private int nTypes = 9;
     static private String[] peakTypes = new String[nTypes];
 
+    static final public Color[] FREEZE_COLORS = {Color.ORANGE, Color.MAGENTA, Color.RED};
+
     static {
         int j = 1;
 
@@ -1185,7 +1187,21 @@ public class Peak implements Comparable, PeakOrMulti {
         this.comment = comment;
         peakUpdated(this);
     }
-
+    
+    public void updateFrozenColor() {
+        int index = 0;
+        if (peakDim[0].isFrozen()) {
+            index++;
+        }
+        if ((peakDim.length > 1) && peakDim[1].isFrozen()) {
+            index += 2;
+        }
+        if (index == 0) {
+            color = null;
+        } else {
+            color = FREEZE_COLORS[index-1];
+        }
+    }
     public boolean getFlag(int index) {
         return flag[index];
     }
@@ -1295,7 +1311,7 @@ public class Peak implements Comparable, PeakOrMulti {
         }
         boolean ok = true;
         for (int j = 0; j < nSearchDim; j++) {
-            if ((dim.length <= j) || (dim[j] == -1)  || (dim[j] >= peakDim.length)) {
+            if ((dim.length <= j) || (dim[j] == -1) || (dim[j] >= peakDim.length)) {
                 continue;
             }
             double ctr = peakDim[dim[j]].getChemShiftValue();
