@@ -94,6 +94,7 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.python.core.PyObject;
@@ -1405,6 +1406,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             peakNavigator = null;
             bottomBox.getChildren().remove(1);
         }
+    }
+
+    public void linkPeakDims() {
+        PeakLinker linker = new PeakLinker();
+        linker.linkAllPeakListsByLabel();
     }
 
     public void setNCharts(int nCharts) {

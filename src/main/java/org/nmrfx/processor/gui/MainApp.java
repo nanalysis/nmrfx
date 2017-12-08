@@ -266,7 +266,10 @@ public class MainApp extends Application {
         MenuItem peakNavigatorRemoveMenuItem = new MenuItem("Remove Peak Navigator");
         peakNavigatorRemoveMenuItem.setOnAction(e -> FXMLController.getActiveController().removePeakNavigator());
 
-        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, peakNavigatorRemoveMenuItem);
+        MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
+        linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
+
+        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, peakNavigatorRemoveMenuItem, linkPeakDimsMenuItem);
 
         // Window Menu
         // TBD standard window menu items
