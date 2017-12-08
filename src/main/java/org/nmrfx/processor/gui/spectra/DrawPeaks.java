@@ -1249,7 +1249,7 @@ public class DrawPeaks {
             int nPeaks = 0;
             for (int k = 0, nRootPeaks = peaks.size(); k < nRootPeaks; k++) {
                 Peak kPeak = (Peak) peaks.get(k);
-                ArrayList<Peak> lPeaks = PeakList.getLinks(kPeak, true);
+                List<Peak> lPeaks = PeakList.getLinks(kPeak, true);
 
                 for (Peak lPeak : lPeaks) {
                     double wid = Math.abs(lPeak.peakDim[0].getLineWidthValue());
@@ -1298,7 +1298,7 @@ public class DrawPeaks {
                 bpCoords[iCoord] = f;
                 for (int k = 0, nRootPeaks = peaks.size(); k < nRootPeaks; k++) {
                     Peak kPeak = (Peak) peaks.get(k);
-                    ArrayList<Peak> lPeaks = PeakList.getLinks(kPeak, true);
+                    List<Peak> lPeaks = PeakList.getLinks(kPeak, true);
 
                     for (Peak lPeak : lPeaks) {
                         double c = lPeak.peakDim[0].getChemShiftValue();
