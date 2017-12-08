@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import java.util.Iterator;
 import java.util.List;
 
 /**

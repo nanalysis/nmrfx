@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -88,16 +89,20 @@ public class SimpleResonance implements Resonance {
 
     @Override
     public void merge(Resonance resB) {
-        List<PeakDim> peakDimsB = resB.getPeakDims();
-        System.out.println("merge " + peakDims.size() + " " + peakDimsB.size());
-        int sizeA = peakDims.size();
-        int sizeB = peakDimsB.size();
-        for (PeakDim peakDim : peakDimsB) {
-            peakDim.setResonance(this);
-            peakDims.add(peakDim);
+        if (resB != this) {
+            Collection<PeakDim> peakDimsB = resB.getPeakDims();
+            System.out.println("merge " + peakDims.size() + " " + peakDimsB.size());
+            int sizeA = peakDims.size();
+            int sizeB = peakDimsB.size();
+            for (PeakDim peakDim : peakDimsB) {
+                peakDim.setResonance(this);
+                if (!peakDims.contains(peakDim)) {
+                    peakDims.add(peakDim);
+                }
+            }
+            peakDimsB.clear();
+            System.out.println("mergd " + peakDims.size() + " " + peakDimsB.size());
         }
-        peakDimsB.clear();
-        System.out.println("mergd " + peakDims.size() + " " + peakDimsB.size());
 
     }
 
@@ -109,6 +114,8 @@ public class SimpleResonance implements Resonance {
     @Override
     public void add(PeakDim peakDim) {
         peakDim.setResonance(this);
-        peakDims.add(peakDim);
+        if (!peakDims.contains(peakDim)) {
+            peakDims.add(peakDim);
+        }
     }
 }
