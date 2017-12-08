@@ -1187,7 +1187,7 @@ public class Peak implements Comparable, PeakOrMulti {
         this.comment = comment;
         peakUpdated(this);
     }
-    
+
     public void updateFrozenColor() {
         int index = 0;
         if (peakDim[0].isFrozen()) {
@@ -1199,11 +1199,18 @@ public class Peak implements Comparable, PeakOrMulti {
         if (index == 0) {
             color = null;
         } else {
-            color = FREEZE_COLORS[index-1];
+            color = FREEZE_COLORS[index - 1];
         }
     }
+
     public boolean getFlag(int index) {
         return flag[index];
+    }
+
+    public void setFrozen(boolean state) {
+        for (PeakDim pDim : peakDim) {
+            pDim.setFrozen(state);
+        }
     }
 
     public void setFlag(int index, boolean value) {
