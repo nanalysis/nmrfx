@@ -391,7 +391,7 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public void initPeakDimContribs() {
         for (int i = 0; i < peakDim.length; i++) {
-            peakDim[i].initPeakDimContribs();
+            peakDim[i].initResonance();
         }
     }
 
@@ -570,7 +570,7 @@ public class Peak implements Comparable, PeakOrMulti {
         }
         if (PeakList.clusterOrigin != null) {
             for (int iDim = startDim; iDim <= lastDim; iDim++) {
-                ArrayList linkedPeakDims = PeakList.getLinkedPeakDims(this, iDim);
+                List<PeakDim> linkedPeakDims = PeakList.getLinkedPeakDims(this, iDim);
                 for (int i = 0, n = linkedPeakDims.size(); i < n; i++) {
                     PeakDim linkedDim = (PeakDim) linkedPeakDims.get(i);
                     if (linkedDim.getPeak().peakList == PeakList.clusterOrigin) {
@@ -671,7 +671,7 @@ public class Peak implements Comparable, PeakOrMulti {
         this.setType(type);
 
         if ((flagLoc >= 0) && (flagLoc < NFLAGS)) {
-            ArrayList lPeaks = PeakList.getLinks(this);
+            List<Peak> lPeaks = PeakList.getLinks(this);
 
             for (int i = 0, n = lPeaks.size(); i < n; i++) {
                 Peak lPeak = (Peak) lPeaks.get(i);
@@ -818,7 +818,7 @@ public class Peak implements Comparable, PeakOrMulti {
                     + sep);
 
             result.append(stringQuote);
-            result.append(String.valueOf(peakDim[i].getResonanceIDs()));
+            result.append(String.valueOf(peakDim[i].getResonanceIDsAsString()));
             result.append(stringQuote);
             result.append(sep);
             result.append(sep + stringQuote + peakDim[i].getUser()
@@ -945,7 +945,7 @@ public class Peak implements Comparable, PeakOrMulti {
             result.append("<_j dim=\"" + i + "\">"
                     + peakDim[i].getMultiplet().getCouplingsAsString() + "</j>" + "\n");
             result.append("<_j dim=\"" + i + "\">"
-                    + peakDim[i].getResonanceIDs() + "</j>" + "\n");
+                    + peakDim[i].getResonanceIDsAsString() + "</j>" + "\n");
 
             result.append("<_user dim=\"" + i + "\">" + peakDim[i].getUser()
                     + "</_user>" + "\n");
@@ -1025,7 +1025,7 @@ public class Peak implements Comparable, PeakOrMulti {
         CouplingUpdate cUpdate = null;
         PeakDim pDim = peakDim[iDim];
 
-        ArrayList<PeakDim> links = pDim.getLinkedPeakDims();
+        List<PeakDim> links = pDim.getLinkedPeakDims();
         links.sort(comparing(PeakDim::getChemShift));
 
         int iPos = 0;

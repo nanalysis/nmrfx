@@ -46,8 +46,7 @@ public class PeakDim {
     private char[] error = {'+', '+'};
     private String user = "";
     Peak myPeak = null;
-    private PeakDimContrib pdC = null;
-    private ArrayList peakDimContribs = null;
+    private Resonance resonance;
 
     void peakDimUpdated() {
         if (myPeak != null) {
@@ -83,56 +82,9 @@ public class PeakDim {
     }
 
     public void copyLabels(PeakDim newPeakDim) {
-        Resonance resOld = pdC.getResonance();
-        Resonance resNew = newPeakDim.pdC.getResonance();
+        Resonance resOld = getResonance();
+        Resonance resNew = newPeakDim.getResonance();
         resNew.setName(resOld.getName());
-    }
-
-    public void initPeakDimContribs() {
-        if (pdC == null) {
-            pdC = new PeakDimContrib(this);
-        }
-        if ((peakDimContribs != null) && (peakDimContribs.size() == 0)) {
-            PeakDimContrib peakDimContrib = new PeakDimContrib(this);
-            peakDimContribs.add(peakDimContrib);
-        }
-        multiplet = new Multiplet(this);
-    }
-
-    class ResonanceIterator implements Iterator {
-
-        PeakDimContrib pdC;
-
-        public ResonanceIterator(PeakDimContrib pdC) {
-            this.pdC = pdC;
-        }
-
-        public boolean hasNext() {
-            boolean hasNext = false;
-            if (pdC != null) {
-                hasNext = true;
-            }
-            return hasNext;
-        }
-
-        public PeakDimContrib next() {
-            PeakDimContrib result = pdC;
-            pdC = null;
-            return result;
-        }
-
-        public void remove() {
-            pdC = null;
-        }
-    }
-
-    public Iterator getIterator() {
-        if (peakDimContribs != null) {
-            return peakDimContribs.iterator();
-        } else {
-            ResonanceIterator ri = new ResonanceIterator(pdC);
-            return ri;
-        }
     }
 
     public String getDimName() {
@@ -143,113 +95,21 @@ public class PeakDim {
         return myPeak.getName() + "." + getDimName();
     }
 
-    public void addResonance(long resID) {
-        boolean alreadyHasResonance = false;
-        Iterator iter = getIterator();
-        while (iter.hasNext()) {
-            PeakDimContrib pdc = (PeakDimContrib) iter.next();
-            Resonance resonance = pdc.getResonance();
-            if (resonance.getID() == resID) {
-                alreadyHasResonance = true;
-                break;
-            }
-        }
-
-        if (!alreadyHasResonance) {
-            Resonance resonance = resFactory.get(resID);
-            if (resonance == null) {
-                resonance = resFactory.build();
-            }
-            PeakDimContrib peakDimContrib = new PeakDimContrib(this, resonance);
-            addPeakDimContrib(peakDimContrib);
-        }
+    public void initResonance() {
+        resonance = resFactory.build();
+        resonance.add(this);
     }
 
-    void addPeakDimContrib(PeakDimContrib peakDimContrib) {
-        if (peakDimContribs == null) {
-            if (pdC == null) {
-                pdC = peakDimContrib;
-            } else {
-                peakDimContribs = new ArrayList();
-                peakDimContribs.add(pdC);
-                pdC = null;
-                if (!peakDimContribs.contains(peakDimContrib)) {
-                    peakDimContribs.add(peakDimContrib);
-                }
-            }
-        } else if (!peakDimContribs.contains(peakDimContrib)) {
-            peakDimContribs.add(peakDimContrib);
-        }
-    }
-
-    /*
-     public ArrayList getPeakDimContribs() {
-     return peakDimContribs;
-     }*/
-    public ArrayList getResonances() {
-        ArrayList resonances = new ArrayList();
-        Iterator iter = getIterator();
-        while (iter.hasNext()) {
-            PeakDimContrib pdc = (PeakDimContrib) iter.next();
-            resonances.add(pdc.getResonance());
-        }
-        return (resonances);
-    }
-
-    public List<String> getResonanceNames() {
-        ArrayList resonances = getResonances();
-        List<String> list = new ArrayList<>();
-        Iterator iter = resonances.iterator();
-        while (iter.hasNext()) {
-            Resonance resonance = (Resonance) iter.next();
-            list.add(resonance.getName());
-        }
-        return list;
+    public Resonance getResonance() {
+        return resonance;
     }
 
     public String getResonanceIDsAsString() {
-        ArrayList resonances = getResonances();
-        Iterator iter = resonances.iterator();
-        StringBuffer sBuf = new StringBuffer();
-        int i = 0;
-        while (iter.hasNext()) {
-            Resonance resonance = (Resonance) iter.next();
-            if (i > 0) {
-                sBuf.append(" ");
-            }
-            sBuf.append(resonance.getIDString());
-            i++;
-        }
-        return sBuf.toString();
+        return resonance.getIDString();
     }
 
-    public List<String> getResonanceIDs() {
-        ArrayList resonances = getResonances();
-        List<String> list = new ArrayList<>();
-        Iterator iter = resonances.iterator();
-        while (iter.hasNext()) {
-            Resonance resonance = (Resonance) iter.next();
-            if (resonance != null) {
-                list.add(resonance.getIDString());
-            }
-        }
-        return list;
-    }
-
-    public ArrayList<PeakDim> getLinkedPeakDims() {
-        ArrayList resonances = getResonances();
-        ArrayList<PeakDim> peakDims = new ArrayList<PeakDim>();
-        Iterator iter = resonances.iterator();
-        while (iter.hasNext()) {
-            Resonance resonance = (Resonance) iter.next();
-            Iterator iter2 = resonance.getIterator();
-            while (iter2.hasNext()) {
-                PeakDimContrib peakDimContrib = (PeakDimContrib) iter2.next();
-                peakDims.add(peakDimContrib.getPeakDim());
-            }
-
-        }
-        return peakDims;
+    public List<PeakDim> getLinkedPeakDims() {
+        return resonance.getPeakDims();
     }
 
     public String getSummary() {
@@ -307,16 +167,8 @@ public class PeakDim {
     }
 
     public void unLink() {
-        Iterator iter = getIterator();
-        while (iter.hasNext()) {
-            PeakDimContrib pdc = (PeakDimContrib) iter.next();
-            Resonance resonance = pdc.getResonance();
-            String name = resonance.getName();
-            resonance.removePeakDimContrib(pdc);
-            Resonance newResonance = resFactory.build(pdc);
-            newResonance.setName(name);
-            pdc.setResonance(newResonance);
-        }
+        resonance.remove(this);
+        resonance = resFactory.build();
         if (multiplet != null) {
             multiplet.removePeakDim(this);
         }
@@ -326,26 +178,18 @@ public class PeakDim {
     }
 
     public void remove() {
-        Iterator iter = getIterator();
-        while (iter.hasNext()) {
-            PeakDimContrib pdc = (PeakDimContrib) iter.next();
-            Resonance resonance = pdc.getResonance();
-            resonance.removePeakDimContrib(pdc);
+        if (resonance != null) {
+            resonance.remove(this);
         }
     }
 
     public void setResonance(long resID) {
+        remove();
+        resonance = resFactory.get(resID);
+    }
 
-        Iterator iter = getIterator();
-        while (iter.hasNext()) {
-            PeakDimContrib pdc = (PeakDimContrib) iter.next();
-            Resonance resonance = pdc.getResonance();
-            resonance.removePeakDimContrib(pdc);
-        }
-
-        //  peakDimContribs.clear();
-        addResonance(resID);
-        peakDimUpdated();
+    public void setResonance(Resonance newResonance) {
+        resonance = newResonance;
     }
 
     public String toSTAR3LoopAssignedPeakChemShiftString(int iContrib, long resID) {
@@ -696,37 +540,11 @@ public class PeakDim {
     }
 
     public String getLabel() {
-        ArrayList resonances = getResonances();
-        Iterator iter = resonances.iterator();
-        StringBuffer sBuf = new StringBuffer();
-        int i = 0;
-        while (iter.hasNext()) {
-            Resonance resonance = (Resonance) iter.next();
-            if (i > 0) {
-                sBuf.append(" ");
-            }
-            if (resonance != null) {
-                sBuf.append(resonance.getName());
-            }
-            i++;
-        }
-        return sBuf.toString();
+        return resonance.getName();
     }
 
     public String getAtomLabel() {
-        ArrayList resonances = getResonances();
-        Iterator iter = resonances.iterator();
-        StringBuilder sBuf = new StringBuilder();
-        int i = 0;
-        while (iter.hasNext()) {
-            Resonance resonance = (Resonance) iter.next();
-            if (i > 0) {
-                sBuf.append(" ");
-            }
-            sBuf.append(resonance.getAtomName());
-            i++;
-        }
-        return sBuf.toString();
+        return resonance.getAtomName();
     }
 
     public void setLabel(String label) {
@@ -736,46 +554,7 @@ public class PeakDim {
     }
 
     public void setLabel(List<String> labelArgs) {
-        ArrayList resonances = getResonances();
-        if (labelArgs.size() == 0) {
-            labelArgs.add("");
-        }
-        Iterator iter = getIterator();
-        if (labelArgs.size() < resonances.size()) {
-            if (labelArgs.size() == 0) {
-                labelArgs.add("");
-            }
-            boolean[] used = new boolean[labelArgs.size()];
-            while (iter.hasNext()) {
-                PeakDimContrib peakDimContrib = (PeakDimContrib) iter.next();
-                boolean matched = false;
-                for (int j = 0; j < labelArgs.size(); j++) {
-                    if (!used[j] && peakDimContrib.getResonance().getName().equals(labelArgs.get(j).toString())) {
-                        matched = true;
-                        used[j] = true;
-                        break;
-                    }
-                }
-                if (!matched) {
-                    peakDimContrib.remove();
-                    iter.remove();
-                }
-            }
-        }
-
-        resonances = getResonances();
-        if (labelArgs.size() >= resonances.size()) {
-            for (int i = 0; i < resonances.size(); i++) {
-                Resonance resonance = (Resonance) resonances.get(i);
-                resonance.setName(labelArgs.get(i).toString());
-            }
-            for (int i = resonances.size(); i < labelArgs.size(); i++) {
-                PeakDimContrib peakDimContrib = new PeakDimContrib(this);
-                addPeakDimContrib(peakDimContrib);
-                Resonance resonance = peakDimContrib.getResonance();
-                resonance.setName(labelArgs.get(i).toString());
-            }
-        }
+        resonance.setName(labelArgs);
         peakDimUpdated();
     }
 

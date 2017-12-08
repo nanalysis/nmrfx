@@ -140,7 +140,7 @@ public class PeakFitter {
 
             rootedPeaks = true;
 
-            ArrayList<Peak> linkedPeaks2 = PeakList.getLinks(peaks[iPeak], true);
+            List<Peak> linkedPeaks2 = PeakList.getLinks(peaks[iPeak], true);
 
             if (rootedPeaks && (linkedPeaks2.size() < 1)) {
                 continue;
@@ -201,7 +201,7 @@ public class PeakFitter {
                     }
                 }
             } else {
-                ArrayList<Peak> linkedPeaks = PeakList.getLinks(peaks[iPeak], true);
+                List<Peak> linkedPeaks = PeakList.getLinks(peaks[iPeak], true);
 
                 if (linkedPeaks.size() > 1) {
                     splitCount[iPeak] = new int[1];
@@ -334,7 +334,7 @@ public class PeakFitter {
                     }
                 }
             }
-            ArrayList<Peak> linkedPeaks = PeakList.getLinks(peaks[iPeak], true);
+            List<Peak> linkedPeaks = PeakList.getLinks(peaks[iPeak], true);
             for (Peak lPeak : linkedPeaks) {
                 if (lPeak.getFlag(5)) {
                     fixWeakDoublet = false;
@@ -437,7 +437,7 @@ public class PeakFitter {
         int nPeaks = peaks.length;
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
 
-            ArrayList<Peak> linkedPeaks = PeakList.getLinks(peaks[iPeak], true);
+            List<Peak> linkedPeaks = PeakList.getLinks(peaks[iPeak], true);
 
             if (rootedPeaks && (linkedPeaks.size() < 1)) {
                 continue;

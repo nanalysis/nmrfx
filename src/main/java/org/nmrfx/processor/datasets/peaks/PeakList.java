@@ -191,7 +191,7 @@ public class PeakList {
                 Peak oldPeak = peaks.get(i);
                 Peak newPeak = newPeakList.getPeak(i);
                 for (int j = 0; j < oldPeak.peakDim.length; j++) {
-                    ArrayList<PeakDim> linkedPeakDims = getLinkedPeakDims(oldPeak, j);
+                    List<PeakDim> linkedPeakDims = getLinkedPeakDims(oldPeak, j);
                     PeakDim newPeakDim = newPeak.peakDim[j];
                     for (PeakDim peakDim : linkedPeakDims) {
                         Peak linkPeak = peakDim.getPeak();
@@ -484,6 +484,11 @@ public class PeakList {
         }
     }
 
+    public static List<PeakList> getLists() {
+        List<PeakList> peakLists = PeakList.peakListTable.values().stream().collect(Collectors.toList());
+        return peakLists;
+    }
+
     public static PeakList get(String listName) {
         return ((PeakList) peakListTable.get(listName));
     }
@@ -507,18 +512,11 @@ public class PeakList {
         if (peakList != null) {
             for (Peak peak : peakList.peaks) {
                 for (PeakDim peakDim : peak.peakDim) {
-                    peakdim = peakDim;
-                    Iterator iter = peakdim.getIterator();
-                    while (iter.hasNext()) {
-                        PeakDimContrib pdc = (PeakDimContrib) iter.next();
-                        Resonance resonance = pdc.getResonance();
-                        if (resonance != null) {
-                            resonance.removePeakDimContrib(pdc);
-                        }
-                    }
-                    Multiplet multiplet = peakdim.getMultiplet();
+                    peakDim.remove();
+
+                    Multiplet multiplet = peakDim.getMultiplet();
                     if (multiplet != null) {
-                        multiplet.removePeakDim(peakdim);
+                        multiplet.removePeakDim(peakDim);
                     }
                 }
                 peak.markDeleted();
@@ -631,9 +629,6 @@ public class PeakList {
 
         return (result.toString().trim());
     }
-
-
-
 
     public List<Peak> findPeaks(double[] ppm)
             throws IllegalArgumentException {
@@ -1492,7 +1487,7 @@ public class PeakList {
             }
             double[] values = new double[dims.length];
             for (int iDim = 0; iDim < dims.length; iDim++) {
-                ArrayList<PeakDim> linkedPeakDims = getLinkedPeakDims(peak, dims[iDim]);
+                List<PeakDim> linkedPeakDims = getLinkedPeakDims(peak, dims[iDim]);
                 double ppmCenter = 0.0;
                 for (PeakDim peakDim : linkedPeakDims) {
                     Peak peak2 = peakDim.getPeak();
@@ -1713,7 +1708,7 @@ public class PeakList {
                     continue;
                 }
 
-                ArrayList linkedPeaks = getLinks(peak);
+                List<Peak> linkedPeaks = getLinks(peak);
 
                 if (linkedPeaks == null) {
                     continue;
@@ -1783,8 +1778,8 @@ public class PeakList {
         return nClusters;
     }
 
-    public static ArrayList<Peak> getLinks(Peak peak, boolean requireSameList) {
-        ArrayList<PeakDim> peakDims = getLinkedPeakDims(peak, 0);
+    public static List<Peak> getLinks(Peak peak, boolean requireSameList) {
+        List<PeakDim> peakDims = getLinkedPeakDims(peak, 0);
         ArrayList<Peak> peaks = new ArrayList(peakDims.size());
         for (PeakDim peakDim : peakDims) {
             if (!requireSameList || (peakDim.myPeak.peakList == peak.peakList)) {
@@ -1794,8 +1789,8 @@ public class PeakList {
         return peaks;
     }
 
-    public static ArrayList getLinks(Peak peak) {
-        ArrayList peakDims = getLinkedPeakDims(peak, 0);
+    public static List getLinks(Peak peak) {
+        List peakDims = getLinkedPeakDims(peak, 0);
         ArrayList peaks = new ArrayList(peakDims.size());
         for (int i = 0; i < peakDims.size(); i++) {
             PeakDim peakDim = (PeakDim) peakDims.get(i);
@@ -1804,8 +1799,8 @@ public class PeakList {
         return peaks;
     }
 
-    public static ArrayList getLinks(final Peak peak, final int iDim) {
-        final ArrayList peakDims = getLinkedPeakDims(peak, iDim);
+    public static List getLinks(final Peak peak, final int iDim) {
+        final List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
         final ArrayList peaks = new ArrayList(peakDims.size());
         for (int i = 0; i < peakDims.size(); i++) {
             PeakDim peakDim = (PeakDim) peakDims.get(i);
@@ -1814,11 +1809,11 @@ public class PeakList {
         return peaks;
     }
 
-    public static ArrayList<PeakDim> getLinkedPeakDims(Peak peak) {
+    public static List<PeakDim> getLinkedPeakDims(Peak peak) {
         return getLinkedPeakDims(peak, 0);
     }
 
-    public static ArrayList<PeakDim> getLinkedPeakDims(Peak peak, int iDim) {
+    public static List<PeakDim> getLinkedPeakDims(Peak peak, int iDim) {
         PeakDim peakDim = peak.getPeakDim(iDim);
         return peakDim.getLinkedPeakDims();
     }
@@ -1841,13 +1836,10 @@ public class PeakList {
     // FIXME should check to see that nucleus is same
 
     public static void linkPeakDims(PeakDim peakDimA, PeakDim peakDimB) {
-        ArrayList resonancesA = peakDimA.getResonances();
-        ArrayList resonancesB = peakDimB.getResonances();
-        if ((resonancesA.size() == 1) && (resonancesB.size() == 1)) {
-            Resonance resonanceA = (Resonance) resonancesA.get(0);
-            Resonance resonanceB = (Resonance) resonancesB.get(0);
-            Resonance.merge(resonanceA, resonanceB);
-        }
+        Resonance resonanceA = peakDimA.getResonance();
+        Resonance resonanceB = peakDimB.getResonance();
+
+        Resonance.merge(resonanceA, resonanceB);
 
         peakDimA.peakDimUpdated();
         peakDimB.peakDimUpdated();
@@ -1855,13 +1847,10 @@ public class PeakList {
     // FIXME should check to see that nucleus is same
 
     public static void couplePeakDims(PeakDim peakDimA, PeakDim peakDimB) {
-        ArrayList resonancesA = peakDimA.getResonances();
-        ArrayList resonancesB = peakDimB.getResonances();
-        if ((resonancesA.size() == 1) && (resonancesB.size() == 1)) {
-            Resonance resonanceA = (Resonance) resonancesA.get(0);
-            Resonance resonanceB = (Resonance) resonancesB.get(0);
-            Resonance.merge(resonanceA, resonanceB);
-        }
+        Resonance resonanceA = peakDimA.getResonance();
+        Resonance resonanceB = peakDimB.getResonance();
+
+        Resonance.merge(resonanceA, resonanceB);
 
         Multiplet.merge(peakDimA, peakDimB);
         peakDimA.peakDimUpdated();
@@ -1878,7 +1867,7 @@ public class PeakList {
 
     public static void unLinkPeak(Peak peak) {
         for (int i = 0; i < peak.peakList.nDim; i++) {
-            ArrayList<PeakDim> peakDims = getLinkedPeakDims(peak, i);
+            List<PeakDim> peakDims = getLinkedPeakDims(peak, i);
             unLinkPeak(peak, i);
 
             for (PeakDim pDim : peakDims) {
@@ -2281,7 +2270,7 @@ public class PeakList {
 
             rootedPeaks = true;
 
-            ArrayList linkedPeaks2 = getLinks(peaks[iPeak]);
+            List<Peak> linkedPeaks2 = getLinks(peaks[iPeak]);
 
             if (rootedPeaks && (linkedPeaks2.size() < 1)) {
                 continue;
@@ -2342,7 +2331,7 @@ public class PeakList {
                     }
                 }
             } else {
-                ArrayList linkedPeaks = getLinks(peaks[iPeak]);
+                List<Peak> linkedPeaks = getLinks(peaks[iPeak]);
 
                 if (linkedPeaks.size() > 1) {
                     splitCount[iPeak] = new int[1];
@@ -2433,7 +2422,7 @@ public class PeakList {
                     iGuess++;
                 }
             }
-            ArrayList linkedPeaks = getLinks(peaks[iPeak]);
+            List<Peak> linkedPeaks = getLinks(peaks[iPeak]);
             for (int jPeak = 0; jPeak < linkedPeaks.size(); jPeak++) {
                 Peak lPeak = (Peak) linkedPeaks.get(jPeak);
                 if (lPeak.getFlag(5)) {
@@ -2513,7 +2502,7 @@ public class PeakList {
 
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
 
-            ArrayList linkedPeaks = getLinks(peaks[iPeak]);
+            List<Peak> linkedPeaks = getLinks(peaks[iPeak]);
 
             if (rootedPeaks && (linkedPeaks.size() < 1)) {
                 continue;
@@ -3519,7 +3508,7 @@ public class PeakList {
                     }
                     Peak peak = peakList.getPeakByID(idNum);
                     PeakDim peakDim = peak.getPeakDim(sDim);
-                    peakDim.addResonance(resonanceID);
+                    peakDim.setResonance(resonanceID);
                 }
             }
         }

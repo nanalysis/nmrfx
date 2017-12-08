@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import java.util.Iterator;
+import java.util.List;
 
 /**
  *
@@ -29,21 +30,24 @@ public interface Resonance {
 
     public void setName(String name);
 
+    public void setName(List<String> names);
+
+    public void remove(PeakDim peakDim);
+
+    public List<PeakDim> getPeakDims();
+
     public String getAtomName();
 
     public String getIDString();
 
     public long getID();
 
-    public Iterator getIterator();
-
     public void merge(Resonance resB);
 
     public static void merge(Resonance resA, Resonance resB) {
         resA.merge(resB);
     }
+    
+    public void add(PeakDim peakDim);
 
-    public void removePeakDimContrib(PeakDimContrib pdC);
-
-    public void addPeakDimContrib(PeakDimContrib pdC);
 }

@@ -311,13 +311,10 @@ public class PeakWriter {
             }
             PeakDim[] peakDims = peak.getPeakDims();
             for (PeakDim peakDim : peakDims) {
-                ArrayList resonanceList = peakDim.getResonances();
-                for (int k = 0; k < resonanceList.size(); k++) {
-                    Resonance resonance = (Resonance) resonanceList.get(k);
-                    long resID = 0;
-                    if (resonance != null) {
-                        resID = resonance.getID();
-                    }
+                Resonance resonance = peakDim.getResonance();
+                long resID = 0;
+                if (resonance != null) {
+                    resID = resonance.getID();
                     chan.write(peakDim.toSTAR3LoopAssignedPeakChemShiftString(iContrib++, resID) + "\n");
                 }
             }
