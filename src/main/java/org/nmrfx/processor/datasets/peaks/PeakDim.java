@@ -28,6 +28,7 @@ import java.util.HashSet;
 public class PeakDim {
 
     public static ResonanceFactory resFactory = new ResonanceFactory();
+    public static List<PeakDim> EMPTY_LIST = new ArrayList<>();
 
     private int spectralDim = 0;
     private Float chemShift = null;
@@ -109,7 +110,12 @@ public class PeakDim {
     }
 
     public List<PeakDim> getLinkedPeakDims() {
-        return resonance.getPeakDims();
+        if (resonance == null) {
+            // fixme should this contain this peakdim (and in general should result contain this dim plus linked)
+            return EMPTY_LIST;
+        } else {
+            return resonance.getPeakDims();
+        }
     }
 
     public String getSummary() {
@@ -262,6 +268,7 @@ public class PeakDim {
             myPeak.updateFrozenColor();
             freezeDims();
         }
+        peakDimUpdated();
     }
 
     public boolean isFrozen() {
@@ -688,6 +695,7 @@ public class PeakDim {
                 // use field so we don't fire recursive freezeDims
                 peakDim.frozen = frozen;
                 peakDim.myPeak.updateFrozenColor();
+                peakDimUpdated();
             }
         }
 
@@ -701,6 +709,7 @@ public class PeakDim {
                 if (peakDim.myPeak.peakList.getSampleConditionLabel().equals(condition)) {
                     // use field so we don't fire recursive slideDims
                     peakDim.chemShift = chemShift;
+                    peakDimUpdated();
                 }
             }
         }
