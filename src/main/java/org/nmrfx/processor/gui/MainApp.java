@@ -263,13 +263,13 @@ public class MainApp extends Application {
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
         peakNavigatorMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakNavigator());
 
-        MenuItem peakNavigatorRemoveMenuItem = new MenuItem("Remove Peak Navigator");
-        peakNavigatorRemoveMenuItem.setOnAction(e -> FXMLController.getActiveController().removePeakNavigator());
-
         MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
         linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
 
-        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, peakNavigatorRemoveMenuItem, linkPeakDimsMenuItem);
+        MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
+        peakSliderMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakSlider());
+
+        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem);
 
         // Window Menu
         // TBD standard window menu items

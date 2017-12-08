@@ -167,6 +167,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     private boolean minimizeBorders = false;
 
     PeakNavigator peakNavigator;
+    PeakSlider peakSlider;
 
     public File getInitialDirectory() {
         if (initialDir == null) {
@@ -1394,17 +1395,33 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (peakNavigator == null) {
             ToolBar navBar = new ToolBar();
             bottomBox.getChildren().add(navBar);
-            peakNavigator = new PeakNavigator(this);
+            peakNavigator = new PeakNavigator(this, this::removePeakNavigator);
             peakNavigator.initPeakNavigator(navBar);
             peakNavigator.initIfEmpty();
         }
     }
 
-    public void removePeakNavigator() {
+    public void removePeakNavigator(Object o) {
         if (peakNavigator != null) {
             peakNavigator.removePeakList();
+            bottomBox.getChildren().remove(peakNavigator.getToolBar());
             peakNavigator = null;
-            bottomBox.getChildren().remove(1);
+        }
+    }
+
+    public void showPeakSlider() {
+        if (peakSlider == null) {
+            ToolBar navBar = new ToolBar();
+            bottomBox.getChildren().add(navBar);
+            peakSlider = new PeakSlider(this, this::removePeakSlider);
+            peakSlider.initSlider(navBar);
+        }
+    }
+
+    public void removePeakSlider(Object o) {
+        if (peakSlider != null) {
+            bottomBox.getChildren().remove(peakSlider.getToolBar());
+            peakSlider = null;
         }
     }
 

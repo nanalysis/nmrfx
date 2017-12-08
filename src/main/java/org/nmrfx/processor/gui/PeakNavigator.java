@@ -5,6 +5,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -49,9 +50,23 @@ public class PeakNavigator implements PeakListener {
     Background defaultCellBackground = null;
     Optional<List<Peak>> matchPeaks = Optional.empty();
     int matchIndex = 0;
+    Consumer closeAction = null;
 
     public PeakNavigator(PeakNavigable peakNavigable) {
         this.peakNavigable = peakNavigable;
+    }
+
+    public PeakNavigator(PeakNavigable peakNavigable, Consumer closeAction) {
+        this.peakNavigable = peakNavigable;
+        this.closeAction = closeAction;
+    }
+
+    public ToolBar getToolBar() {
+        return navigatorToolBar;
+    }
+
+    public void close() {
+        closeAction.accept(this);
     }
 
     void initPeakNavigator(ToolBar toolBar) {
@@ -65,6 +80,9 @@ public class PeakNavigator implements PeakListener {
         String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        closeButton.setOnAction(e -> close());
+
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> firstPeak(e));
         buttons.add(bButton);
@@ -85,6 +103,9 @@ public class PeakNavigator implements PeakListener {
 
         for (Button button : buttons) {
             // button.getStyleClass().add("toolButton");
+        }
+        if (closeAction != null) {
+            navigatorToolBar.getItems().add(closeButton);
         }
         navigatorToolBar.getItems().add(peakListMenuButton);
         toolBar.getItems().addAll(buttons);

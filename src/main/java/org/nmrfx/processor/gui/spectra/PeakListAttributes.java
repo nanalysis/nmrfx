@@ -375,11 +375,13 @@ public class PeakListAttributes implements PeakListener {
         int[] peakDim = getPeakDim();
         int nDim = Math.min(peakDim.length, oldValue.length);
         for (int i = 0; i < nDim; i++) {
-            double oldAxisValue = getAxisValue(i, oldValue[i]);
-            double newAxisValue = getAxisValue(i, newValue[i]);
-            double delta = newAxisValue - oldAxisValue;
-            double shift = peak.peakDim[peakDim[i]].getChemShiftValue();
-            peak.peakDim[peakDim[i]].setChemShiftValue((float) (shift + delta));
+            if (!peak.peakDim[peakDim[i]].isFrozen()) {
+                double oldAxisValue = getAxisValue(i, oldValue[i]);
+                double newAxisValue = getAxisValue(i, newValue[i]);
+                double delta = newAxisValue - oldAxisValue;
+                double shift = peak.peakDim[peakDim[i]].getChemShiftValue();
+                peak.peakDim[peakDim[i]].setChemShiftValue((float) (shift + delta));
+            }
         }
     }
 

@@ -2041,6 +2041,15 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     }
 
+    public List<Peak> getSelectedPeaks() {
+        List<Peak> selectedPeaks = new ArrayList<>();
+        peakListAttributesList.stream().forEach(peakListAttr -> {
+            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            selectedPeaks.addAll(peaks);
+        });
+        return selectedPeaks;
+    }
+
     void dragPeak(double x, double y, boolean widthMode) {
         boolean draggedAny = false;
         double[] dragPos = {x, y};
