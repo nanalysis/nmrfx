@@ -28,6 +28,7 @@ import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -391,7 +392,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public void removeExtraLinkedPeaks(int nExtra) {
-        ArrayList<PeakDim> links = myPeakDim.getLinkedPeakDims();
+        List<PeakDim> links = myPeakDim.getLinkedPeakDims();
         int nRemoved = 0;
         for (int i = 0; i < links.size(); i++) {
             PeakDim peakDim = links.get(i);
@@ -654,7 +655,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public float getBoundsValue() {
-        ArrayList<PeakDim> links = myPeakDim.getLinkedPeakDims();
+        List<PeakDim> links = myPeakDim.getLinkedPeakDims();
         float max = Float.NEGATIVE_INFINITY;
         float min = Float.MAX_VALUE;
         for (PeakDim peakDim : links) {

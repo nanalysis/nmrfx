@@ -20,6 +20,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.processor.optimization.BipartiteMatcher;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.InitialGuess;
@@ -188,8 +189,8 @@ public class PeakNetworkMatch {
         int jDim2 = 1;
         PeakDim iPeakDim = iPeak.getPeakDim(iDim);
         PeakDim jPeakDim = jPeak.getPeakDim(jDim);
-        ArrayList<PeakDim> iPeakDims = PeakList.getLinkedPeakDims(iPeak, iDim);
-        ArrayList<PeakDim> jPeakDims = PeakList.getLinkedPeakDims(jPeak, jDim);
+        List<PeakDim> iPeakDims = PeakList.getLinkedPeakDims(iPeak, iDim);
+        List<PeakDim> jPeakDims = PeakList.getLinkedPeakDims(jPeak, jDim);
 
         ArrayList<MatchItem> iPPMs = new ArrayList<MatchItem>();
         int i = 0;
@@ -277,7 +278,7 @@ public class PeakNetworkMatch {
             }
             double[] values = new double[dims.length];
             for (int iDim = 0; iDim < dims.length; iDim++) {
-                ArrayList<PeakDim> linkedPeakDims = PeakList.getLinkedPeakDims(peak, dims[iDim]);
+                List<PeakDim> linkedPeakDims = PeakList.getLinkedPeakDims(peak, dims[iDim]);
                 double ppmCenter = 0.0;
                 for (PeakDim peakDim : linkedPeakDims) {
                     Peak peak2 = peakDim.getPeak();

@@ -18,7 +18,6 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -27,9 +26,9 @@ import java.util.List;
  */
 public class SimpleResonance implements Resonance {
 
-    String name = "";
     String atomName = "";
-    List<PeakDimContrib> pdCs = new ArrayList<>();
+    List<String> names = new ArrayList<>();
+    List<PeakDim> peakDims = new ArrayList<>();
     final long id;
 
     public SimpleResonance(long id) {
@@ -37,13 +36,38 @@ public class SimpleResonance implements Resonance {
     }
 
     @Override
+    public void setName(List<String> names) {
+        this.names.clear();
+        this.names.addAll(names);
+    }
+
+    @Override
+    public void remove(PeakDim peakDim) {
+        peakDims.remove(peakDim);
+    }
+
+    @Override
     public String getName() {
-        return name;
+        String result = "";
+        if (names.size() == 1) {
+            result = names.get(0);
+        } else if (names.size() > 1) {
+            StringBuilder builder = new StringBuilder();
+            for (String name : names) {
+                if (builder.length() > 0) {
+                    builder.append(" ");
+                }
+                builder.append(name);
+            }
+            result = builder.toString();
+        }
+        return result;
     }
 
     @Override
     public void setName(String name) {
-        this.name = name;
+        names.clear();
+        names.add(name);
     }
 
     @Override
@@ -63,38 +87,28 @@ public class SimpleResonance implements Resonance {
     }
 
     @Override
-    public Iterator getIterator() {
-        return pdCs.iterator();
-    }
-
-    @Override
     public void merge(Resonance resB) {
+        List<PeakDim> peakDimsB = resB.getPeakDims();
+        System.out.println("merge " + peakDims.size() + " " + peakDimsB.size());
+        int sizeA = peakDims.size();
+        int sizeB = peakDimsB.size();
+        for (PeakDim peakDim : peakDimsB) {
+            peakDim.setResonance(this);
+            peakDims.add(peakDim);
+        }
+        peakDimsB.clear();
+        System.out.println("mergd " + peakDims.size() + " " + peakDimsB.size());
 
-    }
-
-    @Override
-    public void removePeakDimContrib(PeakDimContrib pdC) {
-        pdCs.remove(pdC);
-    }
-
-    @Override
-    public void addPeakDimContrib(PeakDimContrib pdC) {
-        pdCs.add(pdC);
     }
 
     public List<PeakDim> getPeakDims() {
-        ArrayList<PeakDim> peakDims = new ArrayList<>();
-        Iterator iter = getIterator();
-        while (iter.hasNext()) {
-            PeakDimContrib pdc = (PeakDimContrib) iter.next();
-            PeakDim peakDim = pdc.getPeakDim();
-            peakDims.add(peakDim);
-        }
-        /*for (int i=0;i<peakDimContribs.size();i++) {
-         PeakDim peakDim = ((PeakDimContrib) peakDimContribs.get(i)).getPeakDim();
-         peakDims.add(peakDim);
-         }*/
+        // fixme should be unmodifiable or copy
         return peakDims;
     }
 
+    @Override
+    public void add(PeakDim peakDim) {
+        peakDim.setResonance(this);
+        peakDims.add(peakDim);
+    }
 }

@@ -41,12 +41,6 @@ public class ResonanceFactory {
         return resonance;
     }
 
-    public Resonance build(PeakDimContrib pdC) {
-        Resonance resonance = build();
-        resonance.addPeakDimContrib(pdC);
-        return resonance;
-    }
-
     public Resonance get(long id) {
         return map.get(id);
     }
