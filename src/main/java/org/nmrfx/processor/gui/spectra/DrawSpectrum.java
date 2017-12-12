@@ -32,6 +32,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.function.DoubleBinaryOperator;
 import javafx.application.Platform;
 import javafx.concurrent.Service;
@@ -64,13 +67,16 @@ public class DrawSpectrum {
     GraphicsContext g2;
     List<DatasetAttributes> dataAttrList = Collections.synchronizedList(new ArrayList<>());
     final Canvas canvas;
-    DrawTask drawTask;
+    DrawTask makeContours;
+    DrawContours drawContours;
     AXMODE[] axModes;
     DISDIM disDim = DISDIM.TwoD;
     double[][] xy = new double[2][];
     int nPoints = 0;
     int iChunk = 0;
     int rowIndex = -1;
+    private static boolean cancelled = false;
+    ArrayBlockingQueue<DrawObject> contourQueue = new ArrayBlockingQueue<>(4);
 
     public DrawSpectrum(NMRAxis[] axes, Canvas canvas) {
         this.axes = axes;
@@ -78,15 +84,18 @@ public class DrawSpectrum {
         if (canvas != null) {
             g2 = canvas.getGraphicsContext2D();
         }
-        drawTask = new DrawTask(this);
+        makeContours = new DrawTask(this);
+        drawContours = new DrawContours(this);
     }
 
     public void setController(FXMLController controller) {
         Button cancelButton = controller.getCancelButton();
         cancelButton.setOnAction(actionEvent -> {
-            ((Service) drawTask.worker).cancel();
+            ((Service) makeContours.worker).cancel();
+            ((Service) drawContours.worker).cancel();
+            cancelled = true;
         });
-        cancelButton.disableProperty().bind(((Service) drawTask.worker).stateProperty().isNotEqualTo(Task.State.RUNNING));
+        cancelButton.disableProperty().bind(((Service) makeContours.worker).stateProperty().isNotEqualTo(Task.State.RUNNING));
     }
 
     public void setDisDim(DISDIM disDim) {
@@ -99,18 +108,19 @@ public class DrawSpectrum {
 
     public void drawSpectrum(ArrayList<DatasetAttributes> dataGenerators, AXMODE[] axModes,
             boolean pick) {
+        cancelled = false;
 
         if (pick) {
             return;
         }
         this.axModes = new AXMODE[axModes.length];
-        for (int i = 0; i < axModes.length; i++) {
-            this.axModes[i] = axModes[i];
-        }
+        System.arraycopy(axModes, 0, this.axModes, 0, axModes.length);
         dataAttrList.clear();
         dataAttrList.addAll(dataGenerators);
+        contourQueue.clear();
 
-        ((Service) drawTask.worker).restart();
+        ((Service) makeContours.worker).restart();
+        ((Service) drawContours.worker).restart();
     }
 
     public static float[] getLevels(DatasetAttributes fileData) {
@@ -127,18 +137,25 @@ public class DrawSpectrum {
 
     AXMODE[] getAxModes() {
         AXMODE[] modes = new AXMODE[axModes.length];
-        for (int i = 0; i < modes.length; i++) {
-            modes[i] = axModes[i];
-        }
+        System.arraycopy(axModes, 0, modes, 0, modes.length);
         return modes;
     }
 
     NMRAxis[] getAxes() {
         NMRAxis[] tempAxes = new NMRAxis[axes.length];
-        for (int i = 0; i < axes.length; i++) {
-            tempAxes[i] = axes[i];
-        }
+        System.arraycopy(axes, 0, tempAxes, 0, axes.length);
         return tempAxes;
+    }
+
+    private static class DrawObject {
+
+        Contour[] contours;
+        DatasetAttributes dataAttr;
+
+        DrawObject(DatasetAttributes dataAttr, Contour[] contours) {
+            this.contours = contours;
+            this.dataAttr = dataAttr;
+        }
     }
 
     private static class DrawTask {
@@ -151,6 +168,8 @@ public class DrawSpectrum {
         AXMODE[] axModes;
         NMRAxis[] axes;
         float[] levels;
+        int nRunning = 0;
+        boolean done = false;
 
         private DrawTask(DrawSpectrum drawSpectrum) {
             this.drawSpectrum = drawSpectrum;
@@ -162,6 +181,7 @@ public class DrawSpectrum {
                         @Override
                         protected Integer call() {
                             try {
+                                done = false;
                                 dataAttrList = new ArrayList<>();
                                 dataAttrList.addAll(drawSpectrum.dataAttrList);
                                 for (DatasetAttributes fileData : dataAttrList) {
@@ -170,8 +190,9 @@ public class DrawSpectrum {
                                     axes = drawSpectrum.getAxes();
                                     drawNow(this, fileData);
                                 }
-                            } catch (Exception e) {
+                            } catch (IOException e) {
                                 System.out.println("error " + e.getMessage());
+                                e.printStackTrace();
                             }
                             return 0;
                         }
@@ -190,10 +211,9 @@ public class DrawSpectrum {
         }
 
         void drawNow(Task task, DatasetAttributes fileData) throws IOException {
-            int nDrawLevels = 1;
-//        long startTime = System.currentTimeMillis();
             double[] offset = {0, 0};
             fileData.mChunk = -1;
+            done = false;
             do {
                 if (task.isCancelled()) {
                     break;
@@ -202,47 +222,132 @@ public class DrawSpectrum {
                 final Contour[] contours = new Contour[2];
                 contours[0] = new Contour();
                 contours[1] = new Contour();
+                DrawObject drawObject = new DrawObject(fileData, contours);
+
                 if (drawSpectrum.getContours(fileData, contours, iChunk, offset, levels)) {
-                    for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
-                        if ((iPosNeg == 0) && !fileData.getPosDrawOn()) {
-                            continue;
-                        } else if ((iPosNeg == 1) && !fileData.getNegDrawOn()) {
-                            continue;
-                        }
-                        if (contours[iPosNeg].getLineCount() != 0) {
-                            final int jPosNeg = iPosNeg;
-//                            System.out.println("chunk " + iChunk);
-
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-//                                    System.out.println("draw");
-
-                                    g2.setGlobalAlpha(1.0);
-                                    g2.setLineCap(StrokeLineCap.BUTT);
-                                    g2.setEffect(null);
-                                    if (jPosNeg == 0) {
-                                        g2.setLineWidth(fileData.posLineWidthProperty().get());
-                                        g2.setStroke(fileData.getPosColor());
-                                    } else {
-                                        g2.setLineWidth(fileData.negLineWidthProperty().get());
-                                        g2.setStroke(fileData.getNegColor());
-                                    }
-                                    for (int iLevel = 0; iLevel < nDrawLevels; iLevel++) {
-                                        drawSpectrum.drawContours(fileData, axModes, contours[jPosNeg], iLevel, g2);
-                                    }
-                                }
-                            });
-
-                        }
+                    try {
+                        drawSpectrum.contourQueue.put(drawObject);
+                    } catch (InterruptedException ex) {
+                        done = true;
+                        break;
                     }
                 } else {
+                    done = true;
                     break;
                 }
-
             } while (true);
-
         }
+    }
+
+    private static class DrawContours {
+
+        DrawSpectrum drawSpectrum;
+        public Worker<Integer> worker;
+
+        private DrawContours(DrawSpectrum drawSpectrum) {
+            this.drawSpectrum = drawSpectrum;
+            worker = new Service<Integer>() {
+                @Override
+                protected Task createTask() {
+                    return new Task<Integer>() {
+                        @Override
+                        protected Integer call() {
+                            try {
+                                drawAllContours(this);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+
+                            }
+                            return 0;
+                        }
+
+                        @Override
+                        protected void cancelled() {
+                        }
+
+                        @Override
+                        protected void succeeded() {
+                        }
+
+                    };
+                }
+            };
+        }
+
+        public int drawContourObject(DrawObject drawObject) throws InterruptedException, ExecutionException {
+            int nDrawLevels = 1;
+            GraphicsContext g2 = drawSpectrum.g2;
+            Contour[] contours = drawObject.contours;
+            DatasetAttributes dataAttr = drawObject.dataAttr;
+            FutureTask<Integer> future = new FutureTask(() -> {
+                for (int jPosNeg = 0; jPosNeg < 2; jPosNeg++) {
+                    if ((jPosNeg == 0) && !dataAttr.getPosDrawOn()) {
+                        continue;
+                    } else if ((jPosNeg == 1) && !dataAttr.getNegDrawOn()) {
+                        continue;
+                    }
+                    g2.setGlobalAlpha(1.0);
+                    g2.setLineCap(StrokeLineCap.BUTT);
+                    g2.setEffect(null);
+                    if (jPosNeg == 0) {
+                        g2.setLineWidth(dataAttr.posLineWidthProperty().get());
+                        g2.setStroke(dataAttr.getPosColor());
+                    } else {
+                        g2.setLineWidth(dataAttr.negLineWidthProperty().get());
+                        g2.setStroke(dataAttr.getNegColor());
+                    }
+                    for (int iLevel = 0; iLevel < nDrawLevels; iLevel++) {
+                        drawSpectrum.genContourPath(dataAttr, drawSpectrum.axModes, contours[jPosNeg], iLevel, g2);
+                    }
+
+                }
+                return 1;
+            });
+            Platform.runLater(future);
+            Integer value;
+            try {
+                value = future.get();
+            } catch (InterruptedException iE) {
+                value = 0;
+            }
+            return value;
+        }
+
+        public void drawAllContours(Task task) {
+//            while (!drawSpectrum.makeContours.done || !drawSpectrum.contourQueue.isEmpty()) {
+            boolean interrupted = false;
+            try {
+                while (true) {
+                    if (task.isCancelled()) {
+                        break;
+                    }
+                    if (Thread.currentThread().isInterrupted()) {
+                        interrupted = true;
+                        break;
+                    }
+                    DrawObject drawObject = null;
+
+                    try {
+                        drawObject = drawSpectrum.contourQueue.take();
+                        try {
+                            drawContourObject(drawObject);
+                        } catch (ExecutionException ex) {
+                            ex.printStackTrace();
+                        }
+                    } catch (InterruptedException ex) {
+                        interrupted = true;
+                        break;
+                    }
+                }
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+
+            }
+//            System.out.println("done " + drawSpectrum.makeContours.done + " " + drawSpectrum.contourQueue.isEmpty());
+        }
+
     }
 
     boolean getContours(DatasetAttributes fileData, Contour[] contours, int iChunk, double[] offset, float[] levels) throws IOException {
@@ -285,7 +390,7 @@ public class DrawSpectrum {
         return true;
     }
 
-    private void drawContours(DatasetAttributes dataGenerator, AXMODE[] axModes, Contour contours, final int coordIndex, GraphicsContext g2) {
+    private void genContourPath(DatasetAttributes dataGenerator, AXMODE[] axModes, Contour contours, final int coordIndex, GraphicsContext g2) {
         int lineCount = contours.getLineCount(coordIndex);
         float scale = Contour.getScaleFac() / Short.MAX_VALUE;
         double cxOffset = contours.xOffset;
@@ -293,6 +398,9 @@ public class DrawSpectrum {
         g2.beginPath();
         Dataset dataset = dataGenerator.getDataset();
         for (int iLine = 0; iLine < lineCount; iLine += 4) {
+            if (cancelled) {
+                break;
+            }
             double xPoint1 = scale * contours.coords[coordIndex][iLine] + cxOffset;
             double xPoint2 = scale * contours.coords[coordIndex][iLine + 2] + cxOffset;
             double yPoint1 = scale * contours.coords[coordIndex][iLine + 1] + cyOffset;
