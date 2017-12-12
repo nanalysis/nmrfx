@@ -28,16 +28,20 @@ import java.util.List;
 public class SimpleResonance implements Resonance {
 
     String atomName = "";
-    List<String> names = new ArrayList<>();
+    private List<String> names;
     List<PeakDim> peakDims = new ArrayList<>();
     final long id;
 
     public SimpleResonance(long id) {
+        this.names = null;
         this.id = id;
     }
 
     @Override
     public void setName(List<String> names) {
+        if (names == null) {
+            names = new ArrayList<>();
+        }
         this.names.clear();
         this.names.addAll(names);
     }
@@ -50,23 +54,28 @@ public class SimpleResonance implements Resonance {
     @Override
     public String getName() {
         String result = "";
-        if (names.size() == 1) {
-            result = names.get(0);
-        } else if (names.size() > 1) {
-            StringBuilder builder = new StringBuilder();
-            for (String name : names) {
-                if (builder.length() > 0) {
-                    builder.append(" ");
+        if (names != null) {
+            if (names.size() == 1) {
+                result = names.get(0);
+            } else if (names.size() > 1) {
+                StringBuilder builder = new StringBuilder();
+                for (String name : names) {
+                    if (builder.length() > 0) {
+                        builder.append(" ");
+                    }
+                    builder.append(name);
                 }
-                builder.append(name);
+                result = builder.toString();
             }
-            result = builder.toString();
         }
         return result;
     }
 
     @Override
     public void setName(String name) {
+        if (names == null) {
+            names = new ArrayList<>();
+        }
         names.clear();
         names.add(name);
     }
