@@ -96,7 +96,6 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
-import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 
