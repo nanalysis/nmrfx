@@ -162,7 +162,6 @@ public class DrawSpectrum {
 
         public Worker<Integer> worker;
 
-        GraphicsContext g2;
         DrawSpectrum drawSpectrum;
         List<DatasetAttributes> dataAttrList;
         AXMODE[] axModes;
@@ -173,7 +172,6 @@ public class DrawSpectrum {
 
         private DrawTask(DrawSpectrum drawSpectrum) {
             this.drawSpectrum = drawSpectrum;
-            g2 = drawSpectrum.g2;
             worker = new Service<Integer>() {
                 @Override
                 protected Task createTask() {
