@@ -27,7 +27,21 @@ import java.util.HashSet;
 
 public class PeakDim {
 
-    public static ResonanceFactory resFactory = new ResonanceFactory();
+    public static ResonanceFactory resFactory;
+
+    static {
+        try {
+            Class c = Class.forName("org.nmrfx.processor.datasets.peaks.AtomResonanceFactory");
+            try {
+                resFactory = (ResonanceFactory) c.newInstance();
+                System.out.println("made atom res fac");
+            } catch (InstantiationException | IllegalAccessException ex) {
+                resFactory = new ResonanceFactory();
+            }
+        } catch (ClassNotFoundException ex) {
+        }
+
+    }
     public static List<PeakDim> EMPTY_LIST = new ArrayList<>();
 
     private int spectralDim = 0;
