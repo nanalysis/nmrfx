@@ -283,125 +283,125 @@ public class Noe implements Constraint, Serializable {
             if (matchCriteria != null) {
                 ArrayList<Noe> noeList = entry.getValue();
                 for (Noe noe : noeList) {
-                    noe.updateGenType(map, matchCriteria);
+//                    noe.updateGenType(map, matchCriteria);
                 }
             }
         }
     }
 
-    public void updateGenType(Map<String, NoeMatch> map, MatchCriteria[] matchCriteria) {
-        if ((peak != null) && (peak.getStatus() >= 0)) {
-            map.clear();
-            PeakDim peakDim = peak.getPeakDim(matchCriteria[0].getDim());
-            double ppm = peakDim.getChemShift();
-            matchCriteria[0].setPPM(ppm);
-            ArrayList res1s = peakDim.getResonances();
-
-            peakDim = peak.getPeakDim(matchCriteria[1].getDim());
-            ppm = peakDim.getChemShift();
-            matchCriteria[1].setPPM(ppm);
-            ArrayList res2s = peakDim.getResonances();
-
-            int nRes1 = res1s.size();
-            int nRes2 = res2s.size();
-            if ((nRes1 > 0) && (nRes2 > 0)) {
-                if ((nRes1 != 1) && (nRes2 != 1) && (nRes1 != nRes2)) {
-                    throw new IllegalArgumentException("Peak \"" + peak.getName() + "\" has unbalanced assignments");
-                }
-                int maxN = nRes1 > nRes2 ? nRes1 : nRes2;
-
-                for (int iRes = 0; iRes < maxN; iRes++) {
-                    AtomResonance r1 = null;
-                    if (iRes < nRes1) {
-                        r1 = (AtomResonance) res1s.get(iRes);
-                    } else {
-                        r1 = (AtomResonance) res1s.get(0);
-                    }
-                    AtomResonance r2 = null;
-                    if (iRes < nRes2) {
-                        r2 = (AtomResonance) res2s.get(iRes);
-                    } else {
-                        r2 = (AtomResonance) res2s.get(0);
-                    }
-                    Atom r1Atom = r1.getAtom();
-                    SpatialSet sp1 = null;
-                    SpatialSet sp2 = null;
-                    if ((r1Atom != null)) {
-                        sp1 = r1Atom.spatialSet;
-                    }
-                    Atom r2Atom = r2.getAtom();
-                    if ((r2Atom != null)) {
-                        sp2 = r2Atom.spatialSet;
-                    }
-                    if ((sp1 != null) && (sp2 != null) && (sp1 != sp2)) {
-                        String name = sp1.getFullName() + "_" + sp2.getFullName();
-                        NoeMatch match = new NoeMatch(sp1, sp2, Constraint.GenTypes.MANUAL, 0.0);
-                        map.put(name, match);
-                    }
-                }
-            }
-
-            if (matchCriteria[2] != null) {
-                peakDim = peak.getPeakDim(matchCriteria[2].getDim());
-                ppm = peakDim.getChemShift();
-                matchCriteria[2].setPPM(ppm);
-            }
-
-            if (matchCriteria[3] != null) {
-                peakDim = peak.getPeakDim(matchCriteria[3].getDim());
-                ppm = peakDim.getChemShift();
-                matchCriteria[3].setPPM(ppm);
-            }
-            Atom[][] atoms = getAtoms(peak);
-            int pDim1 = matchCriteria[0].getDim();
-            int pDim2 = matchCriteria[1].getDim();
-            if ((atoms[pDim1] != null) && (atoms[pDim2] != null)) {
-                int nProtons1 = atoms[pDim1].length;
-                int nProtons2 = atoms[pDim2].length;
-                if ((nProtons1 > 0) && (nProtons2 > 0)) {
-                    if ((nProtons1 == nProtons2) || (nProtons1 == 1) || (nProtons2 == 1)) {
-                        int maxN = nProtons1 > nProtons2 ? nProtons1 : nProtons2;
-                        for (int iProton = 0; iProton < maxN; iProton++) {
-                            SpatialSet sp1 = null;
-                            SpatialSet sp2 = null;
-                            int iProton1 = iProton;
-                            int iProton2 = iProton;
-                            if (iProton >= nProtons1) {
-                                iProton1 = 0;
-                            }
-                            if (iProton >= nProtons2) {
-                                iProton2 = 0;
-                            }
-                            if (atoms[pDim1][iProton1] != null) {
-                                sp1 = atoms[pDim1][iProton1].spatialSet;
-                            }
-                            if ((atoms[pDim2][iProton2] != null)) {
-                                sp2 = atoms[pDim2][iProton2].spatialSet;
-                            }
-                            if ((sp1 != null) && (sp2 != null) && (sp1 != sp2)) {
-                                String name = sp1.getFullName() + "_" + sp2.getFullName();
-                                NoeMatch match = new NoeMatch(sp1, sp2, Constraint.GenTypes.MANUAL, 0.0);
-                                map.put(name, match);
-                            }
-                        }
-
-                    }
-                }
-            }
-
-            int nMan = map.size();
-            Constraint.GenTypes type = Constraint.GenTypes.MANUAL;
-
-            String name = spg1.getFullName() + "_" + spg2.getFullName();
-            if (!map.containsKey(name)) {
-                type = Constraint.GenTypes.AUTOMATIC;
-                if (nMan > 0) {
-                    type = Constraint.GenTypes.AUTOPLUS;
-                }
-            }
-            setGenType(type);
-        }
-    }
+//    public void updateGenType(Map<String, NoeMatch> map, MatchCriteria[] matchCriteria) {
+//        if ((peak != null) && (peak.getStatus() >= 0)) {
+//            map.clear();
+//            PeakDim peakDim = peak.getPeakDim(matchCriteria[0].getDim());
+//            double ppm = peakDim.getChemShift();
+//            matchCriteria[0].setPPM(ppm);
+//            ArrayList res1s = peakDim.getResonances();
+//
+//            peakDim = peak.getPeakDim(matchCriteria[1].getDim());
+//            ppm = peakDim.getChemShift();
+//            matchCriteria[1].setPPM(ppm);
+//            ArrayList res2s = peakDim.getResonances();
+//
+//            int nRes1 = res1s.size();
+//            int nRes2 = res2s.size();
+//            if ((nRes1 > 0) && (nRes2 > 0)) {
+//                if ((nRes1 != 1) && (nRes2 != 1) && (nRes1 != nRes2)) {
+//                    throw new IllegalArgumentException("Peak \"" + peak.getName() + "\" has unbalanced assignments");
+//                }
+//                int maxN = nRes1 > nRes2 ? nRes1 : nRes2;
+//
+//                for (int iRes = 0; iRes < maxN; iRes++) {
+//                    AtomResonance r1 = null;
+//                    if (iRes < nRes1) {
+//                        r1 = (AtomResonance) res1s.get(iRes);
+//                    } else {
+//                        r1 = (AtomResonance) res1s.get(0);
+//                    }
+//                    AtomResonance r2 = null;
+//                    if (iRes < nRes2) {
+//                        r2 = (AtomResonance) res2s.get(iRes);
+//                    } else {
+//                        r2 = (AtomResonance) res2s.get(0);
+//                    }
+//                    Atom r1Atom = r1.getAtom();
+//                    SpatialSet sp1 = null;
+//                    SpatialSet sp2 = null;
+//                    if ((r1Atom != null)) {
+//                        sp1 = r1Atom.spatialSet;
+//                    }
+//                    Atom r2Atom = r2.getAtom();
+//                    if ((r2Atom != null)) {
+//                        sp2 = r2Atom.spatialSet;
+//                    }
+//                    if ((sp1 != null) && (sp2 != null) && (sp1 != sp2)) {
+//                        String name = sp1.getFullName() + "_" + sp2.getFullName();
+//                        NoeMatch match = new NoeMatch(sp1, sp2, Constraint.GenTypes.MANUAL, 0.0);
+//                        map.put(name, match);
+//                    }
+//                }
+//            }
+//
+//            if (matchCriteria[2] != null) {
+//                peakDim = peak.getPeakDim(matchCriteria[2].getDim());
+//                ppm = peakDim.getChemShift();
+//                matchCriteria[2].setPPM(ppm);
+//            }
+//
+//            if (matchCriteria[3] != null) {
+//                peakDim = peak.getPeakDim(matchCriteria[3].getDim());
+//                ppm = peakDim.getChemShift();
+//                matchCriteria[3].setPPM(ppm);
+//            }
+//            Atom[][] atoms = getAtoms(peak);
+//            int pDim1 = matchCriteria[0].getDim();
+//            int pDim2 = matchCriteria[1].getDim();
+//            if ((atoms[pDim1] != null) && (atoms[pDim2] != null)) {
+//                int nProtons1 = atoms[pDim1].length;
+//                int nProtons2 = atoms[pDim2].length;
+//                if ((nProtons1 > 0) && (nProtons2 > 0)) {
+//                    if ((nProtons1 == nProtons2) || (nProtons1 == 1) || (nProtons2 == 1)) {
+//                        int maxN = nProtons1 > nProtons2 ? nProtons1 : nProtons2;
+//                        for (int iProton = 0; iProton < maxN; iProton++) {
+//                            SpatialSet sp1 = null;
+//                            SpatialSet sp2 = null;
+//                            int iProton1 = iProton;
+//                            int iProton2 = iProton;
+//                            if (iProton >= nProtons1) {
+//                                iProton1 = 0;
+//                            }
+//                            if (iProton >= nProtons2) {
+//                                iProton2 = 0;
+//                            }
+//                            if (atoms[pDim1][iProton1] != null) {
+//                                sp1 = atoms[pDim1][iProton1].spatialSet;
+//                            }
+//                            if ((atoms[pDim2][iProton2] != null)) {
+//                                sp2 = atoms[pDim2][iProton2].spatialSet;
+//                            }
+//                            if ((sp1 != null) && (sp2 != null) && (sp1 != sp2)) {
+//                                String name = sp1.getFullName() + "_" + sp2.getFullName();
+//                                NoeMatch match = new NoeMatch(sp1, sp2, Constraint.GenTypes.MANUAL, 0.0);
+//                                map.put(name, match);
+//                            }
+//                        }
+//
+//                    }
+//                }
+//            }
+//
+//            int nMan = map.size();
+//            Constraint.GenTypes type = Constraint.GenTypes.MANUAL;
+//
+//            String name = spg1.getFullName() + "_" + spg2.getFullName();
+//            if (!map.containsKey(name)) {
+//                type = Constraint.GenTypes.AUTOMATIC;
+//                if (nMan > 0) {
+//                    type = Constraint.GenTypes.AUTOPLUS;
+//                }
+//            }
+//            setGenType(type);
+//        }
+//    }
 //    public void updatePPMError() {
 //   //
 //
@@ -1893,12 +1893,14 @@ public class Noe implements Constraint, Serializable {
                 PeakDim peakDim = peak.getPeakDim(matchCriteria[0].getDim());
                 double ppm = peakDim.getChemShift();
                 matchCriteria[0].setPPM(ppm);
-                ArrayList res1s = peakDim.getResonances();
+//                ArrayList res1s = peakDim.getResonances();
+ArrayList res1s = new ArrayList();
 
                 peakDim = peak.getPeakDim(matchCriteria[1].getDim());
                 ppm = peakDim.getChemShift();
                 matchCriteria[1].setPPM(ppm);
-                ArrayList res2s = peakDim.getResonances();
+//                ArrayList res2s = peakDim.getResonances();
+ArrayList res2s = new ArrayList();
 
                 ArrayList noeList = Noe.getPeakList(peak);
 

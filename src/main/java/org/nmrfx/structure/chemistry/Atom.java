@@ -15,13 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.chemistry.io.AtomParser;
-import org.nmrfx.processor.datasets.peaks.ResonanceSet;
 import java.util.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.nmrfx.processor.datasets.peaks.AtomResonance;
 
 public class Atom {
 
@@ -59,7 +58,7 @@ public class Atom {
     public boolean active = true;
     public ArrayList<AtomEquivalency> equivAtoms = null;
     public final SpatialSet spatialSet;
-    ResonanceSet resonanceSet = null;
+    AtomResonance resonance = null;
     public int irpIndex = 0;
     public int rotUnit = -1;
     public Atom rotGroup = null;
@@ -200,6 +199,14 @@ public class Atom {
         return connected;
     }
 
+    public void setActive(boolean state) {
+        active = state;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
     public boolean isBonded(Atom atom) {
         boolean bonded = false;
         for (int i = 0; i < bonds.size(); i++) {
@@ -253,7 +260,7 @@ public class Atom {
     public String getName() {
         return name;
     }
-    
+
     public int getIndex() {
         return iAtom;
     }
@@ -287,19 +294,19 @@ public class Atom {
         return spatialSet;
     }
 
-    public void setResonanceSet(ResonanceSet resonanceSet) {
-        ResonanceSet current = this.resonanceSet;
-        if ((resonanceSet == null) && (current != null)) {
+    public void setResonance(AtomResonance resonance) {
+        AtomResonance current = this.resonance;
+        if ((resonance == null) && (current != null)) {
             current.setAtom(null);
         }
-        this.resonanceSet = resonanceSet;
-        if (resonanceSet != null) {
-            resonanceSet.setAtom(this);
+        this.resonance = resonance;
+        if (resonance != null) {
+            resonance.setAtom(this);
         }
     }
 
-    public ResonanceSet getResonanceSet() {
-        return resonanceSet;
+    public AtomResonance getResonance() {
+        return resonance;
     }
 
     public void setSelected(int value) {
@@ -420,11 +427,11 @@ public class Atom {
 
         return ppmV;
     }
-    
-    public PPMv getRefPPM(int i){
+
+    public PPMv getRefPPM(int i) {
         PPMv ppmV = null;
         if (spatialSet == null) {
-        } else if (spatialSet != null){
+        } else if (spatialSet != null) {
             ppmV = spatialSet.getRefPPM();
         }
         return ppmV;
@@ -437,14 +444,14 @@ public class Atom {
     public void setPPM(int i, double value) {
         spatialSet.setPPM(i, value, false);
     }
-    
+
     public void setRefPPM(double value) {
-        spatialSet.setRefPPM(0,value);
+        spatialSet.setRefPPM(0, value);
     }
-    
+
     public void setRefPPM(int i, double value) {
-        spatialSet.setRefPPM(i, value);    
-    }    
+        spatialSet.setRefPPM(i, value);
+    }
 
     public void setPPMValidity(int i, boolean validity) {
         spatialSet.setPPMValidity(i, validity);
