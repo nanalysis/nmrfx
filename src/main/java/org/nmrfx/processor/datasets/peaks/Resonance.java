@@ -46,7 +46,7 @@ public interface Resonance {
     public static void merge(Resonance resA, Resonance resB) {
         resA.merge(resB);
     }
-    
+
     public void add(PeakDim peakDim);
 
 }
