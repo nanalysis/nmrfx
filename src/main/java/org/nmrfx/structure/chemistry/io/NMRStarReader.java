@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.io;
 
 import org.nmrfx.structure.chemistry.*;
@@ -29,7 +28,6 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
-import org.nmrfx.processor.datasets.peaks.ResonanceSet;
 import org.nmrfx.processor.star.Loop;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.processor.star.STAR3;
@@ -675,12 +673,12 @@ public class NMRStarReader {
                     if (resonance == null) {
                         throw new ParseException("atom elem resonance " + resIDStr + ": invalid resonance");
                     }
-                    ResonanceSet resonanceSet = resonance.getResonanceSet();
-                    if (resonanceSet == null) {
-                        resonanceSet = new ResonanceSet(resonance);
-                    }
-                    atom.setResonanceSet(resonanceSet);
-                    resonanceSet.setAtom(atom);
+//                    ResonanceSet resonanceSet = resonance.getResonanceSet();
+//                    if (resonanceSet == null) {
+//                        resonanceSet = new ResonanceSet(resonance);
+//                    }
+                    atom.setResonance(resonance);
+                    resonance.setAtom(atom);
                 }
             }
         }
