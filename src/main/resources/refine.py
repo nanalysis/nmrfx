@@ -1087,6 +1087,14 @@ class refine:
                 self.energyLists.addDistanceConstraint(atomNameI,atomNameJ,lower,upper)
 
 
+    def readSequenceString(self, molName, sequence):
+        seqAList = ArrayList()
+        for res in sequence:
+            seqAList.add(res)
+        seqReader = Sequence()
+        self.molecule = seqReader.read(molName, seqAList, "")
+        self.molName = self.molecule.getName()
+        return self.molecule
 
     def readSequence(self,seqFile):
         seqReader = Sequence()
