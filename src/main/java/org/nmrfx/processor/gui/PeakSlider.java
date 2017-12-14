@@ -14,6 +14,9 @@ import java.util.function.Consumer;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ToolBar;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
@@ -31,6 +34,7 @@ public class PeakSlider {
 
     public PeakSlider(FXMLController controller, Consumer closeAction) {
         this.controller = controller;
+        this.closeAction = closeAction;
         setupLists(true);
     }
 
@@ -50,9 +54,8 @@ public class PeakSlider {
         String fontSize = "7pt";
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> close());
-        buttons.add(bButton);
+        Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
+        closeButton.setOnAction(e -> close());
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.LOCK, "Freeze", iconSize, fontSize, ContentDisplay.TOP);
         bButton.setOnAction(e -> freezePeaks());
@@ -69,7 +72,16 @@ public class PeakSlider {
         buttons.forEach((button) -> {
             button.getStyleClass().add("toolButton");
         });
+
+        Pane filler1 = new Pane();
+        HBox.setHgrow(filler1, Priority.ALWAYS);
+        Pane filler2 = new Pane();
+        HBox.setHgrow(filler2, Priority.ALWAYS);
+
+        toolBar.getItems().add(closeButton);
+        toolBar.getItems().add(filler1);
         toolBar.getItems().addAll(buttons);
+        toolBar.getItems().add(filler2);
 
     }
 
