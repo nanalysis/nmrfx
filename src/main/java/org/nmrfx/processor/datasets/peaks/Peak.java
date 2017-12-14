@@ -496,10 +496,10 @@ public class Peak implements Comparable, PeakOrMulti {
         RegionData regionData = analyzePeakRegion(dataset, planes);
         double[] maxPoint = regionData.getMaxDPoint();
         for (int i = 0; i < maxPoint.length; i++) {
-            boolean frozen = getFlag(8 + i);
-            if (!frozen) {
+            PeakDim tweakDim = peakDim[i];
+            if (!tweakDim.isFrozen()) {
                 double position = dataset.pointToPPM(i, maxPoint[i]);
-                getPeakDim(i).setChemShiftValue((float) position);
+                tweakDim.setChemShiftValue((float) position);
             }
         }
     }
