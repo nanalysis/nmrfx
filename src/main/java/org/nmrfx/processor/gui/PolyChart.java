@@ -2306,9 +2306,12 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             double[] offsets = new double[dim.length];
             peaks.stream().forEach((peak) -> {
                 drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, true);
+                int nPeakDim = peak.peakList.nDim;
+                if (peak.getPeakList().isSlideable() && (nPeakDim > 1)) {
+                    drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim);
+                }
             });
         }
-
     }
 
 //    void pickPeakList(DatasetAttributes dataAttr, PeakList peakList, final double pickX, final double pickY) {
