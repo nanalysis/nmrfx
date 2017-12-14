@@ -77,6 +77,7 @@ public class DrawSpectrum {
     int rowIndex = -1;
     private static boolean cancelled = false;
     ArrayBlockingQueue<DrawObject> contourQueue = new ArrayBlockingQueue<>(4);
+    volatile long jobCount = 0;
 
     public DrawSpectrum(NMRAxis[] axes, Canvas canvas) {
         this.axes = axes;
@@ -91,9 +92,9 @@ public class DrawSpectrum {
     public void setController(FXMLController controller) {
         Button cancelButton = controller.getCancelButton();
         cancelButton.setOnAction(actionEvent -> {
+            cancelled = true;
             ((Service) makeContours.worker).cancel();
             ((Service) drawContours.worker).cancel();
-            cancelled = true;
         });
         cancelButton.disableProperty().bind(((Service) makeContours.worker).stateProperty().isNotEqualTo(Task.State.RUNNING));
     }
@@ -113,6 +114,9 @@ public class DrawSpectrum {
         if (pick) {
             return;
         }
+        jobCount++;
+        ((Service) makeContours.worker).cancel();
+
         this.axModes = new AXMODE[axModes.length];
         System.arraycopy(axModes, 0, this.axModes, 0, axModes.length);
         dataAttrList.clear();
@@ -151,10 +155,12 @@ public class DrawSpectrum {
 
         Contour[] contours;
         DatasetAttributes dataAttr;
+        long count;
 
-        DrawObject(DatasetAttributes dataAttr, Contour[] contours) {
+        DrawObject(DatasetAttributes dataAttr, Contour[] contours, long count) {
             this.contours = contours;
             this.dataAttr = dataAttr;
+            this.count = count;
         }
     }
 
@@ -220,7 +226,7 @@ public class DrawSpectrum {
                 final Contour[] contours = new Contour[2];
                 contours[0] = new Contour();
                 contours[1] = new Contour();
-                DrawObject drawObject = new DrawObject(fileData, contours);
+                DrawObject drawObject = new DrawObject(fileData, contours, drawSpectrum.jobCount);
 
                 if (drawSpectrum.getContours(fileData, contours, iChunk, offset, levels)) {
                     try {
@@ -284,6 +290,13 @@ public class DrawSpectrum {
                     } else if ((jPosNeg == 1) && !dataAttr.getNegDrawOn()) {
                         continue;
                     }
+                    if (cancelled) {
+                        return 0;
+                    }
+                    if (drawObject.count < drawSpectrum.jobCount) {
+                        return 0;
+                    }
+
                     g2.setGlobalAlpha(1.0);
                     g2.setLineCap(StrokeLineCap.BUTT);
                     g2.setEffect(null);
@@ -323,6 +336,10 @@ public class DrawSpectrum {
                         interrupted = true;
                         break;
                     }
+                    if (drawSpectrum.cancelled) {
+                        return;
+                    }
+
                     DrawObject drawObject = null;
 
                     try {
@@ -397,6 +414,7 @@ public class DrawSpectrum {
         Dataset dataset = dataGenerator.getDataset();
         for (int iLine = 0; iLine < lineCount; iLine += 4) {
             if (cancelled) {
+                System.out.println("can response1");
                 break;
             }
             double xPoint1 = scale * contours.coords[coordIndex][iLine] + cxOffset;
