@@ -38,12 +38,12 @@ public class SimpleResonance implements Resonance {
     }
 
     @Override
-    public void setName(List<String> names) {
+    public void setName(List<String> newNames) {
         if (names == null) {
             names = new ArrayList<>();
         }
-        this.names.clear();
-        this.names.addAll(names);
+        names.clear();
+        names.addAll(newNames);
     }
 
     @Override
@@ -127,4 +127,109 @@ public class SimpleResonance implements Resonance {
             peakDims.add(peakDim);
         }
     }
+
+    public Double getPPMAvg(String condition) {
+        double sum = 0.0;
+        int n = 0;
+        Double result = null;
+        for (PeakDim peakDim : peakDims) {
+            if (peakDim == null) {
+                continue;
+            }
+            if ((condition != null) && (condition.length() > 0)) {
+                String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
+                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                    continue;
+                }
+            }
+            if (peakDim.getChemShift() != null) {
+                sum += peakDim.getChemShift();
+                n++;
+            }
+        }
+        if (n > 0) {
+            result = sum / n;
+        }
+        return result;
+    }
+
+    public Double getWidthAvg(String condition) {
+        double sum = 0.0;
+        int n = 0;
+        Double result = null;
+        for (PeakDim peakDim : peakDims) {
+            if (peakDim == null) {
+                continue;
+            }
+            if ((condition != null) && (condition.length() > 0)) {
+                String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
+                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                    continue;
+                }
+            }
+            Float lw = peakDim.getLineWidth();
+            if (lw != null) {
+                sum += lw;
+                n++;
+            }
+        }
+        if (n > 0) {
+            result = sum / n;
+        }
+        return result;
+    }
+
+    public Double getPPMDev(String condition) {
+        double sum = 0.0;
+        double sumsq = 0.0;
+        int n = 0;
+        Double result = null;
+        for (PeakDim peakDim : peakDims) {
+            if (peakDim == null) {
+                continue;
+            }
+            if ((condition != null) && (condition.length() > 0)) {
+                String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
+                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                    continue;
+                }
+            }
+            if (peakDim.getChemShift() != null) {
+                sum += peakDim.getChemShift();
+                sumsq += peakDim.getChemShift() * peakDim.getChemShift();
+                n++;
+            }
+        }
+        if (n > 1) {
+            double mean = sum / n;
+            double devsq = sumsq / n - mean * mean;
+            if (devsq > 0.0) {
+                result = Math.sqrt(devsq);
+            } else {
+                result = 0.0;
+            }
+        } else if (n == 1) {
+            result = 0.0;
+        }
+        /*for (int i=0;i<peakDimContribs.size();i++) {
+         PeakDim peakDim = ((PeakDimContrib) peakDimContribs.get(i)).getPeakDim();
+         peakDims.add(peakDim);
+         }*/
+        return result;
+    }
+
+    public int getPeakCount(String condition) {
+        int n = 0;
+        for (PeakDim peakDim : peakDims) {
+            if ((condition != null) && (condition.length() > 0)) {
+                String peakCondition = peakDim.getPeak().getPeakList().getSampleConditionLabel();
+                if ((peakCondition == null) || (!condition.equals(peakCondition))) {
+                    continue;
+                }
+            }
+            n++;
+        }
+        return n;
+    }
+
 }
