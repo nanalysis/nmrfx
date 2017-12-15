@@ -468,6 +468,11 @@ public class PeakDim {
         peakDimUpdated();
     }
 
+    public double getDeltaHz(double delta) {
+        delta /= getSpectralDimObj().getSf();
+        return delta;
+    }
+
     public Float getPhase() {
         return phase;
     }
