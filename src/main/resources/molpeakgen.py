@@ -25,7 +25,6 @@ def writePeakList(peakList, listName=None, folder="genpeaks"):
 def genTOCSYPeaks(mol, transfers, dataset, listName ):
     peakList = peakgen.makePeakListFromDataset(listName, dataset)
 
-    cList = CouplingList()
     polymers = mol.getPolymers()
     for polymer in polymers:
         #print polymer.getName()
@@ -34,7 +33,8 @@ def genTOCSYPeaks(mol, transfers, dataset, listName ):
             resNum = aResidue.getNumber()
             resName = aResidue.getName()
             print iRes,resNum,resName
-            cList.generateCouplings(aResidue,4,4)
+            cList = CouplingList()
+            cList.generateCouplings(aResidue,3,2)
             tLinks = cList.getTocsyLinks()
             for link in tLinks:
                 a0 = link.getAtom(0)
@@ -71,7 +71,7 @@ def genHCPeaks(mol,  dataset, listName, pType):
                                 ppm0 = atom.getPPM(0).getValue()
                                 ppm1 = parent.getPPM(0).getValue()
                                 ppms = [ppm0,ppm1]
-                                widths = [0.02, 0.02]
+                                widths = [0.02, 1.00]
                                 intensity = 100.0
                                 print atom.getShortName(),parent.getShortName(),pSym,ppm0,ppm1
                                 names = [atom.getShortName(), parent.getShortName()]
