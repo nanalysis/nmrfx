@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import java.util.*;
@@ -274,4 +273,14 @@ public class Polymer extends Entity {
             atom.remove(true);
         }
     }
+
+    public void freezeResidueRange(int start, int end, boolean state) {
+        molecule.updateAtomArray();
+        residueList.stream().filter(res -> (res.getResNum() >= start) && (res.getResNum() <= end)).forEach(res -> {
+            res.atoms.stream().filter(atom -> atom.irpIndex > 0).forEach(atom -> atom.rotActive = state);
+        });
+        molecule.setupRotGroups();
+        molecule.setupAngles();
+    }
+
 }
