@@ -1084,8 +1084,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             range = range * factor;
             min = -f * range;
             max = min + range;
-            double oldLevel = dataAttr.getLevel();
-            dataAttr.setLevel(oldLevel * factor);
+            double oldLevel = dataAttr.getLvl();
+            dataAttr.setLvl(oldLevel * factor);
             setYAxis(min, max);
         } else if (dataset != null) {
             double scale = factor;
@@ -1094,8 +1094,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             } else if (scale < 0.5) {
                 scale = 0.5;
             }
-            double oldLevel = dataAttr.getLevel();
-            dataAttr.setLevel(oldLevel * scale);
+            double oldLevel = dataAttr.getLvl();
+            dataAttr.setLvl(oldLevel * scale);
         }
     }
 
@@ -1111,8 +1111,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 range -= y / scale;
                 min = -f * range;
                 max = min + range;
-                double oldLevel = dataAttr.getLevel();
-                dataAttr.setLevel(oldLevel * scale);
+                double oldLevel = dataAttr.getLvl();
+                dataAttr.setLvl(oldLevel * scale);
                 setYAxis(min, max);
             } else if (dataset != null) {
                 double scale = (y / 100.0 + 1.0);
@@ -1121,8 +1121,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 } else if (scale < 0.5) {
                     scale = 0.5;
                 }
-                double oldLevel = dataAttr.getLevel();
-                dataAttr.setLevel(oldLevel * scale);
+                double oldLevel = dataAttr.getLvl();
+                dataAttr.setLvl(oldLevel * scale);
             }
         });
         layoutPlotChildren();
@@ -1370,7 +1370,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             max += range / 20.0;
             min -= range / 20.0;
             double delta = max - min;
-            dataAttr.setLevel(delta / 10.0);
+            dataAttr.setLvl(delta / 10.0);
             double offset = (0.0 - min) / delta;
             dataAttr.setOffset(offset);
             setYAxis(min, max);
@@ -1378,7 +1378,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             Dataset dataset = dataAttr.getDataset();
             Double sdev = dataset.guessNoiseLevel();
             if (sdev != null) {
-                dataAttr.setLevel(sdev * 5.0);
+                dataAttr.setLvl(sdev * 5.0);
                 level = sdev * 5.0;
             }
         }
@@ -1686,7 +1686,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             if (append) {
                 datasetAttributes = new DatasetAttributes(dataset);
                 if (datasetAttributes.getDataset().isLvlSet()) {
-                    datasetAttributes.setLevel(datasetAttributes.getDataset().getLvl());
+                    datasetAttributes.setLvl(datasetAttributes.getDataset().getLvl());
                     datasetAttributes.setHasLevel(true);
                 }
                 datasetAttributesList.add(datasetAttributes);
@@ -1695,24 +1695,24 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 if (datasetAttributesList.isEmpty()) {
                     if ((lastDatasetAttr != null) && (lastDatasetAttr.getDataset().getName().equals(dataset.getName()))) {
                         datasetAttributes = lastDatasetAttr;
-                        double oldLevel = datasetAttributes.getLevel();
+                        double oldLevel = datasetAttributes.getLvl();
                         datasetAttributes.setDataset(dataset);
-                        datasetAttributes.setLevel(oldLevel);
+                        datasetAttributes.setLvl(oldLevel);
                         datasetAttributes.setHasLevel(true);
                     } else {
                         datasetAttributes = new DatasetAttributes(dataset);
-                        datasetAttributes.setLevel(dataset.getLvl());
+                        datasetAttributes.setLvl(dataset.getLvl());
                         datasetAttributes.setHasLevel(true);
                     }
                 } else {
                     datasetAttributes = datasetAttributesList.get(0);
                     Dataset existingDataset = datasetAttributes.getDataset();
-                    double oldLevel = datasetAttributes.getLevel();
+                    double oldLevel = datasetAttributes.getLvl();
                     datasetAttributes.setDataset(dataset);
                     if ((existingDataset == null) || !existingDataset.getName().equals(dataset.getName())) {
-                        datasetAttributes.setLevel(dataset.getLvl());
+                        datasetAttributes.setLvl(dataset.getLvl());
                     } else if ((existingDataset != null) && existingDataset.getName().equals(dataset.getName())) {
-                        datasetAttributes.setLevel(oldLevel);
+                        datasetAttributes.setLvl(oldLevel);
                         datasetAttributes.setHasLevel(true);
                     }
                 }
@@ -1917,7 +1917,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             DatasetAttributes firstAttr = datasetAttributesList.get(0);
             Dataset dataset = datasetAttributes.getDataset();
             if (dataset != null) {
-//                datasetAttributes.setLevel(level);
+//                datasetAttributes.setLvl(level);
                 datasetAttributes.setDrawReal(true);
                 if (datasetAttributes != firstAttr) {
                     datasetAttributes.syncDims(firstAttr);
@@ -1988,10 +1988,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         if (nPoints > 1) {
             if (iMode == 0) {
                 gC.setStroke(datasetAttributes.getPosColor(rowIndex));
-                gC.setLineWidth(datasetAttributes.getPosLineWidth());
+                gC.setLineWidth(datasetAttributes.getPosWidth());
             } else {
                 gC.setStroke(datasetAttributes.getNegColor());
-                gC.setLineWidth(datasetAttributes.getNegLineWidth());
+                gC.setLineWidth(datasetAttributes.getNegWidth());
             }
             gC.setLineCap(StrokeLineCap.BUTT);
             gC.strokePolyline(xy[0], xy[1], nPoints);

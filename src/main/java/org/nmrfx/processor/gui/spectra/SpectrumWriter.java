@@ -99,7 +99,7 @@ public class SpectrumWriter {
         double[][] xy = new double[2][];
         for (Vec vec : vecs) {
             int nPoints = DrawSpectrum.drawVector(vec, xAxis, yAxis, axModes[0], xy);
-            writer.setLineWidth(datasetAttributes.getPosLineWidth());
+            writer.setLineWidth(datasetAttributes.getPosWidth());
             writer.drawPolyLine(xy[0], xy[1], nPoints);
         }
     }
@@ -147,8 +147,8 @@ public class SpectrumWriter {
         writer.drawLine(xAxis.getEnd(), yAxis.getEnd(), xAxis.getEnd(), yAxis.getStart());
         writer.clipRect(xAxis.getStart(), yAxis.getStart(), width, height);
         for (DatasetAttributes fileData : drawSpectrum.dataAttrList) {
-            lineWidth[0] = fileData.posLineWidthProperty().get();
-            lineWidth[1] = fileData.negLineWidthProperty().get();
+            lineWidth[0] = fileData.posWidthProperty().get();
+            lineWidth[1] = fileData.negWidthProperty().get();
             float[] levels = DrawSpectrum.getLevels(fileData);
             fileData.updateBounds(axModes, axes, drawSpectrum.disDim);
             fileData.mChunk = -1;
@@ -159,9 +159,9 @@ public class SpectrumWriter {
                 contours[1] = new Contour();
                 if (drawSpectrum.getContours(fileData, contours, iChunk, offset, levels)) {
                     for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
-                        if ((iPosNeg == 0) && !fileData.getPosDrawOn()) {
+                        if ((iPosNeg == 0) && !fileData.getPos()) {
                             continue;
-                        } else if ((iPosNeg == 1) && !fileData.getNegDrawOn()) {
+                        } else if ((iPosNeg == 1) && !fileData.getNeg()) {
                             continue;
                         }
                         if (contours[iPosNeg].getLineCount() != 0) {

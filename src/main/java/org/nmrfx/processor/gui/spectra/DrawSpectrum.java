@@ -128,11 +128,11 @@ public class DrawSpectrum {
     }
 
     public static float[] getLevels(DatasetAttributes fileData) {
-        int nLevels = fileData.getNlevels();
+        int nLevels = fileData.getNlvls();
         double clm = fileData.getClm();
 
         float[] levels = new float[nLevels];
-        levels[0] = (float) fileData.levelProperty().get();
+        levels[0] = (float) fileData.lvlProperty().get();
         for (int i = 1; i < nLevels; i++) {
             levels[i] = (float) (levels[i - 1] * clm);
         }
@@ -285,9 +285,9 @@ public class DrawSpectrum {
             DatasetAttributes dataAttr = drawObject.dataAttr;
             FutureTask<Integer> future = new FutureTask(() -> {
                 for (int jPosNeg = 0; jPosNeg < 2; jPosNeg++) {
-                    if ((jPosNeg == 0) && !dataAttr.getPosDrawOn()) {
+                    if ((jPosNeg == 0) && !dataAttr.getPos()) {
                         continue;
-                    } else if ((jPosNeg == 1) && !dataAttr.getNegDrawOn()) {
+                    } else if ((jPosNeg == 1) && !dataAttr.getNeg()) {
                         continue;
                     }
                     if (cancelled) {
@@ -301,10 +301,10 @@ public class DrawSpectrum {
                     g2.setLineCap(StrokeLineCap.BUTT);
                     g2.setEffect(null);
                     if (jPosNeg == 0) {
-                        g2.setLineWidth(dataAttr.posLineWidthProperty().get());
+                        g2.setLineWidth(dataAttr.posWidthProperty().get());
                         g2.setStroke(dataAttr.getPosColor());
                     } else {
-                        g2.setLineWidth(dataAttr.negLineWidthProperty().get());
+                        g2.setLineWidth(dataAttr.negWidthProperty().get());
                         g2.setStroke(dataAttr.getNegColor());
                     }
                     for (int iLevel = 0; iLevel < nDrawLevels; iLevel++) {
@@ -386,9 +386,9 @@ public class DrawSpectrum {
         }
 
         for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
-            if ((iPosNeg == 0) && !fileData.getPosDrawOn()) {
+            if ((iPosNeg == 0) && !fileData.getPos()) {
                 continue;
-            } else if ((iPosNeg == 1) && !fileData.getNegDrawOn()) {
+            } else if ((iPosNeg == 1) && !fileData.getNeg()) {
                 continue;
             }
             contours[iPosNeg].setLineCount(0);
@@ -493,7 +493,7 @@ public class DrawSpectrum {
         boolean offsetTracking = sliceAttr.getOffsetTracking();
         try {
             datasetAttr.getSlice(sliceVec, sliceDim, slicePosX, slicePosY);
-            double level = datasetAttr.levelProperty().get();
+            double level = datasetAttr.lvlProperty().get();
             double scale = -sliceAttr.getScaleValue() / level;
             //System.out.println(orientation + " " + slicePosX + " " + slicePosY);
             if (sliceDim == 0) {
@@ -558,7 +558,7 @@ public class DrawSpectrum {
                 return false;
             }
         }
-        double level = dataAttributes.levelProperty().get();
+        double level = dataAttributes.lvlProperty().get();
         double height = axes[1].getHeight();
         double scale = -height / 10.0 / level;
         double offset = height * (1.0 - dataAttributes.getMapOffset(rowIndex));

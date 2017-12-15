@@ -40,12 +40,12 @@ public class PeakPicking {
         if (listName == null) {
             listName = PeakList.getNameForDataset(datasetName);
         }
-        double level = dataAttr.getLevel();
+        double level = dataAttr.getLvl();
         if (nDim == 1) {
             level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
         }
         PeakPick peakPickPar = (new PeakPick(dataset, listName)).level(level).mode("appendregion");
-        peakPickPar.pos(dataAttr.getPosDrawOn()).neg(dataAttr.getNegDrawOn());
+        peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.calcRange();
         for (int iDim = 0; iDim < nDim; iDim++) {
             int jDim = dataAttr.getDim(iDim);
@@ -88,12 +88,12 @@ public class PeakPicking {
         int nDim = dataset.getNDim();
         String datasetName = dataset.getName();
         String listName = PeakList.getNameForDataset(datasetName);
-        double level = dataAttr.getLevel();
+        double level = dataAttr.getLvl();
         if (nDim == 1) {
             level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
         }
         PeakPick peakPickPar = (new PeakPick(dataset, listName)).level(level).mode("appendif");
-        peakPickPar.pos(dataAttr.getPosDrawOn()).neg(dataAttr.getNegDrawOn());
+        peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.region("point").fixed(fixed);
         peakPickPar.calcRange();
         for (int iDim = 0; iDim < nDim; iDim++) {

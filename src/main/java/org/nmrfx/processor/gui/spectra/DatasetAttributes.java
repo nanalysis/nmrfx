@@ -298,53 +298,53 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return negColorProperty().get();
     }
 
-    private DoubleProperty posLineWidth;
+    private DoubleProperty posWidth;
 
-    public DoubleProperty posLineWidthProperty() {
-        if (posLineWidth == null) {
-            posLineWidth = new SimpleDoubleProperty(this, "+wid", 0.5);
+    public DoubleProperty posWidthProperty() {
+        if (posWidth == null) {
+            posWidth = new SimpleDoubleProperty(this, "+wid", 0.5);
         }
-        return posLineWidth;
+        return posWidth;
     }
 
-    public void setPosLineWidth(double value) {
-        posLineWidthProperty().set(value);
+    public void setPosWidth(double value) {
+        posWidthProperty().set(value);
     }
 
-    public double getPosLineWidth() {
-        return posLineWidthProperty().get();
+    public double getPosWidth() {
+        return posWidthProperty().get();
     }
-    private DoubleProperty negLineWidth;
+    private DoubleProperty negWidth;
 
-    public DoubleProperty negLineWidthProperty() {
-        if (negLineWidth == null) {
-            negLineWidth = new SimpleDoubleProperty(this, "-wid", 0.5);
+    public DoubleProperty negWidthProperty() {
+        if (negWidth == null) {
+            negWidth = new SimpleDoubleProperty(this, "-wid", 0.5);
         }
-        return negLineWidth;
+        return negWidth;
     }
 
-    public void setNegLineWidth(double value) {
-        negLineWidthProperty().set(value);
+    public void setNegWidth(double value) {
+        negWidthProperty().set(value);
     }
 
-    public double getNegLineWidth() {
-        return negLineWidthProperty().get();
+    public double getNegWidth() {
+        return negWidthProperty().get();
     }
-    private DoubleProperty level;
+    private DoubleProperty lvl;
 
-    public DoubleProperty levelProperty() {
-        if (level == null) {
-            level = new SimpleDoubleProperty(this, "level", 1.0);
+    public DoubleProperty lvlProperty() {
+        if (lvl == null) {
+            lvl = new SimpleDoubleProperty(this, "lvl", 1.0);
         }
-        return level;
+        return lvl;
     }
 
-    public void setLevel(double value) {
-        levelProperty().set(value);
+    public void setLvl(double value) {
+        lvlProperty().set(value);
     }
 
-    public double getLevel() {
-        return levelProperty().get();
+    public double getLvl() {
+        return lvlProperty().get();
     }
 
     private DoubleProperty offset;
@@ -364,55 +364,55 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return offsetProperty().get();
     }
 
-    private BooleanProperty posDrawOn;
+    private BooleanProperty pos;
 
-    public BooleanProperty posDrawOnProperty() {
-        if (posDrawOn == null) {
-            posDrawOn = new SimpleBooleanProperty(this, "+on", true);
+    public BooleanProperty posProperty() {
+        if (pos == null) {
+            pos = new SimpleBooleanProperty(this, "+on", true);
         }
-        return posDrawOn;
+        return pos;
     }
 
-    public void setPosDrawOn(boolean value) {
-        posDrawOnProperty().set(value);
+    public void setPos(boolean value) {
+        posProperty().set(value);
     }
 
-    public boolean getPosDrawOn() {
-        return posDrawOnProperty().get();
+    public boolean getPos() {
+        return posProperty().get();
     }
 
-    private BooleanProperty negDrawOn;
+    private BooleanProperty neg;
 
-    public BooleanProperty negDrawOnProperty() {
-        if (negDrawOn == null) {
-            negDrawOn = new SimpleBooleanProperty(this, "-on", true);
+    public BooleanProperty negProperty() {
+        if (neg == null) {
+            neg = new SimpleBooleanProperty(this, "-on", true);
         }
-        return negDrawOn;
+        return neg;
     }
 
-    public void setNegDrawOn(boolean value) {
-        negDrawOnProperty().set(value);
+    public void setNeg(boolean value) {
+        negProperty().set(value);
     }
 
-    public boolean getNegDrawOn() {
-        return negDrawOnProperty().get();
+    public boolean getNeg() {
+        return negProperty().get();
     }
 
-    private IntegerProperty nlevels;
+    private IntegerProperty nlvls;
 
-    public IntegerProperty nlevelsProperty() {
-        if (nlevels == null) {
-            nlevels = new SimpleIntegerProperty(this, "nlevels", 20);
+    public IntegerProperty nlvlsProperty() {
+        if (nlvls == null) {
+            nlvls = new SimpleIntegerProperty(this, "nlevels", 20);
         }
-        return nlevels;
+        return nlvls;
     }
 
-    public void setNlevels(int value) {
-        nlevelsProperty().set(value);
+    public void setNlvls(int value) {
+        nlvlsProperty().set(value);
     }
 
-    public int getNlevels() {
-        return nlevelsProperty().get();
+    public int getNlvls() {
+        return nlvlsProperty().get();
     }
     private DoubleProperty clm;
 
@@ -546,16 +546,16 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             o = super.clone();
             ((DatasetAttributes) o).setPosColor(getPosColor());
             ((DatasetAttributes) o).setNegColor(getNegColor());
-            ((DatasetAttributes) o).setPosLineWidth(getPosLineWidth());
-            ((DatasetAttributes) o).setNegLineWidth(getNegLineWidth());
-            ((DatasetAttributes) o).setLevel(getLevel());
+            ((DatasetAttributes) o).setPosWidth(getPosWidth());
+            ((DatasetAttributes) o).setNegWidth(getNegWidth());
+            ((DatasetAttributes) o).setLvl(getLvl());
             ((DatasetAttributes) o).clm = clm;
-            ((DatasetAttributes) o).setNlevels(getNlevels());
+            ((DatasetAttributes) o).setNlvls(getNlvls());
             ((DatasetAttributes) o).nDim = nDim;
             ((DatasetAttributes) o).fileName = fileName;
             ((DatasetAttributes) o).theFile = theFile;
-            ((DatasetAttributes) o).setPosDrawOn(getPosDrawOn());
-            ((DatasetAttributes) o).setNegDrawOn(getNegDrawOn());
+            ((DatasetAttributes) o).setPos(getPos());
+            ((DatasetAttributes) o).setNeg(getNeg());
             if (drawList != null) {
                 ((DatasetAttributes) o).drawList = drawList.clone();
             }
@@ -671,19 +671,19 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         }
 
         if (theFile.getLvl() > 0) {
-            setLevel(theFile.getLvl());
+            setLvl(theFile.getLvl());
         }
         setPosColor(Color.valueOf(theFile.getPosColor()));
         setNegColor(Color.valueOf(theFile.getNegColor()));
 
         if ((theFile.getPosneg() & 2) == 2) {
             setNegColor(Color.RED);
-            setNegDrawOn(true);
+            setNeg(true);
         }
 
         if ((theFile.getPosneg() & 1) != 1) {
             setPosColor(Color.BLACK);
-            setPosDrawOn(false);
+            setPos(false);
         }
         hasLevel = false;
     }
@@ -1152,7 +1152,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
                 if (extremeValue == null) {
                     break;
-                } else if (extremeValue > level.get()) {
+                } else if (extremeValue > lvl.get()) {
                     break;
                 }
             }
@@ -1619,16 +1619,16 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     /*
                 ((DatasetAttributes) o).setPosColor(getPosColor());
             ((DatasetAttributes) o).setNegColor(getNegColor());
-            ((DatasetAttributes) o).setPosLineWidth(getPosLineWidth());
-            ((DatasetAttributes) o).setNegLineWidth(getNegLineWidth());
-            ((DatasetAttributes) o).setLevel(getLevel());
+            ((DatasetAttributes) o).setPosWidth(getPosWidth());
+            ((DatasetAttributes) o).setNegWidth(getNegWidth());
+            ((DatasetAttributes) o).setLvl(getLvl());
             ((DatasetAttributes) o).clm = clm;
             ((DatasetAttributes) o).setNLevels(getNLevels());
             ((DatasetAttributes) o).nDim = nDim;
             ((DatasetAttributes) o).fileName = fileName;
             ((DatasetAttributes) o).theFile = theFile;
-            ((DatasetAttributes) o).setPosDrawOn(getPosDrawOn());
-            ((DatasetAttributes) o).setNegDrawOn(getNegDrawOn());
+            ((DatasetAttributes) o).setPos(getPos());
+            ((DatasetAttributes) o).setNeg(getNeg());
             if (drawList != null) {
                 ((DatasetAttributes) o).drawList = drawList.clone();
             }
@@ -1668,7 +1668,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 //            }
 //        }
         Map<String, Object> data = new HashMap<>();
-        String[] beanNames = {"nlevels", "clm", "posColor", "negColor", "posLineWidth", "negLineWidth", "level", "posDrawOn", "negDrawOn"};
+        String[] beanNames = {"nlvls", "clm", "posColor", "negColor", "posWidth", "negWidth", "lvl", "pos", "neg"};
         for (String beanName : beanNames) {
             try {
                 data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));

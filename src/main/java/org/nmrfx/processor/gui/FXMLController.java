@@ -444,7 +444,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             if (!datasetAttributes.getHasLevel()) {
                 getActiveChart().full();
                 if (datasetAttributes.getDataset().isLvlSet()) {
-                    datasetAttributes.setLevel(datasetAttributes.getDataset().getLvl());
+                    datasetAttributes.setLvl(datasetAttributes.getDataset().getLvl());
                     datasetAttributes.setHasLevel(true);
                 } else {
                     getActiveChart().autoScale();
