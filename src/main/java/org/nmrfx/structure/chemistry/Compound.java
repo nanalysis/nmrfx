@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.utilities.Util;
@@ -25,6 +24,7 @@ public class Compound extends Entity implements AtomContainer {
 
     protected HashMap atomMap;
     public String number = "";
+    Integer resNum;
     public int iRes;
     public int labelNum = 1;
 
@@ -32,15 +32,17 @@ public class Compound extends Entity implements AtomContainer {
     }
 
     public Compound(String number, String name) {
-        this.name = name;
-        this.number = number;
-        this.label = name;
-        atomMap = new HashMap();
+        this(number, name, name);
     }
 
     public Compound(String number, String name, String label) {
         this.name = name;
         this.number = number;
+        try {
+            resNum = Integer.valueOf(number);
+        } catch (NumberFormatException nfE) {
+            resNum = null;
+        }
         this.label = label;
         atomMap = new HashMap();
     }
@@ -56,6 +58,10 @@ public class Compound extends Entity implements AtomContainer {
 
     public String getNumber() {
         return number;
+    }
+
+    public Integer getResNum() {
+        return resNum;
     }
 
     public void setNumber(final String number) {
