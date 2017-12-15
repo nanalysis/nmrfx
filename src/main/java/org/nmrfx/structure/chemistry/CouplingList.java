@@ -30,6 +30,9 @@ public class CouplingList {
     ArrayList<JCoupling> hmbcLinks = new ArrayList<>();
 
     public void generateCouplings(Entity entity, int nShells, int minShells) {
+        jCouplings.clear();
+        tocsyLinks.clear();
+        hmbcLinks.clear();
         Molecule.getCouplings(entity, jCouplings, tocsyLinks, hmbcLinks, nShells, minShells);
     }
 
