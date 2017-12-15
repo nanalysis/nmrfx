@@ -153,7 +153,21 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     boolean mouseDown = false;
 
     @Override
-    public void peakListChanged(PeakEvent peakEvent) {
+    public void peakListChanged(final PeakEvent peakEvent) {
+        if (Platform.isFxApplicationThread()) {
+            respondToPeakListChange(peakEvent);
+        } else {
+            Platform.runLater(() -> {
+                respondToPeakListChange(peakEvent);
+            }
+            );
+        }
+
+    }
+
+    private void respondToPeakListChange(PeakEvent peakEvent) {
+        // if mouse down we could be dragging peak which will itself cause redraw
+        //   no need to call this
         if (mouseDown) {
             return;
         }
