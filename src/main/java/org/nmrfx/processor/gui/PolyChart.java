@@ -2225,14 +2225,22 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     }
 
     void selectPeaks(double pickX, double pickY, boolean append) {
+        List<Peak> selPeaks = new ArrayList<>();
         drawPeakLists(false);
         if (peakStatus.get()) {
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
                 if (peakListAttr.getDrawPeaks()) {
                     peakListAttr.selectPeak(drawPeaks, pickX, pickY, append);
+                    List<Peak> peaks = peakListAttr.getSelectedPeaks();
+                    if (!peaks.isEmpty()) {
+                        selPeaks.addAll(peaks);
+                    }
                     drawSelectedPeaks(peakListAttr);
                 }
             }
+        }
+        if (controller == FXMLController.activeController) {
+            controller.selPeaks.set(selPeaks);
         }
     }
 

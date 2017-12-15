@@ -44,6 +44,7 @@ import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -167,6 +168,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     PeakNavigator peakNavigator;
     PeakSlider peakSlider;
+    
+    SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
 
     public File getInitialDirectory() {
         if (initialDir == null) {
