@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-version="1.8.0_92"
+version="1.8.0_152"
 os=macosx-amd64
 tail="_unpacked"
 
