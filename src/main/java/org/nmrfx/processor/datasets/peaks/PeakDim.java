@@ -34,11 +34,11 @@ public class PeakDim {
             Class c = Class.forName("org.nmrfx.processor.datasets.peaks.AtomResonanceFactory");
             try {
                 resFactory = (ResonanceFactory) c.newInstance();
-                System.out.println("made atom res fac");
             } catch (InstantiationException | IllegalAccessException ex) {
                 resFactory = new ResonanceFactory();
             }
         } catch (ClassNotFoundException ex) {
+            resFactory = new ResonanceFactory();
         }
 
     }
@@ -723,7 +723,7 @@ public class PeakDim {
                 if (peakDim.myPeak.peakList.getSampleConditionLabel().equals(condition)) {
                     // use field so we don't fire recursive slideDims
                     peakDim.chemShift = chemShift;
-                    peakDimUpdated();
+                    peakDim.peakDimUpdated();
                 }
             }
         }
