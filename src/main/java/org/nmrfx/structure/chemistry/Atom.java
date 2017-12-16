@@ -299,7 +299,6 @@ public class Atom {
 
     public String getResidueName() {
         String result = "";
-        System.out.println(entity);
         if ((entity != null) && (entity instanceof Compound)) {
             result = ((Compound) entity).getName();
         }
