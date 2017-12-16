@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import java.util.*;
@@ -54,6 +53,13 @@ public class Residue extends Compound {
         if (standardResSet.containsKey(name.toLowerCase())) {
             standard = true;
         }
+        try {
+            resNum = Integer.valueOf(number);
+        } catch (NumberFormatException nfE) {
+            System.out.println(number);
+            resNum = null;
+        }
+
         super.atomMap = new HashMap();
     }
 
