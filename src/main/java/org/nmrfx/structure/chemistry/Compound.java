@@ -41,6 +41,7 @@ public class Compound extends Entity implements AtomContainer {
         try {
             resNum = Integer.valueOf(number);
         } catch (NumberFormatException nfE) {
+            System.out.println(number);
             resNum = null;
         }
         this.label = label;

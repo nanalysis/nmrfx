@@ -286,6 +286,36 @@ public class Atom {
         }
     }
 
+    public int getResidueNumber() {
+        Integer result = 0;
+        if ((entity != null) && (entity instanceof Compound)) {
+            result = ((Compound) entity).getResNum();
+            if (result == null) {
+                result = 0;
+            }
+        }
+        return result;
+    }
+
+    public String getResidueName() {
+        String result = "";
+        System.out.println(entity);
+        if ((entity != null) && (entity instanceof Compound)) {
+            result = ((Compound) entity).getName();
+        }
+        return result;
+    }
+
+    public String getPolymerName() {
+        String result = "";
+        if (entity instanceof Residue) {
+            result = ((Residue) entity).polymer.getName();
+        } else {
+            result = ((Compound) entity).getName();
+        }
+        return result;
+    }
+
     public void addBond(Bond bond) {
         bonds.addElement(bond);
     }
@@ -416,6 +446,15 @@ public class Atom {
             valid = spatialSet.getPointValidity();
         }
         return valid;
+    }
+
+    public Double getPPM() {
+        PPMv ppmV = getPPM(0);
+        if ((ppmV != null) && ppmV.isValid()) {
+            return ppmV.getValue();
+        } else {
+            return null;
+        }
     }
 
     public PPMv getPPM(int i) {
