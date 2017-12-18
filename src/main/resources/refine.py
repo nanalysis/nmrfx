@@ -1113,6 +1113,18 @@ class refine:
         Molecule.selectAtoms('*.*')
         return self.molecule
 
+    def readPDBFiles(self,files):
+        fileName = files[0]
+        pdb = PDBFile()
+        pdb.readSequence(fileName,0)
+        molName = Molecule.defaultMol
+        self.molecule = Molecule.get(molName)
+        iFile = 1
+        for file in files:
+            pdb.readCoordinates(file,iFile,False)
+            iFile += 1
+        return self.molecule
+
     def readPDBFileNL(self,fileName):
         pdb = PDBFile()
         pdb.read(fileName)
