@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -203,9 +204,9 @@ public class PeakNavigator implements PeakListener {
                 peakList.registerListener(this);
                 peakNavigable.refreshPeakListView(peakList);
             }
-            setPeakIdField();
             updateDeleteStatus();
         }
+        setPeakIdField();
     }
 
     void updateDeleteStatus() {
@@ -370,7 +371,14 @@ public class PeakNavigator implements PeakListener {
         if (peakEvent.getSource() instanceof PeakList) {
             PeakList sourceList = (PeakList) peakEvent.getSource();
             if (sourceList == peakList) {
-                peakNavigable.refreshPeakView();
+                if (Platform.isFxApplicationThread()) {
+                    peakNavigable.refreshPeakView();
+                } else {
+                    Platform.runLater(() -> {
+                        peakNavigable.refreshPeakView();
+                    }
+                    );
+                }
             }
         }
     }
