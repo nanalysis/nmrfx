@@ -278,17 +278,20 @@ def getFullSequence(molecule):
             seqList.append(polymer.getName() + ':' + residue.getName() + residue.getNumber())
     return seqList
 
-def setPredictions(molecule, predPPMs):
+def setPredictions(molecule, predPPMs, refMode=True):
     molecule.updateAtomArray()
     for atomName in predPPMs:
         ppm = predPPMs[atomName]
         if atomName[-1] == 'p':
             atomName = atomName[0:-1] + "'"
         atom = Molecule.getAtomByName(atomName)
-        atom.setPPM(ppm)
+        if refMode:
+            atom.setRefPPM(ppm)
+        else:
+            atom.setPPM(ppm)
 
 
-def dumpPredictions(molecule):
+def dumpPredictions(molecule, refMode=True):
     polymers = molecule.getPolymers()
     if len(polymers) > 1:
         useFull = True
@@ -297,7 +300,10 @@ def dumpPredictions(molecule):
     for polymer in polymers:
         for residue in polymer.getResidues():
             for atom in residue.getAtoms():
-                ppmV = atom.getPPM(0)
+                if refMode:
+                    ppmV = atom.getRefPPM(0)
+                else:
+                    ppmV = atom.getPPM(0)
                 if (ppmV != None):
                     if atom.parent.active and atom.active:
                          if useFull:
