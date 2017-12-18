@@ -30,6 +30,18 @@ public class AtomPairDistance {
         this.distance = distance;
     }
 
+    public double getDistance() {
+        return distance;
+    }
+
+    public Atom getAtom1() {
+        return atom1;
+    }
+
+    public Atom getAtom2() {
+        return atom2;
+    }
+
     public String toString() {
         return atom1.getFullName() + " " + atom2.getFullName() + " " + distance;
     }
