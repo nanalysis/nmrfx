@@ -20,8 +20,8 @@ package org.nmrfx.structure.chemistry;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Vector;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -35,7 +35,7 @@ public class SpatialSetGroup {
     public SpatialSetGroup(String filter) throws InvalidMoleculeException {
         this.name = filter;
         MolFilter mf = new MolFilter(filter);
-        Vector spSetVec = Molecule.matchAtoms(mf);
+        List<SpatialSet> spSetVec = Molecule.matchAtoms(mf);
         spSets = new HashSet(spSetVec.size());
         spSets.addAll(spSetVec);
     }

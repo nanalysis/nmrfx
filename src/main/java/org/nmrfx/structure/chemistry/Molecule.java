@@ -23,19 +23,31 @@ import org.nmrfx.structure.chemistry.search.*;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import org.nmrfx.structure.utilities.Util;
 import java.io.*;
-import java.util.*;
+import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class Molecule implements Serializable {
 
-    public static Vector atomList = null;
-    public static final Vector conditions = new Vector();
+    public static List<Atom> atomList = null;
+    public static final List<String> conditions = new ArrayList<>();
     public static String defaultMol = "default";
-    public static final Hashtable<String, Molecule> molecules = new Hashtable<String, Molecule>();
-    public static final Hashtable sites = new Hashtable();
-    public static final Vector globalSelected = new Vector(1024);
-    private static final Vector bselected = new Vector(1024);
+    public static final Map<String, Molecule> molecules = new HashMap<String, Molecule>();
+    public static final Map<String, List<SpatialSet>> sites = new HashMap<>();
+    public static final List<SpatialSet> globalSelected = new ArrayList<>(1024);
+    private static final List<Bond> bselected = new ArrayList<>(1024);
     public static int selCycleCount = 0;
     public static final int ENERGY = 0;
     public static final int SQ_SCORE = 1;
@@ -182,9 +194,11 @@ public class Molecule implements Serializable {
     private HashMap<String, String> propertyMap = new HashMap<String, String>();
     private ArrayList<Atom> angleAtoms = null;
     private ArrayList<Atom> pseudoAngleAtoms = null;
-    ArrayList<Atom> atoms = new ArrayList<>();
+//    ArrayList<Atom> atoms = new ArrayList<>();
     private boolean atomArrayValid = false;
     Map<String, Atom> atomMap = new HashMap<>();
+    List<Atom> atoms;
+
     ArrayList<Bond> bonds = new ArrayList<Bond>();
     SpatialSet spSets[][] = null;
     int genVecs[][] = null;
@@ -194,13 +208,23 @@ public class Molecule implements Serializable {
 // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
         this.name = name;
-        entities = new LinkedHashMap<String, Entity>();
+        entities = new LinkedHashMap<>();
         entityLabels = new LinkedHashMap();
-        coordSets = new LinkedHashMap<String, CoordSet>();
+        coordSets = new LinkedHashMap<>();
         molecules.put(name, this);
         defaultMol = this.name;
         nResidues = 0;
         Atom.resetLastAtom();
+        try {
+            Class c = Class.forName("javafx.collections.FXCollections");
+            Class[] argTypes = new Class[0];
+            Method m = c.getDeclaredMethod("observableArrayList", argTypes);
+            Object[] args = new Object[0];
+            atoms = (List<Atom>) m.invoke(args);
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            atoms = new ArrayList<>();
+        }
+
     }
 
     public void changed() {
@@ -228,8 +252,8 @@ public class Molecule implements Serializable {
     }
 
     public static void clearAllChanged() {
-        for (Object checkMol : molecules.values()) {
-            ((Molecule) checkMol).clearChanged();
+        for (Molecule checkMol : molecules.values()) {
+            checkMol.clearChanged();
         }
     }
 
@@ -266,37 +290,37 @@ public class Molecule implements Serializable {
         // fixme need to remove each molecule from list, rather than just settng molecules to new Hashtable?
         // should at least just clear molecules
         if (atomList != null) {
-            atomList.removeAllElements();
+            atomList.clear();
             atomList = null;
         }
 
         molecules.clear();
-        globalSelected.removeAllElements();
-        bselected.removeAllElements();
-        conditions.removeAllElements();
+        globalSelected.clear();
+        bselected.clear();
+        conditions.clear();
         defaultMol = "default";
     }
 
     public void remove() {
         if (atomList != null) {
-            atomList.removeAllElements();
+            atomList.clear();
             atomList = null;
         }
 
         molecules.remove(name);
-        globalSelected.removeAllElements();
-        bselected.removeAllElements();
+        globalSelected.clear();
+        bselected.clear();
         structures.clear();
         resetActiveStructures();
-        conditions.removeAllElements();
+        conditions.clear();
         defaultMol = "default";
 
-        Enumeration e = molecules.keys();
+        Set<String> molNames = molecules.keySet();
 
-        if (e.hasMoreElements()) {
-            defaultMol = (String) e.nextElement();
-        } else {
-            defaultMol = "default";
+        defaultMol = "default";
+        for (String molName : molNames) {
+            defaultMol = molName;
+            break;
         }
     }
 
@@ -315,7 +339,7 @@ public class Molecule implements Serializable {
         int i = 0;
         while (e.hasNext()) {
             Integer intStructure = (Integer) e.next();
-            activeStructures[i++] = intStructure.intValue();
+            activeStructures[i++] = intStructure;
         }
     }
 
@@ -436,7 +460,7 @@ public class Molecule implements Serializable {
     }
 
     public static Point3 avgCoords(MolFilter molFilter1) throws IllegalArgumentException, InvalidMoleculeException {
-        Vector selected1 = matchAtoms(molFilter1);
+        List<SpatialSet> selected1 = matchAtoms(molFilter1);
         Point3 pt1 = Atom.avgAtom(selected1, molFilter1.getStructureNum());
         if (pt1 == null) {
             throw new IllegalArgumentException("No coordinates for atom " + molFilter1.getString());
@@ -469,8 +493,8 @@ public class Molecule implements Serializable {
 
     public static double calcDistance(MolFilter molFilter1,
             MolFilter molFilter2) throws MissingCoordinatesException, InvalidMoleculeException {
-        Vector selected1 = matchAtoms(molFilter1);
-        Vector selected2 = matchAtoms(molFilter2);
+        List<SpatialSet> selected1 = matchAtoms(molFilter1);
+        List<SpatialSet> selected2 = matchAtoms(molFilter2);
         Point3 pt1 = Atom.avgAtom(selected1, molFilter1.getStructureNum());
         Point3 pt2 = Atom.avgAtom(selected2, molFilter2.getStructureNum());
         if (pt1 == null) {
@@ -696,7 +720,7 @@ public class Molecule implements Serializable {
             Coordinates coords = null;
             double dihedralAngle = 0;
             for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = (Bond) a3.bonds.elementAt(iBond);
+                Bond bond = a3.bonds.get(iBond);
                 if (bond.begin == a3) {
                     a4 = bond.end;
                 } else {
@@ -800,7 +824,7 @@ public class Molecule implements Serializable {
             Coordinates coords = null;
             double dihedralAngle = 0;
             for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = (Bond) a3.bonds.elementAt(iBond);
+                Bond bond = a3.bonds.get(iBond);
                 if (bond.begin == a3) {
                     a4 = bond.end;
                 } else {
@@ -907,7 +931,7 @@ public class Molecule implements Serializable {
             Atom a4;
             daughterList.clear();
             for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = (Bond) a3.bonds.elementAt(iBond);
+                Bond bond = a3.bonds.get(iBond);
                 if (bond.begin == a3) {
                     a4 = bond.end;
                 } else {
@@ -965,7 +989,7 @@ public class Molecule implements Serializable {
             Atom a4;
             daughterList.clear();
             for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = (Bond) a3.bonds.elementAt(iBond);
+                Bond bond = a3.bonds.get(iBond);
                 if (bond.begin == a3) {
                     a4 = bond.end;
                 } else {
@@ -1186,7 +1210,7 @@ public class Molecule implements Serializable {
 
         for (Atom a3 : atoms) {
             for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = (Bond) a3.bonds.elementAt(iBond);
+                Bond bond = a3.bonds.get(iBond);
                 if (bond.begin == a3) {
                     a4 = bond.end;
                 } else {
@@ -1212,7 +1236,7 @@ public class Molecule implements Serializable {
     public ArrayList<Atom> getAttachedHydrogens(Atom atom) {
         ArrayList<Atom> hydrogens = new ArrayList<Atom>();
         for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-            Bond bond = (Bond) atom.bonds.elementAt(iBond);
+            Bond bond = atom.bonds.get(iBond);
             Atom checkAtom;
             if (bond.begin == atom) {
                 checkAtom = bond.end;
@@ -1244,11 +1268,11 @@ public class Molecule implements Serializable {
     }
 
     public static int selectResidues() {
-        Vector selected = new Vector(256);
+        List<SpatialSet> selected = new ArrayList<>(256);
         TreeSet completedResidues = new TreeSet();
 
         for (int i = 0; i < Molecule.globalSelected.size(); i++) {
-            SpatialSet spatialSet = (SpatialSet) Molecule.globalSelected.elementAt(i);
+            SpatialSet spatialSet = Molecule.globalSelected.get(i);
 
             if (spatialSet.selected != 1) {
                 continue;
@@ -1267,7 +1291,7 @@ public class Molecule implements Serializable {
                 SpatialSet spatialSet2 = atom.getSpatialSet();
 
                 if (spatialSet2 != null) {
-                    selected.addElement(spatialSet2);
+                    selected.add(spatialSet2);
                 }
             }
         }
@@ -1282,19 +1306,19 @@ public class Molecule implements Serializable {
 
     public static int selectAtoms(String selectionString, boolean append, boolean inverse) throws InvalidMoleculeException {
         MolFilter molFilter = new MolFilter(selectionString);
-        Vector selected = matchAtoms(molFilter);
+        List<SpatialSet> selected = matchAtoms(molFilter);
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
     }
 
     public static int selectAtoms(MolFilter molFilter,
             boolean append, boolean inverse) throws InvalidMoleculeException {
-        Vector selected = matchAtoms(molFilter);
+        List<SpatialSet> selected = matchAtoms(molFilter);
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
     }
 
-    public static int setSelected(Vector selected,
+    public static int setSelected(List<SpatialSet> selected,
             boolean append, boolean inverse) {
         int i;
         int j;
@@ -1303,7 +1327,7 @@ public class Molecule implements Serializable {
 
         if (!append) {
             for (i = 0; i < Molecule.globalSelected.size(); i++) {
-                spatialSet = (SpatialSet) Molecule.globalSelected.elementAt(i);
+                spatialSet = Molecule.globalSelected.get(i);
 
                 if (spatialSet != null) {
                     spatialSet.setSelected(0);
@@ -1312,7 +1336,7 @@ public class Molecule implements Serializable {
         }
 
         if (selected == null) {
-            Molecule.globalSelected.setSize(0);
+            Molecule.globalSelected.clear();
 
             return 0;
         }
@@ -1322,22 +1346,22 @@ public class Molecule implements Serializable {
                 Molecule.makeAtomList();
             }
             for (i = 0; i < Molecule.atomList.size(); i++) {
-                atom = (Atom) Molecule.atomList.elementAt(i);
+                atom = Molecule.atomList.get(i);
                 atom.spatialSet.setSelected(1);
             }
 
             for (i = 0; i < selected.size(); i++) {
-                spatialSet = (SpatialSet) selected.elementAt(i);
+                spatialSet = (SpatialSet) selected.get(i);
                 spatialSet.setSelected(0);
             }
 
-            Molecule.globalSelected.setSize(0);
+            Molecule.globalSelected.clear();
 
             for (i = 0; i < Molecule.atomList.size(); i++) {
-                atom = (Atom) Molecule.atomList.elementAt(i);
+                atom = Molecule.atomList.get(i);
                 spatialSet = atom.spatialSet;
                 if (spatialSet.getSelected() > 0) {
-                    Molecule.globalSelected.addElement(spatialSet);
+                    Molecule.globalSelected.add(spatialSet);
                 }
             }
 
@@ -1349,39 +1373,37 @@ public class Molecule implements Serializable {
                 j = 0;
             }
 
-            Molecule.globalSelected.setSize(j + selected.size());
+            Molecule.globalSelected.clear();
 
             for (i = 0; i < selected.size(); i++) {
-                spatialSet = (SpatialSet) selected.elementAt(i);
+                spatialSet = (SpatialSet) selected.get(i);
 
                 if (spatialSet != null) {
                     spatialSet.setSelected(spatialSet.getSelected() + 1);
-                    Molecule.globalSelected.setElementAt(spatialSet, j++);
+                    Molecule.globalSelected.add(spatialSet);
                 }
             }
 
-            Molecule.globalSelected.setSize(j);
-
-            return (j);
+            return Molecule.globalSelected.size();
         }
     }
 
     public static int selectBonds(String mode) {
-        Vector selected = matchBonds();
+        List<Bond> selected = matchBonds();
         int i;
         Bond bond;
 
         for (i = 0; i < Molecule.bselected.size(); i++) {
-            bond = (Bond) Molecule.bselected.elementAt(i);
+            bond = Molecule.bselected.get(i);
             bond.unsetProperty(Atom.SELECT);
         }
 
-        Molecule.bselected.setSize(selected.size());
+        Molecule.bselected.clear();
 
         for (i = 0; i < selected.size(); i++) {
-            bond = (Bond) selected.elementAt(i);
+            bond = selected.get(i);
             bond.setProperty(Atom.SELECT);
-            Molecule.bselected.setElementAt(bond, i);
+            Molecule.bselected.add(bond);
         }
 
         return selected.size();
@@ -1393,7 +1415,7 @@ public class Molecule implements Serializable {
         ArrayList<String> list = new ArrayList<>();
 
         for (i = 0; i < globalSelected.size(); i++) {
-            spatialSet = (SpatialSet) globalSelected.elementAt(i);
+            spatialSet = globalSelected.get(i);
             list.add(spatialSet.getFullName());
         }
         return list;
@@ -1406,13 +1428,13 @@ public class Molecule implements Serializable {
             return;
         }
 
-        spatialSet = (SpatialSet) globalSelected.lastElement();
+        spatialSet = globalSelected.get(globalSelected.size() - 1);
 
         if ((spatialSet != null) && (spatialSet.getSelected() > 0)) {
             spatialSet.setSelected(spatialSet.getSelected() - 1);
         }
 
-        globalSelected.removeElementAt(globalSelected.size() - 1);
+        globalSelected.remove(globalSelected.size() - 1);
     }
 
     public static void makeSite(String siteName) throws IllegalArgumentException {
@@ -1420,7 +1442,7 @@ public class Molecule implements Serializable {
             throw new IllegalArgumentException("makeSite: null or blank siteName");
         }
 
-        Vector siteList = new Vector(globalSelected);
+        List<SpatialSet> siteList = new ArrayList<>(globalSelected);
         sites.put(siteName, siteList);
     }
 
@@ -1430,7 +1452,7 @@ public class Molecule implements Serializable {
             throw new IllegalArgumentException("selectSite: null or blank siteName");
         }
 
-        Vector siteList = (Vector) sites.get(siteName);
+        List<SpatialSet> siteList = sites.get(siteName);
 
         if (siteList == null) {
             throw new IllegalArgumentException(
@@ -1447,17 +1469,17 @@ public class Molecule implements Serializable {
             throw new IllegalArgumentException("selectSite: null or blank siteName");
         }
 
-        Vector siteList = (Vector) sites.get(siteName);
+        List<SpatialSet> siteList = sites.get(siteName);
 
         if (siteList == null) {
             throw new IllegalArgumentException(
                     "withinSite: siteList \"" + siteName + "\" doesnt't exist");
         }
 
-        Vector hitList = new Vector(128);
+        List<SpatialSet> hitList = new ArrayList<>(128);
 
         for (int i = 0; i < globalSelected.size(); i++) {
-            SpatialSet s1 = (SpatialSet) globalSelected.elementAt(i);
+            SpatialSet s1 = globalSelected.get(i);
 
             if (s1.getSelected() != 1) {
                 continue;
@@ -1471,7 +1493,7 @@ public class Molecule implements Serializable {
 
             // fixme  should get array of coords once
             for (int j = 0; j < siteList.size(); j++) {
-                SpatialSet s2 = (SpatialSet) siteList.elementAt(j);
+                SpatialSet s2 = siteList.get(j);
                 Point3 pt2 = s2.getPoint();
 
                 if (pt2 == null) {
@@ -1481,7 +1503,7 @@ public class Molecule implements Serializable {
                 double distance = Atom.calcDistance(pt1, pt2);
 
                 if (distance < tolerance) {
-                    hitList.addElement(s1);
+                    hitList.add(s1);
 
                     break;
                 }
@@ -1499,7 +1521,7 @@ public class Molecule implements Serializable {
         List<Object> list = new ArrayList<>();
 
         for (i = 0; i < bselected.size(); i++) {
-            bond = (Bond) bselected.elementAt(i);
+            bond = bselected.get(i);
             atomB = bond.begin;
             atomE = bond.end;
             if ((atomB != null) && (atomE != null)) {
@@ -1517,7 +1539,7 @@ public class Molecule implements Serializable {
         SpatialSet spatialSet;
 
         for (int i = 0; i < globalSelected.size(); i++) {
-            spatialSet = (SpatialSet) globalSelected.elementAt(i);
+            spatialSet = globalSelected.get(i);
 
             if (spatialSet.getSelected() == 1) {
                 if (state) {
@@ -1533,7 +1555,7 @@ public class Molecule implements Serializable {
         Bond bond;
 
         for (int i = 0; i < bselected.size(); i++) {
-            bond = (Bond) bselected.elementAt(i);
+            bond = bselected.get(i);
 
             if (state) {
                 bond.setProperty(Bond.DISPLAY);
@@ -1556,7 +1578,7 @@ public class Molecule implements Serializable {
         Atom atom;
 
         for (int i = 0; i < globalSelected.size(); i++) {
-            atom = ((SpatialSet) globalSelected.elementAt(i)).atom;
+            atom = globalSelected.get(i).atom;
             atom.setColor(red, green, blue);
         }
     }
@@ -1565,7 +1587,7 @@ public class Molecule implements Serializable {
         Atom atom;
 
         for (int i = 0; i < globalSelected.size(); i++) {
-            atom = ((SpatialSet) globalSelected.elementAt(i)).atom;
+            atom = globalSelected.get(i).atom;
             atom.setColorByType();
         }
     }
@@ -1575,7 +1597,7 @@ public class Molecule implements Serializable {
         Bond bond;
 
         for (int i = 0; i < bselected.size(); i++) {
-            bond = (Bond) bselected.elementAt(i);
+            bond = bselected.get(i);
             bond.red = red;
             bond.green = green;
             bond.blue = blue;
@@ -1586,7 +1608,7 @@ public class Molecule implements Serializable {
         Atom atom;
 
         for (int i = 0; i < globalSelected.size(); i++) {
-            atom = ((SpatialSet) globalSelected.elementAt(i)).atom;
+            atom = globalSelected.get(i).atom;
             atom.radius = radius;
         }
     }
@@ -1595,7 +1617,7 @@ public class Molecule implements Serializable {
         Bond bond;
 
         for (int i = 0; i < globalSelected.size(); i++) {
-            bond = (Bond) bselected.elementAt(i);
+            bond = bselected.get(i);
             bond.radius = radius;
         }
     }
@@ -1996,7 +2018,7 @@ public class Molecule implements Serializable {
         double z = 0;
         int n = 0;
         for (int i = 0; i < globalSelected.size(); i++) {
-            SpatialSet spatialSet = (SpatialSet) globalSelected.elementAt(i);
+            SpatialSet spatialSet = (SpatialSet) globalSelected.get(i);
             Point3 pt = spatialSet.getPoint(iStructure);
             if (pt != null) {
                 x += pt.getX();
@@ -2153,7 +2175,7 @@ public class Molecule implements Serializable {
         i = 0;
 
         for (int k = 0; k < n; k++) {
-            spatialSet1 = (SpatialSet) globalSelected.elementAt(k);
+            spatialSet1 = globalSelected.get(k);
 
             int selected = spatialSet1.getSelected();
 
@@ -2162,7 +2184,7 @@ public class Molecule implements Serializable {
 
                 if (ptB != null) {
                     if ((k + 1) < n) {
-                        spatialSet2 = (SpatialSet) globalSelected.elementAt(k
+                        spatialSet2 = (SpatialSet) globalSelected.get(k
                                 + 1);
                     }
 
@@ -2285,8 +2307,8 @@ public class Molecule implements Serializable {
         return i;
     }
 
-    public static Vector matchBonds() throws IllegalArgumentException {
-        Vector selected = new Vector(32);
+    public static List<Bond> matchBonds() throws IllegalArgumentException {
+        List<Bond> selected = new ArrayList<>(32);
         Atom atomB;
         Atom atomE;
         String molName = Molecule.defaultMol;
@@ -2305,7 +2327,7 @@ public class Molecule implements Serializable {
                 if ((atomB.getSelected() > 0)
                         && (atomE.getSelected() > 0)) {
                     bond.setProperty(Bond.SELECT);
-                    selected.addElement(bond);
+                    selected.add(bond);
                 }
             }
         }
@@ -2313,9 +2335,9 @@ public class Molecule implements Serializable {
         return (selected);
     }
 
-    public Vector getMoleculeBonds() {
+    public List<Bond> getMoleculeBonds() {
 
-        Vector bondVector = new Vector(32);
+        List<Bond> bondVector = new ArrayList<>(32);
         Atom atomB;
         Atom atomE;
         updateBondArray();
@@ -2324,7 +2346,7 @@ public class Molecule implements Serializable {
             atomE = bond.end;
 
             if ((atomB != null) && (atomE != null)) {
-                bondVector.addElement(bond);
+                bondVector.add(bond);
             }
         }
 
@@ -2334,29 +2356,29 @@ public class Molecule implements Serializable {
     public void updateSpatialSets() {
     }
 
-    public Vector getAtoms() {
-        Vector atomVector = new Vector(32);
+    public List<Atom> getAtoms() {
+        List<Atom> atomVector = new ArrayList<>(32);
         updateAtomArray();
         for (Atom atom : atoms) {
-            atomVector.addElement(atom);
+            atomVector.add(atom);
         }
 
         return atomVector;
     }
 
-    public ArrayList<Atom> getAtomArray() {
+    public List<Atom> getAtomArray() {
         updateAtomArray();
         return atoms;
     }
 
-    public Vector getAtomsByProp(int property) {
-        Vector selected = new Vector(32);
+    public List<SpatialSet> getAtomsByProp(int property) {
+        List<SpatialSet> selected = new ArrayList<>(32);
         updateAtomArray();
         for (Atom atom : atoms) {
             SpatialSet spatialSet = atom.getSpatialSet();
 
             if ((spatialSet != null) && spatialSet.getProperty(property)) {
-                selected.addElement(spatialSet);
+                selected.add(spatialSet);
             }
         }
 
@@ -2529,13 +2551,13 @@ public class Molecule implements Serializable {
     }
 
     public ArrayList<HydrogenBond> hydrogenBonds(final int[] structures, final MolFilter hydrogenFilter, final MolFilter acceptorFilter) throws InvalidMoleculeException {
-        Vector hydrogens = matchAtoms(hydrogenFilter);
-        Vector acceptors = matchAtoms(acceptorFilter);
+        List<SpatialSet> hydrogens = matchAtoms(hydrogenFilter);
+        List<SpatialSet> acceptors = matchAtoms(acceptorFilter);
         ArrayList<HydrogenBond> hBonds = new ArrayList<HydrogenBond>();
         for (int i = 0, n = hydrogens.size(); i < n; i++) {
-            SpatialSet hydrogen = (SpatialSet) hydrogens.elementAt(i);
+            SpatialSet hydrogen = (SpatialSet) hydrogens.get(i);
             for (int j = 0, m = acceptors.size(); j < m; j++) {
-                SpatialSet acceptor = (SpatialSet) acceptors.elementAt(j);
+                SpatialSet acceptor = (SpatialSet) acceptors.get(j);
                 HydrogenBond hBondBest = null;
                 double bestShift = 0.0;
                 int bestStructure = 0;
@@ -2553,16 +2575,16 @@ public class Molecule implements Serializable {
     }
 
     public Map<String, HydrogenBond> hydrogenBondMap(final MolFilter hydrogenFilter, final MolFilter acceptorFilter, int structureNum) throws InvalidMoleculeException {
-        Vector hydrogens = matchAtoms(hydrogenFilter);
-        Vector acceptors = matchAtoms(acceptorFilter);
+        List<SpatialSet> hydrogens = matchAtoms(hydrogenFilter);
+        List<SpatialSet> acceptors = matchAtoms(acceptorFilter);
         Map<String, HydrogenBond> hBondMap = new HashMap<>();
         Map<String, HydrogenBond> acceptorMap = new HashMap<>();
         for (int i = 0, n = hydrogens.size(); i < n; i++) {
-            SpatialSet hydrogen = (SpatialSet) hydrogens.elementAt(i);
+            SpatialSet hydrogen = (SpatialSet) hydrogens.get(i);
             HydrogenBond hBondBest = null;
             double bestShift = -1.0e6;
             for (int j = 0, m = acceptors.size(); j < m; j++) {
-                SpatialSet acceptor = (SpatialSet) acceptors.elementAt(j);
+                SpatialSet acceptor = (SpatialSet) acceptors.get(j);
                 boolean valid = HydrogenBond.validate(hydrogen, acceptor, structureNum);
                 if (valid) {
                     HydrogenBond hBond = new HydrogenBond(hydrogen, acceptor);
@@ -2591,14 +2613,14 @@ public class Molecule implements Serializable {
     }
 
     public Map<String, Double> electroStaticShiftMap(final MolFilter targetFilter, final MolFilter sourceFilter, int structureNum) throws InvalidMoleculeException {
-        Vector targets = matchAtoms(targetFilter);
-        Vector sources = matchAtoms(sourceFilter);
+        List<SpatialSet> targets = matchAtoms(targetFilter);
+        List<SpatialSet> sources = matchAtoms(sourceFilter);
         Map<String, Double> shiftMap = new HashMap<>();
         for (int i = 0, n = targets.size(); i < n; i++) {
-            SpatialSet target = (SpatialSet) targets.elementAt(i);
+            SpatialSet target = targets.get(i);
             double sumShift = 0.0;
             for (int j = 0, m = sources.size(); j < m; j++) {
-                SpatialSet source = (SpatialSet) sources.elementAt(j);
+                SpatialSet source = sources.get(j);
                 boolean valid = ElectrostaticInteraction.validate(target, source, structureNum);
                 if (valid) {
                     ElectrostaticInteraction eInteraction = new ElectrostaticInteraction(target, source);
@@ -2661,7 +2683,7 @@ public class Molecule implements Serializable {
         }
     }
 
-    public static Vector matchAtoms(MolFilter molFilter) throws InvalidMoleculeException {
+    public static List<SpatialSet> matchAtoms(MolFilter molFilter) throws InvalidMoleculeException {
         String molName = Molecule.defaultMol;
         Molecule molecule = (Molecule) molecules.get(molName);
 
@@ -2671,9 +2693,9 @@ public class Molecule implements Serializable {
         return matchAtoms(molFilter, molecule);
     }
 
-    public static Vector matchAtoms(MolFilter molFilter, Molecule molecule) {
+    public static List<SpatialSet> matchAtoms(MolFilter molFilter, Molecule molecule) {
 
-        Vector selected = new Vector(32);
+        List<SpatialSet> selected = new ArrayList<>(32);
         if (molecule == null) {
             return selected;
         }
@@ -2787,7 +2809,7 @@ public class Molecule implements Serializable {
 
                             if (validAtom) {
                                 SpatialSet spatialSet = atom.getSpatialSet();
-                                selected.addElement(spatialSet);
+                                selected.add(spatialSet);
                             }
                         }
                     }
@@ -3131,12 +3153,12 @@ public class Molecule implements Serializable {
     }
 
     public static void makeAtomList() {
-        atomList = new Vector();
+        atomList = new ArrayList<>();
 
         for (Molecule molecule : molecules.values()) {
             molecule.updateAtomArray();
             for (Atom atom : molecule.atoms) {
-                atomList.addElement(atom);
+                atomList.add(atom);
             }
         }
 
@@ -3416,7 +3438,7 @@ public class Molecule implements Serializable {
             Point3 pt1 = sg1.getPoint(iStruct);
 
             for (int i = 0; i < Molecule.atomList.size(); i++) {
-                Atom sg2 = (Atom) Molecule.atomList.elementAt(i);
+                Atom sg2 = Molecule.atomList.get(i);
                 if ((sg1 != sg2) && sg2.getName().equals("SG")) {
                     Point3 pt2 = sg2.getPoint(iStruct);
                     double distance = Atom.calcDistance(pt1, pt2);
@@ -3442,8 +3464,8 @@ public class Molecule implements Serializable {
 
         for (int i = 0; i < Molecule.atomList.size(); i++) {
             for (int j = i + 1; j < Molecule.atomList.size(); j++) {
-                atom1 = (Atom) Molecule.atomList.elementAt(i);
-                atom2 = (Atom) Molecule.atomList.elementAt(j);
+                atom1 = Molecule.atomList.get(i);
+                atom2 = Molecule.atomList.get(j);
                 result = Atom.calcBond(atom1, atom2, 1);
 
                 if (result == 2) {
@@ -3467,13 +3489,13 @@ public class Molecule implements Serializable {
 
         for (int i = 0; i < globalSelected.size(); i++) {
             for (int j = i + 1; j < globalSelected.size(); j++) {
-                atom1 = ((SpatialSet) globalSelected.elementAt(i)).atom;
+                atom1 = globalSelected.get(i).atom;
 
                 if (atom1.getSelected() != 1) {
                     continue;
                 }
 
-                atom2 = ((SpatialSet) globalSelected.elementAt(j)).atom;
+                atom2 = globalSelected.get(j).atom;
 
                 if (atom2.getSelected() != 1) {
                     continue;
@@ -3505,7 +3527,7 @@ public class Molecule implements Serializable {
         int nBonds = 0;
         ArrayList<AtomPairDistance> pairs = new ArrayList<AtomPairDistance>();
         for (int i = 0; i < globalSelected.size(); i++) {
-            atom1 = ((SpatialSet) globalSelected.elementAt(i)).atom;
+            atom1 = globalSelected.get(i).atom;
             if (atom1.getSelected() != 1) {
                 continue;
             }
@@ -3529,7 +3551,7 @@ public class Molecule implements Serializable {
                 if (atom1.isMethyl()) {
                     extra += 0.7;
                 }
-                atom2 = ((SpatialSet) globalSelected.elementAt(j)).atom;
+                atom2 = globalSelected.get(j).atom;
                 if (atom2.getSelected() != 1) {
                     continue;
                 }
@@ -3617,14 +3639,14 @@ public class Molecule implements Serializable {
         molecule.getAtomTypes();
 
         MTree mTree = new MTree();
-        Hashtable hash = new Hashtable();
-        Vector eAtomList = new Vector();
+        Map<Atom, Integer> hash = new HashMap<>();
+        List<Atom> eAtomList = new ArrayList<>();
         int i = 0;
 
         for (Atom atom : entity.atoms) {
             // entity check ensures that only atoms in same residue are used
             if (atom.entity == entity) {
-                hash.put(atom, Integer.valueOf(i));
+                hash.put(atom, i);
                 eAtomList.add(atom);
 
                 mTree.addNode();
@@ -3637,9 +3659,9 @@ public class Molecule implements Serializable {
 
         for (Atom atom : entity.atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = (Bond) atom.bonds.elementAt(iBond);
-                Integer iNodeBegin = (Integer) hash.get(bond.begin);
-                Integer iNodeEnd = (Integer) hash.get(bond.end);
+                Bond bond = atom.bonds.get(iBond);
+                Integer iNodeBegin = hash.get(bond.begin);
+                Integer iNodeEnd = hash.get(bond.end);
 
                 if ((iNodeBegin != null) && (iNodeEnd != null)) {
                     mTree.addEdge(iNodeBegin.intValue(), iNodeEnd.intValue());
@@ -3665,7 +3687,7 @@ public class Molecule implements Serializable {
 
         // get breadth first path from each atom
         for (int j = 0, n = eAtomList.size(); j < n; j++) {
-            Atom atom = (Atom) eAtomList.elementAt(j);
+            Atom atom = eAtomList.get(j);
 
             int[] path = mTree.broad_path(j);
             int shell;
@@ -3674,7 +3696,7 @@ public class Molecule implements Serializable {
             ArrayList treeValues = new ArrayList(path.length);
 
             for (int k = 0; k < path.length; k++) {
-                atom = (Atom) eAtomList.elementAt(path[k] & 0xFF);
+                atom = eAtomList.get(path[k] & 0xFF);
                 shell = (path[k] >> 8);
 
                 // value ensures that only atoms of same type in same shell are equivalent
@@ -3723,14 +3745,14 @@ public class Molecule implements Serializable {
                 }
 
                 if (ok) {
-                    Atom jAtom = (Atom) eAtomList.elementAt(jGroup.path[0]
+                    Atom jAtom = eAtomList.get(jGroup.path[0]
                             & 0xFF);
-                    Atom kAtom = (Atom) eAtomList.elementAt(kGroup.path[0]
+                    Atom kAtom = eAtomList.get(kGroup.path[0]
                             & 0xFF);
                     int shell = -1;
 
                     for (int jj = 0; jj < kGroup.treeValues.size(); jj++) {
-                        Atom atomTest = (Atom) eAtomList.elementAt(kGroup.path[jj]
+                        Atom atomTest = eAtomList.get(kGroup.path[jj]
                                 & 0xFF);
 
                         if (atomTest.getName().equals(jAtom.getName())) {
@@ -3822,7 +3844,7 @@ public class Molecule implements Serializable {
 
         for (Atom atom : entity.atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = (Bond) atom.bonds.elementAt(iBond);
+                Bond bond = atom.bonds.get(iBond);
                 Integer iNodeBegin = (Integer) hash.get(bond.begin);
                 Integer iNodeEnd = (Integer) hash.get(bond.end);
 
@@ -3946,7 +3968,7 @@ public class Molecule implements Serializable {
 
         for (Atom atom : atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = (Bond) atom.bonds.elementAt(iBond);
+                Bond bond = (Bond) atom.bonds.get(iBond);
                 if (((bond.begin == atom) && (bond.end.iAtom > atom.iAtom)) || ((bond.end == atom) && (bond.begin.iAtom > atom.iAtom))) {
                     Integer iNodeBegin = hash.get(bond.begin);
                     Integer iNodeEnd = hash.get(bond.end);
@@ -4003,12 +4025,12 @@ public class Molecule implements Serializable {
     }
 
     public static Atom getStartAtom(Molecule molecule) {
-        Vector atoms = molecule.getAtoms();
+        List<Atom> atoms = molecule.getAtoms();
         int maxValue = 0;
         int maxAtom = 0;
 
         for (int i = 0, n = atoms.size(); i < n; i++) {
-            Atom atom = (Atom) atoms.elementAt(i);
+            Atom atom = atoms.get(i);
 
             if (atom.canonValue > maxValue) {
                 maxValue = atom.canonValue;
@@ -4016,12 +4038,12 @@ public class Molecule implements Serializable {
             }
         }
 
-        return (Atom) atoms.elementAt(maxAtom);
+        return atoms.get(maxAtom);
     }
 
     public static int buildTree(Molecule molecule,
-            Atom startAtom, Vector atomList, MTree mTree) {
-        Hashtable hash = new Hashtable();
+            Atom startAtom, List<Atom> atomList, MTree mTree) {
+        Map<Atom, Integer> hash = new HashMap<>();
 
         Entity entity = startAtom.entity;
         int i = 0;
@@ -4033,7 +4055,7 @@ public class Molecule implements Serializable {
             }
 
             if (atom.entity == entity) {
-                hash.put(atom, Integer.valueOf(i));
+                hash.put(atom, i);
                 atomList.add(atom);
 
                 MNode mNode = mTree.addNode();
@@ -4047,9 +4069,9 @@ public class Molecule implements Serializable {
 
         for (Atom atom : entity.atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = (Bond) atom.bonds.elementAt(iBond);
-                Integer iNodeBegin = (Integer) hash.get(bond.begin);
-                Integer iNodeEnd = (Integer) hash.get(bond.end);
+                Bond bond = atom.bonds.get(iBond);
+                Integer iNodeBegin = hash.get(bond.begin);
+                Integer iNodeEnd = hash.get(bond.end);
 
                 if ((iNodeBegin != null) && (iNodeEnd != null)) {
                     mTree.addEdge(iNodeBegin.intValue(), iNodeEnd.intValue());
@@ -4173,7 +4195,7 @@ public class Molecule implements Serializable {
                     }
                 }
                 for (Atom bAtom : bondList) {
-                    Vector bondedAtoms = bAtom.getConnected();
+                    List<Atom> bondedAtoms = bAtom.getConnected();
                     if (bondedAtoms.size() > 0) {
                         outString.setLength(0);
                         outString.append("CONECT");
@@ -4216,9 +4238,9 @@ public class Molecule implements Serializable {
             structureList = new int[1];
             structureList[0] = 0;
         }
-        ArrayList<Atom> bondList = new ArrayList<Atom>();
+        ArrayList<Atom> bondList = new ArrayList<>();
         StringBuilder outString = new StringBuilder();
-        ArrayList<Integer> iAtoms = new ArrayList<Integer>();
+        ArrayList<Integer> iAtoms = new ArrayList<>();
         for (int iStruct : structureList) {
             if ((whichStruct >= 0) && (iStruct != whichStruct)) {
                 continue;
@@ -4242,7 +4264,7 @@ public class Molecule implements Serializable {
                 }
             }
             for (Atom bAtom : bondList) {
-                Vector bondedAtoms = bAtom.getConnected();
+                List<Atom> bondedAtoms = bAtom.getConnected();
                 if (bondedAtoms.size() > 0) {
                     outString.setLength(0);
                     outString.append("CONECT");
@@ -4273,7 +4295,7 @@ public class Molecule implements Serializable {
 
         for (Atom atom : atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = (Bond) atom.bonds.elementAt(iBond);
+                Bond bond = atom.bonds.get(iBond);
                 if ((bond.begin == atom) && (bond.end.aNum == 1)) {
                     atom.hydrogens++;
                 } else if ((bond.end == atom) && (bond.begin.aNum == 1)) {
@@ -4311,7 +4333,7 @@ public class Molecule implements Serializable {
         Bond bond = null;
 
         for (int iBond = 0; iBond < atomB.bonds.size(); iBond++) {
-            bond = (Bond) atomB.bonds.elementAt(iBond);
+            bond = atomB.bonds.get(iBond);
 
             if (((bond.begin == atomB) && (bond.end == atomE))
                     || ((bond.begin == atomE) && (bond.end == atomB))) {
@@ -4320,7 +4342,7 @@ public class Molecule implements Serializable {
         }
 
         for (int iBond = 0; iBond < atomE.bonds.size(); iBond++) {
-            bond = (Bond) atomE.bonds.elementAt(iBond);
+            bond = atomE.bonds.get(iBond);
 
             if (((bond.begin == atomB) && (bond.end == atomE))
                     || ((bond.begin == atomE) && (bond.end == atomB))) {
@@ -4526,16 +4548,15 @@ public class Molecule implements Serializable {
         labelsCurrent = true;
     }
 
-    public static void selectAtomsForTable(MolFilter molFilter, ArrayList selected) throws InvalidMoleculeException {
+    public static void selectAtomsForTable(MolFilter molFilter, List<Atom> selected) throws InvalidMoleculeException {
         selected.clear();
-        Vector fselected = Molecule.matchAtoms(molFilter);
+        List<SpatialSet> fselected = Molecule.matchAtoms(molFilter);
 
-        for (int i = 0, n = fselected.size(); i < n; i++) {
-            SpatialSet spatialSet = (SpatialSet) fselected.elementAt(i);
+        for (SpatialSet spatialSet : fselected) {
             if (spatialSet.atom.isMethyl() && !spatialSet.atom.isFirstInMethyl()) {
                 continue;
             }
-            selected.add(spatialSet);
+            selected.add(spatialSet.atom);
         }
     }
 

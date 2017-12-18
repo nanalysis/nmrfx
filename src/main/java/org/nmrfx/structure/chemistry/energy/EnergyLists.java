@@ -29,7 +29,6 @@ import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.SpatialSet;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
-import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -40,7 +39,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords.ViolationStats;
@@ -234,7 +233,7 @@ public class EnergyLists {
         ringShifts.makeRingList(molecule);
         
         MolFilter molFilter = new MolFilter(filterString);
-        Vector<SpatialSet> spatialSets = Molecule.matchAtoms(molFilter,molecule);
+        List<SpatialSet> spatialSets = Molecule.matchAtoms(molFilter,molecule);
         ringShifts.setBasePPMs(spatialSets);
     }
     
@@ -450,7 +449,7 @@ public class EnergyLists {
     public void makeCompoundList(Molecule molecule) {
         this.molecule = molecule;
         // initialize energy types for atoms
-        ArrayList<Atom> atoms = molecule.getAtomArray();
+        List<Atom> atoms = molecule.getAtomArray();
         for (Atom atom : atoms) {
             atom.atomEnergyProp = AtomEnergyProp.get(atom.getType());
         }
@@ -1132,7 +1131,7 @@ public class EnergyLists {
         EnergyCoords eCoords = molecule.getEnergyCoords();
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         try {
-            ArrayList<Atom> atoms = molecule.getAtomArray();
+            List<Atom> atoms = molecule.getAtomArray();
             int nBranch = 0;
             for (Atom atom : atoms) {
                 if (atom.rotUnit != -1) {

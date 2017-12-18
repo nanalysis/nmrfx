@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.Atom;
@@ -31,8 +30,8 @@ import java.io.LineNumberReader;
 import java.io.BufferedReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
-import java.util.Vector;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.SimpleValueChecker;
 import org.apache.commons.math3.util.FastMath;
@@ -341,9 +340,8 @@ public class Dihedral {
      */
     public void addBoundary(final String molFilterString, final AngleBoundary angleBoundary) throws InvalidMoleculeException {
         MolFilter molFilter = new MolFilter(molFilterString);
-        Vector atoms = Molecule.matchAtoms(molFilter);
-        for (Object obj : atoms) {
-            SpatialSet spatialSet = (SpatialSet) obj;
+        List<SpatialSet> atoms = Molecule.matchAtoms(molFilter);
+        for (SpatialSet spatialSet : atoms) {
             angleBoundaries.put(spatialSet.atom.getFullName(), angleBoundary);
         }
     }
@@ -358,9 +356,8 @@ public class Dihedral {
      */
     public void addBoundary(final String molFilterString, double lower, double upper, double scale) throws InvalidMoleculeException {
         MolFilter molFilter = new MolFilter(molFilterString);
-        Vector atoms = Molecule.matchAtoms(molFilter);
-        for (Object obj : atoms) {
-            SpatialSet spatialSet = (SpatialSet) obj;
+        List<SpatialSet> atoms = Molecule.matchAtoms(molFilter);
+        for (SpatialSet spatialSet : atoms) {
             Atom atom = spatialSet.atom;
             Atom parent = atom.getParent();
             String atomName = atom.getFullName();

@@ -15,11 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.utilities.Util;
-
 
 public class AtomUtil {
     // FIXME  modify to use new atom data expression  like i.c{int < 0}
@@ -57,7 +55,7 @@ public class AtomUtil {
                     parent[i]--;
 
                     /*printf("Parent %d %d %d\n",parent[i],atoms[atmNums[i]].parent,atmNums[parent[i]]);*/
-                    if (((Bond) (atoms[i].bonds.elementAt(0))).end != atoms[parent[i]]) {
+                    if (((atoms[i].bonds.get(0))).end != atoms[parent[i]]) {
                         return (0);
                     }
                 }
