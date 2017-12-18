@@ -17,35 +17,13 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  *
  * @author Bruce Johnson
  */
-public class ResonanceFactory {
+public interface FreezeListener {
 
-    Map<Long, Resonance> map = new HashMap<>();
-    private static long lastID = -1;
-    
-    public void init() {
-        
-    }
+    public void freezeHappened(Peak peak, boolean state);
 
-    public Resonance build() {
-        lastID++;
-        Resonance resonance = new SimpleResonance(lastID);
-        map.put(lastID, resonance);
-        return resonance;
-    }
-
-    public Resonance build(long id) {
-        Resonance resonance = new SimpleResonance(id);
-        return resonance;
-    }
-
-    public Resonance get(long id) {
-        return map.get(id);
-    }
 }

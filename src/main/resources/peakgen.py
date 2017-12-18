@@ -33,3 +33,4 @@ def addPeak(peakList,ppms,widths,intensity,names):
         peakDim.setLineWidthValue(width)
         peakDim.setBoundsValue(width*2.0)
     peak.setIntensity(intensity)
+    peak.setVolume1(intensity)

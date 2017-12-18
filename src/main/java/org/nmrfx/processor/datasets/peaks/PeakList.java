@@ -81,6 +81,7 @@ public class PeakList {
     private ArrayList<Multiplet> sortedMultiplets = new ArrayList<Multiplet>();
     static Vector globalListeners = new Vector();
     Vector listeners = new Vector();
+    static List<FreezeListener> freezeListeners = new ArrayList<>();
     private boolean thisListUpdated = false;
     boolean changed = false;
     static boolean aListUpdated = false;
@@ -325,6 +326,20 @@ public class PeakList {
         for (int i = 0; i < globalListeners.size(); i++) {
             PeakListener listener = (PeakListener) globalListeners.get(i);
             listener.peakListChanged(new PeakEvent("*"));
+        }
+    }
+
+    public static void registerFreezeListener(FreezeListener freezeListener) {
+        if (freezeListeners.contains(freezeListener)) {
+            freezeListeners.remove(freezeListener);
+        }
+        freezeListeners.add(freezeListener);
+    }
+
+    public static void notifyFreezeListeners(Peak peak, boolean state) {
+        for (FreezeListener listener : freezeListeners) {
+            listener.freezeHappened(peak, state);
+
         }
     }
 
@@ -1884,11 +1899,11 @@ public class PeakList {
             }
         }
     }
-    
+
     public boolean isSlideable() {
         return slideable;
     }
-    
+
     public void setSlideable(boolean state) {
         slideable = state;
     }

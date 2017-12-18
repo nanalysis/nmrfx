@@ -40,6 +40,7 @@ public class PeakDim {
         } catch (ClassNotFoundException ex) {
             resFactory = new ResonanceFactory();
         }
+        resFactory.init();
 
     }
     public static List<PeakDim> EMPTY_LIST = new ArrayList<>();
