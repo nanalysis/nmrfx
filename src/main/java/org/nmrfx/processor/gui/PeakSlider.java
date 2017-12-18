@@ -19,6 +19,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.FreezeListener;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
@@ -39,9 +40,12 @@ public class PeakSlider {
     Button linkButton;
     Label atomXFieldLabel;
     Label atomYFieldLabel;
+    Label intensityFieldLabel;
     Label atomXLabel;
     Label atomYLabel;
+    Label intensityLabel;
     List<Peak> selPeaks;
+    List<FreezeListener> listeners = new ArrayList<>();
 
     public PeakSlider(FXMLController controller, Consumer closeAction) {
         this.controller = controller;
@@ -90,10 +94,13 @@ public class PeakSlider {
 
         atomXFieldLabel = new Label("X:");
         atomYFieldLabel = new Label("Y:");
+        intensityFieldLabel = new Label("I:");
         atomXLabel = new Label();
         atomXLabel.setMinWidth(75);
         atomYLabel = new Label();
         atomYLabel.setMinWidth(75);
+        intensityLabel = new Label();
+        intensityLabel.setMinWidth(75);
 
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
@@ -102,18 +109,19 @@ public class PeakSlider {
         Pane filler3 = new Pane();
         filler3.setMinWidth(50);
         Pane filler4 = new Pane();
-        HBox.setHgrow(filler4, Priority.ALWAYS);
+        filler4.setMinWidth(50);
+        Pane filler5 = new Pane();
+        HBox.setHgrow(filler5, Priority.ALWAYS);
 
         toolBar.getItems().add(closeButton);
         toolBar.getItems().add(filler1);
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(filler2);
-        toolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel);
+        toolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
 
-        toolBar.getItems().add(filler4);
+        toolBar.getItems().add(filler5);
 
         controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
-
     }
 
     public final void setupLists(final boolean state) {
@@ -130,6 +138,7 @@ public class PeakSlider {
             List<Peak> selected = chart.getSelectedPeaks();
             selected.forEach((peak) -> {
                 peak.setFrozen(true);
+                PeakList.notifyFreezeListeners(peak, true);
             });
         });
 
@@ -140,6 +149,7 @@ public class PeakSlider {
             List<Peak> selected = chart.getSelectedPeaks();
             selected.forEach((peak) -> {
                 peak.setFrozen(false);
+                PeakList.notifyFreezeListeners(peak, false);
             });
         });
 
@@ -155,6 +165,7 @@ public class PeakSlider {
                     try {
                         peak.tweak(dataset);
                         peak.setFrozen(true);
+                        PeakList.notifyFreezeListeners(peak, true);
                     } catch (IOException ioE) {
 
                     }
@@ -217,6 +228,7 @@ public class PeakSlider {
         if ((peaks == null) || peaks.isEmpty()) {
             atomXLabel.setText("");
             atomYLabel.setText("");
+            intensityLabel.setText("");
             freezeButton.setDisable(true);
             thawButton.setDisable(true);
             tweakFreezeButton.setDisable(true);
@@ -225,6 +237,7 @@ public class PeakSlider {
             // fixme axes could be swapped
             Peak peak = peaks.get(peaks.size() - 1);
             atomXLabel.setText(peak.getPeakDim(0).getLabel());
+            intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
             if (peak.getPeakDims().length > 1) {
                 atomYLabel.setText(peak.getPeakDim(1).getLabel());
             }
