@@ -36,7 +36,7 @@ public class Atom {
     public String type = "";
     public String label = "";
     public Entity entity = null;
-    public Vector bonds;
+    public List<Bond> bonds;
     public double mass = 0.0;
     private int stereo = 0;
     public byte nPiBonds = 0;
@@ -79,7 +79,7 @@ public class Atom {
         atomProperty = AtomProperty.get(name);
         radius = atomProperty.radius;
         setColorByType();
-        bonds = new Vector(2, 2);
+        bonds = new ArrayList<>(2);
         iAtom = lastAtom;
         lastAtom++;
     }
@@ -91,7 +91,7 @@ public class Atom {
         atomProperty = AtomProperty.get(aType);
         radius = atomProperty.radius;
         setColorByType();
-        bonds = new Vector(2, 2);
+        bonds = new ArrayList<>(2);
         iAtom = lastAtom;
         lastAtom++;
     }
@@ -115,7 +115,7 @@ public class Atom {
 
         setColorByType();
         charge = (float) atomParse.charge;
-        bonds = new Vector(2, 2);
+        bonds = new ArrayList<>(2);
         iAtom = lastAtom;
         lastAtom++;
     }
@@ -160,7 +160,7 @@ public class Atom {
     }
 
     public void removeBonds() {
-        Vector connected = getConnected();
+        List<Atom> connected = getConnected();
         for (int i = 0; i < connected.size(); i++) {
             Atom atom = (Atom) connected.get(i);
             atom.removeBondTo(this);
@@ -168,9 +168,9 @@ public class Atom {
     }
 
     public void removeBondTo(Atom atom) {
-        Vector newBonds = new Vector(2, 2);
+        List<Bond> newBonds = new ArrayList<>(2);
         for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = (Bond) bonds.elementAt(i);
+            Bond bond = bonds.get(i);
             Atom atomB = bond.begin;
             Atom atomE = bond.end;
             if ((atomB != atom) && (atomE != atom)) {
@@ -182,17 +182,17 @@ public class Atom {
         bonds = newBonds;
     }
 
-    public Vector getConnected() {
-        Vector connected = new Vector(4);
+    public List<Atom> getConnected() {
+        List<Atom> connected = new ArrayList<>(4);
         for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = (Bond) bonds.elementAt(i);
+            Bond bond = bonds.get(i);
             Atom atomB = bond.begin;
             Atom atomE = bond.end;
 
             if (atomB == this) {
-                connected.addElement(atomE);
+                connected.add(atomE);
             } else if (atomE == this) {
-                connected.addElement(atomB);
+                connected.add(atomB);
             }
         }
 
@@ -210,7 +210,7 @@ public class Atom {
     public boolean isBonded(Atom atom) {
         boolean bonded = false;
         for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = (Bond) bonds.elementAt(i);
+            Bond bond = bonds.get(i);
             Atom atomB = bond.begin;
             Atom atomE = bond.end;
 
@@ -316,7 +316,7 @@ public class Atom {
     }
 
     public void addBond(Bond bond) {
-        bonds.addElement(bond);
+        bonds.add(bond);
     }
 
     public SpatialSet getSpatialSet() {
@@ -464,6 +464,15 @@ public class Atom {
         }
 
         return ppmV;
+    }
+
+    public Double getRefPPM() {
+        PPMv ppmV = getRefPPM(0);
+        if ((ppmV != null) && ppmV.isValid()) {
+            return ppmV.getValue();
+        } else {
+            return null;
+        }
     }
 
     public PPMv getRefPPM(int i) {
@@ -751,11 +760,11 @@ public class Atom {
 
     }
 
-    public static Point3 avgAtom(Vector selected) {
+    public static Point3 avgAtom(List<SpatialSet> selected) {
         return avgAtom(selected, 0);
     }
 
-    public static Point3 avgAtom(Vector selected, int structureNum) {
+    public static Point3 avgAtom(List<SpatialSet> selected, int structureNum) {
         int i;
         Vector3D pt;
         Vector3D pt1 = new Vector3D(0.0, 0.0, 0.0);
@@ -763,7 +772,7 @@ public class Atom {
         SpatialSet spatialSet = null;
 
         for (i = 0; i < selected.size(); i++) {
-            spatialSet = (SpatialSet) selected.elementAt(i);
+            spatialSet = selected.get(i);
             pt = spatialSet.getPoint(structureNum);
 
             if (pt != null) {
@@ -1022,21 +1031,21 @@ public class Atom {
         }
     }
 
-    public Vector getChildren() {
-        Vector children = new Vector(4);
+    public List<Atom> getChildren() {
+        List<Atom> children = new ArrayList<>(4);
 
         for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = (Bond) bonds.elementAt(i);
+            Bond bond = bonds.get(i);
             Atom atomB = bond.begin;
             Atom atomE = bond.end;
 
             if (atomB == this) {
                 if (atomE.iAtom > iAtom) {
-                    children.addElement(atomE);
+                    children.add(atomE);
                 }
             } else if (atomE == this) {
                 if (atomB.iAtom > iAtom) {
-                    children.addElement(atomB);
+                    children.add(atomB);
                 }
             }
         }
@@ -1047,7 +1056,7 @@ public class Atom {
     public Atom getAngleChild() {
         Atom child = null;
         for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = (Bond) bonds.elementAt(i);
+            Bond bond = bonds.get(i);
             Atom atomB = bond.begin;
             Atom atomE = bond.end;
 
@@ -1281,10 +1290,10 @@ public class Atom {
 
     public Point3 getMethylCenter(int structNum) {
         Atom parent = getParent();
-        Vector children = parent.getChildren();
-        Vector3D pt1 = ((Atom) children.elementAt(0)).getPoint(structNum);
-        pt1 = pt1.add(((Atom) children.elementAt(1)).getPoint(structNum));
-        pt1 = pt1.add(((Atom) children.elementAt(2)).getPoint(structNum));
+        List<Atom> children = parent.getChildren();
+        Vector3D pt1 = ((Atom) children.get(0)).getPoint(structNum);
+        pt1 = pt1.add(((Atom) children.get(1)).getPoint(structNum));
+        pt1 = pt1.add(((Atom) children.get(2)).getPoint(structNum));
         pt1 = pt1.scalarMultiply(1.0 / 3.0);
 
         return new Point3(pt1);

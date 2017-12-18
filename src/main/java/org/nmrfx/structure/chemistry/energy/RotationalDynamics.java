@@ -27,6 +27,7 @@ import org.nmrfx.structure.fastlinear.FastMatrix;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.math3.util.FastMath;
 import java.util.Random;
 import org.python.core.PyFloat;
@@ -102,7 +103,7 @@ public class RotationalDynamics {
     }
 
     final void getBranchAtoms() {
-        ArrayList<Atom> atoms = molecule.getAtomArray();
+        List<Atom> atoms = molecule.getAtomArray();
         int i = 0;
         for (AtomBranch branch : branches) {
             for (Atom atom : atoms) {

@@ -44,7 +44,7 @@ public class SuperMol {
         Point3 pt1;
         Point3 pt2;
         double t_rms = 0.0;
-        Vector selected = molecule.getAtomsByProp(Atom.SUPER);
+        List<SpatialSet> selected = molecule.getAtomsByProp(Atom.SUPER);
         System.out.println("size is " + selected.size());
         x = new double[selected.size()][3];
         y = new double[selected.size()][3];
@@ -67,7 +67,7 @@ public class SuperMol {
                 }
                 j = 0;
                 for (int i = 0; i < selected.size(); i++) {
-                    spatialSet = (SpatialSet) selected.elementAt(i);
+                    spatialSet = selected.get(i);
 
                     pt1 = (Point3) spatialSet.getPoint(iFix);
 

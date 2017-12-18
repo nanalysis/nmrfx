@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.Atom;
@@ -24,7 +23,7 @@ import org.nmrfx.structure.chemistry.MolFilter;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.SpatialSet;
 import java.util.HashMap;
-import java.util.Vector;
+import java.util.List;
 
 /**
  * This class determines if the angle boundary is valid - angle boundary for each bond. The angle must be between -180
@@ -69,11 +68,11 @@ public class AngleBoundary {
         this.upper = upper * toRad;
         this.scale = scale;
         MolFilter molFilter = new MolFilter(atomName);
-        Vector atoms = Molecule.matchAtoms(molFilter);
+        List<SpatialSet> atoms = Molecule.matchAtoms(molFilter);
         if (atoms.size() == 0) {
             throw new IllegalArgumentException("Invalid atom " + atomName);
         }
-        SpatialSet spatialSet = (SpatialSet) atoms.elementAt(0);
+        SpatialSet spatialSet = atoms.get(0);
         atom = spatialSet.atom;
         if (boundaries.containsKey(atom.getFullName())) {
             String angleName = boundaries.get(atom.getFullName()).angleName;
@@ -110,10 +109,10 @@ public class AngleBoundary {
         this.scale = scale;
 
         MolFilter molFilter = new MolFilter(atomName);
-        Vector atoms = Molecule.matchAtoms(molFilter);
+        List<SpatialSet> atoms = Molecule.matchAtoms(molFilter);
         angleProp = AngleProp.map.get(angleName);
         for (int i = 0; i < atoms.size(); i++) {
-            SpatialSet spatialSet = (SpatialSet) atoms.elementAt(i);
+            SpatialSet spatialSet = (SpatialSet) atoms.get(i);
             atom = spatialSet.atom;
             boundaries.put(spatialSet.atom.getFullName(), this.angleProp);
         }

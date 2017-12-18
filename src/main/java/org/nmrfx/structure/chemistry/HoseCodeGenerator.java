@@ -54,7 +54,7 @@ public class HoseCodeGenerator {
 
         for (Atom atom : entity.atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = (Bond) atom.bonds.elementAt(iBond);
+                Bond bond =  atom.bonds.get(iBond);
                 Integer iNodeBegin = hash.get(bond.begin);
                 Integer iNodeEnd = hash.get(bond.end);
 

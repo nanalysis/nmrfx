@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.Iterator;
+import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.threed.Plane;
 import org.apache.commons.math3.geometry.euclidean.threed.Line;
@@ -242,9 +243,9 @@ public class RingCurrentShift {
         return calcRingContributions(ring, pt, targetFactor, iStruct);
     }
     
-    public static Vector<SpatialSet> refSP = null;
+    public static List<SpatialSet> refSP = null;
     
-    public void setBasePPMs(Vector<SpatialSet> targetSpatialSets){
+    public void setBasePPMs(List<SpatialSet> targetSpatialSets){
         for (SpatialSet sp : targetSpatialSets){
             String nucName = sp.atom.getEntity().getName();
             String aName = sp.atom.getName();
