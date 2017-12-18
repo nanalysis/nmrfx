@@ -43,7 +43,6 @@ import java.text.DecimalFormat;
 import java.util.Optional;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
@@ -59,10 +58,6 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import javafx.util.converter.FloatStringConverter;
@@ -613,8 +608,8 @@ public class PeakAttrController implements Initializable, PeakNavigable {
                     String listFileName = file.getPath();
 
                     try (FileWriter writer = new FileWriter(listFileName)) {
-                            PeakWriter peakWriter = new PeakWriter();
-                            peakWriter.writePeaksXPK2(writer, peakList);
+                        PeakWriter peakWriter = new PeakWriter();
+                        peakWriter.writePeaksXPK2(writer, peakList);
                         writer.close();
                     }
                 }
