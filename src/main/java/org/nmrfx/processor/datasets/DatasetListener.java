@@ -32,6 +32,8 @@ package org.nmrfx.processor.datasets;
  */
 public interface DatasetListener {
 
+    void datasetAdded(Dataset dataset);
+    
     void datasetModified(Dataset dataset);
 
     void datasetRemoved(Dataset dataset);
