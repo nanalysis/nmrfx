@@ -183,6 +183,9 @@ class refine:
         self.angleDelta = 30
         self.molecule = None
         self.trajectoryWriter = None
+        self.molecule = Molecule.getActive()
+        if self.molecule != None:
+            self.molName = self.molecule.getName()
 
     def setAngleDelta(self,value):
         self.angleDelta = value
@@ -446,6 +449,7 @@ class refine:
 
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
         self.energy()
+
         if 'molecule' in data:
             molDict = data['molecule']
             if 'ss' in molDict:
@@ -461,6 +465,8 @@ class refine:
 
         if 'rna' in data:
             self.readRNADict(data['rna'])
+        self.readSuiteAngles()
+
         if 'anneal' in data:
             self.dOpt = self.readAnnealDict(data['anneal'])
         self.energy()
@@ -791,7 +797,7 @@ class refine:
     def addSuiteAngles(self, fileName):
         self.suiteAngleFiles.append(fileName)
 
-    def readSuiteAngles(self, mul = 3.0):
+    def readSuiteAngles(self, mul = 0.5):
         for fileName in self.suiteAngleFiles:
             polymers = self.molecule.getPolymers()
             polymer = polymers[0]
@@ -805,7 +811,7 @@ class refine:
                     self.dihedral.addBoundary(angleBoundary.getAtom().getFullName(), angleBoundary)
             fIn.close()
 
-    def addSuiteBoundary(self,polymer, residueNum,rotamerName, mul=3.0):
+    def addSuiteBoundary(self,polymer, residueNum,rotamerName, mul=0.5):
         angleBoundaries = RNARotamer.getAngleBoundaries(polymer, str(residueNum), rotamerName, mul)
         for angleBoundary in angleBoundaries:
             self.dihedral.addBoundary(angleBoundary.getAtom().getFullName(), angleBoundary)
@@ -1106,9 +1112,7 @@ class refine:
     def readPDBFile(self,fileName):
         pdb = PDBFile()
         pdb.readSequence(fileName,0)
-        molName = Molecule.defaultMol
-        self.molecule = Molecule.get(molName)
- 
+        self.molecule = Molecule.getActive()
         self.molName = self.molecule.getName()
         Molecule.selectAtoms('*.*')
         return self.molecule
@@ -1117,8 +1121,7 @@ class refine:
         fileName = files[0]
         pdb = PDBFile()
         pdb.readSequence(fileName,0)
-        molName = Molecule.defaultMol
-        self.molecule = Molecule.get(molName)
+        self.molecule = Molecule.getActive()
         iFile = 1
         for file in files:
             pdb.readCoordinates(file,iFile,False)
@@ -1128,8 +1131,7 @@ class refine:
     def readPDBFileNL(self,fileName):
         pdb = PDBFile()
         pdb.read(fileName)
-        molName = Molecule.defaultMol
-        self.molecule = Molecule.get(molName)
+        self.molecule = Molecule.getActive()
  
         self.molName = self.molecule.getName()
         Molecule.selectAtoms('*.*')
@@ -1140,6 +1142,11 @@ class refine:
             self.cyanaAngleFiles.append(file)
         else:
             self.nvAngleFiles.append(file)
+
+    def setMolecule(self, molecule):
+        Molecule.setActive(molecule)
+        self.molecule = molecule
+        self.molName = self.molecule.getName()
 
     def addAngle(self,angleString):
         self.angleStrings.append(angleString)
@@ -1232,7 +1239,6 @@ class refine:
         self.setupEnergy(self.molName,usePseudo=usePseudo,useShifts=useShifts)
         self.loadDihedrals(self.angleStrings)
         self.readAngleFiles()
-        self.readSuiteAngles()
         self.readDistanceFiles()
 
         self.setForces(repel=0.5,dis=1,dih=5)
