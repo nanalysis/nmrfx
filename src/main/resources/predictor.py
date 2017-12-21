@@ -80,7 +80,9 @@ if argFile.endswith('.yaml'):
     refiner.loadFromYaml(data,0)
     mol = refiner.molecule
     vienna = data['rna']['vienna']
-    rnapred.predictFromSequence(mol,vienna)
+    mol.setDotBracket(vienna)
+    #rnapred.predictFromSequence(mol,vienna)
+    rnapred.predictFromSequence()
     rnapred.dumpPredictions(mol)
 elif argFile.endswith('.pdb'):
     refiner=refine()
