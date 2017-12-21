@@ -34,8 +34,6 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.renjin.sexp.AttributeMap;
 import org.renjin.sexp.DoubleVector;
 import org.renjin.sexp.DoubleArrayVector;
@@ -121,7 +119,7 @@ public class Dataset extends DoubleVector {
     private HashMap properties = new HashMap();
     private String posColor = "black";
     private String negColor = "red";
-    private List<DatasetListener> observers = new ArrayList<>();
+    private static List<DatasetListener> observers = new ArrayList<>();
     private Double noiseLevel = null;
     static private LRUMap vectorBuffer = new LRUMap(512);
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
@@ -799,10 +797,24 @@ public class Dataset extends DoubleVector {
 
     private void addFile(String fileName) {
         theFiles.put(fileName, this);
+        for (DatasetListener observer : observers) {
+            try {
+                observer.datasetAdded(this);
+            } catch (RuntimeException e) {
+            }
+        }
+
     }
 
     private void removeFile(String fileName) {
         theFiles.remove(fileName);
+        for (DatasetListener observer : observers) {
+            try {
+                observer.datasetRemoved(this);
+            } catch (RuntimeException e) {
+            }
+        }
+
     }
 
     /**
@@ -831,16 +843,16 @@ public class Dataset extends DoubleVector {
      *
      * @param datasetListener the DatasetListener object
      */
-    public void addObserver(DatasetListener datasetListener) {
+    public static void addObserver(DatasetListener datasetListener) {
         observers.add(datasetListener);
     }
 
     /**
-     * Add a listener to be notified when Datasets are removed.
+     * Remove a DatasetListener from list of listeners.
      *
      * @param datasetListener the DatasetListener object
      */
-    public void removeObserver(DatasetListener datasetListener) {
+    public static void removeObserver(DatasetListener datasetListener) {
         observers.remove(datasetListener);
     }
 
