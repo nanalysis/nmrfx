@@ -688,7 +688,7 @@ public class EnergyLists {
                         irpEnergy += energy.getEnergy();
                         nIrp++;
                         if (energy.getEnergy() > limitVal) {
-                            writer.format("Dih: %10s %5.2f %5.2f\n", atom.getFullName(), toDeg * atom.dihedralAngle, energy.getEnergy());
+                            writer.format("Irp: %10s %5.2f %5.2f\n", atom.getFullName(), toDeg * atom.dihedralAngle, energy.getEnergy());
                         }
                     }
                 }

@@ -312,7 +312,11 @@ def dumpPredictions(molecule, refMode=True):
                              name = atom.getShortName()
                          print name,ppmV.getValue()
 
-def predictFromSequence(molecule, vienna):
+def predictFromSequence(molecule = None, vienna = None):
+    if molecule == None:
+        molecule = Molecule.getActive()
+    if vienna == None:
+        vienna = molecule.getDotBracket()
     pairs = getPairs(vienna)
     seqList = getFullSequence(molecule)
     outLines = genRNAData(seqList, pairs)

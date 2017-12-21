@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.io;
 
 import org.nmrfx.structure.chemistry.*;
@@ -573,10 +572,10 @@ public class Sequence {
             String polymerName, ArrayList<String> coordSetNames) throws MoleculeIOException {
 
         if ((molName == null) || molName.equals("")) {
-            if (Molecule.defaultMol == null) {
+            if (Molecule.getActive() == null) {
                 throw new MoleculeIOException("No default molecule");
             } else {
-                molecule = Molecule.get(Molecule.defaultMol);
+                molecule = Molecule.getActive();
 
                 if (molecule == null) {
                     molecule = new Molecule(polymerName);

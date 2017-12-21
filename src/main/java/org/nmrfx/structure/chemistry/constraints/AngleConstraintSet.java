@@ -124,7 +124,7 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
     }
 
     public void updateAngleData() {
-        Molecule mol = Molecule.get(Molecule.defaultMol);
+        Molecule mol = Molecule.getActive();
         if (mol == null) {
             return;
         }
