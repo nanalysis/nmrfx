@@ -168,7 +168,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     PeakNavigator peakNavigator;
     PeakSlider peakSlider;
-    
+
     SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
 
     public File getInitialDirectory() {
@@ -302,7 +302,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                         PreferencesController.saveRecentDatasets(selectedFile.toString());
                         NMRViewData nvData = (NMRViewData) nmrData;
                         Dataset dataset = nvData.getDataset();
-                        addDatasetToList(dataset);
                     }
                 }
             } catch (IllegalArgumentException | IOException iaE) {
@@ -351,7 +350,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 if (nmrData instanceof NMRViewData) {
                     NMRViewData nvData = (NMRViewData) nmrData;
                     Dataset dataset = nvData.getDataset();
-                    addDatasetToList(dataset);
                     addDataset(dataset, appendFile, reload);
                 } else {
                     addFID(nmrData, clearOps, reload);
@@ -457,12 +455,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         getActiveChart().layoutPlotChildren();
     }
 
-    public static boolean addDatasetToList(Dataset dataset) {
-        boolean alreadyPresent = datasetList.contains(dataset);
-        if (!alreadyPresent) {
-            datasetList.add(dataset);
-        }
-        return alreadyPresent;
+    public static void updateDatasetList() {
+        datasetList.clear();
+        datasetList.addAll(Dataset.datasets());
     }
 
     void closeFile(File target) {

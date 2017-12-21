@@ -52,11 +52,12 @@ import org.controlsfx.dialog.ExceptionDialog;
 import static javafx.application.Application.launch;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import org.nmrfx.processor.datasets.DatasetListener;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
 import org.nmrfx.processor.utilities.WebConnect;
 
-public class MainApp extends Application {
+public class MainApp extends Application implements DatasetListener {
 
     public static ArrayList<Stage> stages = new ArrayList<>();
     public static PreferencesController preferencesController;
@@ -120,6 +121,7 @@ public class MainApp extends Application {
         interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
+        Dataset.addObserver(this);
     }
 
     public static boolean isMac() {
@@ -466,6 +468,46 @@ public class MainApp extends Application {
             System.out.println(string);
         } else {
             consoleController.writeOutput(string);
+        }
+    }
+
+    @Override
+    public void datasetAdded(Dataset dataset) {
+        if (Platform.isFxApplicationThread()) {
+            FXMLController.updateDatasetList();
+        } else {
+            Platform.runLater(() -> {
+                FXMLController.updateDatasetList();
+            }
+            );
+        }
+    }
+
+    @Override
+    public void datasetModified(Dataset dataset) {
+    }
+
+    @Override
+    public void datasetRemoved(Dataset dataset) {
+        if (Platform.isFxApplicationThread()) {
+            FXMLController.updateDatasetList();
+        } else {
+            Platform.runLater(() -> {
+                FXMLController.updateDatasetList();
+            }
+            );
+        }
+    }
+
+    @Override
+    public void datasetRenamed(Dataset dataset) {
+        if (Platform.isFxApplicationThread()) {
+            FXMLController.updateDatasetList();
+        } else {
+            Platform.runLater(() -> {
+                FXMLController.updateDatasetList();
+            }
+            );
         }
     }
 
