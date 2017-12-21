@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.io;
 
 import org.nmrfx.structure.chemistry.*;
@@ -475,15 +474,11 @@ public class PDBFile {
         LineNumberReader lineReader;
         String lastChain = "";
 
-        if (Molecule.defaultMol == null) {
-            throw new MoleculeIOException("No molecule");
-        }
-
-        String molName = Molecule.defaultMol;
-        Molecule molecule = Molecule.get(molName);
+        Molecule molecule = Molecule.getActive();
         if (molecule == null) {
             throw new MoleculeIOException("No molecule");
         }
+        String molName = molecule.getName();
         int type = checkPDBType(fileName);
 
         try {

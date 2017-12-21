@@ -260,10 +260,10 @@ public class MMcifReader {
         double bfactor = 0.0;
         int validCoord = 0;
         structureNumber = 0;
-        molecule = Molecule.get(Molecule.defaultMol);
+        molecule = Molecule.getActive();
 
         if (molecule == null) {
-            throw new InvalidMoleculeException("Couldn't find molecule " + Molecule.defaultMol);
+            throw new InvalidMoleculeException("No active molecule ");
         }
 
         while (true) {

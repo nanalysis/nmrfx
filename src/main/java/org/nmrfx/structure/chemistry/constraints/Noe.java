@@ -632,7 +632,7 @@ public class Noe implements Constraint, Serializable {
 
     public static void updateNOEListDistances(ArrayList<Noe> noeList) {
         double sum = 0.0;
-        Molecule mol = Molecule.get(Molecule.defaultMol);
+        Molecule mol = Molecule.getActive();
         int[] structures = mol.getActiveStructures();
         if (structures.length == 0) {
             structures = new int[1];
@@ -675,7 +675,7 @@ public class Noe implements Constraint, Serializable {
     }
 
     public static void updateDistancesIndividual() {
-        Molecule mol = Molecule.get(Molecule.defaultMol);
+        Molecule mol = Molecule.getActive();
         if (mol == null) {
             return;
         }
@@ -716,7 +716,7 @@ public class Noe implements Constraint, Serializable {
     }
 
     public static void updateNOEListDistancesAvg(ArrayList<Noe> noeList, boolean requireActive) {
-        Molecule mol = Molecule.get(Molecule.defaultMol);
+        Molecule mol = Molecule.getActive();
         int[] structures = mol.getActiveStructures();
         if (structures.length == 0) {
             structures = new int[1];
@@ -764,7 +764,7 @@ public class Noe implements Constraint, Serializable {
     }
 
     public static void updateDistances(boolean requireActive) {
-        Molecule mol = Molecule.get(Molecule.defaultMol);
+        Molecule mol = Molecule.getActive();
         if (mol == null) {
             return;
         }
@@ -1146,7 +1146,7 @@ public class Noe implements Constraint, Serializable {
 
     public static void findNetworks(boolean useContrib) {
         int nNoe = activeSet.getSize();
-        Molecule mol = Molecule.get(Molecule.defaultMol);
+        Molecule mol = Molecule.getActive();
         if (mol == null) {
             System.out.println("null mol");
             return;
@@ -1297,7 +1297,7 @@ public class Noe implements Constraint, Serializable {
 
     public static void findRedundant() {
         int nNoe = activeSet.getSize();
-        Molecule mol = Molecule.get(Molecule.defaultMol);
+        Molecule mol = Molecule.getActive();
         if (mol == null) {
             System.out.println("null mol");
             return;
@@ -1765,7 +1765,7 @@ public class Noe implements Constraint, Serializable {
         nPeaks = peakList.size();
         MatchCriteria[] matchCriteria = new MatchCriteria[peakList.nDim];
         IdPeak idPeak = new IdPeak();
-        idPeak.setMolecule(Molecule.get(Molecule.defaultMol));
+        idPeak.setMolecule(Molecule.getActive());
 
         if (idPeak.getMolecule() == null) {
             throw new InvalidMoleculeException("Can't find default molecule");
@@ -1874,7 +1874,7 @@ public class Noe implements Constraint, Serializable {
         nPeaks = peakList.size();
         IdPeak idPeak = new IdPeak();
         idPeak.setPPMSet(ppmSet);
-        idPeak.setMolecule(Molecule.get(Molecule.defaultMol));
+        idPeak.setMolecule(Molecule.getActive());
 
         if (idPeak.getMolecule() == null) {
             throw new InvalidMoleculeException("Can't find default molecule");

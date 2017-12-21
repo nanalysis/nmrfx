@@ -65,7 +65,7 @@ public class PPMFiles {
         }
     }
 
-    public static void readPPM(Molecule molecule, Path path, int ppmSet) {
+    public static void readPPM(Molecule molecule, Path path, int ppmSet, boolean refMode) {
 
         try (BufferedReader fileReader = Files.newBufferedReader(path)) {
             while (true) {
@@ -88,7 +88,12 @@ public class PPMFiles {
                         System.out.println("no atom " + atomRef);
                     } else {
                         double ppm = Double.parseDouble(sfields[1]);
-                        atom.setPPM(ppmSet, ppm);
+                        if (refMode) {
+                            atom.setRefPPM(ppmSet, ppm);
+                        } else {
+                            atom.setPPM(ppmSet, ppm);
+
+                        }
                     }
                 }
             }

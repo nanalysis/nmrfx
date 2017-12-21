@@ -28,6 +28,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,7 +44,7 @@ public class Molecule implements Serializable {
 
     public static List<Atom> atomList = null;
     public static final List<String> conditions = new ArrayList<>();
-    public static String defaultMol = "default";
+    public static Molecule activeMol = null;
     public static final Map<String, Molecule> molecules = new HashMap<String, Molecule>();
     public static final Map<String, List<SpatialSet>> sites = new HashMap<>();
     public static final List<SpatialSet> globalSelected = new ArrayList<>(1024);
@@ -204,6 +205,7 @@ public class Molecule implements Serializable {
     int genVecs[][] = null;
     EnergyCoords eCoords = new EnergyCoords();
     Dihedral dihedrals = null;
+    String dotBracket = "";
 
 // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
@@ -212,7 +214,6 @@ public class Molecule implements Serializable {
         entityLabels = new LinkedHashMap();
         coordSets = new LinkedHashMap<>();
         molecules.put(name, this);
-        defaultMol = this.name;
         nResidues = 0;
         Atom.resetLastAtom();
         try {
@@ -224,7 +225,7 @@ public class Molecule implements Serializable {
         } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             atoms = new ArrayList<>();
         }
-
+        activeMol = this;
     }
 
     public void changed() {
@@ -257,13 +258,16 @@ public class Molecule implements Serializable {
         }
     }
 
+    public static Molecule getActive() {
+        return activeMol;
+    }
+
     public void reName(Molecule molecule, Compound compound, String name1,
             String name2) {
         molecule.name = name2;
         Molecule.molecules.remove(name1);
         compound.name = molecule.name;
         Molecule.molecules.put(molecule.name, molecule);
-        Molecule.defaultMol = molecule.name;
     }
 
     public String getName() {
@@ -298,7 +302,7 @@ public class Molecule implements Serializable {
         globalSelected.clear();
         bselected.clear();
         conditions.clear();
-        defaultMol = "default";
+        activeMol = null;
     }
 
     public void remove() {
@@ -313,13 +317,12 @@ public class Molecule implements Serializable {
         structures.clear();
         resetActiveStructures();
         conditions.clear();
-        defaultMol = "default";
 
-        Set<String> molNames = molecules.keySet();
+        Collection<Molecule> mols = molecules.values();
 
-        defaultMol = "default";
-        for (String molName : molNames) {
-            defaultMol = molName;
+        activeMol = null;
+        for (Molecule mol : mols) {
+            activeMol = mol;
             break;
         }
     }
@@ -423,8 +426,8 @@ public class Molecule implements Serializable {
         }
     }
 
-    public ArrayList<Polymer> getPolymers() {
-        ArrayList<Polymer> polymers = new ArrayList<>();
+    public List<Polymer> getPolymers() {
+        List<Polymer> polymers = new ArrayList<>();
         for (Entity entity : entities.values()) {
             if (entity instanceof Polymer) {
                 polymers.add((Polymer) entity);
@@ -457,6 +460,14 @@ public class Molecule implements Serializable {
 
     public Dihedral getDihedrals() {
         return dihedrals;
+    }
+
+    public String getDotBracket() {
+        return dotBracket;
+    }
+
+    public void setDotBracket(String value) {
+        dotBracket = value;
     }
 
     public static Point3 avgCoords(MolFilter molFilter1) throws IllegalArgumentException, InvalidMoleculeException {
@@ -2311,11 +2322,10 @@ public class Molecule implements Serializable {
         List<Bond> selected = new ArrayList<>(32);
         Atom atomB;
         Atom atomE;
-        String molName = Molecule.defaultMol;
-        Molecule molecule = (Molecule) molecules.get(molName);
+        Molecule molecule = activeMol;
 
         if (molecule == null) {
-            throw new IllegalArgumentException("Can't find molecule " + molName);
+            throw new IllegalArgumentException("No active molecule ");
         }
 
         molecule.updateBondArray();
@@ -2684,11 +2694,10 @@ public class Molecule implements Serializable {
     }
 
     public static List<SpatialSet> matchAtoms(MolFilter molFilter) throws InvalidMoleculeException {
-        String molName = Molecule.defaultMol;
-        Molecule molecule = (Molecule) molecules.get(molName);
+        Molecule molecule = Molecule.getActive();
 
         if (molecule == null) {
-            throw new InvalidMoleculeException("Can't find molecule " + molName);
+            throw new InvalidMoleculeException("No active molecule");
         }
         return matchAtoms(molFilter, molecule);
     }
@@ -3233,14 +3242,12 @@ public class Molecule implements Serializable {
             throws IllegalArgumentException {
         Residue firstResidue = null;
         Compound compound;
-        Molecule molecule = null;
         CoordSet coordSet;
 
-        String molName = Molecule.defaultMol;
-        molecule = (Molecule) molecules.get(molName);
+        Molecule molecule = Molecule.getActive();
 
         if (molecule == null) {
-            throw new IllegalArgumentException("Can't find molecule " + molName);
+            throw new IllegalArgumentException("No active molecule");
         }
 
         Iterator e = molecule.coordSets.values().iterator();
@@ -4085,7 +4092,7 @@ public class Molecule implements Serializable {
     }
 
     public static void writeXYZ() {
-        Molecule molecule = (Molecule) molecules.get(defaultMol);
+        Molecule molecule = activeMol;
 
         if (molecule == null) {
             return;
@@ -4107,10 +4114,10 @@ public class Molecule implements Serializable {
         int iStruct = 0;
         String result = null;
 
-        Molecule molecule = (Molecule) molecules.get(defaultMol);
+        Molecule molecule = activeMol;
 
         if (molecule == null) {
-            throw new InvalidMoleculeException("Molecule " + defaultMol + " doesn't exist");
+            throw new InvalidMoleculeException("No active molecule");
         }
         molecule.updateAtomArray();
 
@@ -4139,12 +4146,12 @@ public class Molecule implements Serializable {
         int i;
         String result = null;
 
-        Molecule molecule = (Molecule) molecules.get(defaultMol);
-        molecule.updateAtomArray();
+        Molecule molecule = Molecule.getActive();
 
         if (molecule == null) {
-            throw new InvalidMoleculeException("Molecule " + defaultMol + " doesn't exist");
+            throw new InvalidMoleculeException("No Active Molecule");
         }
+        molecule.updateAtomArray();
 
         i = 0;
 
@@ -4226,10 +4233,10 @@ public class Molecule implements Serializable {
             int whichStruct) throws InvalidMoleculeException, IOException {
         int i;
 
-        Molecule molecule = (Molecule) molecules.get(defaultMol);
+        Molecule molecule = activeMol;
 
         if (molecule == null) {
-            throw new InvalidMoleculeException("Molecule " + defaultMol + " doesn't exist");
+            throw new InvalidMoleculeException("No active molecule");
         }
         molecule.updateAtomArray();
 
