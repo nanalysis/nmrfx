@@ -43,6 +43,10 @@ import java.text.DecimalFormat;
 import java.util.Optional;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.ScatterChart;
+import javafx.scene.chart.XYChart;
+import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
@@ -58,6 +62,7 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import javafx.util.converter.FloatStringConverter;
@@ -102,6 +107,11 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     @FXML
     private TableView<SpectralDim> referenceTableView;
 
+    @FXML
+    private BorderPane graphBorderPane;
+
+    private ScatterChart<Number, Number> scatterChart;
+
     PeakNavigator peakNavigator;
 
     PeakList peakList;
@@ -128,6 +138,15 @@ public class PeakAttrController implements Initializable, PeakNavigable {
 
             }
         });
+        final NumberAxis xAxis = new NumberAxis(0, 10, 1);
+        final NumberAxis yAxis = new NumberAxis(-100, 500, 100);
+        scatterChart = new ScatterChart<>(xAxis, yAxis);
+        xAxis.setAutoRanging(true);
+        yAxis.setAutoRanging(true);
+        xAxis.setAnimated(false);
+        yAxis.setAnimated(false);
+        scatterChart.setAnimated(false);
+        graphBorderPane.setCenter(scatterChart);
 //        peakListMenuButton.setOnMousePressed(e -> {
 //            updatePeakListMenu();
 //            peakListMenuButton.show();
@@ -195,8 +214,26 @@ public class PeakAttrController implements Initializable, PeakNavigable {
             clearIt = false;
         }
         currentPeak = peak;
+        updateGraph();
         if (clearIt) {
             clearInsepctor();
+        }
+    }
+
+    public void updateGraph() {
+        if ((currentPeak != null) && currentPeak.getMeasures().isPresent()) {
+            ObservableList<XYChart.Series<Number, Number>> data = FXCollections.observableArrayList();
+            Series series = new Series<>();
+            data.add(series);
+
+            double[] yValues = currentPeak.getMeasures().get();
+            for (int i = 0; i < yValues.length; i++) {
+                XYChart.Data value = new XYChart.Data(1.0 * i, yValues[i]);
+                series.getData().add(value);
+            }
+            scatterChart.getData().setAll(data);
+        } else {
+            scatterChart.getData().clear();
         }
     }
 
