@@ -118,6 +118,37 @@ public class PeakWriter {
         }
     }
 
+    public void writePeakMeasures(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
+        int nDim = peakList.nDim;
+        StringBuilder result = new StringBuilder();
+        String sep = "\t";
+        result.append("id").append(sep);
+
+        for (int j = 0; j < nDim; j++) {
+            result.append("lab" + (j + 1)).append(sep);
+        }
+        int nPeaks = peakList.size();
+        boolean wroteHeader = false;
+        for (int i = 0; i < nPeaks; i++) {
+            Peak peak = peakList.getPeak(i);
+            if (peak == null) {
+                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+            }
+            if (peak.getMeasures().isPresent()) {
+                if (!wroteHeader) {
+                    int nMeasure = peak.getMeasures().get().length;
+                    for (int j = 0; j < nMeasure; j++) {
+                        result.append("val" + (j + 1)).append(sep);
+                    }
+                    chan.write(result.toString().trim());
+                    chan.write("\n");
+                    wroteHeader = true;
+                }
+                chan.write(peak.toMeasureString(i) + "\n");
+            }
+        }
+    }
+
     public void writePeaksXPK(FileWriter chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
         if (chan == null) {
             throw new IllegalArgumentException("Channel null");

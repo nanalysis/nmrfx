@@ -225,6 +225,52 @@ public class PeakReader {
         return peakList;
     }
 
+    public static void readMPK2(PeakList peakList, String fileName) throws IOException {
+        Path path = Paths.get(fileName);
+        boolean gotHeader = false;
+        int valStart = -1;
+        int nValues = -1;
+        try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
+            while (true) {
+                String line = fileReader.readLine();
+                if (line == null) {
+                    break;
+                }
+                String sline = line.trim();
+                if (sline.length() == 0) {
+                    continue;
+                }
+                if (sline.charAt(0) == '#') {
+                    continue;
+                }
+                String[] data = line.split("\t");
+                if (!gotHeader) {
+                    gotHeader = true;
+                    int i = 0;
+                    for (String s : data) {
+                        if (s.startsWith("val")) {
+                            valStart = i;
+                            nValues = data.length - valStart;
+                            break;
+                        }
+                        i++;
+                    }
+                } else {
+                    int peakId = Integer.parseInt(data[0]);
+                    Peak peak = peakList.getPeakByID(peakId);
+                    if (peak != null) {
+                        double[] values = new double[nValues];
+                        for (int i = valStart, j = 0; i < data.length; i++) {
+                            values[j++] = Double.parseDouble(data[i]);
+                        }
+                        peak.setMeasures(values);
+                    }
+
+                }
+            }
+        }
+    }
+
     /*
     dataset ndim
     C_nhsqcsegr_b.nv        2
