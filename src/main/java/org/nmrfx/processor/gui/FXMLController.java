@@ -461,14 +461,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     void closeFile(File target) {
-        for (Iterator<Dataset> iterator = datasetList.iterator(); iterator.hasNext();) {
-            Dataset dataset = iterator.next();
-            if (target.toString().equals(dataset.getFile().toString())) {
-                dataset.close();
-                iterator.remove();
-                getActiveChart().remove(dataset);
-            }
-        }
+        // make copy because datasetList might be updated vi DatasetListener mechanism
+        List<Dataset> copyOfDatasetList = new ArrayList<>();
+        copyOfDatasetList.addAll(datasetList);
+        getActiveChart().removeAllDatasets();
     }
 
     @FXML
