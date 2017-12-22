@@ -104,6 +104,7 @@ public class Dataset extends DoubleVector {
     private boolean[] freqDomain;
     private boolean[] freqDomain_r;
     private double[][] rmsd;
+    private double[][] values;
     private int posneg;
     private double lvl;
     private boolean lvlSet = false;
@@ -302,6 +303,7 @@ public class Dataset extends DoubleVector {
         freqDomain_r[0] = vector.freqDomain();
         refUnits[0] = 3;
         rmsd = new double[1][1];
+        values = new double[1][];
         //System.err.println("Opened file " + fileName + " with " + this.nDim + " dimensions");
         initialized = true;
         addFile(fileName);
@@ -327,6 +329,7 @@ public class Dataset extends DoubleVector {
             this.vsize_r = new int[this.nDim];
             this.tdSize = new int[this.nDim];
             rmsd = new double[nDim][];
+            values = new double[nDim][];
             int nBytes = 4;
             fileSize = 1;
 
@@ -379,6 +382,7 @@ public class Dataset extends DoubleVector {
             this.vsize_r = new int[this.nDim];
             this.tdSize = new int[this.nDim];
             rmsd = new double[nDim][];
+            values = new double[nDim][];
             int nBytes = 4;
             fileSize = 1;
 
@@ -1905,6 +1909,36 @@ public class Dataset extends DoubleVector {
         }
     }
 
+    /**
+     * Get the stored values for the specified dimension of this dataset
+     *
+     * @param iDim the dataset dimension
+     * @return values
+     */
+    public double[] getValues(int iDim) {
+        return values[iDim];
+    }
+
+    /**
+     * Store a set of values for a dimension of dataset
+     *
+     * @param iDim the dataset dimension
+     * @param values the values
+     */
+    public void setValues(int iDim, double[] values) {
+        if ((iDim < 0) || (iDim >= nDim)) {
+            throw new IllegalArgumentException("Invalid dimension in setValues");
+        }
+        if (values == null) {
+            this.values[iDim] = null;
+        } else {
+            if (values.length != size[iDim]) {
+                throw new IllegalArgumentException("Number of values must equal dimension size");
+            }
+            this.values[iDim] = values.clone();
+        }
+    }
+
     double[] optCenter(int[] maxPoint, int[] dim) throws IOException {
         double[] dmaxPoint = new double[nDim];
         int[] points = new int[nDim];
@@ -2800,6 +2834,7 @@ public class Dataset extends DoubleVector {
             }
 
             rmsd = new double[nDim][];
+            values = new double[nDim][];
         } catch (Exception e) {
             System.err.println(e.getMessage());
 
@@ -2935,6 +2970,7 @@ public class Dataset extends DoubleVector {
         fileHeaderSize = UCSF_HEADER_SIZE + 128 * nDim;
         blockHeaderSize = 0;
         rmsd = new double[nDim][];
+        values = new double[nDim][];
         dataType = 0;
         rdims = nDim;
         setStrides();
@@ -3022,6 +3058,7 @@ public class Dataset extends DoubleVector {
         dlabel = new String[nDim];
         nucleus = new Nuclei[nDim];
         rmsd = new double[nDim][];
+        values = new double[nDim][];
 
         int i;
 
@@ -3164,6 +3201,7 @@ public class Dataset extends DoubleVector {
             foldDown[iDim] = 0.0;
         }
         rmsd = new double[nDim][];
+        values = new double[nDim][];
         setStrides();
         setDimAttributes();
     }
