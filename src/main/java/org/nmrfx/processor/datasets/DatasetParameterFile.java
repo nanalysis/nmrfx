@@ -101,6 +101,13 @@ public class DatasetParameterFile {
                 pStream.printf("dlabel %d %s\n", (i + 1), dataset.getDlabel(i));
                 pStream.printf("nucleus %d %s\n", (i + 1), dataset.getNucleus(i).getNameNumber());
                 pStream.printf("complex %d %d\n", (i + 1), dataset.getComplex(i) ? 1 : 0);
+                double[] values = dataset.getValues(i);
+                if (values != null) {
+                    pStream.printf("values %d", (i + 1));
+                    for (double value : values) {
+                        pStream.printf(" %.4f", value);
+                    }
+                }
             }
             pStream.printf("posneg %d\n", dataset.getPosneg());
             pStream.printf("lvl %f\n", dataset.getLvl());
@@ -289,6 +296,16 @@ public class DatasetParameterFile {
                 } else {
                     dataset.addProperty(propName, fields[2]);
                 }
+                break;
+            }
+            case "values": {
+                int iDim = Integer.parseInt(fields[1]) - 1;
+                double[] values = new double[fields.length - 2];
+                for (int i = 2; i < fields.length; i++) {
+                    double value = Double.parseDouble(fields[2]);
+                    values[i - 2] = value;
+                }
+                dataset.setValues(iDim, values);
                 break;
             }
         }
