@@ -90,6 +90,7 @@ public class PeakList {
     ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture futureUpdate = null;
     boolean slideable = false;
+    boolean hasMeasures = false;
 
     class UpdateTask implements Runnable {
 
@@ -384,6 +385,10 @@ public class PeakList {
         for (Object checkList : peakListTable.values()) {
             ((PeakList) checkList).clearChanged();
         }
+    }
+
+    public boolean hasMeasures() {
+        return hasMeasures;
     }
 
     private void sortMultiplets() {
@@ -2672,11 +2677,27 @@ public class PeakList {
         if (dataset == null) {
             throw new IllegalArgumentException("No dataset for peak list");
         }
+
         java.util.function.Function<RegionData, Double> f = getMeasureFunction(mode);
         if (f == null) {
             throw new IllegalArgumentException("Invalid measurment mode: " + mode);
         }
+        int nDataDim = dataset.getNDim();
+        if (nDim == nDataDim) {
+            quantifyPeaks(dataset, f, mode);
+        } else if (nDim == (nDataDim - 1)) {
+            int scanDim = 2;
+            int nPlanes = dataset.getSize(scanDim);
+            quantifyPeaks(dataset, f, mode, nPlanes);
+        } else if (nDim > nDataDim) {
+            throw new IllegalArgumentException("Peak list has more dimensions than dataset");
 
+        } else {
+            throw new IllegalArgumentException("Dataset has more than one extra dimension (relative to peak list)");
+        }
+    }
+
+    public void quantifyPeaks(Dataset dataset, java.util.function.Function<RegionData, Double> f, String mode) {
         peaks.stream().forEach(peak -> {
             try {
                 peak.quantifyPeak(dataset, f, mode);
@@ -2687,70 +2708,30 @@ public class PeakList {
         });
     }
 
-    public void measurePeaks(String mode) {
-        if (peaks.isEmpty()) {
-            return;
-        }
-        Dataset dataset = Dataset.getDataset(fileName);
-        if (dataset == null) {
-            throw new IllegalArgumentException("No dataset for peak list");
-        }
-        measurePeaks(dataset, peaks, mode);
-    }
-
-    public void measurePeaks(Dataset dataset, List<Peak> speaks, String mode) {
-        if (speaks.isEmpty()) {
-            return;
-        }
-        final java.util.function.Function<RegionData, Double> f = Peak.getMeasureFunction(mode);
+    public void quantifyPeaks(Dataset dataset, java.util.function.Function<RegionData, Double> f, String mode, int nPlanes) {
         if (f == null) {
             throw new IllegalArgumentException("Unknown measurment type: " + mode);
         }
-        int[] planes;
-        Peak firstPeak = speaks.get(0);
-        int nPeakDim = firstPeak.getPeakList().nDim;
-        int nDataDim = dataset.getNDim();
-        final int nPlanes;
-        if (nPeakDim > nDataDim) {
-            throw new IllegalArgumentException("Peak list has more dimensions than dataset");
-        } else if (nPeakDim < (nDataDim - 1)) {
-            throw new IllegalArgumentException("Dataset has more than one extra dimension (relative to peak list)");
-        } else {
-            planes = new int[nDataDim - nPeakDim];
-            int scanDim = 2;
-            if (planes.length == 0) {
-                nPlanes = 1;
-            } else {
-                nPlanes = dataset.getSize(scanDim);
-            }
-        }
-        if (nPlanes == 1) {
-            List<Double> result = new ArrayList<>();
-            speaks.stream().forEach(peak -> {
-                for (int i = 0; i < nPlanes; i++) {
-                    if (planes.length == 1) {
-                        planes[0] = i;
-                    }
-                    try {
-                        double value = peak.measurePeak(dataset, planes, f);
-                        result.add(value);
-                    } catch (IOException ex) {
-                        result.add(null);
-                    }
-                }
-            });
-        } else {
-            List<Double> result = new ArrayList<>();
-            speaks.stream().forEach(peak -> {
+        int[] planes = new int[1];
+        peaks.stream().forEach(peak -> {
+            double[] measures = new double[nPlanes];
+            for (int i = 0; i < nPlanes; i++) {
+                planes[0] = i;
                 try {
                     double value = peak.measurePeak(dataset, planes, f);
-                    result.add(value);
+                    measures[i] = value;
                 } catch (IOException ex) {
-                    result.add(null);
+                    System.out.println(ex.getMessage());
                 }
-            });
-
-        }
+            }
+            if (mode.contains("vol")) {
+                peak.setVolume1((float) measures[0]);
+            } else {
+                peak.setIntensity((float) measures[0]);
+            }
+            peak.setMeasures(measures);
+            hasMeasures = true;
+        });
     }
 
     public void tweakPeaks(Dataset dataset, List<Peak> speaks) {

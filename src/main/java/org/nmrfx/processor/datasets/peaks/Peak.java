@@ -98,6 +98,7 @@ public class Peak implements Comparable, PeakOrMulti {
     private Color color;
     private String comment;
     private boolean[] flag;
+    private Optional<double[]> measures = Optional.empty();
     public PeakDim[] peakDim;
     private Corner corner = new Corner("ne");
     public PeakList peakList;
@@ -443,7 +444,17 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public double measurePeak(Dataset dataset, int[] planes, Function<RegionData, Double> f) throws IOException {
         RegionData regionData = analyzePeakRegion(dataset, planes);
-        return f.apply(regionData);
+        double value = f.apply(regionData);
+        return value;
+    }
+
+    public void setMeasures(double[] values) {
+        measures = Optional.of(values);
+        peakList.hasMeasures = true;
+    }
+
+    public Optional<double[]> getMeasures() {
+        return measures;
     }
 
     public void quantifyPeak(Dataset dataset, Function<RegionData, Double> f, String mode) throws IOException, IllegalArgumentException {
@@ -878,6 +889,25 @@ public class Peak implements Comparable, PeakOrMulti {
         result.append(String.valueOf(getComment())).append(sep);
         result.append(String.valueOf(getFlag()));
 
+        return (result.toString().trim());
+    }
+
+    public String toMeasureString(int index) {
+        StringBuilder result = new StringBuilder();
+        String sep = "\t";
+        result.append(String.valueOf(getIdNum())).append(sep);
+        String formatString = "%.5f";
+
+        for (int i = 0; i < getNDim(); i++) {
+            String label = peakDim[i].getLabel();
+            result.append(label).append(sep);
+        }
+        if (measures.isPresent()) {
+            double[] values = measures.get();
+            for (int i = 0; i < values.length; i++) {
+                result.append(String.format(formatString, values[i])).append(sep);
+            }
+        }
         return (result.toString().trim());
     }
 
