@@ -948,6 +948,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         return dataset;
     }
 
+    void removeAllDatasets() {
+        if (!datasetAttributesList.isEmpty()) {
+            lastDatasetAttr = (DatasetAttributes) ((DatasetAttributes) datasetAttributesList.get(0)).clone();
+        }
+        datasetAttributesList.clear();
+    }
+
     void remove(Dataset dataset) {
         for (Iterator<DatasetAttributes> iterator = datasetAttributesList.iterator(); iterator.hasNext();) {
             DatasetAttributes dataAttr = iterator.next();
@@ -1218,10 +1225,25 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             Dataset dataset = getDataset();
             int indexL = axModes[axis].getIndex(datasetAttributes, axis, axes[axis].getLowerBound());
             int indexU = axModes[axis].getIndex(datasetAttributes, axis, axes[axis].getUpperBound());
-            indexL += amount;
-            axes[axis].setLowerBound(indexL);
+            int[] maxLimits = datasetAttributes.getMaxLimitsPt(axis);
 
+            indexL += amount;
             indexU += amount;
+            if (indexL < maxLimits[0]) {
+                indexL = maxLimits[0];
+            }
+            if (indexU < maxLimits[0]) {
+                indexU = maxLimits[0];
+            }
+
+            if (indexL > maxLimits[1]) {
+                indexL = maxLimits[1];
+            }
+            if (indexU > maxLimits[1]) {
+                indexU = maxLimits[1];
+            }
+
+            axes[axis].setLowerBound(indexL);
             axes[axis].setUpperBound(indexU);
             layoutPlotChildren();
         }
