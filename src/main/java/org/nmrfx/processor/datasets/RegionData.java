@@ -96,11 +96,16 @@ public class RegionData {
             if (iPointAbs[ii] != cpt[ii]) {
                 iscenter = false;
             }
-            int delta = Math.abs(iPointAbs[ii] - cpt[ii]);
-            if (delta > dataset.getSize(dim[ii]) / 2) {
-                delta = dataset.getSize(dim[ii]) - delta;
+            // if width is near 0.0 (use tolerance to avoid exact test for 0.0)
+            //   then we're probably integrating an n-1 dim peak in an n dim dataset
+            // so don't check r2 distance from center
+            if (width[ii] > 1.0e-6) {
+                int delta = Math.abs(iPointAbs[ii] - cpt[ii]);
+                if (delta > dataset.getSize(dim[ii]) / 2) {
+                    delta = dataset.getSize(dim[ii]) - delta;
+                }
+                r2 += (delta * delta) / (0.47 * width[ii] * width[ii]);
             }
-            r2 += (delta * delta) / (0.47 * width[ii] * width[ii]);
             //System.err.println(ii+" "+iVec[ii]+" "+iPointAbs[ii]+" "+cpt[ii]+" "+value+" "+width[ii]);
         }
         if (iscenter) {
