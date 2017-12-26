@@ -1486,6 +1486,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return 0;
     }
 
+    public int arrangeGetRows() {
+        return chartGroup.getRows();
+    }
+
+    public int arrangeGetColumns() {
+        return chartGroup.getColumns();
+    }
+
     public void arrange(FractionPane.ORIENTATION orient) {
         if (charts.size() == 1) {
             PolyChart chart = charts.get(0);
