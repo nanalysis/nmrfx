@@ -30,12 +30,21 @@ class NMRFxWindowScripting:
         self.cmd.grid(rows, columns)
         return self
 
+    def getGrid(self):
+        return self.cmd.grid()
+
     def active(self, chartName=None):
         if chartName != None:
             self.cmd.active(chartName)
             return self
         else:
             return self.cmd.active()
+
+    def datasets(self, datasetNames=None):
+        if datasetNames == None:
+            return self.cmd.datasets()
+        else:
+            self.cmd.datasets(datasetNames)
 
     def config(self, datasets=None, pars=None,  **kwargs):
         if datasets != None:
@@ -56,6 +65,24 @@ class NMRFxWindowScripting:
 
     def offsets(self, indices, offset, dataset=None):
         self.cmd.offsetMap(dataset, indices, offset)
+
+    def lim(self,pars=None,**kwargs):
+        if (pars==None) and (len(kwargs) == 0):
+            return self.cmd.limit()
+        else:
+            if pars != None:
+                print 'pars',pars
+                for elem in pars:
+                    (v1,v2) = pars[elem] 
+                    self.cmd.limit(elem, v1, v2)
+            for elem in kwargs:
+                (v1,v2) = kwargs[elem]
+                self.cmd.limit(elem, v1, v2)
+        self.cmd.draw()
+
+    def axlim(self, axis, v1, v2):
+        self.cmd.limit(axis, v1, v2)
+        self.cmd.draw()
 
     def configOld(self,datasets=None, **kwargs):
         dAttrs = self.getDAttrs()
