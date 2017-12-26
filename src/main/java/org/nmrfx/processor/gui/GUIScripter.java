@@ -123,6 +123,56 @@ public class GUIScripter {
         });
     }
 
+    public void limit(String dimName, double v1, double v2) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            int axNum = chart.getAxisNum(dimName);
+            if (v1 < v2) {
+                chart.setAxis(axNum, v1, v2);
+            } else {
+                chart.setAxis(axNum, v2, v1);
+            }
+        });
+    }
+
+    public void limit(int axNum, double v1, double v2) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            if (v1 < v2) {
+                chart.setAxis(axNum, v1, v2);
+            } else {
+                chart.setAxis(axNum, v2, v1);
+            }
+        });
+    }
+
+    public Map<String, List<Double>> limit() {
+        Map<String, List<Double>> result = new HashMap<>();
+        String dimChars = "xyzabcdefghijk";
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            int nAxes = chart.axes.length;
+            for (int i = 0; i < nAxes; i++) {
+                double v1 = chart.getAxis(i).getLowerBound();
+                double v2 = chart.getAxis(i).getUpperBound();
+                String axName = dimChars.substring(i,i+1);
+                List<Double> limits = new ArrayList<>();
+                limits.add(v1);
+                limits.add(v2);
+                result.put(axName, limits);
+            }
+        });
+        return result;
+    }
+
+    public void draw() {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            chart.refresh();
+        });
+
+    }
+
     public void colorMap(String datasetName, int index, String colorName) {
         ConsoleUtil.runOnFxThread(() -> {
             PolyChart chart = getChart();
@@ -224,6 +274,22 @@ public class GUIScripter {
         return future.get();
 
     }
+
+    public List<Integer> grid() throws InterruptedException, ExecutionException {
+        FutureTask<List<Integer>> future = new FutureTask(() -> {
+            PolyChart chart = getChart();
+            int nRows = chart.getController().arrangeGetRows();
+            int nColumns = chart.getController().arrangeGetColumns();
+            List<Integer> result = new ArrayList<>();
+            result.add(nRows);
+            result.add(nColumns);
+            return result;
+
+        });
+        ConsoleUtil.runOnFxThread(future);
+        return future.get();
+    }
+
 
     public void newStage() {
         FXMLController controller = FXMLController.create();
