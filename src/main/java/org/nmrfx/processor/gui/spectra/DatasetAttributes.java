@@ -168,6 +168,62 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 return "ppm";
             }
         },
+        HZ() {
+            public int getIndex(Vec vec, double value) {
+                int index = (int) vec.lwToPtD(value);
+                if (index < 0) {
+                    index = 0;
+                }
+                if (index >= vec.getSize()) {
+                    index = vec.getSize() - 1;
+                }
+                return index;
+            }
+
+            public double getIncrement(Vec vec, double start, double end) {
+                int iStart = getIndex(vec, start);
+                int iEnd = getIndex(vec, end);
+                double delta = (end - start) / (iEnd - iStart);
+                return delta;
+            }
+
+            public int getIndex(DatasetAttributes dataAttr, int jDim, double value) {
+                Dataset dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                int index = (int) dataset.hzWidthToPoints(iDim, value);
+                if (index < 0) {
+                    index = 0;
+                }
+                if (index >= dataset.getSize(iDim)) {
+                    index = dataset.getSize(iDim) - 1;
+                }
+                return index;
+            }
+
+            public double indexToValue(DatasetAttributes dataAttr, int jDim, double value) {
+                Dataset dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                double ppmValue = dataset.ptWidthToHz(iDim, value);
+                return ppmValue;
+            }
+
+            public double getIncrement(DatasetAttributes dataAttr, int jDim, double start, double end) {
+                return 1;
+            }
+
+            public String getLabel(DatasetAttributes dataAttr, int jDim) {
+                Dataset dataset = dataAttr.getDataset();
+                int iDim = dataAttr.dim[jDim];
+
+                return dataset.getLabel(iDim) + " (Hz)";
+            }
+
+            public String getLabel(Vec vec) {
+                return "Hz";
+            }
+        },
         TIME() {
             public int getIndex(Vec vec, double value) {
                 int index = vec.timeToPt(value);
@@ -1671,7 +1727,15 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         String[] beanNames = {"nlvls", "clm", "posColor", "negColor", "posWidth", "negWidth", "lvl", "pos", "neg"};
         for (String beanName : beanNames) {
             try {
-                data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
+                if (beanName.contains("Color")) {
+                    Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
+                    if (colObj instanceof Color) {
+                        String colorName = colObj.toString();
+                        data.put(beanName, colorName);
+                    }
+                } else {
+                    data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
+                }
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
                 Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
             }
