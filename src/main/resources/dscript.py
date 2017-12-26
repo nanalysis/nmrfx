@@ -4,7 +4,6 @@ from shutil import copyfile
 from org.nmrfx.processor.datasets import Dataset
 from org.nmrfx.processor.math import Vec
 
-
 class NMRFxDatasetScripting:
     def __init__(self):
         self.cmd = Dataset
