@@ -1169,6 +1169,30 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     }
 
+    public int getAxisNum(String ax) {
+        int axNum = -1;
+        char ch = ax.charAt(0);
+        if ((ax.length() == 1) && Character.isLetter(ch) && Character.isLowerCase(ch)) {
+            axNum = ch - 'x';
+            if (axNum < 0) {
+                axNum = ch - 'a' + 3;
+            }
+        }
+        if (axNum == -1) {
+            throw new IllegalArgumentException("Invalid axis name: \"" + ax + "\"");
+        }
+
+        return axNum;
+    }
+
+    public int getAxisForLabel(String ax) {
+        int axNum = getDimNames().indexOf(ax);
+        if (axNum == -1) {
+            throw new IllegalArgumentException("Invalid axis name: \"" + ax + "\"");
+        }
+        return axNum;
+    }
+
     protected void setXAxis(double min, double max) {
         double range = max - min;
         double delta = range / 10;
