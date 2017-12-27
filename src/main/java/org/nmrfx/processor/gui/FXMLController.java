@@ -1446,7 +1446,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void removeChart(PolyChart chart) {
         if (chart != null) {
-            chartGroup.getChildren().remove(chart);
+            chartGroup.removeChild(chart);
             charts.remove(chart);
             if (chart == activeChart) {
                 if (charts.isEmpty()) {

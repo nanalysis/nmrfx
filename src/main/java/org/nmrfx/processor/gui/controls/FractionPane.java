@@ -171,6 +171,22 @@ public class FractionPane extends Pane {
         return nCols;
     }
 
+    public void removeChild(Node node) {
+        int nRows = getRows();
+        int nCols = getColumns();
+        getChildren().remove(node);
+        int nChildren = getChildrenUnmodifiable().size();
+
+        if (setRows != -1) {
+            int lastChild = nChildren - 1;
+            if (lastChild < 0) {
+                lastChild = 0;
+            }
+            int calcRows = (lastChild / nCols) + 1;
+            setRows = Math.min(nRows, calcRows);
+        }
+    }
+
     @Override
     public void layoutChildren() {
         Bounds bounds = getLayoutBounds();
