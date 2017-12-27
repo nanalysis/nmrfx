@@ -98,6 +98,10 @@ public class MainApp extends Application implements DatasetListener {
         return stages.get(0);
     }
 
+    public static List<Stage> getStages() {
+        return stages;
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
         stages.add(stage);
