@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.FractionPane;
@@ -155,7 +156,7 @@ public class GUIScripter {
             for (int i = 0; i < nAxes; i++) {
                 double v1 = chart.getAxis(i).getLowerBound();
                 double v2 = chart.getAxis(i).getUpperBound();
-                String axName = dimChars.substring(i,i+1);
+                String axName = dimChars.substring(i, i + 1);
                 List<Double> limits = new ArrayList<>();
                 limits.add(v1);
                 limits.add(v2);
@@ -259,12 +260,20 @@ public class GUIScripter {
 
     }
 
-    public Map<String, Object> config() throws InterruptedException, ExecutionException {
+    public Map<String, Object> config(List<String> datasetNames) throws InterruptedException, ExecutionException {
+        final String datasetName;
+        if ((datasetNames != null) && !datasetNames.isEmpty()) {
+            datasetName = datasetNames.get(0);
+        } else {
+            datasetName = null;
+        }
         FutureTask<Map<String, Object>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
             List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrs) {
-                return dataAttr.config();
+                if ((datasetName == null) || dataAttr.getFileName().equals(datasetName)) {
+                    return dataAttr.config();
+                }
             }
             chart.refresh();
             return new HashMap<>();
@@ -289,7 +298,6 @@ public class GUIScripter {
         ConsoleUtil.runOnFxThread(future);
         return future.get();
     }
-
 
     public void newStage() {
         FXMLController controller = FXMLController.create();
@@ -354,6 +362,15 @@ public class GUIScripter {
         });
     }
 
+    public int nCharts() throws InterruptedException, ExecutionException {
+        FutureTask<Integer> future = new FutureTask(() -> {
+            FXMLController controller = FXMLController.getActiveController();
+            return controller.charts.size();
+        });
+        ConsoleUtil.runOnFxThread(future);
+        return future.get();
+    }
+
     public List<String> datasets() throws InterruptedException, ExecutionException {
         FutureTask<List<String>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
@@ -403,6 +420,44 @@ public class GUIScripter {
         });
     }
 
+    public List<Double> geometry() throws InterruptedException, ExecutionException {
+        FutureTask<List<Double>> future = new FutureTask(() -> {
+            PolyChart chart = getChart();
+            Stage stage = chart.getController().stage;
+            double x = stage.getX();
+            double y = stage.getY();
+            double width = stage.getWidth();
+            double height = stage.getHeight();
+            List<Double> result = new ArrayList<>();
+            result.add(x);
+            result.add(y);
+            result.add(width);
+            result.add(height);
+            return result;
+        });
+        ConsoleUtil.runOnFxThread(future);
+        return future.get();
+    }
+
+    public void geometry(Double x, Double y, Double width, Double height) throws InterruptedException, ExecutionException {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            Stage stage = chart.getController().stage;
+            if (x != null) {
+                stage.setX(x);
+            }
+            if (y != null) {
+                stage.setY(y);
+            }
+            if (width != null) {
+                stage.setWidth(width);
+            }
+            if (height != null) {
+                stage.setHeight(height);
+            }
+        });
+    }
+
     public static String toRGBCode(Color color) {
         return String.format("#%02X%02X%02X%02X",
                 (int) (color.getRed() * 255),
@@ -415,6 +470,10 @@ public class GUIScripter {
     public static Color getColor(String colorString) {
         return Color.web(colorString);
 
+    }
+
+    public List<Stage> getStages() {
+        return MainApp.getStages();
     }
 
 }
