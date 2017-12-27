@@ -14,6 +14,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.FractionPane;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 
 /**
  *
@@ -275,12 +276,56 @@ public class GUIScripter {
                     return dataAttr.config();
                 }
             }
-            chart.refresh();
             return new HashMap<>();
 
         });
         ConsoleUtil.runOnFxThread(future);
         return future.get();
+
+    }
+
+    public Map<String, Object> pconfig(List<String> peakListNames) throws InterruptedException, ExecutionException {
+        final String peakListName;
+        if ((peakListNames != null) && !peakListNames.isEmpty()) {
+            peakListName = peakListNames.get(0);
+        } else {
+            peakListName = null;
+        }
+        FutureTask<Map<String, Object>> future = new FutureTask(() -> {
+            PolyChart chart = getChart();
+            List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
+            for (PeakListAttributes peakAttr : peakAttrs) {
+                if ((peakListName == null) || peakAttr.getPeakListName().equals(peakListName)) {
+                    return peakAttr.config();
+                }
+            }
+            return new HashMap<>();
+
+        });
+        ConsoleUtil.runOnFxThread(future);
+        return future.get();
+
+    }
+
+    public void pconfig(List<String> peakListNames, Map<String, Object> map) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
+            map.entrySet().stream().forEach(entry -> {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (key.contains("Color")) {
+                    value = getColor(value.toString());
+                }
+                for (PeakListAttributes peakAttr : peakAttrs) {
+                    String testName = peakAttr.getPeakListName();
+                    if ((peakListNames == null) || peakListNames.contains(testName)) {
+                        peakAttr.config(key, value);
+                    }
+                }
+            });
+            chart.refresh();
+        });
 
     }
 
@@ -420,6 +465,24 @@ public class GUIScripter {
         });
     }
 
+    public List<String> peakLists() throws InterruptedException, ExecutionException {
+        FutureTask<List<String>> future = new FutureTask(() -> {
+            PolyChart chart = getChart();
+            List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
+            List<String> peakListNames = peakAttrs.stream().map(p -> p.getPeakListName()).collect(Collectors.toList());
+            return peakListNames;
+        });
+        ConsoleUtil.runOnFxThread(future);
+        return future.get();
+    }
+
+    public void peakLists(List<String> peakListNames) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            chart.updatePeakLists(peakListNames);
+        });
+    }
+
     public List<Double> geometry() throws InterruptedException, ExecutionException {
         FutureTask<List<Double>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
@@ -459,7 +522,7 @@ public class GUIScripter {
     }
 
     public static String toRGBCode(Color color) {
-        return String.format("#%02X%02X%02X%02X",
+        return String.format("0x%02X%02X%02X%02X",
                 (int) (color.getRed() * 255),
                 (int) (color.getGreen() * 255),
                 (int) (color.getBlue() * 255),

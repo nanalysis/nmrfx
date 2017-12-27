@@ -59,6 +59,12 @@ class NMRFxWindowScripting:
         else:
             self.cmd.datasets(datasetNames)
 
+    def peakLists(self, peakListNames=None):
+        if peakListNames == None:
+            return self.cmd.peakLists()
+        else:
+            self.cmd.peakLists(peakListNames)
+
     def config(self, datasets=None, pars=None,  **kwargs):
         if datasets != None:
             if not isinstance(datasets,list):
@@ -72,6 +78,20 @@ class NMRFxWindowScripting:
             if len(kwargs) != 0:
                 configData.update(kwargs)
             self.cmd.config(datasets,configData)
+
+    def pconfig(self, peakLists=None, pars=None,  **kwargs):
+        if peakLists != None:
+            if not isinstance(peakLists,list):
+                peakLists = [peakLists]
+        if len(kwargs) == 0 and pars == None:
+            return self.cmd.pconfig(peakLists)
+        else:
+            configData = {}
+            if pars != None:
+                configData.update(pars)
+            if len(kwargs) != 0:
+                configData.update(kwargs)
+            self.cmd.pconfig(peakLists,configData)
 
     def colors(self, indices, colorName, dataset=None):
         self.cmd.colorMap(dataset, indices, colorName)

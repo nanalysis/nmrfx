@@ -37,6 +37,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 
 public class DatasetAttributes extends DataGenerator implements Cloneable {
@@ -1730,7 +1731,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 if (beanName.contains("Color")) {
                     Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
                     if (colObj instanceof Color) {
-                        String colorName = colObj.toString();
+                        String colorName = GUIScripter.toRGBCode((Color) colObj);
                         data.put(beanName, colorName);
                     }
                 } else {

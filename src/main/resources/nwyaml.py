@@ -29,6 +29,13 @@ def dumpYamlWin(yamlFile):
             dset['name']=dataset
             dset['config']= nw.config(dataset)
             sd['datasets'].append(dset)
+        sd['peakLists'] = []
+        peakLists = nw.peakLists() 
+        for peakList in peakLists:
+            pset = {}
+            pset['name']=peakList
+            pset['config']= nw.pconfig(peakList)
+            sd['peakLists'].append(pset)
 
     print win
     yamlDump = yaml.dump(win)
@@ -36,10 +43,10 @@ def dumpYamlWin(yamlFile):
         fOut.write(yamlDump)
 
 def loadYamlWin(yamlFile):
-    input = FileInputStream(yamlFile)
+    with open(yamlFile) as fIn:
+        inputData = fIn.read()
     yaml = Yaml()
-    data = yaml.load(input)
-    input.close()
+    data = yaml.load(inputData)
     if 'geometry' in data:
         (x,y,w,h) = data['geometry']
         nw.geometry(x,y,w,h)
@@ -67,5 +74,19 @@ def loadYamlWin(yamlFile):
             name = dataset['name']
             cfg = dataset['config']
             nw.config(datasets=[name],pars=cfg)
+
+        if 'peakLists' in v:
+            peakLists = v['peakLists']
+            peakListValues = []
+            for peakList in peakLists:
+                print peakList
+                name = peakList['name']
+                peakListValues.append(name)
+            print 'dv',peakListValues
+            nw.cmd.peakLists(peakListValues)
+            for peakList in peakLists:
+                name = peakList['name']
+                cfg = peakList['config']
+                nw.pconfig(peakLists=[name],pars=cfg)
 
 nw = gscript.NMRFxWindowScripting()

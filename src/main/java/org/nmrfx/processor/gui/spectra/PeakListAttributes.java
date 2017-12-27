@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import java.lang.reflect.InvocationTargetException;
 import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
@@ -25,8 +26,12 @@ import static org.nmrfx.processor.gui.spectra.DrawPeaks.minHitSize;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.PeakDisTypes;
 import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.PeakLabelTypes.Number;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -36,8 +41,10 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
 
 /**
  *
@@ -138,6 +145,10 @@ public class PeakListAttributes implements PeakListener {
         this.peakLabelTypeProperty().set(peakLabelType);
     }
 
+    public final void setPeakLabelType(final String type) {
+        this.peakLabelTypeProperty().set(PeakDisplayParameters.PeakLabelTypes.valueOf(type));
+    }
+
     private ObjectProperty<PeakDisplayParameters.PeakDisTypes> peakDisplayType;
 
     public final ObjectProperty<PeakDisplayParameters.PeakDisTypes> peakDisplayTypeProperty() {
@@ -153,6 +164,10 @@ public class PeakListAttributes implements PeakListener {
 
     public final void setPeakDisplayType(final PeakDisplayParameters.PeakDisTypes peakDisplayType) {
         this.peakDisplayTypeProperty().set(peakDisplayType);
+    }
+
+    public final void setPeakDisplayType(final String type) {
+        this.peakDisplayTypeProperty().set(PeakDisplayParameters.PeakDisTypes.valueOf(type));
     }
 
     public PeakListAttributes(PolyChart chart, DatasetAttributes dataAttr, PeakList peakList) {
@@ -524,6 +539,59 @@ public class PeakListAttributes implements PeakListener {
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
         peaksInRegion = Optional.empty();
+    }
+
+    public void config(String name, Object value) {
+        ConsoleUtil.runOnFxThread(() -> {
+            try {
+                switch (name) {
+                    case "peakLabelType":
+                        setPeakLabelType(value.toString());
+                        break;
+                    case "peakDisplayType":
+                        setPeakDisplayType(value.toString());
+                        break;
+                    case "simPeaks":
+                        setSimPeaks(Boolean.valueOf(value.toString()));
+                        break;
+                    case "drawPeaks":
+                        setDrawPeaks(Boolean.valueOf(value.toString()));
+                        break;
+                    default:
+                        PropertyUtils.setSimpleProperty(this, name, value);
+                        break;
+                }
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                Logger.getLogger(PeakListAttributes.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
+
+    }
+
+    public Map<String, Object> config() {
+        Map<String, Object> data = new HashMap<>();
+        String[] beanNames = {"onColor", "offColor", "drawPeaks", "simPeaks", "peakLabelType", "peakDisplayType"};
+        for (String beanName : beanNames) {
+            try {
+                if (beanName.contains("Color")) {
+                    Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
+                    if (colObj instanceof Color) {
+                        String colorName = colObj.toString();
+                        data.put(beanName, colorName);
+                    }
+                } else {
+                    Object obj = PropertyUtils.getSimpleProperty(this, beanName);
+                    if (obj == null) {
+                        data.put(beanName, null);
+                    } else {
+                        data.put(beanName, obj.toString());
+                    }
+                }
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                Logger.getLogger(PeakListAttributes.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return data;
     }
 
 }
