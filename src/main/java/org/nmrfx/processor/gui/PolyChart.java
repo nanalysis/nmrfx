@@ -1702,6 +1702,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             // if didn't add one, then create new DatasetAttributes
             if (newList.size() == n) {
                 Dataset dataset = Dataset.getDataset(s);
+                int nDim = dataset.getNDim();
+                // fixme kluge as not all datasets that are freq domain have attribute set
+                for (int i = 0; i < nDim; i++) {
+                    dataset.setFreqDomain(i, true);
+                }
                 DatasetAttributes newAttr = new DatasetAttributes(dataset);
                 newList.add(newAttr);
                 updated = true;
@@ -2083,6 +2088,40 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                         break;
                     }
                 }
+            }
+        }
+    }
+
+    public void removeUnusedPeakLists(List<String> targets) {
+        ObservableList<PeakListAttributes> peakAttrs = getPeakListAttributes();
+        List<PeakListAttributes> newList = new ArrayList<>();
+        boolean removeSome = false;
+        for (PeakListAttributes peakAttr : peakAttrs) {
+            boolean found = false;
+            for (String s : targets) {
+                if (peakAttr.getPeakListName().equals(s)) {
+                    newList.add(peakAttr);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                peakAttr.getPeakList().removeListener(this);
+            }
+            removeSome = !found;
+        }
+        if (removeSome) {
+            peakAttrs.clear();
+            peakAttrs.addAll(newList);
+        }
+    }
+
+    public void updatePeakLists(List<String> targets) {
+        removeUnusedPeakLists(targets);
+        for (String s : targets) {
+            PeakList peakList = PeakList.get(s);
+            if (peakList != null) {
+                setupPeakListAttributes(peakList);
             }
         }
     }
