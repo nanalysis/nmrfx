@@ -1,4 +1,5 @@
 from org.nmrfx.processor.gui import FXMLController
+from org.nmrfx.processor.gui import MainApp
 from org.nmrfx.processor.gui import GUIScripter
 import argparse
 import dscript
@@ -26,12 +27,24 @@ class NMRFxWindowScripting:
         self.cmd.newStage()
         return self
 
+    def geometry(self, x=None, y=None, width=None, height=None):
+        if (x==None and y==None and width==None and height==None):
+            return self.cmd.geometry()
+        else:
+            self.cmd.geometry(x, y, width, height)
+
     def grid(self, rows=1, columns=1):
         self.cmd.grid(rows, columns)
         return self
 
     def getGrid(self):
         return self.cmd.grid()
+
+    def stages(self):
+        return self.cmd.stages()
+
+    def nCharts(self):
+        return self.cmd.nCharts()
 
     def active(self, chartName=None):
         if chartName != None:
@@ -51,7 +64,7 @@ class NMRFxWindowScripting:
             if not isinstance(datasets,list):
                 datasets = [datasets]
         if len(kwargs) == 0 and pars == None:
-            return self.cmd.config()
+            return self.cmd.config(datasets)
         else:
             configData = {}
             if pars != None:
