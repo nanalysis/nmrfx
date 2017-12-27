@@ -14,6 +14,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -21,6 +22,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetParameterFile;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
@@ -136,7 +138,8 @@ public class ProjectLoader {
             throw new IllegalArgumentException("Project directory not set");
         }
         savePeakLists();
-     }
+        saveDatasets();
+    }
 
     void loadDatasets(Path directory) throws IOException {
         Pattern pattern = Pattern.compile("(.+)\\.(nv|ucsf)");
@@ -157,7 +160,31 @@ public class ProjectLoader {
         }
     }
 
- 
+    void saveDatasets() throws IOException {
+        if (currentProjectDir == null) {
+            throw new IllegalArgumentException("Project directory not set");
+        }
+        List<Dataset> datasets = Dataset.datasets();
+        Path datasetDir = currentProjectDir.resolve("datasets");
+
+        for (Dataset dataset : datasets) {
+            Path currentPath = dataset.getFile().toPath();
+            Path fileName = currentPath.getFileName();
+            Path pathInProject = datasetDir.resolve(fileName);
+            // fixme should we have option to copy file, rather than make symbolic link
+            // or add text file with path to original
+            if (!Files.exists(pathInProject)) {
+                try {
+                    Files.createLink(pathInProject, currentPath);
+                } catch (IOException | UnsupportedOperationException | SecurityException ex) {
+                    Files.createSymbolicLink(pathInProject, currentPath);
+                }
+            }
+            String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
+            dataset.writeParFile(parFilePath);
+        }
+    }
+
     void loadPeaks(Path directory) throws IOException {
         FileSystem fileSystem = FileSystems.getDefault();
         if (Files.isDirectory(directory)) {
@@ -178,8 +205,6 @@ public class ProjectLoader {
             }
         }
     }
-
- 
 
     void savePeakLists() {
         FileSystem fileSystem = FileSystems.getDefault();
