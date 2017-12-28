@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -57,7 +56,7 @@ public class PreferencesController implements Initializable {
 
     static File nestaNMR = null;
     static File datasetDir = null;
-    static String recentDatasetsString = null;
+    private static Map<String, String> recentMap = new HashMap<>();
     static String location = null;
     static Integer nProcesses = null;
 
@@ -239,12 +238,30 @@ public class PreferencesController implements Initializable {
      * Saves recently opened datasets. The path is persisted in the OS specific registry.
      *
      */
+    public static List<Path> getRecentDatasets() {
+        return getRecentFileItem("RECENT-DATASETS");
+    }
+
+    public static List<Path> getRecentProjects() {
+        return getRecentFileItem("RECENT-PROJECTS");
+    }
+
+    public static void saveRecentProjects(String fileName) {
+        saveRecentFileItems(fileName, "RECENT-PROJECTS");
+    }
+
     public static void saveRecentDatasets(String fileName) {
+        saveRecentFileItems(fileName, "RECENT-DATASETS");
+    }
+
+    public static void saveRecentFileItems(String fileName, String mode) {
         Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
-        if (recentDatasetsString == null) {
-            recentDatasetsString = prefs.get("RECENT-DATASETS", "");
+        String recentFileString = recentMap.get(mode);
+        if (recentFileString == null) {
+            recentFileString = prefs.get(mode, "");
+            recentMap.put(mode, recentFileString);
         }
-        String[] recentDatasets = recentDatasetsString.split("\n");
+        String[] recentDatasets = recentFileString.split("\n");
         Map<String, Long> datasetMap = new HashMap<>();
         for (String recentDatasetEntry : recentDatasets) {
             String[] entry = recentDatasetEntry.split(";");
@@ -261,16 +278,19 @@ public class PreferencesController implements Initializable {
             sBuilder.append(String.valueOf(e1.getValue()));
             sBuilder.append("\n");
         });
-        recentDatasetsString = sBuilder.toString();
-        prefs.put("RECENT-DATASETS", recentDatasetsString);
+        recentFileString = sBuilder.toString();
+        recentMap.put(mode, recentFileString);
+        prefs.put(mode, recentFileString);
     }
 
-    public static List<Path> getRecentDatasets() {
-        if (recentDatasetsString == null) {
+    public static List<Path> getRecentFileItem(String mode) {
+        String recentFileString = recentMap.get(mode);
+        if (recentFileString == null) {
             Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
-            recentDatasetsString = prefs.get("RECENT-DATASETS", "");
+            recentFileString = prefs.get(mode, "");
+            recentMap.put(mode, recentFileString);
         }
-        String[] recentDatasets = recentDatasetsString.split("\n");
+        String[] recentDatasets = recentFileString.split("\n");
         List<Path> result = new ArrayList<>();
         for (String recentDatasetEntry : recentDatasets) {
             String[] entry = recentDatasetEntry.split(";");
