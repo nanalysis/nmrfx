@@ -13,6 +13,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -206,13 +207,29 @@ public class ProjectLoader {
         }
     }
 
-    void savePeakLists() {
+    void savePeakLists() throws IOException {
         FileSystem fileSystem = FileSystems.getDefault();
 
         if (currentProjectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         Path projectDir = currentProjectDir;
+        Path peakDirPath = Paths.get(projectDir.toString(), "peaks");
+        Files.list(peakDirPath).forEach(path -> {
+            String fileName = path.getFileName().toString();
+            if (fileName.endsWith(".xpk2") || fileName.endsWith(".mpk2")) {
+                String listName = fileName.substring(0, fileName.length() - 5);
+                if (PeakList.get(listName) == null) {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException ex) {
+                        Logger.getLogger(ProjectLoader.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+
+            }
+        });
+
         PeakList.peakListTable.values().stream().forEach(peakList -> {
             Path peakFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".xpk2");
             Path measureFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".mpk2");
