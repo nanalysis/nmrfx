@@ -27,6 +27,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -649,7 +652,18 @@ public class PeakAttrController implements Initializable, PeakNavigable {
                         peakWriter.writePeaksXPK2(writer, peakList);
                         writer.close();
                     }
+                    if (peakList.hasMeasures()) {
+                        if (listFileName.endsWith(".xpk2")) {
+                            String measureFileName = listFileName.substring(0, listFileName.length() - 4) + "mpk2";
+                            try (FileWriter writer = new FileWriter(measureFileName)) {
+                                PeakWriter peakWriter = new PeakWriter();
+                                peakWriter.writePeakMeasures(writer, peakList);
+                                writer.close();
+                            }
+                        }
+                    }
                 }
+
             } catch (IOException | InvalidPeakException ioE) {
                 ExceptionDialog dialog = new ExceptionDialog(ioE);
                 dialog.showAndWait();
@@ -666,7 +680,13 @@ public class PeakAttrController implements Initializable, PeakNavigable {
                 PeakList newPeakList = PeakReader.readXPK2Peaks(listFileName);
                 if (newPeakList != null) {
                     peakNavigator.setPeakList(newPeakList);
+                    String mpk2File = listFileName.substring(0, listFileName.length() - 4) + "mpk2";
+                    Path mpk2Path = Paths.get(mpk2File);
+                    if (Files.exists(mpk2Path)) {
+                        PeakReader.readMPK2(peakList, mpk2Path.toString());
+                    }
                 }
+
             } catch (IOException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
