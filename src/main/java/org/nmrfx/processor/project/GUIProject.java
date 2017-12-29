@@ -14,14 +14,16 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import static org.nmrfx.processor.project.Project.currentProjectDir;
-import static org.nmrfx.processor.project.Project.getIndex;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class GUIProject extends Project {
+    
+    public GUIProject(String name) {
+        super(name);
+    }
 
     public void loadGUIProject(Path projectDir) throws IOException, IllegalStateException {
         loadProject(projectDir);
@@ -43,11 +45,11 @@ public class GUIProject extends Project {
 
             }
         }
-        currentProjectDir = projectDir;
+        this.projectDir = projectDir;
     }
 
     public void saveProject() throws IOException {
-        if (currentProjectDir == null) {
+        if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         super.saveProject();
@@ -71,10 +73,10 @@ public class GUIProject extends Project {
     void saveWindows() throws IOException {
         FileSystem fileSystem = FileSystems.getDefault();
 
-        if (currentProjectDir == null) {
+        if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
-        Path projectDir = currentProjectDir;
+        Path projectDir = this.projectDir;
         int ppmSet = 0;
         String fileName = String.valueOf(ppmSet) + "_" + "ppm.txt";
         String subDir = "windows";

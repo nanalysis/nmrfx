@@ -4,7 +4,6 @@ import gscript
 
 def dumpYamlWin(yamlFile):
     yaml=Yaml()
-    lims = nw.lim()
     win={}
     win['geometry'] = nw.geometry()
     win['title'] = "Test"
@@ -21,7 +20,7 @@ def dumpYamlWin(yamlFile):
         iRow = iSpectrum / cols
         iCol = iSpectrum % cols
         sd['grid'] = [iRow, iCol]
-        sd['lim']=lims
+        sd['lim'] = nw.lim()
         sd['datasets'] = []
         datasets = nw.datasets() 
         for dataset in datasets:
