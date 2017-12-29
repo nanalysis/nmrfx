@@ -39,13 +39,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import org.nmrfx.processor.project.StructureProject;
 
 public class Molecule implements Serializable {
 
     public static List<Atom> atomList = null;
     public static final List<String> conditions = new ArrayList<>();
     public static Molecule activeMol = null;
-    public static final Map<String, Molecule> molecules = new HashMap<String, Molecule>();
     public static final Map<String, List<SpatialSet>> sites = new HashMap<>();
     public static final List<SpatialSet> globalSelected = new ArrayList<>(1024);
     private static final List<Bond> bselected = new ArrayList<>(1024);
@@ -213,7 +213,6 @@ public class Molecule implements Serializable {
         entities = new LinkedHashMap<>();
         entityLabels = new LinkedHashMap();
         coordSets = new LinkedHashMap<>();
-        molecules.put(name, this);
         nResidues = 0;
         Atom.resetLastAtom();
         try {
@@ -226,6 +225,11 @@ public class Molecule implements Serializable {
             atoms = new ArrayList<>();
         }
         activeMol = this;
+        storeMolecule();
+    }
+
+    final void storeMolecule() {
+        StructureProject.getActive().putMolecule(this);
     }
 
     public void changed() {
@@ -242,8 +246,9 @@ public class Molecule implements Serializable {
 
     public static boolean isAnyChanged() {
         boolean anyChanged = false;
-        for (Object checkMol : molecules.values()) {
-            if (((Molecule) checkMol).isChanged()) {
+        Collection<Molecule> molecules = StructureProject.getActive().getMolecules();
+        for (Molecule checkMol : molecules) {
+            if (checkMol.isChanged()) {
                 anyChanged = true;
                 break;
 
@@ -253,7 +258,8 @@ public class Molecule implements Serializable {
     }
 
     public static void clearAllChanged() {
-        for (Molecule checkMol : molecules.values()) {
+        Collection<Molecule> molecules = StructureProject.getActive().getMolecules();
+        for (Molecule checkMol : molecules) {
             checkMol.clearChanged();
         }
     }
@@ -265,9 +271,10 @@ public class Molecule implements Serializable {
     public void reName(Molecule molecule, Compound compound, String name1,
             String name2) {
         molecule.name = name2;
-        Molecule.molecules.remove(name1);
+        StructureProject.getActive().removeMolecule(name1);
+
         compound.name = molecule.name;
-        Molecule.molecules.put(molecule.name, molecule);
+        StructureProject.getActive().putMolecule(molecule);
     }
 
     public String getName() {
@@ -297,8 +304,8 @@ public class Molecule implements Serializable {
             atomList.clear();
             atomList = null;
         }
+        StructureProject.getActive().clearAllMolecules();
 
-        molecules.clear();
         globalSelected.clear();
         bselected.clear();
         conditions.clear();
@@ -311,14 +318,14 @@ public class Molecule implements Serializable {
             atomList = null;
         }
 
-        molecules.remove(name);
+        StructureProject.getActive().removeMolecule(name);
         globalSelected.clear();
         bselected.clear();
         structures.clear();
         resetActiveStructures();
         conditions.clear();
 
-        Collection<Molecule> mols = molecules.values();
+        Collection<Molecule> mols = StructureProject.getActive().getMolecules();
 
         activeMol = null;
         for (Molecule mol : mols) {
@@ -450,7 +457,7 @@ public class Molecule implements Serializable {
         if (name == null) {
             return null;
         } else {
-            return ((Molecule) molecules.get(name));
+            return StructureProject.getActive().getMolecule(name);
         }
     }
 
@@ -3163,8 +3170,9 @@ public class Molecule implements Serializable {
 
     public static void makeAtomList() {
         atomList = new ArrayList<>();
+        Collection<Molecule> molecules = StructureProject.getActive().getMolecules();
 
-        for (Molecule molecule : molecules.values()) {
+        for (Molecule molecule : molecules) {
             molecule.updateAtomArray();
             for (Atom atom : molecule.atoms) {
                 atomList.add(atom);
