@@ -16,7 +16,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -39,7 +41,15 @@ public class Project {
     static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
     static final Predicate<String> INDEX_PREDICATE = INDEX_PATTERN.asPredicate();
     static String[] SUB_DIR_TYPES = {"datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
-    static Path currentProjectDir = null;
+    static final Map<String, Project> projects = new HashMap<>();
+    static Project activeProject = null;
+    Path projectDir = null;
+    final String name;
+
+    public Project(String name) {
+        this.name = name;
+        setActive();
+    }
 
     class FileComparator implements Comparator<Path> {
 
@@ -76,6 +86,10 @@ public class Project {
         }
 
     }
+    
+    public boolean hasDirectory() {
+        return projectDir != null;
+    }
 
     static Optional<Integer> getIndex(String s) {
         Optional<Integer> fileNum = Optional.empty();
@@ -97,6 +111,14 @@ public class Project {
         return name;
     }
 
+    public final void setActive() {
+        activeProject = this;
+    }
+    
+    public static Project getActive() {
+        return activeProject;
+    }
+
     public void createProject(Path projectDir) throws IOException {
         if (Files.exists(projectDir)) {
             throw new IllegalArgumentException("Project directory \"" + projectDir + "\" already exists");
@@ -107,7 +129,7 @@ public class Project {
             Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
             Files.createDirectory(subDirectory);
         }
-        currentProjectDir = projectDir;
+        this.projectDir = projectDir;
     }
 
     public void loadProject(Path projectDir) throws IOException, IllegalStateException {
@@ -132,11 +154,11 @@ public class Project {
 
             }
         }
-        currentProjectDir = projectDir;
+        this.projectDir = projectDir;
     }
 
     public void saveProject() throws IOException {
-        if (currentProjectDir == null) {
+        if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         savePeakLists();
@@ -163,11 +185,11 @@ public class Project {
     }
 
     void saveDatasets() throws IOException {
-        if (currentProjectDir == null) {
+        if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         List<Dataset> datasets = Dataset.datasets();
-        Path datasetDir = currentProjectDir.resolve("datasets");
+        Path datasetDir = projectDir.resolve("datasets");
 
         for (Dataset dataset : datasets) {
             File datasetFile = dataset.getFile();
@@ -214,10 +236,10 @@ public class Project {
     void savePeakLists() throws IOException {
         FileSystem fileSystem = FileSystems.getDefault();
 
-        if (currentProjectDir == null) {
+        if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
-        Path projectDir = currentProjectDir;
+        Path projectDir = this.projectDir;
         Path peakDirPath = Paths.get(projectDir.toString(), "peaks");
         Files.list(peakDirPath).forEach(path -> {
             String fileName = path.getFileName().toString();
