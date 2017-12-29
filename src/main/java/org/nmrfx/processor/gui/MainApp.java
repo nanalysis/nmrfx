@@ -207,11 +207,9 @@ public class MainApp extends Application implements DatasetListener {
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
         MenuItem svgMenuItem = new MenuItem("Export SVG...");
         svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
-        MenuItem savePeakListMenuItem = new MenuItem("Save PeakLists");
-        savePeakListMenuItem.setOnAction(e -> savePeakLists());
         MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
-        fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, savePeakListMenuItem, loadPeakListMenuItem);
+        fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
@@ -404,30 +402,6 @@ public class MainApp extends Application implements DatasetListener {
         }
         datasetController.getStage().show();
         datasetController.getStage().toFront();
-    }
-
-    void savePeakLists() {
-        PeakList.peakListTable.values().stream().forEach(peakList -> {
-            Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
-            String canonFileName = dataset.getCanonicalFile();
-            File canonFile = new File(canonFileName);
-            if (canonFile.exists()) {
-                int dotIndex = canonFileName.lastIndexOf(".");
-                if (dotIndex != -1) {
-                    String listFileName = canonFileName.substring(0, dotIndex) + ".xpk2";
-                    try {
-                        try (FileWriter writer = new FileWriter(listFileName)) {
-                            PeakWriter peakWriter = new PeakWriter();
-                            peakWriter.writePeaksXPK2(writer, peakList);
-                            writer.close();
-                        }
-                    } catch (IOException | InvalidPeakException ioE) {
-                        ExceptionDialog dialog = new ExceptionDialog(ioE);
-                        dialog.showAndWait();
-                    }
-                }
-            }
-        });
     }
 
     void loadPeakLists() {
