@@ -5,6 +5,7 @@
  */
 package org.nmrfx.processor.project;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.DirectoryIteratorException;
@@ -169,20 +170,23 @@ public class ProjectLoader {
         Path datasetDir = currentProjectDir.resolve("datasets");
 
         for (Dataset dataset : datasets) {
-            Path currentPath = dataset.getFile().toPath();
-            Path fileName = currentPath.getFileName();
-            Path pathInProject = datasetDir.resolve(fileName);
-            // fixme should we have option to copy file, rather than make symbolic link
-            // or add text file with path to original
-            if (!Files.exists(pathInProject)) {
-                try {
-                    Files.createLink(pathInProject, currentPath);
-                } catch (IOException | UnsupportedOperationException | SecurityException ex) {
-                    Files.createSymbolicLink(pathInProject, currentPath);
+            File datasetFile = dataset.getFile();
+            if (datasetFile != null) {
+                Path currentPath = datasetFile.toPath();
+                Path fileName = currentPath.getFileName();
+                Path pathInProject = datasetDir.resolve(fileName);
+                // fixme should we have option to copy file, rather than make  link
+                // or add text file with path to original
+                if (!Files.exists(pathInProject)) {
+                    try {
+                        Files.createLink(pathInProject, currentPath);
+                    } catch (IOException | UnsupportedOperationException | SecurityException ex) {
+                        Files.createSymbolicLink(pathInProject, currentPath);
+                    }
                 }
+                String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
+                dataset.writeParFile(parFilePath);
             }
-            String parFilePath = DatasetParameterFile.getParameterFileName(pathInProject.toString());
-            dataset.writeParFile(parFilePath);
         }
     }
 
