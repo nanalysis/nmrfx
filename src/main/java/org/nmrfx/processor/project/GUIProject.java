@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  * @author Bruce Johnson
  */
 public class GUIProject extends Project {
-    
+
     public GUIProject(String name) {
         super(name);
     }
@@ -56,7 +56,7 @@ public class GUIProject extends Project {
         saveWindows();
     }
 
-    void loadWindows(Path directory) throws  IOException {
+    void loadWindows(Path directory) throws IOException {
         Pattern pattern = Pattern.compile("(.+)\\.(txt|ppm)");
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
