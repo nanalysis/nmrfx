@@ -14,14 +14,14 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import static org.nmrfx.processor.project.ProjectLoader.currentProjectDir;
-import static org.nmrfx.processor.project.ProjectLoader.getIndex;
+import static org.nmrfx.processor.project.Project.currentProjectDir;
+import static org.nmrfx.processor.project.Project.getIndex;
 
 /**
  *
  * @author Bruce Johnson
  */
-public class GUIProjectLoader extends ProjectLoader {
+public class GUIProject extends Project {
 
     public void loadGUIProject(Path projectDir) throws IOException, IllegalStateException {
         loadProject(projectDir);
@@ -59,7 +59,7 @@ public class GUIProjectLoader extends ProjectLoader {
         Predicate<String> predicate = pattern.asPredicate();
         if (Files.isDirectory(directory)) {
             Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    sorted(new ProjectLoader.FileComparator()).
+                    sorted(new Project.FileComparator()).
                     forEach(path -> {
                         String fileName = path.getFileName().toString();
                         Optional<Integer> fileNum = getIndex(fileName);
