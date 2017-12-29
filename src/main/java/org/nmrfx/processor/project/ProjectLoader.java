@@ -198,7 +198,7 @@ public class ProjectLoader {
                     String filePath = f.toString();
                     System.out.println("read peaks: " + f.toString());
                     PeakList peakList = PeakReader.readXPK2Peaks(f.toString());
-                    String mpk2File = filePath.substring(0, filePath.length() - 3) + "mpk2";
+                    String mpk2File = filePath.substring(0, filePath.length() - 4) + "mpk2";
                     Path mpk2Path = fileSystem.getPath(mpk2File);
                     if (Files.exists(mpk2Path)) {
                         PeakReader.readMPK2(peakList, mpk2Path.toString());
