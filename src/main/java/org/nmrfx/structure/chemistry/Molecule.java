@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import org.nmrfx.processor.project.StructureProject;
+import org.nmrfx.project.StructureProject;
 
 public class Molecule implements Serializable {
 
