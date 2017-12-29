@@ -34,7 +34,7 @@ import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
  *
  * @author Bruce Johnson
  */
-public class ProjectLoader {
+public class Project {
 
     static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
     static final Predicate<String> INDEX_PREDICATE = INDEX_PATTERN.asPredicate();
@@ -156,7 +156,7 @@ public class ProjectLoader {
                         try {
                             Dataset dataset = new Dataset(pathName, fileName, true);
                         } catch (IOException ex) {
-                            Logger.getLogger(ProjectLoader.class.getName()).log(Level.SEVERE, null, ex);
+                            Logger.getLogger(Project.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     });
         }
@@ -227,7 +227,7 @@ public class ProjectLoader {
                     try {
                         Files.delete(path);
                     } catch (IOException ex) {
-                        Logger.getLogger(ProjectLoader.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(Project.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
 
