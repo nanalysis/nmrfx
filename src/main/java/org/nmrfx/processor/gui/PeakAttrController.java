@@ -677,13 +677,15 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         if (file != null) {
             String listFileName = file.getPath();
             try {
-                PeakList newPeakList = PeakReader.readXPK2Peaks(listFileName);
+                PeakReader peakReader = new PeakReader();
+
+                PeakList newPeakList = peakReader.readXPK2Peaks(listFileName);
                 if (newPeakList != null) {
                     peakNavigator.setPeakList(newPeakList);
                     String mpk2File = listFileName.substring(0, listFileName.length() - 4) + "mpk2";
                     Path mpk2Path = Paths.get(mpk2File);
                     if (Files.exists(mpk2Path)) {
-                        PeakReader.readMPK2(peakList, mpk2Path.toString());
+                        peakReader.readMPK2(peakList, mpk2Path.toString());
                     }
                 }
 
