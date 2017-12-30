@@ -100,7 +100,6 @@ public class SimpleResonance implements Resonance {
     public void merge(Resonance resB) {
         if (resB != this) {
             Collection<PeakDim> peakDimsB = resB.getPeakDims();
-            System.out.println("merge " + peakDims.size() + " " + peakDimsB.size());
             int sizeA = peakDims.size();
             int sizeB = peakDimsB.size();
             for (PeakDim peakDim : peakDimsB) {
@@ -110,7 +109,6 @@ public class SimpleResonance implements Resonance {
                 }
             }
             peakDimsB.clear();
-            System.out.println("mergd " + peakDims.size() + " " + peakDimsB.size());
         }
 
     }
