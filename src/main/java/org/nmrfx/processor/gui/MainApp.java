@@ -405,6 +405,7 @@ public class MainApp extends Application implements DatasetListener {
     }
 
     void loadPeakLists() {
+        PeakReader peakReader = new PeakReader();
         Dataset.datasets().stream().forEach(dataset -> {
             String canonFileName = dataset.getCanonicalFile();
             File canonFile = new File(canonFileName);
@@ -418,7 +419,7 @@ public class MainApp extends Application implements DatasetListener {
                     listName = listName.substring(0, dotIndex);
                     if (PeakList.get(listName) == null) {
                         try {
-                            PeakReader.readXPK2Peaks(listFileName);
+                            peakReader.readXPK2Peaks(listFileName);
                         } catch (IOException ioE) {
                             ExceptionDialog dialog = new ExceptionDialog(ioE);
                             dialog.showAndWait();
