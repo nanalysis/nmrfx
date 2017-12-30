@@ -86,7 +86,7 @@ public class Project {
         }
 
     }
-    
+
     public boolean hasDirectory() {
         return projectDir != null;
     }
@@ -114,7 +114,7 @@ public class Project {
     public final void setActive() {
         activeProject = this;
     }
-    
+
     public static Project getActive() {
         return activeProject;
     }
@@ -215,21 +215,23 @@ public class Project {
     void loadPeaks(Path directory) throws IOException {
         FileSystem fileSystem = FileSystems.getDefault();
         if (Files.isDirectory(directory)) {
+            PeakReader peakReader = new PeakReader(true);
             try (DirectoryStream<Path> fileStream = Files.newDirectoryStream(directory, "*.xpk2")) {
                 for (Path f : fileStream) {
                     String filePath = f.toString();
                     System.out.println("read peaks: " + f.toString());
-                    PeakList peakList = PeakReader.readXPK2Peaks(f.toString());
+                    PeakList peakList = peakReader.readXPK2Peaks(f.toString());
                     String mpk2File = filePath.substring(0, filePath.length() - 4) + "mpk2";
                     Path mpk2Path = fileSystem.getPath(mpk2File);
                     if (Files.exists(mpk2Path)) {
-                        PeakReader.readMPK2(peakList, mpk2Path.toString());
+                        peakReader.readMPK2(peakList, mpk2Path.toString());
                     }
 
                 }
             } catch (DirectoryIteratorException | IOException ex) {
                 throw new IOException(ex.getMessage());
             }
+            peakReader.linkResonances();
         }
     }
 
