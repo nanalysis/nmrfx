@@ -67,7 +67,7 @@ class MolPeakGen:
         self.refMode = True
         self.labelScheme = "All: A.C2',C8,Hn,Hr G.C1',Cn,Hn,Hr U.C2',C6,Hn,Hr C.C1',C6,Hn,Hr"
         self.editSchemes = ["ef","fe","ee","ff","aa"]
-        self.vienna = None
+        self.vienna = mol.getDotBracket()
 
     def setVienna(self,vienna):
         self.vienna = vienna
