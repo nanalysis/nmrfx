@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +38,46 @@ import org.nmrfx.processor.datasets.peaks.SpectralDim;
  */
 public class PeakReader {
 
-    public static PeakList readXPK2Peaks(String fileName) throws IOException {
+    Map<Long, List<PeakDim>> resMap = null;
+    final boolean linkResonances;
+
+    public PeakReader() {
+        this(false);
+    }
+
+    public PeakReader(boolean linkResonances) {
+        this.linkResonances = linkResonances;
+        resMap = new HashMap<>();
+    }
+
+    private void addResonance(long resID, PeakDim peakDim) {
+        List<PeakDim> peakDims = resMap.get(resID);
+        if (peakDims == null) {
+            peakDims = new ArrayList<>();
+            resMap.put(resID, peakDims);
+        }
+        peakDims.add(peakDim);
+    }
+
+    public void linkResonances() {
+        for (Long resID : resMap.keySet()) {
+            List<PeakDim> peakDims = resMap.get(resID);
+            PeakDim firstPeakDim = peakDims.get(0);
+//            System.out.println(resID + " " + firstPeakDim.getName() + " " + peakDims.size());
+            if (peakDims.size() > 1) {
+
+                for (PeakDim peakDim : peakDims) {
+                    if (peakDim != firstPeakDim) {
+//                        System.out.println(peakDim.getName());
+                        PeakList.linkPeakDims(firstPeakDim, peakDim);
+                    }
+
+                }
+            }
+        }
+    }
+
+    public PeakList readXPK2Peaks(String fileName) throws IOException {
         Path path = Paths.get(fileName);
         String fileTail = path.getFileName().toString();
         fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
@@ -180,6 +220,9 @@ public class PeakReader {
                                                 break;
                                             case "r":
                                                 long resNum = Long.valueOf(value);
+                                                if (linkResonances) {
+                                                    addResonance(resNum, peakDim);
+                                                }
                                                 break;
                                             default:
                                                 throw new IllegalArgumentException("Unknown field " + field);
@@ -225,7 +268,7 @@ public class PeakReader {
         return peakList;
     }
 
-    public static void readMPK2(PeakList peakList, String fileName) throws IOException {
+    public void readMPK2(PeakList peakList, String fileName) throws IOException {
         Path path = Paths.get(fileName);
         boolean gotHeader = false;
         int valStart = -1;

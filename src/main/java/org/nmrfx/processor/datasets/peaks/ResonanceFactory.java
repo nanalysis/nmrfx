@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets.peaks;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *
@@ -27,10 +28,22 @@ import java.util.Map;
 public class ResonanceFactory {
 
     Map<Long, Resonance> map = new HashMap<>();
-    private static long lastID = -1;
-    
+    private long lastID = -1;
+
     public void init() {
-        
+
+    }
+
+    public void clean() {
+        Map<Long, Resonance> resonancesNew = new TreeMap<Long, Resonance>();
+        for (Map.Entry<Long, Resonance> entry : map.entrySet()) {
+            Resonance resonance = entry.getValue();
+            if (((resonance.getPeakDims() != null) && (resonance.getPeakDims().size() != 0))) {
+                resonancesNew.put(entry.getKey(), resonance);
+            }
+        }
+        map.clear();
+        map = resonancesNew;
     }
 
     public Resonance build() {
