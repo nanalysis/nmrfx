@@ -52,7 +52,7 @@ public class PPMFiles {
                     }
                     double ppm = ppmV.getValue();
                     if (refMode) {
-                        result = String.format("%s\t%.4f", name, ppm);
+                        result = String.format("%s\t%.4f\n", name, ppm);
                     } else {
                         int stereo = ppmV.getAmbigCode();
                         atom.getBMRBAmbiguity();
