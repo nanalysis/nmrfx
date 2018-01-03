@@ -641,14 +641,16 @@ public class PeakList {
             result.append(dimName).append(".J").append(sep);
             result.append(dimName).append(".U").append(sep);
             result.append(dimName).append(".r").append(sep);
+            result.append(dimName).append(".F").append(sep);
         }
         result.append("volume").append(sep);
         result.append("intensity").append(sep);
         result.append("status").append(sep);
         result.append("comment").append(sep);
-        result.append("flags").append(sep);
+        result.append("color").append(sep);
+        result.append("flags");
 
-        return (result.toString().trim());
+        return (result.toString());
     }
 
     public List<Peak> findPeaks(double[] ppm)

@@ -215,6 +215,9 @@ public class PeakReader {
                                             case "E":
                                                 peakDim.setError(value);
                                                 break;
+                                            case "F":
+                                                peakDim.setFrozen(!value.equals("0"));
+                                                break;
                                             case "U":
                                                 peakDim.setUser(value);
                                                 break;
@@ -253,6 +256,9 @@ public class PeakReader {
                                                 break;
                                             case "flags":
                                                 peak.setFlag(value);
+                                                break;
+                                            case "color":
+                                                peak.setColor(value);
                                                 break;
                                             default:
                                                 throw new IllegalArgumentException("Unknown field " + field);
