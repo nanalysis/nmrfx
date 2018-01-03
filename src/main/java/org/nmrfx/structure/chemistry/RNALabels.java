@@ -68,7 +68,7 @@ public class RNALabels {
         }
         List<Atom> allAtoms = molecule.getAtomArray();
         for (Atom atom : allAtoms) {
-            atom.active = false;
+            atom.setActive(false);
         }
         List<Polymer> polymers = molecule.getPolymers();
         for (Polymer polymer : polymers) {
@@ -128,7 +128,7 @@ public class RNALabels {
                                     }
                                 }
                                 if (ok) {
-                                    atom.active = true;
+                                    atom.setActive(true);
                                 }
                             }
                         }
