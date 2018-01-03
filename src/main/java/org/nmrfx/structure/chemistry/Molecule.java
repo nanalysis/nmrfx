@@ -644,6 +644,20 @@ public class Molecule implements Serializable {
         return (Atom.calcDihedral(pts[0], pts[1], pts[2], pts[3]));
     }
 
+    public void activateAtoms() {
+        updateAtomArray();
+        for (Atom atom : atoms) {
+            atom.setActive(true);
+        }
+    }
+
+    public void inactivateAtoms() {
+        updateAtomArray();
+        for (Atom atom : atoms) {
+            atom.setActive(false);
+        }
+    }
+
     public void nullCoords() {
         updateAtomArray();
         int iStructure = 0;
@@ -3546,7 +3560,7 @@ public class Molecule implements Serializable {
             if (atom1.getSelected() != 1) {
                 continue;
             }
-            if (requireActive && !atom1.active) {
+            if (requireActive && !atom1.isActive()) {
                 continue;
             }
             if (atom1.isMethyl()) {
@@ -3577,7 +3591,7 @@ public class Molecule implements Serializable {
                 if ((atom2.getAtomicNumber() == 1) && atom2.getParent().getType().startsWith("O")) {
                     continue;
                 }
-                if (requireActive && !atom2.active) {
+                if (requireActive && !atom2.isActive()) {
                     continue;
                 }
                 if (atom2.isMethyl()) {
