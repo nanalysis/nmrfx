@@ -28,6 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.datasets.RegionData;
+import org.nmrfx.processor.utilities.ColorUtil;
 
 public class Peak implements Comparable, PeakOrMulti {
 
@@ -882,11 +883,15 @@ public class Peak implements Comparable, PeakOrMulti {
             result.append(peakDim[i].getMultiplet().getCouplingsAsSimpleString()).append(sep);
             result.append(peakDim[i].getUser()).append(sep);
             result.append(peakDim[i].getResonanceIDsAsString()).append(sep);
+            int frozen = peakDim[i].isFrozen() ? 1 : 0;
+            result.append(frozen).append(sep);
         }
         result.append(String.valueOf(getVolume1())).append(sep);
         result.append(String.valueOf(getIntensity())).append(sep);
         result.append(String.valueOf(getStatus())).append(sep);
         result.append(String.valueOf(getComment())).append(sep);
+        String colorString = color == null ? "" : ColorUtil.toRGBCode(color);
+        result.append(colorString).append(sep);
         result.append(String.valueOf(getFlag()));
 
         return (result.toString().trim());
