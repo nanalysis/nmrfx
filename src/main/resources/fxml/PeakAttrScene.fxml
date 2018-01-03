@@ -1,18 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.control.ToolBar?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
 <BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.PeakAttrController">
     <top>
@@ -104,6 +93,40 @@
                 <Tab text="Graph">
                     <content>
                         <BorderPane fx:id="graphBorderPane"/>
+                    </content>
+                </Tab>
+                <Tab text="Simulate">
+                    <content>
+                        <BorderPane fx:id="simBorderPane">
+                            <top>
+                                <HBox>
+                                    <children>
+                                        <Label text="Mode"/>
+                                        <ChoiceBox fx:id="simTypeChoice"/>
+                                        <Pane minWidth="50"/>
+                                        <Label text="Dataset" alignment="center_left"/>
+                                        <ComboBox fx:id="simDatasetNameField" editable="false" HBox.hgrow="ALWAYS" minWidth="200"/>
+                                    </children>
+                                </HBox>
+                            </top>
+                            <center>
+                                <HBox fx:id="optionBox">
+                                    
+                                </HBox>
+                                
+                            </center>
+                            
+                            <bottom>
+                                <HBox>
+                                    <children>
+                                        <Label text="List Name"/>
+                                        <TextField fx:id="simPeakListNameField" HBox.hgrow="ALWAYS"/>
+                                        <Pane HBox.hgrow="ALWAYS"/>
+                                        <Button text="Generate" onAction="#genPeaksAction" />
+                                    </children>
+                                </HBox>
+                            </bottom>
+                        </BorderPane>
                     </content>
                 </Tab>
 

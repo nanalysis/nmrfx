@@ -46,16 +46,20 @@ import java.text.DecimalFormat;
 import java.util.Optional;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.ScatterChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TablePosition;
 import javafx.scene.control.TextField;
@@ -66,6 +70,7 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
 import javafx.util.converter.FloatStringConverter;
@@ -79,6 +84,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
+import org.python.util.PythonInterpreter;
 
 /**
  *
@@ -113,6 +119,22 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     @FXML
     private BorderPane graphBorderPane;
 
+    @FXML
+    private BorderPane simBorderPane;
+    @FXML
+    private TextField simPeakListNameField;
+    @FXML
+    private ComboBox simDatasetNameField;
+
+    @FXML
+    private ChoiceBox simTypeChoice;
+
+    @FXML
+    private HBox optionBox;
+
+    private Slider distanceSlider = new Slider(2, 7.0, 5.0);
+    private ChoiceBox transferLimitChoice = new ChoiceBox();
+
     private ScatterChart<Number, Number> scatterChart;
 
     PeakNavigator peakNavigator;
@@ -141,6 +163,18 @@ public class PeakAttrController implements Initializable, PeakNavigable {
 
             }
         });
+
+        simDatasetNameField.setOnShowing(e -> updateSimDatasetNames());
+        simDatasetNameField.setOnAction(e -> {
+            selectSimDataset();
+        });
+
+        simTypeChoice.getItems().add("HSQC");
+        simTypeChoice.getItems().add("RNA-NOESY 2nd Str");
+        simTypeChoice.getItems().add("NOESY");
+        simTypeChoice.getItems().add("TOCSY");
+        simTypeChoice.setOnAction(e -> updateOptions());
+
         final NumberAxis xAxis = new NumberAxis(0, 10, 1);
         final NumberAxis yAxis = new NumberAxis(-100, 500, 100);
         scatterChart = new ScatterChart<>(xAxis, yAxis);
@@ -150,6 +184,8 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         yAxis.setAnimated(false);
         scatterChart.setAnimated(false);
         graphBorderPane.setCenter(scatterChart);
+        initOptions();
+
 //        peakListMenuButton.setOnMousePressed(e -> {
 //            updatePeakListMenu();
 //            peakListMenuButton.show();
@@ -248,6 +284,13 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         if (peakList != null) {
             datasetNameField.setValue(peakList.getDatasetName());
         }
+    }
+
+    public void updateSimDatasetNames() {
+        simDatasetNameField.getItems().clear();
+        Dataset.datasets().stream().forEach(d -> {
+            simDatasetNameField.getItems().add(d.getName());
+        });
     }
 
     public void refreshPeakListView(PeakList refreshPeakList) {
@@ -776,6 +819,44 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         }
     }
 
+    void selectSimDataset() {
+        String name = (String) simDatasetNameField.getValue();
+        if (name != null) {
+            simPeakListNameField.setText(name + "sim");
+        }
+    }
+
+    void initOptions() {
+        transferLimitChoice.getItems().add("1");
+        transferLimitChoice.getItems().add("2");
+        transferLimitChoice.getItems().add("3");
+        transferLimitChoice.getItems().add("4");
+        transferLimitChoice.getItems().add("5");
+        transferLimitChoice.setValue("2");
+        distanceSlider.setShowTickLabels(true);
+        distanceSlider.setShowTickMarks(true);
+        distanceSlider.setMajorTickUnit(1.0);
+        distanceSlider.setMinorTickCount(9);
+        distanceSlider.setMinWidth(250.0);
+
+    }
+
+    void updateOptions() {
+        optionBox.getChildren().clear();
+        String mode = (String) simTypeChoice.getValue();
+        if (mode != null) {
+            if (mode.equals("TOCSY")) {
+                Label label = new Label("Transfers");
+                optionBox.getChildren().add(label);
+                optionBox.getChildren().add(transferLimitChoice);
+            } else if (mode.equals("NOESY")) {
+                Label label = new Label("Distance");
+                optionBox.getChildren().add(label);
+                optionBox.getChildren().add(distanceSlider);
+            }
+        }
+    }
+
     void unLinkPeakList() {
         if (peakList != null) {
             peakList.unLinkPeaks();
@@ -814,5 +895,45 @@ public class PeakAttrController implements Initializable, PeakNavigable {
                 }
             }
         }
+    }
+
+    @FXML
+    public void genPeaksAction(ActionEvent e) {
+        String mode = (String) simTypeChoice.getValue();
+        if (mode != null) {
+            Dataset dataset = Dataset.getDataset(simDatasetNameField.getValue().toString());
+            if (dataset == null) {
+                // warning
+                return;
+            }
+            String datasetName = dataset.getName();
+            String listName = simPeakListNameField.getText();
+            String script = null;
+            switch (mode) {
+                case "NOESY":
+                    double range = distanceSlider.getValue();
+                    script = String.format("molGen.genDistancePeaks(\"%s\", listName=\"%s\", tol=%f)", datasetName, listName, range);
+                    break;
+                case "TOCSY":
+                    int limit = Integer.parseInt(transferLimitChoice.getValue().toString());
+                    script = String.format("molGen.genTOCSYPeaks(\"%s\", listName=\"%s\", transfers=%d)", datasetName, listName, limit);
+                    break;
+                case "HSQC":
+                    script = String.format("molGen.genHCPeaks(\"%s\", listName=\"%s\")", datasetName, listName);
+                    break;
+                case "RNA-NOESY 2nd Str":
+                    script = String.format("molGen.genRNASecStrPeaks(\"%s\", listName=\"%s\")", datasetName, listName);
+                    break;
+                default:
+                    break;
+            }
+            if (script != null) {
+                PythonInterpreter interp = MainApp.getInterpreter();
+                interp.exec("import molpeakgen");
+                interp.exec("molGen=molpeakgen.MolPeakGen()");
+                interp.exec(script);
+            }
+        }
+
     }
 }

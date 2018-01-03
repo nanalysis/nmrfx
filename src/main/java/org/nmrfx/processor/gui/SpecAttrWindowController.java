@@ -341,7 +341,6 @@ public class SpecAttrWindowController implements Initializable {
         updateDims();
         setupDimActions();
         datasetTableView.getSelectionModel().clearSelection();
-
     }
 
     void initToolBar() {
