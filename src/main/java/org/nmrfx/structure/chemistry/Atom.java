@@ -55,7 +55,7 @@ public class Atom {
     AtomProperty atomProperty = null;
     public String forceFieldCode = null;
     public float value = 0.0f;
-    public boolean active = true;
+    private boolean active = true;
     public ArrayList<AtomEquivalency> equivAtoms = null;
     public final SpatialSet spatialSet;
     AtomResonance resonance = null;
