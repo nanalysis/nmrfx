@@ -73,6 +73,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -116,6 +117,8 @@ public class SpecAttrWindowController implements Initializable {
     private ComboBox<DISDIM> disDimCombo;
     @FXML
     private Tab datasetTab;
+    @FXML
+    private Tab peakSelectTab;
 
     StringProperty[][] limitFields;
     @FXML
@@ -130,13 +133,14 @@ public class SpecAttrWindowController implements Initializable {
     Slider xOffsetSlider;
     @FXML
     Slider yOffsetSlider;
-    @FXML
-    private CheckBox peakStatusCheckBox;
     SegmentedButton groupButton;
+    ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox();
+
     private ComboBox[] dimCombos;
     Label[] axisLabels;
     Label[] dimLabels;
     ListSelectionView<String> datasetView;
+    ListSelectionView<String> peakView;
     static String[] rowNames = {"X", "Y", "Z", "A"};
 
     @Override
@@ -158,6 +162,19 @@ public class SpecAttrWindowController implements Initializable {
                 }
             }
         };
+        peakView = new ListSelectionView<>();
+        peakSelectTab.setContent(peakView);
+        peakView.setSourceFooter(showOnlyCompatibleBox);
+        showOnlyCompatibleBox.getItems().add("Matching");
+        showOnlyCompatibleBox.getItems().add("Compatible");
+        showOnlyCompatibleBox.getItems().add("All");
+        showOnlyCompatibleBox.setValue("Compatible");
+        showOnlyCompatibleBox.setOnAction(e -> updatePeakView());
+        peakSelectTab.setOnSelectionChanged(e -> {
+            if (peakSelectTab.isSelected()) {
+                updatePeakView();
+            }
+        });
     }
 
     public Stage getStage() {
@@ -316,6 +333,36 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
+    void updatePeakView() {
+        String showOnlyMode = showOnlyCompatibleBox.getValue();
+        ObservableList<String> peaksTarget = peakView.getTargetItems();
+        ObservableList<String> peaksSource = peakView.getSourceItems();
+        peaksTarget.clear();
+        peaksSource.clear();
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
+
+        for (PeakListAttributes peakAttr : peakAttrs) {
+            peaksTarget.add(peakAttr.getPeakListName());
+        }
+        for (PeakList peakList : PeakList.getLists()) {
+            if (!peaksTarget.contains(peakList.getName())) {
+                boolean ok = false;
+                if (showOnlyMode.equals("All")) {
+                    ok = true;
+                } else if (showOnlyMode.equals("Compatible") && chart.isPeakListCompatible(peakList)) {
+                    ok = true;
+                } else if (showOnlyMode.equals("Matching")) {
+                    String datasetName = peakList.getDatasetName();
+                    ok = dataAttrs.stream().anyMatch(d -> d.getFileName().equals(datasetName));
+                }
+                if (ok) {
+                    peaksSource.add(peakList.getName());
+                }
+            }
+        }
+    }
+
     public void setChart(PolyChart chart) {
         this.chart = chart;
         // disDimCombo.valueProperty().addListener(e -> setDisDim());
@@ -338,6 +385,8 @@ public class SpecAttrWindowController implements Initializable {
                 datasetsSource.add(dataset.getName());
             }
         }
+        updatePeakView();
+
         updateDims();
         setupDimActions();
         datasetTableView.getSelectionModel().clearSelection();
@@ -719,16 +768,6 @@ public class SpecAttrWindowController implements Initializable {
         chart.refreshCrossHairs();
     }
 
-    @FXML
-    private void peakStatusAction(Event event) {
-        if (peakStatusCheckBox.isSelected()) {
-            PeakList.peakListTable.values().stream().forEach(peakList -> {
-                chart.setupPeakListAttributes(peakList);
-            });
-        }
-        chart.refresh();
-    }
-
     private void colorAction(MouseEvent event) {
         ColorPicker colorPicker = new ColorPicker();
         colorPicker.setOnAction(new EventHandler() {
@@ -763,8 +802,10 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     private void refreshAction() {
-        ObservableList<String> targets = datasetView.getTargetItems();
-        chart.updateDatasets(targets);
+        ObservableList<String> datasetTargets = datasetView.getTargetItems();
+        chart.updateDatasets(datasetTargets);
+        ObservableList<String> peakListTargets = peakView.getTargetItems();
+        chart.updatePeakLists(peakListTargets);
         try {
             chart.xAxis.lowerBoundProperty().setValue(formatter.parse(limitFields[0][0].get()));
             chart.xAxis.upperBoundProperty().setValue(formatter.parse(limitFields[0][1].get()));
@@ -840,7 +881,6 @@ public class SpecAttrWindowController implements Initializable {
         polyChart.sliceAttributes.offsetYValueProperty().bindBidirectional(yOffsetSlider.valueProperty());
         polyChart.sliceAttributes.scaleValueProperty().bindBidirectional(scaleSlider.valueProperty());
         sliceColorPicker.setValue(polyChart.sliceAttributes.sliceColorProperty().get());
-        polyChart.peakStatus.bindBidirectional(peakStatusCheckBox.selectedProperty());
         disDimCombo.setValue((DISDIM) polyChart.disDimProp.get());
 
         polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());

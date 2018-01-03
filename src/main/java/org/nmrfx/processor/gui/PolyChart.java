@@ -2094,17 +2094,24 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             }
         }
         if (!present) {
-            for (DatasetAttributes dataAttr : datasetAttributesList) {
-                Dataset dataset = dataAttr.getDataset();
-                String datasetName = dataset.getName();
-                if (datasetName.length() != 0) {
-                    if (peakList.getDatasetName().equals(datasetName)) {
-                        PeakListAttributes peakListAttr = new PeakListAttributes(this, dataAttr, peakList);
-                        peakListAttributesList.add(peakListAttr);
-                        peakList.registerListener(this);
-                        break;
+            if (isPeakListCompatible(peakList)) {
+                DatasetAttributes matchData = null;
+                for (DatasetAttributes dataAttr : datasetAttributesList) {
+                    Dataset dataset = dataAttr.getDataset();
+                    String datasetName = dataset.getName();
+                    if (datasetName.length() != 0) {
+                        if (peakList.getDatasetName().equals(datasetName)) {
+                            matchData = dataAttr;
+                            break;
+                        }
                     }
                 }
+                if (matchData == null) {
+                    matchData = datasetAttributesList.get(0);
+                }
+                PeakListAttributes peakListAttr = new PeakListAttributes(this, matchData, peakList);
+                peakListAttributesList.add(peakListAttr);
+                peakList.registerListener(this);
             }
         }
     }
@@ -2200,7 +2207,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                     try {
                         peakListAttr.getPeakList().peakFit(dataset, peaks);
                     } catch (IllegalArgumentException | IOException | PeakFitException ex) {
-                        Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(PolyChart.class
+                                .getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
@@ -2221,7 +2229,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 try {
                     peakListAttr.getPeakList().peakFit(dataset);
                 } catch (IllegalArgumentException | IOException | PeakFitException ex) {
-                    Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(PolyChart.class
+                            .getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
@@ -2242,8 +2251,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 if (dataset != null) {
                     try {
                         peakListAttr.getPeakList().tweakPeaks(dataset, peaks);
+
                     } catch (IllegalArgumentException ex) {
-                        Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(PolyChart.class
+                                .getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
@@ -2263,8 +2274,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             if (dataset != null) {
                 try {
                     peakListAttr.getPeakList().tweakPeaks(dataset);
+
                 } catch (IllegalArgumentException ex) {
-                    Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(PolyChart.class
+                            .getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
@@ -2366,6 +2379,20 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
         return limits;
 
+    }
+
+    public boolean isPeakListCompatible(PeakList peakList) {
+        boolean result = false;
+        if (!datasetAttributesList.isEmpty()) {
+            DatasetAttributes dataAttr = datasetAttributesList.get(0);
+            int[] peakDim = getPeakDim(dataAttr, peakList);
+            if (peakDim[0] != -1) {
+                if ((peakDim.length == 1) || (peakDim[1] != -1)) {
+                    result = true;
+                }
+            }
+        }
+        return result;
     }
 
     int[] getPeakDim(DatasetAttributes dataAttr, PeakList peakList) {
@@ -2970,6 +2997,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 System.out.println(rData.getMax() + " " + maxPoint[2]);
                 axes[2].setLowerBound(maxPoint[2]);
                 axes[2].setUpperBound(maxPoint[2]);
+
             }
         }
     }

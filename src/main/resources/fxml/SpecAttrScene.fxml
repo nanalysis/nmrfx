@@ -17,7 +17,7 @@
     <center>
         <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
             <tabs>
-                <Tab text="Selector" fx:id="datasetTab">
+                <Tab text="Data Selector" fx:id="datasetTab">
                     <content>
                         
                     </content>
@@ -114,13 +114,15 @@
                         </BorderPane>
                     </content>
                 </Tab>
+                <Tab text="Peak Selector" fx:id="peakSelectTab">
+                    <content>
+                        
+                    </content>
+                </Tab>
+
                 <Tab text="Peaks">
                     <content>
                         <BorderPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                            <top>
-                                <CheckBox fx:id="peakStatusCheckBox" selected="true" text="ShowPeaks"  onAction="#peakStatusAction" />
-
-                            </top>
                             <center>
                                 <TableView fx:id="peakListTableView">
                                     <columns>
