@@ -62,6 +62,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
@@ -267,6 +268,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         activeChart = this;
         setCursor(Cursor.CROSSHAIR);
         id = getNextId();
+        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
+            purgeInvalidPeakListAttributes();
+        };
+        PeakList.peakListTable.addListener(mapChangeListener);
+
     }
 
     /**
@@ -2061,10 +2067,21 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             gC.setLineCap(StrokeLineCap.BUTT);
             gC.strokePolyline(xy[0], xy[1], nPoints);
         }
+    }
+
+    void purgeInvalidPeakListAttributes() {
+        Iterator<PeakListAttributes> iterator = peakListAttributesList.iterator();
+        while (iterator.hasNext()) {
+            PeakList peakList = iterator.next().getPeakList();
+            if (!peakList.valid()) {
+                iterator.remove();
+            }
+        }
 
     }
 
     void setupPeakListAttributes(PeakList peakList) {
+        purgeInvalidPeakListAttributes();
         boolean present = false;
         String listName = peakList.getName();
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
