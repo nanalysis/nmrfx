@@ -1388,9 +1388,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (peakNavigator == null) {
             ToolBar navBar = new ToolBar();
             bottomBox.getChildren().add(navBar);
-            peakNavigator = new PeakNavigator(this, this::removePeakNavigator);
-            peakNavigator.initPeakNavigator(navBar);
-            peakNavigator.initIfEmpty();
+            peakNavigator = PeakNavigator.create(this).onClose(this::removePeakNavigator).showAtoms().initialize(navBar);
+            peakNavigator.setPeakList();
         }
     }
 

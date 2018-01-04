@@ -151,10 +151,8 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initMenuBar();
-        peakNavigator = new PeakNavigator(this);
-        peakNavigator.initPeakNavigator(peakNavigatorToolBar);
-        graphNavigator = new PeakNavigator(this);
-        graphNavigator.initPeakNavigator(graphNavigatorToolBar, peakNavigator);
+        peakNavigator = PeakNavigator.create(this).initialize(peakNavigatorToolBar);
+        graphNavigator = PeakNavigator.create(this).initialize(graphNavigatorToolBar);
         initTable();
         initReferenceTable();
         setFieldActions();
@@ -344,7 +342,7 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     }
 
     public void initIfEmpty() {
-        peakNavigator.initIfEmpty();
+        peakNavigator.setPeakList();
     }
 
     public void setPeakList(PeakList peakList) {

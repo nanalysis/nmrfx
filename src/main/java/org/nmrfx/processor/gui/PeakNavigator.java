@@ -13,6 +13,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
@@ -21,6 +22,9 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
@@ -52,14 +56,35 @@ public class PeakNavigator implements PeakListener {
     Optional<List<Peak>> matchPeaks = Optional.empty();
     int matchIndex = 0;
     Consumer closeAction = null;
+    boolean showAtoms = false;
+    Label atomXFieldLabel;
+    Label atomYFieldLabel;
+    Label intensityFieldLabel;
+    Label atomXLabel;
+    Label atomYLabel;
+    Label intensityLabel;
 
-    public PeakNavigator(PeakNavigable peakNavigable) {
+    private PeakNavigator(PeakNavigable peakNavigable) {
         this.peakNavigable = peakNavigable;
     }
 
-    public PeakNavigator(PeakNavigable peakNavigable, Consumer closeAction) {
+    private PeakNavigator(PeakNavigable peakNavigable, Consumer closeAction) {
         this.peakNavigable = peakNavigable;
         this.closeAction = closeAction;
+    }
+
+    public static PeakNavigator create(PeakNavigable peakNavigable) {
+        return new PeakNavigator(peakNavigable);
+    }
+
+    public PeakNavigator onClose(Consumer closeAction) {
+        this.closeAction = closeAction;
+        return this;
+    }
+
+    public PeakNavigator showAtoms() {
+        this.showAtoms = true;
+        return this;
     }
 
     public ToolBar getToolBar() {
@@ -70,8 +95,9 @@ public class PeakNavigator implements PeakListener {
         closeAction.accept(this);
     }
 
-    void initPeakNavigator(ToolBar toolBar) {
+    PeakNavigator initialize(ToolBar toolBar) {
         initPeakNavigator(toolBar, null);
+        return this;
     }
 
     void initPeakNavigator(ToolBar toolBar, PeakNavigator parentNavigator) {
@@ -123,6 +149,30 @@ public class PeakNavigator implements PeakListener {
         toolBar.getItems().add(peakIdField);
         toolBar.getItems().add(deleteButton);
 
+        if (showAtoms) {
+            atomXFieldLabel = new Label("X:");
+            atomYFieldLabel = new Label("Y:");
+            intensityFieldLabel = new Label("I:");
+            atomXLabel = new Label();
+            atomXLabel.setMinWidth(75);
+            atomYLabel = new Label();
+            atomYLabel.setMinWidth(75);
+            intensityLabel = new Label();
+            intensityLabel.setMinWidth(75);
+
+            Pane filler2 = new Pane();
+            filler2.setMinWidth(20);
+            Pane filler3 = new Pane();
+            filler3.setMinWidth(20);
+            Pane filler4 = new Pane();
+            filler4.setMinWidth(20);
+            Pane filler5 = new Pane();
+            HBox.setHgrow(filler5, Priority.ALWAYS);
+
+            toolBar.getItems().addAll(filler2, atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel, filler5);
+
+        }
+
         peakIdField.setOnKeyReleased(kE -> {
             if (null != kE.getCode()) {
                 switch (kE.getCode()) {
@@ -154,13 +204,13 @@ public class PeakNavigator implements PeakListener {
         for (String peakListName : PeakList.peakListTable.keySet()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
-                setPeakList(peakListName);
+                PeakNavigator.this.setPeakList(peakListName);
             });
             peakListMenuButton.getItems().add(menuItem);
         }
     }
 
-    public void initIfEmpty() {
+    public void setPeakList() {
         if (peakList == null) {
             PeakList testList = null;
             FXMLController controller = FXMLController.getActiveController();
@@ -175,7 +225,6 @@ public class PeakNavigator implements PeakListener {
                 testList = PeakList.get(0);
             }
             setPeakList(testList);
-
         }
     }
 
@@ -189,7 +238,7 @@ public class PeakNavigator implements PeakListener {
 
     public void setPeakList(String listName) {
         peakList = PeakList.get(listName);
-        setPeakList(peakList);
+        PeakNavigator.this.setPeakList(peakList);
     }
 
     public void setPeakList(PeakList newPeakList) {
@@ -215,7 +264,26 @@ public class PeakNavigator implements PeakListener {
             }
             updateDeleteStatus();
         }
+        updateAtomLabels(peak);
         setPeakIdField();
+    }
+
+    void updateAtomLabels(Peak peak) {
+        if (showAtoms) {
+            if (peak != null) {
+                atomXLabel.setText(peak.getPeakDim(0).getLabel());
+                intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
+                if (peak.getPeakDims().length > 1) {
+                    atomYLabel.setText(peak.getPeakDim(1).getLabel());
+                }
+            } else {
+                if (showAtoms) {
+                    atomXLabel.setText("");
+                    atomYLabel.setText("");
+                    intensityLabel.setText("");
+                }
+            }
+        }
     }
 
     void updateDeleteStatus() {
