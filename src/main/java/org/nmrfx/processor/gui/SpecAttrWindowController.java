@@ -509,10 +509,10 @@ public class SpecAttrWindowController implements Initializable {
 
         ContextMenu offsetMenu = new ContextMenu();
         MenuItem unifyOffsetItem = new MenuItem("unify");
-        unifyLevelItem.setOnAction(e -> unifyOffset());
+        unifyOffsetItem.setOnAction(e -> unifyOffset());
         MenuItem rampOffsetItem = new MenuItem("ramp");
         rampOffsetItem.setOnAction(e -> rampOffset());
-        offsetMenu.getItems().addAll(rampOffsetItem);
+        offsetMenu.getItems().addAll(unifyOffsetItem, rampOffsetItem);
         offsetCol.setContextMenu(offsetMenu);
         offsetCol.setPrefWidth(50);
 
@@ -520,6 +520,12 @@ public class SpecAttrWindowController implements Initializable {
         nLevelsCol.setCellValueFactory(new PropertyValueFactory("nlvls"));
         nLevelsCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
         nLevelsCol.setPrefWidth(35);
+
+        ContextMenu nLvlMenu = new ContextMenu();
+        MenuItem unifyNLvlItem = new MenuItem("unify");
+        unifyNLvlItem.setOnAction(e -> unifyNLvl());
+        nLevelsCol.setContextMenu(nLvlMenu);
+        nLvlMenu.getItems().addAll(unifyNLvlItem);
 
         TableColumn<DatasetAttributes, String> clmCol = new TableColumn<>("clm");
         clmCol.setCellValueFactory(new PropertyValueFactory("clm"));
@@ -941,11 +947,41 @@ public class SpecAttrWindowController implements Initializable {
 
     void unifyLevel() {
         ObservableList<DatasetAttributes> items = datasetTableView.getItems();
-        items.stream().forEach((dataAttr) -> {
-            dataAttr.setLvl(items.get(0).getLvl());
-        });
-        datasetTableView.refresh();
+        if (!items.isEmpty()) {
+            int index = datasetTableView.getSelectionModel().getSelectedIndex();
+            index = index == -1 ? 0 : index;
+            final double lvl = items.get(index).getLvl();
+            items.stream().forEach((dataAttr) -> {
+                dataAttr.setLvl(lvl);
+            });
+            datasetTableView.refresh();
+        }
+    }
 
+    void unifyClm() {
+        ObservableList<DatasetAttributes> items = datasetTableView.getItems();
+        if (!items.isEmpty()) {
+            int index = datasetTableView.getSelectionModel().getSelectedIndex();
+            index = index == -1 ? 0 : index;
+            final double clm = items.get(index).getClm();
+            items.stream().forEach((dataAttr) -> {
+                dataAttr.setClm(clm);
+            });
+            datasetTableView.refresh();
+        }
+    }
+
+    void unifyNLvl() {
+        ObservableList<DatasetAttributes> items = datasetTableView.getItems();
+        if (!items.isEmpty()) {
+            int index = datasetTableView.getSelectionModel().getSelectedIndex();
+            index = index == -1 ? 0 : index;
+            final int nlvls = items.get(index).getNlvls();
+            items.stream().forEach((dataAttr) -> {
+                dataAttr.setNlvls(nlvls);
+            });
+            datasetTableView.refresh();
+        }
     }
 
     void unifyOffset() {
