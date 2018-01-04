@@ -70,6 +70,7 @@ import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.CheckBox;
@@ -143,6 +144,9 @@ public class SpecAttrWindowController implements Initializable {
     ListSelectionView<String> peakView;
     static String[] rowNames = {"X", "Y", "Z", "A"};
 
+    ListChangeListener<String> peakTargetListener;
+    ListChangeListener<String> datasetTargetListener;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         initToolBar();
@@ -175,6 +179,14 @@ public class SpecAttrWindowController implements Initializable {
                 updatePeakView();
             }
         });
+        peakTargetListener = (ListChangeListener.Change<? extends String> c) -> {
+            updateChartPeakLists();
+        };
+        datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
+            updateChartDatasets();
+        };
+        datasetView.getTargetItems().addListener(datasetTargetListener);
+        peakView.getTargetItems().addListener(peakTargetListener);
     }
 
     public Stage getStage() {
@@ -334,6 +346,7 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     void updatePeakView() {
+        peakView.getTargetItems().removeListener(peakTargetListener);
         String showOnlyMode = showOnlyCompatibleBox.getValue();
         ObservableList<String> peaksTarget = peakView.getTargetItems();
         ObservableList<String> peaksSource = peakView.getSourceItems();
@@ -361,20 +374,17 @@ public class SpecAttrWindowController implements Initializable {
                 }
             }
         }
+        peakView.getTargetItems().addListener(peakTargetListener);
     }
 
-    public void setChart(PolyChart chart) {
-        this.chart = chart;
-        // disDimCombo.valueProperty().addListener(e -> setDisDim());
-        updateDatasetTableView();
-        updatePeakListTableView();
-        clearDimActions();
-        bindToChart(chart);
-        setLimits();
+    void updateDatasetView() {
+        datasetView.getTargetItems().removeListener(datasetTargetListener);
         ObservableList<String> datasetsTarget = datasetView.getTargetItems();
         ObservableList<String> datasetsSource = datasetView.getSourceItems();
         datasetsTarget.clear();
         datasetsSource.clear();
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
 
         for (Object obj : chart.getDatasetAttributes()) {
             DatasetAttributes dataAttr = (DatasetAttributes) obj;
@@ -385,11 +395,24 @@ public class SpecAttrWindowController implements Initializable {
                 datasetsSource.add(dataset.getName());
             }
         }
-        updatePeakView();
+        datasetView.getTargetItems().addListener(datasetTargetListener);
+    }
 
-        updateDims();
-        setupDimActions();
-        datasetTableView.getSelectionModel().clearSelection();
+    public void setChart(PolyChart chart) {
+        if (this.chart != chart) {
+            this.chart = chart;
+            // disDimCombo.valueProperty().addListener(e -> setDisDim());
+            updateDatasetTableView();
+            updatePeakListTableView();
+            clearDimActions();
+            bindToChart(chart);
+            setLimits();
+            updateDatasetView();
+            updatePeakView();
+            updateDims();
+            setupDimActions();
+            datasetTableView.getSelectionModel().clearSelection();
+        }
     }
 
     void initToolBar() {
@@ -801,11 +824,19 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
-    private void refreshAction() {
-        ObservableList<String> datasetTargets = datasetView.getTargetItems();
-        chart.updateDatasets(datasetTargets);
+    private void updateChartPeakLists() {
         ObservableList<String> peakListTargets = peakView.getTargetItems();
         chart.updatePeakLists(peakListTargets);
+    }
+
+    private void updateChartDatasets() {
+        ObservableList<String> datasetTargets = datasetView.getTargetItems();
+        chart.updateDatasets(datasetTargets);
+    }
+
+    private void refreshAction() {
+        updateChartDatasets();
+        updateChartPeakLists();
         try {
             chart.xAxis.lowerBoundProperty().setValue(formatter.parse(limitFields[0][0].get()));
             chart.xAxis.upperBoundProperty().setValue(formatter.parse(limitFields[0][1].get()));
