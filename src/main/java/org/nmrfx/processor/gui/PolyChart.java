@@ -109,8 +109,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     ArrayList<Double> dList = new ArrayList<>();
     ArrayList<Double> nList = new ArrayList<>();
     ArrayList<Double> bcList = new ArrayList<>();
-    Polyline xSliceLine = new Polyline();
-    Polyline ySliceLine = new Polyline();
     Canvas canvas;
     Canvas peakCanvas;
     Canvas annoCanvas = null;
@@ -1958,8 +1956,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
      */
     @Override
     protected void layoutPlotChildren() {
-        xSliceLine.getPoints().clear();
-        ySliceLine.getPoints().clear();
         bcPath.getElements().clear();
         bcPath.setStroke(Color.ORANGE);
         bcPath.setStrokeWidth(3.0);
@@ -2670,8 +2666,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     }
 
     protected void loadData() {
-        xSliceLine = new Polyline();
-        ySliceLine = new Polyline();
         bcPath = new Path();
         //xSliceLine.setMouseTransparent(true);
         //ySliceLine.setMouseTransparent(true);
@@ -2685,11 +2679,12 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         peakCanvas = new Canvas(width, height);
         peakCanvas.setCache(true);
         peakCanvas.setMouseTransparent(true);
+        annoCanvas = new Canvas(width, height);
+        annoCanvas.setMouseTransparent(true);
 
         getPlotChildren().add(1, canvas);
         getPlotChildren().add(2, peakCanvas);
-        getPlotChildren().add(3, xSliceLine);
-        getPlotChildren().add(4, ySliceLine);
+        getPlotChildren().add(3, annoCanvas);
         layoutChildren();
     }
 
@@ -2741,6 +2736,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 statusBar.crossText[iCross][jOrient].setMax(axes[iAxis].getUpperBound());
             }
         }
+        drawSlices();
     }
 
     public void moveCrosshair(int iCross, int iOrient, double value) {
@@ -2756,6 +2752,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         int axisDim = iOrient == VERTICAL ? 0 : 1;
         label = dataAttr.getLabel(axisDim);
         crossHairManager.updatePosition(this, iCross, iOrient, aValue, label);
+        drawSlices();
     }
 
     public void syncCrosshair(int iCross, int iOrient, String dimLabel, double value) {
@@ -2776,6 +2773,9 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         if (jOrient >= 0) {
             crossHairPositions[iCross][jOrient] = value;
             drawCrossHair(iCross, jOrient);
+            if (iCross == 0) {
+                drawSlices();
+            }
         }
     }
 
@@ -2855,18 +2855,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     }
 
     public void setSliceStatus(boolean state) {
-        if (state) {
-            xSliceLine.getPoints().clear();
-            ySliceLine.getPoints().clear();
-            xSliceLine.setVisible(true);
-            ySliceLine.setVisible(true);
-            refreshCrossHairs();
-        } else {
-            xSliceLine.getPoints().clear();
-            ySliceLine.getPoints().clear();
-            xSliceLine.setVisible(false);
-            ySliceLine.setVisible(false);
-        }
+        refreshCrossHairs();
     }
 
     public void drawCrossHair(int iCross, int iOrient) {
@@ -2897,66 +2886,67 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             crossHairLines[iCross][iOrient].setVisible(true);
             nList.clear();
             bcList.clear();
-            int nDim = dataset.getNDim();
-            boolean xOn = false;
-            boolean yOn = false;
-            if (controller.sliceStatus.get() && sliceStatus.get()) {
-                xOn = true;
-                yOn = true;
-            }
-            if (controller.isPhaseSliderVisible()) {
-                if (phaseAxis == 0) {
-                    yOn = false;
-                } else {
-                    xOn = false;
-                }
-            }
-            if (xOn || yOn) {
-                if ((nDim > 1) && xOn && controller.sliceStatus.get() && sliceStatus.get() && (iCross == 0) && (iOrient == HORIZONTAL)) {
-                    xSliceLine.getPoints().clear();
-                    xSliceLine.setVisible(true);
-                    xSliceLine.setCache(true);
-                    xSliceLine.setStroke(sliceAttributes.getSliceColor());
-                    nList.clear();
-                    for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(0), getPh1(0));
-                        double[][] xy = drawSpectrum.getXY();
-                        int nPoints = drawSpectrum.getNPoints();
-                        for (int iPoint = 0; iPoint < nPoints; iPoint++) {
-                            nList.add(xy[0][iPoint]);
-                            nList.add(xy[1][iPoint]);
-                        }
-                    }
-                    xSliceLine.getPoints().addAll(nList);
-                }
-                if ((nDim > 1) && yOn && controller.sliceStatus.get() && sliceStatus.get() && (iCross == 0) && (iOrient == VERTICAL)) {
-                    ySliceLine.getPoints().clear();
-                    ySliceLine.setVisible(true);
-                    ySliceLine.setCache(true);
-                    ySliceLine.setStroke(sliceAttributes.getSliceColor());
-                    nList.clear();
-                    for (DatasetAttributes datasetAttributes : datasetAttributesList) {
-                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(1), getPh1(1));
-                        double[][] xy = drawSpectrum.getXY();
-                        int nPoints = drawSpectrum.getNPoints();
-                        for (int iPoint = 0; iPoint < nPoints; iPoint++) {
-                            nList.add(xy[0][iPoint]);
-                            nList.add(xy[1][iPoint]);
-                        }
-                    }
-                    ySliceLine.getPoints().addAll(nList);
-                }
-            }
-            if (!xOn) {
-                xSliceLine.getPoints().clear();
-                xSliceLine.setVisible(false);
-            }
-            if (!yOn) {
-                ySliceLine.getPoints().clear();
-                ySliceLine.setVisible(false);
+        }
+    }
+
+    public void drawSlices() {
+        double width = xAxis.getWidth();
+        double height = yAxis.getHeight();
+        GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
+        annoGC.clearRect(0, 0, width, height);
+        drawSlice(0, VERTICAL);
+        drawSlice(0, HORIZONTAL);
+        if (sliceAttributes.show2ndSliceProperty().get()) {
+            drawSlice(1, VERTICAL);
+            drawSlice(1, HORIZONTAL);
+        }
+    }
+
+    public void drawSlice(int iCross, int iOrient) {
+        Dataset dataset = getDataset();
+        if (dataset == null) {
+            return;
+        }
+        int nDim = dataset.getNDim();
+        Bounds bounds = plotBackground.getBoundsInParent();
+        boolean xOn = false;
+        boolean yOn = false;
+        if (controller.sliceStatus.get() && sliceStatus.get()) {
+            xOn = true;
+            yOn = true;
+        }
+        if (controller.isPhaseSliderVisible()) {
+            if (phaseAxis == 0) {
+                yOn = false;
+            } else {
+                xOn = false;
             }
         }
+        GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
 
+        if ((nDim > 1) && controller.sliceStatus.get() && sliceStatus.get()) {
+            if (((iOrient == HORIZONTAL) && xOn) || ((iOrient == VERTICAL) && yOn)) {
+                for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+                    if (iOrient == HORIZONTAL) {
+                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, HORIZONTAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(0), getPh1(0));
+                    } else {
+                        drawSpectrum.drawSlice(datasetAttributes, sliceAttributes, VERTICAL, crossHairPositions[iCross][VERTICAL], crossHairPositions[iCross][HORIZONTAL], bounds, getPh0(1), getPh1(1));
+                    }
+                    double[][] xy = drawSpectrum.getXY();
+                    int nPoints = drawSpectrum.getNPoints();
+                    if (sliceAttributes.useDatasetColorProperty().get()) {
+                        annoGC.setStroke(datasetAttributes.getPosColor());
+                    } else {
+                        if (iCross == 0) {
+                            annoGC.setStroke(sliceAttributes.getSlice1Color());
+                        } else {
+                            annoGC.setStroke(sliceAttributes.getSlice2Color());
+                        }
+                    }
+                    annoGC.strokePolyline(xy[0], xy[1], nPoints);
+                }
+            }
+        }
     }
 
     void gotoMaxPlane() {

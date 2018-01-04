@@ -33,7 +33,10 @@ public class SliceAttributes {
     public DoubleProperty offsetXValue;
     public DoubleProperty offsetYValue;
     public DoubleProperty scaleValue;
-    private ColorProperty sliceColor;
+    private ColorProperty slice1Color;
+    private ColorProperty slice2Color;
+    private BooleanProperty useDatasetColor;
+    private BooleanProperty show2ndSlice;
 
     public BooleanProperty offsetTrackingProperty() {
         if (offsetTracking == null) {
@@ -95,19 +98,64 @@ public class SliceAttributes {
         return scaleValueProperty().get();
     }
 
-    public ColorProperty sliceColorProperty() {
-        if (sliceColor == null) {
-            sliceColor = new ColorProperty(this, "color", Color.BLUE);
+    public ColorProperty slice1ColorProperty() {
+        if (slice1Color == null) {
+            slice1Color = new ColorProperty(this, "color1", Color.BLUE);
         }
-        return sliceColor;
+        return slice1Color;
     }
 
-    public void setSliceColor(Color value) {
-        sliceColorProperty().set(value);
+    public void setSlice1Color(Color value) {
+        slice1ColorProperty().set(value);
     }
 
-    public Color getSliceColor() {
-        return sliceColorProperty().get();
+    public Color getSlice1Color() {
+        return slice1ColorProperty().get();
+    }
+
+    public ColorProperty slice2ColorProperty() {
+        if (slice2Color == null) {
+            slice2Color = new ColorProperty(this, "color2", Color.BLUE);
+        }
+        return slice2Color;
+    }
+
+    public void setSlice2Color(Color value) {
+        slice2ColorProperty().set(value);
+    }
+
+    public Color getSlice2Color() {
+        return slice2ColorProperty().get();
+    }
+
+    public BooleanProperty useDatasetColorProperty() {
+        if (useDatasetColor == null) {
+            useDatasetColor = new SimpleBooleanProperty(this, "usedatasetcolor", true);
+        }
+        return useDatasetColor;
+    }
+
+    public void setUseDatasetColor(boolean value) {
+        useDatasetColorProperty().set(value);
+    }
+
+    public boolean getUseDatasetColor() {
+        return useDatasetColorProperty().get();
+    }
+
+    public BooleanProperty show2ndSliceProperty() {
+        if (show2ndSlice == null) {
+            show2ndSlice = new SimpleBooleanProperty(this, "show2ndslice", false);
+        }
+        return show2ndSlice;
+    }
+
+    public void setShow2ndSlice(boolean value) {
+        show2ndSliceProperty().set(value);
+    }
+
+    public boolean getShow2ndSlice() {
+        return show2ndSliceProperty().get();
     }
 
 }

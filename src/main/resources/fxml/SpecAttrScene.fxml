@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import java.lang.*?>
-<?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.*?>
-<?import org.controlsfx.control.spreadsheet.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ColorPicker?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" fx:id="attrBorderPane" fx:controller="org.nmrfx.processor.gui.SpecAttrWindowController">
+<BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.SpecAttrWindowController">
     <top>
         <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
             <items>
@@ -17,7 +27,7 @@
     <center>
         <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
             <tabs>
-                <Tab text="Data Selector" fx:id="datasetTab">
+                <Tab fx:id="datasetTab" text="Data Selector">
                     <content>
                         
                     </content>
@@ -70,20 +80,32 @@
                                 <GridPane BorderPane.alignment="CENTER">
                                     <columnConstraints>
                                         <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
-                                        <ColumnConstraints minWidth="10.0" prefWidth="200.0" fillWidth="true"  />
+                                        <ColumnConstraints fillWidth="true" minWidth="10.0" prefWidth="200.0" />
                                     </columnConstraints>
                                     <rowConstraints>
                                         <RowConstraints />
                                         <RowConstraints minHeight="10.0" />
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" />
+                                        <RowConstraints minHeight="10.0" />
+                                        <RowConstraints minHeight="10.0" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" />
                                     </rowConstraints>
                                     <children>
-                                        <Label  text="Vertical" GridPane.rowIndex="1" />
-                                        <Label text="Horizontal" GridPane.rowIndex="2" />
-                                        <Slider fx:id="xOffsetSlider" blockIncrement="0.1" max="1.0" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="1" onValueChange="#sliceAction"/>
-                                        <Slider fx:id="yOffsetSlider" blockIncrement="0.1" max="1.0" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="2"  onValueChange="#sliceAction"/>
-                                        <Label text="Orientation" />
-                                        <Label text="Offset" GridPane.columnIndex="1" />
+                                        <Label text="Orientation" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                        <Label text="Offset" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                        <Label text="Vertical" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                        <Label text="Horizontal" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                        <Slider blockIncrement="0.1" max="1.0" onValueChange="#sliceAction" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="1" fx:id="xOffsetSlider" />
+                                        <Slider fx:id="yOffsetSlider" blockIncrement="0.1" max="1.0" onValueChange="#sliceAction" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+                                        <Label text="Slice"  GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                                        <Label text="Color"  GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                        <Label text="1" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+                                        <Label text="2" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+                                        <ColorPicker fx:id="slice1ColorPicker" onAction="#sliceAction" promptText="Slice 1 Color" GridPane.columnIndex="1" GridPane.rowIndex="5" /> 
+                                        <ColorPicker fx:id="slice2ColorPicker" onAction="#sliceAction" promptText="Slice 2 Color" GridPane.columnIndex="1" GridPane.rowIndex="6"  /> 
                                     </children>
                                     <padding>
                                         <Insets top="20.0" />
@@ -93,10 +115,9 @@
                             <top>
                                 <ToolBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                                     <items>
-                                        <CheckBox fx:id="offsetTrackingCheckBox" mnemonicParsing="false" text="Offset Tracking"  onAction="#sliceAction" />
-                                        <Label text="     Slice Color" />
-
-                                        <ColorPicker fx:id="sliceColorPicker" promptText="Slice Color" onAction="#sliceAction" /> 
+                                        <CheckBox fx:id="offsetTrackingCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="Offset Tracking   " />
+                                        <CheckBox fx:id="useDatasetColorCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="   Use Dataset Color" selected="true"/>
+                                        <CheckBox fx:id="show2ndSliceCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="Slice2" selected="false"/>
                                     </items>
                                 </ToolBar>
                             </top>
@@ -104,7 +125,7 @@
                                 <VBox prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
                                     <children>
                                         <Label text="Scale" />
-                                        <Slider fx:id="scaleSlider" blockIncrement="1.0" min="1.0" minorTickCount="5" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" value="10.0" onValueChange="#sliceAction" />
+                                        <Slider fx:id="scaleSlider" blockIncrement="1.0" min="1.0" minorTickCount="5" onValueChange="#sliceAction" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" value="10.0" />
                                     </children>
                                     <padding>
                                         <Insets left="20.0" top="20.0" />
@@ -114,7 +135,7 @@
                         </BorderPane>
                     </content>
                 </Tab>
-                <Tab text="Peak Selector" fx:id="peakSelectTab">
+                <Tab fx:id="peakSelectTab" text="Peak Selector">
                     <content>
                         
                     </content>

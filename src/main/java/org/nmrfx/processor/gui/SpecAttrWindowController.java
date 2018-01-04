@@ -129,7 +129,13 @@ public class SpecAttrWindowController implements Initializable {
     @FXML
     private CheckBox offsetTrackingCheckBox;
     @FXML
-    private ColorPicker sliceColorPicker;
+    private CheckBox useDatasetColorCheckBox;
+    @FXML
+    private CheckBox show2ndSliceCheckBox;
+    @FXML
+    private ColorPicker slice1ColorPicker;
+    @FXML
+    private ColorPicker slice2ColorPicker;
     @FXML
     Slider xOffsetSlider;
     @FXML
@@ -793,7 +799,8 @@ public class SpecAttrWindowController implements Initializable {
 //    }
     @FXML
     private void sliceAction(Event event) {
-        chart.sliceAttributes.setSliceColor(sliceColorPicker.getValue());
+        chart.sliceAttributes.setSlice1Color(slice1ColorPicker.getValue());
+        chart.sliceAttributes.setSlice2Color(slice2ColorPicker.getValue());
         chart.refreshCrossHairs();
     }
 
@@ -914,10 +921,13 @@ public class SpecAttrWindowController implements Initializable {
 //            limitFields[i][1].bind(axis.upperBoundProperty().asString());
         }
         polyChart.sliceAttributes.offsetTrackingProperty().bindBidirectional(offsetTrackingCheckBox.selectedProperty());
+        polyChart.sliceAttributes.useDatasetColorProperty().bindBidirectional(useDatasetColorCheckBox.selectedProperty());
+        polyChart.sliceAttributes.show2ndSliceProperty().bindBidirectional(show2ndSliceCheckBox.selectedProperty());
         polyChart.sliceAttributes.offsetXValueProperty().bindBidirectional(xOffsetSlider.valueProperty());
         polyChart.sliceAttributes.offsetYValueProperty().bindBidirectional(yOffsetSlider.valueProperty());
         polyChart.sliceAttributes.scaleValueProperty().bindBidirectional(scaleSlider.valueProperty());
-        sliceColorPicker.setValue(polyChart.sliceAttributes.sliceColorProperty().get());
+        slice1ColorPicker.setValue(polyChart.sliceAttributes.slice1ColorProperty().get());
+        slice2ColorPicker.setValue(polyChart.sliceAttributes.slice2ColorProperty().get());
         disDimCombo.setValue((DISDIM) polyChart.disDimProp.get());
 
         polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
