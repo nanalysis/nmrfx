@@ -7,10 +7,7 @@
     <top>
         <VBox>
             <children>
-                <ToolBar fx:id="menuBar" BorderPane.alignment="CENTER">
-                </ToolBar>
-                <ToolBar fx:id="peakNavigatorToolBar" orientation="HORIZONTAL" BorderPane.alignment="CENTER">
-                </ToolBar>
+                <ToolBar fx:id="menuBar" BorderPane.alignment="CENTER"/>
             </children>
         </VBox>
     </top>
@@ -21,6 +18,7 @@
                     <content>
                         <BorderPane layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
                             <top>
+                                <ToolBar fx:id="peakNavigatorToolBar" orientation="HORIZONTAL" BorderPane.alignment="CENTER"/>
                             </top>
                             <center>
                                 <TableView fx:id="peakTableView">
@@ -92,7 +90,11 @@
                 </Tab>
                 <Tab text="Graph">
                     <content>
-                        <BorderPane fx:id="graphBorderPane"/>
+                        <BorderPane fx:id="graphBorderPane">
+                            <top>
+                                <ToolBar fx:id="graphNavigatorToolBar" orientation="HORIZONTAL" BorderPane.alignment="CENTER"/>
+                            </top>
+                        </BorderPane>
                     </content>
                 </Tab>
                 <Tab text="Simulate">

@@ -71,11 +71,15 @@ public class PeakNavigator implements PeakListener {
     }
 
     void initPeakNavigator(ToolBar toolBar) {
+        initPeakNavigator(toolBar, null);
+    }
+
+    void initPeakNavigator(ToolBar toolBar, PeakNavigator parentNavigator) {
         this.navigatorToolBar = toolBar;
-        peakListMenuButton = new MenuButton("List");
         peakIdField = new TextField();
         peakIdField.setMinWidth(75);
         peakIdField.setMaxWidth(75);
+        PeakNavigator navigator = parentNavigator == null ? this : parentNavigator;
 
         String iconSize = "12px";
         String fontSize = "7pt";
@@ -85,22 +89,22 @@ public class PeakNavigator implements PeakListener {
         closeButton.setOnAction(e -> close());
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> firstPeak(e));
+        bButton.setOnAction(e -> navigator.firstPeak(e));
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> previousPeak(e));
+        bButton.setOnAction(e -> navigator.previousPeak(e));
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> nextPeak(e));
+        bButton.setOnAction(e -> navigator.nextPeak(e));
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> lastPeak(e));
+        bButton.setOnAction(e -> navigator.lastPeak(e));
         buttons.add(bButton);
         deleteButton = GlyphsDude.createIconToggleButton(FontAwesomeIcon.BAN, fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
         // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
         // a second space bar hit would activate
         deleteButton.setOnKeyPressed(e -> e.consume());
-        deleteButton.setOnAction(e -> setDeleteStatus(deleteButton));
+        deleteButton.setOnAction(e -> navigator.setDeleteStatus(deleteButton));
 
         for (Button button : buttons) {
             // button.getStyleClass().add("toolButton");
@@ -108,7 +112,13 @@ public class PeakNavigator implements PeakListener {
         if (closeAction != null) {
             navigatorToolBar.getItems().add(closeButton);
         }
-        navigatorToolBar.getItems().add(peakListMenuButton);
+        if (parentNavigator == null) {
+            peakListMenuButton = new MenuButton("List");
+            navigatorToolBar.getItems().add(peakListMenuButton);
+            updatePeakListMenu();
+        } else {
+            parentNavigator.peakIdField.textProperty().bindBidirectional(peakIdField.textProperty());
+        }
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(peakIdField);
         toolBar.getItems().add(deleteButton);
@@ -117,20 +127,19 @@ public class PeakNavigator implements PeakListener {
             if (null != kE.getCode()) {
                 switch (kE.getCode()) {
                     case ENTER:
-                        gotoPeakId();
+                        navigator.gotoPeakId(peakIdField);
                         break;
                     case UP:
-                        gotoNextMatch(1);
+                        navigator.gotoNextMatch(1);
                         break;
                     case DOWN:
-                        gotoNextMatch(-1);
+                        navigator.gotoNextMatch(-1);
                         break;
                     default:
                         break;
                 }
             }
         });
-        updatePeakListMenu();
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             updatePeakListMenu();
         };
@@ -307,11 +316,11 @@ public class PeakNavigator implements PeakListener {
         return result;
     }
 
-    public void gotoPeakId() {
+    public void gotoPeakId(TextField idField) {
         if (peakList != null) {
             matchPeaks = Optional.empty();
             int id = Integer.MIN_VALUE;
-            String idString = peakIdField.getText().trim();
+            String idString = idField.getText().trim();
             if (idString.length() != 0) {
                 try {
                     id = Integer.parseInt(idString);
@@ -322,7 +331,7 @@ public class PeakNavigator implements PeakListener {
                         matchPeaks = Optional.of(peaks);
                         matchIndex = 0;
                     } else {
-                        peakIdField.setText("");
+                        idField.setText("");
                     }
                 }
                 if (id != Integer.MIN_VALUE) {

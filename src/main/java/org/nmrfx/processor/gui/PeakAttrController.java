@@ -118,6 +118,8 @@ public class PeakAttrController implements Initializable, PeakNavigable {
 
     @FXML
     private BorderPane graphBorderPane;
+    @FXML
+    private ToolBar graphNavigatorToolBar;
 
     @FXML
     private BorderPane simBorderPane;
@@ -138,6 +140,7 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     private ScatterChart<Number, Number> scatterChart;
 
     PeakNavigator peakNavigator;
+    PeakNavigator graphNavigator;
 
     PeakList peakList;
     Peak currentPeak;
@@ -150,6 +153,8 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         initMenuBar();
         peakNavigator = new PeakNavigator(this);
         peakNavigator.initPeakNavigator(peakNavigatorToolBar);
+        graphNavigator = new PeakNavigator(this);
+        graphNavigator.initPeakNavigator(graphNavigatorToolBar, peakNavigator);
         initTable();
         initReferenceTable();
         setFieldActions();
