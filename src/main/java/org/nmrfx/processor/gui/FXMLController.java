@@ -33,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -67,13 +66,20 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.Label;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
 import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -91,6 +97,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Callback;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.peaks.Peak;
@@ -137,6 +144,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     private Button cancelButton;
     EventHandler<ActionEvent> menuHandler;
     PopOver popOver = new PopOver();
+    PopOver attributesPopOver = null;
 
     ChangeListener<String> dimListener;
     ChangeListener<Number> refDimListener;
@@ -144,6 +152,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     static SpecAttrWindowController specAttrWindowController = null;
+    static boolean popOverMode = true;
     static PeakAttrController peakAttrController = null;
     ProcessorController processorController = null;
     ScannerController scannerController = null;
@@ -220,7 +229,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         activeChart = chart;
         PolyChart.activeChart = chart;
         if (specAttrWindowController != null) {
-            if (specAttrWindowController.getStage().isShowing()) {
+            if (specAttrWindowController.isShowing()) {
                 specAttrWindowController.setChart(activeChart);
             }
         }
@@ -247,6 +256,55 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             chart.full();
             chart.layoutPlotChildren();
         });
+    }
+
+    @FXML
+    void showDatasetsAction(ActionEvent event) {
+        ListView listView = new ListView();
+        Dataset.datasets().stream().forEach(d -> {
+            listView.getItems().add(d.getName());
+        });
+        listView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
+            @Override
+            public ListCell<String> call(ListView<String> p) {
+                ListCell<String> olc = new ListCell<String>() {
+                    @Override
+                    public void updateItem(String s, boolean empty) {
+                        super.updateItem(s, empty);
+                        setText(s);
+                    }
+                };
+                olc.setOnDragDetected(new EventHandler<MouseEvent>() {
+                    @Override
+                    public void handle(MouseEvent event) {
+                        Dragboard db = olc.startDragAndDrop(TransferMode.COPY);
+
+                        /* Put a string on a dragboard */
+                        ClipboardContent content = new ClipboardContent();
+                        List<String> items = olc.getListView().getSelectionModel().getSelectedItems();
+                        StringBuilder sBuilder = new StringBuilder();
+                        for (String item : items) {
+                            sBuilder.append(item);
+                            sBuilder.append("\n");
+                        }
+                        content.putString(sBuilder.toString().trim());
+                        db.setContent(content);
+
+                        event.consume();
+                    }
+                });
+                return olc;
+            }
+
+        });
+        listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+        popOver.setDetachable(true);
+        popOver.setTitle("Datasets");
+        popOver.setHeaderAlwaysVisible(true);
+        popOver.setContentNode(listView);
+        popOver.setArrowLocation(PopOver.ArrowLocation.TOP_CENTER);
+        popOver.show((Node) event.getSource());
     }
 
     @FXML
@@ -477,15 +535,52 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @FXML
     void showSpecAttrAction(ActionEvent event) {
         if (specAttrWindowController == null) {
-            specAttrWindowController = SpecAttrWindowController.create();
+            if (popOverMode) {
+                specAttrWindowController = SpecAttrWindowController.createPane();
+            } else {
+                specAttrWindowController = SpecAttrWindowController.create();
+            }
         }
         if (specAttrWindowController != null) {
             specAttrWindowController.setChart(getActiveChart());
-            specAttrWindowController.getStage().show();
+            if (popOverMode) {
+                showAttributesPopOver(event);
+            } else {
+                specAttrWindowController.getStage().show();
+                stage.setResizable(true);
+            }
         } else {
             System.out.println("Coudn't make controller");
         }
-        stage.setResizable(true);
+    }
+
+    void showAttributesPopOver(ActionEvent event) {
+        Pane pane = specAttrWindowController.getPane();
+        if (attributesPopOver == null) {
+            attributesPopOver = new PopOver(pane);
+        }
+        specAttrWindowController.setPopOver(attributesPopOver);
+        attributesPopOver.setDetachable(true);
+        attributesPopOver.setTitle("Spectrum Attributes");
+        attributesPopOver.setHeaderAlwaysVisible(true);
+        attributesPopOver.setArrowLocation(PopOver.ArrowLocation.TOP_CENTER);
+        attributesPopOver.detachedProperty().addListener(e -> popOverDetached());
+        specAttrWindowController.hideToolBar();
+        Object obj = event.getSource();
+        if (obj instanceof Node) {
+            attributesPopOver.show((Node) event.getSource());
+        } else {
+            attributesPopOver.show(getActiveChart());
+
+        }
+    }
+
+    private void popOverDetached() {
+        if (attributesPopOver.isDetached()) {
+            specAttrWindowController.showToolBar();
+        } else {
+            specAttrWindowController.hideToolBar();
+        }
     }
 
     @FXML
@@ -1267,6 +1362,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         ButtonBase bButton;
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN, "Open", iconSize, fontSize, ContentDisplay.TOP);
         bButton.setOnAction(e -> openAction(e));
+        // buttons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", iconSize, fontSize, ContentDisplay.TOP);
+        bButton.setOnAction(e -> showDatasetsAction(e));
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.WRENCH, "Attributes", iconSize, fontSize, ContentDisplay.TOP);
         bButton.setOnAction(e -> showSpecAttrAction(e));

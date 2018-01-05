@@ -185,7 +185,7 @@ public class MainApp extends Application implements DatasetListener {
         // File Menu (items TBD)
         Menu fileMenu = new Menu("File");
         MenuItem openMenuItem = new MenuItem("Open and Draw...");
-        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openAction(e));
+        openMenuItem.setOnAction(e -> FXMLController.getActiveController().showDatasetsAction(e));
         MenuItem addMenuItem = new MenuItem("Open...");
         addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
         MenuItem newMenuItem = new MenuItem("New Window...");

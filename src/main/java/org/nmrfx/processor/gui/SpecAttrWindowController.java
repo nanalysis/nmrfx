@@ -87,6 +87,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.ListSelectionView;
+import org.controlsfx.control.PopOver;
 import org.controlsfx.control.SegmentedButton;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
@@ -102,6 +103,8 @@ public class SpecAttrWindowController implements Initializable {
     static final DecimalFormat formatter = new DecimalFormat();
 
     private Stage stage;
+    private Pane pane;
+    private PopOver popOver;
     @FXML
     private BorderPane attrBorderPane;
     @FXML
@@ -191,12 +194,58 @@ public class SpecAttrWindowController implements Initializable {
         datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
             updateChartDatasets();
         };
+        addViewRefreshButton(datasetView);
+        addViewRefreshButton(peakView);
+
         datasetView.getTargetItems().addListener(datasetTargetListener);
         peakView.getTargetItems().addListener(peakTargetListener);
     }
 
+    public boolean isShowing() {
+        boolean showing = false;
+        if (stage != null) {
+            showing = stage.isShowing();
+        } else if (popOver != null) {
+            showing = popOver.isShowing() || popOver.isDetached();
+        }
+        return showing;
+    }
+
     public Stage getStage() {
         return stage;
+    }
+
+    public Pane getPane() {
+        return pane;
+    }
+
+    public PopOver getPopOver() {
+        return popOver;
+    }
+
+    public void setPopOver(PopOver popOver) {
+        this.popOver = popOver;
+    }
+
+    public void hideToolBar() {
+        Button bButton = new Button("Refresh");
+        bButton.setOnAction(e -> refreshAction());
+        attrBorderPane.setTop(bButton);
+        attrBorderPane.setPrefHeight(250);
+    }
+
+    public void showToolBar() {
+        attrBorderPane.setTop(toolBar);
+        attrBorderPane.setPrefHeight(300);
+    }
+
+    private void addViewRefreshButton(ListSelectionView listView) {
+        Button bButton = new Button("Refresh");
+        bButton.setOnAction(e -> refreshAction());
+        HBox hBox = new HBox();
+        hBox.getChildren().add(bButton);
+        hBox.getChildren().add(new Label("Available"));
+        listView.setSourceHeader(hBox);
     }
 
     private void dimMenuAction(ActionEvent event, int iAxis) {
@@ -311,6 +360,22 @@ public class SpecAttrWindowController implements Initializable {
 
     }
 
+    public static SpecAttrWindowController createPane() {
+        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/SpecAttrScene.fxml"));
+        SpecAttrWindowController controller = null;
+        try {
+            Pane pane = (Pane) loader.load();
+            controller = loader.<SpecAttrWindowController>getController();
+            controller.pane = pane;
+        } catch (IOException ioE) {
+            ioE.printStackTrace();
+            System.out.println(ioE.getMessage());
+        }
+
+        return controller;
+
+    }
+
     public boolean isSceneMode() {
         RadioButton gButton = (RadioButton) groupButton.getToggleGroup().getSelectedToggle();
         boolean sceneMode = false;
@@ -405,20 +470,18 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     public void setChart(PolyChart chart) {
-        if (this.chart != chart) {
-            this.chart = chart;
-            // disDimCombo.valueProperty().addListener(e -> setDisDim());
-            updateDatasetTableView();
-            updatePeakListTableView();
-            clearDimActions();
-            bindToChart(chart);
-            setLimits();
-            updateDatasetView();
-            updatePeakView();
-            updateDims();
-            setupDimActions();
-            datasetTableView.getSelectionModel().clearSelection();
-        }
+        this.chart = chart;
+        // disDimCombo.valueProperty().addListener(e -> setDisDim());
+        updateDatasetTableView();
+        updatePeakListTableView();
+        clearDimActions();
+        bindToChart(chart);
+        setLimits();
+        updateDatasetView();
+        updatePeakView();
+        updateDims();
+        setupDimActions();
+        datasetTableView.getSelectionModel().clearSelection();
     }
 
     void initToolBar() {

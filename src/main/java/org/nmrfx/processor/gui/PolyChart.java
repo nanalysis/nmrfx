@@ -825,11 +825,14 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             success = true;
             // Only get the first file from the list
             final List<File> files = db.getFiles();
+            controller.setActiveChart(this);
             Platform.runLater(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         boolean isDataset = NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null;
+                        PolyChart dropChart = (PolyChart) e.getGestureTarget();
+                        controller.setActiveChart(dropChart);
                         if (isDataset) {
                             boolean appendFile = true;
 
@@ -847,6 +850,27 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                     }
                 }
             });
+        } else if (db.hasString()) {
+            String contentString = db.getString();
+            String[] items = contentString.split("\n");
+            if (items.length > 0) {
+                Dataset dataset = Dataset.getDataset(items[0]);
+                if (dataset != null) {
+                    success = true;
+                    Platform.runLater(() -> {
+                        PolyChart dropChart = (PolyChart) e.getGestureTarget();
+                        controller.setActiveChart(dropChart);
+                        for (String item : items) {
+                            Dataset dataset1 = Dataset.getDataset(item);
+                            if (dataset1 != null) {
+                                controller.addDataset(dataset1, true, false);
+                            }
+                        }
+                    });
+                }
+            }
+        } else {
+            System.out.println("no files");
         }
         e.setDropCompleted(success);
         e.consume();
@@ -869,6 +893,17 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                     isAccepted = false;
                 }
                 if (isAccepted) {
+                    this.setStyle("-fx-border-color: green;"
+                            + "-fx-border-width: 1;");
+                    e.acceptTransferModes(TransferMode.COPY);
+                }
+            }
+        } else if (db.hasString()) {
+            String contentString = db.getString();
+            String[] items = contentString.split("\n");
+            if (items.length > 0) {
+                Dataset dataset = Dataset.getDataset(items[0]);
+                if (dataset != null) {
                     this.setStyle("-fx-border-color: green;"
                             + "-fx-border-width: 1;");
                     e.acceptTransferModes(TransferMode.COPY);
