@@ -210,6 +210,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     double mouseY = 0;
     double mousePressX = 0;
     double mousePressY = 0;
+    boolean dragMode = false;
+    boolean selectMode = false;
     Optional<Boolean> widthMode = Optional.empty();
     public static double overlapScale = 1.0;
 
@@ -672,15 +674,20 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                         double y = mouseEvent.getY();
                         int dragTol = 4;
                         if ((Math.abs(x - dragStart[0]) > dragTol) || (Math.abs(y - dragStart[1]) > dragTol)) {
-                            if (!widthMode.isPresent()) {
-                                boolean metaDown = mouseEvent.isAltDown();
-                                widthMode = Optional.of(metaDown);
+                            if (dragMode) {
+                                dragBox(x, y);
+                            } else {
+                                if (!widthMode.isPresent()) {
+                                    boolean metaDown = mouseEvent.isAltDown();
+                                    widthMode = Optional.of(metaDown);
+                                }
+                                dragPeak(x, y, widthMode.get());
                             }
-                            dragPeak(x, y, widthMode.get());
                         }
                     }
                 }
             }
+
         });
         mouseNode.setOnMouseMoved(new EventHandler() {
             @Override
@@ -695,6 +702,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             @Override
             public void handle(Event event) {
                 mouseDown = true;
+                dragMode = false;
+                selectMode = false;
                 mouseNode.requestFocus();
                 MouseEvent mouseEvent = (MouseEvent) event;
                 mousePressX = mouseEvent.getX();
@@ -702,15 +711,23 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 if (getCursor().toString().equals("CROSSHAIR")) {
                     handleCrossHair(mouseEvent, true);
                 } else {
-                    if (mouseEvent.isPrimaryButtonDown()) {
+                    if (mouseEvent.isPrimaryButtonDown() && !mouseEvent.isControlDown()) {
                         double x = mouseEvent.getX();
                         double y = mouseEvent.getY();
                         dragStart[0] = x;
                         dragStart[1] = y;
                         widthMode = Optional.empty();
-                        selectPeaks(x, y, mouseEvent.isShiftDown());
+                        if (mouseEvent.isShiftDown()) {
+                            dragMode = true;
+                            selectMode = true;
+                        } else if (mouseEvent.isAltDown()) {
+                            dragMode = true;
+                        } else {
+                            selectPeaks(x, y, mouseEvent.isShiftDown());
+                        }
                     }
                 }
+
             }
         });
         mouseNode.setOnMouseReleased(new EventHandler() {
@@ -718,18 +735,22 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             public void handle(Event event) {
                 mouseDown = false;
                 MouseEvent mouseEvent = (MouseEvent) event;
-                if (getCursor().toString().equals("CROSSHAIR")) {
-                    handleCrossHair(mouseEvent, false);
-                } else {
-                    if (mouseEvent.isPrimaryButtonDown()) {
+                if (!mouseEvent.isControlDown()) {
+                    if (getCursor().toString().equals("CROSSHAIR")) {
+                        handleCrossHair(mouseEvent, false);
+                    } else {
                         double x = mouseEvent.getX();
                         double y = mouseEvent.getY();
-                        dragStart[0] = x;
-                        dragStart[1] = y;
-                        if (widthMode.isPresent()) {
-                            dragPeak(x, y, widthMode.get());
+                        if (dragMode) {
+                            finishBox(x, y);
+                        } else {
+                            dragStart[0] = x;
+                            dragStart[1] = y;
+                            if (widthMode.isPresent()) {
+                                dragPeak(x, y, widthMode.get());
+                            }
+                            widthMode = Optional.empty();
                         }
-                        widthMode = Optional.empty();
                     }
                 }
             }
@@ -944,6 +965,84 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             hasMiddleMouseButton = true;
             moveCrosshair(1, HORIZONTAL, mEvent.getY());
             moveCrosshair(1, VERTICAL, mEvent.getX());
+        }
+    }
+
+    protected void dragBox(double x, double y) {
+        GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
+        double width = annoCanvas.getWidth();
+        double height = annoCanvas.getHeight();
+
+        annoGC.clearRect(0, 0, width, height);
+        double x1, y1, x2, y2, w, h;
+        if (x > dragStart[0]) {
+            x1 = dragStart[0];
+            w = x - x1;
+        } else {
+            x1 = x;
+            w = dragStart[0] - x;
+        }
+        if (y > dragStart[1]) {
+            y1 = dragStart[1];
+            h = y - y1;
+        } else {
+            y1 = y;
+            h = dragStart[1] - y;
+        }
+        Color color = new Color(1.0, 1.0, 0.0, 0.3);
+        annoGC.setFill(color);
+        annoGC.fillRect(x1, y1, w, h);
+    }
+
+    private void swapDouble(double[] values) {
+        if (values[0] > values[1]) {
+            double hold = values[0];
+            values[0] = values[1];
+            values[1] = hold;
+        }
+    }
+
+    protected void finishBox(double x, double y) {
+        GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
+        double width = annoCanvas.getWidth();
+        double height = annoCanvas.getHeight();
+        annoGC.clearRect(0, 0, width, height);
+        ValueAxis xAxis = (ValueAxis) getXAxis();
+        double[][] limits;
+        if (is1D()) {
+            limits = new double[1][2];
+        } else {
+            limits = new double[2][2];
+        }
+        limits[0][0] = xAxis.getValueForDisplay(dragStart[0]).doubleValue();
+        limits[0][1] = xAxis.getValueForDisplay(x).doubleValue();
+        swapDouble(limits[0]);
+        if (!is1D()) {
+            ValueAxis yAxis = (ValueAxis) getYAxis();
+            limits[1][0] = yAxis.getValueForDisplay(y).doubleValue();
+            limits[1][1] = yAxis.getValueForDisplay(dragStart[1]).doubleValue();
+            swapDouble(limits[1]);
+        }
+
+        if (!selectMode) {
+            System.out.println("exp");
+            setAxis(0, limits[0][0], limits[0][1]);
+            if (!is1D()) {
+                setAxis(1, limits[1][0], limits[1][1]);
+            }
+        } else {
+            System.out.println("peaks");
+            drawPeakLists(false);
+            List<Peak> selPeaks = new ArrayList<>();
+            for (PeakListAttributes peakAttr : peakListAttributesList) {
+                List<Peak> peaks = peakAttr.selectPeaksInRegion(limits);
+                drawSelectedPeaks(peakAttr);
+                selPeaks.addAll(peaks);
+            }
+            if (controller == FXMLController.activeController) {
+                controller.selPeaks.set(selPeaks);
+            }
+
         }
     }
 

@@ -306,6 +306,27 @@ public class PeakListAttributes implements PeakListener {
         }
     }
 
+    public List<Peak> selectPeaksInRegion(double[][] crossLimits) {
+        if ((peakList != null) && (peakList.peaks() != null)) {
+            double[][] limits = getRegionLimits(dataAttr);
+            limits[0][0] = crossLimits[0][0];
+            limits[0][1] = crossLimits[0][1];
+            if (limits.length > 1) {
+                limits[1][0] = crossLimits[1][0];
+                limits[1][1] = crossLimits[1][1];
+            }
+            int[] peakDim = getPeakDim();
+            List<Peak> peaks = peakList.peaks()
+                    .stream()
+                    .parallel()
+                    .filter(peak -> peak.inRegion(limits, null, peakDim))
+                    .collect(Collectors.toList());
+            selectedPeaks.addAll(peaks);
+            return (peaks);
+        }
+        return new ArrayList<Peak>();
+    }
+
     public void findMultipletsInRegion() {
         double[][] limits = getRegionLimits(dataAttr);
         int[] peakDim = getPeakDim();
@@ -340,20 +361,27 @@ public class PeakListAttributes implements PeakListener {
             int[] peakDim = getPeakDim();
             xAxis = (NMRAxis) chart.getXAxis();
             yAxis = (NMRAxis) chart.getYAxis();
-            if (!append) {
-                selectedPeaks.clear();
-            }
             if (peakList.nDim > 1) {
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
                 if (hit.isPresent()) {
+                    if (!selectedPeaks.contains(hit.get()) && !append) {
+                        selectedPeaks.clear();
+                    }
                     selectedPeaks.add(hit.get());
+                } else {
+                    selectedPeaks.clear();
                 }
             } else {
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
                         .filter((peak) -> pick1DPeak(peak, pickX, pickY)).findFirst();
                 if (hit.isPresent()) {
+                    if (!selectedPeaks.contains(hit.get()) && !append) {
+                        selectedPeaks.clear();
+                    }
                     selectedPeaks.add(hit.get());
+                } else {
+                    selectedPeaks.clear();
                 }
             }
 
