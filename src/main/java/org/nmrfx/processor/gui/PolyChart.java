@@ -51,6 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.DoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -186,7 +187,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
         if (true) {
             drawPeakLists(false);
-            List<Peak> peaks = activeAttr.getSelectedPeaks();
+            Set<Peak> peaks = activeAttr.getSelectedPeaks();
             if (!peaks.isEmpty()) {
                 drawSelectedPeaks(activeAttr);
             }
@@ -666,12 +667,12 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             @Override
             public void handle(Event event) {
                 MouseEvent mouseEvent = (MouseEvent) event;
+                double x = mouseEvent.getX();
+                double y = mouseEvent.getY();
                 if (getCursor().toString().equals("CROSSHAIR")) {
                     handleCrossHair(mouseEvent, false);
                 } else {
                     if (mouseEvent.isPrimaryButtonDown()) {
-                        double x = mouseEvent.getX();
-                        double y = mouseEvent.getY();
                         int dragTol = 4;
                         if ((Math.abs(x - dragStart[0]) > dragTol) || (Math.abs(y - dragStart[1]) > dragTol)) {
                             if (dragMode) {
@@ -683,6 +684,14 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                                 }
                                 dragPeak(x, y, widthMode.get());
                             }
+                        }
+                    } else if (mouseEvent.isMiddleButtonDown()) {
+                        double dx = x - dragStart[0];
+                        double dy = y - dragStart[1];
+                        if ((Math.abs(dx) >= 1.0) || (Math.abs(dy) >= 1.0)) {
+                            dragStart[0] = x;
+                            dragStart[1] = y;
+                            scroll(dx, dy);
                         }
                     }
                 }
@@ -708,12 +717,12 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 MouseEvent mouseEvent = (MouseEvent) event;
                 mousePressX = mouseEvent.getX();
                 mousePressY = mouseEvent.getY();
+                double x = mouseEvent.getX();
+                double y = mouseEvent.getY();
                 if (getCursor().toString().equals("CROSSHAIR")) {
                     handleCrossHair(mouseEvent, true);
                 } else {
                     if (mouseEvent.isPrimaryButtonDown() && !mouseEvent.isControlDown()) {
-                        double x = mouseEvent.getX();
-                        double y = mouseEvent.getY();
                         dragStart[0] = x;
                         dragStart[1] = y;
                         widthMode = Optional.empty();
@@ -725,7 +734,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                         } else {
                             selectPeaks(x, y, mouseEvent.isShiftDown());
                         }
+                    } else if (mouseEvent.isMiddleButtonDown()) {
+                        dragStart[0] = x;
+                        dragStart[1] = y;
                     }
+
                 }
 
             }
@@ -2286,7 +2299,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     void deleteSelectedPeaks() {
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             for (Peak peak : peaks) {
                 peak.setStatus(-1);
             }
@@ -2297,7 +2310,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     public List<Peak> getSelectedPeaks() {
         List<Peak> selectedPeaks = new ArrayList<>();
         peakListAttributesList.stream().forEach(peakListAttr -> {
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             selectedPeaks.addAll(peaks);
         });
         return selectedPeaks;
@@ -2307,7 +2320,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         boolean draggedAny = false;
         double[] dragPos = {x, y};
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             for (Peak peak : peaks) {
                 draggedAny = true;
                 if (widthMode) {
@@ -2321,7 +2334,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         dragStart[1] = dragPos[1];
         drawPeakLists(false);
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             if (!peaks.isEmpty()) {
                 drawSelectedPeaks(peakListAttr);
             }
@@ -2330,7 +2343,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     void fitPeaks() {
         peakListAttributesList.forEach((peakListAttr) -> {
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             if (!peaks.isEmpty()) {
                 Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
                 if (dataset != null) {
@@ -2375,7 +2388,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     void tweakPeaks() {
         peakListAttributesList.forEach((peakListAttr) -> {
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             if (!peaks.isEmpty()) {
                 Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
                 if (dataset != null) {
@@ -2476,7 +2489,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
                 if (peakListAttr.getDrawPeaks()) {
                     peakListAttr.selectPeak(drawPeaks, pickX, pickY, append);
-                    List<Peak> peaks = peakListAttr.getSelectedPeaks();
+                    Set<Peak> peaks = peakListAttr.getSelectedPeaks();
                     if (!peaks.isEmpty()) {
                         selPeaks.addAll(peaks);
                     }
@@ -2582,7 +2595,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     void drawSelectedPeaks(PeakListAttributes peakListAttr) {
         if (peakListAttr.getDrawPeaks()) {
             GraphicsContext gC = peakCanvas.getGraphicsContext2D();
-            List<Peak> peaks = peakListAttr.getSelectedPeaks();
+            Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             int[] dim = peakListAttr.getPeakDim();
             double[] offsets = new double[dim.length];
             peaks.stream().forEach((peak) -> {

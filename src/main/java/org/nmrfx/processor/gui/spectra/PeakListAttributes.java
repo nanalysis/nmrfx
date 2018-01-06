@@ -27,9 +27,11 @@ import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.PeakDisTypes;
 import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.PeakLabelTypes.Number;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -57,7 +59,7 @@ public class PeakListAttributes implements PeakListener {
     final PolyChart chart;
     Optional<List<Peak>> peaksInRegion = Optional.empty();
     Optional<List<Multiplet>> multipletsInRegion = Optional.empty();
-    List<Peak> selectedPeaks = new ArrayList<>();
+    Set<Peak> selectedPeaks = new HashSet<>();
     NMRAxis xAxis = null;
     NMRAxis yAxis = null;
 
@@ -268,7 +270,7 @@ public class PeakListAttributes implements PeakListener {
         selectedPeaks.clear();
     }
 
-    public List<Peak> getSelectedPeaks() {
+    public Set<Peak> getSelectedPeaks() {
         return selectedPeaks;
     }
 
