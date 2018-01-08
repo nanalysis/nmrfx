@@ -90,8 +90,8 @@ public class PeakWriter {
         "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
 
     public void writePeaksXPK2(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
-        chan.write("peaklist\tdataset\tndim\n");
-        chan.write(peakList.getName() + "\t" + peakList.getDatasetName() + "\t" + peakList.nDim + "\n");
+        chan.write("peaklist\tdataset\tndim\tcondition\n");
+        chan.write(peakList.getName() + "\t" + peakList.getDatasetName() + "\t" + peakList.nDim + "\t" + peakList.getSampleConditionLabel() + "\n");
         for (int j = 0; j < XPKDIMSTRINGS.length; j++) {
             if (j > 0) {
                 chan.write("\t");
