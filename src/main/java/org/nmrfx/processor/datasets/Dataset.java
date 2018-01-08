@@ -405,6 +405,11 @@ public class Dataset extends DoubleVector {
         }
     }
 
+    @Override
+    public String toString() {
+        return fileName;
+    }
+
     /**
      * Create a new dataset file in NMRView format.
      *
