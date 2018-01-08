@@ -114,6 +114,9 @@ public class PeakReader {
                         if (map.get("dataset") != null) {
                             peakList.setDatasetName(data[map.get("dataset")]);
                         }
+                        if (map.get("condition") != null) {
+                            peakList.setSampleConditionLabel(data[map.get("condition")]);
+                        }
                     }
                 } else {
                     if (!gotHeader) {
