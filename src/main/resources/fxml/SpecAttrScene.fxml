@@ -20,10 +20,6 @@
 
 
 <BorderPane fx:id="attrBorderPane" prefHeight="300.0" prefWidth="450.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.SpecAttrWindowController">
-    <stylesheets>
-        <URL value="@/styles/SpecAttr.css" />
-    </stylesheets>
-
     <top>
         <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
             <items>

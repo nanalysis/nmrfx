@@ -372,7 +372,9 @@ public class PeakListAttributes implements PeakListener {
                     }
                     selectedPeaks.add(hit.get());
                 } else {
-                    selectedPeaks.clear();
+                    if (!append) {
+                        selectedPeaks.clear();
+                    }
                 }
             } else {
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
@@ -383,7 +385,9 @@ public class PeakListAttributes implements PeakListener {
                     }
                     selectedPeaks.add(hit.get());
                 } else {
-                    selectedPeaks.clear();
+                    if (!append) {
+                        selectedPeaks.clear();
+                    }
                 }
             }
 

@@ -670,7 +670,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 MouseEvent mouseEvent = (MouseEvent) event;
                 double x = mouseEvent.getX();
                 double y = mouseEvent.getY();
-                if (mouseEvent.isMetaDown() || getCursor().toString().equals("CROSSHAIR")) {
+                    if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() &&getCursor().toString().equals("CROSSHAIR"))) {
                     handleCrossHair(mouseEvent, false);
                 } else {
                     if (mouseEvent.isPrimaryButtonDown()) {
@@ -720,7 +720,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 mousePressY = mouseEvent.getY();
                 double x = mouseEvent.getX();
                 double y = mouseEvent.getY();
-                if (mouseEvent.isMetaDown() || getCursor().toString().equals("CROSSHAIR")) {
+                    if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() &&getCursor().toString().equals("CROSSHAIR"))) {
                     if (!getCursor().toString().equals("CROSSHAIR")) {
                         setCrossHairState(true);
                     }
@@ -733,10 +733,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                         if (mouseEvent.isShiftDown()) {
                             dragMode = true;
                             selectMode = true;
+                            selectPeaks(x, y, true);
                         } else if (mouseEvent.isAltDown()) {
                             dragMode = true;
                         } else {
-                            selectPeaks(x, y, mouseEvent.isShiftDown());
+                            selectPeaks(x, y, false);
                         }
                     } else if (mouseEvent.isMiddleButtonDown()) {
                         dragStart[0] = x;
@@ -753,7 +754,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 mouseDown = false;
                 MouseEvent mouseEvent = (MouseEvent) event;
                 if (!mouseEvent.isControlDown()) {
-                    if (mouseEvent.isMetaDown() || getCursor().toString().equals("CROSSHAIR")) {
+                    if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() &&getCursor().toString().equals("CROSSHAIR"))) {
                         handleCrossHair(mouseEvent, false);
                         if (!getCursor().toString().equals("CROSSHAIR")) {
                             setCrossHairState(false);

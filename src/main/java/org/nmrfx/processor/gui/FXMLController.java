@@ -104,6 +104,7 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.utilities.DictionarySort;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 
@@ -177,6 +178,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     PeakNavigator peakNavigator;
     PeakSlider peakSlider;
+    ListView datasetListView = new ListView();
 
     SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
 
@@ -260,49 +262,58 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     @FXML
     void showDatasetsAction(ActionEvent event) {
-        ListView listView = new ListView();
-        Dataset.datasets().stream().forEach(d -> {
-            listView.getItems().add(d.getName());
-        });
-        listView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
-            @Override
-            public ListCell<String> call(ListView<String> p) {
-                ListCell<String> olc = new ListCell<String>() {
-                    @Override
-                    public void updateItem(String s, boolean empty) {
-                        super.updateItem(s, empty);
-                        setText(s);
-                    }
-                };
-                olc.setOnDragDetected(new EventHandler<MouseEvent>() {
-                    @Override
-                    public void handle(MouseEvent event) {
-                        Dragboard db = olc.startDragAndDrop(TransferMode.COPY);
+        if (Dataset.datasets().isEmpty()) {
+            Label label = new Label("No open datasets\nUse File Menu Open item\nto open datasets");
+            label.setStyle("-fx-font-size:12pt;-fx-text-alignment: center; -fx-padding:10px;");
+            popOver.setContentNode(label);
+        } else {
+            datasetListView.setStyle("-fx-font-size:12pt;");
 
-                        /* Put a string on a dragboard */
-                        ClipboardContent content = new ClipboardContent();
-                        List<String> items = olc.getListView().getSelectionModel().getSelectedItems();
-                        StringBuilder sBuilder = new StringBuilder();
-                        for (String item : items) {
-                            sBuilder.append(item);
-                            sBuilder.append("\n");
+            DictionarySort<Dataset> sorter = new DictionarySort<>();
+            datasetListView.getItems().clear();
+            Dataset.datasets().stream().sorted(sorter).forEach((Dataset d) -> {
+                datasetListView.getItems().add(d.getName());
+            });
+            datasetListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
+                @Override
+                public ListCell<String> call(ListView<String> p) {
+                    ListCell<String> olc = new ListCell<String>() {
+                        @Override
+                        public void updateItem(String s, boolean empty) {
+                            super.updateItem(s, empty);
+                            setText(s);
                         }
-                        content.putString(sBuilder.toString().trim());
-                        db.setContent(content);
+                    };
+                    olc.setOnDragDetected(new EventHandler<MouseEvent>() {
+                        @Override
+                        public void handle(MouseEvent event) {
+                            Dragboard db = olc.startDragAndDrop(TransferMode.COPY);
 
-                        event.consume();
-                    }
-                });
-                return olc;
-            }
+                            /* Put a string on a dragboard */
+                            ClipboardContent content = new ClipboardContent();
+                            List<String> items = olc.getListView().getSelectionModel().getSelectedItems();
+                            StringBuilder sBuilder = new StringBuilder();
+                            for (String item : items) {
+                                sBuilder.append(item);
+                                sBuilder.append("\n");
+                            }
+                            content.putString(sBuilder.toString().trim());
+                            db.setContent(content);
 
-        });
-        listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+                            event.consume();
+                        }
+                    });
+                    return olc;
+                }
+
+            });
+            datasetListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+            popOver.setContentNode(datasetListView);
+        }
 
         popOver.setDetachable(true);
         popOver.setTitle("Datasets");
         popOver.setHeaderAlwaysVisible(true);
-        popOver.setContentNode(listView);
         popOver.setArrowLocation(PopOver.ArrowLocation.TOP_CENTER);
         popOver.show((Node) event.getSource());
     }
