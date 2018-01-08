@@ -101,10 +101,10 @@ public class PeakReader {
                 }
                 if (peakList == null) {
                     if (line.contains("ndim")) {
-                        String[] header = line.split("\t");
+                        String[] header = line.split("\t", -1);
                         Map<String, Integer> map = headerMap(header);
                         String lineData = fileReader.readLine();
-                        String[] data = lineData.split("\t");
+                        String[] data = lineData.split("\t", -1);
                         int nDim = Integer.valueOf(data[map.get("ndim")]);
                         String listName = fileTail;
                         if (map.get("peaklist") != null) {
@@ -120,11 +120,11 @@ public class PeakReader {
                     }
                 } else {
                     if (!gotHeader) {
-                        String[] header = line.split("\t");
+                        String[] header = line.split("\t", -1);
                         Map<String, Integer> map = headerMap(header);
                         for (int i = 0; i < peakList.nDim; i++) {
                             String lineData = fileReader.readLine();
-                            String[] data = lineData.split("\t");
+                            String[] data = lineData.split("\t", -1);
                             SpectralDim sDim = peakList.getSpectralDim(i);
                             for (String field : header) {
                                 String value = data[map.get(field)];
@@ -176,12 +176,12 @@ public class PeakReader {
                         gotHeader = true;
                     } else {
                         if (dataHeader == null) {
-                            dataHeader = line.split("\t");
+                            dataHeader = line.split("\t", -1);
                         } else {
                             if (dataMap == null) {
                                 dataMap = headerMap(dataHeader);
                             }
-                            String[] data = line.split("\t");
+                            String[] data = line.split("\t", -1);
                             Peak peak = peakList.getNewPeak();
                             for (String field : dataHeader) {
                                 int dotIndex = field.indexOf('.');
@@ -295,7 +295,7 @@ public class PeakReader {
                 if (sline.charAt(0) == '#') {
                     continue;
                 }
-                String[] data = line.split("\t");
+                String[] data = line.split("\t", -1);
                 if (!gotHeader) {
                     gotHeader = true;
                     int i = 0;
