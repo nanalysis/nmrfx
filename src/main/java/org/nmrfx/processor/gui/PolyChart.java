@@ -522,6 +522,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             }
         });
         mouseNode.setOnKeyReleased((KeyEvent keyEvent) -> {
+            KeyCode code = keyEvent.getCode();
         });
         mouseNode.setOnKeyTyped((KeyEvent keyEvent) -> {
             Pattern pattern = Pattern.compile("jz([0-9]+)");
@@ -669,7 +670,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 MouseEvent mouseEvent = (MouseEvent) event;
                 double x = mouseEvent.getX();
                 double y = mouseEvent.getY();
-                if (getCursor().toString().equals("CROSSHAIR")) {
+                if (mouseEvent.isMetaDown() || getCursor().toString().equals("CROSSHAIR")) {
                     handleCrossHair(mouseEvent, false);
                 } else {
                     if (mouseEvent.isPrimaryButtonDown()) {
@@ -719,7 +720,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 mousePressY = mouseEvent.getY();
                 double x = mouseEvent.getX();
                 double y = mouseEvent.getY();
-                if (getCursor().toString().equals("CROSSHAIR")) {
+                if (mouseEvent.isMetaDown() || getCursor().toString().equals("CROSSHAIR")) {
+                    if (!getCursor().toString().equals("CROSSHAIR")) {
+                        setCrossHairState(true);
+                    }
                     handleCrossHair(mouseEvent, true);
                 } else {
                     if (mouseEvent.isPrimaryButtonDown() && !mouseEvent.isControlDown()) {
@@ -749,8 +753,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 mouseDown = false;
                 MouseEvent mouseEvent = (MouseEvent) event;
                 if (!mouseEvent.isControlDown()) {
-                    if (getCursor().toString().equals("CROSSHAIR")) {
+                    if (mouseEvent.isMetaDown() || getCursor().toString().equals("CROSSHAIR")) {
                         handleCrossHair(mouseEvent, false);
+                        if (!getCursor().toString().equals("CROSSHAIR")) {
+                            setCrossHairState(false);
+                        }
                     } else {
                         double x = mouseEvent.getX();
                         double y = mouseEvent.getY();
@@ -871,12 +878,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                             boolean appendFile = true;
 
                             for (File file : files) {
-                                System.out.println(file.getAbsolutePath());
                                 controller.openFile(file.getAbsolutePath(), false, appendFile);
                                 appendFile = true;
                             }
                         } else {
-                            System.out.println(files.get(0).getAbsolutePath());
                             controller.openFile(files.get(0).getAbsolutePath(), true, false);
                         }
                     } catch (Exception e) {
@@ -1038,13 +1043,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
 
         if (!selectMode) {
-            System.out.println("exp");
             setAxis(0, limits[0][0], limits[0][1]);
             if (!is1D()) {
                 setAxis(1, limits[1][0], limits[1][1]);
             }
         } else {
-            System.out.println("peaks");
             drawPeakLists(false);
             List<Peak> selPeaks = new ArrayList<>();
             for (PeakListAttributes peakAttr : peakListAttributesList) {
@@ -3041,9 +3044,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         double height = yAxis.getHeight();
         GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
         annoGC.clearRect(0, 0, width, height);
-        drawSlice(0, VERTICAL);
-        drawSlice(0, HORIZONTAL);
-        if (sliceAttributes.show2ndSliceProperty().get()) {
+        if (sliceAttributes.slice1StateProperty().get()) {
+            drawSlice(0, VERTICAL);
+            drawSlice(0, HORIZONTAL);
+        }
+        if (sliceAttributes.slice2StateProperty().get()) {
             drawSlice(1, VERTICAL);
             drawSlice(1, HORIZONTAL);
         }

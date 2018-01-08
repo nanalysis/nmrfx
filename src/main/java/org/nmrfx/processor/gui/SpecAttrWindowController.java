@@ -134,7 +134,9 @@ public class SpecAttrWindowController implements Initializable {
     @FXML
     private CheckBox useDatasetColorCheckBox;
     @FXML
-    private CheckBox show2ndSliceCheckBox;
+    private CheckBox slice1StateCheckBox;
+    @FXML
+    private CheckBox slice2StateCheckBox;
     @FXML
     private ColorPicker slice1ColorPicker;
     @FXML
@@ -985,7 +987,8 @@ public class SpecAttrWindowController implements Initializable {
         }
         polyChart.sliceAttributes.offsetTrackingProperty().bindBidirectional(offsetTrackingCheckBox.selectedProperty());
         polyChart.sliceAttributes.useDatasetColorProperty().bindBidirectional(useDatasetColorCheckBox.selectedProperty());
-        polyChart.sliceAttributes.show2ndSliceProperty().bindBidirectional(show2ndSliceCheckBox.selectedProperty());
+        polyChart.sliceAttributes.slice1StateProperty().bindBidirectional(slice1StateCheckBox.selectedProperty());
+        polyChart.sliceAttributes.slice2StateProperty().bindBidirectional(slice2StateCheckBox.selectedProperty());
         polyChart.sliceAttributes.offsetXValueProperty().bindBidirectional(xOffsetSlider.valueProperty());
         polyChart.sliceAttributes.offsetYValueProperty().bindBidirectional(yOffsetSlider.valueProperty());
         polyChart.sliceAttributes.scaleValueProperty().bindBidirectional(scaleSlider.valueProperty());

@@ -36,7 +36,8 @@ public class SliceAttributes {
     private ColorProperty slice1Color;
     private ColorProperty slice2Color;
     private BooleanProperty useDatasetColor;
-    private BooleanProperty show2ndSlice;
+    private BooleanProperty slice1State;
+    private BooleanProperty slice2State;
 
     public BooleanProperty offsetTrackingProperty() {
         if (offsetTracking == null) {
@@ -143,19 +144,34 @@ public class SliceAttributes {
         return useDatasetColorProperty().get();
     }
 
-    public BooleanProperty show2ndSliceProperty() {
-        if (show2ndSlice == null) {
-            show2ndSlice = new SimpleBooleanProperty(this, "show2ndslice", false);
+    public BooleanProperty slice1StateProperty() {
+        if (slice1State == null) {
+            slice1State = new SimpleBooleanProperty(this, "slice1State", true);
         }
-        return show2ndSlice;
+        return slice1State;
     }
 
-    public void setShow2ndSlice(boolean value) {
-        show2ndSliceProperty().set(value);
+    public void setSlice1State(boolean value) {
+        slice1StateProperty().set(value);
     }
 
-    public boolean getShow2ndSlice() {
-        return show2ndSliceProperty().get();
+    public boolean getSlice1State() {
+        return slice1StateProperty().get();
+    }
+
+    public BooleanProperty slice2StateProperty() {
+        if (slice2State == null) {
+            slice2State = new SimpleBooleanProperty(this, "slice2State", false);
+        }
+        return slice2State;
+    }
+
+    public void setSlice2State(boolean value) {
+        slice2StateProperty().set(value);
+    }
+
+    public boolean getSlice2State() {
+        return slice2StateProperty().get();
     }
 
 }

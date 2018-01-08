@@ -16,8 +16,14 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import java.net.URL?>
+
 
 <BorderPane fx:id="attrBorderPane" prefHeight="300.0" prefWidth="450.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.SpecAttrWindowController">
+    <stylesheets>
+        <URL value="@/styles/SpecAttr.css" />
+    </stylesheets>
+
     <top>
         <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
             <items>
@@ -80,6 +86,7 @@
                                 <GridPane BorderPane.alignment="CENTER">
                                     <columnConstraints>
                                         <ColumnConstraints minWidth="10.0" prefWidth="100.0" />
+                                        <ColumnConstraints minWidth="10.0" prefWidth="20.0" />
                                         <ColumnConstraints fillWidth="true" minWidth="10.0" prefWidth="200.0" />
                                     </columnConstraints>
                                     <rowConstraints>
@@ -94,18 +101,21 @@
                                     </rowConstraints>
                                     <children>
                                         <Label text="Orientation" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                                        <Label text="Offset" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                                        <Label text="Offset" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.columnSpan="2"/>
                                         <Label text="Vertical" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                                         <Label text="Horizontal" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                                        <Slider blockIncrement="0.1" max="1.0" onValueChange="#sliceAction" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="1" fx:id="xOffsetSlider" />
-                                        <Slider fx:id="yOffsetSlider" blockIncrement="0.1" max="1.0" onValueChange="#sliceAction" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                        <Slider fx:id="xOffsetSlider" blockIncrement="0.1" max="1.0" onValueChange="#sliceAction" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="1"  GridPane.columnSpan="2" />
+                                        <Slider fx:id="yOffsetSlider" blockIncrement="0.1" max="1.0" onValueChange="#sliceAction" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="2"  GridPane.columnSpan="2"/>
 
                                         <Label text="Slice"  GridPane.columnIndex="0" GridPane.rowIndex="4"/>
-                                        <Label text="Color"  GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                        <Label text="On"  GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                                        <Label text="Color"  GridPane.columnIndex="2" GridPane.rowIndex="4" />
                                         <Label text="1" GridPane.columnIndex="0" GridPane.rowIndex="5" />
                                         <Label text="2" GridPane.columnIndex="0" GridPane.rowIndex="6" />
-                                        <ColorPicker fx:id="slice1ColorPicker" onAction="#sliceAction" promptText="Slice 1 Color" GridPane.columnIndex="1" GridPane.rowIndex="5" /> 
-                                        <ColorPicker fx:id="slice2ColorPicker" onAction="#sliceAction" promptText="Slice 2 Color" GridPane.columnIndex="1" GridPane.rowIndex="6"  /> 
+                                        <CheckBox fx:id="slice1StateCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="" selected="true" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+                                        <CheckBox fx:id="slice2StateCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="" selected="false" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
+                                        <ColorPicker fx:id="slice1ColorPicker" onAction="#sliceAction" promptText="Slice 1 Color" GridPane.columnIndex="2" GridPane.rowIndex="5" /> 
+                                        <ColorPicker fx:id="slice2ColorPicker" onAction="#sliceAction" promptText="Slice 2 Color" GridPane.columnIndex="2" GridPane.rowIndex="6"  /> 
                                     </children>
                                     <padding>
                                         <Insets top="20.0" />
@@ -117,7 +127,6 @@
                                     <items>
                                         <CheckBox fx:id="offsetTrackingCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="Offset Tracking   " />
                                         <CheckBox fx:id="useDatasetColorCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="   Use Dataset Color" selected="true"/>
-                                        <CheckBox fx:id="show2ndSliceCheckBox" mnemonicParsing="false" onAction="#sliceAction" text="Slice2" selected="false"/>
                                     </items>
                                 </ToolBar>
                             </top>
