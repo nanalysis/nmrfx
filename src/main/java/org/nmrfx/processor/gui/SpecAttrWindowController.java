@@ -82,6 +82,7 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -93,6 +94,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
+import org.nmrfx.utilities.DictionarySort;
 
 /**
  *
@@ -119,6 +121,8 @@ public class SpecAttrWindowController implements Initializable {
     private GridPane viewGrid;
     @FXML
     private ComboBox<DISDIM> disDimCombo;
+    @FXML
+    private TabPane tabPane;
     @FXML
     private Tab datasetTab;
     @FXML
@@ -160,6 +164,7 @@ public class SpecAttrWindowController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        tabPane.setStyle("-fx-font-size:8pt;");
         initToolBar();
         initViewToolBar();
         initTable();
@@ -463,11 +468,12 @@ public class SpecAttrWindowController implements Initializable {
             DatasetAttributes dataAttr = (DatasetAttributes) obj;
             datasetsTarget.add(dataAttr.getDataset().getName());
         }
-        for (Dataset dataset : FXMLController.datasetList) {
-            if (!datasetsTarget.contains(dataset.getName())) {
-                datasetsSource.add(dataset.getName());
+        DictionarySort<Dataset> sorter = new DictionarySort<>();
+        FXMLController.datasetList.stream().sorted(sorter).forEach(d -> {
+            if (!datasetsTarget.contains(d.getName())) {
+                datasetsSource.add(d.getName());
             }
-        }
+        });
         datasetView.getTargetItems().addListener(datasetTargetListener);
     }
 
