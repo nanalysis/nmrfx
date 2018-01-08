@@ -2736,7 +2736,7 @@ public class PeakList {
         });
     }
 
-    public void tweakPeaks(Dataset dataset, List<Peak> speaks) {
+    public void tweakPeaks(Dataset dataset, Set<Peak> speaks) {
         speaks.stream().forEach(peak -> {
             try {
                 peak.tweak(dataset);
