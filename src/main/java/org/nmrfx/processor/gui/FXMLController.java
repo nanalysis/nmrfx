@@ -209,7 +209,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
     }
 
-    boolean isPhaseSliderVisible() {
+    public boolean isPhaseSliderVisible() {
         return (rightBox.getChildren().size() > 0);
     }
 
@@ -484,7 +484,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     }
 
-    void addDataset(Dataset dataset, boolean appendFile, boolean reload) {
+    public void addDataset(Dataset dataset, boolean appendFile, boolean reload) {
         isFID = false;
         //dataset.setScale(1.0);
         int nDim = dataset.getNDim();
@@ -734,7 +734,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         handlePh0Reset(ph0);
     }
 
-    void handlePh0Reset(double ph0) {
+    public void handlePh0Reset(double ph0) {
         ph0 = Math.round(ph0 * 10) / 10.0;
         double start = 45.0 * Math.round(ph0 / 45.0) - 90.0;
         double end = start + 180.0;
@@ -746,7 +746,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void setPhaseLabels(double ph0, double ph1) {
+    public void setPhaseLabels(double ph0, double ph1) {
         ph0 = Math.round(ph0 * 10) / 10.0;
         ph1 = Math.round(ph1 * 10) / 10.0;
         ph0Label.setText(String.format("%.1f", ph0));

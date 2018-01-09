@@ -93,6 +93,7 @@ import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
+import org.nmrfx.processor.gui.spectra.GestureBindings;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.MouseBindings;
 
@@ -227,10 +228,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         OneDX, OneDY, TwoD;
     };
     ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(TwoD);
-    final ContextMenu specMenu = new ContextMenu();
-
+    SpectrumMenu specMenu;
     KeyBindings keyBindings;
     MouseBindings mouseBindings;
+    GestureBindings gestureBindings;
 
     AXMODE axModes[] = {AXMODE.PPM, AXMODE.PPM};
     Map<String, Integer> syncGroups = new HashMap<>();
@@ -282,7 +283,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         drawPeaks = new DrawPeaks(this, peakCanvas);
         setHandlers(canvas);
         setDragHandlers(this);
-        makeSpecMenu();
         xAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 0, 0));
         xAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 0, 1));
         yAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 1, 0));
@@ -297,6 +297,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         PeakList.peakListTable.addListener(mapChangeListener);
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
+        gestureBindings = new GestureBindings(this);
+        specMenu = new SpectrumMenu(this);
 
     }
 
@@ -369,110 +371,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         setFocused(true);
     }
 
-    void makeSpecMenu() {
-        MenuItem attrItem = new MenuItem("Attributes");
-        attrItem.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent e) {
-                controller.showSpecAttrAction(e);
-            }
-        });
-        Menu viewMenu = new Menu("View");
-        MenuItem expandItem = new MenuItem("Expand");
-        expandItem.setOnAction((ActionEvent e) -> {
-            expand();
-        });
-        viewMenu.getItems().add(expandItem);
-
-        MenuItem fullItem = new MenuItem("Full");
-        fullItem.setOnAction((ActionEvent e) -> {
-            full();
-        });
-        viewMenu.getItems().add(fullItem);
-
-        MenuItem zoomInItem = new MenuItem("Zoom In");
-        zoomInItem.setOnAction((ActionEvent e) -> {
-            zoom(1.2);
-        });
-        viewMenu.getItems().add(zoomInItem);
-        MenuItem zoomOutItem = new MenuItem("Zoom Out");
-        zoomOutItem.setOnAction((ActionEvent e) -> {
-            zoom(0.8);
-        });
-        viewMenu.getItems().add(zoomOutItem);
-
-        Menu baselineMenu = new Menu("Baseline");
-        MenuItem addBaselineItem = new MenuItem("Add Baseline Region");
-        addBaselineItem.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent e) {
-                addBaselineRange(false);
-            }
-        });
-        MenuItem clearBaselineItem = new MenuItem("Clear Baseline Region");
-        clearBaselineItem.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent e) {
-                addBaselineRange(true);
-            }
-        });
-        MenuItem clearAllBaselineItem = new MenuItem("Clear Baseline Regions");
-        clearAllBaselineItem.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent e) {
-                clearBaselineRanges();
-            }
-        });
-        MenuItem extractItem = new MenuItem("Add Extract Region");
-        extractItem.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent e) {
-                addRegionRange();
-            }
-        });
-
-        baselineMenu.getItems().add(addBaselineItem);
-        baselineMenu.getItems().add(clearBaselineItem);
-        baselineMenu.getItems().add(clearAllBaselineItem);
-        Menu peakMenu = new Menu("Peaks");
-
-        MenuItem inspectPeakItem = new MenuItem("Inspect Peak");
-        inspectPeakItem.setOnAction((ActionEvent e) -> {
-            hitPeak(mouseBindings.getMousePressX(), mouseBindings.getMousePressY());
-        });
-
-        peakMenu.getItems().add(inspectPeakItem);
-
-        MenuItem adjustLabelsItem = new MenuItem("Adjust Labels");
-        adjustLabelsItem.setOnAction((ActionEvent e) -> {
-            adjustLabels();
-        });
-        peakMenu.getItems().add(adjustLabelsItem);
-
-        MenuItem tweakPeakItem = new MenuItem("Tweak Selected");
-        tweakPeakItem.setOnAction((ActionEvent e) -> {
-            tweakPeaks();
-        });
-        peakMenu.getItems().add(tweakPeakItem);
-
-        MenuItem tweakListItem = new MenuItem("Tweak All Lists");
-        tweakListItem.setOnAction((ActionEvent e) -> {
-            tweakPeakLists();
-        });
-        peakMenu.getItems().add(tweakListItem);
-
-        MenuItem fitItem = new MenuItem("Fit Selected");
-        fitItem.setOnAction((ActionEvent e) -> {
-            fitPeaks();
-        });
-        peakMenu.getItems().add(fitItem);
-        MenuItem fitListItem = new MenuItem("Fit All Lists");
-        fitListItem.setOnAction((ActionEvent e) -> {
-            fitPeakLists();
-        });
-        peakMenu.getItems().add(fitListItem);
-
-        specMenu.getItems().add(attrItem);
-        specMenu.getItems().add(viewMenu);
-        specMenu.getItems().add(peakMenu);
-        specMenu.getItems().add(baselineMenu);
-        specMenu.getItems().add(extractItem);
-    }
 //pic.addEventHandler(MouseEvent.MOUSE_CLICKED,
 //    new EventHandler<MouseEvent>() {
 //        @Override public void handle(MouseEvent e) {
@@ -480,15 +378,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 //                cm.show(pic, e.getScreenX(), e.getScreenY());
 //        }
 //});
-
     final protected void setHandlers(Node mouseNode) {
         setFocusTraversable(false);
-        mouseNode.setOnContextMenuRequested(new EventHandler<ContextMenuEvent>() {
-            @Override
-            public void handle(ContextMenuEvent event) {
-                specMenu.show(mouseNode.getScene().getWindow(), event.getScreenX(), event.getScreenY());
-
-            }
+        mouseNode.setOnContextMenuRequested((ContextMenuEvent event) -> {
+            specMenu.show(mouseNode.getScene().getWindow(), event.getScreenX(), event.getScreenY());
         });
         mouseNode.setOnKeyPressed((KeyEvent keyEvent) -> {
             keyBindings.keyPressed(keyEvent);
@@ -518,88 +411,32 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             mouseBindings.mouseReleased(mouseEvent);
         });
 
-        mouseNode.setOnRotate(new EventHandler<RotateEvent>() {
-            @Override
-            public void handle(RotateEvent rEvent) {
-                if (hasData() && controller.isPhaseSliderVisible()) {
-                    double angle = rEvent.getAngle();
-                    setPh0(getPh0() + angle);
-                    double sliderPH0 = getPh0();
-                    double sliderPH1 = getPh1();
-                    sliderPH0 = getPh0() + getDataPH0();
-                    sliderPH1 = getPh1() + getDataPH1();
-                    controller.setPhaseLabels(sliderPH0, sliderPH1);
-                    layoutPlotChildren();
-                }
-            }
+        mouseNode.setOnRotate((RotateEvent rEvent) -> {
+            gestureBindings.rotate(rEvent);
         });
-        mouseNode.setOnRotationFinished(new EventHandler<RotateEvent>() {
-            @Override
-            public void handle(RotateEvent rEvent) {
-                if (hasData() && controller.isPhaseSliderVisible()) {
-                    double angle = rEvent.getAngle();
-                    setPh0(getPh0() + angle);
-                    controller.setPhaseLabels(getPh0(), getPh1());
-                    // use properties??
-                    if (rEvent.getEventType() == RotateEvent.ROTATION_FINISHED) {
-                        double sliderPH0 = getPh0();
-                        sliderPH0 = getPh0() + getDataPH0();
-                        controller.handlePh0Reset(sliderPH0);
-                    }
-                    layoutPlotChildren();
-                }
-
-            }
+        mouseNode.setOnRotationFinished((RotateEvent rEvent) -> {
+            gestureBindings.rotationFinished(rEvent);
         });
-        mouseNode.setOnZoom(new EventHandler() {
-            @Override
-            public void handle(Event event) {
-                ZoomEvent rEvent = (ZoomEvent) event;
-                double zoom = rEvent.getZoomFactor();
-                zoom(zoom);
-
-            }
+        mouseNode.setOnZoom((Event event) -> {
+            gestureBindings.zoom(event);
         });
-        mouseNode.setOnScroll(new EventHandler<ScrollEvent>() {
-            @Override
-            public void handle(ScrollEvent event) {
-                double x = event.getDeltaX();
-                double y = event.getDeltaY();
-                if (event.isControlDown()) {
-                    scaleY(y);
-                } else if (event.isAltDown()) {
-                    zoom(-y / 10.0 + 1.0);
-                } else {
-                    scroll(x, y);
-                }
-            }
+        mouseNode.setOnScroll((ScrollEvent event) -> {
+            gestureBindings.scroll(event);
         });
         mouseNode.focusedProperty().addListener(e -> setActiveChart());
     }
 
     final protected void setDragHandlers(Node mouseNode) {
 
-        mouseNode.setOnDragOver(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseDragOver(event);
-            }
-        }
-        );
-        mouseNode.setOnDragDropped(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseDragDropped(event);
-            }
-        }
-        );
-        mouseNode.setOnDragExited(new EventHandler<DragEvent>() {
-            @Override
-            public void handle(DragEvent event) {
-                mouseNode.setStyle("-fx-border-color: #C6C6C6;");
-            }
-        }
-        );
+        mouseNode.setOnDragOver((DragEvent event) -> {
+            mouseDragOver(event);
+        });
+        mouseNode.setOnDragDropped((DragEvent event) -> {
+            mouseDragDropped(event);
+        });
+        mouseNode.setOnDragExited((DragEvent event) -> {
+            mouseNode.setStyle("-fx-border-color: #C6C6C6;");
+        });
     }
 
     private void mouseDragDropped(final DragEvent e) {
@@ -1019,7 +856,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    protected void scaleY(double y) {
+    public void scaleY(double y) {
         datasetAttributesList.stream().forEach(dataAttr -> {
             Dataset dataset = dataAttr.getDataset();
             if (is1D()) {
