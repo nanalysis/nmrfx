@@ -28,7 +28,7 @@ public class PeakPicking {
         PolyChart chart = fxmlController.getActiveChart();
         ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
         dataList.stream().forEach((DatasetAttributes dataAttr) -> {
-            peakPickActive(chart, dataAttr, chart.hasCrosshairRegion(), false, null);
+            peakPickActive(chart, dataAttr, chart.getCrossHairs().hasCrosshairRegion(), false, null);
         });
         chart.refresh();
     }

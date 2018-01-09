@@ -25,7 +25,6 @@ import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.gui.spectra.CrossHairManager;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
 import org.nmrfx.processor.gui.spectra.DrawPeaks;
@@ -84,6 +83,7 @@ import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
+import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DragBindings;
 import org.nmrfx.processor.gui.spectra.GestureBindings;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
@@ -122,7 +122,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
     public static final int CROSSHAIR_TOL = 25;
-    static CrossHairManager crossHairManager = new CrossHairManager();
     public static final ObservableList<PolyChart> charts = FXCollections.observableArrayList();
     static PolyChart activeChart = null;
 
@@ -225,6 +224,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     MouseBindings mouseBindings;
     GestureBindings gestureBindings;
     DragBindings dragBindings;
+    CrossHairs crossHairs;
 
     AXMODE axModes[] = {AXMODE.PPM, AXMODE.PPM};
     Map<String, Integer> syncGroups = new HashMap<>();
@@ -293,6 +293,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         gestureBindings = new GestureBindings(this);
         dragBindings = new DragBindings(this);
         specMenu = new SpectrumMenu(this);
+        crossHairs = new CrossHairs(activeChart, crossHairPositions, crossHairStates, crossHairLines);
 
     }
 
@@ -449,19 +450,19 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         if (mEvent.isPrimaryButtonDown()) {
             if (selectCrossNum) {
                 if (!hasMiddleMouseButton) {
-                    crossHairNumH = getCrossHairNum(mEvent.getX(), mEvent.getY(), HORIZONTAL);
-                    crossHairNumV = getCrossHairNum(mEvent.getX(), mEvent.getY(), VERTICAL);
+                    crossHairNumH = crossHairs.getCrossHairNum(mEvent.getX(), mEvent.getY(), HORIZONTAL);
+                    crossHairNumV = crossHairs.getCrossHairNum(mEvent.getX(), mEvent.getY(), VERTICAL);
                 } else {
                     crossHairNumH = 0;
                     crossHairNumV = 0;
                 }
             }
-            moveCrosshair(crossHairNumH, HORIZONTAL, mEvent.getY());
-            moveCrosshair(crossHairNumV, VERTICAL, mEvent.getX());
+            crossHairs.moveCrosshair(crossHairNumH, HORIZONTAL, mEvent.getY());
+            crossHairs.moveCrosshair(crossHairNumV, VERTICAL, mEvent.getX());
         } else if (mEvent.isMiddleButtonDown()) {
             hasMiddleMouseButton = true;
-            moveCrosshair(1, HORIZONTAL, mEvent.getY());
-            moveCrosshair(1, VERTICAL, mEvent.getX());
+            crossHairs.moveCrosshair(1, HORIZONTAL, mEvent.getY());
+            crossHairs.moveCrosshair(1, VERTICAL, mEvent.getX());
         }
     }
 
@@ -1170,7 +1171,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             }
         }
         layoutPlotChildren();
-        hideCrossHairs();
+        crossHairs.hideCrossHairs();
     }
 
     public double[] getVerticalCrosshairPositions() {
@@ -1435,7 +1436,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         if (controller.specAttrWindowController != null) {
             controller.specAttrWindowController.updateDims();
         }
-        hideCrossHairs();
+        crossHairs.hideCrossHairs();
         datasetAttributes.drawList = null;
         return datasetAttributes;
     }
@@ -1675,7 +1676,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             anno.draw(peakCanvas, bounds, world);
         });
 
-        refreshCrossHairs();
+        crossHairs.refreshCrossHairs();
     }
 
     public void addAnnotation(CanvasAnnotation anno) {
@@ -2092,39 +2093,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-//    void pickPeakList(DatasetAttributes dataAttr, PeakList peakList, final double pickX, final double pickY) {
-//        GraphicsContext gC = peakCanvas.getGraphicsContext2D();
-//        final int nDataDim = dataAttr.nDim;
-//        final double[] offsets = new double[nDataDim];
-//        final int[] dim = getPeakDim(dataAttr, peakList);
-//        final double[][] limits = getRegionLimits(dataAttr);
-//
-//        List<Peak> selectedPeaks = peakList.peaks().stream().parallel()
-//                .filter(peak -> peak.inRegion(limits, null, dim))
-//                .filter((peak) -> drawPeaks.pickPeak(dataAttr, gC, peak, dim, offsets, pickX, pickY))
-//                .collect(Collectors.toList());
-//        drawSelectedPeaks(dataAttr, peakList, selectedPeaks);
-//
-//    }
-//
-//    void drawSelectedPeaks(DatasetAttributes dataAttr, PeakList peakList, List<Peak> selectedPeaks) {
-//        GraphicsContext gC = peakCanvas.getGraphicsContext2D();
-//        int nPeakDim = peakList.nDim;
-//        int nDataDim = dataAttr.nDim;
-//        int[] dim = new int[nDataDim];
-//        double[] offsets = new double[nDataDim];
-//        for (int i = 0; (i < axes.length); i++) {
-//            dim[i] = -1;
-//            for (int j = 0; j < nPeakDim; j++) {
-//                if (dataAttr.getLabel(i).equals(peakList.getSpectralDim(j).getDimName())) {
-//                    dim[i] = j;
-//                }
-//            }
-//        }
-//        selectedPeaks.stream().forEach((peak) -> {
-//            drawPeaks.drawPeak(gC, peak, dim, offsets, true);
-//        });
-//    }
     public ObservableList<DatasetAttributes> getDatasetAttributes() {
         return datasetAttributesList;
     }
@@ -2329,195 +2297,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    public void hideCrossHairs() {
-        SpectrumStatusBar statusBar = controller.getStatusBar();
-        for (int iCross = 0; iCross < 2; iCross++) {
-            for (int jOrient = 0; jOrient < 2; jOrient++) {
-                crossHairLines[iCross][jOrient].setVisible(false);
-                int iAxis = jOrient == 0 ? 1 : 0;
-                double value = iCross == 1 ? axes[iAxis].getLowerBound() : axes[iAxis].getUpperBound();
-                statusBar.setCrossText(jOrient, iCross, value, true);
-            }
-        }
-    }
-
-    public void setCrossHairState(boolean value) {
-        for (int iCross = 0; iCross < 2; iCross++) {
-            for (int jOrient = 0; jOrient < 2; jOrient++) {
-                crossHairStates[iCross][jOrient] = value;
-            }
-        }
-        if (!value) {
-            hideCrossHairs();
-        }
-    }
-
-    public void refreshCrossHairs() {
-        SpectrumStatusBar statusBar = controller.getStatusBar();
-        for (int iCross = 0; iCross < 2; iCross++) {
-            for (int jOrient = 0; jOrient < 2; jOrient++) {
-                int iAxis = jOrient == 0 ? 1 : 0;
-                if (crossHairStates[iCross][jOrient] && crossHairLines[iCross][jOrient].isVisible()) {
-                    drawCrossHair(iCross, jOrient);
-                } else {
-                    double value = iCross == 1 ? axes[iAxis].getLowerBound() : axes[iAxis].getUpperBound();
-                    statusBar.setCrossText(jOrient, iCross, value, true);
-                }
-                statusBar.crossText[iCross][jOrient].setMin(axes[iAxis].getLowerBound());
-                statusBar.crossText[iCross][jOrient].setMax(axes[iAxis].getUpperBound());
-            }
-        }
-        drawSlices();
-    }
-
-    public void moveCrosshair(int iCross, int iOrient, double value) {
-        if (datasetAttributesList.isEmpty()) {
-            return;
-        }
-        value = crossHairInRange(iCross, iOrient, value);
-        setCrossHairPosition(iCross, iOrient, value);
-        drawCrossHair(iCross, iOrient);
-        double aValue = crossHairPositions[iCross][iOrient];
-        DatasetAttributes dataAttr = datasetAttributesList.get(0);
-        String label;
-        int axisDim = iOrient == VERTICAL ? 0 : 1;
-        label = dataAttr.getLabel(axisDim);
-        crossHairManager.updatePosition(this, iCross, iOrient, aValue, label);
-        drawSlices();
-    }
-
-    public void syncCrosshair(int iCross, int iOrient, String dimLabel, double value) {
-        if (datasetAttributesList.isEmpty()) {
-            return;
-        }
-        DatasetAttributes dataAttr = datasetAttributesList.get(0);
-        int jOrient = -1;
-        if (dataAttr.getLabel(0).equals(dimLabel)) {
-            if (value >= xAxis.getLowerBound() && (value <= xAxis.getUpperBound())) {
-                jOrient = VERTICAL;
-            }
-        } else if (dataAttr.getLabel(1).equals(dimLabel)) {
-            if (value >= yAxis.getLowerBound() && (value <= yAxis.getUpperBound())) {
-                jOrient = HORIZONTAL;
-            }
-        }
-        if (jOrient >= 0) {
-            crossHairPositions[iCross][jOrient] = value;
-            drawCrossHair(iCross, jOrient);
-            if (iCross == 0) {
-                drawSlices();
-            }
-        }
-    }
-
-    public double crossHairInRange(int iCross, int iOrient, double value) {
-        if (value < 0) {
-            value = 1;
-        }
-        double width = xAxis.getWidth();
-        double height = yAxis.getHeight();
-
-        if (iOrient == HORIZONTAL) {
-            if (value > height) {
-                value = height - 1;
-            }
-        } else if (value > width) {
-            value = width - 1;
-        }
-        return value;
-
-    }
-
-    public void setCrossHairPosition(int iCross, int iOrient, double value) {
-        if (iOrient == HORIZONTAL) {
-            ValueAxis yAxis = (ValueAxis) getYAxis();
-            value = yAxis.getValueForDisplay(value).doubleValue();
-        } else {
-            ValueAxis xAxis = (ValueAxis) getXAxis();
-            value = xAxis.getValueForDisplay(value).doubleValue();
-        }
-        crossHairPositions[iCross][iOrient] = value;
-    }
-
-    public boolean hasCrosshairRegion() {
-        boolean horizontalRegion = crossHairStates[0][VERTICAL] && crossHairLines[0][VERTICAL].isVisible()
-                && crossHairStates[1][VERTICAL] && crossHairLines[1][VERTICAL].isVisible();
-        boolean verticalRegion = crossHairStates[0][HORIZONTAL] && crossHairLines[0][HORIZONTAL].isVisible()
-                && crossHairStates[1][HORIZONTAL] && crossHairLines[1][HORIZONTAL].isVisible();
-        boolean hasRegion = false;
-        if (is1D()) {
-            hasRegion = horizontalRegion;
-        } else {
-            hasRegion = horizontalRegion && verticalRegion;
-        }
-        return hasRegion;
-    }
-
-    int getCrossHairNum(double x, double y, int iOrient) {
-        int crossHairNum = 0;
-        if (crossHairStates[1][iOrient] && crossHairLines[1][iOrient].isVisible()) {
-            if (iOrient == HORIZONTAL) {
-                double delta0 = Math.abs(crossHairLines[0][iOrient].getStartY() - y);
-                double delta1 = Math.abs(crossHairLines[1][iOrient].getStartY() - y);
-                if (delta1 < delta0) {
-                    crossHairNum = 1;
-                }
-            } else {
-                double delta0 = Math.abs(crossHairLines[0][iOrient].getStartX() - x);
-                double delta1 = Math.abs(crossHairLines[1][iOrient].getStartX() - x);
-                if (delta1 < delta0) {
-                    crossHairNum = 1;
-                }
-            }
-        } else if (!crossHairLines[0][iOrient].isVisible()) {
-            crossHairNum = 0;
-        } else if (iOrient == HORIZONTAL) {
-            double delta0 = Math.abs(crossHairLines[0][iOrient].getStartY() - y);
-            if (delta0 > CROSSHAIR_TOL) {
-                crossHairNum = 1;
-            }
-        } else {
-            double delta0 = Math.abs(crossHairLines[0][iOrient].getStartX() - x);
-            if (delta0 > CROSSHAIR_TOL) {
-                crossHairNum = 1;
-            }
-        }
-        return crossHairNum;
-    }
-
     public void setSliceStatus(boolean state) {
-        refreshCrossHairs();
-    }
-
-    public void drawCrossHair(int iCross, int iOrient) {
-        Dataset dataset = getDataset();
-        if (dataset == null) {
-            return;
-        }
-        double width = xAxis.getWidth();
-        double height = yAxis.getHeight();
-        if (crossHairStates[iCross][iOrient]) {
-            double value = crossHairPositions[iCross][iOrient];
-            controller.getStatusBar().setCrossText(iOrient, iCross, value, false);
-            Bounds bounds = plotBackground.getBoundsInParent();
-            if (iOrient == HORIZONTAL) {
-                value = yAxis.getDisplayPosition(value);
-                crossHairLines[iCross][iOrient].setStartX(0);
-                crossHairLines[iCross][iOrient].setEndX(width);
-                crossHairLines[iCross][iOrient].setStartY(value);
-                crossHairLines[iCross][iOrient].setEndY(value);
-            } else {
-                value = xAxis.getDisplayPosition(value);
-                crossHairLines[iCross][iOrient].setStartY(0);
-                crossHairLines[iCross][iOrient].setEndY(height);
-                crossHairLines[iCross][iOrient].setStartX(value);
-                crossHairLines[iCross][iOrient].setEndX(value);
-            }
-            crossHairLines[iCross][iOrient].setVisible(true);
-            crossHairLines[iCross][iOrient].setVisible(true);
-            nList.clear();
-            bcList.clear();
-        }
+        crossHairs.refreshCrossHairs();
     }
 
     public void drawSlices() {
@@ -2625,6 +2406,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
+    public CrossHairs getCrossHairs() {
+        return crossHairs;
+    }
+
     class UpdateCrossHair implements java.util.function.DoubleFunction {
 
         final int crossHairNum;
@@ -2638,7 +2423,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         @Override
         public Object apply(double value) {
             crossHairPositions[crossHairNum][orientation] = value;
-            refreshCrossHairs();
+            crossHairs.refreshCrossHairs();
 
             return null;
         }

@@ -111,7 +111,7 @@ public class MouseBindings {
         double y = mouseEvent.getY();
         if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && chart.getCursor().toString().equals("CROSSHAIR"))) {
             if (!chart.getCursor().toString().equals("CROSSHAIR")) {
-                chart.setCrossHairState(true);
+                chart.getCrossHairs().setCrossHairState(true);
             }
             chart.handleCrossHair(mouseEvent, true);
         } else {
@@ -144,7 +144,7 @@ public class MouseBindings {
             if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && chart.getCursor().toString().equals("CROSSHAIR"))) {
                 chart.handleCrossHair(mouseEvent, false);
                 if (!chart.getCursor().toString().equals("CROSSHAIR")) {
-                    chart.setCrossHairState(false);
+                    chart.getCrossHairs().setCrossHairState(false);
                 }
             } else {
                 double x = mouseEvent.getX();

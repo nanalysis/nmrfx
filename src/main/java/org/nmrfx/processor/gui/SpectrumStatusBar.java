@@ -265,9 +265,9 @@ public class SpectrumStatusBar {
         for (PolyChart chart : controller.charts) {
             chart.setCursor(cursor);
             if (cursor.toString().equals("CROSSHAIR")) {
-                chart.setCrossHairState(true);
+                chart.getCrossHairs().setCrossHairState(true);
             } else {
-                chart.setCrossHairState(false);
+                chart.getCrossHairs().setCrossHairState(false);
             }
         }
         currentCursor = cursor;
@@ -446,6 +446,11 @@ public class SpectrumStatusBar {
             }
             vecSpinner.valueProperty().addListener(vecNumListener);
         }
+    }
+
+    public void setCrossTextRange(int iCross, int jOrient, double min, double max) {
+        crossText[iCross][jOrient].setMin(min);
+        crossText[iCross][jOrient].setMax(max);
     }
 
     public void setPlaneRanges(int iDim, int max) {

@@ -872,7 +872,7 @@ public class SpecAttrWindowController implements Initializable {
     private void sliceAction(Event event) {
         chart.sliceAttributes.setSlice1Color(slice1ColorPicker.getValue());
         chart.sliceAttributes.setSlice2Color(slice2ColorPicker.getValue());
-        chart.refreshCrossHairs();
+        chart.getCrossHairs().refreshCrossHairs();
     }
 
     private void colorAction(MouseEvent event) {

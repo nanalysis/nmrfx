@@ -683,7 +683,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         } else {
             //chart.setPh0(sliderPH0);
             getActiveChart().setPh0(deltaPH0);
-            getActiveChart().refreshCrossHairs();
+            getActiveChart().getCrossHairs().refreshCrossHairs();
         }
     }
 
@@ -724,7 +724,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             //chart.setPh1(sliderPH1);
             chart.setPh0(deltaPH0);
             chart.setPh1(deltaPH1);
-            chart.refreshCrossHairs();
+            chart.getCrossHairs().refreshCrossHairs();
         }
     }
 
@@ -1052,7 +1052,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 //chart.setPh1(ph1);
                 chart.setPh0(deltaPH0);
                 chart.setPh1(deltaPH1);
-                chart.refreshCrossHairs();
+                chart.getCrossHairs().refreshCrossHairs();
             }
         }
     }
@@ -1636,7 +1636,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     iChart.xAxis.setUpperBound(xUpper);
                     iChart.yAxis.setLowerBound(yLower);
                     iChart.yAxis.setUpperBound(yUpper);
-                    iChart.setCrossHairState(true);
+                    iChart.getCrossHairs().setCrossHairState(true);
                     iChart.refresh();
                 }
                 chartGroup.layoutChildren();
