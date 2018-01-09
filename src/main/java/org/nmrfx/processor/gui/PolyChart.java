@@ -24,7 +24,6 @@ import org.nmrfx.processor.datasets.RegionData;
 import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.gui.spectra.CrossHairManager;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -61,29 +60,21 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
-import javafx.event.ActionEvent;
 import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.RotateEvent;
-import javafx.scene.input.ZoomEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.chart.ValueAxis;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -93,6 +84,7 @@ import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
+import org.nmrfx.processor.gui.spectra.DragBindings;
 import org.nmrfx.processor.gui.spectra.GestureBindings;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.MouseBindings;
@@ -232,6 +224,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     KeyBindings keyBindings;
     MouseBindings mouseBindings;
     GestureBindings gestureBindings;
+    DragBindings dragBindings;
 
     AXMODE axModes[] = {AXMODE.PPM, AXMODE.PPM};
     Map<String, Integer> syncGroups = new HashMap<>();
@@ -298,6 +291,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);
+        dragBindings = new DragBindings(this);
         specMenu = new SpectrumMenu(this);
 
     }
@@ -427,110 +421,15 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     }
 
     final protected void setDragHandlers(Node mouseNode) {
-
         mouseNode.setOnDragOver((DragEvent event) -> {
-            mouseDragOver(event);
+            dragBindings.mouseDragOver(event);
         });
         mouseNode.setOnDragDropped((DragEvent event) -> {
-            mouseDragDropped(event);
+            dragBindings.mouseDragDropped(event);
         });
         mouseNode.setOnDragExited((DragEvent event) -> {
             mouseNode.setStyle("-fx-border-color: #C6C6C6;");
         });
-    }
-
-    private void mouseDragDropped(final DragEvent e) {
-        final Dragboard db = e.getDragboard();
-        boolean success = false;
-        if (db.hasFiles()) {
-            success = true;
-            // Only get the first file from the list
-            final List<File> files = db.getFiles();
-            controller.setActiveChart(this);
-            Platform.runLater(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        boolean isDataset = NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null;
-                        PolyChart dropChart = (PolyChart) e.getGestureTarget();
-                        controller.setActiveChart(dropChart);
-                        if (isDataset) {
-                            boolean appendFile = true;
-
-                            for (File file : files) {
-                                controller.openFile(file.getAbsolutePath(), false, appendFile);
-                                appendFile = true;
-                            }
-                        } else {
-                            controller.openFile(files.get(0).getAbsolutePath(), true, false);
-                        }
-                    } catch (Exception e) {
-
-                    }
-                }
-            });
-        } else if (db.hasString()) {
-            String contentString = db.getString();
-            String[] items = contentString.split("\n");
-            if (items.length > 0) {
-                Dataset dataset = Dataset.getDataset(items[0]);
-                if (dataset != null) {
-                    success = true;
-                    Platform.runLater(() -> {
-                        PolyChart dropChart = (PolyChart) e.getGestureTarget();
-                        controller.setActiveChart(dropChart);
-                        for (String item : items) {
-                            Dataset dataset1 = Dataset.getDataset(item);
-                            if (dataset1 != null) {
-                                controller.addDataset(dataset1, true, false);
-                            }
-                        }
-                    });
-                }
-            }
-        } else {
-            System.out.println("no files");
-        }
-        e.setDropCompleted(success);
-        e.consume();
-    }
-
-    private void mouseDragOver(final DragEvent e) {
-        final Dragboard db = e.getDragboard();
-
-        List<File> files = db.getFiles();
-        if (db.hasFiles()) {
-            if (files.size() > 0) {
-                boolean isAccepted;
-                try {
-                    isAccepted = NMRDataUtil.isFIDDir(files.get(0).getAbsolutePath()) != null;
-                    if (!isAccepted) {
-                        isAccepted = NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null;
-                    }
-                } catch (Exception ex) {
-                    System.out.println(ex.getMessage());
-                    isAccepted = false;
-                }
-                if (isAccepted) {
-                    this.setStyle("-fx-border-color: green;"
-                            + "-fx-border-width: 1;");
-                    e.acceptTransferModes(TransferMode.COPY);
-                }
-            }
-        } else if (db.hasString()) {
-            String contentString = db.getString();
-            String[] items = contentString.split("\n");
-            if (items.length > 0) {
-                Dataset dataset = Dataset.getDataset(items[0]);
-                if (dataset != null) {
-                    this.setStyle("-fx-border-color: green;"
-                            + "-fx-border-width: 1;");
-                    e.acceptTransferModes(TransferMode.COPY);
-                }
-            }
-        } else {
-            e.consume();
-        }
     }
 
     public void setActiveChart() {
