@@ -38,10 +38,10 @@ public class AxisChangeListener implements ChangeListener<Number> {
     PolyChart chart;
     int axNum;
     int endNum;
-    static final DecimalFormat formatter = new DecimalFormat();
+    static final DecimalFormat FORMATTER = new DecimalFormat();
 
     static {
-        formatter.setMaximumFractionDigits(3);
+        FORMATTER.setMaximumFractionDigits(3);
     }
 
     public AxisChangeListener(PolyChart chart, int axNum, int endNum) {
@@ -60,7 +60,7 @@ public class AxisChangeListener implements ChangeListener<Number> {
             if (chart == PolyChart.activeChart) {
                 if (FXMLController.specAttrWindowController != null) {
                     StringProperty limitProp = FXMLController.specAttrWindowController.limitFields[axNum][endNum];
-                    limitProp.setValue(formatter.format(newBound));
+                    limitProp.setValue(FORMATTER.format(newBound));
                 }
                 if (axNum >= 2) {
                     int pt1 = (int) chart.axes[axNum].getLowerBound();
