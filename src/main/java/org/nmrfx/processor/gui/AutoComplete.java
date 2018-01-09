@@ -45,9 +45,9 @@ public class AutoComplete {
         operations.removeIf((String s) -> s.contains("Cascade"));
 
         trie = new SetTrie();
-        for (String word : operations) {
+        operations.forEach((word) -> {
             trie.add(word);
-        }
+        });
 
     }
 
@@ -71,12 +71,7 @@ public class AutoComplete {
          */
         public boolean match(String prefix) {
             Set<String> tailSet = words.tailSet(prefix);
-            for (String tail : tailSet) {
-                if (tail.startsWith(prefix)) {
-                    return true;
-                }
-            }
-            return false;
+            return tailSet.stream().anyMatch(tail -> tail.startsWith(prefix));
         }
 
         /**
