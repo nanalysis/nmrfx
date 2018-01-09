@@ -409,6 +409,16 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
+     * Set the name of this vector.
+     *
+     * @param name the name to set
+     */
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
      * Return the name of this vector
      *
      * @return the name
