@@ -448,7 +448,9 @@ public class ChartProcessor {
             vectors.add(newVec);
             saveVectors.add(saveVec);
         }
-        chart.setDataset(new Dataset(vectors.get(iVec)));
+        Vec vec = vectors.get(iVec);
+        vec.setName("vec" + iVec);
+        chart.setDataset(new Dataset(vec));
     }
 
     public void setVector(int value) {
@@ -456,7 +458,9 @@ public class ChartProcessor {
         if (iVec > vectors.size() - 1) {
             iVec = vectors.size() - 1;
         }
-        chart.setDataset(new Dataset(vectors.get(iVec)));
+        Vec vec = vectors.get(iVec);
+        vec.setName("vec" + iVec);
+        chart.setDataset(new Dataset(vec));
         chart.layoutPlotChildren();
     }
 
@@ -470,7 +474,9 @@ public class ChartProcessor {
         saveVec.centerFreq = 500.0;
         vectors.add(newVec);
         saveVectors.add(saveVec);
-        chart.setDataset(new Dataset(vectors.get(iVec)));
+        Vec vec = vectors.get(iVec);
+        vec.setName("vec" + iVec);
+        chart.setDataset(new Dataset(vec));
     }
 
     public void vecRow(int i) {
