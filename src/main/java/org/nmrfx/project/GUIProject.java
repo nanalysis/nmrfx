@@ -49,6 +49,20 @@ public class GUIProject extends Project {
         this.projectDir = projectDir;
     }
 
+    public static GUIProject getActive() {
+        Project project = Project.getActive();
+        if (project == null) {
+            project = new GUIProject("Untitled 1");
+        }
+        return (GUIProject) project;
+    }
+
+    public static GUIProject replace(String name, GUIProject project) {
+        GUIProject newProject = new GUIProject(name);
+
+        return newProject;
+    }
+
     public void saveProject() throws IOException {
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");

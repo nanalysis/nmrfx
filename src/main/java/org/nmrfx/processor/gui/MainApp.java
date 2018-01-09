@@ -18,13 +18,11 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.controls.FractionPane;
 import de.codecentric.centerdevice.MenuToolkit;
 import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -52,10 +50,12 @@ import org.controlsfx.dialog.ExceptionDialog;
 import static javafx.application.Application.launch;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.DatasetListener;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
-import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
 import org.nmrfx.processor.utilities.WebConnect;
+import org.nmrfx.project.GUIProject;
 
 public class MainApp extends Application implements DatasetListener {
 
@@ -209,6 +209,33 @@ public class MainApp extends Application implements DatasetListener {
         svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
         MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
+
+        Menu projectMenu = new Menu("Projects");
+
+        MenuItem projectOpenMenuItem = new MenuItem("Open...");
+        projectOpenMenuItem.setOnAction(e -> loadProject());
+
+        MenuItem projectSaveAsMenuItem = new MenuItem("Save As...");
+        projectSaveAsMenuItem.setOnAction(e -> saveProjectAs());
+
+        MenuItem projectSaveMenuItem = new MenuItem("Save");
+        projectSaveMenuItem.setOnAction(e -> saveProject());
+        Menu recentProjectMenuItem = new Menu("Open Recent");
+
+        List<Path> recentProjects = PreferencesController.getRecentProjects();
+        for (Path path : recentProjects) {
+            int count = path.getNameCount();
+            int first = count - 3;
+            first = first >= 0 ? first : 0;
+            Path subPath = path.subpath(first, count);
+
+            MenuItem projectMenuItem = new MenuItem(subPath.toString());
+            projectMenuItem.setOnAction(e -> loadProject(path));
+            recentProjectMenuItem.getItems().add(projectMenuItem);
+        }
+
+        projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem);
+
         fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
@@ -306,13 +333,13 @@ public class MainApp extends Application implements DatasetListener {
             Menu windowMenu = new Menu("Window");
             windowMenu.getItems().addAll(tk.createMinimizeMenuItem(), tk.createZoomMenuItem(), tk.createCycleWindowsItem(),
                     new SeparatorMenuItem(), tk.createBringAllToFrontItem());
-            menuBar.getMenus().addAll(appMenu, fileMenu, spectraMenu, viewMenu, peakMenu, windowMenu, helpMenu);
+            menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, viewMenu, peakMenu, windowMenu, helpMenu);
             tk.autoAddWindowMenuItems(windowMenu);
             tk.setGlobalMenuBar(menuBar);
         } else {
             fileMenu.getItems().add(prefsItem);
             fileMenu.getItems().add(quitItem);
-            menuBar.getMenus().addAll(fileMenu, spectraMenu, viewMenu, peakMenu, helpMenu);
+            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, viewMenu, peakMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
         return menuBar;
@@ -447,6 +474,66 @@ public class MainApp extends Application implements DatasetListener {
             System.out.println(string);
         } else {
             consoleController.writeOutput(string);
+        }
+    }
+
+    public final static GUIProject getActive() {
+        return GUIProject.getActive();
+    }
+
+    private void loadProject() {
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Project Chooser");
+        File directoryFile = chooser.showDialog(null);
+        if (directoryFile != null) {
+            loadProject(directoryFile.toPath());
+        }
+    }
+
+    private void loadProject(Path path) {
+        if (path != null) {
+            String projectName = path.getFileName().toString();
+            GUIProject project = new GUIProject(projectName);
+            try {
+                project.loadGUIProject(path);
+            } catch (IOException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
+
+    }
+
+    private void saveProjectAs() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Project Creator");
+        File directoryFile = chooser.showSaveDialog(null);
+        if (directoryFile != null) {
+            GUIProject activeProject = getActive();
+            if (activeProject != null) {
+                GUIProject newProject = GUIProject.replace(appName, activeProject);
+
+                try {
+                    newProject.createProject(directoryFile.toPath());
+                    newProject.saveProject();
+                } catch (IOException ex) {
+                    ExceptionDialog dialog = new ExceptionDialog(ex);
+                    dialog.showAndWait();
+                }
+            }
+        }
+
+    }
+
+    private void saveProject() {
+        GUIProject project = getActive();
+        if (project.hasDirectory()) {
+            try {
+                project.saveProject();
+            } catch (IOException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
         }
     }
 
