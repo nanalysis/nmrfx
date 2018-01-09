@@ -2025,7 +2025,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         int nPeakDim = peakList.nDim;
         int nDataDim = dataAttr.nDim;
         int[] dim = new int[nDataDim];
-        for (int i = 0; (i < axes.length); i++) {
+        for (int i = 0; (i < axes.length) && (i < dim.length); i++) {
             dim[i] = -1;
             for (int j = 0; j < nPeakDim; j++) {
                 if (dataAttr.getLabel(i).equals(peakList.getSpectralDim(j).getDimName())) {
