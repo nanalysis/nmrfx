@@ -94,6 +94,7 @@ import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
+import org.nmrfx.processor.gui.spectra.MouseBindings;
 
 public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
@@ -115,14 +116,14 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
      * @return the mouseX
      */
     public double getMouseX() {
-        return mouseX;
+        return mouseBindings.getMouseX();
     }
 
     /**
      * @return the mouseY
      */
     public double getMouseY() {
-        return mouseY;
+        return mouseBindings.getMouseY();
     }
 
     public static final int HORIZONTAL = 0;
@@ -175,7 +176,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     int phaseDim = 0;
     int phaseAxis = 0;
     double phaseFraction = 0.0;
-    boolean mouseDown = false;
 
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
@@ -197,7 +197,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     private void respondToPeakListChange(PeakEvent peakEvent) {
         // if mouse down we could be dragging peak which will itself cause redraw
         //   no need to call this
-        if (mouseDown) {
+        if (mouseBindings.isMouseDown()) {
             return;
         }
         Object source = peakEvent.getSource();
@@ -230,19 +230,12 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     final ContextMenu specMenu = new ContextMenu();
 
     KeyBindings keyBindings;
+    MouseBindings mouseBindings;
 
     AXMODE axModes[] = {AXMODE.PPM, AXMODE.PPM};
     Map<String, Integer> syncGroups = new HashMap<>();
     static int nSyncGroups = 0;
 
-    double[] dragStart = new double[2];
-    private double mouseX = 0;
-    private double mouseY = 0;
-    double mousePressX = 0;
-    double mousePressY = 0;
-    boolean dragMode = false;
-    boolean selectMode = false;
-    Optional<Boolean> widthMode = Optional.empty();
     public static double overlapScale = 1.0;
 
     /**
@@ -303,6 +296,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         };
         PeakList.peakListTable.addListener(mapChangeListener);
         keyBindings = new KeyBindings(this);
+        mouseBindings = new MouseBindings(this);
 
     }
 
@@ -439,7 +433,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
         MenuItem inspectPeakItem = new MenuItem("Inspect Peak");
         inspectPeakItem.setOnAction((ActionEvent e) -> {
-            hitPeak(mousePressX, mousePressY);
+            hitPeak(mouseBindings.getMousePressX(), mouseBindings.getMousePressY());
         });
 
         peakMenu.getItems().add(inspectPeakItem);
@@ -508,118 +502,22 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             keyBindings.keyTyped(keyEvent);
         });
 
-        mouseNode.setOnMouseDragged(new EventHandler() {
-            @Override
-            public void handle(Event event) {
-                MouseEvent mouseEvent = (MouseEvent) event;
-                double x = mouseEvent.getX();
-                double y = mouseEvent.getY();
-                if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && getCursor().toString().equals("CROSSHAIR"))) {
-                    handleCrossHair(mouseEvent, false);
-                } else {
-                    if (mouseEvent.isPrimaryButtonDown()) {
-                        int dragTol = 4;
-                        if ((Math.abs(x - dragStart[0]) > dragTol) || (Math.abs(y - dragStart[1]) > dragTol)) {
-                            if (dragMode) {
-                                dragBox(x, y);
-                            } else {
-                                if (!widthMode.isPresent()) {
-                                    boolean metaDown = mouseEvent.isAltDown();
-                                    widthMode = Optional.of(metaDown);
-                                }
-                                dragPeak(x, y, widthMode.get());
-                            }
-                        }
-                    } else if (mouseEvent.isMiddleButtonDown()) {
-                        double dx = x - dragStart[0];
-                        double dy = y - dragStart[1];
-                        if ((Math.abs(dx) >= 1.0) || (Math.abs(dy) >= 1.0)) {
-                            dragStart[0] = x;
-                            dragStart[1] = y;
-                            scroll(dx, dy);
-                        }
-                    }
-                }
-            }
-
+        mouseNode.setOnMouseDragged((MouseEvent mouseEvent) -> {
+            mouseBindings.mouseDragged(mouseEvent);
         });
-        mouseNode.setOnMouseMoved(new EventHandler() {
-            @Override
-            public void handle(Event event) {
-                MouseEvent mouseEvent = (MouseEvent) event;
-                mouseX = mouseEvent.getX();
-                mouseY = mouseEvent.getY();
-            }
 
+        mouseNode.setOnMousePressed((MouseEvent mouseEvent) -> {
+            mouseBindings.mousePressed(mouseEvent);
         });
-        mouseNode.setOnMousePressed(new EventHandler() {
-            @Override
-            public void handle(Event event) {
-                mouseDown = true;
-                dragMode = false;
-                selectMode = false;
-                mouseNode.requestFocus();
-                MouseEvent mouseEvent = (MouseEvent) event;
-                mousePressX = mouseEvent.getX();
-                mousePressY = mouseEvent.getY();
-                double x = mouseEvent.getX();
-                double y = mouseEvent.getY();
-                if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && getCursor().toString().equals("CROSSHAIR"))) {
-                    if (!getCursor().toString().equals("CROSSHAIR")) {
-                        setCrossHairState(true);
-                    }
-                    handleCrossHair(mouseEvent, true);
-                } else {
-                    if (mouseEvent.isPrimaryButtonDown() && !mouseEvent.isControlDown()) {
-                        dragStart[0] = x;
-                        dragStart[1] = y;
-                        widthMode = Optional.empty();
-                        if (mouseEvent.isShiftDown()) {
-                            dragMode = true;
-                            selectMode = true;
-                            selectPeaks(x, y, true);
-                        } else if (mouseEvent.isAltDown()) {
-                            dragMode = true;
-                        } else {
-                            selectPeaks(x, y, false);
-                        }
-                    } else if (mouseEvent.isMiddleButtonDown()) {
-                        dragStart[0] = x;
-                        dragStart[1] = y;
-                    }
 
-                }
+        mouseNode.setOnMouseMoved((MouseEvent mouseEvent) -> {
+            mouseBindings.mouseMoved(mouseEvent);
+        });
 
-            }
+        mouseNode.setOnMouseReleased((MouseEvent mouseEvent) -> {
+            mouseBindings.mouseReleased(mouseEvent);
         });
-        mouseNode.setOnMouseReleased(new EventHandler() {
-            @Override
-            public void handle(Event event) {
-                mouseDown = false;
-                MouseEvent mouseEvent = (MouseEvent) event;
-                if (!mouseEvent.isControlDown()) {
-                    if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && getCursor().toString().equals("CROSSHAIR"))) {
-                        handleCrossHair(mouseEvent, false);
-                        if (!getCursor().toString().equals("CROSSHAIR")) {
-                            setCrossHairState(false);
-                        }
-                    } else {
-                        double x = mouseEvent.getX();
-                        double y = mouseEvent.getY();
-                        if (dragMode) {
-                            finishBox(x, y);
-                        } else {
-                            dragStart[0] = x;
-                            dragStart[1] = y;
-                            if (widthMode.isPresent()) {
-                                dragPeak(x, y, widthMode.get());
-                            }
-                            widthMode = Optional.empty();
-                        }
-                    }
-                }
-            }
-        });
+
         mouseNode.setOnRotate(new EventHandler<RotateEvent>() {
             @Override
             public void handle(RotateEvent rEvent) {
@@ -798,7 +696,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    void setActiveChart() {
+    public void setActiveChart() {
         activeChart = this;
         controller.setActiveChart(this);
     }
@@ -811,7 +709,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         return controller;
     }
 
-    protected void handleCrossHair(MouseEvent mEvent, boolean selectCrossNum) {
+    public void handleCrossHair(MouseEvent mEvent, boolean selectCrossNum) {
         if (mEvent.isPrimaryButtonDown()) {
             if (selectCrossNum) {
                 if (!hasMiddleMouseButton) {
@@ -831,26 +729,28 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    protected void dragBox(double x, double y) {
+    public void dragBox(double[] dragStart, double x, double y) {
         GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
         double width = annoCanvas.getWidth();
         double height = annoCanvas.getHeight();
-
+        double xStart = dragStart[0];
+        double yStart = dragStart[1];
+        System.out.println(xStart + " " + yStart + " " + x + " " + y);
         annoGC.clearRect(0, 0, width, height);
         double x1, y1, x2, y2, w, h;
-        if (x > dragStart[0]) {
-            x1 = dragStart[0];
+        if (x > xStart) {
+            x1 = xStart;
             w = x - x1;
         } else {
             x1 = x;
-            w = dragStart[0] - x;
+            w = xStart - x;
         }
-        if (y > dragStart[1]) {
-            y1 = dragStart[1];
+        if (y > yStart) {
+            y1 = yStart;
             h = y - y1;
         } else {
             y1 = y;
-            h = dragStart[1] - y;
+            h = yStart - y;
         }
         Color color = new Color(1.0, 1.0, 0.0, 0.3);
         annoGC.setFill(color);
@@ -865,7 +765,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    protected void finishBox(double x, double y) {
+    public void finishBox(boolean selectMode, double[] dragStart, double x, double y) {
         GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
         double width = annoCanvas.getWidth();
         double height = annoCanvas.getHeight();
@@ -1034,7 +934,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         return limits;
     }
 
-    protected void scroll(double x, double y) {
+    public void scroll(double x, double y) {
 
         scrollXAxis(x);
         scrollYAxis(y);
@@ -2164,7 +2064,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         return selectedPeaks;
     }
 
-    void dragPeak(double x, double y, boolean widthMode) {
+    public void dragPeak(double[] dragStart, double x, double y, boolean widthMode) {
         boolean draggedAny = false;
         double[] dragPos = {x, y};
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
@@ -2330,7 +2230,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    void selectPeaks(double pickX, double pickY, boolean append) {
+    public void selectPeaks(double pickX, double pickY, boolean append) {
         List<Peak> selPeaks = new ArrayList<>();
         drawPeakLists(false);
         if (peakStatus.get()) {
