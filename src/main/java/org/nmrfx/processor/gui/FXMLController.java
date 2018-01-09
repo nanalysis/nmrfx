@@ -904,6 +904,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
     }
 
+    public void updateAttrDims() {
+        if (specAttrWindowController != null) {
+            specAttrWindowController.updateDims();
+        }
+    }
+
     protected void updatePhaseDim(Observable observable) {
         ReadOnlyIntegerProperty prop = (ReadOnlyIntegerProperty) observable;
         setPhaseDim(prop.getValue());

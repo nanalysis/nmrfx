@@ -41,7 +41,6 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.chart.XYChart.Data;
 import javafx.collections.ObservableList;
-import javafx.scene.shape.Polyline;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Line;
 import javafx.beans.NamedArg;
@@ -55,8 +54,6 @@ import java.util.Set;
 import java.util.function.DoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -85,7 +82,6 @@ import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Region;
@@ -97,8 +93,37 @@ import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
+import org.nmrfx.processor.gui.spectra.KeyBindings;
 
 public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
+
+    /**
+     * @return the hasMiddleMouseButton
+     */
+    public boolean getHasMiddleMouseButton() {
+        return hasMiddleMouseButton;
+    }
+
+    /**
+     * @param hasMiddleMouseButton the hasMiddleMouseButton to set
+     */
+    public void setHasMiddleMouseButton(boolean hasMiddleMouseButton) {
+        this.hasMiddleMouseButton = hasMiddleMouseButton;
+    }
+
+    /**
+     * @return the mouseX
+     */
+    public double getMouseX() {
+        return mouseX;
+    }
+
+    /**
+     * @return the mouseY
+     */
+    public double getMouseY() {
+        return mouseY;
+    }
 
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
@@ -119,7 +144,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     boolean[][] crossHairStates = new boolean[2][2];
     int crossHairNumH = 0;
     int crossHairNumV = 0;
-    boolean hasMiddleMouseButton = false;
+    private boolean hasMiddleMouseButton = false;
     final NMRAxis xAxis;
     final NMRAxis yAxis;
     NMRAxis[] axes = new NMRAxis[2];
@@ -165,6 +190,10 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     }
 
+    public void setPeakStatus(boolean state) {
+        peakStatus.set(state);
+    }
+
     private void respondToPeakListChange(PeakEvent peakEvent) {
         // if mouse down we could be dragging peak which will itself cause redraw
         //   no need to call this
@@ -200,15 +229,15 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(TwoD);
     final ContextMenu specMenu = new ContextMenu();
 
-    KeyMonitor keyMonitor = new KeyMonitor();
+    KeyBindings keyBindings;
 
     AXMODE axModes[] = {AXMODE.PPM, AXMODE.PPM};
     Map<String, Integer> syncGroups = new HashMap<>();
     static int nSyncGroups = 0;
 
     double[] dragStart = new double[2];
-    double mouseX = 0;
-    double mouseY = 0;
+    private double mouseX = 0;
+    private double mouseY = 0;
     double mousePressX = 0;
     double mousePressY = 0;
     boolean dragMode = false;
@@ -273,6 +302,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             purgeInvalidPeakListAttributes();
         };
         PeakList.peakListTable.addListener(mapChangeListener);
+        keyBindings = new KeyBindings(this);
 
     }
 
@@ -312,6 +342,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         activeChart = this;
         setCursor(Cursor.CROSSHAIR);
         id = getNextId();
+        keyBindings = new KeyBindings(this);
     }
 
     private synchronized int getNextId() {
@@ -337,6 +368,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 activeChart = charts.get(0);
             }
         }
+    }
+
+    public void focus() {
+        getController().stage.requestFocus();
+        setFocused(true);
     }
 
     void makeSpecMenu() {
@@ -460,217 +496,25 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
             }
         });
-
-        mouseNode.setOnKeyPressed(new EventHandler() {
-            @Override
-            public void handle(Event event) {
-                KeyEvent keyEvent = (KeyEvent) event;
-                KeyCode code = keyEvent.getCode();
-                if (code == KeyCode.DOWN) {
-                    if (keyEvent.isShiftDown()) {
-                        datasetAttributesList.stream().forEach(d -> d.rotateDim(1, -1));
-                        if (controller.specAttrWindowController != null) {
-                            controller.specAttrWindowController.updateDims();
-                        }
-                        full();
-                        requestFocus();
-                    } else {
-                        if (is1D()) {
-                            incrementRow(-1);
-                        } else {
-                            incrementPlane(2, -1);
-                        }
-                    }
-                    event.consume();
-
-                } else if (code == KeyCode.UP) {
-                    if (keyEvent.isShiftDown()) {
-                        datasetAttributesList.stream().forEach(d -> d.rotateDim(1, 1));
-                        if (controller.specAttrWindowController != null) {
-                            controller.specAttrWindowController.updateDims();
-                        }
-                        full();
-                        requestFocus();
-                    } else {
-                        if (is1D()) {
-                            incrementRow(1);
-                        } else {
-                            incrementPlane(2, 1);
-                        }
-                    }
-                    event.consume();
-                } else if (code == KeyCode.RIGHT) {
-                    incrementPlane(3, 1);
-                    event.consume();
-                } else if (code == KeyCode.LEFT) {
-                    incrementPlane(3, -1);
-                    event.consume();
-                } else if (code == KeyCode.ENTER) {
-                    keyMonitor.complete();
-                    event.consume();
-                } else if (code == KeyCode.DELETE) {
-                    keyMonitor.complete();
-                    event.consume();
-                    deleteSelectedPeaks();
-                    refresh();
-                } else if (code == KeyCode.BACK_SPACE) {
-                    keyMonitor.complete();
-                    event.consume();
-                    deleteSelectedPeaks();
-                    refresh();
-                }
-            }
+        mouseNode.setOnKeyPressed((KeyEvent keyEvent) -> {
+            keyBindings.keyPressed(keyEvent);
         });
+
         mouseNode.setOnKeyReleased((KeyEvent keyEvent) -> {
-            KeyCode code = keyEvent.getCode();
+            keyBindings.keyReleased(keyEvent);
         });
+
         mouseNode.setOnKeyTyped((KeyEvent keyEvent) -> {
-            Pattern pattern = Pattern.compile("jz([0-9]+)");
-            long time = System.currentTimeMillis();
-            String keyChar = keyEvent.getCharacter();
-            if (keyChar.equals(" ")) {
-                String keyString = keyMonitor.getKeyString();
-                if (keyString.equals("")) {
-                    hitPeak(mouseX, mouseY);
-                    keyMonitor.clear();
-                    controller.stage.requestFocus();
-                    setFocused(true);
-                    return;
-                }
-            }
-            keyMonitor.storeKey(keyChar);
-            String keyString = keyMonitor.getKeyString();
-            String shortString = keyString.substring(0, Math.min(2, keyString.length()));
-            keyString = keyString.trim();
-            // note always break on a single character that is used in a two character sequence
-            // otherwise the keystring will be cleared and the multiple key event will never be processed
-            switch (shortString) {
-                case "a":
-                    break;
-
-                case "aa":
-                case "as":
-                    DatasetAttributes datasetAttr = datasetAttributesList.get(0);
-                    double pickX = xAxis.getValueForDisplay(mouseX).doubleValue();
-                    double pickY = yAxis.getValueForDisplay(mouseY).doubleValue();
-                    PeakPicking.pickAtPosition(this, datasetAttr, pickX, pickY, shortString.equals("as"), false);
-                    peakStatus.set(true);
-                    keyMonitor.clear();
-                    drawPeakLists(true);
-                    break;
-                case "c":
-                    break;
-
-                case "c1":
-                    hasMiddleMouseButton = false;
-                    keyMonitor.clear();
-                    break;
-                case "c3":
-                    hasMiddleMouseButton = true;
-                    keyMonitor.clear();
-                    break;
-                case "cc":
-                    SpectrumStatusBar statusBar = controller.getStatusBar();
-                    if (statusBar != null) {
-                        statusBar.setCursor(Cursor.CROSSHAIR);
-                    }
-                    keyMonitor.clear();
-                    break;
-                case "cs":
-                    statusBar = controller.getStatusBar();
-                    if (statusBar != null) {
-                        statusBar.setCursor(Cursor.MOVE);
-                    }
-                    keyMonitor.clear();
-                    break;
-                case "p":
-                    break;
-                case "v":
-                    break;
-                case "ve":
-                    expand();
-                    keyMonitor.clear();
-                    break;
-                case "vf":
-                    full();
-                    keyMonitor.clear();
-                    break;
-                case "vi":
-                    zoom(1.2);
-                    keyMonitor.clear();
-                    break;
-                case "vo":
-                    zoom(0.8);
-                    keyMonitor.clear();
-                    break;
-                case "j":
-                    break;
-                case "jx":
-                case "jy":
-                case "jz":
-                    // fixme what about a,b,c..
-                    int iDim = keyString.charAt(1) - 'x';
-                    switch (keyString.substring(2)) {
-                        case "f":
-                            full(iDim);
-                            layoutPlotChildren();
-                            keyMonitor.clear();
-                            break;
-                        case "m":
-                            if (iDim > 1) {
-                                gotoMaxPlane();
-                                layoutPlotChildren();
-                            }
-                            keyMonitor.clear();
-                            break;
-                        case "c":
-                            center(iDim);
-                            layoutPlotChildren();
-                            keyMonitor.clear();
-                            break;
-                        case "b":
-                            if (iDim > 1) {
-                                firstPlane(2);
-                                layoutPlotChildren();
-                            }
-                            keyMonitor.clear();
-                            break;
-                        case "t":
-                            if (iDim > 1) {
-                                lastPlane(2);
-                                layoutPlotChildren();
-                            }
-                            keyMonitor.clear();
-                            break;
-
-                        default:
-                            if (keyString.length() > 2) {
-                                if (keyMonitor.isComplete()) {
-                                    if (iDim > 1) {
-                                        Matcher matcher = pattern.matcher(keyString);
-                                        if (matcher.matches()) {
-                                            String group = matcher.group(1);
-                                            int plane = Integer.parseInt(group);
-                                            setAxis(2, plane, plane);
-                                            layoutPlotChildren();
-                                        }
-                                    }
-                                    keyMonitor.clear();
-                                }
-                            }
-                    }
-                    break;
-                default:
-                    keyMonitor.clear();
-            }
+            keyBindings.keyTyped(keyEvent);
         });
+
         mouseNode.setOnMouseDragged(new EventHandler() {
             @Override
             public void handle(Event event) {
                 MouseEvent mouseEvent = (MouseEvent) event;
                 double x = mouseEvent.getX();
                 double y = mouseEvent.getY();
-                    if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() &&getCursor().toString().equals("CROSSHAIR"))) {
+                if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && getCursor().toString().equals("CROSSHAIR"))) {
                     handleCrossHair(mouseEvent, false);
                 } else {
                     if (mouseEvent.isPrimaryButtonDown()) {
@@ -720,7 +564,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 mousePressY = mouseEvent.getY();
                 double x = mouseEvent.getX();
                 double y = mouseEvent.getY();
-                    if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() &&getCursor().toString().equals("CROSSHAIR"))) {
+                if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && getCursor().toString().equals("CROSSHAIR"))) {
                     if (!getCursor().toString().equals("CROSSHAIR")) {
                         setCrossHairState(true);
                     }
@@ -754,7 +598,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 mouseDown = false;
                 MouseEvent mouseEvent = (MouseEvent) event;
                 if (!mouseEvent.isControlDown()) {
-                    if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() &&getCursor().toString().equals("CROSSHAIR"))) {
+                    if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && getCursor().toString().equals("CROSSHAIR"))) {
                         handleCrossHair(mouseEvent, false);
                         if (!getCursor().toString().equals("CROSSHAIR")) {
                             setCrossHairState(false);
@@ -1364,7 +1208,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         yAxis.setTickUnit(delta);
     }
 
-    protected void setAxis(int iAxis, double min, double max) {
+    public void setAxis(int iAxis, double min, double max) {
         if (axes.length > iAxis) {
             NMRAxis axis = axes[iAxis];
             double range = max - min;
@@ -1375,7 +1219,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    void incrementRow(int amount) {
+    public void incrementRow(int amount) {
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
         Dataset dataset = getDataset();
         if (dataset.getNDim() < 2) {
@@ -1398,7 +1242,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         layoutPlotChildren();
     }
 
-    void incrementPlane(int axis, int amount) {
+    public void incrementPlane(int axis, int amount) {
         if (axes.length > axis) {
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
             Dataset dataset = getDataset();
@@ -1441,7 +1285,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         });
     }
 
-    protected void full(int axis) {
+    public void full(int axis) {
         if (axes.length > axis) {
             if (!datasetAttributesList.isEmpty()) {
                 double[] limits = getRange(axis);
@@ -1451,7 +1295,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    protected void center(int axis) {
+    public void center(int axis) {
         if (axes.length > axis) {
             if (!datasetAttributesList.isEmpty()) {
                 double[] limits = getRange(axis);
@@ -1484,7 +1328,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    protected void firstPlane(int axis) {
+    public void firstPlane(int axis) {
         if (axes.length > axis) {
             if (!datasetAttributesList.isEmpty()) {
                 double[] limits = getRange(axis);
@@ -1493,7 +1337,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    protected void lastPlane(int axis) {
+    public void lastPlane(int axis) {
         if (axes.length > axis) {
             if (!datasetAttributesList.isEmpty()) {
                 double[] limits = getRange(axis);
@@ -1680,7 +1524,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    protected void expand() {
+    public void expand() {
 
         expand(VERTICAL);
         Dataset dataset = getDataset();
@@ -2301,7 +2145,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         this.setCursor(Cursor.CROSSHAIR);
     }
 
-    void deleteSelectedPeaks() {
+    public void deleteSelectedPeaks() {
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             for (Peak peak : peaks) {
@@ -2437,7 +2281,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 //        });
     }
 
-    void drawPeakLists(boolean clear) {
+    public void drawPeakLists(boolean clear) {
         if (peakCanvas != null) {
             double width = xAxis.getWidth();
             double height = yAxis.getHeight();
@@ -2467,7 +2311,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    void hitPeak(double pickX, double pickY) {
+    public void hitPeak(double pickX, double pickY) {
         Optional<Peak> hit = Optional.empty();
         if (peakStatus.get()) {
             drawPeakLists(false);
@@ -3102,7 +2946,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    void gotoMaxPlane() {
+    public void gotoMaxPlane() {
         Dataset dataset = getDataset();
         if (dataset != null) {
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);

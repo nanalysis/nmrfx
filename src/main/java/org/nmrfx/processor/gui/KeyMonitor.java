@@ -34,7 +34,7 @@ public class KeyMonitor {
     StringBuilder keyString = new StringBuilder();
     boolean complete = false;
 
-    void storeKey(String ch) {
+    public void storeKey(String ch) {
         long time = System.currentTimeMillis();
         if (lastTime == 0) {
             lastTime = time;
@@ -47,20 +47,20 @@ public class KeyMonitor {
         keyString.append(ch);
     }
 
-    String getKeyString() {
+    public String getKeyString() {
         return keyString.toString();
     }
 
-    void clear() {
+    public void clear() {
         keyString.setLength(0);
         complete = false;
     }
 
-    void complete() {
+    public void complete() {
         complete = true;
     }
 
-    boolean isComplete() {
+    public boolean isComplete() {
         return complete;
     }
 
