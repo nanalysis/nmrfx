@@ -201,8 +201,6 @@ public class SpecAttrWindowController implements Initializable {
         datasetTargetListener = (ListChangeListener.Change<? extends String> c) -> {
             updateChartDatasets();
         };
-        addViewRefreshButton(datasetView);
-        addViewRefreshButton(peakView);
 
         datasetView.getTargetItems().addListener(datasetTargetListener);
         peakView.getTargetItems().addListener(peakTargetListener);
