@@ -3503,6 +3503,8 @@ def genScript():
     else:
         script += 'DIM(1)\n'
         for iDim in range(2,fidInfo.nd+1):
+            if not fidInfo.fidObj.isFrequencyDim(iDim-1):
+                continue
             if not fidInfo.isComplex(iDim-1):
                 continue
             if fidInfo.mapToDatasetList[iDim-1] == -1:
@@ -3533,6 +3535,8 @@ def genScript():
         if fidInfo.size[iDim-1] < 2:
             continue
         if fidInfo.mapToDatasetList[iDim-1] == -1:
+            continue
+        if not fidInfo.fidObj.isFrequencyDim(iDim-1):
             continue
         script += 'DIM('+str(iDim)+')\n'
         if iDim == 2 and fidInfo.nd == 2 and fidInfo.fidObj.getSampleSchedule() != None:
