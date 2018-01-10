@@ -156,7 +156,7 @@ public class BrukerPar {
      * @param parName : parameter name
      * @param values : parameter value list
      */
-    static void storeParameter(final HashMap<String, String> pmap, final String parName, ArrayList<String> values) {
+    static void storeParameter(final HashMap<String, String> pmap, final String parName, List<String> values) {
         int nValues = values.size();
         String value = "";
         if (nValues == 1) {

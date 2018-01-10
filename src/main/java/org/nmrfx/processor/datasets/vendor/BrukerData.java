@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import java.io.BufferedReader;
 import org.nmrfx.processor.datasets.parameters.FPMult;
 import org.nmrfx.processor.datasets.parameters.GaussianWt;
 import org.nmrfx.processor.datasets.parameters.LPParams;
@@ -29,6 +30,7 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -46,6 +48,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -99,6 +102,7 @@ class BrukerData implements NMRData {
     private final double scale;
     boolean hasFID = false;
     boolean hasSpectrum = false;
+    double[] arrayValues = null;
 
     /**
      * Open Bruker parameter and data files.
@@ -312,6 +316,24 @@ class BrukerData implements NMRData {
         } else {
             return Integer.parseInt(parMap.get(parname));
         }
+    }
+
+    public double[] getDoubleArrayPar(String parName) {
+        double[] result = null;
+        if ((parMap != null) && (parMap.get(parName) != null)) {
+            String[] sValues = parMap.get(parName).split(" ");
+            result = new double[sValues.length];
+            int i = 0;
+            for (String sValue : sValues) {
+                try {
+                    result[i++] = Double.parseDouble(sValue);
+                } catch (NumberFormatException nFE) {
+                    result = null;
+                    break;
+                }
+            }
+        }
+        return result;
     }
 
     @Override
@@ -730,6 +752,15 @@ class BrukerData implements NMRData {
                 logger.log(Level.WARNING, ex.getMessage());
             }
         }
+        String[] listTypes = {"vd", "vc", "vp"};
+        for (String listType : listTypes) {
+            Path listPath = Paths.get(parpath, listType + "list");
+            if (Files.exists(listPath)) {
+                List<String> lines = Files.readAllLines(listPath);
+                BrukerPar.storeParameter(parMap, listType, lines);
+                System.out.println(getPar("vd"));
+            }
+        }
         this.dim = acqdim;
 //        for (String name : parMap.keySet()) {
 //            System.out.println("  "+name+" : "+parMap.get(name));
@@ -794,6 +825,7 @@ class BrukerData implements NMRData {
                 }
             }
         }
+        arrayValues = getDoubleArrayPar("vd");
         setArrayPars(dim);  // must be before setFTpars()
         if ((ipar = getParInt("BYTORDA,1")) != null) {
             if (ipar == 0) {
@@ -1543,6 +1575,24 @@ class BrukerData implements NMRData {
             }
         }
         return builder.toString();
+    }
+
+    @Override
+    public boolean isFrequencyDim(int iDim) {
+        boolean result = true;
+        System.out.println("freq " + iDim + " " + getNDim());
+        System.out.println(arrayValues);
+        if (arrayValues != null) {
+            System.out.println(arrayValues.length);
+
+        }
+        if (!isComplex(iDim) && (iDim == getNDim() - 1)) {
+            if ((arrayValues != null) && (arrayValues.length == getSize(iDim))) {
+                System.out.println("not f");
+                result = false;
+            }
+        }
+        return result;
     }
 
     @Override
