@@ -356,7 +356,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     void addNoDrawAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(getInitialDirectory());
-        fileChooser.setTitle("Add NMR FID/Dataset");
+        fileChooser.setTitle("Add NMR Dataset");
         fileChooser.getExtensionFilters().addAll(
                 new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf"),
                 new ExtensionFilter("Any File", "*.*")
