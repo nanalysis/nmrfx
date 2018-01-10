@@ -5,25 +5,71 @@
  */
 package org.nmrfx.project;
 
-import org.nmrfx.project.Project;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import javafx.concurrent.Task;
+
+import javafx.stage.Stage;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.Status;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.dircache.DirCache;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.nmrfx.processor.gui.MainApp;
+import org.nmrfx.processor.gui.PreferencesController;
+import org.python.util.PythonInterpreter;
 
 /**
  *
  * @author Bruce Johnson
  */
 public class GUIProject extends Project {
+    Git git;
 
     public GUIProject(String name) {
         super(name);
+    }
+
+    public static GUIProject replace(String name, GUIProject project) {
+        GUIProject newProject = new GUIProject(name);
+        return newProject;
+    }
+
+    public static GUIProject getActive() {
+        Project project = Project.getActive();
+        if (project == null) {
+            project = new GUIProject("Untitled 1");
+        }
+        return (GUIProject) project;
+    }
+
+    public void createProject(Path projectDir) throws IOException {
+        try {
+            super.createProject(projectDir);
+            PreferencesController.saveRecentProjects(projectDir.toString());
+            git = Git.init().setDirectory(projectDir.toFile()).call();
+        } catch (GitAPIException ex) {
+            Logger.getLogger(GUIProject.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (git != null) {
+            Path path = Paths.get(projectDir.toString(), ".gitignore");
+            try (FileWriter writer = new FileWriter(path.toFile())) {
+                writer.write("*.nv\n*.ucsf");
+            }
+        }
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, IllegalStateException {
@@ -47,40 +93,99 @@ public class GUIProject extends Project {
             }
         }
         this.projectDir = projectDir;
+        PreferencesController.saveRecentProjects(projectDir.toString());
+
     }
 
-    public static GUIProject getActive() {
-        Project project = Project.getActive();
-        if (project == null) {
-            project = new GUIProject("Untitled 1");
-        }
-        return (GUIProject) project;
-    }
-
-    public static GUIProject replace(String name, GUIProject project) {
-        GUIProject newProject = new GUIProject(name);
-
-        return newProject;
-    }
-
+    @Override
     public void saveProject() throws IOException {
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         super.saveProject();
         saveWindows();
+        gitCommitOnThread();
+        PreferencesController.saveRecentProjects(projectDir.toString());
+
+    }
+
+    void gitCommitOnThread() {
+        Task<Boolean> task = new Task<Boolean>() {
+            @Override
+            protected Boolean call() throws Exception {
+                return gitCommit();
+            }
+        };
+        Thread th = new Thread(task);
+        th.setDaemon(true);
+        th.start();
+    }
+
+    boolean gitCommit() {
+        boolean didSomething = false;
+        try {
+            if (git == null) {
+                git = Git.open(projectDir.toFile());
+            }
+            DirCache index = git.add().addFilepattern(".").call();
+            Status status = git.status().call();
+            System.out.println("status " + status.isClean() + " " + status.hasUncommittedChanges());
+            StringBuilder sBuilder = new StringBuilder();
+            Set<String> actionMap = new HashSet<>();
+            if (status.hasUncommittedChanges()) {
+                Set<String> addedFiles = status.getAdded();
+                for (String addedFile : addedFiles) {
+                    String action = "add:" + Paths.get(addedFile).getName(0);
+                    actionMap.add(action);
+                    System.out.println("added " + addedFile);
+                }
+                Set<String> changedFiles = status.getChanged();
+                for (String changedFile : changedFiles) {
+                    String action = "change:" + Paths.get(changedFile).getName(0);
+                    actionMap.add(action);
+                    System.out.println("changed " + changedFile);
+                }
+                Set<String> removedFiles = status.getRemoved();
+                for (String removedFile : removedFiles) {
+                    System.out.println("removed " + removedFile);
+                    String action = "remove:" + Paths.get(removedFile).getName(0);
+                    actionMap.add(action);
+                    git.rm().addFilepattern(removedFile).call();
+                }
+                Set<String> missingFiles = status.getMissing();
+                for (String missingFile : missingFiles) {
+                    System.out.println("missing " + missingFile);
+                    String action = "missing:" + Paths.get(missingFile).getName(0);
+                    actionMap.add(action);
+                    git.rm().addFilepattern(missingFile).call();
+                }
+                actionMap.stream().forEach(action -> sBuilder.append(action).append(","));
+                RevCommit commit = git.commit().setMessage(sBuilder.toString()).call();
+                didSomething = true;
+            }
+        } catch (GitAPIException | IOException ex) {
+            Logger.getLogger(GUIProject.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            // fixme, should we do this after each commit, or leave git open
+            git.close();
+            git = null;
+        }
+        return didSomething;
+
     }
 
     void loadWindows(Path directory) throws IOException {
-        Pattern pattern = Pattern.compile("(.+)\\.(txt|ppm)");
+        Pattern pattern = Pattern.compile("(.+)\\.(yaml)");
         Predicate<String> predicate = pattern.asPredicate();
+        final PythonInterpreter interp = MainApp.getInterpreter();
+        interp.exec("import nwyaml\\n");
         if (Files.isDirectory(directory)) {
             Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
                     sorted(new Project.FileComparator()).
                     forEach(path -> {
                         String fileName = path.getFileName().toString();
                         Optional<Integer> fileNum = getIndex(fileName);
-                        int ppmSet = fileNum.isPresent() ? fileNum.get() : 0;
+                        interp.exec("nwyaml.loadYamlWin('" + path.toString() + "')");
                     });
         }
     }
@@ -92,16 +197,16 @@ public class GUIProject extends Project {
             throw new IllegalArgumentException("Project directory not set");
         }
         Path projectDir = this.projectDir;
-        int ppmSet = 0;
-        String fileName = String.valueOf(ppmSet) + "_" + "ppm.txt";
-        String subDir = "windows";
-        Path peakFilePath = fileSystem.getPath(projectDir.toString(), subDir, fileName);
-        // fixme should only write if file doesn't already exist or peaklist changed since read
-        try (FileWriter writer = new FileWriter(peakFilePath.toFile())) {
-            writer.close();
-        } catch (IOException ioE) {
-            throw ioE;
+        PythonInterpreter interp = MainApp.getInterpreter();
+        List<Stage> stages = MainApp.getStages();
+        int i = 0;
+        interp.exec("import nwyaml\\n");
+
+        for (Stage stage : stages) {
+            String fileName = i + "_stage.yaml";
+            Path path = Paths.get(projectDir.toString(), "windows", fileName);
+            interp.exec("nwyaml.dumpYamlWin('" + path.toString() + "')");
+            i++;
         }
     }
-
 }
