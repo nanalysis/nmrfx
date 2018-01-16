@@ -274,8 +274,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         loadData();
         drawSpectrum = new DrawSpectrum(axes, canvas);
         drawPeaks = new DrawPeaks(this, peakCanvas);
-        setHandlers(canvas);
-        setDragHandlers(this);
         xAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 0, 0));
         xAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 0, 1));
         yAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 1, 0));
@@ -294,6 +292,9 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         dragBindings = new DragBindings(this);
         specMenu = new SpectrumMenu(this);
         crossHairs = new CrossHairs(activeChart, crossHairPositions, crossHairStates, crossHairLines);
+        setHandlers(canvas);
+        setDragHandlers(this);
+        canvas.requestFocus();
 
     }
 
@@ -395,6 +396,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         });
 
         mouseNode.setOnMousePressed((MouseEvent mouseEvent) -> {
+            mouseNode.requestFocus();
             mouseBindings.mousePressed(mouseEvent);
         });
 
