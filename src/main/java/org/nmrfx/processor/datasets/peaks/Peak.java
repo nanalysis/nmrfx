@@ -451,7 +451,6 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public void setMeasures(double[] values) {
         measures = Optional.of(values);
-        peakList.hasMeasures = true;
     }
 
     public Optional<double[]> getMeasures() {
