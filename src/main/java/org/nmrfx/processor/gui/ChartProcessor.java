@@ -859,11 +859,13 @@ public class ChartProcessor {
 
         Path target = datasetFile.toPath();
         Path source = datasetFileTemp.toPath();
+        Path parTarget = Paths.get(DatasetParameterFile.getParameterFileName(datasetFile.toString()));
+        Path parSource = Paths.get(DatasetParameterFile.getParameterFileName(datasetFileTemp.toString()));
         try {
             Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
-            String parFileName = DatasetParameterFile.getParameterFileName(target.toString());
-            Path parPath = Paths.get(parFileName);
-            Files.deleteIfExists(parPath);
+            if (Files.exists(parSource)) {
+                Files.move(parSource, parTarget, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException ioE) {
             MainApp.writeOutput(ioE.getMessage() + "\n");
             throw ioE;
