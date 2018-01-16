@@ -827,6 +827,7 @@ public class Processor {
                 dataset.setTDSize(i, useSizes[mapToFID(i)]);
                 //dataset.setPh0(i, nmrData.getPH0(mapToFID(i)));
                 //dataset.setPh1(i, nmrData.getPH1(mapToFID(i)));
+                dataset.setValues(i, nmrData.getValues(i));
             }
             dataset.setSolvent(nmrData.getSolvent());
         }
@@ -1358,6 +1359,7 @@ public class Processor {
             if (dataset.fFormat == Dataset.FFORMAT.UCSF) {
                 dataset.writeHeaderUCSF(false);
             }
+            dataset.writeParFile();
             dataset.close();
             dataset = null;
         }

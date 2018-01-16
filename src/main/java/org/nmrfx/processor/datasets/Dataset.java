@@ -1944,6 +1944,29 @@ public class Dataset extends DoubleVector {
         }
     }
 
+    /**
+     * Store a set of values for a dimension of dataset
+     *
+     * @param iDim the dataset dimension
+     * @param values the values
+     */
+    public void setValues(int iDim, List<Double> values) {
+        if ((iDim < 0) || (iDim >= nDim)) {
+            throw new IllegalArgumentException("Invalid dimension in setValues");
+        }
+        if ((values == null) || values.isEmpty()) {
+            this.values[iDim] = null;
+        } else {
+            if (values.size() != size[iDim]) {
+                throw new IllegalArgumentException("Number of values must equal dimension size");
+            }
+            this.values[iDim] = new double[values.size()];
+            for (int i = 0; i < values.size(); i++) {
+                this.values[iDim][i] = values.get(i);
+            }
+        }
+    }
+
     double[] optCenter(int[] maxPoint, int[] dim) throws IOException {
         double[] dmaxPoint = new double[nDim];
         int[] points = new int[nDim];
