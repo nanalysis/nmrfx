@@ -27,10 +27,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.nmrfx.processor.datasets.peaks.Measures;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.processor.operations.Measure;
 
 /**
  *
@@ -282,6 +284,8 @@ public class PeakReader {
         boolean gotHeader = false;
         int valStart = -1;
         int nValues = -1;
+        int nDim = peakList.nDim;
+        double[] xValues;
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             while (true) {
                 String line = fileReader.readLine();
@@ -298,14 +302,21 @@ public class PeakReader {
                 String[] data = line.split("\t", -1);
                 if (!gotHeader) {
                     gotHeader = true;
-                    int i = 0;
-                    for (String s : data) {
-                        if (s.startsWith("val")) {
-                            valStart = i;
-                            nValues = data.length - valStart;
+                    nValues = data.length - (nDim + 1);
+                    valStart = nDim + 1;
+                    xValues = new double[nValues];
+                    boolean ok = true;
+                    for (int i = valStart, j = 0; i < data.length; i++) {
+                        try {
+                            xValues[j++] = Double.parseDouble(data[i]);
+                        } catch (NumberFormatException nfE) {
+                            ok = false;
                             break;
                         }
-                        i++;
+                    }
+                    if (ok) {
+                        Measures measure = new Measures(xValues);
+                        peakList.setMeasures(measure);
                     }
                 } else {
                     int peakId = Integer.parseInt(data[0]);

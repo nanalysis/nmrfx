@@ -125,7 +125,7 @@ public class PeakWriter {
         result.append("id").append(sep);
 
         for (int j = 0; j < nDim; j++) {
-            result.append("lab" + (j + 1)).append(sep);
+            result.append("lab").append((j + 1)).append(sep);
         }
         int nPeaks = peakList.size();
         boolean wroteHeader = false;
@@ -137,8 +137,16 @@ public class PeakWriter {
             if (peak.getMeasures().isPresent()) {
                 if (!wroteHeader) {
                     int nMeasure = peak.getMeasures().get().length;
+                    double[] xValues = null;
+                    if (peakList.hasMeasures()) {
+                        xValues = peakList.getMeasureValues();
+                    }
                     for (int j = 0; j < nMeasure; j++) {
-                        result.append("val" + (j + 1)).append(sep);
+                        if ((xValues != null) && (xValues.length == nMeasure)) {
+                            result.append(xValues[j]).append(sep);
+                        } else {
+                            result.append("val").append((j + 1)).append(sep);
+                        }
                     }
                     chan.write(result.toString().trim());
                     chan.write("\n");

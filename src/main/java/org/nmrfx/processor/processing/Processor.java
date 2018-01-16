@@ -828,6 +828,7 @@ public class Processor {
                 //dataset.setPh0(i, nmrData.getPH0(mapToFID(i)));
                 //dataset.setPh1(i, nmrData.getPH1(mapToFID(i)));
                 dataset.setValues(i, nmrData.getValues(i));
+                dataset.setComplex(i, nmrData.isComplex(mapToFID(i)));
             }
             dataset.setSolvent(nmrData.getSolvent());
         }

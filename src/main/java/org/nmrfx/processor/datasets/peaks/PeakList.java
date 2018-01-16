@@ -90,7 +90,7 @@ public class PeakList {
     ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture futureUpdate = null;
     boolean slideable = false;
-    boolean hasMeasures = false;
+    Optional<Measures> measures = Optional.empty();
 
     class UpdateTask implements Runnable {
 
@@ -388,7 +388,19 @@ public class PeakList {
     }
 
     public boolean hasMeasures() {
-        return hasMeasures;
+        return measures.isPresent();
+    }
+
+    public void setMeasures(Measures measure) {
+        measures = Optional.of(measure);
+    }
+
+    public double[] getMeasureValues() {
+        double[] values = null;
+        if (hasMeasures()) {
+            values = measures.get().getValues();
+        }
+        return values;
     }
 
     private void sortMultiplets() {
@@ -2716,24 +2728,43 @@ public class PeakList {
         }
         int[] planes = new int[1];
         peaks.stream().forEach(peak -> {
-            double[] measures = new double[nPlanes];
+            double[] values = new double[nPlanes];
             for (int i = 0; i < nPlanes; i++) {
                 planes[0] = i;
                 try {
                     double value = peak.measurePeak(dataset, planes, f);
-                    measures[i] = value;
+                    values[i] = value;
                 } catch (IOException ex) {
                     System.out.println(ex.getMessage());
                 }
             }
             if (mode.contains("vol")) {
-                peak.setVolume1((float) measures[0]);
+                peak.setVolume1((float) values[0]);
             } else {
-                peak.setIntensity((float) measures[0]);
+                peak.setIntensity((float) values[0]);
             }
-            peak.setMeasures(measures);
-            hasMeasures = true;
+            peak.setMeasures(values);
         });
+        double[] pValues = null;
+        for (int iDim = 0; iDim < dataset.getNDim(); iDim++) {
+            pValues = dataset.getValues(iDim);
+            if ((pValues != null) && (pValues.length == nPlanes)) {
+                System.out.println("got values");
+                for (int i = 0; i < pValues.length; i++) {
+                    System.out.println(i + " " + pValues[i]);
+                }
+                break;
+            }
+        }
+        if (pValues == null) {
+            pValues = new double[nPlanes];
+            for (int i = 0; i < pValues.length; i++) {
+                pValues[i] = i;
+            }
+        }
+        Measures measure = new Measures(pValues);
+        measures = Optional.of(measure);
+
     }
 
     public void tweakPeaks(Dataset dataset, Set<Peak> speaks) {
