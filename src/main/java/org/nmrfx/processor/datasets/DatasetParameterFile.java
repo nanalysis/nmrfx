@@ -107,6 +107,7 @@ public class DatasetParameterFile {
                     for (double value : values) {
                         pStream.printf(" %.4f", value);
                     }
+                    pStream.print('\n');
                 }
             }
             pStream.printf("posneg %d\n", dataset.getPosneg());
