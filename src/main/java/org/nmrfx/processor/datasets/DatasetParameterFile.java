@@ -303,7 +303,8 @@ public class DatasetParameterFile {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 double[] values = new double[fields.length - 2];
                 for (int i = 2; i < fields.length; i++) {
-                    double value = Double.parseDouble(fields[2]);
+                    double value = Double.parseDouble(fields[i]);
+                    System.out.println(i-2 + " " + value);
                     values[i - 2] = value;
                 }
                 dataset.setValues(iDim, values);
