@@ -33,6 +33,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.math3.complex.Complex;
 
 /**
@@ -456,6 +457,15 @@ public interface NMRData {
         Instant instant = Instant.ofEpochSecond(epochSeconds);
         LocalDateTime date = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
         return date;
+    }
+    /**
+     * Return an optional list of doubles associated with a dimension of dataset.  This might be, for example, relaxation delays.
+     *
+     * @param dim data dimension index
+     * @return list of values
+     */
+    public default List<Double> getValues(int dim) {
+        return new ArrayList<>();
     }
 
     /**

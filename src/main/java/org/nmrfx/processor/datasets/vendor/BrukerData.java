@@ -102,7 +102,7 @@ class BrukerData implements NMRData {
     private final double scale;
     boolean hasFID = false;
     boolean hasSpectrum = false;
-    double[] arrayValues = null;
+    List<Double> arrayValues = new ArrayList<>();
 
     /**
      * Open Bruker parameter and data files.
@@ -318,15 +318,13 @@ class BrukerData implements NMRData {
         }
     }
 
-    public double[] getDoubleArrayPar(String parName) {
-        double[] result = null;
+    public List<Double> getDoubleListPar(String parName) {
+        List<Double> result = new ArrayList<>();
         if ((parMap != null) && (parMap.get(parName) != null)) {
             String[] sValues = parMap.get(parName).split(" ");
-            result = new double[sValues.length];
-            int i = 0;
             for (String sValue : sValues) {
                 try {
-                    result[i++] = Double.parseDouble(sValue);
+                    result.add(Double.parseDouble(sValue));
                 } catch (NumberFormatException nFE) {
                     result = null;
                     break;
@@ -825,7 +823,7 @@ class BrukerData implements NMRData {
                 }
             }
         }
-        arrayValues = getDoubleArrayPar("vd");
+        arrayValues = getDoubleListPar("vd");
         setArrayPars(dim);  // must be before setFTpars()
         if ((ipar = getParInt("BYTORDA,1")) != null) {
             if (ipar == 0) {
@@ -1578,16 +1576,27 @@ class BrukerData implements NMRData {
     }
 
     @Override
+    public List<Double> getValues(int dim) {
+        List<Double> result;
+        if (dim == (getNDim() - 1)) {
+            result = arrayValues;
+        } else {
+            result = new ArrayList<>();
+        }
+        return result;
+    }
+
+    @Override
     public boolean isFrequencyDim(int iDim) {
         boolean result = true;
         System.out.println("freq " + iDim + " " + getNDim());
         System.out.println(arrayValues);
         if (arrayValues != null) {
-            System.out.println(arrayValues.length);
+            System.out.println(arrayValues.size());
 
         }
         if (!isComplex(iDim) && (iDim == getNDim() - 1)) {
-            if ((arrayValues != null) && (arrayValues.length == getSize(iDim))) {
+            if ((arrayValues != null) && (arrayValues.size() == getSize(iDim))) {
                 System.out.println("not f");
                 result = false;
             }
