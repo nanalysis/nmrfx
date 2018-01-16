@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.processor.gui.spectra;
 
 import java.util.List;
@@ -169,6 +168,42 @@ public class KeyBindings {
                 }
                 keyMonitor.clear();
                 break;
+            case "d":
+                break;
+
+            case "df":
+                if (chart.getController().hasSlider()) {
+                    chart.getController().getSlider().freezePeaks();
+                }
+                keyMonitor.clear();
+                break;
+            case "dt":
+                if (chart.getController().hasSlider()) {
+                    chart.getController().getSlider().thawPeaks();
+                }
+                keyMonitor.clear();
+                break;
+            case "ds":
+                if (chart.getController().hasSlider()) {
+                    chart.getController().getSlider().tweakPeaks();
+                }
+                keyMonitor.clear();
+                break;
+
+            case "da":
+                if (!chart.getController().hasSlider()) {
+                    chart.getController().showPeakSlider();
+                }
+                keyMonitor.clear();
+                break;
+
+            case "dq":
+                if (chart.getController().hasSlider()) {
+                    chart.getController().removePeakSlider(null);
+                }
+                keyMonitor.clear();
+                break;
+
             case "p":
                 break;
             case "v":

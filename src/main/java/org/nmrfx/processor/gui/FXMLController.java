@@ -244,6 +244,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return activeChart;
     }
 
+    public boolean hasSlider() {
+        return peakSlider != null;
+    }
+
+    public PeakSlider getSlider() {
+        return peakSlider;
+    }
+
     @FXML
     private void autoScaleAction(ActionEvent event) {
         charts.stream().filter(chart -> filterChart(chart)).forEach(chart -> {
