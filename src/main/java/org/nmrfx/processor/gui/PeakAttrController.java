@@ -269,8 +269,10 @@ public class PeakAttrController implements Initializable, PeakNavigable {
             data.add(series);
 
             double[] yValues = currentPeak.getMeasures().get();
+            double[] xValues = currentPeak.getPeakList().getMeasureValues();
             for (int i = 0; i < yValues.length; i++) {
-                XYChart.Data value = new XYChart.Data(1.0 * i, yValues[i]);
+                double xValue = xValues != null ? xValues[i] : 1.0 * i;
+                XYChart.Data value = new XYChart.Data(xValue, yValues[i]);
                 series.getData().add(value);
             }
             scatterChart.getData().setAll(data);
