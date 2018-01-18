@@ -30,6 +30,8 @@ package org.nmrfx.processor.datasets;
  */
 public class RegionData {
 
+    static final private String[] FIELDS = {"Min", "Max", "Extreme", "Center", "RVolume", "EVolume", "Mean", "RMS", "N", "MaxPt"};
+
     protected int npoints = 0;
     protected double value = 0.0;
     protected double center = 0.0;
@@ -265,4 +267,38 @@ public class RegionData {
         return dmaxPoint.clone();
     }
 
+    public static String[] getFields() {
+        return FIELDS;
+    }
+
+    public double getValue(String name) {
+        double result = 0.0;
+        switch (name) {
+            case "Min":
+                result = getMin();
+                break;
+            case "Max":
+                result = getMax();
+                break;
+            case "Extreme":
+                result = getExtreme();
+                break;
+            case "Center":
+                result = getCenter();
+                break;
+            case "RVolume":
+                result = getVolume_r();
+                break;
+            case "EVolume":
+                result = getVolume_e();
+                break;
+            case "Mean":
+                result = getMean();
+                break;
+            case "RMS":
+                result = getRMS();
+                break;
+        }
+        return result;
+    }
 }
