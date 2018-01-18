@@ -2623,4 +2623,55 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
 
     }
+
+    protected Optional<RegionData> analyzeFirst() {
+        Optional<RegionData> result = Optional.empty();
+        if (!datasetAttributesList.isEmpty()) {
+            DatasetAttributes dataAttr = datasetAttributesList.get(0);
+            RegionData rData = analyze(dataAttr);
+            result = Optional.of(rData);
+        }
+        return result;
+    }
+
+    protected RegionData analyze(DatasetAttributes dataAttr) {
+        Dataset dataset = dataAttr.getDataset();
+        double max = Double.NEGATIVE_INFINITY;
+        double min = Double.MAX_VALUE;
+
+        int nDim = dataset.getNDim();
+        int[][] pt = new int[nDim][2];
+        int[] cpt = new int[nDim];
+        int[] dim = new int[nDim];
+        double[] width = new double[nDim];
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            int[] limits = new int[2];
+            if (iDim < 2) {
+                int orientation = iDim == 0 ? PolyChart.VERTICAL : PolyChart.HORIZONTAL;
+                limits[0] = axModes[iDim].getIndex(dataAttr, iDim, crossHairPositions[0][orientation]);
+                limits[1] = axModes[iDim].getIndex(dataAttr, iDim, crossHairPositions[1][orientation]);
+            } else {
+                limits[0] = axModes[iDim].getIndex(dataAttr, iDim, axes[iDim].getLowerBound());
+                limits[1] = axModes[iDim].getIndex(dataAttr, iDim, axes[iDim].getUpperBound());
+            }
+
+            if (limits[0] < limits[1]) {
+                pt[iDim][0] = limits[0];
+                pt[iDim][1] = limits[1];
+            } else {
+                pt[iDim][0] = limits[1];
+                pt[iDim][1] = limits[0];
+            }
+            dim[iDim] = dataAttr.dim[iDim];
+            cpt[iDim] = (pt[iDim][0] + pt[iDim][1]) / 2;
+            width[iDim] = (double) Math.abs(pt[iDim][0] - pt[iDim][1]);
+        }
+        RegionData rData = null;
+        try {
+            rData = dataset.analyzeRegion(pt, cpt, width, dim);
+        } catch (IOException ioE) {
+
+        }
+        return rData;
+    }
 }

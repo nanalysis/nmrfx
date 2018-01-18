@@ -63,6 +63,7 @@ public class MainApp extends Application implements DatasetListener {
     public static PreferencesController preferencesController;
     public static DocWindowController docWindowController;
     public static DatasetsController datasetController;
+    public static AnalyzerController analyzerController;
     public static HostServices hostServices;
     private static String version = null;
     static String appName = "NMRFx Processor";
@@ -261,8 +262,10 @@ public class MainApp extends Application implements DatasetListener {
         arrangeMenu.getItems().addAll(horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
         MenuItem alignMenuItem = new MenuItem("Align Spectra");
         alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
+        MenuItem analyzeMenuItem = new MenuItem("Analyzer...");
+        analyzeMenuItem.setOnAction(e -> showAnalyzer(e));
 
-        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem, alignMenuItem);
+        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem, alignMenuItem, analyzeMenuItem);
 
         // Format (items TBD)
 //        Menu formatMenu = new Menu("Format");
@@ -575,6 +578,14 @@ public class MainApp extends Application implements DatasetListener {
             }
             );
         }
+    }
+
+    @FXML
+    private void showAnalyzer(ActionEvent event) {
+        if (analyzerController == null) {
+            analyzerController = new AnalyzerController();
+        }
+        analyzerController.load();
     }
 
 }

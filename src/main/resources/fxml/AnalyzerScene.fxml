@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.web.*?>
+<?import org.controlsfx.control.*?>
+<?import org.nmrfx.processor.gui.*?>
+
+<BorderPane fx:id="borderPane" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.AnalyzerController">
+    <stylesheets>
+        <URL value="@/styles/Styles.css" />
+    </stylesheets>
+    <top>
+        <ToolBar BorderPane.alignment="CENTER">
+            <items>
+                <Button text="Analyze" onAction="#analyze"></Button>
+            </items>
+        </ToolBar>
+    </top>
+    <center>
+        <GridPane fx:id="gridPane">
+            
+        </GridPane>
+    </center>
+    <left>
+    </left>
+    <right>
+    </right>
+    <bottom>
+    </bottom>
+</BorderPane>
+
