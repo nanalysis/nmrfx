@@ -23,8 +23,8 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart;
 import static org.nmrfx.processor.gui.spectra.DrawPeaks.minHitSize;
-import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.PeakDisTypes;
-import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.PeakLabelTypes.Number;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
+import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.Number;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -130,46 +130,46 @@ public class PeakListAttributes implements PeakListener {
         return simPeaksProperty().get();
     }
 
-    private ObjectProperty<PeakDisplayParameters.PeakLabelTypes> peakLabelType;
+    private ObjectProperty<PeakDisplayParameters.LabelTypes> peakLabelType;
 
-    public final ObjectProperty<PeakDisplayParameters.PeakLabelTypes> peakLabelTypeProperty() {
+    public final ObjectProperty<PeakDisplayParameters.LabelTypes> labelTypeProperty() {
         if (peakLabelType == null) {
-            peakLabelType = new SimpleObjectProperty<PeakDisplayParameters.PeakLabelTypes>(Number);
+            peakLabelType = new SimpleObjectProperty<PeakDisplayParameters.LabelTypes>(Number);
         }
         return this.peakLabelType;
     }
 
-    public final PeakDisplayParameters.PeakLabelTypes getPeakLabelType() {
-        return this.peakLabelTypeProperty().get();
+    public final PeakDisplayParameters.LabelTypes getLabelType() {
+        return this.labelTypeProperty().get();
     }
 
-    public final void setPeakLabelType(final PeakDisplayParameters.PeakLabelTypes peakLabelType) {
-        this.peakLabelTypeProperty().set(peakLabelType);
+    public final void setLabelType(final PeakDisplayParameters.LabelTypes labelType) {
+        this.labelTypeProperty().set(labelType);
     }
 
-    public final void setPeakLabelType(final String type) {
-        this.peakLabelTypeProperty().set(PeakDisplayParameters.PeakLabelTypes.valueOf(type));
+    public final void setLabelType(final String type) {
+        this.labelTypeProperty().set(PeakDisplayParameters.LabelTypes.valueOf(type));
     }
 
-    private ObjectProperty<PeakDisplayParameters.PeakDisTypes> peakDisplayType;
+    private ObjectProperty<PeakDisplayParameters.DisplayTypes> displayType;
 
-    public final ObjectProperty<PeakDisplayParameters.PeakDisTypes> peakDisplayTypeProperty() {
-        if (peakDisplayType == null) {
-            peakDisplayType = new SimpleObjectProperty<PeakDisplayParameters.PeakDisTypes>(PeakDisTypes.Peak);
+    public final ObjectProperty<PeakDisplayParameters.DisplayTypes> displayTypeProperty() {
+        if (displayType == null) {
+            displayType = new SimpleObjectProperty<PeakDisplayParameters.DisplayTypes>(DisplayTypes.Peak);
         }
-        return this.peakDisplayType;
+        return this.displayType;
     }
 
-    public final PeakDisplayParameters.PeakDisTypes getPeakDisplayType() {
-        return this.peakDisplayTypeProperty().get();
+    public final PeakDisplayParameters.DisplayTypes getDisplayType() {
+        return this.displayTypeProperty().get();
     }
 
-    public final void setPeakDisplayType(final PeakDisplayParameters.PeakDisTypes peakDisplayType) {
-        this.peakDisplayTypeProperty().set(peakDisplayType);
+    public final void setDisplayType(final PeakDisplayParameters.DisplayTypes displayType) {
+        this.displayTypeProperty().set(displayType);
     }
 
-    public final void setPeakDisplayType(final String type) {
-        this.peakDisplayTypeProperty().set(PeakDisplayParameters.PeakDisTypes.valueOf(type));
+    public final void setDisplayType(final String type) {
+        this.displayTypeProperty().set(PeakDisplayParameters.DisplayTypes.valueOf(type));
     }
 
     public PeakListAttributes(PolyChart chart, DatasetAttributes dataAttr, PeakList peakList) {
@@ -579,11 +579,11 @@ public class PeakListAttributes implements PeakListener {
         ConsoleUtil.runOnFxThread(() -> {
             try {
                 switch (name) {
-                    case "peakLabelType":
-                        setPeakLabelType(value.toString());
+                    case "labelType":
+                        setLabelType(value.toString());
                         break;
-                    case "peakDisplayType":
-                        setPeakDisplayType(value.toString());
+                    case "displayType":
+                        setDisplayType(value.toString());
                         break;
                     case "simPeaks":
                         setSimPeaks(Boolean.valueOf(value.toString()));
@@ -604,7 +604,7 @@ public class PeakListAttributes implements PeakListener {
 
     public Map<String, Object> config() {
         Map<String, Object> data = new HashMap<>();
-        String[] beanNames = {"onColor", "offColor", "drawPeaks", "simPeaks", "peakLabelType", "peakDisplayType"};
+        String[] beanNames = {"onColor", "offColor", "drawPeaks", "simPeaks", "labelType", "displayType"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {

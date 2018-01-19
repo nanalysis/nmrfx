@@ -27,9 +27,9 @@ import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.PeakDisTypes;
-import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.PeakLabelTypes;
-import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.PeakLabelTypes.PPM;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.DisplayTypes;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes;
+import static org.nmrfx.processor.gui.spectra.PeakDisplayParameters.LabelTypes.PPM;
 import org.nmrfx.processor.utilities.Format;
 import java.awt.geom.Line2D;
 import java.util.*;
@@ -99,7 +99,7 @@ public class DrawPeaks {
     int disDim = 0;
     PolyChart chart = null;
     int peakDisType = 0;
-//    int peakLabelType = PeakDisplayParameters.LABEL_PPM;
+//    int labelType = PeakDisplayParameters.LABEL_PPM;
     int peakLabelType = 0;
     int multipletLabelType = 0;
     boolean treeOn = false;
@@ -144,17 +144,17 @@ public class DrawPeaks {
 //        colorOn = pdPar.getColorOn();
 //        colorOff = pdPar.getColorOff();
 //        jmode = pdPar.getJmode();
-//        peakDisType = pdPar.getPeakDisType();
-//        peak1DStroke = pdPar.getPeak1DStroke();
-//        if (peak1DStroke == 0.0) {
-//            peak1DStroke = peak2DStroke;
+//        displayType = pdPar.getDisplayType();
+//        oneDStroke = pdPar.getOneDStroke();
+//        if (oneDStroke == 0.0) {
+//            oneDStroke = peak2DStroke;
 //        }
-//        peakLabelType = pdPar.getPeakLabelType();
-//        peakColorType = pdPar.getPeakColorType();
-//        multipletLabelType = pdPar.getPeakTreeLabelType();
+//        labelType = pdPar.getLabelType();
+//        colorType = pdPar.getColorType();
+//        multipletLabelType = pdPar.getTreeLabelType();
 //        treeOn = pdPar.isTreeOn();
-//        peakDisOn = pdPar.isPeakDisOn();
-//        peakDisOff = pdPar.isPeakDisOff();
+//        displayOn = pdPar.isDisplayOn();
+//        displayOff = pdPar.isDisplayOff();
 ////        iPeakList = specPar.viewPar.iPeakList;
 ////        lastTextBox = null;
 ////        dY = (float) ((24 * Math.abs(chart.activeView[1][0]
@@ -276,7 +276,7 @@ public class DrawPeaks {
         int nPeakDim = peak.peakList.nDim;
         String plab = null;
 
-        switch (peakAttr.getPeakLabelType()) {
+        switch (peakAttr.getLabelType()) {
             case Number:
                 switch (peak.getType()) {
                     case Peak.COMPOUND:
@@ -720,7 +720,7 @@ public class DrawPeaks {
 //        } else {
 //            float textY;
 //            double max = 0.0;
-//            if (peakDisType == PeakDisplayParameters.DISPLAY_NONE) {
+//            if (displayType == PeakDisplayParameters.DISPLAY_NONE) {
 //                textY = (float) (chart.activeView[1][0]
 //                        + (iPeakList * dY) + (dY / 6));
 //            } else {
@@ -833,7 +833,7 @@ public class DrawPeaks {
 //        } else {
 //            float textY;
 //            double max = 0.0;
-//            if (peakDisType == PeakDisplayParameters.DISPLAY_NONE) {
+//            if (displayType == PeakDisplayParameters.DISPLAY_NONE) {
 //                textY = (float) (chart.activeView[1][0]
 //                        + (iPeakList * dY) + (dY / 6));
 //            } else {
@@ -924,7 +924,7 @@ public class DrawPeaks {
 //                lastTextBox = textBox;
 //            } else {
 //                float textY;
-//                if (peakDisType == PeakDisplayParameters.DISPLAY_NONE) {
+//                if (displayType == PeakDisplayParameters.DISPLAY_NONE) {
 //                    textY = (float) (chart.activeView[1][0]
 //                            + (iPeakList * dY) + (dY / 6));
 //                } else {
@@ -934,7 +934,7 @@ public class DrawPeaks {
 //                chart.myDrawRotatedText(g2, xM, textY, label, anchorW, 0, -90);
 //                int bx = (int) ((textBox.getMaxX() + textBox.getMinX()) / 2);
 //                int by = (int) (textBox.getMinY());
-//                if (peakDisType == PeakDisplayParameters.DISPLAY_NONE) {
+//                if (displayType == PeakDisplayParameters.DISPLAY_NONE) {
 //                    chart.myDrawLinePts(g2, bx, by, bx, by - 10);
 //                } else {
 //                    chart.myDrawLine(g2, xM, textY - dY * 0.2, xM, (yM + dY * (1.0 + max + 0.5)));
@@ -1079,7 +1079,7 @@ public class DrawPeaks {
                     double yc = yAxis.getDisplayPosition(ctr[1]);
 
                     double[] position = peak.getCorner().getPosition(x1, y1, x2, y2);
-                    PeakDisTypes disType = peakAttr.getPeakDisplayType();
+                    DisplayTypes disType = peakAttr.getDisplayType();
                     if (null == disType) {
 //                        g2.setStroke(peakOvalStroke);
 //                        chart.myDrawPointer(g2, position[0], position[1], xc, yc);
@@ -1109,7 +1109,7 @@ public class DrawPeaks {
                                 g2.moveTo(xc, y1);
                                 g2.lineTo(xc, y2);
                                 g2.stroke();
-                                if (peakAttr.getPeakLabelType() != PeakLabelTypes.None) {
+                                if (peakAttr.getLabelType() != LabelTypes.None) {
                                     g2.beginPath();
                                     g2.moveTo(xc, yc);
                                     g2.lineTo(position[0], position[1]);
@@ -1122,12 +1122,12 @@ public class DrawPeaks {
                                 x2 = xAxis.getDisplayPosition(ctr[0] - (wid[0] * 0.68 / 2.0));
                                 y2 = yAxis.getDisplayPosition(ctr[1] + (wid[1] * 0.68 / 2.0));
                                 y1 = yAxis.getDisplayPosition(ctr[1] - (wid[1] * 0.68 / 2.0));
-                                if (disType == PeakDisTypes.Ellipse) {
+                                if (disType == DisplayTypes.Ellipse) {
                                     g2.strokeOval(x1, y1, x2 - x1, y2 - y1);
                                 } else {
                                     g2.fillOval(x1, y1, x2 - x1, y2 - y1);
                                 }
-                                if (peakAttr.getPeakLabelType() != PeakLabelTypes.None) {
+                                if (peakAttr.getLabelType() != LabelTypes.None) {
                                     g2.beginPath();
                                     g2.moveTo(xc, yc);
                                     g2.lineTo(position[0], position[1]);
@@ -1137,7 +1137,7 @@ public class DrawPeaks {
                             case None:
                                 break;
                             default:
-                                if (peakAttr.getPeakLabelType() != PeakLabelTypes.None) {
+                                if (peakAttr.getLabelType() != LabelTypes.None) {
                                     g2.beginPath();
                                     g2.moveTo(xc, yc);
                                     g2.lineTo(position[0], position[1]);
@@ -1146,7 +1146,7 @@ public class DrawPeaks {
                                 break;
                         }
                     }
-                    if (peakAttr.getPeakLabelType() != PeakLabelTypes.None) {
+                    if (peakAttr.getLabelType() != LabelTypes.None) {
                         setLabelAlignment(g2, peak.getCorner());
                         g2.setFill(peakAttr.getOnColor());
                         g2.fillText(label, position[0], position[1]);
@@ -1448,7 +1448,7 @@ public class DrawPeaks {
             double x1 = xAxis.getDisplayPosition(x);
             double y1 = yAxis.getDisplayPosition(height);
 
-            if (peakAttr.getPeakLabelType() == PPM) {
+            if (peakAttr.getLabelType() == PPM) {
                 Bounds bounds = measureText(label, g2.getFont(), -90, x1, y1 + 35);
                 if ((lastTextBox == null) || (!lastTextBox.intersects(bounds))) {
                     lastTextBox = bounds;

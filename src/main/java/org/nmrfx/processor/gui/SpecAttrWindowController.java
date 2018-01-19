@@ -794,15 +794,15 @@ public class SpecAttrWindowController implements Initializable {
             }
         });
 
-        TableColumn<PeakListAttributes, PeakDisplayParameters.PeakDisTypes> peakDisTypeCol = new TableColumn<>("Type");
-        peakDisTypeCol.setCellValueFactory(cellData -> cellData.getValue().peakDisplayTypeProperty());
+        TableColumn<PeakListAttributes, PeakDisplayParameters.DisplayTypes> peakDisTypeCol = new TableColumn<>("Type");
+        peakDisTypeCol.setCellValueFactory(cellData -> cellData.getValue().displayTypeProperty());
 
         peakDisTypeCol.setCellFactory(tc -> {
-            ComboBox<PeakDisplayParameters.PeakDisTypes> combo = new ComboBox<>();
-            combo.getItems().addAll(PeakDisplayParameters.PeakDisTypes.values());
-            TableCell<PeakListAttributes, PeakDisplayParameters.PeakDisTypes> cell = new TableCell<PeakListAttributes, PeakDisplayParameters.PeakDisTypes>() {
+            ComboBox<PeakDisplayParameters.DisplayTypes> combo = new ComboBox<>();
+            combo.getItems().addAll(PeakDisplayParameters.DisplayTypes.values());
+            TableCell<PeakListAttributes, PeakDisplayParameters.DisplayTypes> cell = new TableCell<PeakListAttributes, PeakDisplayParameters.DisplayTypes>() {
                 @Override
-                protected void updateItem(PeakDisplayParameters.PeakDisTypes reason, boolean empty) {
+                protected void updateItem(PeakDisplayParameters.DisplayTypes reason, boolean empty) {
                     super.updateItem(reason, empty);
                     if (empty) {
                         setGraphic(null);
@@ -813,21 +813,21 @@ public class SpecAttrWindowController implements Initializable {
                 }
             };
             combo.setOnAction(e
-                    -> peakListTableView.getItems().get(cell.getIndex()).setPeakDisplayType(combo.getValue()));
+                    -> peakListTableView.getItems().get(cell.getIndex()).setDisplayType(combo.getValue()));
             return cell;
         });
         peakDisTypeCol.setPrefWidth(100);
         peakDisTypeCol.setMaxWidth(150);
 
-        TableColumn<PeakListAttributes, PeakDisplayParameters.PeakLabelTypes> peakLabelTypeCol = new TableColumn<>("Label");
-        peakLabelTypeCol.setCellValueFactory(cellData -> cellData.getValue().peakLabelTypeProperty());
+        TableColumn<PeakListAttributes, PeakDisplayParameters.LabelTypes> peakLabelTypeCol = new TableColumn<>("Label");
+        peakLabelTypeCol.setCellValueFactory(cellData -> cellData.getValue().labelTypeProperty());
 
         peakLabelTypeCol.setCellFactory(tc -> {
-            ComboBox<PeakDisplayParameters.PeakLabelTypes> combo = new ComboBox<>();
-            combo.getItems().addAll(PeakDisplayParameters.PeakLabelTypes.values());
-            TableCell<PeakListAttributes, PeakDisplayParameters.PeakLabelTypes> cell = new TableCell<PeakListAttributes, PeakDisplayParameters.PeakLabelTypes>() {
+            ComboBox<PeakDisplayParameters.LabelTypes> combo = new ComboBox<>();
+            combo.getItems().addAll(PeakDisplayParameters.LabelTypes.values());
+            TableCell<PeakListAttributes, PeakDisplayParameters.LabelTypes> cell = new TableCell<PeakListAttributes, PeakDisplayParameters.LabelTypes>() {
                 @Override
-                protected void updateItem(PeakDisplayParameters.PeakLabelTypes reason, boolean empty) {
+                protected void updateItem(PeakDisplayParameters.LabelTypes reason, boolean empty) {
                     super.updateItem(reason, empty);
                     if (empty) {
                         setGraphic(null);
@@ -838,7 +838,7 @@ public class SpecAttrWindowController implements Initializable {
                 }
             };
             combo.setOnAction(e
-                    -> peakListTableView.getItems().get(cell.getIndex()).setPeakLabelType(combo.getValue()));
+                    -> peakListTableView.getItems().get(cell.getIndex()).setLabelType(combo.getValue()));
             return cell;
         });
         peakLabelTypeCol.setPrefWidth(100);

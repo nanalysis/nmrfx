@@ -77,24 +77,24 @@ public class PeakDisplayParameters {
     }
 
     /**
-     * @return the peakColorType
+     * @return the colorType
      */
-    public int getPeakColorType() {
-        return peakColorType;
+    public int getColorType() {
+        return colorType;
     }
 
     /**
-     * @return the peakLabelType
+     * @return the labelType
      */
-    public int getPeakLabelType() {
-        return peakLabelType;
+    public int getLabelType() {
+        return labelType;
     }
 
     /**
-     * @return the peakDisType
+     * @return the displayType
      */
-    public int getPeakDisType() {
-        return peakDisType;
+    public int getDisplayType() {
+        return displayType;
     }
 
     /**
@@ -105,10 +105,10 @@ public class PeakDisplayParameters {
     }
 
     /**
-     * @return the peakTypes
+     * @return the types
      */
     public int getPeakTypes() {
-        return peakTypes;
+        return types;
     }
 
     /**
@@ -121,7 +121,7 @@ public class PeakDisplayParameters {
     /**
      * @return the treeMode
      */
-    public int getPeakTreeLabelType() {
+    public int getTreeLabelType() {
         return multipletLabelType;
     }
 
@@ -140,17 +140,17 @@ public class PeakDisplayParameters {
     }
 
     /**
-     * @return the peakDisOn
+     * @return the displayOn
      */
-    public boolean isPeakDisOn() {
-        return peakDisOn;
+    public boolean isDisplayOn() {
+        return displayOn;
     }
 
     /**
-     * @return the peakDisOff
+     * @return the displayOff
      */
-    public boolean isPeakDisOff() {
-        return peakDisOff;
+    public boolean isDisplayOff() {
+        return displayOff;
     }
 
     /**
@@ -161,77 +161,77 @@ public class PeakDisplayParameters {
     }
 
     /**
-     * @return the peak1DStroke
+     * @return the oneDStroke
      */
-    public double getPeak1DStroke() {
-        return peak1DStroke;
+    public double getOneDStroke() {
+        return oneDStroke;
     }
 
     public enum Params {
 
-        PEAK_LABEL_TYPE("PEAK_LABEL_TYPE", Integer.valueOf(0)) {
+        LABEL_TYPE("LABEL_TYPE", Integer.valueOf(0)) {
             public void setValue(PeakDisplayParameters pdPar, Object object) {
                 if (object instanceof Integer) {
-                    pdPar.peakLabelType = ((Integer) object).intValue();
+                    pdPar.labelType = ((Integer) object).intValue();
                 } else {
-                    int i = NvUtil.getStringPars(PeakDisplayParameters.peakLabelTypes, object.toString().toLowerCase(), 3);
+                    int i = NvUtil.getStringPars(PeakDisplayParameters.labelTypes, object.toString().toLowerCase(), 3);
                     if (i != -1) {
-                        pdPar.peakLabelType = i;
+                        pdPar.labelType = i;
                     }
 
                 }
             }
 
             public Integer getValue(PeakDisplayParameters pdPar) {
-                return Integer.valueOf(pdPar.peakLabelType);
+                return Integer.valueOf(pdPar.labelType);
             }
 
             public String getValueForTcl(PeakDisplayParameters pdPar) {
-                String result = peakLabelTypes[pdPar.peakLabelType];
+                String result = labelTypes[pdPar.labelType];
                 return result;
             }
         },
-        PEAK_COLOR_TYPE("PEAK_COLOR_TYPE", Integer.valueOf(0)) {
+        COLOR_TYPE("COLOR_TYPE", Integer.valueOf(0)) {
             public void setValue(PeakDisplayParameters pdPar, Object object) {
                 if (object instanceof Integer) {
-                    pdPar.peakColorType = ((Integer) object).intValue();
+                    pdPar.colorType = ((Integer) object).intValue();
                 } else {
-                    int i = NvUtil.getStringPars(PeakDisplayParameters.peakColorTypes, object.toString().toLowerCase(), 3);
+                    int i = NvUtil.getStringPars(PeakDisplayParameters.colorTypes, object.toString().toLowerCase(), 3);
                     if (i != -1) {
-                        pdPar.peakColorType = i;
+                        pdPar.colorType = i;
                     }
 
                 }
             }
 
             public Integer getValue(PeakDisplayParameters pdPar) {
-                return Integer.valueOf(pdPar.peakColorType);
+                return Integer.valueOf(pdPar.colorType);
             }
 
             public String getValueForTcl(PeakDisplayParameters pdPar) {
-                String result = peakColorTypes[pdPar.peakColorType];
+                String result = colorTypes[pdPar.colorType];
                 return result;
             }
         },
-        PEAK_DIS_TYPE("PEAK_DIS_TYPE", Integer.valueOf(0)) {
+        DISPLAY_TYPE("DISPLAY_TYPE", Integer.valueOf(0)) {
             public void setValue(PeakDisplayParameters pdPar, Object object) {
                 if (object instanceof Integer) {
-                    pdPar.peakDisType = ((Integer) object).intValue();
+                    pdPar.displayType = ((Integer) object).intValue();
                 } else {
-                    int i = NvUtil.getStringPars(PeakDisplayParameters.peakDisTypes, object.toString().toLowerCase(), 3);
+                    int i = NvUtil.getStringPars(PeakDisplayParameters.displayTypes, object.toString().toLowerCase(), 3);
                     if (i != -1) {
-                        pdPar.peakDisType = i;
+                        pdPar.displayType = i;
                     }
 
                 }
             }
 
             public Integer getValue(PeakDisplayParameters pdPar) {
-                return Integer.valueOf(pdPar.peakDisType);
+                return Integer.valueOf(pdPar.displayType);
             }
 
             public String getValueForTcl(PeakDisplayParameters pdPar) {
-                String result = peakDisTypes[pdPar.peakDisType];
+                String result = displayTypes[pdPar.displayType];
                 return result;
             }
         },
@@ -248,19 +248,19 @@ public class PeakDisplayParameters {
                 return getValue(pdPar);
             }
         },
-        PEAK_TYPES("PEAK_TYPES", Integer.valueOf(0)) {
+        TYPES("PEAK_TYPES", Integer.valueOf(0)) {
             public void setValue(PeakDisplayParameters pdPar, Object object) {
-                pdPar.peakTypes = ((Integer) object).intValue();
+                pdPar.types = ((Integer) object).intValue();
             }
 
             public Integer getValue(PeakDisplayParameters pdPar) {
-                return Integer.valueOf(pdPar.peakTypes);
+                return Integer.valueOf(pdPar.types);
             }
 
             public Object getValueForTcl(PeakDisplayParameters pdPar) {
                 String result = "all";
-                if (pdPar.peakTypes != 0) {
-                    result = Peak.typesToString(pdPar.peakTypes);
+                if (pdPar.types != 0) {
+                    result = Peak.typesToString(pdPar.types);
                 }
                 return result;
             }
@@ -316,29 +316,29 @@ public class PeakDisplayParameters {
         },
         PEAK_DIS_ON("PEAK_DIS_ON", Boolean.valueOf(false)) {
             public void setValue(PeakDisplayParameters pdPar, Object object) {
-                pdPar.peakDisOn = ((Boolean) object).booleanValue();
+                pdPar.displayOn = ((Boolean) object).booleanValue();
             }
 
             public Boolean getValue(PeakDisplayParameters pdPar) {
-                return Boolean.valueOf(pdPar.peakDisOn);
+                return Boolean.valueOf(pdPar.displayOn);
             }
 
             public String getValueForTcl(PeakDisplayParameters pdPar) {
-                String result = pdPar.peakDisOn ? "1" : "0";
+                String result = pdPar.displayOn ? "1" : "0";
                 return result;
             }
         },
         PEAK_DIS_OFF("PEAK_DIS_OFF", Boolean.valueOf(false)) {
             public void setValue(PeakDisplayParameters pdPar, Object object) {
-                pdPar.peakDisOff = ((Boolean) object).booleanValue();
+                pdPar.displayOff = ((Boolean) object).booleanValue();
             }
 
             public Boolean getValue(PeakDisplayParameters pdPar) {
-                return Boolean.valueOf(pdPar.peakDisOff);
+                return Boolean.valueOf(pdPar.displayOff);
             }
 
             public String getValueForTcl(PeakDisplayParameters pdPar) {
-                String result = pdPar.peakDisOff ? "1" : "0";
+                String result = pdPar.displayOff ? "1" : "0";
                 return result;
             }
         },
@@ -399,7 +399,7 @@ public class PeakDisplayParameters {
         }
     }
 
-    public enum PeakLabelTypes {
+    public enum LabelTypes {
         Number(),
         Label(),
         Residue(),
@@ -414,7 +414,7 @@ public class PeakDisplayParameters {
 
     }
 
-    public enum PeakDisTypes {
+    public enum DisplayTypes {
         Peak(),
         Cross(),
         Label(),
@@ -423,12 +423,12 @@ public class PeakDisplayParameters {
         None();
     }
 
-    static final String[] peakLabelTypes = {
+    static final String[] labelTypes = {
         "Number", "Label", "Residue", "1Residue", "Atom", "Cluster", "User", "Comment",
         "Summary", "PPM", "None"
     };
-    static final String[] peakDisTypes = {"Peak", "Simulated", "Label", "Ellipse", "FillEllipse", "None"};
-    static final String[] peakColorTypes = {
+    static final String[] displayTypes = {"Peak", "Simulated", "Label", "Ellipse", "FillEllipse", "None"};
+    static final String[] colorTypes = {
         "Plane", "Assigned", "Error", "Status", "Intensity"
     };
     static final String[] multipletLabelTypes = {
@@ -437,18 +437,18 @@ public class PeakDisplayParameters {
     static Font defaultPeakFont = new Font("SansSerif", 10);
     Color colorOn = Color.BLACK;
     Color colorOff = Color.RED;
-    int peakColorType = COLOR_BY_PLANE;
-    int peakLabelType = LABEL_NUMBER;
-    int peakDisType = DISPLAY_PEAK;
+    int colorType = COLOR_BY_PLANE;
+    int labelType = LABEL_NUMBER;
+    int displayType = DISPLAY_PEAK;
     int peakOff = 0;
-    int peakTypes = 0;
+    int types = 0;
     boolean treeOn = false;
     int multipletLabelType = MULTIPLET_LABEL_NUMBER;
-    boolean peakDisOn = true;
-    boolean peakDisOff = true;
+    boolean displayOn = true;
+    boolean displayOff = true;
     int jmode = 0;
     private String peakListName = "";
-    double peak1DStroke = 0.5;
+    double oneDStroke = 0.5;
 
     PeakDisplayParameters(final String peakListName) {
         this.peakListName = peakListName;
@@ -459,17 +459,17 @@ public class PeakDisplayParameters {
 
         newPeakPar.colorOn = peakPar.colorOn;
         newPeakPar.colorOff = peakPar.colorOff;
-        newPeakPar.peakColorType = peakPar.peakColorType;
-        newPeakPar.peakLabelType = peakPar.peakLabelType;
-        newPeakPar.peakDisType = peakPar.peakDisType;
+        newPeakPar.colorType = peakPar.colorType;
+        newPeakPar.labelType = peakPar.labelType;
+        newPeakPar.displayType = peakPar.displayType;
         newPeakPar.peakOff = peakPar.peakOff;
-        newPeakPar.peakTypes = peakPar.peakTypes;
+        newPeakPar.types = peakPar.types;
         newPeakPar.treeOn = peakPar.treeOn;
         newPeakPar.multipletLabelType = peakPar.multipletLabelType;
-        newPeakPar.peakDisOn = peakPar.peakDisOn;
-        newPeakPar.peakDisOff = peakPar.peakDisOff;
+        newPeakPar.displayOn = peakPar.displayOn;
+        newPeakPar.displayOff = peakPar.displayOff;
         newPeakPar.jmode = peakPar.jmode;
-        newPeakPar.peak1DStroke = peakPar.peak1DStroke;
+        newPeakPar.oneDStroke = peakPar.oneDStroke;
 
         return newPeakPar;
     }
@@ -490,16 +490,16 @@ public class PeakDisplayParameters {
         peakListName = name;
     }
 
-    public static String[] getPeakLabelTypes() {
-        return peakLabelTypes.clone();
+    public static String[] getLabelTypes() {
+        return labelTypes.clone();
     }
 
-    public static String[] getPeakDisTypes() {
-        return peakDisTypes.clone();
+    public static String[] getDisplayTypes() {
+        return displayTypes.clone();
     }
 
-    public static String[] getPeakColorTypes() {
-        return peakColorTypes.clone();
+    public static String[] getColorTypes() {
+        return colorTypes.clone();
     }
 
 }
