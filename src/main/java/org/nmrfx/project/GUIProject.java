@@ -37,6 +37,7 @@ import org.python.util.PythonInterpreter;
  * @author Bruce Johnson
  */
 public class GUIProject extends Project {
+
     Git git;
 
     public GUIProject(String name) {
@@ -132,7 +133,7 @@ public class GUIProject extends Project {
             System.out.println("status " + status.isClean() + " " + status.hasUncommittedChanges());
             StringBuilder sBuilder = new StringBuilder();
             Set<String> actionMap = new HashSet<>();
-            if (status.hasUncommittedChanges()) {
+            if (!status.isClean() || status.hasUncommittedChanges()) {
                 Set<String> addedFiles = status.getAdded();
                 for (String addedFile : addedFiles) {
                     String action = "add:" + Paths.get(addedFile).getName(0);
