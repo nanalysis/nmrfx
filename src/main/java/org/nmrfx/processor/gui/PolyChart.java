@@ -474,7 +474,6 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         double height = annoCanvas.getHeight();
         double xStart = dragStart[0];
         double yStart = dragStart[1];
-        System.out.println(xStart + " " + yStart + " " + x + " " + y);
         annoGC.clearRect(0, 0, width, height);
         double x1, y1, x2, y2, w, h;
         if (x > xStart) {
