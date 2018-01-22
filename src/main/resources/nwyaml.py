@@ -28,13 +28,13 @@ def dumpYamlWin(yamlFile):
             dset['name']=dataset
             dset['config']= nw.config(dataset)
             sd['datasets'].append(dset)
-        sd['peakLists'] = []
+        sd['peaklists'] = []
         peakLists = nw.peakLists() 
         for peakList in peakLists:
             pset = {}
             pset['name']=peakList
             pset['config']= nw.pconfig(peakList)
-            sd['peakLists'].append(pset)
+            sd['peaklists'].append(pset)
 
     print win
     yamlDump = yaml.dump(win)
@@ -74,8 +74,8 @@ def loadYamlWin(yamlFile):
             cfg = dataset['config']
             nw.config(datasets=[name],pars=cfg)
 
-        if 'peakLists' in v:
-            peakLists = v['peakLists']
+        if 'peaklists' in v:
+            peakLists = v['peaklists']
             peakListValues = []
             for peakList in peakLists:
                 print peakList
