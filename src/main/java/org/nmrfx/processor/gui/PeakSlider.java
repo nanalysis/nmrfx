@@ -161,9 +161,10 @@ public class PeakSlider {
             selected.forEach((peak) -> {
                 PeakList peakList = peak.getPeakList();
                 Dataset dataset = Dataset.getDataset(peakList.fileName);
+                int[] planes = new int[0];
                 if (dataset != null) {
                     try {
-                        peak.tweak(dataset);
+                        peak.tweak(dataset, planes);
                         peak.setFrozen(true);
                         PeakList.notifyFreezeListeners(peak, true);
                     } catch (IOException ioE) {

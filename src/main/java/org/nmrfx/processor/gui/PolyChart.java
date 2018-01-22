@@ -346,6 +346,16 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         return String.valueOf(id);
     }
 
+    public static Optional<PolyChart> getChart(String name) {
+        Optional<PolyChart> result = Optional.empty();
+        for (PolyChart chart : charts) {
+            if (chart.getName().equals(name)) {
+                result = Optional.of(chart);
+            }
+        }
+        return result;
+    }
+
     public FXMLController getFXMLController() {
         return controller;
     }
@@ -1888,7 +1898,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
                 if (dataset != null) {
                     try {
-                        peakListAttr.getPeakList().tweakPeaks(dataset, peaks);
+                        int[] dim = getPeakDim(peakListAttr.getDatasetAttributes(), peakListAttr.getPeakList());
+                        for (int i = 0; i < dim.length; i++) {
+                            System.out.println(i + " " + dim[i]);
+                        }
+                        int nExtra = dim.length - peakListAttr.getPeakList().nDim;
+                        int[] planes = new int[nExtra];
+                        peakListAttr.getPeakList().tweakPeaks(dataset, peaks, planes);
 
                     } catch (IllegalArgumentException ex) {
                         Logger.getLogger(PolyChart.class
@@ -1911,7 +1927,9 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
             if (dataset != null) {
                 try {
-                    peakListAttr.getPeakList().tweakPeaks(dataset);
+                    int nExtra = dataset.getNDim() - peakListAttr.getPeakList().nDim;
+                    int[] planes = new int[nExtra];
+                    peakListAttr.getPeakList().tweakPeaks(dataset, planes);
 
                 } catch (IllegalArgumentException ex) {
                     Logger.getLogger(PolyChart.class
