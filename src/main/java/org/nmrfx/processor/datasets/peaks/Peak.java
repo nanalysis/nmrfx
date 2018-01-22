@@ -502,11 +502,10 @@ public class Peak implements Comparable, PeakOrMulti {
         return f;
     }
 
-    public void tweak(Dataset dataset) throws IOException {
-        int[] planes = new int[0];
+    public void tweak(Dataset dataset, int[] planes) throws IOException {
         RegionData regionData = analyzePeakRegion(dataset, planes);
         double[] maxPoint = regionData.getMaxDPoint();
-        for (int i = 0; i < maxPoint.length; i++) {
+        for (int i = 0; i < peakDim.length; i++) {
             PeakDim tweakDim = peakDim[i];
             if (!tweakDim.isFrozen()) {
                 double position = dataset.pointToPPM(i, maxPoint[i]);
