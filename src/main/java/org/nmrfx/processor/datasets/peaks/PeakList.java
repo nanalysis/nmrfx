@@ -2767,10 +2767,10 @@ public class PeakList {
 
     }
 
-    public void tweakPeaks(Dataset dataset, Set<Peak> speaks) {
+    public void tweakPeaks(Dataset dataset, Set<Peak> speaks, int[] planes) {
         speaks.stream().forEach(peak -> {
             try {
-                peak.tweak(dataset);
+                peak.tweak(dataset, planes);
             } catch (IOException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
                 return;
@@ -2779,10 +2779,10 @@ public class PeakList {
 
     }
 
-    public void tweakPeaks(Dataset dataset) {
+    public void tweakPeaks(Dataset dataset, int[] planes) {
         peaks.stream().forEach(peak -> {
             try {
-                peak.tweak(dataset);
+                peak.tweak(dataset, planes);
             } catch (IOException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
                 return;
