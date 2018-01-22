@@ -117,7 +117,7 @@ public class KeyBindings {
         if (keyChar.equals(" ")) {
             String keyString = keyMonitor.getKeyString();
             if (keyString.equals("")) {
-                chart.hitPeak(chart.getMouseX(), chart.getMouseY());
+                chart.showHitPeak(chart.getMouseX(), chart.getMouseY());
                 keyMonitor.clear();
                 chart.focus();
                 return;

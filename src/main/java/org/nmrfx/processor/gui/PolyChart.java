@@ -469,30 +469,33 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     }
 
     public void dragBox(double[] dragStart, double x, double y) {
-        GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
-        double width = annoCanvas.getWidth();
-        double height = annoCanvas.getHeight();
-        double xStart = dragStart[0];
-        double yStart = dragStart[1];
-        annoGC.clearRect(0, 0, width, height);
-        double x1, y1, x2, y2, w, h;
-        if (x > xStart) {
-            x1 = xStart;
-            w = x - x1;
-        } else {
-            x1 = x;
-            w = xStart - x;
+        int dragTol = 4;
+        if ((Math.abs(x - dragStart[0]) > dragTol) || (Math.abs(y - dragStart[1]) > dragTol)) {
+            GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
+            double width = annoCanvas.getWidth();
+            double height = annoCanvas.getHeight();
+            double xStart = dragStart[0];
+            double yStart = dragStart[1];
+            annoGC.clearRect(0, 0, width, height);
+            double x1, y1, x2, y2, w, h;
+            if (x > xStart) {
+                x1 = xStart;
+                w = x - x1;
+            } else {
+                x1 = x;
+                w = xStart - x;
+            }
+            if (y > yStart) {
+                y1 = yStart;
+                h = y - y1;
+            } else {
+                y1 = y;
+                h = yStart - y;
+            }
+            Color color = new Color(1.0, 1.0, 0.0, 0.3);
+            annoGC.setFill(color);
+            annoGC.fillRect(x1, y1, w, h);
         }
-        if (y > yStart) {
-            y1 = yStart;
-            h = y - y1;
-        } else {
-            y1 = y;
-            h = yStart - y;
-        }
-        Color color = new Color(1.0, 1.0, 0.0, 0.3);
-        annoGC.setFill(color);
-        annoGC.fillRect(x1, y1, w, h);
     }
 
     private void swapDouble(double[] values) {
@@ -515,6 +518,9 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         } else {
             limits = new double[2][2];
         }
+        double dX = Math.abs(x - dragStart[0]);
+        double dY = Math.abs(y - dragStart[1]);
+        System.out.println(dX + " " + dY);
         limits[0][0] = xAxis.getValueForDisplay(dragStart[0]).doubleValue();
         limits[0][1] = xAxis.getValueForDisplay(x).doubleValue();
         swapDouble(limits[0]);
@@ -526,9 +532,14 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
 
         if (!selectMode) {
-            setAxis(0, limits[0][0], limits[0][1]);
-            if (!is1D()) {
-                setAxis(1, limits[1][0], limits[1][1]);
+            double minMove = 100;
+            if (dX > minMove) {
+                if (is1D() || (dY > minMove)) {
+                    setAxis(0, limits[0][0], limits[0][1]);
+                    if (!is1D()) {
+                        setAxis(1, limits[1][0], limits[1][1]);
+                    }
+                }
             }
         } else {
             drawPeakLists(false);
@@ -1947,7 +1958,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
-    public void hitPeak(double pickX, double pickY) {
+    public Optional<Peak> hitPeak(double pickX, double pickY) {
         Optional<Peak> hit = Optional.empty();
         if (peakStatus.get()) {
             drawPeakLists(false);
@@ -1960,6 +1971,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 }
             }
         }
+        return hit;
+    }
+
+    public void showHitPeak(double pickX, double pickY) {
+        Optional<Peak> hit = hitPeak(pickX, pickY);
         if (hit.isPresent()) {
             FXMLController.getActiveController().showPeakAttr();
             FXMLController.peakAttrController.gotoPeak(hit.get());

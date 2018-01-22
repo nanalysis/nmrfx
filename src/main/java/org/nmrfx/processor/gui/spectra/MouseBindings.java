@@ -20,6 +20,7 @@ package org.nmrfx.processor.gui.spectra;
 import java.util.Optional;
 import javafx.event.Event;
 import javafx.scene.input.MouseEvent;
+import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.gui.PolyChart;
 
 /**
@@ -28,10 +29,19 @@ import org.nmrfx.processor.gui.PolyChart;
  */
 public class MouseBindings {
 
+    private static enum MOUSE_ACTION {
+        NOTHING,
+        DRAG_SELECTION,
+        DRAG_VIEW,
+        DRAG_EXPAND,
+        DRAG_PEAK,
+        DRAG_PEAK_WIDTH,
+        CROSSHAIR
+    }
+
     PolyChart chart;
     double[] dragStart = new double[2];
-    boolean dragMode = false;
-    boolean selectMode = false;
+    MOUSE_ACTION mouseAction = MOUSE_ACTION.NOTHING;
     boolean mouseDown = false;
     Optional<Boolean> widthMode = Optional.empty();
     double mouseX;
@@ -66,29 +76,40 @@ public class MouseBindings {
     public void mouseDragged(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
-        if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && chart.getCursor().toString().equals("CROSSHAIR"))) {
-            chart.handleCrossHair(mouseEvent, false);
-        } else {
-            if (mouseEvent.isPrimaryButtonDown()) {
-                int dragTol = 4;
-                if ((Math.abs(x - dragStart[0]) > dragTol) || (Math.abs(y - dragStart[1]) > dragTol)) {
-                    if (dragMode) {
-                        chart.dragBox(dragStart, x, y);
-                    } else {
-                        if (!widthMode.isPresent()) {
-                            boolean metaDown = mouseEvent.isAltDown();
-                            widthMode = Optional.of(metaDown);
-                        }
-                        chart.dragPeak(dragStart, x, y, widthMode.get());
+        if (!mouseEvent.isControlDown()) {
+            if (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR")) {
+                chart.handleCrossHair(mouseEvent, false);
+            } else {
+                if (mouseEvent.isPrimaryButtonDown()) {
+                    switch (mouseAction) {
+                        case CROSSHAIR:
+                            chart.handleCrossHair(mouseEvent, false);
+                            break;
+                        case DRAG_EXPAND:
+                            chart.dragBox(dragStart, x, y);
+                            break;
+                        case DRAG_SELECTION:
+                            chart.dragBox(dragStart, x, y);
+                            break;
+                        case DRAG_PEAK:
+                            chart.dragPeak(dragStart, x, y, false);
+                            break;
+                        case DRAG_PEAK_WIDTH:
+                            chart.dragPeak(dragStart, x, y, true);
+                            break;
+                        case DRAG_VIEW:
+                            double dx = x - dragStart[0];
+                            double dy = y - dragStart[1];
+                            if ((Math.abs(dx) >= 1.0) || (Math.abs(dy) >= 1.0)) {
+                                dragStart[0] = x;
+                                dragStart[1] = y;
+                                chart.scroll(dx, dy);
+                            }
+                            break;
+
+                        default:
+
                     }
-                }
-            } else if (mouseEvent.isMiddleButtonDown()) {
-                double dx = x - dragStart[0];
-                double dy = y - dragStart[1];
-                if ((Math.abs(dx) >= 1.0) || (Math.abs(dy) >= 1.0)) {
-                    dragStart[0] = x;
-                    dragStart[1] = y;
-                    chart.scroll(dx, dy);
                 }
             }
         }
@@ -100,48 +121,46 @@ public class MouseBindings {
     }
 
     public void mousePressed(MouseEvent mouseEvent) {
-        mouseDown = true;
-        dragMode = false;
-        selectMode = false;
-        chart.focus();
-        chart.setActiveChart();
-        mousePressX = mouseEvent.getX();
-        mousePressY = mouseEvent.getY();
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
-        if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && chart.getCursor().toString().equals("CROSSHAIR"))) {
-            if (!chart.getCursor().toString().equals("CROSSHAIR")) {
-                chart.getCrossHairs().setCrossHairState(true);
-            }
-            chart.handleCrossHair(mouseEvent, true);
-        } else {
-            if (mouseEvent.isPrimaryButtonDown() && !mouseEvent.isControlDown()) {
-                dragStart[0] = x;
-                dragStart[1] = y;
-                widthMode = Optional.empty();
-                if (mouseEvent.isShiftDown()) {
-                    dragMode = true;
-                    selectMode = true;
-                    chart.selectPeaks(x, y, true);
-                } else if (mouseEvent.isAltDown()) {
-                    dragMode = true;
-                } else {
-                    chart.selectPeaks(x, y, false);
+        dragStart[0] = x;
+        dragStart[1] = y;
+        mouseAction = MOUSE_ACTION.NOTHING;
+        if (!mouseEvent.isControlDown()) {
+            if (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR")) {
+                if (!chart.getCursor().toString().equals("CROSSHAIR")) {
+                    chart.getCrossHairs().setCrossHairState(true);
                 }
-            } else if (mouseEvent.isMiddleButtonDown()) {
-                dragStart[0] = x;
-                dragStart[1] = y;
+                chart.handleCrossHair(mouseEvent, true);
+                mouseAction = MOUSE_ACTION.CROSSHAIR;
+            } else {
+                if (mouseEvent.isPrimaryButtonDown()) {
+                    Optional<Peak> hit = chart.hitPeak(x, y);
+                    if (mouseEvent.isShiftDown()) {
+                        mouseAction = MOUSE_ACTION.DRAG_SELECTION;
+                        chart.selectPeaks(x, y, true);
+                    } else if (mouseEvent.isAltDown()) {
+                        if (hit.isPresent()) {
+                            mouseAction = MOUSE_ACTION.DRAG_PEAK_WIDTH;
+                        } else {
+                            mouseAction = MOUSE_ACTION.DRAG_EXPAND;
+                        }
+                    } else {
+                        chart.selectPeaks(x, y, false);
+                        mouseAction = MOUSE_ACTION.DRAG_PEAK;
+                    }
+                } else if (mouseEvent.isMiddleButtonDown()) {
+                    mouseAction = MOUSE_ACTION.DRAG_VIEW;
+                }
             }
-
         }
-
     }
 
     public void mouseReleased(Event event) {
         mouseDown = false;
         MouseEvent mouseEvent = (MouseEvent) event;
         if (!mouseEvent.isControlDown()) {
-            if (mouseEvent.isMetaDown() || (!mouseEvent.isControlDown() && chart.getCursor().toString().equals("CROSSHAIR"))) {
+            if (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR")) {
                 chart.handleCrossHair(mouseEvent, false);
                 if (!chart.getCursor().toString().equals("CROSSHAIR")) {
                     chart.getCrossHairs().setCrossHairState(false);
@@ -149,17 +168,35 @@ public class MouseBindings {
             } else {
                 double x = mouseEvent.getX();
                 double y = mouseEvent.getY();
-                if (dragMode) {
-                    chart.finishBox(selectMode, dragStart, x, y);
-                } else {
-                    dragStart[0] = x;
-                    dragStart[1] = y;
-                    if (widthMode.isPresent()) {
-                        chart.dragPeak(dragStart, x, y, widthMode.get());
-                    }
-                    widthMode = Optional.empty();
+                switch (mouseAction) {
+                    case DRAG_EXPAND:
+                        chart.finishBox(false, dragStart, x, y);
+                        break;
+                    case DRAG_SELECTION:
+                        chart.finishBox(true, dragStart, x, y);
+                        break;
+                    case DRAG_PEAK:
+                        dragStart[0] = x;
+                        dragStart[1] = y;
+                        chart.dragPeak(dragStart, x, y, false);
+                        break;
+                    case DRAG_PEAK_WIDTH:
+                        dragStart[0] = x;
+                        dragStart[1] = y;
+                        chart.dragPeak(dragStart, x, y, true);
+                        widthMode = Optional.empty();
+                        break;
+                    default:
+                        dragStart[0] = x;
+                        dragStart[1] = y;
+                        if (widthMode.isPresent()) {
+                            chart.dragPeak(dragStart, x, y, widthMode.get());
+                        }
+                        widthMode = Optional.empty();
+                        break;
                 }
             }
+
         }
     }
 

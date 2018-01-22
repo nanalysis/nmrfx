@@ -92,7 +92,7 @@ public class SpectrumMenu {
 
         MenuItem inspectPeakItem = new MenuItem("Inspect Peak");
         inspectPeakItem.setOnAction((ActionEvent e) -> {
-            chart.hitPeak(chart.mouseBindings.getMousePressX(), chart.mouseBindings.getMousePressY());
+            chart.showHitPeak(chart.mouseBindings.getMousePressX(), chart.mouseBindings.getMousePressY());
         });
 
         peakMenu.getItems().add(inspectPeakItem);
