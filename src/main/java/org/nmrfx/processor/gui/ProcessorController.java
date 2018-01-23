@@ -296,9 +296,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     @FXML
     public void viewDatasetInApp() {
         if (chartProcessor.datasetFile != null) {
+            boolean viewingDataset = isViewingDataset();
             String datasetPath = chartProcessor.datasetFile.getPath();
             chart.controller.openFile(datasetPath, false, false);
             viewMode.getSelectionModel().select(1);
+            if (!viewingDataset) {
+                chart.full();
+                chart.autoScale();
+            }
         }
     }
 
