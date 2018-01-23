@@ -917,6 +917,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     public void incrementPlane(int axis, int amount) {
         if (axes.length > axis) {
+            ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
             DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
             Dataset dataset = getDataset();
             int indexL = axModes[axis].getIndex(datasetAttributes, axis, axes[axis].getLowerBound());
@@ -942,6 +943,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             axes[axis].setLowerBound(indexL);
             axes[axis].setUpperBound(indexU);
             layoutPlotChildren();
+            ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
+            controller.undoManager.add("plane", undo, redo);
         }
     }
 

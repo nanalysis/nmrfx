@@ -66,6 +66,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
+import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 
 /**
  *
@@ -403,8 +404,11 @@ public class SpectrumStatusBar {
         if (pt1 != (plane - delta)) {
             pt1 = plane - delta;
             pt2 = plane + delta;
+            ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
             controller.getActiveChart().setAxis(iDim, pt1, pt2);
             controller.getActiveChart().refresh();
+            ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
+            controller.undoManager.add("plane", undo, redo);
         }
     }
 
