@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import org.nmrfx.processor.gui.undo.UndoRedo;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -205,6 +206,16 @@ public class KeyBindings {
                 break;
 
             case "p":
+                break;
+            case "u":
+                break;
+            case "uu":
+                chart.getController().undo();
+                keyMonitor.clear();
+                break;
+            case "ur":
+                chart.getController().redo();
+                keyMonitor.clear();
                 break;
             case "v":
                 break;

@@ -104,6 +104,7 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utilities.DictionarySort;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
@@ -181,6 +182,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     ListView datasetListView = new ListView();
 
     SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
+    UndoManager undoManager = new UndoManager();
 
     public File getInitialDirectory() {
         if (initialDir == null) {
@@ -435,6 +437,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             PreferencesController.saveRecentDatasets(filePath);
         } catch (IOException ioE) {
         }
+        undoManager.clear();
     }
 
     public PeakAttrController getPeakAttrController() {
@@ -1408,6 +1411,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         buttons.add(cancelButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNDO, "Undo", iconSize, fontSize, ContentDisplay.TOP);
+        bButton.setOnAction(e -> undoManager.undo());
+        buttons.add(bButton);
+        bButton.disableProperty().bind(undoManager.undoable.not());
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REPEAT, "Redo", iconSize, fontSize, ContentDisplay.TOP);
+        bButton.setOnAction(e -> undoManager.redo());
+        buttons.add(bButton);
+        bButton.disableProperty().bind(undoManager.redoable.not());
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", iconSize, fontSize, ContentDisplay.TOP);
         bButton.setOnAction(e -> getActiveChart().full());
@@ -1795,5 +1806,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             System.out.println(configMap);
         });
 
+    }
+
+    public void undo() {
+        undoManager.undo();
+    }
+
+    public void redo() {
+        undoManager.redo();
     }
 }

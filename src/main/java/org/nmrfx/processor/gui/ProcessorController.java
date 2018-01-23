@@ -319,6 +319,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         dimChoice.getSelectionModel().select(0);
         chartProcessor.setVecDim("D1");
         viewMode.setValue("FID");
+        chart.controller.undoManager.clear();
     }
 
     public String getScript() {

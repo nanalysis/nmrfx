@@ -83,11 +83,14 @@ import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
+import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DragBindings;
 import org.nmrfx.processor.gui.spectra.GestureBindings;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.MouseBindings;
+import org.nmrfx.processor.gui.undo.ChartUndoScale;
+import org.nmrfx.processor.gui.undo.UndoRedo;
 
 public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
@@ -545,10 +548,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             double minMove = 100;
             if (dX > minMove) {
                 if (is1D() || (dY > minMove)) {
+                    ChartUndoLimits undo = new ChartUndoLimits(this);
                     setAxis(0, limits[0][0], limits[0][1]);
                     if (!is1D()) {
                         setAxis(1, limits[1][0], limits[1][1]);
                     }
+                    ChartUndoLimits redo = new ChartUndoLimits(this);
+                    controller.undoManager.add("expand", undo, redo);
                 }
             }
         } else {
@@ -645,11 +651,16 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         ConsoleUtil.runOnFxThread(() -> {
             Dataset dataset = getDataset();
             if (dataset != null) {
+                ChartUndoLimits undo = new ChartUndoLimits(this);
                 xZoom(factor);
                 if (!is1D()) {
                     yZoom(factor);
                 }
                 layoutPlotChildren();
+                ChartUndoLimits redo = new ChartUndoLimits(this);
+                String undoName = factor > 1.0 ? "zoomout" : "zoomin";
+                controller.undoManager.add(undoName, undo, redo);
+
             }
         }
         );
@@ -746,10 +757,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     }
 
     protected void adjustScale(double factor) {
+        ChartUndoScale undo = new ChartUndoScale(this);
         datasetAttributesList.stream().forEach(dataAttr -> {
             adjustScale(dataAttr, factor);
         });
         layoutPlotChildren();
+        ChartUndoScale redo = new ChartUndoScale(this);
+        controller.undoManager.add("ascale", undo, redo);
 
     }
 
@@ -934,12 +948,15 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     public void full() {
         ConsoleUtil.runOnFxThread(() -> {
             if (!datasetAttributesList.isEmpty()) {
+                ChartUndoLimits undo = new ChartUndoLimits(this);
                 double[] limits = getRange(0);
                 setXAxis(limits[0], limits[1]);
                 if (disDimProp.get() == DISDIM.TwoD) {
                     limits = getRange(1);
                     setYAxis(limits[0], limits[1]);
                 }
+                ChartUndoLimits redo = new ChartUndoLimits(this);
+                controller.undoManager.add("full", undo, redo);
             }
         });
     }
@@ -1042,10 +1059,13 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     }
 
     public void autoScale() {
+        ChartUndoScale undo = new ChartUndoScale(this);
         datasetAttributesList.stream().forEach(dataAttr -> {
             autoScale(dataAttr);
         });
         layoutPlotChildren();
+        ChartUndoScale redo = new ChartUndoScale(this);
+        controller.undoManager.add("ascale", undo, redo);
 
     }
 
@@ -1184,7 +1204,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     }
 
     public void expand() {
-
+        ChartUndoLimits undo = new ChartUndoLimits(this);
         expand(VERTICAL);
         Dataset dataset = getDataset();
         if (dataset != null) {
@@ -1194,6 +1214,9 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
         layoutPlotChildren();
         crossHairs.hideCrossHairs();
+        ChartUndoLimits redo = new ChartUndoLimits(this);
+        controller.undoManager.add("expand", undo, redo);
+
     }
 
     public double[] getVerticalCrosshairPositions() {
