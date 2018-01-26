@@ -32,12 +32,16 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
@@ -541,10 +545,19 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     void closeFile(File target) {
-        // make copy because datasetList might be updated vi DatasetListener mechanism
-        List<Dataset> copyOfDatasetList = new ArrayList<>();
-        copyOfDatasetList.addAll(datasetList);
         getActiveChart().removeAllDatasets();
+        // removeAllDatasets in chart only stops displaying them, so we need to actually close the dataset
+        Path path1 = target.toPath();
+        for (Dataset dataset : Dataset.datasets()) {
+            File file = dataset.getFile();
+            try {
+                if (Files.isSameFile(path1, file.toPath())) {
+                    dataset.close();
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
     @FXML
