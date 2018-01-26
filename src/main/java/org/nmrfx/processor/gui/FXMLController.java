@@ -550,12 +550,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         Path path1 = target.toPath();
         for (Dataset dataset : Dataset.datasets()) {
             File file = dataset.getFile();
-            try {
-                if (Files.isSameFile(path1, file.toPath())) {
-                    dataset.close();
+            if (file != null) {
+                try {
+                    if (Files.isSameFile(path1, file.toPath())) {
+                        dataset.close();
+                    }
+                } catch (IOException ex) {
+                    Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            } catch (IOException ex) {
-                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
