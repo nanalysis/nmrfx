@@ -147,34 +147,30 @@ public class PeakDim {
 
     public Set<PeakDim> getCoupledPeakDims() {
         if (multiplet == null) {
-            return new HashSet<PeakDim>();
+            Set<PeakDim> set = new HashSet<PeakDim>();
+            set.add(this);
+            return set;
         } else {
             return multiplet.getPeakDims();
         }
     }
 
     public Multiplet getMultiplet() {
-        /*
-         Multiplet aMultiplet = multiplet;
-         if (aMultiplet == null) {
-         ArrayList<PeakDim> peakDims = getLinkedPeakDims();
-         for (PeakDim peakDim : peakDims) {
-         if (peakDim.multiplet != null) {
-         aMultiplet = peakDim.multiplet;
-         }
-         }
-         }
-         if (aMultiplet == null) {
-         multiplet = new Multiplet(this);
-         aMultiplet = multiplet;
-         }
-
-         return aMultiplet;
-         */
-        if (multiplet == null) {
-            multiplet = new Multiplet(this);
+        Multiplet aMultiplet = multiplet;
+        if (aMultiplet == null) {
+            List<PeakDim> peakDims = getLinkedPeakDims();
+            for (PeakDim peakDim : peakDims) {
+                if (peakDim.multiplet != null) {
+                    aMultiplet = peakDim.multiplet;
+                }
+            }
         }
-        return multiplet;
+        if (aMultiplet == null) {
+            multiplet = new Multiplet(this);
+            aMultiplet = multiplet;
+        }
+
+        return aMultiplet;
     }
 
     public void setMultiplet(Multiplet newMultiplet) {
@@ -189,11 +185,11 @@ public class PeakDim {
 
     public void unLink() {
         resonance.remove(this);
-        resonance = resFactory.build();
+        initResonance();
         if (multiplet != null) {
             multiplet.removePeakDim(this);
+            multiplet = new Multiplet(this);
         }
-        multiplet = new Multiplet(this);
 
         peakDimUpdated();
     }
