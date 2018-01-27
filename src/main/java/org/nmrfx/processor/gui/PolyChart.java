@@ -1658,6 +1658,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
 //        datasetAttributesList.clear();
         ArrayList<DatasetAttributes> draw2DList = new ArrayList<>();
+        updateDatasetAttributeBounds();
         datasetAttributesList.stream().forEach(datasetAttributes -> {
             DatasetAttributes firstAttr = datasetAttributesList.get(0);
             Dataset dataset = datasetAttributes.getDataset();
