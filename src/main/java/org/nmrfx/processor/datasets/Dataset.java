@@ -125,6 +125,7 @@ public class Dataset extends DoubleVector {
     static private LRUMap vectorBuffer = new LRUMap(512);
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     private RandomAccessFile raFile = null;
+    Set<Region> regions;
 
     @Override
     protected SEXP cloneWithNewAttributes(AttributeMap newAttributes) {
@@ -5260,4 +5261,11 @@ public class Dataset extends DoubleVector {
         return indices;
     }
 
+    public void setRegions(Set<Region> regions) {
+        this.regions = regions;
+    }
+
+    public Set<Region> getRegions() {
+        return regions;
+    }
 }
