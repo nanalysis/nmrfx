@@ -244,6 +244,9 @@ public class Multiplet implements PeakOrMulti, Comparable {
                 myPeakDim = pD;
                 break;
             }
+            if (peakDims.size() == 1) {
+                makeSinglet();
+            }
         }
     }
 
@@ -562,7 +565,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     // Adjust peak component positons and intensities to correspond to values calculated from
     //    couplings (centered on current multiplet center)
     public void setMultipletComponentValues() {
-        if (coupling != null) {
+        if ((coupling != null) && !(coupling instanceof ComplexCoupling)) {
             FreqIntensities fiValues = getFreqIntensitiesFromSplittings();
             int nFreqs = fiValues.freqs.length;
             if (nFreqs != fiValues.intensities.length) {
@@ -578,12 +581,11 @@ public class Multiplet implements PeakOrMulti, Comparable {
             //System.out.println("setMultipletComponentValues "+nFreqs+" "+nExtra+" "+" "+fiValues.intensities.length);
             //  fixme freqs length can be inconistent
             if (peakDims.size() == fiValues.intensities.length) {
-                intensity = 0.0;
-                double sumV = 0.0;
 
                 int j = 0;
                 for (PeakDim lPeakDim : peakDims) {
                     lPeakDim.setChemShiftValueNoCheck((float) (center - fiValues.freqs[j]));
+
                     //fixme lPeakDim.setLineWidthValue(getLineWidthValue());
                     lPeakDim.myPeak.setIntensity((float) fiValues.intensities[j]);
                     //lPeakDim.myPeak.setFlag(4, true);
@@ -591,15 +593,28 @@ public class Multiplet implements PeakOrMulti, Comparable {
                     // summing data points across peak, not unreasonable because you have to sum out to infinity
                     // to get the whole integral
                     lPeakDim.myPeak.setVolume1((float) (lPeakDim.myPeak.getIntensity() * Math.abs(lPeakDim.myPeak.peakDim[0].getLineWidthValue()) * Math.PI / 2.0 / 1.05));
-                    sumV += lPeakDim.myPeak.getVolume1();
                     j++;
 
                 }
-                volume = sumV;
-                intensity = getMultipletMax();
             }
-            myPeakDim.peakDimUpdated();
         }
+        updateVolumes();
+    }
+
+    public void updateVolumes() {
+        intensity = 0.0;
+        double sumV = 0.0;
+        for (PeakDim lPeakDim : peakDims) {
+            //lPeakDim.myPeak.setFlag(4, true);
+            // XXX 1.05 is a fudge factor to make the volume calculated here closer to those from
+            // summing data points across peak, not unreasonable because you have to sum out to infinity
+            // to get the whole integral
+            lPeakDim.myPeak.setVolume1((float) (lPeakDim.myPeak.getIntensity() * Math.abs(lPeakDim.myPeak.peakDim[0].getLineWidthValue()) * Math.PI / 2.0 / 1.05));
+            sumV += lPeakDim.myPeak.getVolume1();
+        }
+        volume = sumV;
+        intensity = getMultipletMax();
+        myPeakDim.peakDimUpdated();
     }
 
     public double getMultipletMax() {
