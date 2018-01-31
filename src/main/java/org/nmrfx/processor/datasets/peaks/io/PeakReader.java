@@ -32,7 +32,6 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
-import org.nmrfx.processor.operations.Measure;
 
 /**
  *
@@ -255,6 +254,9 @@ public class PeakReader {
                                                 break;
                                             case "status":
                                                 peak.setStatus(Integer.valueOf(value));
+                                                break;
+                                            case "type":
+                                                peak.setType(Integer.valueOf(value));
                                                 break;
                                             case "comment":
                                                 peak.setComment(value);
