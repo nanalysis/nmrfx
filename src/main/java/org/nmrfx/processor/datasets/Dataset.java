@@ -59,6 +59,9 @@ public class Dataset extends DoubleVector {
     private static HashMap<String, Dataset> theFiles = new HashMap<>();
     private final static int NV_HEADER_SIZE = 2048;
     private final static int UCSF_HEADER_SIZE = 180;
+    private final static int LABEL_MAX_BYTES = 16;
+    private final static int SOLVENT_MAX_BYTES = 24;
+
     MappedMatrixInterface dataFile = null;
     String details = "";
     private Vec vecMat = null;
@@ -111,6 +114,7 @@ public class Dataset extends DoubleVector {
     private double scale = 1.0;
     private int rdims;
     private String solvent = null;
+    private double temperature = 0.0;
     private boolean littleEndian = false;
     private boolean gotByteOrder = false;
     private int dataType = 0;
@@ -2796,10 +2800,21 @@ public class Dataset extends DoubleVector {
             if (rdims == 0) {
                 rdims = nDim;
             }
+            temperature = DataUtilities.readSwapFloat(dis, checkSwap);
+            byte[] solventBytes = new byte[SOLVENT_MAX_BYTES];
+            dis.read(solventBytes);
 
-            dis.skip(992);
+            StringBuilder solventBuffer = new StringBuilder();
 
-            byte[] labelBytes = new byte[16];
+            for (int j = 0; (j < SOLVENT_MAX_BYTES) && (solventBytes[j] != '\0'); j++) {
+                solventBuffer.append((char) solventBytes[j]);
+            }
+
+            solvent = solventBuffer.toString();
+
+            dis.skip(992 - 4 - SOLVENT_MAX_BYTES);
+
+            byte[] labelBytes = new byte[LABEL_MAX_BYTES];
             StringBuilder labelBuffer = new StringBuilder();
             offsetPoints[0] = 1;
 
@@ -2842,7 +2857,7 @@ public class Dataset extends DoubleVector {
                 int j;
                 labelBuffer.setLength(0);
 
-                for (j = 0; (j < 16) && (labelBytes[j] != '\0'); j++) {
+                for (j = 0; (j < LABEL_MAX_BYTES) && (labelBytes[j] != '\0'); j++) {
                     labelBuffer.append((char) labelBytes[j]);
                 }
 
@@ -3387,8 +3402,8 @@ public class Dataset extends DoubleVector {
             byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         }
 
-        int labelMaxBytes = 16;
-        byte[] labelBytes = new byte[labelMaxBytes];
+        byte[] labelBytes = new byte[LABEL_MAX_BYTES];
+        byte[] solventBytes = new byte[SOLVENT_MAX_BYTES];
         try {
             magic = 0x3418abcd;
             byteBuffer.putInt(magic);
@@ -3399,6 +3414,17 @@ public class Dataset extends DoubleVector {
             byteBuffer.putInt(blockElements / 4);
             byteBuffer.putInt(nDim);
             byteBuffer.putInt(rdims);
+            byteBuffer.putFloat(0.0f);
+            String solventString = getSolvent();
+            int nBytes = solventString.length();
+            for (int j = 0; j < SOLVENT_MAX_BYTES; j++) {
+                if (j < nBytes) {
+                    solventBytes[j] = (byte) solventString.charAt(j);
+                } else {
+                    solventBytes[j] = 0;
+                }
+            }
+            byteBuffer.put(solventBytes);
 
             for (int i = 0; i < nDim; i++) {
                 byteBuffer.position(1024 + i * 128);
@@ -3417,8 +3443,8 @@ public class Dataset extends DoubleVector {
                 byteBuffer.putFloat((float) foldDown[i]);
 
                 String labelString = label[i];
-                int nBytes = labelString.length();
-                for (int j = 0; j < labelMaxBytes; j++) {
+                nBytes = labelString.length();
+                for (int j = 0; j < LABEL_MAX_BYTES; j++) {
                     if (j < nBytes) {
                         labelBytes[j] = (byte) labelString.charAt(j);
                     } else {
@@ -3463,8 +3489,7 @@ public class Dataset extends DoubleVector {
         sBuilder.append(littleEndian);
         sBuilder.append(sepChar);
 
-        int labelMaxBytes = 16;
-        byte[] labelBytes = new byte[labelMaxBytes];
+        byte[] labelBytes = new byte[LABEL_MAX_BYTES];
         magic = 0x3418abcd;
         sBuilder.append("magic");
         sBuilder.append(sepChar);
@@ -3572,7 +3597,7 @@ public class Dataset extends DoubleVector {
 
             String labelString = label[i];
             int nBytes = labelString.length();
-            for (int j = 0; j < labelMaxBytes; j++) {
+            for (int j = 0; j < LABEL_MAX_BYTES; j++) {
                 if (j < nBytes) {
                     labelBytes[j] = (byte) labelString.charAt(j);
                 } else {
