@@ -887,6 +887,7 @@ public class Peak implements Comparable, PeakOrMulti {
         result.append(String.valueOf(getVolume1())).append(sep);
         result.append(String.valueOf(getIntensity())).append(sep);
         result.append(String.valueOf(getStatus())).append(sep);
+        result.append(String.valueOf(getType())).append(sep);
         result.append(String.valueOf(getComment())).append(sep);
         String colorString = color == null ? "" : ColorUtil.toRGBCode(color);
         result.append(colorString).append(sep);
@@ -1280,7 +1281,7 @@ public class Peak implements Comparable, PeakOrMulti {
         }
         return result;
     }
-
+    
     public Corner getCorner() {
         return corner;
     }
