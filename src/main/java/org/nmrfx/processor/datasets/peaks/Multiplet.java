@@ -250,7 +250,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         }
     }
 
-    protected void adjustCouplings(int iCoupling, double newValue) {
+    public void adjustCouplings(int iCoupling, double newValue) {
         if (coupling != null) {
             coupling = coupling.adjustCouplings(this, iCoupling, newValue);
             if (isCoupled()) {
