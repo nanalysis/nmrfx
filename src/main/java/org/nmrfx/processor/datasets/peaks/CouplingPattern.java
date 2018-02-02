@@ -31,7 +31,7 @@ import java.util.Arrays;
  *
  * @author brucejohnson
  */
-class CouplingPattern extends Coupling {
+public class CouplingPattern extends Coupling {
 
     private CouplingItem[] couplingItems;
     private final double intensity;
