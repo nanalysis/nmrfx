@@ -155,6 +155,10 @@ public class PeakDim {
         }
     }
 
+    public boolean hasMultiplet() {
+        return multiplet != null;
+    }
+
     public Multiplet getMultiplet() {
         Multiplet aMultiplet = multiplet;
         if (aMultiplet == null) {
