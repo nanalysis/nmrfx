@@ -34,17 +34,16 @@ import java.util.Arrays;
 public class CouplingPattern extends Coupling {
 
     private CouplingItem[] couplingItems;
-    private final double intensity;
     private final double[] intensities;
-    static final private int[][] pascalsTri = new int[16][];
+    static final private int[][] PASCALS_TRIANGLE = new int[16][];
 
     static {
-        for (int iRow = 0; iRow < pascalsTri.length; iRow++) {
-            pascalsTri[iRow] = new int[iRow + 1];
-            pascalsTri[iRow][0] = 1;
-            pascalsTri[iRow][iRow] = 1;
+        for (int iRow = 0; iRow < PASCALS_TRIANGLE.length; iRow++) {
+            PASCALS_TRIANGLE[iRow] = new int[iRow + 1];
+            PASCALS_TRIANGLE[iRow][0] = 1;
+            PASCALS_TRIANGLE[iRow][iRow] = 1;
             for (int iCol = 1; iCol < iRow; iCol++) {
-                pascalsTri[iRow][iCol] = pascalsTri[iRow - 1][iCol] + pascalsTri[iRow - 1][iCol - 1];
+                PASCALS_TRIANGLE[iRow][iCol] = PASCALS_TRIANGLE[iRow - 1][iCol] + PASCALS_TRIANGLE[iRow - 1][iCol - 1];
             }
         }
     }
@@ -56,7 +55,6 @@ public class CouplingPattern extends Coupling {
             couplingItems[i] = new CouplingItem(values[i], 0.0, n[i]);
         }
         this.intensities = intensities;
-        this.intensity = 1.0;
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
 
@@ -74,7 +72,6 @@ public class CouplingPattern extends Coupling {
         for (int i = 0; i < nLines; i++) {
             intensities[i] = 1.0;
         }
-        this.intensity = 1.0;
     }
 
     CouplingPattern(final Multiplet multiplet, final double[] values, final int[] n, final double intensity, final double[] sin2thetas) {
@@ -94,7 +91,6 @@ public class CouplingPattern extends Coupling {
         }
         intensities = new double[nLines];
         double[] freqs = new double[nLines];
-        this.intensity = intensity;
         jSplittings(couplingItems, freqs, intensities);
         for (int i = 0; i < nLines; i++) {
             intensities[i] *= intensity;
@@ -103,31 +99,41 @@ public class CouplingPattern extends Coupling {
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
 
+    @Override
     public String getMultiplicity() {
 
         char[] pattern = new char[couplingItems.length];
         for (int i = 0; i < couplingItems.length; i++) {
             int n = couplingItems[i].getNSplits();
-            if (n == 2) {
-                pattern[i] = 'd';
-            } else if (n == 3) {
-                pattern[i] = 't';
-            } else if (n == 4) {
-                pattern[i] = 'q';
-            } else if (n == 5) {
-                pattern[i] = 'p';
-            } else if (n == 6) {
-                pattern[i] = 'h';
-            } else if (n == 7) {
-                pattern[i] = 'x';
-            } else {
-                pattern[i] = 'm';
+            switch (n) {
+                case 2:
+                    pattern[i] = 'd';
+                    break;
+                case 3:
+                    pattern[i] = 't';
+                    break;
+                case 4:
+                    pattern[i] = 'q';
+                    break;
+                case 5:
+                    pattern[i] = 'p';
+                    break;
+                case 6:
+                    pattern[i] = 'h';
+                    break;
+                case 7:
+                    pattern[i] = 'x';
+                    break;
+                default:
+                    pattern[i] = 'm';
+                    break;
             }
         }
         return String.valueOf(pattern);
 
     }
 
+    @Override
     public boolean isCoupled() {
         return true;
     }
@@ -187,12 +193,13 @@ public class CouplingPattern extends Coupling {
         return couplingItems.length;
     }
 
+    @Override
     public String getCouplingsAsString() {
 
         if ((couplingItems.length == 1) && (couplingItems[0].getNSplits() == 2)) {
             return String.valueOf(couplingItems[0].getCoupling());
         } else {
-            StringBuffer sbuf = new StringBuffer();
+            StringBuilder sbuf = new StringBuilder();
 
             for (int i = 0; i < couplingItems.length; i++) {
                 if (i > 0) {
@@ -208,11 +215,12 @@ public class CouplingPattern extends Coupling {
         }
     }
 
+    @Override
     public String getCouplingsAsSimpleString() {
         if ((couplingItems.length == 1) && (couplingItems[0].getNSplits() == 2)) {
             return String.valueOf(Format.format2(couplingItems[0].getCoupling()));
         } else {
-            StringBuffer sbuf = new StringBuffer();
+            StringBuilder sbuf = new StringBuilder();
 
             for (int i = 0; i < couplingItems.length; i++) {
                 if (i > 0) {
@@ -260,6 +268,7 @@ public class CouplingPattern extends Coupling {
         }
     }
 
+    @Override
     FreqIntensities getFreqIntensitiesFromSplittings() {
         int nFreqs = 1;
         for (CouplingItem couplingItem : couplingItems) {
@@ -272,7 +281,6 @@ public class CouplingPattern extends Coupling {
         double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
         for (int i = 0; i < nFreqs; i++) {
             freqs[i] *= 1.0 / sf;
-            System.out.println("int " + jAmps[i] + " " + intensities[i]);
         }
         FreqIntensities fiValues = new FreqIntensities(freqs, intensities.clone());
         return fiValues;
@@ -348,7 +356,7 @@ public class CouplingPattern extends Coupling {
             for (int j = 0; j < current; j++) {
                 double offset = jCoup * ((nSplits / 2.0) - 0.5);
                 for (int k = 0; k < nSplits; k++) {
-                    double pascalAmp = pascalsTri[nSplits - 1][k];
+                    double pascalAmp = PASCALS_TRIANGLE[nSplits - 1][k];
                     // System.out.println(j + " " + current + " " + jCoup + " " + offset + " " + (current - j - 1) + " " + last + " " + freqs[last] + " " + freqs[current - j - 1]);
                     freqs[last] = freqs[current - j - 1] + offset;
                     if (offset > smallCoup) {
@@ -367,9 +375,10 @@ public class CouplingPattern extends Coupling {
         }
     }
 
+    @Override
     public ArrayList<Line2D> getSplittingGraph() {
 
-        ArrayList<Line2D> lines = new ArrayList<Line2D>();
+        ArrayList<Line2D> lines = new ArrayList<>();
 
         int[] splitCount = getNValues();
 
