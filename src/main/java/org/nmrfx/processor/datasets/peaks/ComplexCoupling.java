@@ -31,10 +31,12 @@ import java.util.ArrayList;
  */
 public class ComplexCoupling extends Coupling {
 
+    @Override
     public String getMultiplicity() {
         return "m";
     }
 
+    @Override
     public boolean isCoupled() {
         return true;
     }
@@ -60,10 +62,12 @@ public class ComplexCoupling extends Coupling {
         }
     }
 
+    @Override
     public String getCouplingsAsString() {
         return "m";
     }
 
+    @Override
     public String getCouplingsAsSimpleString() {
         return "";
     }
@@ -72,6 +76,7 @@ public class ComplexCoupling extends Coupling {
         return multiplet.getPeakDims().size();
     }
 
+    @Override
     FreqIntensities getFreqIntensitiesFromSplittings() {
         FreqIntensities fiValues;
         int nFreqs = multiplet.getPeakDims().size();
@@ -84,21 +89,20 @@ public class ComplexCoupling extends Coupling {
         for (PeakDim peakDim : multiplet.getPeakDims()) {
             fiValues.freqs[iFreq] = (peakDim.getChemShift() - centerPPM) * sf;
             fiValues.intensities[iFreq] = peakDim.getPeak().getIntensity();
-            System.out.println("get fr " + peakDim.getChemShift() + " " + fiValues.freqs[iFreq]);
             iFreq++;
         }
 
         return fiValues;
     }
 
+    @Override
     public ArrayList<Line2D> getSplittingGraph() {
-        ArrayList<Line2D> lines = new ArrayList<Line2D>();
+        ArrayList<Line2D> lines = new ArrayList<>();
         double centerPPM = multiplet.getCenter();
 
-        for (PeakDim peakDim : multiplet.getPeakDims()) {
-            double deltaPPM = (centerPPM - peakDim.getChemShift());
+        multiplet.getPeakDims().stream().map((peakDim) -> (centerPPM - peakDim.getChemShift())).forEachOrdered((deltaPPM) -> {
             lines.add(new Line2D.Double(0.0, 0.0, deltaPPM, 0.0));
-        }
+        });
         return lines;
     }
 }
