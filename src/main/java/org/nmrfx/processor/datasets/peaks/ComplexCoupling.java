@@ -24,16 +24,12 @@ package org.nmrfx.processor.datasets.peaks;
 
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  *
  * @author brucejohnson
  */
 public class ComplexCoupling extends Coupling {
-
-    private double[] intensities = new double[0];
-    private double[] frequencyOffsets = new double[0];
 
     public String getMultiplicity() {
         return "m";
@@ -43,34 +39,27 @@ public class ComplexCoupling extends Coupling {
         return true;
     }
 
-    ComplexCoupling(final Multiplet multiplet, final double[] frequencyOffsets, final double[] intensities) {
+    ComplexCoupling(final Multiplet multiplet, double center, final double[] frequencyOffsets, final double[] intensities) {
         this.multiplet = multiplet;
-        this.frequencyOffsets = frequencyOffsets;
-        this.intensities = intensities;
         double max = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < intensities.length; i++) {
             if (intensities[i] > max) {
                 max = intensities[i];
             }
         }
+        double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
         multiplet.setIntensity(multiplet.getMultipletMax());
+        int i = 0;
+        System.out.println("setup cmplex center " + center);
+        for (PeakDim peakDim : multiplet.getPeakDims()) {
+            double shift = center - frequencyOffsets[i] / sf;
+            System.out.println("peakshift " + shift + " hz " + frequencyOffsets[i] + " int " + intensities[i]);
+            peakDim.setChemShiftValueNoCheck((float) shift);
+            peakDim.getPeak().setIntensity((float) intensities[i]);
+            i++;
+        }
     }
 
-//    public TclObject getCouplingsAsTclObject(Interp interp)
-//            throws TclException {
-//        int nFreq = getFrequencyCount();
-//        TclObject list = TclList.newInstance();
-//        TclList.append(interp, list, TclString.newInstance("m"));
-//
-//        for (int i = 0; i < nFreq; i++) {
-//            TclList.append(interp, list,
-//                    TclString.newInstance(String.format("%.4f", frequencyOffsets[i])));
-//            TclList.append(interp, list,
-//                    TclString.newInstance(String.format("%.6g", intensities[i])));
-//        }
-//        return list;
-//
-//    }
     public String getCouplingsAsString() {
         return "m";
     }
@@ -79,53 +68,36 @@ public class ComplexCoupling extends Coupling {
         return "";
     }
 
-    protected Coupling adjustCouplings(final Multiplet multiplet, final int iCoupling, final double newValue) {
-        double[] fo = multiplet.getFrequencyOffsets();
-        Arrays.sort(fo);
-        return new ComplexCoupling(multiplet, fo, intensities);
-    }
-
-    Coupling update(double[] newFO, double[] newIntensities) {
-        return new ComplexCoupling(multiplet, newFO, newIntensities);
-
-    }
-
-    Coupling update(double[] newFO, double intensity, double[] sin2Thetas) {
-        return new ComplexCoupling(multiplet, newFO, null);
-
+    public int getFrequencyCount() {
+        return multiplet.getPeakDims().size();
     }
 
     FreqIntensities getFreqIntensitiesFromSplittings() {
         FreqIntensities fiValues;
-        int nFreqs = frequencyOffsets.length;
-        PeakDim peakDim = multiplet.getPeakDim();
-        double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
+        int nFreqs = multiplet.getPeakDims().size();
+        PeakDim peakDimRef = multiplet.getPeakDim();
+        double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
         fiValues = new FreqIntensities(nFreqs);
+        double centerPPM = multiplet.getCenter();
 
-        for (int iFreq = 0; iFreq < nFreqs; iFreq++) {
-            fiValues.freqs[iFreq] = frequencyOffsets[iFreq] / sf;
-            fiValues.intensities[iFreq] = intensities[iFreq];
+        int iFreq = 0;
+        for (PeakDim peakDim : multiplet.getPeakDims()) {
+            fiValues.freqs[iFreq] = (peakDim.getChemShift() - centerPPM) * sf;
+            fiValues.intensities[iFreq] = peakDim.getPeak().getIntensity();
+            System.out.println("get fr " + peakDim.getChemShift() + " " + fiValues.freqs[iFreq]);
+            iFreq++;
         }
+
         return fiValues;
-    }
-
-    int getFrequencyCount() {
-        return frequencyOffsets.length;
-    }
-
-    public double getFrequencyOffset(int i) {
-        return frequencyOffsets[i];
     }
 
     public ArrayList<Line2D> getSplittingGraph() {
         ArrayList<Line2D> lines = new ArrayList<Line2D>();
-        int nFreqs = getFrequencyCount();
-        PeakDim peakDim = multiplet.getPeakDim();
-        double sf = peakDim.myPeak.peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
+        double centerPPM = multiplet.getCenter();
 
-        for (int iFreq = 0; iFreq < nFreqs; iFreq++) {
-            double freq = frequencyOffsets[iFreq] / sf;
-            lines.add(new Line2D.Double(0.0, 0.0, freq, 0.0));
+        for (PeakDim peakDim : multiplet.getPeakDims()) {
+            double deltaPPM = (centerPPM - peakDim.getChemShift());
+            lines.add(new Line2D.Double(0.0, 0.0, deltaPPM, 0.0));
         }
         return lines;
     }

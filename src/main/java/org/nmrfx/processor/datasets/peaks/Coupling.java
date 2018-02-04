@@ -26,8 +26,6 @@ public abstract class Coupling {
 
     abstract String getMultiplicity();
 
-    abstract Coupling adjustCouplings(final Multiplet multiplet, final int iCoupling, final double newValue);
-
     abstract FreqIntensities getFreqIntensitiesFromSplittings();
 
     abstract ArrayList<Line2D> getSplittingGraph();
@@ -38,10 +36,6 @@ public abstract class Coupling {
     abstract String getCouplingsAsSimpleString();
 
     abstract boolean isCoupled();
-
-    abstract Coupling update(double[] v1, double[] intensities);
-
-    abstract Coupling update(double[] v1, double intensity, double[] sin2Thetas);
 
     /*
      void setValue(double[] newValues, int[] newN) {
