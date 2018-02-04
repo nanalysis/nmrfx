@@ -23,7 +23,6 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.nmrfx.processor.utilities.Format;
-import org.nmrfx.processor.utilities.NvUtil;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,9 +41,10 @@ public class Multiplet implements PeakOrMulti, Comparable {
     private double volume;
     private int idNum;
     private Coupling coupling = new Singlet(this);
-    HashSet<PeakDim> peakDims = new HashSet<PeakDim>();
+    HashSet<PeakDim> peakDims = new HashSet<>();
     PeakDim myPeakDim;
 
+    @Override
     public int compareTo(Object o) {
 //       int result = 1;
 //       if (o instanceof Multiplet) {
@@ -88,6 +88,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         peakDim.getPeak().peakList.addMultiplet(this);
     }
 
+    @Override
     public int getStatus() {
         int status = -1;
         if (myPeakDim != null) {
@@ -96,6 +97,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         return status;
     }
 
+    @Override
     public boolean isValid() {
         boolean valid = false;
         if (myPeakDim != null) {
@@ -112,6 +114,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         return idNum;
     }
 
+    @Override
     public PeakList getPeakList() {
         PeakList peakList = null;
         if (myPeakDim != null) {
@@ -136,10 +139,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public void set(double centerPPM, double[] freqs, double[] amplitudes) {
-        System.out.println("complex ");
-        for (double freq:freqs) {
-            System.out.println(freq);
-        }
         if (coupling instanceof ComplexCoupling) {
             coupling = new ComplexCoupling(this, center, freqs, amplitudes);
         }
@@ -245,7 +244,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public double[] getIntensities() {
-        if (peakDims.size() == 0) {
+        if (peakDims.isEmpty()) {
             return new double[0];
         } else {
             double[] intensities = new double[peakDims.size()];
@@ -425,8 +424,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public double[] getFrequencyOffsets() {
-        double[] offsets = null;
-        offsets = new double[peakDims.size()];
+        double[] offsets = new double[peakDims.size()];
         int i = 0;
         for (PeakDim peakDim : peakDims) {
             offsets[i++] = (center - peakDim.getChemShiftValue()) * myPeakDim.myPeak.peakList.getSpectralDim(0).getSf();
@@ -460,7 +458,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
                     lPeakDim.setChemShiftValueNoCheck((float) (center - fiValues.freqs[j]));
 
                     //fixme lPeakDim.setLineWidthValue(getLineWidthValue());
-                    System.out.println("intens " + fiValues.intensities[j]);
                     lPeakDim.myPeak.setIntensity((float) fiValues.intensities[j]);
                     //lPeakDim.myPeak.setFlag(4, true);
                     // XXX 1.05 is a fudge factor to make the volume calculated here closer to those from
@@ -522,9 +519,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     public boolean inRegion(double[][] limits, double[][] foldLimits, int[] dim) {
         int nSearchDim = limits.length;
-        if (false) {
-            return true;
-        }
         boolean ok = true;
         for (int j = 0; j < nSearchDim; j++) {
             if ((dim.length <= j) || (dim[j] == -1)) {
@@ -564,14 +558,11 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public void removeCoupling() {
-        double[] intensities = getIntensities();
-        System.out.println("remove " + coupling.getCouplingsAsString());
         if (coupling instanceof CouplingPattern) {
             CouplingPattern cPattern = (CouplingPattern) coupling;
             int[] nValues = cPattern.getNValues();
             double[] values = cPattern.getValues();
             int nSplittings = nValues.length - 1;
-            System.out.println("remove n " + nSplittings);
             if (nSplittings > 0) {
                 int[] newN = new int[nSplittings];
                 System.arraycopy(nValues, 0, newN, 0, nSplittings);
@@ -594,7 +585,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
             oldCoupling = coupling;
         }
         if (oldCoupling instanceof CouplingPattern) {
-            System.out.println(" coupling pattern " + couplingType + " " + couplingValue + " " + nType);
             CouplingPattern cPattern = (CouplingPattern) oldCoupling;
             int[] nValues = cPattern.getNValues();
             double[] values = cPattern.getValues();
@@ -607,18 +597,13 @@ public class Multiplet implements PeakOrMulti, Comparable {
             newValues[nSplittings - 1] = couplingValue;
             setCouplingValues(newValues, newN);
         } else if (oldCoupling instanceof Singlet) {
-            System.out.println(" singlet " + nType);
             int[] newN = {nType};
             double[] newValues = {couplingValue};
             setCouplingValues(newValues, newN);
-        } else {
-            System.out.println(" complex pattern ");
-
         }
     }
 
     public void expandCoupling(int limit) throws IllegalArgumentException {
-        double[] intensities = getIntensities();
         if (coupling instanceof CouplingPattern) {
             CouplingPattern cPattern = (CouplingPattern) coupling;
             int[] nValues = cPattern.getNValues();
@@ -630,7 +615,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
                 }
                 newLength += nValue - 1;
             }
-            System.out.println("expand coupling " + newLength);
             int[] newN = new int[newLength];
             double[] newValues = new double[newLength];
             for (int i = 0, j = 0; i < nValues.length; i++) {
@@ -640,7 +624,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
                 }
                 double mult = 1.1;
                 for (int k = 1; k < nValue; k++) {
-                    System.out.println(i + " " + k + " " + j + " " + values[i] + " " + mult);
                     newN[j] = 2;
                     newValues[j] = values[i] * mult;
                     mult *= 0.9;
