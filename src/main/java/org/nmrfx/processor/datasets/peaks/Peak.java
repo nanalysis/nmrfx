@@ -1103,13 +1103,6 @@ public class Peak implements Comparable, PeakOrMulti {
         return cUpdate;
     }
 
-    public void updateCouplings(int iDim, int iCoupling, double value) {
-        PeakDim pDim = peakDim[iDim];
-
-        pDim.getMultiplet().adjustCouplings(iCoupling, value);
-
-    }
-
     /*
      public void updateCouplings() {
      if (!getFlag(5)) {
@@ -1281,7 +1274,7 @@ public class Peak implements Comparable, PeakOrMulti {
         }
         return result;
     }
-    
+
     public Corner getCorner() {
         return corner;
     }
