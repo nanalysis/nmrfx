@@ -47,19 +47,23 @@ public class Singlet extends Coupling {
         return this;
     }
 
+    @Override
     public boolean isCoupled() {
         return false;
     }
 
+    @Override
     public String getMultiplicity() {
         return "s";
     }
 
+    @Override
     public String getCouplingsAsString() {
         return String.valueOf(0.0);
 
     }
 
+    @Override
     public String getCouplingsAsSimpleString() {
         return "";
     }
@@ -68,6 +72,7 @@ public class Singlet extends Coupling {
         return this;
     }
 
+    @Override
     FreqIntensities getFreqIntensitiesFromSplittings() {
         FreqIntensities fiValues;
 
@@ -77,8 +82,9 @@ public class Singlet extends Coupling {
         return fiValues;
     }
 
+    @Override
     public ArrayList<Line2D> getSplittingGraph() {
-        ArrayList<Line2D> lines = new ArrayList<Line2D>();
+        ArrayList<Line2D> lines = new ArrayList<>();
         lines.add(new Line2D.Double(0.0, 0.0, 0.0, 0.0));
         return lines;
     }
