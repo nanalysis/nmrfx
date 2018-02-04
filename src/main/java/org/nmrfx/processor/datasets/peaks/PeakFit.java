@@ -310,7 +310,7 @@ public class PeakFit implements MultivariateFunction {
             }
             if (nSigAmps[iSig] == 1) {
                 for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-                    amplitudes[iSig][iLine] *= sigAmps[iSigAmp];
+                    amplitudes[iSig][iLine] = sigAmps[iSigAmp];
                 }
                 iSigAmp++;
             } else {

@@ -236,7 +236,7 @@ public class CouplingPattern extends Coupling {
 
     }
 
-    protected Coupling adjustCouplings(final Multiplet multiplet, final int iCoupling, double newValue) {
+    public void adjustCouplings(final int iCoupling, double newValue) {
         double minValue = 0.1;
         final CouplingPattern newCoupling;
         if ((iCoupling >= 0) && (couplingItems.length > iCoupling)) {
@@ -253,15 +253,11 @@ public class CouplingPattern extends Coupling {
                     newValue = couplingItems[iCoupling + 1].getCoupling() + minValue;
                 }
             }
-            double[] newValues = getValues();
-            newValues[iCoupling] = newValue;
-            newCoupling = new CouplingPattern(multiplet, newValues, getNValues(), intensity, getSin2Thetas());
-        } else {
-            newCoupling = this;
+            CouplingItem oldItem = couplingItems[iCoupling];
+            CouplingItem newItem = new CouplingItem(newValue, oldItem.getSin2Theta(), oldItem.getNSplits());
+            couplingItems[iCoupling] = newItem;
+            multiplet.setMultipletComponentValues();
         }
-
-        return newCoupling;
-
     }
 
     FreqIntensities getFreqIntensitiesFromSplittings() {
@@ -276,6 +272,7 @@ public class CouplingPattern extends Coupling {
         double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
         for (int i = 0; i < nFreqs; i++) {
             freqs[i] *= 1.0 / sf;
+            System.out.println("int " + jAmps[i] + " " + intensities[i]);
         }
         FreqIntensities fiValues = new FreqIntensities(freqs, intensities.clone());
         return fiValues;

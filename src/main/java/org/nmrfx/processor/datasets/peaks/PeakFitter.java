@@ -183,9 +183,9 @@ public class PeakFitter {
                     splitCount[iPeak][0] = -nFreqs;
                     guessList.remove(guessList.size() - 1);
 
-                    for (int iFreq = 0; iFreq < nFreqs;
-                            iFreq++) {
-                        double dw = theFile.hzWidthToPoints(0, cCoup.getFrequencyOffset(iFreq));
+                    FreqIntensities freqInt = cCoup.getFreqIntensitiesFromSplittings();
+                    for (int iFreq = 0; iFreq < freqInt.freqs.length; iFreq++) {
+                        double dw = theFile.hzWidthToPoints(0, freqInt.freqs[iFreq]);
                         int cw0 = (int) ((c + dw) - Math.abs(width[0]) - 1);
                         int cw1 = (int) (c + dw + Math.abs(width[0]) + 1);
 
@@ -425,7 +425,7 @@ public class PeakFitter {
 //               System.out.print(pValue + " ");
 //          }
 //            System.out.println(duration);
-        }
+            }
 
 //        if (fitMode == PeakListCmd.FIT_LW_AMPLITUDES) {
 ////            fcn.initLWAmpFit(guesses);
@@ -490,6 +490,7 @@ public class PeakFitter {
             }
 
             if (rootedPeaks) {
+                Multiplet multiplet = peaks[iPeak].peakDim[0].getMultiplet();
                 if ((splitCount[iPeak].length == 1)
                         && (splitCount[iPeak][0] < 0)) { // generic multiplet
 
@@ -497,9 +498,10 @@ public class PeakFitter {
                         double delta = freqs[iFreq] - peakFit.getCFreq(iPeak);
                         freqs[iFreq] = theFile.ptWidthToHz(0, delta);
                     }
-                    peaks[iPeak].peakDim[0].getMultiplet().setCenter(theFile.pointToPPM(0,
-                            peakFit.getCFreq(iPeak) + p2[0][0]));
-                    peaks[iPeak].peakDim[0].getMultiplet().setCoupling(freqs, amplitudes);
+                    System.out.println("generic1");
+
+                    double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
+                    multiplet.set(centerPPM, freqs, amplitudes);
 
                 } else {
                     CouplingItem[] cplItems2 = peakFit.getCouplings(iPeak);
@@ -509,13 +511,12 @@ public class PeakFitter {
                     for (int iCoup = 0; iCoup < couplings.length; iCoup++) {
                         couplings[iCoup] = theFile.ptWidthToHz(0, cplItems2[iCoup].getCoupling());
                         sin2Thetas[iCoup] = cplItems2[iCoup].getSin2Theta();
-                        //System.out.println(cplItems2[iCoup].getCoupling() + " " + couplings[iCoup]);
+                        //System.out.println(cplItems2[iCoup].getCoupling() + " " + couplings[iCoup] + " " + amps[iCoup] + " " + sin2Thetas[iCoup]);
                     }
-                    peaks[iPeak].peakDim[0].getMultiplet().setCoupling(couplings, amps[iPeak], sin2Thetas);
-                }
 
-                peaks[iPeak].peakDim[0].getMultiplet().setCenter(theFile.pointToPPM(0,
-                        peakFit.getCFreq(iPeak) + p2[0][0]));
+                    double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
+                    multiplet.set(centerPPM, couplings, amps[0], sin2Thetas);
+                }
                 peaks[iPeak].peakDim[0].getMultiplet().setMultipletComponentValues();
                 //System.out.println(peakFit.getCFreq(iPeak) + " " + p2[0][0]);
                 for (int jPeak = 0; jPeak < linkedPeaks.size(); jPeak++) {
