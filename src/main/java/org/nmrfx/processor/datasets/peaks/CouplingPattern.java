@@ -35,6 +35,7 @@ public class CouplingPattern extends Coupling {
 
     private CouplingItem[] couplingItems;
     private final double[] intensities;
+    private final double intensity;
     static final private int[][] PASCALS_TRIANGLE = new int[16][];
 
     static {
@@ -45,32 +46,6 @@ public class CouplingPattern extends Coupling {
             for (int iCol = 1; iCol < iRow; iCol++) {
                 PASCALS_TRIANGLE[iRow][iCol] = PASCALS_TRIANGLE[iRow - 1][iCol] + PASCALS_TRIANGLE[iRow - 1][iCol - 1];
             }
-        }
-    }
-
-    CouplingPattern(final Multiplet multiplet, final double[] values, final int[] n, final double[] intensities) {
-        this.multiplet = multiplet;
-        couplingItems = new CouplingItem[values.length];
-        for (int i = 0; i < values.length; i++) {
-            couplingItems[i] = new CouplingItem(values[i], 0.0, n[i]);
-        }
-        this.intensities = intensities;
-        // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
-    }
-
-    CouplingPattern(final Multiplet multiplet, final double[] values, final int[] n) {
-        this.multiplet = multiplet;
-        couplingItems = new CouplingItem[values.length];
-        for (int i = 0; i < values.length; i++) {
-            couplingItems[i] = new CouplingItem(values[i], 0.0, n[i]);
-        }
-        int nLines = 1;
-        for (int i = 0; i < n.length; i++) {
-            nLines *= n[i];
-        }
-        intensities = new double[nLines];
-        for (int i = 0; i < nLines; i++) {
-            intensities[i] = 1.0;
         }
     }
 
@@ -92,6 +67,7 @@ public class CouplingPattern extends Coupling {
         intensities = new double[nLines];
         double[] freqs = new double[nLines];
         jSplittings(couplingItems, freqs, intensities);
+        this.intensity = intensity;
         for (int i = 0; i < nLines; i++) {
             intensities[i] *= intensity;
         }
@@ -179,6 +155,10 @@ public class CouplingPattern extends Coupling {
             n[i++] = couplingItem.getNSplits();
         }
         return n;
+    }
+
+    public double getIntensity() {
+        return intensity;
     }
 
     public double getIntensity(int i) {
@@ -275,7 +255,6 @@ public class CouplingPattern extends Coupling {
         FreqIntensities fiValues = new FreqIntensities(freqs, intensities.clone());
         return fiValues;
     }
-
 
     public void jSplittings(double[] freqs, double[] jAmps) {
         jSplittings(couplingItems, freqs, jAmps);
