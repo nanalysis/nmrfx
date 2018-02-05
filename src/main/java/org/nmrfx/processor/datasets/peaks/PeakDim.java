@@ -22,8 +22,6 @@ import org.nmrfx.processor.utilities.ConvUtil;
 import org.nmrfx.processor.utilities.Format;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
 
 public class PeakDim {
 
@@ -145,11 +143,11 @@ public class PeakDim {
         return summary;
     }
 
-    public Set<PeakDim> getCoupledPeakDims() {
+    public List<PeakDim> getCoupledPeakDims() {
         if (multiplet == null) {
-            Set<PeakDim> set = new HashSet<PeakDim>();
-            set.add(this);
-            return set;
+            List<PeakDim> peakDims = new ArrayList<>();
+            peakDims.add(this);
+            return peakDims;
         } else {
             return multiplet.getPeakDims();
         }

@@ -26,9 +26,8 @@ import org.nmrfx.processor.utilities.Format;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -41,7 +40,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     private double volume;
     private int idNum;
     private Coupling coupling = new Singlet(this);
-    HashSet<PeakDim> peakDims = new HashSet<>();
+    List<PeakDim> peakDims = new ArrayList<>();
     PeakDim myPeakDim;
 
     @Override
@@ -191,7 +190,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         return myPeakDim;
     }
 
-    public Set<PeakDim> getPeakDims() {
+    public List<PeakDim> getPeakDims() {
         return peakDims;
     }
 
@@ -383,11 +382,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public void updateCenter() {
-        double sum = 0.0;
-        for (PeakDim peakDim : peakDims) {
-            sum += peakDim.getChemShiftValue();
-        }
-        center = sum / peakDims.size();
+        center = peakDims.stream().collect(Collectors.averagingDouble(PeakDim::getChemShift));
     }
 
     public double[] getFrequencyOffsets() {
