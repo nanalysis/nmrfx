@@ -324,39 +324,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
         }
     }
 
-    public void setCouplingValues(double[] values, int[] n) {
-        setCouplingValues(values, n, null);
-    }
-
-    public void setCouplingValues(double[] values, int[] n, double[] intensities) {
-        if ((intensities == null) || (intensities.length == 0)) {
-            coupling = new CouplingPattern(this, values, n);
-        } else {
-            coupling = new CouplingPattern(this, values, n, intensities);
-        }
-        FreqIntensities fiValues = getFreqIntensitiesFromSplittings();
-        Arrays.sort(fiValues.freqs);
-        int nFreqs = getFrequencyOffsets().length;
-        int nExtra = nFreqs - fiValues.freqs.length;
-        if (nExtra > 0) {
-            removeExtraLinkedPeaks(nExtra);
-            setMultipletComponentValues();
-        } else if (nExtra < 0) {
-            nExtra = -nExtra;
-            addExtraLinkedPeaks(nExtra);
-            if ((intensities == null) || (intensities.length == 0)) {
-                coupling = new CouplingPattern(this, values, n);
-            } else {
-                coupling = new CouplingPattern(this, values, n, intensities);
-            }
-            setMultipletComponentValues();
-        } else {
-            setMultipletComponentValues();
-        }
-
-        myPeakDim.peakDimUpdated();
-    }
-
     public void setCouplingValues(double[] values, int[] n, double intensity, double[] sin2Thetas) {
         coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
         FreqIntensities fiValues = getFreqIntensitiesFromSplittings();
@@ -369,7 +336,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         } else if (nExtra < 0) {
             nExtra = -nExtra;
             addExtraLinkedPeaks(nExtra);
-            coupling = new CouplingPattern(this, values, n);
+            coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
             setMultipletComponentValues();
         } else {
             setMultipletComponentValues();
@@ -562,13 +529,16 @@ public class Multiplet implements PeakOrMulti, Comparable {
             CouplingPattern cPattern = (CouplingPattern) coupling;
             int[] nValues = cPattern.getNValues();
             double[] values = cPattern.getValues();
+            double[] sin2thetas = cPattern.getSin2Thetas();
             int nSplittings = nValues.length - 1;
             if (nSplittings > 0) {
                 int[] newN = new int[nSplittings];
                 System.arraycopy(nValues, 0, newN, 0, nSplittings);
                 double[] newValues = new double[nSplittings];
                 System.arraycopy(values, 0, newValues, 0, nSplittings);
-                setCouplingValues(newValues, newN);
+                double[] newSin2thetas = new double[nSplittings];
+                System.arraycopy(sin2thetas, 0, newSin2thetas, 0, nSplittings);
+                setCouplingValues(newValues, newN, cPattern.getIntensity(), newSin2thetas);
             } else {
                 coupling = new Singlet(this);
             }
@@ -588,18 +558,22 @@ public class Multiplet implements PeakOrMulti, Comparable {
             CouplingPattern cPattern = (CouplingPattern) oldCoupling;
             int[] nValues = cPattern.getNValues();
             double[] values = cPattern.getValues();
+            double[] sin2thetas = cPattern.getSin2Thetas();
             int nSplittings = nValues.length + 1;
             int[] newN = new int[nSplittings];
             double[] newValues = new double[nSplittings];
+            double[] newSin2thetas = new double[nSplittings];
             System.arraycopy(nValues, 0, newN, 0, nValues.length);
             System.arraycopy(values, 0, newValues, 0, nValues.length);
+            System.arraycopy(sin2thetas, 0, newSin2thetas, 0, nValues.length);
             newN[nSplittings - 1] = nType;
             newValues[nSplittings - 1] = couplingValue;
-            setCouplingValues(newValues, newN);
+            setCouplingValues(newValues, newN, cPattern.getIntensity(), newSin2thetas);
         } else if (oldCoupling instanceof Singlet) {
             int[] newN = {nType};
             double[] newValues = {couplingValue};
-            setCouplingValues(newValues, newN);
+            double[] newSin2thetas = {0.0};
+            setCouplingValues(newValues, newN, 1.0, newSin2thetas);
         }
     }
 
@@ -617,6 +591,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
             }
             int[] newN = new int[newLength];
             double[] newValues = new double[newLength];
+            double[] newSin2thetas = new double[newLength];
             for (int i = 0, j = 0; i < nValues.length; i++) {
                 int nValue = nValues[i];
                 if (nValue > limit) {
@@ -626,11 +601,12 @@ public class Multiplet implements PeakOrMulti, Comparable {
                 for (int k = 1; k < nValue; k++) {
                     newN[j] = 2;
                     newValues[j] = values[i] * mult;
+                    newSin2thetas[j] = 0.0;
                     mult *= 0.9;
                     j++;
                 }
             }
-            setCouplingValues(newValues, newN);
+            setCouplingValues(newValues, newN, cPattern.getIntensity(), newSin2thetas);
         }
     }
 }
