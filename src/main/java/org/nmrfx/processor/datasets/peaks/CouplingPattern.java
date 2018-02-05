@@ -234,16 +234,6 @@ public class CouplingPattern extends Coupling {
         }
     }
 
-    Coupling update(double[] newValues, double[] newIntensities) {
-        return new CouplingPattern(multiplet, newValues, getNValues(), newIntensities);
-
-    }
-
-    Coupling update(double[] newValues, double newIntensity, double[] sin2Thetas) {
-        return new CouplingPattern(multiplet, newValues, getNValues(), newIntensity, sin2Thetas);
-
-    }
-
     public void adjustCouplings(final int iCoupling, double newValue) {
         double minValue = 0.1;
         final CouplingPattern newCoupling;
@@ -286,53 +276,6 @@ public class CouplingPattern extends Coupling {
         return fiValues;
     }
 
-    FreqIntensities getFreqIntensitiesFromSplittingsOld() {
-        FreqIntensities fiValues;
-
-        fiValues = new FreqIntensities(1);
-        int[] splitCount = getNValues();
-
-        if ((couplingItems != null) && (couplingItems.length > 0)
-                && (splitCount != null)) {
-            if ((couplingItems.length > 1) || (couplingItems[0].getCoupling() != 0.0)) {
-                PeakDim peakDim = multiplet.getPeakDim();
-                double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
-                int nFreqs = 1;
-
-                for (int j = 0; j < splitCount.length; j++) {
-                    nFreqs = nFreqs * splitCount[j];
-                    //System.out.println(nFreqs + " " + splitCount[j]);
-                }
-
-                double[] freqs = new double[nFreqs];
-
-                int current = 1;
-                int i = 0;
-                for (CouplingItem couplingItem : couplingItems) {
-                    int last = (splitCount[i] * current) - 1;
-
-                    for (int j = 0; j < current; j++) {
-                        double offset = (couplingItem.getCoupling() / sf) * ((splitCount[i] / 2.0)
-                                - 0.5);
-
-                        for (int k = 0; k < splitCount[i]; k++) {
-                            freqs[last--] = freqs[current - j - 1] + offset;
-                            offset -= (couplingItem.getCoupling() / sf);
-                        }
-                    }
-
-                    current *= splitCount[i];
-                    i++;
-                }
-
-                Arrays.sort(freqs);
-                fiValues = new FreqIntensities(freqs, intensities.clone());
-
-            }
-        }
-
-        return fiValues;
-    }
 
     public void jSplittings(double[] freqs, double[] jAmps) {
         jSplittings(couplingItems, freqs, jAmps);
