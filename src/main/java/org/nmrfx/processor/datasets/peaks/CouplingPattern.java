@@ -34,7 +34,6 @@ import java.util.Arrays;
 public class CouplingPattern extends Coupling {
 
     private CouplingItem[] couplingItems;
-    private final double[] intensities;
     private final double intensity;
     static final private int[][] PASCALS_TRIANGLE = new int[16][];
 
@@ -60,18 +59,7 @@ public class CouplingPattern extends Coupling {
             }
             couplingItems[i] = new CouplingItem(values[i], sin2theta, n[i]);
         }
-        int nLines = 1;
-        for (int i = 0; i < n.length; i++) {
-            nLines *= n[i];
-        }
-        intensities = new double[nLines];
-        double[] freqs = new double[nLines];
-        jSplittings(couplingItems, freqs, intensities);
         this.intensity = intensity;
-        for (int i = 0; i < nLines; i++) {
-            intensities[i] *= intensity;
-        }
-
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
 
@@ -161,14 +149,6 @@ public class CouplingPattern extends Coupling {
         return intensity;
     }
 
-    public double getIntensity(int i) {
-        double value = 0.0;
-        if (i < intensities.length) {
-            value = intensities[i];
-        }
-        return value;
-    }
-
     public int getNCouplingValues() {
         return couplingItems.length;
     }
@@ -251,8 +231,9 @@ public class CouplingPattern extends Coupling {
         double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
         for (int i = 0; i < nFreqs; i++) {
             freqs[i] *= 1.0 / sf;
+            jAmps[i] *= intensity;
         }
-        FreqIntensities fiValues = new FreqIntensities(freqs, intensities.clone());
+        FreqIntensities fiValues = new FreqIntensities(freqs, jAmps);
         return fiValues;
     }
 
