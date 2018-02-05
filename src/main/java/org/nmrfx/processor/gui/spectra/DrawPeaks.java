@@ -897,6 +897,7 @@ public class DrawPeaks {
         double max = 0.0;
         treeOn = true;
         Color strokeColor;
+        boolean generic = multiplet.isGenericMultiplet();
         if (treeOn) {
             if (colorMode == 0) {
                 strokeColor = peakAttr.getOnColor();
@@ -916,7 +917,9 @@ public class DrawPeaks {
             for (Line2D line : lines) {
                 double xC = xM + line.getX1();
                 double xE = xM - line.getX2();
-                boolean selMode = selected && ((int) Math.round(line.getY1()) == iLine);
+                int index = generic ? i : (int) Math.round(line.getY1());
+
+                boolean selMode = selected && (index == iLine);
                 renderToMulti(g2, strokeColor, xC, xE, yM, max, line.getY1(), selMode);
                 i++;
             }
@@ -981,6 +984,7 @@ public class DrawPeaks {
         ArrayList<Line2D> lines = multiplet.getSplittingGraph();
         double max = 0.0;
         treeOn = true;
+        boolean generic = multiplet.isGenericMultiplet();
         if (treeOn) {
             for (Line2D line : lines) {
                 if (line.getY1() > max) {
@@ -992,7 +996,8 @@ public class DrawPeaks {
                 double xC = xM + line.getX1();
                 double xE = xM - line.getX2();
                 if (hitMultipletLine(xE, yM, max, line.getY1(), hitX, hitY)) {
-                    MultipletSelection mSel = new MultipletSelection(multiplet, xC, xE, (int) Math.round(line.getY1()));
+                    int index = generic ? i : (int) Math.round(line.getY1());
+                    MultipletSelection mSel = new MultipletSelection(multiplet, xC, xE, index);
                     result = Optional.of(mSel);
                     break;
                 }
