@@ -44,6 +44,9 @@ import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.nmrfx.processor.datasets.peaks.Coupling;
+import org.nmrfx.processor.datasets.peaks.CouplingPattern;
+import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
@@ -60,6 +63,7 @@ public class PeakListAttributes implements PeakListener {
     Optional<List<Peak>> peaksInRegion = Optional.empty();
     Optional<List<Multiplet>> multipletsInRegion = Optional.empty();
     Set<Peak> selectedPeaks = new HashSet<>();
+    Set<MultipletSelection> selectedMultiplets = new HashSet<>();
     NMRAxis xAxis = null;
     NMRAxis yAxis = null;
 
@@ -268,10 +272,15 @@ public class PeakListAttributes implements PeakListener {
 
     public void clearSelectedPeaks() {
         selectedPeaks.clear();
+        selectedMultiplets.clear();
     }
 
     public Set<Peak> getSelectedPeaks() {
         return selectedPeaks;
+    }
+
+    public Set<MultipletSelection> getSelectedMultiplets() {
+        return selectedMultiplets;
     }
 
     public void findPeaksInRegion() {
@@ -351,7 +360,7 @@ public class PeakListAttributes implements PeakListener {
                         .filter((peak) -> pick2DPeak(peak, pickX, pickY)).findFirst();
             } else {
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
-                        .filter((peak) -> pick1DPeak(peak, pickX, pickY)).findFirst();
+                        .filter((peak) -> drawPeaks.pick1DPeak(this, peak, peakDim, pickX, pickY)).findFirst();
             }
         }
         return hit;
@@ -377,8 +386,11 @@ public class PeakListAttributes implements PeakListener {
                     }
                 }
             } else {
+                //    protected boolean pick1DPeak(PeakListAttributes peakAttr, Peak peak, int[] dim, double hitX, double hitY) {
+
                 hit = peaksInRegion.get().stream().parallel().filter(peak -> peak.getStatus() >= 0)
-                        .filter((peak) -> pick1DPeak(peak, pickX, pickY)).findFirst();
+                        // .filter((peak) -> pick1DPeak(peak, pickX, pickY)).findFirst();
+                        .filter((peak) -> drawPeaks.pick1DPeak(this, peak, peakDim, pickX, pickY)).findFirst();
                 if (hit.isPresent()) {
                     if (!selectedPeaks.contains(hit.get()) && !append) {
                         selectedPeaks.clear();
@@ -387,6 +399,24 @@ public class PeakListAttributes implements PeakListener {
                 } else {
                     if (!append) {
                         selectedPeaks.clear();
+                    }
+                }
+                if (multipletsInRegion.isPresent()) {
+                    for (Multiplet multiplet : multipletsInRegion.get()) {
+                        Optional<MultipletSelection> lineHit = drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY);
+                        if (lineHit.isPresent()) {
+                            MultipletSelection mSel = lineHit.get();
+                            if (!selectedMultiplets.contains(mSel) && !append) {
+                                selectedMultiplets.clear();
+                            }
+                            selectedMultiplets.add(mSel);
+                            break;
+                        } else {
+                            if (!append) {
+                                selectedMultiplets.clear();
+                            }
+                        }
+
                     }
                 }
             }
@@ -421,15 +451,27 @@ public class PeakListAttributes implements PeakListener {
     }
 
     public void movePeak(Peak peak, double[] oldValue, double[] newValue) {
-        int[] peakDim = getPeakDim();
-        int nDim = Math.min(peakDim.length, oldValue.length);
+        int[] peakDims = getPeakDim();
+        int nDim = Math.min(peakDims.length, oldValue.length);
         for (int i = 0; i < nDim; i++) {
-            if (!peak.peakDim[peakDim[i]].isFrozen()) {
+            PeakDim peakDim = peak.peakDim[peakDims[i]];
+            if (!peakDim.isFrozen()) {
+                // check if this is peakDim is coupled in pattern.  If so don't move it
+                //   you have to move the multiplet tree items to change coupling values
+                if (peakDim.hasMultiplet()) {
+                    Multiplet multiplet = peakDim.getMultiplet();
+                    if (multiplet.isCoupled()) {
+                        Coupling coupling = multiplet.getCoupling();
+                        if (coupling instanceof CouplingPattern) {
+                            continue;
+                        }
+                    }
+                }
                 double oldAxisValue = getAxisValue(i, oldValue[i]);
                 double newAxisValue = getAxisValue(i, newValue[i]);
                 double delta = newAxisValue - oldAxisValue;
-                double shift = peak.peakDim[peakDim[i]].getChemShiftValue();
-                peak.peakDim[peakDim[i]].setChemShiftValue((float) (shift + delta));
+                double shift = peakDim.getChemShiftValue();
+                peakDim.setChemShiftValue((float) (shift + delta));
             }
         }
     }
@@ -450,14 +492,43 @@ public class PeakListAttributes implements PeakListener {
         }
     }
 
+    public void moveMultipletCoupling(MultipletSelection mSel, double[] oldValue, double[] newValue) {
+        int[] peakDims = getPeakDim();
+        int nDim = Math.min(peakDims.length, oldValue.length);
+        Multiplet multiplet = mSel.getMultiplet();
+        int iDim = 0;
+        int mLine = mSel.getLine();
+        if (multiplet.isCoupled()) {
+            Coupling coupling = multiplet.getCoupling();
+            if (coupling instanceof CouplingPattern) {
+                CouplingPattern cPat = (CouplingPattern) coupling;
+                double mCenter = mSel.getCenter();
+                double[] values = cPat.getValues();
+                double oldAxisValue = getAxisValue(iDim, oldValue[iDim]);
+                double newAxisValue = getAxisValue(iDim, newValue[iDim]);
+                double delta = newAxisValue - oldAxisValue;
+                double deltaHz;
+                if (mSel.getEdge() > mCenter) {
+                    deltaHz = delta * multiplet.getPeakDim().getSpectralDimObj().getSf();
+                } else {
+                    deltaHz = -delta * multiplet.getPeakDim().getSpectralDimObj().getSf();
+                }
+
+                values[mLine] += deltaHz;
+                cPat.adjustCouplings(mLine, values[mLine]);
+                multiplet.setMultipletComponentValues();
+            }
+        }
+    }
+
     protected boolean pick1DPeak(Peak peak, double x,
             double y) {
+        double height = yAxis.getHeight();
+        y = height - y;
         int[] peakDim = getPeakDim();
-
         double bou = peak.peakDim[0].getBoundsValue();
         double ctr = peak.peakDim[0].getChemShiftValue();
         Rectangle box = getBox(ctr, bou, 20);
-        System.out.println("pick " + x + " " + y + box.toString());
         boolean result = box.contains(x, y);
         return result;
     }
@@ -561,7 +632,7 @@ public class PeakListAttributes implements PeakListener {
         double yMin;
         double yHeight;
         if (y1 < y2) {
-            yMin = x1;
+            yMin = y1;
             yHeight = y2 - y1;
         } else {
             yMin = y2;

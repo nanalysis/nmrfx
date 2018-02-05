@@ -101,7 +101,7 @@ public class DrawPeaks {
     int peakDisType = 0;
 //    int labelType = PeakDisplayParameters.LABEL_PPM;
     int peakLabelType = 0;
-    int multipletLabelType = 0;
+    int multipletLabelType = PeakDisplayParameters.MULTIPLET_LABEL_SUMMARY;
     boolean treeOn = false;
     int peakColorType = 0;
     boolean peakDisOn = true;
@@ -211,7 +211,7 @@ public class DrawPeaks {
     }
 
     public synchronized void drawMultiplet(PeakListAttributes peakAttr, GraphicsContext g2, Multiplet multiplet, int[] dim,
-            double[] offset) {
+            double[] offset, boolean selected, int line) {
         Peak peak = multiplet.getPeakDim().getPeak();
         int nPeakDim = peak.peakList.nDim;
         int colorMode = setColor(peakAttr, g2, peak, offset);
@@ -221,7 +221,7 @@ public class DrawPeaks {
         if ((disDim != 0) && (nPeakDim > 1)) {
             draw2DPeak(peakAttr, g2, dim, peak, false, false);
         } else {
-            draw1DMultiplet(peakAttr, g2, dim, multiplet, colorMode);
+            draw1DMultiplet(peakAttr, g2, dim, multiplet, colorMode, selected, line);
         }
     }
 
@@ -681,16 +681,16 @@ public class DrawPeaks {
         double x1 = xAxis.getDisplayPosition(x);
         float intensity = peak.getIntensity();
 
-        double height = canvas.getHeight();
+        double height = yAxis.getHeight();
         double textY = height - g2.getFont().getSize() - 5;
         double y1 = textY;
-        double angle = 0.0;
-        if (peakLabelType == PeakDisplayParameters.LABEL_PPM) {
-            angle = -90.0;
+        Bounds bounds;
+        if (peakAttr.getLabelType() == PPM) {
             y1 = yAxis.getDisplayPosition(intensity);
+            bounds = measureText(label, g2.getFont(), -90, x1, y1 - 35);
+        } else {
+            bounds = measureText(label, g2.getFont(), 0.0, x1, y1);
         }
-
-        Bounds bounds = measureText(label, g2.getFont(), angle, x1, y1);
         return bounds.contains(hitX, hitY);
 
     }
@@ -753,7 +753,6 @@ public class DrawPeaks {
         ctr[1] = peak.peakDim[dim[1]].getChemShiftValue();
         Rectangle box = getBox(ctr, bou);
         boolean result = box.contains(x, y);
-        System.out.println(box.toString() + " " + x + " " + y + " " + result);
 
         if (!result) {
             int growWidth = 0;
@@ -875,11 +874,17 @@ public class DrawPeaks {
         }
     }
 
-    void draw1DMultiplet(PeakListAttributes peakAttr, GraphicsContext g2, int[] dim, Multiplet multiplet, int colorMode) {
+    void draw1DMultiplet(PeakListAttributes peakAttr, GraphicsContext g2, int[] dim, Multiplet multiplet,
+            int colorMode, boolean selected, int iLine) {
         if (!multiplet.isValid()) {
             System.out.println("invalid mult");
             return;
         }
+        Peak peak = multiplet.getOrigin();
+        if ((peak.getStatus() < 0) || !peak.isValid()) {
+            return;
+        }
+
         String label;
         if (multipletLabelType == PeakDisplayParameters.MULTIPLET_LABEL_NUMBER) {
             label = String.valueOf(multiplet.getIDNum());
@@ -890,26 +895,157 @@ public class DrawPeaks {
         float yM = (float) multiplet.getIntensity();
         ArrayList<Line2D> lines = multiplet.getSplittingGraph();
         double max = 0.0;
+        treeOn = true;
+        Color strokeColor;
+        if (treeOn) {
+            if (colorMode == 0) {
+                strokeColor = peakAttr.getOnColor();
+            } else {
+                strokeColor = peakAttr.getOffColor();
+            }
+
+            for (Line2D line : lines) {
+                if (line.getY1() > max) {
+                    max = line.getY1();
+                }
+            }
+            int i = 0;
+            if (lines.size() == 1) {
+                max = -1.0;
+            }
+            for (Line2D line : lines) {
+                double xC = xM + line.getX1();
+                double xE = xM - line.getX2();
+                boolean selMode = selected && ((int) Math.round(line.getY1()) == iLine);
+                renderToMulti(g2, strokeColor, xC, xE, yM, max, line.getY1(), selMode);
+                i++;
+            }
+            if (!selected) {
+                renderMultipletLabel(g2, label, strokeColor, xM, yM, max);
+            }
+//            chart.myDrawLine(g2, xM, (yM + dY * (1.0 + max + 1.2)), xM, (yM + dY * (1.0 + max + 0.5)));
+        }
+    }
+
+    void renderToMulti(GraphicsContext g2, Color color, double xC, double xE, double y, double max, double nY, boolean selMode) {
+        double deltaY = 25.0;
+        double x1 = xAxis.getDisplayPosition(xC);
+        double y1 = yAxis.getDisplayPosition(y);
+        double x2 = xAxis.getDisplayPosition(xE);
+        double y2, y3;
+        if (max < 0.0) {
+            y1 -= deltaY;
+            y2 = y1;
+            y3 = y2 + deltaY;
+        } else {
+            y1 -= (1 + max - nY) * 2 * deltaY;
+            y2 = y1 + deltaY;
+            y3 = y2 + deltaY;
+        }
+        if (selMode) {
+            g2.setLineWidth(peak1DStroke * 4);
+            g2.setStroke(Color.ORANGE);
+            g2.beginPath();
+            g2.moveTo(x2, y2);
+            g2.lineTo(x2, y3);
+            g2.stroke();
+        }
+
+        g2.setLineWidth(peak1DStroke);
+        g2.setStroke(color);
+        g2.beginPath();
+        if (max < 0.0) {
+            g2.moveTo(x2, y2);
+            g2.lineTo(x2, y3);
+        } else {
+            g2.moveTo(x1, y1);
+            g2.lineTo(x2, y2);
+            g2.lineTo(x2, y3);
+        }
+        g2.stroke();
+    }
+
+    Optional<MultipletSelection> pick1DMultiplet(PeakListAttributes peakAttr, int[] dim, Multiplet multiplet, double hitX, double hitY) {
+        Optional<MultipletSelection> result = Optional.empty();
+        if (!multiplet.isValid()) {
+            System.out.println("invalid mult");
+            return result;
+        }
+        Peak peak = multiplet.getOrigin();
+        if ((peak.getStatus() < 0) || !peak.isValid()) {
+            return result;
+        }
+
+        float xM = (float) multiplet.getCenter();
+        float yM = (float) multiplet.getIntensity();
+        ArrayList<Line2D> lines = multiplet.getSplittingGraph();
+        double max = 0.0;
+        treeOn = true;
         if (treeOn) {
             for (Line2D line : lines) {
                 if (line.getY1() > max) {
                     max = line.getY1();
                 }
             }
+            int i = 0;
             for (Line2D line : lines) {
-//            float height = (float) (yM +
-//                    (spectrum.iPeakList * dY) + (((nLines - 1) * dY) / 2) + dY * (4-line.getY1()));
-                //System.out.println(max+" "+yM+" "+dY+" "+line.getY1());
-                float lineY1 = (float) (yM + dY * (1.0 + max - line.getY1() + 0.5));
-                float lineY2 = (float) (lineY1 - (dY / 2));
-                // fixme y values wrong
-                Peak1DRep peakRep = new Peak1DRep(peakAttr, dim[0], (float) (xM + line.getX1()), lineY1, lineY2,
-                        label, colorMode, multiplet.getPeakDim().getPeak());
-
-                peakRep.renderToMulti(g2, false, (float) (xM - line.getX2()));
+                double xC = xM + line.getX1();
+                double xE = xM - line.getX2();
+                if (hitMultipletLine(xE, yM, max, line.getY1(), hitX, hitY)) {
+                    MultipletSelection mSel = new MultipletSelection(multiplet, xC, xE, (int) Math.round(line.getY1()));
+                    result = Optional.of(mSel);
+                    break;
+                }
+                i++;
             }
-//            chart.myDrawLine(g2, xM, (yM + dY * (1.0 + max + 1.2)), xM, (yM + dY * (1.0 + max + 0.5)));
         }
+        return result;
+    }
+
+    boolean hitMultipletLine(double xE, double y, double max, double nY, double hitX, double hitY) {
+        double deltaY = 25.0;
+        double y1 = yAxis.getDisplayPosition(y);
+        double x2 = xAxis.getDisplayPosition(xE);
+
+        y1 -= (1 + max - nY) * 2 * deltaY;
+        double y2 = y1 + deltaY;
+        Rectangle rect = new Rectangle(x2 - 5, y2, 10, deltaY);
+        return rect.contains(hitX, hitY);
+    }
+
+    void renderMultipletLabel(GraphicsContext g2, String label, Color color, double xC, double y, double max) {
+        double deltaY = 25.0;
+        double x1 = xAxis.getDisplayPosition(xC);
+        double y1 = yAxis.getDisplayPosition(y);
+        if (max < 0.0) {
+            y1 -= deltaY;
+        } else {
+            y1 -= (1 + max) * 2 * deltaY;
+
+        }
+        double yText = y1 - 5;
+        g2.setTextAlign(TextAlignment.CENTER);
+        Bounds bounds = measureText(label, g2.getFont(), 0, x1, yText);
+        int nTries = 5;
+        if (lastTextBox != null) {
+            for (int i = 0; i < nTries; i++) {
+                bounds = measureText(label, g2.getFont(), 0, x1, yText);
+                if (!lastTextBox.intersects(bounds)) {
+                    break;
+                }
+                yText -= bounds.getHeight();
+            }
+        }
+        if ((lastTextBox == null) || (!lastTextBox.intersects(bounds))) {
+            lastTextBox = bounds;
+            g2.setTextBaseline(VPos.BOTTOM);
+            g2.fillText(label, x1, yText);
+            g2.setStroke(color);
+            g2.strokeLine(x1, y1, x1, yText);
+        }
+
+    }
+
 //        if (PeakDisplayParameters.drawMultipletLabel(multipletLabelType)) {
 //            if (multipletLabelType == PeakDisplayParameters.MULTIPLET_LABEL_SUMMARY) {
 //                float textY = (float) (yM + dY * ((1.0 + max + 1.5)));
@@ -942,9 +1078,7 @@ public class DrawPeaks {
 //                lastTextBox = textBox;
 //            }
 //        }
-
-        //         addTo1DRegionHash(x,peakRep);
-    }
+    //         addTo1DRegionHash(x,peakRep);
 //    void draw2DPeakSelection(GraphicsContext g2, int[] dim, Peak peak, boolean erase) {
 //        if (!peak.isValid() || (peak.getStatus() < 0)) {
 //            return;
@@ -952,7 +1086,6 @@ public class DrawPeaks {
 //
 //        draw2DPeak(g2, dim, peak, erase, true);
 //    }
-
     Rectangle getBox(double[] ctr, double[] bou) {
         double x1 = xAxis.getDisplayPosition(ctr[0] + (bou[0] / 2.0));
         double x2 = xAxis.getDisplayPosition(ctr[0] - (bou[0] / 2.0));
@@ -1531,7 +1664,7 @@ public class DrawPeaks {
                 }
 
                 g2.setLineWidth(peak1DStroke);
-                if (peakLabelType == PeakDisplayParameters.LABEL_PPM) {
+                if (peakAttr.getLabelType() == PPM) {
                     drawSelectionIndicator(g2, label, -90, x1, y1 - 35);
                 } else {
                     drawSelectionIndicator(g2, label, 0, x1, textY);

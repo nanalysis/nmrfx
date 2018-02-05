@@ -89,6 +89,7 @@ import org.nmrfx.processor.gui.spectra.DragBindings;
 import org.nmrfx.processor.gui.spectra.GestureBindings;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.MouseBindings;
+import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
 import org.nmrfx.processor.gui.undo.UndoRedo;
 
@@ -211,10 +212,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
         if (true) {
             drawPeakLists(false);
-            Set<Peak> peaks = activeAttr.getSelectedPeaks();
-            if (!peaks.isEmpty()) {
-                drawSelectedPeaks(activeAttr);
-            }
+            drawSelectedPeaks(activeAttr);
         }
     }
 
@@ -1861,15 +1859,18 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                     peakListAttr.movePeak(peak, dragStart, dragPos);
                 }
             }
+            Set<MultipletSelection> multipletItems = peakListAttr.getSelectedMultiplets();
+            for (MultipletSelection mSel : multipletItems) {
+                peakListAttr.moveMultipletCoupling(mSel, dragStart, dragPos);
+
+            }
+
         }
         dragStart[0] = dragPos[0];
         dragStart[1] = dragPos[1];
         drawPeakLists(false);
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
-            Set<Peak> peaks = peakListAttr.getSelectedPeaks();
-            if (!peaks.isEmpty()) {
-                drawSelectedPeaks(peakListAttr);
-            }
+            drawSelectedPeaks(peakListAttr);
         }
     }
 
@@ -2110,7 +2111,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             List<Multiplet> multiplets = peakListAttr.getMultipletsInRegion();
             List<Peak> roots = new ArrayList<>();
             multiplets.stream().forEach((multiplet) -> {
-                drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets);
+                drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, false, 0);
                 roots.add(multiplet.getPeakDim().getPeak());
             });
             if (false) {
@@ -2139,17 +2140,26 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     void drawSelectedPeaks(PeakListAttributes peakListAttr) {
         if (peakListAttr.getDrawPeaks()) {
-            GraphicsContext gC = peakCanvas.getGraphicsContext2D();
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
-            int[] dim = peakListAttr.getPeakDim();
-            double[] offsets = new double[dim.length];
-            peaks.stream().forEach((peak) -> {
-                drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, true);
-                int nPeakDim = peak.peakList.nDim;
-                if (peak.getPeakList().isSlideable() && (nPeakDim > 1)) {
-                    drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim);
-                }
-            });
+            Set<MultipletSelection> multiplets = peakListAttr.getSelectedMultiplets();
+            if (!peaks.isEmpty() || !multiplets.isEmpty()) {
+                GraphicsContext gC = peakCanvas.getGraphicsContext2D();
+                int[] dim = peakListAttr.getPeakDim();
+                double[] offsets = new double[dim.length];
+                peaks.stream().forEach((peak) -> {
+                    drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, true);
+                    int nPeakDim = peak.peakList.nDim;
+                    if (peak.getPeakList().isSlideable() && (nPeakDim > 1)) {
+                        drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim);
+                    }
+                });
+                multiplets.stream().forEach((multipletSel) -> {
+                    Multiplet multiplet = multipletSel.getMultiplet();
+                    int line = multipletSel.getLine();
+                    drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, true, line);
+                });
+            }
+
         }
     }
 
