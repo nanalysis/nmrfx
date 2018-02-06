@@ -134,6 +134,8 @@ public class PeakSlider {
     }
 
     public void freezePeaks() {
+        // do setup because we could have added a peak list after adding slider controller.  Should be a better way
+        setupLists(true);
         controller.charts.stream().forEach(chart -> {
             List<Peak> selected = chart.getSelectedPeaks();
             selected.forEach((peak) -> {
@@ -145,6 +147,8 @@ public class PeakSlider {
     }
 
     public void thawPeaks() {
+        // do setup because we could have added a peak list after adding slider controller.  Should be a better way
+        setupLists(true);
         controller.charts.stream().forEach(chart -> {
             List<Peak> selected = chart.getSelectedPeaks();
             selected.forEach((peak) -> {
@@ -156,6 +160,8 @@ public class PeakSlider {
     }
 
     public void tweakPeaks() {
+        // do setup because we could have added a peak list after adding slider controller.  Should be a better way
+        setupLists(true);
         controller.charts.stream().forEach(chart -> {
             List<Peak> selected = chart.getSelectedPeaks();
             selected.forEach((peak) -> {
@@ -227,6 +233,7 @@ public class PeakSlider {
     public void setActivePeaks(List<Peak> peaks) {
         selPeaks = peaks;
         if ((peaks == null) || peaks.isEmpty()) {
+System.out.println("empty peaks");
             atomXLabel.setText("");
             atomYLabel.setText("");
             intensityLabel.setText("");
@@ -236,6 +243,7 @@ public class PeakSlider {
             linkButton.setDisable(true);
         } else {
             // fixme axes could be swapped
+System.out.println("peaks count " +peaks.size());
             Peak peak = peaks.get(peaks.size() - 1);
             atomXLabel.setText(peak.getPeakDim(0).getLabel());
             intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
