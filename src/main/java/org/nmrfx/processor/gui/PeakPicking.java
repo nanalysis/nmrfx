@@ -7,6 +7,7 @@ package org.nmrfx.processor.gui;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
 import javafx.collections.ObservableList;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
@@ -17,6 +18,7 @@ import org.nmrfx.processor.datasets.peaks.PeakPick;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 
 /**
  *
@@ -33,12 +35,27 @@ public class PeakPicking {
         chart.refresh();
     }
 
+    private static String getListName(PolyChart chart, DatasetAttributes dataAttr) {
+        String listName = null;
+        List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
+        for (PeakListAttributes peakAttr : peakAttrs) {
+            if (peakAttr.getDatasetAttributes() == dataAttr) {
+                listName = peakAttr.getPeakListName();
+                break;
+            }
+        }
+        if (listName == null) {
+            listName = PeakList.getNameForDataset(dataAttr.getFileName());
+        }
+        return listName;
+    }
+
     public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean useCrossHairs, boolean saveFile, String listName) {
         Dataset dataset = dataAttr.getDataset();
         int nDim = dataset.getNDim();
-        String datasetName = dataset.getName();
+
         if (listName == null) {
-            listName = PeakList.getNameForDataset(datasetName);
+            listName = getListName(chart, dataAttr);
         }
         double level = dataAttr.getLvl();
         if (nDim == 1) {
@@ -71,8 +88,8 @@ public class PeakPicking {
             chart.setupPeakListAttributes(peakList);
             if (saveFile) {
                 try (final FileWriter writer = new FileWriter(listFileName)) {
-                            PeakWriter peakWriter = new PeakWriter();
-                            peakWriter.writePeaksXPK2(writer, peakList);
+                    PeakWriter peakWriter = new PeakWriter();
+                    peakWriter.writePeaksXPK2(writer, peakList);
                 }
             }
         } catch (IOException | InvalidPeakException ioE) {
@@ -86,8 +103,7 @@ public class PeakPicking {
     public static PeakList pickAtPosition(PolyChart chart, DatasetAttributes dataAttr, double x, double y, boolean fixed, boolean saveFile) {
         Dataset dataset = dataAttr.getDataset();
         int nDim = dataset.getNDim();
-        String datasetName = dataset.getName();
-        String listName = PeakList.getNameForDataset(datasetName);
+        String listName = getListName(chart, dataAttr);
         double level = dataAttr.getLvl();
         if (nDim == 1) {
             level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
@@ -116,8 +132,8 @@ public class PeakPicking {
                 chart.setupPeakListAttributes(peakList);
                 if (saveFile) {
                     try (final FileWriter writer = new FileWriter(listFileName)) {
-                            PeakWriter peakWriter = new PeakWriter();
-                            peakWriter.writePeaksXPK2(writer, peakList);
+                        PeakWriter peakWriter = new PeakWriter();
+                        peakWriter.writePeaksXPK2(writer, peakList);
                     }
                 }
                 peak = picker.getLastPick();
