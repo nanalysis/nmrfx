@@ -33,6 +33,8 @@ import java.util.Arrays;
  */
 public class CouplingPattern extends Coupling {
 
+    public final static String COUPLING_CHARS = "sdtqphx";
+
     private CouplingItem[] couplingItems;
     private final double intensity;
     static final private int[][] PASCALS_TRIANGLE = new int[16][];
@@ -65,36 +67,16 @@ public class CouplingPattern extends Coupling {
 
     @Override
     public String getMultiplicity() {
-
-        char[] pattern = new char[couplingItems.length];
-        for (int i = 0; i < couplingItems.length; i++) {
-            int n = couplingItems[i].getNSplits();
-            switch (n) {
-                case 2:
-                    pattern[i] = 'd';
-                    break;
-                case 3:
-                    pattern[i] = 't';
-                    break;
-                case 4:
-                    pattern[i] = 'q';
-                    break;
-                case 5:
-                    pattern[i] = 'p';
-                    break;
-                case 6:
-                    pattern[i] = 'h';
-                    break;
-                case 7:
-                    pattern[i] = 'x';
-                    break;
-                default:
-                    pattern[i] = 'm';
-                    break;
+        StringBuilder sBuilder = new StringBuilder();
+        for (CouplingItem cItem : couplingItems) {
+            int index = cItem.getNSplits() - 1;
+            if ((index >= COUPLING_CHARS.length()) || (index < 1)) {
+                sBuilder.append('m');
+            } else {
+                sBuilder.append(COUPLING_CHARS.charAt(index));
             }
         }
-        return String.valueOf(pattern);
-
+        return sBuilder.toString();
     }
 
     @Override
@@ -177,21 +159,21 @@ public class CouplingPattern extends Coupling {
 
     @Override
     public String getCouplingsAsSimpleString() {
-        if ((couplingItems.length == 1) && (couplingItems[0].getNSplits() == 2)) {
-            return String.valueOf(Format.format2(couplingItems[0].getCoupling()));
-        } else {
-            StringBuilder sbuf = new StringBuilder();
+        StringBuilder sbuf = new StringBuilder();
 
-            for (int i = 0; i < couplingItems.length; i++) {
-                if (i > 0) {
-                    sbuf.append(" ");
-                }
-
-                sbuf.append(Format.format2(couplingItems[i].getCoupling()));
+        for (int i = 0; i < couplingItems.length; i++) {
+            if (i > 0) {
+                sbuf.append(" ");
             }
 
-            return sbuf.toString();
+            sbuf.append(Format.format2(couplingItems[i].getCoupling()));
+            sbuf.append(" ");
+            sbuf.append(couplingItems[i].getNSplits() - 1);
+            sbuf.append(" ");
+            sbuf.append(Format.format2(couplingItems[i].getSin2Theta()));
         }
+
+        return sbuf.toString();
     }
 
     public void adjustCouplings(final int iCoupling, double newValue) {
