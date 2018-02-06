@@ -44,6 +44,7 @@ import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
 import org.nmrfx.processor.datasets.peaks.Coupling;
 import org.nmrfx.processor.datasets.peaks.CouplingPattern;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
@@ -498,15 +499,15 @@ public class PeakListAttributes implements PeakListener {
         Multiplet multiplet = mSel.getMultiplet();
         int iDim = 0;
         int mLine = mSel.getLine();
+        double oldAxisValue = getAxisValue(iDim, oldValue[iDim]);
+        double newAxisValue = getAxisValue(iDim, newValue[iDim]);
+        double delta = newAxisValue - oldAxisValue;
         if (multiplet.isCoupled()) {
             Coupling coupling = multiplet.getCoupling();
             if (coupling instanceof CouplingPattern) {
                 CouplingPattern cPat = (CouplingPattern) coupling;
                 double mCenter = mSel.getCenter();
                 double[] values = cPat.getValues();
-                double oldAxisValue = getAxisValue(iDim, oldValue[iDim]);
-                double newAxisValue = getAxisValue(iDim, newValue[iDim]);
-                double delta = newAxisValue - oldAxisValue;
                 double deltaHz;
                 if (mSel.getEdge() > mCenter) {
                     deltaHz = delta * multiplet.getPeakDim().getSpectralDimObj().getSf();
@@ -518,6 +519,17 @@ public class PeakListAttributes implements PeakListener {
                 cPat.adjustCouplings(mLine, values[mLine]);
                 multiplet.setMultipletComponentValues();
             }
+        } else if (multiplet.isGenericMultiplet()) {
+            Coupling coupling = multiplet.getCoupling();
+            ComplexCoupling cPat = (ComplexCoupling) coupling;
+            PeakDim peakDim = multiplet.getPeakDims().get(mLine);
+            double shift = peakDim.getChemShiftValue();
+            peakDim.setChemShiftValue((float) (shift + delta));
+            multiplet.updateCenter();
+        } else {
+            PeakDim peakDim = multiplet.getPeakDim();
+            double shift = peakDim.getChemShiftValue();
+            peakDim.setChemShiftValue((float) (shift + delta));
         }
     }
 
