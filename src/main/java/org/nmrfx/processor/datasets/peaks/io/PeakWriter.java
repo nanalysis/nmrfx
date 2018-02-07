@@ -90,8 +90,16 @@ public class PeakWriter {
         "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
 
     public void writePeaksXPK2(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
-        chan.write("peaklist\tdataset\tndim\tcondition\n");
-        chan.write(peakList.getName() + "\t" + peakList.getDatasetName() + "\t" + peakList.nDim + "\t" + peakList.getSampleConditionLabel() + "\n");
+        peakList.getMultiplets();  // call this to ensure that mulitplets are sorted with number starting at 0
+        chan.write("peaklist\tdataset\tndim\tcondition\tscale\n");
+        StringBuilder sBuilder = new StringBuilder();
+        char sep = '\t';
+        sBuilder.append(peakList.getName()).append(sep);
+        sBuilder.append(peakList.getDatasetName()).append(sep);
+        sBuilder.append(peakList.getNDim()).append(sep);
+        sBuilder.append(peakList.getSampleConditionLabel()).append(sep);
+        sBuilder.append(peakList.getScale()).append('\n');
+        chan.write(sBuilder.toString());
         for (int j = 0; j < XPKDIMSTRINGS.length; j++) {
             if (j > 0) {
                 chan.write("\t");

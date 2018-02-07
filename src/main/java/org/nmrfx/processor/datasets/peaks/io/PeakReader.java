@@ -262,7 +262,7 @@ public class PeakReader {
                                                 peak.setComment(value);
                                                 break;
                                             case "flags":
-                                                peak.setFlag(value);
+                                                peak.setFlag2(value);
                                                 break;
                                             case "color":
                                                 peak.setColor(value);

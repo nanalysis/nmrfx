@@ -233,6 +233,14 @@ public class PeakList {
         listName = newName;
         peakListTable.put(newName, this);
     }
+    
+    public int getNDim() {
+        return nDim;
+    }
+    
+    public double getScale() {
+        return scale;
+    }
 
     public void setSampleLabel(String sampleLabel) {
         this.sampleLabel = sampleLabel;
@@ -650,18 +658,19 @@ public class PeakList {
             result.append(dimName).append(".WH").append(sep);
             result.append(dimName).append(".BH").append(sep);
             result.append(dimName).append(".E").append(sep);
-            result.append(dimName).append(".J").append(sep);
+            result.append(dimName).append(".M").append(sep);
+            result.append(dimName).append(".m").append(sep);
             result.append(dimName).append(".U").append(sep);
             result.append(dimName).append(".r").append(sep);
             result.append(dimName).append(".F").append(sep);
         }
         result.append("volume").append(sep);
         result.append("intensity").append(sep);
-        result.append("status").append(sep);
         result.append("type").append(sep);
         result.append("comment").append(sep);
         result.append("color").append(sep);
-        result.append("flags");
+        result.append("flags").append(sep);
+        result.append("status");
 
         return (result.toString());
     }
@@ -1997,7 +2006,6 @@ public class PeakList {
             n--;
         }
     }
-
 
     final static class CenterRef {
 

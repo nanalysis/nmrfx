@@ -878,7 +878,12 @@ public class Peak implements Comparable, PeakOrMulti {
             result.append(String.format(formatString, peakDim[i].getLineWidth() * sf)).append(sep);
             result.append(String.format(formatString, peakDim[i].getBoundsValue() * sf)).append(sep);
             result.append(peakDim[i].getError()).append(sep);
-            result.append(peakDim[i].getMultiplet().getCouplingsAsSimpleString()).append(sep);
+            if (peakDim[i].hasMultiplet()) {
+                result.append(peakDim[i].getMultiplet().getMultiplicity()).append(sep);
+                result.append(peakDim[i].getMultiplet().getIDNum()).append(sep);
+            } else {
+                result.append(sep).append(sep);
+            }
             result.append(peakDim[i].getUser()).append(sep);
             result.append(peakDim[i].getResonanceIDsAsString()).append(sep);
             int frozen = peakDim[i].isFrozen() ? 1 : 0;
@@ -886,12 +891,12 @@ public class Peak implements Comparable, PeakOrMulti {
         }
         result.append(String.valueOf(getVolume1())).append(sep);
         result.append(String.valueOf(getIntensity())).append(sep);
-        result.append(String.valueOf(getStatus())).append(sep);
         result.append(String.valueOf(getType())).append(sep);
         result.append(String.valueOf(getComment())).append(sep);
         String colorString = color == null ? "" : ColorUtil.toRGBCode(color);
         result.append(colorString).append(sep);
-        result.append(String.valueOf(getFlag()));
+        result.append(getFlag2()).append(sep);
+        result.append(String.valueOf(getStatus()));
 
         return (result.toString().trim());
     }
@@ -1258,7 +1263,7 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public String getFlag() {
-        StringBuffer flagResult = new StringBuffer();
+        StringBuilder flagResult = new StringBuilder();
         boolean nonZero = false;
         for (int i = 0; i < NFLAGS; i++) {
             if (getFlag(i)) {
@@ -1273,6 +1278,36 @@ public class Peak implements Comparable, PeakOrMulti {
             result = flagResult.toString();
         }
         return result;
+    }
+
+    public String getFlag2() {
+        StringBuilder flagResult = new StringBuilder();
+        boolean firstEntry = true;
+        for (int i = 0; i < NFLAGS; i++) {
+            if (getFlag(i)) {
+                if (!firstEntry) {
+                    flagResult.append("/");
+                }
+                flagResult.append(i);
+                firstEntry = false;
+            }
+        }
+        return flagResult.toString();
+    }
+
+    public void setFlag2(String flagString) {
+        for (int i = 0; i < flag.length; i++) {
+            flag[i] = false;
+        }
+        if (flagString.length() > 0) {
+            String[] fields = flagString.split("/");
+            for (String field : fields) {
+                int i = Integer.parseInt(field);
+                flag[i] = true;
+
+            }
+        }
+        peakUpdated(this);
     }
 
     public Corner getCorner() {
