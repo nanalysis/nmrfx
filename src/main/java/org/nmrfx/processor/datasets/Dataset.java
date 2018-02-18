@@ -4843,7 +4843,12 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         for (int i = 0, j = 0; i < nDim; i++) {
             if (iDim == i) {
                 pt[i][0] = 0;
+                if (vector.isComplex()) {
+                    pt[i][1] = 2 * vector.getSize() - 1;
+                } else {
                     pt[i][1] = vector.getSize() - 1;
+
+                }
                 dim[0] = iDim;
             } else {
                 dim[j + 1] = i;
