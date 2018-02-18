@@ -47,7 +47,7 @@ import org.renjin.sexp.SEXP;
  *
  * @author brucejohnson
  */
-public class Dataset extends DoubleVector {
+public class Dataset extends DoubleVector implements Comparable<Dataset> {
 
 //    private static final Logger LOGGER = LogManager.getLogger();
 //    static {
@@ -172,6 +172,11 @@ public class Dataset extends DoubleVector {
     @Override
     public boolean isConstantAccessTime() {
         return true;
+    }
+
+    @Override
+    public int compareTo(Dataset o) {
+        return getName().compareTo(o.getName());
     }
 
     /**
@@ -4837,7 +4842,7 @@ public class Dataset extends DoubleVector {
         for (int i = 0, j = 0; i < nDim; i++) {
             if (iDim == i) {
                 pt[i][0] = 0;
-                pt[i][1] = vector.getSize() - 1;
+                    pt[i][1] = vector.getSize() - 1;
                 dim[0] = iDim;
             } else {
                 dim[j + 1] = i;
@@ -5293,4 +5298,4 @@ public class Dataset extends DoubleVector {
     public Set<Region> getRegions() {
         return regions;
     }
-}
+        }
