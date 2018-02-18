@@ -572,6 +572,10 @@ public interface NMRData {
         }
         return builder.toString();
     }
+    
+    public default boolean isFID() {
+        return true;
+    }
 
     public default boolean isFrequencyDim(int iDim) {
         return true;
