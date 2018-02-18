@@ -118,6 +118,13 @@ public class PeakReader {
                         if (map.get("condition") != null) {
                             peakList.setSampleConditionLabel(data[map.get("condition")]);
                         }
+                        for (String headerLabel : map.keySet()) {
+                            if (headerLabel.startsWith("prop:")) {
+                                String propName = headerLabel.substring(5);
+                                String propValue = data[map.get(headerLabel)];
+                                peakList.setProperty(propName, propValue);
+                            }
+                        }
                     }
                 } else {
                     if (!gotHeader) {

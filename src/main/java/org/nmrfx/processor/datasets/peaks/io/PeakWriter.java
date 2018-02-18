@@ -20,6 +20,7 @@ package org.nmrfx.processor.datasets.peaks.io;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
@@ -91,14 +92,33 @@ public class PeakWriter {
 
     public void writePeaksXPK2(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
         peakList.getMultiplets();  // call this to ensure that mulitplets are sorted with number starting at 0
-        chan.write("peaklist\tdataset\tndim\tcondition\tscale\n");
+
+        Map<String, String> properties = peakList.getProperties();
+        chan.write("peaklist\tdataset\tndim\tcondition\tscale");
+        StringBuilder propBuilder = new StringBuilder();
+        for (String propName : properties.keySet()) {
+            String propValue = properties.get(propName);
+            if (propValue.length() > 0) {
+                chan.write('\t');
+                chan.write("prop:");
+                chan.write(propName);
+                propBuilder.append('\t');
+                propBuilder.append(propValue);
+            }
+        }
+
+        chan.write("\n");
         StringBuilder sBuilder = new StringBuilder();
         char sep = '\t';
         sBuilder.append(peakList.getName()).append(sep);
         sBuilder.append(peakList.getDatasetName()).append(sep);
         sBuilder.append(peakList.getNDim()).append(sep);
         sBuilder.append(peakList.getSampleConditionLabel()).append(sep);
-        sBuilder.append(peakList.getScale()).append('\n');
+        sBuilder.append(peakList.getScale());
+        if (propBuilder.length() > 0) {
+            sBuilder.append(propBuilder.toString());
+        }
+        sBuilder.append('\n');
         chan.write(sBuilder.toString());
         for (int j = 0; j < XPKDIMSTRINGS.length; j++) {
             if (j > 0) {
