@@ -44,6 +44,8 @@ import javafx.stage.StageStyle;
 import javafx.util.converter.DoubleStringConverter;
 import java.text.DecimalFormat;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -112,6 +114,8 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     @FXML
     private ComboBox datasetNameField;
     @FXML
+    private ComboBox conditionField;
+    @FXML
     private ToolBar peakReferenceToolBar;
     @FXML
     private TableView<SpectralDim> referenceTableView;
@@ -160,6 +164,12 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         datasetNameField.setOnAction(e -> {
             selectDataset();
         });
+        conditionField.setOnShowing(e -> updateConditionNames());
+        conditionField.setOnAction(e -> {
+            setCondition();
+        });
+        conditionField.setEditable(true);
+
         peakListNameField.setOnKeyReleased(kE -> {
             if (kE.getCode() == KeyCode.ENTER) {
                 renamePeakList();
@@ -291,9 +301,22 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         }
     }
 
+    public void updateConditionNames() {
+        conditionField.getItems().clear();
+        Set<String> conditions = PeakList.peakListTable.values().stream().
+                map(peakList -> peakList.getSampleConditionLabel()).
+                filter(label -> label != null).collect(Collectors.toSet());
+        conditions.stream().sorted().forEach(s -> {
+            conditionField.getItems().add(s);
+        });
+        if (peakList != null) {
+            conditionField.setValue(peakList.getSampleConditionLabel());
+        }
+    }
+
     public void updateSimDatasetNames() {
         simDatasetNameField.getItems().clear();
-        Dataset.datasets().stream().forEach(d -> {
+        Dataset.datasets().stream().sorted().forEach(d -> {
             simDatasetNameField.getItems().add(d.getName());
         });
     }
@@ -316,6 +339,7 @@ public class PeakAttrController implements Initializable, PeakNavigable {
             referenceTableView.setItems(peakDimList);
             peakListNameField.setText(peakList.getName());
             datasetNameField.setValue(peakList.getDatasetName());
+            conditionField.setValue(peakList.getSampleConditionLabel());
             stage.setTitle(peakList.getName());
         } else {
             referenceTableView.getItems().clear();
@@ -821,6 +845,16 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         if (peakList != null) {
             String name = (String) datasetNameField.getValue();
             peakList.setDatasetName(name);
+        }
+    }
+
+    void setCondition() {
+        if (peakList != null) {
+            String condition = (String) conditionField.getValue();
+            if (condition == null) {
+                condition = "";
+            }
+            peakList.setSampleConditionLabel(condition);
         }
     }
 
