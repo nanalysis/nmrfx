@@ -30,7 +30,7 @@ public class VecIndex {
     public int getInVec(int i) {
         return inVecs[i];
     }
-    void printMe(int vecGroup, int nSteps) {  // for debugging
+    public void printMe(int vecGroup, int nSteps) {  // for debugging
         if ((vecGroup + 1) % nSteps == 1 || (vecGroup +1) % nSteps == 0) {
             System.out.printf("group %6d in ", vecGroup);
             for (int k : inVecs) {
