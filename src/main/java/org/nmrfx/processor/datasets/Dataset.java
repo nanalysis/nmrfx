@@ -34,6 +34,7 @@ import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.apache.commons.lang3.StringUtils;
 import org.renjin.sexp.AttributeMap;
 import org.renjin.sexp.DoubleVector;
 import org.renjin.sexp.DoubleArrayVector;
@@ -5298,4 +5299,21 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     public Set<Region> getRegions() {
         return regions;
     }
+
+    public static void setMinimumTitles() {
+        String[] names = new String[datasets().size()];
+        int i = 0;
+        for (Dataset dataset : datasets()) {
+            names[i++] = dataset.getName();
         }
+        String prefix = StringUtils.getCommonPrefix(names);
+        System.out.println("prefix " + prefix);
+        datasets().forEach((dataset) -> {
+            String name = dataset.getName();
+            String title = StringUtils.removeStart(name, prefix);
+            title = StringUtils.removeEndIgnoreCase(title, ".nv");
+            System.out.println("title " + title);
+            dataset.setTitle(title);
+        });
+    }
+}
