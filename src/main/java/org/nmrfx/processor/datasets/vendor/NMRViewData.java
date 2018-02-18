@@ -139,7 +139,11 @@ public class NMRViewData implements NMRData {
 
     @Override
     public int getNPoints() {  // points per vector
-        return dataset.getSize(0);
+        int np = dataset.getSize(0);
+        if (dataset.getComplex(0)) {
+            np /= 2;
+        }
+        return np;
     }
 
     public boolean isSpectrum() {
@@ -158,12 +162,81 @@ public class NMRViewData implements NMRData {
 
     @Override
     public String[] getAcqOrder() {
+        if (acqOrder == null) {
+            int nDim = getNDim() - 1;
+            acqOrder = new String[nDim * 2];
+            for (int i = 0; i < nDim; i++) {
+                acqOrder[i * 2] = "p" + (i + 1);
+                acqOrder[i * 2 + 1] = "d" + (i + 1);
+            }
+        }
         return acqOrder;
     }
 
     @Override
-    public void setAcqOrder(String[] acqOrder) {
-        this.acqOrder = acqOrder;
+    public void setAcqOrder(String[] newOrder) {
+        if (newOrder.length == 1) {
+            String s = newOrder[0];
+            final int len = s.length();
+            int nDim = getNDim();
+            int nIDim = nDim - 1;
+            if ((len == nDim) || (len == nIDim)) {
+                acqOrder = new String[nIDim * 2];
+                int j = 0;
+                if (sampleSchedule != null) {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                        }
+                    }
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                } else {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals(nDim + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                }
+            } else if (len > nDim) {
+                acqOrder = new String[(len - 1) * 2];
+                int j = 0;
+                if (sampleSchedule != null) {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                        }
+                    }
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                } else {
+                    for (int i = (len - 1); i >= 0; i--) {
+                        String dimStr = s.substring(i, i + 1);
+                        if (!dimStr.equals((nDim + 1) + "")) {
+                            acqOrder[j++] = "p" + dimStr;
+                            acqOrder[j++] = "d" + dimStr;
+                        }
+                    }
+                }
+            }
+        } else {
+            this.acqOrder = new String[newOrder.length];
+            for (int i = 0; i < newOrder.length; i++) {
+                this.acqOrder[i] = newOrder[i];
+            }
+        }
     }
 
     @Override
@@ -178,7 +251,7 @@ public class NMRViewData implements NMRData {
 
     @Override
     public String getSymbolicCoefs(int idim) {
-        return "";
+        return null;
     }
 
     @Override
@@ -349,7 +422,11 @@ public class NMRViewData implements NMRData {
 
     @Override
     public int getSize(int iDim) {
-        return dataset.getSize(iDim);
+        int size = dataset.getSize(iDim);
+        if (dataset.getComplex(iDim)) {
+            size /= 2;
+        }
+        return size;
     }
 
     @Override
@@ -358,8 +435,19 @@ public class NMRViewData implements NMRData {
     }
 
     @Override
+    public boolean isFID() {
+        return !dataset.getFreqDomain(0);
+    }
+
+    @Override
+    public boolean isFrequencyDim(int iDim) {
+        // fixme  Need to be able to specify whether a NMRView file dimesnion is frequency mode
+        return true;
+    }
+
+    @Override
     public boolean isComplex(int idim) {
-        return dataset.getComplex(idim - 1);
+        return dataset.getComplex(idim);
     }
 
     @Override
