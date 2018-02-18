@@ -210,7 +210,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 }
             }
         }
-        if (true) {
+        if (activeAttr != null) {
             drawPeakLists(false);
             drawSelectedPeaks(activeAttr);
         }
