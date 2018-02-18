@@ -1286,7 +1286,7 @@ public class Peak implements Comparable, PeakOrMulti {
         for (int i = 0; i < NFLAGS; i++) {
             if (getFlag(i)) {
                 if (!firstEntry) {
-                    flagResult.append("/");
+                    flagResult.append("_");
                 }
                 flagResult.append(i);
                 firstEntry = false;
@@ -1300,7 +1300,7 @@ public class Peak implements Comparable, PeakOrMulti {
             flag[i] = false;
         }
         if (flagString.length() > 0) {
-            String[] fields = flagString.split("/");
+            String[] fields = flagString.split("_");
             for (String field : fields) {
                 int i = Integer.parseInt(field);
                 flag[i] = true;
