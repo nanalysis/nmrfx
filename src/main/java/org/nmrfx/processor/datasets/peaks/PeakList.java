@@ -91,6 +91,7 @@ public class PeakList {
     ScheduledFuture futureUpdate = null;
     boolean slideable = false;
     Optional<Measures> measures = Optional.empty();
+    Map<String, String> properties = new HashMap<>();
 
     class UpdateTask implements Runnable {
 
@@ -233,11 +234,11 @@ public class PeakList {
         listName = newName;
         peakListTable.put(newName, this);
     }
-    
+
     public int getNDim() {
         return nDim;
     }
-    
+
     public double getScale() {
         return scale;
     }
@@ -409,6 +410,26 @@ public class PeakList {
             values = measures.get().getValues();
         }
         return values;
+    }
+
+    public String getProperty(String name) {
+        String result = "";
+        if (properties.containsKey(name)) {
+            result = properties.get(name);
+        }
+        return result;
+    }
+
+    public boolean hasProperty(String name) {
+        return properties.containsKey(name);
+    }
+
+    public void setProperty(String name, String value) {
+        properties.put(name, value);
+    }
+
+    public Map<String, String> getProperties() {
+        return properties;
     }
 
     private void sortMultiplets() {
