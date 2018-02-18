@@ -1093,7 +1093,7 @@ public class ChartProcessor {
         int nDim = nmrData.getNDim();
         iVec = 0;
         execScript("", false, false);
-        if (nmrData instanceof NMRViewData) {
+        if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
             NMRViewData nvData = (NMRViewData) nmrData;
             chart.setDataset(nvData.getDataset());
 //            chart.datasetAttributes = null;
@@ -1154,7 +1154,7 @@ public class ChartProcessor {
             if (nmrData != null) {
                 interpreter.exec("makeFIDInfo()");
             }
-            if (nmrData instanceof NMRViewData) {
+            if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
                 return;
             }
             if (processorController == null) {
