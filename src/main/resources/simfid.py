@@ -297,7 +297,7 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0002, d
         signals = makeEmptySignals(nSigs)
 
     if sigRng == None:
-        sigRng = SignalRng(frMin=[6.0,90.0], frMax=[11.0,125.0], amp=0.0005, ampSd=0.0001, lw=[20,13], lwSd=[5,3])
+        sigRng = SignalRng(frMin=[6.0,90.0], frMax=[11.0,125.0], amp=0.0005, ampSd=0.0001, lw=[20,18], lwSd=[5,4])
 
     randomizeSignals(signals, sigRng)
     center = findCenter(nDims, signals)
