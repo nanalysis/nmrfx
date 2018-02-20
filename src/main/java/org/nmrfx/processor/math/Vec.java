@@ -79,6 +79,8 @@ import org.renjin.sexp.AttributeMap;
  */
 public class Vec extends PySequence implements MatrixType {
 
+    static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new Well19937c());
+
     public static final String TYPE_NAME = "nmrfxvector";
 
     protected AttributeMap attributes;
@@ -413,7 +415,6 @@ public class Vec extends PySequence implements MatrixType {
      *
      * @param name the name to set
      */
-
     public void setName(String name) {
         this.name = name;
     }
@@ -1682,28 +1683,27 @@ public class Vec extends PySequence implements MatrixType {
      * @see Well19937c
      */
     public void genNoise(double level) {
-        UncorrelatedRandomVectorGenerator rv
-                = new UncorrelatedRandomVectorGenerator(size,
-                        new GaussianRandomGenerator(new Well19937c())
-                );
         int i;
-        double[] re = rv.nextVector();
         if (isComplex) {
-            double[] im = rv.nextVector();
             if (useApache) {
                 for (i = 0; i < size; i++) {
-                    Complex cpx = new Complex(re[i] * level, im[i] * level);
+                    double reRand = randGen.nextNormalizedDouble();
+                    double imRand = randGen.nextNormalizedDouble();
+                    Complex cpx = new Complex(reRand * level, imRand * level);
                     cvec[i] = cvec[i].add(cpx);
                 }
             } else {
                 for (i = 0; i < size; i++) {
-                    rvec[i] += re[i] * level;
-                    ivec[i] += im[i] * level;
+                    double reRand = randGen.nextNormalizedDouble();
+                    double imRand = randGen.nextNormalizedDouble();
+                    rvec[i] += reRand * level;
+                    ivec[i] += imRand * level;
                 }
             }
         } else {
             for (i = 0; i < size; i++) {
-                rvec[i] += re[i] * level;
+                double reRand = randGen.nextNormalizedDouble();
+                rvec[i] += reRand * level;
             }
         }
     }
