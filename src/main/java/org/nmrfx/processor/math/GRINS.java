@@ -99,7 +99,7 @@ public class GRINS {
                 }
 
                 double[] measure = matrix.measure(false);
-                double max = FastMath.abs(measure[1]);
+                double max = Math.max(FastMath.abs(measure[0]), FastMath.abs(measure[1]));
                 // fixme threshold based on abs value
                 double globalThreshold = max * thresholdScale;
                 if (globalThreshold > lastThreshold * thresholdScale) {
@@ -120,7 +120,7 @@ public class GRINS {
                 }
                 subtractSignals(matrix, peaks, addBuffer);
                 double[] measure2 = matrix.measure(false);
-                double max2 = measure2[1];
+                double max2 = Math.max(FastMath.abs(measure2[0]), FastMath.abs(measure2[1]));
 
                 if (fileWriter != null) {
                     String outLine = String.format("%4d %4d %10.3f %10.3f %10.3f %10.3f\n", iteration, nPeaksTemp, globalThreshold, noiseThreshold, max, max2);
