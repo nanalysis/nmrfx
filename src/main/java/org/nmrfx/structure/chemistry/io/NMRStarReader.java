@@ -50,7 +50,7 @@ public class NMRStarReader {
 
     public NMRStarReader(final STAR3 star3) {
         this.star3 = star3;
-        PeakDim.setResonanceFactory(new AtomResonanceFactory());
+//        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
