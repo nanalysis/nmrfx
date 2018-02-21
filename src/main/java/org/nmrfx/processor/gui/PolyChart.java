@@ -2117,31 +2117,34 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
                 drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, false);
             });
-            List<Multiplet> multiplets = peakListAttr.getMultipletsInRegion();
-            List<Peak> roots = new ArrayList<>();
-            multiplets.stream().forEach((multiplet) -> {
-                drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, false, 0);
-                roots.add(multiplet.getPeakDim().getPeak());
-            });
-            if (false) {
-                PeakList.sortPeaks(roots, 0, true);
-                ArrayList overlappedPeaks = new ArrayList();
-                for (int iPeak = 0, n = roots.size(); iPeak < n; iPeak++) {
-                    Peak aPeak = (Peak) roots.get(iPeak);
-                    overlappedPeaks.add(aPeak);
-                    for (int jPeak = (iPeak + 1); jPeak < n; jPeak++) {
-                        Peak bPeak = (Peak) roots.get(jPeak);
-                        if (aPeak.overlaps(bPeak, 0, overlapScale)) {
-                            overlappedPeaks.add(bPeak);
-                            iPeak++;
-                        } else {
-                            break;
-                        }
-                    }
-                    drawPeaks.drawSimSum(gC, overlappedPeaks, dim);
-                    overlappedPeaks.clear();
-                }
+            if (dim.length == 1) { // only draw multiples for 1D 
+                List<Multiplet> multiplets = peakListAttr.getMultipletsInRegion();
+                List<Peak> roots = new ArrayList<>();
+                multiplets.stream().forEach((multiplet) -> {
+                    drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, false, 0);
+                    roots.add(multiplet.getPeakDim().getPeak());
+                });
 
+                if (false) {
+                    PeakList.sortPeaks(roots, 0, true);
+                    ArrayList overlappedPeaks = new ArrayList();
+                    for (int iPeak = 0, n = roots.size(); iPeak < n; iPeak++) {
+                        Peak aPeak = (Peak) roots.get(iPeak);
+                        overlappedPeaks.add(aPeak);
+                        for (int jPeak = (iPeak + 1); jPeak < n; jPeak++) {
+                            Peak bPeak = (Peak) roots.get(jPeak);
+                            if (aPeak.overlaps(bPeak, 0, overlapScale)) {
+                                overlappedPeaks.add(bPeak);
+                                iPeak++;
+                            } else {
+                                break;
+                            }
+                        }
+                        drawPeaks.drawSimSum(gC, overlappedPeaks, dim);
+                        overlappedPeaks.clear();
+                    }
+
+                }
             }
         }
 
@@ -2487,6 +2490,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     public CrossHairs getCrossHairs() {
         return crossHairs;
+
     }
 
     class UpdateCrossHair implements java.util.function.DoubleFunction {

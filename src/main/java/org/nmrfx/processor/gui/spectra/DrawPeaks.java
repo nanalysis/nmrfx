@@ -219,7 +219,7 @@ public class DrawPeaks {
             return;
         }
         if ((disDim != 0) && (nPeakDim > 1)) {
-            draw2DPeak(peakAttr, g2, dim, peak, false, false);
+//            draw2DPeak(peakAttr, g2, dim, peak, false, false);
         } else {
             draw1DMultiplet(peakAttr, g2, dim, multiplet, colorMode, selected, line);
         }
@@ -438,8 +438,8 @@ public class DrawPeaks {
                 double normVal = 0;
 
                 // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
-                String couplings = peak.peakDim[0].getMultiplet().getCouplingsAsSimpleString();
-                if (multipletMode) {
+                if (multipletMode && peak.peakDim[0].hasMultiplet()) {
+                    String couplings = peak.peakDim[0].getMultiplet().getCouplingsAsSimpleString();
                     if (peak.peakList.scale > 0.0) {
                         normVal = peak.peakDim[0].getMultiplet().getVolume() / peak.peakList.scale;
                     }
@@ -1134,12 +1134,12 @@ public class DrawPeaks {
         double[] bou = {0.0, 0.0};
         double[] wid = {0.0, 0.0};
 
-        if ((jmode == 0) && (peak.peakDim[dim[0]].getMultiplet().isCoupled())) {
+        if ((jmode == 0) && peak.peakDim[dim[0]].hasMultiplet() && (peak.peakDim[dim[0]].getMultiplet().isCoupled())) {
             jx = 2;
         }
 
         if ((dim.length > 1)
-                && ((jmode == 1) && (peak.peakDim[dim[1]].getMultiplet().isCoupled()))) {
+                && ((jmode == 1) && peak.peakDim[dim[1]].hasMultiplet() && (peak.peakDim[dim[1]].getMultiplet().isCoupled()))) {
             jy = 2;
         }
         bou[0] = peak.peakDim[dim[0]].getBoundsValue();
