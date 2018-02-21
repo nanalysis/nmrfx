@@ -352,7 +352,9 @@ public class Peak implements Comparable, PeakOrMulti {
         valid = false;
 
         for (int i = 0; i < peakDim.length; i++) {
-            peakDim[i].getMultiplet().removePeakDim(peakDim[i]);
+            if (peakDim[i].hasMultiplet()) {
+                peakDim[i].getMultiplet().removePeakDim(peakDim[i]);
+            }
             peakDim[i].remove();
         }
 
@@ -826,8 +828,11 @@ public class Peak implements Comparable, PeakOrMulti {
             }
 
             result.append(sep);
-            result.append(String.valueOf(peakDim[i].getMultiplet().getCouplingsAsString())
-                    + sep);
+            if (peakDim[i].hasMultiplet()) {
+                result.append(String.valueOf(peakDim[i].getMultiplet().getCouplingsAsString()) + sep);
+            } else {
+                result.append(sep);
+            }
 
             result.append(stringQuote);
             result.append(String.valueOf(peakDim[i].getResonanceIDsAsString()));
