@@ -72,6 +72,7 @@ public class MTree {
             cNode.shell = -1;
             cNode.parent = null;
             cNode.pathPos = -1;
+            cNode.ringClosure = false;
         }
 
         cNode = (MNode) nodes.elementAt(iStart);
@@ -98,6 +99,10 @@ public class MTree {
                     nNode.shell = cNode.shell + 1;
                     nNode.parent = cNode;
                     nNode.pathPos = nodesAdded - 1;
+                } else {
+                    if (nNode.shell == cNode.shell + 1) {
+                        nNode.ringClosure = true;
+                    }
                 }
             }
         }

@@ -33,6 +33,7 @@ public class MNode implements Comparable, Comparator {
     int indexInShell = -1;
     int maxShell = 0;
     MNode lastRotatable = null;
+    boolean ringClosure = false;
 
     public MNode() {
         nodes = new ArrayList();
@@ -120,5 +121,9 @@ public class MNode implements Comparable, Comparator {
     public int compare(Object o1, Object o2) {
         MNode mNode1 = (MNode) o1;
         return mNode1.compareTo(o2);
+    }
+
+    public boolean isRingClosure() {
+        return ringClosure;
     }
 }
