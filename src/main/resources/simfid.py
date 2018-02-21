@@ -211,15 +211,11 @@ def createDataset(dataPars, datasetName):
         dataset.syncPars(dim)
         dataset.close
 
-def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, delay=None, fp=0.5, frMul=None, offset=0.0, ph=0.0):
+def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, delay=None, fp=0.5, frMul=None, offset=0.0, ph=0.0, pep=False):
     dataset = Dataset(datasetName, 'hsqc.nv', True)
     dimSizes = dataPars.dimSizes
     dLabels = dataPars.dimLabels
     sf = dataPars.sf
-    sw = dataPars.sw
-    vector = Vec(dimSizes[0]/2,True)
-    vector.setSW(sw[0])
-    vector.setSF(sf[0])
     #sz is an array that helps finding the position in space for a row of data to be generated
     #Should be empty array if only 2 dimensions
     sz = getSZ(dataPars.dimSizes)
@@ -231,41 +227,62 @@ def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, d
         signal.ranShift(ranShift)
 
     #Iterations represents the number of times data is generated for a row.  This is based on the size of all dimensions beyond the first generation
+    nPhases = 2
     iterations = loopNDims(dataPars);
+    iterations /= nPhases
     iTimes = [0] * (dataPars.nDims-1)
     if frMul == None:
         frMul = [1.0]*dataPars.nDims
-    for i in range(iterations):
-        SZ = list(sz)
-        position = getPosition(i,SZ,[])
-        for dim in range(len(position)):
-            deltaT = 1.0/(sw[dim+1])
-            iTimes[dim] = (position[dim]/2)*deltaT
-            if delay != None:
-               iTimes[dim] += delay[dim+1] * deltaT
-        print position,iTimes[0]
-        vector.zeros()
-        vector.makeComplex()
-        f = [0] * dataPars.nDims
-        for signal in signals:
-            amp = signal.amp
-            f[0] = (signal.fr[0]+signal.rShift[0]) * frMul[0]
-            lw = signal.lw
-
+    sw = dataPars.sw
+    vectors = []
+    for j in range(nPhases):
+        vector = Vec(dimSizes[0]/2,True)
+        vector.setSW(sw[0])
+        vector.setSF(sf[0])
+        vectors.append(vector)
+    i = 0
+    for iGroup in range(iterations):
+        for j in range(nPhases):
+            SZ = list(sz)
+            i = iGroup*nPhases+j
+            position = getPosition(i,SZ,[])
             for dim in range(len(position)):
-                f[dim+1] = (signal.fr[dim+1]+signal.rShift[dim+1]) * frMul[dim+1]
-                if (position [dim] % 2) == 0:
-                    amp *= (math.cos(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
-                else:
-                    amp *= (math.sin(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
+                deltaT = 1.0/(sw[dim+1])
+                iTimes[dim] = (position[dim]/2)*deltaT
+                if delay != None:
+                   iTimes[dim] += delay[dim+1] * deltaT
+            vectors[j].zeros()
+            vectors[j].makeComplex()
+            f = [0] * dataPars.nDims
+            for signal in signals:
+                amp = signal.amp
+                f[0] = (signal.fr[0]+signal.rShift[0]) * frMul[0]
+                lw = signal.lw
 
-            #The above manipulation allows signals to be generated as if real data is collected.  Below each signal is mapped into the nv file
-            vector.genSignalHz(f[0],lw[0],amp,ph)
-        vector.fp(fp)
-        vector.add(offset)
-        vector.genNoise(noise)
-        indice=jarray.array(position,'i')
-        dataset.writeVector(vector, indice, 0)
+                for dim in range(len(position)):
+                    f[dim+1] = (signal.fr[dim+1]+signal.rShift[dim+1]) * frMul[dim+1]
+                    #  pep not working yet
+                    if pep:
+                        if (j % 2) == 0:
+                            amp *= (math.cos(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
+                        else:
+                            amp *= -1.0*(math.cos(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
+                    else:
+                        if (j % 2) == 0:
+                            amp *= (math.cos(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
+                        else:
+                            amp *= (math.sin(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
+
+                #The above manipulation allows signals to be generated as if real data is collected.  Below each signal is mapped into the nv file
+                vectors[j].genSignalHz(f[0],lw[0],amp,ph)
+            vectors[j].fp(fp)
+            vectors[j].add(offset)
+            vectors[j].genNoise(noise)
+        for j in range(nPhases):
+            i = iGroup*nPhases+j
+            position = getPosition(i,SZ,[])
+            indice=jarray.array(position,'i')
+            dataset.writeVector(vectors[j], indice, 0)
     saveRefPars(dataset, dataPars)
 
 def saveRefPars(dataset, dataPars):
@@ -284,7 +301,7 @@ def saveRefPars(dataset, dataPars):
     dataset.writeHeader()
     dataset.close()
 
-def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0005, dataPars=None, delay=None, fp = 0.5, frMul=None, offset=0.0, ph=0.0):
+def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0005, dataPars=None, delay=None, fp = 0.5, frMul=None, offset=0.0, ph=0.0, pep=False):
     if dataPars == None:
         dimSizes=[2048,512]
         nDims = len(dimSizes)
@@ -309,5 +326,5 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0005, d
 
     convertToHz(dataPars, signals, center);
     createDataset(dataPars, datasetName)
-    addDatasetSignals(dataPars, datasetName, signals, 0, noise, delay, fp, frMul, offset, ph)
+    addDatasetSignals(dataPars, datasetName, signals, 0, noise, delay, fp, frMul, offset, ph, pep)
 
