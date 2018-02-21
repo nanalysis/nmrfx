@@ -66,8 +66,9 @@ class NMRSignal:
 
         if self.lw == None:
             self.lw = []
+            lwG  = random.gauss(rng.lw[0],rng.lwSd[0])
             for i in range(nDim):
-                self.lw.append(random.gauss(rng.lw[i],rng.lwSd[i]))
+                self.lw.append(lwG*rng.lw[i]/rng.lw[0])
         if self.amp == None:
             self.amp = random.gauss(rng.amp, rng.ampSd)
 
@@ -210,7 +211,7 @@ def createDataset(dataPars, datasetName):
         dataset.syncPars(dim)
         dataset.close
 
-def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise):
+def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, delay=None):
     dataset = Dataset(datasetName, 'hsqc.nv', True)
     dimSizes = dataPars.dimSizes
     dLabels = dataPars.dimLabels
@@ -238,6 +239,8 @@ def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise):
         for dim in range(len(position)):
             deltaT = 1.0/(sw[dim+1])
             iTimes[dim] = (position[dim]/2)*deltaT
+            if delay != None:
+               iTimes[dim] += delay[dim+1] * deltaT
 
         ph = 0.0
         vector.zeros()
@@ -280,7 +283,7 @@ def saveRefPars(dataset, dataPars):
     dataset.writeHeader()
     dataset.close()
 
-def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0002, dataPars=None):
+def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0005, dataPars=None, delay=None):
     if dataPars == None:
         dimSizes=[2048,512]
         nDims = len(dimSizes)
@@ -297,7 +300,7 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0002, d
         signals = makeEmptySignals(nSigs)
 
     if sigRng == None:
-        sigRng = SignalRng(frMin=[6.0,90.0], frMax=[11.0,125.0], amp=0.0005, ampSd=0.0001, lw=[20,18], lwSd=[5,4])
+        sigRng = SignalRng(frMin=[6.0,90.0], frMax=[11.0,125.0], amp=0.01, ampSd=0.002, lw=[20,18], lwSd=[5,4])
 
     randomizeSignals(signals, sigRng)
     center = findCenter(nDims, signals)
@@ -305,5 +308,5 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0002, d
 
     convertToHz(dataPars, signals, center);
     createDataset(dataPars, datasetName)
-    addDatasetSignals(dataPars, datasetName, signals, 0, noise)
+    addDatasetSignals(dataPars, datasetName, signals, 0, noise, delay)
 
