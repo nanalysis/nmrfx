@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
+import java.util.ArrayDeque;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -29,11 +31,11 @@ import java.util.HashMap;
  */
 public class HoseCodeGenerator {
 
-    void genHOSECodes(Entity entity) {
+    public void genHOSECodes(Entity entity) {
         int targetElement = 6;
         MTree mTree = new MTree();
         HashMap<Atom, Integer> hash = new HashMap<>();
-        ArrayList<Atom> eAtomList = new ArrayList<>();
+        List<Atom> eAtomList = new ArrayList<>();
         int i = 0;
 
         for (Atom atom : entity.atoms) {
@@ -54,7 +56,7 @@ public class HoseCodeGenerator {
 
         for (Atom atom : entity.atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond =  atom.bonds.get(iBond);
+                Bond bond = atom.bonds.get(iBond);
                 Integer iNodeBegin = hash.get(bond.begin);
                 Integer iNodeEnd = hash.get(bond.end);
 
@@ -74,23 +76,23 @@ public class HoseCodeGenerator {
             }
             System.out.println("start " + j + " " + atomStart.getShortName());
             int[] path = mTree.broad_path(j);
-            ArrayList<MNode> pathNodes = mTree.getPathNodes();
+            List<MNode> pathNodes = mTree.getPathNodes();
             int lastShell = 0;
-            ArrayList<MNode> shellNodes = new ArrayList<>();
-            ArrayList<MNode> sortedNodes = new ArrayList<>();
+            List<MNode> shellNodes = new ArrayList<>();
+            ArrayDeque<List<MNode>> sortedNodes = new ArrayDeque<>();
 
             MNode lastNode = pathNodes.get(pathNodes.size() - 1);
             for (MNode mNode : pathNodes) {
                 int shell = mNode.getShell();
                 if ((shell != lastShell) || (mNode == lastNode)) {
                     shellNodes.sort(mNode.reversed());
-                    sortedNodes.addAll(shellNodes);
+                    sortedNodes.add(shellNodes);
                     int indexInShell = 0;
                     for (MNode sNode : shellNodes) {
                         System.out.println(lastShell + " atom " + sNode.getAtom().getShortName() + " indexIn " + indexInShell + " value " + sNode.getValue());
                         sNode.setIndexInShell(indexInShell++);
                     }
-                    shellNodes.clear();
+                    shellNodes = new ArrayList<>();
                     lastShell = shell;
                 }
                 Atom pathAtom = mNode.getAtom();
@@ -105,18 +107,30 @@ public class HoseCodeGenerator {
                 mNode.setValue(value);
                 shellNodes.add(mNode);
             }
-            for (MNode mNode : sortedNodes) {
-                Atom pathAtom = mNode.getAtom();
-                MNode parent = mNode.getParent();
-                String parentName = "";
-                if (parent != null) {
-                    Atom parentAtom = parent.getAtom();
-                    parentName = parentAtom.getFullName();
-                }
-                if (pathAtom.aNum != 1) {
-                    System.out.println("pshell " + mNode.getShell() + " " + pathAtom.getFullName() + " " + parentName);
+            sortedNodes.descendingIterator().forEachRemaining(sNodes -> {
+                sNodes.stream().forEach(sNode -> {
+                });
+            });
+
+            for (List<MNode> sNodes : sortedNodes) {
+                System.out.println("shell");
+                for (MNode mNode : sNodes) {
+                    Atom pathAtom = mNode.getAtom();
+                    MNode parent = mNode.getParent();
+                    String parentName = "";
+                    if (parent != null) {
+                        Atom parentAtom = parent.getAtom();
+                        parentName = parentAtom.getFullName();
+                    }
+                    if (pathAtom.aNum != 1) {
+                        System.out.println("pshell " + mNode.getShell() + " " + pathAtom.getFullName() + " " + parentName + " " + mNode.isRingClosure());
+                    }
                 }
             }
         }
+    }
+
+    public void scoreNode(MNode mNode) {
+        String elemName = mNode.getAtom().getElementName();
     }
 }
