@@ -211,7 +211,7 @@ def createDataset(dataPars, datasetName):
         dataset.syncPars(dim)
         dataset.close
 
-def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, delay=None):
+def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, delay=None, fp=0.5, frMul=None, offset=0.0, ph=0.0):
     dataset = Dataset(datasetName, 'hsqc.nv', True)
     dimSizes = dataPars.dimSizes
     dLabels = dataPars.dimLabels
@@ -233,6 +233,8 @@ def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, d
     #Iterations represents the number of times data is generated for a row.  This is based on the size of all dimensions beyond the first generation
     iterations = loopNDims(dataPars);
     iTimes = [0] * (dataPars.nDims-1)
+    if frMul == None:
+        frMul = [1.0]*dataPars.nDims
     for i in range(iterations):
         SZ = list(sz)
         position = getPosition(i,SZ,[])
@@ -241,19 +243,17 @@ def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, d
             iTimes[dim] = (position[dim]/2)*deltaT
             if delay != None:
                iTimes[dim] += delay[dim+1] * deltaT
-
-        ph = 0.0
+        print position,iTimes[0]
         vector.zeros()
         vector.makeComplex()
         f = [0] * dataPars.nDims
         for signal in signals:
             amp = signal.amp
-            f[0] = signal.fr[0]+signal.rShift[0]
+            f[0] = (signal.fr[0]+signal.rShift[0]) * frMul[0]
             lw = signal.lw
 
-
             for dim in range(len(position)):
-                f[dim+1] = signal.fr[dim+1]+signal.rShift[dim+1]
+                f[dim+1] = (signal.fr[dim+1]+signal.rShift[dim+1]) * frMul[dim+1]
                 if (position [dim] % 2) == 0:
                     amp *= (math.cos(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
                 else:
@@ -261,7 +261,8 @@ def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, d
 
             #The above manipulation allows signals to be generated as if real data is collected.  Below each signal is mapped into the nv file
             vector.genSignalHz(f[0],lw[0],amp,ph)
-        vector.fp(0.5)
+        vector.fp(fp)
+        vector.add(offset)
         vector.genNoise(noise)
         indice=jarray.array(position,'i')
         dataset.writeVector(vector, indice, 0)
@@ -283,7 +284,7 @@ def saveRefPars(dataset, dataPars):
     dataset.writeHeader()
     dataset.close()
 
-def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0005, dataPars=None, delay=None):
+def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0005, dataPars=None, delay=None, fp = 0.5, frMul=None, offset=0.0, ph=0.0):
     if dataPars == None:
         dimSizes=[2048,512]
         nDims = len(dimSizes)
@@ -308,5 +309,5 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0005, d
 
     convertToHz(dataPars, signals, center);
     createDataset(dataPars, datasetName)
-    addDatasetSignals(dataPars, datasetName, signals, 0, noise, delay)
+    addDatasetSignals(dataPars, datasetName, signals, 0, noise, delay, fp, frMul, offset, ph)
 
