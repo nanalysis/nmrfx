@@ -855,6 +855,7 @@ public class ChartProcessor {
     }
 
     public void renameDataset() throws IOException {
+        fxmlController.closeFile(datasetFileTemp);
         fxmlController.closeFile(datasetFile);
 
         Path target = datasetFile.toPath();
