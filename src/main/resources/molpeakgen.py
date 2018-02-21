@@ -88,7 +88,7 @@ class MolPeakGen:
         self.labelScheme = scheme
         if self.labelScheme != "":
             rnaLabels = RNALabels()
-            rnaLabels.parse(self.mol, self.labelScheme)
+            rnaLabels.parseSelGroups(self.mol, self.labelScheme)
         else:
             self.mol.activateAtoms()
 
@@ -104,9 +104,9 @@ class MolPeakGen:
         
 
     def setAllRNAProtons(self, scheme):
-        self.labelScheme = "All: A.Hn,Hr G.Hn,Hr C.Hn,Hr U.Hn,Hr"
+        self.labelScheme = "*:*.Hn,Hr"
         rnaLabels = RNALabels()
-        rnaLabels.parse(self.mol, self.labelScheme)
+        rnaLabels.parseSelGroups(self.mol, self.labelScheme)
 
     def addProtonPairPeak(self, peakList, aAtom, bAtom, intensity=None, d1Edited=None, d2Edited=None):
             ppmAV = aAtom.getPPM(0)
@@ -162,10 +162,10 @@ class MolPeakGen:
         if scheme == "":
             scheme = "aa"
         
-        (d1Edited, d2Edited) = editingModes[editScheme]
+        (d1Edited, d2Edited) = editingModes[scheme]
         peakList = peakgen.makePeakListFromDataset(listName, dataset)
         self.mol.selectAtoms("*.H*")
-        protonPairs = self.mol.getDistancePairs(tol, false)
+        protonPairs = self.mol.getDistancePairs(tol, False)
         for protonPair in protonPairs:
             dis = protonPair.getDistance()
             if dis > 4.0:
@@ -296,4 +296,5 @@ class MolPeakGen:
         peakList = peakgen.makePeakListFromDataset(listName, dataset)
         peakList.setSampleConditionLabel(condition)
         self.addRNASecStrPeaks(peakList, scheme, pairs)
+        return peakList
 
