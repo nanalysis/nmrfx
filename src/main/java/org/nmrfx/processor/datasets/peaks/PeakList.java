@@ -575,10 +575,11 @@ public class PeakList {
             for (Peak peak : peakList.peaks) {
                 for (PeakDim peakDim : peak.peakDim) {
                     peakDim.remove();
-
-                    Multiplet multiplet = peakDim.getMultiplet();
-                    if (multiplet != null) {
-                        multiplet.removePeakDim(peakDim);
+                    if (peakDim.hasMultiplet()) {
+                        Multiplet multiplet = peakDim.getMultiplet();
+                        if (multiplet != null) {
+                            multiplet.removePeakDim(peakDim);
+                        }
                     }
                 }
                 peak.markDeleted();
