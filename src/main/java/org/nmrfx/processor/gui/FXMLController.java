@@ -433,7 +433,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
                     NMRViewData nvData = (NMRViewData) nmrData;
                     Dataset dataset = nvData.getDataset();
-                    addFID(nmrData, clearOps, reload);
                     addDataset(dataset, appendFile, reload);
                 } else {
                     addFID(nmrData, clearOps, reload);
@@ -553,8 +552,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             File file = dataset.getFile();
             if (file != null) {
                 try {
-                    if (Files.isSameFile(path1, file.toPath())) {
-                        dataset.close();
+                    if (Files.exists(file.toPath())) {
+                        if (Files.isSameFile(path1, file.toPath())) {
+                            dataset.close();
+                        }
                     }
                 } catch (IOException ex) {
                     Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
