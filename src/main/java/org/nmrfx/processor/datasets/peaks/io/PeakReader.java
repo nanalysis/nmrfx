@@ -223,6 +223,12 @@ public class PeakReader {
                                             case "J":
                                                 // fixme
                                                 break;
+                                            case "M":
+                                                // fixme
+                                                break;
+                                            case "m":
+                                                // fixme
+                                                break;
                                             case "E":
                                                 peakDim.setError(value);
                                                 break;
