@@ -39,7 +39,6 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.List;
 import java.util.Map;
-import javafx.application.Platform;
 import org.python.core.PyException;
 import org.python.core.PyObject;
 import org.python.util.InteractiveInterpreter;
@@ -1154,9 +1153,7 @@ public class ChartProcessor {
         Processor.getProcessor().clearProcessorError();
         org.nmrfx.processor.processing.processes.Process process = getProcess();
         process.clearOps();
-        // System.out.println("exec script");
         if (processorController.isViewingDataset()) {
-            System.out.println("exec script vd");
             return;
         }
         NMRData nmrData = getNMRData();
@@ -1217,11 +1214,7 @@ public class ChartProcessor {
             //pE.printStackTrace();
             return;
         }
-        // System.out.println("exec script1");
-
         if (doProcess) {
-//         System.out.println("exec script2");
-            System.out.println("fx thread " + Platform.isFxApplicationThread());
             if (!vectors.isEmpty()) {
                 process.clearVectors();
                 int i = 0;
@@ -1235,7 +1228,6 @@ public class ChartProcessor {
                     processorController.clearProcessingTextLabel();
                     OperationListCell.resetCells();
                     process.exec();
-                    System.out.println("done exec " + process.hasOperations());
                 } catch (IncompleteProcessException e) {
                     OperationListCell.failedOperation(e.index);
                     System.out.println("error message: " + e.getMessage());
@@ -1250,15 +1242,12 @@ public class ChartProcessor {
                     }
                 } catch (Exception pE) {
                     processorController.setProcessingStatus(pE.getMessage(), false, pE);
-                    System.out.println("exec script3 exept " + pE.getMessage());
 
                 }
             }
             if (!processorController.isViewingDataset()) {
-//                   System.out.println("exec chart");
                 chart.layoutPlotChildren();
             }
-//               System.out.println("exec script3");
 
         }
     }
