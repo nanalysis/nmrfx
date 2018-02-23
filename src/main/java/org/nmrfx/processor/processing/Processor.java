@@ -19,7 +19,7 @@ package org.nmrfx.processor.processing;
 
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
-import org.nmrfx.processor.processing.processes.Process;
+import org.nmrfx.processor.processing.processes.ProcessOps;
 import org.nmrfx.processor.datasets.ScanRegion;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
@@ -42,8 +42,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The Processor contains all processes. It also contains the "current Process", which is the process which operations
- * will be added to if a process is not specified.
+ * The Processor contains all processes. It also contains the "current ProcessOps", which is the process which operations
+ will be added to if a process is not specified.
  *
  * @author johnsonb
  */
@@ -131,11 +131,11 @@ public class Processor {
     /**
      * List of processes, one for each dimension. Used with runProcesses().
      */
-    private static ArrayList<Process> dimProcesses = null;
+    private static ArrayList<ProcessOps> dimProcesses = null;
     /**
-     * The name of the current Process that Operations and Vec vector will automatically be added to.
+     * The name of the current ProcessOps that Operations and Vec vector will automatically be added to.
      */
-    private static Process defaultProcess;
+    private static ProcessOps defaultProcess;
     /**
      * Each LinkedList<Vec> will hold one set of arraylists for a process. The outer List is synchronized but the inner
      * List is not synchronized.
@@ -250,7 +250,7 @@ public class Processor {
         if (dimProcesses == null) {
             dimProcesses = new ArrayList<>();
         }
-        defaultProcess = new Process();
+        defaultProcess = new ProcessOps();
     }
 
     private Processor() {
@@ -268,7 +268,7 @@ public class Processor {
         }
     }
 
-    public Process getCurrent() throws ProcessingException {
+    public ProcessOps getCurrent() throws ProcessingException {
         return defaultProcess;
     }
 
@@ -277,12 +277,12 @@ public class Processor {
      *
      * @return The current process which will be updated by unnamed commands.
      */
-    public Process getDefaultProcess() {
+    public ProcessOps getDefaultProcess() {
         return defaultProcess;
     }
 
-    public Process createProcess() {
-        Process temp = new Process();
+    public ProcessOps createProcess() {
+        ProcessOps temp = new ProcessOps();
         return temp;
     }
 
@@ -292,12 +292,12 @@ public class Processor {
      * @param name
      * @return
      */
-    public Process createProcess(String name) {
-        Process temp = new Process(name);
+    public ProcessOps createProcess(String name) {
+        ProcessOps temp = new ProcessOps(name);
         return temp;
     }
 
-    private void setDefaultProcess(Process p) {
+    private void setDefaultProcess(ProcessOps p) {
         defaultProcess = p;
     }
 
@@ -1002,7 +1002,7 @@ public class Processor {
     }
 
     /**
-     * Gets the next 'vectorsPerProcess' Vecs from the data file and returns them to the calling Process.
+     * Gets the next 'vectorsPerProcess' Vecs from the data file and returns them to the calling ProcessOps.
      *
      * @return ArrayList of Vecs from the dataset.
      */
@@ -1262,21 +1262,21 @@ public class Processor {
     }
 
     public void addDimProcess(int dim) {
-        dimProcesses.add(new Process(dim));
+        dimProcesses.add(new ProcessOps(dim));
     }
 
     public void addMatProcess(int... dims) {
-        dimProcesses.add(new Process(dims));
+        dimProcesses.add(new ProcessOps(dims));
     }
 
     public void addDatasetProcess() {
-        dimProcesses.add(Process.createDatasetProcess());
+        dimProcesses.add(ProcessOps.createDatasetProcess());
     }
 
     public void addUndoDimProcess(int dim) {
         int nProcesses = dimProcesses.size();
         for (int iProcess = (nProcesses - 1); iProcess >= 0; iProcess--) {
-            Process process = dimProcesses.get(iProcess);
+            ProcessOps process = dimProcesses.get(iProcess);
             int[] dims = process.getDims();
             if ((dims[0] == dim) && (dims.length == 1)) {
                 addUndoProcess(process);
@@ -1285,8 +1285,8 @@ public class Processor {
         }
     }
 
-    public void addUndoProcess(Process process) {
-        Process undoProcess = new Process(process.getDim(), true);
+    public void addUndoProcess(ProcessOps process) {
+        ProcessOps undoProcess = new ProcessOps(process.getDim(), true);
         dimProcesses.add(undoProcess);
         ArrayList<Operation> ops = process.getOperations();
         int nOps = ops.size();
@@ -1300,8 +1300,8 @@ public class Processor {
         }
     }
 
-    public Process getCurrentProcess() {
-        Process p;
+    public ProcessOps getCurrentProcess() {
+        ProcessOps p;
         if (dimProcesses.isEmpty()) {
             p = getDefaultProcess();  // may be null or gc
         } else {
@@ -1312,14 +1312,14 @@ public class Processor {
     }
 
     public int getCurrentDim() {
-        Process p = getCurrentProcess();
+        ProcessOps p = getCurrentProcess();
         return p.getDim();
     }
 
     public void runProcesses() throws IncompleteProcessException {
         long startTime = System.currentTimeMillis();
         clearProcessorError();
-        for (Process p : dimProcesses) {
+        for (ProcessOps p : dimProcesses) {
             // check if this process corresponds to dimension that should be skipped
             if (mapToDataset(p.getDim()) == -1) {
                 System.err.println("Skip dim " + (p.getDim() + 1));
@@ -1389,7 +1389,7 @@ public class Processor {
      *
      * @param p
      */
-    public void run(Process p) {
+    public void run(ProcessOps p) {
         if (processor.getProcessorError()) {
             return;
         }
@@ -1437,7 +1437,7 @@ public class Processor {
             printVecReadCount();
             pool.shutdown();
             processes.clear();
-            Process.resetNumProcessesCreated();
+            ProcessOps.resetNumProcessesCreated();
             p.getOperations().clear();
             isRunning = false;
             if (getProcessorError()) {
@@ -1446,9 +1446,9 @@ public class Processor {
         }
     }
 
-    public void setupPool(Process proc) {
+    public void setupPool(ProcessOps proc) {
         processes = new ArrayList<>();
-        final Process poolProcess = proc;
+        final ProcessOps poolProcess = proc;
         int iDim = proc.getDim();
         int useProcessors = numProcessors;
         if (iDim == 0) {
@@ -1461,7 +1461,7 @@ public class Processor {
         }
         for (int i = 0; i < useProcessors; ++i) {
             processes.add(new Runnable() {
-                final Process p = poolProcess.cloneProcess(createProcess());
+                final ProcessOps p = poolProcess.cloneProcess(createProcess());
 
                 public void run() {
                     try {

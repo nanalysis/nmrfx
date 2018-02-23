@@ -85,7 +85,7 @@ from org.nmrfx.processor.operations import VecRef
 from org.nmrfx.processor.operations import WriteVector
 from org.nmrfx.processor.operations import Zeros
 from org.nmrfx.processor.operations import Zf
-from org.nmrfx.processor.processing.processes import Process
+from org.nmrfx.processor.processing.processes import ProcessOps
 from org.nmrfx.processor.processing import Processor
 from org.nmrfx.processor.datasets.vendor import NMRDataUtil
 from org.nmrfx.processor.math.units import UnitFactory
@@ -666,7 +666,7 @@ def initLocal():
     dataInfo = DataInfo()
     dataInfo.curDim = 1
     dataInfo.resizeable = False
-    localProcess = Process()
+    localProcess = ProcessOps()
 
 def useLocal():
     global useLocalProcess
@@ -3329,7 +3329,7 @@ def addvector(vector,process=None):
     process.addVec(vector)
 
 def copy(process=None):
-    '''return a new Process that is a copy of process'''
+    '''return a new ProcessOps instance that is a copy of process'''
     process = process or getCurrentProcess()
     temp = processor.createProcess()
     return process.cloneProcess(temp)
