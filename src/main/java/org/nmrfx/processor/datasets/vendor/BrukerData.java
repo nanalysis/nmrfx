@@ -824,6 +824,9 @@ class BrukerData implements NMRData {
             }
         }
         arrayValues = getDoubleListPar("vd");
+        if (arrayValues.isEmpty()) {
+            arrayValues = getDoubleListPar("vc");
+        }
         setArrayPars(dim);  // must be before setFTpars()
         if ((ipar = getParInt("BYTORDA,1")) != null) {
             if (ipar == 0) {
