@@ -43,6 +43,7 @@ import org.python.core.PyException;
 import org.python.core.PyObject;
 import org.python.util.InteractiveInterpreter;
 import javafx.beans.property.SimpleObjectProperty;
+import org.nmrfx.processor.processing.processes.ProcessOps;
 
 
 /*
@@ -216,9 +217,9 @@ public class ChartProcessor {
         return interpreter;
     }
 
-    org.nmrfx.processor.processing.processes.Process getProcess() {
+    org.nmrfx.processor.processing.processes.ProcessOps getProcess() {
         PyObject pObject = interpreter.eval("getCurrentProcess()");
-        org.nmrfx.processor.processing.processes.Process process = (org.nmrfx.processor.processing.processes.Process) pObject.__tojava__(org.nmrfx.processor.processing.processes.Process.class);
+        ProcessOps process = (ProcessOps) pObject.__tojava__(ProcessOps.class);
         return process;
     }
 
@@ -404,7 +405,7 @@ public class ChartProcessor {
         if (vecDim != 0) {
             nPoints = 2 * nmrData.getSize(vecDim);
         }
-        org.nmrfx.processor.processing.processes.Process process = getProcess();
+        ProcessOps process = getProcess();
         process.clearVectors();
         vectors.clear();
         saveVectors.clear();
@@ -498,7 +499,7 @@ public class ChartProcessor {
             }
             loadVectors(i);
             try {
-                org.nmrfx.processor.processing.processes.Process process = getProcess();
+                ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
                 ipe.printStackTrace();
@@ -1118,7 +1119,7 @@ public class ChartProcessor {
             loadVectors(0);
             chart.setCrossHairState(false, true, false, true);
             try {
-                org.nmrfx.processor.processing.processes.Process process = getProcess();
+                ProcessOps process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
                 ipe.printStackTrace();
@@ -1151,7 +1152,7 @@ public class ChartProcessor {
 
     public void execScript(String script, boolean doProcess, boolean reloadData) {
         Processor.getProcessor().clearProcessorError();
-        org.nmrfx.processor.processing.processes.Process process = getProcess();
+        ProcessOps process = getProcess();
         process.clearOps();
         if (processorController.isViewingDataset()) {
             return;
