@@ -156,7 +156,6 @@ def parseArgs(argv):
         exit(1)
     for i,fileName in enumerate(args.fileNames):
        dataset = dscript.nd.open(fileName)
-       FXMLController.addDatasetToList(dataset)
        iWin = i % nWins
        nw.active(iWin).cmd.addDataset(dataset)
        
