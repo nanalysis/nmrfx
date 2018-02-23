@@ -1084,6 +1084,10 @@ public class ChartProcessor {
         if (!clearOps) {
             setScripts(saveHeaderList, listOfScripts);
         }
+        if (data != null) {
+            NMRDataUtil.setCurrentData(data);
+        }
+        addFIDToPython();
     }
 
     public void reloadData() {
@@ -1153,7 +1157,7 @@ public class ChartProcessor {
             }
             interpreter.exec("useLocal()");
             if (nmrData != null) {
-                interpreter.exec("makeFIDInfo()");
+                interpreter.exec("fidInfo = makeFIDInfo()");
             }
             if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
                 return;
@@ -1242,10 +1246,15 @@ public class ChartProcessor {
         }
     }
 
-    public String getGenScript() {
+    public void addFIDToPython() {
         interpreter.exec("from pyproc import *");
         interpreter.exec("useLocal()");
-        interpreter.exec("makeFIDInfo()");
+        interpreter.exec("fidInfo = makeFIDInfo()");
+
+    }
+
+    public String getGenScript() {
+        addFIDToPython();
         PyObject pyDocObject = interpreter.eval("genScript()");
         String scriptString = (String) pyDocObject.__tojava__(String.class);
         return scriptString;
