@@ -533,10 +533,8 @@ def acqsize(*pars):
         processor.setSizes(size)
         processor.adjustSizes();
         newSizes = processor.getNewSizes()
-        print 'newsizes',newSizes
         size = [s for s in newSizes]
 
-    print 'acqsize is ',size
     tdSize = list(size)
     fidInfo.size = list(tdSize)
     fidInfo.useSize = list(fidInfo.size)
@@ -550,7 +548,6 @@ def acqsize(*pars):
             nsz = sz * 2;
         dataInfo.msize.append(nsz)
 
-    print 'msizes acq ',dataInfo.msize
             
 # set fid size limits 
 def tdsize(*size):
@@ -588,7 +585,6 @@ def tdsize(*size):
         if fidInfo.isComplex(i):
             nsz = sz * 2;
         dataInfo.msize.append(nsz)
-    print 'msizes td ',dataInfo.msize
 
 def p(par):
     return fidInfo.getPar(par)
@@ -618,7 +614,6 @@ class genericOperation(object):
         self.arguments = inspect.getargspec(self.f)[0]
 
     def __call__(self,*args,**kwargs):
-        print "Entering", self.f.__name__
         if argFile != None:
             self.dumpArgs(argFile,self.f.__name__,*args,**kwargs)
         op = self.f(*args,**kwargs)
@@ -627,7 +622,6 @@ class genericOperation(object):
                 op.eval(kwargs['vector'])
             else:
                 process.add(op)
-        print "Exited", self.f.__name__
         return op
 
     def dumpArgs(self,argFile,opName,*args,**kwargs):
@@ -730,7 +724,6 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
         return None
     if (not tdSize):
         tdSize = getTdSizes(fidObj)
-
     fidInfo.size = list(tdSize)
     fidInfo.useSize = list(fidInfo.size)
     fidInfo.fidObj = fidObj 
@@ -855,14 +848,10 @@ def createDataset(nvFileName=None, datasetSize=None):
         if dataInfo.inMemory:
             processor.createNVInMemory(nvFileName, datasetSize, dataInfo.useSize)
         elif (fidInfo and fidInfo.flags):
-            print 'cr1'
             processor.createNV(nvFileName, datasetSize, dataInfo.useSize, fidInfo.flags)
-            print 'create1',nvFileName
             print 'exists',os.path.exists(nvFileName)
         else:
-            print 'cr2',datasetSize
             processor.createNV(nvFileName, datasetSize, dataInfo.useSize)
-            print 'create2',nvFileName
             print 'exists',os.path.exists(nvFileName)
 
     dataInfo.resizeable = False  # dataInfo.size is fixed, createNV has been run
@@ -909,7 +898,6 @@ def setDataInfoSize(curDim, size):
     global fidInfo
     if fidInfo.mapToDatasetList[curDim] != -1:
         dataInfo.size[curDim] = size
-        print 'setdatainfo',curDim,size,dataInfo.msize[curDim]
         if size > dataInfo.msize[curDim]:
             dataInfo.msize[curDim] = size
 
@@ -3510,7 +3498,6 @@ def genScript():
             if fidInfo.mapToDatasetList[iDim-1] == -1:
                 continue
             fCoef = fidInfo.getSymbolicCoefs(iDim-1)
-            print iDim,fCoef
             if fCoef != None and fCoef != 'hyper' and fCoef != 'sep':
                 script += 'TDCOMB('
                 script += "dim="+str(iDim)
