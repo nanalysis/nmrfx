@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.List;
 import java.util.Map;
+import javafx.application.Platform;
 import org.python.core.PyException;
 import org.python.core.PyObject;
 import org.python.util.InteractiveInterpreter;
@@ -76,7 +77,6 @@ public class ChartProcessor {
 
     File datasetFile;
     File datasetFileTemp;
-    org.nmrfx.processor.processing.processes.Process process = new org.nmrfx.processor.processing.processes.Process();
     /**
      * The InteractiveInterpreter in which processing commands will be executed.
      */
@@ -167,9 +167,6 @@ public class ChartProcessor {
         this.fxmlController = processorController.fxmlController;
         PyObject pyDocObject = interpreter.eval("getDocs()");
         pyDocs = (ArrayList) pyDocObject.__tojava__(java.util.ArrayList.class);
-
-        PyObject pObject = interpreter.eval("getCurrentProcess()");
-        process = (org.nmrfx.processor.processing.processes.Process) pObject.__tojava__(org.nmrfx.processor.processing.processes.Process.class);
     }
 
     class DimComparator implements Comparator {
@@ -218,6 +215,12 @@ public class ChartProcessor {
 
     InteractiveInterpreter getInterpreter() {
         return interpreter;
+    }
+
+    org.nmrfx.processor.processing.processes.Process getProcess() {
+        PyObject pObject = interpreter.eval("getCurrentProcess()");
+        org.nmrfx.processor.processing.processes.Process process = (org.nmrfx.processor.processing.processes.Process) pObject.__tojava__(org.nmrfx.processor.processing.processes.Process.class);
+        return process;
     }
 
     public void setChart(PolyChart chart) {
@@ -402,6 +405,7 @@ public class ChartProcessor {
         if (vecDim != 0) {
             nPoints = 2 * nmrData.getSize(vecDim);
         }
+        org.nmrfx.processor.processing.processes.Process process = getProcess();
         process.clearVectors();
         vectors.clear();
         saveVectors.clear();
@@ -495,6 +499,7 @@ public class ChartProcessor {
             }
             loadVectors(i);
             try {
+                org.nmrfx.processor.processing.processes.Process process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
                 ipe.printStackTrace();
@@ -1114,6 +1119,7 @@ public class ChartProcessor {
             loadVectors(0);
             chart.setCrossHairState(false, true, false, true);
             try {
+                org.nmrfx.processor.processing.processes.Process process = getProcess();
                 process.exec();
             } catch (IncompleteProcessException ipe) {
                 ipe.printStackTrace();
@@ -1146,8 +1152,11 @@ public class ChartProcessor {
 
     public void execScript(String script, boolean doProcess, boolean reloadData) {
         Processor.getProcessor().clearProcessorError();
+        org.nmrfx.processor.processing.processes.Process process = getProcess();
         process.clearOps();
+        // System.out.println("exec script");
         if (processorController.isViewingDataset()) {
+            System.out.println("exec script vd");
             return;
         }
         NMRData nmrData = getNMRData();
@@ -1208,7 +1217,11 @@ public class ChartProcessor {
             //pE.printStackTrace();
             return;
         }
+        // System.out.println("exec script1");
+
         if (doProcess) {
+//         System.out.println("exec script2");
+            System.out.println("fx thread " + Platform.isFxApplicationThread());
             if (!vectors.isEmpty()) {
                 process.clearVectors();
                 int i = 0;
@@ -1222,6 +1235,7 @@ public class ChartProcessor {
                     processorController.clearProcessingTextLabel();
                     OperationListCell.resetCells();
                     process.exec();
+                    System.out.println("done exec " + process.hasOperations());
                 } catch (IncompleteProcessException e) {
                     OperationListCell.failedOperation(e.index);
                     System.out.println("error message: " + e.getMessage());
@@ -1236,12 +1250,15 @@ public class ChartProcessor {
                     }
                 } catch (Exception pE) {
                     processorController.setProcessingStatus(pE.getMessage(), false, pE);
+                    System.out.println("exec script3 exept " + pE.getMessage());
 
                 }
             }
             if (!processorController.isViewingDataset()) {
+//                   System.out.println("exec chart");
                 chart.layoutPlotChildren();
             }
+//               System.out.println("exec script3");
 
         }
     }
