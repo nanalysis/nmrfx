@@ -34,13 +34,13 @@ import java.util.ArrayList;
 import java.util.concurrent.Callable;
 
 /**
- * The Process class will contain a list of all Operations which will be processed. Each process represents a group of
+ * The ProcessOps class will contain a list of all Operations which will be processed. Each process represents a group of
  * Operations which need to be performed sequentially on one or more Vectors. Processors will be contained in another
  * class which will execute multiple Processes at once.
  *
  * @author johnsonb
  */
-public class Process implements Callable<Object> {
+public class ProcessOps implements Callable<Object> {
 
     private ArrayList<Operation> operations = null;
     private ArrayList<Vec> vectors = null;
@@ -74,7 +74,7 @@ public class Process implements Callable<Object> {
         hasStarted = true;
     }
 
-    public Process() {
+    public ProcessOps() {
         this("p" + (numProcessesCreated));
         completionMessage = "Process " + name + " has not completed";
     }
@@ -82,26 +82,26 @@ public class Process implements Callable<Object> {
     /**
      * Create Processor.
      */
-    public Process(String name) {
+    public ProcessOps(String name) {
         numProcessesCreated++;
         this.name = name;
         operations = new ArrayList<Operation>();
         vectors = new ArrayList<Vec>();
     }
 
-    public Process(int d) {
+    public ProcessOps(int d) {
         this("p" + (numProcessesCreated) + "d" + (d + 1));
         completionMessage = "Process " + name + " has not completed";
         this.dims = new int[1];
         this.dims[0] = d;
     }
 
-    public Process(int d, boolean undo) {
+    public ProcessOps(int d, boolean undo) {
         this(d);
         this.isUndo = undo;
     }
 
-    public Process(int... newDims) {
+    public ProcessOps(int... newDims) {
         this("");
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append("p");
@@ -118,8 +118,8 @@ public class Process implements Callable<Object> {
         isMatrix = newDims.length > 1;
     }
 
-    public static Process createDatasetProcess() {
-        Process process = new Process("dataset");
+    public static ProcessOps createDatasetProcess() {
+        ProcessOps process = new ProcessOps("dataset");
         process.setDataset();
         return process;
     }
@@ -157,7 +157,7 @@ public class Process implements Callable<Object> {
     }
 
     /**
-     * Add operation to the Process if the Processor has not raised an error.
+     * Add operation to the ProcessOps if the Processor has not raised an error.
      *
      * @param op An Operation to add to the pool.
      */
@@ -421,7 +421,7 @@ public class Process implements Callable<Object> {
     }
 
     /**
-     * Execute all of the operations in the Process.
+     * Execute all of the operations in the ProcessOps.
      *
      * @return
      * @throws org.nmrfx.processor.processing.processes.IncompleteProcessException
@@ -478,7 +478,7 @@ public class Process implements Callable<Object> {
         return completionMessage;
     }
 
-    public Process cloneProcess(Process proc) {
+    public ProcessOps cloneProcess(ProcessOps proc) {
         if (isMatrix) {
             proc.setMatrix();
         }

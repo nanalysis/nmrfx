@@ -18,7 +18,7 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.processing.processes.Process;
+import org.nmrfx.processor.processing.processes.ProcessOps;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
@@ -27,14 +27,14 @@ import org.nmrfx.processor.processing.ProcessingException;
  */
 public class LoadVector extends Operation { // not currently used
 
-    private final Process process;
+    private final ProcessOps process;
 
     /**
      *
      * @param fileName
      * @param dimension Dimension will be decremented by one.
      */
-    public LoadVector(Process process) {
+    public LoadVector(ProcessOps process) {
         this.process = process;
     }
 
