@@ -1081,7 +1081,10 @@ public class ChartProcessor {
         for (Map.Entry<String, List<String>> entry : listOfScripts.entrySet()) {
             //System.out.println(entry.toString());
         }
-
+        // when setting data reset vecdim back to 0 as it could have been set to
+        // a value higher than the number of dimensions
+        vecDim = 0;
+        vecDimName = "D1";
         processorController.updateDimChoice(nDim);
         reloadData();
         processorController.refManager.resetData();
