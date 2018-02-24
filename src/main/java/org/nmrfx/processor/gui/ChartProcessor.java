@@ -357,7 +357,6 @@ public class ChartProcessor {
 
     public void setArraySize(String arraySizes) {
         NMRData nmrData = getNMRData();
-        System.out.println("set array size " + arraySizes);
 
         if (nmrData != null) {
             String[] arraySizeArray = arraySizes.split(",");
@@ -369,7 +368,6 @@ public class ChartProcessor {
                 }
                 try {
                     int size = Integer.parseInt(sizeArg);
-                    System.out.println("set array size " + iDim + " " + size);
                     setArraySize(iDim, size);
                 } catch (NumberFormatException nfE) {
                     System.out.println(nfE.getMessage());
