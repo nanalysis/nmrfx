@@ -19,7 +19,6 @@ package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
-import org.apache.commons.math3.util.FastMath;
 
 /**
  *
