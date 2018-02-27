@@ -802,7 +802,7 @@ class BrukerData implements NMRData {
         boolean gotSchedule = false;
         File nusFile = new File(fpath + File.separator + "nuslist");
         if (nusFile.exists()) {
-            NMRData.readSampleSchedule(nusFile.getPath(), false, this);
+            readSampleSchedule(nusFile.getPath(), false);
             if (sampleSchedule.getTotalSamples() == 0) {
                 throw new IOException("nuslist file exists, but is empty");
             } else {
@@ -1469,7 +1469,7 @@ class BrukerData implements NMRData {
                     acqOrder[i * 2 + 1] = "d" + (j + 1);
                 }
             } else {
-                if (sampleSchedule != null) {
+                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
                     for (int i = 0; i < nDim; i++) {
                         acqOrder[i] = "p" + (i + 1);
                     }
@@ -1502,7 +1502,7 @@ class BrukerData implements NMRData {
             if ((len == nDim) || (len == nIDim)) {
                 acqOrder = new String[nIDim * 2];
                 int j = 0;
-                if (sampleSchedule != null) {
+                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
                     for (int i = (len - 1); i >= 0; i--) {
                         String dimStr = s.substring(i, i + 1);
                         if (!dimStr.equals(nDim + "")) {
@@ -1527,7 +1527,7 @@ class BrukerData implements NMRData {
             } else if (len > nDim) {
                 acqOrder = new String[(len - 1) * 2];
                 int j = 0;
-                if (sampleSchedule != null) {
+                if ((sampleSchedule != null) && !sampleSchedule.isDemo()) {
                     for (int i = (len - 1); i >= 0; i--) {
                         String dimStr = s.substring(i, i + 1);
                         if (!dimStr.equals((nDim + 1) + "")) {
