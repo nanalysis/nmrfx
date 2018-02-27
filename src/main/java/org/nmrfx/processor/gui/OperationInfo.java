@@ -60,6 +60,7 @@ public class OperationInfo {
         "LP",
         "LPR",
         "Cascade-APOD",
+        "BLACKMAN",
         "EXPD",
         "SB",
         "TRI",
