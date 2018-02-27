@@ -27,6 +27,7 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 public class NESTAMath {
 
+    final boolean apodize;
     final int outerIterations;
     final int innerIterations = 500;
     final int statWinSize = 10;
@@ -42,7 +43,7 @@ public class NESTAMath {
     double finalL1Norm = 0.0;
     FileWriter fileWriter = null;
 
-    public NESTAMath(MatrixND matrix, int[] zeroList, int iterations, double tolFinal, double muFinal, double[] phase, boolean zeroAtStart, String logFileName) {
+    public NESTAMath(MatrixND matrix, int[] zeroList, int iterations, double tolFinal, double muFinal, double[] phase, boolean apodize, boolean zeroAtStart, String logFileName) {
         this.matrix = matrix;
         this.zeroList = zeroList;
         this.outerIterations = iterations;
@@ -50,6 +51,7 @@ public class NESTAMath {
         this.muFinal = muFinal;
         this.phase = phase;
         this.zeroAtStart = zeroAtStart;
+        this.apodize = apodize;
         if (logFileName != null) {
             try {
                 fileWriter = new FileWriter(logFileName);
@@ -71,6 +73,9 @@ public class NESTAMath {
         }
         if (doPhase) {
             matrix.phase(phase);
+        }
+        if (apodize) {
+            matrix.apodize();
         }
         if (zeroAtStart) {
             matrix.zeroValues(zeroList);

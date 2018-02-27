@@ -53,6 +53,7 @@ public class NESTANMR extends MatrixOperation {
      */
     private final double tolFinal;
     private final double muFinal;
+    private final boolean apodize;
     private final boolean zeroAtStart;
     /**
      * 2D phase array: [f1ph0, f1ph1, f2ph0, f2ph1].
@@ -63,7 +64,7 @@ public class NESTANMR extends MatrixOperation {
 
     private final File logHome;
 
-    public NESTANMR(int iterations, double tolFinal, double muFinal, SampleSchedule schedule, ArrayList phaseList, boolean zeroAtStart, String logHomeName) throws ProcessingException {
+    public NESTANMR(int iterations, double tolFinal, double muFinal, SampleSchedule schedule, ArrayList phaseList, boolean apodize, boolean zeroAtStart, String logHomeName) throws ProcessingException {
         this.iterations = iterations;
         this.sampleSchedule = schedule;
         if (!phaseList.isEmpty()) {
@@ -81,6 +82,7 @@ public class NESTANMR extends MatrixOperation {
         }
         this.tolFinal = tolFinal;
         this.muFinal = muFinal;
+        this.apodize = apodize;
         this.zeroAtStart = zeroAtStart;
     }
 
@@ -107,7 +109,7 @@ public class NESTANMR extends MatrixOperation {
             }
             int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
 
-            NESTAMath nesta = new NESTAMath(matrixND, zeroList, iterations, tolFinal, muFinal, phase, zeroAtStart, logFile);
+            NESTAMath nesta = new NESTAMath(matrixND, zeroList, iterations, tolFinal, muFinal, phase, apodize, zeroAtStart, logFile);
             nesta.doNESTA();
             if (vector.getSize() != origSize) {
                 vector.resize(origSize);
@@ -135,10 +137,11 @@ public class NESTANMR extends MatrixOperation {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
             }
 
-            NESTAMath nesta = new NESTAMath(matrixND, zeroList, iterations, tolFinal, muFinal, phase, zeroAtStart, logFile);
+            NESTAMath nesta = new NESTAMath(matrixND, zeroList, iterations, tolFinal, muFinal, phase, apodize, zeroAtStart, logFile);
             nesta.doNESTA();
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
+            
         }
 
         return this;
