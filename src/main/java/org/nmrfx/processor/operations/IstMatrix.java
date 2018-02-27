@@ -339,7 +339,7 @@ public class IstMatrix extends MatrixOperation {
             matrix.phase(phase);
         }
         if (doSineBell) {
-            matrix.doSineBell();
+            matrix.apodize();
         }
         matrix.zeroValues(zeroList);
         // could just copy the actually sample values to vector
