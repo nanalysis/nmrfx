@@ -19,6 +19,7 @@ from org.nmrfx.processor.operations import BcMed
 from org.nmrfx.processor.operations import BcPoly
 from org.nmrfx.processor.operations import BcSine
 from org.nmrfx.processor.operations import Bcwhit
+from org.nmrfx.processor.operations import Blackman
 from org.nmrfx.processor.operations import Bucket
 from org.nmrfx.processor.operations import Bz
 from org.nmrfx.processor.operations import CShift
@@ -88,6 +89,7 @@ from org.nmrfx.processor.operations import Zf
 from org.nmrfx.processor.processing.processes import ProcessOps
 from org.nmrfx.processor.processing import Processor
 from org.nmrfx.processor.datasets.vendor import NMRDataUtil
+from org.nmrfx.processor.datasets.vendor import NMRData
 from org.nmrfx.processor.math.units import UnitFactory
 from org.nmrfx.processor.math import Vec
 from org.nmrfx.processor.datasets import DatasetPhaser
@@ -602,6 +604,17 @@ def clearLocalProcess():
     global localProcess
     if localProcess:
         localProcess.clearOps()
+
+def readNUS(fileName, demo=True):
+    global fidInfo
+    fidObj = fidInfo.fidObj
+    fidObj.readSampleSchedule(fileName, demo)
+
+def genNUS(sizes):
+    global fidInfo
+    fidObj = fidInfo.fidObj
+    print "gen ",sizes
+    fidObj.createUniformSchedule(sizes)
 
 class genericOperation(object):
     def __init__(self, f):
@@ -2290,7 +2303,7 @@ def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph
         process.addOperation(op)
     return op
 
-def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, zeroAtStart=True, disabled=False, vector=None, process=None):
+def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, apodize=False, zeroAtStart=True, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for NUS processing.  This version
     requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
    
@@ -2315,6 +2328,8 @@ def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, zer
         Array of phase values, 2 per indirect dimension.
     logToFile : bool
         Write log files containing information about progress of NESTA.
+    apodize : bool
+        Apodize matrix 
     zeroAtStart : bool
         Set unsampled values to zero at start of operation
     '''
@@ -2345,7 +2360,7 @@ def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, zer
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
-    op = NESTANMR(iterations, tolFinalReal, muFinalReal, schedule, phaseList, zeroAtStart, logFileName)
+    op = NESTANMR(iterations, tolFinalReal, muFinalReal, schedule, phaseList, apodize, zeroAtStart, logFileName)
 
     if (vector != None):
         op.eval(vector)
@@ -3087,6 +3102,37 @@ def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=Fal
         return None
     process = process or getCurrentProcess()
     op = SinebellApod(offset, end, power, c, apodSize, inverse)
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+
+def BLACKMAN(end=1.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None, process=None):
+    '''Blackman Apodization
+    Parameters
+    ---------
+    end : real
+        amin : 0.5
+        min : 0.5
+        max : 1.0
+        amax : 1.0
+        End value of sine window argument.
+    c : real
+        amin : 0.5
+        min : 0.5
+        max : 1.0
+        amax : 1.0
+        First point multiplier.
+    apodSize : int
+        min : 0
+        max : size
+        Size of apodization window.  Default 0f 0 uses entire FID.
+    '''
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+    op = Blackman(end, c, apodSize, inverse)
     if (vector != None):
         op.eval(vector)
     else:
