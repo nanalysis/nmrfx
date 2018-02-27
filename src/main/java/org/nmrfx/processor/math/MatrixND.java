@@ -39,6 +39,7 @@ public class MatrixND implements MatrixType {
 
     final double[] data;
     final int[] sizes;
+    int[] vSizes;
     final int[] strides;
     final int nDim;
     final int nElems;
@@ -57,6 +58,7 @@ public class MatrixND implements MatrixType {
         }
         nElems = n;
         data = new double[n];
+        vSizes = sizes.clone();
     }
 
     public MatrixND(int[][] pt, int... sizes) {
@@ -81,6 +83,10 @@ public class MatrixND implements MatrixType {
                 data[k++] = data2D[i][j];
             }
         }
+    }
+
+    public void setVSizes(int... vSizes) {
+        this.vSizes = vSizes.clone();
     }
 
     @Override
@@ -406,20 +412,49 @@ public class MatrixND implements MatrixType {
 
     }
 
-    private void sineBell(double[][] riVec) {
-        int size = riVec[0].length;
-        int apodSize = size / 2;
+    private void sineBell(double[][] riVec, int apodSize) {
         double offset = 0.5;
         double end = 0.99;
         double start = offset * Math.PI;
+        double power = 2.0;
+        double c = 0.5;
         double delta = ((end - offset) * Math.PI) / (apodSize - 1);
         for (int i = 0; i < apodSize; i++) {
             double rVal = riVec[0][i];
             double iVal = riVec[1][i];
-            double scale = Math.sin(start + (i * delta));
+            double scale;
+            if (power != 1.0) {
+                scale = Math.pow(Math.sin(start + (i * delta)), power);
+            } else {
+                scale = Math.sin(start + (i * delta));
+            }
+            if (i == 0) {
+                scale *= c;
+            }
             riVec[0][i] = rVal * scale;
             riVec[1][i] = iVal * scale;
         }
+    }
+
+    private void blackman(double[][] riVec, int apodSize) {
+        double offset = 0.5;
+        double end = 0.99;
+        double c = 0.5;
+        double start = offset * Math.PI;
+
+        double delta = ((end - offset) * Math.PI) / (apodSize - 1);
+        for (int i = 0; i < apodSize; i++) {
+            double rVal = riVec[0][i];
+            double iVal = riVec[1][i];
+            double deltaPos = i;
+            double scale = 0.42 - 0.5 * Math.cos(2.0 * start + 2.0 * (deltaPos * delta)) + 0.08 * Math.cos(4.0 * (deltaPos * delta));
+            if (i == 0) {
+                scale *= c;
+            }
+            riVec[0][i] = rVal * scale;
+            riVec[1][i] = iVal * scale;
+        }
+
     }
 
     public void doFTtoReal() {
@@ -466,13 +501,13 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    public void doSineBell() {
+    public void apodize() {
         for (int i = 0; i < nDim; i++) {
-            doSineBell(i);
+            MatrixND.this.apodize(i);
         }
     }
 
-    public void doSineBell(int axis) {
+    public void apodize(int axis) {
         int[] subSizes = getSubSizes(axis);
         double[][] riVec = new double[2][sizes[axis]];
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
@@ -482,7 +517,7 @@ public class MatrixND implements MatrixType {
             iterator.next();
             int[] counts = iterator.getCounts();
             getVectorRI(axis, riVec, counts);
-            sineBell(riVec);
+            blackman(riVec, vSizes[axis]);
             putVectorRI(axis, riVec, counts);
         }
     }
