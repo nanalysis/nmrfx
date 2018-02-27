@@ -931,7 +931,7 @@ class VarianData implements NMRData {
         if (scheduleFile.exists()) {
             System.out.println("exists");
             try {
-                NMRData.readSampleSchedule(scheduleFile.getPath(), false, this);
+                readSampleSchedule(scheduleFile.getPath(), false);
                 gotSchedule = true;
             } catch (IOException ioE) {
                 gotSchedule = false;

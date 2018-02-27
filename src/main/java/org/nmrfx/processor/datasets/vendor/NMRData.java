@@ -459,7 +459,8 @@ public interface NMRData {
         return date;
     }
     /**
-     * Return an optional list of doubles associated with a dimension of dataset.  This might be, for example, relaxation delays.
+     * Return an optional list of doubles associated with a dimension of dataset. This might be, for example, relaxation
+     * delays.
      *
      * @param dim data dimension index
      * @return list of values
@@ -572,7 +573,7 @@ public interface NMRData {
         }
         return builder.toString();
     }
-    
+
     public default boolean isFID() {
         return true;
     }
@@ -605,19 +606,25 @@ public interface NMRData {
      * @throws IOException if an I/O error occurs
      * @throws ProcessingException if a processing error occurs
      */
-    public static SampleSchedule readSampleSchedule(String path, boolean demo, NMRData nmrdata)
+    public default SampleSchedule readSampleSchedule(String path, boolean demo)
             throws IOException, ProcessingException {
         if ((new java.io.File(path)).exists()) {
             SampleSchedule schedule = new SampleSchedule(path, demo);
-            if (nmrdata != null) {
-                nmrdata.setSampleSchedule(schedule);
-                return schedule;
-            } else {
-                throw new ProcessingException("Sample schedule read, but no FID object found.");
-            }
+            setSampleSchedule(schedule);
+            return schedule;
         } else {
             throw new IOException("Cannot find sample schedule file " + path);
         }
+    }
+
+    public default SampleSchedule createUniformSchedule(List<Integer> nSizes) {
+        int[] nSArray = new int[nSizes.size()];
+        for (int i=0;i<nSArray.length;i++) {
+            nSArray[i] = nSizes.get(i);
+        }
+        SampleSchedule schedule = SampleSchedule.createUniformSchedule(nSArray);
+        setSampleSchedule(schedule);
+        return schedule;
     }
 
     /**
