@@ -53,6 +53,7 @@ from org.nmrfx.processor.operations import Integrate
 from org.nmrfx.processor.operations import IO
 from org.nmrfx.processor.operations import IstMatrix
 from org.nmrfx.processor.operations import IstVec
+from org.nmrfx.processor.operations import Kaiser
 from org.nmrfx.processor.operations import Mag
 from org.nmrfx.processor.operations import Measure
 from org.nmrfx.processor.operations import Mult
@@ -3133,6 +3134,43 @@ def BLACKMAN(end=1.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None,
         return None
     process = process or getCurrentProcess()
     op = Blackman(end, c, apodSize, inverse)
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
+
+def KAISER(beta=10.0, end=1.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None, process=None):
+    '''Blackman Apodization
+    Parameters
+    ---------
+    beta : real
+        amin : 0.0
+        min : 0.0
+        max : 20.0
+        amax : 20.0
+        Beta.
+    end : real
+        amin : 0.5
+        min : 0.5
+        max : 1.0
+        amax : 1.0
+        End value of window 
+    c : real
+        amin : 0.5
+        min : 0.5
+        max : 1.0
+        amax : 1.0
+        First point multiplier.
+    apodSize : int
+        min : 0
+        max : size
+        Size of apodization window.  Default 0f 0 uses entire FID.
+    '''
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+    op = Kaiser(beta, end, c, apodSize, inverse)
     if (vector != None):
         op.eval(vector)
     else:
