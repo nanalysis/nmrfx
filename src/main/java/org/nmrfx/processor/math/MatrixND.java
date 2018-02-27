@@ -28,6 +28,7 @@ import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import net.sourceforge.jdistlib.math.Bessel;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.transform.DftNormalization;
@@ -457,6 +458,30 @@ public class MatrixND implements MatrixType {
 
     }
 
+    private void kaiser(double[][] riVec, int apodSize) {
+        double offset = 0.5;
+        double end = 0.99;
+        double c = 0.5;
+        double beta = 10.0;
+        double start = offset * Math.PI;
+
+        double delta = ((end - offset)) / (apodSize - 1);
+        for (int i = 0; i < apodSize; i++) {
+            double rVal = riVec[0][i];
+            double iVal = riVec[1][i];
+            double deltaPos = i;
+            double v1 = beta * Math.sqrt(1.0 - Math.pow(2.0 * deltaPos * delta, 2));
+            double v2 = beta;
+            double scale = Bessel.i(v1, 0, false) / Bessel.i(v2, 0, false);
+            if (i == 0) {
+                scale *= c;
+            }
+            riVec[0][i] = rVal * scale;
+            riVec[1][i] = iVal * scale;
+        }
+
+    }
+
     public void doFTtoReal() {
         for (int i = 0; i < nDim; i++) {
             doFTtoReal(i);
@@ -517,7 +542,7 @@ public class MatrixND implements MatrixType {
             iterator.next();
             int[] counts = iterator.getCounts();
             getVectorRI(axis, riVec, counts);
-            blackman(riVec, vSizes[axis]);
+            kaiser(riVec, vSizes[axis]);
             putVectorRI(axis, riVec, counts);
         }
     }
