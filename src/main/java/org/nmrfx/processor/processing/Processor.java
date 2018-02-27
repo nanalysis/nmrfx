@@ -42,8 +42,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The Processor contains all processes. It also contains the "current ProcessOps", which is the process which operations
- will be added to if a process is not specified.
+ * The Processor contains all processes. It also contains the "current ProcessOps", which is the process which
+ * operations will be added to if a process is not specified.
  *
  * @author johnsonb
  */
@@ -980,17 +980,23 @@ public class Processor {
             // zerofill matrix size for processing and writing
             int[][] writePt = calcPt(dim);
             int[] matrixSizes = new int[pt.length - 1];
+            // size in points of valid data (used for apodizatin etc.)
+            int[] vSizes = new int[pt.length - 1];
             for (int i = 0; i < pt.length - 1; i++) {
                 matrixSizes[i] = Vec.checkPowerOf2(1 + pt[i][1]);
+                vSizes[i] = (pt[i][1] + 1);
+                if (dataset.getComplex(dim[0])) {
+                    vSizes[i] /= 2;
+                }
             }
             for (int i = 0; i < pt.length - 1; i++) {
-//                System.out.println("mat " + i + " ms " + +matrixSizes[i] + " pt " + pt[i][1] + " d " + dim[i]);
                 writePt[i][1] = matrixSizes[i] - 1;
             }
             writePt[pt.length - 1][0] = matrixCount;
             pt[pt.length - 1][0] = matrixCount;
             try {
                 matrix = new MatrixND(writePt, matrixSizes);
+                matrix.setVSizes(vSizes);
 //                printDimPt("getMatrix", dim, matrix.getPt());  // for debug
                 dataset.readMatrixND(pt, dim, matrix);
             } catch (IOException ex) {
@@ -1089,11 +1095,11 @@ public class Processor {
      */
     private VecIndex getNextGroup(final int vecNum) {
         if (nDim > 1) {
+            VecIndex vecIndex = tmult.getNextGroup(vecNum);
             if (isNUS()) {
-                VecIndex vecIndex = tmult.getNextGroup(vecNum);
-                return sampleSchedule.convertToNUSGroup(vecIndex);
+                return sampleSchedule.convertToNUSGroup(vecIndex, vecNum);
             } else {
-                return tmult.getNextGroup(vecNum);
+                return vecIndex;
             }
         } else {
             int[] inVecs = {vecNum};
