@@ -18,6 +18,8 @@
 package org.nmrfx.processor.operations;
 
 import net.sourceforge.jdistlib.math.Bessel;
+import org.nmrfx.processor.math.MatrixND;
+import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -35,6 +37,18 @@ public class Kaiser extends Apodization implements Invertible {
     @Override
     public Kaiser eval(Vec vector) throws ProcessingException {
         apply(vector);
+        return this;
+    }
+
+    @Override
+    public Operation evalMatrix(MatrixType matrix) {
+        if (matrix instanceof MatrixND) {
+            MatrixND matrixND = (MatrixND) matrix;
+            int[] vSizes = matrixND.getVSizes();
+            for (int i = 0; i < vSizes.length; i++) {
+                kaiser(matrixND, i, vSizes[i]);
+            }
+        }
         return this;
     }
 
@@ -81,6 +95,24 @@ public class Kaiser extends Apodization implements Invertible {
             applyApod(vector);
         }
     }
+
+    private void kaiser(MatrixND matrix, int axis, int apodSize) {
+        double offset = 0.5;
+        double delta = ((end - offset)) / (apodSize - 1);
+        double[] apodVec = new double[apodSize];
+        for (int i = 0; i < apodSize; i++) {
+            double deltaPos = i;
+            double v1 = beta * Math.sqrt(1.0 - Math.pow(2.0 * deltaPos * delta, 2));
+            double v2 = beta;
+            double scale = Bessel.i(v1, 0, false) / Bessel.i(v2, 0, false);
+            if (i == 0) {
+                scale *= c;
+            }
+            apodVec[i] = scale;
+        }
+        matrix.applyApod(axis, apodVec);
+    }
+
 }
 
 /*

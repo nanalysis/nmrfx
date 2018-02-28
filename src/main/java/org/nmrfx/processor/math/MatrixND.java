@@ -89,6 +89,10 @@ public class MatrixND implements MatrixType {
     public void setVSizes(int... vSizes) {
         this.vSizes = vSizes.clone();
     }
+    
+    public int[] getVSizes() {
+        return vSizes.clone();
+    }
 
     @Override
     public String exportData(String rootName, String suffix) throws IOException {
@@ -544,6 +548,29 @@ public class MatrixND implements MatrixType {
             getVectorRI(axis, riVec, counts);
             kaiser(riVec, vSizes[axis]);
             putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    public void applyApod(int axis, double[] apodVec) {
+        int[] subSizes = getSubSizes(axis);
+        double[][] riVec = new double[2][sizes[axis]];
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        double tol = 0.0001;
+        while (iterator.hasNext()) {
+            iterator.next();
+            int[] counts = iterator.getCounts();
+            getVectorRI(axis, riVec, counts);
+            applyApod(riVec, apodVec);
+            putVectorRI(axis, riVec, counts);
+        }
+    }
+
+    private void applyApod(double[][] riVec, double[] apodVec) {
+        for (int i = 0; i < apodVec.length; i++) {
+            double scale = apodVec[i];
+            riVec[0][i] *= scale;
+            riVec[1][i] *= scale;
         }
     }
 
