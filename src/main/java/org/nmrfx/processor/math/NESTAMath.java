@@ -32,6 +32,7 @@ public class NESTAMath {
     final int innerIterations = 500;
     final int statWinSize = 10;
     final boolean zeroAtStart;
+    final double threshold;
     double tolFinal;
     double muFinal;
     final MatrixND matrix;
@@ -43,7 +44,7 @@ public class NESTAMath {
     double finalL1Norm = 0.0;
     FileWriter fileWriter = null;
 
-    public NESTAMath(MatrixND matrix, int[] zeroList, int iterations, double tolFinal, double muFinal, double[] phase, boolean apodize, boolean zeroAtStart, String logFileName) {
+    public NESTAMath(MatrixND matrix, int[] zeroList, int iterations, double tolFinal, double muFinal, double[] phase, boolean apodize, boolean zeroAtStart, double threshold, String logFileName) {
         this.matrix = matrix;
         this.zeroList = zeroList;
         this.outerIterations = iterations;
@@ -52,6 +53,7 @@ public class NESTAMath {
         this.phase = phase;
         this.zeroAtStart = zeroAtStart;
         this.apodize = apodize;
+        this.threshold = threshold;
         if (logFileName != null) {
             try {
                 fileWriter = new FileWriter(logFileName);
@@ -86,15 +88,18 @@ public class NESTAMath {
         gradMatrix.doFTtoReal();
         SummaryStatistics sStats = gradMatrix.calcRealStats();
         initialL1Norm = sStats.getSum();
+        double maxAbs = sStats.getMax();
+        if (maxAbs < threshold) {
+            return;
+        }
 
-        double largestValue = sStats.getMax();
         int n = matrix.getNElems();
         double[] zValues = new double[n];  // zk of page 5
         double[] yValues = new double[n];  // yk of page 5
         double[] wValues = new double[n];  // cumulative gradient
         double[] xPlug = new double[n];    // matrix values at beginning of inner loop
 
-        double muStart = largestValue * 0.9;  // based on page 11 of NESTA paper
+        double muStart = maxAbs * 0.9;  // based on page 11 of NESTA paper
         // fixme  good value for muFinal?/ should this be an argument?
         // or should it be set automatically from data (fraction of largest value accounting for dynamic range)
         //   or based on noise
@@ -188,4 +193,4 @@ public class NESTAMath {
             fileWriter.close();
         }
     }
-}
+    }
