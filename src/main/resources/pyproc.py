@@ -2304,7 +2304,7 @@ def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph
         process.addOperation(op)
     return op
 
-def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, apodize=False, zeroAtStart=True, disabled=False, vector=None, process=None):
+def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, apodize=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for NUS processing.  This version
     requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
    
@@ -2331,6 +2331,9 @@ def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, apo
         Write log files containing information about progress of NESTA.
     apodize : bool
         Apodize matrix 
+    threshold : real
+        min : 0
+        Threshold for absolute value.  If less than  this skip this hyperplane.
     zeroAtStart : bool
         Set unsampled values to zero at start of operation
     '''
@@ -2361,7 +2364,7 @@ def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, apo
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
-    op = NESTANMR(iterations, tolFinalReal, muFinalReal, schedule, phaseList, apodize, zeroAtStart, logFileName)
+    op = NESTANMR(iterations, tolFinalReal, muFinalReal, schedule, phaseList, apodize, zeroAtStart, threshold, logFileName)
 
     if (vector != None):
         op.eval(vector)
