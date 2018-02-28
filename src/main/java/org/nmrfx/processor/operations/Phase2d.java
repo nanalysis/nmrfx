@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.MatrixType;
 
 /**
@@ -27,24 +28,20 @@ import org.nmrfx.processor.math.MatrixType;
 public class Phase2d extends MatrixOperation {
 
     private final double[] phase;
-    private final boolean f1abs;
-    private final boolean f2abs;
+    private final int dim;
 
     /**
      * Constructor with phase array.
      *
      * @param ph phase array : f1 0th order, f1 1st order, f2 0th order, f2 1st order
-     * @param absF1 f1 absolute phase
-     * @param absF2 f2 absolute phase
      */
-    public Phase2d(double[] ph, Boolean absF1, Boolean absF2) {
-        int len = ph.length < 4 ? ph.length : 4;
-        phase = new double[4];
+    public Phase2d(double[] ph) {
+        int len = ph.length;
+        phase = new double[len];
         for (int i = 0; i < len; i++) {
             phase[i] = ph[i];
         }
-        f1abs = absF1;
-        f2abs = absF2;
+        dim = -1;
     }
 
     /**
@@ -52,25 +49,23 @@ public class Phase2d extends MatrixOperation {
      *
      * @param f1p0 f1 zero order phase
      * @param f1p1 f1 first order phase
-     * @param f2p0 f2 zero order phase
-     * @param f2p1 f2 first order phase
-     * @param absF1 f1 absolute phase
-     * @param absF2 f2 absolute phase
+     * @param dim The dimension to phase
      */
-    public Phase2d(double f1p0, double f1p1, double f2p0, double f2p1,
-            Boolean absF1, Boolean absF2) {
-        phase = new double[4];
+    public Phase2d(double f1p0, double f1p1, int dim) {
+        phase = new double[2];
         phase[0] = f1p0;
         phase[1] = f1p1;
-        phase[2] = f2p0;
-        phase[3] = f2p0;
-        f1abs = absF1;
-        f2abs = absF2;
+        this.dim = dim;
     }
 
     @Override
     public Operation evalMatrix(MatrixType matrix) {
-        matrix.phase(phase);
+        if ((matrix instanceof MatrixND) && (dim >= 0)) {
+            MatrixND matrixND = (MatrixND) matrix;
+            matrixND.doPhaseTD(dim, phase[0], phase[1]);
+        } else {
+            matrix.phase(phase);
+        }
         return this;
     }
 
