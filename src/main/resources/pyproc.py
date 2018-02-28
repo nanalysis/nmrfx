@@ -2304,16 +2304,20 @@ def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph
         process.addOperation(op)
     return op
 
-def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, apodize=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
+def NESTA(nOuter=30, nInner=20, tolFinal=6, muFinal=3,phase=None, logToFile=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for NUS processing.  This version
     requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
    
     Parameters
     ---------
-    iterations : int
+    nOuter : int
         min : 1
         max : 100
-        Number of iterations to perform.
+        Number of outer iterations (continuations) to perform.
+    nInner : int
+        min : 1
+        max : 100
+        Number of inner iterations to perform.
     tolFinal : int
         amin : 0
         min : 0
@@ -2329,8 +2333,6 @@ def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, apo
         Array of phase values, 2 per indirect dimension.
     logToFile : bool
         Write log files containing information about progress of NESTA.
-    apodize : bool
-        Apodize matrix 
     threshold : real
         min : 0
         Threshold for absolute value.  If less than  this skip this hyperplane.
@@ -2348,7 +2350,7 @@ def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, apo
     tolFinalReal = math.pow(10.0,-tolFinal)
     muFinalReal = math.pow(10.0,-muFinal)
     process = process or getCurrentProcess()
-    print 'iter',iterations
+    print 'iter',nOuter
     print 'ph',phase
     print 'ph',phaseList
     global fidInfo
@@ -2364,7 +2366,7 @@ def NESTA(iterations=30,  tolFinal=6, muFinal=3,phase=None, logToFile=False, apo
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
-    op = NESTANMR(iterations, tolFinalReal, muFinalReal, schedule, phaseList, apodize, zeroAtStart, threshold, logFileName)
+    op = NESTANMR(nOuter, nInner, tolFinalReal, muFinalReal, schedule, phaseList, zeroAtStart, threshold, logFileName)
 
     if (vector != None):
         op.eval(vector)
@@ -2899,42 +2901,44 @@ def PHASE(ph0=0.0, ph1=0.0, dimag=False, disabled=False, vector=None, process=No
         process.addOperation(op)
     return op
 
-def PHASE2D(f2ph0=0.0, f2ph1=0.0, f3ph0=0.0, f3ph1=0.0, f4ph0=0.0, f4ph1=0.0, disabled=False, process=None):
+def PHASE2D(phase=None, disabled=False, process=None):
     '''Phase ND matrix.
     Parameters
     ---------
-    f2ph0 : real
-        min : -360.0
-        max : 360.0
-        F2 Zero order phase value
-    f2ph1 : real
-        min : -360.0
-        max : 360.0
-        F2 First order phase value
-    f3ph0 : real
-        min : -360.0
-        max : 360.0
-        F3 Zero order phase value
-    f3ph1 : real
-        min : -360.0
-        max : 360.0
-        F3 First order phase value
-    f4ph0 : real
-        min : -360.0
-        max : 360.0
-        F4 Zero order phase value
-    f4ph1 : real
-        min : -360.0
-        max : 360.0
-        F4 First order phase value
+    phase : []
+        Array of phase values, 2 per indirect dimension.
 '''
     if disabled:
         return None
 
     process = process or getCurrentProcess()
-    op = Phase2d(f2ph0, f2ph1, f3ph0, f3ph1, f4ph0, f4ph1)
+    op = Phase2d(phase)
     process.addOperation(op)
     return op
+
+def PHASEND(ph0=0.0,ph1=0.0,dim=0, disabled=False, process=None):
+    '''Phase ND matrix.
+    Parameters
+    ---------
+    ph0 : real
+        min : -360.0
+        max : 360.0
+        Zero order phase value
+    ph1 : real
+        min : -360.0
+        max : 360.0
+        First order phase value
+    dim : {0,1,2,3,4,5,6}
+        Dataset dimension to phase. (0 does all dimensions)
+'''
+    if disabled:
+        return None
+    dim -= 1
+    process = process or getCurrentProcess()
+    op = Phase2d(ph0, ph1, dim)
+    process.addOperation(op)
+    return op
+
 
 @generic_operation
 def RAND(disabled=False, vector=None, process=None):
