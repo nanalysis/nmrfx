@@ -63,6 +63,11 @@ public class NMRViewData implements NMRData {
         openDataFile(path);
     }
 
+    public NMRViewData(Dataset dataset) {
+        this.dataset = dataset;
+        this.fpath = dataset.getFileName();
+    }
+
     public void close() {
         dataset.close();
     }
