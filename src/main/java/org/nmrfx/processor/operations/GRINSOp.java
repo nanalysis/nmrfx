@@ -25,7 +25,6 @@ import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 import java.io.File;
-import java.util.ArrayList;
 
 /**
  *
@@ -56,29 +55,16 @@ public class GRINSOp extends MatrixOperation {
      * @see #zero_samples
      * @see SampleSchedule
      */
-    /**
-     * 2D phase array: [f1ph0, f1ph1, f2ph0, f2ph1].
-     */
-    private final double[] phase;  // init zero values
-
     private final SampleSchedule sampleSchedule;
 
     private final File logHome;
 
-    public GRINSOp(double noise, double scale, boolean preserve, boolean synthetic, SampleSchedule schedule, ArrayList phaseList, String logHomeName) throws ProcessingException {
+    public GRINSOp(double noise, double scale, boolean preserve, boolean synthetic, SampleSchedule schedule, String logHomeName) throws ProcessingException {
         this.noise = noise;
         this.scale = scale;
         this.preserve = preserve;
         this.synthetic = synthetic;
         this.sampleSchedule = schedule;
-        if (!phaseList.isEmpty()) {
-            this.phase = new double[phaseList.size()];
-            for (int i = 0; i < phaseList.size(); i++) {
-                this.phase[i] = (Double) phaseList.get(i);
-            }
-        } else {
-            phase = null;
-        }
         if (logHomeName == null) {
             this.logHome = null;
         } else {
@@ -108,7 +94,7 @@ public class GRINSOp extends MatrixOperation {
             int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
             int[] srcTargetMap = genSrcTargetMap(schedule, matrixND);
 
-            GRINS smile = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, phase, logFile);
+            GRINS smile = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, logFile);
             smile.exec();
             for (int i = 0; i < vector.getSize(); i++) {
                 double real = matrixND.getValue(i * 2);
@@ -134,7 +120,7 @@ public class GRINSOp extends MatrixOperation {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
             }
 //            if (matrixND.getIndex() == 381) {
-            GRINS smile = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, phase, logFile);
+            GRINS smile = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, logFile);
             smile.exec();
 //            }
         } catch (Exception e) {

@@ -55,12 +55,11 @@ public class DGRINSOp extends DatasetOperation {
             dim[i] = i + 1;
         }
         int size0 = dataset.getSize(0);
-        double[] phase = new double[0];
         for (int i = 0; i < size0; i++) {
             MatrixND matrix = getMatrixNDFromFile(dataset, dim, i);
             int[] zeroList = IstMatrix.genZeroList(schedule, matrix);
             int[] srcTargetMap = genSrcTargetMap(schedule, matrix);
-            GRINS smile = new GRINS(matrix, noise, scale, true, false, zeroList, srcTargetMap, phase, null);
+            GRINS smile = new GRINS(matrix, noise, scale, true, false, zeroList, srcTargetMap, null);
             smile.exec();
             try {
                 dataset.writeMatrixNDToDatasetFile(dim, matrix);
