@@ -39,7 +39,6 @@ public class GRINS {
     final boolean synthetic;
     final int[] zeroList;
     final int[] srcTargetMap;
-    final double[] phase;
     final double scale;
     final String logFileName;
 
@@ -53,14 +52,13 @@ public class GRINS {
      */
     boolean calcStats = true;
 
-    public GRINS(MatrixND matrix, double noise, double scale, boolean preserve, boolean synthetic, int[] zeroList, int[] srcTargetMap, double[] phase, String logFileName) {
+    public GRINS(MatrixND matrix, double noise, double scale, boolean preserve, boolean synthetic, int[] zeroList, int[] srcTargetMap, String logFileName) {
         this.matrix = matrix;
         this.noise = noise;
         this.scale = scale;
         this.preserve = preserve;
         this.synthetic = synthetic;
         this.zeroList = zeroList;
-        this.phase = phase;
         this.srcTargetMap = srcTargetMap;
         this.logFileName = logFileName;
     }
@@ -68,19 +66,6 @@ public class GRINS {
     public void exec() {
         try (FileWriter fileWriter = logFileName == null ? null : new FileWriter(logFileName)) {
             int iterations = 16;
-            boolean doPhase = false;
-            if (phase != null) {
-                for (double phaseVal : phase) {
-                    if (Math.abs(phaseVal) > 1.0e-6) {
-                        doPhase = true;
-                        break;
-                    }
-                }
-            }
-            if (doPhase) {
-                matrix.phase(phase);
-            }
-
             matrix.zeroValues(zeroList);
             double preValue = 0.0;
             double postValue = 0.0;
