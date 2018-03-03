@@ -2759,7 +2759,7 @@ def DPHASE(dim=0,firstOrder=False, winSize=2, ratio=25.0, ph1Limit=45.0, disable
         process.addOperation(op)
     return op
 
-def DGRINS(noise=5, phase=None, logToFile=False, disabled=False, dataset=None, process=None):
+def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
@@ -2783,13 +2783,6 @@ def DGRINS(noise=5, phase=None, logToFile=False, disabled=False, dataset=None, p
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
-    phaseList = ArrayList()
-    if phase == None:
-        pass
-    else:
-        for value in phase:
-            phaseList.add(float(value))
-
     process = process or getCurrentProcess()
 
     op = DGRINSOp(schedule, noise)
@@ -2800,7 +2793,7 @@ def DGRINS(noise=5, phase=None, logToFile=False, disabled=False, dataset=None, p
         process.addOperation(op)
     return op
 
-def GRINS(noise=5, scale=1.0, preserve=False, synthetic=False, phase=None, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noise=5, scale=1.0, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
@@ -2819,8 +2812,6 @@ def GRINS(noise=5, scale=1.0, preserve=False, synthetic=False, phase=None, logTo
         Add fitted signals to the residual signal (rather than replacing it)
     synthetic : bool
         Replace measured values with synthetic values. 
-    phase : []
-        Array of phase values, 2 per indirect dimension.
     logToFile : bool
         Write log files containing information about progress of NESTA.
 '''
@@ -2842,16 +2833,9 @@ def GRINS(noise=5, scale=1.0, preserve=False, synthetic=False, phase=None, logTo
                 os.mkdir(logDir)
             logFileName = os.path.join(logDir,"log")
 
-    phaseList = ArrayList()
-    if phase == None:
-        pass
-    else:
-        for value in phase:
-            phaseList.add(float(value))
-
     process = process or getCurrentProcess()
 
-    op = GRINSOp(noise, scale, preserve, synthetic, schedule, phaseList, logFileName)
+    op = GRINSOp(noise, scale, preserve, synthetic, schedule, logFileName)
 
     if (dataset != None):
         op.eval(dataset)
