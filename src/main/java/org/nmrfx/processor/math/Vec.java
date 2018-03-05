@@ -145,6 +145,9 @@ public class Vec extends PySequence implements MatrixType {
     private double groupDelay = 0.0;
     private boolean[] inSignalRegion = null;
     private double[] annotationData = null;
+    private int zfSize;
+    private int extFirst;
+    private int extLast;
 
     /**
      * Sample schedule that applies to this vector when NUS data acquisition was used.
@@ -751,6 +754,10 @@ public class Vec extends PySequence implements MatrixType {
         target.ph0 = source.ph0;
         target.ph1 = source.ph1;
         target.groupDelay = source.groupDelay;
+        target.zfSize = source.zfSize;
+        target.tdSize = source.tdSize;
+        target.extFirst = source.extFirst;
+        target.extLast = source.extLast;
         if (source.inSignalRegion != null) {
             target.inSignalRegion = source.inSignalRegion.clone();
         } else {
@@ -1008,6 +1015,16 @@ public class Vec extends PySequence implements MatrixType {
             System.arraycopy(cvec, 0, newarr, 0, cvec.length);
         }
         cvec = newarr;
+    }
+
+    /**
+     * ZeroFill a vector. Original values smaller than new size are preserved.
+     *
+     * @param newsize the new size of the vector
+     */
+    public void zf(int newsize) {
+        zfSize = newsize;
+        resize(newsize);
     }
 
     /**
@@ -2257,6 +2274,33 @@ public class Vec extends PySequence implements MatrixType {
      */
     public int getTDSize() {
         return tdSize;
+    }
+
+    /**
+     * Return zero-filling size of the vector
+     *
+     * @return size
+     */
+    public int getZFSize() {
+        return zfSize;
+    }
+
+    /**
+     * Return the first point of the xtracted region of the vector
+     *
+     * @return first point
+     */
+    public int getExtFirst() {
+        return extFirst;
+    }
+
+    /**
+     * Return last point of the extracted region of the vector
+     *
+     * @return last point
+     */
+    public int getExtLast() {
+        return extLast;
     }
 
     /**
@@ -4298,6 +4342,22 @@ public class Vec extends PySequence implements MatrixType {
 
             rvec[i] -= yval;
         }
+    }
+
+    public Vec extract(int start, int end) {
+        int newSize = end - start + 1;
+        trim(start, newSize);
+        int[][] pt = getPt();
+        int[] dim = getDim();
+        if (pt == null) {
+            pt = new int[1][2];
+            dim = new int[1];
+        }
+        pt[0][1] = newSize - 1;
+        setPt(pt, dim);
+        extFirst = start;
+        extLast = end;
+        return this;
     }
 
     /**

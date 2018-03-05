@@ -80,6 +80,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     private int[] vsize;
     private int[] vsize_r;
     private int[] tdSize;
+    private int[] zfSize;
+    private int[] extFirst;
+    private int[] extLast;
     private long fileSize;
     private int magic;
     private int[] blockSize;
@@ -279,6 +282,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         vsize = new int[1];
         vsize_r = new int[1];
         tdSize = new int[1];
+        zfSize = new int[1];
+        extFirst = new int[1];
+        extLast = new int[1];
         size[0] = vector.getSize();
         strides[0] = 1;
         vsize[0] = 0;
@@ -339,6 +345,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             this.vsize = new int[this.nDim];
             this.vsize_r = new int[this.nDim];
             this.tdSize = new int[this.nDim];
+            this.zfSize = new int[this.nDim];
+            this.extFirst = new int[this.nDim];
+            this.extLast = new int[this.nDim];
             rmsd = new double[nDim][];
             values = new double[nDim][];
             int nBytes = 4;
@@ -392,6 +401,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             this.vsize = new int[this.nDim];
             this.vsize_r = new int[this.nDim];
             this.tdSize = new int[this.nDim];
+            this.zfSize = new int[this.nDim];
+            this.extFirst = new int[this.nDim];
+            this.extLast = new int[this.nDim];
             rmsd = new double[nDim][];
             values = new double[nDim][];
             int nBytes = 4;
@@ -1244,6 +1256,84 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public void setTDSize(final int iDim, final int size) {
         this.tdSize[iDim] = size;
+    }
+
+    /**
+     * Get the size of zero-filled data along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the zfSize
+     */
+    public int getZFSize(int iDim) {
+        final int value;
+        if (vecMat == null) {
+            value = zfSize[iDim];
+        } else {
+            value = vecMat.getZFSize();
+        }
+        return value;
+    }
+
+    /**
+     * Get the size of zero-filled data along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the zfSize
+     */
+    public int getExtFirst(int iDim) {
+        final int value;
+        if (vecMat == null) {
+            value = extFirst[iDim];
+        } else {
+            value = vecMat.getExtFirst();
+        }
+        return value;
+    }
+
+    /**
+     * Get the size of zero-filled data along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @return the zfSize
+     */
+    public int getExtLast(int iDim) {
+        final int value;
+        if (vecMat == null) {
+            value = extLast[iDim];
+        } else {
+            value = vecMat.getExtLast();
+        }
+        return value;
+    }
+
+    /**
+     * Set the size of the zero-filled time domain data along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param size the zfSize to set
+     */
+    public void setZFSize(final int iDim, final int size) {
+        this.zfSize[iDim] = size;
+    }
+
+    /**
+     * Set the first point extracted region.
+     *
+     * @param iDim Dataset dimension index
+     * @param point the point to set
+     */
+    public void setExtFirst(final int iDim, final int point) {
+        this.extFirst[iDim] = point;
+    }
+
+    /**
+     * Set the last point extracted region.
+     *
+     * @param iDim Dataset dimension index
+     * @param point the point to set
+     */
+    public void setExtLast(final int iDim, final int point) {
+        this.extLast[iDim] = point;
     }
 
     /**
@@ -2609,6 +2699,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         vsize = new int[nDim];
         vsize_r = new int[nDim];
         tdSize = new int[nDim];
+        zfSize = new int[this.nDim];
+        extFirst = new int[this.nDim];
+        extLast = new int[this.nDim];
         blockSize = new int[nDim];
         offsetPoints = new int[nDim];
 
@@ -2880,7 +2973,11 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 setPh1_r(i, getPh1(i));
                 setVSize(i, DataUtilities.readSwapInt(dis, checkSwap));
                 setVSize_r(i, getVSize(i));
-                dis.skip(10 * 4);
+                setTDSize(i, DataUtilities.readSwapInt(dis, checkSwap));
+                setZFSize(i, DataUtilities.readSwapInt(dis, checkSwap));
+                setExtFirst(i, DataUtilities.readSwapInt(dis, checkSwap));
+                setExtLast(i, DataUtilities.readSwapInt(dis, checkSwap));
+                dis.skip(6 * 4);
             }
 
             rmsd = new double[nDim][];
@@ -3474,6 +3571,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 byteBuffer.putFloat((float) getPh0(i));
                 byteBuffer.putFloat((float) getPh1(i));
                 byteBuffer.putInt(getVSize(i));
+                byteBuffer.putInt(getTDSize(i));
+                byteBuffer.putInt(getZFSize(i));
+                byteBuffer.putInt(getExtFirst(i));
+                byteBuffer.putInt(getExtLast(i));
             }
 
             if (outFile != null) {
@@ -4818,6 +4919,34 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
+     * Read vector from dataset
+     *
+     * @param vector Store dataset values in this vec
+     * @param indices the indices of vector to read
+     * @param iDim read values along this dimension index
+     * @throws IOException if an I/O error occurs
+     */
+    public void readVector(Vec vector, int[] indices, int iDim) throws IOException {
+        int[] dim = new int[nDim];
+        int[][] pt = new int[nDim][2];
+        for (int i = 0; i < nDim; i++) {
+            dim[i] = i;
+            if (iDim == i) {
+                pt[i][0] = 0;
+                if (vector.isComplex()) {
+                    pt[i][1] = 2 * vector.getSize() - 1;
+                } else {
+                    pt[i][1] = vector.getSize() - 1;
+                }
+            } else {
+                pt[i][0] = indices[i];
+                pt[i][1] = indices[i];
+            }
+        }
+        readVectorFromDatasetFile(pt, dim, vector);
+    }
+
+    /**
      * Read a vector from the dataset at the location stored in the vector's header
      *
      * @param vector Store data values in this vector object.
@@ -4955,6 +5084,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         setComplex(dim[0], vector.isComplex());
         setPh0(dim[0], vector.getPH0());
         setPh1(dim[0], vector.getPH1());
+        setExtFirst(dim[0], vector.getExtFirst());
+        setExtLast(dim[0], vector.getExtLast());
+        setZFSize(dim[0], vector.getZFSize());
+        setTDSize(dim[0], vector.getTDSize());
 
 //        System.err.printf("write %d %d %4d %4d %4d %4d %7.3f %7.3f %7.3f %7.3f %7.3f cmplx %b fd %b\n", dim[0],dim[1],pt[0][0],pt[0][1],pt[1][0],pt[1][1],(1.0/rwVector.dwellTime),(rwVector.refValue-delRef),rwVector.refValue,delRef,refPt_r[dim[0]],rwVector.isComplex(),rwVector.getFreqDomain());
     }
