@@ -567,8 +567,10 @@ class BrukerData implements NMRData {
     public double getTempK() {
         Double d;
         if ((d = getParDouble("TEMP,1")) == null) {
+            if ((d = getParDouble("TE,1")) == null) {
 // fixme what should we return if not present, is it ever not present
-            d = 298.0;
+                d = 298.0;
+            }
         }
         return d;
     }
