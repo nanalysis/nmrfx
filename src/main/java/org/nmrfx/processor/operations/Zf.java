@@ -90,7 +90,7 @@ public class Zf extends Operation implements Invertible {
                     Math.ceil((Math.log(size) / Math.log(2)) + factor)));
         }
 
-        vector.resize(newSize);
+        vector.zf(newSize);
     }
 
     private void izf(Vec vector) throws OperationException {

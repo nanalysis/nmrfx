@@ -72,17 +72,7 @@ public class Extract extends Operation {
             throw new OperationException(
                     "Extract: end value must be > " + start + " and < " + (size - 1));
         }
-        int newSize = end - start + 1;
-        vector.trim(start, newSize);
-        int[][] pt = vector.getPt();
-        int[] dim =  vector.getDim();
-        if (pt == null) {
-            pt = new int[1][2];
-            dim = new int[1];
-        }
-        pt[0][1] = newSize - 1;
-        vector.setPt(pt, dim);
-
+        vector.extract(start, end);
         return this;
     }
 }
