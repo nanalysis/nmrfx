@@ -3148,6 +3148,24 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
+     * Get the temperature (K).
+     *
+     * @return temperature
+     */
+    public double getTempK() {
+        return temperature;
+    }
+
+    /**
+     * Set the temperature (K).
+     *
+     * @param temperature The temperature
+     */
+    public void setTempK(double value) {
+        this.temperature = value;
+    }
+
+    /**
      * Get the title of the dataset.
      *
      * @return title of dataset
@@ -3517,7 +3535,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             byteBuffer.putInt(blockElements / 4);
             byteBuffer.putInt(nDim);
             byteBuffer.putInt(rdims);
-            byteBuffer.putFloat(0.0f);
+            byteBuffer.putFloat((float) temperature);
             String solventString = getSolvent();
             int nBytes = solventString.length();
             for (int j = 0; j < SOLVENT_MAX_BYTES; j++) {
