@@ -4724,6 +4724,34 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
+     * Apply soft thresholding to vector by setting values with absolute value below threshold to 0.0 
+     * and subtracting threshold from positive values (greater than threshold) or adding threshold
+     * to negative values (less than threshold).
+     *
+     * @param threshold
+     */
+    public Vec softThreshold(double threshold) throws VecException {
+        if (isComplex) {
+            throw new VecException("Vec must be real");
+        } else {
+            for (int i = 0; i < size; ++i) {
+                double value = FastMath.abs(rvec[i]);
+                if (value < threshold) {
+                    rvec[i] = 0.0;
+                } else {
+                    if (rvec[i] > 0.0) {
+                        rvec[i] -= threshold;
+                    } else {
+                        rvec[i] += threshold;
+                    }
+
+                }
+            }
+        }
+        return this;
+    }
+
+    /**
      * Time domain polynomial correction. Can be used for solvent suppression by fitting a polynomial to the FID.
      *
      * @param order The polynomial order
