@@ -2304,7 +2304,7 @@ def IST(threshold=0.98, iterations=500, alg='std', timeDomain=True, ph0=None, ph
         process.addOperation(op)
     return op
 
-def NESTA(nOuter=30, nInner=20, tolFinal=6, muFinal=3,phase=None, logToFile=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
+def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=False, zeroAtStart=True, threshold=0.0, disabled=False, vector=None, process=None):
     ''' Experimental implementation of NESTA algorithm for NUS processing.  This version
     requires that the data be in-phase.  Use the phase argument to provide a list of phase values.
    
@@ -2318,13 +2318,13 @@ def NESTA(nOuter=30, nInner=20, tolFinal=6, muFinal=3,phase=None, logToFile=Fals
         min : 1
         max : 100
         Number of inner iterations to perform.
-    tolFinal : int
+    tolFinal : real
         amin : 0
         min : 0
         max : 10
         amax : 10
         Final tolerance for inner iterations is 10 raised to the negative of this number.  For example, 5 gives 1.0e-5.
-    muFinal : int
+    muFinal : real
         amin : -2
         min : -2
         max : 9
@@ -2333,11 +2333,11 @@ def NESTA(nOuter=30, nInner=20, tolFinal=6, muFinal=3,phase=None, logToFile=Fals
         Array of phase values, 2 per indirect dimension.
     logToFile : bool
         Write log files containing information about progress of NESTA.
+    zeroAtStart : bool
+        Set unsampled values to zero at start of operation
     threshold : real
         min : 0
         Threshold for absolute value.  If less than  this skip this hyperplane.
-    zeroAtStart : bool
-        Set unsampled values to zero at start of operation
     '''
     if disabled:
         return None
@@ -3132,7 +3132,7 @@ def BLACKMAN(end=1.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None,
     return op
 
 def KAISER(beta=10.0, end=1.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None, process=None):
-    '''Blackman Apodization
+    '''Kaiser Apodization
     Parameters
     ---------
     beta : real
