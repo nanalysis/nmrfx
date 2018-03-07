@@ -2,6 +2,7 @@ from itertools import izip
 import array
 from shutil import copyfile
 from org.nmrfx.processor.datasets import Dataset
+from org.nmrfx.processor.datasets.vendor import NMRPipeData
 from org.nmrfx.processor.math import Vec
 
 class NMRFxDatasetScripting:
@@ -11,6 +12,10 @@ class NMRFxDatasetScripting:
     def open(self, fileName,writable=False):
         dataset = Dataset(fileName,"",writable)
         return dataset
+
+    def toPipe(self, dataset, fileName):
+        np = NMRPipeData(dataset)
+        np.saveFile(fileName)
 
     def combine(self, func, outName, dIn1, dIn2):
         copyfile(dIn1.getCanonicalFile(), outName)
