@@ -831,6 +831,7 @@ public class Processor {
                 dataset.setComplex(i, nmrData.isComplex(mapToFID(i)));
             }
             dataset.setSolvent(nmrData.getSolvent());
+            dataset.setTempK(nmrData.getTempK());
         }
         dataset.writeHeader();
         return true;
