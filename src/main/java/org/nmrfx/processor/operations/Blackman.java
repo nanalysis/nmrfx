@@ -17,6 +17,8 @@
  */
 package org.nmrfx.processor.operations;
 
+import org.nmrfx.processor.math.MatrixND;
+import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -33,6 +35,18 @@ public class Blackman extends Apodization implements Invertible {
     @Override
     public Blackman eval(Vec vector) throws ProcessingException {
         apply(vector);
+        return this;
+    }
+
+    @Override
+    public Operation evalMatrix(MatrixType matrix) {
+        if (matrix instanceof MatrixND) {
+            MatrixND matrixND = (MatrixND) matrix;
+            int[] vSizes = matrixND.getVSizes();
+            for (int i = 0; i < vSizes.length; i++) {
+                blackman(matrixND, i, vSizes[i]);
+            }
+        }
         return this;
     }
 
@@ -66,7 +80,7 @@ public class Blackman extends Apodization implements Invertible {
             double delta = ((end - offset) * Math.PI) / (apodSize - vStart - 1);
             for (int i = vStart; i < apodSize; i++) {
                 double deltaPos = i - vStart;
-                apodVec[i] = 0.42 - 0.5 * Math.cos(2.0* start + 2.0 * (deltaPos * delta)) + 0.08 * Math.cos(4.0 * (deltaPos * delta));
+                apodVec[i] = 0.42 - 0.5 * Math.cos(2.0 * start + 2.0 * (deltaPos * delta)) + 0.08 * Math.cos(4.0 * (deltaPos * delta));
             }
             apodVec[vStart] *= c;
         }
@@ -76,8 +90,23 @@ public class Blackman extends Apodization implements Invertible {
             applyApod(vector);
         }
     }
-}
 
+    private void blackman(MatrixND matrix, int axis, int apodSize) {
+        double offset = 0.5;
+        double delta = ((end - offset)) / (apodSize - 1);
+        double[] apodVec = new double[apodSize];
+        double start = offset * Math.PI;
+        for (int i = 0; i < apodSize; i++) {
+            double deltaPos = i;
+            double scale = 0.42 - 0.5 * Math.cos(2.0 * start + 2.0 * (deltaPos * delta)) + 0.08 * Math.cos(4.0 * (deltaPos * delta));
+            if (i == 0) {
+                scale *= c;
+            }
+            apodVec[i] = scale;
+        }
+        matrix.applyApod(axis, apodVec);
+    }
+}
 /*
  w = (0.42 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1)) +
          0.08 * np.cos(4.0 * np.pi * n / (M - 1)))
