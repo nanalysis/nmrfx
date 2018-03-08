@@ -24,7 +24,6 @@ def parseArgs():
     parser.add_argument("-a",dest='nusAlg',default='NESTA',help="NUS Mode")
     parser.add_argument("-w",dest='apod',default='kaiser',help="Apodization Window")
     parser.add_argument("-u",dest='uniform',action='store_true', help="NUS Mode")
-    parser.add_argument("-c",dest='tdcomb',default="",help="Time domain combination")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
     return args
