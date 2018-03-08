@@ -553,7 +553,6 @@ public class MatrixND implements MatrixType {
 
     public void applyApod(int axis, double[] apodVec) {
         int[] subSizes = getSubSizes(axis);
-        System.out.println("subs " + subSizes[0] + " " + axis + " " + sizes[axis] + " apd " + apodVec.length);
         double[][] riVec = new double[2][sizes[axis]];
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
