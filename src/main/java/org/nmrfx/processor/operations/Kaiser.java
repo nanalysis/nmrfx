@@ -99,7 +99,7 @@ public class Kaiser extends Apodization implements Invertible {
     private void kaiser(MatrixND matrix, int axis, int apodSize) {
         double offset = 0.5;
         double delta = ((end - offset)) / (apodSize - 1);
-        double[] apodVec = new double[apodSize];
+        double[] apodVec2 = new double[apodSize];
         for (int i = 0; i < apodSize; i++) {
             double deltaPos = i;
             double v1 = beta * Math.sqrt(1.0 - Math.pow(2.0 * deltaPos * delta, 2));
@@ -108,9 +108,9 @@ public class Kaiser extends Apodization implements Invertible {
             if (i == 0) {
                 scale *= c;
             }
-            apodVec[i] = scale;
+            apodVec2[i] = scale;
         }
-        matrix.applyApod(axis, apodVec);
+        matrix.applyApod(axis, apodVec2);
     }
 
 }
