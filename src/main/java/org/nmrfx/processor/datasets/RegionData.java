@@ -119,10 +119,10 @@ public class RegionData {
         }
         if (Math.abs(value) > Math.abs(i_extreme)) {
             i_extreme = value;
+            System.arraycopy(iPointAbs, 0, maxPoint, 0, nDim);
         }
         if (value > i_max) {
             i_max = value;
-            System.arraycopy(iPointAbs, 0, maxPoint, 0, nDim);
         }
         if (value < i_min) {
             i_min = value;
