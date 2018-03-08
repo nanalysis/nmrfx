@@ -89,7 +89,7 @@ public class MatrixND implements MatrixType {
     public void setVSizes(int... vSizes) {
         this.vSizes = vSizes.clone();
     }
-    
+
     public int[] getVSizes() {
         return vSizes.clone();
     }
@@ -553,10 +553,10 @@ public class MatrixND implements MatrixType {
 
     public void applyApod(int axis, double[] apodVec) {
         int[] subSizes = getSubSizes(axis);
+        System.out.println("subs " + subSizes[0] + " " + axis + " " + sizes[axis] + " apd " + apodVec.length);
         double[][] riVec = new double[2][sizes[axis]];
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(subSizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
-        double tol = 0.0001;
         while (iterator.hasNext()) {
             iterator.next();
             int[] counts = iterator.getCounts();
@@ -571,6 +571,10 @@ public class MatrixND implements MatrixType {
             double scale = apodVec[i];
             riVec[0][i] *= scale;
             riVec[1][i] *= scale;
+        }
+        for (int i = apodVec.length; i < riVec[0].length; i++) {
+            riVec[0][i] = 0.0;
+            riVec[1][i] = 0.0;
         }
     }
 
