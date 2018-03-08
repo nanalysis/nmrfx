@@ -22,7 +22,9 @@ def parseArgs():
     parser.add_argument("-s",dest='schedType',default='pg',help="Schedule type")
     parser.add_argument("-n",dest='schedNum',default='0',help="Schedule number")
     parser.add_argument("-a",dest='nusAlg',default='NESTA',help="NUS Mode")
+    parser.add_argument("-w",dest='apod',default='kaiser',help="Apodization Window")
     parser.add_argument("-u",dest='uniform',action='store_true', help="NUS Mode")
+    parser.add_argument("-c",dest='tdcomb',default="",help="Time domain combination")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
     return args
@@ -89,7 +91,7 @@ def testData(fidRootDir, datasetDir, challenge, sample, expName, pars):
     if not os.path.exists(pipeFileDir):
         os.mkdir(pipeFileDir)
 
-    statFileName = "report.txt"
+    statFileName = sample + "-" + expName + "-" + "report.txt"
 
     datasetFile = os.path.join(datasetDir, datasetFileName)
     uniformFile = os.path.join(datasetDir, uniformFileName)
@@ -107,12 +109,22 @@ def testData(fidRootDir, datasetDir, challenge, sample, expName, pars):
     with open(statFile,'a') as fStat:
         outStr = datasetFileName + " l1 " + str(fNormSum) + " diff " +  str(compareSum) + " " + report(args) + "\n"
         fStat.write(outStr)
-    
+
+def getNegation(pars, varName, nDim=3):
+    if varName in pars:
+        result = pars[varName]
+    else:
+        result = [False]*nDim
+    return result 
+        
 def execNUS(fidDirName, datasetName, scheduleName,  pars, args):
     FID(fidDirName)
     CREATE(datasetName)
     phases=pars['phases']
     range=pars['range']
+    tdcomb = pars['tdcomb']
+    negPairs = getNegation(pars, 'negPairs', 3)
+    negImag = getNegation(pars, 'negImag', 3)
     mode = args.nusAlg
     if scheduleName != None:
         readNUS(scheduleName)
@@ -129,8 +141,12 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args):
     ref(4.773,'N','C')
     apodize=True
     DIM(1)
-    TDCOMB(coef='echo-antiecho')
-    KAISER()
+    if tdcomb != "":
+        TDCOMB(coef=tdcomb)
+    if args.apod == "blackman":
+        BLACKMAN()
+    else:
+        KAISER()
     ZF()
     FT()
     (ph0,ph1) = phases[0]
@@ -139,7 +155,10 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args):
         start,end = range
         EXTRACT(start=start,end=end,mode='region')
     DIM(2,3)
-    KAISER(c=0.5,beta=args.beta)
+    if args.apod == "blackman":
+        BLACKMAN(c=0.5)
+    else:
+        KAISER(c=0.5, beta=args.beta)
     for dim,phase in enumerate(phases[1:]):
         if len(phase) == 2:
             (ph0,ph1) = phase
@@ -150,10 +169,11 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args):
         ISTMATRIX(threshold=args.istFraction, iterations=args.nInner, alg="std")
     DIM(2)
     ZF()
-    FT(negateImag=True)
+    FT(negatePairs=negPairs[1], negateImag=negImag[1])
     REAL()
     DIM(3)
     ZF()
-    FT(negatePairs=True,negateImag=True)
+    #FT(negatePairs=True,negateImag=True)
+    FT(negatePairs=negPairs[2], negateImag=negImag[2])
     REAL()
     run()
