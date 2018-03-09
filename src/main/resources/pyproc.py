@@ -3100,7 +3100,7 @@ def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=Fal
         process.addOperation(op)
     return op
 
-def BLACKMAN(end=1.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None, process=None):
+def BLACKMAN(end=1.0,c=1.0,apodSize=0,dim=1, inverse=False,disabled=False, vector=None, process=None):
     '''Blackman Apodization
     Parameters
     ---------
@@ -3120,18 +3120,20 @@ def BLACKMAN(end=1.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None,
         min : 0
         max : size
         Size of apodization window.  Default 0f 0 uses entire FID.
+    dim : {1,2,3,4,5,6}
+        Dataset dimension to apodize. Only applicable for matrix operations.
     '''
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = Blackman(end, c, apodSize, inverse)
+    op = Blackman(end, c, apodSize, dim-1, inverse)
     if (vector != None):
         op.eval(vector)
     else:
         process.addOperation(op)
     return op
 
-def KAISER(beta=10.0, end=1.0,c=1.0,apodSize=0,inverse=False,disabled=False, vector=None, process=None):
+def KAISER(beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False,disabled=False, vector=None, process=None):
     '''Kaiser Apodization
     Parameters
     ---------
@@ -3157,11 +3159,13 @@ def KAISER(beta=10.0, end=1.0,c=1.0,apodSize=0,inverse=False,disabled=False, vec
         min : 0
         max : size
         Size of apodization window.  Default 0f 0 uses entire FID.
+    dim : {1,2,3,4,5,6}
+        Dataset dimension to apodize. Only applicable for matrix operations.
     '''
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = Kaiser(beta, end, c, apodSize, inverse)
+    op = Kaiser(beta, end, c, apodSize, dim-1, inverse)
     if (vector != None):
         op.eval(vector)
     else:
