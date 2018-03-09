@@ -24,6 +24,8 @@ def parseArgs():
     parser.add_argument("-a",dest='nusAlg',default='NESTA',help="NUS Mode")
     parser.add_argument("-w",dest='apod',default='kaiser',help="Apodization Window")
     parser.add_argument("-u",dest='uniform',action='store_true', help="NUS Mode")
+    parser.add_argument("-c",dest='compare',action='store_true', help="NUS Mode")
+    parser.add_argument("-p",dest='saveToPipe',action='store_true', help="Save to nmrPipe format")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
     return args
@@ -59,8 +61,7 @@ def compareFiles(dName1, dName2, threshold):
         sum += vec3.sum().getReal()
     return sum
 
-def testData(fidRootDir, datasetDir, challenge, sample, expName, pars):
-    args = parseArgs()
+def getFileNames(fidRootDir, datasetDir, challenge, sample, expName, args):
     schedType=args.schedType
     schedLines=args.schedLines
     schedNum=args.schedNum
@@ -86,28 +87,55 @@ def testData(fidRootDir, datasetDir, challenge, sample, expName, pars):
     if not os.path.exists(datasetDir):
         os.mkdir(datasetDir)
 
-    pipeFileDir = os.path.join(datasetDir, pipeFileName)
-    if not os.path.exists(pipeFileDir):
-        os.mkdir(pipeFileDir)
-
     statFileName = sample + "-" + expName + "-" + "report.txt"
 
     datasetFile = os.path.join(datasetDir, datasetFileName)
     uniformFile = os.path.join(datasetDir, uniformFileName)
     statFile = os.path.join(datasetDir, statFileName)
+    return (fidFileDir,datasetFile,scheduleFileName,uniformFile,statFile)
+
+def saveToPipe(datasetFile):
+    datasetDir,fileName = os.path.split(datasetFile)
+    fileRootName,ext = os.path.splitext(fileName)
+    pipeFileName = 'pipe-'+fileRootName
+    pipeFileDir = os.path.join(datasetDir, pipeFileName)
+    if not os.path.exists(pipeFileDir):
+        os.mkdir(pipeFileDir)
     pipeFile = os.path.join(pipeFileDir, "test%03d.ft")
-
-
-    execNUS(fidFileDir, datasetFile, scheduleFileName, pars, args)
-
     dataset=nd.open(datasetFile)
     nd.toPipe(dataset, pipeFile)
 
-    fNormSum = analyzeLog(fidFileDir)
-    compareSum = compareFiles(datasetFile,uniformFile, pars['threshold'])
-    with open(statFile,'a') as fStat:
-        outStr = datasetFileName + " l1 " + str(fNormSum) + " diff " +  str(compareSum) + " " + report(args) + "\n"
-        fStat.write(outStr)
+def doCompare(fidFileDir, datasetFile, uniformFile,statFile, args, threshold):
+        fNormSum = analyzeLog(fidFileDir)
+        compareSum = compareFiles(datasetFile,uniformFile, threshold)
+        with open(statFile,'a') as fStat:
+            outStr = os.path.split(datasetFile)[-1] + " l1 " + str(fNormSum) + " diff " +  str(compareSum) + " " + report(args) + "\n"
+            fStat.write(outStr)
+
+def testData(pars, challenge=None, sample=None, expName=None):
+    args = parseArgs()
+    if args.uniform:
+        args.nusAlg = "ft"
+    print 'arfi',args.fileNames
+    if len(args.fileNames) > 1:
+        fidFileDir = args.fileNames[0]
+        datasetFile = args.fileNames[1]
+        if len(args.fileNames) > 2:
+            scheduleFileName = args.fileNames[2]
+    else:
+        fidRootDir = os.environ.get('FIDDIR')
+        datasetDir = os.environ.get('DATADIR')
+        fidFileDir,datasetFile,scheduleFileName,uniformFile,statFile = getFileNames(fidRootDir, datasetDir, challenge, sample, expName, args)
+
+
+    if scheduleFileName != None and not os.path.exists(scheduleFileName):
+               raise Exception("Schedule file " + scheduleFileName + " doesn't exist")
+
+    execNUS(fidFileDir, datasetFile, scheduleFileName, pars, args)
+    if args.saveToPipe:
+        saveToPipe(datasetFile)
+    if args.compare:
+        doCompare(fidFileDir, datasetFile, uniformFile,statFile, args, pars['threshold'])
 
 def getNegation(pars, varName, nDim=3):
     if varName in pars:
@@ -116,7 +144,7 @@ def getNegation(pars, varName, nDim=3):
         result = [False]*nDim
     return result 
         
-def execNUS(fidDirName, datasetName, scheduleName,  pars, args):
+def execNUSOld(fidDirName, datasetName, scheduleName,  pars, args):
     FID(fidDirName)
     CREATE(datasetName)
     phases=pars['phases']
@@ -155,9 +183,11 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args):
         EXTRACT(start=start,end=end,mode='region')
     DIM(2,3)
     if args.apod == "blackman":
-        BLACKMAN(c=0.5)
+        BLACKMAN(c=0.5, dim=1)
+        BLACKMAN(c=0.5, dim=2)
     else:
-        KAISER(c=0.5, beta=args.beta)
+        KAISER(c=0.5, beta=args.beta, dim=1)
+        KAISER(c=0.5, beta=args.beta, dim=2)
     for dim,phase in enumerate(phases[1:]):
         if len(phase) == 2:
             (ph0,ph1) = phase
@@ -174,5 +204,63 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args):
     ZF()
     #FT(negatePairs=True,negateImag=True)
     FT(negatePairs=negPairs[2], negateImag=negImag[2])
+    REAL()
+    run()
+
+def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
+    if args == None:
+        args = nustest.parseArgs()
+    FID(fidDirName)
+    CREATE(datasetName)
+    ph=pars['phases']
+    lab=pars['labels']
+    (start,end)=pars['range']
+    tdcomb = pars['tdcomb']
+    negI=pars['negI']
+    negP=pars['negP']
+    refH=pars['refH']
+    mode = args.nusAlg
+    if scheduleName != None:
+        readNUS(scheduleName)
+    acqOrder('321')
+    acqarray(0,0,0)
+    skip(0,0,0)
+    label(lab[0], lab[1], lab[2])
+    acqsize(0,0,0)
+    tdsize(0,0,0)
+    sf('SFO1,1','SFO1,2','SFO1,3')
+    sw('SW_h,1','SW_h,2','SW_h,3')
+    ref(refH,'N','C')
+    DIM(1)
+    if tdcomb != "":
+        TDCOMB(coef=tdcomb)
+    if args.apod == "blackman":
+        BLACKMAN()
+    else:
+        KAISER()
+    ZF()
+    FT()
+    PHASE(ph0=ph[0][0],ph1=ph[0][1],dimag=False)
+    EXTRACT(start=start,end=end,mode='region')
+    DIM(2,3)
+    if args.apod == "blackman":
+        BLACKMAN(c=0.5, dim=1)
+        BLACKMAN(c=0.5, dim=2)
+    else:
+        KAISER(c=0.5, beta=args.beta, dim=1)
+        KAISER(c=0.5, beta=args.beta, dim=2)
+    PHASEND(ph0=ph[1][0],ph1=ph[1][1],dim=1)
+    PHASEND(ph0=ph[2][0],ph1=ph[2][1],dim=2)
+    if mode == "NESTA":
+        NESTA(tolFinal=args.tolFinal, muFinal=args.muFinal, threshold=args.threshold, nOuter=args.nOuter, nInner=args.nInner, logToFile=True)
+    elif mode == "IST":
+        ISTMATRIX(threshold=args.istFraction, iterations=args.nInner, alg="std")
+    DIM(2)
+    ZF()
+    FT(negatePairs=negP[1], negateImag=negI[1])
+    REAL()
+    DIM(3)
+    ZF()
+    FT(negatePairs=negP[2], negateImag=negI[2])
     REAL()
     run()
