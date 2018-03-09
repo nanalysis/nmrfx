@@ -33,6 +33,7 @@ public class Kaiser extends Apodization implements Invertible {
     final double end;
     final double c;
     final int apodSize;
+    final int dim;
 
     @Override
     public Kaiser eval(Vec vector) throws ProcessingException {
@@ -45,43 +46,40 @@ public class Kaiser extends Apodization implements Invertible {
         if (matrix instanceof MatrixND) {
             MatrixND matrixND = (MatrixND) matrix;
             int[] vSizes = matrixND.getVSizes();
-            for (int i = 0; i < vSizes.length; i++) {
-                kaiser(matrixND, i, vSizes[i]);
-            }
+            apply(matrixND, dim, vSizes[dim]);
         }
         return this;
     }
 
-    public Kaiser(double beta, double end, double c, int apodSize) {
-        this(beta, end, c, apodSize, false);
+    public Kaiser(double beta, double end, double c, int apodSize, int dim) {
+        this(beta, end, c, apodSize, dim, false);
     }
 
-    public Kaiser(double beta, double end, double c, int apodSize, boolean inverse) {
+    public Kaiser(double beta, double end, double c, int apodSize, int dim, boolean inverse) {
         this.end = end;
         this.beta = beta;
         this.c = c;
         this.apodSize = apodSize;
+        this.dim = dim;
         this.invertOp = inverse;
     }
 
-    public void apply(Vec vector) {
-        vector.makeApache();
-        int apodSize = this.apodSize;
-        if (this.apodSize > vector.getSize()) {
-            apodSize = vector.getSize();
+    public void setupApod(int dataSize, int vStart) {
+        int apodSize2 = this.apodSize;
+        if (apodSize2 > dataSize) {
+            apodSize2 = dataSize;
         }
-        if (apodSize == 0) {
-            apodSize = vector.getSize();
+        if (apodSize2 == 0) {
+            apodSize2 = dataSize;
         }
         double offset = 0.5;
-        if (apodVec == null || vector.getSize() != apodVec.length) {
-            resize(apodSize);
-            int vStart = vector.getStart();
+        if (apodVec == null || apodSize2 != apodVec.length) {
+            resize(apodSize2);
             initApod(vStart);
             double start = offset * Math.PI;
 
-            double delta = ((end - offset)) / (apodSize - vStart - 1);
-            for (int i = vStart; i < apodSize; i++) {
+            double delta = ((end - offset)) / (apodSize2 - vStart - 1);
+            for (int i = vStart; i < apodSize2; i++) {
                 double deltaPos = i - vStart;
                 double v1 = beta * Math.sqrt(1.0 - Math.pow(2.0 * deltaPos * delta, 2));
                 double v2 = beta;
@@ -89,6 +87,11 @@ public class Kaiser extends Apodization implements Invertible {
             }
             apodVec[vStart] *= c;
         }
+    }
+
+    public void apply(Vec vector) {
+        vector.makeApache();
+        setupApod(vector.getTDSize(), vector.getStart());
         if (invertOp) {
             invertApod(vector);
         } else {
@@ -96,23 +99,10 @@ public class Kaiser extends Apodization implements Invertible {
         }
     }
 
-    private void kaiser(MatrixND matrix, int axis, int apodSize) {
-        double offset = 0.5;
-        double delta = ((end - offset)) / (apodSize - 1);
-        double[] apodVec2 = new double[apodSize];
-        for (int i = 0; i < apodSize; i++) {
-            double deltaPos = i;
-            double v1 = beta * Math.sqrt(1.0 - Math.pow(2.0 * deltaPos * delta, 2));
-            double v2 = beta;
-            double scale = Bessel.i(v1, 0, false) / Bessel.i(v2, 0, false);
-            if (i == 0) {
-                scale *= c;
-            }
-            apodVec2[i] = scale;
-        }
-        matrix.applyApod(axis, apodVec2);
+    private void apply(MatrixND matrix, int axis, int mApodSize) {
+        setupApod(mApodSize, 0);
+        matrix.applyApod(axis, apodVec);
     }
-
 }
 
 /*

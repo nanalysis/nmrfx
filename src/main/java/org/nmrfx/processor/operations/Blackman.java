@@ -31,6 +31,7 @@ public class Blackman extends Apodization implements Invertible {
     final double end;
     final double c;
     final int apodSize;
+    final int dim;
 
     @Override
     public Blackman eval(Vec vector) throws ProcessingException {
@@ -43,37 +44,34 @@ public class Blackman extends Apodization implements Invertible {
         if (matrix instanceof MatrixND) {
             MatrixND matrixND = (MatrixND) matrix;
             int[] vSizes = matrixND.getVSizes();
-            for (int i = 0; i < vSizes.length; i++) {
-                blackman(matrixND, i, vSizes[i]);
-            }
+            apply(matrixND, dim, vSizes[dim]);
         }
         return this;
     }
 
-    public Blackman(double end, double c, int apodSize) {
-        this(end, c, apodSize, false);
+    public Blackman(double end, double c, int apodSize, int dim) {
+        this(end, c, apodSize, dim, false);
     }
 
-    public Blackman(double end, double c, int apodSize, boolean inverse) {
+    public Blackman(double end, double c, int apodSize, int dim, boolean inverse) {
         this.end = end;
         this.c = c;
         this.apodSize = apodSize;
         this.invertOp = inverse;
+        this.dim = dim;
     }
 
-    public void apply(Vec vector) {
-        vector.makeApache();
-        int apodSize = this.apodSize;
-        if (this.apodSize > vector.getSize()) {
-            apodSize = vector.getSize();
+    public void setupApod(int dataSize, int vStart) {
+        int apodSize2 = this.apodSize;
+        if (apodSize2 > dataSize) {
+            apodSize2 = dataSize;
         }
-        if (apodSize == 0) {
-            apodSize = vector.getSize();
+        if (apodSize2 == 0) {
+            apodSize2 = dataSize;
         }
         double offset = 0.5;
-        if (apodVec == null || vector.getSize() != apodVec.length) {
-            resize(apodSize);
-            int vStart = vector.getStart();
+        if (apodVec == null || apodSize2 != apodVec.length) {
+            resize(apodSize2);
             initApod(vStart);
             double start = offset * Math.PI;
 
@@ -84,6 +82,11 @@ public class Blackman extends Apodization implements Invertible {
             }
             apodVec[vStart] *= c;
         }
+    }
+
+    public void apply(Vec vector) {
+        vector.makeApache();
+        setupApod(vector.getTDSize(), vector.getStart());
         if (invertOp) {
             invertApod(vector);
         } else {
@@ -91,21 +94,11 @@ public class Blackman extends Apodization implements Invertible {
         }
     }
 
-    private void blackman(MatrixND matrix, int axis, int apodSize) {
-        double offset = 0.5;
-        double delta = ((end - offset)) / (apodSize - 1);
-        double[] apodVec = new double[apodSize];
-        double start = offset * Math.PI;
-        for (int i = 0; i < apodSize; i++) {
-            double deltaPos = i;
-            double scale = 0.42 - 0.5 * Math.cos(2.0 * start + 2.0 * (deltaPos * delta)) + 0.08 * Math.cos(4.0 * (deltaPos * delta));
-            if (i == 0) {
-                scale *= c;
-            }
-            apodVec[i] = scale;
-        }
+    private void apply(MatrixND matrix, int axis, int mApodSize) {
+        setupApod(mApodSize, 0);
         matrix.applyApod(axis, apodVec);
     }
+
 }
 /*
  w = (0.42 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1)) +
