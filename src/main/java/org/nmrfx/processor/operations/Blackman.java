@@ -75,8 +75,8 @@ public class Blackman extends Apodization implements Invertible {
             initApod(vStart);
             double start = offset * Math.PI;
 
-            double delta = ((end - offset) * Math.PI) / (apodSize - vStart - 1);
-            for (int i = vStart; i < apodSize; i++) {
+            double delta = ((end - offset) * Math.PI) / (apodSize2 - vStart - 1);
+            for (int i = vStart; i < apodSize2; i++) {
                 double deltaPos = i - vStart;
                 apodVec[i] = 0.42 - 0.5 * Math.cos(2.0 * start + 2.0 * (deltaPos * delta)) + 0.08 * Math.cos(4.0 * (deltaPos * delta));
             }
