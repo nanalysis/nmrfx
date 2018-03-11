@@ -26,12 +26,13 @@ def parseArgs():
     parser.add_argument("-u",dest='uniform',action='store_true', help="NUS Mode")
     parser.add_argument("-c",dest='compare',action='store_true', help="NUS Mode")
     parser.add_argument("-p",dest='saveToPipe',action='store_true', help="Save to nmrPipe format")
+    parser.add_argument("-z",dest='zf',default=1,help="Zero Filling Factor (all dimensions)")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
     return args
 
 def report(args):
-        result = "alg %s beta %f tolFinal %.1f muFinal %.1f nOuter %d nInner %d" % (args.nusAlg, args.beta, args.tolFinal, args.muFinal, args.nOuter, args.nInner)
+        result = "alg %s beta %f apod %s tolFinal %.1f muFinal %.1f nOuter %d nInner %d" % (args.nusAlg, args.beta, args.apod, args.tolFinal, args.muFinal, args.nOuter, args.nInner)
         return result
 
 def analyzeLog(fidDirName):
@@ -144,69 +145,6 @@ def getNegation(pars, varName, nDim=3):
         result = [False]*nDim
     return result 
         
-def execNUSOld(fidDirName, datasetName, scheduleName,  pars, args):
-    FID(fidDirName)
-    CREATE(datasetName)
-    phases=pars['phases']
-    range=pars['range']
-    tdcomb = pars['tdcomb']
-    negPairs = getNegation(pars, 'negPairs', 3)
-    negImag = getNegation(pars, 'negImag', 3)
-    mode = args.nusAlg
-    if scheduleName != None:
-        readNUS(scheduleName)
-    else:
-        mode = "ft"
-    acqOrder('321')
-    acqarray(0,0,0)
-    skip(0,0,0)
-    label('1H','15N','13C')
-    acqsize(0,0,0)
-    tdsize(0,0,0)
-    sf('SFO1,1','SFO1,2','SFO1,3')
-    sw('SW_h,1','SW_h,2','SW_h,3')
-    ref(4.773,'N','C')
-    apodize=True
-    DIM(1)
-    if tdcomb != "":
-        TDCOMB(coef=tdcomb)
-    if args.apod == "blackman":
-        BLACKMAN()
-    else:
-        KAISER()
-    ZF()
-    FT()
-    (ph0,ph1) = phases[0]
-    PHASE(ph0=ph0,ph1=ph1,dimag=False)
-    if range != None:
-        start,end = range
-        EXTRACT(start=start,end=end,mode='region')
-    DIM(2,3)
-    if args.apod == "blackman":
-        BLACKMAN(c=0.5, dim=1)
-        BLACKMAN(c=0.5, dim=2)
-    else:
-        KAISER(c=0.5, beta=args.beta, dim=1)
-        KAISER(c=0.5, beta=args.beta, dim=2)
-    for dim,phase in enumerate(phases[1:]):
-        if len(phase) == 2:
-            (ph0,ph1) = phase
-            PHASEND(ph0=ph0,ph1=ph1,dim=dim+1)
-    if mode == "NESTA":
-        NESTA(tolFinal=args.tolFinal, muFinal=args.muFinal, threshold=args.threshold, nOuter=args.nOuter, nInner=args.nInner, logToFile=True)
-    elif mode == "IST":
-        ISTMATRIX(threshold=args.istFraction, iterations=args.nInner, alg="std")
-    DIM(2)
-    ZF()
-    FT(negatePairs=negPairs[1], negateImag=negImag[1])
-    REAL()
-    DIM(3)
-    ZF()
-    #FT(negatePairs=True,negateImag=True)
-    FT(negatePairs=negPairs[2], negateImag=negImag[2])
-    REAL()
-    run()
-
 def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     if args == None:
         args = nustest.parseArgs()
@@ -220,6 +158,7 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     negP=pars['negP']
     refH=pars['refH']
     mode = args.nusAlg
+    zfFactor = args.zf
     if scheduleName != None:
         readNUS(scheduleName)
     acqOrder('321')
@@ -238,7 +177,7 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
         BLACKMAN()
     else:
         KAISER()
-    ZF()
+    ZF(factor=zfFactor)
     FT()
     PHASE(ph0=ph[0][0],ph1=ph[0][1],dimag=False)
     EXTRACT(start=start,end=end,mode='region')
@@ -256,11 +195,11 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     elif mode == "IST":
         ISTMATRIX(threshold=args.istFraction, iterations=args.nInner, alg="std")
     DIM(2)
-    ZF()
+    ZF(factor=zfFactor)
     FT(negatePairs=negP[1], negateImag=negI[1])
     REAL()
     DIM(3)
-    ZF()
+    ZF(factor=zfFactor)
     FT(negatePairs=negP[2], negateImag=negI[2])
     REAL()
     run()
