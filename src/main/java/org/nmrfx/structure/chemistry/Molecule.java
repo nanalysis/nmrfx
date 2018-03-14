@@ -694,6 +694,7 @@ public class Molecule implements Serializable {
                     }
                 }
             }
+            atomArrayValid = true;
         }
     }
 
