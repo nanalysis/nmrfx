@@ -92,6 +92,8 @@ public class PeakList {
     boolean slideable = false;
     Optional<Measures> measures = Optional.empty();
     Map<String, String> properties = new HashMap<>();
+    boolean requireSliderCondition = false;
+    static boolean globalRequireSliderCondition = false;
 
     class UpdateTask implements Runnable {
 
@@ -1967,8 +1969,15 @@ public class PeakList {
     }
 
     public static boolean isLinked(Peak peak1, int dim1, Peak peak2) {
-        // FIXME
-        return false;
+        boolean result = false;
+        List<PeakDim> peakDims = getLinkedPeakDims(peak1, dim1);
+        for (PeakDim peakDim : peakDims) {
+            if (peakDim.getPeak() == peak2) {
+                result = true;
+                break;
+            }
+        }
+        return result;
     }
 
     public static void trimFreqs(ArrayList signals, int nExtra) {
@@ -3007,5 +3016,9 @@ public class PeakList {
         }
         Nuclei[] nuclei = Nuclei.findNuclei(sf);
         return nuclei;
+    }
+
+    public boolean requireSliderCondition() {
+        return requireSliderCondition;
     }
 }
