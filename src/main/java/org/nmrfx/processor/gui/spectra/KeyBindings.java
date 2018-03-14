@@ -174,13 +174,13 @@ public class KeyBindings {
 
             case "df":
                 if (chart.getController().hasSlider()) {
-                    chart.getController().getSlider().freezePeaks();
+                    chart.getController().getSlider().freezePeaks(false);
                 }
                 keyMonitor.clear();
                 break;
             case "dt":
                 if (chart.getController().hasSlider()) {
-                    chart.getController().getSlider().thawPeaks();
+                    chart.getController().getSlider().thawPeaks(false);
                 }
                 keyMonitor.clear();
                 break;
