@@ -9,12 +9,17 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
+import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -73,11 +78,13 @@ public class PeakSlider {
         closeButton.setOnAction(e -> close());
 
         freezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.LOCK, "Freeze", iconSize, fontSize, ContentDisplay.TOP);
-        freezeButton.setOnAction(e -> freezePeaks());
+        freezeButton.setOnAction(e -> freezePeaks(e));
+        freezeButton.setOnMouseClicked(e -> freezePeaks(e));
         buttons.add(freezeButton);
 
         thawButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNLOCK, "Thaw", iconSize, fontSize, ContentDisplay.TOP);
-        thawButton.setOnAction(e -> thawPeaks());
+        thawButton.setOnAction(e -> thawPeaks(e));
+        thawButton.setOnMouseClicked(e -> thawPeaks(e));
         buttons.add(thawButton);
 
         tweakFreezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Tweak+Freeze", iconSize, fontSize, ContentDisplay.TOP);
@@ -133,26 +140,67 @@ public class PeakSlider {
         });
     }
 
-    public void freezePeaks() {
+    boolean getAltState(Event event) {
+        boolean altState = false;
+        if (event instanceof MouseEvent) {
+            MouseEvent mEvent = (MouseEvent) event;
+            if (mEvent.isAltDown()) {
+                altState = true;
+            }
+        }
+        return altState;
+    }
+
+    boolean shouldRespond(Event event) {
+        boolean shouldRespond = event instanceof ActionEvent;
+        if (event instanceof MouseEvent) {
+            MouseEvent mEvent = (MouseEvent) event;
+            if (mEvent.isAltDown()) {
+                shouldRespond = true;
+            }
+        }
+        return shouldRespond;
+    }
+
+    public void freezePeaks(Event event) {
+        if (shouldRespond(event)) {
+            freezePeaks(getAltState(event));
+        }
+    }
+
+//    public void freezePeaks(MouseEvent event) {
+//        System.out.println(event.getEventType().toString() + " " + event.getSource());
+//        
+//        freezePeaks(event.isAltDown());
+//        event.consume();
+//        
+//    }
+    public void freezePeaks(boolean useAllConditions) {
         // do setup because we could have added a peak list after adding slider controller.  Should be a better way
         setupLists(true);
         controller.charts.stream().forEach(chart -> {
             List<Peak> selected = chart.getSelectedPeaks();
             selected.forEach((peak) -> {
-                peak.setFrozen(true);
+                peak.setFrozen(true, useAllConditions);
                 PeakList.notifyFreezeListeners(peak, true);
             });
         });
 
     }
 
-    public void thawPeaks() {
+    public void thawPeaks(Event event) {
+        if (shouldRespond(event)) {
+            thawPeaks(getAltState(event));
+        }
+    }
+
+    public void thawPeaks(boolean useAllConditions) {
         // do setup because we could have added a peak list after adding slider controller.  Should be a better way
         setupLists(true);
         controller.charts.stream().forEach(chart -> {
             List<Peak> selected = chart.getSelectedPeaks();
             selected.forEach((peak) -> {
-                peak.setFrozen(false);
+                peak.setFrozen(false, useAllConditions);
                 PeakList.notifyFreezeListeners(peak, false);
             });
         });
@@ -165,20 +213,65 @@ public class PeakSlider {
         controller.charts.stream().forEach(chart -> {
             List<Peak> selected = chart.getSelectedPeaks();
             selected.forEach((peak) -> {
-                PeakList peakList = peak.getPeakList();
-                Dataset dataset = Dataset.getDataset(peakList.fileName);
-                int[] planes = new int[0];
-                if (dataset != null) {
-                    try {
-                        peak.tweak(dataset, planes);
-                        peak.setFrozen(true);
-                        PeakList.notifyFreezeListeners(peak, true);
-                    } catch (IOException ioE) {
-
-                    }
-                }
+                tweakPeak(peak);
             });
         });
+    }
+
+    public void tweakPeak(Peak peak) {
+        Set<Peak> peakSet = new HashSet<>();
+        int nDim = peak.getPeakList().getNDim();
+        for (int i = 0; i < nDim; i++) {
+            List<Peak> peaks = PeakList.getLinks(peak, i);
+            peakSet.addAll(peaks);
+        }
+
+        List<Peak> peaksB = new ArrayList<>();
+        // find all peaks that are linked in all dimensions to original peak
+        // These are the peaks that should be tweaked when original peak is tweaked.
+        // fixme add test for condition, if not useAllConditions (and pass this in as arg)
+        for (Peak speak : peakSet) {
+            if (speak == peak) {
+                continue;
+            }
+            boolean ok = true;
+            for (int i = 0; i < nDim; i++) {
+                if (!PeakList.isLinked(peak, i, speak)) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) {
+                peaksB.add(speak);
+            }
+        }
+
+        PeakList peakList = peak.getPeakList();
+        Dataset dataset = Dataset.getDataset(peakList.fileName);
+        int[] planes = new int[0];
+        if (dataset != null) {
+            try {
+                peak.tweak(dataset, planes);
+                peak.setFrozen(true, false);
+                for (Peak lPeak : peaksB) {
+                    peakList = lPeak.getPeakList();
+                    dataset = Dataset.getDataset(peakList.fileName);
+                    if (dataset != null) {
+                        lPeak.tweak(dataset, planes);
+                    }
+                }
+                for (Peak lPeak : peaksB) {
+                    peakList = lPeak.getPeakList();
+                    dataset = Dataset.getDataset(peakList.fileName);
+                    if (dataset != null) {
+                        lPeak.setFrozen(true, false);
+                    }
+                }
+
+            } catch (IOException ioE) {
+
+            }
+        }
     }
 
     public void linkDims() {
