@@ -187,6 +187,34 @@ public class CrossHairs {
         return hasRegion;
     }
 
+    public boolean hasCrosshairState(String state) {
+        boolean v0 = crossHairStates[0][VERTICAL] && crossHairLines[0][VERTICAL].isVisible();
+        boolean v1 = crossHairStates[1][VERTICAL] && crossHairLines[1][VERTICAL].isVisible();
+        boolean h0 = crossHairStates[0][HORIZONTAL] && crossHairLines[0][HORIZONTAL].isVisible();
+        boolean h1 = crossHairStates[1][HORIZONTAL] && crossHairLines[1][HORIZONTAL].isVisible();
+        boolean result;
+        if (state.equals("region")) {
+            state = chart.is1D() ? "||" : "[]";
+        }
+        switch (state) {
+            case "||":
+                result = v0 & v1;
+                break;
+            case "=":
+                result = h0 & h1;
+                break;
+            case "|_":
+                result = h0 & v0;
+                break;
+            case "[]":
+                result = h0 & v0 & h1 & v1;
+                break;
+            default:
+                result = false;
+        }
+        return result;
+    }
+
     public int getCrossHairNum(double x, double y, int iOrient) {
         int crossHairNum = 0;
         if (crossHairStates[1][iOrient] && crossHairLines[1][iOrient].isVisible()) {
