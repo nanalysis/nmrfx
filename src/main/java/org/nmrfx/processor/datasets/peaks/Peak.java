@@ -1244,9 +1244,9 @@ public class Peak implements Comparable, PeakOrMulti {
         return flag[index];
     }
 
-    public void setFrozen(boolean state) {
+    public void setFrozen(boolean state, boolean allConditions) {
         for (PeakDim pDim : peakDim) {
-            pDim.setFrozen(state);
+            pDim.setFrozen(state, allConditions);
         }
     }
 

@@ -276,10 +276,14 @@ public class PeakDim {
     }
 
     public void setFrozen(boolean state) {
+        setFrozen(state, false);
+    }
+
+    public void setFrozen(boolean state, boolean allConditions) {
         frozen = state;
         if (myPeak.peakList.isSlideable()) {
             myPeak.updateFrozenColor();
-            freezeDims();
+            freezeDims(allConditions);
         }
         peakDimUpdated();
     }
@@ -705,11 +709,11 @@ public class PeakDim {
         }
     }
 
-    void freezeDims() {
+    void freezeDims(boolean useAllConditions) {
         List<PeakDim> links = getLinkedPeakDims();
         String condition = myPeak.peakList.getSampleConditionLabel();
         for (PeakDim peakDim : links) {
-            if ((peakDim != this) && peakDim.myPeak.peakList.getSampleConditionLabel().equals(condition)) {
+            if ((peakDim != this) && (useAllConditions || peakDim.myPeak.peakList.getSampleConditionLabel().equals(condition))) {
                 // use field so we don't fire recursive freezeDims
                 peakDim.frozen = frozen;
                 peakDim.myPeak.updateFrozenColor();
@@ -724,7 +728,7 @@ public class PeakDim {
         String condition = myPeak.peakList.getSampleConditionLabel();
         for (PeakDim peakDim : links) {
             if ((peakDim != this) && !peakDim.frozen) {
-                if (peakDim.myPeak.peakList.getSampleConditionLabel().equals(condition)) {
+                if (!peakDim.myPeak.peakList.requireSliderCondition() || peakDim.myPeak.peakList.getSampleConditionLabel().equals(condition)) {
                     // use field so we don't fire recursive slideDims
                     peakDim.chemShift = chemShift;
                     peakDim.peakDimUpdated();
