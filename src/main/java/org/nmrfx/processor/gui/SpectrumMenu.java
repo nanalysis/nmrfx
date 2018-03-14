@@ -126,9 +126,18 @@ public class SpectrumMenu {
         });
         peakMenu.getItems().add(fitListItem);
 
+        Menu refMenu = new Menu("Reference");
+
+        MenuItem diagRefMenuItem = new MenuItem("Adjust Diagonal");
+        diagRefMenuItem.setOnAction((ActionEvent e) -> {
+            chart.adjustDiagonalReference();
+        });
+        refMenu.getItems().add(diagRefMenuItem);
+
         specMenu.getItems().add(attrItem);
         specMenu.getItems().add(viewMenu);
         specMenu.getItems().add(peakMenu);
+        specMenu.getItems().add(refMenu);
         specMenu.getItems().add(baselineMenu);
         specMenu.getItems().add(extractItem);
     }
