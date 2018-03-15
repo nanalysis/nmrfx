@@ -258,16 +258,9 @@ public class PeakSlider {
                     dataset = Dataset.getDataset(peakList.fileName);
                     if (dataset != null) {
                         lPeak.tweak(dataset, planes);
-                    }
-                }
-                for (Peak lPeak : peaksB) {
-                    peakList = lPeak.getPeakList();
-                    dataset = Dataset.getDataset(peakList.fileName);
-                    if (dataset != null) {
                         lPeak.setFrozen(true, false);
                     }
                 }
-
             } catch (IOException ioE) {
 
             }
