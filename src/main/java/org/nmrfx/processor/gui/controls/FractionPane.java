@@ -74,6 +74,8 @@ public class FractionPane extends Pane {
     private double extraOnTop = 0.0;
     private double extraOnBottom = 0.0;
     FractionPaneChild children;
+    private int currentRows = 1;
+    private int currentCols = 1;
 
     public FractionPane(FractionPaneChild children) {
         super();
@@ -126,6 +128,14 @@ public class FractionPane extends Pane {
         } else {
             return false;
         }
+    }
+
+    public int getCurrentRows() {
+        return currentRows;
+    }
+
+    public int getCurrentCols() {
+        return currentCols;
     }
 
     public int getRows() {
@@ -220,6 +230,8 @@ public class FractionPane extends Pane {
             itemHeight = (height - extraOnTop - extraOnBottom) / nRows;
             delY = 0.0;
         }
+        currentRows = nRows;
+        currentCols = nCols;
         children.prepareChildren(nRows, nCols);
         double x = 0.0;
         double y = 0.0;

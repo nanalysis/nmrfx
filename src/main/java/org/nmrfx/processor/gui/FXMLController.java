@@ -1637,11 +1637,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public int arrangeGetRows() {
-        return chartGroup.getRows();
+        return chartGroup.getCurrentRows();
     }
 
     public int arrangeGetColumns() {
-        return chartGroup.getColumns();
+        return chartGroup.getCurrentCols();
     }
 
     public void arrange(FractionPane.ORIENTATION orient) {
