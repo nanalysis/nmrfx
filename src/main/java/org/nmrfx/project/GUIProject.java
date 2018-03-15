@@ -40,6 +40,8 @@ public class GUIProject extends Project {
 
     Git git;
 
+    private static boolean commitActive = false;
+
     public GUIProject(String name) {
         super(name);
     }
@@ -66,9 +68,17 @@ public class GUIProject extends Project {
             Logger.getLogger(GUIProject.class.getName()).log(Level.SEVERE, null, ex);
         }
         if (git != null) {
+            writeIgnore();
+        }
+    }
+
+    private void writeIgnore() {
+        if (git != null) {
             Path path = Paths.get(projectDir.toString(), ".gitignore");
             try (FileWriter writer = new FileWriter(path.toFile())) {
                 writer.write("*.nv\n*.ucsf");
+            } catch (IOException ioE) {
+                System.out.println(ioE.getMessage());
             }
         }
     }
@@ -122,12 +132,24 @@ public class GUIProject extends Project {
         th.start();
     }
 
+    public static boolean isCommitting() {
+        return commitActive;
+    }
+
     boolean gitCommit() {
         boolean didSomething = false;
+        commitActive = true;
         try {
             if (git == null) {
-                git = Git.open(projectDir.toFile());
+                try {
+                    git = Git.open(projectDir.toFile());
+                } catch (IOException ioE) {
+                    git = Git.init().setDirectory(projectDir.toFile()).call();
+                    writeIgnore();
+                    System.out.println("gitinited");
+                }
             }
+
             DirCache index = git.add().addFilepattern(".").call();
             Status status = git.status().call();
             System.out.println("status " + status.isClean() + " " + status.hasUncommittedChanges());
@@ -164,15 +186,15 @@ public class GUIProject extends Project {
                 RevCommit commit = git.commit().setMessage(sBuilder.toString()).call();
                 didSomething = true;
             }
-        } catch (GitAPIException | IOException ex) {
+        } catch (GitAPIException ex) {
             Logger.getLogger(GUIProject.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             // fixme, should we do this after each commit, or leave git open
             git.close();
             git = null;
+            commitActive = false;
         }
         return didSomething;
-
     }
 
     void loadWindows(Path directory) throws IOException {

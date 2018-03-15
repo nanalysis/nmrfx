@@ -138,8 +138,29 @@ public class MainApp extends Application implements DatasetListener {
     }
 
     public void quit() {
+        waitForCommit();
         Platform.exit();
         System.exit(0);
+    }
+
+    @Override
+    public void stop() {
+        waitForCommit();
+    }
+
+    public void waitForCommit() {
+        int nTries = 30;
+        int iTry = 0;
+        while (GUIProject.isCommitting() && (iTry < nTries)) {
+            System.out.println("committing");
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ex) {
+                break;
+            }
+            iTry++;
+        }
+
     }
 
     Stage makeAbout(String appName) {
@@ -179,6 +200,10 @@ public class MainApp extends Application implements DatasetListener {
             appMenu.getItems().addAll(aboutItem, new SeparatorMenuItem(), prefsItem, new SeparatorMenuItem(),
                     tk.createHideMenuItem(appName), tk.createHideOthersMenuItem(), tk.createUnhideAllMenuItem(),
                     new SeparatorMenuItem(), quitItem);
+            // createQuitMeneItem doesn't result in stop or quit being called
+            //  therefore we can't check for waiting till a commit is done before leaving
+            // so explicitly set action to quit
+            quitItem.setOnAction(e -> quit());
         } else {
             quitItem = new MenuItem("Quit");
             quitItem.setOnAction(e -> quit());
