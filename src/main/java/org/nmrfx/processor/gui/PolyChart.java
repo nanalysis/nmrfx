@@ -1007,6 +1007,24 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         }
     }
 
+    protected void moveTo(Double[] positions, Double[] widths) {
+        for (int axis = 0; axis < positions.length; axis++) {
+            if (positions[axis] != null) {
+                if (axis > 1) {
+                    DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+                    int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, positions[axis]);
+                    setAxis(axis, plane, plane);
+                } else {
+                    double[] limits = getRange(axis);
+                    double range = widths[axis];
+                    double newLower = positions[axis] - range / 2;
+                    double newUpper = positions[axis] + range / 2;
+                    setAxis(axis, newLower, newUpper);
+                }
+            }
+        }
+    }
+
     public void firstPlane(int axis) {
         if (axes.length > axis) {
             if (!datasetAttributesList.isEmpty()) {
@@ -2769,7 +2787,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             alert.showAndWait();
             return;
         }
-        
+
         double x = crossHairPositions[0][VERTICAL];
         double y = crossHairPositions[0][HORIZONTAL];
         double delta = x - y;
