@@ -68,6 +68,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBase;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ListCell;
@@ -187,6 +188,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
     UndoManager undoManager = new UndoManager();
+    double widthScale = 5.0;
 
     public File getInitialDirectory() {
         if (initialDir == null) {
@@ -1258,13 +1260,19 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     int cDim = chart.getNDim();
                     int aDim = dataAttr.nDim;
                     Double[] ppms = new Double[cDim];
+                    Double[] widths = new Double[cDim];
                     for (int i = 0; i < aDim; i++) {
                         PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
                         if (peakDim != null) {
                             ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
+                            widths[i] = widthScale * Double.valueOf(peakDim.getLineWidthValue());
                         }
                     }
-                    chart.moveTo(ppms);
+                    if (widthScale > 0.0) {
+                        chart.moveTo(ppms, widths);
+                    } else {
+                        chart.moveTo(ppms);
+                    }
                 }
             }
         }
@@ -1541,6 +1549,17 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             bottomBox.getChildren().add(navBar);
             peakNavigator = PeakNavigator.create(this).onClose(this::removePeakNavigator).showAtoms().initialize(navBar);
             peakNavigator.setPeakList();
+            ObservableList<Double> scaleList = FXCollections.observableArrayList(0.0, 2.5, 5.0, 7.5, 10.0, 15.0, 20.0);
+            ChoiceBox<Double> scaleBox = new ChoiceBox(scaleList);
+            scaleBox.setValue(5.0);
+            scaleBox.setOnAction(e -> {
+                widthScale = scaleBox.getValue();
+                Peak peak = peakNavigator.getPeak();
+                if (peak != null) {
+                    refreshPeakView(peak);
+                }
+            });
+            navBar.getItems().add(scaleBox);
         }
     }
 
