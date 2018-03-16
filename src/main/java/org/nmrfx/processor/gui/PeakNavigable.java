@@ -15,7 +15,9 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 public interface PeakNavigable {
 
     public void refreshPeakView(Peak peak);
+
     public void refreshPeakView();
+
     public void refreshPeakListView(PeakList peakList);
 
 }
