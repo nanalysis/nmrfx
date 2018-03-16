@@ -253,6 +253,10 @@ public class PeakNavigator implements PeakListener {
         peakNavigable.refreshPeakListView(peakList);
     }
 
+    public Peak getPeak() {
+        return currentPeak;
+    }
+
     public void setPeak(Peak peak) {
         currentPeak = peak;
         peakNavigable.refreshPeakView(peak);
