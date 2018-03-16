@@ -181,17 +181,11 @@ public class RNALabels {
 
                         List<Atom> atoms = residue.getAtoms();
                         for (Atom atom : atoms) {
-                            boolean ribose = false;
-                            boolean exchangable = false;
-                            if ((atom.parent != null) && (atom.getParent().getElementName().equals("O"))) {
+                            NucleicAcidAtomType naType = new NucleicAcidAtomType(atom);
+                            if (naType.hydroxyl) {
                                 continue;
                             }
-                            if (atom.getName().endsWith("'") || atom.getName().endsWith("\"")) {
-                                ribose = true;
-                            } else if (atom.getElementName().equals("H") && atom.getParent().getElementName().equals("N")) {
-                                exchangable = true;
-                            }
-                            boolean ok = checkAtom(atom.getName(), atom.getElementName(), selGroup.gAtomNames, ribose, exchangable);
+                            boolean ok = checkAtom(atom.getName(), atom.getElementName(), selGroup.gAtomNames, naType.sugar, naType.exchangable);
                             if (ok) {
                                 atom.setActive(true);
                             }
@@ -200,6 +194,31 @@ public class RNALabels {
 
                 }
 
+            }
+        }
+    }
+
+    public static class NucleicAcidAtomType {
+
+        final boolean hydroxyl;
+        final boolean sugar;
+        final boolean exchangable;
+
+        public NucleicAcidAtomType(Atom atom) {
+            if ((atom.parent != null) && (atom.getParent().getElementName().equals("O"))) {
+                hydroxyl = true;
+            } else {
+                hydroxyl = false;
+            }
+            if (atom.getName().endsWith("'") || atom.getName().endsWith("\"")) {
+                sugar = true;
+            } else {
+                sugar = false;
+            }
+            if (atom.getElementName().equals("H") && (atom.parent != null) && (atom.getParent().getElementName().equals("N") || hydroxyl)) {
+                exchangable = true;
+            } else {
+                exchangable = false;
             }
         }
     }
