@@ -2350,9 +2350,6 @@ def NESTA(nOuter=15, nInner=20, tolFinal=2.5, muFinal=6,phase=None, logToFile=Fa
     tolFinalReal = math.pow(10.0,-tolFinal)
     muFinalReal = math.pow(10.0,-muFinal)
     process = process or getCurrentProcess()
-    print 'iter',nOuter
-    print 'ph',phase
-    print 'ph',phaseList
     global fidInfo
     logFileName = None
     if fidInfo == None or fidInfo.fidObj == None:
@@ -3100,16 +3097,21 @@ def SB(offset=0.5, end=1.0,power=2.0,c=1.0,apodSize=0,inverse=False,disabled=Fal
         process.addOperation(op)
     return op
 
-def BLACKMAN(end=1.0,c=1.0,apodSize=0,dim=1, inverse=False,disabled=False, vector=None, process=None):
+def BLACKMAN(offset=0.5,end=1.0,c=1.0,apodSize=0,dim=1, inverse=False,disabled=False, vector=None, process=None):
     '''Blackman Apodization
     Parameters
     ---------
+    offset : real
+        amin : 0.0
+        min : 0.0
+        max : 0.5
+        Offset of Blackman window.
     end : real
         amin : 0.5
         min : 0.5
         max : 1.0
         amax : 1.0
-        End value of sine window argument.
+        End value of Blackman window argument.
     c : real
         amin : 0.5
         min : 0.5
@@ -3126,17 +3128,22 @@ def BLACKMAN(end=1.0,c=1.0,apodSize=0,dim=1, inverse=False,disabled=False, vecto
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = Blackman(end, c, apodSize, dim-1, inverse)
+    op = Blackman(offset, end, c, apodSize, dim-1, inverse)
     if (vector != None):
         op.eval(vector)
     else:
         process.addOperation(op)
     return op
 
-def KAISER(beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False,disabled=False, vector=None, process=None):
+def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False,disabled=False, vector=None, process=None):
     '''Kaiser Apodization
     Parameters
     ---------
+    offset : real
+        amin : 0.0
+        min : 0.0
+        max : 0.5
+        Offset of Kaiser window.
     beta : real
         amin : 0.0
         min : 0.0
@@ -3165,7 +3172,7 @@ def KAISER(beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False,disabled=Fa
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = Kaiser(beta, end, c, apodSize, dim-1, inverse)
+    op = Kaiser(offset, beta, end, c, apodSize, dim-1, inverse)
     if (vector != None):
         op.eval(vector)
     else:
