@@ -47,6 +47,7 @@ public class VecRef extends Operation {
     public Operation eval(Vec vector) throws ProcessingException {
         if (size != null) {
             vector.resize(size);
+            vector.setTDSize(size);
         }
         if (sf != null) {
             vector.centerFreq = sf;
