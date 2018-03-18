@@ -426,8 +426,8 @@ public class SampleSchedule {
 
     public synchronized boolean recreateArray(int nSamples, int vecSize, boolean doEndOnly) {
         boolean recreate = false;
-        if ((nSamples != nSamples) || (vecSize != nPoints) || (endOnly != doEndOnly)) {
-            nSamples = nSamples;
+        if ((this.nSamples != nSamples) || (vecSize != nPoints) || (endOnly != doEndOnly)) {
+            this.nSamples = nSamples;
             nPoints = vecSize;
             endOnly = doEndOnly;
             recreate = true;
