@@ -29,6 +29,7 @@ import org.nmrfx.processor.processing.ProcessingException;
  */
 public class Kaiser extends Apodization implements Invertible {
 
+    final double offset;
     final double beta;
     final double end;
     final double c;
@@ -51,11 +52,12 @@ public class Kaiser extends Apodization implements Invertible {
         return this;
     }
 
-    public Kaiser(double beta, double end, double c, int apodSize, int dim) {
-        this(beta, end, c, apodSize, dim, false);
+    public Kaiser(double offset, double beta, double end, double c, int apodSize, int dim) {
+        this(offset, beta, end, c, apodSize, dim, false);
     }
 
-    public Kaiser(double beta, double end, double c, int apodSize, int dim, boolean inverse) {
+    public Kaiser(double offset, double beta, double end, double c, int apodSize, int dim, boolean inverse) {
+        this.offset = offset;
         this.end = end;
         this.beta = beta;
         this.c = c;
@@ -72,18 +74,16 @@ public class Kaiser extends Apodization implements Invertible {
         if (apodSize2 == 0) {
             apodSize2 = dataSize;
         }
-        double offset = 0.5;
         if (apodVec == null || apodSize2 != apodVec.length) {
             resize(apodSize2);
             initApod(vStart);
-            double start = offset * Math.PI;
-
-            double delta = ((end - offset)) / (apodSize2 - vStart - 1);
             for (int i = vStart; i < apodSize2; i++) {
                 double deltaPos = i - vStart;
-                double v1 = beta * Math.sqrt(1.0 - Math.pow(2.0 * deltaPos * delta, 2));
+                double tt = (-1.0 + offset * 2.0) + end * 2.0 * (1.0 - offset) * deltaPos / (apodSize2 - 1.0);
+                double v1 = beta * Math.sqrt(1.0 - Math.pow(tt, 2));
                 double v2 = beta;
-                apodVec[i] = Bessel.i(v1, 0, false) / Bessel.i(v2, 0, false);
+                apodVec[i] = Bessel.i(v1, 0.0, false) / Bessel.i(v2, 0.0, false);
+
             }
             apodVec[vStart] *= c;
         }

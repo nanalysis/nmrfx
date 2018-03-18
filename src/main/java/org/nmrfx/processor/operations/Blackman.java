@@ -28,6 +28,7 @@ import org.nmrfx.processor.processing.ProcessingException;
  */
 public class Blackman extends Apodization implements Invertible {
 
+    final double offset;
     final double end;
     final double c;
     final int apodSize;
@@ -49,11 +50,12 @@ public class Blackman extends Apodization implements Invertible {
         return this;
     }
 
-    public Blackman(double end, double c, int apodSize, int dim) {
-        this(end, c, apodSize, dim, false);
+    public Blackman(double offset, double end, double c, int apodSize, int dim) {
+        this(offset, end, c, apodSize, dim, false);
     }
 
-    public Blackman(double end, double c, int apodSize, int dim, boolean inverse) {
+    public Blackman(double offset, double end, double c, int apodSize, int dim, boolean inverse) {
+        this.offset = offset;
         this.end = end;
         this.c = c;
         this.apodSize = apodSize;
@@ -69,16 +71,17 @@ public class Blackman extends Apodization implements Invertible {
         if (apodSize2 == 0) {
             apodSize2 = dataSize;
         }
-        double offset = 0.5;
         if (apodVec == null || apodSize2 != apodVec.length) {
             resize(apodSize2);
             initApod(vStart);
             double start = offset * Math.PI;
 
             double delta = ((end - offset) * Math.PI) / (apodSize2 - vStart - 1);
+
             for (int i = vStart; i < apodSize2; i++) {
                 double deltaPos = i - vStart;
-                apodVec[i] = 0.42 - 0.5 * Math.cos(2.0 * start + 2.0 * (deltaPos * delta)) + 0.08 * Math.cos(4.0 * (deltaPos * delta));
+                apodVec[i] = (0.42 - 0.5 * Math.cos(2.0 * start + 2.0 * (deltaPos * delta)) + 0.08 * Math.cos(4.0 * start + 4.0 * (deltaPos * delta)));
+
             }
             apodVec[vStart] *= c;
         }
@@ -101,6 +104,22 @@ public class Blackman extends Apodization implements Invertible {
 
 }
 /*
+    if M < 1:
+        return np.array([])
+    if M == 1:
+        return np.ones(1, 'd')
+    odd = M % 2
+    if not sym and not odd:
+        M = M + 1
+    n = np.arange(0, M)
+    w = (0.42 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1)) + 0.08 * np.cos(4.0 * np.pi * n / (M - 1)))
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+
+
+ */
+ /*
  w = (0.42 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1)) +
          0.08 * np.cos(4.0 * np.pi * n / (M - 1)))
     if not sym and not odd:
