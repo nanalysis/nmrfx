@@ -112,7 +112,9 @@ public class NESTANMR extends MatrixOperation {
                 if (logHome != null) {
                     logFile = logHome.toString() + vector.getIndex() + ".log";
                 }
-
+            }
+            if (schedule == null) {
+                return this;
             }
             int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
 
