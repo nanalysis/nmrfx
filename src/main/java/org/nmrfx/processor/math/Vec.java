@@ -4455,10 +4455,6 @@ public class Vec extends PySequence implements MatrixType {
             adjustRef(0, nBuckets);
         }
 
-        if (isComplex) {
-            throw new IllegalArgumentException("bucket: vector must be real");
-        }
-
         if (size < nBuckets) {
             throw new IllegalArgumentException("bucket: nBuckets must be smaller than size");
         }
@@ -4469,17 +4465,41 @@ public class Vec extends PySequence implements MatrixType {
 
         int bucketSize = size / nBuckets;
 
-        for (int i = 0; i < nBuckets; i++) {
-            double bucketVal = 0.0;
-            int k = i * bucketSize;
-
-            for (int j = 0; j < bucketSize; j++) {
-                bucketVal += rvec[k++];
+        if (isComplex) {
+            if (useApache) {
+                for (int i = 0; i < nBuckets; i++) {
+                    Complex bucketVal = Complex.ZERO;
+                    int k = i * bucketSize;
+                    for (int j = 0; j < bucketSize; j++) {
+                        bucketVal = bucketVal.add(cvec[k++]);
+                    }
+                    cvec[i] = bucketVal;
+                }
+            } else {
+                for (int i = 0; i < nBuckets; i++) {
+                    double rVal = 0.0;
+                    double iVal = 0.0;
+                    int k = i * bucketSize;
+                    for (int j = 0; j < bucketSize; j++) {
+                        rVal += rvec[k];
+                        iVal += ivec[k++];
+                    }
+                    rvec[i] = rVal;
+                    ivec[i] = iVal;
+                }
             }
+        } else {
+            for (int i = 0; i < nBuckets; i++) {
+                double bucketVal = 0.0;
+                int k = i * bucketSize;
 
-            rvec[i] = bucketVal;
+                for (int j = 0; j < bucketSize; j++) {
+                    bucketVal += rvec[k++];
+                }
+
+                rvec[i] = bucketVal;
+            }
         }
-
         size = nBuckets;
     }
 
@@ -4724,9 +4744,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Apply soft thresholding to vector by setting values with absolute value below threshold to 0.0 
-     * and subtracting threshold from positive values (greater than threshold) or adding threshold
-     * to negative values (less than threshold).
+     * Apply soft thresholding to vector by setting values with absolute value below threshold to 0.0 and subtracting
+     * threshold from positive values (greater than threshold) or adding threshold to negative values (less than
+     * threshold).
      *
      * @param threshold
      */
