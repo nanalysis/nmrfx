@@ -19,15 +19,19 @@ package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.chemistry.io.AtomParser;
 import java.util.*;
+import javax.vecmath.Point2d;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.processor.datasets.peaks.AtomResonance;
+import org.nmrfx.structure.chemistry.miner.IAtom;
+import org.nmrfx.structure.chemistry.miner.IBond;
 
-public class Atom {
+public class Atom implements IAtom {
 
     static final public int SELECT = 0;
     static final public int DISPLAY = 1;
     static final public int SUPER = 2;
     static final public int LABEL = 2;
+    static final public int VISITED = 0;
     static final public double NULL_PPM = -9990.0;
     static int lastAtom = 0;
     public int iAtom = 1;
@@ -66,6 +70,8 @@ public class Atom {
     public int canonValue = 0;
     public Atom[] branchAtoms = new Atom[0];
     public Object atomEnergyProp = null;
+    boolean[] flags = new boolean[1];
+    Optional<Map<String, Object>> properties = Optional.empty();
 
     public Atom(AtomParser atomParse) {
         spatialSet = new SpatialSet(this);
@@ -126,7 +132,7 @@ public class Atom {
         }
     }
 
-    public Atom add(String name, String elementName, int order) {
+    public Atom add(String name, String elementName, Order order) {
         Atom newAtom = new Atom(name, elementName);
         newAtom.parent = this;
         if (entity != null) {
@@ -197,6 +203,20 @@ public class Atom {
         }
 
         return connected;
+    }
+
+    public void setFlag(int flag, boolean state) throws IllegalArgumentException {
+        if (flag > flags.length) {
+            throw new IllegalArgumentException("Invalid flag");
+        }
+        flags[flag] = state;
+    }
+
+    public boolean getFlag(int flag) throws IllegalArgumentException {
+        if (flag > flags.length) {
+            throw new IllegalArgumentException("Invalid flag");
+        }
+        return flags[flag];
     }
 
     public void setActive(boolean state) {
@@ -1075,11 +1095,11 @@ public class Atom {
         return child;
     }
 
-    public static int calcBond(Atom atom1, Atom atom2, int order) {
+    public static int calcBond(Atom atom1, Atom atom2, Order order) {
         return calcBond(atom1, atom2, order, 0);
     }
 
-    public static int calcBond(Atom atom1, Atom atom2, int order, int stereo) {
+    public static int calcBond(Atom atom1, Atom atom2, Order order, int stereo) {
         int iRes;
         int jRes;
         Point3 pt1;
@@ -1142,11 +1162,11 @@ public class Atom {
         return 1;
     }
 
-    public static int addBond(Atom atom1, Atom atom2, int order, final boolean record) {
+    public static int addBond(Atom atom1, Atom atom2, Order order, final boolean record) {
         return (addBond(atom1, atom2, order, 0, record));
     }
 
-    public static int addBond(Atom atom1, Atom atom2, int order, int stereo, final boolean record) {
+    public static int addBond(Atom atom1, Atom atom2, Order order, int stereo, final boolean record) {
         Bond bond;
 
         bond = new Bond(atom1, atom2);
@@ -1460,5 +1480,60 @@ public class Atom {
     public boolean isCoarse() {
         int nameLen = name.length();
         return name.charAt(nameLen - 1) == 'c';
+    }
+
+    @Override
+    public Point2d getPoint2d() {
+        return new Point2d(getPoint().getX(), getPoint().getY());
+    }
+
+    @Override
+    public void setPoint2d(Point2d pt) {
+        Point3 point = new Point3(pt.x, pt.y, 0.0);
+        setPoint(point);
+    }
+
+    @Override
+    public void setID(int i) {
+        iAtom = i;
+    }
+
+    @Override
+    public int getID() {
+        return iAtom;
+    }
+
+    @Override
+    public void setProperty(String name, Object value) {
+        if (!properties.isPresent()) {
+            properties = Optional.of(new HashMap<String, Object>());
+        }
+        properties.get().put(name, value);
+    }
+
+    @Override
+    public Object getProperty(String name) {
+        Object value = null;
+        if (properties.isPresent()) {
+            value = properties.get().get(name);
+        }
+        return value;
+    }
+
+    @Override
+    public String getSymbol() {
+        return getElementName();
+    }
+
+    @Override
+    public String getHybridization() {
+        return (String) getProperty("hyb");
+    }
+
+    @Override
+    public List<IBond> getBonds() {
+        List<IBond> result = new ArrayList<>();
+        result.addAll(bonds);
+        return result;
     }
 }

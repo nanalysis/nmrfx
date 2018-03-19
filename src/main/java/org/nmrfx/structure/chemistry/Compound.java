@@ -126,7 +126,7 @@ public class Compound extends Entity implements AtomContainer {
                 Atom atom1 = atoms.get(i);
                 Atom atom2 = atoms.get(j);
                 if (!atom1.isBonded(atom2)) {
-                    result = Atom.calcBond(atom1, atom2, 1);
+                    result = Atom.calcBond(atom1, atom2, Order.SINGLE);
                     if (result == 2) {
                         break;
                     }

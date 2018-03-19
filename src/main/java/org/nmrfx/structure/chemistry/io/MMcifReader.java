@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.io;
 
 import org.nmrfx.structure.chemistry.Atom;
@@ -32,6 +31,7 @@ import java.io.*;
 import java.nio.*;
 import java.util.*;
 import java.util.regex.*;
+import org.nmrfx.structure.chemistry.Order;
 
 public class MMcifReader {
 
@@ -532,9 +532,9 @@ public class MMcifReader {
         String atomName1 = null;
         String atomName2 = null;
         String orderName = null;
-        int order = 1;
 
         while (true) {
+            Order order = Order.SINGLE;
 
             for (i = 0; i < nTokens; i++) {
                 token = getToken();
@@ -565,15 +565,15 @@ public class MMcifReader {
                     orderName = token;
 
                     if (orderName.equalsIgnoreCase("sing")) {
-                        order = 1;
+                        order = Order.SINGLE;
                     } else if (orderName.equalsIgnoreCase("doub")) {
-                        order = 2;
+                        order = Order.DOUBLE;
                     } else if (orderName.equalsIgnoreCase("trip")) {
-                        order = 3;
+                        order = Order.TRIPLE;
                     } else if (orderName.equalsIgnoreCase("quad")) {
-                        order = 4;
+                        order = Order.QUAD;
                     } else {
-                        order = 2;
+                        order = Order.DOUBLE;
                     }
                 }
             }

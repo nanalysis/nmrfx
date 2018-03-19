@@ -78,15 +78,15 @@ public class NMRStarReader {
                 String orderString = (String) orderColumn.get(i);
                 Atom atom1 = compound.getAtom(aName1);
                 Atom atom2 = compound.getAtom(aName2);
-                int order = 1;
+                Order order = Order.SINGLE;
                 if (orderString.toUpperCase().startsWith("SING")) {
-                    order = 1;
+                    order = Order.SINGLE;
                 } else if (orderString.toUpperCase().startsWith("DOUB")) {
-                    order = 2;
+                    order = Order.DOUBLE;
                 } else if (orderString.toUpperCase().startsWith("TRIP")) {
-                    order = 3;
+                    order = Order.TRIPLE;
                 } else {
-                    order = 1;
+                    order = Order.SINGLE;
                 }
                 int stereo = 0;
                 Atom.addBond(atom1, atom2, order, stereo, false);

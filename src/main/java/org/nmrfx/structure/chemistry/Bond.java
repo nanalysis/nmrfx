@@ -15,29 +15,38 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import java.io.*;
+import org.nmrfx.structure.chemistry.miner.IAtom;
+import org.nmrfx.structure.chemistry.miner.IBond;
 
-public class Bond implements Serializable {
+public class Bond implements IBond, Serializable {
 
     static final public int SELECT = 0;
     static final public int DISPLAY = 1;
     static final public int STEREO_BOND_UP = 10;
     static final public int STEREO_BOND_DOWN = 11;
     static final public int STEREO_BOND_EITHER = 12;
+    static final public int VISITED = 0;
+    static final public int ISAROMATIC = 1;
     boolean[] properties;
     public float radius = 0.3f;
     public float red = 1.0f;
     public float green = 0.0f;
     public float blue = 0.0f;
-    public int order = 1;
+    public Order order = Order.SINGLE;
     public int stereo = 0;
     public Atom begin;
     public Atom end;
+    boolean[] flags = new boolean[2];
 
     public Bond(Atom begin, Atom end) {
+        this(begin, end, Order.SINGLE);
+    }
+
+    public Bond(Atom begin, Atom end, Order bondOrder) {
+        order = bondOrder;
         this.begin = begin;
         this.end = end;
         radius = 0.3f;
@@ -73,6 +82,34 @@ public class Bond implements Serializable {
         return end;
     }
 
+    public Atom getAtom(int index) {
+        return index == 0 ? begin : end;
+    }
+
+    public Atom getConnectedAtom(Atom atom) {
+        if (atom == begin) {
+            return end;
+        } else if (atom == end) {
+            return begin;
+        } else {
+            return null;
+        }
+    }
+
+    public void setFlag(int flag, boolean state) throws IllegalArgumentException {
+        if (flag > flags.length) {
+            throw new IllegalArgumentException("Invalid flag");
+        }
+        flags[flag] = state;
+    }
+
+    public boolean getFlag(int flag) throws IllegalArgumentException {
+        if (flag > flags.length) {
+            throw new IllegalArgumentException("Invalid flag");
+        }
+        return flags[flag];
+    }
+
     public void setProperty(int propIndex) {
         if (properties.length <= propIndex) {
             return;
@@ -95,5 +132,22 @@ public class Bond implements Serializable {
         } else {
             return (properties[propIndex]);
         }
+    }
+
+    @Override
+    public IAtom getConnectedAtom(IAtom atom) {
+        IAtom result = null;
+        if (end == atom) {
+            result = begin;
+        }
+        if (begin == atom) {
+            result = end;
+        }
+        return result;
+    }
+
+    @Override
+    public Order getOrder() {
+        return order;
     }
 }

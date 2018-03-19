@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * FFDReader.java
  *
  * Created on September 2, 2003, 1:27 PM
@@ -32,6 +32,7 @@ import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
 import java.io.*;
 import java.util.*;
+import org.nmrfx.structure.chemistry.Order;
 
 /**
  *
@@ -458,20 +459,16 @@ public class FFDReader {
     }
 
     private void finishMolecule() throws MoleculeIOException {
-        int iBond;
-        Atom atom1 = null;
-        Atom atom2 = null;
-        int order;
 
-        for (iBond = 0; iBond < bondList.size(); iBond += 3) {
+        for (int iBond = 0; iBond < bondList.size(); iBond += 3) {
             if (atomList != null) {
-                atom1 = (Atom) atomHash.get((Integer) bondList.elementAt(iBond));
-                atom2 = (Atom) atomHash.get((Integer) bondList.elementAt(iBond
+                Atom atom1 = (Atom) atomHash.get((Integer) bondList.elementAt(iBond));
+                Atom atom2 = (Atom) atomHash.get((Integer) bondList.elementAt(iBond
                         + 1));
-                order = ((Integer) bondList.elementAt(iBond + 2)).intValue();
+                int order = ((Integer) bondList.elementAt(iBond + 2)).intValue();
 
                 if ((atom1 != null) && (atom2 != null)) {
-                    Atom.addBond(atom1, atom2, order, false);
+                    Atom.addBond(atom1, atom2, Order.getOrder(order), false);
                 }
             }
         }

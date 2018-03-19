@@ -329,7 +329,7 @@ public class SDFile {
                         atom1 = (Atom) atomList.elementAt(iBond);
                         atom2 = (Atom) atomList.elementAt(jBond);
 
-                        Atom.addBond(atom1, atom2, order, stereo, false);
+                        Atom.addBond(atom1, atom2, Order.getOrder(order), stereo, false);
                     } else {
                         System.err.println("error in adding bond to molecule "
                                 + molName);
@@ -716,7 +716,7 @@ public class SDFile {
                         atom1 = (Atom) atomList.elementAt(iBond);
                         atom2 = (Atom) atomList.elementAt(jBond);
 
-                        Atom.addBond(atom1, atom2, order, stereo, false);
+                        Atom.addBond(atom1, atom2, Order.getOrder(order), stereo, false);
                     } else {
                         System.err.println("error in adding bond to molecule "
                                 + molName);
