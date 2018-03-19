@@ -18,7 +18,7 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Vec;
-import java.util.ArrayList;
+import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 
 /**
  *
@@ -26,20 +26,27 @@ import java.util.ArrayList;
  */
 public class IDBaseline2 extends Operation {
 
+    public enum ThreshMode {
+        SDEV,
+        AUTO,
+        FRACTION;
+    }
     private final int minSize;
     private final int[] limits;
     private final double ratio;
+    private final ThreshMode mode;
     private boolean[] signalPoints;
 
     public IDBaseline2 eval(Vec vector) throws OperationException {
-        IDBaseline2(vector);
+        analyzeWithSDev(vector);
         return this;
     }
 
-    public IDBaseline2(int minSize, int[] limits, double ratio) {
+    public IDBaseline2(int minSize, int[] limits, double ratio, ThreshMode mode) {
         this.minSize = minSize;
         this.limits = limits;
         this.ratio = ratio;
+        this.mode = mode;
     }
 
     public boolean[] getResult() //what if this is called n times?
@@ -47,7 +54,24 @@ public class IDBaseline2 extends Operation {
         return signalPoints;
     }
 
-    private void IDBaseline2(Vec vector) throws OperationException {
+    private double getFractionThreshold(Vec vector, double fraction) throws OperationException {
+        if (vector.isComplex()) {
+            throw new OperationException("idBaseline2: vector complex");
+        }
+        signalPoints = new boolean[vector.getSize()];
+        double[] rvec = vector.getRvec();
+        if (fraction > 95.0) {
+            fraction = 95.0;
+        } else if (fraction < 5.0) {
+            fraction = 5.0;
+        }
+        Percentile percentile = new Percentile(fraction);
+        double value = percentile.evaluate(rvec);
+        return value;
+
+    }
+
+    private void analyzeWithSDev(Vec vector) throws OperationException {
         if (vector.isComplex()) {
             throw new OperationException("idBaseline2: vector complex");
         }
@@ -66,8 +90,23 @@ public class IDBaseline2 extends Operation {
         double[] sdevMean = Util.getMeanAndStdDev(vector, winSize, 2);
         double sdevThreshold = sdevMean[0] + ratio * sdevMean[1];
         double autoThreshold = getThreshold(vector, ratio);
+        double fractionThreshold = getFractionThreshold(vector, ratio);
+//        System.out.printf("sdev %.3f auto %.3f frac %.3f\n", sdevThreshold, autoThreshold, fractionThreshold);
+
 //        System.out.printf("%d ratio %.3f mean %.3f sdev %.3f sdevthresh %.3f autothresh %.3f\n", winSize, ratio, sdevMean[0], sdevMean[1], sdevThreshold, autoThreshold);
-        threshold = sdevThreshold;
+        switch (mode) {
+            case SDEV:
+                threshold = sdevThreshold;
+                break;
+            case AUTO:
+                threshold = autoThreshold;
+                break;
+            case FRACTION:
+                threshold = fractionThreshold;
+                break;
+            default:
+                threshold = sdevThreshold;
+        }
 
         for (int i = minSize; i < (vector.getSize() - minSize - 1); i++) {
             boolean isSignal = false;

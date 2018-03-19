@@ -268,7 +268,7 @@ public class TestBasePoints implements MultivariateFunction {
 
         int[] limits = new int[2];
         int edgeSize = 5;
-        IDBaseline2 idbase = new IDBaseline2(edgeSize, limits, ratio);
+        IDBaseline2 idbase = new IDBaseline2(edgeSize, limits, ratio, IDBaseline2.ThreshMode.SDEV);
         idbase.eval(dVec);
         hasSignal = idbase.getResult();
 

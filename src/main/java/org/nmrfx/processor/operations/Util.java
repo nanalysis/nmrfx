@@ -229,18 +229,18 @@ public class Util {
     public Util() {
     }
 
-    public static boolean[] getSignalRegionByCWTD(Vec vector, int winSize, int minBase, double ratio) {
+    public static boolean[] getSignalRegionByCWTD(Vec vector, int winSize, int minBase, double ratio, IDBaseline2.ThreshMode mode) {
         Vec dVec = new Vec(vector.getSize());
         dVec.resize(vector.getSize(), vector.isComplex());
         vector.copy(dVec);
-        if (!dVec.isComplex()) {
-            dVec.hft();
-        }
+//        if (!dVec.isComplex()) {
+//            dVec.hft();
+//        }
         Cwtd cwtd = new Cwtd(winSize);
         cwtd.eval(dVec);
         dVec.power();
         int[] limits = new int[2];
-        IDBaseline2 idbaseline = new IDBaseline2(minBase, limits, ratio).eval(dVec);
+        IDBaseline2 idbaseline = new IDBaseline2(minBase, limits, ratio, mode).eval(dVec);
         boolean[] isInSignalRegion = idbaseline.getResult();
         return isInSignalRegion;
     }
@@ -526,15 +526,26 @@ public class Util {
         threshold = rmsd * ratio;
 
         ArrayList<Integer> baseList = new ArrayList<>();
-
+        boolean lastWasBase = false;
         for (int i = 0; i < nRegions; i++) {
             if (sdVec[i] < threshold) {
-                baseList.add(i * winSize);
+                int start = i * winSize;
+                if (!lastWasBase) {
+                    start += winSize / 2;
+                }
                 int end = i * winSize + winSize - 1;
                 if (end >= vecSize) {
                     end = vecSize - 1;
                 }
+                baseList.add(start);
                 baseList.add(end);
+                lastWasBase = true;
+            } else {
+                if ((i >= 0) && lastWasBase) {
+                    int index = baseList.size() - 1;
+                    baseList.set(index, baseList.get(index) - (winSize / 2));
+                }
+                lastWasBase = false;
             }
         }
 
