@@ -1198,16 +1198,10 @@ def BCPOLY(order=2, winSize=16, disabled=False, vector=None, process=None):
         process.addOperation(op)   
     return op
 
-def BCSINE(regions=None, type='pts', invert=False, order=1, winSize=16, ratio=0.0, disabled=False, vector=None, process=None):
+def BCSINE(order=1, winSize=16,  disabled=False, vector=None, process=None):
     '''Baseline correction using a sine curve.
     Parameters
     ---------
-    regions : []
-        Specify the points of the vector to perform baseline correction on.
-    type : {'pts','ppms'}
-        Specify the units for the region values.
-    invert : bool
-        Specify the boundary of peaks instead of the baseline.
     order : int
         min : 1
         max : 8
@@ -1216,30 +1210,12 @@ def BCSINE(regions=None, type='pts', invert=False, order=1, winSize=16, ratio=0.
         min : 4
         max : 256
         Size of window used in searching for baseline regions;
-    ratio : real
-        amin : 1.0
-        min : 1.0
-        max : 100.0
-        Ratio relative to noise used in determining if region is signal or baseline.
     '''
     if disabled:
         return None
     process = process or getCurrentProcess()
 
-    nonBaseRegions = ArrayList()
-    realPoints = ArrayList()
-
-    realPoints = ArrayList()
-
-    #pts, nonBaseRegions add
-    if regions == None:
-        print "no regions specified"
-        pass
-    else:
-        for value in regions:
-            realPoints.add(float(value))
-
-    op = BcSine(order, winSize, ratio, realPoints, invert, type)
+    op = BcSine(order, winSize)
 
     if (vector != None):
         op.eval(vector)
