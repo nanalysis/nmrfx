@@ -56,6 +56,7 @@ public class VecRef extends Operation {
             vector.dwellTime = 1.0 / sw;
         }
         vector.schedule = null;
+        vector.clearAnnotation();
         return this;
     }
 
