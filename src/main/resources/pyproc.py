@@ -1146,7 +1146,7 @@ def AUTOREGIONS(mode='sdev', winSize=16, minBase=12, ratio=10.0, disabled=False,
     '''Baseline correction using a polynomial fit.
     Parameters
     ---------
-    mode : {'sdev','cwtd'}
+    mode : {'sdev','cwtd','cwtdf'}
         Specify the mode for auto identifying baseline regions.
     winSize : int
         min : 4
@@ -1160,7 +1160,7 @@ def AUTOREGIONS(mode='sdev', winSize=16, minBase=12, ratio=10.0, disabled=False,
         amin : 1.0
         min : 1.0
         max : 100.0
-        Ratio relative to noise used in determining if region is signal or baseline.
+        Ratio relative to noise used in determining if region is signal or baseline, or percent baseline in cwtdf mode.
     '''
     if disabled:
         return None
