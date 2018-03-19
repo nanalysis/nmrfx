@@ -879,6 +879,7 @@ class BrukerData implements NMRData {
                         f1coefS[i - 1] = "hyper-r";
                         tdsize[i - 1] = tdsize[i - 1] / 2;
                         break;
+                    case 0:
                     case 5: // f1coef[i-1] = "1 0 0 0 0 0 1 0";
                         f1coef[i - 1] = new double[]{1, 0, 0, 0, 0, 0, 1, 0};
                         complexDim[i - 1] = true;
