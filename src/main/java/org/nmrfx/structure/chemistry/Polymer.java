@@ -249,15 +249,15 @@ public class Polymer extends Entity {
             Residue residue2 = getResidue(comp2);
             Atom atom1 = residue1.getAtom(atom1Name);
             Atom atom2 = residue2.getAtom(atom2Name);
-            int order = 1;
+            Order order = Order.SINGLE;
             if (orderString.toUpperCase().startsWith("SING")) {
-                order = 1;
+                order = Order.SINGLE;
             } else if (orderString.toUpperCase().startsWith("DOUB")) {
-                order = 2;
+                order = Order.DOUBLE;
             } else if (orderString.toUpperCase().startsWith("TRIP")) {
-                order = 3;
+                order = Order.TRIPLE;
             } else {
-                order = 1;
+                order = Order.SINGLE;
             }
 
             Atom.addBond(atom1, atom2, order, true);

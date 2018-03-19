@@ -22,6 +22,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TreeSet;
 import javax.vecmath.Vector3d;
 
@@ -228,7 +229,7 @@ public class PDBFile {
 
     public static void capPolymer(Polymer polymer) {
         Residue residue = polymer.firstResidue;
-        ArrayList<Atom> atoms = residue.getAtoms();
+        List<Atom> atoms = residue.getAtoms();
         if (atoms.size() > 2) {
             Atom firstAtom = residue.getAtoms().get(0);
             Atom secondAtom = residue.getAtoms().get(1);
@@ -241,17 +242,17 @@ public class PDBFile {
                 }
                 thirdAtom.valanceAngle = (float) (180.0 * Math.PI / 180.0);
                 thirdAtom.dihedralAngle = (float) (0.0 * Math.PI / 180.0);
-                Atom newAtom = firstAtom.add(newRoot + "3", "H", 1);
+                Atom newAtom = firstAtom.add(newRoot + "3", "H", Order.SINGLE);
                 newAtom.setType("H");
                 newAtom.bondLength = 1.08f;
                 newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
                 newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
-                newAtom = firstAtom.add(newRoot + "2", "H", 1);
+                newAtom = firstAtom.add(newRoot + "2", "H", Order.SINGLE);
                 newAtom.setType("H");
                 newAtom.bondLength = 1.08f;
                 newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
                 newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
-                newAtom = firstAtom.add(newRoot + "1", "H", 1);
+                newAtom = firstAtom.add(newRoot + "1", "H", Order.SINGLE);
                 newAtom.setType("H");
                 newAtom.bondLength = 1.08f;
                 newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
@@ -260,7 +261,7 @@ public class PDBFile {
             if (atoms.size() > 4) {
                 Atom fourthAtom = residue.getAtoms().get(4);
                 if (fourthAtom.getName().equals("O5'")) {
-                    Atom newAtom = firstAtom.add("OP3", "O", 1);
+                    Atom newAtom = firstAtom.add("OP3", "O", Order.SINGLE);
                     newAtom.setType("O");
                     newAtom.bondLength = 1.48f;
                     newAtom.dihedralAngle = (float) (71.58 * Math.PI / 180.0);
@@ -281,9 +282,9 @@ public class PDBFile {
                     }
                     Atom newAtom;
                     if (!isIUPACMode()) {
-                        newAtom = secondAtom.add(newRoot + "2", "O", 2);
+                        newAtom = secondAtom.add(newRoot + "2", "O", Order.DOUBLE);
                     } else {
-                        newAtom = secondAtom.add(newRoot + "''", "O", 2);
+                        newAtom = secondAtom.add(newRoot + "''", "O", Order.DOUBLE);
                     }
                     newAtom.bondLength = 1.24f;
                     newAtom.dihedralAngle = (float) (180.0 * Math.PI / 180.0);
@@ -291,9 +292,9 @@ public class PDBFile {
                     newAtom.setType("O");
 
                     if (!isIUPACMode()) {
-                        newAtom = secondAtom.add(newRoot + "1", "O", 1);
+                        newAtom = secondAtom.add(newRoot + "1", "O", Order.SINGLE);
                     } else {
-                        newAtom = secondAtom.add(newRoot + "'", "O", 1);
+                        newAtom = secondAtom.add(newRoot + "'", "O", Order.SINGLE);
                     }
                     newAtom.bondLength = 1.24f;
                     newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
@@ -301,7 +302,7 @@ public class PDBFile {
                     newAtom.setType("O");
                 }
             } else if (lastAtom.getName().equals("O3'")) {
-                Atom newAtom = lastAtom.add("HO3'", "H", 1);
+                Atom newAtom = lastAtom.add("HO3'", "H", Order.SINGLE);
                 newAtom.setType("H");
                 newAtom.bondLength = 0.98f;
                 newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
