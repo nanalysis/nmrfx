@@ -610,7 +610,7 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Set the annotation values. Values are typically used for display of annotation.
+     * Set the annotation values. Values are typically used for display of apodization.
      *
      * @param region double array.
      */
@@ -619,6 +619,10 @@ public class Vec extends PySequence implements MatrixType {
             annotationData = new double[data.length];
         }
         System.arraycopy(data, 0, annotationData, 0, data.length);
+    }
+    
+    public void clearAnnotation() {
+        annotationData = null;
     }
 
     /**
