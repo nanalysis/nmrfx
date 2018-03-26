@@ -22,8 +22,13 @@ import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.nmrfx.structure.chemistry.miner.IBond;
 
 /**
  *
@@ -31,8 +36,87 @@ import java.util.stream.Collectors;
  */
 public class HoseCodeGenerator {
 
-    public void genHOSECodes(Entity entity) {
+    private List<MNode> getShellNodes(List<MNode> nodes, int iShell, int start) {
+        List<MNode> shellNodes = new ArrayList<>();
+        for (int i = start; i < nodes.size(); i++) {
+            MNode node = nodes.get(i);
+            if (node.getShell() > iShell) {
+                break;
+            } else if (node.getShell() == iShell) {
+                shellNodes.add(node);
+            }
+        }
+        return shellNodes;
+    }
+
+    class NodeComparator implements Comparator<MNode> {
+
+        @Override
+        public int compare(MNode o1, MNode o2) {
+            return o2.compareTo(o1);
+        }
+    }
+
+    private void initNodeValue(Entity entity, MNode mNode) {
+        MNode parent = mNode.getParent();
+        Atom nodeAtom = mNode.getAtom();
+        int value = 0;
+        if (parent != null) {
+            Atom parentAtom = parent.getAtom();
+            IBond iBond = entity.getBond(parentAtom, nodeAtom);
+
+            if (iBond != null) {
+                Order order = iBond.getOrder();
+                value += order.getOrderNum() * 5000;
+            }
+            int symNumber = 0;
+            String sym = mNode.isRingClosure() ? "" : nodeAtom.getElementName();
+            switch (sym) {
+                case "C":
+                    symNumber = 10;
+                    break;
+                case "O":
+                    symNumber = 9;
+                    break;
+                case "N":
+                    symNumber = 8;
+                    break;
+                case "S":
+                    symNumber = 7;
+                    break;
+                case "P":
+                    symNumber = 6;
+                    break;
+                case "Si":
+                    symNumber = 5;
+                    break;
+                case "B":
+                    symNumber = 4;
+                    break;
+                case "F":
+                    symNumber = 3;
+                    break;
+                case "Cl":
+                    symNumber = 2;
+                    break;
+                case "Br":
+                    symNumber = 1;
+                    break;
+                default:
+                    symNumber = 0;
+            }
+            value += (symNumber + 1) * 100;
+        }
+        mNode.setValue(value);
+    }
+
+    public Map<Integer, String> genHOSECodes(Entity entity, int nShells) {
         int targetElement = 6;
+        Set<Integer> targetSet = new HashSet<>();
+        targetSet.add(6);
+//        targetSet.add(7);
+//        targetSet.add(9);
+//        targetSet.add(15);
         MTree mTree = new MTree();
         HashMap<Atom, Integer> hash = new HashMap<>();
         List<Atom> eAtomList = new ArrayList<>();
@@ -40,6 +124,9 @@ public class HoseCodeGenerator {
 
         for (Atom atom : entity.atoms) {
             // entity check ensures that only atoms in same residue are used
+            if (atom.getAtomicNumber() == 0) {
+                continue;
+            }
             if (atom.entity == entity) {
                 if (atom.isMethyl() && !atom.isFirstInMethyl()) {
                     continue;
@@ -55,13 +142,25 @@ public class HoseCodeGenerator {
         }
 
         for (Atom atom : entity.atoms) {
-            for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = atom.bonds.get(iBond);
+//            System.out.println("atom " + atom.getShortName());
+            if (atom.getAtomicNumber() == 0) {
+                continue;
+            }
+
+            for (Bond bond : atom.bonds) {
+//                System.out.println("bond " + bond.toString());
+                if ((bond.begin.getAtomicNumber() == 1) || (bond.end.getAtomicNumber() == 1)) {
+                    continue;
+                }
                 Integer iNodeBegin = hash.get(bond.begin);
                 Integer iNodeEnd = hash.get(bond.end);
 
                 if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                    mTree.addEdge(iNodeBegin, iNodeEnd);
+                    if (bond.begin == atom) {
+                        mTree.addEdge(iNodeBegin, iNodeEnd, false);
+                    } else {
+                        mTree.addEdge(iNodeEnd, iNodeBegin, false);
+                    }
                 }
             }
 
@@ -69,65 +168,154 @@ public class HoseCodeGenerator {
         mTree.sortNodes();
 
         // get breadth first path from each atom
+        Map<Integer, String> result = new HashMap<>();
         for (int j = 0, n = eAtomList.size(); j < n; j++) {
             Atom atomStart = (Atom) eAtomList.get(j);
-            if (atomStart.aNum != targetElement) {
+            if (!targetSet.contains(atomStart.getAtomicNumber())) {
                 continue;
             }
-            System.out.println("start " + j + " " + atomStart.getShortName());
+//            System.out.println("start " + j + " " + atomStart.getShortName());
             int[] path = mTree.broad_path(j);
             List<MNode> pathNodes = mTree.getPathNodes();
-            int lastShell = 0;
-            List<MNode> shellNodes = new ArrayList<>();
-            ArrayDeque<List<MNode>> sortedNodes = new ArrayDeque<>();
-
-            MNode lastNode = pathNodes.get(pathNodes.size() - 1);
             for (MNode mNode : pathNodes) {
-                int shell = mNode.getShell();
-                if ((shell != lastShell) || (mNode == lastNode)) {
-                    shellNodes.sort(mNode.reversed());
-                    sortedNodes.add(shellNodes);
-                    int indexInShell = 0;
-                    for (MNode sNode : shellNodes) {
-                        System.out.println(lastShell + " atom " + sNode.getAtom().getShortName() + " indexIn " + indexInShell + " value " + sNode.getValue());
-                        sNode.setIndexInShell(indexInShell++);
-                    }
-                    shellNodes = new ArrayList<>();
-                    lastShell = shell;
-                }
-                Atom pathAtom = mNode.getAtom();
-                int value = 100 - pathAtom.getAtomicNumber();
-                int parentShellIndex = 0;
+                initNodeValue(entity, mNode);
+            }
+            for (int iN = pathNodes.size() - 1; iN >= 0; iN--) {
+                MNode mNode = pathNodes.get(iN);
                 MNode parent = mNode.getParent();
                 if (parent != null) {
-                    parentShellIndex = parent.getIndexInShell();
+                    parent.setValue(parent.getValue() + mNode.getValue());
                 }
-                value += (100 - parentShellIndex) * 10000;
-                System.out.println(pathAtom.getShortName() + " parent SI " + parentShellIndex + " shell " + shell + " value " + value);
-                mNode.setValue(value);
-                shellNodes.add(mNode);
             }
-            sortedNodes.descendingIterator().forEachRemaining(sNodes -> {
-                sNodes.stream().forEach(sNode -> {
-                });
-            });
+            MNode lastNode = pathNodes.get(pathNodes.size() - 1);
+            ArrayDeque<List<MNode>> sortedNodes = new ArrayDeque<>();
+            int lastNodeIndex = 0;
+            List<MNode> lastShellNodes = new ArrayList<>();
+            for (int iShell = 0; iShell < nShells; iShell++) {
+                List<MNode> shellNodes = getShellNodes(pathNodes, iShell, lastNodeIndex);
+                lastNodeIndex += shellNodes.size();
+                if (shellNodes.isEmpty()) {
+                    break;
+                }
+                List<MNode> thisShell = new ArrayList<>();
+                if (lastShellNodes.isEmpty()) {
+                    thisShell.addAll(shellNodes);
+                } else {
+                    for (MNode nNode : lastShellNodes) {
+                        int id = nNode.getID();
+                        List<MNode> thisBranch = shellNodes.stream().filter(nn -> nn.getParent().getID() == id).sorted(new NodeComparator()).collect(Collectors.toList());
+                        thisShell.addAll(thisBranch);
+                    }
+                }
+                lastShellNodes.clear();
+                lastShellNodes.addAll(thisShell);
+//                System.out.println(thisShell.toString());
+                sortedNodes.add(thisShell);
+            }
 
-            for (List<MNode> sNodes : sortedNodes) {
-                System.out.println("shell");
-                for (MNode mNode : sNodes) {
-                    Atom pathAtom = mNode.getAtom();
-                    MNode parent = mNode.getParent();
-                    String parentName = "";
-                    if (parent != null) {
-                        Atom parentAtom = parent.getAtom();
-                        parentName = parentAtom.getFullName();
-                    }
-                    if (pathAtom.aNum != 1) {
-                        System.out.println("pshell " + mNode.getShell() + " " + pathAtom.getFullName() + " " + parentName + " " + mNode.isRingClosure());
-                    }
-                }
-            }
+            String hoseCode = dumpCodes(entity, sortedNodes);
+//            System.out.println(hoseCode);
+            atomStart.setProperty("hose", hoseCode);
+            result.put(atomStart.getID(), hoseCode);
         }
+        return result;
+    }
+
+    String formatCenterNode(MNode node) {
+        StringBuilder result = new StringBuilder();
+        Atom atom = node.getAtom();
+        result.append(atom.getElementName());
+        Integer hyb = (Integer) atom.getProperty("hyb");
+        if (hyb == null) {
+            hyb = 3;
+        }
+        if (atom.getFlag(Atom.AROMATIC)) {
+            hyb = hyb + 4;
+        }
+        result.append(hyb);
+        return result.toString();
+    }
+
+    String getHoseCodeElement(String elementName) {
+        switch (elementName) {
+            case "Si":
+                return "Q";
+            case "Cl":
+                return "X";
+            case "Br":
+                return "Y";
+            default:
+                break;
+        }
+        return elementName;
+    }
+
+    private String dumpCodes(Entity entity, ArrayDeque<List<MNode>> sortedNodes) {
+        StringBuilder result = new StringBuilder();
+        List<Atom> lastShell = new ArrayList<>();
+        List<MNode> firstNodes = sortedNodes.pollFirst();
+        if (firstNodes.isEmpty()) {
+            return "";
+        }
+        MNode centerNode = firstNodes.get(0);
+        result.append(formatCenterNode(centerNode));
+        for (List<MNode> sNodes : sortedNodes) {
+//            System.out.println("shell");
+            result.append("/");
+            List<Atom> thisShell = new ArrayList<>();
+            int lastIndex = 0;
+
+            for (MNode mNode : sNodes) {
+                Atom pathAtom = mNode.getAtom();
+                MNode parent = mNode.getParent();
+                String parentName = "";
+                Order order = null;
+                int index = -1;
+                Atom parentAtom = parent.getAtom();
+                parentName = parentAtom.getFullName();
+                IBond iBond = entity.getBond(parentAtom, pathAtom);
+                if (iBond == null) {
+//                        System.out.println("null " + parentAtom.getShortName() + " " + pathAtom.getShortName());
+                } else {
+                    order = iBond.getOrder();
+                }
+                index = lastShell.indexOf(parentAtom);
+
+                if (pathAtom.aNum != 1) {
+                    if (index != -1) {
+                        while (lastIndex < index) {
+                            result.append(",");
+                            lastIndex++;
+                        }
+                    }
+                    thisShell.add(pathAtom);
+//                    System.out.println("pshell " + mNode.getShell() + " " + pathAtom.getFullName() + " " + parentName + " " + mNode.isRingClosure() + " " + index);
+                    if (pathAtom.getFlag(Atom.AROMATIC) && parentAtom.getFlag(Atom.AROMATIC)) {
+                        result.append("*");
+                    } else if ((order != null) && (order == Order.TRIPLE)) {
+                        result.append("%");
+                    } else if ((order != null) && (order == Order.DOUBLE)) {
+                        result.append("=");
+                    }
+
+                    if (mNode.isRingClosure()) {
+                        result.append("&");
+                    } else {
+                        result.append(getHoseCodeElement(pathAtom.getElementName()));
+                    }
+                    lastIndex = index;
+                }
+
+            }
+            while ((lastIndex + 1) < lastShell.size()) {
+                result.append(",");
+                lastIndex++;
+            }
+
+            lastShell.clear();
+            lastShell.addAll(thisShell);
+        }
+        return result.toString();
     }
 
     public void scoreNode(MNode mNode) {
