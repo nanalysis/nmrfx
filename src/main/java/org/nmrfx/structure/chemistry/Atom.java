@@ -27,11 +27,31 @@ import org.nmrfx.structure.chemistry.miner.IBond;
 
 public class Atom implements IAtom {
 
+    public enum ATOMFLAGS {
+        VISITED(0),
+        AROMATIC(1);
+        int index;
+
+        ATOMFLAGS(int index) {
+            this.index = index;
+
+        }
+        
+        public int getIndex() {
+            return index;
+        }
+
+        public void setValue(Atom atom, boolean value) {
+            atom.setFlag(index, value);
+        }
+    }
+
     static final public int SELECT = 0;
     static final public int DISPLAY = 1;
     static final public int SUPER = 2;
     static final public int LABEL = 2;
-    static final public int VISITED = 0;
+    static final public int VISITED = ATOMFLAGS.VISITED.index;
+    static final public int AROMATIC = ATOMFLAGS.AROMATIC.index;
     static final public double NULL_PPM = -9990.0;
     static int lastAtom = 0;
     public int iAtom = 1;
@@ -70,7 +90,7 @@ public class Atom implements IAtom {
     public int canonValue = 0;
     public Atom[] branchAtoms = new Atom[0];
     public Object atomEnergyProp = null;
-    boolean[] flags = new boolean[1];
+    boolean[] flags = new boolean[ATOMFLAGS.values().length];
     Optional<Map<String, Object>> properties = Optional.empty();
 
     public Atom(AtomParser atomParse) {
