@@ -15,6 +15,7 @@ from org.nmrfx.structure.chemistry.energy import CmaesRefinement
 from org.nmrfx.structure.chemistry.energy import AngleBoundary
 from org.nmrfx.structure.chemistry.energy import RNARotamer
 from org.nmrfx.structure.chemistry.io import PDBFile
+from org.nmrfx.structure.chemistry.io import SDFile
 from org.nmrfx.structure.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry.io import TrajectoryWriter
 from org.nmrfx.structure.chemistry import SSLayout
@@ -1131,6 +1132,15 @@ class refine:
     def readPDBFileNL(self,fileName):
         pdb = PDBFile()
         pdb.read(fileName)
+        self.molecule = Molecule.getActive()
+ 
+        self.molName = self.molecule.getName()
+        Molecule.selectAtoms('*.*')
+        return self.molecule
+
+    def readSDFile(self,fileName):
+        pdb = SDFile()
+        pdb.read(fileName, None)
         self.molecule = Molecule.getActive()
  
         self.molName = self.molecule.getName()
