@@ -24,7 +24,7 @@ FAMILY   CA     CB     CG     HB3    HB2
 FAMILY   CB     CG     SD     HG3    HG2    
 FAMILY   CG     SD     CE     
 FAMILY   SD     CE     HE3    HE2    HE1
-FAMILY   CA     C      +      O      
+FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 2

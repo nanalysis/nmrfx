@@ -20,8 +20,8 @@ FAMILY   -      N      H      CA
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
 FAMILY   CB     CG     CD     HG3    HG2    
-FAMILY   CG     CD     OE1    OE2    
-FAMILY   CA     C      +      O      
+FAMILY   CG     CD     =OE1    OE2    
+FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 2
