@@ -38,10 +38,16 @@ public class MTree {
     }
 
     public void addEdge(int i, int j) {
+        addEdge(i, j, true);
+    }
+
+    public void addEdge(int i, int j, boolean sym) {
         MNode iNode = (MNode) nodes.elementAt(i);
         MNode jNode = (MNode) nodes.elementAt(j);
         iNode.addNode(jNode);
-        jNode.addNode(iNode);
+        if (sym) {
+            jNode.addNode(iNode);
+        }
     }
 
     public void sortNodes() {
@@ -87,10 +93,12 @@ public class MTree {
 
             m = (path[j] & 0xFF);
             cNode = (MNode) nodes.elementAt(m);
+//            System.out.println("cNode " + j + " " + cNode.toString());
 
             for (int i = 0; i < cNode.nodes.size(); i++) {
                 next = ((MNode) cNode.nodes.get(i)).getID();
                 nNode = (MNode) nodes.elementAt(next);
+//                System.out.println("nNode " + i + " " + nNode.toString());
 
                 if (nNode.shell == -1) {
                     //System.out.println(j+" "+i+" "+m+" "+nodesAdded+" "+next+" "+cNode.shell);
@@ -99,11 +107,26 @@ public class MTree {
                     nNode.shell = cNode.shell + 1;
                     nNode.parent = cNode;
                     nNode.pathPos = nodesAdded - 1;
+//                    System.out.println("add " + (nodesAdded - 1 + " " + nNode.toString()));
                 } else {
-                    if (nNode.shell == cNode.shell + 1) {
-                        nNode.ringClosure = true;
+                    if ((nNode.parent == cNode) || (cNode.parent == nNode)) {
+//                        System.out.println("already notring");
+
+                    } else {
+                        if (nNode.shell == cNode.shell + 1) {
+                            MNode newNode = new MNode(nNodes);
+                            newNode.shell = nNode.shell;
+                            newNode.parent = cNode;
+                            newNode.pathPos = nodesAdded - 1;
+                            newNode.setAtom(nNode.getAtom());
+//                            System.out.println("already rimg");
+                            newNode.ringClosure = true;
+                            pathNodes.add(newNode);
+                        } else {
+                        }
                     }
                 }
+
             }
         }
 
