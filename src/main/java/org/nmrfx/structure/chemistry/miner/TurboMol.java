@@ -1,44 +1,74 @@
 package org.nmrfx.structure.chemistry.miner;
 
 import java.io.*;
-import java.util.Vector;
+import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.structure.chemistry.Entity;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.io.MoleculeIOException;
+import org.nmrfx.structure.chemistry.io.SDFile;
 
 public class TurboMol {
 
     String inputData = null;
     String inFileName = null;
     String outValue = null;
-    AtomContainer inMolecule = null;
+    Molecule inMolecule = null;
     BufferedReader bufReader = null;
 
-    public AtomContainer getMolecule() {
+    public Molecule getMolecule() {
         return inMolecule;
     }
-    public void setMolecule(AtomContainer iMol) {
+
+    public void setMolecule(Molecule iMol) {
         this.inMolecule = iMol;
     }
 
-    public IAtom getAtom(final int index) {
-        IAtom atom = null;
-        if (inMolecule != null) {
-            atom = inMolecule.getAtom(index);
-        }
-        return atom;
-    }
-
-    public int getAtomCount(final int element) {
-        int atomCount = 0;
-        if (inMolecule != null) {
-            for (IAtom atom : inMolecule.atoms()) {
-                if (element == atom.getAtomicNumber()) {
-                    atomCount++;
-                }
+    public void labelAtoms() {
+        int i = 0;
+        for (Entity entity : inMolecule.entities.values()) {
+            for (Atom atom : entity.getAtoms()) {
+                atom.setID(i++);
             }
         }
-        return atomCount;
     }
 
+    public void removeHydrogens() {
+        int i = 0;
+        inMolecule.entities.values().forEach((entity) -> {
+            entity.getAtoms().stream().filter((atom) -> (atom.getAtomicNumber() == 1)).forEachOrdered((atom) -> {
+                atom.remove();
+            });
+        });
+    }
+    
+    public void getNeighborCount() {
+        int i = 0;
+        inMolecule.entities.values().forEach((entity) -> {
+            entity.getAtoms().stream().filter((atom) -> (atom.getAtomicNumber() == 1)).forEachOrdered((atom) -> {
+                atom.getConnected().size();
+            });
+        });
+    }
+
+//    public IAtom getAtom(final int index) {
+//        IAtom atom = null;
+//        if (inMolecule != null) {
+//            atom = inMolecule.getAtom(index);
+//        }
+//        return atom;
+//    }
+//
+//    public int getAtomCount(final int element) {
+//        int atomCount = 0;
+//        if (inMolecule != null) {
+//            for (IAtom atom : inMolecule.atoms()) {
+//                if (element == atom.getAtomicNumber()) {
+//                    atomCount++;
+//                }
+//            }
+//        }
+//        return atomCount;
+//    }
     public void setInputFromString(String dataString) {
         inputData = dataString;
     }
@@ -113,6 +143,11 @@ public class TurboMol {
         inFileName = string;
     }
 
+    public void fromMol() throws MoleculeIOException {
+        SDFile sdFile = new SDFile();
+        inMolecule = sdFile.readMol("test", inputData);
+    }
+
     public void fromMDL() {
     }
 
@@ -180,11 +215,9 @@ public class TurboMol {
         outValue = toPDB(inMolecule);
     }
 
-    String toPDB(AtomContainer mol) {
-
+    String toPDB(Molecule mol) {
 
         String result = "";
-
 
         return result;
     }
@@ -193,7 +226,7 @@ public class TurboMol {
         outValue = toMDL(inMolecule);
     }
 
-    String toMDL(AtomContainer mol) {
+    String toMDL(Molecule mol) {
 
         String result = "";
 
@@ -203,9 +236,10 @@ public class TurboMol {
     public String getOutput() {
         return outValue;
     }
+
     public String getInput() {
         if (inputData == null) {
-           return "";
+            return "";
         } else {
             return inputData;
         }
@@ -215,12 +249,12 @@ public class TurboMol {
         outValue = generateSmiles(inMolecule);
     }
 
-    public String generateSmiles(AtomContainer molecule) {
+    public String generateSmiles(Molecule molecule) {
         return "";
     }
 
     public Molecule parseSmiles(String smilesString) {
-            return null;
+        return null;
 
     }
 
