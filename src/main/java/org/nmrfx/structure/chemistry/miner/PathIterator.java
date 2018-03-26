@@ -2,6 +2,7 @@ package org.nmrfx.structure.chemistry.miner;
 
 import java.util.*;
 import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.structure.chemistry.Atom.ATOMFLAGS;
 import org.nmrfx.structure.chemistry.Order;
 
 public class PathIterator implements Iterator {
@@ -11,7 +12,7 @@ public class PathIterator implements Iterator {
     ArrayList pathBonds = null;
     HashMap bondMap = new HashMap();
     ArrayList path = null;
-    public static boolean debug = true;
+    public static boolean debug = false;
     int pathLength = 0;
     int pathPos = 0;
     int firstAtom = 0;
@@ -186,7 +187,9 @@ public class PathIterator implements Iterator {
             }
         }
         boolean aType = nodeValidator.checkAtom(aNum, visited, currentPath, currentPattern, index, iAtom, bondMap);
-        System.out.println("check Atom index " + index + " iatom " + iAtom + " pattern " + currentPattern + " atype "  + aType);
+        if (debug) {
+            System.out.println("check Atom index " + index + " iatom " + iAtom + " pattern " + currentPattern + " atype " + aType);
+        }
         return aType;
     }
     //  public boolean checkBond(int order, final int[] currentPath,final int patternIndex, final int pathIndex, final int bondIndex) {
@@ -472,12 +475,8 @@ public class PathIterator implements Iterator {
         while (true) {
             if (pathLength == 0) {
                 if (!initialize()) {
-                    System.out.println("can't init " + currentAtom);
                     path = null;
-
                     break;
-                } else {
-                    System.out.println("init " + currentAtom);
                 }
             }
 
@@ -485,41 +484,83 @@ public class PathIterator implements Iterator {
                 break;
             }
         }
-        if ((path != null) && (pathLength != 0)) {
-            System.out.println(path.toString() + " len " + pathLength);
-        }
+        //if ((path != null) && (pathLength > 1)) {
+        //System.out.println("gotpath " + path.toString() + " len " + pathLength + " pat " + currentPattern);
+        //}
 
         return ((path != null) && (pathLength != 0));
     }
 
     public void processPatterns() {
         for (currentPattern = 0; currentPattern < nPatterns; currentPattern++) {
-            System.out.println("current pattern " + currentPattern + " of " + nPatterns);
+            //System.out.println("current pattern " + currentPattern + " of " + nPatterns);
             path = null;
             pathLength = 0;
             currentAtom = -1;
             while (hasNext()) {
                 ArrayList nextPath = (ArrayList) next();
                 int mode = nodeValidator.getMode(currentPattern);
-                System.out.println("is mode " + mode);
                 if (mode == 0) {
                     nodeValidator.assignProps(nextPath, currentPattern);
                 } else if (mode == 1) {
-                    System.out.println("is type " + currentPattern);
+                    //System.out.println("is type " + currentPattern);
                 } else if (mode == 2) {
                     ArrayList params = nodeValidator.getParams(nextPath, currentPattern);
-                    System.out.println("params " + params);
+                    //System.out.println("params " + params);
                     int atomIndex = (Integer) params.get(0);
                     for (int i = 1; i < params.size(); i += 2) {
                         String name = (String) params.get(i);
                         String value = (String) params.get(i + 1);
                         atoms[atomIndex].setProperty(name, value);
                         Atom atom = (Atom) atoms[atomIndex];
-                        System.out.println(atom.getFullName() + " " + name + " " + value);
+//                        System.out.println(atom.getFullName() + " " + name + " " + value);
                     }
                 }
             }
         }
-        nodeValidator.dumpProps();
+//        nodeValidator.dumpProps();
+    }
+
+    int getPropIndex(String[] propNames, String propName) {
+        int index = -1;
+        for (int i = 0; i < propNames.length; i++) {
+            if (propNames[i].equals(propName)) {
+                index = i;
+                break;
+            }
+        }
+        return index;
+    }
+
+    public void setHybridization() {
+        String[] propNames = nodeValidator.getPropertyNames();
+        int spIndex = getPropIndex(propNames, "sp");
+        int sp2Index = getPropIndex(propNames, "sp2");
+        if (spIndex != -1) {
+            boolean[][] props = nodeValidator.p;
+            for (int i = 0; i < props.length; i++) {
+                if (props[i][spIndex]) {
+                    atoms[i].setProperty("hyb", 1);
+                } else if (props[i][sp2Index]) {
+                    atoms[i].setProperty("hyb", 2);
+                } else {
+                    atoms[i].setProperty("hyb", 3);
+                }
+            }
+        }
+
+    }
+
+    public void setProperties(String propName, String propFlag) {
+        int flag = Atom.ATOMFLAGS.valueOf(propFlag).getIndex();
+        String[] propNames = nodeValidator.getPropertyNames();
+        int arIndex = getPropIndex(propNames, propName);
+        if (arIndex != -1) {
+            boolean[][] props = nodeValidator.p;
+            for (int i = 0; i < props.length; i++) {
+                atoms[i].setFlag(flag, props[i][arIndex]);
+            }
+        }
+
     }
 }
