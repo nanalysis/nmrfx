@@ -90,7 +90,7 @@ public class Entity implements AtomContainer, Serializable {
         for (Bond bond : bonds) {
             if ((bond.begin == atom1) && (bond.end == atom2)) {
                 result = bond;
-            } else if ((bond.begin == atom1) && (bond.end == atom2)) {
+            } else if ((bond.begin == atom2) && (bond.end == atom1)) {
                 result = bond;
             }
         }
