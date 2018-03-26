@@ -120,12 +120,17 @@ public class Sequence {
                         parent.addBond(bond);
                         residue.addBond(bond);
                     }
-                    bond = new Bond(refAtom, parent);
                     refAtom.parent = parent;
-                    refAtom.addBond(bond);
+//                    bond = new Bond(refAtom, parent);
+//                    refAtom.addBond(bond);
                 }
                 for (int iField = 3; iField < fields.length; iField++) {
                     String atomName = fields[iField];
+                    Order order = Order.SINGLE;
+                    if (atomName.charAt(0) == '=') {
+                        atomName = atomName.substring(1);
+                        order = Order.DOUBLE;
+                    }
                     Atom daughterAtom = null;
                     boolean ringClosure = false;
                     boolean connector = false;
@@ -145,15 +150,16 @@ public class Sequence {
                         throw new MoleculeIOException("Can't find daughter atom \"" + atomName + "\"");
                     }
 //                    if (!connector && daughterAtom.getName().startsWith("H")) {
-                    if (!connector && !ringClosure) {
-                        bond = new Bond(daughterAtom, refAtom);
+//                    if (!connector && !ringClosure) {
+                    if (!connector ) {
+                        bond = new Bond(daughterAtom, refAtom, order);
                         daughterAtom.addBond(bond);
                         daughterAtom.parent = refAtom;
                     }
                     if (connector) {
                         sequence.connectBond = bond;
                     } else {
-                        bond = new Bond(refAtom, daughterAtom);
+                        bond = new Bond(refAtom, daughterAtom, order);
                         refAtom.addBond(bond);
                         if (!connector && !ringClosure) {
                             daughterAtom.parent = refAtom;
