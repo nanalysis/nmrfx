@@ -14,7 +14,7 @@ ATOM   O      O'   1.24  121.00   180.0
 FAMILY   -      N      H      CA     
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     HB3    HB2    HB1
-FAMILY   CA     C      +      O      
+FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB      CHI1 1
 ANGLE     C       PSI 1

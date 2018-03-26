@@ -20,7 +20,7 @@ FAMILY   N      CA     C      CB     HA
 FAMILY   CA     CB     CG     HB3    HB2    
 FAMILY   CB     CG     CD     HG3    HG2    
 FAMILY   CG     CD     HD3    HD2    
-FAMILY   CA     C      +      O      
+FAMILY   CA     C      +      =O      
 ANGLE     C       PSI 1
 ATREE  C  +  
 PSEUDO QB HB2 HB3

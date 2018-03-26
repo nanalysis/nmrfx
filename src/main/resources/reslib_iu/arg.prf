@@ -30,11 +30,11 @@ FAMILY   N      CA     C      CB     HA
 FAMILY   CA     CB     CG     HB3    HB2    
 FAMILY   CB     CG     CD     HG3    HG2    
 FAMILY   CG     CD     NE     HD3    HD2    
-FAMILY   CD     NE     CZ     HE     
+FAMILY   CD     NE     =CZ     HE     
 FAMILY   NE     CZ     NH2    NH1    
 FAMILY   CZ     NH2    HH21   HH22   
 FAMILY   CZ     NH1    HH11   HH12   
-FAMILY   CA     C      +      O      
+FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 2
