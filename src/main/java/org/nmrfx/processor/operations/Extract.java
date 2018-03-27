@@ -18,6 +18,7 @@
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.math.units.PPM;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
@@ -30,12 +31,14 @@ public class Extract extends Operation {
     private final int iend;
     private final double dstart;
     private final double dend;
+    private final boolean ppmMode;
 
     public Extract(int start, int end) {
         this.istart = start;
         this.iend = end;
         this.dstart = -1;
         this.dend = -1;
+        this.ppmMode = false;
     }
 
     public Extract(double start, double end) {
@@ -43,10 +46,23 @@ public class Extract extends Operation {
         this.dend = end;
         this.istart = -1;
         this.iend = -1;
+        this.ppmMode = false;
+    }
+
+    public Extract(double start, double end, boolean ppmMode) {
+        this.dstart = start;
+        this.dend = end;
+        this.istart = -1;
+        this.iend = -1;
+        this.ppmMode = ppmMode;
+        System.out.println(start + " " + end + " " + ppmMode);
     }
 
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
+        if (ppmMode) {
+            return evalPPMMode(vector);
+        }
         int start;
         int end;
         int size = vector.getSize();
@@ -63,6 +79,26 @@ public class Extract extends Operation {
         } else {
             end = iend;
         }
+
+        if ((start < 0) || (start > (size - 1))) {
+            throw new OperationException(
+                    "Extract: start value must be > 0 and < " + (size - 1));
+        }
+        if ((end > (size - 1)) || (end <= start)) {
+            throw new OperationException(
+                    "Extract: end value must be > " + start + " and < " + (size - 1));
+        }
+        vector.extract(start, end);
+        return this;
+    }
+
+    Operation evalPPMMode(Vec vector) throws ProcessingException {
+
+        PPM ppm1 = new PPM(dstart);
+        PPM ppm2 = new PPM(dend);
+        int start = (int) vector.getDoublePosition(ppm1);
+        int end = (int) vector.getDoublePosition(ppm2);
+        int size = vector.getSize();
 
         if ((start < 0) || (start > (size - 1))) {
             throw new OperationException(
