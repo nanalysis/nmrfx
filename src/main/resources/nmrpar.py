@@ -40,6 +40,12 @@ def getExtendSize(vecSize,predictEnd,insert):
         size = predictEnd+1
     return size
 
+def getExtractSizeP(vsize,fidInfo,curDim,fstart,fend):
+    sw = fidInfo.sw[curDim]
+    sf = fidInfo.sf[curDim]
+    size = int((fstart-fend)*sf/sw*vsize+0.5)+2
+    return size
+
 def getExtractSize(vsize,fstart,fend):
     start=0
     end=0
