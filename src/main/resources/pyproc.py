@@ -706,7 +706,7 @@ def useProcessor(inNMRFx=False):
     dataInfo.resizeable = True
 
 # should FID be done by open with testing for file type
-def FID(fidFileName, tdSize=None, **keywords):
+def FID(fidFileName, tdSize=None, nusFileName=None, **keywords):
     ''' Open a raw  NMR dataset (FID file).<br>
     Parameters
     ---------
@@ -719,9 +719,9 @@ def FID(fidFileName, tdSize=None, **keywords):
     '''
 
     if (tdSize):
-        fidObj = processor.openfid(fidFileName, tdSize)
+        fidObj = processor.openfid(fidFileName, nusFileName, tdSize)
     else:
-        fidObj = processor.openfid(fidFileName)
+        fidObj = processor.openfid(fidFileName, nusFileName)
 
     fidInfo = makeFIDInfo(fidObj,tdSize)
     if (keywords):  # may use keywords for flags
