@@ -26,6 +26,7 @@ def parseArgs():
     parser.add_argument("-u",dest='uniform',action='store_true', help="NUS Mode")
     parser.add_argument("-c",dest='compare',action='store_true', help="NUS Mode")
     parser.add_argument("-p",dest='saveToPipe',action='store_true', help="Save to nmrPipe format")
+    parser.add_argument("-x",dest='extractNUS',action='store_true', help="Extract sample from uniform")
     parser.add_argument("-z",dest='zf',default=1,help="Zero Filling Factor (all dimensions)")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
@@ -95,14 +96,20 @@ def getFileNames(fidRootDir, datasetDir, challenge, sample, expName, args):
     statFile = os.path.join(datasetDir, statFileName)
     return (fidFileDir,datasetFile,scheduleFileName,uniformFile,statFile)
 
-def saveToPipe(datasetFile):
+def saveToPipe(datasetFile, pipeFile=None):
     datasetDir,fileName = os.path.split(datasetFile)
     fileRootName,ext = os.path.splitext(fileName)
-    pipeFileName = 'pipe-'+fileRootName
-    pipeFileDir = os.path.join(datasetDir, pipeFileName)
-    if not os.path.exists(pipeFileDir):
-        os.mkdir(pipeFileDir)
-    pipeFile = os.path.join(pipeFileDir, "test%03d.ft")
+    if pipeFile == None:
+        pipeFileName = 'pipe-'+fileRootName
+        pipeFileDir = os.path.join(datasetDir, pipeFileName)
+        if not os.path.exists(pipeFileDir):
+            os.mkdir(pipeFileDir)
+        pipeFile = os.path.join(pipeFileDir, "test%03d.ft")
+    else:
+        pipeFileDir = os.path.dirname(pipeFile)
+        if not os.path.exists(pipeFileDir):
+            os.mkdir(pipeFileDir)
+
     dataset=nd.open(datasetFile)
     nd.toPipe(dataset, pipeFile)
 
@@ -147,20 +154,30 @@ def getNegation(pars, varName, nDim=3):
         
 def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     if args == None:
-        args = nustest.parseArgs()
-    FID(fidDirName)
+        args = parseArgs()
+    if args.extractNUS:
+        FID(fidDirName, nusFileName=None)
+    else:
+        FID(fidDirName, nusFileName=scheduleName)
     CREATE(datasetName)
     ph=pars['phases']
     lab=pars['labels']
-    (start,end)=pars['range']
+    prangeMode = False
+    if 'prange' in pars:
+        prangeMode = True
+        (start,end)=pars['prange']
+        print pars['prange'],start,end
+    else:
+        (start,end)=pars['range']
     tdcomb = pars['tdcomb']
     negI=pars['negI']
     negP=pars['negP']
     refH=pars['refH']
     mode = args.nusAlg
     zfFactor = args.zf
-    if scheduleName != None:
-        readNUS(scheduleName)
+    if args.extractNUS:
+        if scheduleName != None:
+            readNUS(scheduleName)
     acqOrder('321')
     acqarray(0,0,0)
     skip(0,0,0)
@@ -180,7 +197,10 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     ZF(factor=zfFactor)
     FT()
     PHASE(ph0=ph[0][0],ph1=ph[0][1],dimag=False)
-    EXTRACT(start=start,end=end,mode='region')
+    if prangeMode:
+        EXTRACTP(fstart=start,fend=end)
+    else:
+        EXTRACT(start=start,end=end,mode='region')
     DIM(2,3)
     if args.apod == "blackman":
         BLACKMAN(c=0.5, dim=1)
