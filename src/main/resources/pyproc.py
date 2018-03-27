@@ -106,6 +106,7 @@ from nmrpar import getTdSizes
 from nmrpar import getBzSize
 from nmrpar import getExtendSize
 from nmrpar import getExtractSize
+from nmrpar import getExtractSizeP
 from nmrpar import getFilterSize
 from nmrpar import getZfSize
 from nmrpar import refByRatio
@@ -1636,6 +1637,34 @@ def LPR(fitStart=0, fitEnd=0, predictStart=0, predictEnd=0, npred=0, ncoef=0,
             curDim = dataInfo.curDim
             setDataInfoSize(curDim,getExtendSize(dataInfo.size[curDim],predictEnd,True))
     return op
+
+def EXTRACTP(fstart=0.0, fend=0.0,  disabled=False, vector=None, process=None):
+    '''Extract a specified range of points.
+    Parameters
+    ---------
+    fstart : real
+        min : 0
+        max : size-1
+        Start point of region to extract
+    fend : real
+        min : 0
+        max : size-1
+        End point of region to extract
+'''
+    global fidInfo
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+    op = Extract(fstart,fend,True)
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+        if (dataInfo.resizeable):
+            curDim = dataInfo.curDim
+            setDataInfoSize(curDim, getExtractSizeP(dataInfo.size[curDim],fidInfo,curDim,fstart,fend))
+
+
 
 def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=None):
     '''Extract a specified range of points.
