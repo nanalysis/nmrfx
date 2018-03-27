@@ -103,17 +103,19 @@ class BrukerData implements NMRData {
     boolean hasFID = false;
     boolean hasSpectrum = false;
     List<Double> arrayValues = new ArrayList<>();
+    File nusFile = null;
 
     /**
      * Open Bruker parameter and data files.
      *
      * @param path full path to the fid directory or file
      */
-    public BrukerData(String path) throws IOException {
+    public BrukerData(String path, File nusFile) throws IOException {
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.length() - 1);
         }
         this.fpath = path;
+        this.nusFile = nusFile;
         openParFile(path);
         openDataFile(path);
         if (dim < 2) {
@@ -802,7 +804,9 @@ class BrukerData implements NMRData {
         }
         String tdpar = "TD,";
         boolean gotSchedule = false;
-        File nusFile = new File(fpath + File.separator + "nuslist");
+        if (nusFile == null) {
+            nusFile = new File(fpath + File.separator + "nuslist");
+        }
         if (nusFile.exists()) {
             readSampleSchedule(nusFile.getPath(), false);
             if (sampleSchedule.getTotalSamples() == 0) {
@@ -896,7 +900,7 @@ class BrukerData implements NMRData {
                     case 1: // f1coef[i-1] = "1 0 0 1";
                         f1coefS[i - 1] = "sep";
                         complexDim[i - 1] = true;
-                        tdsize[i-1] = tdsize[i-1] /2;
+                        tdsize[i - 1] = tdsize[i - 1] / 2;
                         break;
                     default:
                         f1coef[i - 1] = new double[]{1, 0, 0, 1};

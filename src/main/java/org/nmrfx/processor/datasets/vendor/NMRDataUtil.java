@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.datasets.vendor;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -72,12 +73,16 @@ public final class NMRDataUtil {
      * @see NMRData
      */
     public static NMRData getFID(String fpath) throws IOException {
+        return getFID(fpath, null);
+    }
+
+    public static NMRData getFID(String fpath, File nusFile) throws IOException {
         StringBuilder bpath = new StringBuilder(fpath);
         try {
             if (NMRViewData.findFID(bpath)) {
                 return new NMRViewData(bpath.toString());
             } else if (BrukerData.findFID(bpath)) {
-                return new BrukerData(bpath.toString());
+                return new BrukerData(bpath.toString(), nusFile);
             } else if (VarianData.findFID(bpath)) {
                 return new VarianData(bpath.toString());
             } else if (JCAMPData.findFID(bpath)) {
@@ -111,7 +116,7 @@ public final class NMRDataUtil {
             if (NMRViewData.findFID(bpath)) {
                 return new NMRViewData(bpath.toString());
             } else if (BrukerData.findData(bpath)) {
-                return new BrukerData(bpath.toString());
+                return new BrukerData(bpath.toString(), null);
             } else if (VarianData.findFID(bpath)) {
                 return new VarianData(bpath.toString());
             } else if (JCAMPData.findData(bpath)) {

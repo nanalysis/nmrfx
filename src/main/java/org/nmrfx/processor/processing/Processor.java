@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.processing;
 
+import java.io.File;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.processing.processes.ProcessOps;
@@ -673,10 +674,14 @@ public class Processor {
      * @param tdSizes - time domain sizes
      * @return
      */
-    public NMRData openfid(String filename, int tdSizes[]) {
+    public NMRData openfid(String filename, String nusFileName, int tdSizes[]) {
         NMRData nmrData;
+        File nusFile = null;
+        if (nusFileName != null) {
+            nusFile = new File(nusFileName);
+        }
         try {
-            nmrData = NMRDataUtil.getFID(filename);
+            nmrData = NMRDataUtil.getFID(filename, nusFile);
         } catch (IOException ex) {
             throw new ProcessingException("Cannot open dataset " + filename);
         }
@@ -695,10 +700,14 @@ public class Processor {
      * @param filename
      * @return
      */
-    public NMRData openfid(String filename) {
+    public NMRData openfid(String filename, String nusFileName) {
         NMRData nmrData;
+        File nusFile = null;
+        if (nusFileName != null) {
+            nusFile = new File(nusFileName);
+        }
         try {
-            nmrData = NMRDataUtil.getFID(filename);
+            nmrData = NMRDataUtil.getFID(filename, nusFile);
         } catch (IOException ex) {
             throw new ProcessingException("Cannot open dataset \"" + filename + "\" because: " + ex.getMessage());
         }
