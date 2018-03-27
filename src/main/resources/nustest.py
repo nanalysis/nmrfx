@@ -27,7 +27,7 @@ def parseArgs():
     parser.add_argument("-c",dest='compare',action='store_true', help="NUS Mode")
     parser.add_argument("-p",dest='saveToPipe',action='store_true', help="Save to nmrPipe format")
     parser.add_argument("-x",dest='extractNUS',action='store_true', help="Extract sample from uniform")
-    parser.add_argument("-z",dest='zf',default=1,help="Zero Filling Factor (all dimensions)")
+    parser.add_argument("-z",dest='zf',type=int,default=1,help="Zero Filling Factor (all dimensions)")
     parser.add_argument("fileNames",nargs="*")
     args = parser.parse_args()
     return args
@@ -160,6 +160,7 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     else:
         FID(fidDirName, nusFileName=scheduleName)
     CREATE(datasetName)
+    kOffset = 0.49
     ph=pars['phases']
     lab=pars['labels']
     prangeMode = False
@@ -193,7 +194,7 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     if args.apod == "blackman":
         BLACKMAN()
     else:
-        KAISER()
+        KAISER(beta=args.beta,offset=kOffset)
     ZF(factor=zfFactor)
     FT()
     PHASE(ph0=ph[0][0],ph1=ph[0][1],dimag=False)
@@ -206,8 +207,8 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
         BLACKMAN(c=0.5, dim=1)
         BLACKMAN(c=0.5, dim=2)
     else:
-        KAISER(c=0.5, beta=args.beta, dim=1)
-        KAISER(c=0.5, beta=args.beta, dim=2)
+        KAISER(c=0.5, offset=kOffset, beta=args.beta, dim=1)
+        KAISER(c=0.5, offset=kOffset, beta=args.beta, dim=2)
     PHASEND(ph0=ph[1][0],ph1=ph[1][1],dim=1)
     PHASEND(ph0=ph[2][0],ph1=ph[2][1],dim=2)
     if mode == "NESTA":
