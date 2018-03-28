@@ -57,7 +57,7 @@ public class NMRPipeData implements NMRData {
     private final String fpath;
     private FileChannel fc = null;
     private double groupDelay = 0.0;
-    private final double scale = 1.0;
+    private final double scale = 1.0e6;
     String template = "%03d.ft";
     private Double[] Ref = new Double[MAXDIM];
     private Double[] Sw = new Double[MAXDIM];
@@ -82,8 +82,10 @@ public class NMRPipeData implements NMRData {
     boolean isShort = false;
     int[] sizes;
     Dataset dataSource = null;
+    File nusFile = null;
 
-    public NMRPipeData(String path) {
+    public NMRPipeData(String path, File nusFile) throws IOException {
+        this.nusFile = nusFile;
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.length() - 1);
         }
@@ -129,7 +131,7 @@ public class NMRPipeData implements NMRData {
         fileHeader = new Header(bBuffer);
     }
 
-    public NMRPipeData(Dataset dataset) {
+    public NMRPipeData(Dataset dataset) throws IOException {
         ByteBuffer bBuffer = ByteBuffer.allocate(2048).order(ByteOrder.LITTLE_ENDIAN);
         dirName = "";
         fpath = "";
@@ -138,7 +140,7 @@ public class NMRPipeData implements NMRData {
         dataSource = dataset;
     }
 
-    private void setFromDataset(Dataset dataset) {
+    private void setFromDataset(Dataset dataset) throws IOException {
         setNDim(dataset.getNDim());
         for (int iDim = 0; iDim < getNDim(); iDim++) {
             setDimOrder(iDim, iDim + 1);
@@ -645,11 +647,12 @@ public class NMRPipeData implements NMRData {
 
     @Override
     public SampleSchedule getSampleSchedule() {
-        return null;
+        return sampleSchedule;
     }
 
     @Override
     public void setSampleSchedule(SampleSchedule sampleSchedule) {
+        this.sampleSchedule = sampleSchedule;
     }
 
     FileChannel getFileChannel(int i) {
@@ -738,17 +741,17 @@ public class NMRPipeData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) fbuf.get(j);
+                data[j] = (double) fbuf.get(j) / scale;
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) sbuf.get(j);
+                data[j] = (double) sbuf.get(j) / scale;
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (j = 0; j < np; j++) {
-                data[j] = (double) ibuf.get(j);
+                data[j] = (double) ibuf.get(j) / scale;
             }
         }
     }  // end copyVecData
@@ -761,17 +764,17 @@ public class NMRPipeData implements NMRData {
             buf.order(ByteOrder.LITTLE_ENDIAN);
             FloatBuffer fbuf = buf.asFloatBuffer();
             for (int j = 0; j < nComplex; j++) {
-                data[j] = new Complex((double) fbuf.get(j), (double) fbuf.get(j + nComplex));
+                data[j] = new Complex((double) fbuf.get(j) / scale, (double) -fbuf.get(j + nComplex) / scale);
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (int j = 0; j < nComplex; j++) {
-                data[j] = new Complex((double) sbuf.get(j), (double) sbuf.get(j + nComplex));
+                data[j] = new Complex((double) sbuf.get(j) / scale, (double) -sbuf.get(j + nComplex) / scale);
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (int j = 0; j < nComplex; j++) {
-                data[j] = new Complex((double) ibuf.get(j), (double) ibuf.get(j + nComplex));
+                data[j] = new Complex((double) ibuf.get(j) / scale, (double) -ibuf.get(j + nComplex) / scale);
             }
         }
     }  // end copyVecData
@@ -782,20 +785,20 @@ public class NMRPipeData implements NMRData {
         if (isFloat) {
             FloatBuffer fbuf = ByteBuffer.wrap(dataBuf).asFloatBuffer();
             for (int j = 0; j < nComplex; j++) {
-                rdata[j] = (double) fbuf.get(j);
-                idata[j] = (double) fbuf.get(j + nComplex);
+                rdata[j] = (double) fbuf.get(j) / scale;
+                idata[j] = (double) -fbuf.get(j + nComplex) / scale;
             }
         } else if (isShort) {
             ShortBuffer sbuf = ByteBuffer.wrap(dataBuf).asShortBuffer();
             for (int j = 0; j < nComplex; j++) {
-                rdata[j] = (double) sbuf.get(j);
-                idata[j] = (double) sbuf.get(j + nComplex);
+                rdata[j] = (double) sbuf.get(j) / scale;
+                idata[j] = (double) -sbuf.get(j + nComplex) / scale;
             }
         } else {
             IntBuffer ibuf = ByteBuffer.wrap(dataBuf).asIntBuffer();
             for (int j = 0; j < nComplex; j++) {
-                rdata[j] = (double) ibuf.get(j);
-                idata[j] = (double) ibuf.get(j + nComplex);
+                rdata[j] = (double) ibuf.get(j) / scale;
+                idata[j] = (double) -ibuf.get(j + nComplex) / scale;
             }
         }
     }  // end copyVecData
@@ -806,12 +809,39 @@ public class NMRPipeData implements NMRData {
         }
     }
 
-    void getSizes() {
+    void getSizes() throws IOException {
         sizes = new int[DIMSIZE];
         for (int dim = 0; dim < DIMSIZE; dim++) {
             int size = FIELDS.getSize(fileHeader, dim);
             sizes[dim] = size > 0 ? size : 1;
         }
+        boolean gotSchedule = false;
+        if (nusFile == null) {
+            nusFile = new File(fpath + File.separator + "nuslist");
+        }
+        if (nusFile.exists()) {
+            readSampleSchedule(nusFile.getPath(), false);
+            if (sampleSchedule.getTotalSamples() == 0) {
+                throw new IOException("nuslist file exists, but is empty");
+            } else {
+                gotSchedule = true;
+            }
+        }
+//        if (gotSchedule) {
+//            int[] dims = sampleSchedule.getDims();
+//            for (int i = 0; i < dims.length; i++) {
+//                tdsize[i + 1] = dims[i] * 2;
+//                dim = i + 2;
+//            }
+//        } else {
+//            for (int i = 2; i <= dim; i++) {
+//                tdsize[i - 1] = 1;
+//                if ((ipar = getParInt(tdpar + i)) != null) {
+//                    tdsize[i - 1] = ipar;
+//                }
+//            }
+//        }
+
     }
 
     String getTemplateFile(int index) {

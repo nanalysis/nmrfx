@@ -88,7 +88,7 @@ public final class NMRDataUtil {
             } else if (JCAMPData.findFID(bpath)) {
                 return new JCAMPData(bpath.toString());
             } else if (NMRPipeData.findFID(bpath)) {
-                return new NMRPipeData(bpath.toString());
+                return new NMRPipeData(bpath.toString(), nusFile);
             } else {
                 throw new IOException("FID not found: " + fpath);
             }
