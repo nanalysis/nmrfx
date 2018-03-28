@@ -160,7 +160,7 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     else:
         FID(fidDirName, nusFileName=scheduleName)
     CREATE(datasetName)
-    kOffset = 0.49
+    kOffset = 0.495
     ph=pars['phases']
     lab=pars['labels']
     prangeMode = False
