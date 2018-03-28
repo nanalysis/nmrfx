@@ -159,6 +159,9 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
         FID(fidDirName, nusFileName=None)
     else:
         FID(fidDirName, nusFileName=scheduleName)
+
+    pipeMode = "%" in fidDirName
+
     CREATE(datasetName)
     kOffset = 0.495
     ph=pars['phases']
@@ -173,7 +176,7 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     tdcomb = pars['tdcomb']
     negI=pars['negI']
     negP=pars['negP']
-    refH=pars['refH']
+    refValues=pars['ref']
     mode = args.nusAlg
     zfFactor = args.zf
     if args.extractNUS:
@@ -185,9 +188,15 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     label(lab[0], lab[1], lab[2])
     acqsize(0,0,0)
     tdsize(0,0,0)
-    sf('SFO1,1','SFO1,2','SFO1,3')
-    sw('SW_h,1','SW_h,2','SW_h,3')
-    ref(refH,'N','C')
+    if pipeMode:
+        sf('FDF2OBS','FDF1OBS','FDF3OBS')
+        sw('FDF2SW','FDF1SW','FDF3SW')
+    else:
+        sf('SFO1,1','SFO1,2','SFO1,3')
+        sw('SW_h,1','SW_h,2','SW_h,3')
+
+
+    ref(refValues[0],refValues[1],refValues[2])
     DIM(1)
     if tdcomb != "":
         TDCOMB(coef=tdcomb)
@@ -212,7 +221,7 @@ def execNUS(fidDirName, datasetName, scheduleName,  pars, args=None):
     PHASEND(ph0=ph[1][0],ph1=ph[1][1],dim=1)
     PHASEND(ph0=ph[2][0],ph1=ph[2][1],dim=2)
     if mode == "NESTA":
-        NESTA(tolFinal=args.tolFinal, muFinal=args.muFinal, threshold=args.threshold, nOuter=args.nOuter, nInner=args.nInner, logToFile=True)
+        NESTA(tolFinal=args.tolFinal, muFinal=args.muFinal, threshold=args.threshold, nOuter=args.nOuter, nInner=args.nInner, logToFile=False)
     elif mode == "IST":
         ISTMATRIX(threshold=args.istFraction, iterations=args.nInner, alg="std")
     DIM(2)
