@@ -42,6 +42,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.datasets.Dataset;
@@ -49,6 +51,7 @@ import org.nmrfx.processor.datasets.Dataset;
 public class NMRPipeData implements NMRData {
 
     static private final int DIMSIZE = 4;
+    static private final int MAXDIM = 10;
     static private final int MAX_FILECHANNELS = 16;
     private final String dirName;
     private final String fpath;
@@ -56,6 +59,9 @@ public class NMRPipeData implements NMRData {
     private double groupDelay = 0.0;
     private final double scale = 1.0;
     String template = "%03d.ft";
+    private Double[] Ref = new Double[MAXDIM];
+    private Double[] Sw = new Double[MAXDIM];
+    private Double[] Sf = new Double[MAXDIM];
 
     Header fileHeader;
     private SampleSchedule sampleSchedule = null;
@@ -83,6 +89,24 @@ public class NMRPipeData implements NMRData {
         }
         Path filePath = Paths.get(path);
         dirName = filePath.getParent().toString();
+        template = "test%03d.fid";
+
+        String fileName = filePath.getFileName().toString();
+        if (fileName.contains("%")) {
+            template = fileName;
+            fileName = String.format(fileName, 1);
+            path = Paths.get(dirName, fileName).toString();
+        } else {
+            Pattern pattern = Pattern.compile("(.+\\D)(\\d+)(\\..+)");
+            Matcher matcher = pattern.matcher(fileName);
+            if (matcher.matches()) {
+                // fixme  only works for 3d
+                template = matcher.group(1) + "%0" + matcher.group(2).length() + "d" + matcher.group(3);
+                System.out.println("template " + template);
+            }
+            // fixme use regex to come up with a pattern
+        }
+
         this.fpath = path;
         fcMap = Collections.synchronizedMap(new FileChannelMap(MAX_FILECHANNELS));
 
@@ -93,6 +117,7 @@ public class NMRPipeData implements NMRData {
         np = getSize(0) * 2;
         getDimMap();
         getSizes();
+        groupDelay = getDMXValue();
         tbytes = np * ebytes;
 //        checkAndOpenSampleSchedule(path);
     }
@@ -168,6 +193,12 @@ public class NMRPipeData implements NMRData {
     public static boolean findFIDFiles(String dpath) {
         boolean found = false;
         File file = new File(dpath);
+        String dirName = file.getParent();
+        String fileName = file.getName();
+        if (fileName.contains("%")) {
+            fileName = String.format(fileName, 1);
+            file = Paths.get(dirName, fileName).toFile();
+        }
         if (file.exists()) {
             try (FileReader reader = new FileReader(file)) {
                 boolean ok = true;
@@ -295,51 +326,81 @@ public class NMRPipeData implements NMRData {
         return FIELDS.FDTEMPERATURE.getFloat(fileHeader);
     }
 
+    public double getDMXValue() {
+        return FIELDS.FDDMXVAL.getFloat(fileHeader);
+    }
+
     @Override
     public String getSequence() {
         return "";
     }
 
-    @Override
-    public double getSF(int dim) {
-        return FIELDS.getFloat(fileHeader, dim, "OBS");
+    public String getLabel(int dim) {
+        return FIELDS.getString(fileHeader, dim, "LABEL");
     }
 
     @Override
-    public void setSF(int dim, double value) {
-        FIELDS.setFloat(fileHeader, dim, "OBS", (float) value);
+    public double getSF(int iDim) {
+        double sf;
+        if (Sf[iDim] != null) {
+            sf = Sf[iDim];
+        } else {
+            sf = FIELDS.getFloat(fileHeader, iDim, "OBS");
+        }
+        return sf;
     }
 
     @Override
-    public void resetSF(int dim) {
+    public void setSF(int iDim, double value) {
+        Sf[iDim] = value;
     }
 
     @Override
-    public double getSW(int dim) {
-        return FIELDS.getFloat(fileHeader, dim, "SW");
+    public void resetSF(int iDim) {
+        Sf[iDim] = null;
     }
 
     @Override
-    public void setSW(int dim, double value) {
-        FIELDS.setFloat(fileHeader, dim, "SW", (float) value);
+    public double getSW(int iDim) {
+        double sw;
+        if (Sw[iDim] != null) {
+            sw = Sw[iDim];
+        } else {
+            sw = FIELDS.getFloat(fileHeader, iDim, "SW");
+        }
+        return sw;
     }
 
     @Override
-    public void resetSW(int dim) {
+    public void setSW(int iDim, double value) {
+        Sw[iDim] = value;
     }
 
     @Override
-    public double getRef(int dim) {
-        return FIELDS.getFloat(fileHeader, dim, "CAR");
+    public void resetSW(int iDim) {
+        Sw[iDim] = null;
     }
 
     @Override
-    public void setRef(int dim, double ref) {
-        FIELDS.setFloat(fileHeader, dim, "CAR", (float) ref);
+    public double getRef(int iDim) {
+        double ref;
+        if (Ref[iDim] != null) {
+            ref = Ref[iDim];
+        } else {
+            ref = FIELDS.getFloat(fileHeader, iDim, "CAR");
+            setRef(iDim, ref);
+        }
+        return ref;
+    }
+
+    @Override
+    public void setRef(int iDim, double ref) {
+        Ref[iDim] = ref;
     }
 
     @Override
     public void resetRef(int dim) {
+        Ref[dim] = null;
     }
 
     @Override
@@ -424,7 +485,8 @@ public class NMRPipeData implements NMRData {
         int nDim = getNDim();
         String[] names = new String[nDim];
         for (int i = 0; i < nDim; i++) {
-            names[i] = "FDF" + (i + 1) + "OBS";
+            int j = fileHeader.getDim(i);
+            names[i] = "FDF" + (j + 1) + "OBS";
         }
         return names;
     }
@@ -434,7 +496,8 @@ public class NMRPipeData implements NMRData {
         int nDim = getNDim();
         String[] names = new String[nDim];
         for (int i = 0; i < nDim; i++) {
-            names[i] = "FDF" + (i + 1) + "SW";
+            int j = fileHeader.getDim(i);
+            names[i] = "FDF" + (j + 1) + "SW";
         }
         return names;
     }
@@ -444,11 +507,7 @@ public class NMRPipeData implements NMRData {
         int nDim = getNDim();
         ArrayList<String> names = new ArrayList<>();
         for (int i = 0; i < nDim; i++) {
-            String name = getTN(i);
-            if (names.contains(name)) {
-                name = name + "_" + (i + 1);
-            }
-            names.add(name);
+            names.add(getLabel(i));
         }
 
         return names.toArray(new String[names.size()]);
@@ -456,6 +515,7 @@ public class NMRPipeData implements NMRData {
 
     @Override
     public void readVector(int iVec, Vec dvec) {
+        dvec.setGroupDelay(groupDelay);
         if (dvec.isComplex()) {
             if (dvec.useApache()) {
                 readVector(iVec, dvec.getCvec());
@@ -465,6 +525,7 @@ public class NMRPipeData implements NMRData {
         } else {
             readVector(iVec, dvec.rvec);
         }
+        dvec.fixWithPhasedHFT();
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
         double delRef = (dvec.getSize() / 2 - 0) * (1.0 / dvec.dwellTime) / dvec.centerFreq / dvec.getSize();
@@ -598,7 +659,7 @@ public class NMRPipeData implements NMRData {
         int planeIndex = getPlaneIndex(i);
         FileChannel fileChan = fcMap.get(planeIndex);
         if (fileChan == null) {
-            String templateFile = getTemplateFile(i);
+            String templateFile = getTemplateFile(planeIndex);
             fileChan = openDataFile(dirName, templateFile);
             fcMap.put(planeIndex, fileChan);
         }
