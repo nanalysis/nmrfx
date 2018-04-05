@@ -151,8 +151,8 @@ public class NMRPipeData implements NMRData {
         FIELDS.setFloat(fileHeader, "TEMPERATURE", (float) dataset.getTempK());
         for (int iDim = 0; iDim < getNDim(); iDim++) {
             setSize(iDim, dataset.getSize(iDim));
-            setSF(iDim, dataset.getSf(iDim));
-            setSW(iDim, dataset.getSw(iDim));
+            FIELDS.setFloat(fileHeader, iDim, "OBS", (float) dataset.getSf(iDim));
+            FIELDS.setFloat(fileHeader, iDim, "SW", (float) dataset.getSw(iDim));
             FIELDS.setInt(fileHeader, iDim, "TDSIZE", dataset.getTDSize(iDim));
             FIELDS.setInt(fileHeader, iDim, "ZF", dataset.getZFSize(iDim));
             FIELDS.setInt(fileHeader, iDim, "FTSIZE", dataset.getZFSize(iDim));
