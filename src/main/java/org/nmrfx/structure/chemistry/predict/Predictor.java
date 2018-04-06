@@ -5,15 +5,19 @@
  */
 package org.nmrfx.structure.chemistry.predict;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Entity;
 import org.nmrfx.structure.chemistry.HoseCodeGenerator;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.ProteinPredictor;
 import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 import org.nmrfx.structure.chemistry.miner.NodeValidator;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
 
@@ -22,6 +26,32 @@ import org.nmrfx.structure.chemistry.miner.PathIterator;
  * @author Bruce Johnson
  */
 public class Predictor {
+
+    static final Map<String, Double> RNA_REF_SHIFTS = new HashMap<>();
+
+    static {
+        RNA_REF_SHIFTS.put("A.H2", 7.93);
+        RNA_REF_SHIFTS.put("G.H8", 7.87);
+        RNA_REF_SHIFTS.put("C.H5", 5.84);
+        RNA_REF_SHIFTS.put("U.H5", 5.76);
+
+        RNA_REF_SHIFTS.put("C.H6", 8.02);
+        RNA_REF_SHIFTS.put("U.H6", 8.01);
+        RNA_REF_SHIFTS.put("A.H1'", 5.38);
+        RNA_REF_SHIFTS.put("G.H1'", 5.37);
+        RNA_REF_SHIFTS.put("C.H1'", 5.45);
+
+        RNA_REF_SHIFTS.put("U.H1'", 5.50);
+        RNA_REF_SHIFTS.put("A.H2'", 4.54);
+        RNA_REF_SHIFTS.put("G.H2'", 4.59);
+        RNA_REF_SHIFTS.put("C.H2'", 4.54);
+        RNA_REF_SHIFTS.put("U.H2'", 4.54);
+
+        RNA_REF_SHIFTS.put("A.H3'", 4.59);
+        RNA_REF_SHIFTS.put("G.H3'", 4.59);
+        RNA_REF_SHIFTS.put("C.H3'", 4.59);
+        RNA_REF_SHIFTS.put("U.H3'", 4.59);
+    }
 
     private boolean isRNA(Polymer polymer) {
         boolean rna = false;
@@ -36,13 +66,20 @@ public class Predictor {
     }
 
     public void predictMolecule(Molecule mol, int iRef) throws InvalidMoleculeException {
+
         for (Polymer polymer : mol.getPolymers()) {
             if (!isRNA(polymer)) {
                 predictPeptidePolymer(polymer, iRef);
+            } else {
+                predictRNAWithRingCurrent(polymer, iRef);
             }
         }
-        for (Entity entity:mol.getLigands()) {
+        boolean hasPolymer = !mol.getPolymers().isEmpty();
+        for (Entity entity : mol.getLigands()) {
             predictWithShells(entity, iRef);
+            if (hasPolymer) {
+                predictLigandWithRingCurrent(entity, iRef);
+            }
         }
     }
 
@@ -63,6 +100,45 @@ public class Predictor {
                 }
             }
         });
+    }
+
+    public void predictRNAWithRingCurrent(Polymer polymer, int iRef) throws InvalidMoleculeException {
+        RingCurrentShift ringShifts = new RingCurrentShift();
+        ringShifts.makeRingList(polymer.molecule);
+
+        double ringRatio = 0.56;
+        List<Atom> atoms = polymer.getAtoms();
+        for (Atom atom : atoms) {
+            String name = atom.getShortName();
+            String aName = atom.getName();
+            String nucName = atom.getEntity().getName();
+            String nucAtom = nucName + "." + aName;
+            if (RNA_REF_SHIFTS.containsKey(nucAtom)) {
+                double basePPM = RNA_REF_SHIFTS.get(nucName + "." + aName);
+                double ringPPM = ringShifts.calcRingContributions(atom.getSpatialSet(), 0, ringRatio);
+                double ppm = basePPM + ringPPM;
+                atom.setRefPPM(iRef, ppm);
+            }
+        }
+    }
+
+    public void predictLigandWithRingCurrent(Entity ligand, int iRef) throws InvalidMoleculeException {
+        RingCurrentShift ringShifts = new RingCurrentShift();
+        ringShifts.makeRingList(ligand.molecule);
+
+        double ringRatio = 0.56;
+        List<Atom> atoms = ligand.getAtoms();
+        for (Atom atom : atoms) {
+            String name = atom.getShortName();
+            String aName = atom.getName();
+            double ringPPM = ringShifts.calcRingContributions(atom.getSpatialSet(), 0, ringRatio);
+            PPMv ppmV = atom.getRefPPM(iRef);
+            if (ppmV != null) {
+                double basePPM = ppmV.getValue();
+                double ppm = basePPM + ringPPM;
+                atom.setRefPPM(iRef, ppm);
+            }
+        }
     }
 
     public void predictWithShells(Entity aC, int iRef) {
