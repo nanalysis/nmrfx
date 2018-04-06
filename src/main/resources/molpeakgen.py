@@ -59,12 +59,14 @@ editingModes = {'ef':(False,True), 'fe':(True,False), 'ee':(True,True), 'ff':(Fa
 
 
 class MolPeakGen:
+    widthH = 0.02
+    widthC = 0.4
 
     def __init__(self, mol = None):
         if mol == None:
             mol = Molecule.getActive()
         self.mol = mol
-        self.widths = [0.02,0.02]
+        self.widths = [self.widthH, self.widthH]
         self.intensity = 100.0
         self.refMode = True
         #self.labelScheme = "All: A.C2',C8,Hn,Hr G.C1',Cn,Hn,Hr U.C2',C6,Hn,Hr C.C1',C6,Hn,Hr"
@@ -151,6 +153,7 @@ class MolPeakGen:
                 peakgen.addPeak(peakList, ppms, self.widths, intensity, names)
 
     def genDistancePeaks(self, dataset, listName="", condition="sim", scheme="", tol=5.0):
+        self.setWidths([self.widthH, self.widthH])
         if not isinstance(dataset,Dataset):
             dataset = Dataset.getDataset(dataset)
         if listName == "":
@@ -180,6 +183,7 @@ class MolPeakGen:
         return peakList
 
     def genTOCSYPeaks(self, dataset, listName="", condition="sim", transfers=2):
+        self.setWidths([self.widthH, self.widthH])
         if not isinstance(dataset,Dataset):
             dataset = Dataset.getDataset(dataset)
         if listName == "":
@@ -208,6 +212,7 @@ class MolPeakGen:
         return peakList
 
     def genHCPeaks(self, dataset, listName="", condition="sim"):
+        self.setWidths([self.widthH*2, self.widthC])
         if not isinstance(dataset,Dataset):
             dataset = Dataset.getDataset(dataset)
         if listName == "":
@@ -223,7 +228,6 @@ class MolPeakGen:
             pType = "N"
         else:
             pType = "C"
-        
 
         polymers = self.mol.getPolymers()
         for polymer in polymers:
@@ -282,6 +286,7 @@ class MolPeakGen:
                     self.addPeaks(peakList, aSelected, bSelected, d1Edited, d2Edited)
 
     def genRNASecStrPeaks(self, dataset, listName="", condition="sim", scheme=""):
+        self.setWidths([self.widthH, self.widthH])
         if not isinstance(dataset,Dataset):
             dataset = Dataset.getDataset(dataset)
         if listName == "":
