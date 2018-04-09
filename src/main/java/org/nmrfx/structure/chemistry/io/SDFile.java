@@ -100,9 +100,9 @@ public class SDFile {
             this.molecule = compound.molecule;
         } else {
             molecule = new Molecule(molName);
-            compound = new Compound("1", molName);
-            compound.molecule = molecule;
-            molecule.addEntity(compound, molName);
+            this.compound = new Compound("1", molName);
+            this.compound.molecule = molecule;
+            molecule.addEntity(this.compound, molName);
             molecule.structures.add(0);
         }
 
