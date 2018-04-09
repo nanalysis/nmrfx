@@ -159,12 +159,12 @@ public class EnergyLists {
     void addAngleBoundary(AngleBoundary angleBoundary) {
         angleBoundList.add(angleBoundary);
     }
-    
-    public void addAtomRef(Atom atom){
+
+    public void addAtomRef(Atom atom) {
         refAtoms.add(atom);
     }
-    
-    public ArrayList<Atom> getRefAtoms(){
+
+    public ArrayList<Atom> getRefAtoms() {
         return refAtoms;
     }
 
@@ -227,21 +227,21 @@ public class EnergyLists {
     public int getStructure() {
         return iStruct;
     }
-    
-    public void setRingShifts(String filterString){
+
+    public void setRingShifts(String filterString) {
         ringShifts = new RingCurrentShift();
         ringShifts.makeRingList(molecule);
-        
+
         MolFilter molFilter = new MolFilter(filterString);
-        List<SpatialSet> spatialSets = Molecule.matchAtoms(molFilter,molecule);
+        List<SpatialSet> spatialSets = Molecule.matchAtoms(molFilter, molecule);
         ringShifts.setBasePPMs(spatialSets);
     }
-    
-    public void setRingShifts(){
+
+    public void setRingShifts() {
         setRingShifts("*.H8,H6,H5,H2,H1',H2',H3'");
     }
-    
-    public void updateShifts(){
+
+    public void updateShifts() {
         ringShifts.predictShifts();
     }
 
@@ -301,8 +301,8 @@ public class EnergyLists {
         double minDistance = Double.MAX_VALUE;
         for (Atom atom : atomContainer) {
             Point3 pt2 = atom.getPoint();
+            double distance = calcDistance(pt1, pt2);
             if (pt2 != null) {
-                double distance = calcDistance(pt1, pt2);
                 if (distance < minDistance) {
                     minDistance = distance;
                     cAtom = atom;
@@ -554,7 +554,7 @@ public class EnergyLists {
         }
         eCoords.updateFixed(dRange);
     }
-    
+
     public void clear() {
         atomList.clear();
         bondList.clear();
@@ -623,11 +623,11 @@ public class EnergyLists {
                 for (Atom atom : refAtoms) {
                     double deltaShift = AtomMath.calcDeltaShift(atom);
                     if (deltaShift != -1.0) {
-                        double shiftEnergy = AtomMath.calcShiftEnergy(deltaShift,forceWeight);
+                        double shiftEnergy = AtomMath.calcShiftEnergy(deltaShift, forceWeight);
                         shiftTotEnergy += shiftEnergy;
                         nShift++;
                         if (Math.abs(deltaShift) > shiftVal) {
-                            writer.format("Shi: %10s %10s %5.2f %5.2f %5.2f %5.3f\n", atom.getFullName(), "",atom.getPPM(0).getValue(), atom.getRefPPM(0).getValue(), deltaShift, shiftEnergy);
+                            writer.format("Shi: %10s %10s %5.2f %5.2f %5.2f %5.3f\n", atom.getFullName(), "", atom.getPPM(0).getValue(), atom.getRefPPM(0).getValue(), deltaShift, shiftEnergy);
                         }
                     }
                 }
@@ -644,9 +644,7 @@ public class EnergyLists {
                         writer.format("Rob: %10s %10s %5.2f %7.3f %5.2f %5.2f\n", atomPair.spSet1.getFullName(), atomPair.spSet2.getFullName(), atomPair.ePair.r, energy.getEnergy(), p, delta);
                     }
                 }
-            }
-
-            else {
+            } else {
                 EnergyCoords eCoords = molecule.getEnergyCoords();
                 repelEnergy = eCoords.calcRepel(false, forceWeight.getRepel());
                 nRepel = eCoords.getNContacts();
@@ -738,7 +736,7 @@ public class EnergyLists {
 
         return energy;
     }
-    
+
     public double calcRepel(boolean calcDeriv) {
         double totalEnergy = 0;
         double[] eD = new double[2];
@@ -763,7 +761,7 @@ public class EnergyLists {
         }
         return totalEnergy;
     }
-    
+
     public double calcShift(boolean calcDeriv) {
         double totalEnergy = 0;
         if (calcDeriv) {
@@ -773,11 +771,11 @@ public class EnergyLists {
         updateShifts();
         for (Atom atom : refAtoms) {
             double deltaShift = AtomMath.calcDeltaShift(atom);
-            totalEnergy += AtomMath.calcShiftEnergy(deltaShift,forceWeight);
+            totalEnergy += AtomMath.calcShiftEnergy(deltaShift, forceWeight);
         }
         return totalEnergy;
     }
-        
+
     public double calcbondEnergy(boolean calcDeriv) {
         double totalEnergy = 0;
         for (BondPair bondPair : bondList) {
@@ -913,7 +911,7 @@ public class EnergyLists {
                         if (atom2.rotGroup != null) {
                             jUnit = atom2.rotGroup.rotUnit;
                         }
-                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup,weight);
+                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup, weight);
                     }
 
                 }
@@ -933,7 +931,7 @@ public class EnergyLists {
                         int jAtom = atom2.iAtom;
                         int iUnit = atom1.rotGroup.rotUnit;
                         int jUnit = atom2.rotGroup.rotUnit;
-                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup,weight);
+                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup, weight);
                     }
                 }
             }
@@ -969,16 +967,16 @@ public class EnergyLists {
                 energyTotal += calcRepelFast(calcDeriv);
             }
             energyTotal += calcbondEnergy(calcDeriv);
-            
+
             if (forceWeight.getNOE() > 0.0) {
                 energyTotal += calcNOEFast(calcDeriv);
             }
             if (calcDeriv) {
                 gradient = recurrentDerivative();
             }
-            
-            if (forceWeight.getShift() > 0.0){
-                energyTotal += calcShift(calcDeriv); 
+
+            if (forceWeight.getShift() > 0.0) {
+                energyTotal += calcShift(calcDeriv);
             }
 
             if (forceWeight.getDihedralProb() > 0.0) {
@@ -1003,7 +1001,7 @@ public class EnergyLists {
                     }
                 }
             }
-            
+
             if (calcDeriv) {
                 for (int i = 0; i < branches.length; i++) {
                     if (REPORTBAD && (Math.abs(gradient[i]) > 100000.0)) {
