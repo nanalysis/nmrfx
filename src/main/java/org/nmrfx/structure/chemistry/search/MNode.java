@@ -125,6 +125,10 @@ public class MNode implements Comparable, Comparator {
         Collections.sort(nodes);
     }
 
+    public void sortNodesDescending() {
+        Collections.sort(nodes, reversed());
+    }
+
     @Override
     public int compare(Object o1, Object o2) {
         MNode mNode1 = (MNode) o1;
@@ -133,5 +137,33 @@ public class MNode implements Comparable, Comparator {
 
     public boolean isRingClosure() {
         return ringClosure;
+    }
+
+    public int getParValue() {
+        int parValue = 0;
+        if (parent != null) {
+            parValue = parent.value;
+        }
+        parValue = parValue + value;
+        return parValue;
+    }
+
+    public int getParValue2() {
+        int parValue = 0;
+        if (parent != null) {
+            parValue = parent.value;
+        }
+        return parValue;
+    }
+
+    public static int compareByParValue(MNode a, MNode b) {
+        int value = Integer.compare(b.getParValue2(), a.getParValue2());
+        if (value == 0) {
+            value = Integer.compare(b.getValue(), a.getValue());
+        }
+        if (value == 0) {
+            value = a.getAtom().getName().compareTo(b.getAtom().getName());
+        }
+        return value;
     }
 }
