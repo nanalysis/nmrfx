@@ -218,7 +218,7 @@ public class EnergyCoords {
                 dif = dis - rUp;
             }
         }
-        
+
         double getViol() {
             return dif;
         }
@@ -259,12 +259,11 @@ public class EnergyCoords {
         String result = "";
         ViolationStats stat = null;
         if (Math.abs(dif) > limitVal) {
-            double energy = weights[i]*weight * dif * dif;
+            double energy = weights[i] * weight * dif * dif;
             stat = new ViolationStats(mode, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rLow[i], rUp[i], energy);
         }
 
         return stat;
-
     }
 
     public double dumpRestrants(boolean calcDeriv, double weight, int mode) {
@@ -294,13 +293,13 @@ public class EnergyCoords {
             } else {
                 continue;
             }
-            viol[i] = weights[i]*weight * dif * dif;
+            viol[i] = weights[i] * weight * dif * dif;
             sum += viol[i];
             if (calcDeriv) {
                 //  what is needed is actually the derivitive/r, therefore
                 // we divide by r
                 // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                derivs[i] = -2.0 * weights[i]*weight * dif / (r + RADJ);
+                derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
             }
 
         }
@@ -376,13 +375,13 @@ public class EnergyCoords {
                 }
                 continue;
             }
-            viol[i] = weights[i]*weight * dif * dif;
+            viol[i] = weights[i] * weight * dif * dif;
             sum += viol[i];
             if (calcDeriv) {
                 //  what is needed is actually the derivative/r, therefore
                 // we divide by r
                 // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                derivs[i] = -2.0 * weights[i]*weight * dif / (r + RADJ);
+                derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
             }
             if (groupSize > 1) {
                 for (int j = 1; j < groupSize; j++) {
@@ -814,8 +813,6 @@ public class EnergyCoords {
                 if (fixed[i][j]) {
                     nFixed++;
                 }
-                Atom atom1 = atoms[i];
-                Atom atom2 = atoms[i + j + 1];
 //                if (fixed[i][j]) {
 //                    System.out.print(" " + j);
 //                }
