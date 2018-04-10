@@ -32,6 +32,7 @@ def loadPDBModels(files):
     for file in files:
         pdb.readCoordinates(file,iFile,False)
         iFile += 1
+    return molecule
 
 def findRepresentative(resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     treeSet = TreeSet()
