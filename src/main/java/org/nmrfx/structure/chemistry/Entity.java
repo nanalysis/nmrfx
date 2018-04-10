@@ -268,4 +268,8 @@ public class Entity implements AtomContainer, Serializable {
         return coordSet;
     }
 
+    public void sortByIndex() {
+        Collections.sort(atoms, Atom::compareByIndex);
+    }
+
 }

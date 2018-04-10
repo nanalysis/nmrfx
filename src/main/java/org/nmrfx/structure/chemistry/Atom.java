@@ -59,7 +59,7 @@ public class Atom implements IAtom {
     static final public double NULL_PPM = -9990.0;
     static int lastAtom = 0;
     public int iAtom = 1;
-    private int treeIndex = 0;
+    private int origIndex = 0;
     public Atom parent = null;
     public String name;
     public String type = "";
@@ -112,7 +112,7 @@ public class Atom implements IAtom {
         setColorByType();
         bonds = new ArrayList<>(2);
         iAtom = lastAtom;
-        treeIndex = iAtom;
+        origIndex = iAtom;
         lastAtom++;
     }
 
@@ -125,7 +125,7 @@ public class Atom implements IAtom {
         setColorByType();
         bonds = new ArrayList<>(2);
         iAtom = lastAtom;
-        treeIndex = iAtom;
+        origIndex = iAtom;
         lastAtom++;
     }
 
@@ -150,7 +150,7 @@ public class Atom implements IAtom {
         charge = (float) atomParse.charge;
         bonds = new ArrayList<>(2);
         iAtom = lastAtom;
-        treeIndex = iAtom;
+        origIndex = iAtom;
         lastAtom++;
     }
 
@@ -336,11 +336,11 @@ public class Atom implements IAtom {
     }
 
     public int getTreeIndex() {
-        return treeIndex;
+        return iAtom;
     }
 
     public void setTreeIndex(int index) {
-        treeIndex = index;
+        iAtom = index;
     }
 
     public String getShortName() {
@@ -1095,12 +1095,12 @@ public class Atom implements IAtom {
                 Bond bond = (Bond) bondObject;
                 //if ((bond.begin != null) && (bond.begin != this) && (bond.begin.aNum != 1) && (this.aNum == 1)) {
                 if ((bond.begin != null) && (bond.begin != this) && (bond.begin.aNum != 1)) {
-                    if (bond.begin.treeIndex < treeIndex) {
+                    if (bond.begin.iAtom < iAtom) {
                         return bond.begin;
                     }
                     //} else if ((bond.end != null) && (bond.end != this) && (bond.end.aNum != 1) && (this.aNum == 1)) {
                 } else if ((bond.end != null) && (bond.end != this) && (bond.end.aNum != 1)) {
-                    if (bond.end.treeIndex < treeIndex) {
+                    if (bond.end.iAtom < iAtom) {
                         return bond.end;
                     }
                 }
@@ -1118,11 +1118,11 @@ public class Atom implements IAtom {
             Atom atomE = bond.end;
 
             if (atomB == this) {
-                if (atomE.treeIndex > treeIndex) {
+                if (atomE.iAtom > iAtom) {
                     children.add(atomE);
                 }
             } else if (atomE == this) {
-                if (atomB.treeIndex > treeIndex) {
+                if (atomB.iAtom > iAtom) {
                     children.add(atomB);
                 }
             }
@@ -1139,12 +1139,12 @@ public class Atom implements IAtom {
             Atom atomE = bond.end;
 
             if (atomB == this) {
-                if (atomE.treeIndex > treeIndex) {
+                if (atomE.iAtom > iAtom) {
                     child = atomE;
                     break;
                 }
             } else if (atomE == this) {
-                if (atomB.treeIndex > treeIndex) {
+                if (atomB.iAtom > iAtom) {
                     child = atomB;
                     break;
                 }
@@ -1593,5 +1593,9 @@ public class Atom implements IAtom {
         List<IBond> result = new ArrayList<>();
         result.addAll(bonds);
         return result;
+    }
+
+    public static int compareByIndex(Atom a1, Atom a2) {
+        return Integer.compare(a1.iAtom, a2.iAtom);
     }
 }

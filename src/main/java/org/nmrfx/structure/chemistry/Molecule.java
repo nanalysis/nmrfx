@@ -200,7 +200,6 @@ public class Molecule implements Serializable {
     private boolean atomArrayValid = false;
     Map<String, Atom> atomMap = new HashMap<>();
     List<Atom> atoms;
-    List<Atom> atomPathList = null;
 
     ArrayList<Bond> bonds = new ArrayList<Bond>();
     SpatialSet spSets[][] = null;
@@ -454,6 +453,18 @@ public class Molecule implements Serializable {
         }
         return compounds;
     }
+    
+    public void sortByIndex() {
+        for (Polymer polymer:getPolymers()) {
+            for (Residue residue:polymer.getResidues()) {
+                residue.sortByIndex();
+            }
+        }
+        for (Entity entity:getLigands()) {
+            entity.sortByIndex();
+        }
+        updateAtomArray();
+    }
 
     public static Molecule get(String name) {
         if (name == null) {
@@ -461,10 +472,6 @@ public class Molecule implements Serializable {
         } else {
             return StructureProject.getActive().getMolecule(name);
         }
-    }
-
-    public void setAtomPath(List<Atom> pathList) {
-        atomPathList = pathList;
     }
 
     public void setDihedrals(Dihedral dihedrals) {
@@ -749,8 +756,7 @@ public class Molecule implements Serializable {
         Atom a2 = null;
         Atom a4 = null;
         int nAngles = 0;
-        List<Atom> atomList = atomPathList == null ? atoms : atomPathList;
-        for (Atom a3 : atomList) {
+        for (Atom a3 : atoms) {
             if (!a3.getPointValidity(iStructure)) {
                 if (fillCoords) {
                     continue;
@@ -854,8 +860,7 @@ public class Molecule implements Serializable {
         Atom a2 = null;
         Atom a4 = null;
         int nAngles = 0;
-        List<Atom> atomList = atomPathList == null ? atoms : atomPathList;
-        for (Atom a3 : atomList) {
+        for (Atom a3 : atoms) {
             if (!a3.getPointValidity()) {
                 if (fillCoords) {
                     continue;
@@ -957,9 +962,8 @@ public class Molecule implements Serializable {
         int nAngles = 0;
         int iAtom = 0;
         ArrayList<Atom> daughterList = new ArrayList<>();
-        List<Atom> atomList = atomPathList == null ? atoms : atomPathList;
-        spSets = new SpatialSet[atomList.size()][];
-        for (Atom a3 : atomList) {
+        spSets = new SpatialSet[atoms.size()][];
+        for (Atom a3 : atoms) {
             if (!a3.getPointValidity()) {
                 a3.setPointValidity(true);
             }
@@ -1019,8 +1023,7 @@ public class Molecule implements Serializable {
         genVecs = new int[atoms.size()][];
         int iAtom = 0;
         ArrayList<Atom> daughterList = new ArrayList<>();
-        List<Atom> atomList = atomPathList == null ? atoms : atomPathList;
-        for (Atom a3 : atomList) {
+        for (Atom a3 : atoms) {
             if (!a3.getPointValidity()) {
                 a3.setPointValidity(true);
             }
@@ -1202,13 +1205,12 @@ public class Molecule implements Serializable {
     }
 
     public void updateVecCoords() {
-        List<Atom> atomList = atomPathList == null ? atoms : atomPathList;
         FastVector3D[] vecCoords = eCoords.getVecCoords(atomList.size());
         int i = 0;
         Entity lastEntity = null;
         int resNum = -1;
         getAtomTypes();
-        for (Atom atom : atomList) {
+        for (Atom atom : atoms) {
             atom.iAtom = i;
             if (atom.entity != lastEntity) {
                 lastEntity = atom.entity;
@@ -1227,8 +1229,7 @@ public class Molecule implements Serializable {
     public void updateFromVecCoords() {
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         int i = 0;
-        List<Atom> atomList = atomPathList == null ? atoms : atomPathList;
-        for (Atom atom : atomList) {
+        for (Atom atom : atoms) {
             atom.iAtom = i;
             Point3 pt = atom.getPoint();
             if (pt == null) {
@@ -1253,8 +1254,7 @@ public class Molecule implements Serializable {
         int nAngles = 0;
         updateAtomArray();
 
-        List<Atom> atomList = atomPathList == null ? atoms : atomPathList;
-        for (Atom a3 : atomList) {
+        for (Atom a3 : atoms) {
             for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
                 Bond bond = a3.bonds.get(iBond);
                 if (bond.begin == a3) {
@@ -3329,8 +3329,7 @@ public class Molecule implements Serializable {
 
     public void setupRotGroups() {
         int rotUnit = 0;
-        List<Atom> atomList = atomPathList == null ? atoms : atomPathList;
-        for (Atom iAtom : atomList) {
+        for (Atom iAtom : atoms) {
             iAtom.rotUnit = -1;
             if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
                 //if (iAtom.irpIndex > 0) {

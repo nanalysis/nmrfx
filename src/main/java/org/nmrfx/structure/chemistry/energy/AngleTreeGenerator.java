@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
 import org.nmrfx.structure.chemistry.Entity;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Order;
 import org.nmrfx.structure.chemistry.Point3;
 import org.nmrfx.structure.chemistry.search.MNode;
@@ -19,26 +20,26 @@ import org.nmrfx.structure.chemistry.search.MTree;
  * @author Bruce Johnson
  */
 public class AngleTreeGenerator {
-
+    
     static final double TO_RAD = 180.0 / Math.PI;
-
+    
     class BondSort implements Comparable<BondSort> {
-
+        
         final Bond bond;
         final MNode mNode;
-
+        
         BondSort(Bond bond, MNode mNode) {
             this.bond = bond;
             this.mNode = mNode;
         }
-
+        
         @Override
         public int compareTo(BondSort o) {
             return MNode.compareByParValue(mNode, o.mNode);
         }
-
+        
     }
-
+    
     public void scan(Entity entity, Atom startAtom, Atom endAtom) {
         MTree mTree = new MTree();
         Map<Atom, Integer> hash = new HashMap<>();
@@ -61,13 +62,13 @@ public class AngleTreeGenerator {
         if (startIndex == -1) {
             throw new IllegalArgumentException("Didnt' find start atom\"" + startAtom.getShortName() + "\"");
         }
-
+        
         for (Atom atom : atoms) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
                 Bond bond = atom.bonds.get(iBond);
                 Integer iNodeBegin = hash.get(bond.begin);
                 Integer iNodeEnd = hash.get(bond.end);
-
+                
                 if ((iNodeBegin != null) && (iNodeEnd != null)) {
                     mTree.addEdge(iNodeBegin, iNodeEnd);
                 }
@@ -91,15 +92,15 @@ public class AngleTreeGenerator {
         for (MNode mNode : pathNodes) {
             mNode.sortNodesDescending();
         }
-
+        
         path = mTree.broad_path(startIndex);
         pathNodes = mTree.getPathNodes();
-
+        
         MNode lastNode = null;
         boolean firstAtom = true;
         double lastAngle = 0.0;
         double dih;
-
+        
         int lastNodeIndex = 0;
         int nShells = pathNodes.get(pathNodes.size() - 1).getShell() + 1;
         for (Atom atom : atoms) {
@@ -129,14 +130,14 @@ public class AngleTreeGenerator {
                     firstAtom = true;
                     lastAngle = 0.0;
                 }
-
+                
                 if (mNode2 != null) {
                     final Atom atom2 = mNode2.getAtom();
                     atom3.parent = atom2;
                     Point3 pt2 = atom2.getPoint();
                     atom3.bondLength = (float) AtomMath.calcDistance(pt2, pt3);
                     Optional<Bond> oBond = atom2.getBond(atom3);
-
+                    
                     oBond.ifPresent(b -> {
                         bondMap.get(atom2).add(b);
                         bondMap.get(atom3).add(b);
@@ -168,9 +169,8 @@ public class AngleTreeGenerator {
                                 newDih = newDih + 2.0 * Math.PI;
                             }
                             atom3.dihedralAngle = (float) newDih;
-//                        System.out.println(lastAngle * TO_RAD + " " + dih * TO_RAD + " " + newDih * TO_RAD + " " + firstAtom);
                         }
-
+                        
                     }
 
                     // fixme write faster code to get bond (like atom2.getbond(atom3) so you search bonds for atom not whole entity
@@ -194,11 +194,11 @@ public class AngleTreeGenerator {
                         rotatable = false;
                     }
                     atom3.irpIndex = rotatable ? 1 : 0;
-
+                    
                     String parentName = atom2 == null ? "" : atom2.getShortName();
-                    System.out.printf("%10s %10s %3d %7.3f %7.3f %7.3f %b %3d %3d %b\n",
-                            parentName, atom3.getShortName(), atom3.getTreeIndex(), atom3.bondLength,
-                            atom3.valanceAngle * TO_RAD, atom3.dihedralAngle * TO_RAD, atom3.getRotActive(), atom3.rotUnit, atom3.irpIndex, rotatable);
+//                    System.out.printf("%10s %10s %3d %7.3f %7.3f %7.3f %b %3d %3d %b\n",
+//                            parentName, atom3.getShortName(), atom3.getTreeIndex(), atom3.bondLength,
+//                            atom3.valanceAngle * TO_RAD, atom3.dihedralAngle * TO_RAD, atom3.getRotActive(), atom3.rotUnit, atom3.irpIndex, rotatable);
                     firstAtom = false;
                 }
             }
@@ -206,7 +206,32 @@ public class AngleTreeGenerator {
         for (Atom atom : atoms) {
             atom.bonds.clear();
         }
-
+        
+        for (Atom atom : atoms) {
+            switch (atom.getAtomicNumber()) {
+                case 1:
+                    atom.setType("H");
+                    break;
+                case 6:
+                    atom.setType("C3");
+                    break;
+                case 7:
+                    atom.setType("N");
+                    break;
+                case 16:
+                    atom.setType("S");
+                    break;
+                case 15:
+                    atom.setType("P");
+                    break;
+                case 8:
+                    atom.setType("O");
+                    break;
+                default:
+                    atom.setType("C");
+            }
+        }
+        
         for (Atom atom : bondMap.keySet()) {
             for (Bond bond : bondMap.get(atom)) {
                 atom.bonds.add(bond);
@@ -229,14 +254,13 @@ public class AngleTreeGenerator {
             }
 //            System.out.println(par + " --> " + par2 + " --> " + atom.getShortName() + " " + atom.getTreeIndex());
         }
-
-        entity.molecule.setAtomPath(atomPathList);
+        entity.molecule.sortByIndex();
+        Molecule.makeAtomList();
         entity.molecule.resetGenCoords();
         entity.molecule.setupRotGroups();
-
         entity.molecule.genCoords();
     }
-
+    
     private List<MNode> getShellNodes(List<MNode> nodes, int iShell, int start) {
         List<MNode> shellNodes = new ArrayList<>();
         for (int i = start; i < nodes.size(); i++) {
@@ -250,5 +274,5 @@ public class AngleTreeGenerator {
         Collections.sort(shellNodes, MNode::compareByParValue);
         return shellNodes;
     }
-
+    
 }
