@@ -897,8 +897,13 @@ class BrukerData implements NMRData {
                         break;
                     case 1: // f1coef[i-1] = "1 0 0 1";
                         f1coefS[i - 1] = "sep";
-                        complexDim[i - 1] = true;
-                        tdsize[i - 1] = tdsize[i - 1] / 2;
+                        if (tdsize[i-1] == getValues(i-1).size()) {
+                            complexDim[i - 1] = false;                            
+                        } else {
+                            complexDim[i - 1] = true;
+                            tdsize[i - 1] = tdsize[i - 1] / 2;
+                        }
+
                         break;
                     default:
                         f1coef[i - 1] = new double[]{1, 0, 0, 1};
