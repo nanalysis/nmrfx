@@ -2039,7 +2039,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             this.values[iDim] = null;
         } else {
             if (values.length != size[iDim]) {
-                throw new IllegalArgumentException("Number of values must equal dimension size");
+                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + size[iDim] + ") for dim " + iDim);
             }
             this.values[iDim] = values.clone();
         }
@@ -2059,7 +2059,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             this.values[iDim] = null;
         } else {
             if (values.size() != size[iDim]) {
-                throw new IllegalArgumentException("Number of values must equal dimension size");
+                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + size[iDim] + ") for dim " + iDim);
             }
             this.values[iDim] = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
