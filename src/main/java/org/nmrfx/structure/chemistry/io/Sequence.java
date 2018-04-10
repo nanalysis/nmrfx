@@ -105,7 +105,9 @@ public class Sequence {
                 if (parentField.equals("-")) {
                     if (sequence.connectAtom != null) {
                         parent = sequence.connectAtom;
-                        sequence.connectBond.end = refAtom;
+                        if (sequence.connectBond != null) {
+                            sequence.connectBond.end = refAtom;
+                        }
                         connectee = true;
                     } else {
                         parent = null;
@@ -121,8 +123,8 @@ public class Sequence {
                         residue.addBond(bond);
                     }
                     refAtom.parent = parent;
-//                    bond = new Bond(refAtom, parent);
-//                    refAtom.addBond(bond);
+                    bond = new Bond(refAtom, parent);
+                    refAtom.addBond(bond);
                 }
                 for (int iField = 3; iField < fields.length; iField++) {
                     String atomName = fields[iField];
@@ -150,9 +152,8 @@ public class Sequence {
                         throw new MoleculeIOException("Can't find daughter atom \"" + atomName + "\"");
                     }
 //                    if (!connector && daughterAtom.getName().startsWith("H")) {
-//                    if (!connector && !ringClosure) {
-                    if (!connector ) {
-                        bond = new Bond(daughterAtom, refAtom, order);
+                    if (!connector && !ringClosure) {
+                        bond = new Bond(daughterAtom, refAtom);
                         daughterAtom.addBond(bond);
                         daughterAtom.parent = refAtom;
                     }
