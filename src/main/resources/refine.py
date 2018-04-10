@@ -430,6 +430,9 @@ class refine:
             lower = float(s2)
             upper = float(s3)
             self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
+
+    def addDisCon(self, atomName1, atomName2, lower, upper):
+        self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
  
     def loadFromYaml(self,data, seed, pdbFile=""):
  
