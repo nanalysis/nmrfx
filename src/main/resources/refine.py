@@ -19,6 +19,10 @@ from org.nmrfx.structure.chemistry.io import SDFile
 from org.nmrfx.structure.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry.io import TrajectoryWriter
 from org.nmrfx.structure.chemistry import SSLayout
+from org.nmrfx.structure.chemistry.miner import PathIterator
+from org.nmrfx.structure.chemistry.miner import NodeValidator
+from org.nmrfx.structure.chemistry.energy import AngleTreeGenerator
+
 
 
 #from tcl.lang import NvLiteShell
@@ -510,10 +514,27 @@ class refine:
                     type = 'nv'
                 elif type == 'pdb':
                     self.readPDBFile(file)
+                elif type == 'sdf':
+                    self.readSDFile(file)
+                elif type == 'mol':
+                    self.readSDFile(file)
+
             else: 
                 type = 'nv'
             if type == 'nv':
                 self.readSequence(file)
+
+            if 'tree' in molDict:
+                treeDict = molDict['tree']
+                if 'start' in treeDict:
+                    start = treeDict['start']
+                else:
+                    start = None
+                if 'end' in treeDict:
+                    end = treeDict['end']
+                else:
+                    end = None
+                self.setupTree(start, end)
             
     def readDistanceDict(self,disDict,residues):
         wt = -1.0
@@ -1149,6 +1170,24 @@ class refine:
         self.molName = self.molecule.getName()
         Molecule.selectAtoms('*.*')
         return self.molecule
+
+    def setupTree(self, start, end):
+        mol = self.molecule
+        ligands = mol.getLigands()
+        for ligand in ligands:
+            pI = PathIterator(ligand)
+            nodeValidator = NodeValidator()
+            pI.init(nodeValidator)
+            pI.processPatterns()
+            pI.setProperties("ar", "AROMATIC");
+            pI.setProperties("res", "RESONANT");
+            pI.setProperties("r", "RING");
+            pI.setHybridization();
+            aTree = AngleTreeGenerator()
+            atoms = ligand.getAtoms()
+            startAtom = ligand.getAtom(start)
+            endAtom = ligand.getAtom(end)
+            aTree.scan(ligand,startAtom, endAtom)
 
     def addAngleFile(self,file, mode='nv'):
         if mode == 'cyana':
