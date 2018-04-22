@@ -578,6 +578,10 @@ public class Atom implements IAtom {
         spatialSet.setRefPPM(i, value);
     }
 
+    public void setRefError(double value) {
+        spatialSet.setRefError(0, value);
+    }
+
     public void setPPMValidity(int i, boolean validity) {
         spatialSet.setPPMValidity(i, validity);
     }

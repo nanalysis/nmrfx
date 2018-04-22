@@ -272,6 +272,12 @@ public class SpatialSet {
         }
         refPPMV.setValid(true,atom);
     }
+
+    public void setRefError(int structureNum, double value) {
+        if (refPPMV != null) {
+            refPPMV.setError(value);
+        }
+    }
     
     public void setRefPPMValidity(boolean validity) {
         if (refPPMV == null) {
