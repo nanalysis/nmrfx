@@ -39,16 +39,26 @@ public class PeakNetworkMatch {
 
     final PeakList iList;
     final PeakList jList;
+    final double[][] positions;
     double[] optOffset = null;
+    MatchResult matchResult = null;
 
     public PeakNetworkMatch(final PeakList iList, final PeakList jList) {
         this.iList = iList;
         this.jList = jList;
+        this.positions = null;
+    }
+
+    public PeakNetworkMatch(final PeakList iList, double[][] positions) {
+        this.iList = iList;
+        this.jList = null;
+        this.positions = positions;
     }
 
     public PeakNetworkMatch(final String iListName, final String jListName) {
         this.iList = PeakList.get(iListName);
         this.jList = PeakList.get(jListName);
+        this.positions = null;
     }
 
     public double[] getOptOffset() {
@@ -130,13 +140,13 @@ public class PeakNetworkMatch {
                 throw new IllegalArgumentException("Peak Label doesn't match template label");
             }
         }
-        ArrayList<MatchItem> iMList = getMatchingItems(iList, dimsI, boundary);
-        ArrayList<MatchItem> jMList = getMatchingItems(jList, dimsJ, boundary);
+        List<MatchItem> iMList = getMatchingItems(iList, dimsI, boundary);
+        List<MatchItem> jMList = getMatchingItems(jList, dimsJ, boundary);
         if (optimizeMatch) {
             optimizeMatch(iMList, offsets[0], jMList, offsets[1], tol, 0, 0.0, 1.0);
         }
 
-        MatchResult matchResult = doBPMatch(iMList, offsets[0], jMList, offsets[1], tol, true);
+        matchResult = doBPMatch(iMList, offsets[0], jMList, offsets[1], tol, true);
         System.out.println(matchResult.score);
 //        int[] matching = matchResult.matching;
 //        TclObject resultList = TclList.newInstance();
@@ -168,6 +178,71 @@ public class PeakNetworkMatch {
 //        TclList.append(interp, result, resultList);
     }
 
+    void bpMatchList(String[] dimNamesI, double[][] tols, double[][] offsets,
+            boolean optimizeMatch, double tolMul, final double[][] boundary) {
+        // should check for "deleted" peaks
+
+        boolean matched = true;
+        int[] dimsI;
+        int nDim = dimNamesI.length;
+        double[] tol = new double[nDim];
+
+        if ((dimNamesI == null) || (dimNamesI.length == 0)) {
+            dimsI = new int[nDim];
+            for (int k = 0; k < dimsI.length; k++) {
+                dimsI[k] = k;
+            }
+        } else {
+            dimsI = new int[dimNamesI.length];
+            for (int k = 0; k < dimsI.length; k++) {
+                dimsI[k] = -1;
+                tol[k] = tols[0][k];
+                for (int i = 0; i < nDim; i++) {
+                    if (dimNamesI[k].equals(iList.getSpectralDim(i).getDimName())) {
+                        dimsI[k] = i;
+                    }
+                }
+                if (dimsI[k] == -1) {
+                    matched = false;
+                    break;
+                }
+            }
+
+            if (!matched) {
+                throw new IllegalArgumentException("Peak Label doesn't match template label");
+            }
+        }
+        List<MatchItem> iMList = getMatchingItems(iList, dimsI, boundary);
+        List<MatchItem> jMList = getMatchingItems(positions);
+        if (optimizeMatch) {
+            for (int iCycle = 0; iCycle < 2; iCycle++) {
+                double searchMin = -tolMul * tol[0] / (iCycle + 1);
+                double searchMax = tolMul * tol[0] / (iCycle + 1);
+                optimizeMatch(iMList, offsets[0], jMList, offsets[1], tol, 0, searchMin, searchMax);
+                searchMin = -tolMul * tol[1] / (iCycle + 1);
+                searchMax = tolMul * tol[1] / (iCycle + 1);
+                optimizeMatch(iMList, offsets[0], jMList, offsets[1], tol, 1, searchMin, searchMax);
+            }
+        }
+
+        matchResult = doBPMatch(iMList, offsets[0], jMList, offsets[1], tol, false);
+        int[] matching = matchResult.matching;
+        for (int i = 0; i < iMList.size(); i++) {
+            MatchItem iItem = iMList.get(i);
+            MatchItem jItem = null;
+            Peak iPeak = (Peak) iList.getPeak(iItem.itemIndex);
+            if ((matching[i] >= 0) && (matching[i] < jMList.size())) {
+                jItem = jMList.get(matching[i]);
+                double deltaSqSum = getMatchingDistanceSq(iItem, offsets[0], jItem, offsets[1], tol);
+                double delta = Math.sqrt(deltaSqSum);
+                String matchString = iPeak.getIdNum() + " " + jItem.itemIndex + " " + delta;
+            } else {
+                String matchString = iPeak.getIdNum() + " -1 0";
+            }
+
+        }
+    }
+
     double getPeakDistanceSq(Peak iPeak, int[] dimsI, double[] iOffsets, Peak jPeak, int[] dimsJ, double[] tol, double[] jOffsets) {
         double deltaSqSum = 0.0;
         for (int k = 0; k < dimsI.length; k++) {
@@ -192,7 +267,7 @@ public class PeakNetworkMatch {
         List<PeakDim> iPeakDims = PeakList.getLinkedPeakDims(iPeak, iDim);
         List<PeakDim> jPeakDims = PeakList.getLinkedPeakDims(jPeak, jDim);
 
-        ArrayList<MatchItem> iPPMs = new ArrayList<MatchItem>();
+        List<MatchItem> iPPMs = new ArrayList<MatchItem>();
         int i = 0;
         for (PeakDim peakDim : iPeakDims) {
             if ((peakDim != iPeakDim) && (peakDim.getSpectralDim() == iDim)) {
@@ -205,7 +280,7 @@ public class PeakNetworkMatch {
             i++;
         }
         i = 0;
-        ArrayList<MatchItem> jPPMs = new ArrayList<MatchItem>();
+        List<MatchItem> jPPMs = new ArrayList<MatchItem>();
         for (PeakDim peakDim : jPeakDims) {
             if ((peakDim != jPeakDim) && (peakDim.getSpectralDim() == jDim)) {
                 Peak peak = peakDim.getPeak();
@@ -253,8 +328,8 @@ public class PeakNetworkMatch {
         }
     }
 
-    ArrayList<MatchItem> getMatchingItems(PeakList peakList, int[] dims, final double[][] boundary) {
-        ArrayList<MatchItem> matchList = new ArrayList<MatchItem>();
+    List<MatchItem> getMatchingItems(PeakList peakList, int[] dims, final double[][] boundary) {
+        List<MatchItem> matchList = new ArrayList<MatchItem>();
         int nPeaks = peakList.size();
         HashSet usedPeaks = new HashSet();
         for (int j = 0; j < nPeaks; j++) {
@@ -293,8 +368,8 @@ public class PeakNetworkMatch {
         return matchList;
     }
 
-    ArrayList<MatchItem> getMatchingItems(double[][] positions) {
-        ArrayList<MatchItem> matchList = new ArrayList<MatchItem>();
+    List<MatchItem> getMatchingItems(double[][] positions) {
+        List<MatchItem> matchList = new ArrayList<MatchItem>();
         for (int j = 0; j < positions.length; j++) {
             MatchItem matchItem = new MatchItem(j, positions[j]);
             matchList.add(matchItem);
@@ -315,7 +390,7 @@ public class PeakNetworkMatch {
         }
     }
 
-    private MatchResult doBPMatch(ArrayList<MatchItem> iMList, final double[] iOffsets, ArrayList<MatchItem> jMList, final double[] jOffsets, double[] tol, final boolean doLinkMatch) {
+    private MatchResult doBPMatch(List<MatchItem> iMList, final double[] iOffsets, List<MatchItem> jMList, final double[] jOffsets, double[] tol, final boolean doLinkMatch) {
         int iNPeaks = iMList.size();
         int jNPeaks = jMList.size();
         int nPeaks = iNPeaks + jNPeaks;
@@ -382,7 +457,7 @@ public class PeakNetworkMatch {
         return matchResult;
     }
 
-    private void optimizeMatch(final ArrayList<MatchItem> iMList, final double[] iOffsets, final ArrayList<MatchItem> jMList, final double[] jOffsets, final double[] tol, int minDim, double min, double max) {
+    private void optimizeMatch(final List<MatchItem> iMList, final double[] iOffsets, final List<MatchItem> jMList, final double[] jOffsets, final double[] tol, int minDim, double min, double max) {
         class MatchFunction implements MultivariateFunction {
 
             double[] bestMatch = null;
