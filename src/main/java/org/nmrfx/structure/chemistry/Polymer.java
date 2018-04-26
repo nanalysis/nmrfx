@@ -283,4 +283,15 @@ public class Polymer extends Entity {
         molecule.setupAngles();
     }
 
+    public boolean isRNA() {
+        boolean rna = false;
+        for (Residue residue : getResidues()) {
+            String resName = residue.getName();
+            if (resName.equals("A") || resName.equals("C") || resName.equals("G") || resName.equals("U")) {
+                rna = true;
+                break;
+            }
+        }
+        return rna;
+    }
 }
