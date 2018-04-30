@@ -19,7 +19,6 @@ package org.nmrfx.processor.datasets.peaks.io;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Map;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
@@ -89,6 +88,14 @@ public class PeakWriter {
         "_Assigned_peak_chem_shift.Val",
         "_Assigned_peak_chem_shift.Resonance_ID",
         "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
+
+    public void writePeaksXPK2(String fileName, PeakList peakList) throws IOException, InvalidPeakException {
+        try (FileWriter writer = new FileWriter(fileName)) {
+            PeakWriter peakWriter = new PeakWriter();
+            peakWriter.writePeaksXPK2(writer, peakList);
+            writer.close();
+        }
+    }
 
     public void writePeaksXPK2(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
         peakList.getMultiplets();  // call this to ensure that mulitplets are sorted with number starting at 0
