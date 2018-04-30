@@ -505,35 +505,26 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public void tweak(Dataset dataset, int[] planes) throws IOException {
+        int[] pdim = getDimsForDataset(dataset);
         RegionData regionData = analyzePeakRegion(dataset, planes);
         double[] maxPoint = regionData.getMaxDPoint();
         for (int i = 0; i < peakDim.length; i++) {
             PeakDim tweakDim = peakDim[i];
             if (!tweakDim.isFrozen()) {
-                double position = dataset.pointToPPM(i, maxPoint[i]);
+                //int iDim = regionData
+                double position = dataset.pointToPPM(pdim[i], maxPoint[pdim[i]]);
                 tweakDim.setChemShiftValue((float) position);
             }
         }
     }
 
-    public RegionData analyzePeakRegion(Dataset theFile, int[] planes)
-            throws IOException {
-        int dataDim = theFile.getNDim();
-        int[][] p = new int[dataDim][2];
-        int[] cpt = new int[dataDim];
-        double[] width = new double[dataDim];
-        int[] dim = new int[dataDim];
+    public int[] getDimsForDataset(Dataset dataset) {
         int[] pdim = new int[peakList.nDim];
-
-        if (dataDim != (peakList.nDim + planes.length)) {
-            throw new IllegalArgumentException("Number of peak list dimensions not equal to number of dataset dimensions");
-        }
-
+        int dataDim = dataset.getNDim();
         for (int j = 0; j < peakList.nDim; j++) {
             boolean ok = false;
-
             for (int i = 0; i < dataDim; i++) {
-                if (peakList.getSpectralDim(j).getDimName().equals(theFile.getLabel(i))) {
+                if (peakList.getSpectralDim(j).getDimName().equals(dataset.getLabel(i))) {
                     pdim[j] = i;
                     ok = true;
 
@@ -547,6 +538,22 @@ public class Peak implements Comparable, PeakOrMulti {
                         + peakList.getSpectralDim(j).getDimName() + "\"");
             }
         }
+        return pdim;
+    }
+
+    public RegionData analyzePeakRegion(Dataset theFile, int[] planes)
+            throws IOException {
+        int dataDim = theFile.getNDim();
+        int[][] p = new int[dataDim][2];
+        int[] cpt = new int[dataDim];
+        double[] width = new double[dataDim];
+        int[] dim = new int[dataDim];
+
+        if (dataDim != (peakList.nDim + planes.length)) {
+            throw new IllegalArgumentException("Number of peak list dimensions not equal to number of dataset dimensions");
+        }
+
+        int[] pdim = getDimsForDataset(theFile);
 
         int k = 0;
         getPeakRegion(theFile, pdim, p, cpt, width);
@@ -880,7 +887,7 @@ public class Peak implements Comparable, PeakOrMulti {
             String label = peakDim[i].getLabel();
             result.append(label).append(sep);
             result.append(String.format(formatString, peakDim[i].getChemShiftValue())).append(sep);
-            result.append(String.format(formatString, peakDim[i].getLineWidth() * sf)).append(sep);
+            result.append(String.format(formatString, peakDim[i].getLineWidthValue() * sf)).append(sep);
             result.append(String.format(formatString, peakDim[i].getBoundsValue() * sf)).append(sep);
             result.append(peakDim[i].getError()).append(sep);
             if (peakDim[i].hasMultiplet()) {

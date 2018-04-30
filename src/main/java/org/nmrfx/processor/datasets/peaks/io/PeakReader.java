@@ -32,6 +32,7 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.python.util.PythonInterpreter;
 
 /**
  *
@@ -75,6 +76,22 @@ public class PeakReader {
 
                 }
             }
+        }
+    }
+
+    public PeakList readPeakList(String fileName) throws IOException {
+        return readPeakList(fileName, null);
+    }
+
+    public PeakList readPeakList(String fileName, Map<String, Object> pMap) throws IOException {
+        if (fileName.endsWith(".xpk2")) {
+            return readXPK2Peaks(fileName);
+        } else if (fileName.endsWith(".xpk")) {
+            return readXPKPeaks(fileName);
+        } else if (fileName.endsWith(".save")) {
+            return readSparkySaveFile(fileName, pMap);
+        } else {
+            throw new IllegalArgumentException("Invalid file name extension " + fileName);
         }
     }
 
@@ -190,108 +207,115 @@ public class PeakReader {
                                 dataMap = headerMap(dataHeader);
                             }
                             String[] data = line.split("\t", -1);
-                            Peak peak = peakList.getNewPeak();
-                            for (String field : dataHeader) {
-                                int dotIndex = field.indexOf('.');
-                                if (dotIndex != -1) {
-                                    Integer dataIndex = dataMap.get(field);
-                                    String dimLabel = field.substring(0, dotIndex);
-                                    field = field.substring(dotIndex + 1);
-                                    PeakDim peakDim = peak.getPeakDim(dimLabel);
-                                    if (dataIndex != null) {
-                                        String value = data[dataIndex];
-                                        switch (field) {
-                                            case "L":
-                                                List<String> labelList = Arrays.asList(value.split(" "));
-                                                peakDim.setLabel(labelList);
-                                                break;
-                                            case "P":
-                                                peakDim.setChemShiftValue(Float.valueOf(value));
-                                                break;
-                                            case "W":
-                                                peakDim.setLineWidthValue(Float.valueOf(value));
-                                                break;
-                                            case "WH":
-                                                peakDim.setLineWidthValue(Float.valueOf(value) / (float) peakDim.getSpectralDimObj().getSf());
-                                                break;
-                                            case "B":
-                                                peakDim.setBoundsValue(Float.valueOf(value));
-                                                break;
-                                            case "BH":
-                                                peakDim.setBoundsValue(Float.valueOf(value) / (float) peakDim.getSpectralDimObj().getSf());
-                                                break;
-                                            case "J":
-                                                // fixme
-                                                break;
-                                            case "M":
-                                                // fixme
-                                                break;
-                                            case "m":
-                                                // fixme
-                                                break;
-                                            case "E":
-                                                peakDim.setError(value);
-                                                break;
-                                            case "F":
-                                                peakDim.setFrozen(!value.equals("0"));
-                                                break;
-                                            case "U":
-                                                peakDim.setUser(value);
-                                                break;
-                                            case "r":
-                                                long resNum = Long.valueOf(value);
-                                                if (linkResonances) {
-                                                    addResonance(resNum, peakDim);
-                                                }
-                                                break;
-                                            default:
-                                                throw new IllegalArgumentException("Unknown field " + field);
-                                        }
-                                    }
-                                } else {
-                                    Integer dataIndex = dataMap.get(field);
-                                    //   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U
-                                    // N.L     N.P     N.WH    N.B     N.E     N.J     N.U
-                                    // volume  intensity       status  comment flags
-                                    if (dataIndex != null) {
-                                        String value = data[dataIndex];
-                                        switch (field) {
-                                            case "id":
-                                                peak.setIdNum(Integer.valueOf(value));
-                                                break;
-                                            case "intensity":
-                                                peak.setIntensity(Float.valueOf(value));
-                                                break;
-                                            case "volume":
-                                                peak.setVolume1(Float.valueOf(value));
-                                                break;
-                                            case "status":
-                                                peak.setStatus(Integer.valueOf(value));
-                                                break;
-                                            case "type":
-                                                peak.setType(Integer.valueOf(value));
-                                                break;
-                                            case "comment":
-                                                peak.setComment(value);
-                                                break;
-                                            case "flags":
-                                                peak.setFlag2(value);
-                                                break;
-                                            case "color":
-                                                peak.setColor(value);
-                                                break;
-                                            default:
-                                                throw new IllegalArgumentException("Unknown field " + field);
-                                        }
-                                    }
-                                }
-                            }
+                            processLine(peakList, dataHeader, dataMap, data);
                         }
                     }
                 }
             }
         }
         return peakList;
+    }
+
+    public void processLine(PeakList peakList, String[] dataHeader, Map<String, Integer> dataMap, String[] data) {
+        Peak peak = peakList.getNewPeak();
+        for (String field : dataHeader) {
+            int dotIndex = field.indexOf('.');
+            if (dotIndex != -1) {
+                Integer dataIndex = dataMap.get(field);
+                String dimLabel = field.substring(0, dotIndex);
+                field = field.substring(dotIndex + 1);
+                PeakDim peakDim = peak.getPeakDim(dimLabel);
+                if (dataIndex != null) {
+                    String value = data[dataIndex];
+                    switch (field) {
+                        case "L":
+                            List<String> labelList = Arrays.asList(value.split(" "));
+                            peakDim.setLabel(labelList);
+                            break;
+                        case "P":
+                            peakDim.setChemShiftValue(Float.valueOf(value));
+                            break;
+                        case "W":
+                            peakDim.setLineWidthValue(Float.valueOf(value));
+                            break;
+                        case "WH":
+                            peakDim.setLineWidthValue(Float.valueOf(value) / (float) peakDim.getSpectralDimObj().getSf());
+                            break;
+                        case "B":
+                            peakDim.setBoundsValue(Float.valueOf(value));
+                            break;
+                        case "BH":
+                            peakDim.setBoundsValue(Float.valueOf(value) / (float) peakDim.getSpectralDimObj().getSf());
+                            break;
+                        case "J":
+                            // fixme
+                            break;
+                        case "M":
+                            // fixme
+                            break;
+                        case "m":
+                            // fixme
+                            break;
+                        case "E":
+                            peakDim.setError(value);
+                            break;
+                        case "F":
+                            peakDim.setFrozen(!value.equals("0"));
+                            break;
+                        case "U":
+                            peakDim.setUser(value);
+                            break;
+                        case "r":
+                            long resNum = Long.valueOf(value);
+                            if (linkResonances) {
+                                addResonance(resNum, peakDim);
+                            }
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unknown field " + field);
+                    }
+                }
+            } else {
+                Integer dataIndex = dataMap.get(field);
+                //   id      HN.L    HN.P    HN.WH   HN.B    HN.E    HN.J    HN.U
+                // N.L     N.P     N.WH    N.B     N.E     N.J     N.U
+                // volume  intensity       status  comment flags
+                if (dataIndex != null) {
+                    String value = data[dataIndex];
+                    switch (field) {
+                        case "id":
+                            peak.setIdNum(Integer.valueOf(value));
+                            break;
+                        case "int":
+                        case "intensity":
+                            peak.setIntensity(Float.valueOf(value));
+                            break;
+                        case "vol":
+                        case "volume":
+                            peak.setVolume1(Float.valueOf(value));
+                            break;
+                        case "status":
+                            peak.setStatus(Integer.valueOf(value));
+                            break;
+                        case "type":
+                            peak.setType(Integer.valueOf(value));
+                            break;
+                        case "comment":
+                            peak.setComment(value);
+                            break;
+                        case "flags":
+                            peak.setFlag2(value);
+                            break;
+                        case "color":
+                            peak.setColor(value);
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unknown field " + field);
+                    }
+                }
+            }
+        }
+
     }
 
     public void readMPK2(PeakList peakList, String fileName) throws IOException {
@@ -364,5 +388,192 @@ public class PeakReader {
             map.put(header[i], i);
         }
         return map;
+    }
+
+    /*
+
+    if {[gets $fileid fields] == -1} {
+        error "Can't read first line"
+    }
+
+    foreach item $fields {
+        if {[gets $fileid s] == -1} {
+            error "Can't read line"
+        }
+        set $item $s
+    }
+
+
+    if {![info exists label]} {
+        error "Can't find line for peak labels"
+    }
+
+    if {[lsearch $lists $lst]< 0} {
+        eval nv_peak addlist $lst $label
+        eval nv_peak dataset $lst $dataset
+        eval nv_peak sf $lst $sf
+        eval nv_peak sw $lst $sw
+        if {[info exists condition]} {
+            eval nv_peak sample condition $lst $condition
+        }
+    }
+
+    if {[gets $fileid fields] == -1} {
+        error "Can't read peak fields line"
+    }
+
+    set i 0
+    set idnums [list]
+    while {[gets $fileid s] != -1} {
+        if {$i>=[nv_peak n $lst]} {
+            set i [nv_peak add $lst]
+        }
+        set j 1
+        set idnum [lindex $s 0]
+        foreach field $fields {
+            set value [lindex $s $j]
+            nv_peak elem $field $lst.$i $value
+            incr j
+        }
+        lappend idnums $idnum $i
+        incr i
+    }
+    foreach "idnum i" $idnums {
+        nv_peak idnum $lst.$i $idnum
+    }
+
+     */
+    public PeakList readXPKPeaks(String fileName) throws IOException {
+        Path path = Paths.get(fileName);
+        String fileTail = path.getFileName().toString();
+        fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
+        String listName = fileTail;
+        boolean gotHeader = false;
+        String[] dataHeader = null;
+        Map<String, Integer> dataMap = null;
+        PeakList peakList = null;
+        String units = "ppm";
+        try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
+            String line = fileReader.readLine();
+            List<String> listFields = parseXPKLine(line);
+            Map<String, List<String>> listMap = new HashMap<>();
+            for (String field : listFields) {
+                line = fileReader.readLine();
+                List<String> values = parseXPKLine(line);
+                listMap.put(field, values);
+            }
+            int nDim = listMap.get("label").size();
+            peakList = new PeakList(listName, nDim);
+            for (String field : listFields) {
+                if (!field.equals("dataset")) {
+                    for (int iDim = 0; iDim < nDim; iDim++) {
+                        SpectralDim sDim = peakList.getSpectralDim(iDim);
+                        String value = listMap.get(field).get(iDim);
+                        switch (field) {
+                            case "label":
+                                sDim.setDimName(value);
+                                break;
+                            case "sf":
+                                sDim.setSf(Double.valueOf(value));
+                                break;
+                            case "sw":
+                                sDim.setSw(Double.valueOf(value));
+                                break;
+                        }
+                    }
+                }
+            }
+            if (listMap.containsKey("dataset")) {
+                peakList.setDatasetName(listMap.get("dataset").get(0));
+            }
+            String[] data = null;
+            while (true) {
+                line = fileReader.readLine();
+                if (line == null) {
+                    break;
+                }
+                String sline = line.trim();
+                if (sline.length() == 0) {
+                    continue;
+                }
+                if (sline.charAt(0) == '#') {
+                    continue;
+                }
+                List<String> fields = parseXPKLine(line);
+
+                if (dataHeader == null) {
+                    List<String> headerList = parseXPKLine(line);
+                    headerList.add(0, "id");
+                    dataHeader = new String[headerList.size()];
+                    headerList.toArray(dataHeader);
+                    data = new String[headerList.size()];
+                } else {
+                    if (dataMap == null) {
+                        dataMap = headerMap(dataHeader);
+                    }
+                    List<String> lineList = parseXPKLine(line);
+                    lineList.toArray(data);
+                    processLine(peakList, dataHeader, dataMap, data);
+                }
+            }
+
+            return peakList;
+        }
+
+    }
+
+    public static List<String> parseXPKLine(String line) {
+        List<String> store = new ArrayList<>();
+        StringBuilder curVal = new StringBuilder();
+        boolean inquotes = false;
+        boolean started = false;
+        char quoteChar = '\'';
+        for (int i = 0; i < line.length(); i++) {
+            char ch = line.charAt(i);
+            if (inquotes) {
+                started = true;
+                if (ch == quoteChar) {
+                    inquotes = false;
+                } else {
+                    curVal.append((char) ch);
+                }
+            } else if ((ch == '\"') || (ch == '\'') || (ch == '{')) {
+                inquotes = true;
+                quoteChar = ch == '{' ? '}' : ch;
+
+                if (started) {
+                    // if this is the second quote in a value, add a quote
+                    // this is for the double quote in the middle of a value
+                    curVal.append(quoteChar);
+                }
+            } else if ((ch == ' ') || (ch == '\t')) {
+                if (curVal.length() != 0) {
+                    store.add(curVal.toString().trim());
+                    curVal = new StringBuilder();
+                    started = false;
+                }
+            } else {
+                curVal.append((char) ch);
+            }
+        }
+        store.add(curVal.toString().trim());
+        return store;
+    }
+
+    public static PeakList readSparkySaveFile(String fileName, Map<String, Object> pMap) {
+        Path path = Paths.get(fileName);
+        String fileTail = path.getFileName().toString();
+        fileTail = fileTail.substring(0, fileTail.lastIndexOf('.'));
+        String listName = fileTail;
+        PythonInterpreter interpreter = new PythonInterpreter();
+        interpreter.exec("import sparky");
+        String rdString;
+;
+        interpreter.set("pMap", pMap);
+        interpreter.exec("sparky.pMap=pMap");
+        rdString = String.format("sparky.loadSaveFile('%s','%s')", fileName, listName);
+        interpreter.exec(rdString);
+        PeakList peakList = PeakList.get(listName);
+        return peakList;
     }
 }
