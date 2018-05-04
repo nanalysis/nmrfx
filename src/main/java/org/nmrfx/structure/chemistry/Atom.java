@@ -436,7 +436,7 @@ public class Atom implements IAtom {
         setRed(atomProperty.getRed());
         setGreen(atomProperty.getGreen());
         setBlue(atomProperty.getBlue());
-    }
+ }
 
     public void setColor(float red, float green, float blue) {
         spatialSet.red = red;
