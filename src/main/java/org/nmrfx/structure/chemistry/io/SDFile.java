@@ -174,8 +174,7 @@ public class SDFile {
             String atomSymbol = string.substring(31, 34).trim();
             String aname = atomSymbol + (iAtom + 1);
 
-            Atom atom = new Atom(aname, molName);
-            atom.aNum = Atom.getElementNumber(atomSymbol);
+            Atom atom = new Atom(aname, atomSymbol);
             atom.setPointValidity(structureNumber, true);
             Point3 pt = new Point3(x, y, z);
             atom.setPoint(structureNumber, pt);
