@@ -708,7 +708,7 @@ public class PeakAttrController implements Initializable, PeakNavigable {
                     t.getRowValue().setSpatialRelation(value == null ? "" : value);
                 });
 
-        referenceTableView.getColumns().setAll(dimNameCol, nucCol, sfCol, swCol, tolCol, patternCol, relCol, spatialCol);
+        referenceTableView.getColumns().setAll(labelCol, nucCol, sfCol, swCol, tolCol, patternCol, relCol, spatialCol);
     }
 
     void saveList() {
