@@ -4979,6 +4979,34 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
+     * Write vector to dataset
+     *
+     * @param vector Store dataset values in this vec
+     * @param index the index of vector to write
+     * @param iDim write values along this dimension index
+     * @throws IOException if an I/O error occurs
+     */
+    public void writeVector(Vec vector, int index, int iDim) throws IOException {
+        int[] dim = new int[nDim];
+        int[][] pt = new int[nDim][2];
+        for (int i = 0; i < nDim; i++) {
+            dim[i] = i;
+            if (iDim == i) {
+                pt[i][0] = 0;
+                if (vector.isComplex()) {
+                    pt[i][1] = 2 * vector.getSize() - 1;
+                } else {
+                    pt[i][1] = vector.getSize() - 1;
+                }
+            } else {
+                pt[i][0] = index;
+                pt[i][1] = index;
+            }
+        }
+        writeVecToDatasetFile(pt, dim, vector);
+    }
+
+    /**
      * Write vector to the dataset at the specified location. The location is specified with indices indicating the
      * offset for each dimension and the vector is written along the specified dimension. The location at which the
      * vector is written is stored in the vector header.
