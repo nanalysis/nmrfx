@@ -1787,7 +1787,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             }
         }
         if (!present) {
-            if (isPeakListCompatible(peakList)) {
+            if (isPeakListCompatible(peakList, true)) {
                 DatasetAttributes matchData = null;
                 for (DatasetAttributes dataAttr : datasetAttributesList) {
                     Dataset dataset = dataAttr.getDataset();
@@ -1955,7 +1955,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
                 if (dataset != null) {
                     try {
-                        int[] dim = getPeakDim(peakListAttr.getDatasetAttributes(), peakListAttr.getPeakList());
+                        int[] dim = getPeakDim(peakListAttr.getDatasetAttributes(), peakListAttr.getPeakList(), true);
                         for (int i = 0; i < dim.length; i++) {
                             System.out.println(i + " " + dim[i]);
                         }
@@ -2099,11 +2099,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
 
     }
 
-    public boolean isPeakListCompatible(PeakList peakList) {
+    public boolean isPeakListCompatible(PeakList peakList, boolean looseMode) {
         boolean result = false;
         if (!datasetAttributesList.isEmpty()) {
             DatasetAttributes dataAttr = datasetAttributesList.get(0);
-            int[] peakDim = getPeakDim(dataAttr, peakList);
+            int[] peakDim = getPeakDim(dataAttr, peakList, looseMode);
             if (peakDim[0] != -1) {
                 if ((peakDim.length == 1) || (peakDim[1] != -1)) {
                     result = true;
@@ -2113,15 +2113,42 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         return result;
     }
 
-    int[] getPeakDim(DatasetAttributes dataAttr, PeakList peakList) {
+    int[] getPeakDim(DatasetAttributes dataAttr, PeakList peakList, boolean looseMode) {
         int nPeakDim = peakList.nDim;
         int nDataDim = dataAttr.nDim;
         int[] dim = new int[nDataDim];
+        int nMatch = 0;
+        int nShouldMatch = 0;
+        boolean[] used = new boolean[nPeakDim];
+
         for (int i = 0; (i < axes.length) && (i < dim.length); i++) {
             dim[i] = -1;
+            nShouldMatch++;
             for (int j = 0; j < nPeakDim; j++) {
                 if (dataAttr.getLabel(i).equals(peakList.getSpectralDim(j).getDimName())) {
                     dim[i] = j;
+                    nMatch++;
+                    used[j] = true;
+                    break;
+                }
+            }
+        }
+
+        if ((nMatch != nShouldMatch) && looseMode) {
+            for (int i = 0; (i < axes.length) && (i < dim.length); i++) {
+                if (dim[i] == -1) {
+                    for (int j = 0; j < nPeakDim; j++) {
+                        if (!used[j]) {
+                            String dNuc = dataAttr.getDataset().getNucleus(i).getNumberName();
+                            String pNuc = peakList.getSpectralDim(j).getNucleus();
+                            if (dNuc.equals(pNuc)) {
+                                dim[i] = j;
+                                used[j] = true;
+                                nMatch++;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -241,11 +241,31 @@ public class PeakListAttributes implements PeakListener {
         int nPeakDim = peakList.nDim;
         int nDataDim = dataAttr.nDim;
         int[] dim = new int[nDataDim];
+        boolean[] used = new boolean[nPeakDim];
+        int nMatch = 0;
         for (int i = 0; i < nDataDim; i++) {
             dim[i] = -1;
             for (int j = 0; j < nPeakDim; j++) {
                 if (dataAttr.getLabel(i).equals(peakList.getSpectralDim(j).getDimName())) {
                     dim[i] = j;
+                    nMatch++;
+                    break;
+                }
+            }
+        }
+        for (int i = 0; i < nDataDim; i++) {
+            if (dim[i] == -1) {
+                for (int j = 0; j < nPeakDim; j++) {
+                    if (!used[j]) {
+                        String dNuc = dataAttr.getDataset().getNucleus(i).getNumberName();
+                        String pNuc = peakList.getSpectralDim(j).getNucleus();
+                        if (dNuc.equals(pNuc)) {
+                            dim[i] = j;
+                            used[j] = true;
+                            nMatch++;
+                            break;
+                        }
+                    }
                 }
             }
         }

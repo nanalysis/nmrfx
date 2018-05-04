@@ -439,7 +439,7 @@ public class SpecAttrWindowController implements Initializable {
                 boolean ok = false;
                 if (showOnlyMode.equals("All")) {
                     ok = true;
-                } else if (showOnlyMode.equals("Compatible") && chart.isPeakListCompatible(peakList)) {
+                } else if (showOnlyMode.equals("Compatible") && chart.isPeakListCompatible(peakList, false)) {
                     ok = true;
                 } else if (showOnlyMode.equals("Matching")) {
                     String datasetName = peakList.getDatasetName();
