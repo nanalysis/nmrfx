@@ -46,6 +46,7 @@ import javafx.stage.StageStyle;
 import javafx.util.converter.DoubleStringConverter;
 import java.text.DecimalFormat;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.control.ButtonBase;
@@ -56,9 +57,11 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
+import javafx.collections.ListChangeListener;
 
 /**
  *
@@ -77,6 +80,9 @@ public class DatasetsController implements Initializable {
     private int dimNumber = 0;
     private int maxDim = 6;
     TableColumn dim1Column;
+    Button valueButton;
+    Stage valueStage = null;
+    TableView<ValueItem> valueTableView = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -127,6 +133,10 @@ public class DatasetsController implements Initializable {
         drawButton.setContextMenu(drawMenu);
 
         buttons.add(drawButton);
+        valueButton = new Button("Values");
+        valueButton.setOnAction(e -> makeValueTable());
+        buttons.add(valueButton);
+        valueButton.setDisable(true);
 
         for (ButtonBase button : buttons) {
             button.getStyleClass().add("toolButton");
@@ -354,6 +364,15 @@ public class DatasetsController implements Initializable {
         dim1Column.setContextMenu(menu);
         tableView.getColumns().setAll(fileNameCol, nDimCol, levelCol, scaleCol, positiveColumn, negativeColumn, dim1Column);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        ListChangeListener listener = new ListChangeListener() {
+            @Override
+            public void onChanged(ListChangeListener.Change c) {
+                int nSelected = tableView.getSelectionModel().getSelectedItems().size();
+                boolean state = nSelected == 1;
+                valueButton.setDisable(!state);
+            }
+        };
+        tableView.getSelectionModel().getSelectedIndices().addListener(listener);
     }
 
     private int getDimNum() {
@@ -407,4 +426,101 @@ public class DatasetsController implements Initializable {
         }
     }
 
+    public class ValueItem {
+
+        int index;
+        double value;
+
+        public ValueItem(int index, double value) {
+            this.index = index;
+            this.value = value;
+        }
+
+        public double getValue() {
+            return value;
+        }
+
+        public void setValue(double value) {
+            this.value = value;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public void setIndex(int index) {
+            this.index = index;
+        }
+    }
+
+    class ValueItemDoubleFieldTableCell extends TextFieldTableCell<ValueItem, Double> {
+
+        ValueItemDoubleFieldTableCell(StringConverter<Double> converter) {
+            super(converter);
+        }
+
+        @Override
+        public void commitEdit(Double newValue) {
+            String column = getTableColumn().getText();
+            ValueItem value = (ValueItem) getTableRow().getItem();
+            super.commitEdit(newValue);
+            switch (column) {
+                case "Value":
+                    value.setValue(newValue);
+                    break;
+            }
+        }
+
+    }
+
+    public void updateValueTable(TableView valueTable) {
+        ObservableList<Dataset> datasets = tableView.getSelectionModel().getSelectedItems();
+        ObservableList<ValueItem> valueList = FXCollections.observableArrayList();
+        if (datasets.size() == 1) {
+            Dataset dataset = datasets.get(0);
+            int nDim = dataset.getNDim();
+            for (int i = 0; i < nDim; i++) {
+                double[] values = dataset.getValues(i);
+                if ((values != null) && (values.length > 1)) {
+                    System.out.println(i + " " + values.length);
+                    for (int j = 0; j < values.length; j++) {
+                        ValueItem item = new ValueItem(j, values[j]);
+                        valueList.add(item);
+                    }
+                    break;
+                }
+            }
+        }
+        valueTableView.setItems(valueList);
+    }
+
+    public void makeValueTable() {
+        if (valueTableView == null) {
+            DoubleStringConverter dsConverter = new DoubleStringConverter();
+            valueStage = new Stage(StageStyle.DECORATED);
+            BorderPane borderPane = new BorderPane();
+            Scene scene = new Scene(borderPane);
+            valueStage.setScene(scene);
+            valueStage.setTitle("Dataset Values");
+            valueStage.show();
+
+            valueTableView = new TableView<>();
+            valueTableView.setEditable(true);
+            borderPane.setCenter(valueTableView);
+            TableColumn<ValueItem, Integer> indexColumn = new TableColumn<>("Index");
+            indexColumn.setEditable(false);
+            TableColumn<ValueItem, Double> valueColumn = new TableColumn<>("Value");
+            valueColumn.setEditable(true);
+
+            indexColumn.setCellValueFactory(new PropertyValueFactory("index"));
+            valueColumn.setCellValueFactory(new PropertyValueFactory("value"));
+            valueColumn.setCellFactory(tc -> new ValueItemDoubleFieldTableCell(dsConverter));
+            //valueColumn.setCellFactory(tc -> new DatasetDoubleFieldTableCell(dsConverter));
+
+            valueTableView.getColumns().addAll(indexColumn, valueColumn);
+        }
+        valueStage.show();
+        valueStage.toFront();
+        updateValueTable(valueTableView);
+    }
 }
