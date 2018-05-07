@@ -453,14 +453,14 @@ public class Molecule implements Serializable {
         }
         return compounds;
     }
-    
+
     public void sortByIndex() {
-        for (Polymer polymer:getPolymers()) {
-            for (Residue residue:polymer.getResidues()) {
+        for (Polymer polymer : getPolymers()) {
+            for (Residue residue : polymer.getResidues()) {
                 residue.sortByIndex();
             }
         }
-        for (Entity entity:getLigands()) {
+        for (Entity entity : getLigands()) {
             entity.sortByIndex();
         }
         updateAtomArray();
@@ -1362,6 +1362,15 @@ public class Molecule implements Serializable {
         List<SpatialSet> selected = matchAtoms(molFilter);
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
+    }
+
+    public static void clearSelected() {
+        for (SpatialSet spatialSet: globalSelected) {
+            if (spatialSet != null) {
+                spatialSet.setSelected(0);
+            }            
+        }
+        globalSelected.clear();
     }
 
     public static int setSelected(List<SpatialSet> selected,
