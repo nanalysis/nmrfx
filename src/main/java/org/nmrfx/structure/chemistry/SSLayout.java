@@ -156,8 +156,8 @@ public class SSLayout implements MultivariateFunction {
                 List<String> sequence = new ArrayList<>();
                 sequences.add(sequence);
                 for (Residue residue : polymer.getResidues()) {
-                    String resName = residue.getName().substring(0,1);
-                    sequence.add(resName +  residue.getNumber());
+                    String resName = residue.getName().substring(0, 1);
+                    sequence.add(resName + residue.getNumber());
                 }
             }
         }
@@ -292,7 +292,37 @@ public class SSLayout implements MultivariateFunction {
         }
     }
 
+    private void doNoBasePairs() {
+        double a = nNuc / 2;
+        double b = a / 1.5;
+        double angle = Math.PI - Math.PI / 4;
+        double deltaAngle = (2.0 * Math.PI - Math.PI / 2) / nNuc;
+        for (int i = 0; i < nNuc; i++) {
+            double x = a * Math.cos(angle);
+            double y = b * Math.sin(angle);
+            setXY(i, x, y);
+            angle -= deltaAngle;
+        }
+        for (int i = 0; i < nNuc; i++) {
+            values[i * 2] = coords[0][i];
+            values[i * 2 + 1] = coords[1][i];
+        }
+    }
+
     public void fillPairsNew() {
+        int nBP = 0;
+        for (int i = 0; i < nNuc; i++) {
+            if (basePairs[i] != -1) {
+                nBP++;
+            }
+        }
+        if (nBP == 0) {
+            Arrays.fill(coordsSet, false);
+            Arrays.fill(structureTypes, null);
+            Arrays.fill(ssClass, 0);
+            doNoBasePairs();
+            return;
+        }
         nSet = 0;
         Arrays.fill(coordsSet, false);
         Arrays.fill(structureTypes, null);
