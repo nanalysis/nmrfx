@@ -144,6 +144,10 @@ public class Residue extends Compound {
         return oneLetter;
     }
 
+    public Polymer getPolymer() {
+        return polymer;
+    }
+
     @Override
     public int getIDNum() {
         polymer.getResidues();

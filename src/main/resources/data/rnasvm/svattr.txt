@@ -427,17 +427,6 @@ GH5pp pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot st
 GH5pp pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
 GH5pp pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
 GH5pp nuc 3prime-nc 5prime-nc ligand protein
-AC2 nuc1 Pp PP pP pp P- p- Pm pm -
-AC2 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
-AC2 nuc3 AA AC AG AU A-
-AC2 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
-AC2 nuc5 Pp PP pP pp P- p- Pm pm -
-AC2 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
-AC2 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
-AC2 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
-AC2 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
-AC2 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
-AC2 nuc 3prime-nc 5prime-nc ligand protein
 AC8 nuc1 Pp PP pP pp P- p- Pm pm -
 AC8 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
 AC8 nuc3 AA AC AG AU A-
@@ -460,6 +449,17 @@ GC8 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stac
 GC8 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
 GC8 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
 GC8 nuc 3prime-nc 5prime-nc ligand protein
+AC2 nuc1 Pp PP pP pp P- p- Pm pm -
+AC2 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC2 nuc3 AA AC AG AU A-
+AC2 nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC2 nuc5 Pp PP pP pp P- p- Pm pm -
+AC2 pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2 pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2 pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2 pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2 pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC2 nuc 3prime-nc 5prime-nc ligand protein
 CC5 nuc1 Pp PP pP pp P- p- Pm pm -
 CC5 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
 CC5 nuc3 CA CC CG CU C-
@@ -636,6 +636,94 @@ UC3p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot sta
 UC3p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
 UC3p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
 UC3p nuc 3prime-nc 5prime-nc ligand protein
+UC4p nuc1 Pp PP pP pp P- p- Pm pm -
+UC4p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC4p nuc3 UA UC UG UU U-
+UC4p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC4p nuc5 Pp PP pP pp P- p- Pm pm -
+UC4p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC4p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC4p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC4p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC4p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC4p nuc 3prime-nc 5prime-nc ligand protein
+UC5p nuc1 Pp PP pP pp P- p- Pm pm -
+UC5p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC5p nuc3 UA UC UG UU U-
+UC5p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+UC5p nuc5 Pp PP pP pp P- p- Pm pm -
+UC5p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC5p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC5p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC5p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC5p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+UC5p nuc 3prime-nc 5prime-nc ligand protein
+CC4p nuc1 Pp PP pP pp P- p- Pm pm -
+CC4p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC4p nuc3 CA CC CG CU C-
+CC4p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC4p nuc5 Pp PP pP pp P- p- Pm pm -
+CC4p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC4p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC4p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC4p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC4p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC4p nuc 3prime-nc 5prime-nc ligand protein
+CC5p nuc1 Pp PP pP pp P- p- Pm pm -
+CC5p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC5p nuc3 CA CC CG CU C-
+CC5p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+CC5p nuc5 Pp PP pP pp P- p- Pm pm -
+CC5p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC5p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC5p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC5p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC5p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+CC5p nuc 3prime-nc 5prime-nc ligand protein
+AC4p nuc1 Pp PP pP pp P- p- Pm pm -
+AC4p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC4p nuc3 AA AC AG AU A-
+AC4p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC4p nuc5 Pp PP pP pp P- p- Pm pm -
+AC4p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC4p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC4p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC4p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC4p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC4p nuc 3prime-nc 5prime-nc ligand protein
+AC5p nuc1 Pp PP pP pp P- p- Pm pm -
+AC5p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC5p nuc3 AA AC AG AU A-
+AC5p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+AC5p nuc5 Pp PP pP pp P- p- Pm pm -
+AC5p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC5p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC5p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC5p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC5p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+AC5p nuc 3prime-nc 5prime-nc ligand protein
+GC4p nuc1 Pp PP pP pp P- p- Pm pm -
+GC4p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC4p nuc3 GA GC GG GU G-
+GC4p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC4p nuc5 Pp PP pP pp P- p- Pm pm -
+GC4p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC4p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC4p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC4p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC4p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC4p nuc 3prime-nc 5prime-nc ligand protein
+GC5p nuc1 Pp PP pP pp P- p- Pm pm -
+GC5p nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC5p nuc3 GA GC GG GU G-
+GC5p nuc4 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
+GC5p nuc5 Pp PP pP pp P- p- Pm pm -
+GC5p pos1 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC5p pos2 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC5p pos3 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC5p pos4 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC5p pos5 - gnra1 gnra2 gnra3 gnra4 gnra5 kissing multiplet penta pseudoknot stacked tetra1 tetra2 tetra3 tetra4 tetra5 uncg1 uncg2 uncg3 uncg4 uncg5
+GC5p nuc 3prime-nc 5prime-nc ligand protein
 AN1 nuc1 Pp PP pP pp P- p- Pm pm -
 AN1 nuc2 GC CG AU UA A- C- G- GU U- UG AA AC AG CA CU CC GA GG UC UU -
 AN1 nuc3 AA AC AG AU A-
