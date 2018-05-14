@@ -560,7 +560,6 @@ public class SSLayout implements MultivariateFunction {
         int k = 0;
         for (boolean fixed : angleFixed) {
             if (!fixed) {
-                System.out.println(k + " j " + j);
                 iNucs[k++] = j;
             }
             j++;
@@ -580,7 +579,6 @@ public class SSLayout implements MultivariateFunction {
             boundaries[1][i] = Math.PI / 2;
             inputSigma[i] = 0.1;
             if (sBreak) {
-                System.out.println(i + " sBreak ");
                 int nAng = 9;
                 for (int kk = 0; kk < nAng; kk++) {
                     boundaries[0][i + kk - nAng / 2] = -0.4;
@@ -835,10 +833,10 @@ public class SSLayout implements MultivariateFunction {
             }
         }
         if (result != null) {
-            dumpCoordinates(result.getPoint());
+            //dumpCoordinates(result.getPoint());
         } else {
             result = new PointValuePair(guess, value);
-            dumpCoordinates(guess);
+            //dumpCoordinates(guess);
         }
         return result;
     }
@@ -936,6 +934,6 @@ public class SSLayout implements MultivariateFunction {
 //        ssLayout.refineCMAES(30000,0.01,0.5,1.0,100);
         //PointValuePair result = ssLayout.refineCMAES(1000, 1.0, 0.5, 1.0, 0);
         //ssLayout.dumpCoordinates(result.getPoint());
-        ssLayout.dumpCoordinates();
+        //ssLayout.dumpCoordinates();
     }
 }

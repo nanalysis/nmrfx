@@ -20,6 +20,7 @@ import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 import org.nmrfx.structure.chemistry.miner.NodeValidator;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
+import org.python.util.PythonInterpreter;
 
 /**
  *
@@ -102,6 +103,16 @@ public class Predictor {
         });
     }
 
+    public void predictRNAWithAttributes() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule != null) {
+            if (!molecule.getDotBracket().equals("")) {
+                PythonInterpreter interp = new PythonInterpreter();
+                interp.exec("import rnapred\nrnapred.predictFromSequence()");
+            }
+        }
+    }
+
     public void predictRNAWithRingCurrent(Polymer polymer, int iRef) throws InvalidMoleculeException {
         RingCurrentShift ringShifts = new RingCurrentShift();
         ringShifts.makeRingList(polymer.molecule);
@@ -167,7 +178,7 @@ public class Predictor {
             }
             if ((hoseAtom != null) && (hoseAtom.getAtomicNumber() == 6)) {
                 String hoseCode = (String) hoseAtom.getProperty("hose");
-                System.out.println(atom.getShortName() + " " + hoseAtom.getShortName() + " " + hoseCode);
+//                System.out.println(atom.getShortName() + " " + hoseAtom.getShortName() + " " + hoseCode);
                 if (hoseCode != null) {
                     PredictResult predResult;
                     HosePrediction.HOSEPPM hosePPM = new HosePrediction.HOSEPPM(hoseCode);
