@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.*?>
+
+<BorderPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.RNAPeakGeneratorSceneController">
+    <stylesheets>
+        <URL value="@/styles/rnapeakgeneratorscene.css"/>
+    </stylesheets>
+    <top>
+        <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <items>
+                <CheckBox text="D2O" fx:id="d2oCheckBox"/>
+                <CheckBox text="C" fx:id="carbonCheckBox"/>
+                <CheckBox text="N" fx:id="nitrogenCheckBox"/>
+                <MenuButton text="Select">
+                    <items>
+                        <MenuItem text="Bases On" onAction="#setAllBasesOn"/>
+                        <MenuItem text="Bases Off" onAction="#setAllBasesOff"/>
+                        <MenuItem text="Riboses On" onAction="#setAllRibosesOn"/>
+                        <MenuItem text="Riboses Off" onAction="#setAllRibosesOff"/>
+                    </items>
+                </MenuButton>
+            </items>
+        </ToolBar>
+    </top>
+    <center>
+        <GridPane>
+            <TitledPane  text="Adenosine" collapsible="false" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                <content>
+                    <GridPane fx:id="adenosinePane">
+                    
+                    </GridPane>
+                </content>
+            </TitledPane>
+            <TitledPane  text="Guanosine" collapsible="false" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                <content>
+                    <GridPane fx:id="guanosinePane">
+                    
+                    </GridPane>
+                </content>
+
+            </TitledPane>
+            <TitledPane  text="Uridine" collapsible="false" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                <content>
+                    <GridPane fx:id="uridinePane">
+                    
+                    </GridPane>
+                </content>
+
+            </TitledPane>
+            <TitledPane text="Cytidine" collapsible="false" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                <content>
+                    <GridPane fx:id="cytidinePane">
+                    
+                    </GridPane>
+                </content>
+
+            </TitledPane>
+        </GridPane>
+    </center>
+    <bottom>
+        <VBox>
+            <children>
+                <HBox>
+                    <children>
+                        <Label text="Entities"/>
+                        <ChoiceBox  fx:id="entityChoiceBox"/>
+                        <Pane minWidth="50"/>
+                        <Label text="Residues Start:"/>
+                        <TextField fx:id="firstResidueField" maxWidth="60"/>
+                        <Label text="End:"/>
+                        <TextField fx:id="lastResidueField" maxWidth="60"/>
+                    </children>
+                </HBox>
+                <HBox>
+                    <children>
+                        <Button text="Show" fx:id="showSelGroupButton" onAction="#showSelGroup"/>
+                        <Button text="Clear" fx:id="clearSelGroupButton" onAction="#clearSelGroup"/>
+                        <Button text="Clear All" fx:id="clearAllSelGroupsButton" onAction="#clearAllSelGroups"/>
+                        <Button text="Add" fx:id="addSelGroupButton" onAction="#addSelGroup"/>
+                        <Button text="Replace" fx:id="replaceSelGroupButton" onAction="#replaceSelGroup"/>
+                    </children>
+                </HBox>
+                <ListView fx:id="selGroupListView" prefHeight="80"/>
+                <HBox>
+                    <children>
+                        <Label text="Dataset" alignment="center_left"/>
+                        <ComboBox fx:id="genDatasetNameField" editable="false" HBox.hgrow="ALWAYS" minWidth="200"/>
+                        <Pane minWidth="50"/>
+                        <Button text="Load" fx:id="loadSelGroupButton" onAction="#loadSelGroup"/>
+                        <Button text="Apply" fx:id="applySelGroupButton" onAction="#applySelGroup"/>
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </bottom>
+</BorderPane>
