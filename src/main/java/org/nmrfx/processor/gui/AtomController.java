@@ -235,10 +235,6 @@ public class AtomController implements Initializable, FreezeListener {
         MenuItem universalItem = new MenuItem("Universal");
         universalItem.setOnAction(e -> predictAll(e));
         predictMenu.getItems().addAll(rnaAttributesItem, rna3DItem, protein3DItem, universalItem);
-
-        MenuButton measureMenu = new MenuButton("Measure");
-        menuBar.getItems().add(measureMenu);
-
     }
 
     @Override
