@@ -171,7 +171,7 @@ public class PSFFile {
                 int jj = Integer.parseInt(atomPairs[j + 1]);
                 Atom atom1 = atoms.get(ii - 1);
                 Atom atom2 = atoms.get(jj - 1);
-                int order = 1;
+                Order order = Order.SINGLE;
                 boolean recordBondInPolymer = false;
                 if (atom1.entity != atom2.entity) {
                     recordBondInPolymer = true;

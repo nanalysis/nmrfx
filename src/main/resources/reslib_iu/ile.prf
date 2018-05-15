@@ -26,7 +26,7 @@ FAMILY   CA     CB     CG1    CG2    HB
 FAMILY   CB     CG1    CD1    HG13   HG12   
 FAMILY   CG1    CD1    HD13   HD12   HD11
 FAMILY   CB     CG2    HG23   HG22   HG21   
-FAMILY   CA     C      +      O      
+FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG1    CHI21 2

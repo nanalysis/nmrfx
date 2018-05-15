@@ -15,13 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
+
+import org.nmrfx.structure.chemistry.miner.AtomContainer;
 
 import java.io.*;
 import java.util.*;
+import org.nmrfx.structure.chemistry.miner.IAtom;
+import org.nmrfx.structure.chemistry.miner.IBond;
 
-public class Entity implements Serializable {
+public class Entity implements AtomContainer, Serializable {
 
     public static String[] entityStrings = {
         "_Entity.Ambiguous_conformational_states",
@@ -51,8 +54,8 @@ public class Entity implements Serializable {
     public String name = null;
     public String label = null;
     public Molecule molecule = null;
-    ArrayList<Atom> atoms = new ArrayList<Atom>();
-    ArrayList<Bond> bonds = new ArrayList<Bond>();
+    List<Atom> atoms = new ArrayList<Atom>();
+    List<Bond> bonds = new ArrayList<Bond>();
     boolean hasEquivalentAtoms = false;
     public CoordSet coordSet = null;
     public int entityID = 0;
@@ -65,6 +68,101 @@ public class Entity implements Serializable {
     public String details = "?";
     private HashMap<String, String> propertyMap = new HashMap<String, String>();
     ArrayList<EntityCommonName> commonNames = new ArrayList<>();
+
+    @Override
+    public int getAtomCount() {
+        return atoms.size();
+    }
+
+    @Override
+    public int getBondCount() {
+        return bonds.size();
+    }
+
+    @Override
+    public IBond getBond(int i) {
+        return bonds.get(i);
+    }
+
+    @Override
+    public IBond getBond(IAtom atom1, IAtom atom2) {
+        Bond result = null;
+        for (Bond bond : bonds) {
+            if ((bond.begin == atom1) && (bond.end == atom2)) {
+                result = bond;
+            } else if ((bond.begin == atom2) && (bond.end == atom1)) {
+                result = bond;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<IAtom> atoms() {
+        List<IAtom> result = new ArrayList<>();
+        result.addAll(atoms);
+        return result;
+    }
+
+    @Override
+    public List<IBond> getBonds(IAtom atom) {
+        return atom.getBonds();
+    }
+
+    @Override
+    public List<IBond> bonds() {
+        List<IBond> result = new ArrayList<>();
+        result.addAll(bonds);
+        return result;
+    }
+
+    @Override
+    public List<IAtom> getConnectedAtomsList(IAtom atom) {
+        List<IBond> ibonds = atom.getBonds();
+        List<IAtom> result = new ArrayList<>();
+
+        for (IBond ibond : ibonds) {
+            if (ibond.getAtom(0) == atom) {
+                result.add(ibond.getAtom(1));
+            } else if (ibond.getAtom(1) == atom) {
+                result.add(ibond.getAtom(0));
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<IBond> getConnectedBondsList(IAtom atom) {
+        List<IBond> result = atom.getBonds();
+        return result;
+    }
+
+    @Override
+    public int getAtomNumber(IAtom atom) {
+        return atoms.indexOf(atom);
+    }
+
+    @Override
+    public int getBondNumber(IBond bond) {
+        int index = bonds.indexOf(bond);
+        if (index == -1) {
+            int i = 0;
+            for (Bond bond2 : bonds) {
+                if ((bond.getAtom(0) == bond2.getAtom(0)) && (bond.getAtom(1) == bond2.getAtom(1))) {
+                    index = i;
+                    break;
+                } else if ((bond.getAtom(0) == bond2.getAtom(1)) && (bond.getAtom(1) == bond2.getAtom(0))) {
+                    index = i;
+                    break;
+                }
+                i++;
+            }
+        }
+        if (index == -1) {
+            System.out.println("Bond not present " + ((Bond) bond).toString());
+        }
+        return index;
+    }
 
     public static class EntityCommonName {
 
@@ -120,8 +218,12 @@ public class Entity implements Serializable {
         return copyList;
     }
 
-    public ArrayList<Atom> getAtoms() {
+    public List<Atom> getAtoms() {
         return atoms;
+    }
+
+    public Atom getAtom(int index) {
+        return atoms.get(index);
     }
 
     public boolean hasEquivalentAtoms() {
@@ -164,6 +266,10 @@ public class Entity implements Serializable {
 
     public CoordSet getCoordSet() {
         return coordSet;
+    }
+
+    public void sortByIndex() {
+        Collections.sort(atoms, Atom::compareByIndex);
     }
 
 }

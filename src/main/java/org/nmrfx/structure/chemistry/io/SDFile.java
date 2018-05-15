@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.io;
 
 import org.nmrfx.structure.chemistry.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
-import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -37,436 +39,334 @@ public class SDFile {
     static final int PROP = 5;
     static final int FREE = 6;
     static final int VALUE = 7;
+    static Pattern pattern = Pattern.compile("> +<(.*)>");
+
+    int nMols = 0;
+    Molecule molecule = null;
+    Compound compound = null;
+    String molName = "";
+    int nItems = 0;
+    int nAtoms = 0;
+    int nBonds = 0;
+    int nLists = 0;
+    int nStexts = 0;
+    int nProps = 0;
+    int nProds = 0;
+    int nReacs = 0;
+    int nInters = 0;
+    boolean chiral = false;
+    int structureNumber = 0;
+    List<Atom> atomList = new ArrayList<>();
 
     public static Molecule read(String fileName, String fileContent)
             throws MoleculeIOException {
-        String molName = null;
-        Molecule molecule = null;
-        Compound compound = null;
-        boolean firstAtom = true;
-        String token = null;
-        double x;
-        double y;
-        double z;
-        int iAtom;
-        int iBond;
-        int jBond;
-        String aname = null;
-        Point3 pt;
-        int structureNumber = 0;
-        Atom atom1 = null;
-        Atom atom2 = null;
-        String string;
-        LineNumberReader lineReader;
-        int order;
-        int stereo;
-        int nItems = 0;
-        int nAtoms = 0;
-        int nBonds = 0;
-        int nLists = 0;
-        int nStexts = 0;
-        int nProps = 0;
-        int nProds = 0;
-        int nReacs = 0;
-        int nInters = 0;
-        int nMols = 0;
-        String valueName = null;
-        String value;
-        boolean chiral = false;
-        int state = MOLECULE;
+        SDFile sdFile = new SDFile();
+        return sdFile.readMol(fileName, fileContent);
+    }
 
+    void getMolName(String fileName) {
+        File file = new File(fileName);
+
+        String fileTail = file.getName();
+        String fileRoot;
+        int dot = fileTail.indexOf(".");
+
+        if (dot != -1) {
+            fileRoot = fileTail.substring(0, dot);
+        } else {
+            fileRoot = fileTail;
+        }
+        if (nMols == 0) {
+            molName = fileRoot;
+        } else {
+            molName = fileRoot + nMols;
+        }
+    }
+
+    void readHeader(String fileName, LineNumberReader lineReader, Compound compound) throws MoleculeIOException {
+        String[] header = new String[4];
         try {
-            if (fileContent == null) {
-                BufferedReader bf = new BufferedReader(new FileReader(fileName));
-                lineReader = new LineNumberReader(bf);
-            } else {
-                StringReader sf = new StringReader(fileContent);
-                lineReader = new LineNumberReader(sf);
+            for (int i = 0; i < header.length; i++) {
+                header[i] = lineReader.readLine();
+                System.out.println(header[i]);
             }
         } catch (IOException ioe) {
-            throw new MoleculeIOException(ioe.getMessage());
+            throw new MoleculeIOException("Couldn't read first four lines");
+        }
+        getMolName(fileName);
+
+        nMols++;
+        if (compound != null) {
+            this.compound = compound;
+            this.molecule = compound.molecule;
+        } else {
+            molecule = new Molecule(molName);
+            this.compound = new Compound("1", molName);
+            this.compound.molecule = molecule;
+            molecule.addEntity(this.compound, molName);
+            molecule.structures.add(0);
         }
 
-        Vector atomList = new Vector();
+        String string = header[3];
+        if (string.length() < 33) {
+            throw new MoleculeIOException(
+                    "Read SD file: nPar line too short " + header[0] + "\n" + header[1] + "\n" + header[2] + "\n" + header[3]);
+        }
+        setupItemCounts(string);
+    }
 
-        if (atomList == null) {
-            atomList = new Vector(128);
+    private void setupItemCounts(String string) {
+        nAtoms = Integer.parseInt(string.substring(0, 3).trim());
+        nBonds = Integer.parseInt(string.substring(3, 6).trim());
+        nLists = Integer.parseInt(string.substring(7, 9).trim());
+
+        String valueString = string.substring(14, 15).trim();
+
+        if (valueString.length() > 0) {
+            chiral = (Integer.parseInt(valueString) == 1);
         }
 
-        StringTokenizer tokenizer;
+        valueString = string.substring(15, 18).trim();
 
-        while (true) {
+        if (valueString.length() > 0) {
+            nStexts = Integer.parseInt(valueString);
+        }
+
+        valueString = string.substring(18, 21).trim();
+
+        if (valueString.length() > 0) {
+            nReacs = Integer.parseInt(valueString);
+        }
+
+        valueString = string.substring(21, 24).trim();
+
+        if (valueString.length() > 0) {
+            nProds = Integer.parseInt(valueString);
+        }
+
+        valueString = string.substring(24, 27).trim();
+
+        if (valueString.length() > 0) {
+            nInters = Integer.parseInt(valueString);
+        }
+
+        valueString = string.substring(27, 30).trim();
+
+        if (valueString.length() > 0) {
+            nProps = Integer.parseInt(valueString);
+        }
+        if ((nProds != 0) || (nReacs != 0) || (nInters != 0)) {
+            System.err.println("unused nProd, nReacs, or nInters");
+        }
+    }
+
+    public void readAtoms(LineNumberReader lineReader) throws IOException, MoleculeIOException {
+        for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
+            String string = lineReader.readLine();
+            if (string.length() < 34) {
+                throw new MoleculeIOException(
+                        "Read SD file: atom line too short");
+            }
+
+            double x = Double.parseDouble(string.substring(0, 10).trim());
+            double y = Double.parseDouble(string.substring(10, 20).trim());
+            double z = Double.parseDouble(string.substring(20, 30).trim());
+
+            String atomSymbol = string.substring(31, 34).trim();
+            String aname = atomSymbol + (iAtom + 1);
+
+            Atom atom = new Atom(aname, atomSymbol);
+            atom.setPointValidity(structureNumber, true);
+            Point3 pt = new Point3(x, y, z);
+            atom.setPoint(structureNumber, pt);
+
+            String massDiffString = string.substring(34, 36).trim();
+            int massDiff = 0;
             try {
-                string = lineReader.readLine();
-            } catch (IOException ioe) {
-                System.err.println(ioe.getMessage());
-                Molecule.makeAtomList();
-                molecule.getAtomTypes();
-
-                return molecule;
+                massDiff = Integer.parseInt(massDiffString);
+            } catch (NumberFormatException nfE) {
+            }
+            if (massDiff != 0) {
+                System.err.println("unused massDiff");
             }
 
-            if (string == null) {
-                Molecule.makeAtomList();
-                molecule.getAtomTypes();
+            String chargeString = string.substring(36, 39).trim();
 
-                return molecule;
-            }
+            try {
+                int chargeValue = Integer.parseInt(chargeString);
 
-            if (state == MOLECULE) {
-                if (nItems < 3) {
-                    nItems++;
+                switch (chargeValue) {
+                    case 1: {
+                        atom.setFormalCharge(3);
 
-                    continue;
-                }
-
-                File file = new File(fileName);
-
-                String fileTail = file.getName();
-                String fileRoot;
-                int dot = fileTail.indexOf(".");
-
-                if (dot != -1) {
-                    fileRoot = fileTail.substring(0, dot);
-                } else {
-                    fileRoot = fileTail;
-                }
-
-                if (nMols == 0) {
-                    molName = fileRoot;
-                } else {
-                    molName = fileRoot + nMols;
-                }
-
-                nMols++;
-                molecule = new Molecule(molName);
-                compound = null;
-                firstAtom = true;
-                atomList.setSize(0);
-                molecule.structures.add(Integer.valueOf(0));
-
-                if (string.length() < 33) {
-                    throw new MoleculeIOException(
-                            "Read SD file: nPar line too short");
-                }
-
-                String valueString = null;
-                nAtoms = Integer.parseInt(string.substring(0, 3).trim());
-                nBonds = Integer.parseInt(string.substring(3, 6).trim());
-                nLists = Integer.parseInt(string.substring(7, 9).trim());
-
-                valueString = string.substring(14, 15).trim();
-
-                if (valueString.length() > 0) {
-                    chiral = (Integer.parseInt(valueString) == 1);
-                }
-
-                valueString = string.substring(15, 18).trim();
-
-                if (valueString.length() > 0) {
-                    nStexts = Integer.parseInt(valueString);
-                }
-
-                valueString = string.substring(18, 21).trim();
-
-                if (valueString.length() > 0) {
-                    nReacs = Integer.parseInt(valueString);
-                }
-
-                valueString = string.substring(21, 24).trim();
-
-                if (valueString.length() > 0) {
-                    nProds = Integer.parseInt(valueString);
-                }
-
-                valueString = string.substring(24, 27).trim();
-
-                if (valueString.length() > 0) {
-                    nInters = Integer.parseInt(valueString);
-                }
-
-                valueString = string.substring(27, 30).trim();
-
-                if (valueString.length() > 0) {
-                    nProps = Integer.parseInt(valueString);
-                }
-                if ((nProds != 0) || (nReacs != 0) || (nInters != 0)) {
-                    System.err.println("unused nProd, nReacs, or nInters");
-                }
-                state = ATOM;
-                nItems = 0;
-
-                continue;
-            } else if (state == ATOM) {
-                if (string.length() < 34) {
-                    throw new MoleculeIOException(
-                            "Read SD file: atom line too short");
-                }
-
-                x = Double.parseDouble(string.substring(0, 10).trim());
-                y = Double.parseDouble(string.substring(10, 20).trim());
-                z = Double.parseDouble(string.substring(20, 30).trim());
-
-                iAtom = nItems;
-
-                String atomSymbol = string.substring(31, 34).trim();
-                aname = atomSymbol + (iAtom + 1);
-
-                if (compound == null) {
-                    compound = new Compound("1", molName);
-                    compound.molecule = molecule;
-                    molecule.addEntity(compound, molName);
-                }
-
-                Atom atom = new Atom(aname, molName);
-                atom.aNum = Atom.getElementNumber(atomSymbol);
-                atom.setPointValidity(structureNumber, true);
-                pt = atom.getPoint(structureNumber);
-                pt = new Point3(x, y, z);
-                atom.setPoint(structureNumber, pt);
-
-                String massDiffString = string.substring(34, 36).trim();
-                int massDiff = 0;
-                try {
-                    massDiff = Integer.parseInt(massDiffString);
-                } catch (NumberFormatException nfE) {
-                }
-                if (massDiff != 0) {
-                    System.err.println("unused massDiff");
-                }
-
-                String chargeString = string.substring(36, 39).trim();
-
-                try {
-                    int chargeValue = Integer.parseInt(chargeString);
-
-                    switch (chargeValue) {
-                        case 1: {
-                            atom.setFormalCharge(3);
-
-                            break;
-                        }
-
-                        case 2: {
-                            atom.setFormalCharge(2);
-
-                            break;
-                        }
-
-                        case 3: {
-                            atom.setFormalCharge(1);
-
-                            break;
-                        }
-
-                        case 5: {
-                            atom.setFormalCharge(-1);
-
-                            break;
-                        }
-
-                        case 6: {
-                            atom.setFormalCharge(-2);
-
-                            break;
-                        }
-
-                        case 7: {
-                            atom.setFormalCharge(-3);
-
-                            break;
-                        }
-
-                        default: {
-                            atom.setFormalCharge(0);
-
-                            break;
-                        }
+                        break;
                     }
-                } catch (NumberFormatException nfE) {
+
+                    case 2: {
+                        atom.setFormalCharge(2);
+
+                        break;
+                    }
+
+                    case 3: {
+                        atom.setFormalCharge(1);
+
+                        break;
+                    }
+
+                    case 5: {
+                        atom.setFormalCharge(-1);
+
+                        break;
+                    }
+
+                    case 6: {
+                        atom.setFormalCharge(-2);
+
+                        break;
+                    }
+
+                    case 7: {
+                        atom.setFormalCharge(-3);
+
+                        break;
+                    }
+
+                    default: {
+                        atom.setFormalCharge(0);
+
+                        break;
+                    }
                 }
-                /*
+            } catch (NumberFormatException nfE) {
+            }
+            /*
                  * String stereoString = string.substring(39, 42).trim(); int
                  * stereoValue = 0; try { stereoValue =
                  * Integer.parseInt(stereoString); } catch
                  * (NumberFormatException nfE) { } atom.setStereo(stereoValue);
-                 */
+             */
 
-                if (firstAtom) {
-                    firstAtom = false;
-                }
+            atom.entity = compound;
+            compound.addAtom(atom);
+            atomList.add(atom);
+            nItems++;
+        }
+    }
 
-                atom.entity = compound;
-                compound.addAtom(atom);
-                atomList.addElement(atom);
-                nItems++;
+    void readBonds(LineNumberReader lineReader) throws MoleculeIOException, IOException {
+        for (int i = 0; i < nBonds; i++) {
+            String string = lineReader.readLine();
+            try {
+                int iBond = Integer.parseInt(string.substring(0, 3).trim()) - 1;
+                int jBond = Integer.parseInt(string.substring(3, 6).trim()) - 1;
+                int order = Integer.parseInt(string.substring(6, 9).trim());
+                int stereo = Integer.parseInt(string.substring(9, 12).trim());
 
-                if (nItems == nAtoms) {
-                    nItems = 0;
-                    state = BOND;
-
-                    continue;
-                }
-            } else if (state == BOND) {
-                iBond = Integer.parseInt(string.substring(0, 3).trim()) - 1;
-                jBond = Integer.parseInt(string.substring(3, 6).trim()) - 1;
-                order = Integer.parseInt(string.substring(6, 9).trim());
-                stereo = Integer.parseInt(string.substring(9, 12).trim());
-
-                if (stereo == 1) {
-                    stereo = Bond.STEREO_BOND_UP;
-                } else if (stereo == 4) {
-                    stereo = Bond.STEREO_BOND_EITHER;
-                } else if (stereo == 6) {
-                    stereo = Bond.STEREO_BOND_DOWN;
-                } else {
-                    stereo = 0;
+                switch (stereo) {
+                    case 1:
+                        stereo = Bond.STEREO_BOND_UP;
+                        break;
+                    case 4:
+                        stereo = Bond.STEREO_BOND_EITHER;
+                        break;
+                    case 6:
+                        stereo = Bond.STEREO_BOND_DOWN;
+                        break;
+                    default:
+                        stereo = 0;
+                        break;
                 }
 
                 //System.err.println (iBond + " " + jBond + " " + atomList.size ());
                 if (atomList != null) {
                     if ((iBond < atomList.size()) && (jBond < atomList.size())) {
-                        atom1 = (Atom) atomList.elementAt(iBond);
-                        atom2 = (Atom) atomList.elementAt(jBond);
+                        Atom atom1 = (Atom) atomList.get(iBond);
+                        Atom atom2 = (Atom) atomList.get(jBond);
 
-                        Atom.addBond(atom1, atom2, order, stereo, false);
+                        Atom.addBond(atom1, atom2, Order.getOrder(order), stereo, false);
                     } else {
                         System.err.println("error in adding bond to molecule "
                                 + molName);
                     }
                 }
-
-                nItems++;
-
-                if (nItems == nBonds) {
-                    nItems = 0;
-                    state = LIST;
-                }
-
-                continue;
-            }
-
-            if (state == LIST) {
-                if ((nLists == 0) || (nItems == nLists)) {
-                    nItems = 0;
-                    state = STEXT;
-                } else {
-                    nItems++;
-
-                    continue;
-                }
-            }
-
-            if (state == STEXT) {
-                if ((nStexts == 0) || (nItems == nStexts)) {
-                    nItems = 0;
-                    state = PROP;
-                } else {
-                    nItems++;
-
-                    continue;
-                }
-            }
-
-            if (state == PROP) {
-                if ((nProps == 0) || (nItems == nProps)) {
-                    nItems = 0;
-                    state = FREE;
-                } else {
-                    nItems++;
-
-                    continue;
-                }
-            }
-
-            if (state == FREE) {
-                tokenizer = new StringTokenizer(string);
-
-                int nTokens = tokenizer.countTokens();
-
-                if (nTokens > 0) {
-                    token = tokenizer.nextToken();
-
-                    if (token.equals("$$$$")) {
-                        state = MOLECULE;
-                        nItems = 0;
-
-                        continue;
-                    } else if (token.equals(">")) {
-                        if (nTokens > 1) {
-                            state = VALUE;
-                            token = tokenizer.nextToken();
-                            valueName = token.substring(1, token.length() - 1);
-
-                            if (nTokens > 2) {
-                                token = tokenizer.nextToken();
-                                value = token;
-                            }
-                        }
-
-                        continue;
-                    }
-                }
-            } else if (state == VALUE) {
-                tokenizer = new StringTokenizer(string);
-
-                token = tokenizer.nextToken();
-                value = token;
-
-                if (valueName.equals("MDLNUMBER")) {
-                    molecule.reName(molecule, compound, molName, value);
-                    molName = molecule.name;
-                }
-// fixme
-//                TclObject valueObj = TclString.newInstance(value);
-//                interp.setVar(molName + "(" + valueName + ")", valueObj,
-//                        TCL.GLOBAL_ONLY);
-                state = FREE;
-
-                continue;
+            } catch (NumberFormatException nFE) {
+                throw new MoleculeIOException("Bad bond data " + string);
             }
         }
     }
 
-    public static void readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName)
-            throws MoleculeIOException {
-        String molName = molecule.name;
-
-        if (coordSetName == null) {
-            // XXX
-            coordSetName = ((CoordSet) molecule.coordSets.values().iterator().next()).getName();
+    void readLists(LineNumberReader lineReader) throws IOException {
+        for (int iList = 0; iList < nLists; iList++) {
+            String string = lineReader.readLine();
         }
-        Compound compound = null;
-        boolean firstAtom = true;
-        String token = null;
-        double x;
-        double y;
-        double z;
-        int iAtom;
-        int iBond;
-        int jBond;
-        String aname = null;
-        Point3 pt;
-        int structureNumber = 0;
-        Atom atom1 = null;
-        Atom atom2 = null;
+    }
+
+    void readStexts(LineNumberReader lineReader) throws IOException {
+        for (int iList = 0; iList < nStexts; iList++) {
+            String string = lineReader.readLine();
+        }
+    }
+
+    void readProps(LineNumberReader lineReader) throws IOException {
         String string;
-        LineNumberReader lineReader;
-        int order;
-        int stereo;
-        int nItems = 0;
-        int nAtoms = 0;
-        int nBonds = 0;
-        int nLists = 0;
-        int nStexts = 0;
-        int nProps = 0;
-        int nProds = 0;
-        int nReacs = 0;
-        int nInters = 0;
-        String valueName = null;
-        String value = null;
-        boolean chiral = false;
-        int state = MOLECULE;
+        while ((string = lineReader.readLine()) != null) {
+            string = string.trim();
+            if (string.equals("M  END")) {
+                break;
+            }
+            if (string.charAt(0) == 'V') {
+                String atomSpec = string.substring(3, 6).trim();
+                Integer index = Integer.parseInt(atomSpec);
+                if (index < 1) {
+                    System.out.println("no index at " + string);
+                } else if (string.length() > 7) {
+                    atomList.get(index - 1).setProperty("V", string.substring(7));
+                }
+            }
+
+        }
+
+    }
+
+    void readFreeForm(LineNumberReader lineReader) throws IOException {
+        String string;
+        while ((string = lineReader.readLine()) != null) {
+            String valueName;
+            string = string.trim();
+            if (string.length() != 0) {
+                if (string.equals("$$$$")) {
+                    break;
+                } else if (string.startsWith(">")) {
+                    Matcher matcher = pattern.matcher(string);
+                    if (matcher.matches()) {
+                        valueName = matcher.group(1);
+                        string = lineReader.readLine();
+                        String value = string.trim();
+                        if (valueName.equals("MDLNUMBER")) {
+                            molecule.reName(molecule, compound, molName, value);
+                            molName = molecule.name;
+                        } else {
+                            molecule.setProperty(valueName, value);
+                        }
+
+                    }
+
+                }
+                StringTokenizer tokenizer = new StringTokenizer(string);
+
+            }
+        }
+
+    }
+
+    public Molecule readMol(String fileName, String fileContent) throws MoleculeIOException {
+        return readMol(fileName, fileContent, null);
+    }
+
+    public Molecule readMol(String fileName, String fileContent, Compound compound)
+            throws MoleculeIOException {
+        LineNumberReader lineReader = null;
 
         try {
             if (fileContent == null) {
@@ -476,342 +376,35 @@ public class SDFile {
                 StringReader sf = new StringReader(fileContent);
                 lineReader = new LineNumberReader(sf);
             }
-        } catch (IOException ioe) {
-            throw new MoleculeIOException(ioe.getMessage());
+            readHeader(fileName, lineReader, compound);
+            readAtoms(lineReader);
+            readBonds(lineReader);
+            readLists(lineReader);
+            readStexts(lineReader);
+            readProps(lineReader);
+            readFreeForm(lineReader);
+        } catch (IOException ioE) {
+            int iLine = lineReader == null ? -1 : lineReader.getLineNumber();
+            throw new MoleculeIOException("error reading at line " + iLine);
         }
+        System.out.println("read mol " + nAtoms);
+        return molecule;
+    }
 
-        Vector atomList = new Vector();
-
-        if (atomList == null) {
-            atomList = new Vector(128);
+    public static Compound readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName) throws MoleculeIOException {
+        if (coordSetName == null) {
+            // XXX
+            coordSetName = ((CoordSet) molecule.coordSets.values().iterator().next()).getName();
         }
-
-        StringTokenizer tokenizer = null;
-        String compoundName = "";
-        while (true) {
-            try {
-                string = lineReader.readLine();
-            } catch (IOException ioe) {
-                System.err.println(ioe.getMessage());
-                Molecule.makeAtomList();
-                molecule.getAtomTypes();
-
-                return;
-            }
-
-            if (string == null) {
-                Molecule.makeAtomList();
-                molecule.getAtomTypes();
-
-                return;
-            }
-
-            if (state == MOLECULE) {
-                if (nItems < 3) {
-                    nItems++;
-
-                    continue;
-                }
-
-                File file = new File(fileName);
-
-                String fileTail = file.getName();
-                String fileRoot;
-                int dot = fileTail.indexOf(".");
-
-                if (dot != -1) {
-                    fileRoot = fileTail.substring(0, dot);
-                } else {
-                    fileRoot = fileTail;
-                }
-                compoundName = fileRoot;
-                compound = null;
-                firstAtom = true;
-                atomList.setSize(0);
-                //  molecule.structures.add(Integer.valueOf(0));
-
-                if (string.length() < 33) {
-                    throw new MoleculeIOException(
-                            "Read SD file: nPar line too short");
-                }
-
-                String valueString = null;
-                nAtoms = Integer.parseInt(string.substring(0, 3).trim());
-                nBonds = Integer.parseInt(string.substring(3, 6).trim());
-                nLists = Integer.parseInt(string.substring(7, 9).trim());
-
-                valueString = string.substring(14, 15).trim();
-
-                if (valueString.length() > 0) {
-                    chiral = (Integer.parseInt(valueString) == 1);
-                }
-
-                valueString = string.substring(15, 18).trim();
-
-                if (valueString.length() > 0) {
-                    nStexts = Integer.parseInt(valueString);
-                }
-
-                valueString = string.substring(18, 21).trim();
-
-                if (valueString.length() > 0) {
-                    nReacs = Integer.parseInt(valueString);
-                }
-
-                valueString = string.substring(21, 24).trim();
-
-                if (valueString.length() > 0) {
-                    nProds = Integer.parseInt(valueString);
-                }
-
-                valueString = string.substring(24, 27).trim();
-
-                if (valueString.length() > 0) {
-                    nInters = Integer.parseInt(valueString);
-                }
-
-                valueString = string.substring(27, 30).trim();
-
-                if (valueString.length() > 0) {
-                    nProps = Integer.parseInt(valueString);
-                }
-                if ((nProds != 0) || (nReacs != 0) || (nInters != 0)) {
-                    System.err.println("unused nProd, nReacs, or nInters");
-                }
-                state = ATOM;
-                nItems = 0;
-
-                continue;
-            } else if (state == ATOM) {
-                if (string.length() < 34) {
-                    throw new MoleculeIOException(
-                            "Read SD file: atom line too short");
-                }
-
-                x = Double.parseDouble(string.substring(0, 10).trim());
-                y = Double.parseDouble(string.substring(10, 20).trim());
-                z = Double.parseDouble(string.substring(20, 30).trim());
-
-                iAtom = nItems;
-
-                String atomSymbol = string.substring(31, 34).trim();
-                aname = atomSymbol + (iAtom + 1);
-
-                if (compound == null) {
-                    compound = new Compound("1", compoundName);
-                    compound.molecule = molecule;
-                    compound.assemblyID = molecule.entityLabels.size() + 1;
-
-                    molecule.addEntity(compound, coordSetName);
-                }
-
-                Atom atom = new Atom(aname);
-                atom.aNum = Atom.getElementNumber(atomSymbol);
-                atom.setPointValidity(structureNumber, true);
-                pt = atom.getPoint(structureNumber);
-                pt = new Point3(x, y, z);
-                atom.setPoint(structureNumber, pt);
-
-                String massDiffString = string.substring(34, 36).trim();
-                int massDiff = 0;
-                try {
-                    massDiff = Integer.parseInt(massDiffString);
-                } catch (NumberFormatException nfE) {
-                }
-                if (massDiff != 0) {
-                    System.err.println("unused massDiff");
-                }
-
-                String chargeString = string.substring(36, 39).trim();
-
-                try {
-                    int chargeValue = Integer.parseInt(chargeString);
-
-                    switch (chargeValue) {
-                        case 1: {
-                            atom.setFormalCharge(3);
-
-                            break;
-                        }
-
-                        case 2: {
-                            atom.setFormalCharge(2);
-
-                            break;
-                        }
-
-                        case 3: {
-                            atom.setFormalCharge(1);
-
-                            break;
-                        }
-
-                        case 5: {
-                            atom.setFormalCharge(-1);
-
-                            break;
-                        }
-
-                        case 6: {
-                            atom.setFormalCharge(-2);
-
-                            break;
-                        }
-
-                        case 7: {
-                            atom.setFormalCharge(-3);
-
-                            break;
-                        }
-
-                        default: {
-                            atom.setFormalCharge(0);
-
-                            break;
-                        }
-                    }
-                } catch (NumberFormatException nfE) {
-                }
-                /*
-                 * String stereoString = string.substring(39, 42).trim(); int
-                 * stereoValue = 0; try { stereoValue =
-                 * Integer.parseInt(stereoString); } catch
-                 * (NumberFormatException nfE) { } atom.setStereo(stereoValue);
-                 */
-
-                if (firstAtom) {
-                    firstAtom = false;
-                }
-
-                atom.entity = compound;
-                compound.addAtom(atom);
-                atomList.addElement(atom);
-                nItems++;
-
-                if (nItems == nAtoms) {
-                    nItems = 0;
-                    state = BOND;
-
-                    continue;
-                }
-            } else if (state == BOND) {
-                iBond = Integer.parseInt(string.substring(0, 3).trim()) - 1;
-                jBond = Integer.parseInt(string.substring(3, 6).trim()) - 1;
-                order = Integer.parseInt(string.substring(6, 9).trim());
-                stereo = Integer.parseInt(string.substring(9, 12).trim());
-
-                if (stereo == 1) {
-                    stereo = Bond.STEREO_BOND_UP;
-                } else if (stereo == 4) {
-                    stereo = Bond.STEREO_BOND_EITHER;
-                } else if (stereo == 6) {
-                    stereo = Bond.STEREO_BOND_DOWN;
-                } else {
-                    stereo = 0;
-                }
-
-                //System.err.println (iBond + " " + jBond + " " + atomList.size ());
-                if (atomList != null) {
-                    if ((iBond < atomList.size()) && (jBond < atomList.size())) {
-                        atom1 = (Atom) atomList.elementAt(iBond);
-                        atom2 = (Atom) atomList.elementAt(jBond);
-
-                        Atom.addBond(atom1, atom2, order, stereo, false);
-                    } else {
-                        System.err.println("error in adding bond to molecule "
-                                + molName);
-                    }
-                }
-
-                nItems++;
-
-                if (nItems == nBonds) {
-                    nItems = 0;
-                    state = LIST;
-                }
-
-                continue;
-            }
-
-            if (state == LIST) {
-                if ((nLists == 0) || (nItems == nLists)) {
-                    nItems = 0;
-                    state = STEXT;
-                } else {
-                    nItems++;
-
-                    continue;
-                }
-            }
-
-            if (state == STEXT) {
-                if ((nStexts == 0) || (nItems == nStexts)) {
-                    nItems = 0;
-                    state = PROP;
-                } else {
-                    nItems++;
-
-                    continue;
-                }
-            }
-
-            if (state == PROP) {
-                if ((nProps == 0) || (nItems == nProps)) {
-                    nItems = 0;
-                    state = FREE;
-                } else {
-                    nItems++;
-
-                    continue;
-                }
-            }
-
-            if (state == FREE) {
-                tokenizer = new StringTokenizer(string);
-
-                int nTokens = tokenizer.countTokens();
-
-                if (nTokens > 0) {
-                    token = tokenizer.nextToken();
-
-                    if (token.equals("$$$$")) {
-                        state = MOLECULE;
-                        nItems = 0;
-
-                        continue;
-                    } else if (token.equals(">")) {
-                        if (nTokens > 1) {
-                            state = VALUE;
-                            token = tokenizer.nextToken();
-                            valueName = token.substring(1, token.length() - 1);
-
-                            if (nTokens > 2) {
-                                token = tokenizer.nextToken();
-                                value = token;
-                            }
-                        }
-
-                        continue;
-                    }
-                }
-            } else if (state == VALUE) {
-                tokenizer = new StringTokenizer(string);
-
-                token = tokenizer.nextToken();
-                value = token;
-
-                if (valueName.equals("MDLNUMBER")) {
-                    molecule.reName(molecule, compound, molName, value);
-                    molName = molecule.name;
-                }
-// fixme
-//                TclObject valueObj = TclString.newInstance(value);
-//                interp.setVar(molName + "(" + valueName + ")", valueObj,
-//                        TCL.GLOBAL_ONLY);
-                state = FREE;
-
-                continue;
-            }
-        }
+        SDFile sdFile = new SDFile();
+        sdFile.getMolName(fileName);
+        String compoundName = sdFile.molName;
+        Compound compound = new Compound("1", compoundName);
+        compound.molecule = molecule;
+        compound.assemblyID = molecule.entityLabels.size() + 1;
+
+        molecule.addEntity(compound, coordSetName);
+        sdFile.readMol(fileName, fileContent, compound);
+        return compound;
     }
 }

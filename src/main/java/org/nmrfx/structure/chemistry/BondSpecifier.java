@@ -22,9 +22,9 @@ public class BondSpecifier {
 
     private final AtomSpecifier atom1;
     private final AtomSpecifier atom2;
-    private final int order;
+    private final Order order;
 
-    BondSpecifier(final AtomSpecifier atom1, final AtomSpecifier atom2, final int order) {
+    BondSpecifier(final AtomSpecifier atom1, final AtomSpecifier atom2, final Order order) {
         this.atom1 = atom1;
         this.atom2 = atom2;
         this.order = order;
@@ -47,7 +47,7 @@ public class BondSpecifier {
     /**
      * @return the order
      */
-    public int getOrder() {
+    public Order getOrder() {
         return order;
     }
 }

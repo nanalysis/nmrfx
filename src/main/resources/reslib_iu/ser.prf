@@ -16,7 +16,7 @@ FAMILY   -      N      H      CA
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     OG     HB3    HB2    
 FAMILY   CB     OG     HG     
-FAMILY   CA     C      +      O      
+FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     OG     CHI2 6

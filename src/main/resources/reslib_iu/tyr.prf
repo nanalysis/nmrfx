@@ -25,14 +25,14 @@ ATOM   O      O'   1.24  120.00   180.0
 FAMILY   -      N      H      CA     
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
-FAMILY   CB     CG     CD1    -CD2   
+FAMILY   CB     CG     =CD1    -CD2   
 FAMILY   CG     CD1    CE1    HD1
-FAMILY   CD1    CE1    CZ     HE1    
+FAMILY   CD1    CE1    =CZ     HE1    
 FAMILY   CE1    CZ     OH     CE2    
 FAMILY   CZ     OH     HH     
-FAMILY   CZ     CE2    CD2    HE2    
+FAMILY   CZ     CE2    =CD2    HE2    
 FAMILY   CE2    CD2    HD2    
-FAMILY   CA     C      +      O      
+FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 3

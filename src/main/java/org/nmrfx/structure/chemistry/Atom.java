@@ -19,18 +19,47 @@ package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.chemistry.io.AtomParser;
 import java.util.*;
+import javax.vecmath.Point2d;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.processor.datasets.peaks.AtomResonance;
+import org.nmrfx.structure.chemistry.miner.IAtom;
+import org.nmrfx.structure.chemistry.miner.IBond;
 
-public class Atom {
+public class Atom implements IAtom {
+
+    public enum ATOMFLAGS {
+        VISITED(0),
+        AROMATIC(1),
+        RESONANT(2),
+        RING(3);
+        int index;
+
+        ATOMFLAGS(int index) {
+            this.index = index;
+
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public void setValue(Atom atom, boolean value) {
+            atom.setFlag(index, value);
+        }
+    }
 
     static final public int SELECT = 0;
     static final public int DISPLAY = 1;
     static final public int SUPER = 2;
     static final public int LABEL = 2;
+    static final public int VISITED = ATOMFLAGS.VISITED.index;
+    static final public int AROMATIC = ATOMFLAGS.AROMATIC.index;
+    static final public int RESONANT = ATOMFLAGS.RESONANT.index;
+    static final public int RING = ATOMFLAGS.RING.index;
     static final public double NULL_PPM = -9990.0;
     static int lastAtom = 0;
     public int iAtom = 1;
+    private int origIndex = 0;
     public Atom parent = null;
     public String name;
     public String type = "";
@@ -66,6 +95,8 @@ public class Atom {
     public int canonValue = 0;
     public Atom[] branchAtoms = new Atom[0];
     public Object atomEnergyProp = null;
+    boolean[] flags = new boolean[ATOMFLAGS.values().length];
+    Optional<Map<String, Object>> properties = Optional.empty();
 
     public Atom(AtomParser atomParse) {
         spatialSet = new SpatialSet(this);
@@ -81,6 +112,7 @@ public class Atom {
         setColorByType();
         bonds = new ArrayList<>(2);
         iAtom = lastAtom;
+        origIndex = iAtom;
         lastAtom++;
     }
 
@@ -93,6 +125,7 @@ public class Atom {
         setColorByType();
         bonds = new ArrayList<>(2);
         iAtom = lastAtom;
+        origIndex = iAtom;
         lastAtom++;
     }
 
@@ -117,6 +150,7 @@ public class Atom {
         charge = (float) atomParse.charge;
         bonds = new ArrayList<>(2);
         iAtom = lastAtom;
+        origIndex = iAtom;
         lastAtom++;
     }
 
@@ -126,7 +160,7 @@ public class Atom {
         }
     }
 
-    public Atom add(String name, String elementName, int order) {
+    public Atom add(String name, String elementName, Order order) {
         Atom newAtom = new Atom(name, elementName);
         newAtom.parent = this;
         if (entity != null) {
@@ -199,12 +233,48 @@ public class Atom {
         return connected;
     }
 
+    public void setFlag(int flag, boolean state) throws IllegalArgumentException {
+        if (flag > flags.length) {
+            throw new IllegalArgumentException("Invalid flag");
+        }
+        flags[flag] = state;
+    }
+
+    public boolean getFlag(int flag) throws IllegalArgumentException {
+        if (flag > flags.length) {
+            throw new IllegalArgumentException("Invalid flag");
+        }
+        return flags[flag];
+    }
+
     public void setActive(boolean state) {
         active = state;
     }
 
     public boolean isActive() {
         return active;
+    }
+
+    public Optional<Bond> getBond(Atom atom) {
+        Optional<Bond> result = Optional.empty();
+        for (int i = 0; i < bonds.size(); i++) {
+            Bond bond = bonds.get(i);
+            Atom atomB = bond.begin;
+            Atom atomE = bond.end;
+
+            if (atomB == this) {
+                if (atomE == atom) {
+                    result = Optional.of(bond);
+                    break;
+                }
+            } else if (atomE == this) {
+                if (atomB == atom) {
+                    result = Optional.of(bond);
+                    break;
+                }
+            }
+        }
+        return result;
     }
 
     public boolean isBonded(Atom atom) {
@@ -263,6 +333,14 @@ public class Atom {
 
     public int getIndex() {
         return iAtom;
+    }
+
+    public int getTreeIndex() {
+        return iAtom;
+    }
+
+    public void setTreeIndex(int index) {
+        iAtom = index;
     }
 
     public String getShortName() {
@@ -358,7 +436,7 @@ public class Atom {
         setRed(atomProperty.getRed());
         setGreen(atomProperty.getGreen());
         setBlue(atomProperty.getBlue());
-    }
+ }
 
     public void setColor(float red, float green, float blue) {
         spatialSet.red = red;
@@ -498,6 +576,10 @@ public class Atom {
 
     public void setRefPPM(int i, double value) {
         spatialSet.setRefPPM(i, value);
+    }
+
+    public void setRefError(double value) {
+        spatialSet.setRefError(0, value);
     }
 
     public void setPPMValidity(int i, boolean validity) {
@@ -1075,11 +1157,11 @@ public class Atom {
         return child;
     }
 
-    public static int calcBond(Atom atom1, Atom atom2, int order) {
+    public static int calcBond(Atom atom1, Atom atom2, Order order) {
         return calcBond(atom1, atom2, order, 0);
     }
 
-    public static int calcBond(Atom atom1, Atom atom2, int order, int stereo) {
+    public static int calcBond(Atom atom1, Atom atom2, Order order, int stereo) {
         int iRes;
         int jRes;
         Point3 pt1;
@@ -1142,11 +1224,11 @@ public class Atom {
         return 1;
     }
 
-    public static int addBond(Atom atom1, Atom atom2, int order, final boolean record) {
+    public static int addBond(Atom atom1, Atom atom2, Order order, final boolean record) {
         return (addBond(atom1, atom2, order, 0, record));
     }
 
-    public static int addBond(Atom atom1, Atom atom2, int order, int stereo, final boolean record) {
+    public static int addBond(Atom atom1, Atom atom2, Order order, int stereo, final boolean record) {
         Bond bond;
 
         bond = new Bond(atom1, atom2);
@@ -1460,5 +1542,64 @@ public class Atom {
     public boolean isCoarse() {
         int nameLen = name.length();
         return name.charAt(nameLen - 1) == 'c';
+    }
+
+    @Override
+    public Point2d getPoint2d() {
+        return new Point2d(getPoint().getX(), getPoint().getY());
+    }
+
+    @Override
+    public void setPoint2d(Point2d pt) {
+        Point3 point = new Point3(pt.x, pt.y, 0.0);
+        setPoint(point);
+    }
+
+    @Override
+    public void setID(int i) {
+        iAtom = i;
+    }
+
+    @Override
+    public int getID() {
+        return iAtom;
+    }
+
+    @Override
+    public void setProperty(String name, Object value) {
+        if (!properties.isPresent()) {
+            properties = Optional.of(new HashMap<String, Object>());
+        }
+        properties.get().put(name, value);
+    }
+
+    @Override
+    public Object getProperty(String name) {
+        Object value = null;
+        if (properties.isPresent()) {
+            value = properties.get().get(name);
+        }
+        return value;
+    }
+
+    @Override
+    public String getSymbol() {
+        return getElementName();
+    }
+
+    @Override
+    public String getHybridization() {
+        return (String) getProperty("hyb");
+    }
+
+    @Override
+    public List<IBond> getBonds() {
+        List<IBond> result = new ArrayList<>();
+        result.addAll(bonds);
+        return result;
+    }
+
+    public static int compareByIndex(Atom a1, Atom a2) {
+        return Integer.compare(a1.iAtom, a2.iAtom);
     }
 }

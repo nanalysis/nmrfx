@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.search;
 
 import org.nmrfx.structure.chemistry.Atom;
@@ -34,6 +33,15 @@ public class MNode implements Comparable, Comparator {
     int maxShell = 0;
     MNode lastRotatable = null;
     boolean ringClosure = false;
+
+    @Override
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        String atomName = atom != null ? atom.getShortName() : "noatom";
+        int pid = parent != null ? parent.id : -1;
+        sBuilder.append("id ").append(id).append(" pid ").append(pid).append(" sh ").append(shell).append(" pp ").append(pathPos).append(" atm ").append(atomName).append(" rng ").append(ringClosure).append(" v ").append(value);
+        return sBuilder.toString();
+    }
 
     public MNode() {
         nodes = new ArrayList();
@@ -64,11 +72,11 @@ public class MNode implements Comparable, Comparator {
         }
         return lAtom;
     }
-    
+
     public int getShell() {
         return (shell);
     }
-    
+
     public int getMaxShell() {
         return maxShell;
     }
@@ -117,6 +125,10 @@ public class MNode implements Comparable, Comparator {
         Collections.sort(nodes);
     }
 
+    public void sortNodesDescending() {
+        Collections.sort(nodes, reversed());
+    }
+
     @Override
     public int compare(Object o1, Object o2) {
         MNode mNode1 = (MNode) o1;
@@ -125,5 +137,33 @@ public class MNode implements Comparable, Comparator {
 
     public boolean isRingClosure() {
         return ringClosure;
+    }
+
+    public int getParValue() {
+        int parValue = 0;
+        if (parent != null) {
+            parValue = parent.value;
+        }
+        parValue = parValue + value;
+        return parValue;
+    }
+
+    public int getParValue2() {
+        int parValue = 0;
+        if (parent != null) {
+            parValue = parent.value;
+        }
+        return parValue;
+    }
+
+    public static int compareByParValue(MNode a, MNode b) {
+        int value = Integer.compare(b.getParValue2(), a.getParValue2());
+        if (value == 0) {
+            value = Integer.compare(b.getValue(), a.getValue());
+        }
+        if (value == 0) {
+            value = a.getAtom().getName().compareTo(b.getAtom().getName());
+        }
+        return value;
     }
 }

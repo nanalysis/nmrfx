@@ -22,28 +22,26 @@ def median(values):
     
 
 def loadPDBModels(files):
-    global molName
-    global molecule
     fileName = files[0]
     pdb = PDBFile()
     molecule = pdb.read(fileName)
-    molName = molecule.getName()
     iFile = 1
     for file in files:
         pdb.readCoordinates(file,iFile,False)
         iFile += 1
+    return molecule
 
-def findRepresentative(resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
+def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     treeSet = TreeSet()
-    structures = molecule.getStructures()
+    structures = mol.getStructures()
     for structure in structures:
         if structure != 0: 
             treeSet.add(structure)
     nFiles = treeSet.size()
 
     doSelections(resNums,atomNames)
-    sup = SuperMol(molName)
-    molecule.setActiveStructures(treeSet)
+    sup = SuperMol(mol)
+    mol.setActiveStructures(treeSet)
     
     superResults = sup.doSuper(-1, -1, False)
     totalRMS = 0.0
@@ -67,12 +65,12 @@ def findRepresentative(resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     avgRMS = totalRMS/len(superResults)
     return (minIndex, minRMS, avgRMS)
 
-def findCore(minIndex,atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
+def findCore(mol, minIndex,atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     atomNameList = atomNames.split(',')
-    sup = SuperMol(molName)
+    sup = SuperMol(mol)
     superResults = sup.doSuper(minIndex, -1, True)
-    molecule.calcRMSD()
-    polymers = molecule.getPolymers()
+    mol.calcRMSD()
+    polymers = mol.getPolymers()
     resRMSs = []
     resValues = []
     for polymer in polymers:
@@ -135,26 +133,33 @@ def doSelections(resSelects, atomSelect):
         Molecule.setAtomProperty(2,True)
 
 
-def superImpose(target,resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
+def superImpose(mol, target,resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
     doSelections(resSelect,atomSelect)
-    sup = SuperMol(molName)
+    sup = SuperMol(mol)
     superResults = sup.doSuper(target, -1, True)
 
-def saveModels(dir,base):
-    active = molecule.getActiveStructures()
+def saveModels(mol,dir,base):
+    active = mol.getActiveStructures()
     for i in active:
         outFile = os.path.join(dir,base+str(i)+'.pdb')
-        refine.savePDB(molecule, outFile, i)
+        refine.savePDB(mol, outFile, i)
 
 def runSuper(files,newBase='super'):    
-    loadPDBModels(files)
-    (minI,rms,avgRMS) = findRepresentative()
-    print 'repModel',minI,'rms',rms,'avgrms',avgRMS
-    coreRes = findCore(minI)
-    print 'coreResidues',coreRes
-    superImpose(minI,coreRes)
+    mol = loadPDBModels(files)
+    polymers = mol.getPolymers()
+    if len(polymers) > 0:
+        (minI,rms,avgRMS) = findRepresentative(mol)
+        print 'repModel',minI,'rms',rms,'avgrms',avgRMS
+        coreRes = findCore(mol, minI)
+        print 'coreResidues',coreRes
+        superImpose(mol, minI, coreRes)
+    else:
+        (minI,rms,avgRMS) = findRepresentative(mol,'*','c*,n*,o*,p*')
+        print 'repModel',minI,'rms',rms,'avgrms',avgRMS
+        coreRes = ['*']
+        superImpose(mol, minI, coreRes,'c*,n*,o*,p*')
     (dir,fileName) = os.path.split(files[0])
     (base,ext) = os.path.splitext(fileName)
 
-    saveModels(dir,newBase)
+    saveModels(mol, dir,newBase)
 

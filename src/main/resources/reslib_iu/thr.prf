@@ -20,7 +20,7 @@ FAMILY   N      CA     C      CB     HA
 FAMILY   CA     CB     OG1    CG2    HB     
 FAMILY   CB     CG2    HG23   HG22   HG21
 FAMILY   CB     OG1    HG1    
-FAMILY   CA     C      +      O      
+FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     OG1    CHI21 6

@@ -30,7 +30,7 @@ FAMILY   CB     CG     CD     HG3    HG2
 FAMILY   CG     CD     CE     HD3    HD2    
 FAMILY   CD     CE     NZ     HE3    HE2    
 FAMILY   CE     NZ     HZ1    HZ2    HZ3    
-FAMILY   CA     C      +      O      
+FAMILY   CA     C      +      =O      
 ANGLE     CA      PHI 1
 ANGLE     CB     CHI1 2
 ANGLE     CG     CHI2 2

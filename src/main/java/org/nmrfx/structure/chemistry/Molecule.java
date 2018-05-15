@@ -19,7 +19,6 @@ package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords;
-import org.nmrfx.structure.chemistry.search.*;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import org.nmrfx.structure.utilities.Util;
 import java.io.*;
@@ -40,6 +39,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.nmrfx.project.StructureProject;
+import org.nmrfx.structure.chemistry.search.MNode;
+import org.nmrfx.structure.chemistry.search.MTree;
 
 public class Molecule implements Serializable {
 
@@ -451,6 +452,18 @@ public class Molecule implements Serializable {
             }
         }
         return compounds;
+    }
+
+    public void sortByIndex() {
+        for (Polymer polymer : getPolymers()) {
+            for (Residue residue : polymer.getResidues()) {
+                residue.sortByIndex();
+            }
+        }
+        for (Entity entity : getLigands()) {
+            entity.sortByIndex();
+        }
+        updateAtomArray();
     }
 
     public static Molecule get(String name) {
@@ -947,9 +960,9 @@ public class Molecule implements Serializable {
         nullCoords();
         updateAtomArray();
         int nAngles = 0;
-        spSets = new SpatialSet[atoms.size()][];
         int iAtom = 0;
         ArrayList<Atom> daughterList = new ArrayList<>();
+        spSets = new SpatialSet[atoms.size()][];
         for (Atom a3 : atoms) {
             if (!a3.getPointValidity()) {
                 a3.setPointValidity(true);
@@ -1192,7 +1205,7 @@ public class Molecule implements Serializable {
     }
 
     public void updateVecCoords() {
-        FastVector3D[] vecCoords = eCoords.getVecCoords(atoms.size());
+        FastVector3D[] vecCoords = eCoords.getVecCoords(atomList.size());
         int i = 0;
         Entity lastEntity = null;
         int resNum = -1;
@@ -1349,6 +1362,15 @@ public class Molecule implements Serializable {
         List<SpatialSet> selected = matchAtoms(molFilter);
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
+    }
+
+    public static void clearSelected() {
+        for (SpatialSet spatialSet: globalSelected) {
+            if (spatialSet != null) {
+                spatialSet.setSelected(0);
+            }            
+        }
+        globalSelected.clear();
     }
 
     public static int setSelected(List<SpatialSet> selected,
@@ -1821,9 +1843,9 @@ public class Molecule implements Serializable {
                             colors[j++] = atomE.getGreen();
                             colors[j++] = atomE.getBlue();
                         } else {
-                            if ((bond.order == 1) || (bond.order == 3)
-                                    || (bond.order == 7)
-                                    || (bond.order == 9)) {
+                            if ((bond.order == Order.SINGLE) || (bond.order == Order.TRIPLE)
+                                    || (bond.order.getOrderNum() == 7)
+                                    || (bond.order.getOrderNum() == 9)) {
                                 atomB.setProperty(Atom.LABEL);
                                 atomE.setProperty(Atom.LABEL);
 
@@ -1841,8 +1863,8 @@ public class Molecule implements Serializable {
                                 colors[j++] = atomE.getBlue();
                             }
 
-                            if ((bond.order == 2) || (bond.order == 3)
-                                    || (bond.order == 8)) {
+                            if ((bond.order == Order.DOUBLE) || (bond.order == Order.TRIPLE)
+                                    || (bond.order.getOrderNum() == 8)) {
                                 coords[i++] = (float) (ptB.getX() + x3);
                                 coords[i++] = (float) (ptB.getY() + y3);
                                 coords[i++] = (float) (ptB.getZ() + z3);
@@ -1914,17 +1936,17 @@ public class Molecule implements Serializable {
                             bondArray[k++] = bond;
                             bondArray[k++] = bond;
                         } else {
-                            if ((bond.order == 1) || (bond.order == 3)
-                                    || (bond.order == 7)
-                                    || (bond.order == 9)) {
+                            if ((bond.order == Order.SINGLE) || (bond.order == Order.TRIPLE)
+                                    || (bond.order.getOrderNum() == 7)
+                                    || (bond.order.getOrderNum() == 9)) {
                                 atomB.setProperty(Atom.LABEL);
                                 atomE.setProperty(Atom.LABEL);
                                 bondArray[k++] = bond;
 
                             }
 
-                            if ((bond.order == 2) || (bond.order == 3)
-                                    || (bond.order == 8)) {
+                            if ((bond.order == Order.DOUBLE) || (bond.order == Order.TRIPLE)
+                                    || (bond.order.getOrderNum() == 8)) {
                                 bondArray[k++] = bond;
                                 bondArray[k++] = bond;
                             }
@@ -1965,9 +1987,9 @@ public class Molecule implements Serializable {
                                 || ((bond.stereo == Bond.STEREO_BOND_UP)
                                 && (atomE.nonHydrogens > atomB.nonHydrogens))) {
                             i += 5;
-                        } else if (bond.order < 4) {
-                            i += bond.order;
-                        } else if (bond.order == 8) {
+                        } else if (bond.order.getOrderNum() < 4) {
+                            i += bond.order.getOrderNum();
+                        } else if (bond.order.getOrderNum() == 8) {
                             i += 2;
                         } else {
                             i++;
@@ -3496,7 +3518,7 @@ public class Molecule implements Serializable {
             for (int j = i + 1; j < Molecule.atomList.size(); j++) {
                 atom1 = Molecule.atomList.get(i);
                 atom2 = Molecule.atomList.get(j);
-                result = Atom.calcBond(atom1, atom2, 1);
+                result = Atom.calcBond(atom1, atom2, Order.SINGLE);
 
                 if (result == 2) {
                     break;
@@ -3531,7 +3553,7 @@ public class Molecule implements Serializable {
                     continue;
                 }
 
-                result = Atom.calcBond(atom1, atom2, 1);
+                result = Atom.calcBond(atom1, atom2, Order.SINGLE);
 
                 if (result == 2) {
                     break;
@@ -4340,13 +4362,13 @@ public class Molecule implements Serializable {
                     bond.begin.nonHydrogens++;
                 }
 
-                if (bond.order < 5) {
-                    bond.begin.nPiBonds += (2 * (bond.order - 1));
-                    bond.end.nPiBonds += (2 * (bond.order - 1));
-                } else if ((bond.order == 8)) {
+                if (bond.order.getOrderNum() < 5) {
+                    bond.begin.nPiBonds += (2 * (bond.order.getOrderNum() - 1));
+                    bond.end.nPiBonds += (2 * (bond.order.getOrderNum() - 1));
+                } else if ((bond.order.getOrderNum() == 8)) {
                     bond.begin.nPiBonds += 1;
                     bond.end.nPiBonds += 1;
-                } else if ((bond.order == 7)) {
+                } else if ((bond.order.getOrderNum() == 7)) {
                     bond.begin.nPiBonds += 1;
                     bond.end.nPiBonds += 1;
                 }
