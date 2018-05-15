@@ -316,10 +316,7 @@ public class MainApp extends Application implements DatasetListener {
         MenuItem molMenuItem = new MenuItem("Show Molecule");
         molMenuItem.setOnAction(e -> showMols(e));
 
-        MenuItem atomBrowserMenuItem = new MenuItem("Show Atom Browser");
-        atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
-
-        molMenu.getItems().addAll(atomsMenuItem, molMenuItem, atomBrowserMenuItem);
+        molMenu.getItems().addAll(atomsMenuItem, molMenuItem);
 
         Menu viewMenu = new Menu("View");
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
@@ -364,7 +361,10 @@ public class MainApp extends Application implements DatasetListener {
         MenuItem pickMenuButton = new MenuItem("Pick");
         pickMenuButton.setOnAction(e -> rnaPicker());
 
-        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem, peakAnalyzerMenuItem, pickMenuButton);
+        MenuItem atomBrowserMenuItem = new MenuItem("Show Atom Browser");
+        atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
+
+        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem, peakAnalyzerMenuItem, pickMenuButton, atomBrowserMenuItem);
 
         // Window Menu
         // TBD standard window menu items
