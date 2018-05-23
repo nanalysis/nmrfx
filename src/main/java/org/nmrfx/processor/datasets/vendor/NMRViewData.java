@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
 
@@ -446,8 +447,15 @@ public class NMRViewData implements NMRData {
 
     @Override
     public boolean isFrequencyDim(int iDim) {
-        // fixme  Need to be able to specify whether a NMRView file dimesnion is frequency mode
-        return true;
+        boolean result = true;
+        double[] values = dataset.getValues(iDim);
+        if (!isComplex(iDim) && (iDim == getNDim() - 1)) {
+            if ((values != null) && (values.length == getSize(iDim))) {
+                result = false;
+            }
+        }
+        return result;
+
     }
 
     @Override
@@ -523,8 +531,21 @@ public class NMRViewData implements NMRData {
         int[] dim = new int[nDim];
         pt[0][0] = 0;
         pt[0][1] = dataset.getSize(0) - 1;
-        pt[1][0] = iVec;
-        pt[1][1] = iVec;
+        int offset = iVec;
+        int[] strides = new int[nDim];
+        strides[0] = 1;
+        int nIndirect = nDim - 1;
+
+        for (int i = 1; i < nIndirect; i++) {
+            strides[i] = strides[i - 1] * dataset.getSize(i);
+        }
+        for (int i = nIndirect; i > 0; i--) {
+            int index = iVec / strides[i - 1];
+            pt[i][0] = index;
+            pt[i][1] = index;
+            System.out.println("dim " + strides[i] + " " + i + " " + index);
+            iVec = iVec % strides[i - 1];
+        }
         for (int i = 0; i < nDim; i++) {
             dim[i] = i;
         }
