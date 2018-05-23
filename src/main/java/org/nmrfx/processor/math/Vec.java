@@ -48,6 +48,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.commons.math3.random.GaussianRandomGenerator;
+import org.apache.commons.math3.random.SynchronizedRandomGenerator;
 import org.apache.commons.math3.random.UncorrelatedRandomVectorGenerator;
 import org.apache.commons.math3.random.Well19937c;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -79,7 +80,7 @@ import org.renjin.sexp.AttributeMap;
  */
 public class Vec extends PySequence implements MatrixType {
 
-    static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new Well19937c());
+    static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
 
     public static final String TYPE_NAME = "nmrfxvector";
 
@@ -620,7 +621,7 @@ public class Vec extends PySequence implements MatrixType {
         }
         System.arraycopy(data, 0, annotationData, 0, data.length);
     }
-    
+
     public void clearAnnotation() {
         annotationData = null;
     }
