@@ -248,6 +248,7 @@ public class PeakListAttributes implements PeakListener {
             for (int j = 0; j < nPeakDim; j++) {
                 if (dataAttr.getLabel(i).equals(peakList.getSpectralDim(j).getDimName())) {
                     dim[i] = j;
+                    used[j] = true;
                     nMatch++;
                     break;
                 }
