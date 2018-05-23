@@ -2,6 +2,7 @@ import math
 import time
 import array
 import random
+import seqalgs
 import re
 
 from org.nmrfx.structure.chemistry import Molecule
@@ -1570,6 +1571,39 @@ class refine:
                 atom = residue.getAtom("N")
                 atom.dihedralAngle = math.pi*psi/180.0
         molecule.genCoords()
+
+def compileLCMB(mol):
+    polymers = mol.getPolymers()
+
+    for polymer in polymers:
+        lcmbs = []
+        residues = []
+        for residue in polymer.iterator():
+            sum = 0.0
+            atoms = residue.getAtoms()
+            if False:
+                atomNames = ('N','CA','C')
+                atomNames = ("P","C3'","C4'")
+                atoms = []
+                for atomName in atomNames:
+                    atom = residue.getAtom(atomName)
+                    atoms.append(atom)
+            for atom in atoms:
+                if (atom != None) and (atom.getAtomicNumber() > 1):
+                    sum += atom.getBFactor()
+            f = 1.0*sum
+            lcmbs.append(f)
+            residues.append(residue.getNumber())
+        lcmbs = seqalgs.smoothShifts(lcmbs)
+        for residue,lcmb in zip(residues,lcmbs):
+            print residue,lcmb
+
+
+def calcLCMB(mol, scaleEnds, iStruct=0):
+    mol.calcLCMB(iStruct, scaleEnds)
+
+def calcOrder(mol, scaleEnds, iStruct=0):
+    mol.calcContactOrder(iStruct, scaleEnds)
 
 def doAnneal(seed,dOpt=None,homeDir=None, writeTrajectory=False):
     import osfiles
