@@ -1365,10 +1365,10 @@ public class Molecule implements Serializable {
     }
 
     public static void clearSelected() {
-        for (SpatialSet spatialSet: globalSelected) {
+        for (SpatialSet spatialSet : globalSelected) {
             if (spatialSet != null) {
                 spatialSet.setSelected(0);
-            }            
+            }
         }
         globalSelected.clear();
     }
@@ -2690,13 +2690,14 @@ public class Molecule implements Serializable {
         calcLCMB(iStruct, true);
     }
 
+    // Biophysical Journal 96(8) 3074–3081
     public void calcLCMB(final int iStruct, boolean scaleEnds) {
         double r0 = 3.0;
         double a = 39.3;
         updateAtomArray();
         for (Atom atom1 : atoms) {
             SpatialSet sp1 = atom1.spatialSet;
-            sp1.setOrder(0.0f);
+            sp1.setBFactor(0.0f);
             Polymer polymer = null;
             ArrayList<Residue> residues = null;
             double endMultiplier = 1.0;
@@ -2731,10 +2732,56 @@ public class Molecule implements Serializable {
                         }
                     }
                 }
-                double bFactor = 1.0 / fSum * endMultiplier;
-                sp1.setOrder((float) bFactor);
+                double bFactor = 1.0e4 / fSum * endMultiplier;
+                sp1.setBFactor((float) bFactor);
             }
         }
+    }
+
+    // J. AM. CHEM. SOC. 2002, 124, 12654-12655
+    public void calcContactOrder(final int iStruct, boolean scaleEnds) {
+        double r0 = 1.0;
+        updateAtomArray();
+        List<Polymer> polymers = getPolymers();
+        for (Polymer polymer : polymers) {
+            List<Residue> residues = polymer.getResidues();
+            for (Residue residue : residues) {
+                Residue previousResidue = residue.previous;
+                if (previousResidue == null) {
+                    continue;
+                }
+                Atom atomH = residue.getAtom("H");
+                Atom atomO = previousResidue.getAtom("O");
+                if ((atomH == null) || (atomO == null)) {
+                    continue;
+                }
+                Point3 ptH = atomH.getPoint(iStruct);
+                Point3 ptO = atomO.getPoint(iStruct);
+
+                double fSum = 0.0;
+                for (Atom atom2 : atoms) {
+                    if (atom2.entity == residue) {
+                        continue;
+                    }
+                    if (atom2.entity == previousResidue) {
+                        continue;
+                    }
+                    if (atom2.getAtomicNumber() == 1) {
+                        continue;
+                    }
+                    Point3 pt2 = atom2.getPoint(iStruct);
+                    double rH = Atom.calcDistance(ptH, pt2);
+                    double rO = Atom.calcDistance(ptO, pt2);
+                    fSum += Math.exp(-rO / r0) + 0.8 * Math.exp(-rH / r0);
+                }
+                // note the paper has 0.8 insteand of 2.0, but 2.0 gives more reasonable numbers
+                //  needs to be optimized
+                double order = Math.tanh(2.0 * fSum) - 0.1;
+                atomH.setOrder((float) order);
+                atomH.setBFactor((float) order);
+            }
+        }
+
     }
 
     public static List<SpatialSet> matchAtoms(MolFilter molFilter) throws InvalidMoleculeException {
