@@ -27,6 +27,11 @@ class NMRSignal:
         self.rShift = 0.0
         self.c = 0.0
        
+    def copy(self):
+        newSig = NMRSignal(self.id, self.fr,self.amp,self.lw)
+        newSig.rShift = self.rShift
+        newSig.c = self.c
+        return newSig
 
     def setFr(self,fr):
         self.fr = fr
@@ -184,18 +189,30 @@ def findCenter(nDims, signals):
         center.append((max(freqs)-min(freqs))/2.0+min(freqs))
     return center
 
+def decaySignal(signals, delay, rates):
+    newSignals = []
+    for signal in signals:
+        newSig = signal.copy()
+        newSig.amp = signal.amp * math.exp(-delay*rates)
+        newSignals.append(newSig)
+    return newSignals
+
 ##################
 def convertToHz(dataPars, signals, center):
     nDims = len(center)
+    if nDims > 2:
+        nDims = 2
     for signal in signals:
         for dim in range(nDims):
-            signal.fr[dim] = 1.0*((signal.fr[dim]-center[dim])*dataPars.sf[dim])
+            ppmCtr = signal.fr[dim] - dataPars.ref[dim]
+            signal.fr[dim] = -1.0 * ppmCtr * dataPars.sf[dim]
 
 #COMPUTATIONS FOR MULTIDIMENSIONAL DATA
-def loopNDims(dataPars):
+def loopNDims(dataset, dataPars):
     iterations = 1;
     for dim in range(1,dataPars.nDims):
-        iterations *= dataPars.dimSizes[dim]
+        if not dim in dataPars.pseudoDims:
+            iterations *= dataPars.dimSizes[dim]
     return iterations
 
 def createDataset(dataPars, datasetName):
@@ -210,9 +227,11 @@ def createDataset(dataPars, datasetName):
         dataset.setRefPt(dim,dataPars.dimSizes[dim]/2)
         dataset.syncPars(dim)
         dataset.close
+    if dataPars.nDims > 2:
+        dataset.setComplex(2,False)
+        dataset.setFreqDomain(2,False)
 
-def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, delay=None, fp=0.5, frMul=None, offset=0.0, ph=0.0, pep=False):
-    dataset = Dataset(datasetName, 'hsqc.nv', True)
+def addDatasetSignals(dataset, dataPars, datasetName, signals, plane, noise, delay=None, fp=0.5, frMul=None, offset=0.0, ph=0.0, pep=False):
     dimSizes = dataPars.dimSizes
     dLabels = dataPars.dimLabels
     sf = dataPars.sf
@@ -228,7 +247,7 @@ def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, d
 
     #Iterations represents the number of times data is generated for a row.  This is based on the size of all dimensions beyond the first generation
     nPhases = 2
-    iterations = loopNDims(dataPars);
+    iterations = loopNDims(dataset, dataPars);
     iterations /= nPhases
     iTimes = [0] * (dataPars.nDims-1)
     if frMul == None:
@@ -259,31 +278,35 @@ def addDatasetSignals(dataPars, datasetName, signals, datasetNameIndex, noise, d
                 f[0] = (signal.fr[0]+signal.rShift[0]) * frMul[0]
                 lw = signal.lw
 
-                for dim in range(len(position)):
+                #for dim in range(len(position)):
+                for dim in range(1):
                     f[dim+1] = (signal.fr[dim+1]+signal.rShift[dim+1]) * frMul[dim+1]
+                    fR = f[dim+1]
                     #  pep not working yet
                     if pep:
                         if (j % 2) == 0:
-                            amp *= (math.cos(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
+                            amp *= (math.cos(2*math.pi*fR*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
                         else:
-                            amp *= -1.0*(math.cos(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
+                            amp *= -1.0*(math.cos(2*math.pi*fR*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
                     else:
                         if (j % 2) == 0:
-                            amp *= (math.cos(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
+                            amp *= (math.cos(2*math.pi*fR*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
                         else:
-                            amp *= (math.sin(2*math.pi*f[dim+1]*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
+                            amp *= (math.sin(2*math.pi*fR*iTimes[dim]))*math.exp(-iTimes[dim]*lw[dim+1]*math.pi)
 
                 #The above manipulation allows signals to be generated as if real data is collected.  Below each signal is mapped into the nv file
-                vectors[j].genSignalHz(f[0],lw[0],amp,ph)
+                fR = random.gauss(f[0],lw[0]*0.10)
+                lwR = lw[0]
+                vectors[j].genSignalHz(fR,lwR,amp,ph)
             vectors[j].fp(fp)
             vectors[j].add(offset)
             vectors[j].genNoise(noise)
         for j in range(nPhases):
             i = iGroup*nPhases+j
             position = getPosition(i,SZ,[])
+            position[1] = plane
             indice=jarray.array(position,'i')
             dataset.writeVector(vectors[j], indice, 0)
-    saveRefPars(dataset, dataPars)
 
 def saveRefPars(dataset, dataPars):
     for dim in range(dataPars.nDims):
@@ -294,22 +317,28 @@ def saveRefPars(dataset, dataPars):
         dataset.setSf(dim,dataPars.sf[dim])
         dataset.setSw(dim,dataPars.sw[dim])
         dataset.setLabel(dim,dataPars.dimLabels[dim])
-        dataset.setRefValue(dim,dataPars.ref[dim])
         dataset.setRefPt(dim,dataPars.dimSizes[dim]/2)
+        dataset.setRefValue(dim,dataPars.ref[dim])
         dataset.syncPars(dim)
         dataset.close
+    if dataPars.nDims > 2:
+        dataset.setComplex(2,False)
     dataset.writeHeader()
+    dataset.writeParFile()
     dataset.close()
 
-def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0005, dataPars=None, delay=None, fp = 0.5, frMul=None, offset=0.0, ph=0.0, pep=False):
+def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.00005, dataPars=None, delay=None, fp = 0.5, frMul=None, offset=0.0, ph=0.0, pep=False):
     if dataPars == None:
         dimSizes=[2048,512]
-        nDims = len(dimSizes)
         sfH = 600.0
         sf = [sfH,sfH*0.101329118]
         sw = [3000.0,3000.0]
         dLabels = ['H','N']
         dataPars = DatasetPars(dimSizes, sf, sw, dLabels)
+
+    nDims = len(dataPars.dimSizes)
+    dataPars.pseudoDims=[2]
+
 
     if bmrbFileName != None:
         shiftSets = loadBMRBShifts(bmrbFileName)
@@ -321,10 +350,21 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.0005, d
         sigRng = SignalRng(frMin=[6.0,90.0], frMax=[11.0,125.0], amp=0.01, ampSd=0.002, lw=[20,18], lwSd=[5,4])
 
     randomizeSignals(signals, sigRng)
-    center = findCenter(nDims, signals)
-    dataPars.setRef(center)
+    center = findCenter(2, signals)
+    center = [0.0,0.0]
 
     convertToHz(dataPars, signals, center);
     createDataset(dataPars, datasetName)
-    addDatasetSignals(dataPars, datasetName, signals, 0, noise, delay, fp, frMul, offset, ph, pep)
+    dataset = Dataset(datasetName, 'hsqc.nv', True)
+    nPlanes = 1
+    if len(dataPars.dimSizes) > 2:
+        nPlanes = dataPars.dimSizes[2]
+    for plane in range(nPlanes):
+        newSignals = decaySignal(signals, plane*100, 0.003)
+        addDatasetSignals(dataset, dataPars, datasetName, newSignals, plane, noise, delay, fp, frMul, offset, ph, pep)
+    values=[1.0]*dataPars.dimSizes[2]
+    dataset.setValues(2, values) 
+
+    saveRefPars(dataset, dataPars)
+
 
