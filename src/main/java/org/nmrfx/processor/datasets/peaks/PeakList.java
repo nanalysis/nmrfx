@@ -1542,9 +1542,39 @@ public class PeakList {
         }
     }
 
-    ArrayList<MatchItem> getMatchingItems(PeakList peakList, int[] dims) {
-        ArrayList<MatchItem> matchList = new ArrayList<MatchItem>();
-        List<Peak> searchPeaks = peakList.peaks;
+    public void assignAtomLabels(int[] dims, double[] tol, double[][] positions, String[][] names) {
+        List<MatchItem> peakItems = getMatchingItems(dims);
+        List<MatchItem> atomItems = getMatchingItems(positions);
+        if (tol == null) {
+            tol = new double[dims.length];
+            for (int iDim = 0; iDim < dims.length; iDim++) {
+                tol[iDim] = widthStatsPPM(iDim).getAverage() * 2.0;
+            }
+        }
+        double[] iOffsets = new double[dims.length];
+        double[] jOffsets = new double[dims.length];
+        MatchResult result = doBPMatch(peakItems, iOffsets, atomItems, jOffsets, tol);
+        int[] matching = result.matching;
+        for (int i = 0; i < peakItems.size(); i++) {
+            MatchItem item = peakItems.get(i);
+            if (item.itemIndex < peaks.size()) {
+                if (matching[i] != -1) {
+                    int j = matching[i];
+                    if (item.itemIndex < peakItems.size()) {
+                        Peak peak = peaks.get(item.itemIndex);
+                        for (int iDim = 0; iDim < dims.length; iDim++) {
+                            peak.peakDim[dims[iDim]].setLabel(names[j][iDim]);
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    List<MatchItem> getMatchingItems(int[] dims) {
+        List<MatchItem> matchList = new ArrayList<>();
+        List<Peak> searchPeaks = peaks;
 
         Set<Peak> usedPeaks = searchPeaks.stream().filter(p -> p.getStatus() < 0).collect(Collectors.toSet());
 
@@ -1571,8 +1601,8 @@ public class PeakList {
         return matchList;
     }
 
-    ArrayList<MatchItem> getMatchingItems(double[][] positions) {
-        ArrayList<MatchItem> matchList = new ArrayList<MatchItem>();
+    List<MatchItem> getMatchingItems(double[][] positions) {
+        List<MatchItem> matchList = new ArrayList<MatchItem>();
         for (int j = 0; j < positions.length; j++) {
             MatchItem matchItem = new MatchItem(j, positions[j]);
             matchList.add(matchItem);
@@ -1593,7 +1623,7 @@ public class PeakList {
         }
     }
 
-    private MatchResult doBPMatch(ArrayList<MatchItem> iMList, final double[] iOffsets, ArrayList<MatchItem> jMList, final double[] jOffsets, double[] tol) {
+    private MatchResult doBPMatch(List<MatchItem> iMList, final double[] iOffsets, List<MatchItem> jMList, final double[] jOffsets, double[] tol) {
         int iNPeaks = iMList.size();
         int jNPeaks = jMList.size();
         int nPeaks = iNPeaks + jNPeaks;
@@ -2973,6 +3003,11 @@ public class PeakList {
 
     public DoubleSummaryStatistics widthStats(int iDim) {
         DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDim[iDim].getLineWidthHz()).summaryStatistics();
+        return stats;
+    }
+
+    public DoubleSummaryStatistics widthStatsPPM(int iDim) {
+        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDim[iDim].getLineWidth()).summaryStatistics();
         return stats;
     }
 
