@@ -291,6 +291,10 @@ public class Polymer extends Entity {
                 rna = true;
                 break;
             }
+            if (resName.equals("RADE") || resName.equals("RCYT") || resName.equals("RGUA") || resName.equals("RURA")) {
+                rna = true;
+                break;
+            }
         }
         return rna;
     }
