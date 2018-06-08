@@ -18,6 +18,8 @@ import javafx.event.Event;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
@@ -109,6 +111,11 @@ public class PeakSlider {
         intensityLabel = new Label();
         intensityLabel.setMinWidth(75);
 
+        MenuButton actionMenu = new MenuButton("Actions");
+        MenuItem thawAllItem = new MenuItem("Thaw All");
+        thawAllItem.setOnAction(e -> thawAllPeaks());
+        actionMenu.getItems().add(thawAllItem);
+
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
         Pane filler2 = new Pane();
@@ -122,6 +129,7 @@ public class PeakSlider {
 
         toolBar.getItems().add(closeButton);
         toolBar.getItems().add(filler1);
+        toolBar.getItems().add(actionMenu);
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(filler2);
         toolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
@@ -205,6 +213,18 @@ public class PeakSlider {
             });
         });
 
+    }
+
+    public void thawAllPeaks() {
+        controller.charts.stream().forEach(chart -> {
+            chart.getPeakListAttributes().stream().forEach(peakListAttr -> {
+                // XXX unclear why the following cast is necessary
+                PeakList peakList = ((PeakListAttributes) peakListAttr).getPeakList();
+                peakList.peaks().stream().forEach(peak -> {
+                    peak.setFrozen(false, true);
+                });
+            });
+        });
     }
 
     public void tweakPeaks() {
