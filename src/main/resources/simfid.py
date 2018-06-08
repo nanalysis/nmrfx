@@ -197,6 +197,15 @@ def decaySignal(signals, delay, rates):
         newSignals.append(newSig)
     return newSignals
 
+def applyDecay(signals, decayDict, plane):
+    newSignals = []
+    for signal in signals:
+        newSig = signal.copy()
+        key = str(signal.id)
+        decayValues = decayDict[key]
+        newSig.amp = signal.amp * decayValues[plane]
+        newSignals.append(newSig)
+    return newSignals
 ##################
 def convertToHz(dataPars, signals, center):
     nDims = len(center)
@@ -327,7 +336,7 @@ def saveRefPars(dataset, dataPars):
     dataset.writeParFile()
     dataset.close()
 
-def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.00005, dataPars=None, delay=None, fp = 0.5, frMul=None, offset=0.0, ph=0.0, pep=False):
+def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.00005, dataPars=None, delay=None, fp = 0.5, frMul=None, offset=0.0, ph=0.0, pep=False, decayFile=None):
     if dataPars == None:
         dimSizes=[2048,512]
         sfH = 600.0
@@ -352,19 +361,38 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.00005, 
     randomizeSignals(signals, sigRng)
     center = findCenter(2, signals)
     center = [0.0,0.0]
-
+    fcenter = list(center)
+    fcenter.append(1)
+    #dataPars.setRef(fcenter)
     convertToHz(dataPars, signals, center);
-    createDataset(dataPars, datasetName)
     dataset = Dataset(datasetName, 'hsqc.nv', True)
-    nPlanes = 1
-    if len(dataPars.dimSizes) > 2:
-        nPlanes = dataPars.dimSizes[2]
-    for plane in range(nPlanes):
-        newSignals = decaySignal(signals, plane*100, 0.003)
-        addDatasetSignals(dataset, dataPars, datasetName, newSignals, plane, noise, delay, fp, frMul, offset, ph, pep)
+    if not decayFile:
+        createDataset(dataPars, datasetName)
+        for plane in range(dataPars.dimSizes[2]):
+            newSignals = decaySignal(signals, plane*100, 0.003)
+            addDatasetSignals(dataset, dataPars, datasetName, newSignals, plane, noise, delay, fp, frMul, offset, ph, pep)
+    else:
+        decayValues, planes = readDecayFile(decayFile)
+        if planes != dataPars.dimSizes[2]:
+            print "Changing size of dim 3 from", dataPars.dimSizes[2], "to", planes
+            dataPars.dimSizes = dataPars.dimSizes[0:2] + [planes]
+        createDataset(dataPars, datasetName)
+        for plane in range(dataPars.dimSizes[2]):
+            newSignals = applyDecay(signals, decayValues, plane)
+            addDatasetSignals(dataset, dataPars, datasetName, newSignals, plane, noise, delay, fp, frMul, offset, ph, pep)
+
     values=[1.0]*dataPars.dimSizes[2]
-    dataset.setValues(2, values) 
+    dataset.setValues(2, values)
 
     saveRefPars(dataset, dataPars)
 
+def readDecayFile(file):
+    decayValues = {}
+    for line in open(file,'r'):
+        arr = line.split()
+        if arr[0] == 'Residue':  #Header line
+            continue
+        decayValues[arr[0]] = [float(x) for x in arr[1:]]
+        planes = len(decayValues[arr[0]])
+    return [decayValues,planes]
 
