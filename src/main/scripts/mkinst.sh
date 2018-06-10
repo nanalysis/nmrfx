@@ -21,6 +21,8 @@ do
     cp -r -p ../../target/processorgui-*-bin/proc* .
     sdir=`ls -d processorgui-*`
     cd $sdir
+    cp -p ../../../../nmrfxprocessor/target/processor-*-bin/processor-*/nmrfxp .
+    cp -p ../../../../nmrfxprocessor/target/processor-*-bin/processor-*/nmrfxp.bat .
 
     mkdir jre
     cd jre
