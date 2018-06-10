@@ -40,11 +40,11 @@
     </fileSets>
     <files>
         <file>
-            <source>src/main/scripts/nmrfxa.bat</source>
+            <source>src/main/scripts/nmrfxag.bat</source>
             <filtered>true</filtered>
         </file>
         <file>
-            <source>src/main/scripts/nmrfxa</source>
+            <source>src/main/scripts/nmrfxag</source>
             <filtered>true</filtered>
             <fileMode>0744</fileMode>
         </file>
