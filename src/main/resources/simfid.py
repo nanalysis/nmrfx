@@ -235,10 +235,10 @@ def createDataset(dataPars, datasetName):
         dataset.setRefValue(dim,dataPars.ref[dim])
         dataset.setRefPt(dim,dataPars.dimSizes[dim]/2)
         dataset.syncPars(dim)
-        dataset.close
     if dataPars.nDims > 2:
         dataset.setComplex(2,False)
         dataset.setFreqDomain(2,False)
+    dataset.close
 
 def addDatasetSignals(dataset, dataPars, datasetName, signals, plane, noise, delay=None, fp=0.5, frMul=None, offset=0.0, ph=0.0, pep=False):
     dimSizes = dataPars.dimSizes
@@ -365,9 +365,9 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.00005, 
     fcenter.append(1)
     #dataPars.setRef(fcenter)
     convertToHz(dataPars, signals, center);
-    dataset = Dataset(datasetName, 'hsqc.nv', True)
     if not decayFile:
         createDataset(dataPars, datasetName)
+        dataset = Dataset(datasetName, 'hsqc.nv', True)
         for plane in range(dataPars.dimSizes[2]):
             newSignals = decaySignal(signals, plane*100, 0.003)
             addDatasetSignals(dataset, dataPars, datasetName, newSignals, plane, noise, delay, fp, frMul, offset, ph, pep)
@@ -377,6 +377,7 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.00005, 
             print "Changing size of dim 3 from", dataPars.dimSizes[2], "to", planes
             dataPars.dimSizes = dataPars.dimSizes[0:2] + [planes]
         createDataset(dataPars, datasetName)
+        dataset = Dataset(datasetName, 'hsqc.nv', True)
         for plane in range(dataPars.dimSizes[2]):
             newSignals = applyDecay(signals, decayValues, plane)
             addDatasetSignals(dataset, dataPars, datasetName, newSignals, plane, noise, delay, fp, frMul, offset, ph, pep)
