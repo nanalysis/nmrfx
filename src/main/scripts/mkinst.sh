@@ -18,9 +18,12 @@ do
 
     mkdir -p $dir
     cd $dir
-    cp -r -p ../../target/datachordgui-*-bin/datach* .
-    sdir=`ls -d datachordgui-*`
+    cp -r -p ../../target/analystgui-*-bin/analystgui* .
+    sdir=`ls -d analystgui-*`
     cd $sdir
+    cp -p ../../../../analyst/target/analyst-*-bin/analyst-*/nmrfxa .
+    cp -p ../../../../analyst/target/analyst-*-bin/analyst-*/nmrfxa.bat .
+
 
     mkdir jre
     cd jre
