@@ -543,7 +543,6 @@ public class NMRViewData implements NMRData {
             int index = iVec / strides[i - 1];
             pt[i][0] = index;
             pt[i][1] = index;
-            System.out.println("dim " + strides[i] + " " + i + " " + index);
             iVec = iVec % strides[i - 1];
         }
         for (int i = 0; i < nDim; i++) {
