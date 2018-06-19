@@ -24,6 +24,7 @@ import org.nmrfx.processor.processing.processes.ProcessOps;
 import org.nmrfx.processor.datasets.ScanRegion;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.datasets.vendor.BrukerData;
 import org.nmrfx.processor.math.Matrix;
 import org.nmrfx.processor.math.MatrixND;
 import org.nmrfx.processor.math.MatrixType;
@@ -416,7 +417,10 @@ public class Processor {
             for (int i = 1; i < nDim; i++) {
                 int arraySize = nmrData.getArraySize(i);
                 if (arraySize != 0) {
-                    newTDSizes[j] = tdSizes[i] / arraySize;
+                    newTDSizes[j] = tdSizes[i];
+                    if (nmrData instanceof BrukerData) {
+                        newTDSizes[j] /= arraySize;
+                    }
                     newTDSizes[j + 1] = arraySize;
                     newComplex[j] = complex[i];
                     newComplex[j + 1] = false;
