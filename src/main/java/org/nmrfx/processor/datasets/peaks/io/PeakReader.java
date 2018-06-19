@@ -281,36 +281,42 @@ public class PeakReader {
                 // N.L     N.P     N.WH    N.B     N.E     N.J     N.U
                 // volume  intensity       status  comment flags
                 if (dataIndex != null) {
-                    String value = data[dataIndex];
-                    switch (field) {
-                        case "id":
-                            peak.setIdNum(Integer.valueOf(value));
-                            break;
-                        case "int":
-                        case "intensity":
-                            peak.setIntensity(Float.valueOf(value));
-                            break;
-                        case "vol":
-                        case "volume":
-                            peak.setVolume1(Float.valueOf(value));
-                            break;
-                        case "status":
-                            peak.setStatus(Integer.valueOf(value));
-                            break;
-                        case "type":
-                            peak.setType(Integer.valueOf(value));
-                            break;
-                        case "comment":
-                            peak.setComment(value);
-                            break;
-                        case "flags":
-                            peak.setFlag2(value);
-                            break;
-                        case "color":
-                            peak.setColor(value);
-                            break;
-                        default:
-                            throw new IllegalArgumentException("Unknown field " + field);
+                    String value = null;
+                    try {
+                        value = data[dataIndex];
+                        switch (field) {
+                            case "id":
+                                peak.setIdNum(Integer.valueOf(value));
+                                break;
+                            case "int":
+                            case "intensity":
+                                peak.setIntensity(Float.valueOf(value));
+                                break;
+                            case "vol":
+                            case "volume":
+                                peak.setVolume1(Float.valueOf(value));
+                                break;
+                            case "status":
+                                peak.setStatus(Integer.valueOf(value));
+                                break;
+                            case "type":
+                                peak.setType(Integer.valueOf(value));
+                                break;
+                            case "comment":
+                                peak.setComment(value);
+                                break;
+                            case "flags":
+                                peak.setFlag2(value);
+                                break;
+                            case "color":
+                                peak.setColor(value);
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Unknown field " + field);
+                        }
+
+                    } catch (NumberFormatException nfE) {
+                        throw new IllegalArgumentException("Can't parse number: " + value + " for field " + field);
                     }
                 }
             }
@@ -500,20 +506,24 @@ public class PeakReader {
                     continue;
                 }
                 List<String> fields = parseXPKLine(line);
+                try {
 
-                if (dataHeader == null) {
-                    List<String> headerList = parseXPKLine(line);
-                    headerList.add(0, "id");
-                    dataHeader = new String[headerList.size()];
-                    headerList.toArray(dataHeader);
-                    data = new String[headerList.size()];
-                } else {
-                    if (dataMap == null) {
-                        dataMap = headerMap(dataHeader);
+                    if (dataHeader == null) {
+                        List<String> headerList = parseXPKLine(line);
+                        headerList.add(0, "id");
+                        dataHeader = new String[headerList.size()];
+                        headerList.toArray(dataHeader);
+                        data = new String[headerList.size()];
+                    } else {
+                        if (dataMap == null) {
+                            dataMap = headerMap(dataHeader);
+                        }
+                        List<String> lineList = parseXPKLine(line);
+                        lineList.toArray(data);
+                        processLine(peakList, dataHeader, dataMap, data);
                     }
-                    List<String> lineList = parseXPKLine(line);
-                    lineList.toArray(data);
-                    processLine(peakList, dataHeader, dataMap, data);
+                } catch (Exception exc) {
+                    throw new IOException("Can't read line: " + line + " \n" + exc.getMessage());
                 }
             }
 
@@ -534,6 +544,9 @@ public class PeakReader {
                 started = true;
                 if (ch == quoteChar) {
                     inquotes = false;
+                    store.add(curVal.toString().trim());
+                    curVal = new StringBuilder();
+                    started = false;
                 } else {
                     curVal.append((char) ch);
                 }
@@ -568,7 +581,7 @@ public class PeakReader {
         PythonInterpreter interpreter = new PythonInterpreter();
         interpreter.exec("import sparky");
         String rdString;
-;
+        ;
         interpreter.set("pMap", pMap);
         interpreter.exec("sparky.pMap=pMap");
         rdString = String.format("sparky.loadSaveFile('%s','%s')", fileName, listName);
