@@ -1560,7 +1560,7 @@ public class PeakList {
             if (item.itemIndex < peaks.size()) {
                 if (matching[i] != -1) {
                     int j = matching[i];
-                    if (item.itemIndex < peakItems.size()) {
+                    if ((j < names.length) && (item.itemIndex < peakItems.size())) {
                         Peak peak = peaks.get(item.itemIndex);
                         for (int iDim = 0; iDim < dims.length; iDim++) {
                             peak.peakDim[dims[iDim]].setLabel(names[j][iDim]);
