@@ -53,6 +53,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import org.apache.commons.math3.complex.Complex;
 
 /**
@@ -66,6 +67,7 @@ class VarianData implements NMRData {
     DateTimeFormatter vTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
 // Feb  4 2000
     DateTimeFormatter vDateFormatter = DateTimeFormatter.ofPattern("MMM ppd yyyy");
+    private final static int MAXDIM = 10;
 
     private final String fpath;
     private int nblocks = 0;
@@ -78,9 +80,10 @@ class VarianData implements NMRData {
     private HashMap<String, String> parMap = null;
     private String[] acqOrder;
     // fixme dynamically determine size
-    private Double[] Ref = new Double[5];
-    private Double[] Sw = new Double[5];
-    private Double[] Sf = new Double[5];
+    private int arraysize[] = new int[MAXDIM];  // TD,1 TD,2 etc.
+    private Double[] Ref = new Double[MAXDIM];
+    private Double[] Sw = new Double[MAXDIM];
+    private Double[] Sf = new Double[MAXDIM];
     private String text = null;
     private SampleSchedule sampleSchedule = null;
     static final Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
@@ -88,6 +91,7 @@ class VarianData implements NMRData {
     int[] sizes = null;
     int[] maxSizes = null;
     double scale = 1.0e6;
+    List<Double> arrayValues = new ArrayList<>();
 
     static final String parlist = "acqdim apptype array arraydim axis axisf procdim "
             + "solvent seqfil pslabel sfrq dfrq dfrq2 dfrq3 sw sw1 sw2 sw3 "
@@ -654,6 +658,16 @@ class VarianData implements NMRData {
             size = maxSizes[iDim];
         }
         sizes[iDim] = size;
+    }
+
+    @Override
+    public int getArraySize(int iDim) {
+        return arraysize[iDim];
+    }
+
+    @Override
+    public void setArraySize(int iDim, int size) {
+        arraysize[iDim] = size;
     }
 
     @Override
@@ -1351,7 +1365,21 @@ class VarianData implements NMRData {
                         }
                         acqOrder[i++] = "p" + dimChar;
                     } else {
-                        acqOrder[i++] = arrayElems[j];
+                        acqOrder[i++] = "a" + String.valueOf(nDim + 1);
+                        String arrayValue = getPar(arrayElems[j]);
+                        String[] arrayValueElems = arrayValue.split(",");
+                        arraysize[i - 1] = arrayValueElems.length;
+                        arrayValues.clear();
+                        for (String val : arrayValueElems) {
+                            try {
+                                double dVal = Double.parseDouble(val);
+                                arrayValues.add(dVal);
+                            } catch (NumberFormatException nfE) {
+                                arrayValues.clear();
+                                break;
+                            }
+                        }
+
                     }
                 }
                 for (int j = 0; j < nDim; j++) {
@@ -1405,6 +1433,8 @@ class VarianData implements NMRData {
             String elem = acqOrderArray[i];
             if (elem.substring(0, 1).equals("p")) {
                 builder.append(elem.substring(1, 2));
+            } else if (elem.substring(0, 1).equals("a")) {
+                return "";
             }
         }
         return builder.toString();
