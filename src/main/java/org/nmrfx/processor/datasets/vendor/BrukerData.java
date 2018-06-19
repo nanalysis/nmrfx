@@ -61,7 +61,7 @@ import org.apache.commons.math3.util.Precision;
  * @see NMRData
  * @see NMRDataUtil
  */
-class BrukerData implements NMRData {
+public class BrukerData implements NMRData {
 
     private final static int MAXDIM = 10;
     private int tbytes = 0;             // TD,1
