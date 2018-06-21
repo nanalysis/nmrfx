@@ -1205,6 +1205,9 @@ public class Molecule implements Serializable {
     }
 
     public void updateVecCoords() {
+        if (Molecule.atomList == null) {
+            Molecule.makeAtomList();
+        }
         FastVector3D[] vecCoords = eCoords.getVecCoords(atomList.size());
         int i = 0;
         Entity lastEntity = null;
