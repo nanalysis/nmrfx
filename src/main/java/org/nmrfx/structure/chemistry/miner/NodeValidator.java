@@ -73,6 +73,24 @@ public class NodeValidator {
         2,
         2,
         2,
+        2,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
         2};
 
     int[][] atomPatterns = {
@@ -142,7 +160,25 @@ public class NodeValidator {
         {47},
         {47, 0},
         {48},
-        {49}};
+        {49},
+        {50, 18, 50},
+        {50, 18, 18, 50},
+        {50, 18, 18, 50},
+        {50, 18, 18, 50},
+        {50, 19, 19, 50},
+        {50, 19, 19, 19, 50},
+        {51},
+        {52},
+        {53},
+        {54},
+        {55},
+        {56},
+        {57},
+        {58},
+        {59},
+        {20},
+        {60},
+        {61}};
 
     int[][] bondPatterns = {
         {-1, 0},
@@ -210,6 +246,24 @@ public class NodeValidator {
         {-1},
         {-1},
         {-1, 0},
+        {-1},
+        {-1},
+        {-1, 2, 2},
+        {-1, 2, 2, 2},
+        {-1, 4, 2, 5},
+        {-1, 4, 2, 4},
+        {-1, 2, 3, 2},
+        {-1, 2, 3, 3, 2},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
         {-1},
         {-1}};
 
@@ -280,6 +334,24 @@ public class NodeValidator {
         {-1},
         {-1, -1},
         {-1},
+        {-1},
+        {-1, -1, -1},
+        {-1, -1, -1, -1},
+        {-1, -1, -1, -1},
+        {-1, -1, -1, -1},
+        {-1, -1, -1, -1},
+        {-1, -1, -1, -1, -1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
         {-1}};
 
     int[][] propertyValues = {
@@ -349,7 +421,25 @@ public class NodeValidator {
         {197},
         {204, -1},
         {209},
-        {214}};
+        {214},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {221},
+        {224},
+        {227},
+        {230},
+        {233},
+        {236},
+        {239},
+        {242},
+        {245},
+        {248},
+        {251},
+        {254}};
 
     String[] propertyNames = {
         "sp2",
@@ -593,7 +683,43 @@ public class NodeValidator {
         "hard",
         "10.8",
         "charge",
-        "1.0"};
+        "1.0",
+        "2",
+        "nH",
+        "0",
+        "2",
+        "nH",
+        "1",
+        "2",
+        "nH",
+        "2",
+        "2",
+        "nH",
+        "3",
+        "2",
+        "nH",
+        "0",
+        "2",
+        "nH",
+        "1",
+        "2",
+        "nH",
+        "2",
+        "2",
+        "nH",
+        "0",
+        "2",
+        "nH",
+        "1",
+        "2",
+        "nH",
+        "0",
+        "2",
+        "nH",
+        "1",
+        "2",
+        "nH",
+        "3"};
 
     public NodeValidator() {
     }
@@ -647,7 +773,7 @@ public class NodeValidator {
                 break;
 
             case 10:
-                atomValid = p[atomIndex][13] || p[atomIndex][14]; // r5 || r6
+                atomValid = p[atomIndex][12] || p[atomIndex][13] || p[atomIndex][14]; // r4 || r5 || r6
                 break;
 
             case 11:
@@ -806,6 +932,54 @@ public class NodeValidator {
                 atomValid = (aNum == 53) && p[atomIndex][9]; // I && x2
                 break;
 
+            case 50:
+                atomValid = (aNum == 1); // H
+                break;
+
+            case 51:
+                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][5]; // C && sp3 && x4
+                break;
+
+            case 52:
+                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][7]; // C && sp3 && x3
+                break;
+
+            case 53:
+                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][9]; // C && sp3 && x2
+                break;
+
+            case 54:
+                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][11]; // C && sp3 && x1
+                break;
+
+            case 55:
+                atomValid = (aNum == 6) && p[atomIndex][0] && p[atomIndex][7]; // C && sp2 && x3
+                break;
+
+            case 56:
+                atomValid = (aNum == 6) && p[atomIndex][0] && p[atomIndex][9]; // C && sp2 && x2
+                break;
+
+            case 57:
+                atomValid = (aNum == 6) && p[atomIndex][0] && p[atomIndex][11]; // C && sp2 && x1
+                break;
+
+            case 58:
+                atomValid = (aNum == 6) && p[atomIndex][1] && p[atomIndex][9]; // C && sp && x2
+                break;
+
+            case 59:
+                atomValid = (aNum == 6) && p[atomIndex][1] && p[atomIndex][11]; // C && sp && x1
+                break;
+
+            case 60:
+                atomValid = (aNum == 8) && p[atomIndex][0] && p[atomIndex][11]; // O && sp2 && x1
+                break;
+
+            case 61:
+                atomValid = (aNum == 7) && p[atomIndex][2] && p[atomIndex][7]; // N && sp3 && x3
+                break;
+
         }
         return atomValid;
     }
@@ -829,6 +1003,14 @@ public class NodeValidator {
 
             case 3:
                 bondValid = true;
+                break;
+
+            case 4:
+                bondValid = (order == 5);
+                break;
+
+            case 5:
+                bondValid = (order == 4);
                 break;
 
         }
