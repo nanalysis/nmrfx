@@ -527,14 +527,18 @@ class refine:
 
             if 'tree' in molDict:
                 treeDict = molDict['tree']
-                if 'start' in treeDict:
-                    start = treeDict['start']
-                else:
+                if treeDict == None:
                     start = None
-                if 'end' in treeDict:
-                    end = treeDict['end']
-                else:
                     end = None
+                else:
+                    if 'start' in treeDict:
+                        start = treeDict['start']
+                    else:
+                        start = None
+                    if 'end' in treeDict:
+                        end = treeDict['end']
+                    else:
+                        end = None
                 self.setupTree(start, end)
             
     def readDistanceDict(self,disDict,residues):
@@ -1183,11 +1187,18 @@ class refine:
             pI.setProperties("ar", "AROMATIC");
             pI.setProperties("res", "RESONANT");
             pI.setProperties("r", "RING");
+            pI.setProperties("r4", "RING");
             pI.setHybridization();
             aTree = AngleTreeGenerator()
             atoms = ligand.getAtoms()
-            startAtom = ligand.getAtom(start)
-            endAtom = ligand.getAtom(end)
+            if start != None:
+                startAtom = ligand.getAtom(start)
+            else:
+                startAtom = None
+            if end != None:
+                endAtom = ligand.getAtom(end)
+            else:
+                endAtom = None
             aTree.scan(ligand,startAtom, endAtom)
 
     def addAngleFile(self,file, mode='nv'):
