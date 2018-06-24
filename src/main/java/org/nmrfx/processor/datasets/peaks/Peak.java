@@ -721,7 +721,8 @@ public class Peak implements Comparable, PeakOrMulti {
         result.append(getStatus());
         result.append(sep);
         result.append(stringQuote);
-        result.append(getColorName());
+        String colorName = getColorName();
+        result.append(colorName.equals("") ? "." : colorName);
         result.append(stringQuote);
         result.append(sep);
         result.append(getFlag());
@@ -1202,7 +1203,7 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public String getColorName() {
-        return color.toString();
+        return color == null ? "" : color.toString();
     }
 
     public void setColor(Color color) {
