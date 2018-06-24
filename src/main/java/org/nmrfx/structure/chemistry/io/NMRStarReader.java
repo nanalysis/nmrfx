@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.io;
 
+import java.io.BufferedReader;
 import org.nmrfx.structure.chemistry.*;
 import org.nmrfx.structure.chemistry.constraints.*;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
@@ -33,8 +34,13 @@ import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.processor.star.STAR3;
 import org.nmrfx.processor.star.Saveframe;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import org.nmrfx.processor.datasets.peaks.Resonance;
+import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.processor.utilities.NvUtil;
 
 /**
  *
@@ -51,6 +57,22 @@ public class NMRStarReader {
     public NMRStarReader(final STAR3 star3) {
         this.star3 = star3;
 //        PeakDim.setResonanceFactory(new AtomResonanceFactory());
+    }
+
+    public static void read(File starFile) throws ParseException {
+        FileReader fileReader;
+        try {
+            fileReader = new FileReader(starFile);
+        } catch (FileNotFoundException ex) {
+            return;
+        }
+        BufferedReader bfR = new BufferedReader(fileReader);
+
+        STAR3 star = new STAR3(bfR, "star3");
+
+        star.scanFile();
+        NMRStarReader reader = new NMRStarReader(star);
+        reader.process();
     }
 
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
@@ -254,7 +276,7 @@ public class NMRStarReader {
         String reslibDir = PDBFile.getReslibDir("IUPAC");
         Polymer polymer = null;
         Sequence sequence = new Sequence();
-        int entityID = 0;
+        int entityID = 1;
         String lastChain = "";
         for (int i = 0; i < chainCodeColumn.size(); i++) {
             String chainCode = (String) chainCodeColumn.get(i);
@@ -537,7 +559,7 @@ public class NMRStarReader {
         for (Saveframe saveframe : star3.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("spectral_peak_list")) {
                 System.err.println("process peaklists " + saveframe.getName());
-                PeakList.processSTAR3PeakList(saveframe);
+                processSTAR3PeakList(saveframe);
             }
         }
     }
@@ -602,6 +624,262 @@ public class NMRStarReader {
             }
         }
         return spg;
+    }
+
+    public static void processSTAR3PeakList(Saveframe saveframe) throws ParseException {
+        ResonanceFactory resFactory = PeakDim.resFactory;
+        String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
+        String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
+        String sampleConditionLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_condition_list_label");
+        String datasetName = saveframe.getLabelValue("_Spectral_peak_list", "Experiment_name");
+        String nDimString = saveframe.getValue("_Spectral_peak_list", "Number_of_spectral_dimensions");
+        String dataFormat = saveframe.getOptionalValue("_Spectral_peak_list", "Text_data_format");
+        String details = saveframe.getOptionalValue("_Spectral_peak_list", "Details");
+        if (dataFormat.equals("text")) {
+            System.out.println("Aaaack, peak list is in text format, skipping list");
+            System.out.println(details);
+            return;
+        }
+        if (nDimString.equals("?")) {
+            return;
+        }
+        if (nDimString.equals(".")) {
+            return;
+        }
+        int nDim = NvUtil.toInt(nDimString);
+
+        PeakList peakList = new PeakList(listName, nDim);
+
+        int nSpectralDim = saveframe.loopCount("_Spectral_dim");
+        if (nSpectralDim > nDim) {
+            throw new IllegalArgumentException("Too many _Spectral_dim values " + listName + " " + nSpectralDim + " " + nDim);
+        }
+
+        peakList.setSampleLabel(sampleLabel);
+        peakList.setSampleConditionLabel(sampleConditionLabel);
+        peakList.setDatasetName(datasetName);
+        peakList.setDetails(details);
+
+        for (int i = 0; i < nSpectralDim; i++) {
+            SpectralDim sDim = peakList.getSpectralDim(i);
+
+            String value = null;
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Atom_type", i);
+            if (value != null) {
+                sDim.setAtomType(value);
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Atom_isotope_number", i);
+            if (value != null) {
+                sDim.setAtomIsotopeValue(NvUtil.toInt(value));
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Spectral_region", i);
+            if (value != null) {
+                sDim.setSpectralRegion(value);
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Magnetization_linkage", i);
+            if (value != null) {
+                sDim.setMagLinkage(NvUtil.toInt(value) - 1);
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Sweep_width", i);
+            if (value != null) {
+                sDim.setSw(NvUtil.toDouble(value));
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Spectrometer_frequency", i);
+            if (value != null) {
+                sDim.setSf(NvUtil.toDouble(value));
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Encoding_code", i);
+            if (value != null) {
+                sDim.setEncodingCode(value);
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Encoded_source_dimension", i);
+            if (value != null) {
+                sDim.setEncodedSourceDim(NvUtil.toInt(value) - 1);
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Dataset_dimension", i);
+            if (value != null) {
+                sDim.setDataDim(NvUtil.toInt(value) - 1);
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Dimension_name", i);
+            if (value != null) {
+                sDim.setDimName(value);
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "ID_tolerance", i);
+            if (value != null) {
+                sDim.setIdTol(NvUtil.toDouble(value));
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Pattern", i);
+            if (value != null) {
+                sDim.setPattern(value);
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Relation", i);
+            if (value != null) {
+                sDim.setRelation(value);
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Aliasing", i);
+            if (value != null) {
+                sDim.setAliasing(value);
+            }
+            value = saveframe.getValueIfPresent("_Spectral_dim", "Precision", i);
+            if (value != null) {
+                sDim.setPrecision(NvUtil.toInt(value));
+            }
+        }
+
+        Loop loop = saveframe.getLoop("_Peak");
+        if (loop != null) {
+            List<String> idColumn = loop.getColumnAsList("ID");
+            List<String> detailColumn = loop.getColumnAsListIfExists("Details");
+            List<String> fomColumn = loop.getColumnAsListIfExists("Figure_of_merit");
+            List<String> typeColumn = loop.getColumnAsListIfExists("Type");
+            List<String> statusColumn = loop.getColumnAsListIfExists("Status");
+            List<String> colorColumn = loop.getColumnAsListIfExists("Color");
+            List<String> flagColumn = loop.getColumnAsListIfExists("Flag");
+            List<String> cornerColumn = loop.getColumnAsListIfExists("Label_corner");
+
+            for (int i = 0, n = idColumn.size(); i < n; i++) {
+                int idNum = Integer.parseInt((String) idColumn.get(i));
+                Peak peak = new Peak(peakList, nDim);
+                peak.setIdNum(idNum);
+                String value = null;
+                if ((value = NvUtil.getColumnValue(fomColumn, i)) != null) {
+                    float fom = NvUtil.toFloat(value);
+                    peak.setFigureOfMerit(fom);
+                }
+                if ((value = NvUtil.getColumnValue(detailColumn, i)) != null) {
+                    peak.setComment(value);
+                }
+                if ((value = NvUtil.getColumnValue(typeColumn, i)) != null) {
+                    int type = Peak.getType(value);
+                    peak.setType(type);
+                }
+                if ((value = NvUtil.getColumnValue(statusColumn, i)) != null) {
+                    int status = NvUtil.toInt(value);
+                    peak.setStatus(status);
+                }
+                if ((value = NvUtil.getColumnValue(colorColumn, i)) != null) {
+                    value = value.equals(".") ? null : value;
+                    peak.setColor(value);
+                }
+                if ((value = NvUtil.getColumnValue(flagColumn, i)) != null) {
+                    for (int iFlag = 0; iFlag < Peak.NFLAGS; iFlag++) {
+                        if (value.length() > iFlag) {
+                            peak.setFlag(iFlag, (value.charAt(iFlag) == '1'));
+                        } else {
+                            peak.setFlag(iFlag, false);
+                        }
+                    }
+                }
+                if ((value = NvUtil.getColumnValue(cornerColumn, i)) != null) {
+                    peak.setCorner(value);
+                }
+                peakList.addPeakWithoutResonance(peak);
+            }
+
+            loop = saveframe.getLoop("_Peak_general_char");
+            if (loop != null) {
+                List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
+                List<String> methodColumn = loop.getColumnAsList("Measurement_method");
+                List<String> intensityColumn = loop.getColumnAsList("Intensity_val");
+                //  fixme, unused: ArrayList errorColumn = loop.getColumnAsList("Intensity_val_err");
+                for (int i = 0, n = peakidColumn.size(); i < n; i++) {
+                    String value = null;
+                    int idNum = 0;
+                    if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
+                        idNum = NvUtil.toInt(value);
+                    } else {
+                        //throw new TclException("Invalid peak id value at row \""+i+"\"");
+                        continue;
+                    }
+                    Peak peak = peakList.getPeakByID(idNum);
+                    String method = "height";
+                    if ((value = NvUtil.getColumnValue(methodColumn, i)) != null) {
+                        method = value;
+                    }
+                    if ((value = NvUtil.getColumnValue(intensityColumn, i)) != null) {
+                        float iValue = NvUtil.toFloat(value);
+                        if (method.equals("height")) {
+                            peak.setIntensity(iValue);
+                        } else if (method.equals("volume")) {
+                            // FIXME should set volume/evolume 
+                            peak.setVolume1(iValue);
+                        } else {
+                            // FIXME throw error if don't know type, or add new type dynamically?
+                            peak.setIntensity(iValue);
+                        }
+                    }
+                    // FIXME set error value
+                }
+            }
+
+            loop = saveframe.getLoop("_Peak_char");
+            if (loop == null) {
+                throw new ParseException("No \"_Peak_char\" loop");
+            }
+
+            List<String> peakIdColumn = loop.getColumnAsList("Peak_ID");
+            List<String> sdimColumn = loop.getColumnAsList("Spectral_dim_ID");
+            String[] peakCharStrings = Peak.getSTAR3CharStrings();
+            for (int j = 0; j < peakCharStrings.length; j++) {
+                String tag = peakCharStrings[j].substring(peakCharStrings[j].indexOf(".") + 1);
+                if (tag.equals("Sf_ID") || tag.equals("Entry_ID") || tag.equals("Spectral_peak_list_ID")) {
+                    continue;
+                }
+                if (tag.equals("Resonance_ID") || tag.equals("Resonance_count")) {
+                    continue;
+                }
+                List<String> column = loop.getColumnAsList(tag);
+                if (column != null) {
+                    for (int i = 0, n = column.size(); i < n; i++) {
+                        int idNum = Integer.parseInt((String) peakIdColumn.get(i));
+                        int sDim = Integer.parseInt((String) sdimColumn.get(i)) - 1;
+                        String value = (String) column.get(i);
+                        if (!value.equals(".") && !value.equals("?")) {
+                            Peak peak = peakList.getPeakByID(idNum);
+                            PeakDim peakDim = peak.getPeakDim(sDim);
+                            peakDim.setAttribute(tag, value);
+                        }
+                    }
+                }
+            }
+            loop = saveframe.getLoop("_Assigned_peak_chem_shift");
+            if (loop != null) {
+                List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
+                List<String> spectralDimColumn = loop.getColumnAsList("Spectral_dim_ID");
+                List<String> valColumn = loop.getColumnAsList("Val");
+                List<String> resonanceColumn = loop.getColumnAsList("Resonance_ID");
+                for (int i = 0, n = peakidColumn.size(); i < n; i++) {
+                    String value = null;
+                    int idNum = 0;
+                    if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
+                        idNum = NvUtil.toInt(value);
+                    } else {
+                        //throw new TclException("Invalid peak id value at row \""+i+"\"");
+                        continue;
+                    }
+                    int sDim = 0;
+                    long resonanceID = -1;
+                    if ((value = NvUtil.getColumnValue(spectralDimColumn, i)) != null) {
+                        sDim = NvUtil.toInt(value) - 1;
+                    } else {
+                        throw new ParseException("Invalid spectral dim value at row \"" + i + "\"");
+                    }
+                    if ((value = NvUtil.getColumnValue(valColumn, i)) != null) {
+                        NvUtil.toFloat(value);  // fixme shouldn't we use this
+                    }
+                    if ((value = NvUtil.getColumnValue(resonanceColumn, i)) != null) {
+                        resonanceID = NvUtil.toLong(value);
+                    }
+                    Peak peak = peakList.getPeakByID(idNum);
+                    PeakDim peakDim = peak.getPeakDim(sDim);
+                    Resonance res = resFactory.get(resonanceID);
+                    if (res == null) {
+                        resFactory.build(resonanceID);
+                    }
+                    peakDim.setResonance(resonanceID);
+                }
+            }
+        }
     }
 
     public void processChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
