@@ -57,10 +57,15 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.DatasetListener;
 import org.nmrfx.processor.datasets.peaks.Analyzer;
+import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
+import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.project.GUIStructureProject;
 import org.nmrfx.processor.utilities.WebConnect;
+import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
+import org.nmrfx.structure.chemistry.io.NMRStarReader;
+import org.nmrfx.structure.chemistry.io.NMRStarWriter;
 import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 
 public class MainApp extends Application implements DatasetListener {
@@ -261,6 +266,12 @@ public class MainApp extends Application implements DatasetListener {
         projectSaveMenuItem.setOnAction(e -> saveProject());
         Menu recentProjectMenuItem = new Menu("Open Recent");
 
+        MenuItem openSTARMenuItem = new MenuItem("Open STAR3...");
+        openSTARMenuItem.setOnAction(e -> readSTAR());
+
+        MenuItem saveSTARMenuItem = new MenuItem("Save STAR3...");
+        saveSTARMenuItem.setOnAction(e -> writeSTAR());
+
         List<Path> recentProjects = PreferencesController.getRecentProjects();
         for (Path path : recentProjects) {
             int count = path.getNameCount();
@@ -273,7 +284,7 @@ public class MainApp extends Application implements DatasetListener {
             recentProjectMenuItem.getItems().add(projectMenuItem);
         }
 
-        projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem);
+        projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem, openSTARMenuItem, saveSTARMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, loadPeakListMenuItem);
 
@@ -741,4 +752,34 @@ public class MainApp extends Application implements DatasetListener {
         analyzerController.load();
     }
 
+    @FXML
+    void readSTAR() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Read STAR3 File");
+        File starFile = chooser.showOpenDialog(null);
+        if (starFile != null) {
+            try {
+                NMRStarReader.read(starFile);
+            } catch (ParseException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+                return;
+            }
+        }
+    }
+
+    void writeSTAR() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Write STAR3 File");
+        File starFile = chooser.showSaveDialog(null);
+        if (starFile != null) {
+            try {
+                NMRStarWriter.writeAll(starFile);
+            } catch (IOException | ParseException | InvalidPeakException | InvalidMoleculeException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+                return;
+            }
+        }
+    }
 }
