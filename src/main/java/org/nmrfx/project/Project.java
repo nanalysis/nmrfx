@@ -40,7 +40,7 @@ public class Project {
 
     static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
     static final Predicate<String> INDEX_PREDICATE = INDEX_PATTERN.asPredicate();
-    static String[] SUB_DIR_TYPES = {"datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
+    static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     static final Map<String, Project> projects = new HashMap<>();
     static Project activeProject = null;
     Path projectDir = null;
@@ -133,26 +133,31 @@ public class Project {
     }
 
     public void loadProject(Path projectDir) throws IOException, IllegalStateException {
-        FileSystem fileSystem = FileSystems.getDefault();
 
         String[] subDirTypes = {"datasets", "peaks"};
-        if (projectDir != null) {
-            for (String subDir : subDirTypes) {
-                Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
-                if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
-                    switch (subDir) {
-                        case "datasets":
-                            loadDatasets(subDirectory);
-                            break;
-                        case "peaks":
-                            loadPeaks(subDirectory);
-                            break;
-                        default:
-                            throw new IllegalStateException("Invalid subdir type");
-                    }
-                }
+        for (String subDir : subDirTypes) {
+            loadProject(projectDir, subDir);
+        }
 
+    }
+
+    public void loadProject(Path projectDir, String subDir) throws IOException, IllegalStateException {
+        FileSystem fileSystem = FileSystems.getDefault();
+        if (projectDir != null) {
+            Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
+            if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
+                switch (subDir) {
+                    case "datasets":
+                        loadDatasets(subDirectory);
+                        break;
+                    case "peaks":
+                        loadPeaks(subDirectory);
+                        break;
+                    default:
+                        throw new IllegalStateException("Invalid subdir type");
+                }
             }
+
         }
         this.projectDir = projectDir;
     }
