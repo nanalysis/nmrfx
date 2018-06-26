@@ -28,6 +28,8 @@ import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
@@ -72,6 +74,12 @@ public class GUIStructureProject extends StructureProject {
             Logger.getLogger(GUIStructureProject.class.getName()).log(Level.SEVERE, null, ex);
         }
         writeIgnore();
+    }
+
+    public void close() {
+        clearAllMolecules();
+        MainApp.closeAll();
+
     }
 
     private void writeIgnore() {
@@ -216,8 +224,11 @@ public class GUIStructureProject extends StructureProject {
                     sorted(new Project.FileComparator()).
                     forEach(path -> {
                         String fileName = path.getFileName().toString();
+                        System.out.println(fileName);
                         Optional<Integer> fileNum = getIndex(fileName);
-                        interp.exec("nwyaml.loadYamlWin('" + path.toString() + "')");
+                        if (fileNum.isPresent()) {
+                            interp.exec("nwyaml.loadYamlWin('" + path.toString() + "'" + "," + String.valueOf(fileNum.get()) + ")");
+                        }
                     });
         }
     }
@@ -234,8 +245,12 @@ public class GUIStructureProject extends StructureProject {
         int i = 0;
         interp.exec("import nwyaml\\n");
 
-        for (Stage stage : stages) {
+        List<FXMLController> controllers = FXMLController.getControllers();
+
+        for (FXMLController controller : controllers) {
+            GUIScripter.setController(controller);
             String fileName = i + "_stage.yaml";
+            System.out.println(" file " + fileName);
             Path path = Paths.get(projectDir.toString(), "windows", fileName);
             interp.exec("nwyaml.dumpYamlWin('" + path.toString() + "')");
             i++;
