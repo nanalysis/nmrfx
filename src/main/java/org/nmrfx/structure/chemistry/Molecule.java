@@ -47,7 +47,7 @@ public class Molecule implements Serializable {
     public static List<Atom> atomList = null;
     public static final List<String> conditions = new ArrayList<>();
     public static Molecule activeMol = null;
-    public static final Map<String, List<SpatialSet>> sites = new HashMap<>();
+    public final Map<String, List<SpatialSet>> sites = new HashMap<>();
     public static final List<SpatialSet> globalSelected = new ArrayList<>(1024);
     private static final List<Bond> bselected = new ArrayList<>(1024);
     public static int selCycleCount = 0;
@@ -1495,7 +1495,7 @@ public class Molecule implements Serializable {
         globalSelected.remove(globalSelected.size() - 1);
     }
 
-    public static void makeSite(String siteName) throws IllegalArgumentException {
+    public void makeSite(String siteName) throws IllegalArgumentException {
         if ((siteName == null) || (siteName.trim().equals(""))) {
             throw new IllegalArgumentException("makeSite: null or blank siteName");
         }
@@ -1504,7 +1504,7 @@ public class Molecule implements Serializable {
         sites.put(siteName, siteList);
     }
 
-    public static int selectSite(String siteName)
+    public int selectSite(String siteName)
             throws IllegalArgumentException {
         if ((siteName == null) || (siteName.trim().equals(""))) {
             throw new IllegalArgumentException("selectSite: null or blank siteName");
@@ -1521,7 +1521,7 @@ public class Molecule implements Serializable {
         return nSelected;
     }
 
-    public static void withinSite(String siteName,
+    public void withinSite(String siteName,
             float tolerance) throws IllegalArgumentException {
         if ((siteName == null) || (siteName.trim().equals(""))) {
             throw new IllegalArgumentException("selectSite: null or blank siteName");
