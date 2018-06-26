@@ -13,13 +13,13 @@ class NMRFxWindowScripting:
             self.cmd = GUIScripter(winName)
 
     def getDAttrs(self):
-        activeController = FXMLController.getActiveController()
+        activeController = self.cmd.getController()
         chart=activeController.getActiveChart()
         dAttrs = chart.getDatasetAttributes()
         return dAttrs
 
     def getActiveChart(self):
-        activeController = FXMLController.getActiveController()
+        activeController = self.cmd.getController()
         chart=activeController.getActiveChart()
         return chart
 
