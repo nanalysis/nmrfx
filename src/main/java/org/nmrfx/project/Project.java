@@ -15,6 +15,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +46,7 @@ public class Project {
     static Project activeProject = null;
     Path projectDir = null;
     final String name;
+    public final Map<String, PeakList> peakLists = new HashMap<>();
 
     public Project(String name) {
         this.name = name;
@@ -283,6 +285,26 @@ public class Project {
             } catch (IOException | InvalidPeakException ioE) {
             }
         });
+    }
+
+    public Collection<PeakList> getPeakLists() {
+        return peakLists.values();
+    }
+
+    public PeakList getPeakList(String name) {
+        return peakLists.get(name);
+    }
+
+    public void putPeakList(PeakList peakList) {
+        peakLists.put(peakList.getName(), peakList);
+    }
+
+    public void clearAllPeakLists() {
+        peakLists.clear();
+    }
+
+    public void removePeakList(String name) {
+        peakLists.remove(name);
     }
 
 }
