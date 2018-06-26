@@ -1329,7 +1329,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         layoutControl.setManaged(true);
 
         controllers.add(this);
-        System.out.println("init ");
 //        l.layoutBoundsProperty().addListener(e -> boundsUpdated(l));
 //        l2.layoutBoundsProperty().addListener(e -> boundsUpdated(l2));
         statusBar.setMode(0);
