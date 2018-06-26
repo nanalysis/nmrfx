@@ -49,7 +49,7 @@ public class Molecule implements Serializable {
     public static Molecule activeMol = null;
     public final Map<String, List<SpatialSet>> sites = new HashMap<>();
     public static final List<SpatialSet> globalSelected = new ArrayList<>(1024);
-    private static final List<Bond> bselected = new ArrayList<>(1024);
+    private final List<Bond> bselected = new ArrayList<>(1024);
     public static int selCycleCount = 0;
     public static final int ENERGY = 0;
     public static final int SQ_SCORE = 1;
@@ -308,7 +308,6 @@ public class Molecule implements Serializable {
         StructureProject.getActive().clearAllMolecules();
 
         globalSelected.clear();
-        bselected.clear();
         conditions.clear();
         activeMol = null;
     }
@@ -1446,22 +1445,22 @@ public class Molecule implements Serializable {
         }
     }
 
-    public static int selectBonds(String mode) {
+    public int selectBonds(String mode) {
         List<Bond> selected = matchBonds();
         int i;
         Bond bond;
 
-        for (i = 0; i < Molecule.bselected.size(); i++) {
-            bond = Molecule.bselected.get(i);
+        for (i = 0; i < bselected.size(); i++) {
+            bond = bselected.get(i);
             bond.unsetProperty(Atom.SELECT);
         }
 
-        Molecule.bselected.clear();
+        bselected.clear();
 
         for (i = 0; i < selected.size(); i++) {
             bond = selected.get(i);
             bond.setProperty(Atom.SELECT);
-            Molecule.bselected.add(bond);
+            bselected.add(bond);
         }
 
         return selected.size();
@@ -1650,7 +1649,7 @@ public class Molecule implements Serializable {
         }
     }
 
-    public static void colorBonds(float red, float green,
+    public void colorBonds(float red, float green,
             float blue) {
         Bond bond;
 
@@ -1671,10 +1670,10 @@ public class Molecule implements Serializable {
         }
     }
 
-    public static void radiusBonds(float radius) {
+    public void radiusBonds(float radius) {
         Bond bond;
 
-        for (int i = 0; i < globalSelected.size(); i++) {
+        for (int i = 0; i < bselected.size(); i++) {
             bond = bselected.get(i);
             bond.radius = radius;
         }
