@@ -16,7 +16,6 @@ def dumpYamlWin(yamlFile):
         nw.active(iSpectrum)
         sd = {}
         spectra.append(sd)
-        sd['name'] = "duck"
         iRow = iSpectrum / cols
         iCol = iSpectrum % cols
         sd['grid'] = [iRow, iCol]
@@ -41,10 +40,12 @@ def dumpYamlWin(yamlFile):
     with open(yamlFile,'w') as fOut:
         fOut.write(yamlDump)
 
-def loadYamlWin(yamlFile):
+def loadYamlWin(yamlFile, createNewStage=True):
     with open(yamlFile) as fIn:
         inputData = fIn.read()
     yaml = Yaml()
+    if createNewStage > 0:
+        nw.new()
     data = yaml.load(inputData)
     if 'geometry' in data:
         (x,y,w,h) = data['geometry']
