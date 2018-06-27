@@ -152,6 +152,14 @@ public class PeakList {
         listNum = peakListTable.size();
     }
 
+    /**
+     * Copies an existing peak list.
+     * @param name a string with the name of an existing peak list.
+     * @param allLinks a boolean specifying whether or not to link peak dimensions.
+     * @param merge a boolean specifying whether or not to merge peak labels.
+     * @return a list that is a copy of the peak list with the input name.
+     * @throws IllegalArgumentException if a peak with the input name doesn't exist.
+     */
     public PeakList copy(final String name, final boolean allLinks, boolean merge) {
         PeakList newPeakList;
         if (merge) {
@@ -215,6 +223,10 @@ public class PeakList {
         return newPeakList;
     }
 
+    /**
+     *
+     * @return a peak list object.
+     */
     public List<Peak> peaks() {
         return peaks;
     }
@@ -223,20 +235,36 @@ public class PeakList {
         return peakListTable.values().iterator();
     }
 
+    /**
+     *
+     * @return the ID number of the peak list.
+     */
     public int getId() {
         return listNum;
     }
 
+    /**
+     *
+     * @return the name of the peak list.
+     */
     public String getName() {
         return listName;
     }
 
+    /**
+     * Rename the peak list.
+     * @param newName
+     */
     public void setName(String newName) {
         peakListTable.remove(listName);
         listName = newName;
         peakListTable.put(newName, this);
     }
 
+    /**
+     *
+     * @return the number of dimensions of the peak list.
+     */
     public int getNDim() {
         return nDim;
     }
@@ -699,10 +727,18 @@ public class PeakList {
         return (result.toString());
     }
 
-    public List<Peak> findPeaks(double[] ppm)
+    /**
+     * Search peak list for peaks that match the specified chemical shifts.
+     * Before using, a search template needs to be set up.
+     * @param ppms An array of chemical shifts to search
+     * @return A list of matching peaks
+     * @throws IllegalArgumentException thrown if ppm length not equal to search template length 
+     * or if peak labels don't match search template
+     */
+    public List<Peak> findPeaks(double[] ppms)
             throws IllegalArgumentException {
-        if (ppm.length != searchDims.size()) {
-            throw new IllegalArgumentException("Search dimensions (" + ppm.length
+        if (ppms.length != searchDims.size()) {
+            throw new IllegalArgumentException("Search dimensions (" + ppms.length
                     + ") don't match template dimensions (" + searchDims.size() + ")");
         }
 
@@ -725,8 +761,8 @@ public class PeakList {
                 break;
             }
             double tol = sDim.tol;
-            limits[i][1] = ppm[i] - tol;
-            limits[i][0] = ppm[i] + tol;
+            limits[i][1] = ppms[i] - tol;
+            limits[i][0] = ppms[i] + tol;
             i++;
         }
 
@@ -737,7 +773,8 @@ public class PeakList {
         return (locatePeaks(limits, searchDim));
     }
 
-    public void sortPeaks(int dim, boolean ascending) {
+    public void sortPeaks(int dim, boolean ascending) throws IllegalArgumentException {
+//        checkDim(dim);
         sortPeaks(peaks, dim, ascending);
         reIndex();
     }
@@ -793,6 +830,15 @@ public class PeakList {
         }
     }
 
+    /**
+     * Locate what peaks are contained within certain limits.
+     * 
+     * @param limits A multidimensional array of chemical plot limits to search.
+     * @param dim An array of which peak list dim corresponds to dim in the limit array.
+     * @param foldLimits An optional multidimensional array of plot limits where folded peaks should appear.
+     * Can be null.
+     * @return A list of matching peaks
+     */
     public List<Peak> locatePeaks(double[][] limits, int[] dim, double[][] foldLimits) {
         List<PeakDistance> foundPeaks = new ArrayList<>();
 //        final Vector peakDistance = new Vector();

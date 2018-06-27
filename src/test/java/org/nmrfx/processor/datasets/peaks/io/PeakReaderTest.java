@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 
 public class PeakReaderTest {
+
     String peakListName = "src/test/resources/test.xpk";
     PeakList peakList1 = null;
 
@@ -77,5 +78,61 @@ public class PeakReaderTest {
         for (int i = 0; i < ppms.length; i++) {
             Assert.assertEquals(ppms[i], (double) peakList.getPeak(0).getPeakDim(i).getChemShiftValue(), 1.0e-5);
         }
+    }
+
+    @Test
+    public void testXPKReaderDimLabel() {
+        PeakList peakList = getPeakList();
+        //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
+
+        String[] dimlabels = {"31.H", "31.N"};
+        Assert.assertNotNull(peakList);
+        for (int i = 0; i < dimlabels.length; i++) {
+            Assert.assertEquals(dimlabels[i], peakList.getPeak(0).getPeakDim(i).getLabel());
+        }
+    }
+
+    @Test
+    public void testXPKReaderWidth() {
+        PeakList peakList = getPeakList();
+        //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
+
+        double[] widths = {0.030457228, 0.3105101};
+        Assert.assertNotNull(peakList);
+        for (int i = 0; i < widths.length; i++) {
+            Assert.assertEquals(widths[i], (double) peakList.getPeak(0).getPeakDim(i).getLineWidth(), 1.0e-5);
+        }
+    }
+    
+    @Test
+    public void testXPKReaderBoxWidth() {
+        PeakList peakList = getPeakList();
+        //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
+
+        double[] bwidths = {0.028026449, 0.28385773};
+        Assert.assertNotNull(peakList);
+        for (int i = 0; i < bwidths.length; i++) {
+            Assert.assertEquals(bwidths[i], (double) peakList.getPeak(0).getPeakDim(i).getBounds(), 1.0e-5);
+        }
+    }
+    
+    @Test
+    public void testXPKReaderVolume() {
+        PeakList peakList = getPeakList();
+        //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
+
+        double vol = 0.0;
+        Assert.assertNotNull(peakList);
+        Assert.assertEquals(vol, (double) peakList.getPeak(0).getVolume1(), 1.0e-5);
+    }
+    
+    @Test
+    public void testXPKReaderIntensity() {
+        PeakList peakList = getPeakList();
+        //0 {} 8.784855 0.030457228 0.028026449 {} 129.01712 0.3105101 0.28385773 0.0 0.6005752
+
+        double inten = 0.6005752;
+        Assert.assertNotNull(peakList);
+        Assert.assertEquals(inten, (double) peakList.getPeak(0).getIntensity(), 1.0e-5);
     }
 }
