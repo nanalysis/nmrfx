@@ -292,9 +292,11 @@ public class PeakListAttributes implements PeakListener {
         return multipletsInRegion.get();
     }
 
-    public void clearSelectedPeaks() {
+    public boolean clearSelectedPeaks() {
+        boolean hadPeaks = !selectedPeaks.isEmpty() || !selectedMultiplets.isEmpty();
         selectedPeaks.clear();
         selectedMultiplets.clear();
+        return hadPeaks;
     }
 
     public Set<Peak> getSelectedPeaks() {
