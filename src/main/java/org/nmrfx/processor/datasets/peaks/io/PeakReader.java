@@ -142,6 +142,8 @@ public class PeakReader {
                                 peakList.setProperty(propName, propValue);
                             }
                         }
+                    } else {
+                        throw new IOException("Reading .xpk2 file: no ndim field.");
                     }
                 } else {
                     if (!gotHeader) {
