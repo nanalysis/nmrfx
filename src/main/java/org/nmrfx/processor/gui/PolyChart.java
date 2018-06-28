@@ -566,7 +566,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                 selPeaks.addAll(peaks);
             }
             if (controller == FXMLController.activeController) {
-                controller.selPeaks.set(getSelectedPeaks());
+                List<Peak> allSelPeaks = new ArrayList<>();
+                for (PolyChart chart : controller.charts) {
+                    allSelPeaks.addAll(chart.getSelectedPeaks());
+                }
+                controller.selPeaks.set(allSelPeaks);
             }
 
         }
@@ -2058,6 +2062,22 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     }
 
     public void selectPeaks(double pickX, double pickY, boolean append) {
+        if (!append) {
+            for (PolyChart chart : charts) {
+                if (chart != this) {
+                    boolean hadPeaks = false;
+                    for (PeakListAttributes peakListAttr : (List<PeakListAttributes>) chart.getPeakListAttributes()) {
+                        if (peakListAttr.clearSelectedPeaks()) {
+                            hadPeaks = true;
+                        }
+                    }
+                    if (hadPeaks) {
+                        chart.drawPeakLists(false);
+                    }
+                }
+            }
+        }
+
         List<Peak> selPeaks = new ArrayList<>();
         drawPeakLists(false);
         if (peakStatus.get()) {
@@ -2073,7 +2093,11 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             }
         }
         if (controller == FXMLController.activeController) {
-            controller.selPeaks.set(getSelectedPeaks());
+            List<Peak> allSelPeaks = new ArrayList<>();
+            for (PolyChart chart : controller.charts) {
+                allSelPeaks.addAll(chart.getSelectedPeaks());
+            }
+            controller.selPeaks.set(allSelPeaks);
         }
     }
 
