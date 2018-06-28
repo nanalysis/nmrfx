@@ -47,6 +47,7 @@ public class PeakSlider {
     Button thawButton;
     Button tweakFreezeButton;
     Button linkButton;
+    Button unlinkButton;
     Label atomXFieldLabel;
     Label atomYFieldLabel;
     Label intensityFieldLabel;
@@ -98,6 +99,10 @@ public class PeakSlider {
         linkButton = GlyphsDude.createIconButton(FontAwesomeIcon.CHAIN, "Link", iconSize, fontSize, ContentDisplay.TOP);
         linkButton.setOnAction(e -> linkDims());
         buttons.add(linkButton);
+
+        unlinkButton = GlyphsDude.createIconButton(FontAwesomeIcon.CHAIN_BROKEN, "UnLink", iconSize, fontSize, ContentDisplay.TOP);
+        unlinkButton.setOnAction(e -> unlinkDims());
+        buttons.add(unlinkButton);
 
         buttons.forEach((button) -> {
             button.getStyleClass().add("toolButton");
@@ -336,9 +341,23 @@ public class PeakSlider {
         });
     }
 
+    public void unlinkDims() {
+        if (selPeaks.size() == 1) {
+            PeakDim peakDim00 = selPeaks.get(0).getPeakDim(0);
+            PeakDim peakDim10 = selPeaks.get(0).getPeakDim(1);
+            peakDim00.unLink();
+            peakDim00.setFrozen(false);
+            peakDim10.unLink();
+            peakDim10.setFrozen(false);
+        }
+    }
+
     public void linkDims() {
+        System.out.println("link dims " + selPeaks.size());
         if (selPeaks.size() == 2) {
             // figure out which dimension to link
+            System.out.println(selPeaks.get(0).getName());
+            System.out.println(selPeaks.get(1).getName());
             PeakDim peakDim00 = selPeaks.get(0).getPeakDim(0);
             PeakDim peakDim01 = selPeaks.get(1).getPeakDim(0);
             PeakDim peakDim10 = selPeaks.get(0).getPeakDim(1);
@@ -380,12 +399,12 @@ public class PeakSlider {
                 PeakList.linkPeakDims(peakDim1, peakDim0);
                 peakDim1.setChemShift(peakDim1.getChemShift());
                 peakDim1.setFrozen(peakDim1.isFrozen());
-
             }
         }
     }
 
     public void setActivePeaks(List<Peak> peaks) {
+        System.out.println("set active " + peaks.size());
         selPeaks = peaks;
         if ((peaks == null) || peaks.isEmpty()) {
             atomXLabel.setText("");
@@ -395,6 +414,7 @@ public class PeakSlider {
             thawButton.setDisable(true);
             tweakFreezeButton.setDisable(true);
             linkButton.setDisable(true);
+            unlinkButton.setDisable(false);
         } else {
             // fixme axes could be swapped
             Peak peak = peaks.get(peaks.size() - 1);
@@ -408,6 +428,9 @@ public class PeakSlider {
             tweakFreezeButton.setDisable(false);
             if (peaks.size() == 2) {
                 linkButton.setDisable(false);
+            }
+            if (peaks.size() == 1) {
+                unlinkButton.setDisable(false);
             }
 
         }
