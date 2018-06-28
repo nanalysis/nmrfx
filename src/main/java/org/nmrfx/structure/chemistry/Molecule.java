@@ -48,7 +48,7 @@ public class Molecule implements Serializable {
     public static final List<String> conditions = new ArrayList<>();
     public static Molecule activeMol = null;
     public final Map<String, List<SpatialSet>> sites = new HashMap<>();
-    public static final List<SpatialSet> globalSelected = new ArrayList<>(1024);
+    public final List<SpatialSet> globalSelected = new ArrayList<>(1024);
     private final List<Bond> bselected = new ArrayList<>(1024);
     public static int selCycleCount = 0;
     public static final int ENERGY = 0;
@@ -206,7 +206,6 @@ public class Molecule implements Serializable {
     int genVecs[][] = null;
     EnergyCoords eCoords = new EnergyCoords();
     Dihedral dihedrals = null;
-    String dotBracket = "";
 
 // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
@@ -307,7 +306,6 @@ public class Molecule implements Serializable {
         }
         StructureProject.getActive().clearAllMolecules();
 
-        globalSelected.clear();
         conditions.clear();
         activeMol = null;
     }
@@ -482,11 +480,13 @@ public class Molecule implements Serializable {
     }
 
     public String getDotBracket() {
+        String dotBracket = getProperty("vienna");
+        dotBracket = dotBracket == null ? "" : dotBracket;
         return dotBracket;
     }
 
     public void setDotBracket(String value) {
-        dotBracket = value;
+        setProperty("vienna", value);
     }
 
     public static Point3 avgCoords(MolFilter molFilter1) throws IllegalArgumentException, InvalidMoleculeException {
@@ -1315,12 +1315,12 @@ public class Molecule implements Serializable {
         return maxCount;
     }
 
-    public static int selectResidues() {
+    public int selectResidues() {
         List<SpatialSet> selected = new ArrayList<>(256);
         TreeSet completedResidues = new TreeSet();
 
-        for (int i = 0; i < Molecule.globalSelected.size(); i++) {
-            SpatialSet spatialSet = Molecule.globalSelected.get(i);
+        for (int i = 0; i < globalSelected.size(); i++) {
+            SpatialSet spatialSet = globalSelected.get(i);
 
             if (spatialSet.selected != 1) {
                 continue;
@@ -1348,25 +1348,25 @@ public class Molecule implements Serializable {
         return nSelected;
     }
 
-    public static int selectAtoms(String selectionString) throws InvalidMoleculeException {
+    public int selectAtoms(String selectionString) throws InvalidMoleculeException {
         return selectAtoms(selectionString, false, false);
     }
 
-    public static int selectAtoms(String selectionString, boolean append, boolean inverse) throws InvalidMoleculeException {
+    public int selectAtoms(String selectionString, boolean append, boolean inverse) throws InvalidMoleculeException {
         MolFilter molFilter = new MolFilter(selectionString);
         List<SpatialSet> selected = matchAtoms(molFilter);
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
     }
 
-    public static int selectAtoms(MolFilter molFilter,
+    public int selectAtoms(MolFilter molFilter,
             boolean append, boolean inverse) throws InvalidMoleculeException {
         List<SpatialSet> selected = matchAtoms(molFilter);
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
     }
 
-    public static void clearSelected() {
+    public void clearSelected() {
         for (SpatialSet spatialSet : globalSelected) {
             if (spatialSet != null) {
                 spatialSet.setSelected(0);
@@ -1375,7 +1375,7 @@ public class Molecule implements Serializable {
         globalSelected.clear();
     }
 
-    public static int setSelected(List<SpatialSet> selected,
+    public int setSelected(List<SpatialSet> selected,
             boolean append, boolean inverse) {
         int i;
         int j;
@@ -1383,8 +1383,8 @@ public class Molecule implements Serializable {
         SpatialSet spatialSet = null;
 
         if (!append) {
-            for (i = 0; i < Molecule.globalSelected.size(); i++) {
-                spatialSet = Molecule.globalSelected.get(i);
+            for (i = 0; i < globalSelected.size(); i++) {
+                spatialSet = globalSelected.get(i);
 
                 if (spatialSet != null) {
                     spatialSet.setSelected(0);
@@ -1393,7 +1393,7 @@ public class Molecule implements Serializable {
         }
 
         if (selected == null) {
-            Molecule.globalSelected.clear();
+            globalSelected.clear();
 
             return 0;
         }
@@ -1412,36 +1412,36 @@ public class Molecule implements Serializable {
                 spatialSet.setSelected(0);
             }
 
-            Molecule.globalSelected.clear();
+            globalSelected.clear();
 
             for (i = 0; i < Molecule.atomList.size(); i++) {
                 atom = Molecule.atomList.get(i);
                 spatialSet = atom.spatialSet;
                 if (spatialSet.getSelected() > 0) {
-                    Molecule.globalSelected.add(spatialSet);
+                    globalSelected.add(spatialSet);
                 }
             }
 
-            return (Molecule.globalSelected.size());
+            return (globalSelected.size());
         } else {
             if (append) {
-                j = Molecule.globalSelected.size();
+                j = globalSelected.size();
             } else {
                 j = 0;
             }
 
-            Molecule.globalSelected.clear();
+            globalSelected.clear();
 
             for (i = 0; i < selected.size(); i++) {
                 spatialSet = (SpatialSet) selected.get(i);
 
                 if (spatialSet != null) {
                     spatialSet.setSelected(spatialSet.getSelected() + 1);
-                    Molecule.globalSelected.add(spatialSet);
+                    globalSelected.add(spatialSet);
                 }
             }
 
-            return Molecule.globalSelected.size();
+            return globalSelected.size();
         }
     }
 
@@ -1466,7 +1466,7 @@ public class Molecule implements Serializable {
         return selected.size();
     }
 
-    public static ArrayList<String> listAtoms() {
+    public ArrayList<String> listAtoms() {
         int i;
         SpatialSet spatialSet;
         ArrayList<String> list = new ArrayList<>();
@@ -1478,7 +1478,7 @@ public class Molecule implements Serializable {
         return list;
     }
 
-    public static void unSelectLastAtom() {
+    public void unSelectLastAtom() {
         SpatialSet spatialSet;
 
         if (globalSelected.size() == 0) {
@@ -1592,7 +1592,7 @@ public class Molecule implements Serializable {
         return list;
     }
 
-    public static void setAtomProperty(int property, boolean state) {
+    public void setAtomProperty(int property, boolean state) {
         SpatialSet spatialSet;
 
         for (int i = 0; i < globalSelected.size(); i++) {
@@ -1630,7 +1630,7 @@ public class Molecule implements Serializable {
         return propertyMap.get(propName);
     }
 
-    public static void colorAtoms(float red, float green,
+    public void colorAtoms(float red, float green,
             float blue) {
         Atom atom;
 
@@ -1640,7 +1640,7 @@ public class Molecule implements Serializable {
         }
     }
 
-    public static void colorAtomsByType() {
+    public void colorAtomsByType() {
         Atom atom;
 
         for (int i = 0; i < globalSelected.size(); i++) {
@@ -1661,7 +1661,7 @@ public class Molecule implements Serializable {
         }
     }
 
-    public static void radiusAtoms(float radius) {
+    public void radiusAtoms(float radius) {
         Atom atom;
 
         for (int i = 0; i < globalSelected.size(); i++) {
