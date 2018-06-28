@@ -353,11 +353,8 @@ public class PeakSlider {
     }
 
     public void linkDims() {
-        System.out.println("link dims " + selPeaks.size());
         if (selPeaks.size() == 2) {
             // figure out which dimension to link
-            System.out.println(selPeaks.get(0).getName());
-            System.out.println(selPeaks.get(1).getName());
             PeakDim peakDim00 = selPeaks.get(0).getPeakDim(0);
             PeakDim peakDim01 = selPeaks.get(1).getPeakDim(0);
             PeakDim peakDim10 = selPeaks.get(0).getPeakDim(1);
@@ -404,7 +401,6 @@ public class PeakSlider {
     }
 
     public void setActivePeaks(List<Peak> peaks) {
-        System.out.println("set active " + peaks.size());
         selPeaks = peaks;
         if ((peaks == null) || peaks.isEmpty()) {
             atomXLabel.setText("");

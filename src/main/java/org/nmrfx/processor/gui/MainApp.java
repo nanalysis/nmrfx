@@ -70,7 +70,7 @@ import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 
 public class MainApp extends Application implements DatasetListener {
 
-    public static ArrayList<Stage> stages = new ArrayList<>();
+    public final static ArrayList<Stage> stages = new ArrayList<>();
     public static PreferencesController preferencesController;
     public static DocWindowController docWindowController;
     public static DatasetsController datasetController;
@@ -119,6 +119,15 @@ public class MainApp extends Application implements DatasetListener {
 
     public static List<Stage> getStages() {
         return stages;
+    }
+
+    public static void closeAll() {
+        Stage mainStage = getMainStage();
+        for (Stage stage : stages) {
+            if (stage != mainStage) {
+                stage.close();
+            }
+        }
     }
 
     @Override
@@ -266,6 +275,9 @@ public class MainApp extends Application implements DatasetListener {
         projectSaveMenuItem.setOnAction(e -> saveProject());
         Menu recentProjectMenuItem = new Menu("Open Recent");
 
+        MenuItem closeProjectMenuItem = new MenuItem("Close");
+        closeProjectMenuItem.setOnAction(e -> closeProject());
+
         MenuItem openSTARMenuItem = new MenuItem("Open STAR3...");
         openSTARMenuItem.setOnAction(e -> readSTAR());
 
@@ -284,7 +296,7 @@ public class MainApp extends Application implements DatasetListener {
             recentProjectMenuItem.getItems().add(projectMenuItem);
         }
 
-        projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem, openSTARMenuItem, saveSTARMenuItem);
+        projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, openSTARMenuItem, saveSTARMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, loadPeakListMenuItem);
 
@@ -740,8 +752,12 @@ public class MainApp extends Application implements DatasetListener {
     }
 
     public void rnaPicker() {
-        peakAtomPicker = new PeakAtomPicker();
-        peakAtomPicker.create();
+        if (peakAtomPicker == null) {
+            peakAtomPicker = new PeakAtomPicker();
+            peakAtomPicker.create();
+        } else {
+            peakAtomPicker.show(300, 300);
+        }
     }
 
     @FXML
@@ -750,6 +766,10 @@ public class MainApp extends Application implements DatasetListener {
             analyzerController = new AnalyzerController();
         }
         analyzerController.load();
+    }
+
+    void closeProject() {
+        getActive().close();
     }
 
     @FXML
