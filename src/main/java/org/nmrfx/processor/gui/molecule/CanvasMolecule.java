@@ -459,7 +459,7 @@ public class CanvasMolecule implements CanvasAnnotation {
             return;
         }
 
-        molPrims.nSelected = Molecule.globalSelected.size();
+        molPrims.nSelected = molecule.globalSelected.size();
 
         int n = molPrims.nSelected;
 

@@ -224,7 +224,6 @@ public class GUIStructureProject extends StructureProject {
                     sorted(new Project.FileComparator()).
                     forEach(path -> {
                         String fileName = path.getFileName().toString();
-                        System.out.println(fileName);
                         Optional<Integer> fileNum = getIndex(fileName);
                         if (fileNum.isPresent()) {
                             interp.exec("nwyaml.loadYamlWin('" + path.toString() + "'" + "," + String.valueOf(fileNum.get()) + ")");
@@ -250,7 +249,6 @@ public class GUIStructureProject extends StructureProject {
         for (FXMLController controller : controllers) {
             GUIScripter.setController(controller);
             String fileName = i + "_stage.yaml";
-            System.out.println(" file " + fileName);
             Path path = Paths.get(projectDir.toString(), "windows", fileName);
             interp.exec("nwyaml.dumpYamlWin('" + path.toString() + "')");
             i++;

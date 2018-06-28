@@ -336,9 +336,9 @@ public class MolSceneController implements Initializable, MolSelectionListener {
         if (molecule == null) {
             return;
         }
-        Molecule.selectAtoms("*:*.*");
-        Molecule.setAtomProperty(Atom.DISPLAY, false);
-        Molecule.selectBonds("atoms");
+        molecule.selectAtoms("*:*.*");
+        molecule.setAtomProperty(Atom.DISPLAY, false);
+        molecule.selectBonds("atoms");
         molecule.setBondProperty(Bond.DISPLAY, false);
     }
 
@@ -350,12 +350,12 @@ public class MolSceneController implements Initializable, MolSelectionListener {
         hideAll();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isRNA()) {
-                Molecule.selectAtoms(polymer.getName() + ":*.P,O5',C5',C4',C3',O3'");
+                molecule.selectAtoms(polymer.getName() + ":*.P,O5',C5',C4',C3',O3'");
             } else {
-                Molecule.selectAtoms(polymer.getName() + ":*.CA,C,N");
+                molecule.selectAtoms(polymer.getName() + ":*.CA,C,N");
             }
-            Molecule.setAtomProperty(Atom.DISPLAY, true);
-            Molecule.selectBonds("atoms");
+            molecule.setAtomProperty(Atom.DISPLAY, true);
+            molecule.selectBonds("atoms");
             molecule.setBondProperty(Bond.DISPLAY, true);
         }
     }
@@ -367,9 +367,9 @@ public class MolSceneController implements Initializable, MolSelectionListener {
         }
         hideAll();
         for (Compound ligand : molecule.getLigands()) {
-            Molecule.selectAtoms(ligand.getName() + ":*.*'");
-            Molecule.setAtomProperty(Atom.DISPLAY, true);
-            Molecule.selectBonds("atoms");
+            molecule.selectAtoms(ligand.getName() + ":*.*'");
+            molecule.setAtomProperty(Atom.DISPLAY, true);
+            molecule.selectBonds("atoms");
             molecule.setBondProperty(Bond.DISPLAY, true);
         }
     }
@@ -380,9 +380,9 @@ public class MolSceneController implements Initializable, MolSelectionListener {
             return;
         }
         hideAll();
-        Molecule.selectAtoms("*:*.H*", false, true);
-        Molecule.setAtomProperty(Atom.DISPLAY, true);
-        Molecule.selectBonds("atoms");
+        molecule.selectAtoms("*:*.H*", false, true);
+        molecule.setAtomProperty(Atom.DISPLAY, true);
+        molecule.selectBonds("atoms");
         molecule.setBondProperty(Bond.DISPLAY, true);
 
     }
@@ -393,9 +393,9 @@ public class MolSceneController implements Initializable, MolSelectionListener {
             return;
         }
         hideAll();
-        Molecule.selectAtoms("*:*.*");
-        Molecule.setAtomProperty(Atom.DISPLAY, true);
-        Molecule.selectBonds("atoms");
+        molecule.selectAtoms("*:*.*");
+        molecule.setAtomProperty(Atom.DISPLAY, true);
+        molecule.selectBonds("atoms");
         molecule.setBondProperty(Bond.DISPLAY, true);
     }
 
@@ -444,16 +444,17 @@ public class MolSceneController implements Initializable, MolSelectionListener {
 
     @Override
     public void processSelection(String nodeDescriptor, MouseEvent event) {
+        Molecule molecule = Molecule.getActive();
         String[] fields = nodeDescriptor.split(" ");
         if (fields.length > 0) {
             if (fields[0].equals("atom") && (fields.length > 1)) {
                 try {
-                    Molecule.selectAtoms(fields[1]);
+                    molecule.selectAtoms(fields[1]);
                 } catch (InvalidMoleculeException ex) {
                     Logger.getLogger(MolSceneController.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else if (fields[0].equals("clear")) {
-                Molecule.clearSelected();
+                molecule.clearSelected();
 
             }
         }

@@ -343,11 +343,11 @@ public class MolViewer extends Pane {
         if (molecule == null) {
             return;
         }
-        Molecule.selectAtoms("*:*.*");
-        Molecule.setAtomProperty(Atom.DISPLAY, true);
-        Molecule.selectBonds("atoms");
+        molecule.selectAtoms("*:*.*");
+        molecule.setAtomProperty(Atom.DISPLAY, true);
+        molecule.selectBonds("atoms");
         molecule.setBondProperty(Bond.DISPLAY, true);
-        Molecule.colorAtomsByType();
+        molecule.colorAtomsByType();
 
         molGroup.getChildren().clear();
         if (type.equals("spheres")) {
@@ -404,7 +404,7 @@ public class MolViewer extends Pane {
         if (molecule == null) {
             return;
         }
-        Molecule.colorAtomsByType();
+        molecule.colorAtomsByType();
 
         molecule.updateBondArray();
         molecule.updateAtomArray();
@@ -422,7 +422,7 @@ public class MolViewer extends Pane {
         if (molecule == null) {
             return;
         }
-        Molecule.colorAtomsByType();
+        molecule.colorAtomsByType();
 
         molecule.updateBondArray();
         molecule.updateAtomArray();
@@ -445,14 +445,14 @@ public class MolViewer extends Pane {
             return;
         }
         for (Polymer polymer : mol.getPolymers()) {
-            Molecule.selectAtoms("*:*.*");
-            Molecule.setAtomProperty(Atom.DISPLAY, false);
+            mol.selectAtoms("*:*.*");
+            mol.setAtomProperty(Atom.DISPLAY, false);
             if (polymer.isRNA()) {
-                Molecule.selectAtoms(polymer.getName() + ":*.P,OP1");
+                mol.selectAtoms(polymer.getName() + ":*.P,OP1");
             } else {
-                Molecule.selectAtoms(polymer.getName() + ":*.CA,C");
+                mol.selectAtoms(polymer.getName() + ":*.CA,C");
             }
-            Molecule.setAtomProperty(Atom.DISPLAY, true);
+            mol.setAtomProperty(Atom.DISPLAY, true);
             mol.updateAtomArray();
             MolPrimitives mP = new MolPrimitives(mol, iStructure);
 

@@ -5,7 +5,6 @@ import javafx.scene.paint.Color;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
 import org.nmrfx.structure.chemistry.Molecule;
-import static org.nmrfx.structure.chemistry.Molecule.globalSelected;
 import org.nmrfx.structure.chemistry.Point3;
 import org.nmrfx.structure.chemistry.SpatialSet;
 
@@ -54,16 +53,16 @@ public class MolCoords {
         return i;
     }
 
-    public static int createSelectionArray(ArrayList<Atom> atoms, int iStructure, float[] coords, int[] levels) {
+    public static int createSelectionArray(Molecule molecule, ArrayList<Atom> atoms, int iStructure, float[] coords, int[] levels) {
         int i;
         int j;
 
-        int n = globalSelected.size();
+        int n = molecule.globalSelected.size();
         j = 0;
         i = 0;
 
         for (int k = 0; k < n; k++) {
-            SpatialSet spatialSet1 = (SpatialSet) globalSelected.get(k);
+            SpatialSet spatialSet1 = (SpatialSet) molecule.globalSelected.get(k);
 
             int selected = spatialSet1.getSelected();
 
@@ -72,7 +71,7 @@ public class MolCoords {
                 SpatialSet spatialSet2 = null;
                 if (ptB != null) {
                     if ((k + 1) < n) {
-                        spatialSet2 = (SpatialSet) globalSelected.get(k
+                        spatialSet2 = (SpatialSet) molecule.globalSelected.get(k
                                 + 1);
                     }
 
