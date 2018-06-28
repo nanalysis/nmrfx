@@ -639,11 +639,14 @@ public class NMRStarReader {
     }
 
     public void linkResonances() {
+        ResonanceFactory resFactory = PeakDim.resFactory;
         for (Long resID : resMap.keySet()) {
             List<PeakDim> peakDims = resMap.get(resID);
             PeakDim firstPeakDim = peakDims.get(0);
+            Resonance resonance = resFactory.build(resID);
+            firstPeakDim.setResonance(resonance);
+            resonance.add(firstPeakDim);
             if (peakDims.size() > 1) {
-
                 for (PeakDim peakDim : peakDims) {
                     if (peakDim != firstPeakDim) {
                         PeakList.linkPeakDims(firstPeakDim, peakDim);
@@ -657,11 +660,13 @@ public class NMRStarReader {
         ResonanceFactory resFactory = PeakDim.resFactory;
         String listName = saveframe.getValue("_Spectral_peak_list", "Sf_framecode");
         String sampleLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_label");
-        String sampleConditionLabel = saveframe.getLabelValue("_Spectral_peak_list", "Sample_condition_list_label");
+        String sampleConditionLabel = saveframe.getOptionalValue("_Spectral_peak_list", "Sample_condition_list_label");
         String datasetName = saveframe.getLabelValue("_Spectral_peak_list", "Experiment_name");
         String nDimString = saveframe.getValue("_Spectral_peak_list", "Number_of_spectral_dimensions");
         String dataFormat = saveframe.getOptionalValue("_Spectral_peak_list", "Text_data_format");
         String details = saveframe.getOptionalValue("_Spectral_peak_list", "Details");
+        String slidable = saveframe.getOptionalValue("_Spectral_peak_list", "Slidable");
+
         if (dataFormat.equals("text")) {
             System.out.println("Aaaack, peak list is in text format, skipping list");
             System.out.println(details);
@@ -686,6 +691,7 @@ public class NMRStarReader {
         peakList.setSampleConditionLabel(sampleConditionLabel);
         peakList.setDatasetName(datasetName);
         peakList.setDetails(details);
+        peakList.setSlideable(slidable.equals("yes"));
 
         for (int i = 0; i < nSpectralDim; i++) {
             SpectralDim sDim = peakList.getSpectralDim(i);
