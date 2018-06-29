@@ -17,8 +17,10 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import org.nmrfx.processor.gui.undo.UndoRedo;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.scene.Cursor;
@@ -37,9 +39,20 @@ public class KeyBindings {
 
     KeyMonitor keyMonitor = new KeyMonitor();
     PolyChart chart;
+    Map<String, Consumer> keyActionMap = new HashMap<>();
+    static Map<String, Consumer> globalKeyActionMap = new HashMap<>();
 
     public KeyBindings(PolyChart chart) {
         this.chart = chart;
+    }
+
+    public static void registerGlobalKeyAction(String keyString, Consumer action) {
+        // add firstchar so that key processing doesn't clear keyMonitor before a two key string is typed
+        String firstChar = keyString.substring(0, 1);
+        if (!globalKeyActionMap.containsKey(firstChar)) {
+            globalKeyActionMap.put(firstChar, null);
+        }
+        globalKeyActionMap.put(keyString, action);
     }
 
     public void keyPressed(KeyEvent keyEvent) {
@@ -130,6 +143,21 @@ public class KeyBindings {
         keyString = keyString.trim();
         // note always break on a single character that is used in a two character sequence
         // otherwise the keystring will be cleared and the multiple key event will never be processed
+        if (keyActionMap.containsKey(shortString)) {
+            Consumer action = keyActionMap.get(shortString);
+            if (action != null) {
+                action.accept(chart);
+                keyMonitor.clear();
+            }
+            return;
+        } else if (globalKeyActionMap.containsKey(shortString)) {
+            Consumer action = globalKeyActionMap.get(shortString);
+            if (action != null) {
+                action.accept(chart);
+                keyMonitor.clear();
+            }
+            return;
+        }
         switch (shortString) {
             case "a":
                 break;
