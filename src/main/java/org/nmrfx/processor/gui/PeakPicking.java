@@ -8,6 +8,7 @@ package org.nmrfx.processor.gui;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
 import javafx.collections.ObservableList;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
@@ -25,6 +26,12 @@ import org.nmrfx.processor.gui.spectra.PeakListAttributes;
  * @author Bruce Johnson
  */
 public class PeakPicking {
+
+    static Consumer singlePickAction = null;
+
+    public static void registerSinglePickAction(Consumer func) {
+        singlePickAction = func;
+    }
 
     public static void peakPickActive(FXMLController fxmlController) {
         PolyChart chart = fxmlController.getActiveChart();
@@ -146,6 +153,9 @@ public class PeakPicking {
         if ((peak != null) && FXMLController.getActiveController().isPeakAttrControllerShowing()) {
             PeakAttrController controller = FXMLController.getActiveController().getPeakAttrController();
             controller.gotoPeak(peak);
+        }
+        if ((peak != null) && (singlePickAction != null)) {
+            singlePickAction.accept(peak);
         }
         return peakList;
     }
