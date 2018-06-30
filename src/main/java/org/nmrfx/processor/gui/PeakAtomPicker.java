@@ -11,6 +11,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.processor.datasets.Dataset;
@@ -38,6 +39,7 @@ public class PeakAtomPicker {
     double yOffset = 50;
     Peak selPeak = null;
     int[] peakDims;
+    boolean removePeakOnClose = false;
 
     public void create() {
         stage = new Stage(StageStyle.DECORATED);
@@ -45,7 +47,7 @@ public class PeakAtomPicker {
         Scene scene = new Scene(borderPane);
         stage.setScene(scene);
         scene.getStylesheets().add("/styles/Styles.css");
-        stage.setTitle("RNA Peak Picker");
+        stage.setTitle("Peak Assigner");
         stage.setAlwaysOnTop(true);
 
         Button pickButton = new Button("Assign");
@@ -63,7 +65,7 @@ public class PeakAtomPicker {
         for (int iDim = 0; iDim < nDim; iDim++) {
             GridPane gridPane = new GridPane();
             hBox.getChildren().add(gridPane);
-            Label ppmLabel = new Label("7.5 ppm");
+            Label ppmLabel = new Label(" ppm");
             ppmLabel.setPrefWidth(width1);
             ChoiceBox<String> atomChoice = new ChoiceBox<>();
             atomChoice.setPrefWidth(width1);
@@ -83,15 +85,25 @@ public class PeakAtomPicker {
         }
         borderPane.setBottom(pickButton);
         stage.setAlwaysOnTop(true);
-        show(300, 300);
+        stage.setOnCloseRequest(e -> cancel());
     }
 
-    public void show(double x, double y) {
+    public void show(double x, double y, Peak peak) {
+        removePeakOnClose = peak != null;
+        double tol = 0.04;
         stage.show();
         stage.toFront();
+        double screenWidth = Screen.getPrimary().getBounds().getWidth();
+        if (x > (screenWidth / 2)) {
+            x = x - stage.getWidth() - xOffset;
+        } else {
+            x = x + 100;
+        }
 
-        stage.setX(x + xOffset);
-        stage.setY(y + yOffset);
+        y = y - stage.getHeight() / 2.0;
+
+        stage.setX(x);
+        stage.setY(y);
         Molecule mol = Molecule.getActive();
         if (mol != null) {
             for (ChoiceBox choiceBox : entityChoices) {
@@ -102,8 +114,16 @@ public class PeakAtomPicker {
         PolyChart chart = fxmlController.getActiveChart();
         List<Peak> selected = chart.getSelectedPeaks();
         selPeak = null;
-        if (selected.size() == 1) {
-            selPeak = selected.get(0);
+        if (peak != null) {
+            selPeak = peak;
+        } else {
+            if (selected.size() == 1) {
+                selPeak = selected.get(0);
+            }
+            // fixme if more than one peak selected figure out if they're in row or column and set label
+            // for a single (appropriate) dimension
+        }
+        if (selPeak != null) {
             PeakListAttributes usePeakAttr = null;
             List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
             for (PeakListAttributes peakAttr : peakAttrs) {
@@ -118,7 +138,7 @@ public class PeakAtomPicker {
                 int i = 0;
                 for (int peakDim : peakDims) {
                     double shift = selPeak.getPeakDim(peakDim).getChemShiftValue();
-                    List<AtomDelta> atoms1 = AtomBrowser.getMatchingAtomNames(dataset, shift, 0.04);
+                    List<AtomDelta> atoms1 = AtomBrowser.getMatchingAtomNames(dataset, shift, tol);
                     System.out.println(atoms1.toString());
                     atomChoices[i].getItems().clear();
                     atomChoices[i].getItems().add("Other");
@@ -130,11 +150,22 @@ public class PeakAtomPicker {
                     if (!atoms1.isEmpty()) {
                         atomChoices[i].setValue(atoms1.get(0).toString());
                     }
-                    ppmLabels[i].setText(String.format("%8.3f ppm", shift));
+                    ppmLabels[i].setText(String.format("%8.3f ppm +/ %.3f", shift, tol));
                     i++;
                 }
             }
         }
+    }
+
+    void cancel() {
+        if (removePeakOnClose) {
+            if (selPeak != null) {
+                PeakList peakList = selPeak.getPeakList();
+                peakList.removePeak(selPeak);
+                FXMLController.getActiveController().getActiveChart().drawPeakLists(true);
+            }
+        }
+        stage.close();
     }
 
     void doAssign() {
@@ -142,16 +173,28 @@ public class PeakAtomPicker {
         for (ChoiceBox<String> cBox : atomChoices) {
             String value = cBox.getValue();
             System.out.println("val " + value + " " + i);
-            if (value.equals("Other")) {
+            PeakDim peakDim0 = selPeak.getPeakDim(peakDims[i]);
 
+            if (value == null) {
+            } else if (value.equals("Other")) {
+                String entityName = entityChoices[i].getValue();
+                String aName = atomFields[i].getText();
+                String atomSpecifier;
+                if ((aName != null) && !aName.equals("")) {
+                    if ((entityName != null) && !entityName.equals("")) {
+                        atomSpecifier = entityName + ":" + aName;
+                    } else {
+                        atomSpecifier = aName;
+                    }
+                    peakDim0.setLabel(atomSpecifier);
+                }
             } else if (value.length() > 0) {
                 String[] fields = value.split(" ");
-                if (fields.length > 2) {
-                    String atomName = fields[fields.length - 1];
-                    System.out.println(atomName);
-                    AtomDelta atomDelta = atomDeltaMaps[i].get(atomName);
-                    PeakDim peakDim0 = selPeak.getPeakDim(peakDims[i]);
-                    peakDim0.setLabel(atomName);
+                if (fields.length > 0) {
+                    String atomSpecifier = fields[0];
+                    System.out.println(atomSpecifier);
+                    AtomDelta atomDelta = atomDeltaMaps[i].get(atomSpecifier);
+                    peakDim0.setLabel(atomSpecifier);
                     if (atomDelta.getPeakDim() != null) {
                         PeakDim peakDim1 = atomDelta.getPeakDim();
                         if (peakDim1.getLabel().equals("")) {
@@ -159,11 +202,11 @@ public class PeakAtomPicker {
                             // force a reset of shifts so new peak gets shifted to the groups shift
                             peakDim0.setChemShift(peakDim0.getChemShift());
                             peakDim0.setFrozen(peakDim0.isFrozen());
-                            peakDim0.setLabel(atomName);
+                            peakDim0.setLabel(atomSpecifier);
                         } else {
                             PeakList.linkPeakDims(peakDim1, peakDim0);
-                            peakDim1.setChemShift(peakDim1.getChemShift());
-                            peakDim1.setFrozen(peakDim1.isFrozen());
+                            peakDim0.setChemShift(peakDim1.getChemShift());
+                            peakDim0.setFrozen(peakDim1.isFrozen());
                         }
                     }
 
