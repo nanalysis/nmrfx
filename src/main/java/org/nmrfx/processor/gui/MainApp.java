@@ -50,14 +50,17 @@ import javafx.scene.image.Image;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import static javafx.application.Application.launch;
+import javafx.geometry.Point2D;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ToolBar;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.DatasetListener;
 import org.nmrfx.processor.datasets.peaks.Analyzer;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
+import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.project.GUIStructureProject;
@@ -91,6 +94,7 @@ public class MainApp extends Application implements DatasetListener {
     public static AtomBrowser atomBrowser;
     public static RNAPeakGeneratorSceneController rnaPeakGenController;
     PeakAtomPicker peakAtomPicker = null;
+    CheckMenuItem assignOnPick;
 
     public static void removeStage(Stage stage) {
         synchronized (stages) {
@@ -176,6 +180,24 @@ public class MainApp extends Application implements DatasetListener {
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
         Dataset.addObserver(this);
+        PeakPicking.registerSinglePickAction((c) -> pickedPeakAction(c));
+    }
+
+    Object pickedPeakAction(Object peakObject) {
+        if (assignOnPick.isSelected()) {
+            Peak peak = (Peak) peakObject;
+            System.out.println(peak.getName());
+            PolyChart chart = FXMLController.getActiveController().getActiveChart();
+            double x = chart.getMouseX();
+            double y = chart.getMouseY();
+            Point2D sXY = chart.localToScreen(x, y);
+            if (peakAtomPicker == null) {
+                peakAtomPicker = new PeakAtomPicker();
+                peakAtomPicker.create();
+            }
+            peakAtomPicker.show(sXY.getX(), sXY.getY(), peak);
+        }
+        return null;
     }
 
     public static boolean isMac() {
@@ -381,13 +403,19 @@ public class MainApp extends Application implements DatasetListener {
 
         MenuItem peakAnalyzerMenuItem = new MenuItem("Analyze");
         peakAnalyzerMenuItem.setOnAction(e -> analyze1D());
-        MenuItem pickMenuButton = new MenuItem("Pick");
-        pickMenuButton.setOnAction(e -> rnaPicker());
+
+        Menu assignCascade = new Menu("Assign Tools");
+
+        assignOnPick = new CheckMenuItem("Assign on Pick");
+
+        MenuItem peakAssignerItem = new MenuItem("Show Peak Assigner");
+        peakAssignerItem.setOnAction(e -> assignPeak());
 
         MenuItem atomBrowserMenuItem = new MenuItem("Show Atom Browser");
         atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
+        assignCascade.getItems().addAll(peakAssignerItem, assignOnPick, atomBrowserMenuItem);
 
-        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem, peakAnalyzerMenuItem, pickMenuButton, atomBrowserMenuItem);
+        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem, peakAnalyzerMenuItem, assignCascade);
 
         // Window Menu
         // TBD standard window menu items
@@ -751,13 +779,13 @@ public class MainApp extends Application implements DatasetListener {
         }
     }
 
-    public void rnaPicker() {
+    public void assignPeak() {
         if (peakAtomPicker == null) {
             peakAtomPicker = new PeakAtomPicker();
             peakAtomPicker.create();
-        } else {
-            peakAtomPicker.show(300, 300);
         }
+        peakAtomPicker.show(300, 300, null);
+
     }
 
     @FXML
