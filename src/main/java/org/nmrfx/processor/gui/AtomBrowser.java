@@ -470,7 +470,7 @@ public class AtomBrowser {
         }
 
         public String toString() {
-            return String.format("%2d %1d %s", Math.round(99.0 * fDelta), listType, name);
+            return String.format("%s %2d%% %1d",name, Math.round(99.0 * fDelta), listType);
         }
     }
 
