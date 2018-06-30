@@ -1214,6 +1214,14 @@ public class PeakList {
         }
     }
 
+    public void removePeak(Peak peak) {
+        if (peaks.get(peaks.size() - 1) == peak) {
+            idLast--;
+        }
+        peaks.remove(peak);
+        reIndex();
+    }
+
     public int compress() {
         int nRemoved = 0;
         for (int i = (peaks.size() - 1); i >= 0; i--) {
@@ -2726,7 +2734,7 @@ public class PeakList {
         }
         return specDim;
     }
-    
+
     public static String getNameForDataset(String datasetName) {
         int lastIndex = datasetName.lastIndexOf(".");
         String listName = datasetName;
