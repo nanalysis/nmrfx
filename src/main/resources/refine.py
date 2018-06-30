@@ -1135,7 +1135,7 @@ class refine:
     def readSequence(self,seqFile):
         seqReader = Sequence()
         self.molecule = seqReader.read(seqFile)
-        Molecule.selectAtoms('*.*')
+        self.molecule.selectAtoms('*.*')
         self.molName = self.molecule.getName()
         return self.molecule
 
@@ -1144,7 +1144,7 @@ class refine:
         pdb.readSequence(fileName,0)
         self.molecule = Molecule.getActive()
         self.molName = self.molecule.getName()
-        Molecule.selectAtoms('*.*')
+        self.molecule.selectAtoms('*.*')
         return self.molecule
 
     def readPDBFiles(self,files):
@@ -1164,7 +1164,7 @@ class refine:
         self.molecule = Molecule.getActive()
  
         self.molName = self.molecule.getName()
-        Molecule.selectAtoms('*.*')
+        self.molecule.selectAtoms('*.*')
         return self.molecule
 
     def readSDFile(self,fileName):
@@ -1173,7 +1173,7 @@ class refine:
         self.molecule = Molecule.getActive()
  
         self.molName = self.molecule.getName()
-        Molecule.selectAtoms('*.*')
+        self.molecule.selectAtoms('*.*')
         return self.molecule
 
     def setupTree(self, start, end):
@@ -1310,8 +1310,8 @@ class refine:
         if writeTrajectory:
             self.trajectoryWriter = TrajectoryWriter(self.molecule,"output.traj","traj")
             selection = "*.ca,c,n,o,p,o5',c5',c4',c3',o3'"
-            Molecule.selectAtoms(selection)
-            Molecule.setAtomProperty(2,True)
+            self.molecule.selectAtoms(selection)
+            self.molecule.setAtomProperty(2,True)
 
 
     def prepare(self,steps=1000, gsteps=300, alg='cmaes'):
@@ -1524,7 +1524,7 @@ class refine:
 
     def dumpDis(self, fileName, delta=0.5, atomPat='*.H*',maxDis=4.5,prob=1.1,fixLower=0.0):
         molecule = self.molecule
-        Molecule.selectAtoms(atomPat)
+        self.molecule.selectAtoms(atomPat)
         pairs =  molecule.getDistancePairs(maxDis,False)
         with open(fileName,'w') as fOut:
             for pair in pairs:
