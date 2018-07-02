@@ -296,14 +296,14 @@ public class PeakListTest {
         PeakList peakList = getPeakList(peakListName2);
         Assert.assertNotNull(peakList);
         
-        double[][] limits = {{5,9}};//, {128, 129}, {9, 9.1}};
-        int[] dims = {0};//, 1, 0};
+        double[][] limits = {{9,10}, {127, 128}};
+        int[] dims = {0, 1};
         List peakListl = peakList.locatePeaks(limits, dims);
-        Peak peakl0 = (Peak) peakListl.get(0);
         
-        double[] ppms = {8.99153, 128.18442};
+        double[] ppms = {9.57507, 9.41346};
         for (int i = 0; i < ppms.length; i++) {
-            Assert.assertEquals(ppms[i], (double) peakl0.getPeakDim(i).getChemShiftValue(), 1.0e-5);
+            Peak peakl0 = (Peak) peakListl.get(i);
+            Assert.assertEquals(ppms[i], (double) peakl0.getPeakDim(0).getChemShiftValue(), 1.0e-5);
         }
     }
     
