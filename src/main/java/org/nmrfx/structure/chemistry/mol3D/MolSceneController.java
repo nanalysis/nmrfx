@@ -7,12 +7,14 @@ package org.nmrfx.structure.chemistry.mol3D;
  */
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.collections.MapChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -20,7 +22,6 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.SubScene;
-import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
@@ -41,6 +42,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.AtomController;
 import org.nmrfx.processor.gui.molecule.MoleculeCanvas;
 import org.nmrfx.structure.chemistry.Atom;
@@ -83,6 +86,8 @@ public class MolSceneController implements Initializable, MolSelectionListener {
     MenuButton removeMenuButton;
     @FXML
     MoleculeCanvas ligandCanvas;
+    @FXML
+    MenuButton peakListMenuButton;
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
@@ -120,6 +125,13 @@ public class MolSceneController implements Initializable, MolSelectionListener {
         ligandBorderPane.setCenter(ligandCanvasPane);
         ligandCanvasPane.widthProperty().addListener(ss -> ligandCanvas.layoutChildren(ligandCanvasPane));
         ligandCanvasPane.heightProperty().addListener(ss -> ligandCanvas.layoutChildren(ligandCanvasPane));
+        MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
+            updatePeakListMenu();
+        };
+
+        PeakList.peakListTable.addListener(mapChangeListener);
+        updatePeakListMenu();
+
     }
 
     public Stage getStage() {
@@ -466,4 +478,34 @@ public class MolSceneController implements Initializable, MolSelectionListener {
         ligandCanvas.layoutChildren(ligandCanvasPane);
     }
 
+    public void updatePeakListMenu() {
+        peakListMenuButton.getItems().clear();
+
+        for (String peakListName : PeakList.peakListTable.keySet()) {
+            MenuItem menuItem = new MenuItem(peakListName);
+            menuItem.setOnAction(e -> {
+                PeakList peakList = PeakList.get(peakListName);
+                if (peakList.getNDim() == 2) {
+                    setPeakList(peakListName);
+                }
+            });
+            peakListMenuButton.getItems().add(menuItem);
+        }
+    }
+
+    void setPeakList(String peakListName) {
+        PeakList peakList = PeakList.get(peakListName);
+        List<String> constraintPairs = new ArrayList<>();
+        if (peakList.valid()) {
+            for (Peak peak : peakList.peaks()) {
+                String name1 = peak.getPeakDim(0).getLabel();
+                String name2 = peak.getPeakDim(1).getLabel();
+                if (!name1.equals("") && !name2.equals("")) {
+                    constraintPairs.add(name1);
+                    constraintPairs.add(name2);
+                }
+            }
+        }
+        ssViewer.setConstraintPairs(constraintPairs);
+    }
 }

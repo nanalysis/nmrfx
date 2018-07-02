@@ -868,9 +868,10 @@ public class SSViewer extends Pane {
 
     }
 
-    void setConstraintPairs(ArrayList<String> constraintPairs) {
+    public void setConstraintPairs(List<String> constraintPairs) {
         this.constraintPairs.clear();
         this.constraintPairs.addAll(constraintPairs);
+        constraintPairState = true;
     }
 
     void loadCoordinates(String fileName) {

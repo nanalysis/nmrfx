@@ -83,6 +83,7 @@
                                                 <CheckBox fx:id="numbersCheckBox" text="Numbers"/>
                                                 <CheckBox fx:id="activeCheckBox" text="Active"/>
                                                 <ChoiceBox fx:id="nAtomsChoiceBox"/>
+                                                <MenuButton fx:id="peakListMenuButton" text="PeakList"/>
                                             </buttons>
                                         </ButtonBar>
                                     </children>
@@ -101,7 +102,7 @@
                         </BorderPane>
                     </content>
                 </Tab>
-               <Tab text="Ligands">
+                <Tab text="Ligands">
                     <content>
                         <BorderPane fx:id="ligandBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
                             <top>
