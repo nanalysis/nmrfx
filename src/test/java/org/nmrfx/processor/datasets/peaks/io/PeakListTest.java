@@ -249,6 +249,78 @@ public class PeakListTest {
         Assert.assertEquals(slide, peakList.isSlideable());
     }
     
+    @Test
+    public void testReNumber() {
+        PeakList peakList = getPeakList(peakListName2);
+        Assert.assertNotNull(peakList);
+        int size0 = peakList.size();
+        
+        peakList.getPeak(1).setStatus(-1);
+        peakList.compress();
+        Assert.assertEquals(size0 - 1, peakList.size());
+        Assert.assertEquals(2, peakList.getPeak(1).getIdNum());
+        
+        peakList.reNumber();
+        Assert.assertEquals(1, peakList.getPeak(1).getIdNum());
+    }
     
+    @Test
+    public void testRemove() {
+        PeakList peakList = getPeakList(peakListName2);
+        Assert.assertNotNull(peakList.peaks());
+        
+        peakList.remove(peakList.getName());
+        Assert.assertNull(peakList.peaks());
+    }
+    
+    @Test
+    public void testSortPeaks() throws IllegalArgumentException {
+        PeakList peakList = getPeakList(peakListName2);
+        Assert.assertNotNull(peakList);
+        
+        double[] ppm = {9.04322, 133.32071};
+        for (int i = 0; i < ppm.length; i++) {
+            Assert.assertEquals(ppm[i], (double) peakList.getPeak(0).getPeakDim(i).getChemShiftValue(), 1.0e-5);
+        }
+        
+        peakList.sortPeaks(0, true);
+        
+        double[] ppms = {8.99153, 128.18442};
+        for (int i = 0; i < ppms.length; i++) {
+            Assert.assertEquals(ppms[i], (double) peakList.getPeak(0).getPeakDim(i).getChemShiftValue(), 1.0e-5);
+        }
+    }
+    
+    @Test
+    public void testLocatePeaks() {
+        PeakList peakList = getPeakList(peakListName2);
+        Assert.assertNotNull(peakList);
+        
+        double[][] limits = {{5,9}};//, {128, 129}, {9, 9.1}};
+        int[] dims = {0};//, 1, 0};
+        List peakListl = peakList.locatePeaks(limits, dims);
+        Peak peakl0 = (Peak) peakListl.get(0);
+        
+        double[] ppms = {8.99153, 128.18442};
+        for (int i = 0; i < ppms.length; i++) {
+            Assert.assertEquals(ppms[i], (double) peakl0.getPeakDim(i).getChemShiftValue(), 1.0e-5);
+        }
+    }
+    
+    @Test
+    public void testMatchPeaks() {
+        PeakList peakList = getPeakList(peakListName2);
+        Assert.assertNotNull(peakList);
+        
+        String[] strings = {"", ""};
+        List match = peakList.matchPeaks(strings, true, true);
+        Assert.assertEquals(4, match.size());
+        Peak match0 = (Peak) match.get(0);
+        
+        double[] ppms = {9.04322, 133.32071};
+        for (int i = 0; i < ppms.length; i++) {
+            Assert.assertEquals(ppms[i], (double) match0.getPeakDim(i).getChemShiftValue(), 1.0e-5);
+        }
+    }
     
 }
