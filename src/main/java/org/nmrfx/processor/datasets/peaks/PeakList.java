@@ -833,7 +833,7 @@ public class PeakList {
     /**
      * Locate what peaks are contained within certain limits.
      * 
-     * @param limits A multidimensional array of chemical plot limits to search.
+     * @param limits A multidimensional array of chemical shift plot limits to search.
      * @param dim An array of which peak list dim corresponds to dim in the limit array.
      * @param foldLimits An optional multidimensional array of plot limits where folded peaks should appear.
      * Can be null.
