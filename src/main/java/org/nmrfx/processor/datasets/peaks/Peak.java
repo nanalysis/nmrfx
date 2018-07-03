@@ -63,7 +63,8 @@ public class Peak implements Comparable, PeakOrMulti {
         "_Peak_char.Derivation_method_ID",
         "_Peak_char.Peak_error",
         "_Peak_char.Detail",
-        "_Peak_char.Coupling_detail",};
+        "_Peak_char.Coupling_detail",
+        "_Peak_char.Frozen",};
     static final public int NFLAGS = 16;
     static final public int COMPOUND = 1;
     static final public int MINOR = 2;
@@ -720,9 +721,14 @@ public class Peak implements Comparable, PeakOrMulti {
         result.append(sep);
         result.append(getStatus());
         result.append(sep);
-        result.append(stringQuote);
-        result.append(getColorName());
-        result.append(stringQuote);
+        String colorName = getColorName();
+        if (colorName.equals("")) {
+            result.append(".");
+        } else {
+            result.append(stringQuote);
+            result.append(colorName);
+            result.append(stringQuote);
+        }
         result.append(sep);
         result.append(getFlag());
         result.append(sep);
@@ -1202,7 +1208,7 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public String getColorName() {
-        return color.toString();
+        return color == null ? "" : color.toString();
     }
 
     public void setColor(Color color) {

@@ -264,6 +264,9 @@ public class PeakDim {
         // result.append(getCouplingsAsString()); // fixme only quote if more than one
         result.append("0.0");
         result.append(stringQuote);
+        result.append(sep);
+        result.append(isFrozen() ? "1" : "0");
+
         return result.toString();
     }
 
@@ -705,6 +708,8 @@ public class PeakDim {
         } else if (name.equals("Decay_rate_val_err")) {
             float fvalue = ConvUtil.getFloatValue(value);
             setDecayRateErrorValue(fvalue);
+        } else if (name.equals("Frozen")) {
+            frozen = value.equals("1");
             // fixme unused } else if (name.equals("Derivation_method")) {
         }
     }

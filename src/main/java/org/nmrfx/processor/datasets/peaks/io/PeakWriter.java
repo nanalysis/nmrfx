@@ -293,6 +293,10 @@ public class PeakWriter {
         } else {
             chan.write(".\n");
         }
+        chan.write("_Spectral_peak_list.Slidable                      ");
+        String slidable = peakList.isSlideable() ? "yes" : "no";
+        chan.write(slidable + "\n");
+
         chan.write("_Spectral_peak_list.Experiment_ID                 ");
         chan.write(".\n");
         chan.write("_Spectral_peak_list.Experiment_name               ");
