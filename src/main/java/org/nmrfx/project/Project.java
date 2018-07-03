@@ -15,6 +15,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -40,11 +41,12 @@ public class Project {
 
     static final Pattern INDEX_PATTERN = Pattern.compile("^([0-9]+)_.*");
     static final Predicate<String> INDEX_PREDICATE = INDEX_PATTERN.asPredicate();
-    static String[] SUB_DIR_TYPES = {"datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
+    static String[] SUB_DIR_TYPES = {"star", "datasets", "molecules", "peaks", "shifts", "refshifts", "windows"};
     static final Map<String, Project> projects = new HashMap<>();
     static Project activeProject = null;
     Path projectDir = null;
     final String name;
+    public final Map<String, PeakList> peakLists = new HashMap<>();
 
     public Project(String name) {
         this.name = name;
@@ -133,26 +135,31 @@ public class Project {
     }
 
     public void loadProject(Path projectDir) throws IOException, IllegalStateException {
-        FileSystem fileSystem = FileSystems.getDefault();
 
         String[] subDirTypes = {"datasets", "peaks"};
-        if (projectDir != null) {
-            for (String subDir : subDirTypes) {
-                Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
-                if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
-                    switch (subDir) {
-                        case "datasets":
-                            loadDatasets(subDirectory);
-                            break;
-                        case "peaks":
-                            loadPeaks(subDirectory);
-                            break;
-                        default:
-                            throw new IllegalStateException("Invalid subdir type");
-                    }
-                }
+        for (String subDir : subDirTypes) {
+            loadProject(projectDir, subDir);
+        }
 
+    }
+
+    public void loadProject(Path projectDir, String subDir) throws IOException, IllegalStateException {
+        FileSystem fileSystem = FileSystems.getDefault();
+        if (projectDir != null) {
+            Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
+            if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
+                switch (subDir) {
+                    case "datasets":
+                        loadDatasets(subDirectory);
+                        break;
+                    case "peaks":
+                        loadPeaks(subDirectory);
+                        break;
+                    default:
+                        throw new IllegalStateException("Invalid subdir type");
+                }
             }
+
         }
         this.projectDir = projectDir;
     }
@@ -278,6 +285,26 @@ public class Project {
             } catch (IOException | InvalidPeakException ioE) {
             }
         });
+    }
+
+    public Collection<PeakList> getPeakLists() {
+        return peakLists.values();
+    }
+
+    public PeakList getPeakList(String name) {
+        return peakLists.get(name);
+    }
+
+    public void putPeakList(PeakList peakList) {
+        peakLists.put(peakList.getName(), peakList);
+    }
+
+    public void clearAllPeakLists() {
+        peakLists.clear();
+    }
+
+    public void removePeakList(String name) {
+        peakLists.remove(name);
     }
 
 }
