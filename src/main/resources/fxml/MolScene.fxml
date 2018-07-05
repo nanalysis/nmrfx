@@ -84,6 +84,7 @@
                                                 <CheckBox fx:id="activeCheckBox" text="Active"/>
                                                 <ChoiceBox fx:id="nAtomsChoiceBox"/>
                                                 <MenuButton fx:id="peakListMenuButton" text="PeakList"/>
+                                                <ChoiceBox fx:id="constraintTypeChoiceBox"/>
                                             </buttons>
                                         </ButtonBar>
                                     </children>

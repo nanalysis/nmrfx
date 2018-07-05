@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Scanner;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Pos;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -60,6 +61,7 @@ public class SSViewer extends Pane {
     public SimpleBooleanProperty drawNumbersProp = new SimpleBooleanProperty(false);
     public SimpleBooleanProperty showActiveProp = new SimpleBooleanProperty(true);
     public SimpleIntegerProperty nAtomsProp = new SimpleIntegerProperty(7);
+    public SimpleStringProperty constraintTypeProp = new SimpleStringProperty("All");
 
     double centerX;
     double centerY;
@@ -94,6 +96,7 @@ public class SSViewer extends Pane {
         drawNumbersProp.addListener(e -> drawSS());
         showActiveProp.addListener(e -> drawSS());
         nAtomsProp.addListener(e -> drawSS());
+        constraintTypeProp.addListener(e -> drawSS());
         drawSS();
     }
 
@@ -773,6 +776,17 @@ public class SSViewer extends Pane {
         String r2 = getResNum(a2);
         int r1Num = Integer.parseInt(r1);
         int r2Num = Integer.parseInt(r2);
+        boolean ok = false;
+        if (constraintTypeProp.getValue().equals("All")) {
+            ok = true;
+        } else if (constraintTypeProp.getValue().equals("Intraresidue") && (r1Num == r2Num)) {
+            ok = true;
+        } else if (constraintTypeProp.getValue().equals("Interresidue") && (r1Num != r2Num)) {
+            ok = true;
+        }
+        if (!ok) {
+            return;
+        }
         String aName1 = getAtomName(a1);
         String aName2 = getAtomName(a2);
         int nAtoms = nAtomsProp.get();

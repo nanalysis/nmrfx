@@ -88,6 +88,9 @@ public class MolSceneController implements Initializable, MolSelectionListener {
     MoleculeCanvas ligandCanvas;
     @FXML
     MenuButton peakListMenuButton;
+    @FXML
+    ChoiceBox<String> constraintTypeChoiceBox;
+
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
@@ -111,6 +114,9 @@ public class MolSceneController implements Initializable, MolSelectionListener {
         dotBracketField.textProperty().addListener(e -> {
             dotBracketFieldChanged();
         });
+        constraintTypeChoiceBox.getItems().addAll("All", "Intraresidue", "Interresidue");
+        constraintTypeChoiceBox.setValue("All");
+        ssViewer.constraintTypeProp.bind(constraintTypeChoiceBox.valueProperty());
 
         molBorderPane.widthProperty().addListener(ss -> molViewer.layoutChildren());
         molBorderPane.heightProperty().addListener(ss -> molViewer.layoutChildren());
@@ -507,5 +513,6 @@ public class MolSceneController implements Initializable, MolSelectionListener {
             }
         }
         ssViewer.setConstraintPairs(constraintPairs);
+        ssViewer.drawSS();
     }
 }
