@@ -39,7 +39,7 @@ def findRepresentative(mol, resNums='*',atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3
             treeSet.add(structure)
     nFiles = treeSet.size()
 
-    doSelections(resNums,atomNames)
+    doSelections(mol, resNums,atomNames)
     sup = SuperMol(mol)
     mol.setActiveStructures(treeSet)
     
@@ -123,18 +123,18 @@ def findCore(mol, minIndex,atomNames="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
            resSelect.append(start+'-'+end)
     return resSelect
 
-def doSelections(resSelects, atomSelect):
+def doSelections(mol, resSelects, atomSelect):
     polymer = 'A'
-    Molecule.selectAtoms("*.*")
-    Molecule.setAtomProperty(2,False)
+    mol.selectAtoms("*.*")
+    mol.setAtomProperty(2,False)
     for resSelect in resSelects:
         selection = resSelect+'.'+atomSelect
-        Molecule.selectAtoms(selection)
-        Molecule.setAtomProperty(2,True)
+        mol.selectAtoms(selection)
+        mol.setAtomProperty(2,True)
 
 
 def superImpose(mol, target,resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'"):
-    doSelections(resSelect,atomSelect)
+    doSelections(mol, resSelect,atomSelect)
     sup = SuperMol(mol)
     superResults = sup.doSuper(target, -1, True)
 
