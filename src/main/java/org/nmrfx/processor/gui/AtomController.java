@@ -45,6 +45,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -80,6 +82,7 @@ import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.ProteinPredictor;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
+import org.nmrfx.structure.chemistry.io.PDBFile;
 import org.nmrfx.structure.chemistry.io.PPMFiles;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.python.util.PythonInterpreter;
@@ -191,6 +194,10 @@ public class AtomController implements Initializable, FreezeListener {
         MenuItem readMolItem = new MenuItem("Read Mol...");
         readMolItem.setOnAction(e -> readMolecule());
         fileMenu.getItems().add(readMolItem);
+
+        MenuItem readCoordinatesItem = new MenuItem("Read Multiple Coordinates...");
+        readCoordinatesItem.setOnAction(e -> readCoordinates());
+        fileMenu.getItems().add(readCoordinatesItem);
 
         MenuItem writePPMItem = new MenuItem("Write PPM...");
         writePPMItem.setOnAction(e -> writePPM());
@@ -532,4 +539,18 @@ public class AtomController implements Initializable, FreezeListener {
         }
         setFilterString("");
     }
+
+    void readCoordinates() {
+        FileChooser fileChooser = new FileChooser();
+        List<File> files = fileChooser.showOpenMultipleDialog(null);
+        PDBFile pdbFile = new PDBFile();
+        try {
+            pdbFile.readMultipleCoordinateFiles(files, true);
+        } catch (MoleculeIOException | IOException ex) {
+            ExceptionDialog dialog = new ExceptionDialog(ex);
+            dialog.showAndWait();
+        }
+        setFilterString("");
+    }
+
 }
