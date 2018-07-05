@@ -19,11 +19,16 @@ package org.nmrfx.structure.chemistry.io;
 
 import org.nmrfx.structure.chemistry.*;
 import java.io.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.vecmath.Vector3d;
 
 public class PDBFile {
@@ -468,6 +473,54 @@ public class PDBFile {
         }
         return 0;
 
+    }
+
+    public void readMultipleCoordinateFiles(File dir, final boolean noComplain) throws MoleculeIOException, IOException {
+        Molecule molecule = Molecule.getActive();
+        boolean readMolSeq = false;
+        if (molecule == null) {
+            readMolSeq = true;
+        } else {
+            molecule.structures.clear();
+        }
+        Pattern pdbPattern = Pattern.compile(".+([0-9]+)\\.pdb");
+        Path dirPath = dir.toPath();
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath)) {
+            int iStruct = 0;
+            for (Path entry : stream) {
+                Matcher matcher = pdbPattern.matcher(entry.toString());
+                if (matcher.matches()) {
+                    if (readMolSeq) {
+                        readSequence(entry.toString(), false);
+                        molecule = Molecule.getActive();
+                        molecule.structures.clear();
+                        readMolSeq = false;
+                    }
+                    readCoordinates(entry.toString(), iStruct++, noComplain);
+                }
+            }
+        }
+    }
+
+    public void readMultipleCoordinateFiles(List<File> files, final boolean noComplain) throws MoleculeIOException, IOException {
+        Molecule molecule = Molecule.getActive();
+        boolean readMolSeq = false;
+        if (molecule == null) {
+            readMolSeq = true;
+        } else {
+            molecule.structures.clear();
+        }
+        int iStruct = 0;
+        for (File entry : files) {
+            if (readMolSeq) {
+                readSequence(entry.toString(), false);
+                molecule = Molecule.getActive();
+                molecule.structures.clear();
+                readMolSeq = false;
+            }
+            readCoordinates(entry.toString(), iStruct++, noComplain);
+        }
     }
 
     public void readCoordinates(String fileName, int structureNumber, final boolean noComplain)
