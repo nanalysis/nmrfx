@@ -18,7 +18,9 @@ import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.ProteinPredictor;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
+import org.nmrfx.structure.chemistry.miner.NodeEvaluatorFactory;
 import org.nmrfx.structure.chemistry.miner.NodeValidator;
+import org.nmrfx.structure.chemistry.miner.NodeValidatorInterface;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
 import org.python.util.PythonInterpreter;
 
@@ -27,6 +29,8 @@ import org.python.util.PythonInterpreter;
  * @author Bruce Johnson
  */
 public class Predictor {
+
+    NodeValidatorInterface nodeValidator = null;
 
     static final Map<String, Double> RNA_REF_SHIFTS = new HashMap<>();
 
@@ -155,7 +159,9 @@ public class Predictor {
     public void predictWithShells(Entity aC, int iRef) {
         HosePrediction hosePred = HosePrediction.getDefaultPredictor();
         PathIterator pI = new PathIterator(aC);
-        NodeValidator nodeValidator = new NodeValidator();
+        if (nodeValidator == null) {
+            nodeValidator = NodeEvaluatorFactory.getDefault();
+        }
         pI.init(nodeValidator);
         pI.processPatterns();
         pI.setProperties("ar", "AROMATIC");

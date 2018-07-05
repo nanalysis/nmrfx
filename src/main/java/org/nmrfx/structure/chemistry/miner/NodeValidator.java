@@ -3,7 +3,7 @@ package org.nmrfx.structure.chemistry.miner;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class NodeValidator {
+public class NodeValidator implements NodeValidatorInterface {
 
     boolean[][] p;
     int[] modes = {
@@ -91,8 +91,7 @@ public class NodeValidator {
         2,
         2,
         2,
-        2};
-
+        2,};
     int[][] atomPatterns = {
         {0, 0},
         {0, 0},
@@ -117,58 +116,56 @@ public class NodeValidator {
         {11, 11, 11, 11, 11, 12},
         {11, 11, 11, 11, 12},
         {13},
-        {13},
-        {13},
-        {13},
-        {13},
-        {13},
+        {0},
         {14},
         {15},
         {16},
         {17},
-        {18, 0},
+        {18},
         {19},
         {20},
-        {21, 0},
-        {22},
+        {21},
+        {22, 0},
         {23},
         {24},
-        {25, 26, 25},
+        {14, 0},
+        {25},
+        {26},
         {27},
-        {28, 0},
-        {29},
+        {28, 29, 28},
         {30},
-        {0, 31, 0},
-        {0, 31, 0},
+        {31, 0},
         {32},
-        {33, 0},
-        {34, 0},
-        {28, 0},
-        {0, 35, 0},
-        {0, 36, 0},
-        {37},
-        {38},
+        {33},
+        {0, 15, 0},
+        {0, 15, 0},
+        {34},
+        {35, 0},
+        {36, 0},
+        {31, 0},
+        {0, 37, 0},
+        {0, 38, 0},
         {39},
         {40},
         {41},
-        {42, 0},
-        {0, 43, 0},
-        {44},
-        {45, 0},
-        {45, 0},
+        {42},
+        {43},
+        {44, 0},
+        {0, 45, 0},
         {46},
-        {47},
+        {47, 0},
         {47, 0},
         {48},
         {49},
-        {50, 18, 50},
-        {50, 18, 18, 50},
-        {50, 18, 18, 50},
-        {50, 18, 18, 50},
-        {50, 19, 19, 50},
-        {50, 19, 19, 19, 50},
+        {49, 0},
+        {50},
         {51},
-        {52},
+        {52, 22, 52},
+        {52, 22, 22, 52},
+        {52, 22, 22, 52},
+        {52, 22, 22, 52},
+        {52, 23, 23, 52},
+        {52, 23, 23, 23, 52},
         {53},
         {54},
         {55},
@@ -176,10 +173,11 @@ public class NodeValidator {
         {57},
         {58},
         {59},
-        {20},
         {60},
-        {61}};
-
+        {61},
+        {24},
+        {62},
+        {63},};
     int[][] bondPatterns = {
         {-1, 0},
         {-1, 1},
@@ -265,8 +263,7 @@ public class NodeValidator {
         {-1},
         {-1},
         {-1},
-        {-1}};
-
+        {-1},};
     int[][] jumpPositions = {
         {-1, -1},
         {-1, -1},
@@ -352,8 +349,7 @@ public class NodeValidator {
         {-1},
         {-1},
         {-1},
-        {-1}};
-
+        {-1},};
     int[][] propertyValues = {
         {0, 0},
         {1, 1},
@@ -378,11 +374,11 @@ public class NodeValidator {
         {16, 16, 16, 16, 16, 16},
         {17, 17, 17, 17, 17},
         {18},
-        {18},
-        {18},
-        {18},
-        {18},
-        {18},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
+        {-1},
         {0},
         {5},
         {10},
@@ -439,8 +435,7 @@ public class NodeValidator {
         {245},
         {248},
         {251},
-        {254}};
-
+        {254},};
     String[] propertyNames = {
         "sp2",
         "sp",
@@ -460,8 +455,7 @@ public class NodeValidator {
         "r",
         "ar6",
         "ar5",
-        "ar"};
-
+        "ar",};
     String[] paramValues = {
         "4",
         "elec",
@@ -719,7 +713,7 @@ public class NodeValidator {
         "1",
         "2",
         "nH",
-        "3"};
+        "3",};
 
     public NodeValidator() {
     }
@@ -789,194 +783,202 @@ public class NodeValidator {
                 break;
 
             case 14:
-                atomValid = (aNum == 1) && p[atomIndex][2]; // H && sp3
-                break;
-
-            case 15:
-                atomValid = (aNum == 6) && p[atomIndex][2]; // C && sp3
-                break;
-
-            case 16:
-                atomValid = (aNum == 6) && p[atomIndex][0]; // C && sp2
-                break;
-
-            case 17:
-                atomValid = (aNum == 6) && p[atomIndex][1]; // C && sp
-                break;
-
-            case 18:
-                atomValid = (aNum == 6); // C
-                break;
-
-            case 19:
-                atomValid = (aNum == 6) && p[atomIndex][18]; // C && ar
-                break;
-
-            case 20:
-                atomValid = (aNum == 8) && p[atomIndex][2] && p[atomIndex][9]; // O && sp3 && x2
-                break;
-
-            case 21:
                 atomValid = (aNum == 8); // O
                 break;
 
-            case 22:
-                atomValid = (aNum == 8) && p[atomIndex][2] && p[atomIndex][11]; // O && sp3 && x1
-                break;
-
-            case 23:
-                atomValid = (aNum == 8) && p[atomIndex][18]; // O && ar
-                break;
-
-            case 24:
-                atomValid = (aNum == 7) && p[atomIndex][2]; // N && sp3
-                break;
-
-            case 25:
-                atomValid = p[atomIndex][3]; // conj
-                break;
-
-            case 26:
-                atomValid = (aNum == 7) && p[atomIndex][2] && p[atomIndex][13]; // N && sp3 && r5
-                break;
-
-            case 27:
-                atomValid = (aNum == 7) && p[atomIndex][0]; // N && sp2
-                break;
-
-            case 28:
-                atomValid = (aNum == 7) && p[atomIndex][11]; // N && x1
-                break;
-
-            case 29:
-                atomValid = (aNum == 7) && p[atomIndex][2] && p[atomIndex][5]; // N && sp3 && x4
-                break;
-
-            case 30:
-                atomValid = (aNum == 7) && p[atomIndex][7] && p[atomIndex][0]; // N && x3 && sp2
-                break;
-
-            case 31:
+            case 15:
                 atomValid = (aNum == 7); // N
                 break;
 
+            case 16:
+                atomValid = (aNum == 6) | (aNum == 14) | (aNum == 16) | (aNum == 34) | (aNum == 15) | (aNum == 33); // C|Si|S|Se|P|As
+                break;
+
+            case 17:
+                atomValid = ((aNum == 9) | (aNum == 17) | (aNum == 35) | (aNum == 53)) && p[atomIndex][11]; // (F|Cl|Br|I) && x1
+                break;
+
+            case 18:
+                atomValid = (aNum == 1) && p[atomIndex][2]; // H && sp3
+                break;
+
+            case 19:
+                atomValid = (aNum == 6) && p[atomIndex][2]; // C && sp3
+                break;
+
+            case 20:
+                atomValid = (aNum == 6) && p[atomIndex][0]; // C && sp2
+                break;
+
+            case 21:
+                atomValid = (aNum == 6) && p[atomIndex][1]; // C && sp
+                break;
+
+            case 22:
+                atomValid = (aNum == 6); // C
+                break;
+
+            case 23:
+                atomValid = (aNum == 6) && p[atomIndex][18]; // C && ar
+                break;
+
+            case 24:
+                atomValid = (aNum == 8) && p[atomIndex][2] && p[atomIndex][9]; // O && sp3 && x2
+                break;
+
+            case 25:
+                atomValid = (aNum == 8) && p[atomIndex][2] && p[atomIndex][11]; // O && sp3 && x1
+                break;
+
+            case 26:
+                atomValid = (aNum == 8) && p[atomIndex][18]; // O && ar
+                break;
+
+            case 27:
+                atomValid = (aNum == 7) && p[atomIndex][2]; // N && sp3
+                break;
+
+            case 28:
+                atomValid = p[atomIndex][3]; // conj
+                break;
+
+            case 29:
+                atomValid = (aNum == 7) && p[atomIndex][2] && p[atomIndex][13]; // N && sp3 && r5
+                break;
+
+            case 30:
+                atomValid = (aNum == 7) && p[atomIndex][0]; // N && sp2
+                break;
+
+            case 31:
+                atomValid = (aNum == 7) && p[atomIndex][11]; // N && x1
+                break;
+
             case 32:
-                atomValid = (aNum == 7) && p[atomIndex][18]; // N && ar
+                atomValid = (aNum == 7) && p[atomIndex][2] && p[atomIndex][5]; // N && sp3 && x4
                 break;
 
             case 33:
-                atomValid = (aNum == 7) && p[atomIndex][18] && p[atomIndex][9]; // N && ar && x2
+                atomValid = (aNum == 7) && p[atomIndex][7] && p[atomIndex][0]; // N && x3 && sp2
                 break;
 
             case 34:
-                atomValid = (aNum == 7) && p[atomIndex][18] && p[atomIndex][7]; // N && ar && x3
+                atomValid = (aNum == 7) && p[atomIndex][18]; // N && ar
                 break;
 
             case 35:
-                atomValid = (aNum == 7) && p[atomIndex][9]; // N && x2
+                atomValid = (aNum == 7) && p[atomIndex][18] && p[atomIndex][9]; // N && ar && x2
                 break;
 
             case 36:
-                atomValid = (aNum == 7) && p[atomIndex][9] && (p[atomIndex][13] || p[atomIndex][12]); // N && x2 && (r5 || r4)
+                atomValid = (aNum == 7) && p[atomIndex][18] && p[atomIndex][7]; // N && ar && x3
                 break;
 
             case 37:
-                atomValid = (aNum == 17); // Cl
+                atomValid = (aNum == 7) && p[atomIndex][9]; // N && x2
                 break;
 
             case 38:
-                atomValid = (aNum == 9); // F
+                atomValid = (aNum == 7) && p[atomIndex][9] && (p[atomIndex][13] || p[atomIndex][12]); // N && x2 && (r5 || r4)
                 break;
 
             case 39:
-                atomValid = (aNum == 35); // Br
+                atomValid = (aNum == 17); // Cl
                 break;
 
             case 40:
-                atomValid = (aNum == 16) && p[atomIndex][2] && p[atomIndex][9]; // S && sp3 && x2
+                atomValid = (aNum == 9); // F
                 break;
 
             case 41:
-                atomValid = (aNum == 16) && p[atomIndex][2] && p[atomIndex][7]; // S && sp3 && x3
+                atomValid = (aNum == 35); // Br
                 break;
 
             case 42:
-                atomValid = (aNum == 16) && p[atomIndex][7]; // S && x3
+                atomValid = (aNum == 16) && p[atomIndex][2] && p[atomIndex][9]; // S && sp3 && x2
                 break;
 
             case 43:
-                atomValid = (aNum == 16); // S
+                atomValid = (aNum == 16) && p[atomIndex][2] && p[atomIndex][7]; // S && sp3 && x3
                 break;
 
             case 44:
-                atomValid = (aNum == 16) && p[atomIndex][18]; // S && ar
+                atomValid = (aNum == 16) && p[atomIndex][7]; // S && x3
                 break;
 
             case 45:
-                atomValid = (aNum == 16) && p[atomIndex][11]; // S && x1
+                atomValid = (aNum == 16); // S
                 break;
 
             case 46:
-                atomValid = (aNum == 15); // P
+                atomValid = (aNum == 16) && p[atomIndex][18]; // S && ar
                 break;
 
             case 47:
-                atomValid = (aNum == 15) && p[atomIndex][5]; // P && x4
+                atomValid = (aNum == 16) && p[atomIndex][11]; // S && x1
                 break;
 
             case 48:
-                atomValid = (aNum == 53); // I
+                atomValid = (aNum == 15); // P
                 break;
 
             case 49:
-                atomValid = (aNum == 53) && p[atomIndex][9]; // I && x2
+                atomValid = (aNum == 15) && p[atomIndex][5]; // P && x4
                 break;
 
             case 50:
-                atomValid = (aNum == 1); // H
+                atomValid = (aNum == 53); // I
                 break;
 
             case 51:
-                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][5]; // C && sp3 && x4
+                atomValid = (aNum == 53) && p[atomIndex][9]; // I && x2
                 break;
 
             case 52:
-                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][7]; // C && sp3 && x3
+                atomValid = (aNum == 1); // H
                 break;
 
             case 53:
-                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][9]; // C && sp3 && x2
+                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][5]; // C && sp3 && x4
                 break;
 
             case 54:
-                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][11]; // C && sp3 && x1
+                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][7]; // C && sp3 && x3
                 break;
 
             case 55:
-                atomValid = (aNum == 6) && p[atomIndex][0] && p[atomIndex][7]; // C && sp2 && x3
+                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][9]; // C && sp3 && x2
                 break;
 
             case 56:
-                atomValid = (aNum == 6) && p[atomIndex][0] && p[atomIndex][9]; // C && sp2 && x2
+                atomValid = (aNum == 6) && p[atomIndex][2] && p[atomIndex][11]; // C && sp3 && x1
                 break;
 
             case 57:
-                atomValid = (aNum == 6) && p[atomIndex][0] && p[atomIndex][11]; // C && sp2 && x1
+                atomValid = (aNum == 6) && p[atomIndex][0] && p[atomIndex][7]; // C && sp2 && x3
                 break;
 
             case 58:
-                atomValid = (aNum == 6) && p[atomIndex][1] && p[atomIndex][9]; // C && sp && x2
+                atomValid = (aNum == 6) && p[atomIndex][0] && p[atomIndex][9]; // C && sp2 && x2
                 break;
 
             case 59:
-                atomValid = (aNum == 6) && p[atomIndex][1] && p[atomIndex][11]; // C && sp && x1
+                atomValid = (aNum == 6) && p[atomIndex][0] && p[atomIndex][11]; // C && sp2 && x1
                 break;
 
             case 60:
-                atomValid = (aNum == 8) && p[atomIndex][0] && p[atomIndex][11]; // O && sp2 && x1
+                atomValid = (aNum == 6) && p[atomIndex][1] && p[atomIndex][9]; // C && sp && x2
                 break;
 
             case 61:
+                atomValid = (aNum == 6) && p[atomIndex][1] && p[atomIndex][11]; // C && sp && x1
+                break;
+
+            case 62:
+                atomValid = (aNum == 8) && p[atomIndex][0] && p[atomIndex][11]; // O && sp2 && x1
+                break;
+
+            case 63:
                 atomValid = (aNum == 7) && p[atomIndex][2] && p[atomIndex][7]; // N && sp3 && x3
                 break;
 
@@ -1057,7 +1059,7 @@ public class NodeValidator {
         return result;
     }
 
-    void assignProps(ArrayList path, final int patternIndex) {
+    public void assignProps(ArrayList path, final int patternIndex) {
         int[] props = propertyValues[patternIndex];
         for (int i = 0; i < props.length; i++) {
             if (props[i] >= 0) {
