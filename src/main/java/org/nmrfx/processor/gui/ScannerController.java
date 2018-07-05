@@ -7,6 +7,7 @@ package org.nmrfx.processor.gui;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -231,7 +232,7 @@ public class ScannerController implements Initializable {
 
     public static ScannerController create(FXMLController fxmlController, Stage parent, PolyChart chart) {
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/ScannerScene.fxml"));
-        ScannerController controller = null;
+        final ScannerController controller;
         Stage stage = new Stage(StageStyle.DECORATED);
 
         try {
@@ -248,13 +249,20 @@ public class ScannerController implements Initializable {
 
             stage.initOwner(parent);
             stage.show();
+            stage.setOnCloseRequest(e -> controller.stageClosed());
+            return controller;
         } catch (IOException ioE) {
             ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
 
-        return controller;
+        return null;
 
+    }
+    
+    void stageClosed() {
+        chart.setDrawlist(Collections.EMPTY_LIST);
+        stage.close();
     }
 
     private void initParSheet() {
