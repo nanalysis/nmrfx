@@ -21,7 +21,7 @@ public class PathIterator implements Iterator {
     int currentAtom = -1;
     Map atomMap = new HashMap();
     PathVars pVars = null;
-    NodeValidator nodeValidator;
+    NodeValidatorInterface nodeValidator;
     IAtom[] atoms;
     IBond[] bonds;
     int currentPattern = 0;
@@ -33,7 +33,7 @@ public class PathIterator implements Iterator {
         pVars = new PathVars(ac, "p");
     }
 
-    public void init(NodeValidator nodeValidator) {
+    public void init(NodeValidatorInterface nodeValidator) {
         this.nodeValidator = nodeValidator;
 
         atoms = new IAtom[ac.getAtomCount()];
@@ -537,7 +537,7 @@ public class PathIterator implements Iterator {
         int spIndex = getPropIndex(propNames, "sp");
         int sp2Index = getPropIndex(propNames, "sp2");
         if (spIndex != -1) {
-            boolean[][] props = nodeValidator.p;
+            boolean[][] props = nodeValidator.getProperties();
             for (int i = 0; i < props.length; i++) {
                 if (props[i][spIndex]) {
                     atoms[i].setProperty("hyb", 1);
@@ -556,7 +556,7 @@ public class PathIterator implements Iterator {
         String[] propNames = nodeValidator.getPropertyNames();
         int arIndex = getPropIndex(propNames, propName);
         if (arIndex != -1) {
-            boolean[][] props = nodeValidator.p;
+            boolean[][] props = nodeValidator.getProperties();
             for (int i = 0; i < props.length; i++) {
                 atoms[i].setFlag(flag, props[i][arIndex]);
             }
