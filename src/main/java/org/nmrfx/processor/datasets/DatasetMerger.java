@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.processor.datasets;
 
 import java.io.File;
@@ -60,10 +59,19 @@ public class DatasetMerger {
                 inputDataset.readVector(inVec, 0, 0);
                 indices[0] = iFile;
                 outputDataset.writeVector(inVec, indices, 0);
+            } else if (nDim == 2) {
+                int nRows = inputDataset.getSize(1);
+                for (int iRow = 0; iRow < nRows; iRow++) {
+                    inputDataset.readVector(inVec, iRow, 0);
+                    indices[0] = iRow;
+                    indices[1] = iFile;
+                    outputDataset.writeVector(inVec, indices, 0);
+                }
             }
             iFile++;
         }
         outputDataset.writeHeader();
+        outputDataset.writeParFile();
         outputDataset.close();
     }
 
