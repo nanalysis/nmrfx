@@ -1187,7 +1187,6 @@ class refine:
             pI.setProperties("ar", "AROMATIC");
             pI.setProperties("res", "RESONANT");
             pI.setProperties("r", "RING");
-            pI.setProperties("r4", "RING");
             pI.setHybridization();
             aTree = AngleTreeGenerator()
             atoms = ligand.getAtoms()
