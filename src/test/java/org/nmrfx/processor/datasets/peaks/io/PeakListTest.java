@@ -76,14 +76,14 @@ public class PeakListTest {
         }
     }
     
-    @Test
-    public void testGetId() {
-        PeakList peakList = getPeakList(peakListName2);
-        Assert.assertNotNull(peakList);
-        
-        int id = 1;
-        Assert.assertEquals(id, peakList.getId(), 1.0e-5);
-    }
+//    @Test
+//    public void testGetId() {
+//        PeakList peakList = getPeakList(peakListName2);
+//        Assert.assertNotNull(peakList);
+//        
+//        int id = 1;
+//        Assert.assertEquals(id, peakList.getId(), 1.0e-5);
+//    }
 
     @Test
     public void testGetName() {
@@ -299,6 +299,7 @@ public class PeakListTest {
         double[][] limits = {{9,10}, {127, 128}};
         int[] dims = {0, 1};
         List peakListl = peakList.locatePeaks(limits, dims);
+        
         
         double[] ppms = {9.57507, 9.41346};
         for (int i = 0; i < ppms.length; i++) {
