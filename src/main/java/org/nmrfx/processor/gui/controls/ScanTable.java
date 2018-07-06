@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
@@ -335,11 +336,13 @@ public class ScanTable {
                         // After merging, remove the 1D files
                         for (String fileName : fileNames) {
                             File file = new File(fileName);
+                            FXMLController.getActiveController().closeFile(file);
                             Files.deleteIfExists(file.toPath());
                             String parFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".par";
                             File parFile = new File(parFileName);
                             Files.deleteIfExists(parFile.toPath());
                         }
+
                         // load merged dataset
                         FXMLController.getActiveController().openFile(mergedFilepath, false, false);
                         List<Integer> rows = new ArrayList<>();
@@ -390,6 +393,7 @@ public class ScanTable {
     private void loadScanFiles(ArrayList<String> nmrFiles, int beginIndex) {
         fileListItems.clear();
         long firstDate = Long.MAX_VALUE;
+        List<FileTableItem> items = new ArrayList<>();
         for (String filePath : nmrFiles) {
             NMRData nmrData = null;
             try {
@@ -402,12 +406,16 @@ public class ScanTable {
                 if (date < firstDate) {
                     firstDate = date;
                 }
-                fileListItems.add(new FileTableItem(filePath.substring(beginIndex), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), 0, ""));
+                items.add(new FileTableItem(filePath.substring(beginIndex), nmrData.getSequence(), nmrData.getNDim(), nmrData.getDate(), 0, ""));
             }
         }
-        for (FileTableItem item : fileListItems) {
-            item.setDate(item.getDate() - firstDate);
-        }
+        items.sort(Comparator.comparingLong(FileTableItem::getDate));
+        final long firstDate2 = firstDate;
+        items.stream().forEach((FileTableItem item) -> {
+            item.setDate(item.getDate() - firstDate2);
+            fileListItems.add(item);
+        });
+
         fileTableFilter.resetFilter();
     }
 
