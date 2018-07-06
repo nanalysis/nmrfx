@@ -5201,27 +5201,32 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public void copyHeader(Dataset targetDataset) {
         for (int i = 0; i < nDim; i++) {
-            targetDataset.setSf(i, getSf(i));
-            targetDataset.setSw(i, getSw(i));
-            targetDataset.setSw_r(i, getSw_r(i));
-            targetDataset.setRefValue_r(i, getRefValue_r(i));
-            targetDataset.setRefValue(i, getRefValue(i));
-            targetDataset.setRefPt_r(i, getRefPt_r(i));
-            targetDataset.setRefPt(i, getRefPt(i));
-            targetDataset.setRefUnits(i, getRefUnits(i));
-            targetDataset.setLabel(i, getLabel(i));
-            targetDataset.setDlabel(i, getDlabel(i));
-            targetDataset.setNucleus(i, getNucleus(i));
-            targetDataset.setFreqDomain(i, getFreqDomain(i));
-            targetDataset.setFreqDomain_r(i, getFreqDomain_r(i));
-            targetDataset.setComplex(i, getComplex(i));
-            targetDataset.setComplex_r(i, getComplex_r(i));
-            targetDataset.setVSize_r(i, getVSize_r(i));
-            targetDataset.setVSize(i, getVSize(i));
+            copyHeader(targetDataset, i);
         }
         targetDataset.setSolvent(getSolvent());
         targetDataset.setTitle(getTitle());
         targetDataset.writeHeader();
+    }
+
+    public void copyHeader(Dataset targetDataset, int iDim) {
+        targetDataset.setSf(iDim, getSf(iDim));
+        targetDataset.setSw(iDim, getSw(iDim));
+        targetDataset.setSw_r(iDim, getSw_r(iDim));
+        targetDataset.setRefValue_r(iDim, getRefValue_r(iDim));
+        targetDataset.setRefValue(iDim, getRefValue(iDim));
+        targetDataset.setRefPt_r(iDim, getRefPt_r(iDim));
+        targetDataset.setRefPt(iDim, getRefPt(iDim));
+        targetDataset.setRefUnits(iDim, getRefUnits(iDim));
+        targetDataset.setLabel(iDim, getLabel(iDim));
+        targetDataset.setDlabel(iDim, getDlabel(iDim));
+        targetDataset.setNucleus(iDim, getNucleus(iDim));
+        targetDataset.setFreqDomain(iDim, getFreqDomain(iDim));
+        targetDataset.setFreqDomain_r(iDim, getFreqDomain_r(iDim));
+        targetDataset.setComplex(iDim, getComplex(iDim));
+        targetDataset.setComplex_r(iDim, getComplex_r(iDim));
+        targetDataset.setVSize_r(iDim, getVSize_r(iDim));
+        targetDataset.setVSize(iDim, getVSize(iDim));
+
     }
 
     /**
