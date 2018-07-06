@@ -264,10 +264,13 @@ class MolPeakGen:
                     #print "A Selected", aSelected
 
                     if delta == "x":
-                       kRes = iRes-1
-
-                       if pairs[kRes] != -1:
-                          jRes = pairs[kRes]
+                       iPairRes = pairs[iRes]
+                       if pairs[iPairRes] != -1:
+                           kRes = iRes-1
+                           if pairs[kRes] != -1:
+                              jRes = pairs[kRes]
+                           else:
+                              continue
                        else:
                           continue
                     else:
