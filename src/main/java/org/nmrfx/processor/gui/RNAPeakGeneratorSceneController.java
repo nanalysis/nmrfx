@@ -309,7 +309,7 @@ public class RNAPeakGeneratorSceneController implements Initializable {
                 }
                 sBuilder.append(selGroup.trim());
             }
-            dataset.addProperty("selGroups", sBuilder.toString());
+            dataset.addProperty("labelScheme", sBuilder.toString());
         }
     }
 
@@ -318,10 +318,10 @@ public class RNAPeakGeneratorSceneController implements Initializable {
         Dataset dataset = Dataset.getDataset(genDatasetNameField.getValue());
         selGroupList.clear();
         if (dataset != null) {
-            String selGroupPar = dataset.getProperty("selGroups");
-            String[] selGroups = selGroupPar.split(";");
-            for (String selGroup : selGroups) {
-                selGroupList.add(selGroup);
+            String selGroupPar = dataset.getProperty("labelScheme");
+            String[] labelSchemes = selGroupPar.split(";");
+            for (String labelScheme : labelSchemes) {
+                selGroupList.add(labelScheme);
             }
         }
     }
