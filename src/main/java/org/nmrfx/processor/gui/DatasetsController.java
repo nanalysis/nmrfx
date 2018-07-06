@@ -45,6 +45,8 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.converter.DoubleStringConverter;
 import java.text.DecimalFormat;
+import java.util.List;
+import java.util.stream.Collectors;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -83,6 +85,7 @@ public class DatasetsController implements Initializable {
     Button valueButton;
     Stage valueStage = null;
     TableView<ValueItem> valueTableView = null;
+    Dataset valueDataset = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -467,20 +470,33 @@ public class DatasetsController implements Initializable {
             switch (column) {
                 case "Value":
                     value.setValue(newValue);
+//                    System.out.println("value changed to " + newValue);
+                    saveValueTable();
                     break;
             }
         }
 
     }
 
+    void saveValueTable() {
+        List<ValueItem> items = valueTableView.getItems();
+        if (valueDataset != null) {
+            double[] values = items.stream().mapToDouble(v -> v.getValue()).toArray();
+            int nDim = valueDataset.getNDim();
+            valueDataset.setValues(nDim - 1, values);
+        }
+    }
+
     public void updateValueTable(TableView valueTable) {
         ObservableList<Dataset> datasets = tableView.getSelectionModel().getSelectedItems();
         ObservableList<ValueItem> valueList = FXCollections.observableArrayList();
+        valueDataset = null;
         if (datasets.size() == 1) {
-            Dataset dataset = datasets.get(0);
-            int nDim = dataset.getNDim();
+            valueDataset = datasets.get(0);
+            int nDim = valueDataset.getNDim();
+            
             for (int i = 0; i < nDim; i++) {
-                double[] values = dataset.getValues(i);
+                double[] values = valueDataset.getValues(i);
                 if ((values != null) && (values.length > 1)) {
                     System.out.println(i + " " + values.length);
                     for (int j = 0; j < values.length; j++) {
@@ -488,6 +504,13 @@ public class DatasetsController implements Initializable {
                         valueList.add(item);
                     }
                     break;
+                }
+            }
+            if (valueList.isEmpty()) {
+                if (valueDataset.getNFreqDims() < nDim) {
+                    for (int i=0;i< valueDataset.getSize(nDim-1);i++) {
+                        valueList.add(new ValueItem(i,0.0));
+                    }
                 }
             }
         }
