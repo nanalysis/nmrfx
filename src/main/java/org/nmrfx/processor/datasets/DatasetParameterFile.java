@@ -291,11 +291,12 @@ public class DatasetParameterFile {
 
             case "property": {
                 String propName = fields[1];
-                // fixme property value could have spaces
                 if (fields.length == 2) {
                     dataset.addProperty(propName, "");
                 } else {
-                    dataset.addProperty(propName, fields[2]);
+                    int index = line.indexOf(propName) + propName.length();
+                    String propValue = line.substring(index).trim();
+                    dataset.addProperty(propName, propValue);
                 }
                 break;
             }
