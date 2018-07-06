@@ -67,6 +67,8 @@ public class DatasetMerger {
                     indices[1] = iFile;
                     outputDataset.writeVector(inVec, indices, 0);
                 }
+                inputDataset.copyHeader(outputDataset, 0);
+                inputDataset.copyHeader(outputDataset, 1);
             }
             iFile++;
         }
