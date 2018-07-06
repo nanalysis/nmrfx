@@ -550,7 +550,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         datasetList.addAll(Dataset.datasets());
     }
 
-    void closeFile(File target) {
+    public void closeFile(File target) {
         getActiveChart().removeAllDatasets();
         // removeAllDatasets in chart only stops displaying them, so we need to actually close the dataset
         Path path1 = target.toPath();
