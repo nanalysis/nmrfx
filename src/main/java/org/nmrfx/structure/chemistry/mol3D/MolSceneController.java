@@ -42,6 +42,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.AtomController;
@@ -52,6 +53,7 @@ import org.nmrfx.structure.chemistry.Compound;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Polymer;
+import org.nmrfx.structure.chemistry.RNALabels;
 import org.nmrfx.structure.chemistry.SSLayout;
 import org.nmrfx.structure.chemistry.SSViewer;
 
@@ -510,6 +512,13 @@ public class MolSceneController implements Initializable, MolSelectionListener {
                     constraintPairs.add(name1);
                     constraintPairs.add(name2);
                 }
+            }
+            String datasetName = peakList.getDatasetName();
+            if ((datasetName != null) && !datasetName.equals("") && (Molecule.getActive() != null)) {
+                Dataset dataset = Dataset.getDataset(datasetName);
+                String labelScheme = dataset.getProperty("labelScheme");
+                RNALabels rnaLabels = new RNALabels();
+                rnaLabels.parseSelGroups(Molecule.getActive(), labelScheme);
             }
         }
         ssViewer.setConstraintPairs(constraintPairs);
