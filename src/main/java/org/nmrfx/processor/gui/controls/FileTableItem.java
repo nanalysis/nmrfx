@@ -222,6 +222,7 @@ public class FileTableItem {
 
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(fileName.get()).append(" ");
         sBuilder.append(seqName.get());
         sBuilder.append(" ");
         sBuilder.append(nDim.get());
