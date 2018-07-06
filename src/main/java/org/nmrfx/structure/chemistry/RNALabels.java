@@ -148,11 +148,14 @@ public class RNALabels {
         allAtoms.forEach((atom) -> {
             atom.setActive(false);
         });
-        String[] groups = selGroups.split(" ");
-        for (String group : groups) {
-            group = group.trim();
-            if (group.length() > 0) {
-                parseGroup(molecule, group);
+        String[] selGroupSets = selGroups.split(";");
+        for (String selGroupSet : selGroupSets) {
+            String[] groups = selGroupSet.split(" ");
+            for (String group : groups) {
+                group = group.trim();
+                if (group.length() > 0) {
+                    parseGroup(molecule, group);
+                }
             }
         }
     }
