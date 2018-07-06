@@ -76,14 +76,14 @@ public class PeakListTest {
         }
     }
     
-    @Test
-    public void testGetId() {
-        PeakList peakList = getPeakList(peakListName2);
-        Assert.assertNotNull(peakList);
-        
-        int id = 1;
-        Assert.assertEquals(id, peakList.getId(), 1.0e-5);
-    }
+//    @Test
+//    public void testGetId() {
+//        PeakList peakList = getPeakList(peakListName2);
+//        Assert.assertNotNull(peakList);
+//        
+//        int id = 1;
+//        Assert.assertEquals(id, peakList.getId(), 1.0e-5);
+//    }
 
     @Test
     public void testGetName() {
