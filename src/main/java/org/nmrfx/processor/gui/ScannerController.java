@@ -317,8 +317,7 @@ public class ScannerController implements Initializable {
     private void purgeInactive(ActionEvent event) {
         ObservableList<FileTableItem> tempItems = FXCollections.observableArrayList();
         tempItems.addAll(tableView.getItems());
-        scanTable.getItems().clear();
-        scanTable.getItems().addAll(tempItems);
+        scanTable.getItems().setAll(tempItems);
     }
 
     @FXML
