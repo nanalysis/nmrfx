@@ -656,8 +656,7 @@ public class RNAPeakGeneratorSceneController implements Initializable {
 
             controller = loader.<RNAPeakGeneratorSceneController>getController();
             controller.stage = stage;
-            stage.setTitle("RNA Peak Generator");
-            stage.setAlwaysOnTop(true);
+            stage.setTitle("RNA Label Schemes");
             stage.show();
         } catch (IOException ioE) {
             ioE.printStackTrace();
