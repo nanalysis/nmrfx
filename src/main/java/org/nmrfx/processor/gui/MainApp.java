@@ -65,10 +65,15 @@ import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.project.GUIStructureProject;
 import org.nmrfx.processor.utilities.WebConnect;
+import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
 import org.nmrfx.structure.chemistry.io.NMRStarReader;
 import org.nmrfx.structure.chemistry.io.NMRStarWriter;
+import org.nmrfx.structure.chemistry.io.PDBFile;
+import org.nmrfx.structure.chemistry.io.SDFile;
+import org.nmrfx.structure.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 
 public class MainApp extends Application implements DatasetListener {
@@ -355,13 +360,25 @@ public class MainApp extends Application implements DatasetListener {
 //        formatMenu.getItems().addAll(new MenuItem("TBD"));
         // View Menu (items TBD)
         Menu molMenu = new Menu("Molecules");
-        MenuItem atomsMenuItem = new MenuItem("Show Atoms");
+        Menu molFileMenu = new Menu("File");
+
+        MenuItem readSeqItem = new MenuItem("Read Sequence...");
+        readSeqItem.setOnAction(e -> readMolecule("seq"));
+        molFileMenu.getItems().add(readSeqItem);
+        MenuItem readPDBItem = new MenuItem("Read PDB...");
+        readPDBItem.setOnAction(e -> readMolecule("pdb"));
+        molFileMenu.getItems().add(readPDBItem);
+        MenuItem readMolItem = new MenuItem("Read Mol...");
+        readMolItem.setOnAction(e -> readMolecule("mol"));
+        molFileMenu.getItems().add(readMolItem);
+
+        MenuItem atomsMenuItem = new MenuItem("Atoms");
         atomsMenuItem.setOnAction(e -> showAtoms(e));
 
-        MenuItem molMenuItem = new MenuItem("Show Molecule");
+        MenuItem molMenuItem = new MenuItem("Viewer");
         molMenuItem.setOnAction(e -> showMols(e));
 
-        molMenu.getItems().addAll(atomsMenuItem, molMenuItem);
+        molMenu.getItems().addAll(molFileMenu, atomsMenuItem, molMenuItem);
 
         Menu viewMenu = new Menu("View");
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
@@ -382,7 +399,7 @@ public class MainApp extends Application implements DatasetListener {
         MenuItem minerMenuItem = new MenuItem("Show Miner");
         minerMenuItem.setOnAction(e -> showMiner(e));
 
-        MenuItem rnaPeakGenMenuItem = new MenuItem("Show RNA Peak Gen");
+        MenuItem rnaPeakGenMenuItem = new MenuItem("Show RNA Label Scheme");
         rnaPeakGenMenuItem.setOnAction(e -> showRNAPeakGenerator(e));
 
         viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem, minerMenuItem, rnaPeakGenMenuItem);
@@ -830,4 +847,38 @@ public class MainApp extends Application implements DatasetListener {
             }
         }
     }
+
+    void readMolecule(String type) {
+        FileChooser fileChooser = new FileChooser();
+        File file = fileChooser.showOpenDialog(null);
+        if (file != null) {
+            try {
+                switch (type) {
+                    case "pdb":
+                        PDBFile pdbReader = new PDBFile();
+                        pdbReader.readSequence(file.toString(), false);
+                        System.out.println("read mol: " + file.toString());
+                        break;
+                    case "sdf":
+                    case "mol":
+                        SDFile.read(file.toString(), null);
+                        break;
+                    case "seq":
+                        Sequence seq = new Sequence();
+                        seq.read(file.toString());
+                        break;
+                    default:
+                        break;
+                }
+            } catch (MoleculeIOException ioE) {
+                ExceptionDialog dialog = new ExceptionDialog(ioE);
+                dialog.showAndWait();
+            }
+
+            if (atomController != null) {
+                atomController.setFilterString("");
+            }
+        }
+    }
+
 }

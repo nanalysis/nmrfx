@@ -191,10 +191,6 @@ public class AtomController implements Initializable, FreezeListener {
     void initMenuBar() {
         MenuButton fileMenu = new MenuButton("File");
 
-        MenuItem readMolItem = new MenuItem("Read Mol...");
-        readMolItem.setOnAction(e -> readMolecule());
-        fileMenu.getItems().add(readMolItem);
-
         MenuItem readCoordinatesItem = new MenuItem("Read Multiple Coordinates...");
         readCoordinatesItem.setOnAction(e -> readCoordinates());
         fileMenu.getItems().add(readCoordinatesItem);
@@ -343,7 +339,7 @@ public class AtomController implements Initializable, FreezeListener {
         atomTableView.getColumns().setAll(indexColumn, entityNameColumn, residueNameColumn, residueNumberColumn, atomNameCol, ppmCol, refCol);
     }
 
-    private void setFilterString(String filterName) {
+    public void setFilterString(String filterName) {
         String filterString = filterMap.get(filterName);
         if (filterString == null) {
             filterString = "";
@@ -523,21 +519,6 @@ public class AtomController implements Initializable, FreezeListener {
             }
         }
         atomTableView.refresh();
-    }
-
-    void readMolecule() {
-        FileChooser fileChooser = new FileChooser();
-        File file = fileChooser.showOpenDialog(null);
-        if (file != null) {
-            Path path = file.toPath();
-            try {
-                StructureProject.loadMolecule(path);
-            } catch (MoleculeIOException ioE) {
-                ExceptionDialog dialog = new ExceptionDialog(ioE);
-                dialog.showAndWait();
-            }
-        }
-        setFilterString("");
     }
 
     void readCoordinates() {
