@@ -10,6 +10,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -23,9 +25,14 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.processor.datasets.Dataset;
@@ -39,6 +46,20 @@ import org.nmrfx.structure.chemistry.RNALabels;
  */
 public class RNAPeakGeneratorSceneController implements Initializable {
 
+    String baseAAtoms = "28";
+
+    Pattern quickPat0 = Pattern.compile("^([AGCU][nrH1-9']+)+$");
+    Pattern quickPat1 = Pattern.compile("([AGCU][nrH1-9']+)");
+    Pattern quickPat2 = Pattern.compile("(n|r|H|[1-5]'|[2-8])");
+    Pattern quickPatA = Pattern.compile("([1-5]'|[28])");
+    Pattern quickPatG = Pattern.compile("([1-5]'|[8])");
+    Pattern quickPatC = Pattern.compile("([1-5]'|[56])");
+    Pattern quickPatU = Pattern.compile("([1-5]'|[56])");
+    Background defaultBackground = null;
+    Background errorBackground = new Background(new BackgroundFill(Color.YELLOW, null, null));
+
+    @FXML
+    TextField quickCodeField;
     @FXML
     GridPane adenosinePane;
     @FXML
@@ -186,9 +207,97 @@ public class RNAPeakGeneratorSceneController implements Initializable {
         loadSelGroupButton.disableProperty().bind(genDatasetNameField.valueProperty().isNull());
         genDatasetNameField.setOnShowing(e -> updateGenDatasetNames());
         entityChoiceBox.setOnShowing(e -> updateMolecule());
+        quickCodeField.setOnKeyReleased(e -> {
+            doQuickCode(e, quickCodeField.getText());
+
+        });
         updateGenDatasetNames();
         updateMolecule();
         entityChoiceBox.setValue("*");
+    }
+
+    void doQuickCode(KeyEvent e, String code) {
+        System.out.println("quick " + code);
+        if (defaultBackground == null) {
+            defaultBackground = quickCodeField.getBackground();
+        }
+        code = code.trim();
+        if (code.length() == 0) {
+            quickCodeField.setBackground(defaultBackground);
+            if (e.getCode() == KeyCode.ENTER) {
+                clearAllButtons();
+            }
+            return;
+        }
+        if (!quickPat0.matcher(code).matches()) {
+            quickCodeField.setBackground(errorBackground);
+            return;
+        } else {
+            quickCodeField.setBackground(defaultBackground);
+        }
+
+        Matcher matcher = quickPat1.matcher(code);
+        StringBuilder sBuilder = new StringBuilder();
+        boolean ok = false;
+        while (matcher.find()) {
+            System.out.println(matcher.group(1));
+            Matcher matcher2 = quickPat2.matcher(matcher.group(1));
+            String base = matcher.group(1).substring(0, 1);
+            sBuilder.append("*:").append(base).append("*.");
+            boolean first = true;
+            while (matcher2.find()) {
+                ok = true;
+                if (!first) {
+                    sBuilder.append(",");
+                } else {
+                    first = false;
+                }
+                String atomType = matcher2.group(1);
+                System.out.println(atomType);
+                if (atomType.equals("r")) {
+                    sBuilder.append("Hr");
+                } else if (atomType.equals("n")) {
+                    sBuilder.append("Hn");
+                } else {
+                    if (atomType.length() != 2) {
+                        Pattern basePat = null;
+                        switch (base) {
+                            case "A":
+                                basePat = quickPatA;
+                                break;
+                            case "G":
+                                basePat = quickPatG;
+                                break;
+                            case "C":
+                            case "U":
+                                basePat = quickPatC;
+                                break;
+                            default:
+                                ok = false;
+                                break;
+                        }
+                        if (!basePat.matcher(atomType).matches()) {
+                            ok = false;
+                        }
+                    }
+                    sBuilder.append("H").append(atomType);
+                }
+            }
+            if (!ok) {
+                break;
+            }
+            sBuilder.append(" ");
+        }
+        System.out.println(sBuilder.toString());
+        if (ok) {
+            if (e.getCode() == KeyCode.ENTER) {
+                updateButtons(sBuilder.toString());
+                quickCodeField.setText("");
+            }
+        } else {
+            quickCodeField.setBackground(errorBackground);
+        }
+
     }
 
     public void updateGenDatasetNames() {
@@ -496,27 +605,31 @@ public class RNAPeakGeneratorSceneController implements Initializable {
         int index = selGroupListView.getSelectionModel().getSelectedIndex();
         if (index != -1) {
             String selGroupEntry = selGroupList.get(index);
-            if (selGroupEntry.length() > 0) {
-                String[] selGroupStrs = selGroupEntry.split(" ");
-                for (String selGroupStr : selGroupStrs) {
-                    RNALabels.SelGroup selGroup = RNALabels.parseSelGroup(selGroupStr);
-                    if (selGroup.firstRes != null) {
-                        firstResidueField.setText(String.valueOf(selGroup.firstRes));
-                    }
-                    if (selGroup.lastRes != null) {
-                        lastResidueField.setText(String.valueOf(selGroup.lastRes));
-                    }
-                    entityChoiceBox.setValue(selGroup.entityStr);
-                    for (int iBase = 0; iBase < 4; iBase++) {
-                        if (RNALabels.checkResType(baseChars[iBase], selGroup.resTypes)) {
-                            for (int iType = 0; iType < 3; iType++) {
-                                for (CheckBox checkBox : checkBoxes[iBase][iType]) {
-                                    boolean exchangeable = iType == 1;
-                                    boolean ribose = iType == 2;
-                                    boolean state = RNALabels.checkAtom(checkBox.getText(), checkBox.getText().substring(0, 1), selGroup.gAtomNames, ribose, exchangeable);
-                                    if (state) {
-                                        checkBox.setSelected(true);
-                                    }
+            updateButtons(selGroupEntry);
+        }
+    }
+
+    void updateButtons(String selGroupEntry) {
+        if (selGroupEntry.length() > 0) {
+            String[] selGroupStrs = selGroupEntry.split(" ");
+            for (String selGroupStr : selGroupStrs) {
+                RNALabels.SelGroup selGroup = RNALabels.parseSelGroup(selGroupStr);
+                if (selGroup.firstRes != null) {
+                    firstResidueField.setText(String.valueOf(selGroup.firstRes));
+                }
+                if (selGroup.lastRes != null) {
+                    lastResidueField.setText(String.valueOf(selGroup.lastRes));
+                }
+                entityChoiceBox.setValue(selGroup.entityStr);
+                for (int iBase = 0; iBase < 4; iBase++) {
+                    if (RNALabels.checkResType(baseChars[iBase], selGroup.resTypes)) {
+                        for (int iType = 0; iType < 3; iType++) {
+                            for (CheckBox checkBox : checkBoxes[iBase][iType]) {
+                                boolean exchangeable = iType == 1;
+                                boolean ribose = iType == 2;
+                                boolean state = RNALabels.checkAtom(checkBox.getText(), checkBox.getText().substring(0, 1), selGroup.gAtomNames, ribose, exchangeable);
+                                if (state) {
+                                    checkBox.setSelected(true);
                                 }
                             }
                         }
@@ -524,6 +637,7 @@ public class RNAPeakGeneratorSceneController implements Initializable {
                 }
             }
         }
+
     }
 
     public Stage getStage() {

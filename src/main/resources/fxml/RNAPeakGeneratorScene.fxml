@@ -26,6 +26,8 @@
                         <MenuItem text="Riboses Off" onAction="#setAllRibosesOff"/>
                     </items>
                 </MenuButton>
+                <Label text="QuckCode:"/>
+                <TextField fx:id="quickCodeField"/>
             </items>
         </ToolBar>
     </top>
