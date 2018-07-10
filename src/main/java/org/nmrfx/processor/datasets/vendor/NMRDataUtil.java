@@ -25,7 +25,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Base64.Encoder;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
@@ -270,5 +274,12 @@ public final class NMRDataUtil {
         }
         return fileList;
 
+    }
+
+    public static String calculateHash(String input) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        digest.update(input.getBytes());
+        Encoder base64 = Base64.getEncoder();
+        return base64.encodeToString(digest.digest());
     }
 }
