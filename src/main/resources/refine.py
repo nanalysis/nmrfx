@@ -531,14 +531,14 @@ class refine:
                     start = None
                     end = None
                 else:
-                    if 'start' in treeDict:
-                        start = treeDict['start']
-                    else:
-                        start = None
-                    if 'end' in treeDict:
-                        end = treeDict['end']
-                    else:
-                        end = None
+                if 'start' in treeDict:
+                    start = treeDict['start']
+                else:
+                    start = None
+                if 'end' in treeDict:
+                    end = treeDict['end']
+                else:
+                    end = None
                 self.setupTree(start, end)
             
     def readDistanceDict(self,disDict,residues):
@@ -792,6 +792,19 @@ class refine:
         angleMap['CHI1','TYR']= "CG"
         angleMap['CHI1','VAL']= "CG1"
         angleMap['CHI2','LEU']= "CD1"
+        angleMap['CHI2','ASP']= "OD1"
+        angleMap['CHI2','PHE']= "CD1"
+        angleMap['CHI2','GLU']= "CD"
+        angleMap['CHI2','GLN']= "CD"
+        angleMap['CHI2','MET']= "SD"
+        angleMap['CHI2','TYR']= "CD1"
+        angleMap['CHI2','TRP']= "CD1"
+        angleMap['CHI21','ILE']= "CD1"
+        angleMap['CHI21','THR']= "HG1"
+        angleMap['CHI3','GLU']= "OE1"
+        angleMap['CHI2','HIS']= "CD2"
+        angleMap['CHI2','LYS']= "CD"
+        angleMap['CHI2','ARG']= "CD"
 
         fIn = open(fileName,'r')
         for line in fIn:
@@ -821,7 +834,7 @@ class refine:
            if lower == upper:
                lower = lower - 20
                upper = upper + 20
-           if (lower < -180):
+           if (lower < -180) and (upper < 0.0):
                 lower += 360
                 upper += 360
            self.dihedral.addBoundary(fullAtom,lower,upper,scale)
@@ -1194,11 +1207,11 @@ class refine:
             aTree = AngleTreeGenerator()
             atoms = ligand.getAtoms()
             if start != None:
-                startAtom = ligand.getAtom(start)
+            startAtom = ligand.getAtom(start)
             else:
                 startAtom = None
             if end != None:
-                endAtom = ligand.getAtom(end)
+            endAtom = ligand.getAtom(end)
             else:
                 endAtom = None
             aTree.scan(ligand,startAtom, endAtom)
