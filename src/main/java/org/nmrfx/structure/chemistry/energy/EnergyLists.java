@@ -407,31 +407,29 @@ public class EnergyLists {
         if (filterStrings1.size() != filterStrings2.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
         }
-        ArrayList<Atom> atoms1 = new ArrayList<>();
-        ArrayList<Atom> atoms2 = new ArrayList<>();
+        ArrayList<Atom> atoms1m = new ArrayList<>();
+        ArrayList<Atom> atoms2m = new ArrayList<>();
         for (int i = 0; i < filterStrings1.size(); i++) {
             String filterString1 = filterStrings1.get(i);
             String filterString2 = filterStrings2.get(i);
             MolFilter molFilter1 = new MolFilter(filterString1);
             MolFilter molFilter2 = new MolFilter(filterString2);
 
-            atoms1.addAll(Molecule.getNEFMatchedAtoms(molFilter1, molecule));
-            atoms2.addAll(Molecule.getNEFMatchedAtoms(molFilter2, molecule));
+            List<Atom> group1 = Molecule.getNEFMatchedAtoms(molFilter1, molecule);
+            List<Atom> group2 = Molecule.getNEFMatchedAtoms(molFilter2, molecule);
 
-            if (atoms1.size() == 0) {
-                throw new IllegalArgumentException("atom null " + filterString1);
+            if (group1.size() == 0) {
+                throw new IllegalArgumentException("atoms1 null " + filterString1);
             }
-            if (atoms2.size() == 0) {
-                throw new IllegalArgumentException("atom null " + filterString2);
+            if (group2.size() == 0) {
+                throw new IllegalArgumentException("atoms2 null " + filterString2);
             }
-        }
-        ArrayList<Atom> atoms1m = new ArrayList<>();
-        ArrayList<Atom> atoms2m = new ArrayList<>();
 
-        for (Atom atom1 : atoms1) {
-            for (Atom atom2 : atoms2) {
-                atoms1m.add(atom1);
-                atoms2m.add(atom2);
+            for (Atom atom1 : group1) {
+                for (Atom atom2 : group2) {
+                    atoms1m.add(atom1);
+                    atoms2m.add(atom2);
+                }
             }
         }
         Atom[] atomsA1 = new Atom[atoms1m.size()];
@@ -667,6 +665,7 @@ public class EnergyLists {
                 EnergyCoords eCoords = molecule.getEnergyCoords();
                 distanceEnergy = eCoords.calcNOE(false, forceWeight.getNOE());
                 nDistance = eCoords.getNNOE();
+                System.out.println("NNOE " + nDistance + " nRepel " + eCoords.getNContacts());
                 for (int i = 0; i < nDistance; i++) {
                     ViolationStats stat = eCoords.getNOEError(i, limitVal, forceWeight.getNOE());
                     if (stat != null) {
@@ -919,6 +918,7 @@ public class EnergyLists {
             } else if (deltaEnd == 0) {
                 ok = true;
             } else {
+                int nPairs = distancePair.atomPairs.length;
                 for (AtomDistancePair atomDistancePair : distancePair.atomPairs) {
                     Atom atom1 = atomDistancePair.atoms1[0];
                     Atom atom2 = atomDistancePair.atoms2[0];
@@ -931,7 +931,7 @@ public class EnergyLists {
                         int jAtom = atom2.iAtom;
                         int iUnit = atom1.rotGroup.rotUnit;
                         int jUnit = atom2.rotGroup.rotUnit;
-                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup, weight);
+                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup, weight / nPairs);
                     }
                 }
             }
