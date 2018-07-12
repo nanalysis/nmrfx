@@ -58,7 +58,7 @@ public class EnergyCoords {
     double[] weights = new double[DEFAULTSIZE];
 
     double[] derivs = new double[DEFAULTSIZE];
-    int repelStart = 10000;
+    int repelStart = 20000;
     int repelEnd = repelStart;
     int disEnd = 0;
     int nAtoms = 0;
