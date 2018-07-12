@@ -55,13 +55,14 @@ public class AngleBoundary {
     int index = -1;
     final static double toRad = Math.PI / 180.0;
 
-    public AngleBoundary(final String atomName, final double lower, final double upper, final double scale) throws InvalidMoleculeException {
+    public AngleBoundary(final String atomName, double lower, double upper, final double scale) throws InvalidMoleculeException {
         /*Changed from Original*/
-        if ((lower < -180.0) || (upper > 360.0) || (upper < lower)) {
+        if (((lower < -180.0) && (upper < 0.0)) || (upper > 360.0) || (upper < lower)) {
             throw new IllegalArgumentException("Invalid angle bounds: " + lower + " " + upper);
         }
         if ((lower > 180) && (upper > 180)) {
-            throw new IllegalArgumentException("Invalid angle bounds: " + lower + " " + upper);
+            lower = lower - 360.0;
+            upper = upper - 360.0;
         }
 
         this.lower = lower * toRad;
@@ -96,12 +97,13 @@ public class AngleBoundary {
      * spatialSet = (SpatialSet) atoms.elementAt(0); atom = spatialSet.atom; angleProp = new AngleProp(atom.name,
      * target, sigma, height); }
      */
-    public AngleBoundary(final String atomName, final double lower, final double upper, final double scale, final String angleName) throws InvalidMoleculeException {
+    public AngleBoundary(final String atomName, double lower, double upper, final double scale, final String angleName) throws InvalidMoleculeException {
         if ((lower < -180.0) || (upper > 360.0) || (upper < lower)) {
             throw new IllegalArgumentException("Invalid angle bounds: " + lower + " " + upper);
         }
         if ((lower > 180) && (upper > 180)) {
-            throw new IllegalArgumentException("Invalid angle bounds: " + lower + " " + upper);
+            lower = lower - 360.0;
+            upper = upper - 360.0;
         }
 
         this.lower = lower * toRad;
