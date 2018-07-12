@@ -1407,7 +1407,7 @@ class refine:
         rDyn.continueDynamics2(tempLambda,econLambda,stepsAnneal2,timeStep)
         rDyn.run(switchFrac)
 
-        self.setForces(repel=1.0, irp=-1.0, bondWt = 25.0)
+        self.setForces(repel=1.0, bondWt = 25.0)
         self.setPars(useh=True,hardSphere=0.0,shrinkValue=0.0,shrinkHValue=0.0)
         self.setPars(optDict=stage2)
 
