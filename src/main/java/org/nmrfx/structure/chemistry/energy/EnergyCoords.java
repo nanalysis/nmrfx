@@ -332,6 +332,7 @@ public class EnergyCoords {
             int groupSize = groupSizes[i];
             int nMono = 1;
             double r2;
+            double r2Min = Double.MAX_VALUE;
             if (groupSize > 1) {
                 double sum2 = 0.0;
                 for (int j = 0; j < groupSize; j++) {
@@ -344,6 +345,9 @@ public class EnergyCoords {
                     sum2 += FastMath.pow(r, -6);
                     derivs[i + j] = 0.0;
                     viol[i + j] = 0.0;
+                    if (r2Temp < r2Min) {
+                        r2Min = r2Temp;
+                    }
                 }
                 sum2 /= nMono;
                 double r = FastMath.pow(sum2, -1.0 / 6);
@@ -360,11 +364,12 @@ public class EnergyCoords {
                 disSq[i] = r2;
                 derivs[i] = 0.0;
                 viol[i] = 0.0;
+                r2Min = r2;
             }
             final double dif;
             final double r;
-            if (r2 <= rLow2[i]) {
-                r = FastMath.sqrt(r2);
+            if (r2Min <= rLow2[i]) {
+                r = FastMath.sqrt(r2Min);
                 dif = rLow[i] - r;
             } else if (r2 >= rUp2[i]) {
                 r = FastMath.sqrt(r2);
