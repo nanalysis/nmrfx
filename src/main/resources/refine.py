@@ -818,6 +818,9 @@ class refine:
            scale = 1.0
            lower = float(lower)
            upper = float(upper)
+           if lower == upper:
+               lower = lower - 20
+               upper = upper + 20
            if (lower < -180):
                 lower += 360
                 upper += 360
