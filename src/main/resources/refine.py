@@ -531,14 +531,14 @@ class refine:
                     start = None
                     end = None
                 else:
-                if 'start' in treeDict:
-                    start = treeDict['start']
-                else:
-                    start = None
-                if 'end' in treeDict:
-                    end = treeDict['end']
-                else:
-                    end = None
+                    if 'start' in treeDict:
+                        start = treeDict['start']
+                    else:
+                        start = None
+                    if 'end' in treeDict:
+                        end = treeDict['end']
+                    else:
+                        end = None
                 self.setupTree(start, end)
             
     def readDistanceDict(self,disDict,residues):
@@ -1207,11 +1207,11 @@ class refine:
             aTree = AngleTreeGenerator()
             atoms = ligand.getAtoms()
             if start != None:
-            startAtom = ligand.getAtom(start)
+                startAtom = ligand.getAtom(start)
             else:
                 startAtom = None
             if end != None:
-            endAtom = ligand.getAtom(end)
+                endAtom = ligand.getAtom(end)
             else:
                 endAtom = None
             aTree.scan(ligand,startAtom, endAtom)
