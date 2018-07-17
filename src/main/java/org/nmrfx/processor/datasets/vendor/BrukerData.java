@@ -44,6 +44,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -752,13 +753,12 @@ public class BrukerData implements NMRData {
                 logger.log(Level.WARNING, ex.getMessage());
             }
         }
-        String[] listTypes = {"vd", "vc", "vp"};
+        String[] listTypes = {"vd", "vc", "vp", "fq3"};
         for (String listType : listTypes) {
             Path listPath = Paths.get(parpath, listType + "list");
             if (Files.exists(listPath)) {
                 List<String> lines = Files.readAllLines(listPath);
-                BrukerPar.storeParameter(parMap, listType, lines);
-                System.out.println(getPar("vd"));
+                BrukerPar.storeParameter(parMap, listType, lines, "\t");
             }
         }
         this.dim = acqdim;
@@ -827,10 +827,7 @@ public class BrukerData implements NMRData {
                 }
             }
         }
-        arrayValues = getDoubleListPar("vd");
-        if (arrayValues.isEmpty()) {
-            arrayValues = getDoubleListPar("vc");
-        }
+        arrayValues = getArrayValues();
         setArrayPars(dim);  // must be before setFTpars()
         if ((ipar = getParInt("BYTORDA,1")) != null) {
             if (ipar == 0) {
@@ -838,6 +835,54 @@ public class BrukerData implements NMRData {
             }
         }
         setFTpars();
+    }
+
+    private List<Double> getArrayValues() {
+        List<Double> result = new ArrayList<>();
+        int smallDim = -1;
+        int smallSize = Integer.MAX_VALUE;
+        // kluge  find smallest dimension.  This is the most likely one to use an array of values
+        for (int i = 0; i < getNDim(); i++) {
+            if (getSize(i) < smallSize) {
+                smallSize = getSize(i);
+                smallDim = i;
+            }
+        }
+        if (parMap != null) {
+            String[] listTypes = {"vd", "vc", "vp", "fq3"};
+
+            for (String listType : listTypes) {
+                String parValue;
+                if ((parValue = parMap.get(listType)) != null) {
+                    String[] sValues = parValue.split("\t");
+                    if (sValues.length > 0) {
+                        List<String> sList = Arrays.asList(sValues);
+                        int dimSize = getSize(smallDim);
+                        if (listType.startsWith("fq")) {
+                            System.out.println(listType + " " + getSequence());
+                            // first line of fqlist can start with value like "bf ppm", so remove that line
+                            if (getSequence().contains("cest")) {
+                                System.out.println("is cest");
+                                sList.set(0, "0.0");
+                                System.out.println(sList.toString());
+                            }
+                        }
+
+                        for (String sValue : sList) {
+                            try {
+                                result.add(Double.parseDouble(sValue));
+                            } catch (NumberFormatException nFE) {
+                                System.out.println("bad double " + sValue);
+                                result = null;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     private void setArrayPars(int nDim) {
@@ -897,8 +942,8 @@ public class BrukerData implements NMRData {
                         break;
                     case 1: // f1coef[i-1] = "1 0 0 1";
                         f1coefS[i - 1] = "sep";
-                        if (tdsize[i-1] == getValues(i-1).size()) {
-                            complexDim[i - 1] = false;                            
+                        if (getValues(i - 1).size() > 0) {
+                            complexDim[i - 1] = false;
                         } else {
                             complexDim[i - 1] = true;
                             tdsize[i - 1] = tdsize[i - 1] / 2;
