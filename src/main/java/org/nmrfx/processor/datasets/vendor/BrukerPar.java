@@ -110,7 +110,7 @@ public class BrukerPar {
                     Matcher m = patterns[i].matcher(attrLine);
                     if (m.matches() && (m.groupCount() == 4)) {
                         if (haveParameter) {
-                            storeParameter(pmap, parName + "," + iDim, values);
+                            storeParameter(pmap, parName + "," + iDim, values," ");
                         }
                         values.clear();
                         parName = m.group(2);
@@ -156,16 +156,16 @@ public class BrukerPar {
      * @param parName : parameter name
      * @param values : parameter value list
      */
-    static void storeParameter(final HashMap<String, String> pmap, final String parName, List<String> values) {
+    static void storeParameter(final HashMap<String, String> pmap, final String parName, List<String> values, String sepChar) {
         int nValues = values.size();
         String value = "";
         if (nValues == 1) {
             value = values.get(0);
         } else {
-            StringBuffer sBuf = new StringBuffer();
+            StringBuilder sBuf = new StringBuilder();
             for (int i = 0; i < nValues; i++) {
                 if (i > 0) {
-                    sBuf.append(" ");
+                    sBuf.append(sepChar);
                 }
                 sBuf.append(values.get(i));
 
