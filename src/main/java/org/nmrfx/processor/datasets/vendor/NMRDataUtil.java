@@ -97,7 +97,7 @@ public final class NMRDataUtil {
                 throw new IOException("FID not found: " + fpath);
             }
         } catch (NullPointerException nullE) {
-            return null;
+            throw new IOException("Null pointer when reading " + fpath + " " + nullE.getMessage());
         }
     } // end getFID
 
