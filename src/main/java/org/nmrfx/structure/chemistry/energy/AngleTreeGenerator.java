@@ -22,6 +22,7 @@ import org.nmrfx.structure.chemistry.search.MTree;
 public class AngleTreeGenerator {
 
     static final double TO_RAD = 180.0 / Math.PI;
+    Map<Atom, Map> ringClosures;
 
     class BondSort implements Comparable<BondSort> {
 
@@ -288,11 +289,24 @@ public class AngleTreeGenerator {
             }
         }
         List<Atom> atomPathList = new ArrayList<>();
+        // Adds all the ring closures for bonds broken in rings
+        ringClosures = new HashMap<>();
         for (MNode mNode : pathNodes) {
             if (!mNode.isRingClosure()) {
                 atomPathList.add(mNode.getAtom());
+            } else {
+                Atom atom1 = mNode.getAtom();
+                Atom atom2 = mNode.getParent().getAtom();
+                if ((ringClosures.containsKey(atom1) && ringClosures.get(atom1).containsKey(atom2)) || (ringClosures.containsKey(atom2) && ringClosures.get(atom2).containsKey(atom1))) {
+                } else {
+                    addRingClosure(atom1, atom2);
+                    addRingClosurePairs(atom1, atom2);
+                    addRingClosurePairs(atom2, atom1);
+                }
             }
         }
+
+        entity.molecule.setRingClosures(ringClosures);
         for (Atom atom : atoms) {
             String par = "-";
             if (atom.parent != null) {
@@ -325,4 +339,36 @@ public class AngleTreeGenerator {
         return shellNodes;
     }
 
+    private void addRingClosure(Atom a1, Atom a2) {
+        double distance = Atom.calcDistance(a1.getPoint(), a2.getPoint());
+        Atom atomKey;
+        Map<Atom, Double> ringClosure;
+        if (ringClosures.containsKey(a1)) {
+            ringClosure = ringClosures.get(a1);
+            atomKey = a1;
+            if (!ringClosure.containsKey(a2)) {
+                ringClosure.put(a2, distance);
+            }
+        } else if (ringClosures.containsKey(a2)) {
+            ringClosure = ringClosures.get(a2);
+            atomKey = a2;
+            if (!ringClosure.containsKey(a1)) {
+                ringClosure.put(a1, distance);
+            }
+        } else {
+            ringClosure = new HashMap<>();
+            ringClosure.put(a2, distance);
+            atomKey = a1;
+        }
+        
+        ringClosures.put(atomKey, ringClosure);
+    }
+
+    private void addRingClosurePairs(Atom a, Atom a1) {
+        List<Atom> atoms = a.getConnected();
+        for (int i = 0; i < atoms.size(); i++) {
+            Atom a2 = atoms.get(i);
+            addRingClosure(a1, a2);
+        }
+    }
 }
