@@ -299,6 +299,16 @@ public class Dihedral {
         molecule.genCoords(false, null);
     }
 
+    public void checkAngles() {
+        if (angleValues != null) {
+            for (int i = 0; i < angleValues.length; i++) {
+                if (Double.isNaN(angleValues[i])) {
+                    System.out.println("check " + i);
+                }
+            }
+        }
+    }
+
     /**
      * based on the angleValues value, the dihedral angles of molecules are set
      *
