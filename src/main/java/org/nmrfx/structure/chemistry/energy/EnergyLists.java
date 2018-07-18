@@ -1440,7 +1440,9 @@ public class EnergyLists {
                             for (int jAtom = iAtom + 1; jAtom < cSphere1.sSets.size(); jAtom++) {
                                 SpatialSet spSet2 = cSphere1.sSets.get(jAtom);
                                 Atom atom2 = spSet2.atom;
-                                if (AtomEnergyProp.interact(atom1, atom2) && (atom1 != atom2.rotGroup) && (atom1.rotGroup != atom2.rotGroup) && (atom1 != atom2.rotGroup.parent)) {
+                                Atom atom2RotParent = atom2.rotGroup != null ? atom2.rotGroup.parent : null;
+                                if (AtomEnergyProp.interact(atom1, atom2) && (atom1 != atom2.rotGroup) && (atom1.rotGroup != atom2.rotGroup)
+                                        && (atom1 != atom2RotParent)) {
                                     AtomPair atomPair = new AtomPair(atom1, atom2, hardSphere, includeH, shrinkValue, shrinkHValue, forceWeight.getRepel());
                                     cPair.atomPairs.add(atomPair);
                                     //if (getConstraintDistance(atom1, atom2) == null) {
