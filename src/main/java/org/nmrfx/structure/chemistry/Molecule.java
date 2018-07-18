@@ -82,6 +82,7 @@ public class Molecule implements Serializable {
     public static final LinkedHashSet shapeTypes = new LinkedHashSet();
     //public static MoleculeTableModel molTableModel = null;
     public static final Map compoundMap = new HashMap();
+    public Map<Atom, Map> ringClosures;
 
     static {
         labelTypes.put(Integer.valueOf(LABEL_NONE), "none");
@@ -3404,6 +3405,14 @@ public class Molecule implements Serializable {
             }
         }
         genAngleBranches();
+    }
+
+    public void setRingClosures(Map<Atom, Map> bonds) {
+        ringClosures = bonds;
+    }
+
+    public Map<Atom, Map> getRingClosures() {
+        return ringClosures;
     }
 
     public void setRiboseActive(boolean state) {
