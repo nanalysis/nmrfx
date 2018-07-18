@@ -113,7 +113,7 @@ public class MTree {
 //                        System.out.println("already notring");
 
                     } else {
-                        if (nNode.shell == cNode.shell + 1) {
+                        if (nNode.shell == cNode.shell + 1 || areNthCousins(nNode, cNode)) {
                             MNode newNode = new MNode(nNodes);
                             newNode.shell = nNode.shell;
                             newNode.parent = cNode;
@@ -134,9 +134,31 @@ public class MTree {
     }
 
     /**
-     * Does a bread-first search through a tree starting at element iStart Returns an array of node indices describing
-     * the path through the tree. Each pair of entries in the tree describes an edge. The edges are in order of the
-     * bread-first search
+     * Checks to see if two nodes are perfect cousins of each other. This check
+     * helps determine if the two nodes represent a ring closure.
+     */
+    public boolean areNthCousins(MNode node1, MNode node2) {
+
+        if (node1.shell != node2.shell) {
+            return false;
+        }
+        MNode temp1 = node1.parent;
+        MNode temp2 = node2.parent;
+        for (int i = 0; i < node1.shell - 1; i++) {
+            if (temp1 == temp2) {
+                return true;
+            }
+            temp1 = temp1.parent;
+            temp2 = temp2.parent;
+        }
+        return false;
+    }
+
+    /**
+     * Does a bread-first search through a tree starting at element iStart
+     * Returns an array of node indices describing the path through the tree.
+     * Each pair of entries in the tree describes an edge. The edges are in
+     * order of the bread-first search
      *
      */
     public int[] broad_path2(int iStart) {
