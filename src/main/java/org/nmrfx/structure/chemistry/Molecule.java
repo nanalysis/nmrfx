@@ -1079,6 +1079,36 @@ public class Molecule implements Serializable {
         }
     }
 
+    public void dumpCoords() {
+        System.out.printf("%8s %8s %8s %8s %10s %10s %10s \n", "Name", "PName", "GPName", "GGPName", "BondL", "ValAng", "DihAng");
+
+        for (int i = 0; i < spSets.length; i++) {
+            if (spSets[i].length > 3) {
+                double dihedralAngle = 0;
+                for (int j = 3; j < spSets[i].length; j++) {
+                    Atom a4 = spSets[i][j].atom;
+                    if (a4 == null) {
+                        continue;
+                    }
+                    Atom a3 = a4.parent;
+                    Atom a2 = a3 != null ? a3.parent : null;
+                    Atom a1 = a2 != null ? a2.parent : null;
+
+                    String name = a4.getShortName();
+                    String parentName = a3 != null ? a3.getShortName() : null;
+                    String grandParentName = a2 != null ? a2.getShortName() : null;
+                    String greatGrandParentName = a1 != null ? a1.getShortName() : null;
+                    dihedralAngle += a4.dihedralAngle;
+                    double dihedralAnglePrint = dihedralAngle * (180.0 / Math.PI);
+                    double bondLength = a4.bondLength;
+                    double valenceAngle = a4.valanceAngle * (180.0 / Math.PI);
+                    System.out.printf("%8s %8s %8s $8s %10.2f %10.3f %10.3f \n", name, parentName, grandParentName, greatGrandParentName, bondLength, valenceAngle, dihedralAnglePrint);
+
+                }
+            }
+        }
+    }
+
     public void resetGenCoords() {
         spSets = null;
         genVecs = null;
