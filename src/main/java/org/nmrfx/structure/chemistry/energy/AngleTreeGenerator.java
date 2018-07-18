@@ -139,9 +139,9 @@ public class AngleTreeGenerator {
             }
             for (MNode mNode3 : shellNodes) {
                 if (mNode3.isRingClosure()) {
+                    mNode3.getAtom().rotActive = false;
                     continue;
                 }
-                String name3 = mNode3.getAtom().getShortName();
                 Atom atom3 = mNode3.getAtom();
                 atom3.setTreeIndex(iAtom++);
                 Point3 pt3 = atom3.getPoint();
@@ -331,11 +331,12 @@ public class AngleTreeGenerator {
             MNode node = nodes.get(i);
             if (node.getShell() > iShell) {
                 break;
-            } else if (node.getShell() == iShell) {
+            } else {
                 shellNodes.add(node);
             }
         }
-        Collections.sort(shellNodes, MNode::compareByParValue);
+// Sorting the shellNodes results in errors calculating dihedral angles
+//        Collections.sort(shellNodes, MNode::compareByParValue);
         return shellNodes;
     }
 
