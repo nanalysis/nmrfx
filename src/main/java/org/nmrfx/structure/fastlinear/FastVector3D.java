@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.fastlinear;
 
 import org.apache.commons.math3.util.FastMath;
@@ -43,6 +42,18 @@ public class FastVector3D extends FastVector {
         return new FastVector3D(data[0], data[1], data[2]);
     }
 
+    public double getX() {
+        return data[0];
+    }
+
+    public double getY() {
+        return data[1];
+    }
+
+    public double getZ() {
+        return data[2];
+    }
+
     public void set(double x, double y, double z) {
         data[0] = x;
         data[1] = y;
@@ -62,6 +73,14 @@ public class FastVector3D extends FastVector {
 
     public double sumSq() {
         return data[0] * data[0] + data[1] * data[1] + data[2] * data[2];
+    }
+
+    public static double distance(FastVector3D v1, FastVector3D v2) {
+        return v1.dis(v2);
+    }
+
+    public static double distanceSq(FastVector3D v1, FastVector3D v2) {
+        return v1.disSq(v2);
     }
 
     public double dis(FastVector3D v2) {

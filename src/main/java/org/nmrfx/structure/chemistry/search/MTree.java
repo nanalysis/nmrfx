@@ -18,6 +18,7 @@
 package org.nmrfx.structure.chemistry.search;
 
 import java.util.*;
+import org.nmrfx.structure.chemistry.ring.Ring;
 
 public class MTree {
 
@@ -113,20 +114,126 @@ public class MTree {
 //                        System.out.println("already notring");
 
                     } else {
-                        if (nNode.shell == cNode.shell + 1) {
+                        if (nNode.shell == cNode.shell + 1 || areNthCousins(nNode, cNode)) {
                             MNode newNode = new MNode(nNodes);
                             newNode.shell = nNode.shell;
                             newNode.parent = cNode;
                             newNode.pathPos = nodesAdded - 1;
                             newNode.setAtom(nNode.getAtom());
-//                            System.out.println("already rimg");
                             newNode.ringClosure = true;
                             pathNodes.add(newNode);
                         } else {
                         }
                     }
                 }
+            }
+        }
+        return path;
+    }
 
+    public int[] broad_path_3(int iStart) {
+        pathNodes.clear();
+        int nNodes = nodes.size();
+        int[] path = new int[nNodes];
+        int nodesAdded = 1;
+        int next = 0;
+        int m = 0;
+        MNode cNode = null;
+        MNode nNode = null;
+
+        for (int j = 0; j < nNodes; j++) {
+            cNode = (MNode) nodes.elementAt(j);
+            cNode.shell = -1;
+            cNode.parent = null;
+            cNode.pathPos = -1;
+            cNode.ringClosure = false;
+        }
+
+        cNode = (MNode) nodes.elementAt(iStart);
+        cNode.shell = 0;
+        path[0] = iStart;
+        pathNodes.add(cNode);
+        Map<Ring, Integer> openRings = new HashMap<>();
+        for (int j = 0; j < nNodes; j++) {
+            if (j >= nodesAdded) {
+                return (path);
+            }
+            m = (path[j] & 0xFF);
+            cNode = (MNode) nodes.elementAt(m);
+            List<Ring> cNodeRings = (List) cNode.getAtom().getProperty("rings");
+            for (int i = 0; i < cNode.nodes.size(); i++) {
+                boolean branchingRing = false;
+
+                next = ((MNode) cNode.nodes.get(i)).getID();
+                nNode = (MNode) nodes.elementAt(next);
+                if (nNode.shell == -1) {
+                    List<Ring> nNodeRings = (List) nNode.getAtom().getProperty("rings");
+                    if (nNodeRings != null) {
+                        for (Ring ring : nNodeRings) {
+                            if (openRings.containsKey(ring)) {
+                                if (cNodeRings != null) {
+                                    if (cNodeRings.contains(ring)) {
+                                        // continue
+                                    } else {
+                                        System.out.println(nNode.getAtom().getShortName() + " " + cNode.getAtom().getShortName());
+                                        System.out.println(ring.getRingNumber() + " " + openRings.get(ring) + " " + ring.size());
+                                        if (openRings.get(ring) == ring.size() - 1) {
+
+                                        } else {
+                                            branchingRing = true;
+                                        }
+                                    }
+                                } else {
+                                    branchingRing = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!branchingRing) {
+                        if (nNodeRings != null) {
+                            for (Ring ring : nNodeRings) {
+                                if (!openRings.containsKey(ring)) {
+                                    openRings.put(ring, 1);
+                                } else {
+                                    openRings.put(ring, openRings.get(ring) + 1);
+
+                                }
+                            }
+                        }
+                        //System.out.println(j+" "+i+" "+m+" "+nodesAdded+" "+next+" "+cNode.shell);
+                        path[nodesAdded++] = ((cNode.shell + 1) << 8) + next;
+                        pathNodes.add(nNode);
+                        nNode.shell = cNode.shell + 1;
+                        nNode.parent = cNode;
+                        nNode.pathPos = nodesAdded - 1;
+                    }
+
+//                    System.out.println("add " + (nodesAdded - 1 + " " + nNode.toString()));
+                } else {
+                    if ((nNode.parent == cNode) || (cNode.parent == nNode)) {
+//                        System.out.println("already notring");
+
+                    } else {
+                        List<Ring> nAtomRings = (List) nNode.getAtom().getProperty("rings");
+                        List<Ring> cAtomRings = (List) cNode.getAtom().getProperty("rings");
+                        if (nAtomRings != null && cAtomRings != null) {
+                            for (Ring ring : openRings.keySet()) {
+                                if (openRings.get(ring) == ring.size()) {
+                                    if (nAtomRings.contains(ring) && cAtomRings.contains(ring)) {
+                                        MNode newNode = new MNode(nNodes);
+                                        newNode.shell = nNode.shell;
+                                        newNode.parent = cNode;
+                                        newNode.pathPos = nodesAdded - 1;
+                                        newNode.setAtom(nNode.getAtom());
+                                        newNode.ringClosure = true;
+                                        pathNodes.add(newNode);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -134,9 +241,31 @@ public class MTree {
     }
 
     /**
-     * Does a bread-first search through a tree starting at element iStart Returns an array of node indices describing
-     * the path through the tree. Each pair of entries in the tree describes an edge. The edges are in order of the
-     * bread-first search
+     * Checks to see if two nodes are perfect cousins of each other. This check
+     * helps determine if the two nodes represent a ring closure.
+     */
+    public boolean areNthCousins(MNode node1, MNode node2) {
+
+        if (node1.shell != node2.shell) {
+            return false;
+        }
+        MNode temp1 = node1.parent;
+        MNode temp2 = node2.parent;
+        for (int i = 0; i < node1.shell - 1; i++) {
+            if (temp1 == temp2) {
+                return true;
+            }
+            temp1 = temp1.parent;
+            temp2 = temp2.parent;
+        }
+        return false;
+    }
+
+    /**
+     * Does a bread-first search through a tree starting at element iStart
+     * Returns an array of node indices describing the path through the tree.
+     * Each pair of entries in the tree describes an edge. The edges are in
+     * order of the bread-first search
      *
      */
     public int[] broad_path2(int iStart) {
