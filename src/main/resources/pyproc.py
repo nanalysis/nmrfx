@@ -3596,7 +3596,7 @@ def genScript():
         script += 'SB()\n'
         script += 'ZF()\n'
         script += 'FT()\n'
-            script += 'PHASE(ph0=0.0,ph1=0.0)\n'
+        script += 'PHASE(ph0=0.0,ph1=0.0)\n'
         fCoef = fidInfo.getSymbolicCoefs(1)
         if fCoef != None and fCoef == 'sep':
             script += "COMB(coef='sep')\n"
