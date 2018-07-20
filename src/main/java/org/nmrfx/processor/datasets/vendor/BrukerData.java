@@ -792,7 +792,6 @@ public class BrukerData implements NMRData {
             } else {
                 tbytes = np * bytesPerWord;
             }
-            System.out.println("np " + np + " bpw " + bytesPerWord + " tbytes " + tbytes);
             int shiftAmount = 0;
             Double dpar;
             if (groupDelay > 0) {
@@ -1648,15 +1647,8 @@ public class BrukerData implements NMRData {
     @Override
     public boolean isFrequencyDim(int iDim) {
         boolean result = true;
-        System.out.println("freq " + iDim + " " + getNDim());
-        System.out.println(arrayValues);
-        if (arrayValues != null) {
-            System.out.println(arrayValues.size());
-
-        }
         if (!isComplex(iDim) && (iDim == getNDim() - 1)) {
             if ((arrayValues != null) && (arrayValues.size() == getSize(iDim))) {
-                System.out.println("not f");
                 result = false;
             }
         }
