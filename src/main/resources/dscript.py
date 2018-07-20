@@ -13,6 +13,40 @@ class NMRFxDatasetScripting:
         dataset = Dataset(fileName,"",writable)
         return dataset
 
+    def create(self, fileName, sizes, srcDataset=None, title=""):
+        Dataset.createDataset(fileName, "", sizes) 
+        dataset = self.open(fileName, True)
+        if srcDataset:
+            nDim = len(sizes)
+            nDimSrc = srcDataset.getNDim()
+            for iDim in range(min(nDim,nDimSrc)):
+                srcDataset.copyHeader(dataset, iDim)
+            dataset.writeHeader();
+            
+        return dataset
+
+    def createSub(self, fileName, nDim, srcDataset, title=""):
+        if isinstance(srcDataset,str):
+            srcDataset = nd.open(srcDataset,False)
+        sizes = []
+        nDimSrc = srcDataset.getNDim()
+        if nDim > nDimSrc:
+            raise Exception("New dataset has more dimensions than source")
+        for iDim in range(nDim):
+            sizes.append(srcDataset.getSize(iDim))
+
+        Dataset.createDataset(fileName, "", sizes) 
+        dataset = self.open(fileName, True)
+        for iDim in range(nDim):
+            srcDataset.copyHeader(dataset, iDim)
+        dataset.writeHeader();
+            
+        return dataset
+
+    def getVector(self, dataset, iDim):
+        vec = Vec(dataset.getSize(iDim), dataset.getComplex(iDim))
+        return vec
+
     def toPipe(self, dataset, fileName):
         np = NMRPipeData(dataset)
         np.saveFile(fileName)
