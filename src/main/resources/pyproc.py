@@ -284,14 +284,12 @@ class FIDInfo:
         '''return whether or not to negatePairs for FT for current dimension'''
         fidObj = self.fidObj
         negate = fidObj.getNegatePairs(dim)   # dim is 1-based
-        print "  dim", dim+1, "FT auto negatePairs", negate
         return negate
 
     def negateImagFT(self,dim):
         '''return whether or not to negateImag for FT for current dimension'''
         fidObj = self.fidObj
         negate = fidObj.getNegateImag(dim)   # dim is 1-based
-        print "  dim", dim+1, "FT auto negateImag", negate
         return negate
 
     def getSymbolicCoefs(self,dim):
@@ -3598,7 +3596,7 @@ def genScript():
         script += 'SB()\n'
         script += 'ZF()\n'
         script += 'FT()\n'
-        script += 'PHASE(ph0=0.0,ph1=0.0)\n'
+            script += 'PHASE(ph0=0.0,ph1=0.0)\n'
         fCoef = fidInfo.getSymbolicCoefs(1)
         if fCoef != None and fCoef == 'sep':
             script += "COMB(coef='sep')\n"
@@ -3636,7 +3634,7 @@ def genScript():
             script += "MAG()\n"
         else:
             script += 'PHASE(ph0=0.0,ph1=0.0)\n'
-    script += 'run()'
+        script += 'run()'
     return script
 
 
