@@ -52,7 +52,9 @@ public class AutoPhaseDataset extends DatasetOperation {
         if (iDim == -1) {
             int nDims = dataset.getNDim();
             for (int phaseDim = 0; phaseDim < nDims; phaseDim++) {
-                phaseDim(dataset, phaseDim);
+                if (dataset.getFreqDomain(phaseDim)) {
+                    phaseDim(dataset, phaseDim);
+                }
             }
         } else {
             phaseDim(dataset, iDim);
