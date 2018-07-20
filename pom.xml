@@ -4,7 +4,7 @@
 
     <groupId>org.nmrfx</groupId>
     <artifactId>analystgui</artifactId>
-    <version>10.2.9</version>
+    <version>10.2.10</version>
     <name>analystgui</name>
     <packaging>jar</packaging>
 
@@ -16,25 +16,25 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>processor</artifactId>
-            <version>10.2.9</version>
+            <version>10.2.10</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>processorgui</artifactId>
-            <version>10.2.9</version>
+            <version>10.2.10</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>analyst</artifactId>
-            <version>10.2.9</version>
+            <version>10.2.10</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>structure</artifactId>
-            <version>10.2.9</version>
+            <version>10.2.10</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
