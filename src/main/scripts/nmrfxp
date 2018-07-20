@@ -39,7 +39,6 @@ while [ -h "$pgm" ]; do
 done
 
 dir=`dirname "$pgm"`
-echo $dir
 CLASSPATH=${classpath}
 
 if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
