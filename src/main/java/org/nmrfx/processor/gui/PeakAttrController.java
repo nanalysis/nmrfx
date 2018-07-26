@@ -215,6 +215,9 @@ public class PeakAttrController implements Initializable, PeakNavigable {
             }
         });
         initOptions();
+        if (!MainApp.isAnalyst()) {
+            tabPane.getTabs().remove(3);
+        }
 
 //        peakListMenuButton.setOnMousePressed(e -> {
 //            updatePeakListMenu();
