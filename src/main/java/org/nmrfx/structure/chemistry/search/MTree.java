@@ -64,7 +64,7 @@ public class MTree {
         return pathNodes;
     }
 
-    public int[] broad_path(int iStart) {
+    public void broad_path(int iStart) {
         pathNodes.clear();
         int nNodes = nodes.size();
         int[] path = new int[nNodes];
@@ -86,32 +86,27 @@ public class MTree {
         cNode.shell = 0;
         path[0] = iStart;
         pathNodes.add(cNode);
-
         for (int j = 0; j < nNodes; j++) {
             if (j >= nodesAdded) {
-                return (path);
+                return;
             }
 
-            m = (path[j] & 0xFF);
+            m = path[j];
             cNode = (MNode) nodes.elementAt(m);
-//            System.out.println("cNode " + j + " " + cNode.toString());
 
             for (int i = 0; i < cNode.nodes.size(); i++) {
                 next = ((MNode) cNode.nodes.get(i)).getID();
                 nNode = (MNode) nodes.elementAt(next);
-//                System.out.println("nNode " + i + " " + nNode.toString());
-
                 if (nNode.shell == -1) {
                     //System.out.println(j+" "+i+" "+m+" "+nodesAdded+" "+next+" "+cNode.shell);
-                    path[nodesAdded++] = ((cNode.shell + 1) << 8) + next;
+                    path[nodesAdded++] = next;
                     pathNodes.add(nNode);
                     nNode.shell = cNode.shell + 1;
                     nNode.parent = cNode;
                     nNode.pathPos = nodesAdded - 1;
-//                    System.out.println("add " + (nodesAdded - 1 + " " + nNode.toString()));
                 } else {
                     if ((nNode.parent == cNode) || (cNode.parent == nNode)) {
-//                        System.out.println("already notring");
+//                        // Must not be a ring
 
                     } else {
                         if (nNode.shell == cNode.shell + 1 || areNthCousins(nNode, cNode)) {
@@ -128,7 +123,6 @@ public class MTree {
                 }
             }
         }
-        return path;
     }
 
     public int[] broad_path_3(int iStart) {
