@@ -62,6 +62,7 @@ import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TablePosition;
 import javafx.scene.control.TextField;
@@ -98,6 +99,8 @@ public class PeakAttrController implements Initializable, PeakNavigable {
 
     private Stage stage;
     @FXML
+    private TabPane tabPane;
+    @FXML
     private ToolBar menuBar;
     @FXML
     private ToolBar peakNavigatorToolBar;
@@ -121,9 +124,10 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     private TableView<SpectralDim> referenceTableView;
 
     @FXML
-    private BorderPane graphBorderPane;
+    private BorderPane peaksBorderPane;
+
     @FXML
-    private ToolBar graphNavigatorToolBar;
+    private BorderPane graphBorderPane;
 
     @FXML
     private BorderPane simBorderPane;
@@ -144,7 +148,6 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     private ScatterChart<Number, Number> scatterChart;
 
     PeakNavigator peakNavigator;
-    PeakNavigator graphNavigator;
 
     PeakList peakList;
     Peak currentPeak;
@@ -156,7 +159,6 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     public void initialize(URL url, ResourceBundle rb) {
         initMenuBar();
         peakNavigator = PeakNavigator.create(this).initialize(peakNavigatorToolBar);
-        graphNavigator = PeakNavigator.create(this).initialize(graphNavigatorToolBar);
         initTable();
         initReferenceTable();
         setFieldActions();
@@ -197,6 +199,21 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         yAxis.setAnimated(false);
         scatterChart.setAnimated(false);
         graphBorderPane.setCenter(scatterChart);
+        tabPane.getSelectionModel().selectedItemProperty().addListener(e -> {
+            String tabText = tabPane.getSelectionModel().getSelectedItem().textProperty().get();
+            if (tabText.equals("Peaks")) {
+                if (graphBorderPane.getTop() != null) {
+                    graphBorderPane.setTop(null);
+                }
+                peaksBorderPane.setTop(peakNavigatorToolBar);
+            } else if (tabText.equals("Graph")) {
+                if (peaksBorderPane.getTop() != null) {
+                    peaksBorderPane.setTop(null);
+                }
+                graphBorderPane.setTop(peakNavigatorToolBar);
+            } else {
+            }
+        });
         initOptions();
 
 //        peakListMenuButton.setOnMousePressed(e -> {

@@ -12,11 +12,11 @@
         </VBox>
     </top>
     <center>
-        <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+        <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
             <tabs>
                 <Tab text="Peaks">
                     <content>
-                        <BorderPane layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+                        <BorderPane fx:id="peaksBorderPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
                             <top>
                                 <ToolBar fx:id="peakNavigatorToolBar" orientation="HORIZONTAL" BorderPane.alignment="CENTER"/>
                             </top>
@@ -94,7 +94,6 @@
                     <content>
                         <BorderPane fx:id="graphBorderPane">
                             <top>
-                                <ToolBar fx:id="graphNavigatorToolBar" orientation="HORIZONTAL" BorderPane.alignment="CENTER"/>
                             </top>
                         </BorderPane>
                     </content>
