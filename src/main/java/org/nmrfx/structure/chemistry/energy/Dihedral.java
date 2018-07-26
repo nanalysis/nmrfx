@@ -485,7 +485,7 @@ public class Dihedral {
             angleValues[i] = reduceAngle(angleValues[i]);
         }
         putDihedrals();
-        molecule.genCoords(false, null);
+        molecule.genCoords();
     }
 
     public double energy() {
