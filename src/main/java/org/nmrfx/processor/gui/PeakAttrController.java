@@ -884,7 +884,11 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     void selectSimDataset() {
         String name = (String) simDatasetNameField.getValue();
         if (name != null) {
-            simPeakListNameField.setText(name + "sim");
+            int dotIndex = name.indexOf(".");
+            if (dotIndex != -1) {
+                name = name.substring(0, dotIndex);
+            }
+            simPeakListNameField.setText(name + "_sim");
         }
     }
 
