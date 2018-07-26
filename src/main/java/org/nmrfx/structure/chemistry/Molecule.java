@@ -466,6 +466,7 @@ public class Molecule implements Serializable {
         for (Entity entity : getLigands()) {
             entity.sortByIndex();
         }
+        invalidateAtomArray();
         updateAtomArray();
     }
 
