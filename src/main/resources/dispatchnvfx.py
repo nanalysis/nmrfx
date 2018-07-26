@@ -19,7 +19,7 @@ def autoProcess(args):
 
 sys.argv.pop(0)
 
-if len(sys.argv) == 1 and sys.argv[0].endswith(".py"):
+if len(sys.argv) > 0 and sys.argv[0].endswith(".py"):
     scriptName = sys.argv[0]
     runpy.run_path(scriptName)
 else:
