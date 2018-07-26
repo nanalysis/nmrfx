@@ -3517,8 +3517,37 @@ public class Molecule implements Serializable {
     }
 
     public ArrayList<Atom> setupAngles() {
+        if (spSets == null) {
+            setupGenCoords();
+        }
         angleAtoms = new ArrayList<Atom>();
-        for (Atom iAtom : atoms) {
+
+        for (int i = 0; i < spSets.length; i++) {
+            if (spSets[i].length > 3) {
+                Atom iAtom = spSets[i][2].atom;
+                if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
+                    Atom angleAtom = spSets[i][3].atom;
+                    angleAtoms.add(angleAtom);
+                }
+            }
+
+        }
+        return angleAtoms;
+    }
+
+    public ArrayList<Atom> setupAnglesOld() {
+        angleAtoms = new ArrayList<Atom>();
+        List<Atom> atomList;
+        for (int i = 0; i < atoms.size(); i++) {
+            Atom atom1 = atoms.get(i);
+            Atom atom2 = treeAtoms.get(i);
+        }
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
+        for (Atom iAtom : atomList) {
             if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
                 //if (iAtom.irpIndex > 0) {
                 Atom jAtom = iAtom.getAngleChild();
