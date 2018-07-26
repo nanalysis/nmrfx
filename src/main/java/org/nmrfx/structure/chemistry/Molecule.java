@@ -201,6 +201,7 @@ public class Molecule implements Serializable {
     private boolean atomArrayValid = false;
     Map<String, Atom> atomMap = new HashMap<>();
     List<Atom> atoms;
+    List<Atom> treeAtoms;
 
     ArrayList<Bond> bonds = new ArrayList<Bond>();
     SpatialSet spSets[][] = null;
@@ -231,6 +232,10 @@ public class Molecule implements Serializable {
 
     final void storeMolecule() {
         StructureProject.getActive().putMolecule(this);
+    }
+
+    public void setTreeList(List<Atom> treeAtoms) {
+        this.treeAtoms = treeAtoms;
     }
 
     public void changed() {
@@ -863,7 +868,13 @@ public class Molecule implements Serializable {
         Atom a2 = null;
         Atom a4 = null;
         int nAngles = 0;
-        for (Atom a3 : atoms) {
+        List<Atom> atomList;
+        if (treeAtoms != null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
+        for (Atom a3 : atomList) {
             if (!a3.getPointValidity()) {
                 if (fillCoords) {
                     continue;
@@ -962,11 +973,18 @@ public class Molecule implements Serializable {
     public void setupGenCoords() throws RuntimeException {
         nullCoords();
         updateAtomArray();
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            System.out.println("Using tree atoms");
+            atomList = treeAtoms;
+        }
         int nAngles = 0;
         int iAtom = 0;
         ArrayList<Atom> daughterList = new ArrayList<>();
         spSets = new SpatialSet[atoms.size()][];
-        for (Atom a3 : atoms) {
+        for (Atom a3 : atomList) {
             if (!a3.getPointValidity()) {
                 a3.setPointValidity(true);
             }
@@ -1023,10 +1041,16 @@ public class Molecule implements Serializable {
     public void setupGenCoordsFast() throws RuntimeException {
         nullCoords();
         updateAtomArray();
-        genVecs = new int[atoms.size()][];
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
+        genVecs = new int[atomList.size()][];
         int iAtom = 0;
         ArrayList<Atom> daughterList = new ArrayList<>();
-        for (Atom a3 : atoms) {
+        for (Atom a3 : atomList) {
             if (!a3.getPointValidity()) {
                 a3.setPointValidity(true);
             }
@@ -1126,6 +1150,12 @@ public class Molecule implements Serializable {
             setupGenCoords();
         }
         int iStructure = 0;
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
         for (Atom atom : atoms) {
             atom.setPointValidity(iStructure, false);
         }
@@ -3421,7 +3451,14 @@ public class Molecule implements Serializable {
 
     public void setupRotGroups() {
         int rotUnit = 0;
-        for (Atom iAtom : atoms) {
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
+
+        for (Atom iAtom : atomList) {
             iAtom.rotUnit = -1;
             if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
                 //if (iAtom.irpIndex > 0) {
@@ -4091,13 +4128,18 @@ public class Molecule implements Serializable {
 
     public void genAngleBranches() {
         getAtomTypes();
-
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
         MTree mTree = new MTree();
         HashMap<Atom, Integer> hash = new HashMap<>();
         ArrayList<Atom> eAtomList = new ArrayList<>();
         int i = 0;
 
-        for (Atom atom : atoms) {
+        for (Atom atom : atomList) {
             hash.put(atom, i);
             eAtomList.add(atom);
 
@@ -4106,7 +4148,7 @@ public class Molecule implements Serializable {
             i++;
         }
 
-        for (Atom atom : atoms) {
+        for (Atom atom : atomList) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
                 Bond bond = (Bond) atom.bonds.get(iBond);
                 if (((bond.begin == atom) && (bond.end.iAtom > atom.iAtom)) || ((bond.end == atom) && (bond.begin.iAtom > atom.iAtom))) {
@@ -4143,7 +4185,7 @@ public class Molecule implements Serializable {
                     }
                 }
             }
-            for (Atom atom : atoms) {
+            for (Atom atom : atomList) {
                 if (atomBranches.containsKey(atom)) {
                     //  System.out.print(atom.getShortName());
                     ArrayList<Atom> branch = atomBranches.get(atom);

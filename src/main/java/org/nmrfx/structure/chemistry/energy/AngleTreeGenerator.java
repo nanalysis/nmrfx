@@ -305,6 +305,7 @@ public class AngleTreeGenerator {
                 }
             }
         }
+        entity.molecule.setTreeList(atomPathList);
 
         entity.molecule.setRingClosures(ringClosures);
         for (Atom atom : atoms) {
