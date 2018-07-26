@@ -154,6 +154,24 @@ def generateResNums(residues,seqString,linker,polyType):
                     residues.append(residue)
     return residues
 
+def prioritizePolymers(molList):
+    containsSmallMolecule = False
+    for molDict in molList:
+        if "ptype" not in molDict:
+            containsSmallMolecule = True
+    if (not containsSmallMolecule):
+        return molList
+    smallMoleculeList = []
+    returnList = []
+    for molDict in molList:
+        if "ptype" in molDict:
+            returnList.append(molDict)
+        else:
+            smallMoleculeList.append(molDict)
+    returnList += smallMoleculeList
+    return returnList
+
+
 
 
 
@@ -440,21 +458,39 @@ class refine:
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
 
     def loadFromYaml(self,data, seed, pdbFile=""):
-
         if pdbFile != '':
             self.readPDBFile(pdbFile)
             residues = None
         else:
             if 'molecule' in data:
-                if 'residues' in data['molecule']:
-                    residues = ','.join(data['molecule']['residues'].split(' '))
-                else:
-                    residues = None
-                self.readMoleculeDict(data['molecule'])
+                molList = data['molecule']
+                molList = prioritizePolymers(molList)
+                for molDict in molList:
+                    if 'residues' in molDict:
+                        residues = ','.join(molDict['residues'].split(' '))
+                    else:
+                        residues = None
+                    self.readMoleculeDict(molDict)
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
         if 'angles' in data:
             angleWt = self.readAngleDict(data['angles'])
+
+        if 'tree' in data:
+            treeDict = data['tree']
+            if treeDict == None:
+                start = None
+                end = None
+            else:
+                if 'start' in treeDict:
+                    start = treeDict['start']
+                else:
+                    start = None
+                if 'end' in treeDict:
+                    end = treeDict['end']
+                else:
+                    end = None
+            self.setupTree(start, end)
 
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
         self.energy()
@@ -1185,16 +1221,39 @@ class refine:
 
     def readSDFile(self,fileName):
         pdb = SDFile()
-        pdb.read(fileName, None)
-        self.molecule = Molecule.getActive()
-
-        self.molName = self.molecule.getName()
-        self.molecule.selectAtoms('*.*')
+        if (not self.molecule):
+            pdb.read(fileName, None)
+            self.molecule = Molecule.getActive()
+            self.molName = self.molecule.getName()
+            self.molecule.selectAtoms('*.*')
+        else:
+            pdb.readResidue(fileName, None, self.molecule, None)
         return self.molecule
 
     def setupTree(self, start, end):
         mol = self.molecule
         ligands = mol.getLigands()
+        polymers = mol.getPolymers()
+        for polymer in polymers:
+            pI = PathIterator(polymer)
+            nodeValidator = NodeValidator()
+            pI.init(nodeValidator)
+            pI.processPatterns()
+            pI.setProperties("ar", "AROMATIC");
+            pI.setProperties("res", "RESONANT");
+            pI.setProperties("r", "RING");
+            pI.setHybridization();
+            aTree = AngleTreeGenerator()
+            atoms = polymer.getAtoms()
+            if start:
+                startAtom = polymer.getAtom(start)
+            else:
+                startAtom = None
+            if end:
+                endAtom = polymer.getAtom(end)
+            else:
+                endAtom = None
+            aTree.scan(polymer, startAtom, endAtom)
         for ligand in ligands:
             pI = PathIterator(ligand)
             nodeValidator = NodeValidator()
