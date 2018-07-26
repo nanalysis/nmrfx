@@ -99,6 +99,10 @@ public class MainApp extends Application implements DatasetListener {
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
 
+    public static boolean isAnalyst() {
+        return true;
+    }
+
     public static void removeStage(Stage stage) {
         synchronized (stages) {
             stages.remove(stage);
@@ -476,9 +480,10 @@ public class MainApp extends Application implements DatasetListener {
     }
 
     /**
-     * The main() method is ignored in correctly deployed JavaFX application. main() serves only as fallback in case the
-     * application can not be launched through deployment artifacts, e.g., in IDEs with limited FX support. NetBeans
-     * ignores main().
+     * The main() method is ignored in correctly deployed JavaFX application.
+     * main() serves only as fallback in case the application can not be
+     * launched through deployment artifacts, e.g., in IDEs with limited FX
+     * support. NetBeans ignores main().
      *
      * @param args the command line arguments
      */
