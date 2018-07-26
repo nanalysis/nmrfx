@@ -175,7 +175,7 @@ public class HoseCodeGenerator {
                 continue;
             }
 //            System.out.println("start " + j + " " + atomStart.getShortName());
-            int[] path = mTree.broad_path(j);
+            mTree.broad_path(j);
             List<MNode> pathNodes = mTree.getPathNodes();
             for (MNode mNode : pathNodes) {
                 initNodeValue(entity, mNode);

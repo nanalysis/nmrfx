@@ -92,7 +92,7 @@ public class AngleTreeGenerator {
                 }
             }
         }
-        int[] path = mTree.broad_path(startIndex);
+        mTree.broad_path(startIndex);
         ArrayList<MNode> pathNodes = mTree.getPathNodes();
         for (MNode mNode : pathNodes) {
             mNode.setValue(mNode.getAtom().getAtomicNumber());
@@ -114,7 +114,7 @@ public class AngleTreeGenerator {
             mNode.sortNodesDescending();
         }
 
-        path = mTree.broad_path(startIndex);
+        mTree.broad_path(startIndex);
         pathNodes = mTree.getPathNodes();
 
         MNode lastNode = null;
@@ -305,6 +305,7 @@ public class AngleTreeGenerator {
                 }
             }
         }
+        entity.molecule.setTreeList(atomPathList);
 
         entity.molecule.setRingClosures(ringClosures);
         for (Atom atom : atoms) {
@@ -318,7 +319,6 @@ public class AngleTreeGenerator {
             }
 //            System.out.println(par + " --> " + par2 + " --> " + atom.getShortName() + " " + atom.getTreeIndex());
         }
-        entity.molecule.sortByIndex();
         Molecule.makeAtomList();
         entity.molecule.resetGenCoords();
         entity.molecule.setupRotGroups();
