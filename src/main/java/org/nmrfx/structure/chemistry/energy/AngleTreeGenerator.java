@@ -319,7 +319,6 @@ public class AngleTreeGenerator {
             }
 //            System.out.println(par + " --> " + par2 + " --> " + atom.getShortName() + " " + atom.getTreeIndex());
         }
-        entity.molecule.sortByIndex();
         Molecule.makeAtomList();
         entity.molecule.resetGenCoords();
         entity.molecule.setupRotGroups();
