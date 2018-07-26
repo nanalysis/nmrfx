@@ -852,6 +852,9 @@ public class Molecule implements Serializable {
     }
 
     public int genCoords(boolean fillCoords, final double[] dihedralAngles) throws RuntimeException {
+        if (true) {
+            return genCoords();
+        }
         if (!fillCoords) {
             nullCoords();
         }
