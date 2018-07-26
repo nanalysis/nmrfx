@@ -73,6 +73,10 @@ public class MainApp extends Application implements DatasetListener {
     Boolean isMac = null;
     static MainApp mainApp = null;
     static ConsoleController consoleController = null;
+    
+    public static boolean isAnalyst() {
+        return false;
+    }
 
     public static void removeStage(Stage stage) {
         synchronized (stages) {
