@@ -3792,7 +3792,8 @@ public class Molecule implements Serializable {
                 hash.put(atom, i);
                 eAtomList.add(atom);
 
-                mTree.addNode();
+                MNode mNode = mTree.addNode();
+                mNode.setAtom(atom);
                 atom.equivAtoms = null;
 
                 //mNode.atom = atom;
@@ -3816,12 +3817,12 @@ public class Molecule implements Serializable {
         class TreeGroup {
 
             int iAtom = 0;
-            int[] path = null;
+            List<MNode> pathNodes = null;
             ArrayList treeValues = null;
 
-            TreeGroup(int iAtom, int[] path, ArrayList treeValues) {
+            TreeGroup(int iAtom, List<MNode> pathNodes, ArrayList treeValues) {
                 this.iAtom = iAtom;
-                this.path = path;
+                this.pathNodes = pathNodes;
                 this.treeValues = treeValues;
             }
         }
@@ -3830,27 +3831,23 @@ public class Molecule implements Serializable {
 
         // get breadth first path from each atom
         for (int j = 0, n = eAtomList.size(); j < n; j++) {
-            Atom atom = eAtomList.get(j);
-
-            int[] path = mTree.broad_path(j);
-            int shell;
+            mTree.broad_path(j);
+            List<MNode> pathNodes = mTree.getPathNodes();
+            int numNodes = pathNodes.size();
             int value;
+            int shell;
+            ArrayList treeValues = new ArrayList(numNodes);
 
-            ArrayList treeValues = new ArrayList(path.length);
-
-            for (int k = 0; k < path.length; k++) {
-                atom = eAtomList.get(path[k] & 0xFF);
-                shell = (path[k] >> 8);
-
-                // value ensures that only atoms of same type in same shell are equivalent
-                // type has contribution from atomic number and number of pi bonds
+            for (int k = 0; k < numNodes; k++) {
+                MNode cNode = pathNodes.get(k);
+                Atom atom = cNode.getAtom();
+                shell = cNode.getShell();
                 value = (shell * 4096) + (16 * atom.aNum)
                         + ((4 * atom.nPiBonds) / 2);
                 treeValues.add(Integer.valueOf(value));
             }
-
             Collections.sort(treeValues);
-            treeGroups.add(new TreeGroup(j, path, treeValues));
+            treeGroups.add(new TreeGroup(j, pathNodes, treeValues));
         }
 
         ArrayList equivAtoms = new ArrayList();
@@ -3888,18 +3885,16 @@ public class Molecule implements Serializable {
                 }
 
                 if (ok) {
-                    Atom jAtom = eAtomList.get(jGroup.path[0]
-                            & 0xFF);
-                    Atom kAtom = eAtomList.get(kGroup.path[0]
-                            & 0xFF);
+                    Atom jAtom = jGroup.pathNodes.get(0).getAtom();
+                    Atom kAtom = kGroup.pathNodes.get(0).getAtom();
                     int shell = -1;
 
                     for (int jj = 0; jj < kGroup.treeValues.size(); jj++) {
-                        Atom atomTest = eAtomList.get(kGroup.path[jj]
-                                & 0xFF);
+                        MNode nodeTest = kGroup.pathNodes.get(jj);
+                        Atom atomTest = nodeTest.getAtom();
 
-                        if (atomTest.getName().equals(jAtom.getName())) {
-                            shell = (kGroup.path[jj] >> 8);
+                        if (atomTest != null && atomTest.getName().equals(jAtom.getName())) {
+                            shell = nodeTest.getShell();
                         }
                     }
 
@@ -4074,13 +4069,15 @@ public class Molecule implements Serializable {
                 continue;
             }
 
-            int[] path = mTreeJ.broad_path(j);
+            mTreeJ.broad_path(j);
+            List<MNode> pathNodes = mTreeJ.getPathNodes();
+            int numNodes = pathNodes.size();
             int shell;
-            int value;
 
-            for (int k = 1; k < path.length; k++) {
-                Atom atomEnd = (Atom) eAtomListJ.get(path[k] & 0xFF);
-                shell = (path[k] >> 8);
+            for (int k = 1; k < numNodes; k++) {
+                MNode cNode = pathNodes.get(k);
+                Atom atomEnd = cNode.getAtom();
+                shell = cNode.getShell();
                 if ((shell > 0) && (shell < 6)) {
                     atoms[0] = atomStart;
                     atoms[1] = atomEnd;

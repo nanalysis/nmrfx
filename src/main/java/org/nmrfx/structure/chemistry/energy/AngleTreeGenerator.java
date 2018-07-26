@@ -92,7 +92,7 @@ public class AngleTreeGenerator {
                 }
             }
         }
-        int[] path = mTree.broad_path(startIndex);
+        mTree.broad_path(startIndex);
         ArrayList<MNode> pathNodes = mTree.getPathNodes();
         for (MNode mNode : pathNodes) {
             mNode.setValue(mNode.getAtom().getAtomicNumber());
@@ -114,7 +114,7 @@ public class AngleTreeGenerator {
             mNode.sortNodesDescending();
         }
 
-        path = mTree.broad_path(startIndex);
+        mTree.broad_path(startIndex);
         pathNodes = mTree.getPathNodes();
 
         MNode lastNode = null;
