@@ -63,7 +63,7 @@ public class AngleTreeGenerator {
             }
         } else {
             if (!checkStartAtom(startAtom)) {
-                throw new IllegalArgumentException("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");
+                //throw new IllegalArgumentException("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");
             }
         }
         for (Atom atom : atoms) {
@@ -152,76 +152,54 @@ public class AngleTreeGenerator {
                     lastAngle = 0.0;
                 }
 
-                final Atom atom2;
-                Point3 pt2 = null;
                 Optional<Bond> oBond = Optional.empty();
-                MNode mNode1 = null;
+                Atom atom2;
                 if (mNode2 != null) {
                     atom2 = mNode2.getAtom();
+                    if (firstAtom) {
+                        atom2.daughterAtom = atom3;
+                    }
                     atom3.parent = atom2;
-                    pt2 = atom2.getPoint();
+                    Point3 pt2 = atom2.getPoint();
                     oBond = atom2.getBond(atom3);
-                    mNode1 = mNode2.getParent();
+                    atom3.bondLength = (float) AtomMath.calcDistance(pt2, pt3);
+                    MNode mNode1 = mNode2.getParent();
+                    if (mNode1 != null) {
+                        Atom atom1 = mNode1.getAtom();
+                        Point3 pt1 = atom1.getPoint();
+                        atom3.valanceAngle = (float) AtomMath.calcAngle(pt1, pt2, pt3);
+                        MNode mNode0 = mNode1.getParent();
+                        if (mNode0 != null) {
+                            Atom atom0 = mNode0.getAtom();
+                            Point3 pt0 = atom0.getPoint();
+                            dih = AtomMath.calcDihedral(pt0, pt1, pt2, pt3);
+                            if (dih < 0.0) {
+                                dih = dih + 2.0 * Math.PI;
+                            }
+                            double newDih;
+                            if (!firstAtom) {
+                                newDih = dih - lastAngle;
+                            } else {
+                                newDih = dih;
+                            }
+                            lastAngle = dih;
+                            if (newDih > Math.PI) {
+                                newDih = newDih - 2.0 * Math.PI;
+                            }
+                            if (newDih < -Math.PI) {
+                                newDih = newDih + 2.0 * Math.PI;
+                            }
+                            atom3.dihedralAngle = (float) newDih;
+                        }
+                    }
                 } else {
                     atom2 = null;
-                    pt2 = new Point3(0.0, 0.0, 0.0);
                 }
-                atom3.bondLength = (float) AtomMath.calcDistance(pt2, pt3);
 
                 oBond.ifPresent(b -> {
                     bondMap.get(atom2).add(b);
                     bondMap.get(atom3).add(b);
                 });
-                MNode mNode0 = null;
-                Atom atom1 = null;
-                Point3 pt1 = null;
-                if (mNode1 != null) {
-                    atom1 = mNode1.getAtom();
-                    pt1 = atom1.getPoint();
-                    mNode0 = mNode1.getParent();
-                } else {
-                    if (mNode2 == null) {
-                        pt1 = new Point3(-1.0, 0.0, 0.0);
-                    } else {
-                        pt1 = new Point3(0.0, 0.0, 0.0);
-
-                    }
-                }
-                atom3.valanceAngle = (float) AtomMath.calcAngle(pt1, pt2, pt3);
-                Atom atom0 = null;
-                Point3 pt0 = null;
-                if (mNode0 != null) {
-                    atom0 = mNode0.getAtom();
-                    pt0 = atom0.getPoint();
-                } else {
-                    if (mNode1 != null) {
-                        pt0 = new Point3(0.0, 0.0, 0.0);
-                    } else {
-                        if (mNode2 == null) {
-                            pt0 = new Point3(-1.0, -1.0, 0.0);
-                        } else {
-                            pt0 = new Point3(-1.0, 0.0, 0.0);
-                        }
-                    }
-                }
-                dih = AtomMath.calcDihedral(pt0, pt1, pt2, pt3);
-                if (dih < 0.0) {
-                    dih = dih + 2.0 * Math.PI;
-                }
-                double newDih;
-                if (!firstAtom) {
-                    newDih = dih - lastAngle;
-                } else {
-                    newDih = dih;
-                }
-                lastAngle = dih;
-                if (newDih > Math.PI) {
-                    newDih = newDih - 2.0 * Math.PI;
-                }
-                if (newDih < -Math.PI) {
-                    newDih = newDih + 2.0 * Math.PI;
-                }
-                atom3.dihedralAngle = (float) newDih;
 
                 // fixme write faster code to get bond (like atom2.getbond(atom3) so you search bonds for atom not whole entity
                 boolean rotatable = true;
@@ -247,7 +225,7 @@ public class AngleTreeGenerator {
                 }
                 atom3.irpIndex = rotatable ? 1 : 0;
 
-                String parentName = atom2 == null ? "" : atom2.getShortName();
+//                String parentName = atom2 == null ? "" : atom2.getShortName();
 //                    System.out.printf("%10s %10s %3d %7.3f %7.3f %7.3f %b %3d %3d %b\n",
 //                            parentName, atom3.getShortName(), atom3.getTreeIndex(), atom3.bondLength,
 //                            atom3.valanceAngle * TO_RAD, atom3.dihedralAngle * TO_RAD, atom3.getRotActive(), atom3.rotUnit, atom3.irpIndex, rotatable);
@@ -361,7 +339,7 @@ public class AngleTreeGenerator {
             ringClosure.put(a2, distance);
             atomKey = a1;
         }
-        
+
         ringClosures.put(atomKey, ringClosure);
     }
 
