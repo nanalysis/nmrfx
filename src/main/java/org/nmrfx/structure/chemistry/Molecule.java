@@ -457,6 +457,10 @@ public class Molecule implements Serializable {
         return compounds;
     }
 
+    public ArrayList<Entity> getEntities() {
+        return new ArrayList(entities.values());
+    }
+
     public void sortByIndex() {
         for (Polymer polymer : getPolymers()) {
             for (Residue residue : polymer.getResidues()) {

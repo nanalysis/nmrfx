@@ -1232,10 +1232,17 @@ class refine:
 
     def setupTree(self, start, end):
         mol = self.molecule
-        ligands = mol.getLigands()
-        polymers = mol.getPolymers()
-        for polymer in polymers:
-            pI = PathIterator(polymer)
+        if start:
+            startAtom = molecule.getAtom(start)
+        else:
+            startAtom = None
+        if end:
+            endAtom = molecule.getAtom(end)
+        else:
+            endAtom = None
+        entities = mol.getEntities();
+        for entity in entities:
+            pI = PathIterator(entity)
             nodeValidator = NodeValidator()
             pI.init(nodeValidator)
             pI.processPatterns()
@@ -1243,37 +1250,9 @@ class refine:
             pI.setProperties("res", "RESONANT");
             pI.setProperties("r", "RING");
             pI.setHybridization();
-            aTree = AngleTreeGenerator()
-            atoms = polymer.getAtoms()
-            if start:
-                startAtom = polymer.getAtom(start)
-            else:
-                startAtom = None
-            if end:
-                endAtom = polymer.getAtom(end)
-            else:
-                endAtom = None
-            aTree.scan(polymer, startAtom, endAtom)
-        for ligand in ligands:
-            pI = PathIterator(ligand)
-            nodeValidator = NodeValidator()
-            pI.init(nodeValidator)
-            pI.processPatterns()
-            pI.setProperties("ar", "AROMATIC");
-            pI.setProperties("res", "RESONANT");
-            pI.setProperties("r", "RING");
-            pI.setHybridization();
-            aTree = AngleTreeGenerator()
-            atoms = ligand.getAtoms()
-            if start != None:
-                startAtom = ligand.getAtom(start)
-            else:
-                startAtom = None
-            if end != None:
-                endAtom = ligand.getAtom(end)
-            else:
-                endAtom = None
-            aTree.scan(ligand,startAtom, endAtom)
+        aTree = AngleTreeGenerator()
+        aTree.scan(mol, startAtom, endAtom)
+        
 
     def addAngleFile(self,file, mode='nv'):
         if mode == 'cyana':
