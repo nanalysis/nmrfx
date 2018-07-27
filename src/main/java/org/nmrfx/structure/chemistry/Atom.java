@@ -97,6 +97,7 @@ public class Atom implements IAtom {
     public Object atomEnergyProp = null;
     boolean[] flags = new boolean[ATOMFLAGS.values().length];
     Optional<Map<String, Object>> properties = Optional.empty();
+    public Atom daughterAtom = null;
 
     public Atom(AtomParser atomParse) {
         spatialSet = new SpatialSet(this);
