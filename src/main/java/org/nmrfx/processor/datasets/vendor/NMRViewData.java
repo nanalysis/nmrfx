@@ -28,6 +28,7 @@ import org.nmrfx.processor.processing.SampleSchedule;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -522,6 +523,19 @@ public class NMRViewData implements NMRData {
     @Override
     public LPParams getLPParams(int iDim) {
         return null;
+    }
+
+    public List<Double> getValues(int dim) {
+        double[] values =  dataset.getValues(dim);
+        if (values == null) {
+            return Collections.EMPTY_LIST;
+        } else {
+            List<Double> valueList = new ArrayList<>();
+            for (int i=0; i<values.length; i++){
+                valueList.add(values[i]);
+            }
+            return valueList;
+        }
     }
 
     @Override
