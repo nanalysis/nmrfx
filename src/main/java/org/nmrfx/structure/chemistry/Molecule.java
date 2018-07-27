@@ -1107,10 +1107,16 @@ public class Molecule implements Serializable {
     }
 
     public void dumpCoords() {
-        System.out.printf("%8s %8s %8s %8s %10s %10s %10s \n", "Name", "PName", "GPName", "GGPName", "BondL", "ValAng", "DihAng");
-
+        System.out.printf("    %8s %8s %8s %8s %10s %10s %10s \n", "GPName", "PName", "Name", "DName", "BondL", "ValAng", "DihAng");
+        if (spSets == null) {
+            return;
+        }
         for (int i = 0; i < spSets.length; i++) {
             if (spSets[i].length > 3) {
+                Atom atom = spSets[i][2].atom;
+                String angleDaughterName = atom.daughterAtom != null ? atom.daughterAtom.getShortName() : "____";
+                String atomParentName = atom.parent != null ? atom.parent.getShortName() : "___";
+                System.out.printf("%8s %8s %8s %3d %3d\n", atomParentName, atom.getShortName(), angleDaughterName, atom.irpIndex, atom.rotUnit);
                 double dihedralAngle = 0;
                 for (int j = 3; j < spSets[i].length; j++) {
                     Atom a4 = spSets[i][j].atom;
@@ -1122,14 +1128,14 @@ public class Molecule implements Serializable {
                     Atom a1 = a2 != null ? a2.parent : null;
 
                     String name = a4.getShortName();
-                    String parentName = a3 != null ? a3.getShortName() : null;
-                    String grandParentName = a2 != null ? a2.getShortName() : null;
-                    String greatGrandParentName = a1 != null ? a1.getShortName() : null;
+                    String parentName = a3 != null ? a3.getShortName() : "";
+                    String grandParentName = a2 != null ? a2.getShortName() : "";
+                    String greatGrandParentName = a1 != null ? a1.getShortName() : "";
                     dihedralAngle += a4.dihedralAngle;
                     double dihedralAnglePrint = dihedralAngle * (180.0 / Math.PI);
                     double bondLength = a4.bondLength;
                     double valenceAngle = a4.valanceAngle * (180.0 / Math.PI);
-                    System.out.printf("%8s %8s %8s $8s %10.2f %10.3f %10.3f \n", name, parentName, grandParentName, greatGrandParentName, bondLength, valenceAngle, dihedralAnglePrint);
+                    System.out.printf("    %8s %8s %8s %8s %10.2f %10.3f %10.3f \n", greatGrandParentName, grandParentName, parentName, name, bondLength, valenceAngle, dihedralAnglePrint);
 
                 }
             }
@@ -3466,7 +3472,10 @@ public class Molecule implements Serializable {
                 iAtom.rotUnit = rotUnit++;
             }
             Atom jAtom = iAtom;
-            while ((jAtom = jAtom.getParent()) != null) {
+            
+            // careful in following using jAtom.parent is different than jAtom.getParent
+            // the latter will find parent using bonds if parent field null
+            while ((jAtom = jAtom.parent) != null) {
                 //if (jAtom.irpIndex != 0) {
                 if ((jAtom.irpIndex > 0) && jAtom.rotActive) {
                     iAtom.rotGroup = jAtom;
