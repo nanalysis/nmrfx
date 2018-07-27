@@ -261,13 +261,19 @@ public class RotationalDynamics {
             double a1 = branch.rotAccel.getEntry(2);
             delAngle = v * timestep + (4.0 * a1 - a0) * timestep * timestep / 6.0;
             Atom diAtom = branch.atom;
-            Atom daughter = diAtom.getAngleChild();
+            Atom daughter = diAtom.daughterAtom;
+            if (daughter == null) {
+                daughter = diAtom.getAngleChild();
+            }
             double absDelta = FastMath.abs(delAngle);
             if (absDelta > max) {
                 max = absDelta;
             }
             sumSq += delAngle * delAngle;
             //System.out.println(deltaSum);
+            if (daughter == null) {
+                System.out.println(diAtom.getShortName());
+            }
             daughter.dihedralAngle += delAngle;
             daughter.dihedralAngle = (float) Dihedral.reduceAngle(daughter.dihedralAngle);
         }
