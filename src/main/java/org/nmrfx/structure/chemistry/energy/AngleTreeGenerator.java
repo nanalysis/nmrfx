@@ -45,14 +45,14 @@ public class AngleTreeGenerator {
         return startAtom.bonds.size() == 1;
     }
 
-    public void scan(Entity entity, Atom startAtom, Atom endAtom) {
+    public void scan(Molecule molecule, Atom startAtom, Atom endAtom) {
         MTree mTree = new MTree();
         Map<Atom, Integer> hash = new HashMap<>();
         List<Atom> eAtomList = new ArrayList<>();
         int i = 0;
         int startIndex = -1;
         Map<Atom, List<Bond>> bondMap = new HashMap<>();
-        List<Atom> atoms = entity.getAtoms();
+        List<Atom> atoms = molecule.getAtoms();
 
         if (startAtom == null) {
             for (Atom atom : atoms) {
@@ -283,9 +283,9 @@ public class AngleTreeGenerator {
                 }
             }
         }
-        entity.molecule.setTreeList(atomPathList);
+        molecule.setTreeList(atomPathList);
 
-        entity.molecule.setRingClosures(ringClosures);
+        molecule.setRingClosures(ringClosures);
         for (Atom atom : atoms) {
             String par = "-";
             if (atom.parent != null) {
@@ -298,9 +298,9 @@ public class AngleTreeGenerator {
 //            System.out.println(par + " --> " + par2 + " --> " + atom.getShortName() + " " + atom.getTreeIndex());
         }
         Molecule.makeAtomList();
-        entity.molecule.resetGenCoords();
-        entity.molecule.setupRotGroups();
-        entity.molecule.genCoords();
+        molecule.resetGenCoords();
+        molecule.setupRotGroups();
+        molecule.genCoords();
     }
 
     private List<MNode> getShellNodes(List<MNode> nodes, int iShell, int start) {
