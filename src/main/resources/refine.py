@@ -471,6 +471,9 @@ class refine:
                     else:
                         residues = None
                     self.readMoleculeDict(molDict)
+                if 'tree' in data:
+                    self.setupAtomProperties()
+
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
         if 'angles' in data:
@@ -1230,6 +1233,19 @@ class refine:
             pdb.readResidue(fileName, None, self.molecule, None)
         return self.molecule
 
+    def setupAtomProperties(self):
+        mol = self.molecule
+        entities = mol.getEntities()
+        for entity in entities:
+            pI = PathIterator(entity)
+            nodeValidator = NodeValidator()
+            pI.init(nodeValidator)
+            pI.processPatterns()
+            pI.setProperties("ar", "AROMATIC");
+            pI.setProperties("res", "RESONANT");
+            pI.setProperties("r", "RING");
+            pI.setHybridization();
+
     def setupTree(self, start, end):
         mol = self.molecule
         if start:
@@ -1240,19 +1256,8 @@ class refine:
             endAtom = molecule.getAtom(end)
         else:
             endAtom = None
-        entities = mol.getEntities();
-        for entity in entities:
-            pI = PathIterator(entity)
-            nodeValidator = NodeValidator()
-            pI.init(nodeValidator)
-            pI.processPatterns()
-            pI.setProperties("ar", "AROMATIC");
-            pI.setProperties("res", "RESONANT");
-            pI.setProperties("r", "RING");
-            pI.setHybridization();
         aTree = AngleTreeGenerator()
         aTree.scan(mol, startAtom, endAtom)
-        
 
     def addAngleFile(self,file, mode='nv'):
         if mode == 'cyana':
