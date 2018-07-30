@@ -4795,4 +4795,34 @@ public class Molecule implements Serializable {
             atom.setPoint(target, ptT);
         }
     }
+
+    public void createLinker(Atom atom1, Atom atom2, int numLinks) {
+        /**
+         * createLinker is a method to create a link between atoms in two
+         * separate entities
+         *
+         * @param numLinks number of linker atoms to use
+         * @param atom1
+         * @param atom2
+         */
+
+        if (atom1 == null || atom2 == null) {
+            return;
+        }
+        Atom curAtom = atom1;
+        Atom newAtom;
+        String linkRoot = "X";
+        for (int i = 1; i <= numLinks; i++) {
+            newAtom = curAtom.add(linkRoot + Integer.toString(i), "X", Order.SINGLE);
+            newAtom.bondLength = 1.08f;
+            newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
+            newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+            curAtom = newAtom;
+            if (i == numLinks) {
+                Atom.addBond(curAtom, atom2, Order.SINGLE, 0, false);
+                atom2.parent = curAtom;
+                curAtom.daughterAtom = atom2;
+            }
+        }
+    }
 }
