@@ -982,7 +982,6 @@ public class Molecule implements Serializable {
         if (treeAtoms == null) {
             atomList = atoms;
         } else {
-            System.out.println("Using tree atoms");
             atomList = treeAtoms;
         }
         int nAngles = 0;
