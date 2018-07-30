@@ -1245,11 +1245,11 @@ class refine:
             pI.setHybridization();
             aTree = AngleTreeGenerator()
             atoms = polymer.getAtoms()
-            if start:
+            if start != None:
                 startAtom = polymer.getAtom(start)
             else:
                 startAtom = None
-            if end:
+            if end != None:
                 endAtom = polymer.getAtom(end)
             else:
                 endAtom = None
