@@ -162,34 +162,43 @@ public class AngleTreeGenerator {
                     atom3.parent = atom2;
                     Point3 pt2 = atom2.getPoint();
                     oBond = atom2.getBond(atom3);
-                    atom3.bondLength = (float) AtomMath.calcDistance(pt2, pt3);
-                    MNode mNode1 = mNode2.getParent();
-                    if (mNode1 != null) {
-                        Atom atom1 = mNode1.getAtom();
-                        Point3 pt1 = atom1.getPoint();
-                        atom3.valanceAngle = (float) AtomMath.calcAngle(pt1, pt2, pt3);
-                        MNode mNode0 = mNode1.getParent();
-                        if (mNode0 != null) {
-                            Atom atom0 = mNode0.getAtom();
-                            Point3 pt0 = atom0.getPoint();
-                            dih = AtomMath.calcDihedral(pt0, pt1, pt2, pt3);
-                            if (dih < 0.0) {
-                                dih = dih + 2.0 * Math.PI;
+                    
+                    // Check to see if the atoms are linkers. If element names are null they must be linkers
+                    if (atom3.getElementName() != null && atom2.getElementName() != null) {
+                        atom3.bondLength = (float) AtomMath.calcDistance(pt2, pt3);
+                        MNode mNode1 = mNode2.getParent();
+                        if (mNode1 != null) {
+                            Atom atom1 = mNode1.getAtom();
+                            if (atom1.getElementName() != null) {
+                                Point3 pt1 = atom1.getPoint();
+                                atom3.valanceAngle = (float) AtomMath.calcAngle(pt1, pt2, pt3);
+                                MNode mNode0 = mNode1.getParent();
+                                if (mNode0 != null) {
+                                    Atom atom0 = mNode0.getAtom();
+                                    if (atom0.getElementName() != null) {
+                                        Point3 pt0 = atom0.getPoint();
+                                        dih = AtomMath.calcDihedral(pt0, pt1, pt2, pt3);
+                                        if (dih < 0.0) {
+                                            dih = dih + 2.0 * Math.PI;
+                                        }
+                                        double newDih;
+                                        if (!firstAtom) {
+                                            newDih = dih - lastAngle;
+                                        } else {
+                                            newDih = dih;
+                                        }
+                                        lastAngle = dih;
+                                        if (newDih > Math.PI) {
+                                            newDih = newDih - 2.0 * Math.PI;
+                                        }
+                                        if (newDih < -Math.PI) {
+                                            newDih = newDih + 2.0 * Math.PI;
+                                        }
+                                        atom3.dihedralAngle = (float) newDih;
+                                    }
+                                }
+
                             }
-                            double newDih;
-                            if (!firstAtom) {
-                                newDih = dih - lastAngle;
-                            } else {
-                                newDih = dih;
-                            }
-                            lastAngle = dih;
-                            if (newDih > Math.PI) {
-                                newDih = newDih - 2.0 * Math.PI;
-                            }
-                            if (newDih < -Math.PI) {
-                                newDih = newDih + 2.0 * Math.PI;
-                            }
-                            atom3.dihedralAngle = (float) newDih;
                         }
                     }
                 } else {
