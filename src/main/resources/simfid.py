@@ -371,8 +371,9 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.00005, 
         for plane in range(dataPars.dimSizes[2]):
             newSignals = decaySignal(signals, plane*100, 0.003)
             addDatasetSignals(dataset, dataPars, datasetName, newSignals, plane, noise, delay, fp, frMul, offset, ph, pep)
+        values=[1.0]*dataPars.dimSizes[2]
     else:
-        decayValues, planes = readDecayFile(decayFile)
+        headValues, decayValues, planes = readDecayFile(decayFile)
         if planes != dataPars.dimSizes[2]:
             print "Changing size of dim 3 from", dataPars.dimSizes[2], "to", planes
             dataPars.dimSizes = dataPars.dimSizes[0:2] + [planes]
@@ -381,8 +382,13 @@ def doSim(datasetName, bmrbFileName=None, nSigs=20, sigRng=None, noise=0.00005, 
         for plane in range(dataPars.dimSizes[2]):
             newSignals = applyDecay(signals, decayValues, plane)
             addDatasetSignals(dataset, dataPars, datasetName, newSignals, plane, noise, delay, fp, frMul, offset, ph, pep)
+        if headValues != []:
+            values = headValues
+            if "CPMG" in decayFile:
+                values.insert(0, 0.0)
+        else:
+            values=[1.0]*dataPars.dimSizes[2]
 
-    values=[1.0]*dataPars.dimSizes[2]
     dataset.setValues(2, values)
 
     saveRefPars(dataset, dataPars)
@@ -392,8 +398,11 @@ def readDecayFile(file):
     for line in open(file,'r'):
         arr = line.split()
         if arr[0] == 'Residue':  #Header line
-            continue
-        decayValues[arr[0]] = [float(x) for x in arr[1:]]
-        planes = len(decayValues[arr[0]])
-    return [decayValues,planes]
+            #print 'header = ', arr[1:]
+            headValues = [float(x) for x in arr[1:] if not any(c.isalpha() for c in x)]
+            #print 'header values = ', headValues
+        if arr[0] != 'Residue':
+            decayValues[arr[0]] = [float(x) for x in arr[1:]]
+            planes = len(decayValues[arr[0]])
+    return [headValues, decayValues, planes]
 
