@@ -457,6 +457,20 @@ class refine:
     def addDisCon(self, atomName1, atomName2, lower, upper):
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
 
+    def getAtom(self, atomTuple):
+        entity, atomName = atomTuple
+        atomArr = atomName.split('.')
+
+        if len(atomArr) > 1:
+            resNum = atomArr.pop(0)
+            entity = entity.getResidue(resNum)
+        atomName = atomArr[0]
+        atom = entity.getAtom(atomName)
+
+        if not atom:
+            print atomName , "was not found in", entity.getName()
+            raise ValueError
+        return atom
     def loadFromYaml(self,data, seed, pdbFile=""):
         if pdbFile != '':
             self.readPDBFile(pdbFile)
