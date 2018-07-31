@@ -225,6 +225,10 @@ public class Entity implements AtomContainer, Serializable {
     public Atom getAtom(int index) {
         return atoms.get(index);
     }
+    
+    public Atom getLastAtom(){
+        return getAtom(atoms.size()-1);
+    }
 
     public boolean hasEquivalentAtoms() {
         return hasEquivalentAtoms;
