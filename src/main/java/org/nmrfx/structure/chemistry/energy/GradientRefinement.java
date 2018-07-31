@@ -110,13 +110,13 @@ public class GradientRefinement extends Refinement {
         }
         System.arraycopy(result.getPoint(), 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
         putDihedrals();
-        molecule.genCoordsFastVec3D(false, null);
+        molecule.genCoords(false, null);
     }
 
     public double[] nonNormDeriv(final double[] dihAngles) {
         System.arraycopy(dihAngles, 0, dihedrals.angleValues, 0, dihedrals.angleValues.length);
         putDihedrals();
-        molecule.genCoordsFastVec3D(false, null);
+        molecule.genCoords(false, null);
         EnergyDeriv eDeriv = eDeriv();
         if (useNumericDerivatives) {
             double[] nDerivatives = numericalDerivatives(1.0e-6, false);
@@ -134,7 +134,7 @@ public class GradientRefinement extends Refinement {
         dihedrals.denormalize(dihValues, dihedrals.angleValues);
         putDihedrals();
         //int iStruct = energyList.getStructure();
-        molecule.genCoordsFastVec3D(false, null);
+        molecule.genCoords(false, null);
         EnergyDeriv eDeriv = eDeriv();
         double energy = eDeriv.getEnergy();
         if (energy < bestEnergy) {
@@ -165,22 +165,22 @@ public class GradientRefinement extends Refinement {
 
             dihedrals.angleValues[i] = origValue - 2.0 * delta;
             putDihedrals();
-            molecule.genCoordsFastVec3D(false, null);
+            molecule.genCoords(false, null);
             double energy1 = energy();
 
             dihedrals.angleValues[i] = origValue - delta;
             putDihedrals();
-            molecule.genCoordsFastVec3D(false, null);
+            molecule.genCoords(false, null);
             double energy2 = energy();
 
             dihedrals.angleValues[i] = origValue + delta;
             putDihedrals();
-            molecule.genCoordsFastVec3D(false, null);
+            molecule.genCoords(false, null);
             double energy3 = energy();
 
             dihedrals.angleValues[i] = origValue + 2.0 * delta;
             putDihedrals();
-            molecule.genCoordsFastVec3D(false, null);
+            molecule.genCoords(false, null);
             double energy4 = energy();
 
             dihedrals.angleValues[i] = origValue;
