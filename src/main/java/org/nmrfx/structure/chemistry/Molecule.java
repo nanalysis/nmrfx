@@ -759,7 +759,7 @@ public class Molecule implements Serializable {
         return genCoordsFast(dihedralAngles);
     }
 
-    public void setupGenCoords() throws RuntimeException {
+    public void setupGenCoordsFast() throws RuntimeException {
         nullCoords();
         updateAtomArray();
         List<Atom> atomList;
@@ -827,7 +827,7 @@ public class Molecule implements Serializable {
         }
     }
 
-    public void setupGenCoordsFast() throws RuntimeException {
+    public void setupGenCoordsVec3D() throws RuntimeException {
         nullCoords();
         updateAtomArray();
         List<Atom> atomList;
@@ -942,7 +942,7 @@ public class Molecule implements Serializable {
     public int genCoordsFast(final double[] dihedralAngles) throws RuntimeException {
         int nAngles = 0;
         if (spSets == null) {
-            setupGenCoords();
+            setupGenCoordsFast();
         }
         int iStructure = 0;
         List<Atom> atomList;
@@ -1000,7 +1000,7 @@ public class Molecule implements Serializable {
             return genCoordsFast(dihedralAngles);
         }
         if (genVecs == null) {
-            setupGenCoordsFast();
+            setupGenCoordsVec3D();
         }
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         FastVector3D[] origins = new FastVector3D[3];
@@ -3315,7 +3315,7 @@ public class Molecule implements Serializable {
 
     public ArrayList<Atom> setupAngles() {
         if (spSets == null) {
-            setupGenCoords();
+            setupGenCoordsFast();
         }
         angleAtoms = new ArrayList<Atom>();
 
