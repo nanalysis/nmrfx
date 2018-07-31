@@ -1265,10 +1265,13 @@ class refine:
 
     def readPDBFile(self,fileName):
         pdb = PDBFile()
-        pdb.readSequence(fileName,0)
-        self.molecule = Molecule.getActive()
-        self.molName = self.molecule.getName()
-        self.molecule.selectAtoms('*.*')
+        if not self.molecule:
+            pdb.readSequence(fileName,0)
+            self.molecule = Molecule.getActive()
+            self.molName = self.molecule.getName()
+            self.molecule.selectAtoms('*.*')
+        else:
+            pdb.readResidue(fileName, None, self.molecule, None)
         return self.molecule
 
     def readPDBFiles(self,files):
