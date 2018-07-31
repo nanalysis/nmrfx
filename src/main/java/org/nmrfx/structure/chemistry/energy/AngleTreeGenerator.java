@@ -128,7 +128,6 @@ public class AngleTreeGenerator {
             atom.parent = null;
         }
         int iAtom = 0;
-        startAtom.setTreeIndex(iAtom++);
         startAtom.rotActive = false;
         startAtom.irpIndex = 0;
         for (int iShell = 0; iShell < nShells; iShell++) {
