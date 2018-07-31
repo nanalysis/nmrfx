@@ -4409,11 +4409,10 @@ public class Molecule implements Serializable {
                     }
                     atom.iAtom = i;
                     String result = spSet.toPDBString(i + 1, iStruct);
-                    if (!(spSet.atom.entity instanceof Residue) || !((Residue) spSet.atom.entity).isStandard()) {
-                        bondList.add(spSet.atom);
-                    }
-
                     if (result != null) {
+                        if (!(spSet.atom.entity instanceof Residue) || !((Residue) spSet.atom.entity).isStandard()) {
+                            bondList.add(spSet.atom);
+                        }
                         out.print(result + "\n");
                         i++;
                     }
@@ -4427,7 +4426,9 @@ public class Molecule implements Serializable {
                         iAtoms.clear();
                         for (Object aObj : bondedAtoms) {
                             Atom bAtom2 = (Atom) aObj;
-                            iAtoms.add(bAtom2.iAtom);
+                            if (bAtom2.getElementName() != null) {
+                                iAtoms.add(bAtom2.iAtom);
+                            }
                         }
                         Collections.sort(iAtoms);
                         for (Integer iAtom : iAtoms) {
