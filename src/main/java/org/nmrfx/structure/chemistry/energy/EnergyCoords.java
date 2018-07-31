@@ -312,7 +312,7 @@ public class EnergyCoords {
         for (int i = start; i < end;) {
             groupSizes[i] = 1;
             int j = i + 1;
-            while (iGroups[j] == iGroups[i]) {
+            while (iGroups[j] == iGroups[i] && j < end) {
                 groupSizes[i]++;
                 j++;
             }
