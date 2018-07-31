@@ -746,229 +746,17 @@ public class Molecule implements Serializable {
     }
 
     public int genCoords(int iStructure, boolean fillCoords) throws RuntimeException {
-        return genCoords(iStructure, fillCoords, null);
+//        return genCoords(iStructure, fillCoords, null);
+        return genCoordsFast();
     }
 
     public int genCoords(boolean fillCoords) throws RuntimeException {
-        return genCoords(0, fillCoords, null);
-    }
-
-    public int genCoords(int iStructure, boolean fillCoords, final double[] dihedralAngles) throws RuntimeException {
-        if (!fillCoords) {
-            nullCoords();
-        }
-        updateAtomArray();
-        Atom a1 = null;
-        Atom a2 = null;
-        Atom a4 = null;
-        int nAngles = 0;
-        for (Atom a3 : atoms) {
-            if (!a3.getPointValidity(iStructure)) {
-                if (fillCoords) {
-                    continue;
-                }
-                a3.setPointValidity(iStructure, true);
-            }
-            Coordinates coords = null;
-            double dihedralAngle = 0;
-            for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = a3.bonds.get(iBond);
-                if (bond.begin == a3) {
-                    a4 = bond.end;
-                } else {
-                    a4 = bond.begin;
-                }
-                if (a4 == null) {
-                    continue;
-                }
-                if (a4 == a3.parent) {
-                    continue;
-                }
-                if (a4.parent != a3) {
-                    continue;
-                }
-                if (coords == null) {
-                    Point3 p1 = null;
-                    Point3 p2 = null;
-                    Point3 p3 = null;
-                    a2 = a3.parent;
-                    if (a2 == null) {
-                        p1 = new Point3(-1, -1, 0);
-                        p2 = new Point3(-1, 0, 0);
-                    } else {
-                        p2 = a2.getPoint(iStructure);
-                        a1 = a2.parent;
-                        if (a1 == null) {
-                            p1 = new Point3(-1, 0, 0);
-                        } else {
-                            p1 = a1.getPoint(iStructure);
-                        }
-                    }
-                    p3 = a3.getPoint(iStructure);
-                    if (p1 == null) {
-                        if (fillCoords) {
-                            continue;
-                        }
-                        p1 = new Point3(-1, -1, 0);
-                    }
-                    if (p2 == null) {
-                        if (fillCoords) {
-                            continue;
-                        }
-                        p2 = new Point3(-1, 0, 0);
-                    }
-                    if (p3 == null) {
-                        if (fillCoords) {
-                            continue;
-                        }
-                        p3 = new Point3(0, 0, 0);
-                    }
-                    if ((p3.getX() == p2.getX()) && (p3.getY() == p2.getY()) && (p3.getZ() == p2.getZ())) {
-                        throw new RuntimeException("genCoords: coordinates the same for " + a3.getFullName() + " " + p3.toString());
-                    }
-                    if ((p1.getX() == p2.getX()) && (p1.getY() == p2.getY()) && (p1.getZ() == p2.getZ())) {
-                        throw new RuntimeException("genCoords: coordinates the same for " + a2.getFullName() + " " + p2.toString());
-                    }
-                    coords = new Coordinates(p1, p2, p3);
-                    coords.setup();
-                }
-                if (dihedralAngles == null) {
-                    dihedralAngle += a4.dihedralAngle;
-                } else {
-                    dihedralAngle += dihedralAngles[nAngles];
-                }
-                nAngles++;
-                if (!a4.getPointValidity(iStructure)) {
-                    a4.setPointValidity(iStructure, true);
-                    double bondLength = a4.bondLength;
-                    double valanceAngle = a4.valanceAngle;
-                    double bndsin = bondLength * Math.sin(Math.PI - valanceAngle);
-                    double bndcos = bondLength * Math.cos(Math.PI - valanceAngle);
-                    Point3 p4 = coords.calculate(dihedralAngle, bndcos, bndsin);
-                    a4.setPoint(iStructure, p4);
-                }
-            }
-            coords = null;
-        }
-
-        structures.add(Integer.valueOf(iStructure));
-        resetActiveStructures();
-        updateVecCoords();
-        return nAngles;
+//        return genCoords(0, fillCoords, null);
+        return genCoordsFast();
     }
 
     public int genCoords(boolean fillCoords, final double[] dihedralAngles) throws RuntimeException {
-        if (true) {
-            return genCoords();
-        }
-        if (!fillCoords) {
-            nullCoords();
-        }
-        updateAtomArray();
-        Atom a1 = null;
-        Atom a2 = null;
-        Atom a4 = null;
-        int nAngles = 0;
-        List<Atom> atomList;
-        if (treeAtoms != null) {
-            atomList = atoms;
-        } else {
-            atomList = treeAtoms;
-        }
-        for (Atom a3 : atomList) {
-            if (!a3.getPointValidity()) {
-                if (fillCoords) {
-                    continue;
-                }
-                a3.setPointValidity(true);
-            }
-            Coordinates coords = null;
-            double dihedralAngle = 0;
-            for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = a3.bonds.get(iBond);
-                if (bond.begin == a3) {
-                    a4 = bond.end;
-                } else {
-                    a4 = bond.begin;
-                }
-                if (a4 == null) {
-                    continue;
-                }
-                if (a4 == a3.parent) {
-                    continue;
-                }
-                if (a4.parent != a3) {
-                    continue;
-                }
-                if (coords == null) {
-                    Point3 p1 = null;
-                    Point3 p2 = null;
-                    Point3 p3 = null;
-                    a2 = a3.parent;
-                    if (a2 == null) {
-                        p1 = new Point3(-1, -1, 0);
-                        p2 = new Point3(-1, 0, 0);
-                    } else {
-                        p2 = a2.getPoint();
-                        a1 = a2.parent;
-                        if (a1 == null) {
-                            p1 = new Point3(-1, 0, 0);
-                        } else {
-                            p1 = a1.getPoint();
-                        }
-                    }
-                    p3 = a3.getPoint();
-                    if (p1 == null) {
-                        if (fillCoords) {
-                            continue;
-                        }
-                        p1 = new Point3(-1, -1, 0);
-                    }
-                    if (p2 == null) {
-                        if (fillCoords) {
-                            continue;
-                        }
-                        p2 = new Point3(-1, 0, 0);
-                    }
-                    if (p3 == null) {
-                        if (fillCoords) {
-                            continue;
-                        }
-                        p3 = new Point3(0, 0, 0);
-                    }
-                    if ((p3.getX() == p2.getX()) && (p3.getY() == p2.getY()) && (p3.getZ() == p2.getZ())) {
-                        throw new RuntimeException("genCoords: coordinates the same for " + a3.getFullName() + " " + p3.toString());
-                    }
-                    if ((p1.getX() == p2.getX()) && (p1.getY() == p2.getY()) && (p1.getZ() == p2.getZ())) {
-                        throw new RuntimeException("genCoords: coordinates the same for " + a2.getFullName() + " " + p2.toString());
-                    }
-                    coords = new Coordinates(p1, p2, p3);
-                    coords.setup();
-                }
-                if (dihedralAngles == null) {
-                    dihedralAngle += a4.dihedralAngle;
-                } else {
-                    dihedralAngle += dihedralAngles[nAngles];
-                }
-                nAngles++;
-                if (!a4.getPointValidity()) {
-                    a4.setPointValidity(true);
-                    double bondLength = a4.bondLength;
-                    double valanceAngle = a4.valanceAngle;
-                    double bndsin = bondLength * FastMath.sin(Math.PI - valanceAngle);
-                    double bndcos = bondLength * FastMath.cos(Math.PI - valanceAngle);
-                    Point3 p4 = coords.calculate(dihedralAngle, bndcos, bndsin);
-                    a4.setPoint(p4);
-                }
-            }
-            coords = null;
-        }
-
-        structures.add(Integer.valueOf(0));
-        resetActiveStructures();
-        updateVecCoords();
-
-        return nAngles;
+        return genCoordsFast(dihedralAngles);
     }
 
     public void setupGenCoords() throws RuntimeException {
@@ -3472,7 +3260,7 @@ public class Molecule implements Serializable {
                 iAtom.rotUnit = rotUnit++;
             }
             Atom jAtom = iAtom;
-            
+
             // careful in following using jAtom.parent is different than jAtom.getParent
             // the latter will find parent using bonds if parent field null
             while ((jAtom = jAtom.parent) != null) {
