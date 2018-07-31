@@ -487,15 +487,16 @@ class refine:
                 usedEntity[startEnt] = True
                 usedEntity[endEnt] = True
                 self.molecule.createLinker(startAtom, endAtom, n)
+
             usedEntities = [entity for entity in usedEntity.keys() if usedEntity[entity]]
             for entity in usedEntity:
                 used = usedEntity[entity]
                 if not used:
+                    print entity.getName() + " had no defined linker."
                     firstEntity = usedEntities[0]
                     startAtom = firstEntity.getLastAtom()
                     endAtom = entity.getLastAtom()
-                    print startAtom, endAtom
-                    print firstEntity.getName() + " " + entity.getName()
+                    print "linker added between " + startAtom.getFullName() + " and " + endAtom.getFullName()
                     self.molecule.createLinker(startAtom, endAtom, 6)
         else:
             for i, entity in enumerate(entities):
