@@ -704,12 +704,13 @@ public class EnergyCoords {
                             if (disSq < limit2) {
                                 int iRes = resNums[iAtom];
                                 int jRes = resNums[jAtom];
-                                int deltaRes = jRes - iRes;
+                                int deltaRes = Math.abs(jRes - iRes);
                                 if (deltaRes >= deltaEnd) {
                                     continue;
                                 }
                                 boolean notFixed = true;
                                 double adjustClose = 0.0;
+                                // fixme could we have invalid jAtom-iAtom-1, if res test inappropriate
                                 if ((iRes == jRes) || (deltaRes == 1)) {
                                     if (fixed[iAtom][jAtom - iAtom - 1]) {
                                         notFixed = false;
@@ -718,6 +719,7 @@ public class EnergyCoords {
                                         adjustClose = 0.2;
                                     }
                                 }
+                                //System.out.println(iAtom + " " + (jAtom - iAtom -1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes);
                                 boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
                                 // fixme  this is fast, but could miss interactions for atoms that are not bonded
                                 // as it doesn't test for an explicit bond between the pairs
@@ -780,11 +782,16 @@ public class EnergyCoords {
         fixed = new boolean[nAtoms][];
         for (int i = 0; i < nAtoms; i++) {
             int resNum = resNums[i];
-            int nResAtoms = resCounts[resNum];
-            nResAtoms -= (i - resStarts[resNum]) + 1;
-            if (resNum < (nResidues - 1)) {
-                nResAtoms += resCounts[resNum + 1];
+            int lastAtom = i + 100;
+            if (lastAtom >= nAtoms) {
+                lastAtom = nAtoms - 1;
             }
+            int nResAtoms = lastAtom - i;
+//            int nResAtoms = resCounts[resNum];
+//            nResAtoms -= (i - resStarts[resNum]) + 1;
+//            if (resNum < (nResidues - 1)) {
+//                nResAtoms += resCounts[resNum + 1];
+//            }
             disRange[0][i] = new double[nResAtoms];
             fixed[i] = new boolean[nResAtoms];
             Arrays.fill(disRange[0][i], Double.MAX_VALUE);
@@ -814,6 +821,7 @@ public class EnergyCoords {
 //            System.out.print(i);
             for (int j = 0, len = disRanges[0][i].length; j < len; j++) {
                 double delta = disRanges[1][i][j] - disRanges[0][i][j];
+                //System.out.println(i + " " + j + " " + atoms[i].getShortName() + " " + atoms[i + j + 1].getShortName() + " " + delta);
                 fixed[i][j] = delta < tol;
                 if (fixed[i][j]) {
                     nFixed++;
@@ -824,10 +832,27 @@ public class EnergyCoords {
             }
 //            System.out.println("");
         }
+        //System.out.println("Nfix " + nFixed);
+        //dumpFixed();
+    }
+
+    public void dumpFixed() {
+        System.out.println("dump fixed");
+        for (int i = 0; i < nAtoms; i++) {
+            System.out.println(atoms[i].getShortName());
+        }
+        for (int i = 0; i < fixed.length; i++) {
+            for (int j = 0; j < fixed[i].length; j++) {
+                if (fixed[i][j]) {
+                    System.out.println(atoms[i].getShortName() + " " + atoms[i + j + 1].getShortName());
+                }
+            }
+        }
     }
 
     public boolean fixedCurrent() {
-        return (fixed != null) && (fixed.length == nAtoms);
+        boolean status = (fixed != null) && (fixed.length == nAtoms);
+        return status;
     }
 
     public boolean checkCloseAtoms(Atom atom1, Atom atom2) {
