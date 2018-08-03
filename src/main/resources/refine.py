@@ -1243,7 +1243,6 @@ class refine:
             pI.setProperties("res", "RESONANT");
             pI.setProperties("r", "RING");
             pI.setHybridization();
-            aTree = AngleTreeGenerator()
             atoms = polymer.getAtoms()
             if start != None:
                 startAtom = polymer.getAtom(start)
@@ -1253,7 +1252,6 @@ class refine:
                 endAtom = polymer.getAtom(end)
             else:
                 endAtom = None
-            aTree.scan(polymer, startAtom, endAtom)
         for ligand in ligands:
             pI = PathIterator(ligand)
             nodeValidator = NodeValidator()
@@ -1263,7 +1261,6 @@ class refine:
             pI.setProperties("res", "RESONANT");
             pI.setProperties("r", "RING");
             pI.setHybridization();
-            aTree = AngleTreeGenerator()
             atoms = ligand.getAtoms()
             if start != None:
                 startAtom = ligand.getAtom(start)
@@ -1273,7 +1270,11 @@ class refine:
                 endAtom = ligand.getAtom(end)
             else:
                 endAtom = None
-            aTree.scan(ligand,startAtom, endAtom)
+        if start != None:
+            startAtom = Molecule.getAtomByName(start)
+        else:
+            startAtom = None
+        mol.genMeasuredTree(startAtom)
 
     def addAngleFile(self,file, mode='nv'):
         if mode == 'cyana':
