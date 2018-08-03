@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import org.nmrfx.project.StructureProject;
+import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
 
@@ -83,6 +84,7 @@ public class Molecule implements Serializable {
     //public static MoleculeTableModel molTableModel = null;
     public static final Map compoundMap = new HashMap();
     public Map<Atom, Map> ringClosures;
+    List<List<Atom>> atomTree = null;
 
     static {
         labelTypes.put(Integer.valueOf(LABEL_NONE), "none");
@@ -204,7 +206,6 @@ public class Molecule implements Serializable {
     List<Atom> treeAtoms;
 
     ArrayList<Bond> bonds = new ArrayList<Bond>();
-    SpatialSet spSets[][] = null;
     int genVecs[][] = null;
     EnergyCoords eCoords = new EnergyCoords();
     Dihedral dihedrals = null;
@@ -741,6 +742,17 @@ public class Molecule implements Serializable {
         return new ArrayList<Atom>(atoms);
     }
 
+    public void genMeasuredTree(Atom startAtom) {
+        updateAtomArray();
+        if (startAtom == null) {
+            startAtom = atoms.get(0);
+        }
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+        atomTree = aTreeGen.genTree(this, startAtom, null);
+        AngleTreeGenerator.measureAtomTree(this, atomTree);
+        setupGenCoords();
+    }
+
     public int genCoords() throws RuntimeException {
         return genCoordsFast();
     }
@@ -759,20 +771,15 @@ public class Molecule implements Serializable {
         return genCoordsFast(dihedralAngles);
     }
 
-    public void setupGenCoordsFast() throws RuntimeException {
+    public void setupGenCoords() throws RuntimeException {
+        if (atomTree == null) {
+            AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+            atomTree = aTreeGen.genTree(this, atoms.get(0), null);
+        }
         nullCoords();
         updateAtomArray();
-        List<Atom> atomList;
-        if (treeAtoms == null) {
-            atomList = atoms;
-        } else {
-            System.out.println("Using tree atoms");
-            atomList = treeAtoms;
-        }
-//        setupGenCoordsVec3D();
-        int iAtom = 0;
-        ArrayList<Atom> daughterList = new ArrayList<>();
-        spSets = new SpatialSet[atomList.size()][];
+        makeAtomList();
+        genVecs = new int[atomTree.size()][];
         for (Atom a3 : atomList) {
             if (!a3.getPointValidity()) {
                 a3.setPointValidity(true);
@@ -782,155 +789,22 @@ public class Molecule implements Serializable {
             a3.bndSin = (float) (bondLength * FastMath.sin(Math.PI - valanceAngle));
             a3.bndCos = (float) (bondLength * FastMath.cos(Math.PI - valanceAngle));
 
-            Atom a4;
-            daughterList.clear();
-            for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = a3.bonds.get(iBond);
-                if (bond.begin == a3) {
-                    a4 = bond.end;
-                } else {
-                    a4 = bond.begin;
-                }
-                if (a4 == null) {
-                    continue;
-                }
-                if (a4 == a3.parent) {
-                    continue;
-                }
-                if (a4.parent != a3) {
-                    continue;
-                }
-                if (!daughterList.contains(a4)) { // fixme test shouldn't be neccesary unless there are duplicate bonds
-                    daughterList.add(a4);
-                }
-            }
-            spSets[iAtom] = new SpatialSet[daughterList.size() + 3];
-            spSets[iAtom][2] = a3.getSpatialSet();
-            Atom a2 = a3.parent;
-            if (a2 == null) {
-                spSets[iAtom][1] = new SpatialSet(-1.0f, 0.0f, 0.0f);
-                spSets[iAtom][0] = new SpatialSet(-1.0f, -1.0f, 0.0f);
-            } else {
-                spSets[iAtom][1] = a2.getSpatialSet();
-                Atom a1 = a2.parent;
-                if (a1 == null) {
-                    spSets[iAtom][0] = new SpatialSet(-1.0f, -1.0f, 0.0f);
-                } else {
-                    spSets[iAtom][0] = a1.getSpatialSet();
-                }
-            }
-            int j = 3;
-            for (Atom atom : daughterList) {
-                spSets[iAtom][j++] = atom.getSpatialSet();
-            }
-            iAtom++;
-        }
-        dumpCoords();
-    }
-
-    public void setupGenCoordsVec3D() throws RuntimeException {
-        nullCoords();
-        updateAtomArray();
-        System.out.println("setup gen vec");
-        List<Atom> atomList;
-        if (treeAtoms == null) {
-            atomList = atoms;
-        } else {
-            atomList = treeAtoms;
         }
         int iAtom = 0;
-        ArrayList<Atom> daughterList = new ArrayList<>();
-        genVecs = new int[atomList.size()][];
-        for (Atom a3 : atomList) {
-            if (!a3.getPointValidity()) {
-                a3.setPointValidity(true);
+        for (List<Atom> branch : atomTree) {
+            genVecs[iAtom] = new int[branch.size()];
+            int jAtom = 0;
+            int oStart = -1;
+            if (branch.get(1) == null) {
+                oStart = -2;
             }
-            double bondLength = a3.bondLength;
-            double valanceAngle = a3.valanceAngle;
-            a3.bndSin = (float) (bondLength * FastMath.sin(Math.PI - valanceAngle));
-            a3.bndCos = (float) (bondLength * FastMath.cos(Math.PI - valanceAngle));
-
-            Atom a4;
-            daughterList.clear();
-            for (int iBond = 0; iBond < a3.bonds.size(); iBond++) {
-                Bond bond = a3.bonds.get(iBond);
-                if (bond.begin == a3) {
-                    a4 = bond.end;
-                } else {
-                    a4 = bond.begin;
-                }
-                if (a4 == null) {
-                    continue;
-                }
-                if (a4 == a3.parent) {
-                    continue;
-                }
-                if (a4.parent != a3) {
-                    continue;
-                }
-                if (!daughterList.contains(a4)) { // fixme test shouldn't be neccesary unless there are duplicate bonds
-                    daughterList.add(a4);
-                }
-            }
-
-            genVecs[iAtom] = new int[daughterList.size() + 3];
-            genVecs[iAtom][2] = a3.iAtom;
-            Atom a2 = a3.parent;
-            if (a2 == null) {
-                genVecs[iAtom][1] = -1;
-                genVecs[iAtom][0] = -2;
-            } else {
-                genVecs[iAtom][1] = a2.iAtom;
-                Atom a1 = a2.parent;
-                if (a1 == null) {
-                    genVecs[iAtom][0] = -2;  // fixme  should this be -1
-                } else {
-                    genVecs[iAtom][0] = a1.iAtom;
-                }
-            }
-            int j = 3;
-            for (Atom atom : daughterList) {
-                genVecs[iAtom][j++] = atom.iAtom;
+            for (Atom atom : branch) {
+                int index = atom == null ? oStart++ : atom.iAtom;
+                genVecs[iAtom][jAtom++] = index;
             }
             iAtom++;
         }
         dumpCoordsGen();
-    }
-
-    public void dumpCoords() {
-        System.out.printf("    %8s %8s %8s %8s %10s %10s %10s \n", "GPName", "PName", "Name", "DName", "BondL", "ValAng", "DihAng");
-        if (spSets == null) {
-            return;
-        }
-        for (int i = 0; i < spSets.length; i++) {
-            if (spSets[i].length > 3) {
-                Atom atom = spSets[i][2].atom;
-                String angleDaughterName = atom.getAngleChild() != null ? atom.getAngleChild().getShortName() : "____";
-                String atomParentName = atom.parent != null ? atom.parent.getShortName() : "___";
-                System.out.printf("%8s %8s %8s %3d %3d\n", atomParentName, atom.getShortName(), angleDaughterName, atom.irpIndex, atom.rotUnit);
-                double dihedralAngle = 0;
-                Atom a3 = spSets[i][2].atom;
-                Atom a2 = spSets[i][1].atom;
-                Atom a1 = spSets[i][0].atom;
-                for (int j = 3; j < spSets[i].length; j++) {
-                    Atom a4 = spSets[i][j].atom;
-                    if (a4 == null) {
-                        continue;
-                    }
-
-                    String name = a4.getShortName();
-                    String parentName = a3 != null ? a3.getShortName() : "";
-                    String grandParentName = a2 != null ? a2.getShortName() : "";
-                    String greatGrandParentName = a1 != null ? a1.getShortName() : "";
-                    dihedralAngle += a4.dihedralAngle;
-                    double dihedralAnglePrint = dihedralAngle * (180.0 / Math.PI);
-                    double bondLength = a4.bondLength;
-                    double valenceAngle = a4.valanceAngle * (180.0 / Math.PI);
-                    System.out.printf("    %8s %8s %8s %8s %10.2f %10.3f %10.3f \n", greatGrandParentName, grandParentName, parentName, name, bondLength, valenceAngle, dihedralAnglePrint);
-
-                }
-            }
-        }
     }
 
     public void dumpCoordsGen() {
@@ -949,7 +823,7 @@ public class Molecule implements Serializable {
                 Atom atom = atomList.get(genVecs[i][2]);
                 String angleDaughterName = atom.daughterAtom != null ? atom.daughterAtom.getShortName() : "____";
                 String atomParentName = atom.parent != null ? atom.parent.getShortName() : "___";
-                System.out.printf("%8s %8s %8s %3d %3d\n", atomParentName, atom.getShortName(), angleDaughterName, atom.irpIndex, atom.rotUnit);
+                System.out.printf("%8s %8s %8s %3d %3d %3d\n", atomParentName, atom.getShortName(), angleDaughterName, atom.irpIndex, atom.rotUnit, atom.iAtom);
                 double dihedralAngle = 0;
                 int a3Index = genVecs[i][2];
                 int a2Index = genVecs[i][1];
@@ -965,14 +839,14 @@ public class Molecule implements Serializable {
                     Atom a4 = atomList.get(a4Index);
 
                     String name = a4.getShortName();
-                    String parentName = a3 != null ? a3.getShortName() : "";
-                    String grandParentName = a2 != null ? a2.getShortName() : "";
-                    String greatGrandParentName = a1 != null ? a1.getShortName() : "";
+                    String parentName = a3 != null ? a3.getShortName() : a3Index + "";
+                    String grandParentName = a2 != null ? a2.getShortName() : a2Index + "";
+                    String greatGrandParentName = a1 != null ? a1.getShortName() : a1Index + "";
                     dihedralAngle += a4.dihedralAngle;
                     double dihedralAnglePrint = dihedralAngle * (180.0 / Math.PI);
                     double bondLength = a4.bondLength;
                     double valenceAngle = a4.valanceAngle * (180.0 / Math.PI);
-                    System.out.printf("    %8s %8s %8s %8s %10.2f %10.3f %10.3f \n", greatGrandParentName, grandParentName, parentName, name, bondLength, valenceAngle, dihedralAnglePrint);
+                    System.out.printf("    %8s %8s %8s %8s %10.2f %10.3f %10.3f %3d\n", greatGrandParentName, grandParentName, parentName, name, bondLength, valenceAngle, dihedralAnglePrint, a4.iAtom);
 
                 }
             }
@@ -980,8 +854,6 @@ public class Molecule implements Serializable {
     }
 
     public void resetGenCoords() {
-        System.out.println("reset)");
-        spSets = null;
         genVecs = null;
     }
 
@@ -989,20 +861,19 @@ public class Molecule implements Serializable {
         return genCoordsFast(null);
     }
 
-    public int genCoordsFastOff(final double[] dihedralAngles) throws RuntimeException {
+    public int genCoordsFast(final double[] dihedralAngles) throws RuntimeException {
         int nAngles = 0;
         int iStructure = 0;
         if (genVecs == null) {
-            setupGenCoordsVec3D();
+            setupGenCoords();
         }
-        System.out.println("gen coords fast");
+        System.out.println("gennnnnnnnnnn");
         List<Atom> atomList;
         if (treeAtoms == null) {
             atomList = atoms;
         } else {
             atomList = treeAtoms;
         }
-        System.out.println("iatom " + atomList.get(0).iAtom + " " + atomList.size() + " " + atomList.get(atomList.size() - 1).iAtom);
         for (Atom atom : atoms) {
             atom.setPointValidity(iStructure, false);
         }
@@ -1063,69 +934,19 @@ public class Molecule implements Serializable {
         return nAngles;
     }
 
-    public int genCoordsFast(final double[] dihedralAngles) throws RuntimeException {
-        int nAngles = 0;
-        if (spSets == null) {
-            setupGenCoordsFast();
-        }
-        int iStructure = 0;
-        List<Atom> atomList;
-        if (treeAtoms == null) {
-            atomList = atoms;
-        } else {
-            atomList = treeAtoms;
-        }
-        for (Atom atom : atoms) {
-            atom.setPointValidity(iStructure, false);
-        }
-        Atom a3 = spSets[0][2].atom;
-        if (!a3.getPointValidity()) {
-            a3.setPointValidity(true);
-        }
-
-        for (int i = 0; i < spSets.length; i++) {
-            if (spSets[i].length > 3) {
-                Coordinates coords = new Coordinates(spSets[i][0].getPoint(), spSets[i][1].getPoint(), spSets[i][2].getPoint());
-                if (!coords.setup()) {
-                    throw new RuntimeException("genCoords: coordinates the same for " + i + " " + spSets[i][2].getPoint().toString());
-                }
-                double dihedralAngle = 0;
-                for (int j = 3; j < spSets[i].length; j++) {
-                    Atom a4 = spSets[i][j].atom;
-                    if (dihedralAngles == null) {
-                        dihedralAngle += a4.dihedralAngle;
-                    } else {
-                        dihedralAngle += dihedralAngles[nAngles];
-                    }
-                    nAngles++;
-                    if (!a4.getPointValidity()) {
-                        a4.setPointValidity(true);
-//                        double bondLength = a4.bondLength;
-//                        double valanceAngle = a4.valanceAngle;
-//                        double bndsin = bondLength * FastMath.sin(Math.PI - valanceAngle);
-//                        double bndcos = bondLength * FastMath.cos(Math.PI - valanceAngle);
-                        Point3 p4 = coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin);
-                        a4.setPoint(p4);
-                    }
-                }
-            }
-
-        }
-
-        structures.add(0);
-        resetActiveStructures();
-        updateVecCoords();
-        return nAngles;
-    }
-
     public int genCoordsFastVec3D(final double[] dihedralAngles) throws RuntimeException {
         int nAngles = 0;
         if (false) {
             return genCoordsFast(dihedralAngles);
         }
         if (genVecs == null) {
-            System.out.println("gen null");
-            setupGenCoordsVec3D();
+            setupGenCoords();
+        }
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
         }
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         FastVector3D[] origins = new FastVector3D[3];
@@ -1157,21 +978,14 @@ public class Molecule implements Serializable {
                 double dihedralAngle = 0;
                 for (int j = 3; j < genVecs[i].length; j++) {
                     FastVector3D v4 = vecCoords[genVecs[i][j]];
-                    Atom a4 = atoms.get(genVecs[i][j]);
+                    Atom a4 = atomList.get(genVecs[i][j]);
                     if (dihedralAngles == null) {
                         dihedralAngle += a4.dihedralAngle;
                     } else {
                         dihedralAngle += dihedralAngles[nAngles];
                     }
                     nAngles++;
-//                    FastVector3D v5 = new FastVector3D();
                     coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin, v4);
-//                    boolean compare = v4.compare(v5, 1.0e-5);
-//                    Atom a3 = atoms.get(genVecs[i][2]);
-//
-//                    if (!v4.compare(v5, 1.0e-5)) {
-//                        System.out.println(compare + " " + i + " " + j + " " + a3.getShortName() + " " + a4.getShortName() + " " + v4.toString() + " " + v5.toString());
-//                    }
                 }
             }
 
@@ -1196,11 +1010,21 @@ public class Molecule implements Serializable {
         Entity lastEntity = null;
         int resNum = -1;
         getAtomTypes();
-        for (Atom atom : atoms) {
-            atom.iAtom = i;
-            if (atom.entity != lastEntity) {
-                lastEntity = atom.entity;
-                resNum++;
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
+        // fixme this is a hack because the treeAtoms are not in monotoniclly increasing order of residue number
+        Map<Entity, Integer> resMap = new HashMap<>();
+        for (Atom atom : atomList) {
+//            atom.iAtom = i;
+            if (resMap.containsKey(atom.entity)) {
+                resNum = resMap.get(atom.entity);
+            } else {
+                resNum = resMap.size();
+                resMap.put(atom.entity, resNum);
             }
             Point3 pt = atom.getPoint();
             if (pt == null) {
@@ -1215,8 +1039,14 @@ public class Molecule implements Serializable {
     public void updateFromVecCoords() {
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         int i = 0;
-        for (Atom atom : atoms) {
-            atom.iAtom = i;
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
+        for (Atom atom : atomList) {
+//            atom.iAtom = i;
             Point3 pt = atom.getPoint();
             if (pt == null) {
                 System.out.println("updateFromVecCoords null pt " + atom.getFullName() + " " + (i - 1));
@@ -3439,17 +3269,19 @@ public class Molecule implements Serializable {
     }
 
     public ArrayList<Atom> setupAngles() {
-        if (spSets == null) {
-            setupGenCoordsFast();
+        if (genVecs == null) {
+            setupGenCoords();
         }
         angleAtoms = new ArrayList<Atom>();
 
-        for (int i = 0; i < spSets.length; i++) {
-            if (spSets[i].length > 3) {
-                Atom iAtom = spSets[i][2].atom;
+        for (int i = 0; i < genVecs.length; i++) {
+            if (genVecs[i].length > 3) {
+                Atom iAtom = treeAtoms.get(genVecs[i][2]);
+                System.out.println(iAtom.getShortName() + " " + iAtom.irpIndex + " " + iAtom.rotActive);
                 if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
-                    Atom angleAtom = spSets[i][3].atom;
+                    Atom angleAtom = treeAtoms.get(genVecs[i][3]);
                     angleAtoms.add(angleAtom);
+                    System.out.println("ang " + angleAtom.getShortName());
                 }
             }
 
