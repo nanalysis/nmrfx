@@ -40,6 +40,7 @@ public class Bond implements IBond, Serializable {
     public Atom begin;
     public Atom end;
     boolean[] flags = new boolean[2];
+    boolean ringClosure = false;
 
     public Bond(Atom begin, Atom end) {
         this(begin, end, Order.SINGLE);
@@ -149,5 +150,13 @@ public class Bond implements IBond, Serializable {
     @Override
     public Order getOrder() {
         return order;
+    }
+
+    public boolean isRingClosure() {
+        return ringClosure;
+    }
+
+    public void setRingClosure(boolean value) {
+        ringClosure = value;
     }
 }

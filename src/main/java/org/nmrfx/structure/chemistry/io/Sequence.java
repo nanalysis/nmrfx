@@ -161,6 +161,7 @@ public class Sequence {
                         sequence.connectBond = bond;
                     } else {
                         bond = new Bond(refAtom, daughterAtom, order);
+                        bond.setRingClosure(ringClosure);
                         refAtom.addBond(bond);
                         if (!connector && !ringClosure) {
                             daughterAtom.parent = refAtom;
