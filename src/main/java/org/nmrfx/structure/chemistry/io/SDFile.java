@@ -176,6 +176,30 @@ public class SDFile {
             String aname = atomSymbol + (iAtom + 1);
 
             Atom atom = new Atom(aname, atomSymbol);
+            // fixme should do this elsewhere
+            switch (atom.getAtomicNumber()) {
+                case 1:
+                    atom.setType("H");
+                    break;
+                case 6:
+                    atom.setType("C3");
+                    break;
+                case 7:
+                    atom.setType("N");
+                    break;
+                case 16:
+                    atom.setType("S");
+                    break;
+                case 15:
+                    atom.setType("P");
+                    break;
+                case 8:
+                    atom.setType("O");
+                    break;
+                default:
+                    atom.setType("C");
+            }
+
             atom.setPointValidity(structureNumber, true);
             Point3 pt = new Point3(x, y, z);
             atom.setPoint(structureNumber, pt);
