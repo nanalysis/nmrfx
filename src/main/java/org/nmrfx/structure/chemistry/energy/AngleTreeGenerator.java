@@ -21,7 +21,8 @@ import org.nmrfx.structure.chemistry.search.MTree;
 public class AngleTreeGenerator {
 
     static final double TO_RAD = 180.0 / Math.PI;
-    Map<Atom, Map> ringClosures;
+    Map<Atom, Map<Atom, Double>> ringClosures;
+    List<Bond> closureBonds = new ArrayList<>();
 
     class BondSort implements Comparable<BondSort> {
 
@@ -42,263 +43,6 @@ public class AngleTreeGenerator {
 
     public boolean checkStartAtom(Atom startAtom) {
         return startAtom.bonds.size() == 1;
-    }
-
-    public void scan(Entity entity, Atom startAtom, Atom endAtom) {
-        MTree mTree = new MTree();
-        Map<Atom, Integer> hash = new HashMap<>();
-        List<Atom> eAtomList = new ArrayList<>();
-        int i = 0;
-        int startIndex = -1;
-        Map<Atom, List<Bond>> bondMap = new HashMap<>();
-        List<Atom> atoms = entity.getAtoms();
-
-        if (startAtom == null) {
-            for (Atom atom : atoms) {
-                if (checkStartAtom(atom)) {
-                    startAtom = atom;
-                    break;
-                }
-            }
-        } else {
-            if (!checkStartAtom(startAtom)) {
-                //throw new IllegalArgumentException("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");
-            }
-        }
-        for (Atom atom : atoms) {
-            if (atom == startAtom) {
-                startIndex = i;
-            }
-            hash.put(atom, i);
-            eAtomList.add(atom);
-            MNode mNode = mTree.addNode();
-            mNode.setAtom(atom);
-            bondMap.put(atom, new ArrayList<>());
-            i++;
-        }
-        if (startIndex == -1) {
-            throw new IllegalArgumentException("Didnt' find start atom\"" + startAtom.getShortName() + "\"");
-        }
-
-        for (Atom atom : atoms) {
-            for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
-                Bond bond = atom.bonds.get(iBond);
-                Integer iNodeBegin = hash.get(bond.begin);
-                Integer iNodeEnd = hash.get(bond.end);
-
-                if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                    mTree.addEdge(iNodeBegin, iNodeEnd);
-                }
-            }
-        }
-        mTree.broad_path(startIndex);
-        ArrayList<MNode> pathNodes = mTree.getPathNodes();
-        for (MNode mNode : pathNodes) {
-            mNode.setValue(mNode.getAtom().getAtomicNumber());
-            if (mNode.getAtom() == endAtom) {
-                mNode.setValue(10000);
-            }
-        }
-        if (endAtom == null) {
-            pathNodes.get(pathNodes.size() - 1).setValue(10000);
-        }
-        for (int iN = pathNodes.size() - 1; iN >= 0; iN--) {
-            MNode mNode = pathNodes.get(iN);
-            MNode parent = mNode.getParent();
-            if (parent != null) {
-                parent.setValue(parent.getValue() + mNode.getValue());
-            }
-        }
-        for (MNode mNode : pathNodes) {
-            mNode.sortNodesDescending();
-        }
-
-        mTree.broad_path(startIndex);
-        pathNodes = mTree.getPathNodes();
-
-        MNode lastNode = null;
-        boolean firstAtom = true;
-        double lastAngle = 0.0;
-        double dih;
-
-        int lastNodeIndex = 0;
-        int nShells = pathNodes.get(pathNodes.size() - 1).getShell() + 1;
-        for (Atom atom : atoms) {
-            atom.parent = null;
-        }
-        int iAtom = 0;
-        startAtom.rotActive = false;
-        startAtom.irpIndex = 0;
-        for (int iShell = 0; iShell < nShells; iShell++) {
-            List<MNode> shellNodes = getShellNodes(pathNodes, iShell, lastNodeIndex);
-            lastNodeIndex += shellNodes.size();
-            if (shellNodes.isEmpty()) {
-                break;
-            }
-            for (MNode mNode3 : shellNodes) {
-                if (mNode3.isRingClosure()) {
-                    mNode3.getAtom().rotActive = false;
-                    continue;
-                }
-                Atom atom3 = mNode3.getAtom();
-                atom3.setTreeIndex(iAtom++);
-                Point3 pt3 = atom3.getPoint();
-                MNode mNode2 = mNode3.getParent();
-                if ((lastNode == null) || (mNode2 != lastNode)) {
-                    lastNode = mNode2;
-                    firstAtom = true;
-                    lastAngle = 0.0;
-                }
-
-                Optional<Bond> oBond = Optional.empty();
-                Atom atom2;
-                if (mNode2 != null) {
-                    atom2 = mNode2.getAtom();
-                    if (firstAtom) {
-                        atom2.daughterAtom = atom3;
-                    }
-                    atom3.parent = atom2;
-                    Point3 pt2 = atom2.getPoint();
-                    oBond = atom2.getBond(atom3);
-                    atom3.bondLength = (float) AtomMath.calcDistance(pt2, pt3);
-                    MNode mNode1 = mNode2.getParent();
-                    if (mNode1 != null) {
-                        Atom atom1 = mNode1.getAtom();
-                        Point3 pt1 = atom1.getPoint();
-                        atom3.valanceAngle = (float) AtomMath.calcAngle(pt1, pt2, pt3);
-                        MNode mNode0 = mNode1.getParent();
-                        if (mNode0 != null) {
-                            Atom atom0 = mNode0.getAtom();
-                            Point3 pt0 = atom0.getPoint();
-                            dih = AtomMath.calcDihedral(pt0, pt1, pt2, pt3);
-                            if (dih < 0.0) {
-                                dih = dih + 2.0 * Math.PI;
-                            }
-                            double newDih;
-                            if (!firstAtom) {
-                                newDih = dih - lastAngle;
-                            } else {
-                                newDih = dih;
-                            }
-                            lastAngle = dih;
-                            if (newDih > Math.PI) {
-                                newDih = newDih - 2.0 * Math.PI;
-                            }
-                            if (newDih < -Math.PI) {
-                                newDih = newDih + 2.0 * Math.PI;
-                            }
-                            atom3.dihedralAngle = (float) newDih;
-                        }
-                    }
-                } else {
-                    atom2 = null;
-                }
-
-                oBond.ifPresent(b -> {
-                    bondMap.get(atom2).add(b);
-                    bondMap.get(atom3).add(b);
-                });
-
-                // fixme write faster code to get bond (like atom2.getbond(atom3) so you search bonds for atom not whole entity
-                boolean rotatable = true;
-                if (oBond.isPresent() && (oBond.get().getOrder() != Order.SINGLE)) {
-                    rotatable = false;
-                } else if (atom2 == null) {
-                    rotatable = false;
-                } else if (atom3.bonds.size() < 2) {
-                    rotatable = false;
-                } else if (atom3.getAtomicNumber() == 1) {
-                    rotatable = false;
-// fixme atom prop P hyb wrong so we have these special cases
-                } else if ((atom3.getAtomicNumber() == 8) && (atom2.getAtomicNumber() == 15)) {
-                    rotatable = true;
-                } else if ((atom3.getAtomicNumber() == 15) && (atom2.getAtomicNumber() == 8)) {
-                    rotatable = true;
-                } else if (atom3.getFlag(Atom.RESONANT) && atom2.getFlag(Atom.RESONANT)) {
-                    rotatable = false;
-                } else if (atom3.getFlag(Atom.RING) && atom2.getFlag(Atom.RING)) {
-                    rotatable = false;
-                } else if (atom3.getFlag(Atom.AROMATIC) && atom2.getFlag(Atom.AROMATIC)) {
-                    rotatable = false;
-                }
-                atom3.irpIndex = rotatable ? 1 : 0;
-
-//                String parentName = atom2 == null ? "" : atom2.getShortName();
-//                    System.out.printf("%10s %10s %3d %7.3f %7.3f %7.3f %b %3d %3d %b\n",
-//                            parentName, atom3.getShortName(), atom3.getTreeIndex(), atom3.bondLength,
-//                            atom3.valanceAngle * TO_RAD, atom3.dihedralAngle * TO_RAD, atom3.getRotActive(), atom3.rotUnit, atom3.irpIndex, rotatable);
-                firstAtom = false;
-            }
-        }
-        for (Atom atom : atoms) {
-            atom.bonds.clear();
-        }
-
-        for (Atom atom : atoms) {
-            switch (atom.getAtomicNumber()) {
-                case 1:
-                    atom.setType("H");
-                    break;
-                case 6:
-                    atom.setType("C3");
-                    break;
-                case 7:
-                    atom.setType("N");
-                    break;
-                case 16:
-                    atom.setType("S");
-                    break;
-                case 15:
-                    atom.setType("P");
-                    break;
-                case 8:
-                    atom.setType("O");
-                    break;
-                default:
-                    atom.setType("C");
-            }
-        }
-
-        for (Atom atom : bondMap.keySet()) {
-            for (Bond bond : bondMap.get(atom)) {
-                atom.bonds.add(bond);
-            }
-        }
-        List<Atom> atomPathList = new ArrayList<>();
-        // Adds all the ring closures for bonds broken in rings
-        ringClosures = new HashMap<>();
-        for (MNode mNode : pathNodes) {
-            if (!mNode.isRingClosure()) {
-                atomPathList.add(mNode.getAtom());
-            } else {
-                Atom atom1 = mNode.getAtom();
-                Atom atom2 = mNode.getParent().getAtom();
-                if ((ringClosures.containsKey(atom1) && ringClosures.get(atom1).containsKey(atom2)) || (ringClosures.containsKey(atom2) && ringClosures.get(atom2).containsKey(atom1))) {
-                } else {
-                    addRingClosure(atom1, atom2);
-                    addRingClosurePairs(atom1, atom2);
-                    addRingClosurePairs(atom2, atom1);
-                }
-            }
-        }
-        entity.molecule.setTreeList(atomPathList);
-
-        entity.molecule.setRingClosures(ringClosures);
-        for (Atom atom : atoms) {
-            String par = "-";
-            if (atom.parent != null) {
-                par = atom.parent.getShortName();
-            }
-            String par2 = "-";
-            if (atom.getParent() != null) {
-                par2 = atom.getParent().getShortName();
-            }
-//            System.out.println(par + " --> " + par2 + " --> " + atom.getShortName() + " " + atom.getTreeIndex());
-        }
-        Molecule.makeAtomList();
-        entity.molecule.resetGenCoords();
-        entity.molecule.setupRotGroups();
-        entity.molecule.genCoords();
     }
 
     public List<List<Atom>> genTree(Molecule mol, Atom startAtom, Atom endAtom) {
@@ -342,6 +86,8 @@ public class AngleTreeGenerator {
 
                 if (!bond.isRingClosure() && (iNodeBegin != null) && (iNodeEnd != null)) {
                     mTree.addEdge(iNodeBegin, iNodeEnd);
+                } else if (bond.isRingClosure()) {
+                    closureBonds.add(bond);
                 }
             }
         }
@@ -363,6 +109,7 @@ public class AngleTreeGenerator {
                 parent.setValue(parent.getValue() + mNode.getValue());
             }
         }
+        // fixme should we sort
 //        for (MNode mNode : pathNodes) {
 //            mNode.sortNodesDescending();
 //        }
@@ -387,7 +134,17 @@ public class AngleTreeGenerator {
             }
             for (MNode mNode3 : shellNodes) {
                 if (mNode3.isRingClosure()) {
-                    mNode3.getAtom().rotActive = false;
+                    Atom atom3 = mNode3.getAtom();
+                    atom3.rotActive = false;
+                    MNode mNode2 = mNode3.getParent();
+                    if (mNode2 != null) {
+                        Atom atom2 = mNode2.getAtom();
+                        Optional<Bond> oBond = atom2.getBond(atom3);
+                        if (oBond.isPresent()) {
+                            oBond.get().setRingClosure(true);
+                            closureBonds.add(oBond.get());
+                        }
+                    }
                     continue;
                 }
                 Atom atom3 = mNode3.getAtom();
@@ -438,12 +195,32 @@ public class AngleTreeGenerator {
             }
         }
         mol.setTreeList(atomPathList);
+        ringClosures = new HashMap<>();
+//        for (MNode mNode : pathNodes) {
+//            if (mNode.isRingClosure()) {
+//                Atom atom1 = mNode.getAtom();
+//                Atom atom2 = mNode.getParent().getAtom();
+//                if ((ringClosures.containsKey(atom1) && ringClosures.get(atom1).containsKey(atom2)) || (ringClosures.containsKey(atom2) && ringClosures.get(atom2).containsKey(atom1))) {
+//                } else {
+//                    addRingClosure(atom1, atom2);
+//                    addRingClosurePairs(atom1, atom2);
+//                    addRingClosurePairs(atom2, atom1);
+//                }
+//            }
+//        }
 
         dumpAtomTree(atomTree);
         return atomTree;
     }
 
-    public static void measureAtomTree(Molecule molecule, List<List<Atom>> atomTree) {
+    public Map<Atom, Map<Atom, Double>> getRingClosures() {
+        return ringClosures;
+    }
+
+    public void measureAtomTree(Molecule molecule, List<List<Atom>> atomTree) {
+        for (Atom atom : molecule.getAtomArray()) {
+            atom.parent = null;
+        }
         Map<Atom, List<Bond>> bondMap = new HashMap<>();
         atomTree.forEach((branch) -> {
             Atom a0 = branch.get(0);
@@ -459,6 +236,7 @@ public class AngleTreeGenerator {
                 Point3 p3 = a3.getPoint();
                 if (p2 != null) {
                     oBond = a2.getBond(a3);
+                    a3.parent = a2;
                     a3.bondLength = (float) AtomMath.calcDistance(p2, p3);
                     if (p1 != null) {
                         a3.valanceAngle = (float) AtomMath.calcAngle(p1, p2, p3);
@@ -513,43 +291,55 @@ public class AngleTreeGenerator {
                 } else if (a3.getFlag(Atom.RESONANT) && a2.getFlag(Atom.RESONANT)) {
                     rotatable = false;
                 } else if (a3.getFlag(Atom.RING) && a2.getFlag(Atom.RING)) {
-                    rotatable = false;
+//                    rotatable = false;
                 } else if (a3.getFlag(Atom.AROMATIC) && a2.getFlag(Atom.AROMATIC)) {
                     rotatable = false;
                 }
                 a3.irpIndex = rotatable ? 1 : 0;
+//                System.out.println(a3.getShortName() + " " + a3.irpIndex + " " + rotatable);
             }
         });
         for (Atom atom : molecule.getAtomArray()) {
-            switch (atom.getAtomicNumber()) {
-                case 1:
-                    atom.setType("H");
-                    break;
-                case 6:
-                    atom.setType("C3");
-                    break;
-                case 7:
-                    atom.setType("N");
-                    break;
-                case 16:
-                    atom.setType("S");
-                    break;
-                case 15:
-                    atom.setType("P");
-                    break;
-                case 8:
-                    atom.setType("O");
-                    break;
-                default:
-                    atom.setType("C");
-            }
+            atom.bonds.clear();
         }
 
+        for (Atom atom : bondMap.keySet()) {
+            for (Bond bond : bondMap.get(atom)) {
+                atom.addBond(bond);
+            }
+        }
+        ringClosures = new HashMap<>();
+        System.out.println("add clo " + closureBonds.size());
+        for (Bond bond : closureBonds) {
+            bond.begin.addBond(bond);
+            bond.end.addBond(bond);
+            System.out.println("close bond " + bond.toString());
+            addRingClosure(bond.begin, bond.end);
+            addRingClosurePairs(bond.begin, bond.end);
+            addRingClosurePairs(bond.end, bond.begin);
+        }
         Molecule.makeAtomList();
         molecule.resetGenCoords();
         molecule.setupRotGroups();
         molecule.genCoords();
     }
+//   List<Atom> atomPathList = new ArrayList<>();
+//        // Adds all the ring closures for bonds broken in rings
+//        ringClosures = new HashMap<>();
+//        for (MNode mNode : pathNodes) {
+//            if (!mNode.isRingClosure()) {
+//                atomPathList.add(mNode.getAtom());
+//            } else {
+//                Atom atom1 = mNode.getAtom();
+//                Atom atom2 = mNode.getParent().getAtom();
+//                if ((ringClosures.containsKey(atom1) && ringClosures.get(atom1).containsKey(atom2)) || (ringClosures.containsKey(atom2) && ringClosures.get(atom2).containsKey(atom1))) {
+//                } else {
+//                    addRingClosure(atom1, atom2);
+//                    addRingClosurePairs(atom1, atom2);
+//                    addRingClosurePairs(atom2, atom1);
+//                }
+//            }
+//        }
 
     public static void dumpAtomTree(List<List<Atom>> atomTree) {
         for (List<Atom> branch : atomTree) {
