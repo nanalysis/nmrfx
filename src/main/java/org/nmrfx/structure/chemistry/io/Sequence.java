@@ -36,6 +36,7 @@ public class Sequence {
     private Atom connectAtom = null;
     private Bond connectBond = null;
     private Atom connectBranch = null;
+    private int connectPosition = -1;
     private Molecule molecule;
     private final static Map<String, String> residueAliases = new HashMap<>();
 
@@ -105,9 +106,8 @@ public class Sequence {
                 if (parentField.equals("-")) {
                     if (sequence.connectAtom != null) {
                         parent = sequence.connectAtom;
-                        if (sequence.connectBond != null) {
-                            sequence.connectBond.end = refAtom;
-                        }
+                        Bond connectBond = new Bond(parent, refAtom);
+                        parent.bonds.add(sequence.connectPosition, connectBond);
                         connectee = true;
                     } else {
                         parent = null;
@@ -139,6 +139,7 @@ public class Sequence {
                     if (atomName.equals("+")) {
                         sequence.connectAtom = refAtom;
                         connector = true;
+                        sequence.connectPosition = iField - 3;
                     } else if (atomName.startsWith("r")) { // close ring
                         daughterAtom = residue.getAtom(atomName.substring(1));
                         ringClosure = true;
@@ -157,9 +158,7 @@ public class Sequence {
                         daughterAtom.addBond(bond);
                         daughterAtom.parent = refAtom;
                     }
-                    if (connector) {
-                        sequence.connectBond = bond;
-                    } else {
+                    if (!connector) {
                         bond = new Bond(refAtom, daughterAtom, order);
                         bond.setRingClosure(ringClosure);
                         refAtom.addBond(bond);
