@@ -83,7 +83,7 @@ public class Molecule implements Serializable {
     public static final LinkedHashSet shapeTypes = new LinkedHashSet();
     //public static MoleculeTableModel molTableModel = null;
     public static final Map compoundMap = new HashMap();
-    public Map<Atom, Map> ringClosures;
+    public Map<Atom, Map<Atom, Double>> ringClosures;
     List<List<Atom>> atomTree = null;
 
     static {
@@ -749,7 +749,8 @@ public class Molecule implements Serializable {
         }
         AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         atomTree = aTreeGen.genTree(this, startAtom, null);
-        AngleTreeGenerator.measureAtomTree(this, atomTree);
+        aTreeGen.measureAtomTree(this, atomTree);
+        setRingClosures(aTreeGen.getRingClosures());
         setupGenCoords();
     }
 
@@ -867,7 +868,6 @@ public class Molecule implements Serializable {
         if (genVecs == null) {
             setupGenCoords();
         }
-        System.out.println("gennnnnnnnnnn");
         List<Atom> atomList;
         if (treeAtoms == null) {
             atomList = atoms;
@@ -3229,11 +3229,11 @@ public class Molecule implements Serializable {
         genAngleBranches();
     }
 
-    public void setRingClosures(Map<Atom, Map> bonds) {
+    public void setRingClosures(Map<Atom, Map<Atom, Double>> bonds) {
         ringClosures = bonds;
     }
 
-    public Map<Atom, Map> getRingClosures() {
+    public Map<Atom, Map<Atom, Double>> getRingClosures() {
         return ringClosures;
     }
 
@@ -3277,11 +3277,9 @@ public class Molecule implements Serializable {
         for (int i = 0; i < genVecs.length; i++) {
             if (genVecs[i].length > 3) {
                 Atom iAtom = treeAtoms.get(genVecs[i][2]);
-                System.out.println(iAtom.getShortName() + " " + iAtom.irpIndex + " " + iAtom.rotActive);
                 if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
                     Atom angleAtom = treeAtoms.get(genVecs[i][3]);
                     angleAtoms.add(angleAtom);
-                    System.out.println("ang " + angleAtom.getShortName());
                 }
             }
 
