@@ -395,7 +395,15 @@ public class Atom implements IAtom {
     }
 
     public void addBond(Bond bond) {
-        bonds.add(bond);
+        boolean alreadyBonded = false;
+        if (bond.begin == this) {
+            alreadyBonded = isBonded(bond.end);
+        } else if (bond.end == this) {
+            alreadyBonded = isBonded(bond.begin);
+        }
+        if (!alreadyBonded) {
+            bonds.add(bond);
+        }
     }
 
     public SpatialSet getSpatialSet() {
@@ -437,7 +445,7 @@ public class Atom implements IAtom {
         setRed(atomProperty.getRed());
         setGreen(atomProperty.getGreen());
         setBlue(atomProperty.getBlue());
- }
+    }
 
     public void setColor(float red, float green, float blue) {
         spatialSet.red = red;
