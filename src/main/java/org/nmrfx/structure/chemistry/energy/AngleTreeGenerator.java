@@ -395,7 +395,9 @@ public class AngleTreeGenerator {
         List<Atom> atoms = a.getConnected();
         for (int i = 0; i < atoms.size(); i++) {
             Atom a2 = atoms.get(i);
-            addRingClosure(a1, a2);
+            if ((a1 != a2) && (a2.getAtomicNumber() != 1)) {
+                addRingClosure(a1, a2);
+            }
         }
     }
 }
