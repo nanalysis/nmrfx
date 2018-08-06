@@ -119,7 +119,6 @@ public class EnergyCoords {
         rLow2[repelEnd] = r0 * r0;
         rUp2[repelEnd] = Double.MAX_VALUE;
         weights[repelEnd] = 1.0;
-
         repelEnd++;
     }
 
@@ -632,9 +631,11 @@ public class EnergyCoords {
         setRadii(hardSphere, includeH, shrinkValue, shrinkHValue);
 
         clear();
+//        System.out.println("set cells");
 
         for (int j = 0; j < 3; j++) {
             nCells[j] = 1 + (int) Math.floor(bounds[j][1] / limit);
+//            System.out.println("ncell " + nCells[j]);
         }
         int[] strides = {1, nCells[0], nCells[0] * nCells[1]};
         int nCellsTotal = nCells[0] * nCells[1] * nCells[2];
@@ -649,6 +650,7 @@ public class EnergyCoords {
             int index = idx[0] + idx[1] * strides[1] + idx[2] * strides[2];
             cellCounts[index]++;
             cellIndex[i] = index;
+//            System.out.println("atom " + i + " cell " + index + " " + idx[0] + " " + idx[1] + " " + idx[2]);
         }
         int[] offsets1 = new int[offsets.length];
         int start = 0;
@@ -667,90 +669,107 @@ public class EnergyCoords {
             atomIndex[cellStarts[index] + nAdded[index]] = i;
             nAdded[index]++;
         }
-        for (int iCell = 0; iCell < nCellsTotal; iCell++) {
-            int iStart = cellStarts[iCell];
-            int iEnd = iStart + cellCounts[iCell];
-            for (int offset : offsets1) {
-                int jCell = iCell + offset;
-                if ((jCell < 0) || (jCell >= nCellsTotal)) {
-                    continue;
-                }
-                int jStart = cellStarts[jCell];
-                int jEnd = jStart + cellCounts[jCell];
-
-                for (int i = iStart; i < iEnd; i++) {
-                    int ip = atomIndex[i];
-                    if ((atoms[ip].getAtomicNumber() == 1) && !includeH) {
-                        continue;
-                    }
-                    for (int j = jStart; j < jEnd; j++) {
-                        int jp = atomIndex[j];
-                        if ((atoms[jp].getAtomicNumber() == 1) && !includeH) {
+        for (int ix = 0; ix < nCells[0]; ix++) {
+            for (int iy = 0; iy < nCells[1]; iy++) {
+                for (int iz = 0; iz < nCells[2]; iz++) {
+                    int iCell = ix + iy * strides[1] + iz * strides[2];
+                    int iStart = cellStarts[iCell];
+                    int iEnd = iStart + cellCounts[iCell];
+                    int jOffset = 0;
+                    for (int iOff = 0; iOff < offsets[0].length; iOff++) {
+                        int jx = ix + offsets[iOff][0];
+                        int jy = iy + offsets[iOff][1];
+                        int jz = iz + offsets[iOff][2];
+                        if ((jx < 0) || (jx >= nCells[0])) {
                             continue;
                         }
-                        if (ip != jp) {
-                            int iAtom;
-                            int jAtom;
-                            if (ip < jp) {
-                                iAtom = ip;
-                                jAtom = jp;
-                            } else {
-                                iAtom = jp;
-                                jAtom = ip;
+                        if ((jy < 0) || (jy >= nCells[1])) {
+                            continue;
+                        }
+                        if ((jz < 0) || (jz >= nCells[2])) {
+                            continue;
+                        }
+                        int jCell = jx + jy * strides[1] + jz * strides[2];
+//                        System.out.println(iCell + " cell " + jCell + " offset " + iOff + " " + jOffset++);
+                        int jStart = cellStarts[jCell];
+                        int jEnd = jStart + cellCounts[jCell];
+
+                        for (int i = iStart; i < iEnd; i++) {
+                            int ip = atomIndex[i];
+                            if ((atoms[ip].getAtomicNumber() == 1) && !includeH) {
+                                continue;
                             }
-                            Atom atom1 = atoms[iAtom];
-                            Atom atom2 = atoms[jAtom];
-                            double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
-                            if (disSq < limit2) {
-                                int iRes = resNums[iAtom];
-                                int jRes = resNums[jAtom];
-                                int deltaRes = Math.abs(jRes - iRes);
-                                if (deltaRes >= deltaEnd) {
+                            for (int j = jStart; j < jEnd; j++) {
+                                int jp = atomIndex[j];
+                                if ((atoms[jp].getAtomicNumber() == 1) && !includeH) {
                                     continue;
                                 }
-                                boolean notFixed = true;
-                                double adjustClose = 0.0;
-                                // fixme could we have invalid jAtom-iAtom-1, if res test inappropriate
-                                if ((iRes == jRes) || (deltaRes == 1)) {
-                                    if (fixed[iAtom][jAtom - iAtom - 1]) {
-                                        notFixed = false;
+                                if (ip != jp) {
+                                    int iAtom;
+                                    int jAtom;
+                                    if (ip < jp) {
+                                        iAtom = ip;
+                                        jAtom = jp;
+                                    } else {
+                                        iAtom = jp;
+                                        jAtom = ip;
                                     }
-                                    if (checkCloseAtoms(atom1, atom2)) {
-                                        adjustClose = 0.2;
+                                    Atom atom1 = atoms[iAtom];
+                                    Atom atom2 = atoms[jAtom];
+                                    double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
+                                    if (disSq < limit2) {
+                                        int iRes = resNums[iAtom];
+                                        int jRes = resNums[jAtom];
+                                        int deltaRes = Math.abs(jRes - iRes);
+                                        if (deltaRes >= deltaEnd) {
+                                            continue;
+                                        }
+                                        boolean notFixed = true;
+                                        double adjustClose = 0.0;
+                                        // fixme could we have invalid jAtom-iAtom-1, if res test inappropriate
+                                        if ((iRes == jRes) || (deltaRes == 1)) {
+                                            if (fixed[iAtom][jAtom - iAtom - 1]) {
+                                                notFixed = false;
+                                            }
+                                            if (checkCloseAtoms(atom1, atom2)) {
+                                                adjustClose = 0.2;
+                                            }
+                                        }
+                                        //System.out.println(iAtom + " " + (jAtom - iAtom -1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes);
+                                        boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
+                                        // fixme  this is fast, but could miss interactions for atoms that are not bonded
+                                        // as it doesn't test for an explicit bond between the pairs
+                                        boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
+                                        if (notFixed && interactable1 && notConstrained) {
+                                            int iUnit;
+                                            int jUnit;
+                                            if (atom1.rotGroup != null) {
+                                                iUnit = atom1.rotGroup.rotUnit;
+                                            } else {
+                                                iUnit = -1;
+                                            }
+                                            if (atom2.rotGroup != null) {
+                                                jUnit = atom2.rotGroup.rotUnit;
+                                            } else {
+                                                jUnit = -1;
+                                            }
+
+                                            //double rH = ePair.getRh();
+                                            double rH = contactRadii[iAtom] + contactRadii[jAtom];
+                                            if (hBondable[iAtom] * hBondable[jAtom] < 0) {
+                                                rH -= hbondDelta;
+                                            }
+                                            rH -= adjustClose;
+                                            //System.out.println("add pair " + ip + " " + jp + " " + iCell + " " + jCell + " " + rH);
+
+                                            addPair(iAtom, jAtom, iUnit, jUnit, rH);
+
+                                        }
                                     }
                                 }
-                                //System.out.println(iAtom + " " + (jAtom - iAtom -1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes);
-                                boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
-                                // fixme  this is fast, but could miss interactions for atoms that are not bonded
-                                // as it doesn't test for an explicit bond between the pairs
-                                boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
-                                if (notFixed && interactable1 && notConstrained) {
-                                    int iUnit;
-                                    int jUnit;
-                                    if (atom1.rotGroup != null) {
-                                        iUnit = atom1.rotGroup.rotUnit;
-                                    } else {
-                                        iUnit = -1;
-                                    }
-                                    if (atom2.rotGroup != null) {
-                                        jUnit = atom2.rotGroup.rotUnit;
-                                    } else {
-                                        jUnit = -1;
-                                    }
-
-                                    //double rH = ePair.getRh();
-                                    double rH = contactRadii[iAtom] + contactRadii[jAtom];
-                                    if (hBondable[iAtom] * hBondable[jAtom] < 0) {
-                                        rH -= hbondDelta;
-                                    }
-                                    rH -= adjustClose;
-
-                                    addPair(iAtom, jAtom, iUnit, jUnit, rH);
-
-                                }
+//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + disSq);
                             }
                         }
-//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + disSq);
                     }
                 }
             }
