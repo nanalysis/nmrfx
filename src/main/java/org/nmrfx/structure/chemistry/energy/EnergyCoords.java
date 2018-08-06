@@ -631,11 +631,9 @@ public class EnergyCoords {
         setRadii(hardSphere, includeH, shrinkValue, shrinkHValue);
 
         clear();
-//        System.out.println("set cells");
 
         for (int j = 0; j < 3; j++) {
             nCells[j] = 1 + (int) Math.floor(bounds[j][1] / limit);
-//            System.out.println("ncell " + nCells[j]);
         }
         int[] strides = {1, nCells[0], nCells[0] * nCells[1]};
         int nCellsTotal = nCells[0] * nCells[1] * nCells[2];
@@ -650,7 +648,6 @@ public class EnergyCoords {
             int index = idx[0] + idx[1] * strides[1] + idx[2] * strides[2];
             cellCounts[index]++;
             cellIndex[i] = index;
-//            System.out.println("atom " + i + " cell " + index + " " + idx[0] + " " + idx[1] + " " + idx[2]);
         }
         int[] offsets1 = new int[offsets.length];
         int start = 0;
@@ -760,7 +757,6 @@ public class EnergyCoords {
                                                 rH -= hbondDelta;
                                             }
                                             rH -= adjustClose;
-                                            //System.out.println("add pair " + ip + " " + jp + " " + iCell + " " + jCell + " " + rH);
 
                                             addPair(iAtom, jAtom, iUnit, jUnit, rH);
 
