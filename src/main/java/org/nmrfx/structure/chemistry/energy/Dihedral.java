@@ -43,6 +43,7 @@ public class Dihedral {
     //ArrayList<Atom> angleAtoms;
     //static ArrayList<Atom> pseudoAngleAtoms;
     double[] angleValues;
+    double[] savedAngles;
     double[] bestValues;
     double[] normValues;
     double[] sincosValues;
@@ -92,7 +93,8 @@ public class Dihedral {
     }
 
     /**
-     * Used to determine if the value of function of the CMAES optimizer has converged
+     * Used to determine if the value of function of the CMAES optimizer has
+     * converged
      */
     public class Checker extends SimpleValueChecker {
 
@@ -182,10 +184,25 @@ public class Dihedral {
     }
 //
 
+    public void saveDihedrals() {
+        getDihedrals();
+        savedAngles = new double[angleValues.length];
+        System.arraycopy(angleValues, 0, savedAngles, 0, angleValues.length);
+    }
+
+    public void restoreDihedrals() {
+        if (savedAngles.length == angleValues.length) {
+            System.arraycopy(savedAngles, 0, angleValues, 0, angleValues.length);
+            putDihedrals();
+        }
+    }
+
     /**
-     * This method generates a list of atoms that have rotatable angles. Atoms in the sugar ring and the RNA bases do
-     * not have rotatable angles, and are not included in the list of atoms. The method that loops through every atom in
-     * this newly created list. Sets angleValues to their initial value based of angle values.
+     * This method generates a list of atoms that have rotatable angles. Atoms
+     * in the sugar ring and the RNA bases do not have rotatable angles, and are
+     * not included in the list of atoms. The method that loops through every
+     * atom in this newly created list. Sets angleValues to their initial value
+     * based of angle values.
      */
     public void getDihedrals() {
         int i = 0;
@@ -223,7 +240,8 @@ public class Dihedral {
     }
 
     /**
-     * writes dihedral angles to a specified file. The file has 2 values: atom name and dihedral angle Value
+     * writes dihedral angles to a specified file. The file has 2 values: atom
+     * name and dihedral angle Value
      *
      * @param fileName
      */
@@ -251,7 +269,8 @@ public class Dihedral {
 //
 
     /**
-     * read dihedral angles from a specified file. The file has 2 values: atom name and dihedral angle Value
+     * read dihedral angles from a specified file. The file has 2 values: atom
+     * name and dihedral angle Value
      *
      * @param fileName
      */
@@ -274,7 +293,8 @@ public class Dihedral {
     }
 
     /**
-     * Given torsion angle and pucker amplitude, determines the value of all dihedral angles in the ribose sugar.
+     * Given torsion angle and pucker amplitude, determines the value of all
+     * dihedral angles in the ribose sugar.
      *
      * @param angle
      * @param maxTorsionAngle
@@ -342,8 +362,10 @@ public class Dihedral {
     }
 
     /**
-     * NOT USED Adds an angleBoundaries object which has upper and lower angle bounds to an angleBoundaries hashmap
-     * provided a molfilter/atom name. maps spacial set with atom name with angleBoundary in the angleBoundaries hashmap
+     * NOT USED Adds an angleBoundaries object which has upper and lower angle
+     * bounds to an angleBoundaries hashmap provided a molfilter/atom name. maps
+     * spacial set with atom name with angleBoundary in the angleBoundaries
+     * hashmap
      *
      * @param molFilterString
      * @param angleBoundary
@@ -357,7 +379,8 @@ public class Dihedral {
     }
 
     /**
-     * Creates an angle Boundary and then adds the angleBoundary to the angleboundaries hashmap
+     * Creates an angle Boundary and then adds the angleBoundary to the
+     * angleboundaries hashmap
      *
      * @param molFilterString
      * @param lower
