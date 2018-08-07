@@ -161,8 +161,13 @@ public class AngleTreeGenerator {
                     }
                     atom3.parent = atom2;
                     Point3 pt2 = atom2.getPoint();
+                    if (atom2.getElementName() != null && atom3.getElementName() != null) {
+                        Bond bond = new Bond(atom2, atom3);
+                        atom2.addBond(bond);
+                        atom3.addBond(bond);
+                    }
                     oBond = atom2.getBond(atom3);
-                    
+
                     // Check to see if the atoms are linkers. If element names are null they must be linkers
                     if (atom3.getElementName() != null && atom2.getElementName() != null) {
                         atom3.bondLength = (float) AtomMath.calcDistance(pt2, pt3);
