@@ -20,7 +20,6 @@ package org.nmrfx.structure.chemistry.energy;
 import org.nmrfx.structure.chemistry.Atom;
 import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
-import java.util.ArrayList;
 import java.util.Arrays;
 import org.apache.commons.math3.util.FastMath;
 
@@ -143,33 +142,6 @@ public class EnergyCoords {
         //    weights[disEnd] = 1.0;
         //}
         disEnd++;
-    }
-
-    public double calcRepelOff(boolean calcDeriv, double weight) {
-
-        double sum = 0.0;
-        for (int i = 0; i < repelEnd; i++) {
-            int iAtom = iAtoms[i];
-            int jAtom = jAtoms[i];
-            FastVector3D iV = vecCoords[iAtom];
-            FastVector3D jV = vecCoords[jAtom];
-            double r2 = iV.disSq(jV);
-            derivs[i] = 0.0;
-            viol[i] = 0.0;
-
-            if (r2 <= rLow2[i]) {
-                double r = FastMath.sqrt(r2);
-                double dif = rLow[i] - r;
-                viol[i] = weight * dif * dif;
-                sum += viol[i];
-                if (calcDeriv) {
-                    //  what is needed is actually the derivitive/r, therefore
-                    // we divide by r
-                    derivs[i] = -2.0 * weight * dif / r;
-                }
-            }
-        }
-        return sum;
     }
 
     public double calcRepel(boolean calcDeriv, double weight) {
@@ -507,130 +479,6 @@ public class EnergyCoords {
         }
     }
 
-    public void setCellsOld(int deltaEnd, double limit, double hardSphere, boolean includeH, double shrinkValue, double shrinkHValue) {
-        double limit2 = limit * limit;
-        double[][] bounds = getBoundaries();
-        int[] nCells = new int[3];
-        setRadii(hardSphere, includeH, shrinkValue, shrinkHValue);
-
-        clear();
-
-        for (int j = 0; j < 3; j++) {
-            nCells[j] = 1 + (int) Math.floor(bounds[j][1] / limit);
-        }
-        ArrayList<Integer>[][][] cells = new ArrayList[nCells[0]][nCells[1]][nCells[2]];
-
-        for (int i = 0; i < nAtoms; i++) {
-            double[] data = vecCoords[i].getValues();
-            int[] indices = new int[3];
-            for (int j = 0; j < 3; j++) {
-                indices[j] = (int) Math.floor((data[j] - bounds[j][0]) / limit);
-            }
-            if (cells[indices[0]][indices[1]][indices[2]] == null) {
-                cells[indices[0]][indices[1]][indices[2]] = new ArrayList<>();
-            }
-            cells[indices[0]][indices[1]][indices[2]].add(i);
-        }
-        for (int[] offset : offsets) {
-            for (int i = 0; i < nCells[0]; i++) {
-                int dI = i + offset[0];
-                if ((dI < 0) || (dI >= nCells[0])) {
-                    continue;
-                }
-                for (int j = 0; j < nCells[1]; j++) {
-                    int dJ = j + offset[1];
-                    if ((dJ < 0) || (dJ >= nCells[1])) {
-                        continue;
-                    }
-                    for (int k = 0; k < nCells[2]; k++) {
-                        int dK = k + offset[2];
-                        if ((dK < 0) || (dK >= nCells[2])) {
-                            continue;
-                        }
-                        ArrayList<Integer> pts0 = cells[i][j][k];
-                        ArrayList<Integer> pts1 = cells[dI][dJ][dK];
-                        if ((pts0 == null) || (pts1 == null)) {
-                            continue;
-                        }
-                        for (int ip : pts0) {
-                            if ((atoms[ip].getAtomicNumber() == 1) && !includeH) {
-                                continue;
-                            }
-                            for (int jp : pts1) {
-                                if ((atoms[jp].getAtomicNumber() == 1) && !includeH) {
-                                    continue;
-                                }
-                                if (ip != jp) {
-                                    int iAtom;
-                                    int jAtom;
-                                    if (ip < jp) {
-                                        iAtom = ip;
-                                        jAtom = jp;
-                                    } else {
-                                        iAtom = jp;
-                                        jAtom = ip;
-                                    }
-                                    Atom atom1 = atoms[iAtom];
-                                    Atom atom2 = atoms[jAtom];
-                                    double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
-                                    if (disSq < limit2) {
-                                        int iRes = resNums[iAtom];
-                                        int jRes = resNums[jAtom];
-                                        int deltaRes = jRes - iRes;
-                                        if (deltaRes >= deltaEnd) {
-                                            continue;
-                                        }
-                                        boolean notFixed = true;
-                                        double adjustClose = 0.0;
-                                        if ((iRes == jRes) || (deltaRes == 1)) {
-                                            if (fixed[iAtom][jAtom - iAtom - 1]) {
-                                                notFixed = false;
-                                            }
-                                            if (checkCloseAtoms(atom1, atom2)) {
-                                                adjustClose = 0.2;
-                                            }
-                                        }
-//                                        if (ok && (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6)) {
-//                                            double rH = contactRadii[iAtom] + contactRadii[jAtom];
-                                        boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
-                                        //boolean interactable2 = AtomEnergyProp.interact(atom1, atom2);
-
-                                        if (notFixed && interactable1) {
-                                            int iUnit;
-                                            int jUnit;
-                                            if (atom1.rotGroup != null) {
-                                                iUnit = atom1.rotGroup.rotUnit;
-                                            } else {
-                                                iUnit = -1;
-                                            }
-                                            if (atom2.rotGroup != null) {
-                                                jUnit = atom2.rotGroup.rotUnit;
-                                            } else {
-                                                jUnit = -1;
-                                            }
-
-                                            //double rH = ePair.getRh();
-                                            double rH = contactRadii[iAtom] + contactRadii[jAtom];
-                                            if (hBondable[iAtom] * hBondable[jAtom] < 0) {
-                                                rH -= hbondDelta;
-                                            }
-                                            rH -= adjustClose;
-
-                                            addPair(iAtom, jAtom, iUnit, jUnit, rH);
-
-                                        }
-                                    }
-                                }
-//                                System.out.println(iOff + " " + i + " " + j + " " + k + " " + ip + " " + jp + " " + disSq);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        //System.out.println("nrep " + (repelEnd-repelStart) + " " + includeH + " " + limit);
-    }
-
     public void setCells(EnergyLists eList, int deltaEnd, double limit, double hardSphere, boolean includeH, double shrinkValue, double shrinkHValue) {
         double limit2 = limit * limit;
         double[][] bounds = getBoundaries();
@@ -744,8 +592,8 @@ public class EnergyCoords {
                                         double adjustClose = 0.0;
                                         // fixme could we have invalid jAtom-iAtom-1, if res test inappropriate
                                         if ((iRes == jRes) || (deltaRes == 1)) {
-                                            if ((iAtom >= fixed.length) || ((jAtom-iAtom-1) >= fixed[iAtom].length)) {
-                                    System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
+                                            if ((iAtom >= fixed.length) || ((jAtom - iAtom - 1) >= fixed[iAtom].length)) {
+                                                System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
                                             }
                                             if (fixed[iAtom][jAtom - iAtom - 1]) {
                                                 notFixed = false;
