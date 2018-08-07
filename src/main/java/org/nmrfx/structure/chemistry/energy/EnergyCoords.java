@@ -272,7 +272,7 @@ public class EnergyCoords {
         return stat;
     }
 
-    public double dumpRestrants(boolean calcDeriv, double weight, int mode) {
+    public double dumpRestraints(boolean calcDeriv, double weight, int mode) {
         double sum = 0.0;
         int start = 0;
         int end = disEnd;
