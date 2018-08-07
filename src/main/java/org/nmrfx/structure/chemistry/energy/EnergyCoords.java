@@ -209,12 +209,19 @@ public class EnergyCoords {
             this.rUp = rUp;
             this.energy = energy;
             dif = 0.0;
-            if (dis < rLow) {
+            if (mode == 1) {
                 constraintDis = rLow;
-                dif = dis - rLow;
+                if (dis < rLow) {
+                    dif = dis - rLow;
+                }
             } else {
-                constraintDis = rUp;
-                dif = dis - rUp;
+                if (dis < rLow) {
+                    constraintDis = rLow;
+                    dif = dis - rLow;
+                } else if (dis > rUp) {
+                    constraintDis = rUp;
+                    dif = dis - rUp;
+                }
             }
         }
 
@@ -629,7 +636,7 @@ public class EnergyCoords {
         double[][] bounds = getBoundaries();
         int[] nCells = new int[3];
         setRadii(hardSphere, includeH, shrinkValue, shrinkHValue);
-
+//        System.out.println("set cells");
         clear();
 
         for (int j = 0; j < 3; j++) {
@@ -648,6 +655,7 @@ public class EnergyCoords {
             int index = idx[0] + idx[1] * strides[1] + idx[2] * strides[2];
             cellCounts[index]++;
             cellIndex[i] = index;
+//            System.out.println(i + " index " + index + " " + atoms[i].getShortName() + " " + idx[0] + " " + idx[1] + " " + idx[2]);
         }
         int[] offsets1 = new int[offsets.length];
         int start = 0;
@@ -664,6 +672,7 @@ public class EnergyCoords {
         for (int i = 0; i < nAtoms; i++) {
             int index = cellIndex[i];
             atomIndex[cellStarts[index] + nAdded[index]] = i;
+//            System.out.println("index " + i + " " + index + " " + (cellStarts[index] + nAdded[index]));
             nAdded[index]++;
         }
         for (int ix = 0; ix < nCells[0]; ix++) {
@@ -672,11 +681,16 @@ public class EnergyCoords {
                     int iCell = ix + iy * strides[1] + iz * strides[2];
                     int iStart = cellStarts[iCell];
                     int iEnd = iStart + cellCounts[iCell];
+//                    System.out.println("iCell " + iCell + " " + iStart + " " + iEnd + " " + ix + " " + iy + " " + iz);
                     int jOffset = 0;
-                    for (int iOff = 0; iOff < offsets[0].length; iOff++) {
-                        int jx = ix + offsets[iOff][0];
-                        int jy = iy + offsets[iOff][1];
-                        int jz = iz + offsets[iOff][2];
+                    for (int iOff = 0; iOff < offsets.length; iOff++) {
+                        int dX = offsets[iOff][0];
+                        int dY = offsets[iOff][1];
+                        int dZ = offsets[iOff][2];
+                        int jx = ix + dX;
+                        int jy = iy + dY;
+                        int jz = iz + dZ;
+//                        System.out.println(dX + " " + dY + " " + dZ + "iCell jCell");
                         if ((jx < 0) || (jx >= nCells[0])) {
                             continue;
                         }
@@ -690,11 +704,15 @@ public class EnergyCoords {
 //                        System.out.println(iCell + " cell " + jCell + " offset " + iOff + " " + jOffset++);
                         int jStart = cellStarts[jCell];
                         int jEnd = jStart + cellCounts[jCell];
+//                        System.out.println("iCell " + iCell + " jCell " + jCell + " " + jStart + " " + jEnd);
 
                         for (int i = iStart; i < iEnd; i++) {
                             int ip = atomIndex[i];
                             if ((atoms[ip].getAtomicNumber() == 1) && !includeH) {
                                 continue;
+                            }
+                            if (iCell == jCell) {
+                                jStart = i + 1;
                             }
                             for (int j = jStart; j < jEnd; j++) {
                                 int jp = atomIndex[j];
@@ -714,6 +732,7 @@ public class EnergyCoords {
                                     Atom atom1 = atoms[iAtom];
                                     Atom atom2 = atoms[jAtom];
                                     double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
+//                                    System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
                                     if (disSq < limit2) {
                                         int iRes = resNums[iAtom];
                                         int jRes = resNums[jAtom];
@@ -732,11 +751,12 @@ public class EnergyCoords {
                                                 adjustClose = 0.2;
                                             }
                                         }
-                                        //System.out.println(iAtom + " " + (jAtom - iAtom -1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes);
                                         boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
                                         // fixme  this is fast, but could miss interactions for atoms that are not bonded
                                         // as it doesn't test for an explicit bond between the pairs
                                         boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
+//                                        System.out.println("        " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes + " "
+//                                                + interactable1 + " " + notConstrained);
                                         if (notFixed && interactable1 && notConstrained) {
                                             int iUnit;
                                             int jUnit;
@@ -847,7 +867,7 @@ public class EnergyCoords {
             }
 //            System.out.println("");
         }
-        //System.out.println("Nfix " + nFixed);
+        System.out.println("Nfix " + nFixed);
         //dumpFixed();
     }
 
