@@ -542,6 +542,7 @@ public class EnergyLists {
         if (dihedrals == null) {
             return;
         }
+        dihedrals.saveDihedrals();
         EnergyCoords eCoords = molecule.getEnergyCoords();
         double[][][] dRange = eCoords.getFixedRange();
         int nUpdates = 10;
@@ -551,6 +552,8 @@ public class EnergyLists {
             eCoords.updateRanges(dRange);
         }
         eCoords.updateFixed(dRange);
+        dihedrals.restoreDihedrals();
+        molecule.genCoordsFastVec3D(null);
     }
 
     public void clear() {
