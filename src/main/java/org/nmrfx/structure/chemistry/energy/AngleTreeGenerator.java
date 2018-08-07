@@ -221,6 +221,8 @@ public class AngleTreeGenerator {
                 } else if (atom3.getAtomicNumber() == 1) {
                     rotatable = false;
 // fixme atom prop P hyb wrong so we have these special cases
+                } else if (testTerminal(atom3)) {
+                    rotatable = false;
                 } else if ((atom3.getAtomicNumber() == 8) && (atom2.getAtomicNumber() == 15)) {
                     rotatable = true;
                 } else if ((atom3.getAtomicNumber() == 15) && (atom2.getAtomicNumber() == 8)) {
@@ -358,5 +360,16 @@ public class AngleTreeGenerator {
             Atom a2 = atoms.get(i);
             addRingClosure(a1, a2);
         }
+    }
+
+    private boolean testTerminal(Atom a) {
+        List<Atom> aList = a.getConnected();
+        List<Atom> appeared = new ArrayList<>();
+        for (Atom atom : aList){
+            if (!appeared.contains(atom)){
+                appeared.add(atom);
+            } 
+        }
+        return appeared.size()==1;
     }
 }
