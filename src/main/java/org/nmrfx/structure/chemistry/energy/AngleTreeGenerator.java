@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
-import org.nmrfx.structure.chemistry.Entity;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Order;
 import org.nmrfx.structure.chemistry.Point3;
@@ -291,7 +290,7 @@ public class AngleTreeGenerator {
                 } else if (a3.getFlag(Atom.RESONANT) && a2.getFlag(Atom.RESONANT)) {
                     rotatable = false;
                 } else if (a3.getFlag(Atom.RING) && a2.getFlag(Atom.RING)) {
-//                    rotatable = false;
+                    rotatable = false;
                 } else if (a3.getFlag(Atom.AROMATIC) && a2.getFlag(Atom.AROMATIC)) {
                     rotatable = false;
                 }
@@ -395,7 +394,7 @@ public class AngleTreeGenerator {
         List<Atom> atoms = a.getConnected();
         for (int i = 0; i < atoms.size(); i++) {
             Atom a2 = atoms.get(i);
-            if ((a1 != a2) && (a2.getAtomicNumber() != 1)) {
+            if ((a1 != a2)) {
                 addRingClosure(a1, a2);
             }
         }
