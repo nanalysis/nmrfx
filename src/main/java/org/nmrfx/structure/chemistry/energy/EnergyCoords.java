@@ -744,6 +744,9 @@ public class EnergyCoords {
                                         double adjustClose = 0.0;
                                         // fixme could we have invalid jAtom-iAtom-1, if res test inappropriate
                                         if ((iRes == jRes) || (deltaRes == 1)) {
+                                            if ((iAtom >= fixed.length) || ((jAtom-iAtom-1) >= fixed[iAtom].length)) {
+                                    System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
+                                            }
                                             if (fixed[iAtom][jAtom - iAtom - 1]) {
                                                 notFixed = false;
                                             }
@@ -817,7 +820,7 @@ public class EnergyCoords {
         fixed = new boolean[nAtoms][];
         for (int i = 0; i < nAtoms; i++) {
             int resNum = resNums[i];
-            int lastAtom = i + 100;
+            int lastAtom = i + 200;
             if (lastAtom >= nAtoms) {
                 lastAtom = nAtoms - 1;
             }
