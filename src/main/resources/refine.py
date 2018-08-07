@@ -512,7 +512,8 @@ class refine:
 
         if len(atomArr) > 1:
             resNum = atomArr.pop(0)
-            entity = entity.getResidue(resNum)
+            if resNum:
+                entity = entity.getResidue(resNum)
         atomName = atomArr[0]
         atom = entity.getAtom(atomName)
 
