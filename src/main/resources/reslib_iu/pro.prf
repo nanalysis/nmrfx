@@ -10,16 +10,16 @@ ATOM   HB3    H    1.08  109.47  -120.0
 ATOM   CG     C2   1.53  106.00    22.5
 ATOM   HG2    H    1.08  109.47  -120.0
 ATOM   HG3    H    1.08  109.47  -120.0
-ATOM   CD     C2   1.53  106.00   -13.3
-ATOM   HD2    H    1.08  109.47  -120.0
-ATOM   HD3    H    1.08  109.47  -120.0
+ATOM   CD     C2   1.47  123.00    18.6
+ATOM   HD2    H    1.08  109.47   120.0
+ATOM   HD3    H    1.08  109.47   -61.5
 ATOM   C      C'   1.53  113.88   -65.5
 ATOM   O      O'   1.24  121.00   180.0
-FAMILY   -      N      CA     -CD    
+FAMILY   -      N      CD     CA    
+FAMILY   N      CD     HD3    HD2
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    
-FAMILY   CB     CG     CD     HG3    HG2    
-FAMILY   CG     CD     HD3    HD2
+FAMILY   CB     CG     HG3    HG2   -CD
 FAMILY   CA     C      +      =O     
 ANGLE     C       PSI 1
 ATREE  C  +  
