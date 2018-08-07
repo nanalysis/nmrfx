@@ -647,7 +647,7 @@ public class EnergyLists {
                 repelEnergy = eCoords.calcRepel(false, forceWeight.getRepel());
                 nRepel = eCoords.getNContacts();
                 for (int i = 0; i < nRepel; i++) {
-                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getNOE());
+                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getRepel());
                     if (stat != null) {
                         String errMsg = stat.toString();
                         writer.print(errMsg);
