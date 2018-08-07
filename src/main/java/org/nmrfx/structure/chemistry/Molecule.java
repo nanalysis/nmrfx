@@ -3708,7 +3708,7 @@ public class Molecule implements Serializable {
                     Atom kAtom = kGroup.pathNodes.get(0).getAtom();
                     int shell = -1;
 
-                    for (int jj = 0; jj < kGroup.treeValues.size(); jj++) {
+                    for (int jj = 0; jj < kGroup.pathNodes.size(); jj++) {
                         MNode nodeTest = kGroup.pathNodes.get(jj);
                         Atom atomTest = nodeTest.getAtom();
 
