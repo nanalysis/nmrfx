@@ -236,28 +236,31 @@ public class AngleTreeGenerator {
                 if (p2 != null) {
                     oBond = a2.getBond(a3);
                     a3.parent = a2;
-                    a3.bondLength = (float) AtomMath.calcDistance(p2, p3);
-                    if (p1 != null) {
-                        a3.valanceAngle = (float) AtomMath.calcAngle(p1, p2, p3);
-                        if (p0 != null) {
-                            double dih = AtomMath.calcDihedral(p0, p1, p2, p3);
-                            if (dih < 0.0) {
-                                dih = dih + 2.0 * Math.PI;
+                    float bondLength = (float) AtomMath.calcDistance(p2, p3);
+                    if (bondLength > 0.001) {
+                        a3.bondLength = bondLength;
+                        if (p1 != null) {
+                            a3.valanceAngle = (float) AtomMath.calcAngle(p1, p2, p3);
+                            if (p0 != null) {
+                                double dih = AtomMath.calcDihedral(p0, p1, p2, p3);
+                                if (dih < 0.0) {
+                                    dih = dih + 2.0 * Math.PI;
+                                }
+                                double newDih;
+                                if (j > 3) {
+                                    newDih = dih - lastAngle;
+                                } else {
+                                    newDih = dih;
+                                }
+                                lastAngle = dih;
+                                if (newDih > Math.PI) {
+                                    newDih = newDih - 2.0 * Math.PI;
+                                }
+                                if (newDih < -Math.PI) {
+                                    newDih = newDih + 2.0 * Math.PI;
+                                }
+                                a3.dihedralAngle = (float) newDih;
                             }
-                            double newDih;
-                            if (j > 3) {
-                                newDih = dih - lastAngle;
-                            } else {
-                                newDih = dih;
-                            }
-                            lastAngle = dih;
-                            if (newDih > Math.PI) {
-                                newDih = newDih - 2.0 * Math.PI;
-                            }
-                            if (newDih < -Math.PI) {
-                                newDih = newDih + 2.0 * Math.PI;
-                            }
-                            a3.dihedralAngle = (float) newDih;
                         }
                     }
                 }
