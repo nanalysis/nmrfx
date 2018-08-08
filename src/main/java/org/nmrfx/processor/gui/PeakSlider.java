@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
@@ -320,25 +321,29 @@ public class PeakSlider {
     }
 
     public void restoreAllPeaks() {
-        controller.charts.stream().forEach(chart -> {
-            chart.getPeakListAttributes().stream().forEach(peakListAttr -> {
-                // XXX unclear why the following cast is necessary
-                PeakList peakList = ((PeakListAttributes) peakListAttr).getPeakList();
-                peakList.peaks().stream().forEach(peak -> {
-                    for (PeakDim peakDim : peak.getPeakDims()) {
-                        String label = peakDim.getLabel();
-                        Atom atom = Molecule.getAtomByName(label);
-                        if (atom != null) {
-                            Double refPPM = atom.getRefPPM();
-                            if (refPPM != null) {
-                                peakDim.setChemShift(refPPM.floatValue());
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Move all peaks back to predicted positions?");
+        alert.showAndWait().ifPresent(response -> {
+            controller.charts.stream().forEach(chart -> {
+                chart.getPeakListAttributes().stream().forEach(peakListAttr -> {
+                    // XXX unclear why the following cast is necessary
+                    PeakList peakList = ((PeakListAttributes) peakListAttr).getPeakList();
+                    peakList.peaks().stream().forEach(peak -> {
+                        for (PeakDim peakDim : peak.getPeakDims()) {
+                            String label = peakDim.getLabel();
+                            Atom atom = Molecule.getAtomByName(label);
+                            if (atom != null) {
+                                Double refPPM = atom.getRefPPM();
+                                if (refPPM != null) {
+                                    peakDim.setChemShift(refPPM.floatValue());
+                                }
                             }
                         }
-                    }
-                    peak.setFrozen(false, true);
+                        peak.setFrozen(false, true);
+                    });
                 });
             });
         });
+
     }
 
     public void unlinkDims() {
