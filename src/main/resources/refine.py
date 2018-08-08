@@ -39,6 +39,8 @@ from java.util import ArrayList
 #tclInterp.eval('java::load org.nmrfx.structure.chemistry.ChemistryExt')
 PDBFile.putReslibDir('IUPAC','resource:/reslib_iu')
 
+bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
+
 protein3To1 = {"ALA":"A","ASP":"D","ASN":"N","ARG":"R","CYS":"C","GLU":"E","GLN":"Q","ILE":"I",
     "VAL":"V","LEU":"L","PRO":"P","PHE":"F","TYR":"Y","TRP":"W","LYS":"K","MET":"M",
     "HIS":"H","GLY":"G","SER":"S","THR":"T"}
@@ -486,6 +488,20 @@ class refine:
 
                 usedEntity[startEnt] = True
                 usedEntity[endEnt] = True
+                if 'bond' in linkerDict:
+                    bondDict = linkerDict['bond']
+                    length = bondDict['length'] if 'length' in bondDict else 1.08
+                    order = bondDict['order'] if 'order' in bondDict else 'SINGLE'
+                    global bondOrders
+                    if (order < 0 or order > 4) and order not in bondOrders:
+                        print "Bad bond order, automatically converting to SINGLE bond"
+                        order = "SINGLE"
+                    try:
+                        order = bondOrders[order-1]
+                    except:
+                        order = order.upper()
+                    self.molecule.createLinker(startAtom, endAtom, order, length)
+                    continue;
                 self.molecule.createLinker(startAtom, endAtom, n)
 
             usedEntities = [entity for entity in usedEntity.keys() if usedEntity[entity]]

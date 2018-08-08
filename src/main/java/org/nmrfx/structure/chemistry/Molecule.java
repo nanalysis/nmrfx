@@ -4797,6 +4797,34 @@ public class Molecule implements Serializable {
         }
     }
 
+    public void createLinker(Atom atom1, Atom atom2, String bondOrder, float bondLength) {
+        Order bond;
+        switch (bondOrder) {
+            case "SINGLE":
+                bond = Order.SINGLE;
+                break;
+            case "DOUBLE":
+                bond = Order.DOUBLE;
+                break;
+            case "TRIPLE":
+                bond = Order.TRIPLE;
+                break;
+            case "QUAD":
+                bond = Order.QUAD;
+                break;
+            default:
+                bond = Order.SINGLE;
+                break;
+        }
+        if (atom1 == null || atom2 == null){
+            return;
+        }
+        
+        Atom.addBond(atom1, atom2, bond, 0, false);
+        atom2.parent = atom1;
+        atom2.bondLength = bondLength;
+    }
+
     public void createLinker(Atom atom1, Atom atom2, int numLinks) {
         /**
          * createLinker is a method to create a link between atoms in two
