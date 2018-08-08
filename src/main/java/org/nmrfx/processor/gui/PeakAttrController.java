@@ -142,6 +142,9 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     @FXML
     private HBox optionBox;
 
+    @FXML
+    private ChoiceBox<PEAK_NORM> normChoice;
+
     private Slider distanceSlider = new Slider(2, 7.0, 5.0);
     private ChoiceBox transferLimitChoice = new ChoiceBox();
 
@@ -154,6 +157,37 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     ToggleButton deleteButton;
     ComboTableCell comboTableCell = new ComboTableCell();
     ObservableList<String> relationChoiceItems = FXCollections.observableArrayList("", "D1", "D2", "D3", "D4");
+
+    enum PEAK_NORM {
+        NO_NORM() {
+            @Override
+            public Optional<Double> normalize(double first, double value) {
+                return Optional.of(value);
+            }
+
+        },
+        FP_NORM() {
+            @Override
+            public Optional<Double> normalize(double first, double value) {
+                return Optional.of(value / first);
+            }
+
+        },
+        LOG_NORM() {
+            @Override
+            public Optional<Double> normalize(double first, double value) {
+                Optional<Double> result;
+                if (value > 0.0) {
+                    result = Optional.of(-Math.log(value / first));
+                } else {
+                    result = Optional.empty();
+                }
+                return result;
+            }
+        };
+
+        public abstract Optional<Double> normalize(double first, double value);
+    }
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -189,6 +223,10 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         simTypeChoice.getItems().add("NOESY");
         simTypeChoice.getItems().add("TOCSY");
         simTypeChoice.setOnAction(e -> updateOptions());
+
+        normChoice.getItems().addAll(PEAK_NORM.values());
+        normChoice.setValue(PEAK_NORM.NO_NORM);
+        normChoice.setOnAction(e -> updateGraph());
 
         final NumberAxis xAxis = new NumberAxis(0, 10, 1);
         final NumberAxis yAxis = new NumberAxis(-100, 500, 100);
@@ -297,13 +335,19 @@ public class PeakAttrController implements Initializable, PeakNavigable {
             ObservableList<XYChart.Series<Number, Number>> data = FXCollections.observableArrayList();
             Series series = new Series<>();
             data.add(series);
-
+            PEAK_NORM normMode = normChoice.getValue();
             double[] yValues = currentPeak.getMeasures().get();
             double[] xValues = currentPeak.getPeakList().getMeasureValues();
             for (int i = 0; i < yValues.length; i++) {
                 double xValue = xValues != null ? xValues[i] : 1.0 * i;
-                XYChart.Data value = new XYChart.Data(xValue, yValues[i]);
-                series.getData().add(value);
+                if ((i == 0) && (normMode != PEAK_NORM.NO_NORM)) {
+                    continue;
+                }
+                Optional<Double> yValue = normMode.normalize(yValues[0], yValues[i]);
+                if (yValue.isPresent()) {
+                    XYChart.Data value = new XYChart.Data(xValue, yValue.get());
+                    series.getData().add(value);
+                }
             }
             scatterChart.getData().setAll(data);
         } else {

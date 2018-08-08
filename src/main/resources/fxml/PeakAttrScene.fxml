@@ -95,6 +95,9 @@
                         <BorderPane fx:id="graphBorderPane">
                             <top>
                             </top>
+                            <bottom>
+                                <ChoiceBox fx:id="normChoice"/>
+                            </bottom>
                         </BorderPane>
                     </content>
                 </Tab>
