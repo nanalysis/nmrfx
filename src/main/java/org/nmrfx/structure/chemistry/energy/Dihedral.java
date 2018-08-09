@@ -402,7 +402,24 @@ public class Dihedral {
             angleBoundaries.put(atomName, angleBoundary);
         }
     }
-
+    
+    public void addBoundary(final List<String> molFilterStrings, double lower, double upper, double scale) throws InvalidMoleculeException {
+        System.out.println(molFilterStrings);
+        int arrayLength = molFilterStrings.size();
+        if (arrayLength > 1){
+            List<String> atomNames = new ArrayList<>();
+            for (int i = 0; i < arrayLength; i++) {
+                Atom atom = Molecule.getAtomByName(molFilterStrings.get(i));
+                String atomName = atom.getFullName();
+                atomNames.add(atomName);
+            }
+            AngleBoundary angleBoundary = new AngleBoundary(atomNames, lower, upper, scale);
+            angleBoundaries.put(atomNames.get(arrayLength-1), angleBoundary);
+        } else {
+            addBoundary(molFilterStrings.get(0), lower, upper,scale);
+        }
+    }
+    
     public void clearBoundaries() {
         angleBoundaries.clear();
     }
