@@ -605,7 +605,7 @@ public class EnergyLists {
                 for (AngleBoundary angleBoundary : angleBoundList) {
                     AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
                     if (energy.getEnergy() > limitVal) {
-                        writer.format("Tor: %10s %5.2f %5.2f %10s %5.2f\n", angleBoundary.atom.getFullName(), angleBoundary.atom.dihedralAngle, angleBoundary.angleProp.target[0], angleBoundary.angleProp.angleName, energy.getEnergy());
+                        writer.format("Tor: %10s %5.2f %5.2f %10s %5.2f\n", angleBoundary.getAtom().getFullName(), angleBoundary.getAtom().dihedralAngle, angleBoundary.angleProp.target[0], angleBoundary.angleProp.angleName, energy.getEnergy());
                     }
                 }
             }
@@ -615,7 +615,7 @@ public class EnergyLists {
                     dihEnergy += energy.getEnergy();
                     nDih++;
                     if (energy.getEnergy() > limitVal) {
-                        writer.format("Dih: %10s %5.2f %5.2f %5.2f %5.2f\n", angleBoundary.atom.getFullName(), toDeg * angleBoundary.atom.dihedralAngle, toDeg * angleBoundary.lower, toDeg * angleBoundary.upper, energy.getEnergy());
+                        writer.format("Dih: %10s %5.2f %5.2f %5.2f %5.2f\n", angleBoundary.getAtom().getFullName(), toDeg * angleBoundary.getAtom().dihedralAngle, toDeg * angleBoundary.lower, toDeg * angleBoundary.upper, energy.getEnergy());
                     }
                 }
             }

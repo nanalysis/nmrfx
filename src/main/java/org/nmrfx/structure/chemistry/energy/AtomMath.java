@@ -449,11 +449,35 @@ public class AtomMath {
         }
         return (result);
     }
-
+    
+    public static double grabDihedral(AngleBoundary boundary){
+        double dihedral;
+        int atomListLength = boundary.getAtoms().length;
+        switch (atomListLength) {
+            case 1:
+                dihedral = boundary.getAtom().dihedralAngle;
+                return dihedral;
+            case 4:
+                Atom atom0,atom1,atom2,atom3;
+                Point3 pt0,pt1,pt2,pt3;
+                atom0 = boundary.getAtoms()[0];
+                atom1 = boundary.getAtoms()[1];
+                atom2 = boundary.getAtoms()[2];
+                atom3 = boundary.getAtoms()[3];
+                pt0 = atom0.getPoint();
+                pt1 = atom1.getPoint();
+                pt2 = atom2.getPoint();
+                pt3 = atom3.getPoint();
+                dihedral = calcDihedral(pt0, pt1, pt2, pt3);
+                return dihedral;
+            default:
+                throw new IllegalArgumentException("Invalid atom list size of " + atomListLength);
+        }    
+    }
     public static AtomEnergy calcDihedralEnergy(AngleBoundary boundary, final ForceWeight forceWeight, final boolean calcDeriv) {
-        double dihedral = boundary.atom.dihedralAngle;
+        double dihedral = grabDihedral(boundary);
         dihedral = Dihedral.reduceAngle(dihedral);
-
+        
         double upper = boundary.upper;
         double lower = boundary.lower;
         final AtomEnergy result;
@@ -524,9 +548,10 @@ public class AtomMath {
             if (boundary.angleProp != null) {
                 AngleProp temp = boundary.angleProp;
                 int indexValue = 0;
-                double dis = FastMath.abs(boundary.atom.dihedralAngle - temp.target[0]);
+                double dihedral = grabDihedral(boundary);
+                double dis = FastMath.abs(dihedral - temp.target[0]);
                 for (int i = 1; i < temp.target.length; i++) {
-                    double newdis = FastMath.abs(boundary.atom.dihedralAngle - temp.target[i]);
+                    double newdis = FastMath.abs(dihedral - temp.target[i]);
                     if (newdis < dis) {
                         dis = newdis;
                         indexValue = i;

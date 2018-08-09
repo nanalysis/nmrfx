@@ -149,10 +149,10 @@ def generateResNums(residues,seqString,linker,polyType):
                 for j in range(insertionLength):
                     if j == 0 or (j == insertionLength-1):
                         residue = 'ln2 ' + str(j+1+int(resNums[i]))
-                    else:
+                    else: 
                         residue = 'ln5 ' + str(j+1+int(resNums[i]))
                     residues.append(residue)
-    return residues
+    return residues 
 
 def prioritizePolymers(molList):
     containsSmallMolecule = False
@@ -175,7 +175,7 @@ def prioritizePolymers(molList):
 
 
 
-class dynOptions:
+class dynOptions:    
     def __init__(self,steps=15000,highTemp=5000.0,medFrac=0.05,update=20,highFrac=0.3,toMedFrac=0.5,switchFrac=0.65):
         self.steps = steps
         self.highTemp = highTemp
@@ -222,7 +222,7 @@ class refine:
 
     def numericalDerivatives(self,delta,report):
         grefine = GradientRefinement(self.dihedral)
-
+        
         grefine.numericalDerivatives(delta,report)
 
     def setSeed(self,seed):
@@ -339,7 +339,7 @@ class refine:
         else:
             energyLists = eList
         self.energyLists = energyLists
-
+        
         refine.setForces(self,repel=0.5,dis=1)
         energyLists.setCourseGrain(useCourseGrain)
         energyLists.setIncludeH(useH)
@@ -433,7 +433,7 @@ class refine:
                     i+=3
                 bound = AngleBoundary(atomName,lower,upper,scale,center,sigma,height)
                 self.dihedral.addBoundary(atomName,bound)
-
+    
     def loadDistancesFromFile(self,fileName):
        file = open(fileName,"r")
        data= file.read()
@@ -456,7 +456,7 @@ class refine:
 
     def addDisCon(self, atomName1, atomName2, lower, upper):
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
-
+ 
     def loadFromYaml(self,data, seed, pdbFile=""):
         if pdbFile != '':
             self.readPDBFile(pdbFile)
@@ -468,8 +468,8 @@ class refine:
                 for molDict in molList:
                     if 'residues' in molDict:
                         residues = ','.join(molDict['residues'].split(' '))
-                    else:
-                        residues = None
+                else:
+                    residues = None
                     self.readMoleculeDict(molDict)
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
@@ -524,7 +524,7 @@ class refine:
         if 'sequence' in molDict:
             import java.util.ArrayList
             from org.nmrfx.structure.chemistry.io import Sequence
-
+            
             seqString = molDict['sequence']
             if 'link' in molDict:
                 linker = molDict['link']
@@ -556,7 +556,7 @@ class refine:
                 elif type == 'mol':
                     self.readSDFile(file)
 
-            else:
+            else: 
                 type = 'nv'
             if type == 'nv':
                 self.readSequence(file)
@@ -576,7 +576,7 @@ class refine:
                     else:
                         end = None
                 self.setupTree(start, end)
-
+            
     def readDistanceDict(self,disDict,residues):
         wt = -1.0
         for dic in disDict:
@@ -598,7 +598,7 @@ class refine:
                 import osfiles
                 range = dic['range']
                 dir = os.path.dirname(file)
-
+                
                 changeResNums = residues != range
                 file = osfiles.limResidues(range,file,dir,'dis',changeResNums)
             self.addDistanceFile(file,mode=type)
@@ -627,7 +627,7 @@ class refine:
             self.addSuiteAngles(rnaDict['suite'])
         if 'vienna' in rnaDict:
             self.findHelices(rnaDict['vienna'])
-
+            
     def readAnnealDict(self, annealDict):
         dOpt = dynOptions()
         if 'steps' in annealDict:
@@ -654,7 +654,7 @@ class refine:
                 dir = os.path.dirname(file)
                 file = osfiles.convertStarFile(file,dir)
                 type = 'nv'
-        else:
+        else: 
             type = 'nv'
         if type == 'nv':
             if 'range' in shiftDict:
@@ -785,7 +785,7 @@ class refine:
                 atomNames1.add(atomName1)
                 atomNames2.add(atomName2)
             self.energyLists.addDistanceConstraint(atomNames1,atomNames2,lower,upper)
-
+           
 
 #ZETA:  C3'(i-1)-O3'(i-1)-P-O5'   -73
 #ALPHA: O3'(i-1)-P-O5'-C5'        -62
@@ -793,54 +793,76 @@ class refine:
 #GAMMA: O5'-C5'-C4'-C3'            48
 #DELTA: C5'-C4'-C3'-O3'            60 140
 #NU2:  C4'-C3'-C2'-C1'             -40 40
-#HOXI:  C3'-C2'-O2'-HO2''         -140
+#HOXI:  C3'-C2'-O2'-HO2''         -140 
 #NU1:  C3'-C2'-C1'-N9'             60 140
-#CHI:  C3'-C2'-C1'-N?              97
+#CHI:  C2'-C1'-N? - C?             97
 #EPSI:  C4'-C3'-O3'-P(i+1)       -152
 #283   RCYT  GAMMA     23.0    73.0  1.00E+00
 
     def readCYANAAngles(self, fileName,mol):
         angleMap = {}
-        angleMap['ZETA']= "O5'"
-        angleMap['ALPHA']= "C5'"
-        angleMap['BETA']= "C4'"
-        angleMap['GAMMA']= "C3'"
-        angleMap['DELTA']= "O3'"
-        angleMap['EPSI']= "P"
-        angleMap['NU2']= "P"
-        angleMap['PHI']= "C"
-        angleMap['PSI']= "N"
-        angleMap['CHI1','ARG']= "CG"
-        angleMap['CHI1','ASN']= "CG"
-        angleMap['CHI1','ASP']= "CG"
-        angleMap['CHI1','CYS']= "SG"
-        angleMap['CHI1','GLN']= "CG"
-        angleMap['CHI1','GLU']= "CG"
-        angleMap['CHI1','HIS']= "CG"
-        angleMap['CHI1','ILE']= "CG1"
-        angleMap['CHI1','LEU']= "CG"
-        angleMap['CHI1','LYS']= "CG"
-        angleMap['CHI1','MET']= "CG"
-        angleMap['CHI1','PHE']= "CG"
-        angleMap['CHI1','SER']= "OG"
-        angleMap['CHI1','THR']= "OG1"
-        angleMap['CHI1','TRP']= "CG"
-        angleMap['CHI1','TYR']= "CG"
-        angleMap['CHI1','VAL']= "CG1"
-        angleMap['CHI2','LEU']= "CD1"
-        angleMap['CHI2','ASP']= "OD1"
-        angleMap['CHI2','PHE']= "CD1"
-        angleMap['CHI2','GLU']= "CD"
-        angleMap['CHI2','GLN']= "CD"
-        angleMap['CHI2','MET']= "SD"
-        angleMap['CHI2','TYR']= "CD1"
-        angleMap['CHI2','TRP']= "CD1"
-        angleMap['CHI21','ILE']= "CD1"
-        angleMap['CHI21','THR']= "HG1"
-        angleMap['CHI3','GLU']= "OE1"
-        angleMap['CHI2','HIS']= "CD2"
-        angleMap['CHI2','LYS']= "CD"
-        angleMap['CHI2','ARG']= "CD"
+        angleMap['ZETA']= ["O5'"]
+        angleMap['ALPHA']= ["C5'"]
+        angleMap['BETA']= ["C4'"]
+        angleMap['GAMMA']= ["C3'"]
+        angleMap['DELTA']= ["O3'"]
+        angleMap['EPSI']= ["P"]
+	angleMap['NU2']= ["C1'"]
+	angleMap['NU2','A']= ["C1'"]
+	angleMap['NU2','URA']= ["C1'"]
+        angleMap['NU2','RGUA']= ["C1'"]
+        angleMap['NU2','RCYT']= ["C1'"]
+        angleMap['NU2','RADE']= ["C1'"]
+        angleMap['PHI']= ["C"]
+        angleMap['PSI']= ["C"]
+        angleMap['PSI']= ["N"]
+        angleMap['NU1','G']= ["N9"]
+        angleMap['NU1','A']= ["N9"]
+        angleMap['NU1','U']= ["N1"]
+        angleMap['NU1','C']= ["N1"]
+        angleMap['NU1','RGUA']= ["N1"]
+        angleMap['NU1','RCYT']= ["N1"]
+        angleMap['NU1','RADE']= ["N9"]
+        angleMap['NU1','URA']= ["N1"]
+        angleMap['CHI','U']= ["O4'","C1'","N1","C2"]
+        angleMap['CHI','C']= ["O4'","C1'","N1","C2"]
+        angleMap['CHI','G']= ["O4'","C1'","N9","C8"]
+        angleMap['CHI','A']= ["O4'","C1'","N9","C8"]
+        angleMap['CHI','URA']= ["O4'","C1'","N1","C2"]
+        angleMap['CHI','RGUA']= ["O4'","C1'","N9","C8"]
+        angleMap['CHI','RCYT']= ["O4'","C1'","N1","C2"]
+        angleMap['CHI','RADE']= ["O4'","C1'","N9","C8"]
+        angleMap['CHI1','ARG']= ["CG"]
+        angleMap['CHI1','ASN']= ["CG"]
+        angleMap['CHI1','ASP']= ["CG"]
+        angleMap['CHI1','CYS']= ["SG"]
+        angleMap['CHI1','GLN']= ["CG"]
+        angleMap['CHI1','GLU']= ["CG"]
+        angleMap['CHI1','HIS']= ["CG"]
+        angleMap['CHI1','ILE']= ["CG1"]
+        angleMap['CHI1','LEU']= ["CG"]
+        angleMap['CHI1','LYS']= ["CG"]
+        angleMap['CHI1','MET']= ["CG"]
+        angleMap['CHI1','PHE']= ["CG"]
+        angleMap['CHI1','SER']= ["OG"]
+        angleMap['CHI1','THR']= ["OG1"]
+        angleMap['CHI1','TRP']= ["CG"]
+        angleMap['CHI1','TYR']= ["CG"]
+        angleMap['CHI1','VAL']= ["CG1"]
+        angleMap['CHI2','LEU']= ["CD1"]
+        angleMap['CHI2','ASP']= ["OD1"]
+        angleMap['CHI2','PHE']= ["CD1"]
+        angleMap['CHI2','GLU']= ["CD"]
+        angleMap['CHI2','GLN']= ["CD"]
+        angleMap['CHI2','MET']= ["SD"]
+        angleMap['CHI2','TYR']= ["CD1"]
+        angleMap['CHI2','TRP']= ["CD1"]
+        angleMap['CHI21','ILE']= ["CD1"]
+        angleMap['CHI21','THR']= ["HG1"]
+        angleMap['CHI3','GLU']= ["OE1"]
+        angleMap['CHI2','HIS']= ["CD2"]
+        angleMap['CHI2','LYS']= ["CD"]
+        angleMap['CHI2','ARG']= ["CD"]
 
         fIn = open(fileName,'r')
         for line in fIn:
@@ -851,19 +873,22 @@ class refine:
                continue
            (res,resName, angle,lower,upper) = line.split()
            if angle in angleMap:
-               atom = angleMap[angle]
+               atoms = angleMap[angle]
            elif (angle,resName) in angleMap:
-               atom = angleMap[angle,resName]
+               atoms = angleMap[angle,resName]
            else:
                print "no such angle",angle,resName
                exit()
            res = int(res)
-           if atom == 'P':
+           if 'P' in atoms:
                res += 1
-           if atom == 'N':
+           if 'N' in atoms:
                res += 1
-           fullAtom = mol+':'+str(res)+'.'+atom
-           fullAtom = fullAtom.replace('"',"''")
+           fullAtoms = []
+           for atom in atoms:
+               fullAtom = mol+':'+str(res)+'.'+atom
+               fullAtom = fullAtom.replace('"',"''")
+               fullAtoms.append(fullAtom)
            scale = 1.0
            lower = float(lower)
            upper = float(upper)
@@ -873,7 +898,8 @@ class refine:
            if (lower < -180) and (upper < 0.0):
                 lower += 360
                 upper += 360
-           self.dihedral.addBoundary(fullAtom,lower,upper,scale)
+           print fullAtoms
+           self.dihedral.addBoundary(fullAtoms,lower,upper,scale)
         fIn.close()
 
     def addSuiteAngles(self, fileName):
@@ -897,7 +923,7 @@ class refine:
         angleBoundaries = RNARotamer.getAngleBoundaries(polymer, str(residueNum), rotamerName, mul)
         for angleBoundary in angleBoundaries:
             self.dihedral.addBoundary(angleBoundary.getAtom().getFullName(), angleBoundary)
-
+    
     def getSuiteAngles(self, molecule):
         angles  = [
               ["0.C5'","0.C4'","0.C3'","0.O3'"],
@@ -1014,7 +1040,7 @@ class refine:
         uncgPat = re.compile('U[AGUC]CG')
 
         pairs = self.getPairs(vienna)
-
+      
         i = 0
         sets = []
 
@@ -1047,7 +1073,7 @@ class refine:
                 self.addHelix(polymer,set[0],set[3],set[1],set[2],False)
         pat = re.compile('\(\(\.\.\.\.\)\)')
         for m in pat.finditer(vienna):
-            gnraStart = m.start()+2
+            gnraStart = m.start()+2 
             tetraLoopSeq = ""
             tetraLoopRes = []
             for iRes in range(gnraStart,gnraStart+4):
@@ -1069,8 +1095,8 @@ class refine:
         resNumJ = str(resNumJ)
         resI = polymer.getResidue(resNumI)
         resJ = polymer.getResidue(resNumJ)
-        resNameI = resI.getName()
-        resNameJ = resJ.getName()
+        resNameI = resI.getName() 
+        resNameJ = resJ.getName() 
         dHN = 1.89
         dHNlow = 1.8
         dHO = 1.89
@@ -1214,7 +1240,7 @@ class refine:
         pdb = PDBFile()
         pdb.read(fileName)
         self.molecule = Molecule.getActive()
-
+ 
         self.molName = self.molecule.getName()
         self.molecule.selectAtoms('*.*')
         return self.molecule
@@ -1315,14 +1341,14 @@ class refine:
         from org.nmrfx.structure.chemistry import MolFilter
         refShifts = {"A.H2":7.93, "A.H8":8.33, "G.H8":7.87, "C.H5":5.84, "U.H5":5.76,
             "C.H6":8.02, "U.H6":8.01, "A.H1'":5.38, "G.H1'":5.37, "C.H1'":5.45,
-            "U.H1'":5.50, "A.H2'":4.54, "G.H2'":4.59, "C.H2'":4.54, "U.H2'":4.54,
+            "U.H1'":5.50, "A.H2'":4.54, "G.H2'":4.59, "C.H2'":4.54, "U.H2'":4.54, 
             "A.H3'":4.59, "G.H3'":4.59, "C.H3'":4.59, "U.H3'":4.59
         }
 
         ringShifts = RingCurrentShift()
         ringShifts.makeRingList(self.molecule)
         filterString = "*.H8,H6,H2,H1',H2'"
-
+  
         molFilter = MolFilter(filterString)
         spatialSets = Molecule.matchAtoms(molFilter)
 
