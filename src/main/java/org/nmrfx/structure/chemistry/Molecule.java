@@ -3475,7 +3475,7 @@ public class Molecule implements Serializable {
                 iAtom.rotUnit = rotUnit++;
             }
             Atom jAtom = iAtom;
-            
+
             // careful in following using jAtom.parent is different than jAtom.getParent
             // the latter will find parent using bonds if parent field null
             while ((jAtom = jAtom.parent) != null) {
@@ -4816,12 +4816,12 @@ public class Molecule implements Serializable {
                 bond = Order.SINGLE;
                 break;
         }
-        if (atom1 == null || atom2 == null){
+        if (atom1 == null || atom2 == null) {
             return;
         }
-        
         Atom.addBond(atom1, atom2, bond, 0, false);
         atom2.parent = atom1;
+        atom2.setProperty("linker", true);
         atom2.bondLength = bondLength;
     }
 

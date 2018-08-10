@@ -169,7 +169,7 @@ public class AngleTreeGenerator {
                     oBond = atom2.getBond(atom3);
 
                     // Check to see if the atoms are linkers. If element names are null they must be linkers
-                    if (atom3.getElementName() != null && atom2.getElementName() != null) {
+                    if (atom3.getElementName() != null && atom2.getElementName() != null && atom3.getProperty("linker") == null) {
                         atom3.bondLength = (float) AtomMath.calcDistance(pt2, pt3);
                         MNode mNode1 = mNode2.getParent();
                         if (mNode1 != null) {
@@ -370,11 +370,11 @@ public class AngleTreeGenerator {
     private boolean testTerminal(Atom a) {
         List<Atom> aList = a.getConnected();
         List<Atom> appeared = new ArrayList<>();
-        for (Atom atom : aList){
-            if (!appeared.contains(atom)){
+        for (Atom atom : aList) {
+            if (!appeared.contains(atom)) {
                 appeared.add(atom);
-            } 
+            }
         }
-        return appeared.size()==1;
+        return appeared.size() == 1;
     }
 }
