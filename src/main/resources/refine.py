@@ -1334,11 +1334,11 @@ class refine:
     def setupTree(self, start, end):
         mol = self.molecule
         if start:
-            startAtom = molecule.getAtom(start)
+            startAtom = mol.getAtom(start)
         else:
             startAtom = None
         if end:
-            endAtom = molecule.getAtom(end)
+            endAtom = mol.getAtom(end)
         else:
             endAtom = None
         aTree = AngleTreeGenerator()
