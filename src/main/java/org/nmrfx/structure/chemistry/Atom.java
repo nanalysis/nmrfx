@@ -59,6 +59,7 @@ public class Atom implements IAtom {
     static final public double NULL_PPM = -9990.0;
     static int lastAtom = 0;
     public int iAtom = 1;
+    public int eAtom = -1;
     private int origIndex = 0;
     public Atom parent = null;
     public String name;
