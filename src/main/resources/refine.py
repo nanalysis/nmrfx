@@ -715,7 +715,10 @@ class refine:
 
                 changeResNums = residues != range
                 file = osfiles.limResidues(range,file,dir,'dis',changeResNums)
-            self.addDistanceFile(file,mode=type)
+            keepMethod = None
+            if 'keep' in dic:
+                keepMethod = dic['keep']
+            self.addDistanceFile(file,mode=type,keep=keepMethod)
         return wt
 
     def readAngleDict(self,disDict):
