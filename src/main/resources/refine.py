@@ -173,6 +173,22 @@ def prioritizePolymers(molList):
     returnList += smallMoleculeList
     return returnList
 
+class Constraint:
+    def __init__(self, pair, distance, mode, setting = None):
+        Constraint.lastViewed = self
+        self.pairs = [pair]
+        self.lower = distance if mode == 'lower' else None
+        self.upper = distance if mode == 'upper' else None
+        self.tester = 0 if not setting else -1 if setting == 'narrow' else 1
+
+    def addBound(self, distance, mode):
+        self.lower = distance if mode == 'lower' and (not self.lower or ((self.lower-distance)*self.tester >= 0 )) else self.lower
+        self.upper = distance if mode == 'upper' and (not self.upper or ((distance - self.upper)*self.tester >= 0)) else self.upper
+        Constraint.lastViewed = self
+
+    def addPair(self, pair):
+        if pair not in self.pairs:
+            self.pairs.append(pair)
 
 
 
@@ -201,9 +217,10 @@ class refine:
     def __init__(self):
         self.cyanaAngleFiles = []
         self.nvAngleFiles = []
-        self.cyanaDistanceFiles = []
+        self.cyanaDistanceFiles = {}
         self.suiteAngleFiles = []
-        self.nvDistanceFiles = []
+        self.nvDistanceFiles = {}
+        self.constraints = {} # map of atom pairs to
         self.angleStrings = []
         self.disLim = 4.6
         self.angleDelta = 30
@@ -436,13 +453,13 @@ class refine:
                 bound = AngleBoundary(atomName,lower,upper,scale,center,sigma,height)
                 self.dihedral.addBoundary(atomName,bound)
 
-    def loadDistancesFromFile(self,fileName):
+    def loadDistancesFromFile(self,fileName, keepSetting=None):
        file = open(fileName,"r")
        data= file.read()
        file.close()
-       self.loadDistances(data)
+       self.loadDistances(data, keepSetting=None)
 
-    def loadDistances(self,data):
+    def loadDistances(self,data, keepSetting=None):
         lines = data.split('\n')
         for line in lines:
             line = line.strip()
@@ -451,10 +468,17 @@ class refine:
             if (line[0] == '#'):
                 continue
             values = line.split()
-            (atomName1,atomName2,s2,s3) = values
+            (fullAtom1,fullAtom2,s2,s3) = values
             lower = float(s2)
             upper = float(s3)
-            self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
+            atomPair = ' '.join([fullAtom1,fullAtom2]) if fullAtom1 < fullAtom2 else ' '.join([fullAtom2, fullAtom1])
+            if atomPair not in self.constraints:
+                constraint = Constraint(atomPair, lower, 'lower', setting=keepSetting)
+                self.constraints[atomPair] = constraint
+                self.constraints[atomPair].addBound(upper, 'upper')
+            else:
+                self.constraints[atomPair].addBound(upper, 'lower')
+                self.constraints[atomPair].addBound(upper, 'upper')
 
     def addDisCon(self, atomName1, atomName2, lower, upper):
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
@@ -819,63 +843,34 @@ class refine:
 # 283  RCYT  H6          283  RCYT  H2'          4.00    1.00E+00
 # 283  RCYT  H6          283  RCYT  H3'          3.00    1.00E+00
 # 283  RCYT  H3'   283  RCYT  H5"          3.30    1.00E+00
-
-    def readCYANADistances(self,fileNames,molName):
-        defaultLower = 1.8
-        atomPairs  = []
-        distances  = []
-        lowers  = {}
-        i=0
+    def readCYANADistances(self, fileNames, molName, keepSetting=None):
         for fileName in fileNames:
             fIn = open(fileName,'r')
-            if fileName.endswith('.lol'):
-                mode = 'lower'
-            else:
-                mode = 'upper'
-            for line in fIn:
-                line = line.strip()
-                if len(line) == 0:
-                    continue
-                if line[0] == '#':
-                    continue
-                fields = line.split()
-                res1 = fields[0]
-                atom1 = fields[2]
-                res2 = fields[3]
-                atom2 = fields[5]
-                distance  = float(fields[6])
-                fullAtom1 = molName+':'+res1+'.'+atom1
-                fullAtom2  =molName+':'+res2+'.'+atom2
-                fullAtom1 = fullAtom1.replace('"',"''")
-                fullAtom2 = fullAtom2.replace('"',"''")
-                if fullAtom1 < fullAtom2:
-                    atomPair = fullAtom1+' '+fullAtom2
-                else:
-                    atomPair = fullAtom2+' '+fullAtom1
-                if mode == 'upper':
-                    if distance > 0.0:
-                        distances.append(distance)
-                        atomPairs.append([atomPair])
-                        i += 1
+            mode = 'lower' if fileName.endswith('.lol') else 'upper'
+            with open(fileName,'r') as fIn:
+                for line in fIn:
+                    line = line.strip()
+                    if len(line) == 0:
+                        continue
+                    if line[0] == '#':
+                        continue
+                    fields = line.split()
+                    res1, _, atom1, res2, _, atom2, distance = fields
+                    distance = float(distance)
+                    fullAtom1 = molName+':'+res1+'.'+atom1
+                    fullAtom2 = molName+':'+res2+'.'+atom2
+                    fullAtom1 = fullAtom1.replace('"',"''")
+                    fullAtom2 = fullAtom2.replace('"',"''")
+                    atomPair = ' '.join([fullAtom1,fullAtom2]) if fullAtom1 < fullAtom2 else ' '.join([fullAtom2, fullAtom1])
+                    if distance != 0.0:
+                        if atomPair not in self.constraints:
+                            constraint = Constraint(atomPair, distance, mode, setting=keepSetting)
+                            self.constraints[atomPair] = constraint
+                        else:
+                            self.constraints[atomPair].addBound(distance, mode)
                     else:
-                        atomPairs[i-1].append(atomPair)
-                else:
-                    lowers[atomPair] = distance
-            fIn.close()
-        for atomPair,upper in zip(atomPairs,distances):
-            lower = defaultLower
-            for atomPairElem in atomPair:
-                if atomPairElem in lowers:
-                    lower = lowers[atomPairElem]
-            # fixme doesn't work right with ambiguous constraints
-            atomNames1 = ArrayList()
-            atomNames2 = ArrayList()
-            for atomPairElem in atomPair:
-                (atomName1,atomName2) = atomPairElem.split()
-                atomNames1.add(atomName1)
-                atomNames2.add(atomName2)
-            self.energyLists.addDistanceConstraint(atomNames1,atomNames2,lower,upper)
-
+                        if mode == 'upper':
+                            Constraint.lastViewed.addPair(atomPair)
 
 #ZETA:  C3'(i-1)-O3'(i-1)-P-O5'   -73
 #ALPHA: O3'(i-1)-P-O5'-C5'        -62
@@ -1363,11 +1358,11 @@ class refine:
     def addAngle(self,angleString):
         self.angleStrings.append(angleString)
 
-    def addDistanceFile(self,file, mode='nv'):
+    def addDistanceFile(self,file, mode='nv', keep=None):
         if mode == 'cyana':
-            self.cyanaDistanceFiles.append(file)
+            self.cyanaDistanceFiles[file] = keep
         else:
-            self.nvDistanceFiles.append(file)
+            self.nvDistanceFiles[file] = keep
 
     def readAngleFiles(self):
         for file in self.cyanaAngleFiles:
@@ -1376,12 +1371,28 @@ class refine:
             self.loadDihedralsFromFile(file)
 
     def readDistanceFiles(self):
-        for file in self.cyanaDistanceFiles:
+        for file in self.cyanaDistanceFiles.keys():
             lowerFileName = file+'.lol'
             upperFileName = file+'.upl'
-            self.readCYANADistances([lowerFileName, upperFileName],self.molName)
-        for file in self.nvDistanceFiles:
-            self.loadDistancesFromFile(file)
+            self.readCYANADistances([lowerFileName, upperFileName],self.molName, keepSetting=self.cyanaDistanceFiles[file])
+
+        for file in self.nvDistanceFiles.keys():
+            self.loadDistancesFromFile(file, keepSetting=self.nvDistanceFiles[file])
+
+        self.addDistanceConstraints()
+
+    def addDistanceConstraints(self):
+        for constraint in self.constraints.values():
+            lower = constraint.lower
+            upper = constraint.upper
+            atomNames1 = ArrayList()
+            atomNames2 = ArrayList()
+            for pair in constraint.pairs:
+                atomName1, atomName2 = pair.split()
+                atomNames1.add(atomName1)
+                atomNames2.add(atomName2)
+            self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
+
 
     def predictShifts(self):
         from org.nmrfx.structure.chemistry.energy import RingCurrentShift
