@@ -292,12 +292,16 @@ public class AngleTreeGenerator {
                     rotatable = true;
                 } else if (a3.getFlag(Atom.RESONANT) && a2.getFlag(Atom.RESONANT)) {
                     rotatable = false;
+                } else if (a3.getFlag(Atom.AROMATIC) && a2.getFlag(Atom.AROMATIC)) { // wrong if connecting two rings
+                    rotatable = false;
                 } else if (a3.getFlag(Atom.RING) && a2.getFlag(Atom.RING)) {
-                    rotatable = false;
-                } else if (a3.getFlag(Atom.AROMATIC) && a2.getFlag(Atom.AROMATIC)) {
-                    rotatable = false;
+                   rotatable = false;
                 }
-                a3.irpIndex = rotatable ? 1 : 0;
+                int currIRP = a3.irpIndex;
+                if (currIRP == 0) {
+                    currIRP = 1;
+                }
+                a3.irpIndex = rotatable ? currIRP : 0;
 //                System.out.println(a3.getShortName() + " " + a3.irpIndex + " " + rotatable);
             }
         });
