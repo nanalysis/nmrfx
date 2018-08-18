@@ -697,17 +697,17 @@ public class Dihedral {
                     atom = angleAtoms.get(i - 2 * nPseudoAngles);
                 }
                 String atomName = atom.getFullName();
-                AngleBoundary angleBoundary = angleBoundaries.get(atomName);
-                /* adds angleBoundary values to boundaries array */
-                if (angleBoundary != null) {
-                    if (angleBoundary.angleProp != null) {
-                        for (int j = 0; j < angleBoundary.angleProp.height.length; j++) {
-                            if (angleBoundary.angleProp.height[j] == 1) {
-                                angleValues[i] = angleBoundary.angleProp.target[j];
-                            }
-                        }
-                    }
-                }
+//                AngleBoundary angleBoundary = angleBoundaries.get(atomName);
+//                /* adds angleBoundary values to boundaries array */
+//                if (angleBoundary != null) {
+//                    if (angleBoundary.angleProp != null) {
+//                        for (int j = 0; j < angleBoundary.angleProp.height.length; j++) {
+//                            if (angleBoundary.angleProp.height[j] == 1) {
+//                                angleValues[i] = angleBoundary.angleProp.target[j];
+//                            }
+//                        }
+//                    }
+//                }
                 if (usePseudo == true && incrementByTwo == true) {
                     angleValues[i++] = reduceAngle(initPseudoAngle);
                     angleValues[i++] = initPuckerAmplitude;
