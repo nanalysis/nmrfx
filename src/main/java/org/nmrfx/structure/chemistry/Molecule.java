@@ -3275,9 +3275,8 @@ public class Molecule implements Serializable {
 
         for (int i = 0; i < genVecs.length; i++) {
             if (genVecs[i].length > 3) {
-                Atom iAtom = treeAtoms.get(genVecs[i][2]);
-                if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
-                    Atom angleAtom = treeAtoms.get(genVecs[i][3]);
+                Atom angleAtom = treeAtoms.get(genVecs[i][2]);
+                if ((angleAtom.getParent() != null) && (angleAtom.irpIndex > 0) && angleAtom.rotActive) {
                     angleAtoms.add(angleAtom);
                 }
             }
@@ -3285,7 +3284,6 @@ public class Molecule implements Serializable {
         }
         return angleAtoms;
     }
-
 
     public ArrayList<Atom> getPseudoAngleAtoms() {
         return pseudoAngleAtoms;
