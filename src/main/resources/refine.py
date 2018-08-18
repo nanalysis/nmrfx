@@ -512,6 +512,9 @@ class refine:
             self.readRNADict(data['rna'])
         self.readSuiteAngles()
 
+        self.readAngleFiles()
+        self.readDistanceFiles()
+
         if 'anneal' in data:
             self.dOpt = self.readAnnealDict(data['anneal'])
         self.energy()
@@ -685,7 +688,7 @@ class refine:
             restraints.append(("C3'", "O4'",2.32,  2.35))
             #fixme Verify constraints
             restraints.append(("O4'", "H4'", 2.05, 2.2))
-            #	restraints.append(("O4'", "H4'", 1.97, 2.05))
+            # restraints.append(("O4'", "H4'", 1.97, 2.05))
 #            if resName in ('C','U'):
 #                restraints.append(("N1", "O4'",2.40, 2.68))
 #            else:
@@ -799,31 +802,32 @@ class refine:
 #EPSI:  C4'-C3'-O3'-P(i+1)       -152
 #283   RCYT  GAMMA     23.0    73.0  1.00E+00
 
+#FIXME : Because of the change in CHI1 and CHI2, the necessary .prf files need to be changed to accomodate this change.
+
     def readCYANAAngles(self, fileName,mol):
         angleMap = {}
-        angleMap['ZETA']= ["O5'"]
-        angleMap['ALPHA']= ["C5'"]
-        angleMap['BETA']= ["C4'"]
-        angleMap['GAMMA']= ["C3'"]
-        angleMap['DELTA']= ["O3'"]
-        angleMap['EPSI']= ["P"]
-	angleMap['NU2']= ["C1'"]
-	angleMap['NU2','A']= ["C1'"]
-	angleMap['NU2','URA']= ["C1'"]
-        angleMap['NU2','RGUA']= ["C1'"]
-        angleMap['NU2','RCYT']= ["C1'"]
-        angleMap['NU2','RADE']= ["C1'"]
-        angleMap['PHI']= ["C"]
-        angleMap['PSI']= ["C"]
-        angleMap['PSI']= ["N"]
-        angleMap['NU1','G']= ["N9"]
-        angleMap['NU1','A']= ["N9"]
-        angleMap['NU1','U']= ["N1"]
-        angleMap['NU1','C']= ["N1"]
-        angleMap['NU1','RGUA']= ["N1"]
-        angleMap['NU1','RCYT']= ["N1"]
-        angleMap['NU1','RADE']= ["N9"]
-        angleMap['NU1','URA']= ["N1"]
+        angleMap['DELTA']= ["C5'","C4'","C3'","O3'"]
+        angleMap['EPSI']= ["C4'","C3'","O3'","1:P"]
+        angleMap['ZETA']= ["C3'","O3'","1:P","1:O5'"]
+        angleMap['ALPHA']= ["-1:O3'","P","O5'","C5'"]
+        angleMap['BETA']= ["P","O5'","C5'","C4'"]
+        angleMap['GAMMA']= ["O5'","C5'","C4'","C3'"]
+        angleMap['NU2']= ["C1'","C2'","C3'","C4'"] # changed the last atom "C1'" -> "C4'"
+        angleMap['NU2','A']= ["C1'","C2'","C3'","C4'"]
+        angleMap['NU2','URA']= ["C1'","C2'","C3'","C4'"]
+        angleMap['NU2','RGUA']= ["C1'","C2'","C3'","C4'"]
+        angleMap['NU2','RCYT']= ["C1'","C2'","C3'","C4'"]
+        angleMap['NU2','RADE']= ["C1'","C2'","C3'","C4'"]
+        angleMap['PHI']= ["-1:C","N","CA","C"]
+        angleMap['PSI']= ["N","CA","C","1:N"]
+        angleMap['NU1','G']= ["O4'","C1'","C2'","C3'"] # changed the last atom "N9" -> "C3'" (reversed direction of atoms for dihedral)
+        angleMap['NU1','A']= ["O4'","C1'","C2'","C3'"]
+        angleMap['NU1','U']= ["O4'","C1'","C2'","C3'"]
+        angleMap['NU1','C']= ["O4'","C1'","C2'","C3'"]
+        angleMap['NU1','RGUA']= ["O4'","C1'","C2'","C3'"]
+        angleMap['NU1','RCYT']= ["O4'","C1'","C2'","C3'"]
+        angleMap['NU1','RADE']= ["O4'","C1'","C2'","C3'"]
+        angleMap['NU1','URA']= ["O4'","C1'","C2'","C3'"]
         angleMap['CHI','U']= ["O4'","C1'","N1","C2"]
         angleMap['CHI','C']= ["O4'","C1'","N1","C2"]
         angleMap['CHI','G']= ["O4'","C1'","N9","C8"]
@@ -832,37 +836,44 @@ class refine:
         angleMap['CHI','RGUA']= ["O4'","C1'","N9","C8"]
         angleMap['CHI','RCYT']= ["O4'","C1'","N1","C2"]
         angleMap['CHI','RADE']= ["O4'","C1'","N9","C8"]
-        angleMap['CHI1','ARG']= ["CG"]
-        angleMap['CHI1','ASN']= ["CG"]
-        angleMap['CHI1','ASP']= ["CG"]
-        angleMap['CHI1','CYS']= ["SG"]
-        angleMap['CHI1','GLN']= ["CG"]
-        angleMap['CHI1','GLU']= ["CG"]
-        angleMap['CHI1','HIS']= ["CG"]
-        angleMap['CHI1','ILE']= ["CG1"]
-        angleMap['CHI1','LEU']= ["CG"]
-        angleMap['CHI1','LYS']= ["CG"]
-        angleMap['CHI1','MET']= ["CG"]
-        angleMap['CHI1','PHE']= ["CG"]
-        angleMap['CHI1','SER']= ["OG"]
-        angleMap['CHI1','THR']= ["OG1"]
-        angleMap['CHI1','TRP']= ["CG"]
-        angleMap['CHI1','TYR']= ["CG"]
-        angleMap['CHI1','VAL']= ["CG1"]
-        angleMap['CHI2','LEU']= ["CD1"]
-        angleMap['CHI2','ASP']= ["OD1"]
-        angleMap['CHI2','PHE']= ["CD1"]
-        angleMap['CHI2','GLU']= ["CD"]
-        angleMap['CHI2','GLN']= ["CD"]
-        angleMap['CHI2','MET']= ["SD"]
-        angleMap['CHI2','TYR']= ["CD1"]
-        angleMap['CHI2','TRP']= ["CD1"]
-        angleMap['CHI21','ILE']= ["CD1"]
-        angleMap['CHI21','THR']= ["HG1"]
-        angleMap['CHI3','GLU']= ["OE1"]
-        angleMap['CHI2','HIS']= ["CD2"]
-        angleMap['CHI2','LYS']= ["CD"]
-        angleMap['CHI2','ARG']= ["CD"]
+        angleMap['CHI1','ARG']= ["N","CA","CB","CG"]
+        angleMap['CHI1','ASN']= ["N","CA","CB","CG"]
+        angleMap['CHI1','ASP']= ["N","CA","CB","CG"]
+        angleMap['CHI1','CYS']= ["N","CA","CB","SG"]
+        angleMap['CHI1','GLN']= ["N","CA","CB","CG"]
+        angleMap['CHI1','GLU']= ["N","CA","CB","CG"]
+        angleMap['CHI1','HIS']= ["N","CA","CB","CG"]
+        angleMap['CHI1','ILE']= ["N","CA","CB","CG1"]
+        angleMap['CHI1','LEU']= ["N","CA","CB","CG"]
+        angleMap['CHI1','LYS']= ["N","CA","CB","CG"]
+        angleMap['CHI1','MET']= ["N","CA","CB","CG"]
+        angleMap['CHI1','PHE']= ["N","CA","CB","CG"]
+        angleMap['CHI1','SER']= ["N","CA","CB","OG"]
+        angleMap['CHI1','THR']= ["N","CA","CB","OG1"]
+        angleMap['CHI1','TRP']= ["N","CA","CB","CG"]
+        angleMap['CHI1','TYR']= ["N","CA","CB","CG"]
+        angleMap['CHI1','VAL']= ["N","CA","CB","CG1"]
+        angleMap['CHI2','LEU']= ["CA","CB","CG","CD1"]
+        angleMap['CHI2','ASP']= ["CA","CB","CG","OD1"]
+        angleMap['CHI2','PHE']= ["CA","CB","CG","CD1"]
+        angleMap['CHI2','GLU']= ["CA","CB","CG","CD"]
+        angleMap['CHI2','GLN']= ["CA","CB","CG","CD"]
+        angleMap['CHI2','MET']= ["CA","CB","CG","SD"]
+        angleMap['CHI2','TYR']= ["CA","CB","CG","CD1"]
+        angleMap['CHI2','TRP']= ["CA","CB","CG","CD1"]
+        angleMap['CHI21','ILE']= ["CA","CB","CG1","CD1"]
+        angleMap['CHI21','THR']= ["CA","CB","OG1","HG1"]
+        angleMap['CHI2','HIS']= ["CA","CB","CG","CD2"]
+        angleMap['CHI2','LYS']= ["CA","CB","CG","CD"]
+        angleMap['CHI2','ARG']= ["CA","CB","CG","CD"]
+        angleMap['CHI3','ARG']= ["CB","CG","CD","NE"]
+        angleMap['CHI3','GLN']= ["CB","CG","CD","OE1"]
+        angleMap['CHI3','GLU']= ["CB","CG","CD","OE1"]
+        angleMap['CHI3','LYS']= ["CB","CG","CD","CE"]
+        angleMap['CHI3','MET']= ["CB","CG","SD","CE"]
+        angleMap['CHI4','ARG']= ["CG","CD","NE","CZ"]
+        angleMap['CHI4','LYS']= ["CG","CD","CE","NZ"]
+        angleMap['CHI4','ARG']= ["CD","NE","CZ","NH1"] #?
 
         fIn = open(fileName,'r')
         for line in fIn:
@@ -880,13 +891,15 @@ class refine:
                print "no such angle",angle,resName
                exit()
            res = int(res)
-           if 'P' in atoms:
-               res += 1
-           if 'N' in atoms:
-               res += 1
            fullAtoms = []
            for atom in atoms:
-               fullAtom = mol+':'+str(res)+'.'+atom
+               if ':' in atom:
+                   split_atom = atom.split(':')
+                   dRes = int(split_atom[0])
+                   atom = split_atom[1]
+               else:
+                   dRes = 0
+               fullAtom = mol+':'+str(res + dRes)+'.'+atom
                fullAtom = fullAtom.replace('"',"''")
                fullAtoms.append(fullAtom)
            scale = 1.0
@@ -898,7 +911,6 @@ class refine:
            if (lower < -180) and (upper < 0.0):
                 lower += 360
                 upper += 360
-           print fullAtoms
            self.dihedral.addBoundary(fullAtoms,lower,upper,scale)
         fIn.close()
 
@@ -1753,3 +1765,4 @@ def doSGD(seed,homeDir=None):
     dOpt = dynOptions(150000,highFrac=0.4)
     refiner.sgd(dOpt)
     refiner.output()
+

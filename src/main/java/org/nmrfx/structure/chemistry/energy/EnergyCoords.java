@@ -22,6 +22,7 @@ import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.util.Arrays;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.structure.chemistry.Point3;
 
 /**
  *
@@ -90,6 +91,7 @@ public class EnergyCoords {
         vecCoords[i].set(x, y, z);
         resNums[i] = resNum;
         atoms[i] = atomType;
+        atomType.eAtom = i;
     }
 
     public void clear() {
@@ -389,6 +391,31 @@ public class EnergyCoords {
 
     public void addNOEDerivs(AtomBranch[] branches) {
         addDerivs(branches, 0);
+    }
+
+    public double calcDihedral(int a, int b, int c, int d) {
+        FastVector3D av = vecCoords[a];
+        FastVector3D bv = vecCoords[b];
+        FastVector3D cv = vecCoords[c];
+        FastVector3D dv = vecCoords[d];
+        return calcDihedral(av, bv, cv, dv);
+    }
+
+    /**
+     * Calculates the dihedral angle
+     *
+     * @param a first point
+     * @param b second point
+     * @param c third point
+     * @param d fourth point
+     * @return angle
+     */
+    public static double calcDihedral(final FastVector3D a, final FastVector3D b, final FastVector3D c, final FastVector3D d) {
+        Point3 a3 = new Point3(a.getX(), a.getY(), a.getZ());
+        Point3 b3 = new Point3(b.getX(), b.getY(), b.getZ());
+        Point3 c3 = new Point3(c.getX(), c.getY(), c.getZ());
+        Point3 d3 = new Point3(d.getX(), d.getY(), d.getZ());
+        return AtomMath.calcDihedral(a3, b3, c3, d3);
     }
 
     public void addDerivs(AtomBranch[] branches, int mode) {

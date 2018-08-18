@@ -264,34 +264,6 @@ public class EnergyLists {
         return volume;
     }
 
-    public static double calcDihedral(final Point3 a, final Point3 b, final Point3 c, final Point3 d) {
-
-        double d12 = Vector3D.distance(a, b);
-        double sd13 = Vector3D.distanceSq(a, c);
-        double sd14 = Vector3D.distanceSq(a, d);
-        double sd23 = Vector3D.distanceSq(b, c);
-        double sd24 = Vector3D.distanceSq(b, d);
-        double d34 = Vector3D.distance(c, d);
-        double ang123 = Vector3D.angle(a.subtract(b), c.subtract(b));
-        double ang234 = Vector3D.angle(b.subtract(c), d.subtract(c));
-        double cosine = (sd13 - sd14 + sd24 - sd23 + 2.0 * d12 * d34 * FastMath.cos(ang123) * FastMath.cos(ang234))
-                / (2.0 * d12 * d34 * FastMath.sin(ang123) * FastMath.sin(ang234));
-
-        double volume = volume(a, b, c, d);
-
-        double sgn = (volume < 0.0) ? 1.0 : -1.0;
-        double angle = 0.0;
-        if (cosine > 1.0) {
-            angle = 0.0;
-        } else if (cosine < -1.0) {
-            angle = FastMath.PI;
-        } else {
-            angle = sgn * FastMath.acos(cosine);
-        }
-        return (angle);
-
-    }
-
     public Atom findClosestAtom(AtomContainer atomContainer, Point3 pt1) {
         double x = 0;
         double y = 0;
@@ -601,17 +573,17 @@ public class EnergyLists {
         int nShift = 0;
         try {
 
-            if (forceWeight.getDihedralProb() > 0.0) {
-                for (AngleBoundary angleBoundary : angleBoundList) {
-                    AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
-                    if (energy.getEnergy() > limitVal) {
-                        writer.format("Tor: %10s %5.2f %5.2f %10s %5.2f\n", angleBoundary.getAtom().getFullName(), angleBoundary.getAtom().dihedralAngle, angleBoundary.angleProp.target[0], angleBoundary.angleProp.angleName, energy.getEnergy());
-                    }
-                }
-            }
+//            if (forceWeight.getDihedralProb() > 0.0) {
+//                for (AngleBoundary angleBoundary : angleBoundList) {
+//                    AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
+//                    if (energy.getEnergy() > limitVal) {
+//                        writer.format("Tor: %10s %5.2f %5.2f %10s %5.2f\n", angleBoundary.getAtom().getFullName(), angleBoundary.getAtom().dihedralAngle, angleBoundary.angleProp.target[0], angleBoundary.angleProp.angleName, energy.getEnergy());
+//                    }
+//                }
+//            }
             if (forceWeight.getDihedral() > 0.0) {
                 for (AngleBoundary angleBoundary : angleBoundList) {
-                    AtomEnergy energy = AtomMath.calcDihedralEnergy(angleBoundary, forceWeight, false);
+                    AtomEnergy energy = calcDihedralEnergy(angleBoundary, forceWeight, false);
                     dihEnergy += energy.getEnergy();
                     nDih++;
                     if (energy.getEnergy() > limitVal) {
@@ -714,6 +686,59 @@ public class EnergyLists {
         double total = 0.0;
     }
 
+    public static double grabDihedral(AngleBoundary boundary) {
+        double dihedral;
+        int atomListLength = boundary.getAtoms().length;
+        switch (atomListLength) {
+            case 1:
+                dihedral = boundary.getAtom().dihedralAngle;
+                return dihedral;
+            case 4:
+                Point3 pt0,
+                 pt1,
+                 pt2,
+                 pt3;
+                Atom[] atoms = boundary.getAtoms();
+                pt0 = atoms[0].getPoint();
+                pt1 = atoms[1].getPoint();
+                pt2 = atoms[2].getPoint();
+                pt3 = atoms[3].getPoint();
+                dihedral = AtomMath.calcDihedral(pt0, pt1, pt2, pt3);
+                return dihedral;
+            default:
+                throw new IllegalArgumentException("Invalid atom list size of " + atomListLength);
+        }
+    }
+
+    public static AtomEnergy calcDihedralEnergy(AngleBoundary boundary, final ForceWeight forceWeight, final boolean calcDeriv) {
+        double dihedral = grabDihedral(boundary);
+        double upper = boundary.upper;
+        double lower = boundary.lower;
+        return AtomMath.calcDihedralEnergy(dihedral, lower, upper, forceWeight, calcDeriv);
+    }
+
+    public double calcDihedralEnergyFast(double[] gradient) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
+        double energyTotal = 0.0;
+        for (AngleBoundary angleBoundary : angleBoundList) {
+            double dihedral;
+            Atom[] atoms = angleBoundary.getAtoms();
+            if (atoms.length == 1) {
+                dihedral = atoms[0].dihedralAngle;
+            } else {
+                dihedral = eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
+            }
+            AtomEnergy energy = AtomMath.calcDihedralEnergy(dihedral, angleBoundary.lower, angleBoundary.upper, forceWeight, gradient != null);
+            energyTotal += energy.getEnergy();
+            if (gradient != null) {
+                gradient[angleBoundary.getIndex()] -= energy.getDeriv();
+            }
+        }
+
+        return energyTotal;
+
+    }
+
     public double calcRobsen(boolean calcDeriv) {
         double totalEnergy = 0;
         for (AtomPair atomPair : atomList) {
@@ -789,11 +814,10 @@ public class EnergyLists {
 
     public double calcProbDih(boolean calcDeriv) {
         double totalEnergy = 0;
-        for (AngleBoundary angleBoundary : angleBoundList) {
-            AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
-            totalEnergy += energy.getEnergy();
-
-        }
+//        for (AngleBoundary angleBoundary : angleBoundList) {
+//            AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
+//            totalEnergy += energy.getEnergy();
+//        }
         return totalEnergy;
     }
 
@@ -986,13 +1010,7 @@ public class EnergyLists {
                 energyTotal += calcProbDih(calcDeriv);
             }
             if (forceWeight.getDihedral() > 0.0) {
-                for (AngleBoundary angleBoundary : angleBoundList) {
-                    AtomEnergy energy = AtomMath.calcDihedralEnergy(angleBoundary, forceWeight, calcDeriv);
-                    energyTotal += energy.getEnergy();
-                    if (calcDeriv) {
-                        gradient[angleBoundary.index] -= energy.getDeriv();
-                    }
-                }
+                energyTotal += calcDihedralEnergyFast(gradient);
             }
             if (forceWeight.getIrp() > 0.0) {
                 int i = 0;
@@ -1103,17 +1121,17 @@ public class EnergyLists {
             }
 
             if (forceWeight.getDihedralProb() > 0.0) {
-                for (AngleBoundary angleBoundary : angleBoundList) {
-                    AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
-                    energyTotal += energy.getEnergy();
-                }
+//                for (AngleBoundary angleBoundary : angleBoundList) {
+//                    AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
+//                    energyTotal += energy.getEnergy();
+//                }
             }
             if (forceWeight.getDihedral() > 0.0) {
                 for (AngleBoundary angleBoundary : angleBoundList) {
-                    AtomEnergy energy = AtomMath.calcDihedralEnergy(angleBoundary, forceWeight, calcDeriv);
+                    AtomEnergy energy = calcDihedralEnergy(angleBoundary, forceWeight, calcDeriv);
                     energyTotal += energy.getEnergy();
                     if (calcDeriv) {
-                        gradient[angleBoundary.index] -= energy.getDeriv();
+                        gradient[angleBoundary.getIndex()] -= energy.getDeriv();
                     }
                 }
             }
