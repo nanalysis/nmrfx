@@ -1145,28 +1145,6 @@ public class Atom implements IAtom {
         return children;
     }
 
-    public Atom getAngleChild() {
-        Atom child = null;
-        for (int i = 0; i < bonds.size(); i++) {
-            Bond bond = bonds.get(i);
-            Atom atomB = bond.begin;
-            Atom atomE = bond.end;
-
-            if (atomB == this) {
-                if (atomE.iAtom > iAtom) {
-                    child = atomE;
-                    break;
-                }
-            } else if (atomE == this) {
-                if (atomB.iAtom > iAtom) {
-                    child = atomB;
-                    break;
-                }
-            }
-        }
-        return child;
-    }
-
     public static int calcBond(Atom atom1, Atom atom2, Order order) {
         return calcBond(atom1, atom2, order, 0);
     }
