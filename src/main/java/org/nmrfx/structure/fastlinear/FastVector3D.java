@@ -118,4 +118,16 @@ public class FastVector3D extends FastVector {
         target.data[2] = data[2] + dz;
     }
 
+    public void subtract(double dx, double dy, double dz, FastVector3D target) {
+        target.data[0] = data[0] - dx;
+        target.data[1] = data[1] - dy;
+        target.data[2] = data[2] - dz;
+    }
+
+    public void subtract(FastVector3D v2, FastVector3D target) {
+        target.data[0] = data[0] - v2.getX();
+        target.data[1] = data[1] - v2.getY();
+        target.data[2] = data[2] - v2.getZ();
+    }
+
 }
