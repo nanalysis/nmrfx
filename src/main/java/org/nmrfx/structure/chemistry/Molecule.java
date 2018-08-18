@@ -3286,29 +3286,6 @@ public class Molecule implements Serializable {
         return angleAtoms;
     }
 
-    public ArrayList<Atom> setupAnglesOld() {
-        angleAtoms = new ArrayList<Atom>();
-        List<Atom> atomList;
-        for (int i = 0; i < atoms.size(); i++) {
-            Atom atom1 = atoms.get(i);
-            Atom atom2 = treeAtoms.get(i);
-        }
-        if (treeAtoms == null) {
-            atomList = atoms;
-        } else {
-            atomList = treeAtoms;
-        }
-        for (Atom iAtom : atomList) {
-            if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
-                //if (iAtom.irpIndex > 0) {
-                Atom jAtom = iAtom.getAngleChild();
-                if (jAtom != null) {
-                    angleAtoms.add(jAtom);
-                }
-            }
-        }
-        return angleAtoms;
-    }
 
     public ArrayList<Atom> getPseudoAngleAtoms() {
         return pseudoAngleAtoms;
