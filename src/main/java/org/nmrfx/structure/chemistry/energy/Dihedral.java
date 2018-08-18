@@ -235,7 +235,7 @@ public class Dihedral {
         ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
         for (Atom atom : angleAtoms) {
             //reducing angles so that value of each angle is >0 and <2pi 
-            angleValues[i++] = reduceAngle(atom.dihedralAngle);
+            angleValues[i++] = reduceAngle(atom.daughterAtom.dihedralAngle);
         }
     }
 
@@ -262,7 +262,7 @@ public class Dihedral {
         }
         ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
         for (Atom atom : angleAtoms) {
-            fileOut.format("%s %.6f\n", atom.getFullName(), atom.dihedralAngle * toDeg);
+            fileOut.format("%s %.6f\n", atom.getFullName(), atom.daughterAtom.dihedralAngle * toDeg);
         }
         fileOut.close();
     }
@@ -355,7 +355,7 @@ public class Dihedral {
         }
         ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
         for (Atom atom : angleAtoms) {
-            atom.dihedralAngle = (float) reduceAngle(angleValues[i++]);
+            atom.daughterAtom.dihedralAngle = (float) reduceAngle(angleValues[i++]);
         }
         //molecule.genCoords(false, null);print
 
@@ -455,7 +455,7 @@ public class Dihedral {
         }
         int aStart = nPseudoAngles * 2 * stepSize;
         for (int iAtom = 0; iAtom < angleAtoms.size(); iAtom++) {
-            Atom atom = angleAtoms.get(iAtom);
+            Atom atom = angleAtoms.get(iAtom).daughterAtom;
             // temporarily set everything to use sigma, till we make sure counting is correct
             if (atom.parent.getName().equals("P") || atom.parent.getName().equals("O5'") || atom.parent.getName().equals("C5'") || atom.parent.getName().equals("C4'") || atom.parent.getName().equals("O3'")) {
                 inputSigma[aStart++] = sigma / backBoneScale;
@@ -500,7 +500,7 @@ public class Dihedral {
             ranBoundaries[1][i] = FastMath.PI;
         }
         for (int i = 0; i < angleAtoms.size(); i++) {
-            Atom atom = angleAtoms.get(i);
+            Atom atom = angleAtoms.get(i).daughterAtom;
             String atomName = atom.getFullName();
             AngleBoundary angleBoundary = angleBoundaries.get(atomName);
             //if angleBoundary is present for that atom, replace value at there respected indices
@@ -694,7 +694,7 @@ public class Dihedral {
                     atom = pseudoAngleAtoms.get(i / 2 * 3);
                     incrementByTwo = true;
                 } else {
-                    atom = angleAtoms.get(i - 2 * nPseudoAngles);
+                    atom = angleAtoms.get(i - 2 * nPseudoAngles).daughterAtom;
                 }
                 String atomName = atom.getFullName();
 //                AngleBoundary angleBoundary = angleBoundaries.get(atomName);
@@ -743,7 +743,7 @@ public class Dihedral {
             System.out.println(atom.getFullName() + ", Lower Boundary: " + boundaries[0][i * 2 + 1] + ", Upper Boundary: " + boundaries[1][i * 2 + 1] + ", currentValue " + angleValues[i * 2 + 1]);
         }
         for (int i = 0; i < angleAtoms.size(); i++) {
-            Atom atom = angleAtoms.get(i);
+            Atom atom = angleAtoms.get(i).daughterAtom;
             System.out.println(atom.getFullName() + ", Lower Boundary: " + boundaries[0][i + 2 * pseudoAngleAtoms.size() / 3] + ", Upper Boundary: " + boundaries[1][i + 2 * pseudoAngleAtoms.size() / 3] + ", currentValue " + angleValues[i + 2 * pseudoAngleAtoms.size() / 3]);
         }
     }

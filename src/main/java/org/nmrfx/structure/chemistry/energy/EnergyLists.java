@@ -654,9 +654,8 @@ public class EnergyLists {
             }
             if (forceWeight.getIrp() > 0.0) {
                 for (Atom atom : angleAtoms) {
-                    Atom parent = atom.parent;
-                    if ((parent.irpIndex > 1) && parent.rotActive) {
-                        AtomEnergy energy = AtomMath.calcIrpEnergy(atom, forceWeight, false);
+                    if ((atom.irpIndex > 1) && atom.rotActive) {
+                        AtomEnergy energy = AtomMath.calcIrpEnergy(atom.daughterAtom, forceWeight, false);
                         irpEnergy += energy.getEnergy();
                         nIrp++;
                         if (energy.getEnergy() > limitVal) {
@@ -1015,7 +1014,7 @@ public class EnergyLists {
             if (forceWeight.getIrp() > 0.0) {
                 int i = 0;
                 for (Atom atom : angleAtoms) {
-                    AtomEnergy energy = AtomMath.calcIrpEnergy(atom, forceWeight, calcDeriv);
+                    AtomEnergy energy = AtomMath.calcIrpEnergy(atom.daughterAtom, forceWeight, calcDeriv);
                     energyTotal += energy.getEnergy();
                     if (calcDeriv) {
                         gradient[i++] += energy.getDeriv();
