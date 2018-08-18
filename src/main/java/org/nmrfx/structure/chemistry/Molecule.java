@@ -1038,7 +1038,6 @@ public class Molecule implements Serializable {
 
     public void updateFromVecCoords() {
         FastVector3D[] vecCoords = eCoords.getVecCoords();
-        int i = 0;
         List<Atom> atomList;
         if (treeAtoms == null) {
             atomList = atoms;
@@ -1049,9 +1048,9 @@ public class Molecule implements Serializable {
 //            atom.iAtom = i;
             Point3 pt = atom.getPoint();
             if (pt == null) {
-                System.out.println("updateFromVecCoords null pt " + atom.getFullName() + " " + (i - 1));
+                System.out.println("updateFromVecCoords null pt " + atom.getFullName() + " " + atom.eAtom);
             } else {
-                FastVector3D fVec = vecCoords[i++];
+                FastVector3D fVec = vecCoords[atom.eAtom];
                 if (fVec == null) {
                     // fixme System.out.println("null vec " + atom.getFullName() + " " + (i - 1));
                 } else {

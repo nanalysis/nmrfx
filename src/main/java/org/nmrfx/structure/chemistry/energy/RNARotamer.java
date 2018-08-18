@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
@@ -24,7 +23,10 @@ import org.nmrfx.structure.chemistry.Residue;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.structure.chemistry.Point3;
 
 public class RNARotamer {
 
@@ -42,10 +44,19 @@ public class RNARotamer {
 
     static final int[] subsetIndices = {1, 2, 3, 4};
     static final int[] indices = {0, 1, 2, 3, 4, 5, 6};
-    static final String[] atomNames = {"O3'", "P", "O5'", "C5'", "C4'", "C3'", "O3'"};
-    static final double[] sdevs = new double[atomNames.length];
-    static final double[] halfWidths = new double[atomNames.length];
+    // static final String[] atomNames = {"O3'", "P", "O5'", "C5'", "C4'", "C3'", "O3'"};
     static final int NPREVIOUS = 1;
+
+    static final String[] DELTAP_ATOMS = {"-1:C5'", "-1:C4'", "-1:C3'", "-1:O3'"};
+    static final String[] EPSILON_ATOMS = {"-1:C4'", "-1:C3'", "-1:O3'", "P"};
+    static final String[] ZETA_ATOMS = {"-1:C3'", "-1:O3'", "P", "O5'"};
+    static final String[] ALPHA_ATOMS = {"-1:O3'", "P", "O5'", "C5'"};
+    static final String[] BETA_ATOMS = {"P", "O5'", "C5'", "C4'"};
+    static final String[] GAMMA_ATOMS = {"O5'", "C5'", "C4'", "C3'"};
+    static final String[] DELTA_ATOMS = {"C5'", "C4'", "C3'", "O3'"};
+    static final String[][] suiteAtoms = {DELTAP_ATOMS, EPSILON_ATOMS, ZETA_ATOMS, ALPHA_ATOMS, BETA_ATOMS, GAMMA_ATOMS, DELTA_ATOMS};
+    static final double[] sdevs = new double[suiteAtoms.length];
+    static final double[] halfWidths = new double[suiteAtoms.length];
 
     static final LinkedHashMap<String, RNARotamer> ROTAMERS = new LinkedHashMap<>();
 
@@ -200,7 +211,7 @@ public class RNARotamer {
             double frac = ((double) sCount) / count;
             rotamer.fraction = frac;
         }
-        double[] sumSdev = new double[atomNames.length];
+        double[] sumSdev = new double[suiteAtoms.length];
         for (RNARotamer rotamer : ROTAMERS.values()) {
             for (int i = 0; i < sumSdev.length; i++) {
                 sumSdev[i] += rotamer.sdev[i];
@@ -470,16 +481,24 @@ public class RNARotamer {
     public static RotamerScore scoreResidue(Polymer polymer, int residueNum) {
         RotamerScore rotamerScore = null;
         if (residueNum > 0) {
-            double[] angles = new double[atomNames.length];
-            Residue preResidue = polymer.getResidue(residueNum - 1);
-            Residue residue = polymer.getResidue(residueNum);
+            double[] angles = new double[suiteAtoms.length];
             int i = 0;
-            for (String atomName : atomNames) {
-                Residue curResidue = residue;
-                if (i < NPREVIOUS) {
-                    curResidue = preResidue;
+            for (String[] atomNames : suiteAtoms) {
+                Point3[] pts = new Point3[4];
+                int j = 0;
+                for (String aName : atomNames) {
+                    int colonPos = aName.indexOf(':');
+                    int delta = 0;
+                    if (colonPos != -1) {
+                        String deltaRes = aName.substring(0, colonPos);
+                        delta = Integer.valueOf(deltaRes);
+                        aName = aName.substring(colonPos + 1);
+                    }
+                    Residue residue = polymer.getResidue(residueNum + delta);
+                    Atom atom = residue.getAtom(aName);
+                    pts[j++] = atom.getPoint();
                 }
-                angles[i++] = curResidue.getAtom(atomName).dihedralAngle;
+                angles[i++] = AtomMath.calcDihedral(pts[0], pts[1], pts[2], pts[3]);
             }
             rotamerScore = bestProb(angles);
         }
@@ -494,9 +513,7 @@ public class RNARotamer {
         }
         ArrayList<AngleBoundary> boundaries = new ArrayList<>();
         int i = 0;
-        Residue residue = polymer.getResidue(residueNum);
-        Residue preResidue = residue.previous;
-        for (String name : atomNames) {
+        for (String[] atomNames : suiteAtoms) {
             double mean = rotamer.angles[i];
             double sdev = sdevs[i];
             double lower = (mean - sdev * mul) * toDEG;
@@ -506,14 +523,46 @@ public class RNARotamer {
                 upper += 360.0;
             }
             //System.out.printf("%3s %5s %8.3f %8.3f %8.3f %8.3f\n", residueNum, name, mean * toDEG, sdev * toDEG * mul, lower, upper);
-            Residue curResidue = residue;
-            if (i < NPREVIOUS) {
-                curResidue = preResidue;
+            List<String> angleAtomNames = new ArrayList<>();
+            int j = 0;
+            boolean ok = true;
+            for (String aName : atomNames) {
+                int colonPos = aName.indexOf(':');
+                int delta = 0;
+                if (colonPos != -1) {
+                    String deltaRes = aName.substring(0, colonPos);
+                    delta = Integer.valueOf(deltaRes);
+                    aName = aName.substring(colonPos + 1);
+                }
+                Residue residue = polymer.getResidue(residueNum);
+                Atom atom = null;
+                switch (delta) {
+                    case 1:
+                        if (residue.next == null) {
+                            ok = false;
+                        } else {
+                            atom = residue.next.getAtom(aName);
+                        }
+                        break;
+                    case -1:
+                        if (residue.previous == null) {
+                            ok = false;
+                        } else {
+                            atom = residue.previous.getAtom(aName);
+                        }
+                        break;
+                    default:
+                        atom = residue.getAtom(aName);
+                        break;
+                }
+                if (ok) {
+                    angleAtomNames.add(atom.getFullName());
+                } else {
+                    break;
+                }
             }
-            if (curResidue != null) {
-                String number = curResidue.getNumber();
-                String fullName = number + "." + name;
-                AngleBoundary angleBoundary = new AngleBoundary(fullName, lower, upper, 1.0);
+            if (ok) {
+                AngleBoundary angleBoundary = new AngleBoundary(angleAtomNames, lower, upper, 1.0);
                 boundaries.add(angleBoundary);
             }
             i++;
