@@ -13,7 +13,6 @@ from org.nmrfx.structure.chemistry.energy import GradientRefinement
 from org.nmrfx.structure.chemistry.energy import StochasticGradientDescent
 from org.nmrfx.structure.chemistry.energy import CmaesRefinement
 #from org.nmrfx.structure.chemistry.energy import FireflyRefinement
-from org.nmrfx.structure.chemistry.energy import AngleBoundary
 from org.nmrfx.structure.chemistry.energy import RNARotamer
 from org.nmrfx.structure.chemistry.io import PDBFile
 from org.nmrfx.structure.chemistry.io import SDFile
@@ -406,7 +405,12 @@ class refine:
                 lower = float(s1)
                 upper = float(s2)
                 scale = float(s3)
-                self.dihedral.addBoundary(atomName,lower,upper,scale)
+                atom3 = Molecule.getAtomByName(atomName)
+                atom2 = atom3.getParent()
+                atom1 = atom2.getParent()
+                atom0 = atom1.getParent()
+                atoms = [atom0, atom1, atom2, atom3]
+                self.dihedral.addBoundary(atoms, lower,upper,scale)
             elif (len(values)==2):
                 (atomName,s1) = values
                 lower = float(s1)-angleDelta
@@ -415,8 +419,12 @@ class refine:
                     lower += 360
                     upper += 360
                 scale = 0.05
-                bound = AngleBoundary(atomName,lower,upper,scale)
-                self.dihedral.addBoundary(atomName,bound)
+                atom3 = Molecule.getAtomByName(atomName)
+                atom2 = atom3.getParent()
+                atom1 = atom2.getParent()
+                atom0 = atom1.getParent()
+                atoms = [atom0, atom1, atom2, atom3]
+                self.dihedral.addBoundary(atoms, lower,upper,scale)
             else:
                 atomName = values[0]
                 lower = float(values[1])
@@ -431,8 +439,8 @@ class refine:
                     sigma.append(float(values[i+1]))
                     height.append(float(values[i+2]))
                     i+=3
-                bound = AngleBoundary(atomName,lower,upper,scale,center,sigma,height)
-                self.dihedral.addBoundary(atomName,bound)
+                #bound = AngleBoundary(atomName,lower,upper,scale,center,sigma,height)
+                #self.dihedral.addBoundary(atomName,bound)
     
     def loadDistancesFromFile(self,fileName):
        file = open(fileName,"r")
@@ -707,12 +715,12 @@ class refine:
 #NU1:  C3'-C2'-C1'-N9'             60 140
 
             restraints = []
-            restraints.append(("O3'", 70, 155))
-            restraints.append(("C1'", -40, 40))
+            restraints.append((("C5'","C4'","C3'","O3'"), 70, 155))
+            restraints.append((("C4'","C3'","C2'","C1'"), -40, 40))
             if resName in ('C','U'):
-                restraints.append(("N1", 60, 140))
+                restraints.append((["C3'","C2'","C1'","N1"], 60, 140))
             else:
-                restraints.append(("N9", 60, 140))
+                restraints.append((["C3'","C2'","C1'","N9"], 60, 140))
             for restraint in restraints:
                 (a1,lower,upper) = restraint
                 lower = float(lower)
@@ -720,11 +728,15 @@ class refine:
                 if (lower < -180):
                      lower += 360
                      upper += 360
-                fullAtom = str(resNum)+'.'+a1
+                fullAtoms = []
+                for aName in a1:
+                    fullAtoms.append(str(resNum)+'.'+aName)
+                    
                 scale = 1.0
                 try:
-                    self.dihedral.addBoundary(fullAtom,lower,upper,scale)
+                    self.dihedral.addBoundary(fullAtoms,lower,upper,scale)
                 except:
+                    print "err",fullAtoms
                     pass
 
 
@@ -928,13 +940,13 @@ class refine:
                 (residueNum, rotamerName) = line.split()
                 angleBoundaries = RNARotamer.getAngleBoundaries(polymer, residueNum, rotamerName, mul)
                 for angleBoundary in angleBoundaries:
-                    self.dihedral.addBoundary(angleBoundary.getAtom().getFullName(), angleBoundary)
+                    self.dihedral.addBoundary(angleBoundary)
             fIn.close()
 
     def addSuiteBoundary(self,polymer, residueNum,rotamerName, mul=0.5):
         angleBoundaries = RNARotamer.getAngleBoundaries(polymer, str(residueNum), rotamerName, mul)
         for angleBoundary in angleBoundaries:
-            self.dihedral.addBoundary(angleBoundary.getAtom().getFullName(), angleBoundary)
+            self.dihedral.addBoundary(angleBoundary)
     
     def getSuiteAngles(self, molecule):
         angles  = [

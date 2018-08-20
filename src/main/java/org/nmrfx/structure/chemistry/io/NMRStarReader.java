@@ -1134,13 +1134,9 @@ public class NMRStarReader {
         }
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
-        int atomIndex = 3;
         for (int i = 0; i < atomNameColumns[0].size(); i++) {
             String upperValue = (String) upperColumn.get(i);
             String lowerValue = (String) lowerColumn.get(i);
-            String atomName = (String) atomNameColumns[atomIndex].get(i);
-            String chainCode = (String) chainCodeColumns[atomIndex].get(i);
-            String sequenceCode = (String) sequenceCodeColumns[atomIndex].get(i);
             double upper = Double.parseDouble(upperValue);
             double lower = Double.parseDouble(lowerValue);
             if (lower < -180) {
@@ -1148,10 +1144,17 @@ public class NMRStarReader {
                 upper += 360;
             }
 
-            String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
+            Atom[] atoms = new Atom[4];
+            for (int atomIndex = 0; atomIndex < 4; atomIndex++) {
+                String atomName = (String) atomNameColumns[atomIndex].get(i);
+                String chainCode = (String) chainCodeColumns[atomIndex].get(i);
+                String sequenceCode = (String) sequenceCodeColumns[atomIndex].get(i);
+                String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
+                atoms[atomIndex] = Molecule.getAtomByName(fullAtom);
+            }
             double scale = 1.0;
             try {
-                dihedral.addBoundary(fullAtom, lower, upper, scale);
+                dihedral.addBoundary(atoms, lower, upper, scale);
             } catch (InvalidMoleculeException imE) {
 
             }
