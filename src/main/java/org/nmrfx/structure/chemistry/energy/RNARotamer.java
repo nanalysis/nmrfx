@@ -523,7 +523,7 @@ public class RNARotamer {
                 upper += 360.0;
             }
             //System.out.printf("%3s %5s %8.3f %8.3f %8.3f %8.3f\n", residueNum, name, mean * toDEG, sdev * toDEG * mul, lower, upper);
-            List<String> angleAtomNames = new ArrayList<>();
+            List<Atom> angleAtomNames = new ArrayList<>();
             int j = 0;
             boolean ok = true;
             for (String aName : atomNames) {
@@ -556,7 +556,7 @@ public class RNARotamer {
                         break;
                 }
                 if (ok) {
-                    angleAtomNames.add(atom.getFullName());
+                    angleAtomNames.add(atom);
                 } else {
                     break;
                 }

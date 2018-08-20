@@ -17,13 +17,9 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import java.util.List;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import org.nmrfx.structure.chemistry.MolFilter;
-import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.SpatialSet;
-import java.util.HashMap;
-import java.util.List;
 
 /**
  * This class determines if the angle boundary is valid - angle boundary for
@@ -39,8 +35,7 @@ public class AngleBoundary {
      * Lower Angle Bound
      */
     final double lower;
-    
-    
+
     private Atom[] atoms = null;
     /**
      * Scale
@@ -52,7 +47,13 @@ public class AngleBoundary {
     private int index = -1;
     final static double toRad = Math.PI / 180.0;
 
-    public AngleBoundary(final String atomName, double lower, double upper, final double scale) throws InvalidMoleculeException {
+    public AngleBoundary(Atom[] atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+        if (atoms.length != 4) {
+            throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
+        }
+        if ((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2])) {
+            throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa");
+        }
         /*Changed from Original*/
         if (((lower < -180.0) && (upper < 0.0)) || (upper > 360.0) || (upper < lower)) {
             throw new IllegalArgumentException("Invalid angle bounds: " + lower + " " + upper);
@@ -65,17 +66,17 @@ public class AngleBoundary {
         this.lower = lower * toRad;
         this.upper = upper * toRad;
         this.scale = scale;
-        MolFilter molFilter = new MolFilter(atomName);
-        List<SpatialSet> spatialSets = Molecule.matchAtoms(molFilter);
-        if (spatialSets.size() == 0) {
-            throw new IllegalArgumentException("Invalid atom " + atomName);
-        }
-        SpatialSet spatialSet = spatialSets.get(0);
-        atoms = new Atom[1];
-        atoms[0] = spatialSet.atom;
+        this.atoms = new Atom[atoms.length];
+        System.arraycopy(atoms, 0, this.atoms, 0, atoms.length);
     }
 
-    public AngleBoundary(final List<String> atomNames, double lower, double upper, final double scale) throws InvalidMoleculeException {
+    public AngleBoundary(List<Atom> atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+        if (atoms.size() != 4) {
+            throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
+        }
+        if ((atoms.get(2).parent != atoms.get(1)) && (atoms.get(1).parent != atoms.get(2))) {
+            throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa");
+        }
         /*Changed from Original*/
         if (((lower < -180.0) && (upper < 0.0)) || (upper > 360.0) || (upper < lower)) {
             throw new IllegalArgumentException("Invalid angle bounds: " + lower + " " + upper);
@@ -88,23 +89,14 @@ public class AngleBoundary {
         this.lower = lower * toRad;
         this.upper = upper * toRad;
         this.scale = scale;
-        atoms = new Atom[atomNames.size()];
-        int i = 0;
-        for (String atomName : atomNames) {
-            MolFilter molFilter = new MolFilter(atomName);
-            List<SpatialSet> spatialSets = Molecule.matchAtoms(molFilter);
-            if (spatialSets.size() == 0) {
-                throw new IllegalArgumentException("Invalid atom " + atomName);
-            }
-            SpatialSet spatialSet = spatialSets.get(0);
-            atoms[i++] = spatialSet.atom;
-        }
+        this.atoms = new Atom[atoms.size()];
+        atoms.toArray(this.atoms);
     }
 
     public void setIndex(final int index) {
         this.index = index;
     }
-    
+
     public int getIndex() {
         return index;
     }
@@ -115,5 +107,10 @@ public class AngleBoundary {
 
     public Atom[] getAtoms() {
         return atoms;
+    }
+
+    public Atom getRefAtom() {
+        Atom refAtom = atoms[2].parent == atoms[1] ? atoms[2] : atoms[1];
+        return refAtom;
     }
 }

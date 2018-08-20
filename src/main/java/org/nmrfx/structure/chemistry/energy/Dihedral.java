@@ -19,9 +19,7 @@ package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import org.nmrfx.structure.chemistry.MolFilter;
 import org.nmrfx.structure.chemistry.Molecule;
-import org.nmrfx.structure.chemistry.SpatialSet;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -370,56 +368,30 @@ public class Dihedral {
      * @param molFilterString
      * @param angleBoundary
      */
-    public void addBoundary(final String molFilterString, final AngleBoundary angleBoundary) throws InvalidMoleculeException {
-        MolFilter molFilter = new MolFilter(molFilterString);
-        List<SpatialSet> atoms = Molecule.matchAtoms(molFilter);
-        for (SpatialSet spatialSet : atoms) {
-            angleBoundaries.put(spatialSet.atom.getFullName(), angleBoundary);
-        }
+    public void addBoundary(final AngleBoundary angleBoundary) throws InvalidMoleculeException {
+        angleBoundaries.put(angleBoundary.getRefAtom().getFullName(), angleBoundary);
     }
 
-    /**
-     * Creates an angle Boundary and then adds the angleBoundary to the
-     * angleboundaries hashmap
-     *
-     * @param molFilterString
-     * @param lower
-     * @param upper
-     * @param scale
-     */
-    public void addBoundary(final String molFilterString, double lower, double upper, double scale) throws InvalidMoleculeException {
-        MolFilter molFilter = new MolFilter(molFilterString);
-        List<SpatialSet> atoms = Molecule.matchAtoms(molFilter);
-        for (SpatialSet spatialSet : atoms) {
-            Atom atom = spatialSet.atom;
-            Atom parent = atom.getParent();
-            String atomName = atom.getFullName();
-            String parentName = "";
-            if (parent != null) {
-                parentName = parent.getFullName();
-            }
-            AngleBoundary angleBoundary = new AngleBoundary(atomName, lower, upper, scale);
-            angleBoundaries.put(atomName, angleBoundary);
+    public void addBoundary(final List<String> atomNames, double lower, double upper, double scale) throws InvalidMoleculeException {
+        int arrayLength = atomNames.size();
+        if (arrayLength != 4) {
+            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
         }
-    }
-    
-    public void addBoundary(final List<String> molFilterStrings, double lower, double upper, double scale) throws InvalidMoleculeException {
-        System.out.println(molFilterStrings);
-        int arrayLength = molFilterStrings.size();
-        if (arrayLength > 1){
-            List<String> atomNames = new ArrayList<>();
-            for (int i = 0; i < arrayLength; i++) {
-                Atom atom = Molecule.getAtomByName(molFilterStrings.get(i));
-                String atomName = atom.getFullName();
-                atomNames.add(atomName);
-            }
-            AngleBoundary angleBoundary = new AngleBoundary(atomNames, lower, upper, scale);
-            angleBoundaries.put(atomNames.get(arrayLength-1), angleBoundary);
-        } else {
-            addBoundary(molFilterStrings.get(0), lower, upper,scale);
+        Atom[] atoms = new Atom[4];
+        for (int i = 0; i < arrayLength; i++) {
+            atoms[i] = Molecule.getAtomByName(atomNames.get(i));
         }
+        addBoundary(atoms, lower, upper, scale);
     }
-    
+
+    public void addBoundary(final Atom[] atoms, double lower, double upper, double scale) throws InvalidMoleculeException {
+        if (atoms.length != 4) {
+            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
+        }
+        AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale);
+        angleBoundaries.put(angleBoundary.getRefAtom().getFullName(), angleBoundary);
+    }
+
     public void clearBoundaries() {
         angleBoundaries.clear();
     }
@@ -499,8 +471,9 @@ public class Dihedral {
             ranBoundaries[0][i] = -FastMath.PI;
             ranBoundaries[1][i] = FastMath.PI;
         }
+        energyList.clearAngleBoundaries();
         for (int i = 0; i < angleAtoms.size(); i++) {
-            Atom atom = angleAtoms.get(i).daughterAtom;
+            Atom atom = angleAtoms.get(i);
             String atomName = atom.getFullName();
             AngleBoundary angleBoundary = angleBoundaries.get(atomName);
             //if angleBoundary is present for that atom, replace value at there respected indices
