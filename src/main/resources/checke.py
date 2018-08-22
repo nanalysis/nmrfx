@@ -51,13 +51,14 @@ def loadPDBModels(files, yaml, out):
     for file in files:
         outFile = os.path.join(outDir,'output'+str(iFile)+'.txt')
         
-        pdb.readCoordinates(file,0,False)
+        pdb.readCoordinates(file,0,True)
+        refiner.molecule.updateVecCoords()
 
         refiner.setPars(coarse=False,useh=True,dislim=5.0,end=10000,hardSphere=0.0,shrinkValue=0.0,shrinkHValue =0.00)
         if ("shifts" not in yaml):
-            refiner.setForces(repel=2.0,dis=1.0,dih =-1.0,irp=0.001,shift=-1)
+            refiner.setForces(repel=2.0,dis=1.0,dih=5.0,irp=0.001,shift=-1)
         else:
-            refiner.setForces(repel=2.0,dis=1.0,dih =-1.0,irp=0.001,shift=1.0)
+            refiner.setForces(repel=2.0,dis=1.0,dih=5.0,irp=0.001,shift=1.0)
 
         refiner.energyLists.setRingShifts()
 
