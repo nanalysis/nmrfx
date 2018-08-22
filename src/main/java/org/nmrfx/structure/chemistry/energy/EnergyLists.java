@@ -587,7 +587,8 @@ public class EnergyLists {
                     dihEnergy += energy.getEnergy();
                     nDih++;
                     if (energy.getEnergy() > limitVal) {
-                        writer.format("Dih: %10s %5.2f %5.2f %5.2f %5.2f\n", angleBoundary.getAtom().getFullName(), toDeg * angleBoundary.getAtom().dihedralAngle, toDeg * angleBoundary.lower, toDeg * angleBoundary.upper, energy.getEnergy());
+                        double dihedral = grabDihedral(angleBoundary);
+                        writer.format("Dih: %40s %5.2f %5.2f %5.2f %5.2f\n", angleBoundary.getAtomNames(), toDeg * dihedral, toDeg * angleBoundary.lower, toDeg * angleBoundary.upper, energy.getEnergy());
                     }
                 }
             }
@@ -925,8 +926,8 @@ public class EnergyLists {
                     int iRes = Integer.parseInt(compound1.number);
                     int jRes = Integer.parseInt(compound2.number);
                     if (FastMath.abs(iRes - jRes) < deltaEnd) {
-                        int iAtom = atom1.iAtom;
-                        int jAtom = atom2.iAtom;
+                        int iAtom = atom1.eAtom;
+                        int jAtom = atom2.eAtom;
                         // fixme is this right  probably should use -1 for group
                         int iUnit = -1;
                         if (atom1.rotGroup != null) {
@@ -953,8 +954,8 @@ public class EnergyLists {
                     int iRes = Integer.parseInt(compound1.number);
                     int jRes = Integer.parseInt(compound2.number);
                     if (FastMath.abs(iRes - jRes) < deltaEnd) {
-                        int iAtom = atom1.iAtom;
-                        int jAtom = atom2.iAtom;
+                        int iAtom = atom1.eAtom;
+                        int jAtom = atom2.eAtom;
                         int iUnit = atom1.rotGroup.rotUnit;
                         int jUnit = atom2.rotGroup.rotUnit;
                         eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond, iGroup, weight / nPairs);
@@ -1164,8 +1165,8 @@ public class EnergyLists {
             for (Atom atom : atoms) {
                 if (atom.rotUnit != -1) {
                     int unit = atom.rotUnit;
-                    FastVector3D iVecCoords = vecCoords[atom.iAtom];
-                    FastVector3D pVecCoords = vecCoords[atom.parent.iAtom];
+                    FastVector3D iVecCoords = vecCoords[atom.eAtom];
+                    FastVector3D pVecCoords = vecCoords[atom.parent.eAtom];
                     branches[unit] = new AtomBranch(iVecCoords, pVecCoords);
                     branches[unit].setAtom(atom);
                     int nAtomBranches = 0;
