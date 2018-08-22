@@ -471,6 +471,14 @@ public class Dihedral {
             ranBoundaries[0][i] = -FastMath.PI;
             ranBoundaries[1][i] = FastMath.PI;
         }
+        setupAngleRestraints();
+        //for (int j=0;j<angleValues.length;j++) {
+        //System.out.printf("j %3d bou %9.3f bou %9.3f sig %9.3f ang %9.3f nrm %9.3f nrm %9.3f\n",j,toDeg*boundaries[0][j],toDeg*boundaries[1][j],inputSigma[j],toDeg*angleValues[j],normBoundaries[0][j],normBoundaries[1][j]);
+        //}
+    }
+
+    public void setupAngleRestraints() {
+        ArrayList<Atom> angleAtoms = molecule.getAngleAtoms();
         energyList.clearAngleBoundaries();
         for (int i = 0; i < angleAtoms.size(); i++) {
             Atom atom = angleAtoms.get(i);
@@ -482,9 +490,6 @@ public class Dihedral {
                 energyList.addAngleBoundary(angleBoundary);
             }
         }
-        //for (int j=0;j<angleValues.length;j++) {
-        //System.out.printf("j %3d bou %9.3f bou %9.3f sig %9.3f ang %9.3f nrm %9.3f nrm %9.3f\n",j,toDeg*boundaries[0][j],toDeg*boundaries[1][j],inputSigma[j],toDeg*angleValues[j],normBoundaries[0][j],normBoundaries[1][j]);
-        //}
     }
 
     /**
