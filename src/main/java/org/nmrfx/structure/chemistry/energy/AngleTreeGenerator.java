@@ -45,7 +45,6 @@ public class AngleTreeGenerator {
     }
 
     public List<List<Atom>> genTree(Molecule mol, Atom startAtom, Atom endAtom) {
-        System.out.println("gentree");
         MTree mTree = new MTree();
         Map<Atom, Integer> hash = new HashMap<>();
         int i = 0;
@@ -208,7 +207,7 @@ public class AngleTreeGenerator {
 //            }
 //        }
 
-        dumpAtomTree(atomTree);
+//        dumpAtomTree(atomTree);
         return atomTree;
     }
 
@@ -315,11 +314,11 @@ public class AngleTreeGenerator {
             }
         }
         ringClosures = new HashMap<>();
-        System.out.println("add clo " + closureBonds.size());
+//        System.out.println("add clo " + closureBonds.size());
         for (Bond bond : closureBonds) {
             bond.begin.addBond(bond);
             bond.end.addBond(bond);
-            System.out.println("close bond " + bond.toString());
+//            System.out.println("close bond " + bond.toString());
             addRingClosure(bond.begin, bond.end);
             addRingClosurePairs(bond.begin, bond.end);
             addRingClosurePairs(bond.end, bond.begin);
