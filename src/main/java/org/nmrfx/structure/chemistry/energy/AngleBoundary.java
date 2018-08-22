@@ -113,4 +113,13 @@ public class AngleBoundary {
         Atom refAtom = atoms[2].parent == atoms[1] ? atoms[2] : atoms[1];
         return refAtom;
     }
+
+    public String getAtomNames() {
+        String result = String.format("%10s %10s %10s %10s",
+                atoms[0].getFullName(),
+                atoms[1].getFullName(),
+                atoms[2].getFullName(),
+                atoms[3].getFullName());
+        return result;
+    }
 }
