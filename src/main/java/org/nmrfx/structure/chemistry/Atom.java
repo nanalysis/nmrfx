@@ -1385,9 +1385,9 @@ public class Atom implements IAtom {
             int j = 0;
             for (int i = 0; (i < equivAtoms.size()) && (i < shells); i++) {
                 AtomEquivalency aEquiv = equivAtoms.get(i);
-                for (Atom eAtom : aEquiv.getAtoms()) {
-                    if (!eAtom.getName().equals(getName())) {
-                        result[j++] = eAtom;
+                for (Atom equivAtom : aEquiv.getAtoms()) {
+                    if (!equivAtom.getName().equals(getName())) {
+                        result[j++] = equivAtom;
                     }
                 }
             }
@@ -1400,17 +1400,13 @@ public class Atom implements IAtom {
             Molecule.findEquivalentAtoms(entity);
         }
 
-        if ((aNum != 1) || (equivAtoms == null) || (equivAtoms.size() == 0)) {
+        if ((aNum != 1) || (equivAtoms == null) || (equivAtoms.isEmpty())) {
             return false;
         } else {
             AtomEquivalency aEquiv = equivAtoms.get(0);
 
             if (aEquiv.getAtoms().size() == 2) {
-                if (aEquiv.getAtoms().get(0).parent == aEquiv.getAtoms().get(1).parent) {
-                    return true;
-                } else {
-                    return false;
-                }
+                return aEquiv.getAtoms().get(0).parent == aEquiv.getAtoms().get(1).parent;
             } else {
                 return false;
             }
@@ -1474,7 +1470,7 @@ public class Atom implements IAtom {
             Molecule.findEquivalentAtoms(entity);
         }
 
-        if ((equivAtoms == null) || (equivAtoms.size() == 0)) {
+        if ((equivAtoms == null) || (equivAtoms.isEmpty())) {
             return "";
         } else {
             char[] resultCh = new char[(equivAtoms.size() * 2) - 1];
@@ -1556,18 +1552,18 @@ public class Atom implements IAtom {
     @Override
     public void setProperty(String name, Object value) {
         if (!properties.isPresent()) {
-            properties = Optional.of(new HashMap<String, Object>());
+            properties = Optional.of(new HashMap<>());
         }
         properties.get().put(name, value);
     }
 
     @Override
     public Object getProperty(String name) {
-        Object value = null;
+        Object propValue = null;
         if (properties.isPresent()) {
-            value = properties.get().get(name);
+            propValue = properties.get().get(name);
         }
-        return value;
+        return propValue;
     }
 
     @Override
