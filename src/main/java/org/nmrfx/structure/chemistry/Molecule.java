@@ -760,7 +760,7 @@ public class Molecule implements Serializable {
 
     public int genCoords(int iStructure, boolean fillCoords) throws RuntimeException {
 //        return genCoords(iStructure, fillCoords, null);
-        return genCoordsFast();
+        return genCoordsFast(null, fillCoords);
     }
 
     public int genCoords(boolean fillCoords) throws RuntimeException {
@@ -769,7 +769,7 @@ public class Molecule implements Serializable {
     }
 
     public int genCoords(boolean fillCoords, final double[] dihedralAngles) throws RuntimeException {
-        return genCoordsFast(dihedralAngles);
+        return genCoordsFast(dihedralAngles, fillCoords);
     }
 
     public void setupGenCoords() throws RuntimeException {
@@ -805,7 +805,7 @@ public class Molecule implements Serializable {
             }
             iAtom++;
         }
-        dumpCoordsGen();
+        //dumpCoordsGen();
     }
 
     public void dumpCoordsGen() {
@@ -859,10 +859,10 @@ public class Molecule implements Serializable {
     }
 
     public int genCoordsFast() {
-        return genCoordsFast(null);
+        return genCoordsFast(null, false);
     }
 
-    public int genCoordsFast(final double[] dihedralAngles) throws RuntimeException {
+    public int genCoordsFast(final double[] dihedralAngles, boolean fillCoords) throws RuntimeException {
         int nAngles = 0;
         int iStructure = 0;
         if (genVecs == null) {
@@ -874,8 +874,10 @@ public class Molecule implements Serializable {
         } else {
             atomList = treeAtoms;
         }
-        for (Atom atom : atoms) {
-            atom.setPointValidity(iStructure, false);
+        if (!fillCoords) {
+            for (Atom atom : atoms) {
+                atom.setPointValidity(iStructure, false);
+            }
         }
         Atom a3 = atomList.get(genVecs[0][2]);
         if (!a3.getPointValidity(iStructure)) {
@@ -890,11 +892,17 @@ public class Molecule implements Serializable {
         for (int i = 0; i < genVecs.length; i++) {
             if (genVecs[i].length > 3) {
                 if (genVecs[i][0] < 0) {
+                    if (fillCoords) {
+                        continue;
+                    }
                     pts[0] = origins[genVecs[i][0] + 2];
                 } else {
                     pts[0] = atomList.get(genVecs[i][0]).spatialSet.getPoint(iStructure);
                 }
                 if (genVecs[i][1] < 0) {
+                    if (fillCoords) {
+                        continue;
+                    }
                     pts[1] = origins[genVecs[i][1] + 2];
                 } else {
                     pts[1] = atomList.get(genVecs[i][1]).spatialSet.getPoint(iStructure);
@@ -907,6 +915,9 @@ public class Molecule implements Serializable {
                 }
                 Coordinates coords = new Coordinates(pts[0], pts[1], pts[2]);
                 if (!coords.setup()) {
+                    if (fillCoords) {
+                        continue;
+                    }
                     throw new RuntimeException("genCoords: coordinates the same for " + i + " " + pts[2].toString());
                 }
                 double dihedralAngle = 0;
@@ -936,9 +947,6 @@ public class Molecule implements Serializable {
 
     public int genCoordsFastVec3D(final double[] dihedralAngles) throws RuntimeException {
         int nAngles = 0;
-        if (false) {
-            return genCoordsFast(dihedralAngles);
-        }
         if (genVecs == null) {
             setupGenCoords();
         }
@@ -1028,7 +1036,7 @@ public class Molecule implements Serializable {
             }
             Point3 pt = atom.getPoint();
             if (pt == null) {
-                // fixme System.out.println("updateVecCoords null pt " + atom.getFullName() + " " + (i - 1));
+                System.out.println("updateVecCoords null pt " + atom.getFullName() + " " + (i - 1));
             } else {
                 eCoords.setCoords(i, pt.getX(), pt.getY(), pt.getZ(), resNum, atom);
             }
