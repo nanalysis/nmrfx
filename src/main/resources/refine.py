@@ -327,6 +327,7 @@ class refine:
             self.energyLists.setShrinkHValue(shrinkHValue)
         if (dislim >=0):
             self.energyLists.setDistanceLimit(dislim)
+        self.energyLists.resetConstraints()
 
     def setupEnergy(self,molName,eList=None, useH=False,usePseudo=True,useCourseGrain=False,useShifts=False):
         #creates a EnergyList object
@@ -357,6 +358,7 @@ class refine:
 
     def energy(self):
         self.energyLists.makeAtomListFast()
+        self.dihedral.setupAngleRestraints()
         energy=self.energyLists.energy()
         return(energy)
 
@@ -800,7 +802,7 @@ class refine:
                 atomNames1.add(atomName1)
                 atomNames2.add(atomName2)
             self.energyLists.addDistanceConstraint(atomNames1,atomNames2,lower,upper)
-           
+
 
 #ZETA:  C3'(i-1)-O3'(i-1)-P-O5'   -73
 #ALPHA: O3'(i-1)-P-O5'-C5'        -62
@@ -820,7 +822,7 @@ class refine:
         angleMap = {}
         angleMap['DELTA']= ["C5'","C4'","C3'","O3'"]
         angleMap['EPSI']= ["C4'","C3'","O3'","1:P"]
-        angleMap['ZETA']= ["C3'","O3'","1:P","1:O5'"]
+        angleMap['ZETA']= ["-1:C3'","-1:O3'","P","O5'"]
         angleMap['ALPHA']= ["-1:O3'","P","O5'","C5'"]
         angleMap['BETA']= ["P","O5'","C5'","C4'"]
         angleMap['GAMMA']= ["O5'","C5'","C4'","C3'"]
@@ -1415,8 +1417,6 @@ class refine:
 
         self.setupEnergy(self.molName,usePseudo=usePseudo,useShifts=useShifts)
         self.loadDihedrals(self.angleStrings)
-        self.readAngleFiles()
-        self.readDistanceFiles()
         self.addRingClosures() # Broken bonds are stored in molecule after tree generation. This is to fix broken bonds
         self.setForces(repel=0.5,dis=1,dih=5)
         self.setPars(coarse=False,useh=False,dislim=self.disLim,end=2,hardSphere=0.15,shrinkValue=0.20)
