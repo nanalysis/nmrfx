@@ -74,6 +74,7 @@ public class EnergyLists {
     static boolean REPORTBAD = false;
     boolean stochasticMode = false;
     boolean[] stochasticResidues = null;
+    boolean constraintsSetup = false;
 
     public EnergyLists() {
     }
@@ -373,6 +374,7 @@ public class EnergyLists {
         atoms2m.toArray(atomsA2);
         distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond));
         distanceMap.clear();
+        constraintsSetup = false;
     }
 
     public void addDistanceConstraint(final ArrayList<String> filterStrings1, final ArrayList<String> filterStrings2, final double rLow, final double rUp) throws IllegalArgumentException {
@@ -413,6 +415,8 @@ public class EnergyLists {
         atoms2m.toArray(atomsA2);
         distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false));
         distanceMap.clear();
+        constraintsSetup = false;
+
     }
 
     //calculates distance between center of the residues. If center is far away, no need to check atoms of residue
@@ -967,6 +971,11 @@ public class EnergyLists {
         eCoords.updateGroups();
     }
 
+    public void setupConstraints() {
+        updateNOEPairs();
+        constraintsSetup = true;
+    }
+
     public EnergyDeriv energyAndDeriv() {
         EnergyDeriv eDeriv = energy(true);
         return eDeriv;
@@ -978,6 +987,9 @@ public class EnergyLists {
     }
 
     public EnergyDeriv energy(boolean calcDeriv) {
+        if (!constraintsSetup) {
+            setupConstraints();
+        }
         double energyTotal = 0.0;
         double[] gradient = null;
         if (calcDeriv) {
@@ -1364,9 +1376,15 @@ public class EnergyLists {
         }
         makeAtomListFast();
     }
+    
+    public void resetConstraints() {
+        constraintsSetup = false;
+    }
 
     public void makeAtomListFast() {
-        updateNOEPairs();
+        if (!constraintsSetup) {
+            updateNOEPairs();
+        }
         EnergyCoords eCoords = molecule.getEnergyCoords();
         if (!eCoords.fixedCurrent()) {
             if (molecule.getDihedrals() == null) {
