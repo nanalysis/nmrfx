@@ -1396,21 +1396,40 @@ public class Atom implements IAtom {
     }
 
     public boolean isMethylene() {
-        if (!entity.hasEquivalentAtoms()) {
-            Molecule.findEquivalentAtoms(entity);
-        }
-
-        if ((aNum != 1) || (equivAtoms == null) || (equivAtoms.isEmpty())) {
-            return false;
+        if ((parent != null) && (aNum == 1)) {
+            List<Atom> partners = parent.getConnected();
+            int nH = 0;
+            for (Atom partner : partners) {
+                if (partner.getAtomicNumber() == 1) {
+                    nH++;
+                }
+            }
+            return nH == 2;
         } else {
-            AtomEquivalency aEquiv = equivAtoms.get(0);
+            return false;
+        }
+    }
 
-            if (aEquiv.getAtoms().size() == 2) {
-                return aEquiv.getAtoms().get(0).parent == aEquiv.getAtoms().get(1).parent;
-            } else {
-                return false;
+    public Optional<Atom> getMethylenePartner() {
+
+        Optional<Atom> result = Optional.empty();
+        if ((parent != null) && (aNum == 1)) {
+            List<Atom> partners = parent.getConnected();
+            int nH = 0;
+            Atom mPartner = null;
+            for (Atom partner : partners) {
+                if (partner.getAtomicNumber() == 1) {
+                    nH++;
+                    if (partner != this) {
+                        mPartner = partner;
+                    }
+                }
+            }
+            if (nH == 2) {
+                result = Optional.of(mPartner);
             }
         }
+        return result;
     }
 //###################################################################
 //#       Chemical Shift Ambiguity Index Value Definitions          #
