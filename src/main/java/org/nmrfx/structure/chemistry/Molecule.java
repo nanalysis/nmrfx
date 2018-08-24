@@ -878,6 +878,17 @@ public class Molecule implements Serializable {
             for (Atom atom : atoms) {
                 atom.setPointValidity(iStructure, false);
             }
+        } else {
+            boolean anyInvalid = false;
+            for (Atom atom : atoms) {
+                if (atom.getPointValidity(iStructure)) {
+                    anyInvalid = true;
+                    break;
+                }
+            }
+            if (!anyInvalid) {
+                return 0;
+            }
         }
         Atom a3 = atomList.get(genVecs[0][2]);
         if (!a3.getPointValidity(iStructure)) {
