@@ -21,6 +21,12 @@ import org.nmrfx.structure.chemistry.Atom;
 import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.Point3;
 
@@ -39,6 +45,8 @@ public class EnergyCoords {
     FastVector3D[] vecCoords = null;
     int[] resNums = null;
     Atom[] atoms = null;
+    int[] mAtoms = null;
+    boolean[] swapped = null;
     int[] hBondable = null;
     boolean[] hasBondConstraint = null;
     double[] contactRadii = null;
@@ -63,6 +71,8 @@ public class EnergyCoords {
     int disEnd = 0;
     int nAtoms = 0;
     boolean[][] fixed;
+    Map<Integer, Set<Integer>> kSwap = null;
+
     private static double hbondDelta = 0.60;
 
     public FastVector3D[] getVecCoords(int size) {
@@ -70,6 +80,8 @@ public class EnergyCoords {
             vecCoords = new FastVector3D[size];
             resNums = new int[size];
             atoms = new Atom[size];
+            mAtoms = new int[size];
+            swapped = new boolean[size];
             contactRadii = new double[size];
             hasBondConstraint = new boolean[size];
             hBondable = new int[size];
@@ -138,6 +150,13 @@ public class EnergyCoords {
         hasBondConstraint[i] = isBond;
         hasBondConstraint[j] = isBond;
         weights[disEnd] = weight;
+        if (isBond) {
+            if (i < j) {
+                fixed[i][j - i - 1] = true;
+            } else {
+                fixed[j][i - j - 1] = true;
+            }
+        }
         //if (isBond){
         //    weights[disEnd] = 25.0;
         //}else{
@@ -147,7 +166,30 @@ public class EnergyCoords {
     }
 
     public double calcRepel(boolean calcDeriv, double weight) {
-        return calcEnergy(calcDeriv, weight, 1);
+        double sum = 0.0;
+        for (int i = repelStart; i < repelEnd; i++) {
+            int iAtom = iAtoms[i];
+            int jAtom = jAtoms[i];
+            FastVector3D iV = vecCoords[iAtom];
+            FastVector3D jV = vecCoords[jAtom];
+            double r2 = iV.disSq(jV);
+            disSq[i] = r2;
+            derivs[i] = 0.0;
+            viol[i] = 0.0;
+            if (r2 <= rLow2[i]) {
+                double r = FastMath.sqrt(r2);
+                double dif = rLow[i] - r;
+                viol[i] = weights[i] * weight * dif * dif;
+                sum += viol[i];
+                if (calcDeriv) {
+                    //  what is needed is actually the derivative/r, therefore
+                    // we divide by r
+                    // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
+                    derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
+                }
+            }
+        }
+        return sum;
     }
 
     public double calcNOE(boolean calcDeriv, double weight) {
@@ -298,6 +340,133 @@ public class EnergyCoords {
             }
             i = j;
         }
+        updateSwappable();
+    }
+
+    public void updateSwappable() {
+        int nPartner = 0;
+        for (int i = 0; i < atoms.length; i++) {
+            Optional<Atom> partner = atoms[i].getMethylenePartner();
+            if (partner.isPresent()) {
+                mAtoms[i] = partner.get().eAtom;
+                nPartner++;
+            } else {
+                mAtoms[i] = -1;
+            }
+        }
+        int start = 0;
+        int end = disEnd;
+        kSwap = new HashMap<>();
+
+        for (int k = start; k < end; k++) {
+            int groupSize = groupSizes[k];
+            for (int kk = 0; kk < groupSize; kk++) {
+                int i = iAtoms[k + kk];
+                int j = jAtoms[k + kk];
+                int storeIndex;
+                if (mAtoms[i] != -1) {
+                    if (i < mAtoms[i]) {
+                        storeIndex = i;
+                    } else {
+                        storeIndex = mAtoms[i];
+                    }
+                    Set<Integer> swaps = kSwap.get(storeIndex);
+                    if (swaps == null) {
+                        swaps = new HashSet<>();
+                        kSwap.put(storeIndex, swaps);
+                    }
+                    swaps.add(k);
+                }
+                if (mAtoms[j] != -1) {
+                    if (j < mAtoms[j]) {
+                        storeIndex = j;
+                    } else {
+                        storeIndex = mAtoms[j];
+                    }
+                    Set<Integer> swaps = kSwap.get(storeIndex);
+                    if (swaps == null) {
+                        swaps = new HashSet<>();
+                        kSwap.put(storeIndex, swaps);
+                    }
+                    swaps.add(k);
+                }
+            }
+            if (groupSizes[k] > 1) {
+                k += groupSizes[k] - 1;
+            }
+        }
+    }
+
+    public void doSwaps() {
+        for (Entry<Integer, Set<Integer>> entry : kSwap.entrySet()) {
+            doSwap(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public void doSwap(int i, Set<Integer> swaps) {
+        double preSwap = swapEnergy(swaps);
+        swapIt(i);
+        double postSwap = swapEnergy(swaps);
+        if (postSwap < preSwap) {
+            swapped[i] = !swapped[i];
+            swapped[mAtoms[i]] = !swapped[mAtoms[i]];
+        } else {
+            // restore if swap not lower energy
+            swapIt(i);
+        }
+//        double restoreSwap = swapEnergy(swaps);
+//        System.out.printf("%3d %10s %8.3f %8.3f %8.3f\n", i, atoms[i].getFullName(), preSwap, postSwap, restoreSwap);
+    }
+
+    double swapEnergy(Set<Integer> swaps) {
+        double sum = 0.0;
+        for (Integer k : swaps) {
+            sum += calcEnergy(false, 2.0, 0, k);
+        }
+        return sum;
+    }
+
+    void swapIt(int origAtom) {
+        int swapAtom = mAtoms[origAtom];
+        if (swapAtom != -1) {
+            Set<Integer> swaps = kSwap.get(origAtom);
+            if (swaps != null) {
+                for (Integer k : swaps) {
+                    int groupSize = groupSizes[k];
+                    for (int kk = 0; kk < groupSize; kk++) {
+                        int ik = kk + k;
+                        if (iAtoms[ik] == origAtom) {
+                            iAtoms[ik] = swapAtom;
+                        } else if (iAtoms[ik] == swapAtom) {
+                            iAtoms[ik] = origAtom;
+                        }
+                        if (jAtoms[ik] == origAtom) {
+                            jAtoms[ik] = swapAtom;
+                        } else if (jAtoms[ik] == swapAtom) {
+                            jAtoms[ik] = origAtom;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void dumpSwaps() {
+        for (Entry<Integer, Set<Integer>> entry : kSwap.entrySet()) {
+            dumpSwap(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public void dumpSwap(int iAtom, Set<Integer> set) {
+        System.out.print(atoms[iAtom].getFullName());
+        for (Integer k : set) {
+            int groupSize = groupSizes[k];
+            for (int kk = 0; kk < groupSize; kk++) {
+                int ik = kk + k;
+                System.out.print(" " + k + " " + ik + " " + atoms[iAtoms[ik]].getFullName() + " " + atoms[jAtoms[ik]].getFullName());
+            }
+        }
+        System.out.println("");
     }
 
     public double calcEnergy(boolean calcDeriv, double weight, int mode) {
@@ -309,79 +478,85 @@ public class EnergyCoords {
             end = repelEnd;
         }
         for (int i = start; i < end; i++) {
-            int groupSize = groupSizes[i];
-            int nMono = 1;
-            double r2;
-            double r2Min = Double.MAX_VALUE;
-            if (groupSize > 1) {
-                double sum2 = 0.0;
-                for (int j = 0; j < groupSize; j++) {
-                    int iAtom = iAtoms[i + j];
-                    int jAtom = jAtoms[i + j];
-                    FastVector3D iV = vecCoords[iAtom];
-                    FastVector3D jV = vecCoords[jAtom];
-                    double r2Temp = iV.disSq(jV);
-                    double r = FastMath.sqrt(r2Temp);
-                    sum2 += FastMath.pow(r, -6);
-                    derivs[i + j] = 0.0;
-                    viol[i + j] = 0.0;
-                    if (r2Temp < r2Min) {
-                        r2Min = r2Temp;
-                    }
-                }
-                sum2 /= nMono;
-                double r = FastMath.pow(sum2, -1.0 / 6);
-                r2 = r * r;
-                for (int j = 0; j < groupSize; j++) {
-                    disSq[i + j] = r2;
-                }
-            } else {
-                int iAtom = iAtoms[i];
-                int jAtom = jAtoms[i];
-                FastVector3D iV = vecCoords[iAtom];
-                FastVector3D jV = vecCoords[jAtom];
-                r2 = iV.disSq(jV);
-                disSq[i] = r2;
-                derivs[i] = 0.0;
-                viol[i] = 0.0;
-                r2Min = r2;
-            }
-            final double dif;
-            final double r;
-            if (r2Min <= rLow2[i]) {
-                r = FastMath.sqrt(r2Min);
-                dif = rLow[i] - r;
-            } else if (r2 >= rUp2[i]) {
-                r = FastMath.sqrt(r2);
-                dif = rUp[i] - r;
-            } else {
-                if (groupSize > 1) {
-                    i += groupSize - 1;
-                }
-                continue;
-            }
-            viol[i] = weights[i] * weight * dif * dif;
-            sum += viol[i];
-            if (calcDeriv) {
-                //  what is needed is actually the derivative/r, therefore
-                // we divide by r
-                // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
-            }
-            if (groupSize > 1) {
-                for (int j = 1; j < groupSize; j++) {
-                    viol[i + j] = viol[i];
-                    sum += viol[i + j];
-                    if (calcDeriv) {
-                        //  what is needed is actually the derivative/r, therefore
-                        // we divide by r
-                        // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                        derivs[i + j] = derivs[i];
-                    }
-                }
-                i += groupSize - 1;
+            sum += calcEnergy(calcDeriv, weight, mode, i);
+            if (groupSizes[i] > 1) {
+                i += groupSizes[i] - 1;
             }
         }
+        return sum;
+    }
+
+    public double calcEnergy(boolean calcDeriv, double weight, int mode, int i) {
+        double sum = 0.0;
+        int groupSize = groupSizes[i];
+        int nMono = 1;
+        double r2;
+        double r2Min = Double.MAX_VALUE;
+        if (groupSize > 1) {
+            double sum2 = 0.0;
+            for (int j = 0; j < groupSize; j++) {
+                int iAtom = iAtoms[i + j];
+                int jAtom = jAtoms[i + j];
+                FastVector3D iV = vecCoords[iAtom];
+                FastVector3D jV = vecCoords[jAtom];
+                double r2Temp = iV.disSq(jV);
+                double r = FastMath.sqrt(r2Temp);
+                sum2 += FastMath.pow(r, -6);
+                derivs[i + j] = 0.0;
+                viol[i + j] = 0.0;
+                if (r2Temp < r2Min) {
+                    r2Min = r2Temp;
+                }
+            }
+            sum2 /= nMono;
+            double r = FastMath.pow(sum2, -1.0 / 6);
+            r2 = r * r;
+            for (int j = 0; j < groupSize; j++) {
+                disSq[i + j] = r2;
+            }
+        } else {
+            int iAtom = iAtoms[i];
+            int jAtom = jAtoms[i];
+            FastVector3D iV = vecCoords[iAtom];
+            FastVector3D jV = vecCoords[jAtom];
+            r2 = iV.disSq(jV);
+            disSq[i] = r2;
+            derivs[i] = 0.0;
+            viol[i] = 0.0;
+            r2Min = r2;
+        }
+        final double dif;
+        final double r;
+        if (r2Min <= rLow2[i]) {
+            r = FastMath.sqrt(r2Min);
+            dif = rLow[i] - r;
+        } else if (r2 >= rUp2[i]) {
+            r = FastMath.sqrt(r2);
+            dif = rUp[i] - r;
+        } else {
+            return 0.0;
+        }
+        viol[i] = weights[i] * weight * dif * dif;
+        sum += viol[i];
+        if (calcDeriv) {
+            //  what is needed is actually the derivative/r, therefore
+            // we divide by r
+            // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
+            derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
+        }
+        if (groupSize > 1) {
+            for (int j = 1; j < groupSize; j++) {
+                viol[i + j] = viol[i];
+                sum += viol[i + j];
+                if (calcDeriv) {
+                    //  what is needed is actually the derivative/r, therefore
+                    // we divide by r
+                    // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
+                    derivs[i + j] = derivs[i];
+                }
+            }
+        }
+
         return sum;
     }
 
