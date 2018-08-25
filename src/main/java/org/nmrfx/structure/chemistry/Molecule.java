@@ -754,24 +754,6 @@ public class Molecule implements Serializable {
         setupGenCoords();
     }
 
-    public int genCoords() throws RuntimeException {
-        return genCoordsFast();
-    }
-
-    public int genCoords(int iStructure, boolean fillCoords) throws RuntimeException {
-//        return genCoords(iStructure, fillCoords, null);
-        return genCoordsFast(null, fillCoords);
-    }
-
-    public int genCoords(boolean fillCoords) throws RuntimeException {
-//        return genCoords(0, fillCoords, null);
-        return genCoordsFast();
-    }
-
-    public int genCoords(boolean fillCoords, final double[] dihedralAngles) throws RuntimeException {
-        return genCoordsFast(dihedralAngles, fillCoords);
-    }
-
     public void setupGenCoords() throws RuntimeException {
         if (atomTree == null) {
             AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
@@ -858,13 +840,39 @@ public class Molecule implements Serializable {
         genVecs = null;
     }
 
-    public int genCoordsFast() {
-        return genCoordsFast(null, false);
+    public int genCoords() throws RuntimeException {
+        return genCoordsFast(null, false, 0);
     }
 
-    public int genCoordsFast(final double[] dihedralAngles, boolean fillCoords) throws RuntimeException {
+    public int genCoords(int iStructure, boolean fillCoords) throws RuntimeException {
+//        return genCoords(iStructure, fillCoords, null);
+        return genCoordsFast(null, fillCoords, iStructure);
+    }
+
+    public int genCoords(boolean fillCoords) throws RuntimeException {
+        return genCoordsFast(null, fillCoords, 0);
+    }
+
+    public int genCoords(boolean fillCoords, final double[] dihedralAngles) throws RuntimeException {
+        return genCoordsFast(dihedralAngles, fillCoords, 0);
+    }
+
+    public int genCoordsFast(final double[] dihedralAngles, boolean fillCoords, int iStructure) throws RuntimeException {
+        if (fillCoords) {
+            boolean anyInvalid = false;
+            for (Atom atom : atoms) {
+                if (atom.getPointValidity(iStructure)) {
+                    anyInvalid = true;
+                    System.out.println("inval " + atom.getFullName());
+                    break;
+                }
+            }
+            if (!anyInvalid) {
+                return 0;
+            }
+        }
         int nAngles = 0;
-        int iStructure = 0;
+
         if (genVecs == null) {
             setupGenCoords();
         }
@@ -877,17 +885,6 @@ public class Molecule implements Serializable {
         if (!fillCoords) {
             for (Atom atom : atoms) {
                 atom.setPointValidity(iStructure, false);
-            }
-        } else {
-            boolean anyInvalid = false;
-            for (Atom atom : atoms) {
-                if (atom.getPointValidity(iStructure)) {
-                    anyInvalid = true;
-                    break;
-                }
-            }
-            if (!anyInvalid) {
-                return 0;
             }
         }
         Atom a3 = atomList.get(genVecs[0][2]);
@@ -904,7 +901,7 @@ public class Molecule implements Serializable {
             if (genVecs[i].length > 3) {
                 if (genVecs[i][0] < 0) {
                     if (fillCoords) {
-                        continue;
+                        //continue;
                     }
                     pts[0] = origins[genVecs[i][0] + 2];
                 } else {
@@ -912,7 +909,7 @@ public class Molecule implements Serializable {
                 }
                 if (genVecs[i][1] < 0) {
                     if (fillCoords) {
-                        continue;
+                        //continue;
                     }
                     pts[1] = origins[genVecs[i][1] + 2];
                 } else {
@@ -926,9 +923,9 @@ public class Molecule implements Serializable {
                 }
                 Coordinates coords = new Coordinates(pts[0], pts[1], pts[2]);
                 if (!coords.setup()) {
-                    if (fillCoords) {
-                        continue;
-                    }
+//                    if (fillCoords) {
+//                       continue;
+//                    }
                     throw new RuntimeException("genCoords: coordinates the same for " + i + " " + pts[2].toString());
                 }
                 double dihedralAngle = 0;
