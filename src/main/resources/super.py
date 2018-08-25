@@ -138,11 +138,13 @@ def superImpose(mol, target,resSelect,atomSelect="ca,c,n,o,p,o5',c5',c4',c3',o3'
     sup = SuperMol(mol)
     superResults = sup.doSuper(target, -1, True)
 
-def saveModels(mol,dir,base):
+def saveModels(mol, files):
     active = mol.getActiveStructures()
-    for i in active:
-        outFile = os.path.join(dir,base+str(i)+'.pdb')
-        refine.savePDB(mol, outFile, i)
+    for (i,file) in zip(active,files):
+        (dir,fileName) = os.path.split(file)
+        newFileName = 'sup_' + fileName
+        newFile = os.path.join(dir,newFileName)
+        refine.savePDB(mol, newFile, i)
 
 def runSuper(files,newBase='super'):    
     mol = loadPDBModels(files)
@@ -161,5 +163,5 @@ def runSuper(files,newBase='super'):
     (dir,fileName) = os.path.split(files[0])
     (base,ext) = os.path.splitext(fileName)
 
-    saveModels(mol, dir,newBase)
+    saveModels(mol, files)
 
