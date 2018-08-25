@@ -193,6 +193,7 @@ class dynOptions:
         self.polishSteps = 500
         self.irpWeight = 0.015
         self.kinEScale = 200.0
+        self.swap = 0
 
 class refine:
     def __init__(self):
@@ -301,7 +302,7 @@ class refine:
          disLim = el.getDistanceLimit()
          print coarseGrain,includeH,hardSphere,shrinkValue,shrinkHValue,deltaStart,deltaEnd,disLim
 
-    def setPars(self,coarse=None,useh=None,dislim=-1,end=-1,start=-1,hardSphere=-1.0,shrinkValue=-1.0,shrinkHValue=-1.0,optDict={}):
+    def setPars(self,coarse=None,useh=None,dislim=-1,end=-1,start=-1,hardSphere=-1.0,shrinkValue=-1.0,shrinkHValue=-1.0,swap=None,optDict={}):
         #  there must be a better way to do this
         for opt in optDict:
             if opt == 'hardSphere':
@@ -327,6 +328,8 @@ class refine:
             self.energyLists.setShrinkHValue(shrinkHValue)
         if (dislim >=0):
             self.energyLists.setDistanceLimit(dislim)
+        if (swap != None):
+            self.energyLists.setSwap(swap)
         self.energyLists.resetConstraints()
 
     def setupEnergy(self,molName,eList=None, useH=False,usePseudo=True,useCourseGrain=False,useShifts=False):
@@ -653,6 +656,8 @@ class refine:
             dOpt.kinEScale = annealDict['kinEScale']
         if 'irpWeight' in annealDict:
             dOpt.irpWeight = annealDict['irpWeight']
+        if 'swap' in annealDict:
+            dOpt.swap = annealDict['swap']
 
         return dOpt
 
@@ -1482,8 +1487,9 @@ class refine:
 
         self.updateAt(dOpt.update)
         irp = dOpt.irpWeight
+        swap = dOpt.swap
         self.setForces(repel=0.5,dis=1.0,dih=5,irp=irp)
-        self.setPars(end=1000,useh=False,hardSphere=0.15,shrinkValue=0.20)
+        self.setPars(end=1000,useh=False,hardSphere=0.15,shrinkValue=0.20, swap=swap)
         self.setPars(optDict=stage1)
         energy = self.energy()
 
@@ -1517,7 +1523,7 @@ class refine:
         rDyn.continueDynamics2(tempLambda,econHigh,stepsAnneal1,timeStep)
         rDyn.run()
 
-        self.setPars(useh=False,hardSphere=0.0,shrinkValue=0.0)
+        self.setPars(useh=False,hardSphere=0.0,shrinkValue=0.0, swap=swap)
         self.gmin(nsteps=minSteps,tolerance=1.0e-6)
 
         timeStep = rDyn.getTimeStep()/2.0
@@ -1528,7 +1534,7 @@ class refine:
         rDyn.run(switchFrac)
 
         self.setForces(repel=1.0, bondWt = 25.0)
-        self.setPars(useh=True,hardSphere=0.0,shrinkValue=0.0,shrinkHValue=0.0)
+        self.setPars(useh=True,hardSphere=0.0,shrinkValue=0.0,shrinkHValue=0.0, swap=swap)
         self.setPars(optDict=stage2)
 
         timeStep = rDyn.getTimeStep()/2.0
