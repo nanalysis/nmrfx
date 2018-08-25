@@ -63,6 +63,7 @@ public class EnergyLists {
     private boolean useCourseGrain = false;
     private int deltaEnd = 0;
     private int deltaStart = 0;
+    private int swapInterval = 0;
     private double hardSphere = 0;
     private double shrinkValue = 0.0;
     private double shrinkHValue = 0.0;
@@ -156,6 +157,15 @@ public class EnergyLists {
     public double getShrinkHValue() {
         return shrinkHValue;
     }
+
+    public void setSwap(final int value) {
+        swapInterval = value;
+    }
+
+    public int getSwap() {
+        return swapInterval;
+    }
+
 
     void addAngleBoundary(AngleBoundary angleBoundary) {
         angleBoundList.add(angleBoundary);
