@@ -603,9 +603,10 @@ public class RotationalDynamics {
         for (int iStep = 0; iStep < stepsToRun; iStep++) {
             if (((iStep + 1) % dihedrals.updateAt) == 0) {
                 dihedrals.energyList.makeAtomListFast();
+            }
+            if ((dihedrals.energyList.getSwap() != 0) && (((iStep + 1) % dihedrals.energyList.getSwap()) == 0)) {
                 molecule.getEnergyCoords().doSwaps();
             }
-
             lastSteps++;
             saveState();
 
