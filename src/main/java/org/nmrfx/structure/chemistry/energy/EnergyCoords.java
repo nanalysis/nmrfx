@@ -150,11 +150,13 @@ public class EnergyCoords {
         hasBondConstraint[i] = isBond;
         hasBondConstraint[j] = isBond;
         weights[disEnd] = weight;
-        if (isBond) {
-            if (i < j) {
-                fixed[i][j - i - 1] = true;
-            } else {
-                fixed[j][i - j - 1] = true;
+        if (fixed != null) {
+            if (isBond) {
+                if (i < j) {
+                    fixed[i][j - i - 1] = true;
+                } else {
+                    fixed[j][i - j - 1] = true;
+                }
             }
         }
         //if (isBond){
