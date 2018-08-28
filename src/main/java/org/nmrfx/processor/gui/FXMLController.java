@@ -1684,8 +1684,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 for (int i = 0; i < charts.size(); i++) {
                     DatasetAttributes datasetAttr = current.get(i);
                     PolyChart iChart = charts.get(i);
-                    iChart.getDatasetAttributes().clear();
-                    iChart.getDatasetAttributes().add(datasetAttr);
+                    iChart.setDatasetAttr(datasetAttr);
                 }
                 chart.syncSceneMates();
                 chartGroup.layoutChildren();

@@ -316,7 +316,8 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
      *
      * @param xAxis The x axis to use
      * @param yAxis The y axis to use
-     * @param data The data to use, this is the actual list used so any changes to it will be reflected in the chart
+     * @param data The data to use, this is the actual list used so any changes
+     * to it will be reflected in the chart
      */
     public PolyChart(@NamedArg("xAxis") Axis<X> xAxis, @NamedArg("yAxis") Axis<Y> yAxis, @NamedArg("data") ObservableList<Series<X, Y>> data) {
         super(xAxis, yAxis);
@@ -1563,6 +1564,33 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
             if (!axisLabel.equals(axis.getLabel())) {
                 axis.setLabel(axisLabel);
             }
+        }
+    }
+
+    void setDatasetAttr(DatasetAttributes datasetAttrs) {
+        Dataset dataset = datasetAttrs.getDataset();
+        int nDim = dataset.getNDim();
+        int nAxes = nDim;
+        if (is1D()) {
+            nAxes = 2;
+        }
+        datasetAttributesList.clear();
+        datasetAttributesList.add(datasetAttrs);
+        if (axes.length != nAxes) {
+            axes = new NMRAxis[nAxes];
+            axes[0] = xAxis;
+            axes[1] = yAxis;
+            axModes = new AXMODE[nAxes];
+            axModes[0] = AXMODE.PPM;
+            axModes[1] = AXMODE.PPM;
+            for (int i = 2; i < nAxes; i++) {
+                axes[i] = new NMRAxis(datasetAttrs.pt[i][0], datasetAttrs.pt[i][1], 4);
+                axModes[i] = AXMODE.PTS;
+                axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
+                axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
+            }
+            drawSpectrum.setAxes(axes);
+            drawSpectrum.setDisDim(disDimProp.getValue());
         }
     }
 
