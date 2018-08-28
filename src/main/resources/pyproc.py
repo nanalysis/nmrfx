@@ -3634,7 +3634,7 @@ def genScript():
             script += "MAG()\n"
         else:
             script += 'PHASE(ph0=0.0,ph1=0.0)\n'
-        script += 'run()'
+    script += 'run()'
     return script
 
 
