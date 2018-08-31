@@ -2528,7 +2528,7 @@ public class Molecule implements Serializable {
         updateAtomArray();
         for (Atom atom1 : atoms) {
             SpatialSet sp1 = atom1.spatialSet;
-            sp1.setBFactor(0.0f);
+            sp1.setOrder(0.0f);
             Polymer polymer = null;
             ArrayList<Residue> residues = null;
             double endMultiplier = 1.0;
@@ -2564,7 +2564,7 @@ public class Molecule implements Serializable {
                     }
                 }
                 double bFactor = 1.0e4 / fSum * endMultiplier;
-                sp1.setBFactor((float) bFactor);
+                sp1.setOrder((float) bFactor);
             }
         }
     }
