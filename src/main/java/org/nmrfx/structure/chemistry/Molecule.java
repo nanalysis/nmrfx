@@ -43,7 +43,7 @@ import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
 
-public class Molecule implements Serializable {
+public class Molecule implements Serializable, ITree {
 
     public static List<Atom> atomList = null;
     public static final List<String> conditions = new ArrayList<>();
@@ -438,6 +438,10 @@ public class Molecule implements Serializable {
         }
     }
 
+    public ArrayList<Entity> getEntities() {
+        return new ArrayList(entities.values());
+    }
+
     public List<Polymer> getPolymers() {
         List<Polymer> polymers = new ArrayList<>();
         for (Entity entity : entities.values()) {
@@ -749,7 +753,8 @@ public class Molecule implements Serializable {
         }
         AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         atomTree = aTreeGen.genTree(this, startAtom, null);
-        aTreeGen.measureAtomTree(this, atomTree);
+        // fixme  turned off till we can only measure once
+       // aTreeGen.measureAtomTree(this, atomTree);
         setRingClosures(aTreeGen.getRingClosures());
         setupGenCoords();
     }
@@ -2980,6 +2985,7 @@ public class Molecule implements Serializable {
 
                 String atomName;
                 while (compound != null) {
+                    boolean validRes = true;
                     String rNum = compound.getNumber();
                     try {
                         int rNumInt = Integer.parseInt(rNum);
@@ -2988,17 +2994,13 @@ public class Molecule implements Serializable {
                         }
                     } catch (NumberFormatException nfE) {
                     }
-                    for (Atom atom : compound.atoms) {
-                        boolean validRes = true;
-
-                        // fixme why is this inside atom loop
-                        if (!(entity instanceof Polymer)) {
-                            if (!molFilter.firstRes.equals("*")
-                                    && (!molFilter.firstRes.equals(compound.number))) {
-                                validRes = false;
-                            }
+                    if (!(entity instanceof Polymer)) {
+                        if (!molFilter.firstRes.equals("*")
+                                && (!molFilter.firstRes.equals(compound.number))) {
+                            validRes = false;
                         }
-
+                    }
+                    for (Atom atom : compound.atoms) {
                         if (validRes) {
                             boolean validAtom = false;
 
@@ -3245,7 +3247,24 @@ public class Molecule implements Serializable {
     }
 
     public void setRingClosures(Map<Atom, Map<Atom, Double>> bonds) {
-        ringClosures = bonds;
+        if (ringClosures == null) {
+            ringClosures = bonds;
+        } else {
+            for (Atom atom1 : bonds.keySet()) {
+                if (ringClosures.containsKey(atom1)) {
+                    for (Atom atom2 : bonds.get(atom1).keySet()) {
+                        if (ringClosures.get(atom1).containsKey(atom2)) {
+                            // This will prevent overwriting if a value exists
+                            continue;
+                        } else {
+                            ringClosures.get(atom1).put(atom2, bonds.get(atom1).get(atom2));
+                        }
+                    }
+                } else {
+                    ringClosures.put(atom1, bonds.get(atom1));
+                }
+            }
+        }
     }
 
     public Map<Atom, Map<Atom, Double>> getRingClosures() {
@@ -4523,6 +4542,65 @@ public class Molecule implements Serializable {
             ptT = new Point3(ptS.getX(), ptS.getY(), ptS.getZ());
             atom.setPointValidity(target, true);
             atom.setPoint(target, ptT);
+        }
+    }
+
+    public void createLinker(Atom atom1, Atom atom2, String bondOrder, float bondLength) {
+        Order bond;
+        switch (bondOrder) {
+            case "SINGLE":
+                bond = Order.SINGLE;
+                break;
+            case "DOUBLE":
+                bond = Order.DOUBLE;
+                break;
+            case "TRIPLE":
+                bond = Order.TRIPLE;
+                break;
+            case "QUAD":
+                bond = Order.QUAD;
+                break;
+            default:
+                bond = Order.SINGLE;
+                break;
+        }
+        if (atom1 == null || atom2 == null) {
+            return;
+        }
+        Bond b = new Bond(atom1, atom2, bond);
+        Atom.addBond(atom1, atom2, bond, 0, false);
+        atom2.parent = atom1;
+        atom2.setProperty("linker", true);
+        atom2.bondLength = bondLength;
+    }
+
+    public void createLinker(Atom atom1, Atom atom2, int numLinks) {
+        /**
+         * createLinker is a method to create a link between atoms in two
+         * separate entities
+         *
+         * @param numLinks number of linker atoms to use
+         * @param atom1
+         * @param atom2
+         */
+
+        if (atom1 == null || atom2 == null) {
+            return;
+        }
+        Atom curAtom = atom1;
+        Atom newAtom;
+        String linkRoot = "X";
+        for (int i = 1; i <= numLinks; i++) {
+            newAtom = curAtom.add(linkRoot + Integer.toString(i), "X", Order.SINGLE);
+            newAtom.bondLength = 1.08f;
+            newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
+            newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+            curAtom = newAtom;
+            if (i == numLinks) {
+                Atom.addBond(curAtom, atom2, Order.SINGLE, 0, false);
+                atom2.parent = curAtom;
+                curAtom.daughterAtom = atom2;
+            }
         }
     }
 }
