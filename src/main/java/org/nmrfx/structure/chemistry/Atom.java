@@ -396,6 +396,10 @@ public class Atom implements IAtom {
     }
 
     public void addBond(Bond bond) {
+        addBond(bond, -1);
+    }
+
+    public void addBond(Bond bond, int position) {
         boolean alreadyBonded = false;
         if (bond.begin == this) {
             alreadyBonded = isBonded(bond.end);
@@ -403,7 +407,11 @@ public class Atom implements IAtom {
             alreadyBonded = isBonded(bond.begin);
         }
         if (!alreadyBonded) {
-            bonds.add(bond);
+            if (position == -1) {
+                bonds.add(bond);
+            } else {
+                bonds.add(position, bond);
+            }
         }
     }
 
