@@ -18,6 +18,7 @@
 package org.nmrfx.structure.chemistry;
 
 import java.util.*;
+import org.nmrfx.structure.chemistry.miner.IBond;
 
 public class Residue extends Compound {
 
@@ -28,6 +29,8 @@ public class Residue extends Compound {
     private boolean standard = false;
     static Map standardResSet = new TreeMap();
     Map<String, Atom[]> pseudoMap = new HashMap<String, Atom[]>();
+    private final static Map<String, ArrayList<Double>> artAminoAcid = new HashMap<>();
+    private final static Map<String, ArrayList<Double>> artNucleicAcid = new HashMap<>();
 
     static {
         String[] standardResidues = {
@@ -44,6 +47,103 @@ public class Residue extends Compound {
             standardResSet.put(standardResidues[i], standardResidues[i + 1]);
         }
 
+        // Following are dihedral values, valence values and distances respectively
+        ArrayList<Double> tmp;
+
+        tmp = new ArrayList<>();
+        tmp.add(-120.0);
+        tmp.add(114.00);
+        tmp.add(1.32);
+        artAminoAcid.put("N", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(-120.0);
+        tmp.add(114.00);
+        tmp.add(1.32);
+        artAminoAcid.put("N", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(180.0);
+        tmp.add(123.0);
+        artAminoAcid.put("CA", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(180.0);
+        tmp.add(123.00);
+        artAminoAcid.put("H", tmp);
+
+        //Special case, both are dih values but first is with ring 2nd without
+        tmp = new ArrayList<>();
+        tmp.add(-360.0);
+        tmp.add((double) 'H');
+        tmp.add(-65.5);
+        tmp.add(120.0);
+        artAminoAcid.put("C", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(-179.1);
+        artAminoAcid.put("CB", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(18.6);
+        tmp.add(123.0);
+        artAminoAcid.put("CD", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(-161.9);
+        artAminoAcid.put("CG", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(-61.5);
+        artAminoAcid.put("HD3", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(120.0);
+        artAminoAcid.put("HD2", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(-120.0);
+        artAminoAcid.put("HA", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(120.58);
+        tmp.add(1.60);
+        artAminoAcid.put("P", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(120.00);
+        artAminoAcid.put("Pc", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(109.68);
+        artAminoAcid.put("OP1", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(109.68);
+        artAminoAcid.put("OP2", tmp);
+
+        tmp = new ArrayList<>();
+        tmp.add(104.38);
+        artAminoAcid.put("O5'", tmp);
+
+        /*
+        artAminoAcid.put("N", Arrays.asList(-120.0, 114.00, 1.32));
+        artAminoAcid.put("CA", Arrays.asList(180.0, 123));
+        artAminoAcid.put("H", Arrays.asList(0.0, 123.00));
+
+        //Special case, both are dih values but first is with ring 2nd without
+        artAminoAcid.put("C", Arrays.asList(-360, (float) 'H', -65.5, 120.0));
+
+        artAminoAcid.put("CB", Arrays.asList(-121.5));
+        artAminoAcid.put("CD", Arrays.asList(18.6, 123.0));
+        artAminoAcid.put("HD3", Arrays.asList(-61.5));
+        artAminoAcid.put("HD2", Arrays.asList(120.0));
+
+        artNucleicAcid.put("P", Arrays.asList(120.58, 1.60));
+        artNucleicAcid.put("Pc", Arrays.asList(120.00));
+        artNucleicAcid.put("OP1", Arrays.asList(109.68));
+        artNucleicAcid.put("OP2", Arrays.asList(109.68));
+        artNucleicAcid.put("O5'", Arrays.asList(104.38));*/
     }
 
     public Residue(String number, String name) {
@@ -294,4 +394,124 @@ public class Residue extends Compound {
         return dihedral;
     }
 
+    public Atom getFirstBackBoneAtom() {
+        String pType = polymer.getPolymerType(); // 'polypeptide' or 'nucleicacid'
+        String searchString = pType.equals("polypeptide") ? "N" : "P";
+        Atom atom = this.getAtom(searchString);
+        return atom;
+    }
+
+    public Atom getLastBackBoneAtom() {
+        String pType = polymer.getPolymerType();
+        String searchString = pType.equals("polypeptide") ? "C" : "O3'";
+        Atom atom = this.getAtom(searchString);
+        return atom;
+    }
+
+    private void alterAtomValue(Atom atom, double value, int counter) {
+        if (counter < 2) {
+            value *= (Math.PI / 180.0);
+        }
+        switch (counter) {
+            case 0:
+                System.out.println(atom.getShortName() + " dih " + value + " in deg: " + value * (180.0 / Math.PI));
+                atom.dihedralAngle = (float) value;
+                break;
+            case 1:
+                System.out.println(atom.getShortName() + " val " + value + " in deg: " + value * (180.0 / Math.PI));
+
+                atom.valanceAngle = (float) value;
+                break;
+            case 2:
+                atom.bondLength = (float) value;
+                System.out.println(atom.getShortName() + " dis " + value);
+
+                break;
+        }
+    }
+
+    public void removeConnectors() {
+        List<Atom> removeAtoms = new ArrayList<>();
+        for (Atom atom : atoms) {
+            if (atom.getName().endsWith("X")) {
+                removeAtoms.add(atom);
+            }
+        }
+        System.out.println(getName());
+        for (Atom atom : atoms) {
+            if (!atom.getName().endsWith("X")) {
+                System.out.println(atom.getName() + " " + previous + " " + atom.parent);
+                if ((previous != null) && (atom.parent != null)) {
+                    String parName = atom.parent.getName();
+                    System.out.println("look for " + parName);
+
+                    if ((parName.endsWith("X"))) {
+                        System.out.println("found for " + parName);
+                        parName = parName.substring(0, parName.length() - 1);
+                        Atom parent = previous.getAtom(parName);
+                        if (parent == null) {
+                            System.out.println("Doesn't exist " + parName);
+                        } else {
+                          //  atom.parent = parent;
+                        }
+                    }
+                }
+            }
+        }
+        for (Atom atom : removeAtoms) {
+            List<IBond> rBonds = atom.getBonds();
+            atom.removeBonds();
+            for (IBond rBond : rBonds) {
+                removeBond((Bond) rBond);
+            }
+        }
+
+        for (Atom atom : removeAtoms) {
+            System.out.println("remove " + atom.getShortName());
+            removeAtom(atom);
+        }
+        for (Bond bond:bonds) {
+            System.out.println(bond.toString());
+        }
+        for (Atom atom: atoms) {
+            System.out.println("atom " + atom.getShortName());
+        }
+        molecule.updateBondArray();
+
+    }
+
+    public void adjustBorderingAtoms() {
+        String pType = polymer.getPolymerType();
+        Map<String, ArrayList<Double>> borderingAtomValues = pType.equals("polypeptide") ? artAminoAcid : artNucleicAcid;
+        Set<String> atomNames = borderingAtomValues.keySet();
+        int counter;
+        for (String searchString : atomNames) {
+            Atom atom = this.getAtom(searchString);
+            if (atom != null) {
+                System.out.println(atom.getShortName());
+                List<Double> atomValues = (ArrayList) borderingAtomValues.get(searchString).clone();
+                counter = 0;
+                if (atomValues.get(0) == -360.0) { // Has dependency
+                    String dependencySearch = Character.toString((char) atomValues.get(1).floatValue());
+                    atomValues.remove(0);
+                    atomValues.remove(0);
+                    Atom dependencyAtom = this.getAtom(dependencySearch);
+                    while (atomValues.size() > 0) {
+                        double value = dependencyAtom == null ? atomValues.get(0) : atomValues.get(1);
+                        atomValues.remove(0);
+                        atomValues.remove(0);
+                        alterAtomValue(atom, value, counter);
+                        counter += 1;
+                    }
+                } else {
+                    while (atomValues.size() > 0) {
+                        double value = atomValues.get(0);
+                        alterAtomValue(atom, value, counter);
+                        atomValues.remove(0);
+                        counter += 1;
+                    }
+                }
+            }
+        }
+    }
 }
