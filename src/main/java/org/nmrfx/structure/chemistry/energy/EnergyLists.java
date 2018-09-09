@@ -453,7 +453,7 @@ public class EnergyLists {
 
         molecule.getAtomTypes();
         Iterator e = molecule.entities.values().iterator();
-
+        
         while (e.hasNext()) {
             //entity - component of the molecule (could be individual residue or polymer)
             entity = (Entity) e.next();
@@ -472,14 +472,14 @@ public class EnergyLists {
 
             while (compound != null) {
                 //center point of compound 
-                Point3 centerPoint = getCenter(compound);
+                //Point3 centerPoint = getCenter(compound);
                 //determines the atoms closest to the center point
-                Atom centerAtom = findClosestAtom(compound, centerPoint);
+                //Atom centerAtom = findClosestAtom(compound, centerPoint);
                 //gets the actual position of the center atom
-                centerPoint = centerAtom.getPoint();
-                double radius = getRadius(compound, centerPoint);
-                CompoundSphere cSphere = new CompoundSphere(compound, centerAtom, radius, new ArrayList<>());
-                compoundList.add(cSphere);
+                //centerPoint = centerAtom.getPoint();
+                //double radius = getRadius(compound, centerPoint);
+                //CompoundSphere cSphere = new CompoundSphere(compound, centerAtom, radius, new ArrayList<>());
+                //compoundList.add(cSphere);
                 for (Atom atom : compound) {
                     if (atom.atomEnergyProp == null) {
                         continue;
@@ -495,7 +495,7 @@ public class EnergyLists {
                     } else if (isCourseGrain(atom.getType())) {
                         continue;
                     }
-                    cSphere.sSets.add(atom.getSpatialSet());
+                    //cSphere.sSets.add(atom.getSpatialSet());
                 }
 
                 //loops over all compounds in the polymer
@@ -514,7 +514,7 @@ public class EnergyLists {
         if ((compoundArray == null) || (compoundArray.length != compoundList.size())) {
             compoundArray = new CompoundSphere[compoundList.size()];
         }
-
+    
         compoundArray = compoundList.toArray(compoundArray);
 
         //used to rotate angles to minimize energy
