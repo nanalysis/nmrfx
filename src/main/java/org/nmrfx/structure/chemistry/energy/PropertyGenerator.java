@@ -95,7 +95,7 @@ public class PropertyGenerator {
     public double calcHBondAngle(Map<String, HydrogenBond> hBondMap, String hydrogenAtom) {
         Atom atom = Molecule.getAtomByName(hydrogenAtom);
         double value = 0.0;
-        if (atom != null) {
+        if ((hBondMap != null) && (atom != null)) {
             HydrogenBond hBond = hBondMap.get(atom.getFullName());
             if (hBond != null) {
                 double angle = hBond.getAngle(0);
@@ -110,7 +110,7 @@ public class PropertyGenerator {
     public double calcHBondShift(Map<String, HydrogenBond> hBondMap, String hydrogenAtom, double power) {
         Atom atom = Molecule.getAtomByName(hydrogenAtom);
         double shift = 0.0;
-        if (atom != null) {
+        if ((hBondMap != null) && (atom != null)) {
             HydrogenBond hBond = hBondMap.get(atom.getFullName());
             if (hBond != null) {
                 shift = hBond.getShift(0, power);
@@ -122,7 +122,7 @@ public class PropertyGenerator {
     public double calcHBondDistance(Map<String, HydrogenBond> hBondMap, String hydrogenAtom) {
         Atom atom = Molecule.getAtomByName(hydrogenAtom);
         double dis = 0.0;
-        if (atom != null) {
+        if ((hBondMap != null) && (atom != null)) {
             HydrogenBond hBond = hBondMap.get(atom.getFullName());
             if (hBond != null) {
                 dis = hBond.getHADistance(0);
@@ -139,9 +139,11 @@ public class PropertyGenerator {
         Atom atom = Molecule.getAtomByName(hydrogenAtom);
         //System.out.println(hydrogenAtom + " " + atom + " " + eShiftMap);
         double shift = 0.0;
-        Double shiftDouble = eShiftMap.get(atom.getFullName());
-        if (shiftDouble != null) {
-            shift = shiftDouble;
+        if (eShiftMap != null) {
+            Double shiftDouble = eShiftMap.get(atom.getFullName());
+            if (shiftDouble != null) {
+                shift = shiftDouble;
+            }
         }
         return shift;
     }
@@ -539,6 +541,7 @@ public class PropertyGenerator {
             valueMap.put("CHARGE" + suffix, getProperty("CHARGE", residue));
             valueMap.put("PROLINE" + suffix, getProperty("PROLINE", residue));
             valueMap.put("AROMATIC" + suffix, getProperty("AROMATIC", residue));
+            valueMap.put("DISULFIDE" + suffix, getProperty("DISULFIDE", residue));
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -553,6 +556,7 @@ public class PropertyGenerator {
             String polyName = polymer.getName();
             String atomSpec = polyName + ":" + Integer.toString(res) + "." + atomName;
             String hAtomSpec = polyName + ":" + Integer.toString(res) + "." + "H";
+            Atom atom = Molecule.getAtomByName(atomSpec);
             double contactSum = getContactSum(atomSpec);
             valueMap.put("contacts", contactSum);
             valueMap.put("fRandom", getFRandom(atomName, contactSum));
@@ -618,13 +622,14 @@ public class PropertyGenerator {
             int lastRes = getLastRes(polymer);
 
             acs = getCorrectedRandomShift(polyName, firstRes, res, lastRes, atomName);
-            valueMap.put("averagechemicalshift", acs);
-            double glyha = 0.0;
-            if (resName.equals("GLY") && atomName.equals("HA3")) {
-                glyha = 1.0;
+            valueMap.put("acscorr", acs);
+            double h3 = 0.0;
+            if (atomName.startsWith("H") && !atom.isMethyl() && atomName.endsWith("3")) {
+                h3 = 1.0;
             }
-            valueMap.put("glyha", glyha);
+            valueMap.put("h3", h3);
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
         return true;
@@ -836,7 +841,7 @@ public class PropertyGenerator {
         } else if (property.equals("DISULFIDE")) {
             double value = 0.0;
             if (resName.equals("CYS")) {
-                Atom sgAtom = residue.getAtom("SG)");
+                Atom sgAtom = residue.getAtom("SG");
                 if (sgAtom != null) {
                     Molecule molecule = Molecule.getActive();
                     if (molecule.isDisulfide(sgAtom, 0)) {
@@ -852,7 +857,7 @@ public class PropertyGenerator {
                         }
                     }
                 } else {
-                    System.out.println("not cysteine");
+                    System.out.println("no SG " + resName + " " + residue.getNumber());
                 }
             }
             return value;
