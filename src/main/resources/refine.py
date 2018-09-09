@@ -42,6 +42,8 @@ protein3To1 = {"ALA":"A","ASP":"D","ASN":"N","ARG":"R","CYS":"C","GLU":"E","GLN"
     "VAL":"V","LEU":"L","PRO":"P","PHE":"F","TYR":"Y","TRP":"W","LYS":"K","MET":"M",
     "HIS":"H","GLY":"G","SER":"S","THR":"T"}
 
+bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
+
 protein1To3 = {}
 for key in protein3To1:
    protein1To3[protein3To1[key]] = key
@@ -148,10 +150,10 @@ def generateResNums(residues,seqString,linker,polyType):
                 for j in range(insertionLength):
                     if j == 0 or (j == insertionLength-1):
                         residue = 'ln2 ' + str(j+1+int(resNums[i]))
-                    else: 
+                    else:
                         residue = 'ln5 ' + str(j+1+int(resNums[i]))
                     residues.append(residue)
-    return residues 
+    return residues
 
 def prioritizePolymers(molList):
     containsSmallMolecule = False
@@ -174,7 +176,7 @@ def prioritizePolymers(molList):
 
 
 
-class dynOptions:    
+class dynOptions:
     def __init__(self,steps=15000,highTemp=5000.0,medFrac=0.05,update=20,highFrac=0.3,toMedFrac=0.5,switchFrac=0.65):
         self.steps = steps
         self.highTemp = highTemp
@@ -203,6 +205,7 @@ class refine:
         self.suiteAngleFiles = []
         self.nvDistanceFiles = []
         self.angleStrings = []
+        self.bondConstraints = []
         self.disLim = 4.6
         self.angleDelta = 30
         self.molecule = None
@@ -222,7 +225,7 @@ class refine:
 
     def numericalDerivatives(self,delta,report):
         grefine = GradientRefinement(self.dihedral)
-        
+
         grefine.numericalDerivatives(delta,report)
 
     def setSeed(self,seed):
@@ -286,6 +289,143 @@ class refine:
         self.rDyn.setTrajectoryWriter(self.trajectoryWriter)
         return self.rDyn
 
+    def getAtom(self, atomTuple):
+        entity, atomName = atomTuple
+        atomArr = atomName.split('.')
+
+        if len(atomArr) > 1:
+            resNum = atomArr.pop(0)
+            if resNum:
+                entity = entity.getResidue(resNum)
+        atomName = atomArr[0]
+        atom = entity.getAtom(atomName)
+
+        if not atom:
+            print atomName , "was not found in", entity.getName()
+            raise ValueError
+        return atom
+
+    def addLinkers(self, linkerList):
+        entities = self.molecule.getEntities()
+        entityDict = {}
+        usedEntity = {}
+        for entity in entities:
+            entityDict[entity.getName()] = entity # stores entity objects from the entity name
+            usedEntity[entity] = False
+
+        for i, entity in enumerate(entities):
+            if i == len(entities) - 1:
+                break
+            startAtom = entity.getLastAtom()
+            endAtom = entities[i+1].getLastAtom()
+            self.molecule.createLinker(startAtom, endAtom, 6)
+            return
+        if linkerList:
+            try:
+                for linkerDict in linkerList:
+                    usedEntities = self.readLinkerDict(linkerDict, entityDict) # returns used Entities to mark them
+                    for entity in usedEntities:
+                        usedEntity[entity] = True
+
+            except TypeError:
+                usedEntities = self.readLinkerDict(linkerList, entityDict)
+                for entity in usedEntities:
+                    usedEntity[entity] = True
+                # linkerList is just a dict
+
+        #Adds linkers to all entities that do not have one
+        usedEntities = [entity for entity in usedEntity.keys() if usedEntity[entity]]
+        if len(usedEntity.keys()) > 1:
+            for entity in usedEntity:
+                used = usedEntity[entity]
+                if not used:
+                    print entity.getName() + " had no defined linker."
+                    firstEntity = usedEntities[0]
+                    startAtom = firstEntity.getLastAtom()
+                    endAtom = entity.getLastAtom()
+                    print "linker added between " + startAtom.getFullName() + " and " + endAtom.getFullName()
+                    self.molecule.createLinker(startAtom, endAtom, 6)
+
+    def readLinkerDict(self, linkerDict, entityDict):
+        if not linkerDict:
+            return
+        if 'start' in linkerDict:
+            startEntName, startAtom = linkerDict['start'].split(':')
+            endEntName, endAtom = linkerDict['end'].split(':')
+            n = linkerDict['n'] if 'n' in linkerDict else 6
+            if startEnt not in entityDict:
+                print startEnt + " not found within molecule"
+                raise ValueError
+            if endEnt not in entityDict:
+                print endEnt + " not found within molecule"
+                raise ValueError
+
+            startEnt = entityDict[startEntName]
+            endEnt = entityDict[endEntName]
+
+            startTuple = (startEnt, startAtom)
+            endTuple = (endEnt, endAtom)
+            startAtom = self.getAtom(startTuple)
+            endAtom = self.getAtom(endTuple)
+
+        if 'bond' in linkerDict:
+            bondDict = linkerDict['bond']
+            if "cyclic" in bondDict and bondDict["cyclic"]:
+                polymers = self.molecule.getPolymers()
+                if len(polymers) != 1 and pName not in bondDict:
+                    print "Multiple polymers in structure but no specification for which to by made cyclic"
+                    return []
+                polymer = None
+                if "pName" in bondDict:
+                    polymerNames = [polymer.getName() for polymer in polymers]
+                    try:
+                        entity = entityDict[bondDict["pName"]]
+                    except KeyError:
+                         print bondDict["pName"], "is not an entity within the molecule"
+                         return []
+                    entName = entity.getName();
+                    try:
+                        polymer = polymers[polymerNames.index(entName)]
+                    except ValueError:
+                        print entName, "is not a polymer and cannot be made cyclic"
+                else:
+                    polymer = polymers[0]
+                self.addCyclicBond(polymer)
+                return []
+
+            else:
+                sameEnt = startEnt == endEnt;
+                length = bondDict['length'] if 'length' in bondDict else 1.08
+                order = bondDict['order'] if 'order' in bondDict else 'SINGLE'
+                if not sameEnt:
+                    global bondOrders
+                    if (order < 0 or order > 4) and order not in bondOrders:
+                        print "Bad bond order, automatically converting to SINGLE bond"
+                        order = "SINGLE"
+                    try:
+                        order = bondOrders[order-1]
+                    except:
+                        order = order.upper()
+                        self.molecule.createLinker(startAtom, endAtom, order, length)
+
+                else:
+                    atomName1 = startAtom.getFullName()
+                    atomName2 = endAtom.getFullName()
+                    lower = length - .0001
+                    upper = length + .0001
+                    self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
+        else:
+            self.molecule.createLinker(startAtom, endAtom, n)
+        return (startEnt, endEnt)
+
+    def addCyclicBond(self, polymer):
+        # to return a list atomName1, atomName2, distance
+        distanceConstraints = polymer.getCyclicConstraints()
+        for distanceConstraint in distanceConstraints:
+            self.bondConstraints.append(distanceConstraint)
+            #atomName1, atomName2, distance = distanceConstraint.split()
+            #self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
+
 
     def testy(self):
         print('testynow')
@@ -342,7 +482,14 @@ class refine:
         else:
             energyLists = eList
         self.energyLists = energyLists
-        
+        if self.bondConstraints:
+            for bondConstraint in self.bondConstraints:
+                print bondConstraint
+                atomName1, atomName2, distance = bondConstraint.split()
+                distance = float(distance)
+                self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
+
+
         refine.setForces(self,repel=0.5,dis=1)
         energyLists.setCourseGrain(useCourseGrain)
         energyLists.setIncludeH(useH)
@@ -446,7 +593,7 @@ class refine:
                     i+=3
                 #bound = AngleBoundary(atomName,lower,upper,scale,center,sigma,height)
                 #self.dihedral.addBoundary(atomName,bound)
-    
+
     def loadDistancesFromFile(self,fileName):
        file = open(fileName,"r")
        data= file.read()
@@ -469,21 +616,30 @@ class refine:
 
     def addDisCon(self, atomName1, atomName2, lower, upper):
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
- 
+
     def loadFromYaml(self,data, seed, pdbFile=""):
         if pdbFile != '':
             self.readPDBFile(pdbFile)
             residues = None
         else:
             if 'molecule' in data:
-                molList = data['molecule']
-                molList = prioritizePolymers(molList)
-                for molDict in molList:
-                    if 'residues' in molDict:
-                        residues = ','.join(molDict['residues'].split(' '))
+                molData = data['molecule']
+                self.reslib = molData['reslib'] if 'reslib' in molData else None
+                if 'structs' in molData:
+                    molList = molData['structs']
+                    molList = prioritizePolymers(molList)
+                    for molDict in molList:
+                        residues = ",".join(molDict['residues'].split()) if 'residues' in molDict else None
+                        self.readMoleculeDict(molDict)
                 else:
-                    residues = None
-                    self.readMoleculeDict(molDict)
+                    #Only one entity in the molecule
+                    residues = ",".join(molDict['residues'].split()) if 'residues' in molData else None
+                    self.readMoleculeDict(molData)
+
+                linkerList = molData['link'] if 'link' in molData else None
+                self.addLinkers(linkerList)
+
+        mol = self.molecule;
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
         if 'angles' in data:
@@ -540,7 +696,6 @@ class refine:
         if 'sequence' in molDict:
             import java.util.ArrayList
             from org.nmrfx.structure.chemistry.io import Sequence
-            
             seqString = molDict['sequence']
             if 'link' in molDict:
                 linker = molDict['link']
@@ -572,7 +727,7 @@ class refine:
                 elif type == 'mol':
                     self.readSDFile(file)
 
-            else: 
+            else:
                 type = 'nv'
             if type == 'nv':
                 self.readSequence(file)
@@ -592,7 +747,8 @@ class refine:
                     else:
                         end = None
                 self.setupTree(start, end)
-            
+            mol = self.molecule;
+
     def readDistanceDict(self,disDict,residues):
         wt = -1.0
         for dic in disDict:
@@ -614,7 +770,7 @@ class refine:
                 import osfiles
                 range = dic['range']
                 dir = os.path.dirname(file)
-                
+
                 changeResNums = residues != range
                 file = osfiles.limResidues(range,file,dir,'dis',changeResNums)
             self.addDistanceFile(file,mode=type)
@@ -643,7 +799,7 @@ class refine:
             self.addSuiteAngles(rnaDict['suite'])
         if 'vienna' in rnaDict:
             self.findHelices(rnaDict['vienna'])
-            
+
     def readAnnealDict(self, annealDict):
         dOpt = dynOptions()
         if 'steps' in annealDict:
@@ -672,7 +828,7 @@ class refine:
                 dir = os.path.dirname(file)
                 file = osfiles.convertStarFile(file,dir)
                 type = 'nv'
-        else: 
+        else:
             type = 'nv'
         if type == 'nv':
             if 'range' in shiftDict:
@@ -738,7 +894,7 @@ class refine:
                 fullAtoms = []
                 for aName in a1:
                     fullAtoms.append(str(resNum)+'.'+aName)
-                    
+
                 scale = 1.0
                 try:
                     self.dihedral.addBoundary(fullAtoms,lower,upper,scale)
@@ -815,7 +971,7 @@ class refine:
 #GAMMA: O5'-C5'-C4'-C3'            48
 #DELTA: C5'-C4'-C3'-O3'            60 140
 #NU2:  C4'-C3'-C2'-C1'             -40 40
-#HOXI:  C3'-C2'-O2'-HO2''         -140 
+#HOXI:  C3'-C2'-O2'-HO2''         -140
 #NU1:  C3'-C2'-C1'-N9'             60 140
 #CHI:  C2'-C1'-N? - C?             97
 #EPSI:  C4'-C3'-O3'-P(i+1)       -152
@@ -942,7 +1098,7 @@ class refine:
         angleBoundaries = RNARotamer.getAngleBoundaries(polymer, str(residueNum), rotamerName, mul)
         for angleBoundary in angleBoundaries:
             self.dihedral.addBoundary(angleBoundary)
-    
+
     def getSuiteAngles(self, molecule):
         angles  = [
               ["0.C5'","0.C4'","0.C3'","0.O3'"],
@@ -1059,7 +1215,7 @@ class refine:
         uncgPat = re.compile('U[AGUC]CG')
 
         pairs = self.getPairs(vienna)
-      
+
         i = 0
         sets = []
 
@@ -1092,7 +1248,7 @@ class refine:
                 self.addHelix(polymer,set[0],set[3],set[1],set[2],False)
         pat = re.compile('\(\(\.\.\.\.\)\)')
         for m in pat.finditer(vienna):
-            gnraStart = m.start()+2 
+            gnraStart = m.start()+2
             tetraLoopSeq = ""
             tetraLoopRes = []
             for iRes in range(gnraStart,gnraStart+4):
@@ -1114,8 +1270,8 @@ class refine:
         resNumJ = str(resNumJ)
         resI = polymer.getResidue(resNumI)
         resJ = polymer.getResidue(resNumJ)
-        resNameI = resI.getName() 
-        resNameJ = resJ.getName() 
+        resNameI = resI.getName()
+        resNameJ = resJ.getName()
         dHN = 1.89
         dHNlow = 1.8
         dHO = 1.89
@@ -1231,6 +1387,8 @@ class refine:
 
     def readSequence(self,seqFile):
         seqReader = Sequence()
+        if (self.reslib):
+            PDBFile.setLocalResLibDir(self.reslib)
         self.molecule = seqReader.read(seqFile)
         self.molecule.selectAtoms('*.*')
         self.molName = self.molecule.getName()
@@ -1259,7 +1417,7 @@ class refine:
         pdb = PDBFile()
         pdb.read(fileName)
         self.molecule = Molecule.getActive()
- 
+
         self.molName = self.molecule.getName()
         self.molecule.selectAtoms('*.*')
         return self.molecule
@@ -1360,14 +1518,14 @@ class refine:
         from org.nmrfx.structure.chemistry import MolFilter
         refShifts = {"A.H2":7.93, "A.H8":8.33, "G.H8":7.87, "C.H5":5.84, "U.H5":5.76,
             "C.H6":8.02, "U.H6":8.01, "A.H1'":5.38, "G.H1'":5.37, "C.H1'":5.45,
-            "U.H1'":5.50, "A.H2'":4.54, "G.H2'":4.59, "C.H2'":4.54, "U.H2'":4.54, 
+            "U.H1'":5.50, "A.H2'":4.54, "G.H2'":4.59, "C.H2'":4.54, "U.H2'":4.54,
             "A.H3'":4.59, "G.H3'":4.59, "C.H3'":4.59, "U.H3'":4.59
         }
 
         ringShifts = RingCurrentShift()
         ringShifts.makeRingList(self.molecule)
         filterString = "*.H8,H6,H2,H1',H2'"
-  
+
         molFilter = MolFilter(filterString)
         spatialSets = Molecule.matchAtoms(molFilter)
 
@@ -1771,4 +1929,3 @@ def doSGD(seed,homeDir=None):
     dOpt = dynOptions(150000,highFrac=0.4)
     refiner.sgd(dOpt)
     refiner.output()
-
