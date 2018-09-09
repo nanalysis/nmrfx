@@ -21,6 +21,7 @@ import org.nmrfx.structure.chemistry.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -39,6 +40,7 @@ public class Sequence {
     private int connectPosition = -1;
     private Molecule molecule;
     private final static Map<String, String> residueAliases = new HashMap<>();
+    private final static List<String> AMINO_ACID_NAMES = new ArrayList<>();
 
     static {
         residueAliases.put("rade", "a");
@@ -56,6 +58,66 @@ public class Sequence {
         residueAliases.put("dthy", "dt");
         residueAliases.put("dura", "du");
         residueAliases.put("duri", "du");
+    }
+
+    static {
+        AMINO_ACID_NAMES.add("ala");
+        AMINO_ACID_NAMES.add("arg");
+        AMINO_ACID_NAMES.add("asn");
+        AMINO_ACID_NAMES.add("asp");
+        AMINO_ACID_NAMES.add("cys");
+        AMINO_ACID_NAMES.add("gln");
+        AMINO_ACID_NAMES.add("glu");
+        AMINO_ACID_NAMES.add("gly");
+        AMINO_ACID_NAMES.add("his");
+        AMINO_ACID_NAMES.add("ile");
+        AMINO_ACID_NAMES.add("leu");
+        AMINO_ACID_NAMES.add("lys");
+        AMINO_ACID_NAMES.add("met");
+        AMINO_ACID_NAMES.add("phe");
+        AMINO_ACID_NAMES.add("pro");
+        AMINO_ACID_NAMES.add("pro_cis");
+        AMINO_ACID_NAMES.add("ser");
+        AMINO_ACID_NAMES.add("thr");
+        AMINO_ACID_NAMES.add("trp");
+        AMINO_ACID_NAMES.add("tyr");
+        AMINO_ACID_NAMES.add("val");
+
+    }
+
+    private void addUnnaturalResidue(Residue residue) {
+        Atom lastAtom = this.connectAtom;
+
+        // Note this might need to be changed to specify arbitrary start point in seq file
+        Atom firstAtom = residue.getFirstBackBoneAtom();
+        Atom startAtom = residue.getAtom("CAX");
+
+        System.out.println("Bond added between " + lastAtom.getShortName() + " " + firstAtom.getShortName());
+        // Note this might need to be changed to specify arbitrary end point in seq file
+        lastAtom = residue.getLastBackBoneAtom();
+        residue.genMeasuredTree(startAtom);
+        residue.removeConnectors();
+//        Bond bond = new Bond(lastAtom, firstAtom);
+//        firstAtom.parent = lastAtom;
+//        lastAtom.addBond(bond, 0);
+//        firstAtom.addBond(bond);
+//        residue.addBond(bond);
+        Atom parent = connectAtom;
+        connectBond = new Bond(parent, firstAtom);
+        Bond bond = connectBond;
+        parent.bonds.add(connectPosition, connectBond);
+        parent.addBond(bond);
+        residue.addBond(bond);
+        System.out.println("connect " + bond.toString());
+
+        firstAtom.parent = parent;
+        firstAtom.irpIndex = 0;
+        bond = new Bond(firstAtom, parent);
+        firstAtom.addBond(bond);
+        this.connectAtom = lastAtom;
+        System.out.println("set dih for " + residue.getAtom("O").getShortName());
+        residue.getAtom("O").dihedralAngle = (float) Math.PI;
+        //residue.adjustBorderingAtoms();
     }
 
     public enum PRFFields {
@@ -341,8 +403,42 @@ public class Sequence {
                 }
 
             }
+        } else {
+            Compound compound = readResidue(fileName, coordSetName, residue);
+            if (compound != null) {
+                result = true;
+                addUnnaturalResidue(residue);
+            }
+            // FIXME : What happens if first residue is an unnatural residue
+            if (this.connectAtom != null) {
+
+
+                /* FIXME: must also change to accomodate whether nucleic acid or protein */
+            }
         }
         return result;
+    }
+
+    public Compound readResidue(String fileName, String coordSetName, Residue residue) throws MoleculeIOException {
+        String localResLibDir = PDBFile.getLocalReslibDir();
+        File file = new File(fileName);
+        String fileShortName = file.getName();
+        String localFile = localResLibDir + "/" + fileShortName.split(".prf")[0];
+        String[] exts = {".pdb", ".sdf"};
+        Polymer polymer = (Polymer) molecule.getEntity(coordSetName);
+        Compound compound = null;
+        for (String ext : exts) {
+            file = new File(localFile + ext);
+            if (file.canRead()) {
+                if (ext.equals(".pdb")) {
+                    compound = PDBFile.readResidue(localFile + ext, null, molecule, coordSetName, residue);
+                } else {
+                    compound = SDFile.readResidue(localFile + ext, null, molecule, coordSetName, residue);
+                }
+                break;
+            }
+        }
+        return compound;
     }
 
     public Molecule read(String fileName) throws MoleculeIOException {
@@ -394,7 +490,7 @@ public class Sequence {
         LineNumberReader lineReader = null;
         Polymer polymer = null;
         Residue residue = null;
-
+        boolean setPolymerType = false;
         String iRes = "1";
         String[] stringArg = new String[2];
         Pattern pattern = Pattern.compile("[-/\\w/\\.]+");
@@ -524,6 +620,22 @@ public class Sequence {
             }
 
             resName = PDBAtomParser.pdbResToPRFName(resName, 'r');
+
+            if (!setPolymerType) {
+                String polymerType = null;
+                if (residueAliases.values().contains(resName)) {
+                    polymerType = "nucleicacid";
+                    setPolymerType = true;
+                } else if (AMINO_ACID_NAMES.contains(resName)) {
+                    polymerType = "polypeptide";
+                    setPolymerType = true;
+                }
+                /* if all unnatural, maybe set this by a flag from the yaml file with ptype */
+                if (setPolymerType) {
+                    polymer.setPolymerType(polymerType);
+                }
+            }
+
             residue = new Residue(iRes, resName.toUpperCase());
             residue.molecule = molecule;
             polymer.addResidue(residue);
