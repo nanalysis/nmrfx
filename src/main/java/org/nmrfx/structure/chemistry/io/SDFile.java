@@ -416,6 +416,10 @@ public class SDFile {
     }
 
     public static Compound readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName) throws MoleculeIOException {
+        return readResidue(fileName, fileContent, molecule, coordSetName, null);
+    }
+
+    public static Compound readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName, Residue residue) throws MoleculeIOException {
         if (coordSetName == null) {
             // XXX
             coordSetName = ((CoordSet) molecule.coordSets.values().iterator().next()).getName();
@@ -423,11 +427,12 @@ public class SDFile {
         SDFile sdFile = new SDFile();
         sdFile.getMolName(fileName);
         String compoundName = sdFile.molName;
-        Compound compound = new Compound("1", compoundName);
+        Compound compound = residue != null ? residue : new Compound("1", compoundName);;
         compound.molecule = molecule;
         compound.assemblyID = molecule.entityLabels.size() + 1;
-
-        molecule.addEntity(compound, coordSetName);
+        if (residue == null){
+            molecule.addEntity(compound, coordSetName);
+        }
         sdFile.readMol(fileName, fileContent, compound);
         return compound;
     }
