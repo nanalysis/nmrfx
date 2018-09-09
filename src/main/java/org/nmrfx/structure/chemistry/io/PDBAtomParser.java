@@ -19,6 +19,8 @@
 package org.nmrfx.structure.chemistry.io;
 
 public class PDBAtomParser extends AtomParser {
+    
+    String atomNum;
 
     public PDBAtomParser(String string) {
         this(string, false);
@@ -54,6 +56,7 @@ public class PDBAtomParser extends AtomParser {
 // resName should only be in columns 17-19, but cyana uses four characters for rna/dna
         resName = string.substring(17, 21).trim();
         atomName = string.substring(12, 17);  // CYANA sticks ' char for atoms like HO2' in pos 16
+        atomNum = string.substring(7, 11).trim();
         if (atomName.charAt(4) != '\'') {     // kluge for cyana
             atomName = atomName.substring(0, 4);
         }

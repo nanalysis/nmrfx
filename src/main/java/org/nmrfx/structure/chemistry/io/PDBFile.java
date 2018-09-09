@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,6 +56,15 @@ public class PDBFile {
         iupacMode = newValue;
     }
 
+    /**
+     * setLocalResLibDir is used to specify a directory of user generated
+     * residues.
+     *
+     * @param localDir provides a path to the directory
+     *
+     * When specifying a sequence, if the residue name is not found within the
+     * standard library, this path will be parsed for the necessary file.
+     */
     public static void setLocalReslibDir(final String dirName) {
         localReslibDir = dirName;
     }
@@ -233,6 +243,9 @@ public class PDBFile {
     }
 
     public static void capPolymer(Polymer polymer) {
+        if (true) {
+            return;
+        }
         Residue residue = polymer.firstResidue;
         List<Atom> atoms = residue.getAtoms();
         if (atoms.size() > 2) {
@@ -1029,7 +1042,11 @@ public class PDBFile {
         }
     }
 
-    public static void readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName)
+    public static Compound readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName) throws MoleculeIOException {
+        return readResidue(fileName, fileContent, molecule, coordSetName, null);
+    }
+
+    public static Compound readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName, Residue residue)
             throws MoleculeIOException {
         String molName = molecule.name;
 
@@ -1067,7 +1084,8 @@ public class PDBFile {
         // Make atom list so lastResNum is calculated
         molecule.makeAtomList();
         Compound compound = null;
-
+        Map<String, Atom> atomMap = new HashMap<>();
+        boolean calcBonds = true;
         while (true) {
             try {
                 string = lineReader.readLine();
@@ -1075,27 +1093,40 @@ public class PDBFile {
                 System.err.println(ioe.getMessage());
                 molecule.makeAtomList();
                 molecule.getAtomTypes();
-                compound.calcAllBonds();
-                return;
+                if (calcBonds) {
+                    compound.calcAllBonds();
+                }
+                return compound;
             }
 
             if (string == null) {
                 molecule.makeAtomList();
                 molecule.getAtomTypes();
-                compound.calcAllBonds();
-                return;
+                if (calcBonds) {
+                    System.out.println("calculating bonds");
+                    compound.calcAllBonds();
+                }
+                return compound;
             }
             if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
                 PDBAtomParser atomParse = new PDBAtomParser(string);
                 if (compound == null) {
                     System.out.println("add compound with " + String.valueOf(molecule.lastResNum + 1));
-                    compound = new Compound(String.valueOf(molecule.lastResNum + 1), atomParse.resName);
+                    compound = residue != null ? residue : new Compound(String.valueOf(molecule.lastResNum + 1), atomParse.resName);
                     compound.molecule = molecule;
                     compound.assemblyID = molecule.entityLabels.size() + 1;
-                    molecule.addEntity(compound, coordSetName);
+                    if (residue == null) {
+                        molecule.addEntity(compound, coordSetName);
+                    }
                 }
+                String atomNum = atomParse.atomNum;
+                String atomName = atomParse.atomName;
+                String atomType = atomName.substring(0, 1);
                 Atom atom = new Atom(atomParse);
+                atom.setType(atomType);
+                atomMap.put(atomNum, atom);
                 atom.setPointValidity(structureNumber, true);
+
                 atom.entity = compound;
                 atom.getPoint(structureNumber);
                 Point3 pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
@@ -1104,6 +1135,26 @@ public class PDBFile {
                 atom.setBFactor((float) atomParse.bfactor);
                 compound.addAtom(atom);
             }
+            if (string.startsWith("CONECT")) {
+                calcBonds = false;
+                String[] arguments = string.split("\\s+");
+                Atom bondedAtom = atomMap.get(arguments[1]);
+                for (int i = 2; i < arguments.length; i++) {
+                    Atom bondeeAtom = atomMap.get(arguments[i]);
+                    if (!bondedAtom.isBonded(bondeeAtom)) {
+                        // Prevent duplication of bonds
+                        Bond bond = new Bond(bondedAtom, bondeeAtom);
+                        if (residue != null) {
+                            residue.addBond(bond);
+                        } else {
+                            compound.addBond(bond);
+                        }
+                        bondedAtom.addBond(bond);
+                        bondeeAtom.addBond(bond);
+                    }
+                }
+            }
         }
+
     }
 }
