@@ -65,7 +65,7 @@ public class PDBFile {
      * When specifying a sequence, if the residue name is not found within the
      * standard library, this path will be parsed for the necessary file.
      */
-    public static void setLocalReslibDir(final String dirName) {
+    public static void setLocalResLibDir(final String dirName) {
         localReslibDir = dirName;
     }
 
