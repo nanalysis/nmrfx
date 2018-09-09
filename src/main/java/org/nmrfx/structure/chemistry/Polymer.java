@@ -33,7 +33,15 @@ public class Polymer extends Entity {
     private boolean libraryMode = true;
     ArrayList<AtomSpecifier> deletedAtoms = new ArrayList<AtomSpecifier>();
     ArrayList<BondSpecifier> addedBonds = new ArrayList<BondSpecifier>();
-
+    private final static Map<String, String> cyclicCloseUp = new HashMap<>();
+    
+    static {
+        // using distance constraints to close up angles
+        cyclicCloseUp.put("H", "2.045");
+        cyclicCloseUp.put("N", "1.32");
+        cyclicCloseUp.put("CA", "2.454");
+    }
+    
     class PolymerIterator implements Iterator {
 
         Residue current = firstResidue;
@@ -297,5 +305,34 @@ public class Polymer extends Entity {
             }
         }
         return rna;
+    }
+
+    // fixme doesn't add enough constraints.
+    public List<String> getCyclicConstraints() {
+        /**
+         * getCyclicConstraints returns a list of constraints necessary to
+         * create a cyclic polymer.
+         *
+         * Is called by addCyclicBond in refine.py
+         */
+        
+        List<String> constraints = new ArrayList<>();
+        
+        Residue res1 = firstResidue;
+        Residue res2 = lastResidue;
+
+        Atom connectee = res1.getFirstBackBoneAtom();
+        Atom connector = res2.getLastBackBoneAtom();
+
+        List<Atom> atoms = connectee.getConnected();
+        atoms.add(connectee);
+        
+        String constant = connector.getFullName() + " ";
+        for (Atom atom : atoms){
+            String distance = cyclicCloseUp.get(atom.getName());
+            String constraint = constant + atom.getFullName() + " " + distance;
+            constraints.add(constraint);
+        }
+        return constraints;
     }
 }
