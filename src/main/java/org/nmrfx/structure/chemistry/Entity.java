@@ -21,10 +21,11 @@ import org.nmrfx.structure.chemistry.miner.AtomContainer;
 
 import java.io.*;
 import java.util.*;
+import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
 import org.nmrfx.structure.chemistry.miner.IAtom;
 import org.nmrfx.structure.chemistry.miner.IBond;
 
-public class Entity implements AtomContainer, Serializable {
+public class Entity implements AtomContainer, Serializable, ITree {
 
     public static String[] entityStrings = {
         "_Entity.Ambiguous_conformational_states",
@@ -222,6 +223,10 @@ public class Entity implements AtomContainer, Serializable {
         return atoms;
     }
 
+    public List<Atom> getAtomArray() {
+        return getAtoms();
+    }
+
     public Atom getAtom(int index) {
         return atoms.get(index);
     }
@@ -270,6 +275,17 @@ public class Entity implements AtomContainer, Serializable {
 
     public void sortByIndex() {
         Collections.sort(atoms, Atom::compareByIndex);
+    }
+
+    public void genMeasuredTree(Atom startAtom) {
+        if (startAtom == null) {
+            startAtom = atoms.get(0);
+        }
+        
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+        List<List<Atom>> atomTree = aTreeGen.genTree(this, startAtom, null);
+        aTreeGen.measureAtomTree(this, atomTree);
+        molecule.setRingClosures(aTreeGen.getRingClosures());
     }
 
 }
