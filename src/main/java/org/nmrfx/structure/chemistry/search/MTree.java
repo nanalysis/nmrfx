@@ -245,7 +245,7 @@ public class MTree {
         }
         MNode temp1 = node1.parent;
         MNode temp2 = node2.parent;
-        for (int i = 0; i < node1.shell - 1; i++) {
+        for (int i = 0; i < node1.shell; i++) {
             if (temp1 == temp2) {
                 return true;
             }
