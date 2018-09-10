@@ -90,34 +90,29 @@ public class Sequence {
 
         // Note this might need to be changed to specify arbitrary start point in seq file
         Atom firstAtom = residue.getFirstBackBoneAtom();
-        Atom startAtom = residue.getAtom("CAX");
 
-        System.out.println("Bond added between " + lastAtom.getShortName() + " " + firstAtom.getShortName());
         // Note this might need to be changed to specify arbitrary end point in seq file
         lastAtom = residue.getLastBackBoneAtom();
+
+        Atom startAtom = residue.getAtom("CAX");
         residue.genMeasuredTree(startAtom);
         residue.removeConnectors();
-//        Bond bond = new Bond(lastAtom, firstAtom);
-//        firstAtom.parent = lastAtom;
-//        lastAtom.addBond(bond, 0);
-//        firstAtom.addBond(bond);
-//        residue.addBond(bond);
+
         Atom parent = connectAtom;
         connectBond = new Bond(parent, firstAtom);
         Bond bond = connectBond;
         parent.bonds.add(connectPosition, connectBond);
         parent.addBond(bond);
         residue.addBond(bond);
-        System.out.println("connect " + bond.toString());
 
         firstAtom.parent = parent;
         firstAtom.irpIndex = 0;
         bond = new Bond(firstAtom, parent);
         firstAtom.addBond(bond);
         this.connectAtom = lastAtom;
-        System.out.println("set dih for " + residue.getAtom("O").getShortName());
+
+        // fixme this needs to be changed for non-amino acid residue atoms
         residue.getAtom("O").dihedralAngle = (float) Math.PI;
-        //residue.adjustBorderingAtoms();
     }
 
     public enum PRFFields {
