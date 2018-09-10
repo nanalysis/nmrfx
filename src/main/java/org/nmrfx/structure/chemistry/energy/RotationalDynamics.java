@@ -187,7 +187,7 @@ public class RotationalDynamics {
             sumSq += delAngle * delAngle;
             //System.out.println(deltaSum);
             if (daughter == null) {
-                System.out.println(diAtom.getShortName());
+                System.out.println("daughter atom is null " + diAtom.getShortName());
             }
             daughter.dihedralAngle += delAngle;
             daughter.dihedralAngle = (float) Dihedral.reduceAngle(daughter.dihedralAngle);
