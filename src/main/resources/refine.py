@@ -625,8 +625,8 @@ class refine:
             if 'molecule' in data:
                 molData = data['molecule']
                 self.reslib = molData['reslib'] if 'reslib' in molData else None
-                if 'structs' in molData:
-                    molList = molData['structs']
+                if 'entities' in molData:
+                    molList = molData['entities']
                     molList = prioritizePolymers(molList)
                     for molDict in molList:
                         residues = ",".join(molDict['residues'].split()) if 'residues' in molDict else None
