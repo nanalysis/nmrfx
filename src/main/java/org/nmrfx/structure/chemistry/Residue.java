@@ -437,27 +437,6 @@ public class Residue extends Compound {
                 removeAtoms.add(atom);
             }
         }
-        System.out.println(getName());
-        for (Atom atom : atoms) {
-            if (!atom.getName().endsWith("X")) {
-                System.out.println(atom.getName() + " " + previous + " " + atom.parent);
-                if ((previous != null) && (atom.parent != null)) {
-                    String parName = atom.parent.getName();
-                    System.out.println("look for " + parName);
-
-                    if ((parName.endsWith("X"))) {
-                        System.out.println("found for " + parName);
-                        parName = parName.substring(0, parName.length() - 1);
-                        Atom parent = previous.getAtom(parName);
-                        if (parent == null) {
-                            System.out.println("Doesn't exist " + parName);
-                        } else {
-                          //  atom.parent = parent;
-                        }
-                    }
-                }
-            }
-        }
         for (Atom atom : removeAtoms) {
             List<IBond> rBonds = atom.getBonds();
             atom.removeBonds();
@@ -467,17 +446,9 @@ public class Residue extends Compound {
         }
 
         for (Atom atom : removeAtoms) {
-            System.out.println("remove " + atom.getShortName());
             removeAtom(atom);
         }
-        for (Bond bond:bonds) {
-            System.out.println(bond.toString());
-        }
-        for (Atom atom: atoms) {
-            System.out.println("atom " + atom.getShortName());
-        }
         molecule.updateBondArray();
-
     }
 
     public void adjustBorderingAtoms() {
