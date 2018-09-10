@@ -792,7 +792,7 @@ public class Molecule implements Serializable, ITree {
             }
             iAtom++;
         }
-        dumpCoordsGen();
+        //dumpCoordsGen();
     }
 
     public void dumpCoordsGen() {
