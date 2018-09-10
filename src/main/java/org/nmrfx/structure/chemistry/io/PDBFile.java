@@ -243,9 +243,6 @@ public class PDBFile {
     }
 
     public static void capPolymer(Polymer polymer) {
-        if (true) {
-            return;
-        }
         Residue residue = polymer.firstResidue;
         List<Atom> atoms = residue.getAtoms();
         if (atoms.size() > 2) {
