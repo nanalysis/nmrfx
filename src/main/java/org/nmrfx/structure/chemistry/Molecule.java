@@ -753,8 +753,8 @@ public class Molecule implements Serializable, ITree {
         }
         AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         atomTree = aTreeGen.genTree(this, startAtom, null);
-        // fixme  turned off till we can only measure once
-       // aTreeGen.measureAtomTree(this, atomTree);
+        // fixme  need to not measure already measured geometry till we can only measure once
+        aTreeGen.measureAtomTree(this, atomTree);
         setRingClosures(aTreeGen.getRingClosures());
         setupGenCoords();
     }
@@ -792,7 +792,7 @@ public class Molecule implements Serializable, ITree {
             }
             iAtom++;
         }
-        //dumpCoordsGen();
+        dumpCoordsGen();
     }
 
     public void dumpCoordsGen() {
