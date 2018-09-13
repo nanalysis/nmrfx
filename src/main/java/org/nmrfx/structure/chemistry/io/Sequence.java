@@ -48,6 +48,7 @@ public class Sequence {
         residueAliases.put("rcyt", "c");
         residueAliases.put("rc", "c");
         residueAliases.put("rura", "u");
+        residueAliases.put("ura", "u");
         residueAliases.put("ruri", "u");
         residueAliases.put("ru", "u");
         residueAliases.put("dade", "da");
@@ -57,7 +58,7 @@ public class Sequence {
         residueAliases.put("dura", "du");
         residueAliases.put("duri", "du");
     }
-
+    
     public enum PRFFields {
 
         ATOM("ATOM", 6, 6) {

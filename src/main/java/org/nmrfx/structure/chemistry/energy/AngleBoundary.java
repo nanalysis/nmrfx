@@ -20,6 +20,7 @@ package org.nmrfx.structure.chemistry.energy;
 import java.util.List;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.structure.chemistry.Molecule;
 
 /**
  * This class determines if the angle boundary is valid - angle boundary for
@@ -69,7 +70,7 @@ public class AngleBoundary {
         this.atoms = new Atom[atoms.length];
         System.arraycopy(atoms, 0, this.atoms, 0, atoms.length);
     }
-
+    
     public AngleBoundary(List<Atom> atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
         if (atoms.size() != 4) {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
@@ -92,7 +93,22 @@ public class AngleBoundary {
         this.atoms = new Atom[atoms.size()];
         atoms.toArray(this.atoms);
     }
+    
+        public static boolean allowRotation(List<String> atomNames) {
+            
+        int arrayLength = atomNames.size();
+        if (arrayLength != 4) {
+            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
+        }
+        Atom[] atoms = new Atom[4];
+        for (int i = 0; i < arrayLength; i++) {
+            atoms[i] = Molecule.getAtomByName(atomNames.get(i));
+        }
 
+        return !((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2]));
+    }   
+        
+        
     public void setIndex(final int index) {
         this.index = index;
     }
