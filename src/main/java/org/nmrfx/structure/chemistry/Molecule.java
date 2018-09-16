@@ -760,12 +760,12 @@ public class Molecule implements Serializable, ITree {
     }
 
     public void setupGenCoords() throws RuntimeException {
+        updateAtomArray();
         if (atomTree == null) {
             AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
             atomTree = aTreeGen.genTree(this, atoms.get(0), null);
         }
         nullCoords();
-        updateAtomArray();
         makeAtomList();
         genVecs = new int[atomTree.size()][];
         for (Atom a3 : atomList) {
