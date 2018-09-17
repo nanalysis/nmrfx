@@ -85,19 +85,19 @@ public class Sequence {
 
     }
 
-    private void addUnnaturalResidue(Residue residue) {
-        Atom lastAtom = this.connectAtom;
-
-        // Note this might need to be changed to specify arbitrary start point in seq file
-        Atom firstAtom = residue.getFirstBackBoneAtom();
-
-        // Note this might need to be changed to specify arbitrary end point in seq file
-        lastAtom = residue.getLastBackBoneAtom();
-
-        Atom startAtom = residue.getAtom("CAX");
+    private void addNonStandardResidue(Residue residue) {
+        Atom startAtom;
+        if (residue.isCompliant()) {
+            residue.addConnectors();
+            startAtom = residue.getAtom("X");
+        } else {
+            startAtom = residue.getAtom("CAX");
+        }
+        molecule.updateBondArray();
         residue.genMeasuredTree(startAtom);
         residue.removeConnectors();
 
+        Atom firstAtom = residue.getFirstBackBoneAtom();
         Atom parent = connectAtom;
         connectBond = new Bond(parent, firstAtom);
         Bond bond = connectBond;
@@ -109,7 +109,7 @@ public class Sequence {
         firstAtom.irpIndex = 0;
         bond = new Bond(firstAtom, parent);
         firstAtom.addBond(bond);
-        this.connectAtom = lastAtom;
+        this.connectAtom = residue.getLastBackBoneAtom();
 
         // fixme this needs to be changed for non-amino acid residue atoms
         residue.getAtom("O").dihedralAngle = (float) Math.PI;
@@ -402,7 +402,7 @@ public class Sequence {
             Compound compound = readResidue(fileName, coordSetName, residue);
             if (compound != null) {
                 result = true;
-                addUnnaturalResidue(residue);
+                addNonStandardResidue(residue);
             }
             // FIXME : What happens if first residue is an unnatural residue
             if (this.connectAtom != null) {
