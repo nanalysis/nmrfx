@@ -19,6 +19,7 @@ package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords;
+import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import org.nmrfx.structure.utilities.Util;
 import java.io.*;
@@ -759,8 +760,20 @@ public class Molecule implements Serializable, ITree {
         setupGenCoords();
     }
 
+    public void setupEnergy(EnergyLists energyLists) {
+        invalidateAtomArray();
+        updateAtomArray();
+        makeAtomList();
+        atomTree = null;
+        setupGenCoords();
+        energyLists.makeAtomListFast();
+        updateVecCoords();
+    }
+
+
     public void setupGenCoords() throws RuntimeException {
         updateAtomArray();
+
         if (atomTree == null) {
             AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
             atomTree = aTreeGen.genTree(this, atoms.get(0), null);
