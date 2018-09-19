@@ -31,13 +31,8 @@ public class Residue extends Compound {
     private boolean standard = false;
     static Map standardResSet = new TreeMap();
     Map<String, Atom[]> pseudoMap = new HashMap<String, Atom[]>();
-    private final static Map<String, ArrayList<Double>> artAminoAcid = new HashMap<>();
-    private final static Map<String, ArrayList<Double>> artNucleicAcid = new HashMap<>();
     private final static String[] compliantAminoAcid = {"C", "CA", "N"};
-    private final static Map<String, List<String>> artAminoPriority = new HashMap<>();
-
     private final static String[] compliantNucleicAcid = {};
-    private final static Map<String, List<String>> artNucleicPriority = new HashMap<>();
 
     static {
         String[] standardResidues = {
@@ -53,130 +48,6 @@ public class Residue extends Compound {
         for (int i = 0; i < standardResidues.length; i += 2) {
             standardResSet.put(standardResidues[i], standardResidues[i + 1]);
         }
-
-        List<String> names = new ArrayList<>();
-        names.add("CD");
-        names.add("H");
-        names.add("CA");
-        artAminoPriority.put("N", names);
-
-        //For CD
-        names = new ArrayList<>();
-        names.add("HD3");
-        names.add("HD2");
-        names.add("CG");
-        artAminoPriority.put("CD", names);
-
-        //For CA
-        names = new ArrayList<>();
-        names.add("C");
-        names.add("HA3");
-        names.add("HA2");
-        names.add("CB");
-        names.add("HA");
-        artAminoPriority.put("CA", names);
-
-        //For H
-        names = new ArrayList<>();
-        artAminoPriority.put("H", names);
-
-        // Following are dihedral values, valence values and distances respectively
-        ArrayList<Double> tmp;
-
-        tmp = new ArrayList<>();
-        tmp.add(-120.0);
-        tmp.add(114.00);
-        tmp.add(1.32);
-        artAminoAcid.put("N", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(-120.0);
-        tmp.add(114.00);
-        tmp.add(1.32);
-        artAminoAcid.put("N", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(180.0);
-        tmp.add(123.0);
-        artAminoAcid.put("CA", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(180.0);
-        tmp.add(123.00);
-        artAminoAcid.put("H", tmp);
-
-        //Special case, both are dih values but first is with ring 2nd without
-        tmp = new ArrayList<>();
-        tmp.add(-360.0);
-        tmp.add((double) 'H');
-        tmp.add(-65.5);
-        tmp.add(120.0);
-        artAminoAcid.put("C", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(-179.1);
-        artAminoAcid.put("CB", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(18.6);
-        tmp.add(123.0);
-        artAminoAcid.put("CD", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(-161.9);
-        artAminoAcid.put("CG", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(-61.5);
-        artAminoAcid.put("HD3", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(120.0);
-        artAminoAcid.put("HD2", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(-120.0);
-        artAminoAcid.put("HA", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(120.58);
-        tmp.add(1.60);
-        artAminoAcid.put("P", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(120.00);
-        artAminoAcid.put("Pc", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(109.68);
-        artAminoAcid.put("OP1", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(109.68);
-        artAminoAcid.put("OP2", tmp);
-
-        tmp = new ArrayList<>();
-        tmp.add(104.38);
-        artAminoAcid.put("O5'", tmp);
-
-        /*
-        artAminoAcid.put("N", Arrays.asList(-120.0, 114.00, 1.32));
-        artAminoAcid.put("CA", Arrays.asList(180.0, 123));
-        artAminoAcid.put("H", Arrays.asList(0.0, 123.00));
-
-        //Special case, both are dih values but first is with ring 2nd without
-        artAminoAcid.put("C", Arrays.asList(-360, (float) 'H', -65.5, 120.0));
-
-        artAminoAcid.put("CB", Arrays.asList(-121.5));
-        artAminoAcid.put("CD", Arrays.asList(18.6, 123.0));
-        artAminoAcid.put("HD3", Arrays.asList(-61.5));
-        artAminoAcid.put("HD2", Arrays.asList(120.0));
-
-        artNucleicAcid.put("P", Arrays.asList(120.58, 1.60));
-        artNucleicAcid.put("Pc", Arrays.asList(120.00));
-        artNucleicAcid.put("OP1", Arrays.asList(109.68));
-        artNucleicAcid.put("OP2", Arrays.asList(109.68));
-        artNucleicAcid.put("O5'", Arrays.asList(104.38));*/
     }
 
     public Residue(String number, String name) {
@@ -441,28 +312,6 @@ public class Residue extends Compound {
         return atom;
     }
 
-    private void alterAtomValue(Atom atom, double value, int counter) {
-        if (counter < 2) {
-            value *= (Math.PI / 180.0);
-        }
-        switch (counter) {
-            case 0:
-                System.out.println(atom.getShortName() + " dih " + value + " in deg: " + value * (180.0 / Math.PI));
-                atom.dihedralAngle = (float) value;
-                break;
-            case 1:
-                System.out.println(atom.getShortName() + " val " + value + " in deg: " + value * (180.0 / Math.PI));
-
-                atom.valanceAngle = (float) value;
-                break;
-            case 2:
-                atom.bondLength = (float) value;
-                System.out.println(atom.getShortName() + " dis " + value);
-
-                break;
-        }
-    }
-
     public void removeConnectors() {
         List<Atom> removeAtoms = new ArrayList<>();
         for (Atom atom : atoms) {
@@ -482,84 +331,6 @@ public class Residue extends Compound {
             removeAtom(atom);
         }
         molecule.updateBondArray();
-    }
-
-    private void adjustAtomBondOrdering(Atom atom, Map<String, List<String>> priorityMap) {
-        List<String> bondPriorities = priorityMap.get(atom.getName());
-        List<Atom> children = atom.getChildren();
-        for (Atom child : children) {
-            System.out.println(atom.getShortName() + " " + child.getShortName());
-        }
-        Atom[] newOrder = new Atom[bondPriorities.size() + 1];
-        for (Atom child : children) {
-            String name = child.getName();
-            int index = name.endsWith("X") ? newOrder.length - 1 : bondPriorities.indexOf(name);
-            newOrder[index] = child;
-            Bond bond = child.getBond(atom).get();
-            this.removeBond(bond);
-            child.removeBondTo(atom);
-            atom.removeBondTo(child);
-        }
-        for (Atom child : newOrder) {
-            if (child != null) {
-                Bond bond = new Bond(atom, child);
-                child.addBond(bond);
-                atom.addBond(bond);
-                this.addBond(bond);
-            }
-        }
-        System.out.println();
-        for (Atom child : atom.getChildren()) {
-            System.out.println(atom.getShortName() + " " + child.getShortName());
-        }
-        System.out.println();
-    }
-
-    public void adjustBondOrdering() {
-        String pType = polymer.getPolymerType();
-        Map<String, List<String>> bondPriorities = pType.equals("polypeptide") ? artAminoPriority : artNucleicPriority;
-        Atom firstAtom = this.getFirstBackBoneAtom();
-        adjustAtomBondOrdering(firstAtom, bondPriorities);
-        for (Atom atom : firstAtom.getChildren()) {
-            if (!atom.getName().endsWith("X")) {
-                adjustAtomBondOrdering(atom, bondPriorities);
-            }
-        }
-    }
-
-    public void adjustBorderingAtoms() {
-        String pType = polymer.getPolymerType();
-        Map<String, ArrayList<Double>> borderingAtomValues = pType.equals("polypeptide") ? artAminoAcid : artNucleicAcid;
-        Set<String> atomNames = borderingAtomValues.keySet();
-        int counter;
-        for (String searchString : atomNames) {
-            Atom atom = this.getAtom(searchString);
-            if (atom != null) {
-                System.out.println(atom.getShortName());
-                List<Double> atomValues = (ArrayList) borderingAtomValues.get(searchString).clone();
-                counter = 0;
-                if (atomValues.get(0) == -360.0) { // Has dependency
-                    String dependencySearch = Character.toString((char) atomValues.get(1).floatValue());
-                    atomValues.remove(0);
-                    atomValues.remove(0);
-                    Atom dependencyAtom = this.getAtom(dependencySearch);
-                    while (atomValues.size() > 0) {
-                        double value = dependencyAtom == null ? atomValues.get(0) : atomValues.get(1);
-                        atomValues.remove(0);
-                        atomValues.remove(0);
-                        alterAtomValue(atom, value, counter);
-                        counter += 1;
-                    }
-                } else {
-                    while (atomValues.size() > 0) {
-                        double value = atomValues.get(0);
-                        alterAtomValue(atom, value, counter);
-                        atomValues.remove(0);
-                        counter += 1;
-                    }
-                }
-            }
-        }
     }
 
     public boolean isCompliant() {
@@ -637,7 +408,6 @@ public class Residue extends Compound {
             coords = new Coordinates(pts[1], pts[2], pt);
             coords.setup();
             pt = coords.calculate(dih, aX.bndCos, aX.bndSin);
-            System.out.println(aX.getShortName() + " " + pt.toString());
             aX.setPoint(pt);
 
         }

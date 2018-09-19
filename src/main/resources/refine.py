@@ -484,7 +484,6 @@ class refine:
         self.energyLists = energyLists
         if self.bondConstraints:
             for bondConstraint in self.bondConstraints:
-                print bondConstraint
                 atomName1, atomName2, distance = bondConstraint.split()
                 distance = float(distance)
                 self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
