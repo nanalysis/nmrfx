@@ -367,15 +367,17 @@ public class Residue extends Compound {
         Vector3D vec0 = atom.getPoint();
 
         List<Atom> cAtoms = atom.getConnected();
+        int count = 0;
         for (Atom cAtom : cAtoms) {
             if (!cAtom.getName().equals(exclusionList[0]) && !cAtom.getName().equals(exclusionList[1])) {
                 Vector3D vec1 = cAtom.getPoint();
                 vec1 = vec1.subtract(vec0).normalize().add(vec0);
                 vec = vec.add(vec1);
+                count++;
             }
         }
-
-        return new Point3(vec.scalarMultiply(0.5));
+        double scalarMultiplier = 1.0/count;
+        return new Point3(vec.scalarMultiply(scalarMultiplier));
     }
 
     public void addConnectors() {
