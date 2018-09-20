@@ -4,6 +4,7 @@ import array
 import random
 import seqalgs
 import re
+import xplor
 
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry.energy import EnergyLists
@@ -23,14 +24,10 @@ from org.nmrfx.structure.chemistry.miner import PathIterator
 from org.nmrfx.structure.chemistry.miner import NodeValidator
 from org.nmrfx.structure.chemistry.energy import AngleTreeGenerator
 
-
-
 #from tcl.lang import NvLiteShell
 #from tcl.lang import Interp
 from java.lang import String
 from java.util import ArrayList
-
-
 
 #tclInterp = Interp()
 #tclInterp.eval("puts hello")
@@ -200,8 +197,10 @@ class dynOptions:
 class refine:
     def __init__(self):
         self.cyanaAngleFiles = []
+        self.xplorAngleFiles = []
         self.nvAngleFiles = []
         self.cyanaDistanceFiles = []
+        self.xplorDistanceFiles = []
         self.suiteAngleFiles = []
         self.nvDistanceFiles = []
         self.angleStrings = []
@@ -859,10 +858,10 @@ class refine:
             #fixme Verify constraints
             restraints.append(("O4'", "H4'", 2.05, 2.2))
             # restraints.append(("O4'", "H4'", 1.97, 2.05))
-#            if resName in ('C','U'):
-#                restraints.append(("N1", "O4'",2.40, 2.68))
-#            else:
-#                restraints.append(("N9", "O4'",2.40, 2.68))
+            if resName in ('C','U', 'URA', 'RCYT'):
+                restraints.append(("N1", "O4'",2.40, 2.68))
+            else:
+                restraints.append(("N9", "O4'",2.40, 2.68))
             #restraints.append(("C5'", "C3'",2.56, 2.58))
             for restraint in restraints:
                 (a1,a2,lower,upper) = restraint
@@ -879,7 +878,7 @@ class refine:
             restraints = []
             restraints.append((("C5'","C4'","C3'","O3'"), 70, 155))
             restraints.append((("C4'","C3'","C2'","C1'"), -40, 40))
-            if resName in ('C','U'):
+            if resName in ('C','U','URA','RCYT'):
                 restraints.append((["C3'","C2'","C1'","N1"], 60, 140))
             else:
                 restraints.append((["C3'","C2'","C1'","N9"], 60, 140))
@@ -976,7 +975,6 @@ class refine:
 #EPSI:  C4'-C3'-O3'-P(i+1)       -152
 #283   RCYT  GAMMA     23.0    73.0  1.00E+00
 
-#FIXME : Because of the change in CHI1 and CHI2, the necessary .prf files need to be changed to accomodate this change.
 
     def readCYANAAngles(self, fileName,mol):
         angleMap = {}
@@ -986,10 +984,10 @@ class refine:
         angleMap['ALPHA']= ["-1:O3'","P","O5'","C5'"]
         angleMap['BETA']= ["P","O5'","C5'","C4'"]
         angleMap['GAMMA']= ["O5'","C5'","C4'","C3'"]
-        angleMap['NU2']= ["C1'","C2'","C3'","C4'"] # changed the last atom "C1'" -> "C4'"
+        angleMap['NU2']= ["C1'","C2'","C3'","C4'"]
         angleMap['PHI']= ["-1:C","N","CA","C"]
         angleMap['PSI']= ["N","CA","C","1:N"]
-        angleMap['NU1']= ["O4'","C1'","C2'","C3'"] # changed the last atom "N9" -> "C3'" (reversed direction of atoms for dihedral)
+        angleMap['NU1']= ["O4'","C1'","C2'","C3'"]
         angleMap['CHI','U']= ["O4'","C1'","N1","C2"]
         angleMap['CHI','C']= ["O4'","C1'","N1","C2"]
         angleMap['CHI','G']= ["O4'","C1'","N9","C4"]
@@ -1035,7 +1033,7 @@ class refine:
         angleMap['CHI3','MET']= ["CB","CG","SD","CE"]
         angleMap['CHI4','ARG']= ["CG","CD","NE","CZ"]
         angleMap['CHI4','LYS']= ["CG","CD","CE","NZ"]
-        angleMap['CHI4','ARG']= ["CD","NE","CZ","NH1"] #?
+        angleMap['CHI4','ARG']= ["CD","NE","CZ","NH1"]
 
         fIn = open(fileName,'r')
         for line in fIn:
@@ -1481,6 +1479,8 @@ class refine:
     def addAngleFile(self,file, mode='nv'):
         if mode == 'cyana':
             self.cyanaAngleFiles.append(file)
+        elif mode == 'xplor':
+            self.xplorAngleFiles.append(file)
         else:
             self.nvAngleFiles.append(file)
 
@@ -1492,15 +1492,20 @@ class refine:
     def addAngle(self,angleString):
         self.angleStrings.append(angleString)
 
-    def addDistanceFile(self,file, mode='nv'):
+    def addDistanceFile(self, file, mode='nv'):
         if mode == 'cyana':
             self.cyanaDistanceFiles.append(file)
+        elif mode == 'xplor':
+            self.xplorDistanceFiles.append(file)
         else:
             self.nvDistanceFiles.append(file)
 
     def readAngleFiles(self):
         for file in self.cyanaAngleFiles:
             self.readCYANAAngles(file,self.molName)
+        for file in self.xplorAngleFiles:
+            xplorFile = xplor.XPLOR(file)
+            xplorFile.readXPLORAngleConstraints(self.dihedral)
         for file in self.nvAngleFiles:
             self.loadDihedralsFromFile(file)
 
@@ -1508,7 +1513,10 @@ class refine:
         for file in self.cyanaDistanceFiles:
             lowerFileName = file+'.lol'
             upperFileName = file+'.upl'
-            self.readCYANADistances([lowerFileName, upperFileName],self.molName)
+            self.readCYANADistances([lowerFileName, upperFileName], self.molName)
+        for file in self.xplorDistanceFiles:
+            xplorFile = xplor.XPLOR(file)
+            xplorFile.readXPLORDistanceConstraints(self.energyLists)
         for file in self.nvDistanceFiles:
             self.loadDistancesFromFile(file)
 
