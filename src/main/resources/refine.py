@@ -35,6 +35,8 @@ from java.util import ArrayList
 #tclInterp.eval('java::load org.nmrfx.structure.chemistry.ChemistryExt')
 PDBFile.putReslibDir('IUPAC','resource:/reslib_iu')
 
+bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
+
 protein3To1 = {"ALA":"A","ASP":"D","ASN":"N","ARG":"R","CYS":"C","GLU":"E","GLN":"Q","ILE":"I",
     "VAL":"V","LEU":"L","PRO":"P","PHE":"F","TYR":"Y","TRP":"W","LYS":"K","MET":"M",
     "HIS":"H","GLY":"G","SER":"S","THR":"T"}
@@ -169,6 +171,22 @@ def prioritizePolymers(molList):
     returnList += smallMoleculeList
     return returnList
 
+class Constraint:
+    def __init__(self, pair, distance, mode, setting = None):
+        Constraint.lastViewed = self
+        self.pairs = [pair]
+        self.lower = distance if mode == 'lower' else None
+        self.upper = distance if mode == 'upper' else None
+        self.tester = 0 if not setting else -1 if setting == 'narrow' else 1
+
+    def addBound(self, distance, mode):
+        self.lower = distance if mode == 'lower' and (not self.lower or ((self.lower-distance)*self.tester >= 0 )) else self.lower
+        self.upper = distance if mode == 'upper' and (not self.upper or ((distance - self.upper)*self.tester >= 0)) else self.upper
+        Constraint.lastViewed = self
+
+    def addPair(self, pair):
+        if pair not in self.pairs:
+            self.pairs.append(pair)
 
 
 
@@ -199,10 +217,11 @@ class refine:
         self.cyanaAngleFiles = []
         self.xplorAngleFiles = []
         self.nvAngleFiles = []
-        self.cyanaDistanceFiles = []
-        self.xplorDistanceFiles = []
+        self.cyanaDistanceFiles = {}
+        self.xplorDistanceFiles = {}
         self.suiteAngleFiles = []
-        self.nvDistanceFiles = []
+        self.nvDistanceFiles = {}
+        self.constraints = {} # map of atom pairs to
         self.angleStrings = []
         self.bondConstraints = []
         self.disLim = 4.6
@@ -592,13 +611,13 @@ class refine:
                 #bound = AngleBoundary(atomName,lower,upper,scale,center,sigma,height)
                 #self.dihedral.addBoundary(atomName,bound)
 
-    def loadDistancesFromFile(self,fileName):
+    def loadDistancesFromFile(self,fileName, keepSetting=None):
        file = open(fileName,"r")
        data= file.read()
        file.close()
-       self.loadDistances(data)
+       self.loadDistances(data, keepSetting=None)
 
-    def loadDistances(self,data):
+    def loadDistances(self,data, keepSetting=None):
         lines = data.split('\n')
         for line in lines:
             line = line.strip()
@@ -607,13 +626,120 @@ class refine:
             if (line[0] == '#'):
                 continue
             values = line.split()
-            (atomName1,atomName2,s2,s3) = values
+            (fullAtom1,fullAtom2,s2,s3) = values
             lower = float(s2)
             upper = float(s3)
-            self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
+            atomPair = ' '.join([fullAtom1,fullAtom2]) if fullAtom1 < fullAtom2 else ' '.join([fullAtom2, fullAtom1])
+            if atomPair not in self.constraints:
+                constraint = Constraint(atomPair, lower, 'lower', setting=keepSetting)
+                self.constraints[atomPair] = constraint
+                self.constraints[atomPair].addBound(upper, 'upper')
+            else:
+                self.constraints[atomPair].addBound(lower, 'lower')
+                self.constraints[atomPair].addBound(upper, 'upper')
+
+    def readXPLORDistanceConstraints(self, fileName, keepSetting=None):
+        xplorFile = xplor.XPLOR(fileName)
+        constraints = xplorFile.readXPLORDistanceConstraints()
+        for constraint in constraints:
+            lower = constraint['lower']
+            upper = constraint['upper']
+            atomPairs = constraint['atomPairs']
+            firstAtomPair = atomPairs[0]
+            if firstAtomPair not in self.constraints:
+                constraint = Constraint(atomPair, lower, 'lower', setting=keepSetting)
+                self.constraints[atomPair] = constraint
+                if len(atomPairs) > 1:
+                    for atomPair in atomPairs[1:]:
+                        self.constraints[atomPair] = constraint
+                        constraint.addPair(atomPair)
+                self.constraints[atomPair].addBound(upper,'upper');
+            else:
+                self.constraints[atomPair].addBound(lower, 'lower');
+                self.constraints[atomPair].addBound(upper, 'upper');
+
 
     def addDisCon(self, atomName1, atomName2, lower, upper):
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
+
+    def addLinkers(self, linkerList):
+        entities = self.molecule.getEntities()
+        entityDict = {}
+        usedEntity = {}
+        for entity in entities:
+            entityDict[entity.getName()] = entity
+            usedEntity[entity] = False
+        if linkerList:
+            for linkerDict in linkerList:
+                startEnt, startAtom = linkerDict['start'].split(':')
+                endEnt, endAtom = linkerDict['end'].split(':')
+                n = linkerDict['n'] if 'n' in linkerDict else 6
+                if startEnt not in entityDict:
+                    print startEnt + " not found within molecule"
+                    raise ValueError
+                if endEnt not in entityDict:
+                    print endEnt + " not found within molecule"
+                    raise ValueError
+
+                startEnt = entityDict[startEnt]
+                endEnt = entityDict[endEnt]
+
+                startTuple = (startEnt, startAtom)
+                endTuple = (endEnt, endAtom)
+                startAtom = self.getAtom(startTuple)
+                endAtom = self.getAtom(endTuple)
+
+                usedEntity[startEnt] = True
+                usedEntity[endEnt] = True
+                if 'bond' in linkerDict:
+                    bondDict = linkerDict['bond']
+                    length = bondDict['length'] if 'length' in bondDict else 1.08
+                    order = bondDict['order'] if 'order' in bondDict else 'SINGLE'
+                    global bondOrders
+                    if (order < 0 or order > 4) and order not in bondOrders:
+                        print "Bad bond order, automatically converting to SINGLE bond"
+                        order = "SINGLE"
+                    try:
+                        order = bondOrders[order-1]
+                    except:
+                        order = order.upper()
+                    self.molecule.createLinker(startAtom, endAtom, order, length)
+                    continue;
+                self.molecule.createLinker(startAtom, endAtom, n)
+
+            usedEntities = [entity for entity in usedEntity.keys() if usedEntity[entity]]
+            for entity in usedEntity:
+                used = usedEntity[entity]
+                if not used:
+                    print entity.getName() + " had no defined linker."
+                    firstEntity = usedEntities[0]
+                    startAtom = firstEntity.getLastAtom()
+                    endAtom = entity.getLastAtom()
+                    print "linker added between " + startAtom.getFullName() + " and " + endAtom.getFullName()
+                    self.molecule.createLinker(startAtom, endAtom, 6)
+        else:
+            for i, entity in enumerate(entities):
+                if i == len(entities) - 1:
+                    break
+                startAtom = entity.getLastAtom()
+                endAtom = entities[i+1].getLastAtom()
+                self.molecule.createLinker(startAtom, endAtom, 6)
+
+    def getAtom(self, atomTuple):
+        entity, atomName = atomTuple
+        atomArr = atomName.split('.')
+
+        if len(atomArr) > 1:
+            resNum = atomArr.pop(0)
+            if resNum:
+                entity = entity.getResidue(resNum)
+        atomName = atomArr[0]
+        atom = entity.getAtom(atomName)
+
+        if not atom:
+            print atomName , "was not found in", entity.getName()
+            raise ValueError
+        return atom
 
     def loadFromYaml(self,data, seed, pdbFile=""):
         if pdbFile != '':
@@ -771,7 +897,10 @@ class refine:
 
                 changeResNums = residues != range
                 file = osfiles.limResidues(range,file,dir,'dis',changeResNums)
-            self.addDistanceFile(file,mode=type)
+            keepMethod = None
+            if 'keep' in dic:
+                keepMethod = dic['keep']
+            self.addDistanceFile(file,mode=type,keep=keepMethod)
         return wt
 
     def readAngleDict(self,disDict):
@@ -899,63 +1028,35 @@ class refine:
 # 283  RCYT  H6          283  RCYT  H2'          4.00    1.00E+00
 # 283  RCYT  H6          283  RCYT  H3'          3.00    1.00E+00
 # 283  RCYT  H3'   283  RCYT  H5"          3.30    1.00E+00
-
-    def readCYANADistances(self,fileNames,molName):
-        defaultLower = 1.8
-        atomPairs  = []
-        distances  = []
-        lowers  = {}
-        i=0
+    def readCYANADistances(self, fileNames, molName, keepSetting=None):
         for fileName in fileNames:
             fIn = open(fileName,'r')
-            if fileName.endswith('.lol'):
-                mode = 'lower'
-            else:
-                mode = 'upper'
-            for line in fIn:
-                line = line.strip()
-                if len(line) == 0:
-                    continue
-                if line[0] == '#':
-                    continue
-                fields = line.split()
-                res1 = fields[0]
-                atom1 = fields[2]
-                res2 = fields[3]
-                atom2 = fields[5]
-                distance  = float(fields[6])
-                fullAtom1 = molName+':'+res1+'.'+atom1
-                fullAtom2  =molName+':'+res2+'.'+atom2
-                fullAtom1 = fullAtom1.replace('"',"''")
-                fullAtom2 = fullAtom2.replace('"',"''")
-                if fullAtom1 < fullAtom2:
-                    atomPair = fullAtom1+' '+fullAtom2
-                else:
-                    atomPair = fullAtom2+' '+fullAtom1
-                if mode == 'upper':
-                    if distance > 0.0:
-                        distances.append(distance)
-                        atomPairs.append([atomPair])
-                        i += 1
+            mode = 'lower' if fileName.endswith('.lol') else 'upper'
+            with open(fileName,'r') as fIn:
+                for line in fIn:
+                    line = line.strip()
+                    if len(line) == 0:
+                        continue
+                    if line[0] == '#':
+                        continue
+                    fields = line.split()
+                    res1, _, atom1, res2, _, atom2, distance = fields
+                    distance = float(distance)
+                    fullAtom1 = molName+':'+res1+'.'+atom1
+                    fullAtom2 = molName+':'+res2+'.'+atom2
+                    fullAtom1 = fullAtom1.replace('"',"''")
+                    fullAtom2 = fullAtom2.replace('"',"''")
+                    atomPair = ' '.join([fullAtom1,fullAtom2]) if fullAtom1 < fullAtom2 else ' '.join([fullAtom2, fullAtom1])
+                    if distance != 0.0:
+                        if atomPair not in self.constraints:
+                            constraint = Constraint(atomPair, distance, mode, setting=keepSetting)
+                            self.constraints[atomPair] = constraint
+                        else:
+                            self.constraints[atomPair].addBound(distance, mode)
                     else:
-                        atomPairs[i-1].append(atomPair)
-                else:
-                    lowers[atomPair] = distance
-            fIn.close()
-        for atomPair,upper in zip(atomPairs,distances):
-            lower = defaultLower
-            for atomPairElem in atomPair:
-                if atomPairElem in lowers:
-                    lower = lowers[atomPairElem]
-            # fixme doesn't work right with ambiguous constraints
-            atomNames1 = ArrayList()
-            atomNames2 = ArrayList()
-            for atomPairElem in atomPair:
-                (atomName1,atomName2) = atomPairElem.split()
-                atomNames1.add(atomName1)
-                atomNames2.add(atomName2)
-            self.energyLists.addDistanceConstraint(atomNames1,atomNames2,lower,upper)
-
+                        if mode == 'upper':
+                            Constraint.lastViewed.addPair(atomPair)
+                            self.constraints[atomPair] = Constraint.lastViewed
 
 #ZETA:  C3'(i-1)-O3'(i-1)-P-O5'   -73
 #ALPHA: O3'(i-1)-P-O5'-C5'        -62
@@ -1387,10 +1488,13 @@ class refine:
 
     def readPDBFile(self,fileName):
         pdb = PDBFile()
-        pdb.readSequence(fileName,0)
-        self.molecule = Molecule.getActive()
-        self.molName = self.molecule.getName()
-        self.molecule.selectAtoms('*.*')
+        if not self.molecule:
+            pdb.readSequence(fileName,0)
+            self.molecule = Molecule.getActive()
+            self.molName = self.molecule.getName()
+            self.molecule.selectAtoms('*.*')
+        else:
+            pdb.readResidue(fileName, None, self.molecule, None)
         return self.molecule
 
     def readPDBFiles(self,files):
@@ -1424,12 +1528,11 @@ class refine:
             pdb.readResidue(fileName, None, self.molecule, None)
         return self.molecule
 
-    def setupTree(self, start, end):
+    def setupAtomProperties(self):
         mol = self.molecule
-        ligands = mol.getLigands()
-        polymers = mol.getPolymers()
-        for polymer in polymers:
-            pI = PathIterator(polymer)
+        entities = mol.getEntities()
+        for entity in entities:
+            pI = PathIterator(entity)
             nodeValidator = NodeValidator()
             pI.init(nodeValidator)
             pI.processPatterns()
@@ -1437,31 +1540,13 @@ class refine:
             pI.setProperties("res", "RESONANT");
             pI.setProperties("r", "RING");
             pI.setHybridization();
-            atoms = polymer.getAtoms()
+            atoms = entity.getAtoms()
             if start != None:
-                startAtom = polymer.getAtom(start)
+                startAtom = entity.getAtom(start)
             else:
                 startAtom = None
             if end != None:
-                endAtom = polymer.getAtom(end)
-            else:
-                endAtom = None
-        for ligand in ligands:
-            pI = PathIterator(ligand)
-            nodeValidator = NodeValidator()
-            pI.init(nodeValidator)
-            pI.processPatterns()
-            pI.setProperties("ar", "AROMATIC");
-            pI.setProperties("res", "RESONANT");
-            pI.setProperties("r", "RING");
-            pI.setHybridization();
-            atoms = ligand.getAtoms()
-            if start != None:
-                startAtom = ligand.getAtom(start)
-            else:
-                startAtom = None
-            if end != None:
-                endAtom = ligand.getAtom(end)
+                endAtom = entity.getAtom(end)
             else:
                 endAtom = None
         if start != None:
@@ -1486,13 +1571,13 @@ class refine:
     def addAngle(self,angleString):
         self.angleStrings.append(angleString)
 
-    def addDistanceFile(self, file, mode='nv'):
+    def addDistanceFile(self,file, mode='nv', keep=None):
         if mode == 'cyana':
-            self.cyanaDistanceFiles.append(file)
+            self.cyanaDistanceFiles[file] = keep
         elif mode == 'xplor':
-            self.xplorDistanceFiles.append(file)
+            self.xplorDistanceFiles[file] = keep
         else:
-            self.nvDistanceFiles.append(file)
+            self.nvDistanceFiles[file] = keep
 
     def readAngleFiles(self):
         for file in self.cyanaAngleFiles:
@@ -1504,15 +1589,31 @@ class refine:
             self.loadDihedralsFromFile(file)
 
     def readDistanceFiles(self):
-        for file in self.cyanaDistanceFiles:
+        for file in self.cyanaDistanceFiles.keys():
             lowerFileName = file+'.lol'
             upperFileName = file+'.upl'
-            self.readCYANADistances([lowerFileName, upperFileName], self.molName)
-        for file in self.xplorDistanceFiles:
-            xplorFile = xplor.XPLOR(file)
-            xplorFile.readXPLORDistanceConstraints(self.energyLists)
-        for file in self.nvDistanceFiles:
-            self.loadDistancesFromFile(file)
+            self.readCYANADistances([lowerFileName, upperFileName],self.molName, keepSetting=self.cyanaDistanceFiles[file])
+
+        for file in self.nvDistanceFiles.keys():
+            self.loadDistancesFromFile(file, keepSetting=self.nvDistanceFiles[file])
+
+        for file in self.xplorDistanceFiles.keys():
+            self.readXPLORDistanceConstraints(file, keepSetting=self.xplorDistanceFiles[file])
+
+        self.addDistanceConstraints()
+
+    def addDistanceConstraints(self):
+        for constraint in self.constraints.values():
+            lower = constraint.lower
+            upper = constraint.upper
+            atomNames1 = ArrayList()
+            atomNames2 = ArrayList()
+            for pair in constraint.pairs:
+                atomName1, atomName2 = pair.split()
+                atomNames1.add(atomName1)
+                atomNames2.add(atomName2)
+            self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
+
 
     def predictShifts(self):
         from org.nmrfx.structure.chemistry.energy import RingCurrentShift
