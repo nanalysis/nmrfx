@@ -18,6 +18,7 @@
 package org.nmrfx.structure.chemistry;
 
 import java.util.*;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.energy.AtomMath;
 import org.nmrfx.structure.chemistry.miner.IBond;
@@ -356,18 +357,25 @@ public class Residue extends Compound {
     }
 
     Point3 getNBoundPoint() {
-        Atom atom = getAtom("N");
-        Atom nBoundAtom = getAtom("H");
-        if (nBoundAtom == null) {
-            List<Atom> cAtoms = atom.getConnected();
-            for (Atom cAtom : cAtoms) {
-                if (!cAtom.getName().equals("CA") && !cAtom.getName().equals("C")) {
-                    nBoundAtom = cAtom;
-                    break;
-                }
+        boolean isProtein = this.polymer.getPolymerType().equals("polypeptide");
+        Atom atom = this.getFirstBackBoneAtom();
+        String preferedLookup = isProtein ? "H" : "OP1";
+        String[] exclusionList = new String[2];
+        exclusionList[0] = isProtein ? "CA" : "O5'";
+        exclusionList[1] = isProtein ? "C" : "O3'";
+        Vector3D vec = new Vector3D(0, 0, 0);
+        Vector3D vec0 = atom.getPoint();
+
+        List<Atom> cAtoms = atom.getConnected();
+        for (Atom cAtom : cAtoms) {
+            if (!cAtom.getName().equals(exclusionList[0]) && !cAtom.getName().equals(exclusionList[1])) {
+                Vector3D vec1 = cAtom.getPoint();
+                vec1 = vec1.subtract(vec0).normalize().add(vec0);
+                vec = vec.add(vec1);
             }
         }
-        return nBoundAtom.getPoint();
+
+        return new Point3(vec.scalarMultiply(0.5));
     }
 
     public void addConnectors() {
