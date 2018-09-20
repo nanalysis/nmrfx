@@ -93,7 +93,16 @@ public class Sequence {
         } else {
             startAtom = residue.getAtom("CAX");
         }
-        molecule.updateBondArray();
+        //molecule.updateBondArray();
+        residue.getLastBackBoneAtom().setProperty("connector", true);
+        PathIterator pI = new PathIterator(residue);
+        NodeValidator nV = new NodeValidator();
+        pI.init(nV);
+        pI.processPatterns();
+        pI.setProperties("ar", "AROMATIC");
+        pI.setProperties("res", "RESONANT");
+        pI.setProperties("r", "RING");
+        pI.setHybridization();
         residue.genMeasuredTree(startAtom);
         residue.removeConnectors();
 
