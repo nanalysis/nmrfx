@@ -131,12 +131,17 @@ class XPLOR:
         #     pass
         # else:
             #print atoms1,'atoms2',atoms2
-        atomNames1 = ArrayList()
-        atomNames2 = ArrayList()
-        for (aname1,aname2) in zip(atoms1,atoms2):
-            atomNames1.add(aname1)
-            atomNames2.add(aname2)
-        energyLists.addDistanceConstraint(atomNames1, atomNames2, bounds[0], bounds[1])
+        #atomNames1 = ArrayList()
+        #atomNames2 = ArrayList()
+        atomPairs = []
+        for (fullAtom1,fullAtom2) in zip(atoms1,atoms2):
+            atomPair = ' '.join([fullAtom1,fullAtom2]) if fullAtom1 < fullAtom2 else ' '.join([fullAtom2, fullAtom1])
+            atomPairs.append(atomPair);
+            #atomNames1.add(aname1)
+            #atomNames2.add(aname2)
+        (lower, upper) = bounds;
+        return {'atomPairs' : atomPairs, 'lower' : lower, 'upper':upper}
+        #energyLists.addDistanceConstraint(atomNames1, atomNames2, bounds[0], bounds[1])
 
     def processAngleConstraints(self, dihedral, atomsSels, bounds, scale=1):
         # EX: fullAtoms = ["2koc:1.C5'","2koc:1.C4'","2koc:1.C3'","2koc:1.O3'"]
@@ -164,6 +169,7 @@ class XPLOR:
 
 
     def readXPLORDistanceConstraints(self, energyLists=None):
+        constraints = []
         f1 = self.f
         self.distances = True
         atomSels = []
@@ -178,7 +184,7 @@ class XPLOR:
                     continue
                 elif mode.startswith("assi"):
                     if len(atomSels) > 0:
-                        self.processDistanceConstraints(energyLists, atomSels, bounds)
+                        constraints.append(self.processDistanceConstraints(energyLists, atomSels, bounds))
                     atomSels = []
                     bounds = []
                 nSel = 2
@@ -200,8 +206,9 @@ class XPLOR:
                         break
 
         if len(atomSels) > 0:
-            self.processDistanceConstraints(energyLists, atomSels, bounds)
+            constraints.append(self.processDistanceConstraints(energyLists, atomSels, bounds))
         f1.close()
+        return constraints
 
 
     def readXPLORAngleConstraints(self, dihedral):
