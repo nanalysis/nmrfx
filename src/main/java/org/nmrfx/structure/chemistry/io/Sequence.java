@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.nmrfx.structure.chemistry.miner.NodeValidator;
+import org.nmrfx.structure.chemistry.miner.PathIterator;
 
 /**
  *
@@ -86,12 +88,14 @@ public class Sequence {
     }
 
     private void addNonStandardResidue(Residue residue) {
+        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
+        residue.setNonStandard();
         Atom startAtom;
         if (residue.isCompliant()) {
             residue.addConnectors();
             startAtom = residue.getAtom("X");
         } else {
-            startAtom = residue.getAtom("CAX");
+            startAtom = isProtein ? residue.getAtom("CAX") : residue.getAtom("C3'X");
         }
         //molecule.updateBondArray();
         residue.getLastBackBoneAtom().setProperty("connector", true);
@@ -115,13 +119,17 @@ public class Sequence {
         residue.addBond(bond);
 
         firstAtom.parent = parent;
-        firstAtom.irpIndex = 0;
+        if (isProtein) {
+            firstAtom.irpIndex = 0;
+        }
         bond = new Bond(firstAtom, parent);
         firstAtom.addBond(bond);
         this.connectAtom = residue.getLastBackBoneAtom();
 
         // fixme this needs to be changed for non-amino acid residue atoms
-        residue.getAtom("O").dihedralAngle = (float) Math.PI;
+        if (isProtein) {
+            residue.getAtom("O").dihedralAngle = (float) Math.PI;
+        }
     }
 
     public enum PRFFields {

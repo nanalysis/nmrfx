@@ -32,7 +32,7 @@ public class Residue extends Compound {
     static Map standardResSet = new TreeMap();
     Map<String, Atom[]> pseudoMap = new HashMap<String, Atom[]>();
     private final static String[] compliantAminoAcid = {"C", "CA", "N"};
-    private final static String[] compliantNucleicAcid = {};
+    private final static String[] compliantNucleicAcid = {"C5'", "O5'", "P"};
 
     static {
         String[] standardResidues = {
@@ -133,8 +133,12 @@ public class Residue extends Compound {
         return atom;
     }
 
-    boolean isStandard() {
+    public boolean isStandard() {
         return standard;
+    }
+
+    public void setNonStandard() {
+        standard = false;
     }
 
     public char getOneLetter() {
@@ -372,44 +376,47 @@ public class Residue extends Compound {
          * from the previous residue.
          *
          */
-        String pType = polymer.getPolymerType();
-        if (pType.equals("polypeptide")) {
-            Point3[] pts = new Point3[4];
-            for (int i = 0; i < compliantAminoAcid.length; i++) {
-                pts[i] = this.getAtom(compliantAminoAcid[i]).getPoint();
-            }
-
-            pts[3] = getNBoundPoint();
-            float dih = (float) (AtomMath.calcDihedral(pts[0], pts[1], pts[2], pts[3]) + Math.PI);
-
-            float val = 123.0f;
-            val *= (Math.PI / 180.0);
-            float dis = 1.32f; // comes from prf for N
-            Atom aXX = this.getFirstBackBoneAtom().add("XX", "X", Order.SINGLE);
-            aXX.bndCos = (float) (dis * FastMath.cos(Math.PI - val));
-            aXX.bndSin = (float) (dis * FastMath.sin(Math.PI - val));
-            aXX.bondLength = dis;
-            Coordinates coords = new Coordinates(pts[0], pts[1], pts[2]);
-            coords.setup();
-            Point3 pt = coords.calculate(dih, aXX.bndCos, aXX.bndSin);
-
-            aXX.setPoint(pt);
-            aXX.bondLength = 1.53f; // comes from prf for C
-
-            //for 1st atom X, representing 2nd to last atom of backbone of previous residue
-            dih = 180.0f; // comes from prf for CA
-            val = 114.0f; // comes from prf for N
-            dih *= (Math.PI / 180.0);
-            val *= (Math.PI / 180.0);
-            dis = 1.53f; //comes from prf for C
-            Atom aX = aXX.add("X", "X", Order.SINGLE);
-            aX.bndCos = (float) (dis * FastMath.cos(Math.PI - val));
-            aX.bndSin = (float) (dis * FastMath.sin(Math.PI - val));
-            coords = new Coordinates(pts[1], pts[2], pt);
-            coords.setup();
-            pt = coords.calculate(dih, aX.bndCos, aX.bndSin);
-            aX.setPoint(pt);
-
+        boolean isProtein = this.polymer.getPolymerType().equals("polypeptide");
+        String[] compliantArray = isProtein ? compliantAminoAcid : compliantNucleicAcid;
+        Point3[] pts = new Point3[4];
+        for (int i = 0; i < compliantArray.length; i++) {
+            pts[i] = this.getAtom(compliantArray[i]).getPoint();
         }
+
+        pts[3] = getNBoundPoint();
+
+        float refAngle = isProtein ? 180.0f : -116.4f;
+        refAngle = 180.0f;
+        refAngle *= (Math.PI / 180.0);
+        float dih = (float) (AtomMath.calcDihedral(pts[0], pts[1], pts[2], pts[3]) + refAngle);
+
+        float val = isProtein ? 123.0f : 104.3845f;  // comes from prf for CA/O5'
+        val *= (Math.PI / 180.0);
+        float dis = isProtein ? 1.32f : 1.6006f; // comes from prf for N/P
+        Atom aXX = this.getFirstBackBoneAtom().add("XX", "X", Order.SINGLE);
+        aXX.bndCos = (float) (dis * FastMath.cos(Math.PI - val));
+        aXX.bndSin = (float) (dis * FastMath.sin(Math.PI - val));
+        aXX.bondLength = dis;
+        Coordinates coords = new Coordinates(pts[0], pts[1], pts[2]);
+        coords.setup();
+        Point3 pt = coords.calculate(dih, aXX.bndCos, aXX.bndSin);
+
+        aXX.setPoint(pt);
+        aXX.bondLength = 1.53f; // comes from prf for C/
+
+        //for 1st atom X, representing 2nd to last atom of backbone of previous residue
+        dih = isProtein ? 180.0f : -71.584f; // comes from prf for CA/O5'
+        val = isProtein ? 114.0f : 120.577f; // comes from prf for N/P
+        dih *= (Math.PI / 180.0);
+        val *= (Math.PI / 180.0);
+        dis = isProtein ? 1.53f : 1.4113f; //comes from prf for C/O3'
+        Atom aX = aXX.add("X", "X", Order.SINGLE);
+        aX.bndCos = (float) (dis * FastMath.cos(Math.PI - val));
+        aX.bndSin = (float) (dis * FastMath.sin(Math.PI - val));
+        coords = new Coordinates(pts[1], pts[2], pt);
+        coords.setup();
+        pt = coords.calculate(dih, aX.bndCos, aX.bndSin);
+        aX.setPoint(pt);
+
     }
 }
