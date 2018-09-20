@@ -289,7 +289,7 @@ public class AngleTreeGenerator {
                     rotatable = false;
                 } else if (a2 == null) {
                     rotatable = false;
-                } else if (a3.bonds.size() < 2) {
+                } else if (a3.bonds.size() < 2 && a3.getProperty("connector") == null) {
                     rotatable = false;
                 } else if (a3.getAtomicNumber() == 1) {
                     rotatable = false;
