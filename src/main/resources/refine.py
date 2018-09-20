@@ -845,6 +845,8 @@ class refine:
 
     def addRiboseRestraints(self,polymer):
         for residue in polymer.getResidues():
+            if not residue.isStandard():
+                continue
             resNum = residue.getNumber()
             resName = residue.getName()
             upper = 1.46
@@ -853,16 +855,8 @@ class refine:
             restraints.append(("C4'", "O4'",1.44, 1.46))
             restraints.append(("C4'", "C1'",2.30, 2.36))
             restraints.append(("C5'", "O4'",2.37,  2.43))
-            restraints.append(("C5'", "C3'",2.48, 2.58))
             restraints.append(("C3'", "O4'",2.32,  2.35))
-            #fixme Verify constraints
             restraints.append(("O4'", "H4'", 2.05, 2.2))
-            # restraints.append(("O4'", "H4'", 1.97, 2.05))
-            if resName in ('C','U', 'URA', 'RCYT'):
-                restraints.append(("N1", "O4'",2.40, 2.68))
-            else:
-                restraints.append(("N9", "O4'",2.40, 2.68))
-            #restraints.append(("C5'", "C3'",2.56, 2.58))
             for restraint in restraints:
                 (a1,a2,lower,upper) = restraint
                 atomName1 = str(resNum)+'.'+a1
