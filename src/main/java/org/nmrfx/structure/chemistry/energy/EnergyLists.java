@@ -996,7 +996,7 @@ public class EnergyLists {
   }
 
   public void setupConstraints() {
-    updateNOEPairs();
+      updateNOEPairs();
     constraintsSetup = true;
   }
 

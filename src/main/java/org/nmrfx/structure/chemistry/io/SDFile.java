@@ -430,7 +430,7 @@ public class SDFile {
         Compound compound = residue != null ? residue : new Compound("1", compoundName);;
         compound.molecule = molecule;
         compound.assemblyID = molecule.entityLabels.size() + 1;
-        if (residue == null){
+        if (residue == null) {
             molecule.addEntity(compound, coordSetName);
         }
         sdFile.readMol(fileName, fileContent, compound);
