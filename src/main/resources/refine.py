@@ -229,6 +229,7 @@ class refine:
         self.molecule = None
         self.trajectoryWriter = None
         self.molecule = Molecule.getActive()
+        self.linkerAtomDict = {} # map of entity name to linker
         if self.molecule != None:
             self.molName = self.molecule.getName()
 
@@ -724,6 +725,19 @@ class refine:
                 startAtom = entity.getLastAtom()
                 endAtom = entities[i+1].getLastAtom()
                 self.molecule.createLinker(startAtom, endAtom, 6)
+    def setLinkerAtomDict(self, linkerList):
+        if linkerList:
+            try:
+                for linkerDict in linkerList:
+                    endAtom = linkerDict['end'] if 'end' in linkerDict else None
+                    if endAtom:
+                        (entity, atomName) = endAtom.split('.')
+                        self.linkerAtomDict[entity] = atomName
+            except TypeError:
+                endAtom = linkerDict['end'] if 'end' in linkerDict else None
+                if endAtom:
+                    (entity, atomName) = endAtom.split('.')
+                    self.linkerAtomDict[entity] = atomName
 
     def getAtom(self, atomTuple):
         entity, atomName = atomTuple
@@ -749,6 +763,8 @@ class refine:
             if 'molecule' in data:
                 molData = data['molecule']
                 self.reslib = molData['reslib'] if 'reslib' in molData else None
+                linkerList = molData['link'] if 'link' in molData else None
+                self.setLinkerAtomDict(linkerList)
                 if 'entities' in molData:
                     molList = molData['entities']
                     molList = prioritizePolymers(molList)
@@ -759,8 +775,6 @@ class refine:
                     #Only one entity in the molecule
                     residues = ",".join(molDict['residues'].split()) if 'residues' in molData else None
                     self.readMoleculeDict(molData)
-
-                linkerList = molData['link'] if 'link' in molData else None
                 self.addLinkers(linkerList)
 
         mol = self.molecule;
@@ -775,16 +789,9 @@ class refine:
                 start = None
                 end = None
             else:
-                if 'start' in treeDict:
-                    start = treeDict['start']
-                else:
-                    start = None
-                if 'end' in treeDict:
-                    end = treeDict['end']
-                else:
-                    end = None
+                start =treeDict['start'] if 'start' in treeDict else None
+                end = treeDict['end'] if 'end' in treeDict else None
             self.setupTree(start, end)
-
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
         self.energy()
 
@@ -1494,7 +1501,13 @@ class refine:
             self.molName = self.molecule.getName()
             self.molecule.selectAtoms('*.*')
         else:
-            pdb.readResidue(fileName, None, self.molecule, None)
+            compound = pdb.readResidue(fileName, None, self.molecule, None)
+            self.setupAtomProperties(compound)
+            entity = compound.getName()
+            if entity in self.linkerAtomDict:
+                atomName = linkerAtomDict[entity]
+                tuple = (entity, atomName)
+                compound.genMeasuredTree(self.getAtom(tuple))
         return self.molecule
 
     def readPDBFiles(self,files):
@@ -1525,35 +1538,38 @@ class refine:
             self.molName = self.molecule.getName()
             self.molecule.selectAtoms('*.*')
         else:
-            pdb.readResidue(fileName, None, self.molecule, None)
+            compound = pdb.readResidue(fileName, None, self.molecule, None)
+            self.setupAtomProperties(compound)
+            entity = compound.getName()
+            if entity in self.linkerAtomDict:
+                atomName = linkerAtomDict[entity]
+                tuple = (entity, atomName)
+                compound.genMeasuredTree(self.getAtom(tuple))
         return self.molecule
 
-    def setupAtomProperties(self):
+    def setupAtomProperties(self, compound):
+        pI = PathIterator(compound)
+        nodeValidator = NodeValidator()
+        pI.init(nodeValidator)
+        pI.processPatterns()
+        pI.setProperties("ar", "AROMATIC");
+        pI.setProperties("res", "RESONANT");
+        pI.setProperties("r", "RING");
+        pI.setHybridization();
+
+
+    def setupTree(self, start, end):
         mol = self.molecule
-        entities = mol.getEntities()
-        for entity in entities:
-            pI = PathIterator(entity)
-            nodeValidator = NodeValidator()
-            pI.init(nodeValidator)
-            pI.processPatterns()
-            pI.setProperties("ar", "AROMATIC");
-            pI.setProperties("res", "RESONANT");
-            pI.setProperties("r", "RING");
-            pI.setHybridization();
-            atoms = entity.getAtoms()
-            if start != None:
-                startAtom = entity.getAtom(start)
-            else:
-                startAtom = None
-            if end != None:
-                endAtom = entity.getAtom(end)
-            else:
-                endAtom = None
-        if start != None:
-            startAtom = Molecule.getAtomByName(start)
-        else:
-            startAtom = None
-        mol.genMeasuredTree(startAtom)
+        startAtom = mol.getAtom(start) if start else None
+        endAtom = mol.getAtom(end) if end else None
+
+        mol.resetGenCoords()
+        mol.invalidateAtomArray()
+        mol.invalidateAtomTree()
+        aTree = AngleTreeGenerator()
+        aTree.genTree(mol, startAtom, endAtom)
+        mol.genCoords()
+
 
     def addAngleFile(self,file, mode='nv'):
         if mode == 'cyana':
