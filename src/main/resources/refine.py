@@ -1560,14 +1560,17 @@ class refine:
 
     def setupTree(self, start, end):
         mol = self.molecule
+        mol.updateAtomArray()
         startAtom = mol.getAtom(start) if start else None
         endAtom = mol.getAtom(end) if end else None
-
-        mol.resetGenCoords()
-        mol.invalidateAtomArray()
-        mol.invalidateAtomTree()
-        aTree = AngleTreeGenerator()
-        aTree.genTree(mol, startAtom, endAtom)
+        if len(mol.getEntities()) == 1 and len(mol.getLigands()) == 1:
+            mol.genMeasuredTree(startAtom)
+        else:
+            mol.resetGenCoords()
+            mol.invalidateAtomArray()
+            mol.invalidateAtomTree()
+            aTree = AngleTreeGenerator()
+            aTree.genTree(mol, startAtom, endAtom)
         mol.genCoords()
 
 
