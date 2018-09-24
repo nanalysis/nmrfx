@@ -763,6 +763,8 @@ class refine:
             if 'molecule' in data:
                 molData = data['molecule']
                 self.reslib = molData['reslib'] if 'reslib' in molData else None
+                if self.reslib:
+                    PDBFile.setLocalResLibDir(self.reslib)
                 linkerList = molData['link'] if 'link' in molData else None
                 self.setLinkerAtomDict(linkerList)
                 if 'entities' in molData:
