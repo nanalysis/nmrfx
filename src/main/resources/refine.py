@@ -1488,11 +1488,17 @@ class refine:
 
     def readSequence(self,seqFile):
         seqReader = Sequence()
-        if (self.reslib):
-            PDBFile.setLocalResLibDir(self.reslib)
-        self.molecule = seqReader.read(seqFile)
+        mol = seqReader.read(seqFile)
+        if self.molecule:
+            for entity in mol.getEntities():
+                self.molecule.addEntity(entity)
+        else:
+            self.molecule = mol
+        for entity in self.molecule.getEntities():
+            print "Entity is " + entity.getName()
         self.molecule.selectAtoms('*.*')
         self.molName = self.molecule.getName()
+        self.molecule.updateAtomArray()
         return self.molecule
 
     def readPDBFile(self,fileName):
