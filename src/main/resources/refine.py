@@ -669,12 +669,12 @@ class refine:
                 for linkerDict in linkerList:
                     endAtom = linkerDict['end'] if 'end' in linkerDict else None
                     if endAtom:
-                        (entity, atomName) = endAtom.split('.')
+                        (entity, atomName) = endAtom.split(':')
                         self.linkerAtomDict[entity] = atomName
             except TypeError:
                 endAtom = linkerDict['end'] if 'end' in linkerDict else None
                 if endAtom:
-                    (entity, atomName) = endAtom.split('.')
+                    (entity, atomName) = endAtom.split(':')
                     self.linkerAtomDict[entity] = atomName
 
     def getAtom(self, atomTuple):
@@ -1432,8 +1432,6 @@ class refine:
                 self.molecule.addEntity(entity)
         else:
             self.molecule = mol
-        for entity in self.molecule.getEntities():
-            print "Entity is " + entity.getName()
         self.molecule.selectAtoms('*.*')
         self.molName = self.molecule.getName()
         self.molecule.updateAtomArray()
@@ -1449,9 +1447,10 @@ class refine:
         else:
             compound = pdb.readResidue(fileName, None, self.molecule, None)
             self.setupAtomProperties(compound)
-            entity = compound.getName()
-            if entity in self.linkerAtomDict:
-                atomName = linkerAtomDict[entity]
+            entityName = compound.getName()
+            if entityName in self.linkerAtomDict:
+                atomName = self.linkerAtomDict[entityName]
+                entity = self.molecule.getEntity(entityName)
                 tuple = (entity, atomName)
                 compound.genMeasuredTree(self.getAtom(tuple))
         return self.molecule
@@ -1486,9 +1485,10 @@ class refine:
         else:
             compound = pdb.readResidue(fileName, None, self.molecule, None)
             self.setupAtomProperties(compound)
-            entity = compound.getName()
-            if entity in self.linkerAtomDict:
-                atomName = linkerAtomDict[entity]
+            entityName = compound.getName()
+            if entityName in self.linkerAtomDict:
+                atomName = linkerAtomDict[entityName]
+                entity = self.molecule.getEntity(entityName)
                 tuple = (entity, atomName)
                 compound.genMeasuredTree(self.getAtom(tuple))
         return self.molecule
