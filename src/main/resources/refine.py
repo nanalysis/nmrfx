@@ -663,68 +663,6 @@ class refine:
     def addDisCon(self, atomName1, atomName2, lower, upper):
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
 
-    def addLinkers(self, linkerList):
-        entities = self.molecule.getEntities()
-        entityDict = {}
-        usedEntity = {}
-        for entity in entities:
-            entityDict[entity.getName()] = entity
-            usedEntity[entity] = False
-        if linkerList:
-            for linkerDict in linkerList:
-                startEnt, startAtom = linkerDict['start'].split(':')
-                endEnt, endAtom = linkerDict['end'].split(':')
-                n = linkerDict['n'] if 'n' in linkerDict else 6
-                if startEnt not in entityDict:
-                    print startEnt + " not found within molecule"
-                    raise ValueError
-                if endEnt not in entityDict:
-                    print endEnt + " not found within molecule"
-                    raise ValueError
-
-                startEnt = entityDict[startEnt]
-                endEnt = entityDict[endEnt]
-
-                startTuple = (startEnt, startAtom)
-                endTuple = (endEnt, endAtom)
-                startAtom = self.getAtom(startTuple)
-                endAtom = self.getAtom(endTuple)
-
-                usedEntity[startEnt] = True
-                usedEntity[endEnt] = True
-                if 'bond' in linkerDict:
-                    bondDict = linkerDict['bond']
-                    length = bondDict['length'] if 'length' in bondDict else 1.08
-                    order = bondDict['order'] if 'order' in bondDict else 'SINGLE'
-                    global bondOrders
-                    if (order < 0 or order > 4) and order not in bondOrders:
-                        print "Bad bond order, automatically converting to SINGLE bond"
-                        order = "SINGLE"
-                    try:
-                        order = bondOrders[order-1]
-                    except:
-                        order = order.upper()
-                    self.molecule.createLinker(startAtom, endAtom, order, length)
-                    continue;
-                self.molecule.createLinker(startAtom, endAtom, n)
-
-            usedEntities = [entity for entity in usedEntity.keys() if usedEntity[entity]]
-            for entity in usedEntity:
-                used = usedEntity[entity]
-                if not used:
-                    print entity.getName() + " had no defined linker."
-                    firstEntity = usedEntities[0]
-                    startAtom = firstEntity.getLastAtom()
-                    endAtom = entity.getLastAtom()
-                    print "linker added between " + startAtom.getFullName() + " and " + endAtom.getFullName()
-                    self.molecule.createLinker(startAtom, endAtom, 6)
-        else:
-            for i, entity in enumerate(entities):
-                if i == len(entities) - 1:
-                    break
-                startAtom = entity.getLastAtom()
-                endAtom = entities[i+1].getLastAtom()
-                self.molecule.createLinker(startAtom, endAtom, 6)
     def setLinkerAtomDict(self, linkerList):
         if linkerList:
             try:
