@@ -1484,9 +1484,10 @@ class refine:
         end     -- Full name of the last atom in building the tree
         measure -- Boolean flag to determine or not to measure atom lengths and valance angles
         """
-        
-        (start, end) = (treeDict['start'] if 'start' in treeDict else None, treeDict['end'] if 'end' in treeDict else None) if treeDict else (None, None)
-        measure = treeDict['measure'] if 'measure' in treeDict else False
+        (start, end, measure) = ((treeDict['start'] if 'start' in treeDict else None,
+                                 treeDict['end'] if 'end' in treeDict else None,
+                                 treeDict['measure'] if 'measure' in treeDict else False)
+                                 if treeDict else (None, None, False))
         if measure:
             try :
                 measure = True if measure.lower() == 'true' else False
