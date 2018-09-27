@@ -15,7 +15,7 @@ homeDir =  os.getcwd( )
 global outDir;
 
 def setupFile(fileName,disFile=''):
-        
+
     refiner = refine()
     molecule = refiner.readPDBFile(fileName)
     if disFile != '':
@@ -35,7 +35,7 @@ def loadPDBModels(files, yaml, out):
     global outDir
     outDir = out
     outDir += '/'
- 
+
     iFile = 1
     refiner = refine()
     refiner.loadFromYaml(yaml,0,pdbFile=files[0])
@@ -50,17 +50,15 @@ def loadPDBModels(files, yaml, out):
     print yaml
     for file in files:
         outFile = os.path.join(outDir,'output'+str(iFile)+'.txt')
-        
-        pdb.readCoordinates(file,0,True)
-        refiner.molecule.updateVecCoords()
+        pdb.readCoordinates(file,0,False)
 
         refiner.setPars(coarse=False,useh=True,dislim=5.0,end=10000,hardSphere=0.0,shrinkValue=0.0,shrinkHValue =0.00)
-        if ("shifts" not in yaml):
-            refiner.setForces(repel=2.0,dis=1.0,dih=5.0,irp=0.001,shift=-1)
+        if 'shift' in data:
+            refiner.setForces(repel=2.0,dis=1.0,dih =1.0,irp=0.001,shift=1.0)
+            refiner.energyLists.setRingShifts()
         else:
-            refiner.setForces(repel=2.0,dis=1.0,dih=5.0,irp=0.001,shift=1.0)
+            refiner.setForces(repel=2.0,dis=1.0,dih =1.0,irp=0.001,shift=-1.0)
 
-        refiner.energyLists.setRingShifts()
 
         refiner.energy()
 
@@ -68,13 +66,12 @@ def loadPDBModels(files, yaml, out):
         outFileName=getFileName(outFile)
 
         datum = [inFileName,outFileName]
-        
         distanceEnergy=refiner.molecule.getEnergyCoords().calcNOE(False,1.0)
         datum.append("%.1f" % (distanceEnergy))
         if ("shifts" in yaml):
             shiftEnergy = refiner.energyLists.calcShift(False)
             datum.append("%.1f" % (shiftEnergy))
-        
+
         data.append(datum)
 
         refiner.dump(0.1,.20,outFile)
@@ -158,4 +155,3 @@ def summary(outFiles,limit=0.2):
                     fOut.write(structIndicators)
                 fOut.write('\n')
     fOut.close()
-

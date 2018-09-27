@@ -53,6 +53,9 @@ public class AngleTreeGenerator {
         int i = 0;
         int startIndex = -1;
         List<Atom> atoms = itree.getAtomArray();
+        for (Atom atom : atoms) {
+            atom.parent = null;
+        }
 
         if (startAtom == null) {
             for (Atom atom : atoms) {
@@ -111,9 +114,9 @@ public class AngleTreeGenerator {
             }
         }
         // fixme should we sort
-//        for (MNode mNode : pathNodes) {
-//            mNode.sortNodesDescending();
-//        }
+        //        for (MNode mNode : pathNodes) {
+        //            mNode.sortNodesDescending();
+        //        }
 
         mTree.broad_path(startIndex);
         pathNodes = mTree.getPathNodes();
@@ -173,6 +176,11 @@ public class AngleTreeGenerator {
                     }
                     atom3.parent = atom2;
                     Point3 pt2 = atom2.getPoint();
+                    if (atom2.getElementName() != null && atom3.getElementName() != null) {
+                        Bond bond = new Bond(atom2, atom3);
+                        atom2.addBond(bond);
+                        atom3.addBond(bond);
+                    }
                     oBond = atom2.getBond(atom3);
                     MNode mNode1 = mNode2.getParent();
                     if (mNode1 != null) {
@@ -200,20 +208,20 @@ public class AngleTreeGenerator {
             mol.setTreeList(atomPathList);
         }
         ringClosures = new HashMap<>();
-//        for (MNode mNode : pathNodes) {
-//            if (mNode.isRingClosure()) {
-//                Atom atom1 = mNode.getAtom();
-//                Atom atom2 = mNode.getParent().getAtom();
-//                if ((ringClosures.containsKey(atom1) && ringClosures.get(atom1).containsKey(atom2)) || (ringClosures.containsKey(atom2) && ringClosures.get(atom2).containsKey(atom1))) {
-//                } else {
-//                    addRingClosure(atom1, atom2);
-//                    addRingClosurePairs(atom1, atom2);
-//                    addRingClosurePairs(atom2, atom1);
-//                }
-//            }
-//        }
+        //        for (MNode mNode : pathNodes) {
+        //            if (mNode.isRingClosure()) {
+        //                Atom atom1 = mNode.getAtom();
+        //                Atom atom2 = mNode.getParent().getAtom();
+        //                if ((ringClosures.containsKey(atom1) && ringClosures.get(atom1).containsKey(atom2)) || (ringClosures.containsKey(atom2) && ringClosures.get(atom2).containsKey(atom1))) {
+        //                } else {
+        //                    addRingClosure(atom1, atom2);
+        //                    addRingClosurePairs(atom1, atom2);
+        //                    addRingClosurePairs(atom2, atom1);
+        //                }
+        //            }
+        //        }
 
-//        dumpAtomTree(atomTree);
+        //        dumpAtomTree(atomTree);
         return atomTree;
     }
 
@@ -289,11 +297,11 @@ public class AngleTreeGenerator {
                     rotatable = false;
                 } else if (a2 == null) {
                     rotatable = false;
-                } else if (a3.bonds.size() < 2) {
+                } else if (a3.bonds.size() < 2 && a3.getProperty("connector") == null) {
                     rotatable = false;
                 } else if (a3.getAtomicNumber() == 1) {
                     rotatable = false;
-// fixme atom prop P hyb wrong so we have these special cases
+                    // fixme atom prop P hyb wrong so we have these special cases
                 } else if ((a3.getAtomicNumber() == 8) && (a2.getAtomicNumber() == 15)) {
                     rotatable = true;
                 } else if ((a3.getAtomicNumber() == 15) && (a2.getAtomicNumber() == 8)) {
@@ -304,14 +312,14 @@ public class AngleTreeGenerator {
                     rotatable = false;
                 } else if (a3.getFlag(Atom.RING) && a2.getFlag(Atom.RING)) {
                     rotatable = false;
-                
+
                 }
                 int currIRP = a3.irpIndex;
                 if (currIRP == 0) {
                     currIRP = 1;
                 }
                 a3.irpIndex = rotatable ? currIRP : 0;
-//                System.out.println(a3.getShortName() + " " + a3.irpIndex + " " + rotatable);
+                //                System.out.println(a3.getShortName() + " " + a3.irpIndex + " " + rotatable);
             }
         });
         for (Atom atom : itree.getAtomArray()) {
@@ -324,11 +332,11 @@ public class AngleTreeGenerator {
             }
         }
         ringClosures = new HashMap<>();
-//        System.out.println("add clo " + closureBonds.size());
+        //        System.out.println("add clo " + closureBonds.size());
         for (Bond bond : closureBonds) {
             bond.begin.addBond(bond);
             bond.end.addBond(bond);
-//            System.out.println("close bond " + bond.toString());
+            //            System.out.println("close bond " + bond.toString());
             addRingClosure(bond.begin, bond.end);
             addRingClosurePairs(bond.begin, bond.end);
             addRingClosurePairs(bond.end, bond.begin);
@@ -341,23 +349,23 @@ public class AngleTreeGenerator {
             mol.genCoords();
         }
     }
-//   List<Atom> atomPathList = new ArrayList<>();
-//        // Adds all the ring closures for bonds broken in rings
-//        ringClosures = new HashMap<>();
-//        for (MNode mNode : pathNodes) {
-//            if (!mNode.isRingClosure()) {
-//                atomPathList.add(mNode.getAtom());
-//            } else {
-//                Atom atom1 = mNode.getAtom();
-//                Atom atom2 = mNode.getParent().getAtom();
-//                if ((ringClosures.containsKey(atom1) && ringClosures.get(atom1).containsKey(atom2)) || (ringClosures.containsKey(atom2) && ringClosures.get(atom2).containsKey(atom1))) {
-//                } else {
-//                    addRingClosure(atom1, atom2);
-//                    addRingClosurePairs(atom1, atom2);
-//                    addRingClosurePairs(atom2, atom1);
-//                }
-//            }
-//        }
+    //   List<Atom> atomPathList = new ArrayList<>();
+    //        // Adds all the ring closures for bonds broken in rings
+    //        ringClosures = new HashMap<>();
+    //        for (MNode mNode : pathNodes) {
+    //            if (!mNode.isRingClosure()) {
+    //                atomPathList.add(mNode.getAtom());
+    //            } else {
+    //                Atom atom1 = mNode.getAtom();
+    //                Atom atom2 = mNode.getParent().getAtom();
+    //                if ((ringClosures.containsKey(atom1) && ringClosures.get(atom1).containsKey(atom2)) || (ringClosures.containsKey(atom2) && ringClosures.get(atom2).containsKey(atom1))) {
+    //                } else {
+    //                    addRingClosure(atom1, atom2);
+    //                    addRingClosurePairs(atom1, atom2);
+    //                    addRingClosurePairs(atom2, atom1);
+    //                }
+    //            }
+    //        }
 
     public static void dumpAtomTree(List<List<Atom>> atomTree) {
         for (List<Atom> branch : atomTree) {
@@ -379,8 +387,8 @@ public class AngleTreeGenerator {
                 shellNodes.add(node);
             }
         }
-// Sorting the shellNodes results in errors calculating dihedral angles
-//        Collections.sort(shellNodes, MNode::compareByParValue);
+        // Sorting the shellNodes results in errors calculating dihedral angles
+        //        Collections.sort(shellNodes, MNode::compareByParValue);
         return shellNodes;
     }
 
@@ -403,5 +411,16 @@ public class AngleTreeGenerator {
                 addRingClosure(a1, a2);
             }
         }
+    }
+
+    private boolean testTerminal(Atom a) {
+        List<Atom> aList = a.getConnected();
+        List<Atom> appeared = new ArrayList<>();
+        for (Atom atom : aList) {
+            if (!appeared.contains(atom)) {
+                appeared.add(atom);
+            }
+        }
+        return appeared.size() == 1;
     }
 }

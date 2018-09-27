@@ -1,5 +1,5 @@
 /*
- * NMRFx Structure : A Program for Calculating Structures 
+ * NMRFx Structure : A Program for Calculating Structures
  * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
  *
  * This program is free software: you can redistribute it and/or modify
@@ -147,21 +147,21 @@ public class Molecule implements Serializable, ITree {
         colorTypes.add("atom");
 
         /*
-         colorTypes.add("p_atom");
-         colorTypes.add("residue");
-         colorTypes.add("p_residue");
-         colorTypes.add("segment");
-         colorTypes.add("property");
-         colorTypes.add("gcharge");
-         colorTypes.add("p_gcharge");
-         colorTypes.add("charge");
-         colorTypes.add("ffc");
-         colorTypes.add("ss");
-         colorTypes.add("amf");
-         colorTypes.add("ntoc");
-         colorTypes.add("rgb");
-         colorTypes.add("custom");
-         colorTypes.add("gproperty");
+     colorTypes.add("p_atom");
+     colorTypes.add("residue");
+     colorTypes.add("p_residue");
+     colorTypes.add("segment");
+     colorTypes.add("property");
+     colorTypes.add("gcharge");
+     colorTypes.add("p_gcharge");
+     colorTypes.add("charge");
+     colorTypes.add("ffc");
+     colorTypes.add("ss");
+     colorTypes.add("amf");
+     colorTypes.add("ntoc");
+     colorTypes.add("rgb");
+     colorTypes.add("custom");
+     colorTypes.add("gproperty");
          */
         shapeTypes.add("circle");
         shapeTypes.add("square");
@@ -200,7 +200,7 @@ public class Molecule implements Serializable, ITree {
     private HashMap<String, String> propertyMap = new HashMap<String, String>();
     private ArrayList<Atom> angleAtoms = null;
     private ArrayList<Atom> pseudoAngleAtoms = null;
-//    ArrayList<Atom> atoms = new ArrayList<>();
+    //    ArrayList<Atom> atoms = new ArrayList<>();
     private boolean atomArrayValid = false;
     Map<String, Atom> atomMap = new HashMap<>();
     List<Atom> atoms;
@@ -211,7 +211,7 @@ public class Molecule implements Serializable, ITree {
     EnergyCoords eCoords = new EnergyCoords();
     Dihedral dihedrals = null;
 
-// fixme    public EnergyLists energyList = null;
+    // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
         this.name = name;
         entities = new LinkedHashMap<>();
@@ -225,7 +225,8 @@ public class Molecule implements Serializable, ITree {
             Method m = c.getDeclaredMethod("observableArrayList", argTypes);
             Object[] args = new Object[0];
             atoms = (List<Atom>) m.invoke(args);
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException
+                | IllegalArgumentException | InvocationTargetException ex) {
             atoms = new ArrayList<>();
         }
         activeMol = this;
@@ -276,8 +277,7 @@ public class Molecule implements Serializable, ITree {
         return activeMol;
     }
 
-    public void reName(Molecule molecule, Compound compound, String name1,
-            String name2) {
+    public void reName(Molecule molecule, Compound compound, String name1, String name2) {
         molecule.name = name2;
         StructureProject.getActive().removeMolecule(name1);
 
@@ -534,8 +534,8 @@ public class Molecule implements Serializable, ITree {
         return Atom.calcDistance(pts[0], pts[1]);
     }
 
-    public static double calcDistance(MolFilter molFilter1,
-            MolFilter molFilter2) throws MissingCoordinatesException, InvalidMoleculeException {
+    public static double calcDistance(MolFilter molFilter1, MolFilter molFilter2)
+            throws MissingCoordinatesException, InvalidMoleculeException {
         List<SpatialSet> selected1 = matchAtoms(molFilter1);
         List<SpatialSet> selected2 = matchAtoms(molFilter2);
         Point3 pt1 = Atom.avgAtom(selected1, molFilter1.getStructureNum());
@@ -549,8 +549,8 @@ public class Molecule implements Serializable, ITree {
         return (Atom.calcDistance(pt1, pt2));
     }
 
-    public static double calcAngle(MolFilter molFilter1,
-            MolFilter molFilter2, MolFilter molFilter3) throws MissingCoordinatesException {
+    public static double calcAngle(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3)
+            throws MissingCoordinatesException {
         SpatialSet spSet1 = getSpatialSet(molFilter1);
         SpatialSet spSet2 = getSpatialSet(molFilter2);
         SpatialSet spSet3 = getSpatialSet(molFilter3);
@@ -604,8 +604,8 @@ public class Molecule implements Serializable, ITree {
 
     }
 
-    public static double calcDihedral(MolFilter molFilter1,
-            MolFilter molFilter2, MolFilter molFilter3, MolFilter molFilter4) throws IllegalArgumentException {
+    public static double calcDihedral(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3,
+            MolFilter molFilter4) throws IllegalArgumentException {
         MolFilter[] molFilters = new MolFilter[4];
         molFilters[0] = molFilter1;
         molFilters[1] = molFilter2;
@@ -770,10 +770,12 @@ public class Molecule implements Serializable, ITree {
         updateVecCoords();
     }
 
+    public void invalidateAtomTree() {
+        atomTree = null;
+    }
 
     public void setupGenCoords() throws RuntimeException {
         updateAtomArray();
-
         if (atomTree == null) {
             AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
             atomTree = aTreeGen.genTree(this, atoms.get(0), null);
@@ -809,7 +811,8 @@ public class Molecule implements Serializable, ITree {
     }
 
     public void dumpCoordsGen() {
-        System.out.printf("    %8s %8s %8s %8s %10s %10s %10s \n", "GPName", "PName", "Name", "DName", "BondL", "ValAng", "DihAng");
+        System.out.printf("    %8s %8s %8s %8s %10s %10s %10s \n", "GPName", "PName", "Name", "DName", "BondL", "ValAng",
+                "DihAng");
         if (genVecs == null) {
             return;
         }
@@ -824,7 +827,8 @@ public class Molecule implements Serializable, ITree {
                 Atom atom = atomList.get(genVecs[i][2]);
                 String angleDaughterName = atom.daughterAtom != null ? atom.daughterAtom.getShortName() : "____";
                 String atomParentName = atom.parent != null ? atom.parent.getShortName() : "___";
-                System.out.printf("%8s %8s %8s %3d %3d %3d\n", atomParentName, atom.getShortName(), angleDaughterName, atom.irpIndex, atom.rotUnit, atom.iAtom);
+                System.out.printf("%8s %8s %8s %3d %3d %3d\n", atomParentName, atom.getShortName(), angleDaughterName,
+                        atom.irpIndex, atom.rotUnit, atom.iAtom);
                 double dihedralAngle = 0;
                 int a3Index = genVecs[i][2];
                 int a2Index = genVecs[i][1];
@@ -847,7 +851,8 @@ public class Molecule implements Serializable, ITree {
                     double dihedralAnglePrint = dihedralAngle * (180.0 / Math.PI);
                     double bondLength = a4.bondLength;
                     double valenceAngle = a4.valanceAngle * (180.0 / Math.PI);
-                    System.out.printf("    %8s %8s %8s %8s %10.2f %10.3f %10.3f %3d\n", greatGrandParentName, grandParentName, parentName, name, bondLength, valenceAngle, dihedralAnglePrint, a4.iAtom);
+                    System.out.printf("    %8s %8s %8s %8s %10.2f %10.3f %10.3f %3d\n", greatGrandParentName, grandParentName,
+                            parentName, name, bondLength, valenceAngle, dihedralAnglePrint, a4.iAtom);
 
                 }
             }
@@ -863,7 +868,7 @@ public class Molecule implements Serializable, ITree {
     }
 
     public int genCoords(int iStructure, boolean fillCoords) throws RuntimeException {
-//        return genCoords(iStructure, fillCoords, null);
+        //        return genCoords(iStructure, fillCoords, null);
         return genCoordsFast(null, fillCoords, iStructure);
     }
 
@@ -941,9 +946,9 @@ public class Molecule implements Serializable, ITree {
                 }
                 Coordinates coords = new Coordinates(pts[0], pts[1], pts[2]);
                 if (!coords.setup()) {
-//                    if (fillCoords) {
-//                       continue;
-//                    }
+                    //                    if (fillCoords) {
+                    //                       continue;
+                    //                    }
                     throw new RuntimeException("genCoords: coordinates the same for " + i + " " + pts[2].toString());
                 }
                 double dihedralAngle = 0;
@@ -964,7 +969,6 @@ public class Molecule implements Serializable, ITree {
             }
 
         }
-
         structures.add(iStructure);
         resetActiveStructures();
         updateVecCoords();
@@ -1024,7 +1028,7 @@ public class Molecule implements Serializable, ITree {
             }
 
         }
-//        updateFromVecCoords();
+        //        updateFromVecCoords();
 
         structures.add(0);
         resetActiveStructures();
@@ -1053,7 +1057,7 @@ public class Molecule implements Serializable, ITree {
         // fixme this is a hack because the treeAtoms are not in monotoniclly increasing order of residue number
         Map<Entity, Integer> resMap = new HashMap<>();
         for (Atom atom : atomList) {
-//            atom.iAtom = i;
+            //            atom.iAtom = i;
             if (resMap.containsKey(atom.entity)) {
                 resNum = resMap.get(atom.entity);
             } else {
@@ -1079,7 +1083,7 @@ public class Molecule implements Serializable, ITree {
             atomList = treeAtoms;
         }
         for (Atom atom : atomList) {
-//            atom.iAtom = i;
+            //            atom.iAtom = i;
             Point3 pt = atom.getPoint();
             if (pt == null) {
                 System.out.println("updateFromVecCoords null pt " + atom.getFullName() + " " + atom.eAtom);
@@ -1175,8 +1179,7 @@ public class Molecule implements Serializable, ITree {
 
             Compound compound = (Compound) spatialSet.atom.entity;
 
-            if (completedResidues.contains(compound.number
-                    + spatialSet.getName())) {
+            if (completedResidues.contains(compound.number + spatialSet.getName())) {
                 continue;
             } else {
                 completedResidues.add(compound.number + spatialSet.getName());
@@ -1206,8 +1209,7 @@ public class Molecule implements Serializable, ITree {
         return nSelected;
     }
 
-    public int selectAtoms(MolFilter molFilter,
-            boolean append, boolean inverse) throws InvalidMoleculeException {
+    public int selectAtoms(MolFilter molFilter, boolean append, boolean inverse) throws InvalidMoleculeException {
         List<SpatialSet> selected = matchAtoms(molFilter);
         int nSelected = setSelected(selected, append, inverse);
         return nSelected;
@@ -1222,8 +1224,7 @@ public class Molecule implements Serializable, ITree {
         globalSelected.clear();
     }
 
-    public int setSelected(List<SpatialSet> selected,
-            boolean append, boolean inverse) {
+    public int setSelected(List<SpatialSet> selected, boolean append, boolean inverse) {
         int i;
         int j;
         Atom atom;
@@ -1350,8 +1351,7 @@ public class Molecule implements Serializable, ITree {
         sites.put(siteName, siteList);
     }
 
-    public int selectSite(String siteName)
-            throws IllegalArgumentException {
+    public int selectSite(String siteName) throws IllegalArgumentException {
         if ((siteName == null) || (siteName.trim().equals(""))) {
             throw new IllegalArgumentException("selectSite: null or blank siteName");
         }
@@ -1359,16 +1359,14 @@ public class Molecule implements Serializable, ITree {
         List<SpatialSet> siteList = sites.get(siteName);
 
         if (siteList == null) {
-            throw new IllegalArgumentException(
-                    "selectSite: siteList \"" + siteName + "\" doesnt't exist");
+            throw new IllegalArgumentException("selectSite: siteList \"" + siteName + "\" doesnt't exist");
         }
 
         int nSelected = setSelected(siteList, false, false);
         return nSelected;
     }
 
-    public void withinSite(String siteName,
-            float tolerance) throws IllegalArgumentException {
+    public void withinSite(String siteName, float tolerance) throws IllegalArgumentException {
         if ((siteName == null) || (siteName.trim().equals(""))) {
             throw new IllegalArgumentException("selectSite: null or blank siteName");
         }
@@ -1376,8 +1374,7 @@ public class Molecule implements Serializable, ITree {
         List<SpatialSet> siteList = sites.get(siteName);
 
         if (siteList == null) {
-            throw new IllegalArgumentException(
-                    "withinSite: siteList \"" + siteName + "\" doesnt't exist");
+            throw new IllegalArgumentException("withinSite: siteList \"" + siteName + "\" doesnt't exist");
         }
 
         List<SpatialSet> hitList = new ArrayList<>(128);
@@ -1477,8 +1474,7 @@ public class Molecule implements Serializable, ITree {
         return propertyMap.get(propName);
     }
 
-    public void colorAtoms(float red, float green,
-            float blue) {
+    public void colorAtoms(float red, float green, float blue) {
         Atom atom;
 
         for (int i = 0; i < globalSelected.size(); i++) {
@@ -1496,8 +1492,7 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
-    public void colorBonds(float red, float green,
-            float blue) {
+    public void colorBonds(float red, float green, float blue) {
         Bond bond;
 
         for (int i = 0; i < bselected.size(); i++) {
@@ -1526,8 +1521,7 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
-    public int createLineArray(int iStructure, float[] coords, int i,
-            float[] colors) {
+    public int createLineArray(int iStructure, float[] coords, int i, float[] colors) {
         int j;
         Atom atomB;
         Atom atomE;
@@ -1555,10 +1549,8 @@ public class Molecule implements Serializable, ITree {
                         double y3 = dx / bondSpace;
                         double z3 = dz / bondSpace;
 
-                        if (((bond.stereo == Bond.STEREO_BOND_UP)
-                                && (atomE.nonHydrogens < atomB.nonHydrogens))
-                                || ((bond.stereo == Bond.STEREO_BOND_DOWN)
-                                && (atomE.nonHydrogens > atomB.nonHydrogens))) {
+                        if (((bond.stereo == Bond.STEREO_BOND_UP) && (atomE.nonHydrogens < atomB.nonHydrogens))
+                                || ((bond.stereo == Bond.STEREO_BOND_DOWN) && (atomE.nonHydrogens > atomB.nonHydrogens))) {
                             coords[i++] = (float) (ptB.getX());
                             coords[i++] = (float) (ptB.getY());
                             coords[i++] = (float) (ptB.getZ());
@@ -1598,10 +1590,8 @@ public class Molecule implements Serializable, ITree {
                             colors[j++] = atomE.getRed();
                             colors[j++] = atomE.getGreen();
                             colors[j++] = atomE.getBlue();
-                        } else if (((bond.stereo == Bond.STEREO_BOND_DOWN)
-                                && (atomE.nonHydrogens < atomB.nonHydrogens))
-                                || ((bond.stereo == Bond.STEREO_BOND_UP)
-                                && (atomE.nonHydrogens > atomB.nonHydrogens))) {
+                        } else if (((bond.stereo == Bond.STEREO_BOND_DOWN) && (atomE.nonHydrogens < atomB.nonHydrogens))
+                                || ((bond.stereo == Bond.STEREO_BOND_UP) && (atomE.nonHydrogens > atomB.nonHydrogens))) {
                             coords[i++] = (float) (ptB.getX() + x3);
                             coords[i++] = (float) (ptB.getY() + y3);
                             coords[i++] = (float) (ptB.getZ() + z3);
@@ -1609,57 +1599,33 @@ public class Molecule implements Serializable, ITree {
                             coords[i++] = (float) (ptB.getY() - y3);
                             coords[i++] = (float) (ptB.getZ() - z3);
 
-                            coords[i++] = (float) (ptB.getX() + x3
-                                    + (dx / 5));
-                            coords[i++] = (float) (ptB.getY() + y3
-                                    + (dy / 5));
-                            coords[i++] = (float) (ptB.getZ() + z3
-                                    + (dz / 5));
-                            coords[i++] = (float) (ptB.getX() - x3
-                                    + (dx / 5));
-                            coords[i++] = (float) (ptB.getY() - y3
-                                    + (dy / 5));
-                            coords[i++] = (float) (ptB.getZ() - z3
-                                    + (dz / 5));
+                            coords[i++] = (float) (ptB.getX() + x3 + (dx / 5));
+                            coords[i++] = (float) (ptB.getY() + y3 + (dy / 5));
+                            coords[i++] = (float) (ptB.getZ() + z3 + (dz / 5));
+                            coords[i++] = (float) (ptB.getX() - x3 + (dx / 5));
+                            coords[i++] = (float) (ptB.getY() - y3 + (dy / 5));
+                            coords[i++] = (float) (ptB.getZ() - z3 + (dz / 5));
 
-                            coords[i++] = (float) (ptB.getX() + x3
-                                    + (dx / 5 * 2));
-                            coords[i++] = (float) (ptB.getY() + y3
-                                    + (dy / 5 * 2));
-                            coords[i++] = (float) (ptB.getZ() + z3
-                                    + (dz / 5 * 2));
-                            coords[i++] = (float) (ptB.getX() - x3
-                                    + (dx / 5 * 2));
-                            coords[i++] = (float) (ptB.getY() - y3
-                                    + (dy / 5 * 2));
-                            coords[i++] = (float) (ptB.getZ() - z3
-                                    + (dz / 5 * 2));
+                            coords[i++] = (float) (ptB.getX() + x3 + (dx / 5 * 2));
+                            coords[i++] = (float) (ptB.getY() + y3 + (dy / 5 * 2));
+                            coords[i++] = (float) (ptB.getZ() + z3 + (dz / 5 * 2));
+                            coords[i++] = (float) (ptB.getX() - x3 + (dx / 5 * 2));
+                            coords[i++] = (float) (ptB.getY() - y3 + (dy / 5 * 2));
+                            coords[i++] = (float) (ptB.getZ() - z3 + (dz / 5 * 2));
 
-                            coords[i++] = (float) (ptB.getX() + x3
-                                    + (dx / 5 * 3));
-                            coords[i++] = (float) (ptB.getY() + y3
-                                    + (dy / 5 * 3));
-                            coords[i++] = (float) (ptB.getZ() + z3
-                                    + (dz / 5 * 3));
-                            coords[i++] = (float) (ptB.getX() - x3
-                                    + (dx / 5 * 3));
-                            coords[i++] = (float) (ptB.getY() - y3
-                                    + (dy / 5 * 3));
-                            coords[i++] = (float) (ptB.getZ() - z3
-                                    + (dz / 5 * 3));
+                            coords[i++] = (float) (ptB.getX() + x3 + (dx / 5 * 3));
+                            coords[i++] = (float) (ptB.getY() + y3 + (dy / 5 * 3));
+                            coords[i++] = (float) (ptB.getZ() + z3 + (dz / 5 * 3));
+                            coords[i++] = (float) (ptB.getX() - x3 + (dx / 5 * 3));
+                            coords[i++] = (float) (ptB.getY() - y3 + (dy / 5 * 3));
+                            coords[i++] = (float) (ptB.getZ() - z3 + (dz / 5 * 3));
 
-                            coords[i++] = (float) (ptB.getX() + x3
-                                    + (dx / 5 * 4));
-                            coords[i++] = (float) (ptB.getY() + y3
-                                    + (dy / 5 * 4));
-                            coords[i++] = (float) (ptB.getZ() + z3
-                                    + (dz / 5 * 4));
-                            coords[i++] = (float) (ptB.getX() - x3
-                                    + (dx / 5 * 4));
-                            coords[i++] = (float) (ptB.getY() - y3
-                                    + (dy / 5 * 4));
-                            coords[i++] = (float) (ptB.getZ() - z3
-                                    + (dz / 5 * 4));
+                            coords[i++] = (float) (ptB.getX() + x3 + (dx / 5 * 4));
+                            coords[i++] = (float) (ptB.getY() + y3 + (dy / 5 * 4));
+                            coords[i++] = (float) (ptB.getZ() + z3 + (dz / 5 * 4));
+                            coords[i++] = (float) (ptB.getX() - x3 + (dx / 5 * 4));
+                            coords[i++] = (float) (ptB.getY() - y3 + (dy / 5 * 4));
+                            coords[i++] = (float) (ptB.getZ() - z3 + (dz / 5 * 4));
 
                             colors[j++] = atomB.getRed();
                             colors[j++] = atomB.getGreen();
@@ -1692,8 +1658,7 @@ public class Molecule implements Serializable, ITree {
                             colors[j++] = atomE.getGreen();
                             colors[j++] = atomE.getBlue();
                         } else {
-                            if ((bond.order == Order.SINGLE) || (bond.order == Order.TRIPLE)
-                                    || (bond.order.getOrderNum() == 7)
+                            if ((bond.order == Order.SINGLE) || (bond.order == Order.TRIPLE) || (bond.order.getOrderNum() == 7)
                                     || (bond.order.getOrderNum() == 9)) {
                                 atomB.setProperty(Atom.LABEL);
                                 atomE.setProperty(Atom.LABEL);
@@ -1712,8 +1677,7 @@ public class Molecule implements Serializable, ITree {
                                 colors[j++] = atomE.getBlue();
                             }
 
-                            if ((bond.order == Order.DOUBLE) || (bond.order == Order.TRIPLE)
-                                    || (bond.order.getOrderNum() == 8)) {
+                            if ((bond.order == Order.DOUBLE) || (bond.order == Order.TRIPLE) || (bond.order.getOrderNum() == 8)) {
                                 coords[i++] = (float) (ptB.getX() + x3);
                                 coords[i++] = (float) (ptB.getY() + y3);
                                 coords[i++] = (float) (ptB.getZ() + z3);
@@ -1767,26 +1731,21 @@ public class Molecule implements Serializable, ITree {
 
                     if ((ptB != null) && (ptE != null)) {
 
-                        if (((bond.stereo == Bond.STEREO_BOND_UP)
-                                && (atomE.nonHydrogens < atomB.nonHydrogens))
-                                || ((bond.stereo == Bond.STEREO_BOND_DOWN)
-                                && (atomE.nonHydrogens > atomB.nonHydrogens))) {
+                        if (((bond.stereo == Bond.STEREO_BOND_UP) && (atomE.nonHydrogens < atomB.nonHydrogens))
+                                || ((bond.stereo == Bond.STEREO_BOND_DOWN) && (atomE.nonHydrogens > atomB.nonHydrogens))) {
                             bondArray[k++] = bond;
                             bondArray[k++] = bond;
                             bondArray[k++] = bond;
 
-                        } else if (((bond.stereo == Bond.STEREO_BOND_DOWN)
-                                && (atomE.nonHydrogens < atomB.nonHydrogens))
-                                || ((bond.stereo == Bond.STEREO_BOND_UP)
-                                && (atomE.nonHydrogens > atomB.nonHydrogens))) {
+                        } else if (((bond.stereo == Bond.STEREO_BOND_DOWN) && (atomE.nonHydrogens < atomB.nonHydrogens))
+                                || ((bond.stereo == Bond.STEREO_BOND_UP) && (atomE.nonHydrogens > atomB.nonHydrogens))) {
                             bondArray[k++] = bond;
                             bondArray[k++] = bond;
                             bondArray[k++] = bond;
                             bondArray[k++] = bond;
                             bondArray[k++] = bond;
                         } else {
-                            if ((bond.order == Order.SINGLE) || (bond.order == Order.TRIPLE)
-                                    || (bond.order.getOrderNum() == 7)
+                            if ((bond.order == Order.SINGLE) || (bond.order == Order.TRIPLE) || (bond.order.getOrderNum() == 7)
                                     || (bond.order.getOrderNum() == 9)) {
                                 atomB.setProperty(Atom.LABEL);
                                 atomE.setProperty(Atom.LABEL);
@@ -1794,8 +1753,7 @@ public class Molecule implements Serializable, ITree {
 
                             }
 
-                            if ((bond.order == Order.DOUBLE) || (bond.order == Order.TRIPLE)
-                                    || (bond.order.getOrderNum() == 8)) {
+                            if ((bond.order == Order.DOUBLE) || (bond.order == Order.TRIPLE) || (bond.order.getOrderNum() == 8)) {
                                 bondArray[k++] = bond;
                                 bondArray[k++] = bond;
                             }
@@ -1826,15 +1784,11 @@ public class Molecule implements Serializable, ITree {
                     ptE = atomE.getPoint(iStructure);
 
                     if ((ptB != null) && (ptE != null)) {
-                        if (((bond.stereo == Bond.STEREO_BOND_UP)
-                                && (atomE.nonHydrogens < atomB.nonHydrogens))
-                                || ((bond.stereo == Bond.STEREO_BOND_DOWN)
-                                && (atomE.nonHydrogens > atomB.nonHydrogens))) {
+                        if (((bond.stereo == Bond.STEREO_BOND_UP) && (atomE.nonHydrogens < atomB.nonHydrogens))
+                                || ((bond.stereo == Bond.STEREO_BOND_DOWN) && (atomE.nonHydrogens > atomB.nonHydrogens))) {
                             i += 3;
-                        } else if (((bond.stereo == Bond.STEREO_BOND_DOWN)
-                                && (atomE.nonHydrogens < atomB.nonHydrogens))
-                                || ((bond.stereo == Bond.STEREO_BOND_UP)
-                                && (atomE.nonHydrogens > atomB.nonHydrogens))) {
+                        } else if (((bond.stereo == Bond.STEREO_BOND_DOWN) && (atomE.nonHydrogens < atomB.nonHydrogens))
+                                || ((bond.stereo == Bond.STEREO_BOND_UP) && (atomE.nonHydrogens > atomB.nonHydrogens))) {
                             i += 5;
                         } else if (bond.order.getOrderNum() < 4) {
                             i += bond.order.getOrderNum();
@@ -1851,8 +1805,7 @@ public class Molecule implements Serializable, ITree {
         return i;
     }
 
-    public void calcCorner(int iStructure)
-            throws MissingCoordinatesException {
+    public void calcCorner(int iStructure) throws MissingCoordinatesException {
         int n;
         double x = 0;
         double y = 0;
@@ -1915,8 +1868,7 @@ public class Molecule implements Serializable, ITree {
         return mCenter;
     }
 
-    public double[] getCenterOfSelected(int iStructure)
-            throws MissingCoordinatesException {
+    public double[] getCenterOfSelected(int iStructure) throws MissingCoordinatesException {
         double x = 0;
         double y = 0;
         double z = 0;
@@ -1943,8 +1895,7 @@ public class Molecule implements Serializable, ITree {
         return mCenter;
     }
 
-    public Vector3D getCorner(int iStructure)
-            throws MissingCoordinatesException {
+    public Vector3D getCorner(int iStructure) throws MissingCoordinatesException {
         int n;
         Point3 pt;
         n = 0;
@@ -2017,8 +1968,7 @@ public class Molecule implements Serializable, ITree {
         return list;
     }
 
-    public int createSphereArray(int iStructure, float[] coords, int i,
-            float[] colors, float[] values) {
+    public int createSphereArray(int iStructure, float[] coords, int i, float[] colors, float[] values) {
         int j;
         int k = 0;
         Point3 pt;
@@ -2088,14 +2038,11 @@ public class Molecule implements Serializable, ITree {
 
                 if (ptB != null) {
                     if ((k + 1) < n) {
-                        spatialSet2 = (SpatialSet) globalSelected.get(k
-                                + 1);
+                        spatialSet2 = (SpatialSet) globalSelected.get(k + 1);
                     }
 
-                    if ((spatialSet1 == spatialSet2)
-                            || (Molecule.selCycleCount == 0) || ((k + 1) >= n)
-                            || ((Molecule.selCycleCount != 1)
-                            && (((k + 1) % Molecule.selCycleCount) == 0))) {
+                    if ((spatialSet1 == spatialSet2) || (Molecule.selCycleCount == 0) || ((k + 1) >= n)
+                            || ((Molecule.selCycleCount != 1) && (((k + 1) % Molecule.selCycleCount) == 0))) {
                         coords[i++] = (float) ptB.getX();
                         coords[i++] = (float) ptB.getY();
                         coords[i++] = (float) ptB.getZ();
@@ -2122,8 +2069,7 @@ public class Molecule implements Serializable, ITree {
                             float dx = (float) (ptE.getX() - ptB.getX());
                             float dy = (float) (ptE.getY() - ptB.getY());
                             float dz = (float) (ptE.getZ() - ptB.getZ());
-                            float len = (float) Math.sqrt((dx * dx)
-                                    + (dy * dy) + (dz * dz));
+                            float len = (float) Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
                             float xy3 = -dy / len * 0.2f;
                             float yx3 = dx / len * 0.2f;
                             float z3 = dz / len * 0.2f;
@@ -2227,8 +2173,7 @@ public class Molecule implements Serializable, ITree {
             atomE = bond.end;
 
             if ((atomB != null) && (atomE != null)) {
-                if ((atomB.getSelected() > 0)
-                        && (atomE.getSelected() > 0)) {
+                if ((atomB.getSelected() > 0) && (atomE.getSelected() > 0)) {
                     bond.setProperty(Bond.SELECT);
                     selected.add(bond);
                 }
@@ -2453,7 +2398,8 @@ public class Molecule implements Serializable, ITree {
         return hydrogenBonds(structures, hydrogenFilter, acceptorFilter);
     }
 
-    public ArrayList<HydrogenBond> hydrogenBonds(final int[] structures, final MolFilter hydrogenFilter, final MolFilter acceptorFilter) throws InvalidMoleculeException {
+    public ArrayList<HydrogenBond> hydrogenBonds(final int[] structures, final MolFilter hydrogenFilter,
+            final MolFilter acceptorFilter) throws InvalidMoleculeException {
         List<SpatialSet> hydrogens = matchAtoms(hydrogenFilter);
         List<SpatialSet> acceptors = matchAtoms(acceptorFilter);
         ArrayList<HydrogenBond> hBonds = new ArrayList<HydrogenBond>();
@@ -2477,7 +2423,8 @@ public class Molecule implements Serializable, ITree {
         return hBonds;
     }
 
-    public Map<String, HydrogenBond> hydrogenBondMap(final MolFilter hydrogenFilter, final MolFilter acceptorFilter, int structureNum) throws InvalidMoleculeException {
+    public Map<String, HydrogenBond> hydrogenBondMap(final MolFilter hydrogenFilter, final MolFilter acceptorFilter,
+            int structureNum) throws InvalidMoleculeException {
         List<SpatialSet> hydrogens = matchAtoms(hydrogenFilter);
         List<SpatialSet> acceptors = matchAtoms(acceptorFilter);
         Map<String, HydrogenBond> hBondMap = new HashMap<>();
@@ -2515,7 +2462,8 @@ public class Molecule implements Serializable, ITree {
         return hBondMap;
     }
 
-    public Map<String, Double> electroStaticShiftMap(final MolFilter targetFilter, final MolFilter sourceFilter, int structureNum) throws InvalidMoleculeException {
+    public Map<String, Double> electroStaticShiftMap(final MolFilter targetFilter, final MolFilter sourceFilter,
+            int structureNum) throws InvalidMoleculeException {
         List<SpatialSet> targets = matchAtoms(targetFilter);
         List<SpatialSet> sources = matchAtoms(sourceFilter);
         Map<String, Double> shiftMap = new HashMap<>();
@@ -2705,8 +2653,7 @@ public class Molecule implements Serializable, ITree {
                         boolean validRes = true;
 
                         if (!(entity instanceof Polymer)) {
-                            if (!molFilter.firstRes.equals("*")
-                                    && (!molFilter.firstRes.equals(compound.number))) {
+                            if (!molFilter.firstRes.equals("*") && (!molFilter.firstRes.equals(compound.number))) {
                                 validRes = false;
                             }
                         }
@@ -2714,15 +2661,11 @@ public class Molecule implements Serializable, ITree {
                         if (validRes) {
                             boolean validAtom = false;
 
-                            for (int iAtom = 0;
-                                    iAtom < molFilter.atomNames.size();
-                                    iAtom++) {
+                            for (int iAtom = 0; iAtom < molFilter.atomNames.size(); iAtom++) {
                                 atomName = ((String) molFilter.atomNames.elementAt(iAtom)).toLowerCase();
 
                                 if (atomName.charAt(0) == '!') {
-                                    if (!Util.stringMatch(
-                                            atom.name.toLowerCase(),
-                                            atomName.substring(1))) {
+                                    if (!Util.stringMatch(atom.name.toLowerCase(), atomName.substring(1))) {
                                         SpatialSet spatialSet = atom.getSpatialSet();
 
                                         if (spatialSet != null) {
@@ -2735,19 +2678,15 @@ public class Molecule implements Serializable, ITree {
 
                                         break;
                                     }
-                                } else if (Util.stringMatch(
-                                        atom.name.toLowerCase(),
-                                        atomName)) {
+                                } else if (Util.stringMatch(atom.name.toLowerCase(), atomName)) {
                                     SpatialSet spatialSet = atom.getSpatialSet();
 
                                     if (spatialSet != null) {
                                         validAtom = true;
                                     } else {
                                         validAtom = false;
-                                        System.err.println(
-                                                "null spatialset while matching atom "
-                                                + atomName + " in coordset  "
-                                                + coordSet.name);
+                                        System.err
+                                                .println("null spatialset while matching atom " + atomName + " in coordset  " + coordSet.name);
                                     }
 
                                     if (!checkAll) {
@@ -2849,8 +2788,7 @@ public class Molecule implements Serializable, ITree {
 
                         // fixme why is this inside atom loop
                         if (!(entity instanceof Polymer)) {
-                            if (!molFilter.firstRes.equals("*")
-                                    && (!molFilter.firstRes.equals(compound.number))) {
+                            if (!molFilter.firstRes.equals("*") && (!molFilter.firstRes.equals(compound.number))) {
                                 validRes = false;
                             }
                         }
@@ -2908,10 +2846,8 @@ public class Molecule implements Serializable, ITree {
                                         validAtom = true;
                                     } else {
                                         validAtom = false;
-                                        System.err.println(
-                                                "null spatialset while matching atom "
-                                                + atomName + " in coordset  "
-                                                + coordSet.name);
+                                        System.err
+                                                .println("null spatialset while matching atom " + atomName + " in coordset  " + coordSet.name);
                                     }
 
                                     if (!checkAll) {
@@ -3008,8 +2944,7 @@ public class Molecule implements Serializable, ITree {
                     } catch (NumberFormatException nfE) {
                     }
                     if (!(entity instanceof Polymer)) {
-                        if (!molFilter.firstRes.equals("*")
-                                && (!molFilter.firstRes.equals(compound.number))) {
+                        if (!molFilter.firstRes.equals("*") && (!molFilter.firstRes.equals(compound.number))) {
                             validRes = false;
                         }
                     }
@@ -3065,10 +3000,8 @@ public class Molecule implements Serializable, ITree {
                                         validAtom = true;
                                     } else {
                                         validAtom = false;
-                                        System.err.println(
-                                                "null spatialset while matching atom "
-                                                + atomName + " in coordset  "
-                                                + coordSet.name);
+                                        System.err
+                                                .println("null spatialset while matching atom " + atomName + " in coordset  " + coordSet.name);
                                     }
 
                                     if (!checkAll) {
@@ -3152,8 +3085,7 @@ public class Molecule implements Serializable, ITree {
         return atomMap.get(name);
     }
 
-    public static Atom getAtomByName(String name)
-            throws IllegalArgumentException {
+    public static Atom getAtomByName(String name) throws IllegalArgumentException {
         MolFilter molFilter = null;
         molFilter = new MolFilter(name);
         Atom atom = null;
@@ -3176,8 +3108,7 @@ public class Molecule implements Serializable, ITree {
         return atom;
     }
 
-    public static SpatialSet getSpatialSet(MolFilter molFilter)
-            throws IllegalArgumentException {
+    public static SpatialSet getSpatialSet(MolFilter molFilter) throws IllegalArgumentException {
         Residue firstResidue = null;
         Compound compound;
         CoordSet coordSet;
@@ -3207,8 +3138,7 @@ public class Molecule implements Serializable, ITree {
                 } else {
                     compound = (Compound) entity;
 
-                    if (!molFilter.firstRes.equals("*")
-                            && (!molFilter.firstRes.equals(compound.number))) {
+                    if (!molFilter.firstRes.equals("*") && (!molFilter.firstRes.equals(compound.number))) {
                         continue;
                     }
                 }
@@ -3237,7 +3167,6 @@ public class Molecule implements Serializable, ITree {
         } else {
             atomList = treeAtoms;
         }
-
         for (Atom iAtom : atomList) {
             iAtom.rotUnit = -1;
             if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
@@ -3286,8 +3215,7 @@ public class Molecule implements Serializable, ITree {
 
     public void setRiboseActive(boolean state) {
         updateAtomArray();
-        atoms.stream().filter((iAtom) -> (iAtom.getName().equalsIgnoreCase("C3'")
-                || iAtom.getName().equalsIgnoreCase("C2'")
+        atoms.stream().filter((iAtom) -> (iAtom.getName().equalsIgnoreCase("C3'") || iAtom.getName().equalsIgnoreCase("C2'")
                 || iAtom.getName().equalsIgnoreCase("C1'"))).forEachOrdered((iAtom) -> {
             boolean current = iAtom.rotActive;
             iAtom.rotActive = state;
@@ -3342,7 +3270,8 @@ public class Molecule implements Serializable, ITree {
         for (Atom iAtom : atoms) {
             if (iAtom.getName().equals("O3'") || iAtom.getName().equals("C1'")) {
                 pseudoAngleAtoms.add(iAtom);
-            } else if ((iAtom.getName().charAt(0) == 'N') && (iAtom.getParent() != null) && (iAtom.getParent().getName().equals("C1'"))) {
+            } else if ((iAtom.getName().charAt(0) == 'N') && (iAtom.getParent() != null)
+                    && (iAtom.getParent().getName().equals("C1'"))) {
                 pseudoAngleAtoms.add(iAtom);
             }
         }
@@ -3351,65 +3280,65 @@ public class Molecule implements Serializable, ITree {
 
     public void getBondsBroken() {
         /*
-         Residue residue = null;
-         int i;
-         String atomName1;
-         String atomName2;
-         Atom atom1 = null;
-         Atom atom2 = null;
-         Vector residueBonds = null;
-         Entity entity;
+     Residue residue = null;
+     int i;
+     String atomName1;
+     String atomName2;
+     Atom atom1 = null;
+     Atom atom2 = null;
+     Vector residueBonds = null;
+     Entity entity;
 
-         Iterator e = entities.values().iterator();
+     Iterator e = entities.values().iterator();
 
-         while (e.hasNext()) {
-         entity = (Entity) e.next();
+     while (e.hasNext()) {
+     entity = (Entity) e.next();
 
-         if (entity instanceof Polymer) {
-         Polymer polymer = (Polymer) entity;
-         residue = polymer.firstResidue;
-         } else {
-         continue;
-         }
-         while (residue != null) {
-         // fixme  need to get residueBonds
-         //              residueBonds = (Vector) residueTable(residue.name);
-         for (i = 0; i < residueBonds.size(); i += 2) {
-         atomName1 = (String) residueBonds.elementAt(i);
-         atomName2 = (String) residueBonds.elementAt(i + 1);
-         atom1 = residue.getAtom(atomName1);
+     if (entity instanceof Polymer) {
+     Polymer polymer = (Polymer) entity;
+     residue = polymer.firstResidue;
+     } else {
+     continue;
+     }
+     while (residue != null) {
+     // fixme  need to get residueBonds
+     //              residueBonds = (Vector) residueTable(residue.name);
+     for (i = 0; i < residueBonds.size(); i += 2) {
+     atomName1 = (String) residueBonds.elementAt(i);
+     atomName2 = (String) residueBonds.elementAt(i + 1);
+     atom1 = residue.getAtom(atomName1);
 
-         if (atom1 == null) {
-         continue;
-         }
+     if (atom1 == null) {
+     continue;
+     }
 
-         atom2 = residue.getAtom(atomName2);
+     atom2 = residue.getAtom(atomName2);
 
-         if (atom2 == null) {
-         continue;
-         }
+     if (atom2 == null) {
+     continue;
+     }
 
-         Bond bond = new Bond(atom1, atom2);
-         atom1.addBond(bond);
+     Bond bond = new Bond(atom1, atom2);
+     atom1.addBond(bond);
 
-         if (residue.polymer.firstBond == null) {
-         residue.polymer.firstBond = bond;
-         }
+     if (residue.polymer.firstBond == null) {
+     residue.polymer.firstBond = bond;
+     }
 
-         bond.previous = residue.polymer.lastBond;
+     bond.previous = residue.polymer.lastBond;
 
-         if (residue.polymer.lastBond != null) {
-         residue.polymer.lastBond.next = bond;
-         }
+     if (residue.polymer.lastBond != null) {
+     residue.polymer.lastBond.next = bond;
+     }
 
-         bond.next = null;
-         residue.polymer.lastBond = bond;
-         }
+     bond.next = null;
+     residue.polymer.lastBond = bond;
+     }
 
-         residue = residue.next;
-         }
-         }
-         *
+     residue = residue.next;
+     }
+     }
+     *
          */
     }
 
@@ -3595,13 +3524,11 @@ public class Molecule implements Serializable, ITree {
         return pairs;
     }
 
-    public static void findEquivalentAtoms(String atomName)
-            throws IllegalArgumentException {
+    public static void findEquivalentAtoms(String atomName) throws IllegalArgumentException {
         Atom atom = getAtomByName(atomName);
 
         if (atom == null) {
-            throw new IllegalArgumentException(
-                    "Can't find atom \"" + atomName + "\"");
+            throw new IllegalArgumentException("Can't find atom \"" + atomName + "\"");
         }
 
         atom.getEquivalency();
@@ -3683,8 +3610,7 @@ public class Molecule implements Serializable, ITree {
                 MNode cNode = pathNodes.get(k);
                 Atom atom = cNode.getAtom();
                 shell = cNode.getShell();
-                value = (shell * 4096) + (16 * atom.aNum)
-                        + ((4 * atom.nPiBonds) / 2);
+                value = (shell * 4096) + (16 * atom.aNum) + ((4 * atom.nPiBonds) / 2);
                 treeValues.add(Integer.valueOf(value));
             }
             Collections.sort(treeValues);
@@ -3743,8 +3669,7 @@ public class Molecule implements Serializable, ITree {
                     String jUniq = shell + "_" + jAtom.getName();
                     String kUniq = shell + "_" + kAtom.getName();
 
-                    if (!uniqueMap.containsKey(jUniq)
-                            && !uniqueMap.containsKey(kUniq)) {
+                    if (!uniqueMap.containsKey(jUniq) && !uniqueMap.containsKey(kUniq)) {
                         nGroups++;
                         uniqueMap.put(jUniq, Integer.valueOf(nGroups));
                         uniqueMap.put(kUniq, Integer.valueOf(nGroups));
@@ -3788,9 +3713,8 @@ public class Molecule implements Serializable, ITree {
         entity.setHasEquivalentAtoms(true);
     }
 
-    public static void getCouplings(final Entity entity,
-            final ArrayList<JCoupling> jCouplings, final ArrayList<JCoupling> tocsyLinks,
-            final ArrayList<JCoupling> hmbcLinks, int nShells, int minShells) {
+    public static void getCouplings(final Entity entity, final ArrayList<JCoupling> jCouplings,
+            final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks, int nShells, int minShells) {
         Molecule molecule = entity.molecule;
         molecule.getAtomTypes();
 
@@ -3955,7 +3879,8 @@ public class Molecule implements Serializable, ITree {
         for (Atom atom : atomList) {
             for (int iBond = 0; iBond < atom.bonds.size(); iBond++) {
                 Bond bond = (Bond) atom.bonds.get(iBond);
-                if (((bond.begin == atom) && (bond.end.iAtom > atom.iAtom)) || ((bond.end == atom) && (bond.begin.iAtom > atom.iAtom))) {
+                if (((bond.begin == atom) && (bond.end.iAtom > atom.iAtom))
+                        || ((bond.end == atom) && (bond.begin.iAtom > atom.iAtom))) {
                     Integer iNodeBegin = hash.get(bond.begin);
                     Integer iNodeEnd = hash.get(bond.end);
                     if ((iNodeBegin != null) && (iNodeEnd != null)) {
@@ -3994,13 +3919,13 @@ public class Molecule implements Serializable, ITree {
                     //  System.out.print(atom.getShortName());
                     ArrayList<Atom> branch = atomBranches.get(atom);
                     Collections.sort(branch, (a, b) -> Integer.compare(a.getIndex(), b.getIndex()));
-//                    for (Atom branchAtom : branch) {
-//                        System.out.print(" " + branchAtom.getShortName());
-//
-//                    }
+                    //                    for (Atom branchAtom : branch) {
+                    //                        System.out.print(" " + branchAtom.getShortName());
+                    //
+                    //                    }
                     atom.branchAtoms = new Atom[branch.size()];
                     branch.toArray(atom.branchAtoms);
-//                    System.out.println("");
+                    //                    System.out.println("");
 
                 } else {
                     atom.branchAtoms = new Atom[0];
@@ -4027,8 +3952,7 @@ public class Molecule implements Serializable, ITree {
         return atoms.get(maxAtom);
     }
 
-    public static int buildTree(Molecule molecule,
-            Atom startAtom, List<Atom> atomList, MTree mTree) {
+    public static int buildTree(Molecule molecule, Atom startAtom, List<Atom> atomList, MTree mTree) {
         Map<Atom, Integer> hash = new HashMap<>();
 
         Entity entity = startAtom.entity;
@@ -4087,8 +4011,7 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
-    public static void writeXYZToXML(FileWriter chan,
-            int whichStruct) throws InvalidMoleculeException, IOException {
+    public static void writeXYZToXML(FileWriter chan, int whichStruct) throws InvalidMoleculeException, IOException {
         int i;
         int iStruct = 0;
         String result = null;
@@ -4120,8 +4043,7 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
-    public static void writePPMToXML(FileWriter chan,
-            int whichStruct) throws IOException, InvalidMoleculeException {
+    public static void writePPMToXML(FileWriter chan, int whichStruct) throws IOException, InvalidMoleculeException {
         int i;
         String result = null;
 
@@ -4171,11 +4093,10 @@ public class Molecule implements Serializable, ITree {
                     }
                     atom.iAtom = i;
                     String result = spSet.toPDBString(i + 1, iStruct);
-                    if (!(spSet.atom.entity instanceof Residue) || !((Residue) spSet.atom.entity).isStandard()) {
-                        bondList.add(spSet.atom);
-                    }
-
                     if (result != null) {
+                        if (!(spSet.atom.entity instanceof Residue) || !((Residue) spSet.atom.entity).isStandard()) {
+                            bondList.add(spSet.atom);
+                        }
                         out.print(result + "\n");
                         i++;
                     }
@@ -4189,7 +4110,9 @@ public class Molecule implements Serializable, ITree {
                         iAtoms.clear();
                         for (Object aObj : bondedAtoms) {
                             Atom bAtom2 = (Atom) aObj;
-                            iAtoms.add(bAtom2.iAtom);
+                            if (bAtom2.getElementName() != null) {
+                                iAtoms.add(bAtom2.iAtom);
+                            }
                         }
                         Collections.sort(iAtoms);
                         for (Integer iAtom : iAtoms) {
@@ -4208,8 +4131,7 @@ public class Molecule implements Serializable, ITree {
         return stringWriter.toString();
     }
 
-    public static void writeXYZToPDB(Writer chan,
-            int whichStruct) throws InvalidMoleculeException, IOException {
+    public static void writeXYZToPDB(Writer chan, int whichStruct) throws InvalidMoleculeException, IOException {
         int i;
 
         Molecule molecule = activeMol;
@@ -4321,8 +4243,7 @@ public class Molecule implements Serializable, ITree {
         for (int iBond = 0; iBond < atomB.bonds.size(); iBond++) {
             bond = atomB.bonds.get(iBond);
 
-            if (((bond.begin == atomB) && (bond.end == atomE))
-                    || ((bond.begin == atomE) && (bond.end == atomB))) {
+            if (((bond.begin == atomB) && (bond.end == atomE)) || ((bond.begin == atomE) && (bond.end == atomB))) {
                 return bond;
             }
         }
@@ -4330,8 +4251,7 @@ public class Molecule implements Serializable, ITree {
         for (int iBond = 0; iBond < atomE.bonds.size(); iBond++) {
             bond = atomE.bonds.get(iBond);
 
-            if (((bond.begin == atomB) && (bond.end == atomE))
-                    || ((bond.begin == atomE) && (bond.end == atomB))) {
+            if (((bond.begin == atomB) && (bond.end == atomE)) || ((bond.begin == atomE) && (bond.end == atomB))) {
                 return bond;
             }
         }
@@ -4425,8 +4345,7 @@ public class Molecule implements Serializable, ITree {
                 }
 
                 case LABEL_SYMBOL_AND_NUMBER: {
-                    atom.label = String.valueOf(Atom.getElementName(atom.aNum))
-                            + " " + atom.iAtom;
+                    atom.label = String.valueOf(Atom.getElementName(atom.aNum)) + " " + atom.iAtom;
 
                     break;
                 }
@@ -4580,11 +4499,12 @@ public class Molecule implements Serializable, ITree {
         if (atom1 == null || atom2 == null) {
             return;
         }
-        Bond b = new Bond(atom1, atom2, bond);
         Atom.addBond(atom1, atom2, bond, 0, false);
         atom2.parent = atom1;
         atom2.setProperty("linker", true);
         atom2.bondLength = bondLength;
+        atom2.valanceAngle = 120.0f * ((float) Math.PI / 180f);
+        atom2.dihedralAngle = 180.0f * ((float) Math.PI / 180f);
     }
 
     public void createLinker(Atom atom1, Atom atom2, int numLinks) {
