@@ -11,8 +11,6 @@ import org.nmrfx.structure.chemistry.ITree;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Order;
 import org.nmrfx.structure.chemistry.Point3;
-import org.nmrfx.structure.chemistry.miner.AtomContainer;
-import org.nmrfx.structure.chemistry.miner.IAtom;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
 
@@ -206,6 +204,7 @@ public class AngleTreeGenerator {
         if (itree instanceof Molecule) {
             Molecule mol = (Molecule) itree;
             mol.setTreeList(atomPathList);
+            mol.setAtomTree(atomTree);
         }
         ringClosures = new HashMap<>();
         //        for (MNode mNode : pathNodes) {
