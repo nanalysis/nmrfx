@@ -332,13 +332,6 @@ class refine:
             entityDict[entity.getName()] = entity # stores entity objects from the entity name
             usedEntity[entity] = False
 
-        for i, entity in enumerate(entities):
-            if i == len(entities) - 1:
-                break
-            startAtom = entity.getLastAtom()
-            endAtom = entities[i+1].getLastAtom()
-            self.molecule.createLinker(startAtom, endAtom, 6)
-            return
         if linkerList:
             try:
                 for linkerDict in linkerList:
@@ -372,10 +365,10 @@ class refine:
             startEntName, startAtom = linkerDict['start'].split(':')
             endEntName, endAtom = linkerDict['end'].split(':')
             n = linkerDict['n'] if 'n' in linkerDict else 6
-            if startEnt not in entityDict:
+            if startEntName not in entityDict:
                 print startEnt + " not found within molecule"
                 raise ValueError
-            if endEnt not in entityDict:
+            if endEntName not in entityDict:
                 print endEnt + " not found within molecule"
                 raise ValueError
 
@@ -425,8 +418,7 @@ class refine:
                         order = bondOrders[order-1]
                     except:
                         order = order.upper()
-                        self.molecule.createLinker(startAtom, endAtom, order, length)
-
+                    self.molecule.createLinker(startAtom, endAtom, order, length)
                 else:
                     atomName1 = startAtom.getFullName()
                     atomName2 = endAtom.getFullName()
@@ -506,7 +498,6 @@ class refine:
                 atomName1, atomName2, distance = bondConstraint.split()
                 distance = float(distance)
                 self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
-
 
         refine.setForces(self,repel=0.5,dis=1)
         energyLists.setCourseGrain(useCourseGrain)
@@ -722,16 +713,10 @@ class refine:
             disWt = self.readDistanceDict(data['distances'],residues)
         if 'angles' in data:
             angleWt = self.readAngleDict(data['angles'])
-
         if 'tree' in data:
             treeDict = data['tree']
-            if treeDict == None:
-                start = None
-                end = None
-            else:
-                start =treeDict['start'] if 'start' in treeDict else None
-                end = treeDict['end'] if 'end' in treeDict else None
-            self.setupTree(start, end)
+            self.setupTree(treeDict)
+
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
         self.energy()
 
@@ -802,22 +787,6 @@ class refine:
                 type = 'nv'
             if type == 'nv':
                 self.readSequence(file)
-
-            if 'tree' in molDict:
-                treeDict = molDict['tree']
-                if treeDict == None:
-                    start = None
-                    end = None
-                else:
-                    if 'start' in treeDict:
-                        start = treeDict['start']
-                    else:
-                        start = None
-                    if 'end' in treeDict:
-                        end = treeDict['end']
-                    else:
-                        end = None
-                self.setupTree(start, end)
             mol = self.molecule;
 
     def readDistanceDict(self,disDict,residues):
@@ -1504,9 +1473,28 @@ class refine:
         pI.setHybridization();
 
 
-    def setupTree(self, start, end):
+    def setupTree(self, treeDict):
+        """Creates the tree path and setups the coordinates of the molecule from all the entities
+
+        Keyword arguments:
+        treeDict -- A dictionary that might contain start, end, and measure
+
+        Dictionary Keys:
+        start   -- Full name of the first atom in building the tree
+        end     -- Full name of the last atom in building the tree
+        measure -- Boolean flag to determine or not to measure atom lengths and valance angles
+        """
+        
+        (start, end) = (treeDict['start'] if 'start' in treeDict else None, treeDict['end'] if 'end' in treeDict else None) if treeDict else (None, None)
+        measure = treeDict['measure'] if 'measure' in treeDict else False
+        if measure:
+            try :
+                measure = True if measure.lower() == 'true' else False
+            except AttributeError:
+                pass
+
+        Molecule.makeAtomList()
         mol = self.molecule
-        mol.updateAtomArray()
         startAtom = mol.getAtom(start) if start else None
         endAtom = mol.getAtom(end) if end else None
         if len(mol.getEntities()) == 1 and len(mol.getLigands()) == 1:
@@ -1515,10 +1503,13 @@ class refine:
             mol.resetGenCoords()
             mol.invalidateAtomArray()
             mol.invalidateAtomTree()
+            #mol.genMeasuredTree(None)
             aTree = AngleTreeGenerator()
-            aTree.genTree(mol, startAtom, endAtom)
+            angleTree = aTree.genTree(mol, startAtom, endAtom)
+            if (measure):
+                aTree.measureAtomTree(mol, angleTree)
+        mol.setupRotGroups()
         mol.genCoords()
-
 
     def addAngleFile(self,file, mode='nv'):
         if mode == 'cyana':
