@@ -44,6 +44,17 @@ public class AngleTreeGenerator {
     public boolean checkStartAtom(Atom startAtom) {
         return startAtom.bonds.size() == 1;
     }
+    
+    public Atom findStartAtom(List<Atom> atoms){
+        Atom startAtom = null;
+        for (Atom atom : atoms) {
+            if (checkStartAtom(atom)) {
+                startAtom = atom;
+                break;
+            }
+        }
+        return startAtom;
+    }
 
     public List<List<Atom>> genTree(ITree itree, Atom startAtom, Atom endAtom) {
         MTree mTree = new MTree();
@@ -56,12 +67,7 @@ public class AngleTreeGenerator {
         }
 
         if (startAtom == null) {
-            for (Atom atom : atoms) {
-                if (checkStartAtom(atom)) {
-                    startAtom = atom;
-                    break;
-                }
-            }
+            startAtom = findStartAtom(atoms);
         } else {
             if (!checkStartAtom(startAtom)) {
                 //throw new IllegalArgumentException("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");
