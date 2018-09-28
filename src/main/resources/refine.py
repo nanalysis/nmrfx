@@ -384,22 +384,16 @@ class refine:
             bondDict = linkerDict['bond']
             if "cyclic" in bondDict and bondDict["cyclic"]:
                 polymers = self.molecule.getPolymers()
-                if len(polymers) != 1 and pName not in bondDict:
-                    print "Multiple polymers in structure but no specification for which to by made cyclic"
+                polymerNames = [polymer.getName() for polymer in polymers]
+                if len(polymers) != 1 and "pName" not in bondDict:
+                    raise ValueError("Multiple polymers in structure but no specification for which to by made cyclic")
                     return []
                 polymer = None
                 if "pName" in bondDict:
-                    polymerNames = [polymer.getName() for polymer in polymers]
-                    try:
-                        entity = entityDict[bondDict["pName"]]
-                    except KeyError:
-                         print bondDict["pName"], "is not an entity within the molecule"
-                         return []
-                    entName = entity.getName();
-                    try:
-                        polymer = polymers[polymerNames.index(entName)]
-                    except ValueError:
-                        print entName, "is not a polymer and cannot be made cyclic"
+                    if bondDict["pName"] in polymerNames:
+                        polymer = self.molecule.getEntity(bondDict["pName"])
+                    else:
+                        raise ValueError(bondDict["pName"] + " is not a polymer within the molecule")
                 else:
                     polymer = polymers[0]
                 self.addCyclicBond(polymer)
