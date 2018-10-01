@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
@@ -35,12 +35,40 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
 
     double value;
     double defaultValue;
-    Double min = null;
-    Double max = null;
-    Double amin = null;
-    Double amax = null;
+    private Double min = null;
+    private Double max = null;
+    private Double amin = null;
+    private Double amax = null;
     ChangeListener<? super Number> listener;
     char lastChar = (char) -1;
+
+    /**
+     * @return the max
+     */
+    public Double getMax() {
+        return max;
+    }
+
+    /**
+     * @return the min
+     */
+    public Double getMin() {
+        return min;
+    }
+
+    /**
+     * @return the amin
+     */
+    public Double getAmin() {
+        return amin;
+    }
+
+    /**
+     * @return the amax
+     */
+    public Double getAmax() {
+        return amax;
+    }
 
     public DoubleOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
         super(category, name, description);
@@ -97,11 +125,11 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
             double newValue = (Double) o;
             // fixme  should allow the rounding to be changed
             newValue = Math.round(newValue * 1000.0) / 1000.0;
-            if ((amin != null) && (newValue < amin)) {
-                newValue = amin;
+            if ((getAmin() != null) && (newValue < getAmin())) {
+                newValue = getAmin();
             }
-            if ((amax != null) && (newValue > amax)) {
-                newValue = amax;
+            if ((getAmax() != null) && (newValue > getAmax())) {
+                newValue = getAmax();
             }
             value = newValue;
             if ((value != oldValue) && (listener != null)) {

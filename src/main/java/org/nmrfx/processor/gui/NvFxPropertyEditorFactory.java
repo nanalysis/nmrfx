@@ -45,6 +45,27 @@ import org.controlsfx.property.editor.AbstractPropertyEditor;
 import org.controlsfx.property.editor.DefaultPropertyEditorFactory;
 import org.controlsfx.property.editor.Editors;
 import org.controlsfx.property.editor.PropertyEditor;
+import org.nmrfx.processor.gui.properties.MenuTextField;
+import org.nmrfx.processor.gui.properties.MenuTextFieldEditor;
+import org.nmrfx.processor.gui.ProcessorController;
+import org.nmrfx.processor.gui.properties.PropertySliderEditor;
+import org.nmrfx.processor.gui.ReferenceMenuTextField;
+import org.nmrfx.processor.gui.properties.ZoomSlider;
+import org.nmrfx.processor.gui.properties.BooleanOperationItem;
+import org.nmrfx.processor.gui.properties.ChoiceOperationItem;
+import org.nmrfx.processor.gui.properties.ComplexOperationItem;
+import org.nmrfx.processor.gui.properties.DirectoryOperationItem;
+import org.nmrfx.processor.gui.properties.DoubleRangeOperationItem;
+import org.nmrfx.processor.gui.properties.EditableChoiceOperationItem;
+import org.nmrfx.processor.gui.properties.FileOperationItem;
+import org.nmrfx.processor.gui.properties.IntChoiceOperationItem;
+import org.nmrfx.processor.gui.properties.IntOperationItem;
+import org.nmrfx.processor.gui.properties.IntPropertySliderEditor;
+import org.nmrfx.processor.gui.properties.IntRangeOperationItem;
+import org.nmrfx.processor.gui.properties.ListOperationItem;
+import org.nmrfx.processor.gui.properties.MenuTextOperationItem;
+import org.nmrfx.processor.gui.properties.TextOperationItem;
+import org.nmrfx.processor.gui.properties.TextWaitingOperationItem;
 
 /**
  *
@@ -73,20 +94,20 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             //System.out.println("double item");
             Slider slider = new Slider();
             DoubleRangeOperationItem dItem = (DoubleRangeOperationItem) item;
-            slider.setMin(dItem.min);
-            slider.setMax(dItem.max);
+            slider.setMin(dItem.getMin());
+            slider.setMax(dItem.getMax());
             slider.setShowTickLabels(true);
             slider.setShowTickMarks(true);
-            slider.setBlockIncrement((dItem.max - dItem.min) / 100.0);
-            slider.setMajorTickUnit((dItem.max - dItem.min) / 4);
-            ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.amin, dItem.amax);
+            slider.setBlockIncrement((dItem.getMax() - dItem.getMin()) / 100.0);
+            slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
+            ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.getAmin(), dItem.getAmax());
             return new PropertySliderEditor(dItem, zoomSlider);
         } else if (type == IntOperationItem.class) {
             IntOperationItem iItem = (IntOperationItem) item;
             PropertyEditor propEditor = createIntegerEditor(item);
             CustomIntegerTextField textField = (CustomIntegerTextField) propEditor.getEditor();
-            textField.setMin(iItem.min);
-            textField.setMax(iItem.max);
+            textField.setMin(iItem.getMin());
+            textField.setMax(iItem.getMax());
             return propEditor;
         } else if (type == FileOperationItem.class) {
             return createFileEditor(item, false);
@@ -106,7 +127,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             //System.out.println("text item");
             MenuTextOperationItem tItem = (MenuTextOperationItem) item;
             MenuTextField menuTextField;
-            if (tItem.name.equalsIgnoreCase("ref")) {
+            if (tItem.getName().equalsIgnoreCase("ref")) {
                 menuTextField = new ReferenceMenuTextField(processorController);
             } else {
                 menuTextField = new MenuTextField();
@@ -116,12 +137,12 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             //System.out.println("int range item");
             Slider slider = new Slider();
             IntRangeOperationItem iItem = (IntRangeOperationItem) item;
-            slider.setMin(iItem.min);
-            slider.setMax(iItem.max);
+            slider.setMin(iItem.getMin());
+            slider.setMax(iItem.getMax());
             slider.setShowTickLabels(true);
             slider.setShowTickMarks(false);
             slider.setBlockIncrement(1);
-            int delta = iItem.max - iItem.min;
+            int delta = iItem.getMax() - iItem.getMin();
             if (delta < 6) {
                 slider.setMajorTickUnit(1);
                 slider.setMinorTickCount(0);

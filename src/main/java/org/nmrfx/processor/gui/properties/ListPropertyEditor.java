@@ -21,34 +21,35 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
-import javafx.beans.value.ObservableValue;
+import org.nmrfx.processor.gui.properties.ListOperationItem;
 import javafx.scene.Node;
-import javafx.scene.control.Slider;
-import org.controlsfx.property.editor.AbstractPropertyEditor;
+import org.controlsfx.property.editor.PropertyEditor;
 
 /**
  *
- * @author brucejohnson
+ * @author johnsonb
  */
-public class IntPropertySliderEditor extends AbstractPropertyEditor<Object, Node> {
+public class ListPropertyEditor implements PropertyEditor<String> {
 
-    IntPropertySliderEditor(IntRangeOperationItem item, Slider slider) {
-        super(item, slider);
+    ListPropertyEditor(ListOperationItem loi) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    protected ObservableValue<Object> getObservableValue() {
-        Slider slider = (Slider) getEditor();
-        return (ObservableValue) slider.valueProperty();
+    public Node getEditor() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void setValue(Object t) {
-        Slider slider = (Slider) getEditor();
-        double dValue = ((Number) t).doubleValue();
-        slider.setValue(dValue);
+    public String getValue() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void setValue(String t) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

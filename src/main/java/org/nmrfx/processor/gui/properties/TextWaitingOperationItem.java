@@ -21,67 +21,60 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.function.Consumer;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
+import javafx.geometry.Insets;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.paint.Color;
+import org.controlsfx.control.PropertySheet.Item;
 
 /**
  *
  * @author brucejohnson
  */
-public class ChoiceOperationItem extends OperationItem implements ObservableStringValue {
+public class TextWaitingOperationItem extends OperationItem implements ObservableStringValue {
 
-    String defaultValue;
-    String value;
     ChangeListener<? super String> listener;
-    Collection<?> choices;
+    Consumer<Item> f;
+    String value;
+    String defaultValue;
+    static Background activeBackground = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
+    Background defaultBackground = null;
 
-    public ChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
+    public TextWaitingOperationItem(ChangeListener listener, Consumer<Item> f, String defaultValue, String category, String name, String description) {
         super(category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
-        this.choices = new ArrayList(choices);
-    }
-
-    public Class<?> getType() {
-        return ChoiceOperationItem.class;
+        this.f = f;
     }
 
     @Override
-    public String getValue() {
-        return value;
+    public Class<?> getType() {
+        return TextWaitingOperationItem.class;
     }
 
     @Override
     public void setValue(Object o) {
         String oldValue = value;
-        if (o instanceof String) {
-            String newValue = (String) o;
-            if (newValue.charAt(0) == '\'') {
-                newValue = newValue.substring(1, newValue.length() - 1);
-            }
-            if (newValue.charAt(0) == '"') {
-                newValue = newValue.substring(1, newValue.length() - 1);
-            }
-            value = newValue;
-            if ((!value.equals(oldValue)) && (listener != null)) {
-                listener.changed(this, oldValue, value);
-            }
+        value = o.toString();
+        if ((!value.equals(oldValue)) && (listener != null)) {
+            listener.changed(this, oldValue, value);
         }
     }
 
     @Override
     public boolean isDefault() {
-        if (defaultValue == null) {
-            return defaultValue == value;
-        } else {
-            return defaultValue.equals(value);
-        }
+        return value.equals(defaultValue);
     }
 
     @Override
@@ -124,11 +117,27 @@ public class ChoiceOperationItem extends OperationItem implements ObservableStri
     public void removeListener(InvalidationListener listener) {
     }
 
-    Collection<?> getChoices() {
-        return choices;
+    @Override
+    public String getValue() {
+        return value;
     }
 
     public String getStringRep() {
         return '\'' + value + '\'';
     }
+
+    public void keyReleased(TextField textField, KeyEvent event) {
+        if (defaultBackground == null) {
+            defaultBackground = textField.getBackground();
+        }
+        if ((event.getCode() == KeyCode.ENTER) || (textField.getText().length() == 0)) {
+            System.out.println("do " + textField.getText());
+            textField.setBackground(defaultBackground);
+            f.accept(this);
+        } else {
+            textField.setBackground(activeBackground);
+
+        }
+    }
+
 }

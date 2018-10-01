@@ -21,32 +21,34 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
-import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.scene.Node;
+import javafx.scene.control.Slider;
+import org.controlsfx.property.editor.AbstractPropertyEditor;
 
 /**
  *
  * @author brucejohnson
  */
-public class DoubleRangeOperationItem extends DoubleOperationItem {
+public class IntPropertySliderEditor extends AbstractPropertyEditor<Object, Node> {
 
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
-
-    }
-
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
-        super(listener, defaultValue, min, max, category, name, description);
-    }
-
-    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
-        super(listener, defaultValue, min, max, amin, amax, category, name, description);
+    public IntPropertySliderEditor(IntRangeOperationItem item, Slider slider) {
+        super(item, slider);
     }
 
     @Override
-    public Class<?> getType() {
-        return DoubleRangeOperationItem.class;
+    protected ObservableValue<Object> getObservableValue() {
+        Slider slider = (Slider) getEditor();
+        return (ObservableValue) slider.valueProperty();
+    }
+
+    @Override
+    public void setValue(Object t) {
+        Slider slider = (Slider) getEditor();
+        double dValue = ((Number) t).doubleValue();
+        slider.setValue(dValue);
     }
 
 }

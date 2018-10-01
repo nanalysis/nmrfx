@@ -23,6 +23,19 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.processor.gui.properties.ListOperationItem;
+import org.nmrfx.processor.gui.properties.ChoiceOperationItem;
+import org.nmrfx.processor.gui.properties.IntRangeOperationItem;
+import org.nmrfx.processor.gui.properties.IntOperationItem;
+import org.nmrfx.processor.gui.properties.BooleanOperationItem;
+import org.nmrfx.processor.gui.properties.FileOperationItem;
+import org.nmrfx.processor.gui.properties.OperationItem;
+import org.nmrfx.processor.gui.properties.DoubleRangeOperationItem;
+import org.nmrfx.processor.gui.properties.TextWaitingOperationItem;
+import org.nmrfx.processor.gui.properties.ListOperationItemTypeSelector;
+import org.nmrfx.processor.gui.properties.ComplexOperationItem;
+import org.nmrfx.processor.gui.properties.IntChoiceOperationItem;
+import org.nmrfx.processor.gui.properties.TextOperationItem;
 import org.nmrfx.processor.gui.spectra.SpecRegion;
 import java.util.ArrayList;
 import java.util.Map;

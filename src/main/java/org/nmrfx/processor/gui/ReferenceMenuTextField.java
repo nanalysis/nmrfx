@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.processor.gui.properties.MenuTextField;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Menu;
@@ -44,7 +45,7 @@ public class ReferenceMenuTextField extends MenuTextField {
         this.processorController = processorController;
 
         Menu cascadeMenu = new Menu("PPM at Center");
-        mButton.getItems().add(cascadeMenu);
+        getMenuButton().getItems().add(cascadeMenu);
         for (String label : mainMenuLabels) {
             MenuItem menuItem = new MenuItem(label);
             cascadeMenu.getItems().add(menuItem);
@@ -52,7 +53,7 @@ public class ReferenceMenuTextField extends MenuTextField {
         }
 
         cascadeMenu = new Menu("PPM at Crosshair");
-        mButton.getItems().add(cascadeMenu);
+        getMenuButton().getItems().add(cascadeMenu);
         for (String label : crosshairMenuItems) {
             MenuItem menuItem = new MenuItem(label);
             cascadeMenu.getItems().add(menuItem);
@@ -60,7 +61,7 @@ public class ReferenceMenuTextField extends MenuTextField {
         }
 
         cascadeMenu = new Menu("Indirect Reference");
-        mButton.getItems().add(cascadeMenu);
+        getMenuButton().getItems().add(cascadeMenu);
         for (String label : nucleusMenuLabels) {
             MenuItem menuItem = new MenuItem(label);
             cascadeMenu.getItems().add(menuItem);
@@ -75,9 +76,9 @@ public class ReferenceMenuTextField extends MenuTextField {
         double ppm = chart.crossHairPositions[0][1];
         System.out.println(ppm);
         if (menuLabel.equals("default")) {
-            textField.setText("");
+            setText("");
         } else {
-            textField.setText(menuLabel);
+            setText(menuLabel);
         }
 
     }
@@ -114,7 +115,7 @@ public class ReferenceMenuTextField extends MenuTextField {
             }
             newCenter = chart.getRefPositionFromCrossHair(waterPPM);
         }
-        textField.setText(String.format("%.4f", newCenter));
+        setText(String.format("%.4f", newCenter));
 
     }
 

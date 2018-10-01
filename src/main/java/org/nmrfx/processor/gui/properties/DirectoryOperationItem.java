@@ -15,32 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableStringValue;
 
 /**
  *
- * @author brucejohnson
+ * @author Bruce Johnson
  */
-public class MenuTextOperationItem extends TextOperationItem {
+public class DirectoryOperationItem extends TextOperationItem implements ObservableStringValue {
 
-    public MenuTextOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
+    public DirectoryOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
         super(listener, defaultValue, category, name, description);
-        this.defaultValue = defaultValue;
-        this.value = defaultValue;
-        this.listener = listener;
     }
 
     @Override
     public Class<?> getType() {
-        return MenuTextOperationItem.class;
+        return DirectoryOperationItem.class;
     }
 
 }

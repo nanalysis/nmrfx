@@ -21,34 +21,34 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
-import javafx.scene.Node;
-import org.controlsfx.property.editor.PropertyEditor;
+import java.util.ArrayList;
+import java.util.Collection;
+import javafx.beans.value.ChangeListener;
 
 /**
  *
  * @author johnsonb
  */
-public class ListPropertyEditor implements PropertyEditor<String> {
+public class ListOperationItemTypeSelector extends ChoiceOperationItem {
 
-    ListPropertyEditor(ListOperationItem loi) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public ListOperationItemTypeSelector(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
+        super(listener, defaultValue, choices, category, name, description);
     }
 
+    /**
+     * To prevent the String value from being added to the String representation of the op, return false.
+     *
+     * @return false.
+     */
     @Override
-    public Node getEditor() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public boolean isDefault() {
+        return true;
     }
-
-    @Override
-    public String getValue() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void setValue(String t) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
+//    
+//    @Override
+//    public String getStringRep() {
+//        return "";
+//    }
 }

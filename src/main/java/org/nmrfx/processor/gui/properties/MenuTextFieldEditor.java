@@ -21,34 +21,33 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import javafx.beans.value.ChangeListener;
+import org.nmrfx.processor.gui.properties.MenuTextOperationItem;
+import javafx.beans.value.ObservableValue;
+import javafx.scene.Node;
+import org.controlsfx.property.editor.AbstractPropertyEditor;
 
 /**
  *
- * @author johnsonb
+ * @author brucejohnson
  */
-public class ListOperationItemTypeSelector extends ChoiceOperationItem {
+public class MenuTextFieldEditor extends AbstractPropertyEditor<Object, Node> {
 
-    public ListOperationItemTypeSelector(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
-        super(listener, defaultValue, choices, category, name, description);
+    public MenuTextFieldEditor(MenuTextOperationItem item, MenuTextField menuTextField) {
+        super(item, menuTextField);
     }
 
-    /**
-     * To prevent the String value from being added to the String representation of the op, return false.
-     *
-     * @return false.
-     */
     @Override
-    public boolean isDefault() {
-        return true;
+    protected ObservableValue<Object> getObservableValue() {
+        MenuTextField menuTextField = (MenuTextField) getEditor();
+        return (ObservableValue) menuTextField.getTextField().textProperty();
     }
-//    
-//    @Override
-//    public String getStringRep() {
-//        return "";
-//    }
+
+    @Override
+    public void setValue(Object t) {
+        MenuTextField menuTextField = (MenuTextField) getEditor();
+        menuTextField.getTextField().setText(t.toString());
+    }
+
 }

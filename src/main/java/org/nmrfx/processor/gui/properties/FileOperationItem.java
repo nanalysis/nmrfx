@@ -15,38 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package org.nmrfx.processor.gui.properties;
 
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package org.nmrfx.processor.gui;
-
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-import javafx.scene.text.Font;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableStringValue;
 
 /**
  *
- * @author brucejohnson
+ * @author Bruce Johnson
  */
-public class MenuTextField extends GridPane {
+public class FileOperationItem extends TextOperationItem implements ObservableStringValue {
 
-    TextField textField = new TextField();
-    MenuButton mButton = new MenuButton("");
-
-    public MenuTextField() {
-        super();
-        textField.setFont(new Font(11));
-        textField.setPrefWidth(140);
-        this.add(textField, 0, 0);
-        this.add(mButton, 1, 0);
+    public FileOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
+        super(listener, defaultValue, category, name, description);
     }
 
-    public TextField getTextField() {
-        return textField;
+    @Override
+    public Class<?> getType() {
+        return FileOperationItem.class;
     }
 
 }

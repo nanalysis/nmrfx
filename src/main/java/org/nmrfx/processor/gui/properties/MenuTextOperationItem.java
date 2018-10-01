@@ -21,27 +21,26 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableStringValue;
 
 /**
  *
  * @author brucejohnson
  */
-public class EditableChoiceOperationItem extends ChoiceOperationItem {
+public class MenuTextOperationItem extends TextOperationItem {
 
-    public EditableChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
-        super(listener, defaultValue, choices, category, name, description);
-        System.out.println("made editor");
+    public MenuTextOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
+        super(listener, defaultValue, category, name, description);
+        this.defaultValue = defaultValue;
+        this.value = defaultValue;
+        this.listener = listener;
     }
 
+    @Override
     public Class<?> getType() {
-        return EditableChoiceOperationItem.class;
+        return MenuTextOperationItem.class;
     }
 
 }

@@ -21,32 +21,43 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
-import javafx.beans.value.ObservableValue;
-import javafx.scene.Node;
-import org.controlsfx.property.editor.AbstractPropertyEditor;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import javafx.scene.text.Font;
 
 /**
  *
  * @author brucejohnson
  */
-public class MenuTextFieldEditor extends AbstractPropertyEditor<Object, Node> {
+public class MenuTextField extends GridPane {
 
-    MenuTextFieldEditor(MenuTextOperationItem item, MenuTextField menuTextField) {
-        super(item, menuTextField);
+    TextField textField = new TextField();
+    private MenuButton menuButton = new MenuButton("");
+
+    public MenuTextField() {
+        super();
+        textField.setFont(new Font(11));
+        textField.setPrefWidth(140);
+        this.add(textField, 0, 0);
+        this.add(menuButton, 1, 0);
     }
 
-    @Override
-    protected ObservableValue<Object> getObservableValue() {
-        MenuTextField menuTextField = (MenuTextField) getEditor();
-        return (ObservableValue) menuTextField.getTextField().textProperty();
+    public TextField getTextField() {
+        return textField;
     }
 
-    @Override
-    public void setValue(Object t) {
-        MenuTextField menuTextField = (MenuTextField) getEditor();
-        menuTextField.getTextField().setText(t.toString());
+    /**
+     * @return the menuButton
+     */
+    public MenuButton getMenuButton() {
+        return menuButton;
+    }
+    
+    public void setText(String text) {
+        textField.setText(text);
     }
 
 }

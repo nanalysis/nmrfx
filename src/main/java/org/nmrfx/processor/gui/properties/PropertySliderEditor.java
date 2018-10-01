@@ -21,8 +21,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
+import org.nmrfx.processor.gui.properties.DoubleRangeOperationItem;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
 import javafx.scene.control.Slider;
@@ -35,7 +36,7 @@ import org.controlsfx.property.editor.AbstractPropertyEditor;
 public class PropertySliderEditor extends AbstractPropertyEditor<Object, Node> {
 
 //    DoubleRangeOperationItem item;
-    PropertySliderEditor(DoubleRangeOperationItem item, ZoomSlider slider) {
+    public PropertySliderEditor(DoubleRangeOperationItem item, ZoomSlider slider) {
         super(item, slider);
     }
 

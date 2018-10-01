@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
 import javafx.beans.value.ChangeListener;
 
@@ -29,21 +29,24 @@ import javafx.beans.value.ChangeListener;
  *
  * @author brucejohnson
  */
-public class IntRangeOperationItem extends IntOperationItem {
+public class DoubleRangeOperationItem extends DoubleOperationItem {
 
-    public IntRangeOperationItem(ChangeListener listener, int defaultValue, String category, String name, String description) {
+    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
         super(listener, defaultValue, category, name, description);
 
     }
 
-    public IntRangeOperationItem(ChangeListener listener, int defaultValue, int min, int max, String category, String name, String description) {
+    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
         super(listener, defaultValue, min, max, category, name, description);
+    }
 
+    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
+        super(listener, defaultValue, min, max, amin, amax, category, name, description);
     }
 
     @Override
     public Class<?> getType() {
-        return IntRangeOperationItem.class;
+        return DoubleRangeOperationItem.class;
     }
 
 }

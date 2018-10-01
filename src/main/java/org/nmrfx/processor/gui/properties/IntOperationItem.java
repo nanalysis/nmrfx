@@ -21,10 +21,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.properties;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableIntegerValue;
@@ -33,23 +31,40 @@ import javafx.beans.value.ObservableIntegerValue;
  *
  * @author brucejohnson
  */
-public class IntChoiceOperationItem extends OperationItem implements ObservableIntegerValue {
+public class IntOperationItem extends OperationItem implements ObservableIntegerValue {
 
-    Integer defaultValue;
-    Integer value;
+    int value;
+    int defaultValue;
+    private Integer min = null;
+    private Integer max = null;
     ChangeListener<? super Number> listener;
-    Collection<?> choices;
 
-    public IntChoiceOperationItem(ChangeListener listener, Integer defaultValue, Collection<?> choices, String category, String name, String description) {
+    /**
+     * @return the min
+     */
+    public Integer getMin() {
+        return min;
+    }
+
+    /**
+     * @return the max
+     */
+    public Integer getMax() {
+        return max;
+    }
+
+    public IntOperationItem(ChangeListener listener, int defaultValue, String category, String name, String description) {
         super(category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
-        this.choices = new ArrayList(choices);
     }
 
-    public Class<?> getType() {
-        return IntChoiceOperationItem.class;
+    public IntOperationItem(ChangeListener listener, int defaultValue, int min, int max, String category, String name, String description) {
+        this(listener, defaultValue, category, name, description);
+
+        this.min = min;
+        this.max = max;
     }
 
     @Override
@@ -58,41 +73,41 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
     }
 
     @Override
+    public Class<?> getType() {
+        return IntOperationItem.class;
+    }
+
+    @Override
+    public String getCategory() {
+        return category;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
     public void setValue(Object o) {
-        Integer oldValue = value;
-        if (o instanceof Integer) {
-            Integer newValue = (Integer) o;
+        int oldValue = value;
+        if (o instanceof Number) {
+            int newValue = ((Number) o).intValue();
+            if ((getMin() != null) && (newValue < getMin())) {
+                newValue = getMin();
+            }
+            if ((getMax() != null) && (newValue > getMax())) {
+                newValue = getMax();
+            }
             value = newValue;
-            if ((!value.equals(oldValue)) && (listener != null)) {
+            if ((value != oldValue) && (listener != null)) {
                 listener.changed(this, oldValue, value);
             }
         }
-    }
-
-    @Override
-    public boolean isDefault() {
-        if (defaultValue == null) {
-            return defaultValue == value;
-        } else {
-            return defaultValue == value;
-        }
-    }
-
-    @Override
-    public void setFromString(String sValue) {
-        // fixme  need general method to strip leading and trailing quotes
-        if (sValue.charAt(0) == '\'') {
-            sValue = sValue.substring(1, sValue.length() - 1);
-        }
-        if (sValue.charAt(0) == '"') {
-            sValue = sValue.substring(1, sValue.length() - 1);
-        }
-        setValue(Integer.parseInt(sValue));
-    }
-
-    @Override
-    public void setToDefault() {
-        value = defaultValue;
     }
 
     @Override
@@ -101,8 +116,27 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
     }
 
     @Override
+    public int intValue() {
+        return value;
+    }
+
+    @Override
+    public long longValue() {
+        return (long) value;
+    }
+
+    @Override
+    public float floatValue() {
+        return (float) value;
+    }
+
+    @Override
+    public double doubleValue() {
+        return (double) value;
+    }
+
+    @Override
     public void addListener(ChangeListener<? super Number> listener) {
-        System.out.println("add Listener " + name);
         this.listener = listener;
     }
 
@@ -118,31 +152,18 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
     public void removeListener(InvalidationListener listener) {
     }
 
-    Collection<?> getChoices() {
-        return choices;
-    }
-
-    public String getStringRep() {
-        return String.valueOf(value);
+    public boolean isDefault() {
+        return (value == defaultValue);
     }
 
     @Override
-    public int intValue() {
-        return value.intValue();
+    public void setFromString(String sValue) {
+        value = Integer.parseInt(sValue);
     }
 
     @Override
-    public long longValue() {
-        return value.longValue();
+    public void setToDefault() {
+        value = defaultValue;
     }
 
-    @Override
-    public float floatValue() {
-        return value.floatValue();
-    }
-
-    @Override
-    public double doubleValue() {
-        return value.doubleValue();
-    }
 }

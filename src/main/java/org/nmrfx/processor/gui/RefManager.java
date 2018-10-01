@@ -23,6 +23,12 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.processor.gui.properties.MenuTextOperationItem;
+import org.nmrfx.processor.gui.properties.ChoiceOperationItem;
+import org.nmrfx.processor.gui.properties.IntOperationItem;
+import org.nmrfx.processor.gui.properties.BooleanOperationItem;
+import org.nmrfx.processor.gui.properties.EditableChoiceOperationItem;
+import org.nmrfx.processor.gui.properties.TextOperationItem;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import java.util.Map;
 import java.util.HashMap;
