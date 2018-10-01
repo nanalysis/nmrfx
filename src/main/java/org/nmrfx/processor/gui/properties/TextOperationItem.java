@@ -43,9 +43,9 @@ public class TextOperationItem extends OperationItem implements ObservableString
         this.value = defaultValue;
         this.listener = listener;
     }
-    
+
     void addKeyHandler() {
-        
+
     }
 
     @Override

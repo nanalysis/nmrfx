@@ -37,7 +37,8 @@ public class ListOperationItemTypeSelector extends ChoiceOperationItem {
     }
 
     /**
-     * To prevent the String value from being added to the String representation of the op, return false.
+     * To prevent the String value from being added to the String representation
+     * of the op, return false.
      *
      * @return false.
      */
