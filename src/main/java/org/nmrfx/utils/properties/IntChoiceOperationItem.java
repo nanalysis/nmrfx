@@ -21,47 +21,50 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableBooleanValue;
+import javafx.beans.value.ObservableIntegerValue;
 
 /**
  *
  * @author brucejohnson
  */
-public class BooleanOperationItem extends OperationItem implements ObservableBooleanValue {
+public class IntChoiceOperationItem extends OperationItem implements ObservableIntegerValue {
 
-    boolean value;
-    boolean defaultValue;
-    ChangeListener<Boolean> listener;
+    Integer defaultValue;
+    Integer value;
+    ChangeListener<? super Number> listener;
+    private final Collection<?> choices;
 
-    public BooleanOperationItem(ChangeListener listener, boolean defaultValue, String category, String name, String description) {
+    public IntChoiceOperationItem(ChangeListener listener, Integer defaultValue, Collection<?> choices, String category, String name, String description) {
         super(category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
+        this.choices = new ArrayList(choices);
     }
 
     @Override
     public Class<?> getType() {
-        return BooleanOperationItem.class;
+        return IntChoiceOperationItem.class;
     }
 
     @Override
-    public Boolean getValue() {
+    public Integer getValue() {
         return value;
     }
 
     @Override
     public void setValue(Object o) {
-        boolean oldValue = value;
-        if (o instanceof Boolean) {
-            boolean newValue = (Boolean) o;
-
+        Integer oldValue = value;
+        if (o instanceof Integer) {
+            Integer newValue = (Integer) o;
             value = newValue;
-            if ((value != oldValue) && (listener != null)) {
+            if ((!value.equals(oldValue)) && (listener != null)) {
                 listener.changed(this, oldValue, value);
             }
         }
@@ -69,12 +72,23 @@ public class BooleanOperationItem extends OperationItem implements ObservableBoo
 
     @Override
     public boolean isDefault() {
-        return value == defaultValue;
+        if (defaultValue == null) {
+            return value == null;
+        } else {
+            return defaultValue.equals(value);
+        }
     }
 
     @Override
     public void setFromString(String sValue) {
-        value = Boolean.parseBoolean(sValue);
+        // fixme  need general method to strip leading and trailing quotes
+        if (sValue.charAt(0) == '\'') {
+            sValue = sValue.substring(1, sValue.length() - 1);
+        }
+        if (sValue.charAt(0) == '"') {
+            sValue = sValue.substring(1, sValue.length() - 1);
+        }
+        setValue(Integer.parseInt(sValue));
     }
 
     @Override
@@ -83,17 +97,18 @@ public class BooleanOperationItem extends OperationItem implements ObservableBoo
     }
 
     @Override
-    public boolean get() {
+    public int get() {
         return value;
     }
 
     @Override
-    public void addListener(ChangeListener<? super Boolean> listener) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void addListener(ChangeListener<? super Number> listener) {
+        System.out.println("add Listener " + name);
+        this.listener = listener;
     }
 
     @Override
-    public void removeListener(ChangeListener<? super Boolean> listener) {
+    public void removeListener(ChangeListener<? super Number> listener) {
     }
 
     @Override
@@ -104,12 +119,32 @@ public class BooleanOperationItem extends OperationItem implements ObservableBoo
     public void removeListener(InvalidationListener listener) {
     }
 
+    public Collection<?> getChoices() {
+        return choices;
+    }
+
     @Override
     public String getStringRep() {
-        if (value) {
-            return "True";
-        } else {
-            return "False";
-        }
+        return String.valueOf(value);
+    }
+
+    @Override
+    public int intValue() {
+        return value;
+    }
+
+    @Override
+    public long longValue() {
+        return value.longValue();
+    }
+
+    @Override
+    public float floatValue() {
+        return value.floatValue();
+    }
+
+    @Override
+    public double doubleValue() {
+        return value.doubleValue();
     }
 }

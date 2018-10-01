@@ -21,27 +21,34 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
+import java.util.Collection;
 import javafx.beans.value.ChangeListener;
-import org.apache.commons.math3.complex.Complex;
 
 /**
  *
  * @author johnsonb
  */
-public class ComplexRangeOperationItem extends ComplexOperationItem {
+public class ListOperationItemTypeSelector extends ChoiceOperationItem {
 
-    public ComplexRangeOperationItem(ChangeListener listener, Complex defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
+    public ListOperationItemTypeSelector(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
+        super(listener, defaultValue, choices, category, name, description);
     }
 
-    public ComplexRangeOperationItem(ChangeListener listener, Complex defaultValue, Complex min, Complex max, String category, String name, String description) {
-        super(listener, defaultValue, min, max, category, name, description);
-    }
-
+    /**
+     * To prevent the String value from being added to the String representation
+     * of the op, return false.
+     *
+     * @return false.
+     */
     @Override
-    public Class<?> getType() {
-        return ComplexRangeOperationItem.class;
+    public boolean isDefault() {
+        return true;
     }
+//    
+//    @Override
+//    public String getStringRep() {
+//        return "";
+//    }
 }

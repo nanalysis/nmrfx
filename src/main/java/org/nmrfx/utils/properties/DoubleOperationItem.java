@@ -21,60 +21,86 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableIntegerValue;
+import javafx.beans.value.ObservableDoubleValue;
 
 /**
  *
  * @author brucejohnson
  */
-public class IntOperationItem extends OperationItem implements ObservableIntegerValue {
+public class DoubleOperationItem extends OperationItem implements ObservableDoubleValue {
 
-    int value;
-    int defaultValue;
-    private Integer min = null;
-    private Integer max = null;
+    double value;
+    double defaultValue;
+    private Double min = null;
+    private Double max = null;
+    private Double amin = null;
+    private Double amax = null;
     ChangeListener<? super Number> listener;
-
-    /**
-     * @return the min
-     */
-    public Integer getMin() {
-        return min;
-    }
+    char lastChar = (char) -1;
 
     /**
      * @return the max
      */
-    public Integer getMax() {
+    public Double getMax() {
         return max;
     }
 
-    public IntOperationItem(ChangeListener listener, int defaultValue, String category, String name, String description) {
+    /**
+     * @return the min
+     */
+    public Double getMin() {
+        return min;
+    }
+
+    /**
+     * @return the amin
+     */
+    public Double getAmin() {
+        return amin;
+    }
+
+    /**
+     * @return the amax
+     */
+    public Double getAmax() {
+        return amax;
+    }
+
+    public DoubleOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
         super(category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
     }
 
-    public IntOperationItem(ChangeListener listener, int defaultValue, int min, int max, String category, String name, String description) {
+    public DoubleOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
         this(listener, defaultValue, category, name, description);
-
         this.min = min;
         this.max = max;
+        this.amin = min;
+        this.amax = max;
+    }
+
+    public DoubleOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
+        this(listener, defaultValue, category, name, description);
+        this.min = min;
+        this.max = max;
+        this.amin = amin;
+        this.amax = amax;
     }
 
     @Override
-    public Integer getValue() {
+    public Double getValue() {
         return value;
     }
 
     @Override
     public Class<?> getType() {
-        return IntOperationItem.class;
+        return Double.class;
     }
 
     @Override
@@ -94,14 +120,16 @@ public class IntOperationItem extends OperationItem implements ObservableInteger
 
     @Override
     public void setValue(Object o) {
-        int oldValue = value;
-        if (o instanceof Number) {
-            int newValue = ((Number) o).intValue();
-            if ((getMin() != null) && (newValue < getMin())) {
-                newValue = getMin();
+        double oldValue = value;
+        if (o instanceof Double) {
+            double newValue = (Double) o;
+            // fixme  should allow the rounding to be changed
+            newValue = Math.round(newValue * 1000.0) / 1000.0;
+            if ((getAmin() != null) && (newValue < getAmin())) {
+                newValue = getAmin();
             }
-            if ((getMax() != null) && (newValue > getMax())) {
-                newValue = getMax();
+            if ((getAmax() != null) && (newValue > getAmax())) {
+                newValue = getAmax();
             }
             value = newValue;
             if ((value != oldValue) && (listener != null)) {
@@ -111,13 +139,13 @@ public class IntOperationItem extends OperationItem implements ObservableInteger
     }
 
     @Override
-    public int get() {
+    public double get() {
         return value;
     }
 
     @Override
     public int intValue() {
-        return value;
+        return (int) value;
     }
 
     @Override
@@ -132,7 +160,7 @@ public class IntOperationItem extends OperationItem implements ObservableInteger
 
     @Override
     public double doubleValue() {
-        return (double) value;
+        return value;
     }
 
     @Override
@@ -154,17 +182,44 @@ public class IntOperationItem extends OperationItem implements ObservableInteger
 
     @Override
     public boolean isDefault() {
-        return (value == defaultValue);
+        return (Math.abs(value - defaultValue) < 1.0e-9);
     }
 
     @Override
     public void setFromString(String sValue) {
-        value = Integer.parseInt(sValue);
+        if (sValue.startsWith("'") && sValue.endsWith("'")) {
+            sValue = sValue.substring(1, sValue.length() - 1);
+        }
+        if (sValue.length() > 1) {
+            char endChar = sValue.charAt(sValue.length() - 1);
+            if (Character.isLetter(endChar)) {
+                sValue = sValue.substring(0, sValue.length() - 1);
+                lastChar = endChar;
+            }
+        }
+        value = Double.parseDouble(sValue);
     }
 
     @Override
     public void setToDefault() {
         value = defaultValue;
+    }
+
+    public void setLastChar(char lastChar) {
+        this.lastChar = lastChar;
+    }
+
+    public char getLastChar() {
+        return lastChar;
+    }
+
+    @Override
+    public String getStringRep() {
+        if (lastChar != (char) -1) {
+            return '\'' + Double.toString(value) + lastChar + '\'';
+        } else {
+            return Double.toString(value);
+        }
     }
 
 }

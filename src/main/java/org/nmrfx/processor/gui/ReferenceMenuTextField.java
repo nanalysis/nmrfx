@@ -23,7 +23,7 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.gui.properties.MenuTextField;
+import org.nmrfx.utils.properties.MenuTextField;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Menu;

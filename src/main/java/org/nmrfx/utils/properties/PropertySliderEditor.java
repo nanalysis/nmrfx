@@ -21,7 +21,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
@@ -31,22 +31,37 @@ import org.controlsfx.property.editor.AbstractPropertyEditor;
  *
  * @author brucejohnson
  */
-public class MenuTextFieldEditor extends AbstractPropertyEditor<Object, Node> {
+public class PropertySliderEditor extends AbstractPropertyEditor<Object, Node> {
 
-    public MenuTextFieldEditor(MenuTextOperationItem item, MenuTextField menuTextField) {
-        super(item, menuTextField);
+//    DoubleRangeOperationItem item;
+    public PropertySliderEditor(DoubleRangeOperationItem item, ZoomSlider slider) {
+        super(item, slider);
     }
 
     @Override
     protected ObservableValue<Object> getObservableValue() {
-        MenuTextField menuTextField = (MenuTextField) getEditor();
-        return (ObservableValue) menuTextField.getTextField().textProperty();
+        ZoomSlider slider = (ZoomSlider) getEditor();
+        return (ObservableValue) slider.getSlider().valueProperty();
+//        return (ObservableValue) getProperty();
     }
 
     @Override
     public void setValue(Object t) {
-        MenuTextField menuTextField = (MenuTextField) getEditor();
-        menuTextField.getTextField().setText(t.toString());
+        ZoomSlider slider = (ZoomSlider) getEditor();
+        double min = slider.getSlider().getMin();
+        double max = slider.getSlider().getMax();
+        double value = (Double) t;
+        if ((value < min) || (value > max)) {
+            double[] newRange = slider.newRange(min, max, value, 1.0);
+            min = newRange[0];
+            max = newRange[1];
+            slider.getSlider().setMin(min);
+            slider.getSlider().setMax(max);
+            slider.getSlider().setBlockIncrement((max - min) / 100.0);
+            slider.getSlider().setMajorTickUnit((max - min) / 2);
+        }
+        slider.getSlider().setValue(value);
+
     }
 
 }

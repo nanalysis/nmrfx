@@ -21,26 +21,47 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
-import javafx.beans.value.ChangeListener;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import javafx.scene.text.Font;
 
 /**
  *
  * @author brucejohnson
  */
-public class MenuTextOperationItem extends TextOperationItem {
+public class MenuTextField extends GridPane {
 
-    public MenuTextOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
-        this.defaultValue = defaultValue;
-        this.value = defaultValue;
-        this.listener = listener;
+    private final TextField textField = new TextField();
+    private final MenuButton menuButton = new MenuButton("");
+
+    public MenuTextField() {
+        super();
+        textField.setFont(new Font(11));
+        textField.setPrefWidth(140);
+        init();
     }
 
-    @Override
-    public Class<?> getType() {
-        return MenuTextOperationItem.class;
+    private void init() {
+        add(textField, 0, 0);
+        add(menuButton, 1, 0);
+    }
+
+    public TextField getTextField() {
+        return textField;
+    }
+
+    /**
+     * @return the menuButton
+     */
+    public MenuButton getMenuButton() {
+        return menuButton;
+    }
+
+    public void setText(String text) {
+        textField.setText(text);
     }
 
 }

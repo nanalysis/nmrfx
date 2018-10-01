@@ -21,47 +21,27 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-import javafx.scene.text.Font;
+import javafx.beans.value.ChangeListener;
+import org.apache.commons.math3.complex.Complex;
 
 /**
  *
- * @author brucejohnson
+ * @author johnsonb
  */
-public class MenuTextField extends GridPane {
+public class ComplexRangeOperationItem extends ComplexOperationItem {
 
-    private final TextField textField = new TextField();
-    private final MenuButton menuButton = new MenuButton("");
-
-    public MenuTextField() {
-        super();
-        textField.setFont(new Font(11));
-        textField.setPrefWidth(140);
-        init();
+    public ComplexRangeOperationItem(ChangeListener listener, Complex defaultValue, String category, String name, String description) {
+        super(listener, defaultValue, category, name, description);
     }
 
-    private void init() {
-        add(textField, 0, 0);
-        add(menuButton, 1, 0);
+    public ComplexRangeOperationItem(ChangeListener listener, Complex defaultValue, Complex min, Complex max, String category, String name, String description) {
+        super(listener, defaultValue, min, max, category, name, description);
     }
 
-    public TextField getTextField() {
-        return textField;
+    @Override
+    public Class<?> getType() {
+        return ComplexRangeOperationItem.class;
     }
-
-    /**
-     * @return the menuButton
-     */
-    public MenuButton getMenuButton() {
-        return menuButton;
-    }
-
-    public void setText(String text) {
-        textField.setText(text);
-    }
-
 }

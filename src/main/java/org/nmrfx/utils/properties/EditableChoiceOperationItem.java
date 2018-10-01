@@ -15,24 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.gui.properties;
 
+ /*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.nmrfx.utils.properties;
+
+import java.util.Collection;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableStringValue;
 
 /**
  *
- * @author Bruce Johnson
+ * @author brucejohnson
  */
-public class DirectoryOperationItem extends TextOperationItem implements ObservableStringValue {
+public class EditableChoiceOperationItem extends ChoiceOperationItem {
 
-    public DirectoryOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
-        super(listener, defaultValue, category, name, description);
+    public EditableChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
+        super(listener, defaultValue, choices, category, name, description);
+        System.out.println("made editor");
     }
 
     @Override
     public Class<?> getType() {
-        return DirectoryOperationItem.class;
+        return EditableChoiceOperationItem.class;
     }
 
 }

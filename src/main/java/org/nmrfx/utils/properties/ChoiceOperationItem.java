@@ -21,60 +21,68 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
-import java.util.function.Consumer;
+import java.util.ArrayList;
+import java.util.Collection;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
-import javafx.geometry.Insets;
-import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.paint.Color;
-import org.controlsfx.control.PropertySheet.Item;
 
 /**
  *
  * @author brucejohnson
  */
-public class TextWaitingOperationItem extends OperationItem implements ObservableStringValue {
+public class ChoiceOperationItem extends OperationItem implements ObservableStringValue {
 
-    ChangeListener<? super String> listener;
-    Consumer<Item> f;
-    String value;
     String defaultValue;
-    static Background activeBackground = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
-    Background defaultBackground = null;
+    String value;
+    ChangeListener<? super String> listener;
+    private final Collection<?> choices;
 
-    public TextWaitingOperationItem(ChangeListener listener, Consumer<Item> f, String defaultValue, String category, String name, String description) {
+    public ChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
         super(category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
-        this.f = f;
+        this.choices = new ArrayList(choices);
     }
 
     @Override
     public Class<?> getType() {
-        return TextWaitingOperationItem.class;
+        return ChoiceOperationItem.class;
+    }
+
+    @Override
+    public String getValue() {
+        return value;
     }
 
     @Override
     public void setValue(Object o) {
         String oldValue = value;
-        value = o.toString();
-        if ((!value.equals(oldValue)) && (listener != null)) {
-            listener.changed(this, oldValue, value);
+        if (o instanceof String) {
+            String newValue = (String) o;
+            if (newValue.charAt(0) == '\'') {
+                newValue = newValue.substring(1, newValue.length() - 1);
+            }
+            if (newValue.charAt(0) == '"') {
+                newValue = newValue.substring(1, newValue.length() - 1);
+            }
+            value = newValue;
+            if ((!value.equals(oldValue)) && (listener != null)) {
+                listener.changed(this, oldValue, value);
+            }
         }
     }
 
     @Override
     public boolean isDefault() {
-        return value.equals(defaultValue);
+        if (defaultValue == null) {
+            return value == null;
+        } else {
+            return defaultValue.equals(value);
+        }
     }
 
     @Override
@@ -117,28 +125,12 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
     public void removeListener(InvalidationListener listener) {
     }
 
-    @Override
-    public String getValue() {
-        return value;
+    public Collection<?> getChoices() {
+        return choices;
     }
 
     @Override
     public String getStringRep() {
         return '\'' + value + '\'';
     }
-
-    public void keyReleased(TextField textField, KeyEvent event) {
-        if (defaultBackground == null) {
-            defaultBackground = textField.getBackground();
-        }
-        if ((event.getCode() == KeyCode.ENTER) || (textField.getText().length() == 0)) {
-            System.out.println("do " + textField.getText());
-            textField.setBackground(defaultBackground);
-            f.accept(this);
-        } else {
-            textField.setBackground(activeBackground);
-
-        }
-    }
-
 }

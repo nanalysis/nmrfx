@@ -21,34 +21,29 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
-import javafx.scene.Node;
-import org.controlsfx.property.editor.PropertyEditor;
+import javafx.beans.value.ChangeListener;
 
 /**
  *
- * @author johnsonb
+ * @author brucejohnson
  */
-public class ListPropertyEditor implements PropertyEditor<String> {
+public class IntRangeOperationItem extends IntOperationItem {
 
-    ListPropertyEditor(ListOperationItem loi) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public IntRangeOperationItem(ChangeListener listener, int defaultValue, String category, String name, String description) {
+        super(listener, defaultValue, category, name, description);
+
+    }
+
+    public IntRangeOperationItem(ChangeListener listener, int defaultValue, int min, int max, String category, String name, String description) {
+        super(listener, defaultValue, min, max, category, name, description);
+
     }
 
     @Override
-    public Node getEditor() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public String getValue() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void setValue(String t) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Class<?> getType() {
+        return IntRangeOperationItem.class;
     }
 
 }

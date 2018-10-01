@@ -21,25 +21,32 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
-import java.util.Collection;
 import javafx.beans.value.ChangeListener;
 
 /**
  *
  * @author brucejohnson
  */
-public class EditableChoiceOperationItem extends ChoiceOperationItem {
+public class DoubleRangeOperationItem extends DoubleOperationItem {
 
-    public EditableChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
-        super(listener, defaultValue, choices, category, name, description);
-        System.out.println("made editor");
+    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, String category, String name, String description) {
+        super(listener, defaultValue, category, name, description);
+
+    }
+
+    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, String category, String name, String description) {
+        super(listener, defaultValue, min, max, category, name, description);
+    }
+
+    public DoubleRangeOperationItem(ChangeListener listener, double defaultValue, double min, double max, double amin, double amax, String category, String name, String description) {
+        super(listener, defaultValue, min, max, amin, amax, category, name, description);
     }
 
     @Override
     public Class<?> getType() {
-        return EditableChoiceOperationItem.class;
+        return DoubleRangeOperationItem.class;
     }
 
 }

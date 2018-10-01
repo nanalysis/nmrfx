@@ -21,10 +21,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableStringValue;
@@ -33,56 +31,40 @@ import javafx.beans.value.ObservableStringValue;
  *
  * @author brucejohnson
  */
-public class ChoiceOperationItem extends OperationItem implements ObservableStringValue {
+public class TextOperationItem extends OperationItem implements ObservableStringValue {
 
-    String defaultValue;
-    String value;
     ChangeListener<? super String> listener;
-    private final Collection<?> choices;
+    String value;
+    String defaultValue;
 
-    public ChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
+    public TextOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
         super(category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
-        this.choices = new ArrayList(choices);
+    }
+
+    void addKeyHandler() {
+
     }
 
     @Override
     public Class<?> getType() {
-        return ChoiceOperationItem.class;
-    }
-
-    @Override
-    public String getValue() {
-        return value;
+        return TextOperationItem.class;
     }
 
     @Override
     public void setValue(Object o) {
         String oldValue = value;
-        if (o instanceof String) {
-            String newValue = (String) o;
-            if (newValue.charAt(0) == '\'') {
-                newValue = newValue.substring(1, newValue.length() - 1);
-            }
-            if (newValue.charAt(0) == '"') {
-                newValue = newValue.substring(1, newValue.length() - 1);
-            }
-            value = newValue;
-            if ((!value.equals(oldValue)) && (listener != null)) {
-                listener.changed(this, oldValue, value);
-            }
+        value = o.toString();
+        if ((!value.equals(oldValue)) && (listener != null)) {
+            listener.changed(this, oldValue, value);
         }
     }
 
     @Override
     public boolean isDefault() {
-        if (defaultValue == null) {
-            return value == null;
-        } else {
-            return defaultValue.equals(value);
-        }
+        return value.equals(defaultValue);
     }
 
     @Override
@@ -125,12 +107,14 @@ public class ChoiceOperationItem extends OperationItem implements ObservableStri
     public void removeListener(InvalidationListener listener) {
     }
 
-    public Collection<?> getChoices() {
-        return choices;
+    @Override
+    public String getValue() {
+        return value;
     }
 
     @Override
     public String getStringRep() {
         return '\'' + value + '\'';
     }
+
 }

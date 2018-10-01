@@ -21,62 +21,60 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.function.Consumer;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableIntegerValue;
+import javafx.beans.value.ObservableStringValue;
+import javafx.geometry.Insets;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.paint.Color;
+import org.controlsfx.control.PropertySheet.Item;
 
 /**
  *
  * @author brucejohnson
  */
-public class IntChoiceOperationItem extends OperationItem implements ObservableIntegerValue {
+public class TextWaitingOperationItem extends OperationItem implements ObservableStringValue {
 
-    Integer defaultValue;
-    Integer value;
-    ChangeListener<? super Number> listener;
-    private final Collection<?> choices;
+    ChangeListener<? super String> listener;
+    Consumer<Item> f;
+    String value;
+    String defaultValue;
+    static Background activeBackground = new Background(new BackgroundFill(Color.YELLOW, CornerRadii.EMPTY, Insets.EMPTY));
+    Background defaultBackground = null;
 
-    public IntChoiceOperationItem(ChangeListener listener, Integer defaultValue, Collection<?> choices, String category, String name, String description) {
+    public TextWaitingOperationItem(ChangeListener listener, Consumer<Item> f, String defaultValue, String category, String name, String description) {
         super(category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
-        this.choices = new ArrayList(choices);
+        this.f = f;
     }
 
     @Override
     public Class<?> getType() {
-        return IntChoiceOperationItem.class;
-    }
-
-    @Override
-    public Integer getValue() {
-        return value;
+        return TextWaitingOperationItem.class;
     }
 
     @Override
     public void setValue(Object o) {
-        Integer oldValue = value;
-        if (o instanceof Integer) {
-            Integer newValue = (Integer) o;
-            value = newValue;
-            if ((!value.equals(oldValue)) && (listener != null)) {
-                listener.changed(this, oldValue, value);
-            }
+        String oldValue = value;
+        value = o.toString();
+        if ((!value.equals(oldValue)) && (listener != null)) {
+            listener.changed(this, oldValue, value);
         }
     }
 
     @Override
     public boolean isDefault() {
-        if (defaultValue == null) {
-            return value == null;
-        } else {
-            return defaultValue.equals(value);
-        }
+        return value.equals(defaultValue);
     }
 
     @Override
@@ -88,7 +86,7 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
         if (sValue.charAt(0) == '"') {
             sValue = sValue.substring(1, sValue.length() - 1);
         }
-        setValue(Integer.parseInt(sValue));
+        setValue(sValue);
     }
 
     @Override
@@ -97,18 +95,18 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
     }
 
     @Override
-    public int get() {
+    public String get() {
         return value;
     }
 
     @Override
-    public void addListener(ChangeListener<? super Number> listener) {
+    public void addListener(ChangeListener<? super String> listener) {
         System.out.println("add Listener " + name);
         this.listener = listener;
     }
 
     @Override
-    public void removeListener(ChangeListener<? super Number> listener) {
+    public void removeListener(ChangeListener<? super String> listener) {
     }
 
     @Override
@@ -119,32 +117,28 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
     public void removeListener(InvalidationListener listener) {
     }
 
-    public Collection<?> getChoices() {
-        return choices;
-    }
-
     @Override
-    public String getStringRep() {
-        return String.valueOf(value);
-    }
-
-    @Override
-    public int intValue() {
+    public String getValue() {
         return value;
     }
 
     @Override
-    public long longValue() {
-        return value.longValue();
+    public String getStringRep() {
+        return '\'' + value + '\'';
     }
 
-    @Override
-    public float floatValue() {
-        return value.floatValue();
+    public void keyReleased(TextField textField, KeyEvent event) {
+        if (defaultBackground == null) {
+            defaultBackground = textField.getBackground();
+        }
+        if ((event.getCode() == KeyCode.ENTER) || (textField.getText().length() == 0)) {
+            System.out.println("do " + textField.getText());
+            textField.setBackground(defaultBackground);
+            f.accept(this);
+        } else {
+            textField.setBackground(activeBackground);
+
+        }
     }
 
-    @Override
-    public double doubleValue() {
-        return value.doubleValue();
-    }
 }

@@ -21,62 +21,60 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableStringValue;
+import javafx.beans.value.ObservableBooleanValue;
 
 /**
  *
  * @author brucejohnson
  */
-public class TextOperationItem extends OperationItem implements ObservableStringValue {
+public class BooleanOperationItem extends OperationItem implements ObservableBooleanValue {
 
-    ChangeListener<? super String> listener;
-    String value;
-    String defaultValue;
+    boolean value;
+    boolean defaultValue;
+    ChangeListener<Boolean> listener;
 
-    public TextOperationItem(ChangeListener listener, String defaultValue, String category, String name, String description) {
+    public BooleanOperationItem(ChangeListener listener, boolean defaultValue, String category, String name, String description) {
         super(category, name, description);
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.listener = listener;
     }
 
-    void addKeyHandler() {
-
+    @Override
+    public Class<?> getType() {
+        return BooleanOperationItem.class;
     }
 
     @Override
-    public Class<?> getType() {
-        return TextOperationItem.class;
+    public Boolean getValue() {
+        return value;
     }
 
     @Override
     public void setValue(Object o) {
-        String oldValue = value;
-        value = o.toString();
-        if ((!value.equals(oldValue)) && (listener != null)) {
-            listener.changed(this, oldValue, value);
+        boolean oldValue = value;
+        if (o instanceof Boolean) {
+            boolean newValue = (Boolean) o;
+
+            value = newValue;
+            if ((value != oldValue) && (listener != null)) {
+                listener.changed(this, oldValue, value);
+            }
         }
     }
 
     @Override
     public boolean isDefault() {
-        return value.equals(defaultValue);
+        return value == defaultValue;
     }
 
     @Override
     public void setFromString(String sValue) {
-        // fixme  need general method to strip leading and trailing quotes
-        if (sValue.charAt(0) == '\'') {
-            sValue = sValue.substring(1, sValue.length() - 1);
-        }
-        if (sValue.charAt(0) == '"') {
-            sValue = sValue.substring(1, sValue.length() - 1);
-        }
-        setValue(sValue);
+        value = Boolean.parseBoolean(sValue);
     }
 
     @Override
@@ -85,18 +83,17 @@ public class TextOperationItem extends OperationItem implements ObservableString
     }
 
     @Override
-    public String get() {
+    public boolean get() {
         return value;
     }
 
     @Override
-    public void addListener(ChangeListener<? super String> listener) {
-        System.out.println("add Listener " + name);
-        this.listener = listener;
+    public void addListener(ChangeListener<? super Boolean> listener) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void removeListener(ChangeListener<? super String> listener) {
+    public void removeListener(ChangeListener<? super Boolean> listener) {
     }
 
     @Override
@@ -108,13 +105,11 @@ public class TextOperationItem extends OperationItem implements ObservableString
     }
 
     @Override
-    public String getValue() {
-        return value;
-    }
-
-    @Override
     public String getStringRep() {
-        return '\'' + value + '\'';
+        if (value) {
+            return "True";
+        } else {
+            return "False";
+        }
     }
-
 }

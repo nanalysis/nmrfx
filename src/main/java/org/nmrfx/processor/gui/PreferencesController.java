@@ -17,10 +17,10 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.gui.properties.DirectoryOperationItem;
-import org.nmrfx.processor.gui.properties.ChoiceOperationItem;
-import org.nmrfx.processor.gui.properties.IntRangeOperationItem;
-import org.nmrfx.processor.gui.properties.FileOperationItem;
+import org.nmrfx.utils.properties.DirectoryOperationItem;
+import org.nmrfx.utils.properties.ChoiceOperationItem;
+import org.nmrfx.utils.properties.IntRangeOperationItem;
+import org.nmrfx.utils.properties.FileOperationItem;
 import org.nmrfx.processor.operations.NESTANMREx;
 import java.io.File;
 import java.io.IOException;

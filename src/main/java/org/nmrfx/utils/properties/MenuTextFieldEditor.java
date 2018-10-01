@@ -21,34 +21,32 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.properties;
+package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
-import javafx.scene.control.Slider;
 import org.controlsfx.property.editor.AbstractPropertyEditor;
 
 /**
  *
  * @author brucejohnson
  */
-public class IntPropertySliderEditor extends AbstractPropertyEditor<Object, Node> {
+public class MenuTextFieldEditor extends AbstractPropertyEditor<Object, Node> {
 
-    public IntPropertySliderEditor(IntRangeOperationItem item, Slider slider) {
-        super(item, slider);
+    public MenuTextFieldEditor(MenuTextOperationItem item, MenuTextField menuTextField) {
+        super(item, menuTextField);
     }
 
     @Override
     protected ObservableValue<Object> getObservableValue() {
-        Slider slider = (Slider) getEditor();
-        return (ObservableValue) slider.valueProperty();
+        MenuTextField menuTextField = (MenuTextField) getEditor();
+        return (ObservableValue) menuTextField.getTextField().textProperty();
     }
 
     @Override
     public void setValue(Object t) {
-        Slider slider = (Slider) getEditor();
-        double dValue = ((Number) t).doubleValue();
-        slider.setValue(dValue);
+        MenuTextField menuTextField = (MenuTextField) getEditor();
+        menuTextField.getTextField().setText(t.toString());
     }
 
 }
