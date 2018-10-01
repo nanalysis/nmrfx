@@ -23,7 +23,6 @@
  */
 package org.nmrfx.processor.gui.properties;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import javafx.beans.value.ChangeListener;
 

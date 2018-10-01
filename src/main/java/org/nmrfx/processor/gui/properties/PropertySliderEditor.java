@@ -23,10 +23,8 @@
  */
 package org.nmrfx.processor.gui.properties;
 
-import org.nmrfx.processor.gui.properties.DoubleRangeOperationItem;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
-import javafx.scene.control.Slider;
 import org.controlsfx.property.editor.AbstractPropertyEditor;
 
 /**

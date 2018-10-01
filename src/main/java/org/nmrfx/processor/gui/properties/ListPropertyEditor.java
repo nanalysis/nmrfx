@@ -23,7 +23,6 @@
  */
 package org.nmrfx.processor.gui.properties;
 
-import org.nmrfx.processor.gui.properties.ListOperationItem;
 import javafx.scene.Node;
 import org.controlsfx.property.editor.PropertyEditor;
 

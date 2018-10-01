@@ -23,18 +23,10 @@
  */
 package org.nmrfx.processor.gui.properties;
 
-import org.nmrfx.processor.math.units.Unit;
-import org.nmrfx.processor.math.units.UnitFactory;
 import java.util.ArrayList;
-import java.util.Optional;
 import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableObjectValue;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.complex.ComplexFormat;
-import org.apache.commons.math3.exception.MathParseException;
-import org.controlsfx.property.editor.PropertyEditor;
-import org.python.core.PyComplex;
 
 /**
  *
@@ -56,11 +48,12 @@ public class ListOperationItem extends OperationItem implements ObservableObject
      *
      * @param listener
      * @param defaultValue optional default value for the List.
-     * @param listTypes The types of objects that will be contained in the list. The List can only support one type of
-     * item at a time.
+     * @param listTypes The types of objects that will be contained in the list.
+     * The List can only support one type of item at a time.
      * @param category
      * @param name
      * @param description
+     * @param typeSelector
      */
     public ListOperationItem(ChangeListener listener, ArrayList defaultValue, ArrayList<String> listTypes, String category, String name, String description, ChoiceOperationItem typeSelector) {
         super(category, name, description);
@@ -107,7 +100,8 @@ public class ListOperationItem extends OperationItem implements ObservableObject
     }
 
     /**
-     * Value is set by giving a String of comma separated values. Based on the listTypes, we will parse the String
+     * Value is set by giving a String of comma separated values. Based on the
+     * listTypes, we will parse the String
      *
      * @param o
      */
@@ -123,17 +117,21 @@ public class ListOperationItem extends OperationItem implements ObservableObject
             lst = lst.trim();
 
             if (lst.length() != 0) {
-                for (String value : lst.split(",")) {
-                    if (value.equals("")) {
-                        newValue.add(Double.valueOf(0.0));
-                    } else if (value.equals("-")) {
-                        newValue.add(Double.valueOf(-0.0));
-                    } else {
-                        try {
-                            newValue.add(Double.parseDouble(value));
-                        } catch (NumberFormatException nfE) {
-                            newValue.add(Double.valueOf(0.0));
-                        }
+                for (String sValue : lst.split(",")) {
+                    switch (sValue) {
+                        case "":
+                            newValue.add(0.0);
+                            break;
+                        case "-":
+                            newValue.add(-0.0);
+                            break;
+                        default:
+                            try {
+                                newValue.add(Double.parseDouble(sValue));
+                            } catch (NumberFormatException nfE) {
+                                newValue.add(0.0);
+                            }
+                            break;
                     }
                 }
             }
@@ -157,18 +155,13 @@ public class ListOperationItem extends OperationItem implements ObservableObject
     private String listToString(ArrayList list) {
         StringBuilder str = new StringBuilder("");
         //String type = typeSelector.get();
-        for (Object o : list) {
+        list.forEach((o) -> {
             if (o instanceof Number) {
-                if (o instanceof Number) {
-                    //System.out.println("type, o: " + type + " " + o);
-                    //System.out.println(UnitFactory.newUnit(type, (Number) o));
-                    //str.append("\"" + UnitFactory.newUnit(type, (Number) o).toString() + "\",");
-                    str.append(((Number) o).toString() + ",");
-                }
+                str.append(((Number) o).toString()).append(",");
             } else {
                 System.out.println("non Number in List");
             }
-        }
+        });
         //remove trailing comma
         return str.length() == 0 ? "" : str.toString().substring(0, str.toString().length() - 1);
     }
@@ -190,6 +183,7 @@ public class ListOperationItem extends OperationItem implements ObservableObject
     public void removeListener(InvalidationListener listener) {
     }
 
+    @Override
     public boolean isDefault() {
         return value.equals(defaultValue);
     }
@@ -205,6 +199,7 @@ public class ListOperationItem extends OperationItem implements ObservableObject
 //        listener.changed(this, complexToString(old), complexToString(value));
     }
 
+    @Override
     public String getStringRep() {
         return "[" + listToString(value) + "]";
     }

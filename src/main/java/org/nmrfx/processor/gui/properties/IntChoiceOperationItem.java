@@ -38,7 +38,7 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
     Integer defaultValue;
     Integer value;
     ChangeListener<? super Number> listener;
-    private Collection<?> choices;
+    private final Collection<?> choices;
 
     public IntChoiceOperationItem(ChangeListener listener, Integer defaultValue, Collection<?> choices, String category, String name, String description) {
         super(category, name, description);
@@ -48,6 +48,7 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
         this.choices = new ArrayList(choices);
     }
 
+    @Override
     public Class<?> getType() {
         return IntChoiceOperationItem.class;
     }
@@ -72,9 +73,9 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
     @Override
     public boolean isDefault() {
         if (defaultValue == null) {
-            return defaultValue == value;
+            return value == null;
         } else {
-            return defaultValue == value;
+            return defaultValue.equals(value);
         }
     }
 
@@ -122,13 +123,14 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
         return choices;
     }
 
+    @Override
     public String getStringRep() {
         return String.valueOf(value);
     }
 
     @Override
     public int intValue() {
-        return value.intValue();
+        return value;
     }
 
     @Override

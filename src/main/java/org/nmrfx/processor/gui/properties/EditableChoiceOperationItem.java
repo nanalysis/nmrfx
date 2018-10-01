@@ -23,11 +23,8 @@
  */
 package org.nmrfx.processor.gui.properties;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import javafx.beans.InvalidationListener;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableStringValue;
 
 /**
  *
@@ -40,6 +37,7 @@ public class EditableChoiceOperationItem extends ChoiceOperationItem {
         System.out.println("made editor");
     }
 
+    @Override
     public Class<?> getType() {
         return EditableChoiceOperationItem.class;
     }

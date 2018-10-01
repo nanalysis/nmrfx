@@ -180,6 +180,7 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
     public void removeListener(InvalidationListener listener) {
     }
 
+    @Override
     public boolean isDefault() {
         return (Math.abs(value - defaultValue) < 1.0e-9);
     }
@@ -212,6 +213,7 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
         return lastChar;
     }
 
+    @Override
     public String getStringRep() {
         if (lastChar != (char) -1) {
             return '\'' + Double.toString(value) + lastChar + '\'';

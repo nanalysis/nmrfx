@@ -122,6 +122,7 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
         return value;
     }
 
+    @Override
     public String getStringRep() {
         return '\'' + value + '\'';
     }

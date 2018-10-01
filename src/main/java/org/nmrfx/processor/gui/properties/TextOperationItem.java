@@ -112,6 +112,7 @@ public class TextOperationItem extends OperationItem implements ObservableString
         return value;
     }
 
+    @Override
     public String getStringRep() {
         return '\'' + value + '\'';
     }

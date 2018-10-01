@@ -34,15 +34,19 @@ import javafx.scene.text.Font;
  */
 public class MenuTextField extends GridPane {
 
-    TextField textField = new TextField();
-    private MenuButton menuButton = new MenuButton("");
+    private final TextField textField = new TextField();
+    private final MenuButton menuButton = new MenuButton("");
 
     public MenuTextField() {
         super();
         textField.setFont(new Font(11));
         textField.setPrefWidth(140);
-        this.add(textField, 0, 0);
-        this.add(menuButton, 1, 0);
+        init();
+    }
+
+    private void init() {
+        add(textField, 0, 0);
+        add(menuButton, 1, 0);
     }
 
     public TextField getTextField() {
@@ -55,7 +59,7 @@ public class MenuTextField extends GridPane {
     public MenuButton getMenuButton() {
         return menuButton;
     }
-    
+
     public void setText(String text) {
         textField.setText(text);
     }

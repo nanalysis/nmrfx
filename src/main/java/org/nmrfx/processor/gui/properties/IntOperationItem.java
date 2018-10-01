@@ -152,6 +152,7 @@ public class IntOperationItem extends OperationItem implements ObservableInteger
     public void removeListener(InvalidationListener listener) {
     }
 
+    @Override
     public boolean isDefault() {
         return (value == defaultValue);
     }

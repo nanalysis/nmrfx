@@ -116,27 +116,17 @@ public class ZoomSlider extends GridPane {
         //downButton.setBorder(Border.EMPTY);
         textField.setFont(new Font(11));
         textField.setPrefWidth(60);
-        this.add(textField, 0, 0);
-        this.add(slider, 1, 0);
-        this.add(downButton, 2, 0);
-        this.add(upButton, 3, 0);
+        addControls();
         downButton.addEventHandler(ActionEvent.ACTION, event -> downAction(event));
         upButton.addEventHandler(ActionEvent.ACTION, event -> upAction(event));
-//        textField.textProperty().bindBidirectional(slider.valueProperty(), Double);
         Bindings.bindBidirectional(textField.textProperty(), slider.valueProperty(), (StringConverter) new DoubleStringConverter());
+    }
 
-//        Bindings.bindBidirectional(textField.textProperty(), slider.valueProperty(), new StringConverter<Number>() {
-//            @Override
-//            public String toString(Number number) {
-//                return number.toString();
-//            }
-//
-//            @Override
-//            public Number fromString(String string) {
-//                return Integer.parseInt(string);
-//            }
-//        }
-//        );
+    private void addControls() {
+        add(textField, 0, 0);
+        add(slider, 1, 0);
+        add(downButton, 2, 0);
+        add(upButton, 3, 0);
     }
 
     public Slider getSlider() {

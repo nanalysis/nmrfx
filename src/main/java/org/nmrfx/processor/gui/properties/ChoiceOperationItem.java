@@ -79,7 +79,7 @@ public class ChoiceOperationItem extends OperationItem implements ObservableStri
     @Override
     public boolean isDefault() {
         if (defaultValue == null) {
-            return defaultValue == value;
+            return value == null;
         } else {
             return defaultValue.equals(value);
         }
@@ -129,6 +129,7 @@ public class ChoiceOperationItem extends OperationItem implements ObservableStri
         return choices;
     }
 
+    @Override
     public String getStringRep() {
         return '\'' + value + '\'';
     }
