@@ -746,6 +746,10 @@ public class Molecule implements Serializable, ITree {
     public ArrayList<Atom> getAtomList() {
         return new ArrayList<Atom>(atoms);
     }
+    
+    public void setAtomTree(List<List<Atom>> aTree){
+        atomTree = aTree;
+    }
 
     public void genMeasuredTree(Atom startAtom) {
         updateAtomArray();
@@ -764,7 +768,6 @@ public class Molecule implements Serializable, ITree {
         invalidateAtomArray();
         updateAtomArray();
         makeAtomList();
-        atomTree = null;
         setupGenCoords();
         energyLists.makeAtomListFast();
         updateVecCoords();
@@ -4500,6 +4503,9 @@ public class Molecule implements Serializable, ITree {
             return;
         }
         Atom.addBond(atom1, atom2, bond, 0, false);
+        if (bond.equals(Order.SINGLE)) {
+            atom2.irpIndex = 2;
+        }
         atom2.parent = atom1;
         atom2.setProperty("linker", true);
         atom2.bondLength = bondLength;

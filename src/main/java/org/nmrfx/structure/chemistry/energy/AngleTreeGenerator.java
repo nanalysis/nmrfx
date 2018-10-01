@@ -11,8 +11,6 @@ import org.nmrfx.structure.chemistry.ITree;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Order;
 import org.nmrfx.structure.chemistry.Point3;
-import org.nmrfx.structure.chemistry.miner.AtomContainer;
-import org.nmrfx.structure.chemistry.miner.IAtom;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
 
@@ -46,6 +44,17 @@ public class AngleTreeGenerator {
     public boolean checkStartAtom(Atom startAtom) {
         return startAtom.bonds.size() == 1;
     }
+    
+    public Atom findStartAtom(List<Atom> atoms){
+        Atom startAtom = null;
+        for (Atom atom : atoms) {
+            if (checkStartAtom(atom)) {
+                startAtom = atom;
+                break;
+            }
+        }
+        return startAtom;
+    }
 
     public List<List<Atom>> genTree(ITree itree, Atom startAtom, Atom endAtom) {
         MTree mTree = new MTree();
@@ -58,12 +67,7 @@ public class AngleTreeGenerator {
         }
 
         if (startAtom == null) {
-            for (Atom atom : atoms) {
-                if (checkStartAtom(atom)) {
-                    startAtom = atom;
-                    break;
-                }
-            }
+            startAtom = findStartAtom(atoms);
         } else {
             if (!checkStartAtom(startAtom)) {
                 //throw new IllegalArgumentException("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");
@@ -206,6 +210,7 @@ public class AngleTreeGenerator {
         if (itree instanceof Molecule) {
             Molecule mol = (Molecule) itree;
             mol.setTreeList(atomPathList);
+            mol.setAtomTree(atomTree);
         }
         ringClosures = new HashMap<>();
         //        for (MNode mNode : pathNodes) {

@@ -229,7 +229,7 @@ class refine:
         self.molecule = None
         self.trajectoryWriter = None
         self.molecule = Molecule.getActive()
-        self.linkerAtomDict = {} # map of entity name to linker
+        self.entityEntryDict = {} # map of entity name to linker
         if self.molecule != None:
             self.molName = self.molecule.getName()
 
@@ -325,62 +325,23 @@ class refine:
         return atom
 
     def addLinkers(self, linkerList):
-        entities = self.molecule.getEntities()
-        entityDict = {}
-        usedEntity = {}
-        for entity in entities:
-            entityDict[entity.getName()] = entity # stores entity objects from the entity name
-            usedEntity[entity] = False
-
-        for i, entity in enumerate(entities):
-            if i == len(entities) - 1:
-                break
-            startAtom = entity.getLastAtom()
-            endAtom = entities[i+1].getLastAtom()
-            self.molecule.createLinker(startAtom, endAtom, 6)
-            return
         if linkerList:
-            try:
+            try :
                 for linkerDict in linkerList:
-                    usedEntities = self.readLinkerDict(linkerDict, entityDict) # returns used Entities to mark them
-                    for entity in usedEntities:
-                        usedEntity[entity] = True
-
+                    self.readLinkerDict(linkerDict) # returns used Entities to mark them
             except TypeError:
-                usedEntities = self.readLinkerDict(linkerList, entityDict)
-                for entity in usedEntities:
-                    usedEntity[entity] = True
-                # linkerList is just a dict
+                self.readLinkerDict(linkerList)
 
-        #Adds linkers to all entities that do not have one
-        usedEntities = [entity for entity in usedEntity.keys() if usedEntity[entity]]
-        if len(usedEntity.keys()) > 1:
-            for entity in usedEntity:
-                used = usedEntity[entity]
-                if not used:
-                    print entity.getName() + " had no defined linker."
-                    firstEntity = usedEntities[0]
-                    startAtom = firstEntity.getLastAtom()
-                    endAtom = entity.getLastAtom()
-                    print "linker added between " + startAtom.getFullName() + " and " + endAtom.getFullName()
-                    self.molecule.createLinker(startAtom, endAtom, 6)
-
-    def readLinkerDict(self, linkerDict, entityDict):
+    def readLinkerDict(self, linkerDict):
+        entityNames = [entity.getName() for entity in self.molecule.getEntities()]
         if not linkerDict:
             return
-        if 'start' in linkerDict:
-            startEntName, startAtom = linkerDict['start'].split(':')
-            endEntName, endAtom = linkerDict['end'].split(':')
+        if 'atoms' in linkerDict:
+            startEntName, startAtom = linkerDict['atoms'][0].split(':')
+            endEntName, endAtom = linkerDict['atoms'][1].split(':')
             n = linkerDict['n'] if 'n' in linkerDict else 6
-            if startEnt not in entityDict:
-                print startEnt + " not found within molecule"
-                raise ValueError
-            if endEnt not in entityDict:
-                print endEnt + " not found within molecule"
-                raise ValueError
-
-            startEnt = entityDict[startEntName]
-            endEnt = entityDict[endEntName]
+            startEnt = self.molecule.getEntity(startEntName)
+            endEnt = self.molecule.getEntity(endEntName)
 
             startTuple = (startEnt, startAtom)
             endTuple = (endEnt, endAtom)
@@ -391,22 +352,16 @@ class refine:
             bondDict = linkerDict['bond']
             if "cyclic" in bondDict and bondDict["cyclic"]:
                 polymers = self.molecule.getPolymers()
-                if len(polymers) != 1 and pName not in bondDict:
-                    print "Multiple polymers in structure but no specification for which to by made cyclic"
+                polymerNames = [polymer.getName() for polymer in polymers]
+                if len(polymers) != 1 and "pName" not in bondDict:
+                    raise ValueError("Multiple polymers in structure but no specification for which to by made cyclic")
                     return []
                 polymer = None
                 if "pName" in bondDict:
-                    polymerNames = [polymer.getName() for polymer in polymers]
-                    try:
-                        entity = entityDict[bondDict["pName"]]
-                    except KeyError:
-                         print bondDict["pName"], "is not an entity within the molecule"
-                         return []
-                    entName = entity.getName();
-                    try:
-                        polymer = polymers[polymerNames.index(entName)]
-                    except ValueError:
-                        print entName, "is not a polymer and cannot be made cyclic"
+                    if bondDict["pName"] in polymerNames:
+                        polymer = self.molecule.getEntity(bondDict["pName"])
+                    else:
+                        raise ValueError(bondDict["pName"] + " is not a polymer within the molecule")
                 else:
                     polymer = polymers[0]
                 self.addCyclicBond(polymer)
@@ -425,8 +380,7 @@ class refine:
                         order = bondOrders[order-1]
                     except:
                         order = order.upper()
-                        self.molecule.createLinker(startAtom, endAtom, order, length)
-
+                    self.molecule.createLinker(startAtom, endAtom, order, length)
                 else:
                     atomName1 = startAtom.getFullName()
                     atomName2 = endAtom.getFullName()
@@ -506,7 +460,6 @@ class refine:
                 atomName1, atomName2, distance = bondConstraint.split()
                 distance = float(distance)
                 self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
-
 
         refine.setForces(self,repel=0.5,dis=1)
         energyLists.setCourseGrain(useCourseGrain)
@@ -663,81 +616,39 @@ class refine:
     def addDisCon(self, atomName1, atomName2, lower, upper):
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
 
-    def addLinkers(self, linkerList):
-        entities = self.molecule.getEntities()
-        entityDict = {}
-        usedEntity = {}
-        for entity in entities:
-            entityDict[entity.getName()] = entity
-            usedEntity[entity] = False
+    def setEntityEntryDict(self, linkerList, treeDict):
+        entityNames = [entity.getName() for entity in self.molecule.getEntities()]
+        visitedEntities = []
+        if treeDict:
+            entryAtomName = treeDict['start'] if 'start' in treeDict else None
+        elif not treeDict or not entryAtomName:
+            atoms = self.molecule.getEntities()[0].getAtomArray()
+            aTree = AngleTreeGenerator()
+            entryAtomName = aTree.findStartAtom(atoms).getFullName()
+        (entityName, atomName) = entryAtomName.split(':')
+        self.entityEntryDict[entityName] = atomName
+        visitedEntities.append(entityName)
         if linkerList:
-            for linkerDict in linkerList:
-                startEnt, startAtom = linkerDict['start'].split(':')
-                endEnt, endAtom = linkerDict['end'].split(':')
-                n = linkerDict['n'] if 'n' in linkerDict else 6
-                if startEnt not in entityDict:
-                    print startEnt + " not found within molecule"
-                    raise ValueError
-                if endEnt not in entityDict:
-                    print endEnt + " not found within molecule"
-                    raise ValueError
-
-                startEnt = entityDict[startEnt]
-                endEnt = entityDict[endEnt]
-
-                startTuple = (startEnt, startAtom)
-                endTuple = (endEnt, endAtom)
-                startAtom = self.getAtom(startTuple)
-                endAtom = self.getAtom(endTuple)
-
-                usedEntity[startEnt] = True
-                usedEntity[endEnt] = True
-                if 'bond' in linkerDict:
-                    bondDict = linkerDict['bond']
-                    length = bondDict['length'] if 'length' in bondDict else 1.08
-                    order = bondDict['order'] if 'order' in bondDict else 'SINGLE'
-                    global bondOrders
-                    if (order < 0 or order > 4) and order not in bondOrders:
-                        print "Bad bond order, automatically converting to SINGLE bond"
-                        order = "SINGLE"
-                    try:
-                        order = bondOrders[order-1]
-                    except:
-                        order = order.upper()
-                    self.molecule.createLinker(startAtom, endAtom, order, length)
-                    continue;
-                self.molecule.createLinker(startAtom, endAtom, n)
-
-            usedEntities = [entity for entity in usedEntity.keys() if usedEntity[entity]]
-            for entity in usedEntity:
-                used = usedEntity[entity]
-                if not used:
-                    print entity.getName() + " had no defined linker."
-                    firstEntity = usedEntities[0]
-                    startAtom = firstEntity.getLastAtom()
-                    endAtom = entity.getLastAtom()
-                    print "linker added between " + startAtom.getFullName() + " and " + endAtom.getFullName()
-                    self.molecule.createLinker(startAtom, endAtom, 6)
-        else:
-            for i, entity in enumerate(entities):
-                if i == len(entities) - 1:
-                    break
-                startAtom = entity.getLastAtom()
-                endAtom = entities[i+1].getLastAtom()
-                self.molecule.createLinker(startAtom, endAtom, 6)
-    def setLinkerAtomDict(self, linkerList):
-        if linkerList:
-            try:
-                for linkerDict in linkerList:
-                    endAtom = linkerDict['end'] if 'end' in linkerDict else None
-                    if endAtom:
-                        (entity, atomName) = endAtom.split('.')
-                        self.linkerAtomDict[entity] = atomName
-            except TypeError:
-                endAtom = linkerDict['end'] if 'end' in linkerDict else None
-                if endAtom:
-                    (entity, atomName) = endAtom.split('.')
-                    self.linkerAtomDict[entity] = atomName
+            import copy
+            linkerList = copy.deepcopy(linkerList)
+            linkerList = [linkerDict for linkerDict in linkerList if 'atoms' in linkerDict]
+            while len(linkerList) > 0:
+                linkerDict = linkerList[0]
+                atoms = linkerDict['atoms']
+                entityNames = [atom.split(':')[0] for atom in atoms]
+                if entityNames[0] in visitedEntities and entityNames[1] in visitedEntities:
+                    linkerList.pop(0)
+                elif entityNames[0] in visitedEntities:
+                    entryAtomName = atoms[1]
+                    linkerList.pop(0)
+                elif entityNames[1] in visitedEntities:
+                    entryAtomName = atoms[0]
+                    linkerList.pop(0)
+                else:
+                    linkerList.pop(0)
+                    linkerList.append(linkerDict)
+                (entityName, atomName) = entryAtomName.split(':')
+                self.entityEntryDict[entityName] = atomName
 
     def getAtom(self, atomTuple):
         entity, atomName = atomTuple
@@ -755,7 +666,33 @@ class refine:
             raise ValueError
         return atom
 
+    def validateLinkerList(self,linkerList):
+        usedEntities = {entity:False for entity in [entity.getName() for entity in self.molecule.getEntities()]}
+        linkerAtoms = []
+        if linkerList:
+            if type(linkerList) is ArrayList:
+                for linkerDict in linkerList:
+                    linkerAtoms += linkerDict['atoms']
+            else:
+                print linkerList
+                linkerAtoms += linkerList['atoms']
+                linkerList = [linkerList]
+        for atom in linkerAtoms:
+            entity = atom.split(':')[0]
+            usedEntities[entity] = True
+        unusedEntities = [entity for entity in usedEntities if not usedEntities[entity]]
+        firstEntity = [entity for entity in usedEntities if usedEntities[entity]][0]
+        for entity in unusedEntities:
+            print entity.getName() + " had no defined linker."
+            startAtom = firstEntity.getLastAtom()
+            endAtom = entity.getLastAtom()
+            newLinker = {'atoms': [startAtom, endAtom]}
+            linkerList.append(linkerList)
+            print "linker added between " + startAtom.getFullName() + " and " + endAtom.getFullName()
+        return linkerList
+
     def loadFromYaml(self,data, seed, pdbFile=""):
+        """Reading in all the structures"""
         if pdbFile != '':
             self.readPDBFile(pdbFile)
             residues = None
@@ -763,8 +700,8 @@ class refine:
             if 'molecule' in data:
                 molData = data['molecule']
                 self.reslib = molData['reslib'] if 'reslib' in molData else None
-                linkerList = molData['link'] if 'link' in molData else None
-                self.setLinkerAtomDict(linkerList)
+                if self.reslib:
+                    PDBFile.setLocalResLibDir(self.reslib)
                 if 'entities' in molData:
                     molList = molData['entities']
                     molList = prioritizePolymers(molList)
@@ -775,23 +712,23 @@ class refine:
                     #Only one entity in the molecule
                     residues = ",".join(molDict['residues'].split()) if 'residues' in molData else None
                     self.readMoleculeDict(molData)
-                self.addLinkers(linkerList)
+        treeDict = data['tree'] if 'tree' in data else None
 
-        mol = self.molecule;
+        linkerList = molData['link'] if 'link' in molData else None
+        if len(self.molecule.getEntities()) > 1:
+            linkerList = self.validateLinkerList(linkerList)
+
+        if 'tree' in data:
+            self.setEntityEntryDict(linkerList, treeDict)
+            self.measureTree()
+        self.addLinkers(linkerList)
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
         if 'angles' in data:
             angleWt = self.readAngleDict(data['angles'])
-
         if 'tree' in data:
-            treeDict = data['tree']
-            if treeDict == None:
-                start = None
-                end = None
-            else:
-                start =treeDict['start'] if 'start' in treeDict else None
-                end = treeDict['end'] if 'end' in treeDict else None
-            self.setupTree(start, end)
+            self.setupTree(treeDict)
+
         self.setup('./',seed,writeTrajectory=False, usePseudo=False)
         self.energy()
 
@@ -862,22 +799,6 @@ class refine:
                 type = 'nv'
             if type == 'nv':
                 self.readSequence(file)
-
-            if 'tree' in molDict:
-                treeDict = molDict['tree']
-                if treeDict == None:
-                    start = None
-                    end = None
-                else:
-                    if 'start' in treeDict:
-                        start = treeDict['start']
-                    else:
-                        start = None
-                    if 'end' in treeDict:
-                        end = treeDict['end']
-                    else:
-                        end = None
-                self.setupTree(start, end)
             mol = self.molecule;
 
     def readDistanceDict(self,disDict,residues):
@@ -1474,6 +1395,18 @@ class refine:
                 atomNameJ = resNumJ+'.'+aNameJ
                 self.energyLists.addDistanceConstraint(atomNameI,atomNameJ,lower,upper)
 
+    def measureTree(self):
+        for entity in self.molecule.getEntities():
+            print "Setup " + entity.getName()
+            self.setupAtomProperties(entity)
+            entityName = entity.getName()
+            print entityName, self.entityEntryDict
+            #raise ValueError()
+            if entityName in self.entityEntryDict:
+                print "Measuring now"
+                atomName = self.entityEntryDict[entityName]
+                entityTuple = (entity, atomName)
+                entity.genMeasuredTree(self.getAtom(entityTuple))
 
     def readSequenceString(self, molName, sequence):
         seqAList = ArrayList()
@@ -1486,11 +1419,17 @@ class refine:
 
     def readSequence(self,seqFile):
         seqReader = Sequence()
-        if (self.reslib):
-            PDBFile.setLocalResLibDir(self.reslib)
-        self.molecule = seqReader.read(seqFile)
+        mol = seqReader.read(seqFile)
+        if self.molecule:
+            for entity in mol.getEntities():
+        #        self.measureTree(entity)
+                self.molecule.addEntity(entity)
+        else:
+        #    mol.getEntities()[0].measureTree(entity)
+            self.molecule = mol
         self.molecule.selectAtoms('*.*')
         self.molName = self.molecule.getName()
+        self.molecule.updateAtomArray()
         return self.molecule
 
     def readPDBFile(self,fileName):
@@ -1500,14 +1439,10 @@ class refine:
             self.molecule = Molecule.getActive()
             self.molName = self.molecule.getName()
             self.molecule.selectAtoms('*.*')
+            #entity = self.molecule.getEntities()[0]
         else:
-            compound = pdb.readResidue(fileName, None, self.molecule, None)
-            self.setupAtomProperties(compound)
-            entity = compound.getName()
-            if entity in self.linkerAtomDict:
-                atomName = linkerAtomDict[entity]
-                tuple = (entity, atomName)
-                compound.genMeasuredTree(self.getAtom(tuple))
+            entity = pdb.readResidue(fileName, None, self.molecule, None)
+        #self.measureTree(entity)
         return self.molecule
 
     def readPDBFiles(self,files):
@@ -1537,14 +1472,10 @@ class refine:
             self.molecule = Molecule.getActive()
             self.molName = self.molecule.getName()
             self.molecule.selectAtoms('*.*')
+        #    entity = self.molecule.getEntities()[0]
         else:
-            compound = pdb.readResidue(fileName, None, self.molecule, None)
-            self.setupAtomProperties(compound)
-            entity = compound.getName()
-            if entity in self.linkerAtomDict:
-                atomName = linkerAtomDict[entity]
-                tuple = (entity, atomName)
-                compound.genMeasuredTree(self.getAtom(tuple))
+            entity = pdb.readResidue(fileName, None, self.molecule, None)
+        #self.measureTree(entity)
         return self.molecule
 
     def setupAtomProperties(self, compound):
@@ -1558,9 +1489,22 @@ class refine:
         pI.setHybridization();
 
 
-    def setupTree(self, start, end):
+    def setupTree(self, treeDict):
+        """Creates the tree path and setups the coordinates of the molecule from all the entities
+
+        Keyword arguments:
+        treeDict -- A dictionary that might contain start, end, and measure
+
+        Dictionary Keys:
+        start   -- Full name of the first atom in building the tree
+        end     -- Full name of the last atom in building the tree
+        """
+        (start, end) = ((treeDict['start'] if 'start' in treeDict else None,
+                                 treeDict['end'] if 'end' in treeDict else None)
+                                 if treeDict else (None, None))
+
+        Molecule.makeAtomList()
         mol = self.molecule
-        mol.updateAtomArray()
         startAtom = mol.getAtom(start) if start else None
         endAtom = mol.getAtom(end) if end else None
         if len(mol.getEntities()) == 1 and len(mol.getLigands()) == 1:
@@ -1570,9 +1514,9 @@ class refine:
             mol.invalidateAtomArray()
             mol.invalidateAtomTree()
             aTree = AngleTreeGenerator()
-            aTree.genTree(mol, startAtom, endAtom)
+            angleTree = aTree.genTree(mol, startAtom, endAtom)
+        mol.setupRotGroups()
         mol.genCoords()
-
 
     def addAngleFile(self,file, mode='nv'):
         if mode == 'cyana':
