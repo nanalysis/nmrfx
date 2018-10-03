@@ -150,6 +150,7 @@ class XPLOR:
 
             m = pat.findall(self.s)
             elements += addElements(m, resNames)
+        self.f.close()
         return constraints
 
     def readXPLORDistanceConstraints(self, resNames):
