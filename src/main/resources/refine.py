@@ -602,20 +602,21 @@ class refine:
 
     def readXPLORDistanceConstraints(self, fileName, keepSetting=None):
         xplorFile = xplor.XPLOR(fileName)
-        constraints = xplorFile.readXPLORDistanceConstraints()
+        resNames = [residue.getName() for residue in self.molecule.getPolymers()[0].getResidues()]
+        constraints = xplorFile.readXPLORDistanceConstraints(resNames)
         for constraint in constraints:
             lower = constraint['lower']
             upper = constraint['upper']
             atomPairs = constraint['atomPairs']
             firstAtomPair = atomPairs[0]
             if firstAtomPair not in self.constraints:
-                constraint = Constraint(atomPair, lower, 'lower', setting=keepSetting)
-                self.constraints[atomPair] = constraint
+                constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
+                self.constraints[firstAtomPair] = constraint
                 if len(atomPairs) > 1:
                     for atomPair in atomPairs[1:]:
                         self.constraints[atomPair] = constraint
                         constraint.addPair(atomPair)
-                self.constraints[atomPair].addBound(upper,'upper');
+                self.constraints[firstAtomPair].addBound(upper,'upper');
             else:
                 self.constraints[atomPair].addBound(lower, 'lower');
                 self.constraints[atomPair].addBound(upper, 'upper');
@@ -646,6 +647,7 @@ class refine:
                 entityNames = [atom.split(':')[0] for atom in atoms]
                 if entityNames[0] in visitedEntities and entityNames[1] in visitedEntities:
                     linkerList.pop(0)
+                    continue
                 elif entityNames[0] in visitedEntities:
                     entryAtomName = atoms[1]
                     linkerList.pop(0)
@@ -655,8 +657,10 @@ class refine:
                 else:
                     linkerList.pop(0)
                     linkerList.append(linkerDict)
+                    continue
                 (entityName, atomName) = entryAtomName.split(':')
                 self.entityEntryDict[entityName] = atomName
+                visitedEntities.append(entityName)
 
     def getAtom(self, atomTuple):
         entity, atomName = atomTuple
@@ -1557,7 +1561,9 @@ class refine:
             self.readCYANAAngles(file,self.molName)
         for file in self.xplorAngleFiles:
             xplorFile = xplor.XPLOR(file)
-            xplorFile.readXPLORAngleConstraints(self.dihedral)
+            resNames = [residue.getName() for residue in self.molecule.getPolymers()[0].getResidues()]
+
+            xplorFile.readXPLORAngleConstraints(self.dihedral, resNames)
         for file in self.nvAngleFiles:
             self.loadDihedralsFromFile(file)
 
