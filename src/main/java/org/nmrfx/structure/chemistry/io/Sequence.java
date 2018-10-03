@@ -523,6 +523,7 @@ public class Sequence {
         ArrayList<Polymer> polymers = new ArrayList<>();
         ArrayList<File> ligandFiles = new ArrayList<>();
         Set<String> isNotCapped = new TreeSet<>();
+        String polymerType = null;
         for (String inputString : inputStrings) {
             inputString = inputString.trim();
 
@@ -558,6 +559,9 @@ public class Sequence {
                 } else if ("-polymer".startsWith(stringArg[0])) {
                     polymerName = stringArg[1];
                     coordSetNames.clear();
+                } else if ("-ptype".startsWith(stringArg[0])) {
+                    setPolymerType = true;
+                    polymerType = stringArg[1];
                 } else if ("-nocap".startsWith(stringArg[0])) {
                     isNotCapped.add(polymerName);
                 } else if ("-coordset".startsWith(stringArg[0])) {
@@ -603,7 +607,7 @@ public class Sequence {
                     coordSetNames.add(coordSetName);
                 }
 
-                polymer = initMolFromSeqFile(molName, polymerName, coordSetNames);
+                polymer = initMolFromSeqFile(molName, polymerName, coordSetNames, polymerType);
                 polymers.add(polymer);
                 molecule = polymer.molecule;
                 for (String cName : coordSetNames) {
@@ -639,7 +643,6 @@ public class Sequence {
             resName = PDBAtomParser.pdbResToPRFName(resName, 'r');
 
             if (!setPolymerType) {
-                String polymerType = null;
                 if (residueAliases.values().contains(resName)) {
                     polymerType = "nucleicacid";
                     setPolymerType = true;
@@ -700,10 +703,11 @@ public class Sequence {
         if ((connectBond != null) && (connectBond.end == null)) {
             connectBond.begin.removeBondTo(null);
         }
+        
         return molecule;
     }
 
-    Polymer initMolFromSeqFile(String molName, String polymerName, ArrayList<String> coordSetNames)
+    Polymer initMolFromSeqFile(String molName, String polymerName, ArrayList<String> coordSetNames, String polymerType)
             throws MoleculeIOException {
 
         if ((molName == null) || molName.equals("")) {
@@ -744,6 +748,9 @@ public class Sequence {
             }
         } else {
             polymer = (Polymer) entity;
+        }
+        if (polymerType != null) {
+            polymer.setPolymerType(polymerType);
         }
 
         return polymer;
