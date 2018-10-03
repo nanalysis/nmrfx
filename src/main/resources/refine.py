@@ -1571,8 +1571,7 @@ class refine:
             self.loadDistancesFromFile(file, keepSetting=self.nvDistanceFiles[file])
 
         for file in self.xplorDistanceFiles.keys():
-            self.readXPLORDistanceConstraints(file, keepSetting=self.xplorDistanceFiles[file])
-
+            xplorConstraints = self.readXPLORDistanceConstraints(file, keepSetting = self.xplorDistanceFiles[file])
         self.addDistanceConstraints()
 
     def addDistanceConstraints(self):
