@@ -1581,7 +1581,11 @@ class refine:
         self.addDistanceConstraints()
 
     def addDistanceConstraints(self):
+        alreadyAdded = []
         for constraint in self.constraints.values():
+            if constraint in alreadyAdded:
+                continue
+            alreadyAdded.append(constraint)
             lower = constraint.lower
             upper = constraint.upper
             atomNames1 = ArrayList()
