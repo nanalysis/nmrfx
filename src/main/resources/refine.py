@@ -668,14 +668,13 @@ class refine:
                 entity = entity.getResidue(resNum)
         atomName = atomArr[0]
         atom = entity.getAtom(atomName)
-
         if not atom:
             print atomName , "was not found in", entity.getName()
             raise ValueError
         return atom
 
     def validateLinkerList(self,linkerList):
-        usedEntities = {entity:False for entity in [entity.getName() for entity in self.molecule.getEntities()]}
+        usedEntities = {entityName:False for entityName in [entity.getName() for entity in self.molecule.getEntities()]}
         linkerAtoms = []
         if linkerList:
             if type(linkerList) is ArrayList:
@@ -686,12 +685,15 @@ class refine:
                 linkerAtoms += linkerList['atoms']
                 linkerList = [linkerList]
         for atom in linkerAtoms:
-            entity = atom.split(':')[0]
-            usedEntities[entity] = True
-        unusedEntities = [entity for entity in usedEntities if not usedEntities[entity]]
-        firstEntity = [entity for entity in usedEntities if usedEntities[entity]][0]
-        for entity in unusedEntities:
-            print entity.getName() + " had no defined linker."
+            entityName = atom.split(':')[0]
+            if entityName not in usedEntities:
+                raise ValueError(entityName + " is not a valid entity. Entities within molecule are " + ', '.join(entity.getName() for entity in self.molecule.getEntities()))
+            usedEntities[entityName] = True
+        unusedEntities = [entityName for entityName in usedEntities if not usedEntities[entityName]]
+        firstEntity = self.molecule.getEntity([entityName for entityName in usedEntities if usedEntities[entityName]][0])
+        for entityName in unusedEntities:
+            entity = self.molecule.getEntity(entityName)
+            print entityName + " had no defined linker."
             startAtom = firstEntity.getLastAtom()
             endAtom = entity.getLastAtom()
             newLinker = {'atoms': [startAtom, endAtom]}
