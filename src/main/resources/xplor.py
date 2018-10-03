@@ -2,152 +2,112 @@ import re
 #from org.nmrfx.structure.chemistry.energy import EnergyLists
 from java.util import ArrayList
 from org.nmrfx.structure.chemistry.energy import AngleBoundary
+from org.nmrfx.structure.chemistry.io import AtomParser
 
+def addElements(captures, resNames):
+    ''' Takes in a list of lists. Each internal list has 4 items.
+        capture[0] : Residue number
+        capture[1] : Atom name
+        capture[2] : "or"
+        capture[3] : bounds, a string of three numbers
+        Each element will either have a value or an empty string. An empty string
+        means nothing was found of that type in that capture. This function
+        produces a single list of alternating atomnames and ors and possibly ends in
+        a capture with just bounds information.  Captures comes from an entire
+        line and resNames is needed to rename atoms in IUPAC standards'''
+    appending = []
+    for capture in captures:
+        item = ""
+        if capture[0]:
+            resNum = int(capture[0])-1
+            resName = resNames[resNum]
+            atomName = AtomParser.xplorToIUPAC(resName, capture[1])
+            atomName = atomName if atomName else capture[1]
+            item = '.'.join([capture[0], atomName])
+        else:
+            item = capture[2] if capture[2] else capture[3]
+        appending.append(item)
+    return appending
+
+def getAtomPairs(atoms):
+    ''' getAtomPairs finds all the atom pairs from two lists of atoms
+        atoms must be a list of two lists of full atom names.
+        This returns the list of strings for atom pairs that complies with the
+        working of refine.py'''
+
+    atomPairs = []
+    startAtoms, endAtoms = atoms
+    for startAtom in startAtoms:
+        for endAtom in endAtoms:
+            atomPair = ' '.join([startAtom,endAtom]) if startAtom < endAtom else ' '.join([endAtom, startAtom])
+            atomPairs.append(atomPair)
+    return atomPairs
+
+def parseConstraints(constraints, type):
+    ''' parseConstraints takes the xplorInternalized constraint lists and
+        creates more easy to parse contraint dictionaries to be used in either
+        refine.py (when type is "distance") or internally in xplor.py (type is "angles")'''
+    constraintDicts = []
+    for constraint in constraints:
+        atoms = [[],[]] if type == 'distance' else constraint[:-1]
+        if type == 'distance':
+            prevAtom = False
+            placement = 0
+            for element in constraint[:-1]:
+                if element.lower() != 'or':
+                    if prevAtom:
+                        placement += 1
+                    atoms[placement].append(element)
+                    prevAtom = True
+                else:
+                    prevAtom = False
+            atomPairs = getAtomPairs(atoms)
+        else:
+            atomPairs = atoms
+        lower, upper = getBounds(constraint[-1], type)
+        constraint = {'atomPairs':atomPairs, 'lower':lower,'upper':upper}
+        constraintDicts.append(constraint)
+    return constraintDicts
+
+def getBounds(xplorBounds, type):
+    '''getBounds returns the lower and upper bounds for a constraint once given
+        values parsed from the constraint file'''
+    a,b,c = xplorBounds.strip().split()
+    if type == 'distance':
+        return [float(a) - float(b), float(a) + float(c)]
+    else:
+        return [float(b) - float(c), float(b) + float(c)]
 
 class XPLOR:
     def __init__(self, f):
         self.f = open(f, 'r')
         self.s = ""
         self.invalidAtomSelections = []
-
-    def getMode(self):
-        s = self.getNextString()
-        if s is None:
-            return None
-        pat = re.compile(r'(assi[a-z]*|or|set)\s*', re.IGNORECASE)
-        #print "\t\t\tVALUE OF S in getMode() => ", s
-        m = pat.match(s)
-        # m is None if no match is found
-        #print m
-        if m:
-            mode = m.group(1)
-            # mode is ASSIGN
-            self.s = s[m.end(0):].strip()
-            return mode
-        else:
-            return None
-
-
-    def getSelection(self):
-        s = self.getNextString()
-        if s is not None:
-            s = s.lower()
-            pat = re.compile(r'\s*\(?\(([^\(\)]+)\)?\)')
-            m = pat.match(s)
-            if m:
-                selection = m.group(1)
-                self.s = s[m.end(0):].strip()
-                return selection
-        else:
-            return None
-
-
-    def getBounds(self):
-        s = self.getNextString()
-        pat = re.compile(r'(\-??[0-9\.]+)\s+(\-??[0-9\.]+)\s+(\-??[0-9\.]+)\s*([0-9])?')
-        m = pat.match(s)
-        if m:
-            b = [m.group(i+1) for i in range(m.lastindex)]
-            self.s = s[m.end(m.lastindex):].strip()
-
-            if len(b) == 3:
-                return b[0], b[1], b[2]
-            else:
-                return b[0], b[1], b[2], b[3]
-        else:
-            return None
-
-
-    def getComment(self, s):
-        pat = re.compile(r'[^!]*!(.*)')
-        m = pat.match(s)
-        if m:
-             comment = m.group(1)
-        else:
-             comment = ""
-        return comment
-
-
-    def parseSelection(self, s):
-        #print "s value in parse selection :", s
-        s = s.upper()
-        pat = re.compile(r'("[^"]*"|[^ "]+)')
-        fields = pat.findall(s)
-        nFields = len(fields)
-        res = "*"
-        aname = "*"
-        segid = ""
-        for i in range(nFields):
-            type = fields[i]
-            if type.startswith("RESI"):
-                i += 1
-                res = fields[i]
-            elif type == "NAME":
-                i += 1
-                aname = fields[i]
-            elif type == "SEGID":
-                i += 1
-                segid = fields[i].strip('"').strip()
-            elif type == "AND":
-                pass
-            elif type == "OR":
-                pass
-        if segid != "":
-            fullAtom = segid+':'+res+'.'+aname
-        else:
-            fullAtom = res+'.'+aname
-        return fullAtom
-
+        self.regex = r'\(resi\w*\s+([0-9]+)\s+[\w\s]+\s(\w+[0-9]*)\s*\)|(or)|(-?[0-9\.]+\s+-?[0-9\.]+\s+-?[0-9\.]+)'
+        ''' Four matching groups within regex: residueNum , atomName, "or", bounds'''
 
     def getNextString(self):
-        gotString = True
-        self.s = self.s.strip()
-        if len(self.s) == 0:
-            gotString = False
-            while (True):
-                self.s = self.f.readline()
-                #print "\tLine being read  ==== ", self.s
-                if self.s == None:
-                    break
-                if len(self.s) == 0:
-                    break
-                self.s = self.s.strip()
-                if len(self.s) == 0:
-                    continue
-                if self.s[0] == '!':
-                    continue
-                gotString = True
+        ''' getNextString finds the next data-containing line in the file'''
+        while True:
+            temp = self.f.readline()
+            if temp == '':
+                ''' reached EOF '''
+                self.s = None
                 break
-        if gotString:
-            return self.s
-        else:
-            return None
-
-
-    def processDistanceConstraints(self, energyLists, atomSels, bounds):
-        atoms1 = atomSels[0::2]
-        atoms2 = atomSels[1::2]
-        # if energyLists is None:
-        #     pass
-        # else:
-            #print atoms1,'atoms2',atoms2
-        #atomNames1 = ArrayList()
-        #atomNames2 = ArrayList()
-        atomPairs = []
-        for (fullAtom1,fullAtom2) in zip(atoms1,atoms2):
-            atomPair = ' '.join([fullAtom1,fullAtom2]) if fullAtom1 < fullAtom2 else ' '.join([fullAtom2, fullAtom1])
-            atomPairs.append(atomPair);
-            #atomNames1.add(aname1)
-            #atomNames2.add(aname2)
-        (lower, upper) = bounds;
-        return {'atomPairs' : atomPairs, 'lower' : lower, 'upper':upper}
-        #energyLists.addDistanceConstraint(atomNames1, atomNames2, bounds[0], bounds[1])
+            temp = temp.strip()
+            if len(temp) == 0:
+                continue
+            elif temp[0] == '!':
+                continue;
+            else:
+                self.s = temp
+                break
 
     def processAngleConstraints(self, dihedral, atomsSels, bounds, scale=1):
+        ''' processAngleConstraints verifies an angle boundary can exist between
+            four provide atoms (atomsSels) and then adds in the constraint'''
         # EX: fullAtoms = ["2koc:1.C5'","2koc:1.C4'","2koc:1.C3'","2koc:1.O3'"]
-        #print atomsSels
         validAtomSelections = AngleBoundary.allowRotation(atomsSels)
-        #print validAtomSelections
         if validAtomSelections:
             lower, upper = bounds
             if lower == upper:
@@ -166,99 +126,46 @@ class XPLOR:
             self.invalidAtomSelections.append(atomsSels)
             #raise ValueError("Rotation about atom selections not permissible.")
 
-
-
-    def readXPLORDistanceConstraints(self, energyLists=None):
+    def parseXPLORFile(self, resNames):
+        ''' parseXPLORFile parses the xplor file to produce constraint lists
+            in the xplor.py internalized format: a series of atoms and "or"
+            followed by a final element that stores the bounds in a string with
+            each value delimited by whitespace'''
+        regex = self.regex
+        pat = re.compile(regex, re.IGNORECASE)
         constraints = []
         f1 = self.f
         self.distances = True
-        atomSels = []
-        bounds = []
+        elements = []
         while True:
-            mode = self.getMode()
-            if self.s is None or mode is None:
-                break
-            if mode is not None:
-                mode = mode.lower()
-                if mode == "set":
-                    continue
-                elif mode.startswith("assi"):
-                    if len(atomSels) > 0:
-                        constraints.append(self.processDistanceConstraints(energyLists, atomSels, bounds))
-                    atomSels = []
-                    bounds = []
-                nSel = 2
-                for iSel in range(nSel):
-                    selValue = self.getSelection()
-                    atomSel = self.parseSelection(selValue)
-                    atomSels.append(atomSel)
-                if mode.startswith("assi"):
-                    (b1, b2, b3) = self.getBounds()
-                    lower = float(b1)-float(b2)
-                    upper = float(b1)+float(b3)
-                    bounds = [lower,upper]
-                    if self.s is None:
-                        break
-                    comment = self.getComment(self.s)
-                elif mode == "or":
-                    comment = self.getComment(self.s)
-                    if self.s is None:
-                        break
+            self.getNextString()
+            if not self.s:
+                if elements:
+                    constraints.append(elements)
+                break;
+            elif 'assi' in self.s:
+                if elements:
+                    constraints.append(elements)
+                elements = []
 
-        if len(atomSels) > 0:
-            constraints.append(self.processDistanceConstraints(energyLists, atomSels, bounds))
-        f1.close()
+            m = pat.findall(self.s)
+            elements += addElements(m, resNames)
         return constraints
 
+    def readXPLORDistanceConstraints(self, resNames):
+        ''' readXPLORDistanceConstraitns parses an xplor distance file and
+            returns a list of dictionaries containing the keys atomPairs, lower,
+            and upper. This format is easy to parse in the refine.py code '''
+        constraints = self.parseXPLORFile(resNames)
+        constraints = parseConstraints(constraints, 'distance')
+        return constraints
 
-    def readXPLORAngleConstraints(self, dihedral):
-        f1 = self.f
-        atomSels = []
-        bounds = []
-        done = False
-        # count = 0
-        while True:
-            # count += 1
-            if done:
-                break
-            mode = self.getMode()
-            if self.s is None:
-                break
-            if mode is not None:
-                mode = mode.lower()
-                if mode == "assi" or mode == "assign":
-                    if len(atomSels) > 0:
-                        self.processAngleConstraints(dihedral, atomSels, bounds)
-                    atomSels = []
-                    bounds = []
-                nSel = 4
-                for iSel in range(nSel):
-                    selValue = self.getSelection()
-                    atomSel = self.parseSelection(selValue)
-                    atomSels.append(atomSel)
-                #print atomSels
-                if mode == "assi" or mode == "assign":
-                    b = self.getBounds()
-                    b1 = b[1]
-                    b2 = b[2]
-                    lower = float(b1) - float(b2)
-                    upper = float(b1) + float(b2)
-                    bounds = [lower, upper]
-                    #print bounds
-                    if self.s is None:
-                        break
-            # if len(self.s) > 0:
-            #     self.s = ""
-            # THE FOLLOWING IF-STATEMENT IS FOR TESTING USE-ONLY
-            # if count == 2:
-            #      break
-            if self.getNextString() is None:
-                done = True
-
-        if len(atomSels) > 0:
+    def readXPLORAngleConstraints(self, dihedral, resNames):
+        ''' readXPLORAngleConstraints parses an xplor angle file and adds in the
+            constraints directly into the provided dihedral object '''
+        constraints = self.parseXPLORFile(resNames)
+        constraints = parseConstraints(constraints,'angles')
+        for constraint in constraints:
+            atomSels = constraint['atomPairs']
+            bounds = [constraint['lower'],constraint['upper']]
             self.processAngleConstraints(dihedral, atomSels, bounds)
-        f1.close()
-
-# f1 = open('XplorGenDis.tbl','r')
-#xp = XPLOR('XplorNOEDis.mr')
-#xp.readXPLORDistanceConstraints()
