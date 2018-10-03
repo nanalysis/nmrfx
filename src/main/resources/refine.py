@@ -337,8 +337,16 @@ class refine:
         if not linkerDict:
             return
         if 'atoms' in linkerDict:
-            startEntName, startAtom = linkerDict['atoms'][0].split(':')
-            endEntName, endAtom = linkerDict['atoms'][1].split(':')
+            atom1, atom2 = linkerDict['atoms']
+            entName1, startAtom1 = atom1.split(':')
+            entName2, startAtom2 = atom2.split(':')
+            if self.entityEntryDict[entName1] == startAtom1:
+                startEntName, startAtom = (entName2, startAtom2)
+                endEntName, endAtom = (entName1, startAtom1)
+            else:
+                startEntName, startAtom = (entName1, startAtom1)
+                endEntName, endAtom = (entName2, startAtom2)
+
             n = linkerDict['n'] if 'n' in linkerDict else 6
             startEnt = self.molecule.getEntity(startEntName)
             endEnt = self.molecule.getEntity(endEntName)
