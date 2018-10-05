@@ -34,6 +34,8 @@ public class Residue extends Compound {
     Map<String, Atom[]> pseudoMap = new HashMap<String, Atom[]>();
     private final static String[] compliantAminoAcid = {"C", "CA", "N"};
     private final static String[] compliantNucleicAcid = {"C5'", "O5'", "P"};
+    private String lastBackBoneAtomName = null;
+    private String firstBackBoneAtomName = null;
 
     static {
         String[] standardResidues = {
@@ -302,8 +304,17 @@ public class Residue extends Compound {
         }
         return dihedral;
     }
-
+    public void setFirstBackBoneAtom(String name) {
+        firstBackBoneAtomName = name;
+    }
+    public void setLastBackBoneAtom(String name){
+        lastBackBoneAtomName = name;
+    }
+    
     public Atom getFirstBackBoneAtom() {
+        if (firstBackBoneAtomName != null){
+            return this.getAtom(firstBackBoneAtomName);
+        }
         String pType = polymer.getPolymerType(); // 'polypeptide' or 'nucleicacid'
         String searchString = pType.equals("polypeptide") ? "N" : "P";
         Atom atom = this.getAtom(searchString);
@@ -311,6 +322,9 @@ public class Residue extends Compound {
     }
 
     public Atom getLastBackBoneAtom() {
+        if (lastBackBoneAtomName != null){
+            return this.getAtom(lastBackBoneAtomName);
+        }
         String pType = polymer.getPolymerType();
         String searchString = pType.equals("polypeptide") ? "C" : "O3'";
         Atom atom = this.getAtom(searchString);
