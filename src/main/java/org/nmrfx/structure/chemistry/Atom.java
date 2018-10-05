@@ -129,6 +129,7 @@ public class Atom implements IAtom {
         iAtom = lastAtom;
         origIndex = iAtom;
         lastAtom++;
+        setAtomTypeFromNumber();
     }
 
     void initialize(AtomParser atomParse) {
@@ -154,6 +155,40 @@ public class Atom implements IAtom {
         iAtom = lastAtom;
         origIndex = iAtom;
         lastAtom++;
+        setAtomTypeFromNumber();
+
+    }
+
+    void setAtomTypeFromNumber() {
+        /**
+         * setAtomTypeFromNumber sets a starting atomType for an initialized atom.
+         * The type set may not be the most appropriate to use later on in 
+         * calculating repulsion energies but allows for all atoms to contribute
+         * to repulsive interactions.
+         */
+        switch (aNum) {
+            case 1:
+                setType("H");
+                break;
+            case 6:
+                setType("C3");
+                break;
+            case 7:
+                setType("N'");
+                break;
+            case 16:
+                setType("S");
+                break;
+            case 15:
+                setType("P");
+                break;
+            case 8:
+                setType("O");
+                break;
+            default:
+                setType("C");
+        }
+
     }
 
     public void changed() {
