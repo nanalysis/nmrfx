@@ -43,6 +43,8 @@ public class Sequence {
     private Molecule molecule;
     private final static Map<String, String> residueAliases = new HashMap<>();
     private final static List<String> AMINO_ACID_NAMES = new ArrayList<>();
+    private String entryAtomName = null;
+    private String exitAtomName = null;
 
     static {
         residueAliases.put("rade", "a");
@@ -448,6 +450,10 @@ public class Sequence {
         String localResLibDir = PDBFile.getLocalReslibDir();
         File file = new File(fileName);
         String fileShortName = file.getName();
+        residue.setFirstBackBoneAtom(entryAtomName);
+        residue.setLastBackBoneAtom(exitAtomName);
+        entryAtomName = null;
+        exitAtomName = null;
         String localFile = localResLibDir + "/" + fileShortName.split(".prf")[0];
         String[] exts = {".pdb", ".sdf"};
         Polymer polymer = (Polymer) molecule.getEntity(coordSetName);
@@ -585,6 +591,10 @@ public class Sequence {
                         // fixme should add coordset and file
                         ligandFiles.add((new File(parentDir, stringArg[1])));
                     }
+                } else if ("-entry".startsWith(stringArg[0])) {
+                    entryAtomName = stringArg[1];
+                } else if ("-exit".startsWith(stringArg[0])) {
+                    exitAtomName = stringArg[1];
                 } else {
                     throw new MoleculeIOException("unknown option \"" + stringArg[0] + "\" in sequence file");
                 }
