@@ -1118,9 +1118,7 @@ public class PDBFile {
                 }
                 String atomNum = atomParse.atomNum;
                 String atomName = atomParse.atomName;
-                String atomType = atomName.substring(0, 1);
                 Atom atom = new Atom(atomParse);
-                atom.setType(atomType);
                 atomMap.put(atomNum, atom);
                 atom.setPointValidity(structureNumber, true);
 
