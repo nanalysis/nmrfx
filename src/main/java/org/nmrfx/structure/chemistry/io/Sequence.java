@@ -676,7 +676,6 @@ public class Sequence {
                     polymerType = "polypeptide";
                     setPolymerType = true;
                 }
-                /* if all unnatural, maybe set this by a flag from the yaml file with ptype */
                 if (setPolymerType) {
                     polymer.setPolymerType(polymerType);
                 }
