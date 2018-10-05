@@ -426,6 +426,9 @@ public class Sequence {
                 }
 
             }
+            if (entryAtomName != null || exitAtomName != null) {
+                throw new IllegalArgumentException("Start and entry point atoms specified for a standard residue with seq file");
+            }
         } else {
             Compound compound = readResidue(fileName, coordSetName, residue);
             if (compound != null) {
