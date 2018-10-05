@@ -1521,14 +1521,10 @@ class refine:
         mol = self.molecule
         startAtom = mol.getAtom(start) if start else None
         endAtom = mol.getAtom(end) if end else None
-        if len(mol.getEntities()) == 1 and len(mol.getLigands()) == 1:
-            mol.genMeasuredTree(startAtom)
-        else:
-            mol.resetGenCoords()
-            mol.invalidateAtomArray()
-            mol.invalidateAtomTree()
-            aTree = AngleTreeGenerator()
-            angleTree = aTree.genTree(mol, startAtom, endAtom)
+        mol.resetGenCoords()
+        mol.invalidateAtomArray()
+        mol.invalidateAtomTree()
+        mol.genMeasuredTree(startAtom)
         mol.setupRotGroups()
         mol.genCoords()
 
