@@ -90,6 +90,33 @@ public class Sequence {
 
     }
 
+    private void makeConnection(Residue residue) {
+        /**
+         * makeConnection creates a bond for @param residue to the previous
+         * residue and sets this.connectAtom for the next residue in the
+         * sequence.
+         */
+        Atom firstAtom = residue.getFirstBackBoneAtom();
+        Atom parent = connectAtom != null ? connectAtom : null;
+        if (parent != null) {
+            connectBond = new Bond(parent, firstAtom);
+            Bond bond = connectBond;
+            parent.bonds.add(connectPosition, bond);
+            residue.addBond(bond);
+        }
+        firstAtom.parent = parent;
+        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
+        if (isProtein) {
+            firstAtom.irpIndex = 0;
+        }
+
+        /* fixme This value was just chosen arbitrarily and worked. If set to 0, no longer works.
+         Is this value always right*/
+        this.connectPosition = 1;
+        this.connectAtom = residue.getLastBackBoneAtom();
+
+    }
+
     private void addNonStandardResidue(Residue residue) {
         boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
         residue.setNonStandard();
@@ -113,22 +140,8 @@ public class Sequence {
         residue.genMeasuredTree(startAtom);
         residue.removeConnectors();
 
-        Atom firstAtom = residue.getFirstBackBoneAtom();
-        Atom parent = connectAtom;
-        connectBond = new Bond(parent, firstAtom);
-        Bond bond = connectBond;
-        parent.bonds.add(connectPosition, connectBond);
-        parent.addBond(bond);
-        residue.addBond(bond);
-
-        firstAtom.parent = parent;
-        if (isProtein) {
-            firstAtom.irpIndex = 0;
-        }
-        bond = new Bond(firstAtom, parent);
-        firstAtom.addBond(bond);
-        this.connectAtom = residue.getLastBackBoneAtom();
-
+        makeConnection(residue);
+        
         // fixme this needs to be changed for non-amino acid residue atoms
         if (isProtein) {
             residue.getAtom("O").dihedralAngle = (float) Math.PI;
