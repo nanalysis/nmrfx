@@ -23,8 +23,8 @@
  */
 package org.nmrfx.processor.gui;
 
-import org.nmrfx.processor.gui.controls.CustomIntegerTextField;
-import org.nmrfx.processor.gui.controls.CustomNumberTextField;
+import org.nmrfx.utils.properties.CustomIntegerTextField;
+import org.nmrfx.utils.properties.CustomNumberTextField;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.File;

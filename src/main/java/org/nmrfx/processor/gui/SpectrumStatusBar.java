@@ -24,7 +24,7 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.controls.CustomNumberTextField;
+import org.nmrfx.utils.properties.CustomNumberTextField;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;

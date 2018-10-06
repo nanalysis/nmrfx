@@ -21,6 +21,12 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>org.nmrfx</groupId>
+            <artifactId>nmrfxutils</artifactId>
+            <version>10.2.20</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
             <version>4.9.2.201712150930-r</version>
