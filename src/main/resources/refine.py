@@ -337,8 +337,16 @@ class refine:
         if not linkerDict:
             return
         if 'atoms' in linkerDict:
-            startEntName, startAtom = linkerDict['atoms'][0].split(':')
-            endEntName, endAtom = linkerDict['atoms'][1].split(':')
+            atom1, atom2 = linkerDict['atoms']
+            entName1, startAtom1 = atom1.split(':')
+            entName2, startAtom2 = atom2.split(':')
+            if self.entityEntryDict[entName1] == startAtom1:
+                startEntName, startAtom = (entName2, startAtom2)
+                endEntName, endAtom = (entName1, startAtom1)
+            else:
+                startEntName, startAtom = (entName1, startAtom1)
+                endEntName, endAtom = (entName2, startAtom2)
+
             n = linkerDict['n'] if 'n' in linkerDict else 6
             startEnt = self.molecule.getEntity(startEntName)
             endEnt = self.molecule.getEntity(endEntName)
@@ -594,20 +602,21 @@ class refine:
 
     def readXPLORDistanceConstraints(self, fileName, keepSetting=None):
         xplorFile = xplor.XPLOR(fileName)
-        constraints = xplorFile.readXPLORDistanceConstraints()
+        resNames = [residue.getName() for residue in self.molecule.getPolymers()[0].getResidues()]
+        constraints = xplorFile.readXPLORDistanceConstraints(resNames)
         for constraint in constraints:
             lower = constraint['lower']
             upper = constraint['upper']
             atomPairs = constraint['atomPairs']
             firstAtomPair = atomPairs[0]
             if firstAtomPair not in self.constraints:
-                constraint = Constraint(atomPair, lower, 'lower', setting=keepSetting)
-                self.constraints[atomPair] = constraint
+                constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
+                self.constraints[firstAtomPair] = constraint
                 if len(atomPairs) > 1:
                     for atomPair in atomPairs[1:]:
                         self.constraints[atomPair] = constraint
                         constraint.addPair(atomPair)
-                self.constraints[atomPair].addBound(upper,'upper');
+                self.constraints[firstAtomPair].addBound(upper,'upper');
             else:
                 self.constraints[atomPair].addBound(lower, 'lower');
                 self.constraints[atomPair].addBound(upper, 'upper');
@@ -638,6 +647,7 @@ class refine:
                 entityNames = [atom.split(':')[0] for atom in atoms]
                 if entityNames[0] in visitedEntities and entityNames[1] in visitedEntities:
                     linkerList.pop(0)
+                    continue
                 elif entityNames[0] in visitedEntities:
                     entryAtomName = atoms[1]
                     linkerList.pop(0)
@@ -647,8 +657,10 @@ class refine:
                 else:
                     linkerList.pop(0)
                     linkerList.append(linkerDict)
+                    continue
                 (entityName, atomName) = entryAtomName.split(':')
                 self.entityEntryDict[entityName] = atomName
+                visitedEntities.append(entityName)
 
     def getAtom(self, atomTuple):
         entity, atomName = atomTuple
@@ -660,14 +672,13 @@ class refine:
                 entity = entity.getResidue(resNum)
         atomName = atomArr[0]
         atom = entity.getAtom(atomName)
-
         if not atom:
             print atomName , "was not found in", entity.getName()
             raise ValueError
         return atom
 
     def validateLinkerList(self,linkerList):
-        usedEntities = {entity:False for entity in [entity.getName() for entity in self.molecule.getEntities()]}
+        usedEntities = {entityName:False for entityName in [entity.getName() for entity in self.molecule.getEntities()]}
         linkerAtoms = []
         if linkerList:
             if type(linkerList) is ArrayList:
@@ -678,12 +689,15 @@ class refine:
                 linkerAtoms += linkerList['atoms']
                 linkerList = [linkerList]
         for atom in linkerAtoms:
-            entity = atom.split(':')[0]
-            usedEntities[entity] = True
-        unusedEntities = [entity for entity in usedEntities if not usedEntities[entity]]
-        firstEntity = [entity for entity in usedEntities if usedEntities[entity]][0]
-        for entity in unusedEntities:
-            print entity.getName() + " had no defined linker."
+            entityName = atom.split(':')[0]
+            if entityName not in usedEntities:
+                raise ValueError(entityName + " is not a valid entity. Entities within molecule are " + ', '.join(entity.getName() for entity in self.molecule.getEntities()))
+            usedEntities[entityName] = True
+        unusedEntities = [entityName for entityName in usedEntities if not usedEntities[entityName]]
+        firstEntity = self.molecule.getEntity([entityName for entityName in usedEntities if usedEntities[entityName]][0])
+        for entityName in unusedEntities:
+            entity = self.molecule.getEntity(entityName)
+            print entityName + " had no defined linker."
             startAtom = firstEntity.getLastAtom()
             endAtom = entity.getLastAtom()
             newLinker = {'atoms': [startAtom, endAtom]}
@@ -1507,14 +1521,10 @@ class refine:
         mol = self.molecule
         startAtom = mol.getAtom(start) if start else None
         endAtom = mol.getAtom(end) if end else None
-        if len(mol.getEntities()) == 1 and len(mol.getLigands()) == 1:
-            mol.genMeasuredTree(startAtom)
-        else:
-            mol.resetGenCoords()
-            mol.invalidateAtomArray()
-            mol.invalidateAtomTree()
-            aTree = AngleTreeGenerator()
-            angleTree = aTree.genTree(mol, startAtom, endAtom)
+        mol.resetGenCoords()
+        mol.invalidateAtomArray()
+        mol.invalidateAtomTree()
+        mol.genMeasuredTree(startAtom)
         mol.setupRotGroups()
         mol.genCoords()
 
@@ -1547,7 +1557,9 @@ class refine:
             self.readCYANAAngles(file,self.molName)
         for file in self.xplorAngleFiles:
             xplorFile = xplor.XPLOR(file)
-            xplorFile.readXPLORAngleConstraints(self.dihedral)
+            resNames = [residue.getName() for residue in self.molecule.getPolymers()[0].getResidues()]
+
+            xplorFile.readXPLORAngleConstraints(self.dihedral, resNames)
         for file in self.nvAngleFiles:
             self.loadDihedralsFromFile(file)
 
@@ -1561,12 +1573,15 @@ class refine:
             self.loadDistancesFromFile(file, keepSetting=self.nvDistanceFiles[file])
 
         for file in self.xplorDistanceFiles.keys():
-            self.readXPLORDistanceConstraints(file, keepSetting=self.xplorDistanceFiles[file])
-
+            xplorConstraints = self.readXPLORDistanceConstraints(file, keepSetting = self.xplorDistanceFiles[file])
         self.addDistanceConstraints()
 
     def addDistanceConstraints(self):
+        alreadyAdded = []
         for constraint in self.constraints.values():
+            if constraint in alreadyAdded:
+                continue
+            alreadyAdded.append(constraint)
             lower = constraint.lower
             upper = constraint.upper
             atomNames1 = ArrayList()

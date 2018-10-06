@@ -43,6 +43,8 @@ public class Sequence {
     private Molecule molecule;
     private final static Map<String, String> residueAliases = new HashMap<>();
     private final static List<String> AMINO_ACID_NAMES = new ArrayList<>();
+    private String entryAtomName = null;
+    private String exitAtomName = null;
 
     static {
         residueAliases.put("rade", "a");
@@ -88,6 +90,33 @@ public class Sequence {
 
     }
 
+    private void makeConnection(Residue residue) {
+        /**
+         * makeConnection creates a bond for @param residue to the previous
+         * residue and sets this.connectAtom for the next residue in the
+         * sequence.
+         */
+        Atom firstAtom = residue.getFirstBackBoneAtom();
+        Atom parent = connectAtom != null ? connectAtom : null;
+        if (parent != null) {
+            connectBond = new Bond(parent, firstAtom);
+            Bond bond = connectBond;
+            parent.bonds.add(connectPosition, bond);
+            residue.addBond(bond);
+        }
+        firstAtom.parent = parent;
+        boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
+        if (isProtein) {
+            firstAtom.irpIndex = 0;
+        }
+
+        /* fixme This value was just chosen arbitrarily and worked. If set to 0, no longer works.
+         Is this value always right*/
+        this.connectPosition = 1;
+        this.connectAtom = residue.getLastBackBoneAtom();
+
+    }
+
     private void addNonStandardResidue(Residue residue) {
         boolean isProtein = residue.polymer.getPolymerType().equals("polypeptide");
         residue.setNonStandard();
@@ -111,22 +140,8 @@ public class Sequence {
         residue.genMeasuredTree(startAtom);
         residue.removeConnectors();
 
-        Atom firstAtom = residue.getFirstBackBoneAtom();
-        Atom parent = connectAtom;
-        connectBond = new Bond(parent, firstAtom);
-        Bond bond = connectBond;
-        parent.bonds.add(connectPosition, connectBond);
-        parent.addBond(bond);
-        residue.addBond(bond);
-
-        firstAtom.parent = parent;
-        if (isProtein) {
-            firstAtom.irpIndex = 0;
-        }
-        bond = new Bond(firstAtom, parent);
-        firstAtom.addBond(bond);
-        this.connectAtom = residue.getLastBackBoneAtom();
-
+        makeConnection(residue);
+        
         // fixme this needs to be changed for non-amino acid residue atoms
         if (isProtein) {
             residue.getAtom("O").dihedralAngle = (float) Math.PI;
@@ -426,6 +441,9 @@ public class Sequence {
                 }
 
             }
+            if (entryAtomName != null || exitAtomName != null) {
+                throw new IllegalArgumentException("Start and entry point atoms specified for a standard residue with seq file");
+            }
         } else {
             Compound compound = readResidue(fileName, coordSetName, residue);
             if (compound != null) {
@@ -445,6 +463,10 @@ public class Sequence {
         String localResLibDir = PDBFile.getLocalReslibDir();
         File file = new File(fileName);
         String fileShortName = file.getName();
+        residue.setFirstBackBoneAtom(entryAtomName);
+        residue.setLastBackBoneAtom(exitAtomName);
+        entryAtomName = null;
+        exitAtomName = null;
         String localFile = localResLibDir + "/" + fileShortName.split(".prf")[0];
         String[] exts = {".pdb", ".sdf"};
         Polymer polymer = (Polymer) molecule.getEntity(coordSetName);
@@ -523,6 +545,7 @@ public class Sequence {
         ArrayList<Polymer> polymers = new ArrayList<>();
         ArrayList<File> ligandFiles = new ArrayList<>();
         Set<String> isNotCapped = new TreeSet<>();
+        String polymerType = null;
         for (String inputString : inputStrings) {
             inputString = inputString.trim();
 
@@ -558,6 +581,9 @@ public class Sequence {
                 } else if ("-polymer".startsWith(stringArg[0])) {
                     polymerName = stringArg[1];
                     coordSetNames.clear();
+                } else if ("-ptype".startsWith(stringArg[0])) {
+                    setPolymerType = true;
+                    polymerType = stringArg[1];
                 } else if ("-nocap".startsWith(stringArg[0])) {
                     isNotCapped.add(polymerName);
                 } else if ("-coordset".startsWith(stringArg[0])) {
@@ -578,6 +604,10 @@ public class Sequence {
                         // fixme should add coordset and file
                         ligandFiles.add((new File(parentDir, stringArg[1])));
                     }
+                } else if ("-entry".startsWith(stringArg[0])) {
+                    entryAtomName = stringArg[1];
+                } else if ("-exit".startsWith(stringArg[0])) {
+                    exitAtomName = stringArg[1];
                 } else {
                     throw new MoleculeIOException("unknown option \"" + stringArg[0] + "\" in sequence file");
                 }
@@ -603,7 +633,7 @@ public class Sequence {
                     coordSetNames.add(coordSetName);
                 }
 
-                polymer = initMolFromSeqFile(molName, polymerName, coordSetNames);
+                polymer = initMolFromSeqFile(molName, polymerName, coordSetNames, polymerType);
                 polymers.add(polymer);
                 molecule = polymer.molecule;
                 for (String cName : coordSetNames) {
@@ -639,7 +669,6 @@ public class Sequence {
             resName = PDBAtomParser.pdbResToPRFName(resName, 'r');
 
             if (!setPolymerType) {
-                String polymerType = null;
                 if (residueAliases.values().contains(resName)) {
                     polymerType = "nucleicacid";
                     setPolymerType = true;
@@ -647,7 +676,6 @@ public class Sequence {
                     polymerType = "polypeptide";
                     setPolymerType = true;
                 }
-                /* if all unnatural, maybe set this by a flag from the yaml file with ptype */
                 if (setPolymerType) {
                     polymer.setPolymerType(polymerType);
                 }
@@ -700,10 +728,11 @@ public class Sequence {
         if ((connectBond != null) && (connectBond.end == null)) {
             connectBond.begin.removeBondTo(null);
         }
+        
         return molecule;
     }
 
-    Polymer initMolFromSeqFile(String molName, String polymerName, ArrayList<String> coordSetNames)
+    Polymer initMolFromSeqFile(String molName, String polymerName, ArrayList<String> coordSetNames, String polymerType)
             throws MoleculeIOException {
 
         if ((molName == null) || molName.equals("")) {
@@ -744,6 +773,9 @@ public class Sequence {
             }
         } else {
             polymer = (Polymer) entity;
+        }
+        if (polymerType != null) {
+            polymer.setPolymerType(polymerType);
         }
 
         return polymer;

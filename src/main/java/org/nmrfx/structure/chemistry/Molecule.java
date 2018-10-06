@@ -1046,7 +1046,6 @@ public class Molecule implements Serializable, ITree {
         if (Molecule.atomList == null) {
             Molecule.makeAtomList();
         }
-        FastVector3D[] vecCoords = eCoords.getVecCoords(atomList.size());
         int i = 0;
         Entity lastEntity = null;
         int resNum = -1;
@@ -1057,6 +1056,8 @@ public class Molecule implements Serializable, ITree {
         } else {
             atomList = treeAtoms;
         }
+        FastVector3D[] vecCoords = eCoords.getVecCoords(atomList.size());
+
         // fixme this is a hack because the treeAtoms are not in monotoniclly increasing order of residue number
         Map<Entity, Integer> resMap = new HashMap<>();
         for (Atom atom : atomList) {
