@@ -18,9 +18,6 @@
 
 package org.nmrfx.structure.utilities;
 
-import cern.colt.GenericSorting;
-import cern.colt.Swapper;
-import cern.colt.function.IntComparator;
 import java.awt.Color;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -154,44 +151,6 @@ public class NvUtil {
         }
         return result;
 
-    }
-
-    public static int[] arraySorter(final double[] values, final boolean ascending) {
-
-        final boolean ascendMode = ascending;
-        final int[] order = new int[values.length];
-
-        Swapper swapper = new Swapper() {
-            public void swap(int a, int b) {
-                double hold = values[a];
-                values[a] = values[b];
-                values[b] = hold;
-                int ihold = order[a];
-                order[a] = order[b];
-                order[b] = ihold;
-
-            }
-        };
-
-        IntComparator comp = new IntComparator() {
-            public int compare(int a, int b) {
-                double da = values[a];
-                double db = values[b];
-
-                if (ascendMode) {
-                    return (da == db) ? 0 : ((da < db) ? (-1) : 1);
-                } else {
-                    return (da == db) ? 0 : ((da < db) ? 1 : (-1));
-                }
-            }
-        };
-
-        for (int i = 0; i < order.length; i++) {
-            order[i] = i;
-        }
-
-        GenericSorting.quickSort(0, values.length, comp, swapper);
-        return order;
     }
 
     public static String colorToString(Color color) {
