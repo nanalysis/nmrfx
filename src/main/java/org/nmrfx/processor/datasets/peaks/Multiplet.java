@@ -382,7 +382,11 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public void updateCenter() {
-        center = peakDims.stream().collect(Collectors.averagingDouble(PeakDim::getChemShift));
+        center = measureCenter();
+    }
+    public double measureCenter() {
+        double value = peakDims.stream().collect(Collectors.averagingDouble(PeakDim::getChemShift));
+        return value;
     }
 
     public double[] getFrequencyOffsets() {
@@ -505,11 +509,12 @@ public class Multiplet implements PeakOrMulti, Comparable {
         float min = Float.MAX_VALUE;
         for (PeakDim peakDim : links) {
             float value = peakDim.getChemShiftValue();
-            if (value > max) {
-                max = value;
+            float width = Math.abs(peakDim.getLineWidthValue());
+            if ((value + width) > max) {
+                max = (value + width);
             }
-            if (value < min) {
-                min = value;
+            if ((value - width) < min) {
+                min = value - width;
             }
         }
         return (max - min);
