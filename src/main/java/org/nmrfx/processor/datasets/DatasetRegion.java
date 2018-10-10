@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.SortedSet;
 
 // fixme add document "Note: this comparator imposes orderings that are inconsistent with equals."
-public class Region implements Comparator, Comparable {
+public class DatasetRegion implements Comparator, Comparable {
 
     private final double[] x;
     private final double[] startIntensity;
@@ -16,13 +16,13 @@ public class Region implements Comparator, Comparable {
     double max;
     boolean isAuto = true;
 
-    public Region() {
+    public DatasetRegion() {
         x = null;
         startIntensity = new double[0];
         endIntensity = new double[0];
     }
 
-    public Region(final double x0, final double x1) {
+    public DatasetRegion(final double x0, final double x1) {
         x = new double[2];
         startIntensity = new double[1];
         endIntensity = new double[1];
@@ -31,7 +31,7 @@ public class Region implements Comparator, Comparable {
         sortEachDim();
     }
 
-    public Region(final double x0, final double x1, final double y0, final double y1) {
+    public DatasetRegion(final double x0, final double x1, final double y0, final double y1) {
         x = new double[4];
         startIntensity = new double[2];
         endIntensity = new double[2];
@@ -42,7 +42,7 @@ public class Region implements Comparator, Comparable {
         sortEachDim();
     }
 
-    public Region(final double[] newRegion) {
+    public DatasetRegion(final double[] newRegion) {
         x = new double[newRegion.length];
         startIntensity = new double[x.length / 2];
         endIntensity = new double[x.length / 2];
@@ -52,7 +52,7 @@ public class Region implements Comparator, Comparable {
         sortEachDim();
     }
 
-    public Region(final double[] newRegion, final double[] newIntensities) {
+    public DatasetRegion(final double[] newRegion, final double[] newIntensities) {
         x = new double[newRegion.length];
         startIntensity = new double[x.length / 2];
         endIntensity = new double[x.length / 2];
@@ -123,8 +123,8 @@ public class Region implements Comparator, Comparable {
     public int compare(Object o1, Object o2) {
         // FIXME do we need to test type of object?
         int result = 0;
-        Region r1 = (Region) o1;
-        Region r2 = (Region) o2;
+        DatasetRegion r1 = (DatasetRegion) o1;
+        DatasetRegion r2 = (DatasetRegion) o2;
         if ((r1 != null) || (r2 != null)) {
             if (r1 == null) {
                 result = -1;
@@ -150,7 +150,7 @@ public class Region implements Comparator, Comparable {
 
     public boolean overlapOnDim(Object o2, int iDim) {
         boolean result = true;
-        Region r2 = (Region) o2;
+        DatasetRegion r2 = (DatasetRegion) o2;
 
         if (this.getRegionEnd(iDim) < r2.getRegionStart(iDim)) {
             result = false;
@@ -162,7 +162,7 @@ public class Region implements Comparator, Comparable {
 
     public boolean overlaps(Object o2) {
         boolean result = true;
-        Region r2 = (Region) o2;
+        DatasetRegion r2 = (DatasetRegion) o2;
         for (int i = 0, n = getNDims(); i < n; i++) {
             if (!overlapOnDim(r2, i)) {
                 result = false;
@@ -177,7 +177,7 @@ public class Region implements Comparator, Comparable {
         boolean result = false;
 
         while (iter.hasNext()) {
-            Region tRegion = (Region) iter.next();
+            DatasetRegion tRegion = (DatasetRegion) iter.next();
 
             if (overlaps(tRegion)) {
                 result = true;
@@ -196,7 +196,7 @@ public class Region implements Comparator, Comparable {
         boolean result = false;
 
         while (iter.hasNext()) {
-            Region tRegion = (Region) iter.next();
+            DatasetRegion tRegion = (DatasetRegion) iter.next();
 
             if (overlaps(tRegion)) {
                 result = true;
@@ -209,8 +209,8 @@ public class Region implements Comparator, Comparable {
         return result;
     }
 
-    public Region split(double splitPosition0, double splitPosition1) {
-        Region newRegion = new Region(splitPosition1, x[1]);
+    public DatasetRegion split(double splitPosition0, double splitPosition1) {
+        DatasetRegion newRegion = new DatasetRegion(splitPosition1, x[1]);
         x[1] = splitPosition0;
         return newRegion;
     }
