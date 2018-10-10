@@ -37,7 +37,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.paint.Color;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.nmrfx.processor.datasets.Region;
+import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 
@@ -1746,13 +1746,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public double[] getRegionAsArray() {
-        Set<Region> regions = theFile.getRegions();
+        Set<DatasetRegion> regions = theFile.getRegions();
         double[] ppms = null;
         if (regions != null) {
             ppms = new double[regions.size() * 2];
 
             int i = 0;
-            for (Region region : regions) {
+            for (DatasetRegion region : regions) {
                 ppms[i++] = region.getRegionStart(0);
                 ppms[i++] = region.getRegionEnd(0);
             }
@@ -1761,12 +1761,12 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     }
 
     public double[] getOffsetsAsArray() {
-        Set<Region> regions = theFile.getRegions();
+        Set<DatasetRegion> regions = theFile.getRegions();
         double[] offsets = null;
         if (regions != null) {
             offsets = new double[regions.size() * 2];
             int i = 0;
-            for (Region region : regions) {
+            for (DatasetRegion region : regions) {
                 offsets[i++] = region.getRegionStartIntensity(0);
                 offsets[i++] = region.getRegionEndIntensity(0);
             }

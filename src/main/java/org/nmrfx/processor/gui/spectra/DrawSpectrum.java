@@ -51,7 +51,7 @@ import org.apache.commons.math3.complex.Complex;
 import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
 import javafx.scene.shape.StrokeLineCap;
-import org.nmrfx.processor.datasets.Region;
+import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 
 /**
@@ -576,13 +576,13 @@ public class DrawSpectrum {
     }
 
     public double[] getRegionAsArray(Dataset dataset) {
-        Set<Region> regions = dataset.getRegions();
+        Set<DatasetRegion> regions = dataset.getRegions();
         double[] ppms = null;
         if (regions != null) {
             ppms = new double[regions.size() * 2];
 
             int i = 0;
-            for (Region region : regions) {
+            for (DatasetRegion region : regions) {
                 ppms[i++] = region.getRegionStart(0);
                 ppms[i++] = region.getRegionEnd(0);
             }
@@ -591,12 +591,12 @@ public class DrawSpectrum {
     }
 
     public double[] getOffsetsAsArray(Dataset dataset) {
-        Set<Region> regions = dataset.getRegions();
+        Set<DatasetRegion> regions = dataset.getRegions();
         double[] offsets = null;
         if (regions != null) {
             offsets = new double[regions.size() * 2];
             int i = 0;
-            for (Region region : regions) {
+            for (DatasetRegion region : regions) {
                 offsets[i++] = region.getRegionStartIntensity(0);
                 offsets[i++] = region.getRegionEndIntensity(0);
             }
@@ -856,8 +856,8 @@ public class DrawSpectrum {
 
     public void drawRegion(DatasetAttributes dataAttributes, int orientation, AXMODE axMode) {
         Dataset dataset = dataAttributes.getDataset();
-        Set<Region> regions = dataset.getRegions();
-        for (Region region : regions) {
+        Set<DatasetRegion> regions = dataset.getRegions();
+        for (DatasetRegion region : regions) {
 
         }
         if (dataset.getVec() != null) {
