@@ -133,7 +133,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     static private LRUMap vectorBuffer = new LRUMap(512);
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     private RandomAccessFile raFile = null;
-    Set<Region> regions;
+    Set<DatasetRegion> regions;
 
     @Override
     protected SEXP cloneWithNewAttributes(AttributeMap newAttributes) {
@@ -5486,11 +5486,11 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         return indices;
     }
 
-    public void setRegions(Set<Region> regions) {
+    public void setRegions(Set<DatasetRegion> regions) {
         this.regions = regions;
     }
 
-    public Set<Region> getRegions() {
+    public Set<DatasetRegion> getRegions() {
         return regions;
     }
 
