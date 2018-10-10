@@ -1747,6 +1747,7 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
                             int nPoints = drawSpectrum.getNPoints();
                             int rowIndex = drawSpectrum.getRowIndex();
                             drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
+                            draw1DIntegral(datasetAttributes, gC);
                         } while (ok);
                     }
                     drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
@@ -1774,6 +1775,36 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
         });
 
         crossHairs.refreshCrossHairs();
+    }
+
+    void draw1DIntegral(DatasetAttributes datasetAttr, GraphicsContext gC) {
+//        Set<Region> regions = datasetAttr.getDataset().getRegions();
+        
+        double[] ppms = datasetAttr.getRegionAsArray();
+        if (ppms != null) {
+            double[] offsets = datasetAttr.getOffsetsAsArray();
+            double[] ppmsA = new double[2];
+            double[] offsetsA = new double[2];
+            double xMin = xAxis.getLowerBound();
+            double xMax = xAxis.getUpperBound();
+            for (int i = 0; i < ppms.length; i += 2) {
+                ppmsA[0] = ppms[i];
+                ppmsA[1] = ppms[i + 1];
+                if ((ppmsA[1] > xMin) && (ppmsA[0] < xMax)) {
+                    offsetsA[0] = offsets[i];
+                    offsetsA[1] = offsets[i + 1];
+                    boolean regionOK = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppmsA, offsetsA);
+                    if (regionOK) {
+                        double[][] xy = drawSpectrum.getXY();
+                        int nPoints = drawSpectrum.getNPoints();
+                        int rowIndex = drawSpectrum.getRowIndex();
+                        gC.translate(0, -100);
+                        drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy);
+                        gC.translate(0, 100);
+                    }
+                }
+            }
+        }
     }
 
     public void addAnnotation(CanvasAnnotation anno) {
