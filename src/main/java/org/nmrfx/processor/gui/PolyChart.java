@@ -79,6 +79,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakFitException;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
@@ -1778,30 +1779,29 @@ public class PolyChart<X, Y> extends XYChart<X, Y> implements PeakListener {
     }
 
     void draw1DIntegral(DatasetAttributes datasetAttr, GraphicsContext gC) {
-//        Set<Region> regions = datasetAttr.getDataset().getRegions();
-        
-        double[] ppms = datasetAttr.getRegionAsArray();
-        if (ppms != null) {
-            double[] offsets = datasetAttr.getOffsetsAsArray();
-            double[] ppmsA = new double[2];
-            double[] offsetsA = new double[2];
-            double xMin = xAxis.getLowerBound();
-            double xMax = xAxis.getUpperBound();
-            for (int i = 0; i < ppms.length; i += 2) {
-                ppmsA[0] = ppms[i];
-                ppmsA[1] = ppms[i + 1];
-                if ((ppmsA[1] > xMin) && (ppmsA[0] < xMax)) {
-                    offsetsA[0] = offsets[i];
-                    offsetsA[1] = offsets[i + 1];
-                    boolean regionOK = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppmsA, offsetsA);
-                    if (regionOK) {
-                        double[][] xy = drawSpectrum.getXY();
-                        int nPoints = drawSpectrum.getNPoints();
-                        int rowIndex = drawSpectrum.getRowIndex();
-                        gC.translate(0, -100);
-                        drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy);
-                        gC.translate(0, 100);
-                    }
+        Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
+        if (regions == null) {
+            return;
+        }
+        double xMin = xAxis.getLowerBound();
+        double xMax = xAxis.getUpperBound();
+        for (DatasetRegion region : regions) {
+            double[] ppms = new double[2];
+            ppms[0] = region.getRegionStart(0);
+            ppms[1] = region.getRegionEnd(0);
+            double[] offsets = new double[2];
+            offsets[0] = region.getRegionStartIntensity(0);
+            offsets[1] = region.getRegionEndIntensity(0);
+
+            if ((ppms[1] > xMin) && (ppms[0] < xMax)) {
+                boolean regionOK = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppms, offsets);
+                if (regionOK) {
+                    double[][] xy = drawSpectrum.getXY();
+                    int nPoints = drawSpectrum.getNPoints();
+                    int rowIndex = drawSpectrum.getRowIndex();
+                    gC.translate(0, -100);
+                    drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy);
+                    gC.translate(0, 100);
                 }
             }
         }
