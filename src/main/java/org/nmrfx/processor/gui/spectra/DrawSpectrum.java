@@ -750,9 +750,10 @@ public class DrawSpectrum {
             nPoints = speedSpectrum(ve, start, start, end, dValue, delta, incr, xyValues, xFunction, yFunction);
         } else {
             nPoints = 0;
-            if ((xyValues[0] == null) || (xyValues[0].length < nPoints)) {
-                xyValues[0] = new double[nPoints];
-                xyValues[1] = new double[nPoints];
+            int maxPoints = end-start+1;
+            if ((xyValues[0] == null) || (xyValues[0].length < maxPoints)) {
+                xyValues[0] = new double[maxPoints];
+                xyValues[1] = new double[maxPoints];
             }
             int iLine = 0;
             for (int i = start; i <= end; i++) {
