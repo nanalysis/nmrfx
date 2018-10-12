@@ -20,6 +20,8 @@ from org.nmrfx.structure.chemistry.io import SDFile
 from org.nmrfx.structure.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry.io import TrajectoryWriter
 from org.nmrfx.structure.chemistry import SSLayout
+from org.nmrfx.structure.chemistry import Polymer
+
 from org.nmrfx.structure.chemistry.miner import PathIterator
 from org.nmrfx.structure.chemistry.miner import NodeValidator
 from org.nmrfx.structure.chemistry.energy import AngleTreeGenerator
@@ -1427,8 +1429,13 @@ class refine:
     def measureTree(self):
         for entity in self.molecule.getEntities():
             print "Setup " + entity.getName()
-            self.setupAtomProperties(entity)
             entityName = entity.getName()
+            if type(entity) is Polymer:
+                prfStartAtom = self.getEntityTreeStartAtom(entity).getShortName()
+                treeStartAtom = self.entityEntryDict[entityName]
+                if prfStartAtom == treeStartAtom:
+                    continue
+            self.setupAtomProperties(entity)
             #raise ValueError()
             if entityName in self.entityEntryDict:
                 atomName = self.entityEntryDict[entityName]
