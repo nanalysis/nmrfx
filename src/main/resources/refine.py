@@ -679,6 +679,7 @@ class refine:
                 (entityName, atomName) = entryAtomName.split(':')
                 self.entityEntryDict[entityName] = atomName
                 visitedEntities.append(entityName)
+        return treeDict
 
     def getAtom(self, atomTuple):
         entity, atomName = atomTuple
@@ -750,7 +751,7 @@ class refine:
             linkerList = self.validateLinkerList(linkerList)
 
         if 'tree' in data:
-            self.setEntityEntryDict(linkerList, treeDict)
+            treeDict = self.setEntityEntryDict(linkerList, treeDict)
             self.measureTree()
         self.addLinkers(linkerList)
         if 'distances' in data:
