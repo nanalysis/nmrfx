@@ -693,7 +693,6 @@ class refine:
                 for linkerDict in linkerList:
                     linkerAtoms += linkerDict['atoms']
             else:
-                print linkerList
                 linkerAtoms += linkerList['atoms']
                 linkerList = [linkerList]
         for atom in linkerAtoms:
@@ -1422,10 +1421,8 @@ class refine:
             print "Setup " + entity.getName()
             self.setupAtomProperties(entity)
             entityName = entity.getName()
-            print entityName, self.entityEntryDict
             #raise ValueError()
             if entityName in self.entityEntryDict:
-                print "Measuring now"
                 atomName = self.entityEntryDict[entityName]
                 entityTuple = (entity, atomName)
                 entity.genMeasuredTree(self.getAtom(entityTuple))
