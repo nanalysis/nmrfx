@@ -1545,7 +1545,8 @@ class refine:
         mol.resetGenCoords()
         mol.invalidateAtomArray()
         mol.invalidateAtomTree()
-        mol.genMeasuredTree(startAtom)
+        atree = AngleTreeGenerator()
+        atree.genTree(mol,startAtom, endAtom)
         mol.setupRotGroups()
         mol.genCoords()
 
