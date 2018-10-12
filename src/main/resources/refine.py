@@ -1473,14 +1473,22 @@ class refine:
 
     def readPDBFile(self,fileName):
         pdb = PDBFile()
+        # todo ideally this function should call either readSequence or readResidue
+        # those functions should handle whether or not there is a molecule. The
+        # return of those functions should be an entity or list of entities
+        # that are created from the method
+        # this will simplify the code here.
         if not self.molecule:
             pdb.readSequence(fileName,0)
             self.molecule = Molecule.getActive()
             self.molName = self.molecule.getName()
             self.molecule.selectAtoms('*.*')
             #entity = self.molecule.getEntities()[0]
+            return None
         else:
+            # todo this will break if multiple pdbs read in
             entity = pdb.readResidue(fileName, None, self.molecule, None)
+            return entity
         #self.measureTree(entity)
         return self.molecule
 
