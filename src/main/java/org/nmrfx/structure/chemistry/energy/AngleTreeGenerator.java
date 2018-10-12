@@ -7,10 +7,12 @@ import java.util.Map;
 import java.util.Optional;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
+import org.nmrfx.structure.chemistry.Entity;
 import org.nmrfx.structure.chemistry.ITree;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Order;
 import org.nmrfx.structure.chemistry.Point3;
+import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
 
@@ -44,13 +46,19 @@ public class AngleTreeGenerator {
     public boolean checkStartAtom(Atom startAtom) {
         return startAtom.bonds.size() == 1;
     }
-    
-    public Atom findStartAtom(List<Atom> atoms){
+
+    public Atom findStartAtom(ITree itree) {
+        List<Atom> atoms = itree.getAtomArray();
         Atom startAtom = null;
-        for (Atom atom : atoms) {
-            if (checkStartAtom(atom)) {
-                startAtom = atom;
-                break;
+        if (itree instanceof Entity && (Entity) itree instanceof Polymer) {
+            Polymer polymer = (Polymer) (Entity) itree;
+            startAtom = polymer.firstResidue.getFirstBackBoneAtom();
+        } else {
+            for (Atom atom : atoms) {
+                if (checkStartAtom(atom)) {
+                    startAtom = atom;
+                    break;
+                }
             }
         }
         return startAtom;
@@ -67,7 +75,7 @@ public class AngleTreeGenerator {
         }
 
         if (startAtom == null) {
-            startAtom = findStartAtom(atoms);
+            startAtom = findStartAtom(itree);
         } else {
             if (!checkStartAtom(startAtom)) {
                 //throw new IllegalArgumentException("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");

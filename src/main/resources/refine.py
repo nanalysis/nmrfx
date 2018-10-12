@@ -633,15 +633,23 @@ class refine:
     def addDisCon(self, atomName1, atomName2, lower, upper):
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
 
+    def getEntityTreeStartAtom(self, entity):
+        ''' getEntityTreeStartAtom returns an atom that would be picked up
+            by AngleTreeGenerator if no atom is specified.
+        '''
+        aTree = AngleTreeGenerator()
+        entryAtom = aTree.findStartAtom(entity)
+        return entryAtom
+
     def setEntityEntryDict(self, linkerList, treeDict):
         entityNames = [entity.getName() for entity in self.molecule.getEntities()]
         visitedEntities = []
         if treeDict:
             entryAtomName = treeDict['start'] if 'start' in treeDict else None
         elif not treeDict or not entryAtomName:
-            atoms = self.molecule.getEntities()[0].getAtomArray()
-            aTree = AngleTreeGenerator()
-            entryAtomName = aTree.findStartAtom(atoms).getFullName()
+            startEntity = self.molecule.getEntities()[0]
+            entryAtomName = self.getEntityTreeStartAtom(startEntity).getFullName()
+            treeDict = {'start':entryAtomName}
         (entityName, atomName) = entryAtomName.split(':')
         self.entityEntryDict[entityName] = atomName
         visitedEntities.append(entityName)
@@ -706,7 +714,7 @@ class refine:
             entity = self.molecule.getEntity(entityName)
             print entityName + " had no defined linker."
             startAtom = firstEntity.getLastAtom()
-            endAtom = entity.getLastAtom()
+            endAtom = self.getEntityTreeStartAtom(entity)
             newLinker = {'atoms': [startAtom, endAtom]}
             linkerList.append(linkerList)
             print "linker added between " + startAtom.getFullName() + " and " + endAtom.getFullName()
