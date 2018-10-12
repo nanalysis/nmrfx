@@ -626,8 +626,8 @@ class refine:
                         constraint.addPair(atomPair)
                 self.constraints[firstAtomPair].addBound(upper,'upper');
             else:
-                self.constraints[atomPair].addBound(lower, 'lower');
-                self.constraints[atomPair].addBound(upper, 'upper');
+                self.constraints[firstAtomPair].addBound(lower, 'lower');
+                self.constraints[firstAtomPair].addBound(upper, 'upper');
 
 
     def addDisCon(self, atomName1, atomName2, lower, upper):
