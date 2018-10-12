@@ -821,7 +821,11 @@ class refine:
                     file = osfiles.convertSeqFile(file,dir)
                     type = 'nv'
                 elif type == 'pdb':
-                    self.readPDBFile(file)
+                    compound = self.readPDBFile(file)
+                    rnum = str(molDict['rnum']) if 'rnum' in molDict else None
+                    if rnum:
+                        compound.setNumber(rnum)
+
                 elif type == 'sdf':
                     self.readSDFile(file)
                 elif type == 'mol':
