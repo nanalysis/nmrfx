@@ -600,9 +600,17 @@ class refine:
                 self.constraints[atomPair].addBound(lower, 'lower')
                 self.constraints[atomPair].addBound(upper, 'upper')
 
+    def getResNameLookUpDict(self):
+        resNames = {}
+        for polymer in self.molecule.getPolymers():
+            for residue in polymer.getResidues():
+                resNames[residue.getNumber()] = residue.getName()
+        for ligand in self.molecule.getLigands():
+            resNames[ligand.getNumber()] = ligand.getName()
+        return resNames
+
     def readXPLORDistanceConstraints(self, fileName, keepSetting=None):
         xplorFile = xplor.XPLOR(fileName)
-        resNames = [residue.getName() for residue in self.molecule.getPolymers()[0].getResidues()]
         constraints = xplorFile.readXPLORDistanceConstraints(resNames)
         for constraint in constraints:
             lower = constraint['lower']
@@ -1557,8 +1565,7 @@ class refine:
             self.readCYANAAngles(file,self.molName)
         for file in self.xplorAngleFiles:
             xplorFile = xplor.XPLOR(file)
-            resNames = [residue.getName() for residue in self.molecule.getPolymers()[0].getResidues()]
-
+            resNames = self.getResNameLookUpDict()
             xplorFile.readXPLORAngleConstraints(self.dihedral, resNames)
         for file in self.nvAngleFiles:
             self.loadDihedralsFromFile(file)
