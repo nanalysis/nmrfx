@@ -19,7 +19,7 @@ def addElements(captures, resNames):
     for capture in captures:
         item = ""
         if capture[0]:
-            resNum = int(capture[0])-1
+            resNum = capture[0]
             resName = resNames[resNum]
             atomName = AtomParser.xplorToIUPAC(resName, capture[1])
             atomName = atomName if atomName else capture[1]
