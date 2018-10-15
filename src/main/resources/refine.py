@@ -700,9 +700,13 @@ class refine:
             raise ValueError
         return atom
 
-    def validateLinkerList(self,linkerList):
+    def validateLinkerList(self,linkerList, treeDict):
         usedEntities = {entityName:False for entityName in [entity.getName() for entity in self.molecule.getEntities()]}
         linkerAtoms = []
+
+        entryAtomName = (treeDict['start'] if 'start' in treeDict else None) if treeDict else None
+        entityName = entryAtomName.split(':')[0] if entryAtomName else self.molecule.getEntities()[0].getName()
+        usedEntities[entityName] = True
         if linkerList:
             if type(linkerList) is ArrayList:
                 for linkerDict in linkerList:
@@ -751,10 +755,11 @@ class refine:
         treeDict = data['tree'] if 'tree' in data else None
 
         linkerList = molData['link'] if 'link' in molData else None
-        if len(self.molecule.getEntities()) > 1:
-            linkerList = self.validateLinkerList(linkerList)
+
 
         if 'tree' in data:
+            if len(self.molecule.getEntities()) > 1:
+                linkerList = self.validateLinkerList(linkerList, treeDict)
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
             self.measureTree()
         self.addLinkers(linkerList)
