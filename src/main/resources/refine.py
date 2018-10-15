@@ -358,6 +358,10 @@ class refine:
             startAtom = self.getAtom(startTuple)
             endAtom = self.getAtom(endTuple)
 
+        else:
+            if 'bond' not in linkerDict or 'cyclic' not in linkerDict['bond']:
+                raise KeyError("atoms must be defined within the linker object")
+
         if 'bond' in linkerDict:
             bondDict = linkerDict['bond']
             if "cyclic" in bondDict and bondDict["cyclic"]:
