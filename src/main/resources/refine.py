@@ -37,7 +37,6 @@ from java.util import ArrayList
 #tclInterp.eval('java::load org.nmrfx.structure.chemistry.ChemistryExt')
 PDBFile.putReslibDir('IUPAC','resource:/reslib_iu')
 
-bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
 
 protein3To1 = {"ALA":"A","ASP":"D","ASN":"N","ARG":"R","CYS":"C","GLU":"E","GLN":"Q","ILE":"I",
     "VAL":"V","LEU":"L","PRO":"P","PHE":"F","TYR":"Y","TRP":"W","LYS":"K","MET":"M",
@@ -45,10 +44,7 @@ protein3To1 = {"ALA":"A","ASP":"D","ASN":"N","ARG":"R","CYS":"C","GLU":"E","GLN"
 
 bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
 
-protein1To3 = {}
-for key in protein3To1:
-   protein1To3[protein3To1[key]] = key
-
+protein1To3 = {protein3To1[key]: key for key in protein3To1}
 
 def tcl(cmd):
     global tclInterp
