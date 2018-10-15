@@ -920,19 +920,19 @@ public class SpecAttrWindowController implements Initializable {
         updateChartDatasets();
         updateChartPeakLists();
         try {
-            chart.xAxis.lowerBoundProperty().setValue(formatter.parse(limitFields[0][0].get()));
-            chart.xAxis.upperBoundProperty().setValue(formatter.parse(limitFields[0][1].get()));
+            chart.xAxis.minValueProperty().setValue(formatter.parse(limitFields[0][0].get()));
+            chart.xAxis.maxValueProperty().setValue(formatter.parse(limitFields[0][1].get()));
             if (!chart.is1D()) {
                 for (int i = 1; (i < chart.getNDim()) && (i < chart.axes.length); i++) {
                     NMRAxis axis = chart.axes[i];
-                    axis.lowerBoundProperty().setValue(formatter.parse(limitFields[i][0].get()));
-                    axis.upperBoundProperty().setValue(formatter.parse(limitFields[i][1].get()));
+                    axis.minValueProperty().setValue(formatter.parse(limitFields[i][0].get()));
+                    axis.maxValueProperty().setValue(formatter.parse(limitFields[i][1].get()));
                 }
             }
-            chart.layoutPlotChildren();
+        chart.layoutPlotChildren();
             if (isSceneMode()) {
                 List<PolyChart> charts = chart.getSceneMates(false);
-                charts.stream().forEach(c -> c.layoutPlotChildren());
+          charts.stream().forEach(c -> c.layoutPlotChildren());
             }
         } catch (ParseException parseE) {
         }

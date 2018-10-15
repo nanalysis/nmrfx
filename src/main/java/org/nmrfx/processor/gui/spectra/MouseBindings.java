@@ -123,7 +123,7 @@ public class MouseBindings {
     public void mousePressed(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
-        dragStart[0] = x;
+       dragStart[0] = x;
         dragStart[1] = y;
         mouseAction = MOUSE_ACTION.NOTHING;
         if (!mouseEvent.isControlDown()) {

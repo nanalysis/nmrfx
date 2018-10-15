@@ -56,7 +56,11 @@
             <artifactId>centerdevice-nsmenufx</artifactId>
             <version>2.1.4</version>
         </dependency>
-
+        <dependency>
+            <groupId>eu.hansolo</groupId>
+            <artifactId>charts</artifactId>
+            <version>1.0.5x</version>
+        </dependency>
         <dependency>
             <groupId>de.jensd</groupId>
             <artifactId>fontawesomefx</artifactId>

@@ -1756,7 +1756,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void redrawChildren() {
-
         chartGroup.getChildrenUnmodifiable().stream().map((node) -> (PolyChart) node).forEachOrdered((chart) -> {
             chart.layoutPlotChildren();
         });
