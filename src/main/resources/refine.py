@@ -617,6 +617,7 @@ class refine:
 
     def readXPLORDistanceConstraints(self, fileName, keepSetting=None):
         xplorFile = xplor.XPLOR(fileName)
+        resNames = self.getResNameLookUpDict()
         constraints = xplorFile.readXPLORDistanceConstraints(resNames)
         for constraint in constraints:
             lower = constraint['lower']
