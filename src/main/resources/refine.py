@@ -763,6 +763,10 @@ class refine:
                 linkerList = self.validateLinkerList(linkerList, treeDict)
             treeDict = self.setEntityEntryDict(linkerList, treeDict)
             self.measureTree()
+        else:
+            if len(self.molecule.getEntities()) > 1:
+                raise TypeError("Tree mode must be run on molecules with more than one entity")
+
         self.addLinkers(linkerList)
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
