@@ -152,13 +152,17 @@ public class CrossHairs {
         }
         double width = xAxis.getWidth();
         double height = yAxis.getHeight();
+        double xOrigin = xAxis.getXOrigin();
+        double yOrigin = xAxis.getYOrigin();
 
         if (iOrient == HORIZONTAL) {
-            if (value > height) {
-                value = height - 1;
+            if (value > yOrigin) {
+                value = yOrigin - 1;
+            } else if (value < (yOrigin - height)) {
+                value = yOrigin - height + 1;
             }
-        } else if (value > width) {
-            value = width - 1;
+        } else if (value > (xOrigin + width)) {
+            value = xOrigin + width - 1;
         }
         return value;
 
@@ -258,19 +262,21 @@ public class CrossHairs {
         }
         double width = xAxis.getWidth();
         double height = yAxis.getHeight();
+        double xOrigin = xAxis.getXOrigin();
+        double yOrigin = yAxis.getYOrigin();
         if (crossHairStates[iCross][iOrient]) {
             double value = crossHairPositions[iCross][iOrient];
             getController().getStatusBar().setCrossText(iOrient, iCross, value, false);
             if (iOrient == HORIZONTAL) {
                 value = yAxis.getDisplayPosition(value);
-                crossHairLines[iCross][iOrient].setStartX(0);
-                crossHairLines[iCross][iOrient].setEndX(width);
+                crossHairLines[iCross][iOrient].setStartX(xOrigin);
+                crossHairLines[iCross][iOrient].setEndX(xOrigin + width);
                 crossHairLines[iCross][iOrient].setStartY(value);
                 crossHairLines[iCross][iOrient].setEndY(value);
             } else {
                 value = xAxis.getDisplayPosition(value);
-                crossHairLines[iCross][iOrient].setStartY(0);
-                crossHairLines[iCross][iOrient].setEndY(height);
+                crossHairLines[iCross][iOrient].setStartY(yOrigin);
+                crossHairLines[iCross][iOrient].setEndY(yOrigin - height);
                 crossHairLines[iCross][iOrient].setStartX(value);
                 crossHairLines[iCross][iOrient].setEndX(value);
             }

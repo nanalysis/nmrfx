@@ -85,6 +85,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -188,6 +189,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     UndoManager undoManager = new UndoManager();
     double widthScale = 5.0;
     Canvas canvas = new Canvas();
+    Pane plotContent = new Pane();
 
     public File getInitialDirectory() {
         if (initialDir == null) {
@@ -1273,7 +1275,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             MenuBar menuBar = MainApp.getMenuBar();
             topBar.getChildren().add(0, menuBar);
         }
-        PolyChart chart1 = new PolyChart(this, canvas);
+        plotContent.setMouseTransparent(true);
+        PolyChart chart1 = new PolyChart(this, plotContent, canvas);
         activeChart = chart1;
         CanvasBindings.setHandlers(this, canvas);
         initToolBar(toolBar);
@@ -1286,7 +1289,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         chartGroup = new FractionCanvas(canvas, charts);
         LayoutControlCanvas layoutControl = new LayoutControlCanvas(chartGroup);
         chartGroup.setControlPane(layoutControl);
-        chartPane.getChildren().addAll(chartGroup, layoutControl);
+        chartPane.getChildren().addAll(chartGroup, plotContent, layoutControl);
         layoutControl.setVisible(false);
         chartGroup.getChildren().addAll(canvas);
         chartGroup.setManaged(true);
@@ -1608,7 +1611,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             orient = FractionCanvas.ORIENTATION.VERTICAL;
         }
         System.out.println("b1 " + chartGroup.getChildren().size());
-        PolyChart chart = new PolyChart(this, canvas);
+        PolyChart chart = new PolyChart(this, plotContent, canvas);
         System.out.println("b2 " + chartGroup.getChildren().size());
         chart.setController(this);
         System.out.println("b3 " + chartGroup.getChildren().size());

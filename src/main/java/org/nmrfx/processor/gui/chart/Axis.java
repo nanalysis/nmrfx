@@ -17,7 +17,6 @@
  */
 package org.nmrfx.processor.gui.chart;
 
-import java.util.List;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.DoublePropertyBase;
@@ -28,9 +27,6 @@ import javafx.geometry.VPos;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
-import org.nmrfx.processor.gui.spectra.NMRAxisIO;
-import org.python.core.Deriveds;
-import org.python.core.PyObject;
 
 /**
  *
@@ -72,13 +68,14 @@ public class Axis {
     public Number getValueForDisplay(double displayPosition) {
         double scaleValue = calcScale();
         double length = orientation == VERTICAL ? height : width;
+        double offset = orientation == VERTICAL ? yOrigin - height : xOrigin;
+        displayPosition -= offset;
         if (isReversed() && (getOrientation() == Orientation.HORIZONTAL)) {
             displayPosition = length - displayPosition;
         } else if (!isReversed() && (getOrientation() == Orientation.VERTICAL)) {
             displayPosition = length - displayPosition;
         }
-        double offset = 0.0;
-        return ((displayPosition - offset) / scaleValue) + lowerBound;
+        return ((displayPosition) / scaleValue) + lowerBound;
 
     }
 
@@ -177,6 +174,14 @@ public class Axis {
     public void setOrigin(double x, double y) {
         xOrigin = x;
         yOrigin = y;
+    }
+
+    public double getXOrigin() {
+        return xOrigin;
+    }
+
+    public double getYOrigin() {
+        return yOrigin;
     }
 
     public void setLabel(String label) {

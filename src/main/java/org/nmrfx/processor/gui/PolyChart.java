@@ -72,6 +72,8 @@ import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.DatasetRegion;
@@ -143,7 +145,7 @@ public class PolyChart implements PeakListener {
     final NMRAxis yAxis;
     NMRAxis[] axes = new NMRAxis[2];
     final Group plotBackground;
-    final Group plotContent;
+    final Pane plotContent;
     final DrawSpectrum drawSpectrum;
     final DrawPeaks drawPeaks;
     SliceAttributes sliceAttributes = new SliceAttributes();
@@ -234,27 +236,26 @@ public class PolyChart implements PeakListener {
 
     public static double overlapScale = 1.0;
 
-    public PolyChart(FXMLController controller, Canvas canvas) {
-        this(controller, canvas,
+    public PolyChart(FXMLController controller,Pane plotContent, Canvas canvas) {
+        this(controller, plotContent, canvas,
                 new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50),
                 new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200)
         );
 
     }
 
-    public PolyChart(FXMLController controller, Canvas canvas, final NMRAxis... AXIS) {
+    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, final NMRAxis... AXIS) {
         this.canvas = canvas;
         this.controller = controller;
         xAxis = AXIS[0];
         yAxis = AXIS[1];
         plotBackground = new Group();
-        plotContent = new Group();
+        this.plotContent = plotContent;
         drawSpectrum = new DrawSpectrum(axes, canvas);
         drawPeaks = new DrawPeaks(this, canvas);
         id = getNextId();
 
         initChart();
-        plotBackground.getChildren().add(plotContent);
         width = canvas.getWidth();
         height = canvas.getHeight();
 
