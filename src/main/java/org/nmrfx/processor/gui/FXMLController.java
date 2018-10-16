@@ -190,6 +190,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     double widthScale = 5.0;
     Canvas canvas = new Canvas();
     Canvas peakCanvas = new Canvas();
+    Canvas annoCanvas = new Canvas();
     Pane plotContent = new Pane();
 
     public File getInitialDirectory() {
@@ -1277,7 +1278,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             topBar.getChildren().add(0, menuBar);
         }
         plotContent.setMouseTransparent(true);
-        PolyChart chart1 = new PolyChart(this, plotContent, canvas, peakCanvas);
+        PolyChart chart1 = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
         activeChart = chart1;
         CanvasBindings.setHandlers(this, canvas);
         initToolBar(toolBar);
@@ -1292,7 +1293,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         chartGroup.setControlPane(layoutControl);
         chartPane.getChildren().addAll(chartGroup, plotContent, layoutControl);
         layoutControl.setVisible(false);
-        chartGroup.getChildren().addAll(canvas, peakCanvas);
+        chartGroup.getChildren().addAll(canvas, peakCanvas, annoCanvas);
         chartGroup.setManaged(true);
         layoutControl.setManaged(true);
 
@@ -1610,7 +1611,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         } else {
             orient = FractionCanvas.ORIENTATION.VERTICAL;
         }
-        PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas);
+        PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
         chart.setController(this);
         chartGroup.setOrientation(orient, false);
         if ((pos % 2) == 0) {

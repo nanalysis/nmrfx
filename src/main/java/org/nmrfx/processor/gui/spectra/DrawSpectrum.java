@@ -569,7 +569,7 @@ public class DrawSpectrum {
                 if (offsetTracking) {
                     offset = axes[1].getDisplayPosition(slicePosY);
                 } else {
-                    offset = bounds.getHeight() * (1.0 - sliceAttr.getOffsetYValue());
+                    offset = axes[0].getYOrigin() - axes[1].getHeight()* sliceAttr.getOffsetYValue();
                 }
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, ph0, ph1, null,
                         (index, intensity) -> axes[0].getDisplayPosition(index),
@@ -579,7 +579,7 @@ public class DrawSpectrum {
                 if (offsetTracking) {
                     offset = axes[0].getDisplayPosition(slicePosX);
                 } else {
-                    offset = bounds.getWidth() * sliceAttr.getOffsetXValue();
+                    offset = axes[0].getXOrigin() + axes[0].getWidth() * sliceAttr.getOffsetXValue();
                 }
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, ph0, ph1, null,
                         (index, intensity) -> -intensity * scale + offset,

@@ -230,17 +230,18 @@ public class PolyChart implements PeakListener {
 
     public static double overlapScale = 1.0;
 
-    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas) {
-        this(controller, plotContent, canvas, peakCanvas,
+    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
+        this(controller, plotContent, canvas, peakCanvas, annoCanvas,
                 new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50),
                 new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200)
         );
 
     }
 
-    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, final NMRAxis... AXIS) {
+    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas, final NMRAxis... AXIS) {
         this.canvas = canvas;
         this.peakCanvas = peakCanvas;
+        this.annoCanvas = annoCanvas;
         this.controller = controller;
         xAxis = AXIS[0];
         yAxis = AXIS[1];
@@ -2447,7 +2448,6 @@ public class PolyChart implements PeakListener {
         canvas.setCache(true);
         peakCanvas.setCache(true);
         peakCanvas.setMouseTransparent(true);
-        annoCanvas = new Canvas(width, height);
         annoCanvas.setMouseTransparent(true);
 
         //getPlotChildren().add(1, canvas);
@@ -2470,21 +2470,29 @@ public class PolyChart implements PeakListener {
     }
 
     public void drawSlices() {
-        double width = xAxis.getWidth();
-        double height = yAxis.getHeight();
-        GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
-        annoGC.clearRect(0, 0, width, height);
-        if (sliceAttributes.slice1StateProperty().get()) {
-            drawSlice(0, VERTICAL);
-            drawSlice(0, HORIZONTAL);
-        }
-        if (sliceAttributes.slice2StateProperty().get()) {
-            drawSlice(1, VERTICAL);
-            drawSlice(1, HORIZONTAL);
+        if (annoCanvas != null) {
+            annoCanvas.setWidth(canvas.getWidth());
+            annoCanvas.setHeight(canvas.getHeight());
+            GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
+            annoGC.clearRect(xPos, yPos, width, height);
+
+            if (sliceAttributes.slice1StateProperty().get()) {
+                drawSlice(0, VERTICAL);
+                drawSlice(0, HORIZONTAL);
+            }
+            if (sliceAttributes.slice2StateProperty().get()) {
+                drawSlice(1, VERTICAL);
+                drawSlice(1, HORIZONTAL);
+            }
         }
     }
 
+    
+
     public void drawSlice(int iCross, int iOrient) {
+        if (annoCanvas == null) {
+            return;
+        }
         Dataset dataset = getDataset();
         if (dataset == null) {
             return;
