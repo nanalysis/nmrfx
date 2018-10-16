@@ -20,6 +20,8 @@ from org.nmrfx.structure.chemistry.io import SDFile
 from org.nmrfx.structure.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry.io import TrajectoryWriter
 from org.nmrfx.structure.chemistry import SSLayout
+from org.nmrfx.structure.chemistry import Polymer
+
 from org.nmrfx.structure.chemistry.miner import PathIterator
 from org.nmrfx.structure.chemistry.miner import NodeValidator
 from org.nmrfx.structure.chemistry.energy import AngleTreeGenerator
@@ -35,7 +37,6 @@ from java.util import ArrayList
 #tclInterp.eval('java::load org.nmrfx.structure.chemistry.ChemistryExt')
 PDBFile.putReslibDir('IUPAC','resource:/reslib_iu')
 
-bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
 
 protein3To1 = {"ALA":"A","ASP":"D","ASN":"N","ARG":"R","CYS":"C","GLU":"E","GLN":"Q","ILE":"I",
     "VAL":"V","LEU":"L","PRO":"P","PHE":"F","TYR":"Y","TRP":"W","LYS":"K","MET":"M",
@@ -43,10 +44,7 @@ protein3To1 = {"ALA":"A","ASP":"D","ASN":"N","ARG":"R","CYS":"C","GLU":"E","GLN"
 
 bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
 
-protein1To3 = {}
-for key in protein3To1:
-   protein1To3[protein3To1[key]] = key
-
+protein1To3 = {protein3To1[key]: key for key in protein3To1}
 
 def tcl(cmd):
     global tclInterp
@@ -356,6 +354,10 @@ class refine:
             startAtom = self.getAtom(startTuple)
             endAtom = self.getAtom(endTuple)
 
+        else:
+            if 'bond' not in linkerDict or 'cyclic' not in linkerDict['bond']:
+                raise KeyError("atoms must be defined within the linker object")
+
         if 'bond' in linkerDict:
             bondDict = linkerDict['bond']
             if "cyclic" in bondDict and bondDict["cyclic"]:
@@ -600,9 +602,18 @@ class refine:
                 self.constraints[atomPair].addBound(lower, 'lower')
                 self.constraints[atomPair].addBound(upper, 'upper')
 
+    def getResNameLookUpDict(self):
+        resNames = {}
+        for polymer in self.molecule.getPolymers():
+            for residue in polymer.getResidues():
+                resNames[residue.getNumber()] = residue.getName()
+        for ligand in self.molecule.getLigands():
+            resNames[ligand.getNumber()] = ligand.getName()
+        return resNames
+
     def readXPLORDistanceConstraints(self, fileName, keepSetting=None):
         xplorFile = xplor.XPLOR(fileName)
-        resNames = [residue.getName() for residue in self.molecule.getPolymers()[0].getResidues()]
+        resNames = self.getResNameLookUpDict()
         constraints = xplorFile.readXPLORDistanceConstraints(resNames)
         for constraint in constraints:
             lower = constraint['lower']
@@ -618,12 +629,20 @@ class refine:
                         constraint.addPair(atomPair)
                 self.constraints[firstAtomPair].addBound(upper,'upper');
             else:
-                self.constraints[atomPair].addBound(lower, 'lower');
-                self.constraints[atomPair].addBound(upper, 'upper');
+                self.constraints[firstAtomPair].addBound(lower, 'lower');
+                self.constraints[firstAtomPair].addBound(upper, 'upper');
 
 
     def addDisCon(self, atomName1, atomName2, lower, upper):
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
+
+    def getEntityTreeStartAtom(self, entity):
+        ''' getEntityTreeStartAtom returns an atom that would be picked up
+            by AngleTreeGenerator if no atom is specified.
+        '''
+        aTree = AngleTreeGenerator()
+        entryAtom = aTree.findStartAtom(entity)
+        return entryAtom
 
     def setEntityEntryDict(self, linkerList, treeDict):
         entityNames = [entity.getName() for entity in self.molecule.getEntities()]
@@ -631,9 +650,9 @@ class refine:
         if treeDict:
             entryAtomName = treeDict['start'] if 'start' in treeDict else None
         elif not treeDict or not entryAtomName:
-            atoms = self.molecule.getEntities()[0].getAtomArray()
-            aTree = AngleTreeGenerator()
-            entryAtomName = aTree.findStartAtom(atoms).getFullName()
+            startEntity = self.molecule.getEntities()[0]
+            entryAtomName = self.getEntityTreeStartAtom(startEntity).getFullName()
+            treeDict = {'start':entryAtomName}
         (entityName, atomName) = entryAtomName.split(':')
         self.entityEntryDict[entityName] = atomName
         visitedEntities.append(entityName)
@@ -661,6 +680,7 @@ class refine:
                 (entityName, atomName) = entryAtomName.split(':')
                 self.entityEntryDict[entityName] = atomName
                 visitedEntities.append(entityName)
+        return treeDict
 
     def getAtom(self, atomTuple):
         entity, atomName = atomTuple
@@ -677,17 +697,23 @@ class refine:
             raise ValueError
         return atom
 
-    def validateLinkerList(self,linkerList):
+    def validateLinkerList(self,linkerList, treeDict):
         usedEntities = {entityName:False for entityName in [entity.getName() for entity in self.molecule.getEntities()]}
         linkerAtoms = []
+
+        entryAtomName = (treeDict['start'] if 'start' in treeDict else None) if treeDict else None
+        entityName = entryAtomName.split(':')[0] if entryAtomName else self.molecule.getEntities()[0].getName()
+        usedEntities[entityName] = True
         if linkerList:
             if type(linkerList) is ArrayList:
                 for linkerDict in linkerList:
                     linkerAtoms += linkerDict['atoms']
             else:
-                print linkerList
                 linkerAtoms += linkerList['atoms']
                 linkerList = [linkerList]
+        else:
+            linkerList = []
+
         for atom in linkerAtoms:
             entityName = atom.split(':')[0]
             if entityName not in usedEntities:
@@ -698,11 +724,11 @@ class refine:
         for entityName in unusedEntities:
             entity = self.molecule.getEntity(entityName)
             print entityName + " had no defined linker."
-            startAtom = firstEntity.getLastAtom()
-            endAtom = entity.getLastAtom()
+            startAtom = firstEntity.getLastAtom().getFullName()
+            endAtom = self.getEntityTreeStartAtom(entity).getFullName()
             newLinker = {'atoms': [startAtom, endAtom]}
-            linkerList.append(linkerList)
-            print "linker added between " + startAtom.getFullName() + " and " + endAtom.getFullName()
+            linkerList.append(newLinker)
+            print "linker added between " + startAtom + " and " + endAtom
         return linkerList
 
     def loadFromYaml(self,data, seed, pdbFile=""):
@@ -729,12 +755,17 @@ class refine:
         treeDict = data['tree'] if 'tree' in data else None
 
         linkerList = molData['link'] if 'link' in molData else None
-        if len(self.molecule.getEntities()) > 1:
-            linkerList = self.validateLinkerList(linkerList)
+
 
         if 'tree' in data:
-            self.setEntityEntryDict(linkerList, treeDict)
+            if len(self.molecule.getEntities()) > 1:
+                linkerList = self.validateLinkerList(linkerList, treeDict)
+            treeDict = self.setEntityEntryDict(linkerList, treeDict)
             self.measureTree()
+        else:
+            if len(self.molecule.getEntities()) > 1:
+                raise TypeError("Tree mode must be run on molecules with more than one entity")
+
         self.addLinkers(linkerList)
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
@@ -803,7 +834,11 @@ class refine:
                     file = osfiles.convertSeqFile(file,dir)
                     type = 'nv'
                 elif type == 'pdb':
-                    self.readPDBFile(file)
+                    compound = self.readPDBFile(file)
+                    rnum = str(molDict['rnum']) if 'rnum' in molDict else None
+                    if rnum:
+                        compound.setNumber(rnum)
+
                 elif type == 'sdf':
                     self.readSDFile(file)
                 elif type == 'mol':
@@ -1412,12 +1447,15 @@ class refine:
     def measureTree(self):
         for entity in self.molecule.getEntities():
             print "Setup " + entity.getName()
-            self.setupAtomProperties(entity)
             entityName = entity.getName()
-            print entityName, self.entityEntryDict
+            if type(entity) is Polymer:
+                prfStartAtom = self.getEntityTreeStartAtom(entity).getShortName()
+                treeStartAtom = self.entityEntryDict[entityName]
+                if prfStartAtom == treeStartAtom:
+                    continue
+            self.setupAtomProperties(entity)
             #raise ValueError()
             if entityName in self.entityEntryDict:
-                print "Measuring now"
                 atomName = self.entityEntryDict[entityName]
                 entityTuple = (entity, atomName)
                 entity.genMeasuredTree(self.getAtom(entityTuple))
@@ -1448,14 +1486,22 @@ class refine:
 
     def readPDBFile(self,fileName):
         pdb = PDBFile()
+        # todo ideally this function should call either readSequence or readResidue
+        # those functions should handle whether or not there is a molecule. The
+        # return of those functions should be an entity or list of entities
+        # that are created from the method
+        # this will simplify the code here.
         if not self.molecule:
             pdb.readSequence(fileName,0)
             self.molecule = Molecule.getActive()
             self.molName = self.molecule.getName()
             self.molecule.selectAtoms('*.*')
             #entity = self.molecule.getEntities()[0]
+            return None
         else:
+            # todo this will break if multiple pdbs read in
             entity = pdb.readResidue(fileName, None, self.molecule, None)
+            return entity
         #self.measureTree(entity)
         return self.molecule
 
@@ -1524,7 +1570,8 @@ class refine:
         mol.resetGenCoords()
         mol.invalidateAtomArray()
         mol.invalidateAtomTree()
-        mol.genMeasuredTree(startAtom)
+        atree = AngleTreeGenerator()
+        atree.genTree(mol,startAtom, endAtom)
         mol.setupRotGroups()
         mol.genCoords()
 
@@ -1557,8 +1604,7 @@ class refine:
             self.readCYANAAngles(file,self.molName)
         for file in self.xplorAngleFiles:
             xplorFile = xplor.XPLOR(file)
-            resNames = [residue.getName() for residue in self.molecule.getPolymers()[0].getResidues()]
-
+            resNames = self.getResNameLookUpDict()
             xplorFile.readXPLORAngleConstraints(self.dihedral, resNames)
         for file in self.nvAngleFiles:
             self.loadDihedralsFromFile(file)
