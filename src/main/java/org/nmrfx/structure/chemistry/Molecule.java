@@ -746,8 +746,8 @@ public class Molecule implements Serializable, ITree {
     public ArrayList<Atom> getAtomList() {
         return new ArrayList<Atom>(atoms);
     }
-    
-    public void setAtomTree(List<List<Atom>> aTree){
+
+    public void setAtomTree(List<List<Atom>> aTree) {
         atomTree = aTree;
     }
 
@@ -2749,6 +2749,10 @@ public class Molecule implements Serializable, ITree {
 
             while (entIterator.hasNext()) {
                 Entity entity = (Entity) entIterator.next();
+                if (molFilter.entityName != null && !entity.getName().equalsIgnoreCase(molFilter.entityName)) {
+                    continue;
+                };
+
                 Compound compound = null;
                 if (!molFilter.matchCoordSetAndEntity(coordSet.getName(), entity.getName())) {
                     continue;

@@ -34,6 +34,7 @@ public class MolFilter {
     public String firstResType = "*";
     public String lastResType = "*";
     public int structureNum = 0;
+    public String entityName = null;
     String string = "";
     private static String resresPatternStr = "(([a-zA-Z]?-?[0-9]+)-)?([a-zA-Z]?-?[0-9]+)";
     private static Pattern resresPattern = Pattern.compile(resresPatternStr);
@@ -81,9 +82,13 @@ public class MolFilter {
         if (periodPos >= 0) {
             String coordSetName = molName.substring(0, periodPos);
             String entityName = molName.substring(periodPos + 1);
+            this.entityName = entityName;
             csAndENames.add(new CoordsetAndEntity(coordSetName, entityName));
         } else {
             csAndENames.add(new CoordsetAndEntity(molName));
+            if (molName != "*"){
+                entityName = molName;
+            }
         }
 
         resAtom = string.substring(colonPos + 1);
