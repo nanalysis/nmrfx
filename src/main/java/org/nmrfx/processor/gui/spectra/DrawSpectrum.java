@@ -37,8 +37,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.function.DoubleBinaryOperator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -63,6 +61,7 @@ import org.nmrfx.processor.gui.PolyChart.DISDIM;
 public class DrawSpectrum {
 
     static final double degtorad = Math.PI / 180.0;
+    static final long MAX_TIME = 2000;
     NMRAxis[] axes;
     private boolean useThread = true;
     private SpectrumViewParameters viewPar = new SpectrumViewParameters();
@@ -82,6 +81,8 @@ public class DrawSpectrum {
     private static boolean cancelled = false;
     ArrayBlockingQueue<DrawObject> contourQueue = new ArrayBlockingQueue<>(4);
     volatile long jobCount = 0;
+    private long startTime = 0;
+    private long lastPlotTime = 0;
 
     public DrawSpectrum(NMRAxis[] axes, Canvas canvas) {
         this.axes = axes;
@@ -110,6 +111,14 @@ public class DrawSpectrum {
     public void setAxes(NMRAxis[] axes) {
         this.axes = axes;
     }
+    
+    synchronized  void setLastPlotTime() {
+        lastPlotTime = System.currentTimeMillis() - startTime;
+    }
+    
+    public long getLastPlotTime() {
+        return lastPlotTime;
+    }
 
     public void drawSpectrum(ArrayList<DatasetAttributes> dataGenerators, AXMODE[] axModes,
             boolean pick) {
@@ -126,12 +135,14 @@ public class DrawSpectrum {
         dataAttrList.clear();
         dataAttrList.addAll(dataGenerators);
         contourQueue.clear();
+        lastPlotTime = 0;
+        startTime = System.currentTimeMillis();
 
         ((Service) makeContours.worker).restart();
         ((Service) drawContours.worker).restart();
     }
 
-    public void drawSpectrumImmediate(ArrayList<DatasetAttributes> dataGenerators, AXMODE[] axModes) {
+    public boolean drawSpectrumImmediate(ArrayList<DatasetAttributes> dataGenerators, AXMODE[] axModes) {
         cancelled = false;
 
         this.axModes = new AXMODE[axModes.length];
@@ -139,12 +150,15 @@ public class DrawSpectrum {
         dataAttrList.clear();
         dataAttrList.addAll(dataGenerators);
         contourQueue.clear();
-
+        startTime = System.currentTimeMillis();
+        boolean finished = false;
         try {
-            drawNow();
+            finished = drawNow();
         } catch (IOException ex) {
         }
+        lastPlotTime = 0;
 
+        return finished;
     }
 
     public static float[] getLevels(DatasetAttributes fileData) {
@@ -260,6 +274,8 @@ public class DrawSpectrum {
                     break;
                 }
             } while (true);
+            drawSpectrum.setLastPlotTime();
+
         }
     }
 
@@ -354,13 +370,18 @@ public class DrawSpectrum {
 
     }
 
-    public void drawNow() throws IOException {
+    public boolean drawNow() throws IOException {
         for (DatasetAttributes fileData : dataAttrList) {
             float[] levels = getLevels(fileData);
 
             double[] offset = {0, 0};
             fileData.mChunk = -1;
             do {
+                long currentTime = System.currentTimeMillis();
+                if ((currentTime - startTime) > MAX_TIME) {
+                    return false;
+
+                }
                 int iChunk = fileData.mChunk + 1;
                 final Contour[] contours = new Contour[2];
                 contours[0] = new Contour();
@@ -374,6 +395,7 @@ public class DrawSpectrum {
                 }
             } while (true);
         }
+        return true;
     }
 
     static int drawContours(DrawSpectrum drawSpectrum, DrawObject drawObject, GraphicsContext g2) {

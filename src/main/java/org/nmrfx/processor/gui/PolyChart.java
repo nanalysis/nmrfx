@@ -43,7 +43,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.function.DoubleFunction;
 import java.util.logging.Level;
@@ -55,12 +54,10 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
-import javafx.event.Event;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.RotateEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -68,12 +65,8 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.DragEvent;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.DatasetRegion;
@@ -175,6 +168,7 @@ public class PolyChart implements PeakListener {
     int phaseDim = 0;
     int phaseAxis = 0;
     double phaseFraction = 0.0;
+    boolean useImmediateMode = true;
 
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
@@ -1581,7 +1575,7 @@ public class PolyChart implements PeakListener {
             axModes[0] = AXMODE.PPM;
             axModes[1] = AXMODE.PPM;
             for (int i = 2; i < nAxes; i++) {
-                // axes[i] = new NMRAxis(Orientation.HORIZONTAL, Position.BOTTOM, dataset.getSize(i) / 2, dataset.getSize(i) / 2, 4);
+                axes[i] = new NMRAxis(Orientation.HORIZONTAL, dataset.getSize(i) / 2, dataset.getSize(i) / 2, 0, 1);
                 datasetAttributes.dim[i] = i;
                 axModes[i] = AXMODE.PTS;
                 axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
@@ -1652,6 +1646,12 @@ public class PolyChart implements PeakListener {
 //        bcPath.setStroke(Color.ORANGE);
 //        bcPath.setStrokeWidth(3.0);
 //        bcList.clear();
+        if (!useImmediateMode) {
+            long lastPlotTime = drawSpectrum.getLastPlotTime();
+            if ((lastPlotTime != 0) && (lastPlotTime < 1000)) {
+                useImmediateMode = true;
+            }
+        }
         double bottomBorder = 50.0;
         double leftBorder = 80.0;
         GraphicsContext gC = canvas.getGraphicsContext2D();
@@ -1676,7 +1676,12 @@ public class PolyChart implements PeakListener {
 //            annoGC.clearRect(0, 0, width, height);
 //        }
 
-        drawDatasets(gC);
+        if (!drawDatasets(gC)) {
+            // if we used immediate mode and didn't finish in time try again
+            // useImmediate mode will have been set to false
+            Platform.runLater(() -> layoutPlotChildren());
+            return;
+        }
 
         if (!datasetAttributesList.isEmpty()) {
             drawPeakLists(true);
@@ -1691,7 +1696,7 @@ public class PolyChart implements PeakListener {
         crossHairs.refreshCrossHairs();
     }
 
-    void drawDatasets(GraphicsContext gC) {
+    boolean drawDatasets(GraphicsContext gC) {
         ArrayList<DatasetAttributes> draw2DList = new ArrayList<>();
         updateDatasetAttributeBounds();
         datasetAttributesList.stream().forEach(datasetAttributes -> {
@@ -1746,9 +1751,16 @@ public class PolyChart implements PeakListener {
             }
         }
         );
+        boolean finished = true;
         if (!draw2DList.isEmpty()) {
-            drawSpectrum.drawSpectrum(draw2DList, axModes, false);
+            if (useImmediateMode) {
+                finished = drawSpectrum.drawSpectrumImmediate(draw2DList, axModes);
+                useImmediateMode = finished;
+            } else {
+                drawSpectrum.drawSpectrum(draw2DList, axModes, false);
+            }
         }
+        return finished;
 
     }
 
