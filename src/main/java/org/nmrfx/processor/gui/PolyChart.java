@@ -236,28 +236,29 @@ public class PolyChart implements PeakListener {
 
     public static double overlapScale = 1.0;
 
-    public PolyChart(FXMLController controller,Pane plotContent, Canvas canvas) {
-        this(controller, plotContent, canvas,
+    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas) {
+        this(controller, plotContent, canvas, peakCanvas,
                 new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50),
                 new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200)
         );
 
     }
 
-    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, final NMRAxis... AXIS) {
+    public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, final NMRAxis... AXIS) {
         this.canvas = canvas;
+        this.peakCanvas = peakCanvas;
         this.controller = controller;
         xAxis = AXIS[0];
         yAxis = AXIS[1];
         plotBackground = new Group();
         this.plotContent = plotContent;
         drawSpectrum = new DrawSpectrum(axes, canvas);
-        drawPeaks = new DrawPeaks(this, canvas);
         id = getNextId();
 
         initChart();
         width = canvas.getWidth();
         height = canvas.getHeight();
+        drawPeaks = new DrawPeaks(this, peakCanvas);
 
     }
 
@@ -1663,10 +1664,10 @@ public class PolyChart implements PeakListener {
         yAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
         xAxis.draw(gC);
         yAxis.draw(gC);
-//        peakCanvas.setWidth(width);
-//        peakCanvas.setHeight(height);
-//        GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
-//        peakGC.clearRect(0, 0, width, height);
+        peakCanvas.setWidth(canvas.getWidth());
+        peakCanvas.setHeight(canvas.getHeight());
+        GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
+        peakGC.clearRect(xPos, yPos, width, height);
 //
 //        if (annoCanvas != null) {
 //            annoCanvas.setWidth(width);
@@ -1677,9 +1678,9 @@ public class PolyChart implements PeakListener {
 
         drawDatasets(gC);
 
-//        if (!datasetAttributesList.isEmpty()) {
-//            drawPeakLists(true);
-//        }
+        if (!datasetAttributesList.isEmpty()) {
+            drawPeakLists(true);
+        }
 //        double[][] bounds = {{0, canvas.getWidth() - 1}, {0, canvas.getHeight() - 1}};
 //        double[][] world = {{axes[0].getLowerBound(), axes[0].getUpperBound()},
 //        {axes[1].getLowerBound(), axes[1].getUpperBound()}};
@@ -2041,12 +2042,10 @@ public class PolyChart implements PeakListener {
 
     public void drawPeakLists(boolean clear) {
         if (peakCanvas != null) {
-            double width = xAxis.getWidth();
-            double height = yAxis.getHeight();
-            peakCanvas.setWidth(width);
-            peakCanvas.setHeight(height);
+            peakCanvas.setWidth(canvas.getWidth());
+            peakCanvas.setHeight(canvas.getHeight());
             GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
-            peakGC.clearRect(0, 0, width, height);
+            peakGC.clearRect(xPos, yPos, width, height);
         }
         final Iterator<PeakListAttributes> peakListIterator = peakListAttributesList.iterator();
         while (peakListIterator.hasNext()) {
@@ -2434,7 +2433,6 @@ public class PolyChart implements PeakListener {
         double height = yAxis.getHeight();
 
         canvas.setCache(true);
-        peakCanvas = new Canvas(width, height);
         peakCanvas.setCache(true);
         peakCanvas.setMouseTransparent(true);
         annoCanvas = new Canvas(width, height);

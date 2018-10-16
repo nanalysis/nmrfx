@@ -189,6 +189,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     UndoManager undoManager = new UndoManager();
     double widthScale = 5.0;
     Canvas canvas = new Canvas();
+    Canvas peakCanvas = new Canvas();
     Pane plotContent = new Pane();
 
     public File getInitialDirectory() {
@@ -1276,7 +1277,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             topBar.getChildren().add(0, menuBar);
         }
         plotContent.setMouseTransparent(true);
-        PolyChart chart1 = new PolyChart(this, plotContent, canvas);
+        PolyChart chart1 = new PolyChart(this, plotContent, canvas, peakCanvas);
         activeChart = chart1;
         CanvasBindings.setHandlers(this, canvas);
         initToolBar(toolBar);
@@ -1291,7 +1292,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         chartGroup.setControlPane(layoutControl);
         chartPane.getChildren().addAll(chartGroup, plotContent, layoutControl);
         layoutControl.setVisible(false);
-        chartGroup.getChildren().addAll(canvas);
+        chartGroup.getChildren().addAll(canvas, peakCanvas);
         chartGroup.setManaged(true);
         layoutControl.setManaged(true);
 
@@ -1564,7 +1565,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void setNCharts(int nCharts) {
-        int nCurrent = chartGroup.getChildren().size();
+        int nCurrent = charts.size();
         if (nCurrent > nCharts) {
             for (int i = nCurrent - 1; i >= nCharts; i--) {
                 charts.remove(i);
@@ -1603,30 +1604,22 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public Integer addChart(Integer pos) {
-        System.out.println("a " + chartGroup.getChildren().size());
         FractionCanvas.ORIENTATION orient;
         if (pos < 2) {
             orient = FractionCanvas.ORIENTATION.HORIZONTAL;
         } else {
             orient = FractionCanvas.ORIENTATION.VERTICAL;
         }
-        System.out.println("b1 " + chartGroup.getChildren().size());
-        PolyChart chart = new PolyChart(this, plotContent, canvas);
-        System.out.println("b2 " + chartGroup.getChildren().size());
+        PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas);
         chart.setController(this);
-        System.out.println("b3 " + chartGroup.getChildren().size());
         chartGroup.setOrientation(orient, false);
-        System.out.println("c " + chartGroup.getChildren().size());
         if ((pos % 2) == 0) {
             chartGroup.addChart(0, chart);
         } else {
             chartGroup.addChart(chart);
         }
-        System.out.println("d " + chartGroup.getChildren().size());
         arrange(orient);
-        System.out.println("e " + chartGroup.getChildren().size());
         activeChart = chart;
-        System.out.println(charts.size() + " charts");
 
         return 0;
     }

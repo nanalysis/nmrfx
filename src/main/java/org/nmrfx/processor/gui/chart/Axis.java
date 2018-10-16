@@ -331,7 +331,7 @@ public class Axis {
             gC.setTextBaseline(VPos.TOP);
             gC.setTextAlign(TextAlignment.CENTER);
             gC.save();
-            gC.translate(labelFontSize / 2, yOrigin - height / 2);
+            gC.translate(xOrigin - width + labelFontSize / 2, yOrigin - height / 2);
             gC.rotate(270);
             gC.fillText(label, 0, 0);
             gC.restore();
