@@ -161,8 +161,12 @@ public class CrossHairs {
             } else if (value < (yOrigin - height)) {
                 value = yOrigin - height + 1;
             }
-        } else if (value > (xOrigin + width)) {
-            value = xOrigin + width - 1;
+        } else {
+            if (value > (xOrigin + width)) {
+                value = xOrigin + width - 1;
+            } else if (value < xOrigin) {
+                value = xOrigin + 1;
+            }
         }
         return value;
 
