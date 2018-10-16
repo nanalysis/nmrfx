@@ -7,10 +7,12 @@ import java.util.Map;
 import java.util.Optional;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
+import org.nmrfx.structure.chemistry.Entity;
 import org.nmrfx.structure.chemistry.ITree;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Order;
 import org.nmrfx.structure.chemistry.Point3;
+import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
 
@@ -44,13 +46,19 @@ public class AngleTreeGenerator {
     public boolean checkStartAtom(Atom startAtom) {
         return startAtom.bonds.size() == 1;
     }
-    
-    public Atom findStartAtom(List<Atom> atoms){
+
+    public Atom findStartAtom(ITree itree) {
+        List<Atom> atoms = itree.getAtomArray();
         Atom startAtom = null;
-        for (Atom atom : atoms) {
-            if (checkStartAtom(atom)) {
-                startAtom = atom;
-                break;
+        if (itree instanceof Entity && (Entity) itree instanceof Polymer) {
+            Polymer polymer = (Polymer) (Entity) itree;
+            startAtom = polymer.firstResidue.getFirstBackBoneAtom();
+        } else {
+            for (Atom atom : atoms) {
+                if (checkStartAtom(atom)) {
+                    startAtom = atom;
+                    break;
+                }
             }
         }
         return startAtom;
@@ -67,7 +75,7 @@ public class AngleTreeGenerator {
         }
 
         if (startAtom == null) {
-            startAtom = findStartAtom(atoms);
+            startAtom = findStartAtom(itree);
         } else {
             if (!checkStartAtom(startAtom)) {
                 //throw new IllegalArgumentException("Start atom has more than 1 bond \"" + startAtom.getShortName() + "\"");
@@ -252,34 +260,36 @@ public class AngleTreeGenerator {
             for (int j = 3; j < branch.size(); j++) {
                 Atom a3 = branch.get(j);
                 Point3 p3 = a3.getPoint();
-                if (p2 != null) {
+                if (a2 != null) {
                     oBond = a2.getBond(a3);
                     a3.parent = a2;
-                    if (a3.getProperty("linker") == null) {
-                        float bondLength = (float) AtomMath.calcDistance(p2, p3);
-                        if (bondLength > 0.001) {
-                            a3.bondLength = bondLength;
-                            if (p1 != null) {
-                                a3.valanceAngle = (float) AtomMath.calcAngle(p1, p2, p3);
-                                if (p0 != null) {
-                                    double dih = AtomMath.calcDihedral(p0, p1, p2, p3);
-                                    if (dih < 0.0) {
-                                        dih = dih + 2.0 * Math.PI;
+                    if (a3.getProperty("linker") == null && a3.getSymbol() != null) {
+                        if (p2 != null) {
+                            float bondLength = (float) AtomMath.calcDistance(p2, p3);
+                            if (bondLength > 0.001) {
+                                a3.bondLength = bondLength;
+                                if (p1 != null) {
+                                    a3.valanceAngle = (float) AtomMath.calcAngle(p1, p2, p3);
+                                    if (p0 != null) {
+                                        double dih = AtomMath.calcDihedral(p0, p1, p2, p3);
+                                        if (dih < 0.0) {
+                                            dih = dih + 2.0 * Math.PI;
+                                        }
+                                        double newDih;
+                                        if (j > 3) {
+                                            newDih = dih - lastAngle;
+                                        } else {
+                                            newDih = dih;
+                                        }
+                                        lastAngle = dih;
+                                        if (newDih > Math.PI) {
+                                            newDih = newDih - 2.0 * Math.PI;
+                                        }
+                                        if (newDih < -Math.PI) {
+                                            newDih = newDih + 2.0 * Math.PI;
+                                        }
+                                        a3.dihedralAngle = (float) newDih;
                                     }
-                                    double newDih;
-                                    if (j > 3) {
-                                        newDih = dih - lastAngle;
-                                    } else {
-                                        newDih = dih;
-                                    }
-                                    lastAngle = dih;
-                                    if (newDih > Math.PI) {
-                                        newDih = newDih - 2.0 * Math.PI;
-                                    }
-                                    if (newDih < -Math.PI) {
-                                        newDih = newDih + 2.0 * Math.PI;
-                                    }
-                                    a3.dihedralAngle = (float) newDih;
                                 }
                             }
                         }

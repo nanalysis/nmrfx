@@ -19,7 +19,7 @@ def addElements(captures, resNames):
     for capture in captures:
         item = ""
         if capture[0]:
-            resNum = int(capture[0])-1
+            resNum = capture[0]
             resName = resNames[resNum]
             atomName = AtomParser.xplorToIUPAC(resName, capture[1])
             atomName = atomName if atomName else capture[1]
@@ -83,7 +83,7 @@ class XPLOR:
         self.f = open(f, 'r')
         self.s = ""
         self.invalidAtomSelections = []
-        self.regex = r'\(resi\w*\s+([0-9]+)\s+[\w\s]+\s(\w+[0-9]*)\s*\)|(or)|(-?[0-9\.]+\s+-?[0-9\.]+\s+-?[0-9\.]+)'
+        self.regex = r"\([^\(]*resi\w*\s+([0-9]+)\s+[\w\s]+\s(\w+[0-9'\*#]*)\s*\)|(or)|(-?[0-9\.]+\s+-?[0-9\.]+\s+-?[0-9\.]+)"
         ''' Four matching groups within regex: residueNum , atomName, "or", bounds'''
 
     def getNextString(self):
@@ -143,11 +143,10 @@ class XPLOR:
                 if elements:
                     constraints.append(elements)
                 break;
-            elif 'assi' in self.s:
+            elif 'assi' in self.s or 'ASSI' in self.s:
                 if elements:
                     constraints.append(elements)
                 elements = []
-
             m = pat.findall(self.s)
             elements += addElements(m, resNames)
         self.f.close()
