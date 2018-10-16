@@ -19,20 +19,22 @@ package org.nmrfx.processor.gui.controls;
 
 import java.util.function.Function;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableList;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Transform;
-import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.PolyChart;
 
 /**
  *
  * @author Bruce Johnson
  */
-public class FractionPane extends Pane {
+public class FractionCanvas extends Pane {
 
     /**
      * @param extraOnLeft the extraOnLeft to set
@@ -66,30 +68,27 @@ public class FractionPane extends Pane {
         HORIZONTAL, VERTICAL, GRID;
     }
     ORIENTATION orient = null;
-    LayoutControlPane controlPane;
+    LayoutControlCanvas controlPane;
     static int[] nRowDefaults = {1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 2, 3, 3, 3, 4};
     int setRows = -1;
     private double extraOnLeft = 0.0;
     private double extraOnRight = 0.0;
     private double extraOnTop = 0.0;
     private double extraOnBottom = 0.0;
-    FractionPaneChild children;
     private int currentRows = 1;
     private int currentCols = 1;
+    ObservableList<PolyChart> charts;
+    final Canvas canvas;
 
-    public FractionPane(FractionPaneChild children) {
-        super();
-        this.children = children;
-//        getChildrenUnmodifiable().addListener((ListChangeListener.Change<? extends Node> c) -> {
-//            updateLayoutIndicators();
-//        });
+    public FractionCanvas(Canvas canvas, ObservableList<PolyChart> charts) {
+        this.charts = charts;
+        this.canvas = canvas;
         layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
             if (arg2.getWidth() == 0 || arg2.getHeight() == 0) {
                 return;
             }
             requestLayout();
         });
-
     }
 
     public static ORIENTATION getOrientation(String name) {
@@ -121,13 +120,21 @@ public class FractionPane extends Pane {
     public boolean setOrientation(ORIENTATION newOrient, boolean force) {
         setRows = -1;
 
-        int nChildren = getChildrenUnmodifiable().size();
+        int nChildren = charts.size();
         if (force || (nChildren < 2) || (orient == null)) {
             orient = newOrient;
             return true;
         } else {
             return false;
         }
+    }
+
+    public void addChart(int pos, PolyChart chart) {
+        charts.add(pos, chart);
+    }
+
+    public void addChart(PolyChart chart) {
+        charts.add(chart);
     }
 
     public int getCurrentRows() {
@@ -139,7 +146,7 @@ public class FractionPane extends Pane {
     }
 
     public int getRows() {
-        int nChildren = getChildrenUnmodifiable().size();
+        int nChildren = charts.size();
         int nRows = 4;
         if (setRows != -1) {
             nRows = setRows;
@@ -158,7 +165,7 @@ public class FractionPane extends Pane {
     }
 
     public int getColumns() {
-        int nChildren = getChildrenUnmodifiable().size();
+        int nChildren = charts.size();
         int nRows = 4;
         if (setRows != -1) {
             nRows = setRows;
@@ -181,11 +188,11 @@ public class FractionPane extends Pane {
         return nCols;
     }
 
-    public void removeChild(Node node) {
+    public void removeChild(PolyChart node) {
         int nRows = getRows();
         int nCols = getColumns();
-        getChildren().remove(node);
-        int nChildren = getChildrenUnmodifiable().size();
+        charts.remove(node);
+        int nChildren = charts.size();
 
         if (setRows != -1) {
             int lastChild = nChildren - 1;
@@ -199,11 +206,12 @@ public class FractionPane extends Pane {
 
     @Override
     public void layoutChildren() {
-        System.out.println("layout frac");
         Bounds bounds = getLayoutBounds();
         double width = bounds.getWidth();
         double height = bounds.getHeight();
-        int nChildren = getChildrenUnmodifiable().size();
+        canvas.setWidth(width);
+        canvas.setHeight(height);
+        int nChildren = charts.size();
         int nRows = getRows();
         int nCols = getColumns();
 
@@ -233,11 +241,11 @@ public class FractionPane extends Pane {
         }
         currentRows = nRows;
         currentCols = nCols;
-        children.prepareChildren(nRows, nCols);
+        //children.prepareChildren(nRows, nCols);
         double x = 0.0;
         double y = 0.0;
         int iChild = 0;
-        for (Node node : getChildrenUnmodifiable()) {
+        for (PolyChart node : charts) {
             int iRow = iChild / nCols;
             int iCol = iChild % nCols;
             double extraWidth = 0.0;
@@ -266,10 +274,13 @@ public class FractionPane extends Pane {
                 }
             }
         }
-        children.redrawChildren();
+        for (PolyChart chart : charts) {
+            chart.refresh();
+        }
+//        // children.redrawChildren();
     }
 
-    public void setControlPane(LayoutControlPane pane) {
+    public void setControlPane(LayoutControlCanvas pane) {
         controlPane = pane;
     }
 

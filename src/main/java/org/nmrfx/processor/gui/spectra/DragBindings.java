@@ -20,13 +20,16 @@ package org.nmrfx.processor.gui.spectra;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import javafx.application.Platform;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
+import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 
 /**
@@ -35,25 +38,32 @@ import org.nmrfx.processor.gui.PolyChart;
  */
 public class DragBindings {
 
-    PolyChart chart;
+    final FXMLController controller;
+    final Canvas canvas;
 
-    public DragBindings(PolyChart chart) {
-        this.chart = chart;
+    public DragBindings(FXMLController controller, Canvas canvas) {
+        this.canvas = canvas;
+        this.controller = controller;
     }
 
     public void mouseDragDropped(final DragEvent e) {
+        final PolyChart chart;
+        Optional<PolyChart> dropChart = controller.getChart(e.getX(), e.getY());
+        if (dropChart.isPresent()) {
+            chart = dropChart.get();
+        } else {
+            return;
+        }
         final Dragboard db = e.getDragboard();
         boolean success = false;
         if (db.hasFiles()) {
             success = true;
             // Only get the first file from the list
             final List<File> files = db.getFiles();
-            chart.setActiveChart();
             Platform.runLater(() -> {
+                chart.setActiveChart();
                 try {
                     boolean isDataset = NMRDataUtil.isDatasetFile(files.get(0).getAbsolutePath()) != null;
-                    PolyChart dropChart = (PolyChart) e.getGestureTarget();
-                    dropChart.setActiveChart();
                     if (isDataset) {
                         boolean appendFile = true;
 
@@ -64,6 +74,7 @@ public class DragBindings {
                     } else {
                         chart.getController().openFile(files.get(0).getAbsolutePath(), true, false);
                     }
+
                 } catch (IOException e1) {
                     ExceptionDialog dialog = new ExceptionDialog(e1);
                     dialog.showAndWait();
@@ -77,14 +88,14 @@ public class DragBindings {
                 if (dataset != null) {
                     success = true;
                     Platform.runLater(() -> {
-                        PolyChart dropChart = (PolyChart) e.getGestureTarget();
-                        dropChart.setActiveChart();
+                        chart.setActiveChart();
                         for (String item : items) {
                             Dataset dataset1 = Dataset.getDataset(item);
                             if (dataset1 != null) {
                                 chart.getController().addDataset(dataset1, true, false);
                             }
                         }
+
                     });
                 }
             }
@@ -111,8 +122,9 @@ public class DragBindings {
                     isAccepted = false;
                 }
                 if (isAccepted) {
-                    chart.setStyle("-fx-border-color: green;"
-                            + "-fx-border-width: 1;");
+                    // fixme
+//                    chart.setStyle("-fx-border-color: green;"
+//                            + "-fx-border-width: 1;");
                     e.acceptTransferModes(TransferMode.COPY);
                 }
             }
@@ -122,8 +134,9 @@ public class DragBindings {
             if (items.length > 0) {
                 Dataset dataset = Dataset.getDataset(items[0]);
                 if (dataset != null) {
-                    chart.setStyle("-fx-border-color: green;"
-                            + "-fx-border-width: 1;");
+                    // fixme
+//                    chart.setStyle("-fx-border-color: green;"
+//                            + "-fx-border-width: 1;");
                     e.acceptTransferModes(TransferMode.COPY);
                 }
             }

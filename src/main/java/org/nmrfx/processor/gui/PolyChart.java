@@ -17,16 +17,6 @@
  */
 package org.nmrfx.processor.gui;
 
-import eu.hansolo.fx.charts.ChartType;
-import eu.hansolo.fx.charts.Position;
-import eu.hansolo.fx.charts.XYChart;
-import eu.hansolo.fx.charts.XYPane;
-import eu.hansolo.fx.charts.data.XYChartItem;
-import eu.hansolo.fx.charts.data.XYItem;
-import eu.hansolo.fx.charts.data.XYZChartItem;
-import eu.hansolo.fx.charts.data.YChartItem;
-import eu.hansolo.fx.charts.series.XYSeries;
-import eu.hansolo.fx.charts.series.XYSeriesBuilder;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.spectra.DrawSpectrum;
 import org.nmrfx.processor.datasets.Dataset;
@@ -82,7 +72,6 @@ import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.Region;
 import javafx.scene.shape.StrokeLineCap;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.DatasetRegion;
@@ -101,7 +90,7 @@ import org.nmrfx.processor.gui.spectra.MouseBindings;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
 
-public class PolyChart<T extends XYItem> extends XYChart implements PeakListener {
+public class PolyChart implements PeakListener {
 
     /**
      * @return the hasMiddleMouseButton
@@ -153,7 +142,7 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
     final NMRAxis xAxis;
     final NMRAxis yAxis;
     NMRAxis[] axes = new NMRAxis[2];
-    final XYPane plotBackground;
+    final Group plotBackground;
     final Group plotContent;
     final DrawSpectrum drawSpectrum;
     final DrawPeaks drawPeaks;
@@ -162,6 +151,10 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
     List<CanvasAnnotation> canvasAnnotations = new ArrayList<>();
     private static int lastId = 0;
     private final int id;
+    double width = 200.0;
+    double height = 200.0;
+    double xPos = 0.0;
+    double yPos = 0.0;
 
     int iVec = 0;
 //    Vec vec;
@@ -241,34 +234,45 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
 
     public static double overlapScale = 1.0;
 
-    public PolyChart() {
-        this(new XYPane(),
-                new NMRAxis(Orientation.HORIZONTAL, Position.BOTTOM, 0, 100, 10),
-                new NMRAxis(Orientation.VERTICAL, Position.LEFT, 0, 100, 10)
+    public PolyChart(FXMLController controller, Canvas canvas) {
+        this(controller, canvas,
+                new NMRAxis(Orientation.HORIZONTAL, 0, 100, 200, 50),
+                new NMRAxis(Orientation.VERTICAL, 0, 100, 50, 200)
         );
 
     }
 
-    public PolyChart(final XYPane<T> XY_PANE, final NMRAxis... AXIS) {
-        super(XY_PANE, null, AXIS);
-        super.setManaged(false);
-        canvas = new Canvas();
+    public PolyChart(FXMLController controller, Canvas canvas, final NMRAxis... AXIS) {
+        this.canvas = canvas;
+        this.controller = controller;
         xAxis = AXIS[0];
         yAxis = AXIS[1];
-        plotBackground = XY_PANE;
-        plotBackground.getChildren().add(canvas);
+        plotBackground = new Group();
         plotContent = new Group();
         drawSpectrum = new DrawSpectrum(axes, canvas);
         drawPeaks = new DrawPeaks(this, canvas);
         id = getNextId();
-        xAxis.setKeepEdges(true);
-        yAxis.setKeepEdges(true);
-        xAxis.setAutoScale(true);
-        yAxis.setAutoScale(true);
 
         initChart();
         plotBackground.getChildren().add(plotContent);
+        width = canvas.getWidth();
+        height = canvas.getHeight();
 
+    }
+
+    public void resizeRelocate(double x, double y, double width, double height) {
+        xPos = x;
+        yPos = y;
+        this.width = width;
+        this.height = height;
+    }
+
+    public double getWidth() {
+        return width;
+    }
+
+    public double getHeight() {
+        return height;
     }
 
     private void initChart() {
@@ -297,13 +301,13 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
             }
         }
         loadData();
-        xAxis.minValueProperty().addListener(new AxisChangeListener(this, 0, 0));
-        xAxis.maxValueProperty().addListener(new AxisChangeListener(this, 0, 1));
-        yAxis.minValueProperty().addListener(new AxisChangeListener(this, 1, 0));
-        yAxis.maxValueProperty().addListener(new AxisChangeListener(this, 1, 1));
+        xAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 0, 0));
+        xAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 0, 1));
+        yAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 1, 0));
+        yAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 1, 1));
         charts.add(this);
         activeChart = this;
-        setCursor(Cursor.CROSSHAIR);
+        canvas.setCursor(Cursor.CROSSHAIR);
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             purgeInvalidPeakListAttributes();
         };
@@ -311,11 +315,10 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);
-        dragBindings = new DragBindings(this);
+        dragBindings = new DragBindings(controller, canvas);
         specMenu = new SpectrumMenu(this);
         crossHairs = new CrossHairs(activeChart, crossHairPositions, crossHairStates, crossHairLines);
-        setHandlers(canvas);
-        setDragHandlers(this);
+        setDragHandlers(canvas);
         canvas.requestFocus();
 
     }
@@ -365,9 +368,24 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
 
     public void focus() {
         getController().stage.requestFocus();
-        setFocused(true);
+        //  canvas.setFocused(true);
     }
 
+    public Cursor getCursor() {
+        return canvas.getCursor();
+    }
+
+    public void setCursor(Cursor cursor) {
+        canvas.setCursor(cursor);
+    }
+
+    public boolean contains(double x, double y) {
+        if ((x > xPos) && (x < (xPos + width)) && (y > yPos) && (y < (yPos + height))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 //pic.addEventHandler(MouseEvent.MOUSE_CLICKED,
 //    new EventHandler<MouseEvent>() {
 //        @Override public void handle(MouseEvent e) {
@@ -375,53 +393,21 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
 //                cm.show(pic, e.getScreenX(), e.getScreenY());
 //        }
 //});
-    final protected void setHandlers(Node mouseNode) {
-        setFocusTraversable(false);
-        mouseNode.setOnContextMenuRequested((ContextMenuEvent event) -> {
-            specMenu.show(mouseNode.getScene().getWindow(), event.getScreenX(), event.getScreenY());
-        });
-        mouseNode.setOnKeyPressed((KeyEvent keyEvent) -> {
-            keyBindings.keyPressed(keyEvent);
-        });
 
-        mouseNode.setOnKeyReleased((KeyEvent keyEvent) -> {
-            keyBindings.keyReleased(keyEvent);
-        });
+    public MouseBindings getMouseBindings() {
+        return mouseBindings;
+    }
 
-        mouseNode.setOnKeyTyped((KeyEvent keyEvent) -> {
-            keyBindings.keyTyped(keyEvent);
-        });
+    public GestureBindings getGestureBindings() {
+        return gestureBindings;
+    }
 
-        mouseNode.setOnMouseDragged((MouseEvent mouseEvent) -> {
-            mouseBindings.mouseDragged(mouseEvent);
-        });
+    public KeyBindings getKeyBindings() {
+        return keyBindings;
+    }
 
-        mouseNode.setOnMousePressed((MouseEvent mouseEvent) -> {
-            mouseNode.requestFocus();
-            mouseBindings.mousePressed(mouseEvent);
-        });
-
-        mouseNode.setOnMouseMoved((MouseEvent mouseEvent) -> {
-            mouseBindings.mouseMoved(mouseEvent);
-        });
-
-        mouseNode.setOnMouseReleased((MouseEvent mouseEvent) -> {
-            mouseBindings.mouseReleased(mouseEvent);
-        });
-
-        mouseNode.setOnRotate((RotateEvent rEvent) -> {
-            gestureBindings.rotate(rEvent);
-        });
-        mouseNode.setOnRotationFinished((RotateEvent rEvent) -> {
-            gestureBindings.rotationFinished(rEvent);
-        });
-        mouseNode.setOnZoom((Event event) -> {
-            gestureBindings.zoom(event);
-        });
-        mouseNode.setOnScroll((ScrollEvent event) -> {
-            gestureBindings.scroll(event);
-        });
-        mouseNode.focusedProperty().addListener(e -> setActiveChart());
+    public SpectrumMenu getSpectrumMenu() {
+        return specMenu;
     }
 
     final protected void setDragHandlers(Node mouseNode) {
@@ -646,7 +632,6 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
                 if (!is1D()) {
                     yZoom(factor);
                 }
-                System.out.println("lay 1");
                 layoutPlotChildren();
                 ChartUndoLimits redo = new ChartUndoLimits(this);
                 String undoName = factor > 1.0 ? "zoomout" : "zoomin";
@@ -700,7 +685,6 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
         scrollXAxis(x);
         scrollYAxis(y);
 
-                System.out.println("lay 2");
         layoutPlotChildren();
     }
 
@@ -861,14 +845,12 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
         double range = max - min;
         double delta = range / 10;
         xAxis.setMinMax(min, max);
-        xAxis.setTickUnit(delta);
     }
 
     protected void setYAxis(double min, double max) {
         double range = max - min;
         double delta = range / 10;
         yAxis.setMinMax(min, max);
-        yAxis.setTickUnit(delta);
     }
 
     public void setAxis(int iAxis, double min, double max) {
@@ -935,7 +917,6 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
     }
 
     public void full() {
-        System.out.println("full");
         ConsoleUtil.runOnFxThread(() -> {
             if (!datasetAttributesList.isEmpty()) {
                 ChartUndoLimits undo = new ChartUndoLimits(this);
@@ -947,6 +928,7 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
                 }
                 ChartUndoLimits redo = new ChartUndoLimits(this);
                 controller.undoManager.add("full", undo, redo);
+                layoutPlotChildren();
             }
         });
     }
@@ -957,6 +939,7 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
                 double[] limits = getRange(axis);
                 setAxis(axis, limits[0], limits[1]);
                 updateDatasetAttributeBounds();
+                layoutPlotChildren();
             }
         }
     }
@@ -1566,10 +1549,10 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
             axModes[0] = AXMODE.PPM;
             axModes[1] = AXMODE.PPM;
             for (int i = 2; i < nAxes; i++) {
-                axes[i] = new NMRAxis(Orientation.HORIZONTAL, Position.BOTTOM, datasetAttrs.pt[i][0], datasetAttrs.pt[i][1], 4);
+                //axes[i] = new NMRAxis(Orientation.HORIZONTAL, Position.BOTTOM, datasetAttrs.pt[i][0], datasetAttrs.pt[i][1], 4);
                 axModes[i] = AXMODE.PTS;
-                axes[i].minValueProperty().addListener(new AxisChangeListener(this, i, 0));
-                axes[i].maxValueProperty().addListener(new AxisChangeListener(this, i, 1));
+                axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
+                axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
             }
             drawSpectrum.setAxes(axes);
             drawSpectrum.setDisDim(disDimProp.getValue());
@@ -1596,11 +1579,11 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
             axModes[0] = AXMODE.PPM;
             axModes[1] = AXMODE.PPM;
             for (int i = 2; i < nAxes; i++) {
-                axes[i] = new NMRAxis(Orientation.HORIZONTAL, Position.BOTTOM, dataset.getSize(i) / 2, dataset.getSize(i) / 2, 4);
+                // axes[i] = new NMRAxis(Orientation.HORIZONTAL, Position.BOTTOM, dataset.getSize(i) / 2, dataset.getSize(i) / 2, 4);
                 datasetAttributes.dim[i] = i;
                 axModes[i] = AXMODE.PTS;
-                axes[i].minValueProperty().addListener(new AxisChangeListener(this, i, 0));
-                axes[i].maxValueProperty().addListener(new AxisChangeListener(this, i, 1));
+                axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
+                axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
 
             }
             drawSpectrum.setAxes(axes);
@@ -1647,8 +1630,6 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
     }
 
     public void refresh() {
-        System.out.println("refresh");
-        super.refresh();
         layoutPlotChildren();
     }
 
@@ -1664,19 +1645,23 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
     }
 
     protected void layoutPlotChildren() {
-        super.refresh();
-        System.out.println("lay");
-        
+
 //        bcPath.getElements().clear();
 //        bcPath.setStroke(Color.ORANGE);
 //        bcPath.setStrokeWidth(3.0);
 //        bcList.clear();
-        double width = xAxis.getWidth();
-        double height = yAxis.getHeight();
-        canvas.setWidth(width);
-        canvas.setHeight(height);
+        double bottomBorder = 50.0;
+        double leftBorder = 80.0;
         GraphicsContext gC = canvas.getGraphicsContext2D();
-        gC.clearRect(0, 0, width, height);
+        gC.clearRect(xPos, yPos, width, height);
+        xAxis.setWidth(width - leftBorder);
+        xAxis.setHeight(bottomBorder);
+        xAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
+        yAxis.setHeight(height - bottomBorder);
+        yAxis.setWidth(leftBorder);
+        yAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
+        xAxis.draw(gC);
+        yAxis.draw(gC);
 //        peakCanvas.setWidth(width);
 //        peakCanvas.setHeight(height);
 //        GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
@@ -1701,7 +1686,7 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
 //            anno.draw(peakCanvas, bounds, world);
 //        });
 //
-         crossHairs.refreshCrossHairs();
+        crossHairs.refreshCrossHairs();
     }
 
     void drawDatasets(GraphicsContext gC) {
@@ -1894,7 +1879,7 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
     }
 
     public void setCursor() {
-        this.setCursor(Cursor.CROSSHAIR);
+        canvas.setCursor(Cursor.CROSSHAIR);
     }
 
     public void deleteSelectedPeaks() {
@@ -2457,7 +2442,6 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
         //getPlotChildren().add(1, canvas);
         //getPlotChildren().add(2, peakCanvas);
         //getPlotChildren().add(3, annoCanvas);
-        layoutChildren();
     }
 
     public void addAnnoCanvas() {
@@ -2759,11 +2743,12 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
     List<PolyChart> getSceneMates(boolean includeThis) {
         List<PolyChart> sceneMates = new ArrayList<>();
         for (PolyChart chart : charts) {
-            if (chart.getScene() == getScene()) {
-                if (includeThis || (chart != this)) {
-                    sceneMates.add(chart);
-                }
-            }
+            // fixme
+//            if (chart.getScene() == getScene()) {
+//                if (includeThis || (chart != this)) {
+//                    sceneMates.add(chart);
+//                }
+//            }
         }
         return sceneMates;
     }
@@ -2880,39 +2865,4 @@ public class PolyChart<T extends XYItem> extends XYChart implements PeakListener
             refresh();
         }
     }
-
-    static XYSeries<XYChartItem> buildSeries() {
-        Color[] COLORS = {Color.rgb(200, 0, 0, 0.75), Color.rgb(0, 0, 200, 0.75), Color.rgb(0, 200, 200, 0.75), Color.rgb(0, 200, 0, 0.75)};
-        Random RND = new Random();
-
-        XYSeries<XYChartItem> xySeries1;
-        List<XYChartItem> xyItems1 = new ArrayList<>(20);
-        List<XYChartItem> xyItems2 = new ArrayList<>(20);
-        List<XYChartItem> xyItems3 = new ArrayList<>(20);
-        List<YChartItem> yItem = new ArrayList<>(20);
-        List<XYZChartItem> xyzItem = new ArrayList<>(20);
-        for (int i = 0;
-                i < 20; i++) {
-            xyItems1.add(new XYChartItem(i, RND.nextDouble() * 15, "P" + i, COLORS[RND.nextInt(3)]));
-            xyItems2.add(new XYChartItem(i, RND.nextDouble() * 15, "P" + i, COLORS[RND.nextInt(3)]));
-            xyItems3.add(new XYChartItem(i, RND.nextDouble() * 15, "P" + i, COLORS[RND.nextInt(3)]));
-        }
-        for (int i = 0;
-                i < 20; i++) {
-            yItem.add(new YChartItem(RND.nextDouble() * 10, "P" + i, COLORS[RND.nextInt(3)]));
-            xyzItem.add(new XYZChartItem(RND.nextDouble() * 10, RND.nextDouble() * 10, RND.nextDouble() * 25, "P" + i, COLORS[RND.nextInt(3)]));
-        }
-
-        xySeries1 = XYSeriesBuilder.create()
-                .items(xyItems1)
-                .chartType(ChartType.LINE)
-                .fill(Color.TRANSPARENT)
-                .stroke(Color.MAGENTA)
-                .symbolFill(Color.RED)
-                .symbolStroke(Color.TRANSPARENT)
-                .symbolsVisible(true)
-                .build();
-        return xySeries1;
-    }
-
 }

@@ -23,8 +23,6 @@ import org.nmrfx.processor.datasets.peaks.PeakNetworkMatch;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import org.nmrfx.processor.datasets.vendor.NMRDataUtil;
 import org.nmrfx.processor.datasets.vendor.NMRViewData;
-import org.nmrfx.processor.gui.controls.FractionPane;
-import org.nmrfx.processor.gui.controls.LayoutControlPane;
 import org.nmrfx.processor.gui.controls.FractionPaneChild;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
@@ -37,9 +35,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
@@ -59,13 +57,9 @@ import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
-import javafx.print.PageLayout;
-import javafx.print.PageOrientation;
-import javafx.print.Paper;
-import javafx.print.Printer;
-import javafx.print.PrinterJob;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.ChoiceBox;
@@ -85,7 +79,10 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -96,8 +93,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
-import javafx.scene.transform.Scale;
-import javafx.scene.transform.Transform;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -109,6 +104,9 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
+import org.nmrfx.processor.gui.controls.FractionCanvas;
+import org.nmrfx.processor.gui.controls.LayoutControlCanvas;
+import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utilities.DictionarySort;
 import org.python.core.PyObject;
@@ -179,7 +177,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
     File initialDir = null;
 
-    private FractionPane chartGroup;
+    private FractionCanvas chartGroup;
     private boolean minimizeBorders = false;
 
     PeakNavigator peakNavigator;
@@ -189,6 +187,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
     UndoManager undoManager = new UndoManager();
     double widthScale = 5.0;
+    Canvas canvas = new Canvas();
 
     public File getInitialDirectory() {
         if (initialDir == null) {
@@ -615,7 +614,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (obj instanceof Node) {
             attributesPopOver.show((Node) event.getSource());
         } else {
-            attributesPopOver.show(getActiveChart());
+            // fixme attributesPopOver.show(getActiveChart());
 
         }
     }
@@ -870,42 +869,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         } catch (IOException ex) {
             ExceptionDialog eDialog = new ExceptionDialog(ex);
             eDialog.showAndWait();
-        }
-    }
-
-    @FXML
-    private void printActionOld(ActionEvent event) {
-        System.out.println("Print!");
-        PolyChart chart = getActiveChart();
-        Set<Printer> printers = Printer.getAllPrinters();
-        for (Printer printer : printers) {
-            System.out.println(printer.getName());
-        }
-        PrinterJob job = PrinterJob.createPrinterJob();
-        if (job != null) {
-            System.out.println("gotjob");
-            Node node = (Node) chart;
-            Node oldClip = node.getClip();
-            List<Transform> oldTransforms = new ArrayList<>(node.getTransforms());
-
-            Printer printer = job.getPrinter();
-
-            PageLayout pageLayout = printer.createPageLayout(Paper.NA_LETTER, PageOrientation.LANDSCAPE, Printer.MarginType.DEFAULT);
-            job.showPageSetupDialog(chart.getScene().getWindow());
-            double scaleX = pageLayout.getPrintableWidth() / node.getBoundsInParent().getWidth();
-            double scaleY = pageLayout.getPrintableHeight() / node.getBoundsInParent().getHeight();
-            node.getTransforms().add(new Scale(scaleX, scaleY));
-
-            boolean doPrint = job.showPrintDialog(chart.getScene().getWindow());
-            if (doPrint) {
-                boolean success = job.printPage(node);
-                if (success) {
-                    job.endJob();
-                }
-            }
-            node.getTransforms().clear();
-            node.getTransforms().addAll(oldTransforms);
-            node.setClip(oldClip);
         }
     }
 
@@ -1310,8 +1273,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             MenuBar menuBar = MainApp.getMenuBar();
             topBar.getChildren().add(0, menuBar);
         }
-        PolyChart chart1 = new PolyChart();
+        PolyChart chart1 = new PolyChart(this, canvas);
         activeChart = chart1;
+        CanvasBindings.setHandlers(this, canvas);
         initToolBar(toolBar);
         charts.add(chart1);
         chart1.setController(this);
@@ -1319,12 +1283,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 //        PolyChart chart2 = new PolyChart();
 //        charts.add(chart2);
 //        chart2.setController(this);
-        chartGroup = new FractionPane(this);
-        LayoutControlPane layoutControl = new LayoutControlPane(chartGroup);
+        chartGroup = new FractionCanvas(canvas, charts);
+        LayoutControlCanvas layoutControl = new LayoutControlCanvas(chartGroup);
         chartGroup.setControlPane(layoutControl);
         chartPane.getChildren().addAll(chartGroup, layoutControl);
         layoutControl.setVisible(false);
-        chartGroup.getChildren().addAll(chart1);
+        chartGroup.getChildren().addAll(canvas);
         chartGroup.setManaged(true);
         layoutControl.setManaged(true);
 
@@ -1600,8 +1564,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         int nCurrent = chartGroup.getChildren().size();
         if (nCurrent > nCharts) {
             for (int i = nCurrent - 1; i >= nCharts; i--) {
-                PolyChart chart = (PolyChart) chartGroup.getChildren().remove(i);
-                charts.remove(chart);
+                charts.remove(i);
             }
         } else if (nCharts > nCurrent) {
             int nNew = nCharts - nCurrent;
@@ -1620,7 +1583,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public void removeChart(PolyChart chart) {
         if (chart != null) {
             chartGroup.removeChild(chart);
-            charts.remove(chart);
             if (chart == activeChart) {
                 if (charts.isEmpty()) {
                     activeChart = null;
@@ -1630,31 +1592,38 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
             chartGroup.requestLayout();
             for (PolyChart refreshChart : charts) {
-                refreshChart.requestLayout();
-                refreshChart.layout();
+//                refreshChart.requestLayout();
+//                refreshChart.layout();
                 refreshChart.layoutPlotChildren();
             }
         }
     }
 
     public Integer addChart(Integer pos) {
-        FractionPane.ORIENTATION orient;
+        System.out.println("a " + chartGroup.getChildren().size());
+        FractionCanvas.ORIENTATION orient;
         if (pos < 2) {
-            orient = FractionPane.ORIENTATION.HORIZONTAL;
+            orient = FractionCanvas.ORIENTATION.HORIZONTAL;
         } else {
-            orient = FractionPane.ORIENTATION.VERTICAL;
+            orient = FractionCanvas.ORIENTATION.VERTICAL;
         }
-        PolyChart chart = new PolyChart();
-        charts.add(chart);
+        System.out.println("b1 " + chartGroup.getChildren().size());
+        PolyChart chart = new PolyChart(this, canvas);
+        System.out.println("b2 " + chartGroup.getChildren().size());
         chart.setController(this);
+        System.out.println("b3 " + chartGroup.getChildren().size());
         chartGroup.setOrientation(orient, false);
+        System.out.println("c " + chartGroup.getChildren().size());
         if ((pos % 2) == 0) {
-            chartGroup.getChildren().add(0, chart);
+            chartGroup.addChart(0, chart);
         } else {
-            chartGroup.getChildren().add(chart);
+            chartGroup.addChart(chart);
         }
+        System.out.println("d " + chartGroup.getChildren().size());
         arrange(orient);
+        System.out.println("e " + chartGroup.getChildren().size());
         activeChart = chart;
+        System.out.println(charts.size() + " charts");
 
         return 0;
     }
@@ -1667,7 +1636,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return chartGroup.getCurrentCols();
     }
 
-    public void arrange(FractionPane.ORIENTATION orient) {
+    public void arrange(FractionCanvas.ORIENTATION orient) {
         if (charts.size() == 1) {
             PolyChart chart = charts.get(0);
             double xLower = chart.xAxis.getLowerBound();
@@ -1731,10 +1700,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         int iChild = 0;
         double xMax = 0;
         double yMax = 0;
-        for (Node node : chartGroup.getChildrenUnmodifiable()) {
+        for (PolyChart chart : charts) {
             int iRow = iChild / nCols;
             int iCol = iChild % nCols;
-            PolyChart chart = (PolyChart) node;
             if (minimizeBorders) {
                 chart.setAxisState(iCol == 0, iRow == (nRows - 1));
                 xMax = Math.max(xMax, chart.yAxis.getWidth());
@@ -1755,10 +1723,24 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     }
 
+    public Optional<PolyChart> getChart(double x, double y) {
+        Optional<PolyChart> hitChart = Optional.empty();
+        // go backwards so we find the last added chart if they overlap
+        for (int i = charts.size() - 1; i >= 0; i--) {
+            PolyChart chart = charts.get(i);
+            if (chart.contains(x, y)) {
+                hitChart = Optional.of(chart);
+                break;
+            }
+        }
+        return hitChart;
+    }
+
     public void redrawChildren() {
-        chartGroup.getChildrenUnmodifiable().stream().map((node) -> (PolyChart) node).forEachOrdered((chart) -> {
-            chart.layoutPlotChildren();
-        });
+        // fixme
+//        chartGroup.getChildrenUnmodifiable().stream().map((node) -> (PolyChart) node).forEachOrdered((chart) -> {
+//            chart.layoutPlotChildren();
+//        });
     }
 
     public void arrange(int nRows) {

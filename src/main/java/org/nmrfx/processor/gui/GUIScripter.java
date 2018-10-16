@@ -12,6 +12,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.controls.FractionPane;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -363,7 +364,7 @@ public class GUIScripter {
     }
 
     public void grid(String orientName) {
-        FractionPane.ORIENTATION orient = FractionPane.getOrientation(orientName);
+        FractionCanvas.ORIENTATION orient = FractionCanvas.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             controller.arrange(orient);
         });
@@ -385,7 +386,7 @@ public class GUIScripter {
     }
 
     public void grid(int nCharts, String orientName) {
-        FractionPane.ORIENTATION orient = FractionPane.getOrientation(orientName);
+        FractionCanvas.ORIENTATION orient = FractionCanvas.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = getController();
             PolyChart chart = controller.getActiveChart();
@@ -398,7 +399,7 @@ public class GUIScripter {
     }
 
     public void grid(List<String> datasetNames, String orientName) {
-        FractionPane.ORIENTATION orient = FractionPane.getOrientation(orientName);
+        FractionCanvas.ORIENTATION orient = FractionCanvas.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController controller = getController();
             PolyChart chart = controller.getActiveChart();

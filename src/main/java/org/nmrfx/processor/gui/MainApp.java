@@ -54,6 +54,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.DatasetListener;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
+import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.GUIProject;
 
@@ -276,11 +277,11 @@ public class MainApp extends Application implements DatasetListener {
 
         Menu arrangeMenu = new Menu("Arrange");
         MenuItem horizItem = new MenuItem("Horizontal");
-        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionPane.ORIENTATION.HORIZONTAL));
+        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.HORIZONTAL));
         MenuItem vertItem = new MenuItem("Vertical");
-        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionPane.ORIENTATION.VERTICAL));
+        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.VERTICAL));
         MenuItem gridItem = new MenuItem("Grid");
-        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionPane.ORIENTATION.GRID));
+        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.GRID));
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(e -> FXMLController.getActiveController().overlay());
         MenuItem minimizeItem = new MenuItem("Minimize Borders");

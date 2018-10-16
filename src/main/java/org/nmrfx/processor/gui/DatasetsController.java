@@ -64,6 +64,7 @@ import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.collections.ListChangeListener;
+import org.nmrfx.processor.gui.controls.FractionCanvas;
 
 /**
  *
@@ -127,11 +128,11 @@ public class DatasetsController implements Initializable {
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(e -> drawDataset(e));
         MenuItem gridItem = new MenuItem("Grid");
-        gridItem.setOnAction(e -> gridDataset(e, FractionPane.ORIENTATION.GRID));
+        gridItem.setOnAction(e -> gridDataset(e, FractionCanvas.ORIENTATION.GRID));
         MenuItem horizontalItem = new MenuItem("Horizontal");
-        horizontalItem.setOnAction(e -> gridDataset(e, FractionPane.ORIENTATION.HORIZONTAL));
+        horizontalItem.setOnAction(e -> gridDataset(e, FractionCanvas.ORIENTATION.HORIZONTAL));
         MenuItem verticalItem = new MenuItem("Vertical");
-        verticalItem.setOnAction(e -> gridDataset(e, FractionPane.ORIENTATION.VERTICAL));
+        verticalItem.setOnAction(e -> gridDataset(e, FractionCanvas.ORIENTATION.VERTICAL));
         ContextMenu drawMenu = new ContextMenu(overlayItem, horizontalItem, verticalItem, gridItem);
         drawButton.setContextMenu(drawMenu);
 
@@ -410,7 +411,7 @@ public class DatasetsController implements Initializable {
         }
     }
 
-    void gridDataset(ActionEvent e, FractionPane.ORIENTATION orient) {
+    void gridDataset(ActionEvent e, FractionCanvas.ORIENTATION orient) {
         ObservableList<Dataset> datasets = tableView.getSelectionModel().getSelectedItems();
         FXMLController controller = FXMLController.getActiveController();
         PolyChart chart = controller.getActiveChart();
