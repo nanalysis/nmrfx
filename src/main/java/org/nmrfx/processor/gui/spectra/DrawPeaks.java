@@ -36,8 +36,6 @@ import java.util.*;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Path;
@@ -49,6 +47,9 @@ import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 import org.nmrfx.processor.datasets.peaks.Peak.Corner;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.processor.gui.chart.Axis;
+import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
+import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
 /**
  *
@@ -116,13 +117,10 @@ public class DrawPeaks {
     Color selectFill = new Color(1.0f, 1.0f, 0.0f, 0.4f);
     private boolean multipletMode = false;
     Bounds lastTextBox = null;
-    GraphicsContext g2;
-    final Canvas canvas;
+    GraphicsContextInterface g2;
 
-    public DrawPeaks(PolyChart chart, Canvas canvas) {
+    public DrawPeaks(PolyChart chart) {
         this.chart = chart;
-        this.canvas = canvas;
-        this.g2 = canvas.getGraphicsContext2D();
         //   setParameters();
         regions = new HashSet[nRegions];
 
@@ -165,8 +163,8 @@ public class DrawPeaks {
         multipletMode = state;
     }
 
-    public synchronized boolean pickPeak(PeakListAttributes peakAttr, DatasetAttributes dataAttr, GraphicsContext g2, Peak peak, int[] dim,
-            double[] offset, double x, double y) {
+    public synchronized boolean pickPeak(PeakListAttributes peakAttr, DatasetAttributes dataAttr, GraphicsContextInterface g2, Peak peak, int[] dim,
+            double[] offset, double x, double y) throws GraphicsIOException {
         int nPeakDim = peak.peakList.nDim;
         boolean result = false;
         //        if ((disDim != 0) && (nPeakDim > 1)) {
@@ -178,7 +176,7 @@ public class DrawPeaks {
         return result;
     }
 //
-//    synchronized boolean pickMultiplet(GraphicsContext g2, Multiplet multiplet, int[] dim,
+//    synchronized boolean pickMultiplet(GraphicsContextInterface g2, Multiplet multiplet, int[] dim,
 //            double[] offset, int x, int y) {
 //        int nPeakDim = multiplet.getPeakDim().getPeak().peakList.nDim;
 //
@@ -189,13 +187,13 @@ public class DrawPeaks {
 //        }
 //    }
 
-    public void drawSimSum(GraphicsContext g2, ArrayList peaks, int[] dim) {
+    public void drawSimSum(GraphicsContextInterface g2, ArrayList peaks, int[] dim) throws GraphicsIOException {
         //int colorMode = setColor(g2, peak, offset);
         Peak1DRep peakRep = new Peak1DRep(dim[0], peaks);
     }
 
-    public synchronized void drawPeak(PeakListAttributes peakAttr, GraphicsContext g2, Peak peak, int[] dim,
-            double[] offset, boolean selected) {
+    public synchronized void drawPeak(PeakListAttributes peakAttr, GraphicsContextInterface g2, Peak peak, int[] dim,
+            double[] offset, boolean selected) throws GraphicsIOException {
         int nPeakDim = peak.peakList.nDim;
         int colorMode = setColor(peakAttr, g2, peak, offset);
         if (((colorMode == 0) && !peakDisOn) || ((colorMode != 0) && !peakDisOff)) {
@@ -210,8 +208,8 @@ public class DrawPeaks {
         }
     }
 
-    public synchronized void drawMultiplet(PeakListAttributes peakAttr, GraphicsContext g2, Multiplet multiplet, int[] dim,
-            double[] offset, boolean selected, int line) {
+    public synchronized void drawMultiplet(PeakListAttributes peakAttr, GraphicsContextInterface g2, Multiplet multiplet, int[] dim,
+            double[] offset, boolean selected, int line) throws GraphicsIOException {
         Peak peak = multiplet.getPeakDim().getPeak();
         int nPeakDim = peak.peakList.nDim;
         int colorMode = setColor(peakAttr, g2, peak, offset);
@@ -575,7 +573,7 @@ public class DrawPeaks {
         return label;
     }
 
-    int setColor(PeakListAttributes peakAttr, GraphicsContext g2, Peak peak, double[] offset) {
+    int setColor(PeakListAttributes peakAttr, GraphicsContextInterface g2, Peak peak, double[] offset) throws GraphicsIOException {
         int nPeakDim = peak.peakList.nDim;
         int colorMode = 0;
         Color color = peakAttr.getOnColor();
@@ -662,7 +660,7 @@ public class DrawPeaks {
         return colorMode;
     }
 
-    protected void drawSelectionIndicator(GraphicsContext g2, String label, double angle, double x1, double y1) {
+    protected void drawSelectionIndicator(GraphicsContextInterface g2, String label, double angle, double x1, double y1) throws GraphicsIOException {
         Bounds bounds = measureText(label, g2.getFont(), angle, x1, y1);
         double border = 2;
         Paint current = g2.getFill();
@@ -672,7 +670,7 @@ public class DrawPeaks {
         g2.strokeRect(bounds.getMinX() - border, bounds.getMinY() - border, bounds.getWidth() + 2 * border, bounds.getHeight() + 2 * border);
     }
 
-    protected boolean pick1DPeak(PeakListAttributes peakAttr, Peak peak, int[] dim, double hitX, double hitY) {
+    protected boolean pick1DPeak(PeakListAttributes peakAttr, Peak peak, int[] dim, double hitX, double hitY)  {
         if ((dim[0] < 0) || (dim[0] >= peak.peakDim.length)) {
             return false;
         }
@@ -695,7 +693,7 @@ public class DrawPeaks {
 
     }
 
-//    protected boolean pick1DMultiplet(GraphicsContext g2, int[] dim, Multiplet multiplet, int x,
+//    protected boolean pick1DMultiplet(GraphicsContextInterface g2, int[] dim, Multiplet multiplet, int x,
 //            int y) {
 //        if (!multiplet.isValid()) {
 //            System.out.println("invalid mult");
@@ -739,7 +737,7 @@ public class DrawPeaks {
 //        }
 //        return textBox.contains(x, y);
 //    }
-    private boolean pick2DPeak(PeakListAttributes peakAttr, DatasetAttributes dataAttr, GraphicsContext g2, int[] dim, Peak peak, double x,
+    private boolean pick2DPeak(PeakListAttributes peakAttr, DatasetAttributes dataAttr, GraphicsContextInterface g2, int[] dim, Peak peak, double x,
             double y) {
         if ((dim[0] < 0) || (dim[0] >= peak.peakDim.length)) {
             return false;
@@ -792,7 +790,7 @@ public class DrawPeaks {
 //        }
         return result;
     }
-//    void draw1DPeakSelection(GraphicsContext g2, int[] dim, Peak peak, boolean erase) {
+//    void draw1DPeakSelection(GraphicsContextInterface g2, int[] dim, Peak peak, boolean erase) {
 //        if (!peak.isValid() || (peak.getStatus() < 0)) {
 //            return;
 //        }
@@ -810,7 +808,7 @@ public class DrawPeaks {
 //                label, 0, peak);
 //        peakRep.renderSelection(g2, erase);
 //    }
-//    void draw1DMultipletSelection(GraphicsContext g2, int[] dim, Multiplet multiplet, boolean erase) {
+//    void draw1DMultipletSelection(GraphicsContextInterface g2, int[] dim, Multiplet multiplet, boolean erase) {
 //        if (!multiplet.isValid() || (multiplet.getStatus() < 0)) {
 //            return;
 //        }
@@ -853,7 +851,7 @@ public class DrawPeaks {
 //        //         addTo1DRegionHash(x,peakRep);
 //    }
 
-    void draw1DPeak(PeakListAttributes peakAttr, GraphicsContext g2, int[] dim, Peak peak, int colorMode, boolean selected) {
+    void draw1DPeak(PeakListAttributes peakAttr, GraphicsContextInterface g2, int[] dim, Peak peak, int colorMode, boolean selected) throws GraphicsIOException {
         if ((dim[0] < 0) || (dim[0] >= peak.peakDim.length)) {
             return;
         }
@@ -861,8 +859,7 @@ public class DrawPeaks {
         float x = peak.peakDim[dim[0]].getChemShiftValue();
         float intensity = peak.getIntensity();
 
-        double height = canvas.getHeight();
-        double textY = height - g2.getFont().getSize() - 5;
+        double textY = xAxis.getYOrigin() - g2.getFont().getSize() -5;
 
         Peak1DRep peakRep = new Peak1DRep(peakAttr, dim[0], x, intensity, textY, label, colorMode, peak);
 
@@ -874,8 +871,8 @@ public class DrawPeaks {
         }
     }
 
-    void draw1DMultiplet(PeakListAttributes peakAttr, GraphicsContext g2, int[] dim, Multiplet multiplet,
-            int colorMode, boolean selected, int iLine) {
+    void draw1DMultiplet(PeakListAttributes peakAttr, GraphicsContextInterface g2, int[] dim, Multiplet multiplet,
+            int colorMode, boolean selected, int iLine) throws GraphicsIOException {
         if (!multiplet.isValid()) {
             System.out.println("invalid mult");
             return;
@@ -930,7 +927,7 @@ public class DrawPeaks {
         }
     }
 
-    void renderToMulti(GraphicsContext g2, Color color, double xC, double xE, double y, double max, double nY, boolean selMode) {
+    void renderToMulti(GraphicsContextInterface g2, Color color, double xC, double xE, double y, double max, double nY, boolean selMode) throws GraphicsIOException {
         double deltaY = 25.0;
         double x1 = xAxis.getDisplayPosition(xC);
         double y1 = yAxis.getDisplayPosition(y);
@@ -1018,7 +1015,7 @@ public class DrawPeaks {
         return rect.contains(hitX, hitY);
     }
 
-    void renderMultipletLabel(GraphicsContext g2, String label, Color color, double xC, double y, double max) {
+    void renderMultipletLabel(GraphicsContextInterface g2, String label, Color color, double xC, double y, double max) throws GraphicsIOException {
         double deltaY = 25.0;
         double x1 = xAxis.getDisplayPosition(xC);
         double y1 = yAxis.getDisplayPosition(y);
@@ -1084,7 +1081,7 @@ public class DrawPeaks {
 //            }
 //        }
     //         addTo1DRegionHash(x,peakRep);
-//    void draw2DPeakSelection(GraphicsContext g2, int[] dim, Peak peak, boolean erase) {
+//    void draw2DPeakSelection(GraphicsContextInterface g2, int[] dim, Peak peak, boolean erase) {
 //        if (!peak.isValid() || (peak.getStatus() < 0)) {
 //            return;
 //        }
@@ -1117,8 +1114,8 @@ public class DrawPeaks {
         return new Rectangle(xMin, yMin, xWidth, yHeight);
     }
 
-    public void draw2DPeak(PeakListAttributes peakAttr, GraphicsContext g2, int[] dim, Peak peak, boolean erase,
-            boolean selected) {
+    public void draw2DPeak(PeakListAttributes peakAttr, GraphicsContextInterface g2, int[] dim, Peak peak, boolean erase,
+            boolean selected) throws GraphicsIOException {
         if (g2 == null) {
             return;
         }
@@ -1294,7 +1291,7 @@ public class DrawPeaks {
         }
     }
 
-    public void drawLinkLines(PeakListAttributes peakAttr, GraphicsContext g2, Peak peak, int[] dim) {
+    public void drawLinkLines(PeakListAttributes peakAttr, GraphicsContextInterface g2, Peak peak, int[] dim) throws GraphicsIOException {
         if (g2 == null) {
             return;
         }
@@ -1366,7 +1363,7 @@ public class DrawPeaks {
 
     }
 
-    private void setLabelAlignment(GraphicsContext g2, Corner corner) {
+    private void setLabelAlignment(GraphicsContextInterface g2, Corner corner) throws GraphicsIOException {
         double[] position = corner.getPosition();
         if (position[0] < -0.1) {
             g2.setTextAlign(TextAlignment.RIGHT);
@@ -1446,13 +1443,13 @@ public class DrawPeaks {
             this.peakAttr = peakAttr;
         }
 
-        Peak1DRep(int dim, ArrayList peaks) {
+        Peak1DRep(int dim, ArrayList peaks) throws GraphicsIOException {
             this.peaks = peaks;
             this.dim = dim;
             generateDerivedPath();
         }
 
-        void generateDerivedPath() {
+        void generateDerivedPath() throws GraphicsIOException {
             double min = Double.MAX_VALUE;
             double max = Double.NEGATIVE_INFINITY;
             double minWid = Double.MAX_VALUE;
@@ -1532,14 +1529,14 @@ public class DrawPeaks {
 
         }
 //
-//        void erase(GraphicsContext g2) {
+//        void erase(GraphicsContextInterface g2) {
 //            //  Rectangle textBox = chart.getTextBox(g2,x,textY, label , anchorS,0);
 //            //   g2.drawImage(spectrum.bufOffscreen,textBox.x-1,textBox.y-14,textBox.x+textBox.width+2,textBox.y+textBox.height+14,
 //            //           textBox.x-1,textBox.y-14,textBox.x+textBox.width+2,textBox.y+textBox.height+14,null);
 //        }
 //
 
-        void renderToMulti(GraphicsContext g2, boolean eraseFirst, float mX) {
+        void renderToMulti(GraphicsContextInterface g2, boolean eraseFirst, float mX) throws GraphicsIOException {
             if (eraseFirst) {
                 // erase(g2);
             }
@@ -1567,7 +1564,7 @@ public class DrawPeaks {
 
         }
 
-        void render(GraphicsContext g2, boolean eraseFirst) {
+        void render(GraphicsContextInterface g2, boolean eraseFirst) throws GraphicsIOException {
             if (eraseFirst) {
 //                erase(g2);
             }
@@ -1632,7 +1629,7 @@ public class DrawPeaks {
         }
 //
 
-        void renderSimulated(GraphicsContext g2, boolean eraseFirst) {
+        void renderSimulated(GraphicsContextInterface g2, boolean eraseFirst) throws GraphicsIOException {
             double w = peak.peakDim[dim].getLineWidthValue();
             if (w < widthLimit) {
                 w = widthLimit;
@@ -1648,7 +1645,7 @@ public class DrawPeaks {
 
         }
 //
-//        void renderSimSum(GraphicsContext g2, boolean eraseFirst) {
+//        void renderSimSum(GraphicsContextInterface g2, boolean eraseFirst) {
 //            if (gDerived1DPath != null) {
 //                g2.setColor(colorOff);
 //                chart.drawShape(g2, gDerived1DPath);
@@ -1656,7 +1653,7 @@ public class DrawPeaks {
 //        }
 //
 
-        void renderSelection(GraphicsContext g2, boolean erase) {
+        void renderSelection(GraphicsContextInterface g2, boolean erase) throws GraphicsIOException {
             double x1 = xAxis.getDisplayPosition(x);
             double y1 = yAxis.getDisplayPosition(height);
             if (erase) {

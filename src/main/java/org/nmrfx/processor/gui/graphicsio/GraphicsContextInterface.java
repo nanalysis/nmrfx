@@ -83,7 +83,7 @@ public interface GraphicsContextInterface {
 
     FillRule getFillRule() throws GraphicsIOException;
 
-    Font getFont() throws GraphicsIOException;
+    Font getFont();
 
     FontSmoothingType getFontSmoothingType() throws GraphicsIOException;
 

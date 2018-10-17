@@ -256,7 +256,7 @@ public class PolyChart implements PeakListener {
         initChart();
         width = canvas.getWidth();
         height = canvas.getHeight();
-        drawPeaks = new DrawPeaks(this, peakCanvas);
+        drawPeaks = new DrawPeaks(this);
 
     }
 
@@ -1712,6 +1712,9 @@ public class PolyChart implements PeakListener {
             xAxis.draw(svgGC);
             yAxis.draw(svgGC);
             drawDatasets(svgGC);
+            if (!datasetAttributesList.isEmpty()) {
+                drawPeakLists(true, svgGC);
+            }
             svgGC.saveFile();
         } catch (GraphicsIOException ex) {
             throw new IOException(ex.getMessage());
@@ -2080,28 +2083,41 @@ public class PolyChart implements PeakListener {
 
     public void drawPeakLists(boolean clear) {
         if (peakCanvas != null) {
+            GraphicsContextInterface peakGC = new GraphicsContextProxy(peakCanvas.getGraphicsContext2D());
+            drawPeakLists(clear, peakGC);
+        }
+    }
+
+    public void drawPeakLists(boolean clear, GraphicsContextInterface peakGC) {
+        if (peakCanvas != null) {
             peakCanvas.setWidth(canvas.getWidth());
             peakCanvas.setHeight(canvas.getHeight());
-            GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
-            peakGC.clearRect(xPos, yPos, width, height);
-        }
-        final Iterator<PeakListAttributes> peakListIterator = peakListAttributesList.iterator();
-        while (peakListIterator.hasNext()) {
-            PeakListAttributes peakListAttr = peakListIterator.next();
-            if (peakListAttr.getPeakList().peaks() == null) {
-                peakListAttr.getPeakList().removeListener(this);
-                peakListIterator.remove();
-            }
-        }
-        if (peakStatus.get()) {
-            for (PeakListAttributes peakListAttr : peakListAttributesList) {
-                if (clear) {
-                    peakListAttr.clearPeaksInRegion();
+            try {
+                if (peakGC instanceof GraphicsContextProxy) {
+                    peakGC.clearRect(xPos, yPos, width, height);
                 }
-                if (peakListAttr.getDrawPeaks()) {
-                    drawPeakList(peakListAttr);
+
+                final Iterator<PeakListAttributes> peakListIterator = peakListAttributesList.iterator();
+                while (peakListIterator.hasNext()) {
+                    PeakListAttributes peakListAttr = peakListIterator.next();
+                    if (peakListAttr.getPeakList().peaks() == null) {
+                        peakListAttr.getPeakList().removeListener(this);
+                        peakListIterator.remove();
+                    }
                 }
+                if (peakStatus.get()) {
+                    for (PeakListAttributes peakListAttr : peakListAttributesList) {
+                        if (clear) {
+                            peakListAttr.clearPeaksInRegion();
+                        }
+                        if (peakListAttr.getDrawPeaks()) {
+                            drawPeakList(peakListAttr, peakGC);
+                        }
 //                drawSelectedPeaks(peakListAttr);
+                    }
+                }
+            } catch (GraphicsIOException ioE) {
+
             }
         }
     }
@@ -2248,44 +2264,53 @@ public class PolyChart implements PeakListener {
         return dim;
     }
 
-    void drawPeakList(PeakListAttributes peakListAttr) {
-        if (peakListAttr.getDrawPeaks()) {
-            GraphicsContext gC = peakCanvas.getGraphicsContext2D();
-            List<Peak> peaks = peakListAttr.getPeaksInRegion();
-            int[] dim = peakListAttr.getPeakDim();
-            double[] offsets = new double[dim.length];
-            peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
-                drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, false);
-            });
-            if (dim.length == 1) { // only draw multiples for 1D 
-                List<Multiplet> multiplets = peakListAttr.getMultipletsInRegion();
-                List<Peak> roots = new ArrayList<>();
-                multiplets.stream().forEach((multiplet) -> {
-                    drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, false, 0);
-                    roots.add(multiplet.getPeakDim().getPeak());
-                });
-
-                if (false) {
-                    PeakList.sortPeaks(roots, 0, true);
-                    ArrayList overlappedPeaks = new ArrayList();
-                    for (int iPeak = 0, n = roots.size(); iPeak < n; iPeak++) {
-                        Peak aPeak = (Peak) roots.get(iPeak);
-                        overlappedPeaks.add(aPeak);
-                        for (int jPeak = (iPeak + 1); jPeak < n; jPeak++) {
-                            Peak bPeak = (Peak) roots.get(jPeak);
-                            if (aPeak.overlaps(bPeak, 0, overlapScale)) {
-                                overlappedPeaks.add(bPeak);
-                                iPeak++;
-                            } else {
-                                break;
-                            }
-                        }
-                        drawPeaks.drawSimSum(gC, overlappedPeaks, dim);
-                        overlappedPeaks.clear();
+    void drawPeakList(PeakListAttributes peakListAttr, GraphicsContextInterface gC) {
+        try {
+            if (peakListAttr.getDrawPeaks()) {
+                List<Peak> peaks = peakListAttr.getPeaksInRegion();
+                int[] dim = peakListAttr.getPeakDim();
+                double[] offsets = new double[dim.length];
+                peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
+                    try {
+                        drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, false);
+                    } catch (GraphicsIOException ex) {
                     }
+                });
+                if (dim.length == 1) { // only draw multiples for 1D 
+                    List<Multiplet> multiplets = peakListAttr.getMultipletsInRegion();
+                    List<Peak> roots = new ArrayList<>();
+                    multiplets.stream().forEach((multiplet) -> {
+                        try {
+                            drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, false, 0);
+                        } catch (GraphicsIOException ex) {
+                        }
+                        roots.add(multiplet.getPeakDim().getPeak());
+                    });
 
+                    if (false) {
+                        PeakList.sortPeaks(roots, 0, true);
+                        ArrayList overlappedPeaks = new ArrayList();
+                        for (int iPeak = 0, n = roots.size(); iPeak < n; iPeak++) {
+                            Peak aPeak = (Peak) roots.get(iPeak);
+                            overlappedPeaks.add(aPeak);
+                            for (int jPeak = (iPeak + 1); jPeak < n; jPeak++) {
+                                Peak bPeak = (Peak) roots.get(jPeak);
+                                if (aPeak.overlaps(bPeak, 0, overlapScale)) {
+                                    overlappedPeaks.add(bPeak);
+                                    iPeak++;
+                                } else {
+                                    break;
+                                }
+                            }
+                            drawPeaks.drawSimSum(gC, overlappedPeaks, dim);
+                            overlappedPeaks.clear();
+                        }
+
+                    }
                 }
             }
+        } catch (GraphicsIOException gioE) {
+
         }
 
     }
@@ -2295,20 +2320,30 @@ public class PolyChart implements PeakListener {
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             Set<MultipletSelection> multiplets = peakListAttr.getSelectedMultiplets();
             if (!peaks.isEmpty() || !multiplets.isEmpty()) {
-                GraphicsContext gC = peakCanvas.getGraphicsContext2D();
+                GraphicsContext gCC = peakCanvas.getGraphicsContext2D();
+                GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
                 int[] dim = peakListAttr.getPeakDim();
                 double[] offsets = new double[dim.length];
                 peaks.stream().forEach((peak) -> {
-                    drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, true);
+                    try {
+                        drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, true);
+                    } catch (GraphicsIOException ex) {
+                    }
                     int nPeakDim = peak.peakList.nDim;
                     if (peak.getPeakList().isSlideable() && (nPeakDim > 1)) {
-                        drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim);
+                        try {
+                            drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim);
+                        } catch (GraphicsIOException ex) {
+                        }
                     }
                 });
                 multiplets.stream().forEach((multipletSel) -> {
                     Multiplet multiplet = multipletSel.getMultiplet();
                     int line = multipletSel.getLine();
-                    drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, true, line);
+                    try {
+                        drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, true, line);
+                    } catch (GraphicsIOException ex) {
+                    }
                 });
             }
 

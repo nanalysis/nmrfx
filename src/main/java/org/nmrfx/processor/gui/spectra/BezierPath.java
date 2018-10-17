@@ -43,10 +43,11 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.shape.CubicCurveTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
+import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
+import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
 //Algorithm from http://www.antigrain.com/research/bezier_interpolation/
 class BezierPath {
@@ -148,7 +149,7 @@ class BezierPath {
     }
 
     public static void makeBezierCurve(double[] ncoords, int numSteps,
-            GraphicsContext gC, double smoothValue, double xOffset, double yOffset, double width, double height, NMRAxis xAxis, NMRAxis yAxis) {
+            GraphicsContextInterface gC, double smoothValue, double xOffset, double yOffset, double width, double height, NMRAxis xAxis, NMRAxis yAxis) throws GraphicsIOException {
         // Assume we need to calculate the control
         // points between (x1,y1) and (x2,y2).
         // Then x0,y0 - the previous vertex,
