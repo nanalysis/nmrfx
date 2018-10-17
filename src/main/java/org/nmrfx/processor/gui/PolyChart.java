@@ -1714,6 +1714,7 @@ public class PolyChart implements PeakListener {
             drawDatasets(svgGC);
             if (!datasetAttributesList.isEmpty()) {
                 drawPeakLists(true, svgGC);
+                drawSelectedPeaks(svgGC);
             }
             svgGC.saveFile();
         } catch (GraphicsIOException ex) {
@@ -2122,6 +2123,14 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    void drawSelectedPeaks(GraphicsContextInterface peakGC) {
+        for (PeakListAttributes peakListAttr : peakListAttributesList) {
+            if (peakListAttr.getDrawPeaks()) {
+                drawSelectedPeaks(peakListAttr, peakGC);
+            }
+        }
+    }
+
     public Optional<Peak> hitPeak(double pickX, double pickY) {
         Optional<Peak> hit = Optional.empty();
         if (peakStatus.get()) {
@@ -2316,12 +2325,17 @@ public class PolyChart implements PeakListener {
     }
 
     void drawSelectedPeaks(PeakListAttributes peakListAttr) {
+        GraphicsContext gCC = peakCanvas.getGraphicsContext2D();
+        GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
+        drawSelectedPeaks(peakListAttr, gC);
+
+    }
+
+    void drawSelectedPeaks(PeakListAttributes peakListAttr, GraphicsContextInterface gC) {
         if (peakListAttr.getDrawPeaks()) {
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             Set<MultipletSelection> multiplets = peakListAttr.getSelectedMultiplets();
             if (!peaks.isEmpty() || !multiplets.isEmpty()) {
-                GraphicsContext gCC = peakCanvas.getGraphicsContext2D();
-                GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
                 int[] dim = peakListAttr.getPeakDim();
                 double[] offsets = new double[dim.length];
                 peaks.stream().forEach((peak) -> {
