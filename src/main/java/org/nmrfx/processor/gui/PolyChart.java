@@ -75,7 +75,10 @@ import org.nmrfx.processor.datasets.peaks.PeakFitException;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
+import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
+import org.nmrfx.processor.gui.graphicsio.GraphicsContextProxy;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
+import org.nmrfx.processor.gui.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DragBindings;
@@ -1655,20 +1658,22 @@ public class PolyChart implements PeakListener {
         }
         double bottomBorder = 50.0;
         double leftBorder = 80.0;
-        GraphicsContext gC = canvas.getGraphicsContext2D();
-        gC.clearRect(xPos, yPos, width, height);
-        xAxis.setWidth(width - leftBorder);
-        xAxis.setHeight(bottomBorder);
-        xAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
-        yAxis.setHeight(height - bottomBorder);
-        yAxis.setWidth(leftBorder);
-        yAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
-        xAxis.draw(gC);
-        yAxis.draw(gC);
-        peakCanvas.setWidth(canvas.getWidth());
-        peakCanvas.setHeight(canvas.getHeight());
-        GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
-        peakGC.clearRect(xPos, yPos, width, height);
+        GraphicsContext gCC = canvas.getGraphicsContext2D();
+        GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
+        try {
+            gC.clearRect(xPos, yPos, width, height);
+            xAxis.setWidth(width - leftBorder);
+            xAxis.setHeight(bottomBorder);
+            xAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
+            yAxis.setHeight(height - bottomBorder);
+            yAxis.setWidth(leftBorder);
+            yAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
+            xAxis.draw(gC);
+            yAxis.draw(gC);
+            peakCanvas.setWidth(canvas.getWidth());
+            peakCanvas.setHeight(canvas.getHeight());
+            GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
+            peakGC.clearRect(xPos, yPos, width, height);
 //
 //        if (annoCanvas != null) {
 //            annoCanvas.setWidth(width);
@@ -1677,16 +1682,16 @@ public class PolyChart implements PeakListener {
 //            annoGC.clearRect(0, 0, width, height);
 //        }
 
-        if (!drawDatasets(gC)) {
-            // if we used immediate mode and didn't finish in time try again
-            // useImmediate mode will have been set to false
-            Platform.runLater(() -> layoutPlotChildren());
-            return;
-        }
+            if (!drawDatasets(gC)) {
+                // if we used immediate mode and didn't finish in time try again
+                // useImmediate mode will have been set to false
+                Platform.runLater(() -> layoutPlotChildren());
+                return;
+            }
 
-        if (!datasetAttributesList.isEmpty()) {
-            drawPeakLists(true);
-        }
+            if (!datasetAttributesList.isEmpty()) {
+                drawPeakLists(true);
+            }
 //        double[][] bounds = {{0, canvas.getWidth() - 1}, {0, canvas.getHeight() - 1}};
 //        double[][] world = {{axes[0].getLowerBound(), axes[0].getUpperBound()},
 //        {axes[1].getLowerBound(), axes[1].getUpperBound()}};
@@ -1694,68 +1699,88 @@ public class PolyChart implements PeakListener {
 //            anno.draw(peakCanvas, bounds, world);
 //        });
 //
-        crossHairs.refreshCrossHairs();
+            crossHairs.refreshCrossHairs();
+        } catch (GraphicsIOException ioE) {
+
+        }
     }
 
-    boolean drawDatasets(GraphicsContext gC) {
+    protected void exportVectorGraphics(String fileName, String fileType) throws IOException {
+        SVGGraphicsContext svgGC = new SVGGraphicsContext();
+        try {
+            svgGC.create(true, canvas.getWidth(), canvas.getHeight(), fileName);
+            xAxis.draw(svgGC);
+            yAxis.draw(svgGC);
+            drawDatasets(svgGC);
+            svgGC.saveFile();
+        } catch (GraphicsIOException ex) {
+            throw new IOException(ex.getMessage());
+        }
+    }
+
+    boolean drawDatasets(GraphicsContextInterface gC) throws GraphicsIOException {
         ArrayList<DatasetAttributes> draw2DList = new ArrayList<>();
         updateDatasetAttributeBounds();
         datasetAttributesList.stream().forEach(datasetAttributes -> {
-            DatasetAttributes firstAttr = datasetAttributesList.get(0);
-            Dataset dataset = datasetAttributes.getDataset();
-            if (dataset != null) {
+            try {
+                DatasetAttributes firstAttr = datasetAttributesList.get(0);
+                Dataset dataset = datasetAttributes.getDataset();
+                if (dataset != null) {
 //                datasetAttributes.setLvl(level);
-                datasetAttributes.setDrawReal(true);
-                if (datasetAttributes != firstAttr) {
-                    datasetAttributes.syncDims(firstAttr);
-                } else {
-                    updateAxisType();
+                    datasetAttributes.setDrawReal(true);
+                    if (datasetAttributes != firstAttr) {
+                        datasetAttributes.syncDims(firstAttr);
+                    } else {
+                        updateAxisType();
 
-                    if (controller.getStatusBar() != null) {
-                        SpectrumStatusBar statusBar = controller.getStatusBar();
-                        for (int iDim = 2; iDim < datasetAttributes.nDim; iDim++) {
-                            int[] maxLimits = datasetAttributes.getMaxLimitsPt(iDim);
-                            controller.getStatusBar().setPlaneRanges(iDim, maxLimits[1]);
-                        }
-                    }
-                }
-                if (disDimProp.get() != DISDIM.TwoD) {
-                    for (int iMode = 0; iMode < 2; iMode++) {
-                        if (iMode == 0) {
-                            datasetAttributes.setDrawReal(true);
-                        } else {
-                            if (!controller.getStatusBar().complexStatus.isSelected()) {
-                                break;
+                        if (controller.getStatusBar() != null) {
+                            SpectrumStatusBar statusBar = controller.getStatusBar();
+                            for (int iDim = 2; iDim < datasetAttributes.nDim; iDim++) {
+                                int[] maxLimits = datasetAttributes.getMaxLimitsPt(iDim);
+                                controller.getStatusBar().setPlaneRanges(iDim, maxLimits[1]);
                             }
-                            datasetAttributes.setDrawReal(false);
                         }
-                        bcList.clear();
-                        drawSpectrum.setToLastChunk(datasetAttributes);
-                        boolean ok;
-                        do {
-                            ok = drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
-                            double[][] xy = drawSpectrum.getXY();
-                            int nPoints = drawSpectrum.getNPoints();
-                            int rowIndex = drawSpectrum.getRowIndex();
-                            drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
-                            draw1DIntegral(datasetAttributes, gC);
-                        } while (ok);
                     }
-                    drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
-                    double[][] xy = drawSpectrum.getXY();
-                    int nPoints = drawSpectrum.getNPoints();
-                    drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
+                    if (disDimProp.get() != DISDIM.TwoD) {
+                        for (int iMode = 0; iMode < 2; iMode++) {
+                            if (iMode == 0) {
+                                datasetAttributes.setDrawReal(true);
+                            } else {
+                                if (!controller.getStatusBar().complexStatus.isSelected()) {
+                                    break;
+                                }
+                                datasetAttributes.setDrawReal(false);
+                            }
+                            bcList.clear();
+                            drawSpectrum.setToLastChunk(datasetAttributes);
+                            boolean ok;
+                            do {
+                                ok = drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
+                                double[][] xy = drawSpectrum.getXY();
+                                int nPoints = drawSpectrum.getNPoints();
+                                int rowIndex = drawSpectrum.getRowIndex();
+                                drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
+                                draw1DIntegral(datasetAttributes, gC);
+                            } while (ok);
+                        }
+                        drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
+                        double[][] xy = drawSpectrum.getXY();
+                        int nPoints = drawSpectrum.getNPoints();
+                        drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
 
-                } else {
-                    draw2DList.add(datasetAttributes);
+                    } else {
+                        draw2DList.add(datasetAttributes);
+                    }
                 }
+
+            } catch (GraphicsIOException gIO) {
+
             }
-        }
-        );
+        });
         boolean finished = true;
         if (!draw2DList.isEmpty()) {
             if (useImmediateMode) {
-                finished = drawSpectrum.drawSpectrumImmediate(draw2DList, axModes);
+                finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList, axModes);
                 useImmediateMode = finished;
             } else {
                 drawSpectrum.drawSpectrum(draw2DList, axModes, false);
@@ -1765,7 +1790,7 @@ public class PolyChart implements PeakListener {
 
     }
 
-    void draw1DIntegral(DatasetAttributes datasetAttr, GraphicsContext gC) {
+    void draw1DIntegral(DatasetAttributes datasetAttr, GraphicsContextInterface gC) throws GraphicsIOException {
         Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
         if (regions == null) {
             return;
@@ -1798,7 +1823,7 @@ public class PolyChart implements PeakListener {
         canvasAnnotations.add(anno);
     }
 
-    void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContext gC, int iMode, int rowIndex, int nPoints, double[][] xy) {
+    void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContextInterface gC, int iMode, int rowIndex, int nPoints, double[][] xy) throws GraphicsIOException {
         if (nPoints > 1) {
             if (iMode == 0) {
                 gC.setStroke(datasetAttributes.getPosColor(rowIndex));
@@ -2487,8 +2512,6 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    
-
     public void drawSlice(int iCross, int iOrient) {
         if (annoCanvas == null) {
             return;
@@ -2612,7 +2635,7 @@ public class PolyChart implements PeakListener {
         return function;
     }
 
-    protected void exportVectorGraphics(String fileName, String fileType) throws IOException {
+    protected void exportVectorGraphicsOld(String fileName, String fileType) throws IOException {
         Dataset dataset = getDataset();
         if (dataset == null) {
             System.out.println("no dataset");

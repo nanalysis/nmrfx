@@ -21,12 +21,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.gui.graphicsio;
 
 /**
  *
  * @author brucejohnson
  */
+package org.nmrfx.processor.gui.graphicsio;
+
 public class GraphicsIOException extends Exception {
 
     public GraphicsIOException(String message) {

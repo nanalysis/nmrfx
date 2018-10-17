@@ -53,6 +53,9 @@ import javafx.scene.control.Button;
 import javafx.scene.shape.StrokeLineCap;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
+import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
+import org.nmrfx.processor.gui.graphicsio.GraphicsContextProxy;
+import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
 /**
  *
@@ -67,7 +70,7 @@ public class DrawSpectrum {
     private SpectrumViewParameters viewPar = new SpectrumViewParameters();
     private SpectrumColorParameters colorPar = new SpectrumColorParameters();
     static Color[] gradColors = new Color[0];
-    GraphicsContext g2;
+    GraphicsContextInterface g2;
     List<DatasetAttributes> dataAttrList = Collections.synchronizedList(new ArrayList<>());
     final Canvas canvas;
     DrawTask makeContours;
@@ -88,7 +91,8 @@ public class DrawSpectrum {
         this.axes = axes;
         this.canvas = canvas;
         if (canvas != null) {
-            g2 = canvas.getGraphicsContext2D();
+            GraphicsContext g2C = canvas.getGraphicsContext2D();
+            g2 = new GraphicsContextProxy(g2C);
         }
         makeContours = new DrawTask(this);
         drawContours = new DrawContours(this);
@@ -111,11 +115,11 @@ public class DrawSpectrum {
     public void setAxes(NMRAxis[] axes) {
         this.axes = axes;
     }
-    
-    synchronized  void setLastPlotTime() {
+
+    synchronized void setLastPlotTime() {
         lastPlotTime = System.currentTimeMillis() - startTime;
     }
-    
+
     public long getLastPlotTime() {
         return lastPlotTime;
     }
@@ -142,7 +146,7 @@ public class DrawSpectrum {
         ((Service) drawContours.worker).restart();
     }
 
-    public boolean drawSpectrumImmediate(ArrayList<DatasetAttributes> dataGenerators, AXMODE[] axModes) {
+    public boolean drawSpectrumImmediate(GraphicsContextInterface g2I, ArrayList<DatasetAttributes> dataGenerators, AXMODE[] axModes) {
         cancelled = false;
 
         this.axModes = new AXMODE[axModes.length];
@@ -153,7 +157,7 @@ public class DrawSpectrum {
         startTime = System.currentTimeMillis();
         boolean finished = false;
         try {
-            finished = drawNow();
+            finished = drawNow(g2I);
         } catch (IOException ex) {
         }
         lastPlotTime = 0;
@@ -315,7 +319,7 @@ public class DrawSpectrum {
         }
 
         public int drawContourObject(DrawObject drawObject) throws InterruptedException, ExecutionException {
-            GraphicsContext g2 = drawSpectrum.g2;
+            GraphicsContextInterface g2 = drawSpectrum.g2;
             FutureTask<Integer> future = new FutureTask(() -> {
                 return drawContours(drawSpectrum, drawObject, g2);
             });
@@ -370,7 +374,7 @@ public class DrawSpectrum {
 
     }
 
-    public boolean drawNow() throws IOException {
+    public boolean drawNow(GraphicsContextInterface g2I) throws IOException {
         for (DatasetAttributes fileData : dataAttrList) {
             float[] levels = getLevels(fileData);
 
@@ -389,7 +393,7 @@ public class DrawSpectrum {
                 DrawObject drawObject = new DrawObject(fileData, contours, jobCount);
 
                 if (getContours(fileData, contours, iChunk, offset, levels)) {
-                    drawContours(this, drawObject, g2);
+                    drawContours(this, drawObject, g2I);
                 } else {
                     break;
                 }
@@ -398,7 +402,7 @@ public class DrawSpectrum {
         return true;
     }
 
-    static int drawContours(DrawSpectrum drawSpectrum, DrawObject drawObject, GraphicsContext g2) {
+    static int drawContours(DrawSpectrum drawSpectrum, DrawObject drawObject, GraphicsContextInterface g2) {
         int nDrawLevels = 1;
         DatasetAttributes dataAttr = drawObject.dataAttr;
         Contour[] contours = drawObject.contours;
@@ -414,19 +418,23 @@ public class DrawSpectrum {
             if (drawObject.count < drawSpectrum.jobCount) {
                 return 0;
             }
+            try {
+                g2.setGlobalAlpha(1.0);
+                g2.setLineCap(StrokeLineCap.BUTT);
+                g2.setEffect(null);
+                if (jPosNeg == 0) {
+                    g2.setLineWidth(dataAttr.posWidthProperty().get());
+                    g2.setStroke(dataAttr.getPosColor());
+                } else {
+                    g2.setLineWidth(dataAttr.negWidthProperty().get());
+                    g2.setStroke(dataAttr.getNegColor());
+                }
+                for (int iLevel = 0; iLevel < nDrawLevels; iLevel++) {
+                    drawSpectrum.genContourPath(dataAttr, drawSpectrum.axModes, contours[jPosNeg], iLevel, g2);
+                }
+            } catch (GraphicsIOException gIO) {
+                System.out.println(gIO.getMessage());
 
-            g2.setGlobalAlpha(1.0);
-            g2.setLineCap(StrokeLineCap.BUTT);
-            g2.setEffect(null);
-            if (jPosNeg == 0) {
-                g2.setLineWidth(dataAttr.posWidthProperty().get());
-                g2.setStroke(dataAttr.getPosColor());
-            } else {
-                g2.setLineWidth(dataAttr.negWidthProperty().get());
-                g2.setStroke(dataAttr.getNegColor());
-            }
-            for (int iLevel = 0; iLevel < nDrawLevels; iLevel++) {
-                drawSpectrum.genContourPath(dataAttr, drawSpectrum.axModes, contours[jPosNeg], iLevel, g2);
             }
         }
         return 1;
@@ -473,36 +481,38 @@ public class DrawSpectrum {
         return true;
     }
 
-    private void genContourPath(DatasetAttributes dataGenerator, AXMODE[] axModes, Contour contours, final int coordIndex, GraphicsContext g2) {
+    private void genContourPath(DatasetAttributes dataGenerator, AXMODE[] axModes, Contour contours, final int coordIndex, GraphicsContextInterface g2) throws GraphicsIOException {
         int lineCount = contours.getLineCount(coordIndex);
         float scale = Contour.getScaleFac() / Short.MAX_VALUE;
         double cxOffset = contours.xOffset;
         double cyOffset = contours.yOffset;
-        g2.beginPath();
-        Dataset dataset = dataGenerator.getDataset();
-        for (int iLine = 0; iLine < lineCount; iLine += 4) {
-            if (cancelled) {
-                System.out.println("can response1");
-                break;
+        if (lineCount != 0) {
+            g2.beginPath();
+            Dataset dataset = dataGenerator.getDataset();
+            for (int iLine = 0; iLine < lineCount; iLine += 4) {
+                if (cancelled) {
+                    System.out.println("can response1");
+                    break;
+                }
+                double xPoint1 = scale * contours.coords[coordIndex][iLine] + cxOffset;
+                double xPoint2 = scale * contours.coords[coordIndex][iLine + 2] + cxOffset;
+                double yPoint1 = scale * contours.coords[coordIndex][iLine + 1] + cyOffset;
+                double yPoint2 = scale * contours.coords[coordIndex][iLine + 3] + cyOffset;
+                xPoint1 = dataset.pointToPPM(dataGenerator.dim[0], xPoint1);
+                xPoint2 = dataset.pointToPPM(dataGenerator.dim[0], xPoint2);
+                yPoint1 = dataset.pointToPPM(dataGenerator.dim[1], yPoint1);
+                yPoint2 = dataset.pointToPPM(dataGenerator.dim[1], yPoint2);
+
+                double x1 = axes[0].getDisplayPosition(xPoint1);
+                double x2 = axes[0].getDisplayPosition(xPoint2);
+                double y1 = axes[1].getDisplayPosition(yPoint1);
+                double y2 = axes[1].getDisplayPosition(yPoint2);
+
+                g2.moveTo(x1, y1);
+                g2.lineTo(x2, y2);
             }
-            double xPoint1 = scale * contours.coords[coordIndex][iLine] + cxOffset;
-            double xPoint2 = scale * contours.coords[coordIndex][iLine + 2] + cxOffset;
-            double yPoint1 = scale * contours.coords[coordIndex][iLine + 1] + cyOffset;
-            double yPoint2 = scale * contours.coords[coordIndex][iLine + 3] + cyOffset;
-            xPoint1 = dataset.pointToPPM(dataGenerator.dim[0], xPoint1);
-            xPoint2 = dataset.pointToPPM(dataGenerator.dim[0], xPoint2);
-            yPoint1 = dataset.pointToPPM(dataGenerator.dim[1], yPoint1);
-            yPoint2 = dataset.pointToPPM(dataGenerator.dim[1], yPoint2);
-
-            double x1 = axes[0].getDisplayPosition(xPoint1);
-            double x2 = axes[0].getDisplayPosition(xPoint2);
-            double y1 = axes[1].getDisplayPosition(yPoint1);
-            double y2 = axes[1].getDisplayPosition(yPoint2);
-
-            g2.moveTo(x1, y1);
-            g2.lineTo(x2, y2);
+            g2.stroke();
         }
-        g2.stroke();
     }
 
     private boolean checkLevels(float[][] z, int iPosNeg, float[] levels) {
@@ -569,7 +579,7 @@ public class DrawSpectrum {
                 if (offsetTracking) {
                     offset = axes[1].getDisplayPosition(slicePosY);
                 } else {
-                    offset = axes[0].getYOrigin() - axes[1].getHeight()* sliceAttr.getOffsetYValue();
+                    offset = axes[0].getYOrigin() - axes[1].getHeight() * sliceAttr.getOffsetYValue();
                 }
                 drawVector(sliceVec, orientation, 0, AXMODE.PPM, drawReal, ph0, ph1, null,
                         (index, intensity) -> axes[0].getDisplayPosition(index),

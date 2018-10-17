@@ -27,6 +27,8 @@ import javafx.geometry.VPos;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
+import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
+import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
 /**
  *
@@ -269,7 +271,7 @@ public class Axis {
         }
     }
 
-    public void draw(GraphicsContext gC) {
+    public void draw(GraphicsContextInterface gC) throws GraphicsIOException {
         if (orientation == VERTICAL) {
             drawVerticalAxis(gC);
         } else {
@@ -277,7 +279,7 @@ public class Axis {
         }
     }
 
-    private void drawHorizontalAxis(GraphicsContext gC) {
+    private void drawHorizontalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
         gC.setTextAlign(TextAlignment.CENTER);
         gC.setTextBaseline(VPos.TOP);
         gC.setFill(color);
@@ -305,7 +307,7 @@ public class Axis {
 
     }
 
-    private void drawVerticalAxis(GraphicsContext gC) {
+    private void drawVerticalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
         gC.setFill(color);
         gC.setStroke(color);
         gC.setTextBaseline(VPos.CENTER);
