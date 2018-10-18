@@ -107,6 +107,8 @@ import org.nmrfx.processor.datasets.peaks.PeakLinker;
 import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.controls.LayoutControlCanvas;
+import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
+import org.nmrfx.processor.gui.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utilities.DictionarySort;
@@ -856,9 +858,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         fileChooser.setInitialDirectory(getInitialDirectory());
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
+            SVGGraphicsContext svgGC = new SVGGraphicsContext();
             try {
-                getActiveChart().exportVectorGraphics(selectedFile.toString(), "svg");
-            } catch (IOException ex) {
+                svgGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                for (PolyChart chart : charts) {
+                    chart.exportVectorGraphics(svgGC);
+                }
+                svgGC.saveFile();
+            } catch (GraphicsIOException ex) {
                 ExceptionDialog eDialog = new ExceptionDialog(ex);
                 eDialog.showAndWait();
             }
