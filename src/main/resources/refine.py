@@ -814,30 +814,18 @@ class refine:
             reader.readSequenceString('p', resStrings)
         else:
             file = molDict['file']
-            if 'type' in molDict:
-                type = molDict['type']
-                if type == 'fasta':
-                    import os
-                    import osfiles
-                    dir = os.path.dirname(file)
-                    file = osfiles.convertSeqFile(file,dir)
-                    type = 'nv'
-                elif type == 'pdb':
-                    compound = reader.readPDB(file, not 'ptype' in molDict)
-                    rnum = str(molDict['rnum']) if 'rnum' in molDict else None
-                    if rnum:
-                        compound.setNumber(rnum)
-
-                elif type == 'sdf':
-                    self.readSDFile(file)
-                elif type == 'mol':
-                    self.readSDFile(file)
-
+            type = molDict.get('type','nv')
+            if type == 'fasta':
+                reader.readSequence(file, True)
+            elif type == 'pdb':
+                compound = reader.readPDB(file, not 'ptype' in molDict)
+                resnum = molDict.get('resnum')
+                if resnum and compound:
+                    compound.setNumber(str(resnum))
+            elif type == 'sdf' or type == 'mol':
+                self.readSDFile(file)
             else:
-                type = 'nv'
-            if type == 'nv':
                 reader.readSequence(file)
-            mol = self.molecule;
 
     def readDistanceDict(self,disDict,residues):
         wt = -1.0
