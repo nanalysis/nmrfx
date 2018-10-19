@@ -5,6 +5,7 @@ import random
 import seqalgs
 import re
 import xplor
+import reader
 
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry.energy import EnergyLists
@@ -738,7 +739,7 @@ class refine:
     def loadFromYaml(self,data, seed, pdbFile=""):
         """Reading in all the structures"""
         if pdbFile != '':
-            self.readPDBFile(pdbFile)
+            reader.readPDB(pdbFile)
             residues = None
         else:
             if 'molecule' in data:
@@ -756,6 +757,9 @@ class refine:
                     #Only one entity in the molecule
                     residues = ",".join(molDict['residues'].split()) if 'residues' in molData else None
                     self.readMoleculeDict(molData)
+        self.molecule = Molecule.getActive()
+        self.molName = self.molecule.getName()
+
         treeDict = data['tree'] if 'tree' in data else None
 
         linkerList = molData['link'] if 'link' in molData else None
@@ -839,6 +843,7 @@ class refine:
                     type = 'nv'
                 elif type == 'pdb':
                     compound = self.readPDBFile(file)
+                    compound = reader.readPDB(file, not 'ptype' in molDict)
                     rnum = str(molDict['rnum']) if 'rnum' in molDict else None
                     if rnum:
                         compound.setNumber(rnum)
@@ -851,7 +856,7 @@ class refine:
             else:
                 type = 'nv'
             if type == 'nv':
-                self.readSequence(file)
+                reader.readSequence(file)
             mol = self.molecule;
 
     def readDistanceDict(self,disDict,residues):
@@ -1471,42 +1476,6 @@ class refine:
         seqReader = Sequence()
         self.molecule = seqReader.read(molName, seqAList, "")
         self.molName = self.molecule.getName()
-        return self.molecule
-
-    def readSequence(self,seqFile):
-        seqReader = Sequence()
-        mol = seqReader.read(seqFile)
-        if self.molecule:
-            for entity in mol.getEntities():
-        #        self.measureTree(entity)
-                self.molecule.addEntity(entity)
-        else:
-        #    mol.getEntities()[0].measureTree(entity)
-            self.molecule = mol
-        self.molecule.selectAtoms('*.*')
-        self.molName = self.molecule.getName()
-        self.molecule.updateAtomArray()
-        return self.molecule
-
-    def readPDBFile(self,fileName):
-        pdb = PDBFile()
-        # todo ideally this function should call either readSequence or readResidue
-        # those functions should handle whether or not there is a molecule. The
-        # return of those functions should be an entity or list of entities
-        # that are created from the method
-        # this will simplify the code here.
-        if not self.molecule:
-            pdb.readSequence(fileName,0)
-            self.molecule = Molecule.getActive()
-            self.molName = self.molecule.getName()
-            self.molecule.selectAtoms('*.*')
-            #entity = self.molecule.getEntities()[0]
-            return None
-        else:
-            # todo this will break if multiple pdbs read in
-            entity = pdb.readResidue(fileName, None, self.molecule, None)
-            return entity
-        #self.measureTree(entity)
         return self.molecule
 
     def readPDBFiles(self,files):
