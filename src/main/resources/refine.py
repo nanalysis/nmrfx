@@ -106,55 +106,48 @@ def getHelix(pairs,vie):
     nHelix = len(helixStarts)
     return helixStarts,helixEnds
 
-def generateResNums(residues,seqString,linker,polyType):
-    bases = []
-    for char in seqString:
-        if char.isalpha():
-            if polyType == "RNA":
-                bases.append(char.upper())
-            else:
-                bases.append(protein1To3[char.upper()])
-
-    if isinstance(residues,int):
-        startIndex = residues
-        resNums = range(len(bases))
-        resNums = list(map(lambda x: str(x+startIndex),resNums))
-    else:
-        arr = residues.split()
+def getSequenceArray(indexing,seqString,linkers,polyType):
+    ''' getSequenceArray takes a seqString and returns a list of strings with
+        the residue name followed by the residue number. The residue number is
+        determined from the indexing parameter passed in, which can be either a
+        single int or a string of multiple indexing partitions. Linkers can also
+        be added using a string. The returned value is a java arrayList type to
+        be passed into a sequenceReader
+    '''
+    indexing = indexing if indexing else 1;
+    resNames = [char.upper() if polyType == "RNA" else protein1To3[char.upper()] for char in seqString]
+    linkers = [linker.split(':') for linker in linkers.split()] if linkers else []
+    linkers = {int(i): int(n) for i,n in linkers} # resNum to number of linkers
+    try :
+        resNums = range(int(indexing),int(indexing)+len(seqString))
+    except ValueError:
         resNums = []
-        for resIndices in arr:
-            resIndices = resIndices.split(':')
-            if len(resIndices) == 1:
-                resNums += resIndices
-            else:
-                startIndex = int(resIndices[0])
-                endIndex = int(resIndices[1])
-                diff = endIndex - startIndex
-                residues = range(diff+1)
-                residues = list(map(lambda x: str(x+startIndex),residues))
-                resNums += residues
-    indexError = len(resNums) != len(bases)
-    if indexError:
-        raise IndexError('The residues string does not match the inputted sequence')
+        for section in indexing.split():
+            startIndex, endIndex = [int(i) for i in section.split(':')]
+            resNums += range(startIndex, endIndex+1)
 
-    residues = []
-    if linker != None:
-        linker = linker.split(':')
-        insertionIndex = int(linker[0])
-        insertionLength = int(linker[1])
+    if len(resNums) != len(resNames):
+        raise IndexError('The indexing method cannot be applied to the given sequence string')
 
-    for i in xrange(len(bases)):
-        residue = bases[i] + " " + resNums[i]
-        residues.append(residue)
-        if linker != None:
-            if int(resNums[i]) == insertionIndex:
-                for j in range(insertionLength):
-                    if j == 0 or (j == insertionLength-1):
-                        residue = 'ln2 ' + str(j+1+int(resNums[i]))
-                    else:
-                        residue = 'ln5 ' + str(j+1+int(resNums[i]))
-                    residues.append(residue)
-    return residues
+    seqArray = []
+    for i, resNum in enumerate(resNums):
+        resString = ' '.join([resNames[i], str(resNum)])
+        seqArray.append(resString)
+        nLinkers = linkers.get(resNum)
+        if not nLinkers :
+            continue
+        for j in range(1, nLinkers + 1):
+            linkerName = 'ln2' if j == 1 or j == nLinkers else 'ln5'
+            linkerIndex = resNum + j
+            if (linkerIndex == resNums[i+1]):
+                raise IndexError('Linker numbers overlap with residue numbers')
+            resString = ' '.join([linkerName, str(linkerIndex)])
+            seqArray.append(resString)
+        del linkers[resNum]
+    if len(linkers) > 0:
+        raise IndexError('Linkers not created. No residues have a specified linker index')
+
+    return seqArray
 
 def prioritizePolymers(molList):
     containsSmallMolecule = False
@@ -814,22 +807,11 @@ class refine:
         if 'ptype' in molDict:
             polyType = molDict['ptype'].upper()
         if 'sequence' in molDict:
-            import java.util.ArrayList
-            from org.nmrfx.structure.chemistry.io import Sequence
             seqString = molDict['sequence']
-            if 'link' in molDict:
-                linker = molDict['link']
-            else:
-                linker = None
-            if 'residues' in molDict:
-                 resNums = generateResNums(molDict['residues'],seqString,linker,polyType)
-            else:
-                 resNums = generateResNums(1,seqString,linker,polyType)
-            arrayList = ArrayList()
-            arrayList.addAll(resNums)
-            sequenceReader = Sequence()
-            self.molecule = sequenceReader.read('p',arrayList,'')
-            self.molName = self.molecule.getName()
+            linkers = molDict.get('link')
+            index = molDict.get('indexing')
+            resStrings = getSequenceArray(index, seqString, linkers, polyType)
+            reader.readSequenceString('p', resStrings)
         else:
             file = molDict['file']
             if 'type' in molDict:
@@ -841,7 +823,6 @@ class refine:
                     file = osfiles.convertSeqFile(file,dir)
                     type = 'nv'
                 elif type == 'pdb':
-                    compound = self.readPDBFile(file)
                     compound = reader.readPDB(file, not 'ptype' in molDict)
                     rnum = str(molDict['rnum']) if 'rnum' in molDict else None
                     if rnum:
@@ -1468,14 +1449,6 @@ class refine:
                 entityTuple = (entity, atomName)
                 entity.genMeasuredTree(self.getAtom(entityTuple))
 
-    def readSequenceString(self, molName, sequence):
-        seqAList = ArrayList()
-        for res in sequence:
-            seqAList.add(res)
-        seqReader = Sequence()
-        self.molecule = seqReader.read(molName, seqAList, "")
-        self.molName = self.molecule.getName()
-        return self.molecule
 
     def readPDBFiles(self,files):
         fileName = files[0]
