@@ -38,7 +38,12 @@ def readSequenceString(polymerName, sequence):
     seqReader.read(polymerName, seqAList, "")
     updateAtomArray()
 
-def readSequence(seqFile):
+def readSequence(seqFile, convert=False):
+    if convert:
+        import os
+        import osfiles
+        dir = os.path.dirname(seqFile)
+        seqFile = osfiles.convertSeqFile(seqFile,dir)
     seqReader = Sequence()
     seqReader.read(seqFile)
     updateAtomArray()
