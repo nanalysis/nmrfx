@@ -144,7 +144,10 @@ public class Sequence {
         
         // fixme this needs to be changed for non-amino acid residue atoms
         if (isProtein) {
-            residue.getAtom("O").dihedralAngle = (float) Math.PI;
+            Atom refAtom = residue.getAtom("O");
+            if (refAtom != null){
+                residue.getAtom("O").dihedralAngle = (float) Math.PI;
+            }
         }
     }
 
