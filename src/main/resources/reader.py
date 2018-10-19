@@ -1,5 +1,6 @@
 from org.nmrfx.structure.chemistry.io import PDBFile
 from org.nmrfx.structure.chemistry.io import Sequence
+from java.util import ArrayList
 def updateAtomArray():
     ''' Updates the molecule atom array '''
     mol = Molecule.getActive()
@@ -25,6 +26,18 @@ def readPDB(fileName, isCompound = False):
         compound = pdb.readResidue(fileName, None, Molecule.getActive(), None)
     updateAtomArray()
     return compound
+def readSequenceString(polymerName, sequence):
+    ''' Creates a polymer from the sequence provided with the name of polymerName
+        The sequence input can either be a chain of characters but will only work
+        if the desired polymer is RNA. If creating a polymer for a protein,
+        sequence must be a list using the 3 letter code.
+    '''
+    seqAList = ArrayList()
+    seqAList.addAll(sequence)
+    seqReader = Sequence()
+    seqReader.read(polymerName, seqAList, "")
+    updateAtomArray()
+
 def readSequence(seqFile):
     seqReader = Sequence()
     seqReader.read(seqFile)
