@@ -36,7 +36,6 @@ from java.util import ArrayList
 #tclInterp.eval("puts hello")
 #tclInterp.eval('package require java')
 #tclInterp.eval('java::load org.nmrfx.structure.chemistry.ChemistryExt')
-PDBFile.putReslibDir('IUPAC','resource:/reslib_iu')
 
 bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
 
