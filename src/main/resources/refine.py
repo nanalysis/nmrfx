@@ -303,22 +303,6 @@ class refine:
         self.rDyn.setTrajectoryWriter(self.trajectoryWriter)
         return self.rDyn
 
-    def getAtom(self, atomTuple):
-        entity, atomName = atomTuple
-        atomArr = atomName.split('.')
-
-        if len(atomArr) > 1:
-            resNum = atomArr.pop(0)
-            if resNum:
-                entity = entity.getResidue(resNum)
-        atomName = atomArr[0]
-        atom = entity.getAtom(atomName)
-
-        if not atom:
-            print atomName , "was not found in", entity.getName()
-            raise ValueError
-        return atom
-
     def addLinkers(self, linkerList):
         if linkerList:
             try :
