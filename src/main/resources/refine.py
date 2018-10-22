@@ -330,8 +330,8 @@ class refine:
             startEnt = self.molecule.getEntity(startEntName)
             endEnt = self.molecule.getEntity(endEntName)
 
-            startTuple = (startEnt, startAtom)
-            endTuple = (endEnt, endAtom)
+            startTuple = (startEntName, startAtom)
+            endTuple = (endEntName, endAtom)
             startAtom = self.getAtom(startTuple)
             endAtom = self.getAtom(endTuple)
 
@@ -664,7 +664,8 @@ class refine:
         return treeDict
 
     def getAtom(self, atomTuple):
-        entity, atomName = atomTuple
+        entityName, atomName = atomTuple
+        entity = self.molecule.getEntity(entityName)
         atomArr = atomName.split('.')
 
         if len(atomArr) > 1:
@@ -1402,20 +1403,16 @@ class refine:
                 self.energyLists.addDistanceConstraint(atomNameI,atomNameJ,lower,upper)
 
     def measureTree(self):
-        for entity in self.molecule.getEntities():
-            print "Setup " + entity.getName()
+        for entity in [entity for entity in self.molecule.getEntities()]:
             entityName = entity.getName()
+            print "Setup " + entityName
             if type(entity) is Polymer:
                 prfStartAtom = self.getEntityTreeStartAtom(entity).getShortName()
                 treeStartAtom = self.entityEntryDict[entityName]
                 if prfStartAtom == treeStartAtom:
                     continue
             self.setupAtomProperties(entity)
-            #raise ValueError()
             if entityName in self.entityEntryDict:
-                atomName = self.entityEntryDict[entityName]
-                entityTuple = (entity, atomName)
-                entity.genMeasuredTree(self.getAtom(entityTuple))
 
 
     def readPDBFiles(self,files):
@@ -1438,6 +1435,7 @@ class refine:
         self.molecule.selectAtoms('*.*')
         return self.molecule
 
+                entity.genMeasuredTree(self.getAtom((entityName, self.entityEntryDict[entityName])))
 
     def setupAtomProperties(self, compound):
         pI = PathIterator(compound)
@@ -1464,10 +1462,20 @@ class refine:
                                  treeDict['end'] if 'end' in treeDict else None)
                                  if treeDict else (None, None))
 
+        if start:
+            startEntityName, startAtomName = start.split(':')
+            startEntity = self.molecule.getEntity(startEntityName);
+            startAtom = self.getAtom((startEntityName, startAtomName))
+        else:
+            startAtom = None
+        if end:
+            endEntityName, endAtomName = end.split(':')
+            endEntity = self.molecule.getEntity(endEntityName)
+            endAtom = self.getAtom((endEntityName, endAtomName))
+        else:
+            endAtom = None
         Molecule.makeAtomList()
         mol = self.molecule
-        startAtom = mol.getAtom(start) if start else None
-        endAtom = mol.getAtom(end) if end else None
         mol.resetGenCoords()
         mol.invalidateAtomArray()
         mol.invalidateAtomTree()
