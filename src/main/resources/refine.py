@@ -674,34 +674,31 @@ class refine:
         atomName = atomArr[0]
         atom = entity.getAtom(atomName)
         if not atom:
-            print atomName , "was not found in", entity.getName()
-            raise ValueError
+            raise ValueError(atomName, "was not found in", entityName)
         return atom
 
     def validateLinkerList(self,linkerList, treeDict):
-        usedEntities = {entityName:False for entityName in [entity.getName() for entity in self.molecule.getEntities()]}
-        linkerAtoms = []
+        ''' validateLinkerList goes over all linkers and the treeDict to make
+            sure all entities in the molecule are connected in some way.
+            If no linker is provided for an entity, one will be created for
+            the entity.  This function also has a few break points to help users
+            troubleshoot invalid data in their config file'''
+        unusedEntities = [entity.getName() for entity in self.molecule.getEntities()]
+        allEntities = tuple(unusedEntities)
 
-        entryAtomName = (treeDict['start'] if 'start' in treeDict else None) if treeDict else None
-        entityName = entryAtomName.split(':')[0] if entryAtomName else self.molecule.getEntities()[0].getName()
-        usedEntities[entityName] = True
+        entryAtomName = treeDict.get('start') if treeDict else None
+        firstEntityName = entryAtomName.split(':')[0] if entryAtomName else unusedEntities[0]
+        firstEntity = self.molecule.getEntity(firstEntityName)
+        unusedEntities.remove(firstEntityName)
         if linkerList:
-            if type(linkerList) is ArrayList:
-                for linkerDict in linkerList:
-                    linkerAtoms += linkerDict['atoms']
-            else:
-                linkerAtoms += linkerList['atoms']
-                linkerList = [linkerList]
-        else:
-            linkerList = []
-
-        for atom in linkerAtoms:
-            entityName = atom.split(':')[0]
-            if entityName not in usedEntities:
-                raise ValueError(entityName + " is not a valid entity. Entities within molecule are " + ', '.join(entity.getName() for entity in self.molecule.getEntities()))
-            usedEntities[entityName] = True
-        unusedEntities = [entityName for entityName in usedEntities if not usedEntities[entityName]]
-        firstEntity = self.molecule.getEntity([entityName for entityName in usedEntities if usedEntities[entityName]][0])
+            linkerList = linkerList if type(linkerList) is ArrayList else [linkerList]
+            linkerAtoms = reduce(lambda total, linkerDict : total + list(linkerDict.get('atoms')), linkerList, [])
+            for atomName in linkerAtoms:
+                entName = atomName.split(':')[0]
+                if entName not in allEntities:
+                    raise ValueError(entName + " is not a valid entitiy. Entities within molecule are " + ', '.join(allEntities))
+                if entName in unusedEntities:
+                    unusedEntities.remove(entName)
         for entityName in unusedEntities:
             entity = self.molecule.getEntity(entityName)
             print entityName + " had no defined linker."
