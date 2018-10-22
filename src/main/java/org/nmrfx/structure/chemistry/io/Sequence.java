@@ -480,7 +480,7 @@ public class Sequence {
                 if (ext.equals(".pdb")) {
                     compound = PDBFile.readResidue(localFile + ext, null, molecule, coordSetName, residue);
                 } else {
-                    compound = SDFile.readResidue(localFile + ext, null, molecule, coordSetName, residue);
+                    compound = SDFile.read(localFile + ext, null, molecule, coordSetName, residue);
                 }
                 break;
             }
@@ -735,7 +735,7 @@ public class Sequence {
             if (ligandFile.getPath().endsWith("pdb")) {
                 PDBFile.readResidue(ligandFile.getPath(), null, molecule, coordSetName);
             } else {
-                SDFile.readResidue(ligandFile.getPath(), null, molecule, coordSetName);
+                SDFile.read(ligandFile.getPath(), null, molecule, coordSetName);
             }
         }
         if ((connectBond != null) && (connectBond.end == null)) {

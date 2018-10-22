@@ -823,7 +823,7 @@ class refine:
                 if resnum and compound:
                     compound.setNumber(str(resnum))
             elif type == 'sdf' or type == 'mol':
-                self.readSDFile(file)
+                reader.readSDF(file)
             else:
                 reader.readSequence(file)
 
@@ -1458,18 +1458,6 @@ class refine:
         self.molecule.selectAtoms('*.*')
         return self.molecule
 
-    def readSDFile(self,fileName):
-        pdb = SDFile()
-        if (not self.molecule):
-            pdb.read(fileName, None)
-            self.molecule = Molecule.getActive()
-            self.molName = self.molecule.getName()
-            self.molecule.selectAtoms('*.*')
-        #    entity = self.molecule.getEntities()[0]
-        else:
-            entity = pdb.readResidue(fileName, None, self.molecule, None)
-        #self.measureTree(entity)
-        return self.molecule
 
     def setupAtomProperties(self, compound):
         pI = PathIterator(compound)

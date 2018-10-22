@@ -1,4 +1,5 @@
 from org.nmrfx.structure.chemistry.io import PDBFile
+from org.nmrfx.structure.chemistry.io import SDFile
 from org.nmrfx.structure.chemistry.io import Sequence
 from java.util import ArrayList
 def updateAtomArray():
@@ -26,6 +27,12 @@ def readPDB(fileName, isCompound = False):
         compound = pdb.readResidue(fileName, None, Molecule.getActive(), None)
     updateAtomArray()
     return compound
+def readSDF(fileName, newMolecule = False):
+    sdf = SDFile()
+    molecule = Molecule.getActive() if not newMolecule else None
+    sdf.read(fileName, None, molecule, None)
+    updateAtomArray()
+
 def readSequenceString(polymerName, sequence):
     ''' Creates a polymer from the sequence provided with the name of polymerName
         The sequence input can either be a chain of characters but will only work
