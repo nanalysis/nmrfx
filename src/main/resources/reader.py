@@ -30,8 +30,9 @@ def readPDB(fileName, isCompound = False):
 def readSDF(fileName, newMolecule = False):
     sdf = SDFile()
     molecule = Molecule.getActive() if not newMolecule else None
-    sdf.read(fileName, None, molecule, None)
+    compound = sdf.read(fileName, None, molecule, None)
     updateAtomArray()
+    return compound
 
 def readSequenceString(polymerName, sequence):
     ''' Creates a polymer from the sequence provided with the name of polymerName

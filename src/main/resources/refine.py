@@ -803,9 +803,7 @@ class refine:
 
     def readMoleculeDict(self,molDict):
         #if sequence exists it takes priority over the file and the sequence will be used instead
-        polyType = "PROTEIN"
-        if 'ptype' in molDict:
-            polyType = molDict['ptype'].upper()
+        polyType = molDict.get('ptype','protein').upper()
         if 'sequence' in molDict:
             seqString = molDict['sequence']
             linkers = molDict.get('link')
@@ -815,17 +813,18 @@ class refine:
         else:
             file = molDict['file']
             type = molDict.get('type','nv')
+            compound = None
             if type == 'fasta':
                 reader.readSequence(file, True)
             elif type == 'pdb':
                 compound = reader.readPDB(file, not 'ptype' in molDict)
-                resnum = molDict.get('resnum')
-                if resnum and compound:
-                    compound.setNumber(str(resnum))
             elif type == 'sdf' or type == 'mol':
-                reader.readSDF(file)
+                compound = reader.readSDF(file)
             else:
                 reader.readSequence(file)
+            resNum = molDict.get('resnum')
+            if resNum and compound:
+                compound.setNumber(str(resnum))
 
     def readDistanceDict(self,disDict,residues):
         wt = -1.0
