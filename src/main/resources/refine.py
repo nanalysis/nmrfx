@@ -1413,28 +1413,6 @@ class refine:
                     continue
             self.setupAtomProperties(entity)
             if entityName in self.entityEntryDict:
-
-
-    def readPDBFiles(self,files):
-        fileName = files[0]
-        pdb = PDBFile()
-        pdb.readSequence(fileName,0)
-        self.molecule = Molecule.getActive()
-        iFile = 1
-        for file in files:
-            pdb.readCoordinates(file,iFile,False)
-            iFile += 1
-        return self.molecule
-
-    def readPDBFileNL(self,fileName):
-        pdb = PDBFile()
-        pdb.read(fileName)
-        self.molecule = Molecule.getActive()
-
-        self.molName = self.molecule.getName()
-        self.molecule.selectAtoms('*.*')
-        return self.molecule
-
                 entity.genMeasuredTree(self.getAtom((entityName, self.entityEntryDict[entityName])))
 
     def setupAtomProperties(self, compound):
