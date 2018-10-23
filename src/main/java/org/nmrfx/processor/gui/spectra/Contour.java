@@ -23,171 +23,49 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
+import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
+
 /**
  *
  * @author johnbruc
  */
 public class Contour extends java.lang.Object {
 
+    GraphicsContextInterface g2;
+    double[][] pix;
+    double[][] pts;
+
     private static final float scaleFac = 256.0f;
     /**
      * Creates a new instance of Contour
      */
-//    GeneralPath gPath = new GeneralPath(GeneralPath.WIND_NON_ZERO, 256);
     private final int[] linesCount;
     public short[][] coords = null;
     public double xOffset = 0;
     public double yOffset = 0;
-    float[][] pt = new float[2][2];
     float[][] z = null;
     float rampEnd = 4;
     float plateauEnd = 8;
+    int[] offsets = {
+        0, 1, 6, 2, 11, 5, 7, 3, 12, 13, 10, 14, 8, 9, 4, 15
+    };
+    int[][] cells;
 
-    public Contour() {
-        pt[0][0] = 0;
-        pt[0][1] = 180;
-        pt[1][0] = 0;
-        pt[1][1] = 180;
+    public Contour(double[][] pts, double[][] pix) {
+        this.pts = new double[2][2];
+        this.pts[0] = pts[0].clone();
+        this.pts[1] = pts[1].clone();
+        this.pix = new double[2][2];
+        this.pix[0] = pix[0].clone();
+        this.pix[1] = pix[1].clone();
         linesCount = new int[1];
-    }
-
-    public Contour(final int nLevels) {
-        pt[0][0] = 0;
-        pt[0][1] = 180;
-        pt[1][0] = 0;
-        pt[1][1] = 180;
-        coords = new short[nLevels][65536 * 2];
-        linesCount = new int[nLevels];
     }
 
     public static float getScaleFac() {
         return scaleFac;
     }
 
-    public void setPoints(float x1, float y1, float x2, float y2) {
-        pt[0][0] = x1;
-        pt[0][1] = x2;
-        pt[1][0] = y1;
-        pt[1][1] = y2;
-    }
-
-//    public void setRamp(float ramp) {
-//        rampEnd = ramp;
-//        plateauEnd = 2.0f * rampEnd;
-//    }
-//
-//    public void genSimulation() {
-//        int nRows = 180;
-//        int nColumns = 180;
-//        float cx = 45.0f;
-//        float cy = 100.f;
-//        float w = 10.0f;
-//        z = new float[nRows][nColumns];
-//
-//        float[] levels = new float[8];
-//        levels[0] = 0.0f;
-//
-//        for (int k = 1; k < levels.length; k++) {
-//            levels[k] = levels[k - 1] * 1.5f;
-//        }
-//
-//        for (int i = 0; i < nRows; i++) {
-//            for (int j = 0; j < nColumns; j++) {
-//                float delta = (float) Math.sqrt(((i - cx) * (i - cx))
-//                        + ((j - cy) * (j - cy)));
-//                z[j][i] = (float) (Math.exp((-delta * delta) / w) * 10.0f);
-//            }
-//        }
-//
-//        linesCount[0] = 0;
-//        contour(levels, z);
-//    }
-//
-//    public void renderSegment(Graphics2D g2) {
-//        float scale = scaleFac / Short.MAX_VALUE;
-//        gPath.reset();
-//
-//        for (int iLine = 0; iLine < linesCount[0]; iLine += 4) {
-//            gPath.moveTo((coords[0][iLine] * scale) + (float) xOffset,
-//                    (coords[0][iLine + 1] * scale) + (float) yOffset);
-//            gPath.lineTo((coords[0][iLine + 2] * scale) + (float) xOffset,
-//                    (coords[0][iLine + 3] * scale) + (float) yOffset);
-//
-//            //System.out.println((coords[0][iLine] * scale + xOffset)+" "+(coords[0][iLine + 1] * scale + (float) yOffset));
-//            // System.out.println((coords[0][iLine + 2] * scale + xOffset)+" "+(coords[0][iLine + 3] * scale + (float) yOffset));
-//        }
-//
-//        AffineTransform at = new AffineTransform();
-//
-//
-//        if ((pt[0][1] != pt[0][0]) && (pt[1][1] != pt[1][0])) {
-//            double sx = ((double) chart.corner[0][1] - chart.corner[0][0]) / (pt[0][1]
-//                    - pt[0][0]);
-//            double sy = ((double) chart.corner[1][1] - chart.corner[1][0]) / (pt[1][1]
-//                    - pt[1][0]);
-//            at.translate(chart.corner[0][0], chart.corner[1][1]);
-//            at.scale(sx, sy);
-//            at.translate((double) -pt[0][0], (double) -pt[1][1]);
-//
-//            //at.translate(0.0, 0.0);
-//            g2.draw(at.createTransformedShape(gPath));
-//
-//            //g2.draw(gPath);
-//        }
-//    }
-//
-//    public void renderHeat(float[][] z, Graphics2D g2) {
-//        gPath.reset();
-//
-//        int ny = z.length;
-//        int nx = z[0].length;
-//        Rectangle2D.Float rect = new Rectangle2D.Float();
-//        AffineTransform at = new AffineTransform();
-//
-//        if ((pt[0][1] != pt[0][0]) && (pt[1][1] != pt[1][0])) {
-//            double sx = ((double) chart.corner[0][1] - chart.corner[0][0]) / (pt[0][1]
-//                    - pt[0][0]);
-//            double sy = ((double) chart.corner[1][1] - chart.corner[1][0]) / (pt[1][1]
-//                    - pt[1][0]);
-//            at.translate(chart.corner[0][0], chart.corner[1][1]);
-//            at.scale(sx, sy);
-//            at.translate((double) -pt[0][0], (double) -pt[1][1]);
-//        } else {
-//            return;
-//        }
-//
-//        float zf;
-//
-//        // fixme preallocate a range of colors
-//        Color color = null;
-//
-//        for (int j = 0; j < ny; j++) {
-//            for (int i = 0; i < nx; i++) {
-//                float zval = z[j][i];
-//
-//                if (zval < rampEnd) {
-//                    zf = (float) (zval / rampEnd);
-//                    color = new Color(zf, zf, 1.0f - zf);
-//                } else if (zval < plateauEnd) {
-//                    zf = (float) ((zval - rampEnd) / (plateauEnd - rampEnd));
-//                    color = new Color(1.0f, 1.0f - zf, 0.0f);
-//                } else {
-//                    color = Color.white;
-//                }
-//
-//                rect.setFrameFromDiagonal((i + (float) xOffset) - 0.5f,
-//                        (j + (float) yOffset) - 0.5f, i + (float) xOffset + 0.5f,
-//                        j + (float) yOffset + 0.5f);
-//
-//                //at.translate(0.0, 0.0);
-//                g2.setColor(color);
-//                g2.draw(at.createTransformedShape(rect));
-//                g2.fill(at.createTransformedShape(rect));
-//
-//                //g2.draw(gPath);
-//            }
-//        }
-//    }
     public synchronized boolean contour(float[] levels, float[][] z) {
         int npass;
         float[] x1;
@@ -317,4 +195,216 @@ public class Contour extends java.lang.Object {
             linesCount[i] = lineCount;
         }
     }
+
+    public synchronized boolean marchSquares(float level, float[][] data, int[][] cells) {
+        boolean result = false;
+        z = data;
+        int ny = z.length;
+        int nx = z[0].length;
+        this.cells = cells;
+        for (int i = 0; i < ny; i++) {
+            for (int j = 0; j < nx; j++) {
+                cells[i][j] = 0;
+            }
+        }
+        boolean lastI = false;
+        double edgeValue = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < ny; i++) {
+            lastI = i == ny - 1;
+            for (int j = 0; j < nx; j++) {
+                boolean lastJ = j == nx - 1;
+                final double corner00 = z[i][j];
+                final double corner10 = lastI ? edgeValue : z[i + 1][j];
+                final double corner01 = lastJ ? edgeValue : z[i][j + 1];
+                final double corner11 = lastJ || lastI ? edgeValue : z[i + 1][j + 1];
+
+                int cellStatus = 0;
+                if (corner00 > level) {
+                    cellStatus += 1;
+                }
+                if (corner01 > level) {
+                    cellStatus += 2;
+                }
+                if (corner11 > level) {
+                    cellStatus += 4;
+                }
+                if (corner10 > level) {
+                    cellStatus += 8;
+                }
+                boolean flipped = false;
+                int cellValue = 0;
+                if ((cellStatus != 0) && (cellStatus != 15)) {
+                    result = false;
+                    if (cellStatus == 5 || cellStatus == 10) {
+                        double centerAvg = (corner10 + corner11 + corner01 + corner00) / 4;
+                        if (cellStatus == 5 && centerAvg < level) {
+                            flipped = true;
+                        } else if (cellStatus == 10 && centerAvg < level) {
+                            flipped = true;
+                        }
+                    }
+                    int offset = offsets[cellStatus];
+                    if (flipped) {
+                        offset += 16;
+                    }
+                    double f0 = 0.0;
+                    double f1 = 0.0;
+                    if (((cellStatus & 9) == 1) || ((cellStatus & 9) == 8)) {
+                        f0 = (level - corner00) / (corner10 - corner00);
+                    }
+                    if (((cellStatus & 3) == 1) || ((cellStatus & 3) == 2)) {
+                        f1 = (level - corner00) / (corner01 - corner00);
+
+                    }
+
+                    int edge0 = (int) Math.round(255 * f0);
+                    int edge1 = (int) Math.round(255 * f1);
+                    cellValue |= (edge1 << 16);
+                    cellValue |= (edge0 << 8);
+                    cellValue |= offset;
+//                    System.out.printf("%2d %2d %2d %9.3f %9.3f %9.3f %9.3f %5.3f %5.3f %3d %3d\n", i, j, cellStatus, corner00, corner10, corner01, corner11, f0, f1, edge0, edge1);
+//                    System.out.printf("%3d %3d %3d\n", (cellValue & 255), ((cellValue >> 8) & 255), ((cellValue >> 16) & 255));
+                }
+                cells[i][j] = cellValue;
+            }
+        }
+        return result;
+    }
+
+    /*                      0
+    1:lb 0 1  1
+    2:br  1 2  6
+    3:lr  0 2  2
+    4:rt    2 3  11
+    5:ltrb         5   5     5
+    6:bt   1 3   7
+    7:lt  0 3   3
+    8:tl  3 0  12
+    9:tb  3 1  13
+    10:bltr        10       10
+    11:tr  3 2  14
+    12:rl  2 0  8
+    13:rb   2 1  9
+    14:bl 1 0  4
+    15
+    0,1,6,2,11,5,7,3,12,13,10,14,8,9,4,15
+     */
+    public void drawSquares(GraphicsContextInterface g2,
+            double xOff, double yOff) throws GraphicsIOException {
+        this.xOffset = xOff;
+        this.yOffset = yOff;
+        this.g2 = g2;
+        int ny = cells.length;
+        int nx = cells[0].length;
+        final double[] x = new double[4];
+        final double[] y = new double[4];
+        int[] nextX = {-1, 0, 1, 0};
+        int[] nextY = {0, -1, 0, 1};
+        for (int iy = 0; iy < ny - 1; iy++) {
+            for (int ix = 0; ix < nx - 1; ix++) {
+                int offset = cells[iy][ix] & 255;
+                if ((offset != 0) && (offset != 15)) {
+                    int cX = ix;
+                    int cY = iy;
+                    boolean start = true;
+                    int nCells = 0;
+                    //System.out.println("start " + cX + " " + cY);
+                    while (true) {
+                        if ((cells[cY][cX] & 32) == 32) {
+                            // System.out.println("end " + cX + " " + cY);
+                            if (nCells > 0) {
+                                g2.stroke();
+                            }
+                            break;
+                        }
+                        offset = cells[cY][cX] & 255;
+                        int nextSide = drawCell(offset, cX, cY, start);
+                        nCells++;
+                        start = false;
+                        cX += nextX[nextSide];
+                        cY += nextY[nextSide];
+                        // System.out.println(nextSide + " " + cX + " " + cY);
+                        if ((cX < 0) || (cX >= (nx - 1)) || (cY < 0) || (cY >= (ny - 1))) {
+                            // System.out.println("edgey " + nx + " " + ny);
+                            g2.stroke();
+                            break;
+                        }
+                        if ((cX == ix) && (cY == iy)) {
+                            g2.closePath();
+                            g2.stroke();
+                            //  System.out.println("close " + ix + " " + iy);
+                            break;
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    int drawCell(int offset, int ix, int iy, boolean start) throws GraphicsIOException {
+        final double[] x = new double[4];
+        final double[] y = new double[4];
+        boolean flipped = (offset & 16) == 16;
+        offset = offset & 15;
+        offsets[0] = offset;
+        int nOffsets = 1;
+        if (offset == 5) {
+            nOffsets = 2;
+            if (flipped) {
+                offsets[0] = 4;
+                offsets[1] = 14;
+            } else {
+                offsets[0] = 3;
+                offsets[1] = 9;
+            }
+        } else if (offset == 10) {
+            nOffsets = 2;
+            if (flipped) {
+                offsets[0] = 3;
+                offsets[1] = 9;
+            } else {
+                offsets[0] = 4;
+                offsets[1] = 14;
+            }
+        }
+        int edge0y = (cells[iy][ix] >> 8) & 255;
+        int edge1x = ((cells[iy][ix] >> 16) & 255);
+        int edge2y = (cells[iy][ix + 1] >> 8) & 255;
+        int edge3x = (cells[iy + 1][ix] >> 16) & 255;
+        x[0] = ix;
+        y[0] = edge0y / 255.0 + iy;
+        x[1] = edge1x / 255.0 + ix;
+        y[1] = iy;
+        x[2] = ix + 1;
+        y[2] = edge2y / 255.0 + iy;
+        x[3] = edge3x / 255.0 + ix;
+        y[3] = iy + 1;
+        int nextSide = 0;
+        for (int iOff = 0; iOff < nOffsets; iOff++) {
+            offset = offsets[iOff];
+            int i0 = (offset >> 2) & 3;
+            int i1 = offset & 3;
+            if (start) {
+                double xp1 = (x[i0] + xOffset - pts[0][0])
+                        / (pts[0][1] - pts[0][0]) * (pix[0][1] - pix[0][0]) + pix[0][0];
+                double yp1 = (y[i0] + yOffset - pts[1][0])
+                        / (pts[1][1] - pts[1][0]) * (pix[1][1] - pix[1][0]) + pix[1][0];
+                g2.beginPath();
+                g2.moveTo(xp1, yp1);
+            }
+            double xp2 = (x[i1] + xOffset - pts[0][0])
+                    / (pts[0][1] - pts[0][0]) * (pix[0][1] - pix[0][0]) + pix[0][0];
+            double yp2 = (y[i1] + yOffset - pts[1][0])
+                    / (pts[1][1] - pts[1][0]) * (pix[1][1] - pix[1][0]) + pix[1][0];
+            g2.lineTo(xp2, yp2);
+            nextSide = i1;
+            cells[iy][ix] |= 32;
+//                    System.out.printf("%2d iy %2d ix %2d off %2d id0 %2d id1 %2d 0y %3d 1x %3d 2y %3d 3x %3d x0 %5.2f y0 %5.2f x1 %5.2f y1 %5.2f\n", lineCount, iy, ix, offset, index0, index1,
+//                            edge0y, edge1x, edge2y, edge3x, x0, y0, x1, y1, nx, ny);
+        }
+        return nextSide;
+
+    }
+
 }

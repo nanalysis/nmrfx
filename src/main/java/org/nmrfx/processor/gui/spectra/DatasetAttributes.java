@@ -1105,15 +1105,15 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return (matrix);
     }
 
-    public int getMatrixRegion(int iChunk, int mode, int[][] apt,
+    public int getMatrixRegion(int iChunk, int maxChunk, int mode, int[][] apt,
             double[] offset, StringBuffer chunkLabel) {
         Float extremeValue;
         boolean fastMode = false;
         chunkLabel.append(dim[0] + ".");
-        chunkSize[0] = 64;
+        chunkSize[0] = maxChunk;
 
         if (theFile.getNDim() > 1) {
-            chunkSize[1] = 64;
+            chunkSize[1] = maxChunk;
         }
 
         chunkOffset[0] = 1;

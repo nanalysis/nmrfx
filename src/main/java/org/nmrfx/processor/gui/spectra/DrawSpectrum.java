@@ -63,6 +63,8 @@ import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
  */
 public class DrawSpectrum {
 
+    static public boolean MARCH_MODE = true;
+
     static final double degtorad = Math.PI / 180.0;
     static final long MAX_TIME = 2000;
     NMRAxis[] axes;
@@ -261,9 +263,10 @@ public class DrawSpectrum {
                     break;
                 }
                 int iChunk = fileData.mChunk + 1;
+                double[][] pix = getPix(axes, fileData);
                 final Contour[] contours = new Contour[2];
-                contours[0] = new Contour();
-                contours[1] = new Contour();
+                contours[0] = new Contour(fileData.ptd, pix);
+                contours[1] = new Contour(fileData.ptd, pix);
                 DrawObject drawObject = new DrawObject(fileData, contours, drawSpectrum.jobCount);
 
                 if (drawSpectrum.getContours(fileData, contours, iChunk, offset, levels)) {
@@ -379,27 +382,78 @@ public class DrawSpectrum {
             float[] levels = getLevels(fileData);
 
             double[] offset = {0, 0};
+            //MARCH_MODE = iMode == 0 ? false : true;
+            //fileData.posColorProperty().set(iMode == 0 ? Color.BLACK : Color.RED);
             fileData.mChunk = -1;
             do {
                 long currentTime = System.currentTimeMillis();
+                System.out.println(fileData.mChunk + " " + (currentTime - startTime));
                 if ((currentTime - startTime) > MAX_TIME) {
                     return false;
 
                 }
                 int iChunk = fileData.mChunk + 1;
+                double[][] pix = getPix(axes, fileData);
                 final Contour[] contours = new Contour[2];
-                contours[0] = new Contour();
-                contours[1] = new Contour();
+                contours[0] = new Contour(fileData.ptd, pix);
+                contours[1] = new Contour(fileData.ptd, pix);
                 DrawObject drawObject = new DrawObject(fileData, contours, jobCount);
-
-                if (getContours(fileData, contours, iChunk, offset, levels)) {
-                    drawContours(this, drawObject, g2I);
+//                    if (iMode == 0) {
+//                        try {
+//                            drawGrid(fileData, g2);
+//                        } catch (GraphicsIOException gio) {
+//                            System.out.println("err grid " + gio.getMessage());
+//                            throw new IOException(gio.getMessage());
+//                        }
+//                    }
+                if (MARCH_MODE == true) {
+                    try {
+                        float[][] z = getData(fileData, iChunk, offset);
+                        if (z != null) {
+                            int[][] cells = new int[z.length][z[0].length];
+                            if (getMarchingSquares(fileData, z, cells, contours, iChunk, offset, levels, g2I)) {
+                            } else {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    } catch (GraphicsIOException ex) {
+                        throw new IOException(ex.getMessage());
+                    }
                 } else {
-                    break;
+                    if (getContours(fileData, contours, iChunk, offset, levels)) {
+                        drawContours(this, drawObject, g2I);
+                    } else {
+                        break;
+                    }
                 }
             } while (true);
+
         }
         return true;
+    }
+
+    void drawGrid(DatasetAttributes dataAttr, GraphicsContextInterface g2) throws GraphicsIOException {
+        int x0 = dataAttr.pt[0][0];
+        int x1 = dataAttr.pt[0][1];
+        int y0 = dataAttr.pt[1][0];
+        int y1 = dataAttr.pt[1][1];
+        g2.setLineWidth(1);
+        g2.setStroke(Color.BLACK);
+        Dataset dataset = dataAttr.getDataset();
+        System.out.println("stroke " + x0 + " " + y0 + " " + x1 + " " + y1);
+        for (int i = x0; i <= x1; i++) {
+            for (int j = y0; j <= y1; j++) {
+                double xP = dataset.pointToPPM(dataAttr.dim[0], i);
+                double yP = dataset.pointToPPM(dataAttr.dim[1], j);
+                double px1 = axes[0].getDisplayPosition(xP);
+                double py1 = axes[1].getDisplayPosition(yP);
+                g2.strokeLine(px1 - 1, py1, px1 + 1, py1);
+
+            }
+        }
+
     }
 
     static int drawContours(DrawSpectrum drawSpectrum, DrawObject drawObject, GraphicsContextInterface g2) {
@@ -441,11 +495,82 @@ public class DrawSpectrum {
 
     }
 
+    static double[][] getPix(NMRAxis[] axes, DatasetAttributes dataAttr) {
+        Dataset dataset = dataAttr.getDataset();
+        double xPoint1 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][0]);
+        double xPoint2 = dataset.pointToPPM(dataAttr.dim[0], dataAttr.ptd[0][1]);
+        double yPoint1 = dataset.pointToPPM(dataAttr.dim[1], dataAttr.ptd[1][0]);
+        double yPoint2 = dataset.pointToPPM(dataAttr.dim[1], dataAttr.ptd[1][1]);
+        double[][] pix = new double[2][2];
+        pix[0][0] = axes[0].getDisplayPosition(xPoint1);
+        pix[0][1] = axes[0].getDisplayPosition(xPoint2);
+        pix[1][0] = axes[1].getDisplayPosition(yPoint1);
+        pix[1][1] = axes[1].getDisplayPosition(yPoint2);
+        return pix;
+    }
+
+    float[][] getData(DatasetAttributes dataAttr, int iChunk, double[] offset) throws IOException {
+        StringBuffer chunkLabel = new StringBuffer();
+        chunkLabel.setLength(0);
+        int[][] apt = new int[dataAttr.getDataset().getNDim()][2];
+        int fileStatus = dataAttr.getMatrixRegion(iChunk, 2048, viewPar.mode, apt,
+                offset, chunkLabel);
+        if (fileStatus != 0) {
+            return null;
+        }
+        float[][] z = null;
+
+        try {
+            z = dataAttr.Matrix2(dataAttr.mChunk, chunkLabel.toString(), apt);
+        } catch (IOException ioE) {
+            throw ioE;
+        }
+        return z;
+    }
+
+    boolean getMarchingSquares(DatasetAttributes fileData, float[][] z, int[][] cells, Contour[] contours, int iChunk, double[] offset, float[] levels, GraphicsContextInterface g2) throws IOException, GraphicsIOException {
+        if (z == null) {
+            return false;
+        }
+        double xOff = offset[0] + fileData.ptd[0][0];
+        double yOff = offset[1] + fileData.ptd[1][0];
+
+        for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
+            if ((iPosNeg == 0) && !fileData.getPos()) {
+                continue;
+            } else if ((iPosNeg == 1) && !fileData.getNeg()) {
+                continue;
+            }
+            contours[iPosNeg].setLineCount(0);
+
+            if (checkLevels(z, iPosNeg, levels)) {
+                if (contours[iPosNeg] != null) {
+                    for (float level : levels) {
+                        if (!contours[iPosNeg].marchSquares(level, z, cells)) {
+                            g2.setGlobalAlpha(1.0);
+                            g2.setLineCap(StrokeLineCap.BUTT);
+                            g2.setEffect(null);
+                            if (iPosNeg == 0) {
+                                g2.setLineWidth(fileData.posWidthProperty().get());
+                                g2.setStroke(fileData.getPosColor());
+                            } else {
+                                g2.setLineWidth(fileData.negWidthProperty().get());
+                                g2.setStroke(fileData.getNegColor());
+                            }
+                            contours[iPosNeg].drawSquares(g2, xOff, yOff);
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     boolean getContours(DatasetAttributes fileData, Contour[] contours, int iChunk, double[] offset, float[] levels) throws IOException {
         StringBuffer chunkLabel = new StringBuffer();
         chunkLabel.setLength(0);
         int[][] apt = new int[fileData.getDataset().getNDim()][2];
-        int fileStatus = fileData.getMatrixRegion(iChunk, viewPar.mode, apt,
+        int fileStatus = fileData.getMatrixRegion(iChunk, 64, viewPar.mode, apt,
                 offset, chunkLabel);
         if (fileStatus != 0) {
             return false;
@@ -498,10 +623,16 @@ public class DrawSpectrum {
                 double xPoint2 = scale * contours.coords[coordIndex][iLine + 2] + cxOffset;
                 double yPoint1 = scale * contours.coords[coordIndex][iLine + 1] + cyOffset;
                 double yPoint2 = scale * contours.coords[coordIndex][iLine + 3] + cyOffset;
+//                if (MARCH_MODE) {
+//                    System.out.println("pt " + xPoint1 + " " + yPoint1 + " " + xPoint2 + " " + yPoint2);
+//                }
                 xPoint1 = dataset.pointToPPM(dataGenerator.dim[0], xPoint1);
                 xPoint2 = dataset.pointToPPM(dataGenerator.dim[0], xPoint2);
                 yPoint1 = dataset.pointToPPM(dataGenerator.dim[1], yPoint1);
                 yPoint2 = dataset.pointToPPM(dataGenerator.dim[1], yPoint2);
+//                if (MARCH_MODE) {
+//                    System.out.println("pp " + xPoint1 + " " + yPoint1 + " " + xPoint2 + " " + yPoint2);
+//                }
 
                 double x1 = axes[0].getDisplayPosition(xPoint1);
                 double x2 = axes[0].getDisplayPosition(xPoint2);

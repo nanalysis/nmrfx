@@ -154,9 +154,10 @@ public class SpectrumWriter {
             fileData.mChunk = -1;
             do {
                 int iChunk = fileData.mChunk + 1;
+                double[][] pix = DrawSpectrum.getPix(axes, fileData);
                 final Contour[] contours = new Contour[2];
-                contours[0] = new Contour();
-                contours[1] = new Contour();
+                contours[0] = new Contour(fileData.ptd, pix);
+                contours[1] = new Contour(fileData.ptd, pix);
                 if (drawSpectrum.getContours(fileData, contours, iChunk, offset, levels)) {
                     for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
                         if ((iPosNeg == 0) && !fileData.getPos()) {
