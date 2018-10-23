@@ -476,15 +476,15 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         return (matrix);
     }
 
-    public int getMatrixRegion(int iChunk, int mode, int[][] apt,
+    public int getMatrixRegion(int iChunk, int maxChunkSize, int mode, int[][] apt,
             double[] offset, StringBuffer chunkLabel) {
         Float extremeValue;
         boolean fastMode = false;
         chunkLabel.append(dim[0] + ".");
-        chunkSize[0] = 64;
+        chunkSize[0] = maxChunkSize;
 
         if (theFile.getNDim() > 1) {
-            chunkSize[1] = 64;
+            chunkSize[1] = maxChunkSize;
         }
 
         chunkOffset[0] = 1;

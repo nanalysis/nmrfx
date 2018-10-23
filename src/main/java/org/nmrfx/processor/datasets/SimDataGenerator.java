@@ -41,7 +41,7 @@ class SimDataGenerator extends DataGenerator {
         return (null);
     }
 
-    public int getMatrixRegion(int iChunk, int mode, int[][] apt,
+    public int getMatrixRegion(int iChunk, int maxChunkSize, int mode, int[][] apt,
             double[] offset, StringBuffer chunkLabel) {
         return 0;
     }
