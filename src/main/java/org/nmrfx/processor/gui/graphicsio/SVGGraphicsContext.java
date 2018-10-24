@@ -336,7 +336,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void closePath() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        pathBuilder.append("Z");
     }
 
     @Override
