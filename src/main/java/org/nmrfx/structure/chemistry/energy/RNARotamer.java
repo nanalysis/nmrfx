@@ -511,12 +511,9 @@ public class RNARotamer {
         return new RotamerScore(bestRotamer, bestScore, best, angles);
     }
 
-//O3'     P       O5'     C5'     C4'     C3'     O3'
-// d-1     e-1     z-1     a       b       g       d
-    public static RotamerScore scoreResidue(Polymer polymer, int residueNum) {
-        RotamerScore rotamerScore = null;
+    public static double[] getDihedrals(Polymer polymer, int residueNum) {
+        double[] angles = new double[suiteAtoms.length];
         if (residueNum > 0) {
-            double[] angles = new double[suiteAtoms.length];
             int i = 0;
             for (String[] atomNames : suiteAtoms) {
                 Point3[] pts = new Point3[4];
@@ -535,10 +532,19 @@ public class RNARotamer {
                 }
                 angles[i++] = AtomMath.calcDihedral(pts[0], pts[1], pts[2], pts[3]);
             }
+        }
+        return angles;
+    }
+
+//O3'     P       O5'     C5'     C4'     C3'     O3'
+// d-1     e-1     z-1     a       b       g       d
+    public static RotamerScore scoreResidue(Polymer polymer, int residueNum) {
+        RotamerScore rotamerScore = null;
+        if (residueNum > 0) {
+            double[] angles = getDihedrals(polymer, residueNum);
             rotamerScore = bestProb(angles);
         }
         return rotamerScore;
-
     }
 
     public static ArrayList<AngleBoundary> getAngleBoundaries(Polymer polymer, String residueNum, String rotamerName, double mul) throws IllegalArgumentException, InvalidMoleculeException {
