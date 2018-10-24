@@ -370,6 +370,41 @@ public class RNARotamer {
         }
     }
 
+    public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n) {
+        /* getNBest finds n of the best rotamer confirmations and returns a 
+           list of rotamer scores containing the type of rotamer and the 
+           probability. The function takes the polymer and a residue number.
+        */
+        
+        RotamerScore[] bestScores = new RotamerScore[n];
+        double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum);
+        for (RNARotamer rotamer : ROTAMERS.values()) {
+            // Note i am not using the fraction of times rotamers are found in 
+            // each position as an input
+            double probability = rotamer.probability(testAngles, indices, 1.0);
+
+            if (!(bestScores[n - 1] == null || probability > bestScores[n - 1].prob)) {
+                continue;
+            }
+            RotamerScore rotScore = new RotamerScore(rotamer, 0.0, probability, testAngles, null);
+            for (int i = 0; i < n - 1; i++) {
+                Double storedProb = bestScores[i] == null ? null : bestScores[i].prob;
+                if (storedProb == null){
+                    bestScores[i] = rotScore;
+                    break;
+                } else if (probability > storedProb) {
+                    for (int j = n - 1; j > i; j--){
+                        bestScores[j] = bestScores[j-1];
+                    }
+                    bestScores[i] = rotScore;
+                    break;
+                }
+            }
+        }
+        return bestScores;
+
+    }
+
     public double score(double[] testAngles, int[] indices, double[] halfWidths) {
         if (testAngles.length != angles.length) {
             throw new IllegalArgumentException("Must specify " + angles.length + " angles");
