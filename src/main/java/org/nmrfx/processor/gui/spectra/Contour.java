@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui.spectra;
 
+import javafx.scene.paint.Color;
 import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
@@ -35,6 +36,8 @@ public class Contour extends java.lang.Object {
     GraphicsContextInterface g2;
     double[][] pix;
     double[][] pts;
+    double lineWidth = 0.5;
+    Color color = Color.BLACK;
 
     private static final float scaleFac = 256.0f;
     /**
@@ -60,6 +63,11 @@ public class Contour extends java.lang.Object {
         this.pix[0] = pix[0].clone();
         this.pix[1] = pix[1].clone();
         linesCount = new int[1];
+    }
+
+    public void setAttributes(double lineWidth, Color color) {
+        this.lineWidth = lineWidth;
+        this.color = color;
     }
 
     public static float getScaleFac() {
@@ -291,6 +299,9 @@ public class Contour extends java.lang.Object {
      */
     public void drawSquares(GraphicsContextInterface g2,
             double xOff, double yOff) throws GraphicsIOException {
+        g2.setLineWidth(lineWidth);
+        g2.setStroke(color);
+
         this.xOffset = xOff;
         this.yOffset = yOff;
         this.g2 = g2;

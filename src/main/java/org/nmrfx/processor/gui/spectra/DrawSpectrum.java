@@ -385,9 +385,10 @@ public class DrawSpectrum {
             //MARCH_MODE = iMode == 0 ? false : true;
             //fileData.posColorProperty().set(iMode == 0 ? Color.BLACK : Color.RED);
             fileData.mChunk = -1;
+            float[][] z = null;
             do {
                 long currentTime = System.currentTimeMillis();
-                System.out.println(fileData.mChunk + " " + (currentTime - startTime));
+//                System.out.println(fileData.mChunk + " " + (currentTime - startTime));
                 if ((currentTime - startTime) > MAX_TIME) {
                     return false;
 
@@ -398,23 +399,31 @@ public class DrawSpectrum {
                 contours[0] = new Contour(fileData.ptd, pix);
                 contours[1] = new Contour(fileData.ptd, pix);
                 DrawObject drawObject = new DrawObject(fileData, contours, jobCount);
-//                    if (iMode == 0) {
-//                        try {
-//                            drawGrid(fileData, g2);
-//                        } catch (GraphicsIOException gio) {
-//                            System.out.println("err grid " + gio.getMessage());
-//                            throw new IOException(gio.getMessage());
-//                        }
-//                    }
                 if (MARCH_MODE == true) {
                     try {
-                        float[][] z = getData(fileData, iChunk, offset);
+                        z = getData(fileData, iChunk, offset, z);
                         if (z != null) {
+                            double xOff = offset[0] + fileData.ptd[0][0];
+                            double yOff = offset[1] + fileData.ptd[1][0];
                             int[][] cells = new int[z.length][z[0].length];
-                            if (getMarchingSquares(fileData, z, cells, contours, iChunk, offset, levels, g2I)) {
-                            } else {
-                                break;
+                            for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
+                                Contour contour = contours[iPosNeg];
+                                if ((contour == null) || !setContext(contour, fileData, iPosNeg, g2)) {
+                                    continue;
+                                }
+                                float sign = iPosNeg == 0 ? 1.0f : -1.0f;
+                                for (float level : levels) {
+                                    if (!checkLevels(z, iPosNeg, sign * level)) {
+                                        break;
+                                    }
+                                    if (!contour.marchSquares(sign * level, z, cells)) {
+                                        contour.drawSquares(g2, xOff, yOff);
+                                    } else {
+                                        break;
+                                    }
+                                }
                             }
+
                         } else {
                             break;
                         }
@@ -509,7 +518,7 @@ public class DrawSpectrum {
         return pix;
     }
 
-    float[][] getData(DatasetAttributes dataAttr, int iChunk, double[] offset) throws IOException {
+    float[][] getData(DatasetAttributes dataAttr, int iChunk, double[] offset, float[][] z) throws IOException {
         StringBuffer chunkLabel = new StringBuffer();
         chunkLabel.setLength(0);
         int[][] apt = new int[dataAttr.getDataset().getNDim()][2];
@@ -518,47 +527,63 @@ public class DrawSpectrum {
         if (fileStatus != 0) {
             return null;
         }
-        float[][] z = null;
-
         try {
-            z = dataAttr.Matrix2(dataAttr.mChunk, chunkLabel.toString(), apt);
+            z = dataAttr.readMatrix(dataAttr.mChunk, chunkLabel.toString(), apt, z);
         } catch (IOException ioE) {
             throw ioE;
         }
         return z;
     }
 
-    boolean getMarchingSquares(DatasetAttributes fileData, float[][] z, int[][] cells, Contour[] contours, int iChunk, double[] offset, float[] levels, GraphicsContextInterface g2) throws IOException, GraphicsIOException {
-        if (z == null) {
-            return false;
+    boolean setContext(Contour contour, DatasetAttributes dataAttr, int iPosNeg, GraphicsContextInterface g2) throws GraphicsIOException {
+        final boolean ok;
+        if (iPosNeg == 0) {
+            ok = dataAttr.getPos();
+        } else {
+            ok = dataAttr.getNeg();
         }
+        if (ok) {
+            g2.setGlobalAlpha(1.0);
+            g2.setLineCap(StrokeLineCap.BUTT);
+            g2.setEffect(null);
+            if (iPosNeg == 0) {
+                contour.setAttributes(dataAttr.posWidthProperty().get(), dataAttr.getPosColor());
+            } else {
+                contour.setAttributes(dataAttr.negWidthProperty().get(), dataAttr.getNegColor());
+            }
+        }
+        return ok;
+
+    }
+
+    boolean getMarchingSquares(DatasetAttributes fileData, float[][] z,
+            int[][] cells, Contour contour, double[] offset, float level, GraphicsContextInterface g2) throws IOException, GraphicsIOException {
         double xOff = offset[0] + fileData.ptd[0][0];
         double yOff = offset[1] + fileData.ptd[1][0];
 
+        if (!contour.marchSquares(level, z, cells)) {
+            contour.drawSquares(g2, xOff, yOff);
+
+        }
+        return true;
+    }
+
+    boolean getMarchingSquaresOff(DatasetAttributes fileData, float[][] z, int[][] cells, Contour[] contours, int iChunk, double[] offset, float[] levels, GraphicsContextInterface g2) throws IOException, GraphicsIOException {
+        if (z == null) {
+            return false;
+        }
         for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
-            if ((iPosNeg == 0) && !fileData.getPos()) {
-                continue;
-            } else if ((iPosNeg == 1) && !fileData.getNeg()) {
+            if ((contours[iPosNeg] == null) || !setContext(contours[iPosNeg], fileData, iPosNeg, g2)) {
                 continue;
             }
-            contours[iPosNeg].setLineCount(0);
+            double xOff = offset[0] + fileData.ptd[0][0];
+            double yOff = offset[1] + fileData.ptd[1][0];
 
-            if (checkLevels(z, iPosNeg, levels)) {
-                if (contours[iPosNeg] != null) {
-                    for (float level : levels) {
-                        if (!contours[iPosNeg].marchSquares(level, z, cells)) {
-                            g2.setGlobalAlpha(1.0);
-                            g2.setLineCap(StrokeLineCap.BUTT);
-                            g2.setEffect(null);
-                            if (iPosNeg == 0) {
-                                g2.setLineWidth(fileData.posWidthProperty().get());
-                                g2.setStroke(fileData.getPosColor());
-                            } else {
-                                g2.setLineWidth(fileData.negWidthProperty().get());
-                                g2.setStroke(fileData.getNegColor());
-                            }
-                            contours[iPosNeg].drawSquares(g2, xOff, yOff);
-                        }
+            float sign = iPosNeg == 0 ? 1.0f : -1.0f;
+            if (checkLevels(z, iPosNeg, sign * levels[0])) {
+                for (float level : levels) {
+                    if (!contours[iPosNeg].marchSquares(sign * level, z, cells)) {
+                        contours[iPosNeg].drawSquares(g2, xOff, yOff);
                     }
                 }
             }
@@ -578,7 +603,7 @@ public class DrawSpectrum {
         float[][] z = null;
 
         try {
-            z = fileData.Matrix2(fileData.mChunk, chunkLabel.toString(), apt);
+            z = fileData.readMatrix(fileData.mChunk, chunkLabel.toString(), apt, null);
         } catch (IOException ioE) {
             throw ioE;
         }
@@ -644,6 +669,30 @@ public class DrawSpectrum {
             }
             g2.stroke();
         }
+    }
+
+    private boolean checkLevels(float[][] z, int iPosNeg, float level) {
+        int ny = z.length;
+        int nx = z[0].length;
+        boolean ok = false;
+
+        for (int jj = 0; jj < ny; jj++) {
+            for (int ii = 0; ii < nx; ii++) {
+                if ((iPosNeg == 0) && (z[jj][ii] > level)) {
+                    ok = true;
+                    break;
+                } else if ((iPosNeg == 1) && (z[jj][ii] < level)) {
+                    ok = true;
+                    break;
+                }
+            }
+
+            if (ok) {
+                break;
+            }
+        }
+
+        return ok;
     }
 
     private boolean checkLevels(float[][] z, int iPosNeg, float[] levels) {

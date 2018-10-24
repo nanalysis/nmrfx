@@ -1223,9 +1223,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return (0);
     }
 
-    public float[][] Matrix2(int iChunk, String chunkLabelStr, int[][] apt) throws IOException {
-        float[][] matrix = new float[apt[1][1] - apt[1][0] + 1][apt[0][1]
-                - apt[0][0] + 1];
+    public float[][] readMatrix(int iChunk, String chunkLabelStr, int[][] apt, float[][] matrix) throws IOException {
+        int ny = apt[1][1] - apt[1][0] + 1;
+        int nx = apt[0][1] - apt[0][0] + 1;
+        if ((matrix == null) || (matrix.length != ny) || (matrix[0].length != nx)) {
+            matrix = new float[ny][nx];
+        }
+
 //        for (int i=0;i<dim.length;i++) {
 //            System.out.println(i + " " + dim[i] + " " + apt[i][1] + " " + apt[i][0]);
 //        }
