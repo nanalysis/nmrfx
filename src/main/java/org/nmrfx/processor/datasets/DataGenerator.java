@@ -30,8 +30,8 @@ public abstract class DataGenerator {
 
     public abstract float[][] Matrix(int iChunk, int[] offset) throws IOException;
 
-    public abstract float[][] Matrix2(int iChunk, String chunkLabelStr,
-            int[][] apt) throws IOException;
+    public abstract float[][] readMatrix(int iChunk, String chunkLabelStr,
+            int[][] apt, float[][] matrix) throws IOException;
 
     public abstract int getMatrixRegion(int iChunk, int maxChunkSize, int mode, int[][] apt,
             double[] offset, StringBuffer chunkLabel);
