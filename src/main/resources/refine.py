@@ -806,7 +806,7 @@ class refine:
                 reader.readSequence(file)
             resNum = molDict.get('resnum')
             if resNum and compound:
-                compound.setNumber(str(resnum))
+                compound.setNumber(str(resNum))
 
     def readDistanceDict(self,disDict,residues):
         wt = -1.0
