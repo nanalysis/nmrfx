@@ -24,7 +24,6 @@ import javafx.geometry.Orientation;
 import static javafx.geometry.Orientation.VERTICAL;
 import static javafx.geometry.Orientation.HORIZONTAL;
 import javafx.geometry.VPos;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
@@ -263,7 +262,6 @@ public class Axis {
                 }
             }
             double incValue = selValue * Math.pow(10.0, floorScale);
-            double maxNoOfMinorTicks = 10;
             majorTickSpace = incValue;
             minorTickSpace = incValue / 5.0;
             minorTickStart = Math.ceil(lowerBound / minorTickSpace) * minorTickSpace;
@@ -287,16 +285,22 @@ public class Axis {
         getTickPositions();
 
         gC.strokeLine(xOrigin, yOrigin, xOrigin + width, yOrigin);
-        double value = majorTickStart;
+        double value = minorTickStart;
+
         while (value < upperBound) {
             double x = getDisplayPosition(value);
-            String ticString = String.format(ticFormatString, value);
             double y1 = yOrigin;
-            double y2 = yOrigin + ticSize;
-            gC.strokeLine(x, y1, x, y2);
-            gC.fillText(ticString, x, y2 + 2.0);
-            //gC.drawText(ticString, x, y2 - 2, "n", 0.0);
-            value += majorTickSpace;
+            double delta = Math.abs(value - Math.round(value / majorTickSpace) * majorTickSpace);
+            if (delta < (minorTickSpace / 10.0)) {
+                String ticString = String.format(ticFormatString, value);
+                double y2 = yOrigin + ticSize;
+                gC.strokeLine(x, y1, x, y2);
+                gC.fillText(ticString, x, y2 + 2.0);
+            } else {
+                double y2 = yOrigin + ticSize / 2;
+                gC.strokeLine(x, y1, x, y2);
+            }
+            value += minorTickSpace;
         }
         gC.setTextBaseline(VPos.BOTTOM);
         if (label.length() != 0) {
@@ -318,16 +322,22 @@ public class Axis {
         int ticStringLen = 0;
         while (value < upperBound) {
             double y = getDisplayPosition(value);
-            String ticString = String.format(ticFormatString, value);
-            if (ticString.length() > ticStringLen) {
-                ticStringLen = ticString.length();
-            }
             double x1 = xOrigin;
-            double x2 = x1 - ticSize;
-            gC.strokeLine(x1, y, x2, y);
-            gC.fillText(ticString, x2 - 2, y);
+            double delta = Math.abs(value - Math.round(value / majorTickSpace) * majorTickSpace);
+            if (delta < (minorTickSpace / 10.0)) {
+                String ticString = String.format(ticFormatString, value);
+                if (ticString.length() > ticStringLen) {
+                    ticStringLen = ticString.length();
+                }
+                double x2 = x1 - ticSize;
+                gC.strokeLine(x1, y, x2, y);
+                gC.fillText(ticString, x2 - 2, y);
+            } else {
+                double x2 = x1 - ticSize / 2;
+                gC.strokeLine(x1, y, x2, y);
 
-            value += majorTickSpace;
+            }
+            value += minorTickSpace;
         }
         if (label.length() != 0) {
             gC.setTextBaseline(VPos.TOP);
