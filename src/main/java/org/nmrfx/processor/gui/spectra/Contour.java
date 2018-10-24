@@ -24,6 +24,7 @@
 package org.nmrfx.processor.gui.spectra;
 
 import javafx.scene.paint.Color;
+import javafx.scene.shape.StrokeLineCap;
 import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
@@ -297,13 +298,13 @@ public class Contour extends java.lang.Object {
     15
     0,1,6,2,11,5,7,3,12,13,10,14,8,9,4,15
      */
-    public void drawSquares(GraphicsContextInterface g2,
-            double xOff, double yOff) throws GraphicsIOException {
+    public void drawSquares(GraphicsContextInterface g2) throws GraphicsIOException {
+        g2.setGlobalAlpha(1.0);
+        g2.setLineCap(StrokeLineCap.BUTT);
+        g2.setEffect(null);
         g2.setLineWidth(lineWidth);
         g2.setStroke(color);
 
-        this.xOffset = xOff;
-        this.yOffset = yOff;
         this.g2 = g2;
         int ny = cells.length;
         int nx = cells[0].length;
