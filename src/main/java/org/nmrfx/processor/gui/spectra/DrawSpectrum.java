@@ -416,8 +416,7 @@ public class DrawSpectrum {
             do {
                 long currentTime = System.currentTimeMillis();
 //                System.out.println(fileData.mChunk + " " + (currentTime - startTime));
-                if ((currentTime - startTime) > MAX_TIME) {
-                    System.out.println("too slow");
+                if ((g2I instanceof GraphicsContextProxy) && ((currentTime - startTime) > MAX_TIME)) {
                     return false;
 
                 }

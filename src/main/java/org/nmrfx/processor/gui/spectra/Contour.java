@@ -285,18 +285,21 @@ public class Contour extends java.lang.Object {
     2:br  1 2  6
     3:lr  0 2  2
     4:rt    2 3  11
-    5:ltrb         5   5     5
+    5:ltrb  0 3 2 1  5: 3 9
     6:bt   1 3   7
     7:lt  0 3   3
     8:tl  3 0  12
     9:tb  3 1  13
-    10:bltr        10       10
+    10:bltr  1 0 3 2  4 14
     11:tr  3 2  14
     12:rl  2 0  8
     13:rb   2 1  9
     14:bl 1 0  4
     15
     0,1,6,2,11,5,7,3,12,13,10,14,8,9,4,15
+
+    0:3 1:4 2:9 3:14
+    
      */
     public void drawSquares(GraphicsContextInterface g2) throws GraphicsIOException {
         g2.setGlobalAlpha(1.0);
@@ -314,13 +317,20 @@ public class Contour extends java.lang.Object {
         int[] nextY = {0, -1, 0, 1};
         for (int iy = 0; iy < ny - 1; iy++) {
             for (int ix = 0; ix < nx - 1; ix++) {
+                // skip over already drawn cells
+                if ((cells[iy][ix] & 32) == 32) {
+                    continue;
+                }
                 int offset = cells[iy][ix] & 255;
-                if ((offset != 0) && (offset != 15)) {
+                // skip over empty cells and saddle cells
+                // we'll hit saddle cells when looping from cell to cell
+                if ((offset != 0) && (offset != 15) && (offset != 5) && (offset != 10)) {
                     int cX = ix;
                     int cY = iy;
                     boolean start = true;
                     int nCells = 0;
                     //System.out.println("start " + cX + " " + cY);
+                    int lastSide = 0;
                     while (true) {
                         if ((cells[cY][cX] & 32) == 32) {
                             // System.out.println("end " + cX + " " + cY);
@@ -330,7 +340,8 @@ public class Contour extends java.lang.Object {
                             break;
                         }
                         offset = cells[cY][cX] & 255;
-                        int nextSide = drawCell(offset, cX, cY, start);
+                        int nextSide = drawCell(lastSide, offset, cX, cY, start);
+                        lastSide = nextSide;
                         nCells++;
                         start = false;
                         cX += nextX[nextSide];
@@ -352,6 +363,55 @@ public class Contour extends java.lang.Object {
                 }
             }
         }
+    }
+
+    int drawCell(int lastSide, int offset, int ix, int iy, boolean start) throws GraphicsIOException {
+        final double[] x = new double[4];
+        final double[] y = new double[4];
+        boolean flipped = (offset & 16) == 16;
+        offset = offset & 15;
+        //    0:3 1:4 2:9 3:14
+
+        int[] saddleSides = {3, 4, 9, 14};
+        if ((offset == 5) || (offset ==10)) {
+            offset = saddleSides[lastSide];
+        }
+
+        int edge0y = (cells[iy][ix] >> 8) & 255;
+        int edge1x = ((cells[iy][ix] >> 16) & 255);
+        int edge2y = (cells[iy][ix + 1] >> 8) & 255;
+        int edge3x = (cells[iy + 1][ix] >> 16) & 255;
+        x[0] = ix;
+        y[0] = edge0y / 255.0 + iy;
+        x[1] = edge1x / 255.0 + ix;
+        y[1] = iy;
+        x[2] = ix + 1;
+        y[2] = edge2y / 255.0 + iy;
+        x[3] = edge3x / 255.0 + ix;
+        y[3] = iy + 1;
+        int nextSide = 0;
+        int i0 = (offset >> 2) & 3;
+        int i1 = offset & 3;
+        if (start) {
+            double xp1 = (x[i0] + xOffset - pts[0][0])
+                    / (pts[0][1] - pts[0][0]) * (pix[0][1] - pix[0][0]) + pix[0][0];
+            double yp1 = (y[i0] + yOffset - pts[1][0])
+                    / (pts[1][1] - pts[1][0]) * (pix[1][1] - pix[1][0]) + pix[1][0];
+            g2.beginPath();
+            g2.moveTo(xp1, yp1);
+        }
+        double xp2 = (x[i1] + xOffset - pts[0][0])
+                / (pts[0][1] - pts[0][0]) * (pix[0][1] - pix[0][0]) + pix[0][0];
+        double yp2 = (y[i1] + yOffset - pts[1][0])
+                / (pts[1][1] - pts[1][0]) * (pix[1][1] - pix[1][0]) + pix[1][0];
+        g2.lineTo(xp2, yp2);
+        nextSide = i1;
+        cells[iy][ix] |= 32;
+//                    System.out.printf("%2d iy %2d ix %2d off %2d id0 %2d id1 %2d 0y %3d 1x %3d 2y %3d 3x %3d x0 %5.2f y0 %5.2f x1 %5.2f y1 %5.2f\n", lineCount, iy, ix, offset, index0, index1,
+//                            edge0y, edge1x, edge2y, edge3x, x0, y0, x1, y1, nx, ny);
+
+        return nextSide;
+
     }
 
     int drawCell(int offset, int ix, int iy, boolean start) throws GraphicsIOException {
