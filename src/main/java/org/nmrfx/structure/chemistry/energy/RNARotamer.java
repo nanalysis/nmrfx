@@ -404,6 +404,30 @@ public class RNARotamer {
         return bestScores;
     }
 
+    public static double calcRotamerEnergy(Polymer polymer, int residueNum) {
+        /* calcRotamerEnergy calculates the rotamer energy of index residueNum.
+           This defaults to using  three possible rotamer configureations.
+         */
+        return calcRotamerEnergy(polymer, residueNum, 3);
+    }
+
+    public static double calcRotamerEnergy(Polymer polymer, int residueNum, int n) {
+        /* This calcRotamerEnergy can use n possible rotamer configurations.*/
+        RotamerScore[] scores = getNBest(polymer, residueNum, n);
+        double prob = 0;
+        return calcRotamerEnergy(scores);
+    }
+
+    public static double calcRotamerEnergy(RotamerScore[] scores) {
+        /* calcRotamerEnergy takes a list of RotamerScore objects and computes
+           an energy based on the probabilities stored in each RotamerScore 
+           object. 
+        */
+        double prob = 0;
+        for (RotamerScore score : scores) {
+            prob += score.prob;
+        }
+        return -FastMath.log(prob);
     }
 
     public double score(double[] testAngles, int[] indices, double[] halfWidths) {
