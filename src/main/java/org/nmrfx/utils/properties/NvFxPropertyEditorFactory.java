@@ -117,8 +117,9 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
                 slider.setMinorTickCount(delta / 4 - 1);
             }
             slider.setSnapToTicks(true);
+            IntSlider zoomSlider = new IntSlider(slider, iItem.getMin(), iItem.getMax());
+            return new IntPropertySliderEditor(iItem, zoomSlider);
 
-            return new IntPropertySliderEditor(iItem, slider);
         } else if (type == BooleanOperationItem.class) {
             //System.out.println("bpp; range item");
             BooleanOperationItem bItem = (BooleanOperationItem) item;
