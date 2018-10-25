@@ -387,14 +387,14 @@ public class RNARotamer {
                 continue;
             }
             RotamerScore rotScore = new RotamerScore(rotamer, 0.0, probability, testAngles, null);
-            for (int i = 0; i < n - 1; i++) {
+            for (int i = 0; i < n; i++) {
                 Double storedProb = bestScores[i] == null ? null : bestScores[i].prob;
-                if (storedProb == null){
+                if (storedProb == null) {
                     bestScores[i] = rotScore;
                     break;
                 } else if (probability > storedProb) {
-                    for (int j = n - 1; j > i; j--){
-                        bestScores[j] = bestScores[j-1];
+                    for (int j = n - 1; j > i; j--) {
+                        bestScores[j] = bestScores[j - 1];
                     }
                     bestScores[i] = rotScore;
                     break;
@@ -402,6 +402,7 @@ public class RNARotamer {
             }
         }
         return bestScores;
+    }
 
     }
 
