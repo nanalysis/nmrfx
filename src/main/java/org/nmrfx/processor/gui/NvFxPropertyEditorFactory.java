@@ -62,6 +62,7 @@ import org.nmrfx.utils.properties.IntChoiceOperationItem;
 import org.nmrfx.utils.properties.IntOperationItem;
 import org.nmrfx.utils.properties.IntPropertySliderEditor;
 import org.nmrfx.utils.properties.IntRangeOperationItem;
+import org.nmrfx.utils.properties.IntSlider;
 import org.nmrfx.utils.properties.ListOperationItem;
 import org.nmrfx.utils.properties.MenuTextOperationItem;
 import org.nmrfx.utils.properties.TextOperationItem;
@@ -152,7 +153,8 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             }
             slider.setSnapToTicks(true);
 
-            return new IntPropertySliderEditor(iItem, slider);
+            IntSlider zoomSlider = new IntSlider(slider, iItem.getMin(), iItem.getMax());
+            return new IntPropertySliderEditor(iItem, zoomSlider);
         } else if (type == BooleanOperationItem.class) {
             //System.out.println("bpp; range item");
             BooleanOperationItem bItem = (BooleanOperationItem) item;
