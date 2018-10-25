@@ -1662,9 +1662,11 @@ public class PolyChart implements PeakListener {
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         try {
             gC.clearRect(xPos, yPos, width, height);
+            xAxis.setTickFontSize(PreferencesController.getTickFontSize());
             xAxis.setWidth(width - leftBorder);
             xAxis.setHeight(bottomBorder);
             xAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
+            yAxis.setTickFontSize(PreferencesController.getTickFontSize());
             yAxis.setHeight(height - bottomBorder);
             yAxis.setWidth(leftBorder);
             yAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);

@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
@@ -63,6 +65,8 @@ public class PreferencesController implements Initializable {
     private static Map<String, String> recentMap = new HashMap<>();
     static String location = null;
     static Integer nProcesses = null;
+    static IntegerProperty tickFontSizeProp = null;
+    static IntegerProperty labelFontSizeProp = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -92,8 +96,23 @@ public class PreferencesController implements Initializable {
         DirectoryOperationItem locationFileItem = new DirectoryOperationItem(datasetListener, getDatasetDirectory().getPath(), "File Locations", "Datasets", "desc");
 
         int nProcessesDefault = Runtime.getRuntime().availableProcessors() / 2;
-        IntRangeOperationItem nProcessesItem = new IntRangeOperationItem(nprocessListener, nProcessesDefault, 1, 32, "Processor", "NProcesses", "How many parallel processes to run during processing");
-        prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem, nProcessesItem);
+        IntRangeOperationItem nProcessesItem = new IntRangeOperationItem(nprocessListener,
+                nProcessesDefault, 1, 32, "Processor", "NProcesses",
+                "How many parallel processes to run during processing");
+
+        IntRangeOperationItem ticFontSizeItem = new IntRangeOperationItem(
+                (a, b, c) -> {
+                    tickFontSizeProp.setValue((Integer) c);
+                },
+                getTickFontSize(), 1, 32, "Spectra", "TicFontSize", "Font size for tic mark labels");
+        prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem, nProcessesItem, ticFontSizeItem);
+
+        IntRangeOperationItem labelFontSizeItem = new IntRangeOperationItem(
+                (a, b, c) -> {
+                    labelFontSizeProp.setValue((Integer) c);
+                },
+                getLabelFontSize(), 1, 32, "Spectra", "LabelFontSize", "Font size for axis labels");
+        prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem, nProcessesItem, ticFontSizeItem, labelFontSizeItem);
 
     }
 
@@ -131,8 +150,9 @@ public class PreferencesController implements Initializable {
     }
 
     /**
-     * Returns the NESTA-NMR preference, i.e. the executable external program for NESTA-NMR The preference is read from
-     * the OS specific registry. If no such preference can be found, NESTA-NMR is returned.
+     * Returns the NESTA-NMR preference, i.e. the executable external program
+     * for NESTA-NMR The preference is read from the OS specific registry. If no
+     * such preference can be found, NESTA-NMR is returned.
      *
      * @return
      */
@@ -150,7 +170,8 @@ public class PreferencesController implements Initializable {
     }
 
     /**
-     * Sets the file path of the NESTA-NMR program. The path is persisted in the OS specific registry.
+     * Sets the file path of the NESTA-NMR program. The path is persisted in the
+     * OS specific registry.
      *
      * @param file the file or null to remove the path
      */
@@ -239,7 +260,8 @@ public class PreferencesController implements Initializable {
     }
 
     /**
-     * Saves recently opened datasets. The path is persisted in the OS specific registry.
+     * Saves recently opened datasets. The path is persisted in the OS specific
+     * registry.
      *
      */
     public static List<Path> getRecentDatasets() {
@@ -340,6 +362,29 @@ public class PreferencesController implements Initializable {
             prefs.remove("NPROCESSES");
         }
 
+    }
+
+    public static Integer getTickFontSize() {
+        tickFontSizeProp = getInteger(tickFontSizeProp, "TICK_FONT_SIZE", 12);
+        return tickFontSizeProp.getValue();
+    }
+
+    public static Integer getLabelFontSize() {
+        labelFontSizeProp = getInteger(labelFontSizeProp, "LABEL_FONT_SIZE", 12);
+        return labelFontSizeProp.getValue();
+    }
+
+    public static IntegerProperty getInteger(IntegerProperty prop, String name, int defValue) {
+        if (prop == null) {
+            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            String value = prefs.get(name, null);
+            if (value != null) {
+                prop = new SimpleIntegerProperty(Integer.parseInt(value));
+            } else {
+                prop = new SimpleIntegerProperty(defValue);
+            }
+        }
+        return prop;
     }
 
 }

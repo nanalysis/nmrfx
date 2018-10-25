@@ -25,6 +25,7 @@ import static javafx.geometry.Orientation.VERTICAL;
 import static javafx.geometry.Orientation.HORIZONTAL;
 import javafx.geometry.VPos;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
@@ -55,8 +56,11 @@ public class Axis {
     private double majorTickStart;
     private double xOrigin = 100.0;
     private double yOrigin = 800.0;
-    private double labelFontSize = 12;
+    private int labelFontSize = 16;
+    private int ticFontSize = 12;
     private Color color = Color.BLACK;
+    private Font ticFont = new Font(ticFontSize);
+    private Font labelFont = new Font(labelFontSize);
 
     public Axis(Orientation orientation, double lowerBound, double upperBound, double width, double height) {
         this.orientation = orientation;
@@ -233,6 +237,16 @@ public class Axis {
     public double getScale() {
         return 1.0;
     }
+    
+    public void setTickFontSize(int size) {
+        ticFontSize = size;
+        ticFont = new Font(ticFontSize);
+    }
+
+    public void setLabelFontSize(int size) {
+        labelFontSize = size;
+        labelFont = new Font(labelFontSize);
+    }
 
     private void getTickPositions() {
         double length = VERTICAL == getOrientation() ? getHeight() : getWidth();
@@ -270,6 +284,12 @@ public class Axis {
     }
 
     public void draw(GraphicsContextInterface gC) throws GraphicsIOException {
+        gC.setTextAlign(TextAlignment.CENTER);
+        gC.setTextBaseline(VPos.TOP);
+        gC.setFill(color);
+        gC.setStroke(color);
+        gC.setFont(ticFont);
+        getTickPositions();
         if (orientation == VERTICAL) {
             drawVerticalAxis(gC);
         } else {
@@ -278,11 +298,6 @@ public class Axis {
     }
 
     private void drawHorizontalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
-        gC.setTextAlign(TextAlignment.CENTER);
-        gC.setTextBaseline(VPos.TOP);
-        gC.setFill(color);
-        gC.setStroke(color);
-        getTickPositions();
 
         gC.strokeLine(xOrigin, yOrigin, xOrigin + width, yOrigin);
         double value = minorTickStart;
@@ -302,8 +317,9 @@ public class Axis {
             }
             value += minorTickSpace;
         }
-        gC.setTextBaseline(VPos.BOTTOM);
         if (label.length() != 0) {
+            gC.setTextBaseline(VPos.BOTTOM);
+            gC.setFont(labelFont);
             double labelTop = yOrigin + height - 2;
             gC.fillText(label, xOrigin + width / 2, labelTop);
             //gC.drawText(label, leftBorder + width / 2, labelTop, "n", 0.0);
@@ -340,6 +356,8 @@ public class Axis {
             value += minorTickSpace;
         }
         if (label.length() != 0) {
+            gC.setFont(labelFont);
+
             gC.setTextBaseline(VPos.TOP);
             gC.setTextAlign(TextAlignment.CENTER);
             gC.save();
