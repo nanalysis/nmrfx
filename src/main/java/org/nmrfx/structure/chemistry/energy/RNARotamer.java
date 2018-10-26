@@ -24,11 +24,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Point3;
 
 public class RNARotamer {
+
+    private static Atom[][] Atom;
 
     final double[] angles;
     final double[] sdev;
@@ -41,10 +44,10 @@ public class RNARotamer {
     static double toDEG = 180.0 / Math.PI;
     static final double WIDTH = Math.PI / 10;
     public static double HPOWER = 3.0;
-
     static final int[] subsetIndices = {1, 2, 3, 4};
     static final int[] indices = {0, 1, 2, 3, 4, 5, 6};
     // static final String[] atomNames = {"O3'", "P", "O5'", "C5'", "C4'", "C3'", "O3'"};
+    static Atom[] atoms = {null, null, null, null, null, null, null};
     static final int NPREVIOUS = 1;
 
     static final String[] DELTAP_ATOMS = {"-1:C5'", "-1:C4'", "-1:C3'", "-1:O3'"};
@@ -461,6 +464,33 @@ public class RNARotamer {
         }
         return alpha;
     }
+
+    public static Map<Integer, Double> calcDerivs(RotamerScore[] scores, double rotEnergy) {
+        double[] betas = new double[scores.length];
+        double[] alphas = new double[scores.length];
+        double[][] normDeltas = new double[scores.length][7];
+        int i = 0;
+        for (RotamerScore score : scores) {
+            normDeltas[i] = calcNormDeltas(score);
+            betas[i] = calcBeta(normDeltas[i]);
+            alphas[i] = calcAlpha(score);
+            i++;
+        }
+        Map<Integer, Double> derivMap = new HashMap<>();
+        double eRotEnergy = Math.log(rotEnergy);
+        for (i = 0; i < 7; i++) {
+            double sum = 0;
+            for (int j = 0; j < scores.length; j++) {
+                sum += (alphas[j] * Math.exp(betas[j]) * normDeltas[j][i] * scores[j].rotamer.sdev[i]);
+            }
+            double deriv = eRotEnergy * sum;
+            int angleIndex = atoms[i].aAtom;
+            derivMap.put(angleIndex, deriv);
+        }
+
+        return derivMap;
+    }
+
     public double score(double[] testAngles, int[] indices, double[] halfWidths) {
         if (testAngles.length != angles.length) {
             throw new IllegalArgumentException("Must specify " + angles.length + " angles");
@@ -585,6 +615,9 @@ public class RNARotamer {
                     Residue residue = polymer.getResidue(residueNum + delta);
                     Atom atom = residue.getAtom(aName);
                     pts[j++] = atom.getPoint();
+                    if (j == 3) {
+                        atoms[i] = atom;
+                    }
                 }
                 angles[i++] = AtomMath.calcDihedral(pts[0], pts[1], pts[2], pts[3]);
             }

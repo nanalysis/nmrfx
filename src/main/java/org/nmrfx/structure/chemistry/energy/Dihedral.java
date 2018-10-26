@@ -482,6 +482,7 @@ public class Dihedral {
         energyList.clearAngleBoundaries();
         for (int i = 0; i < angleAtoms.size(); i++) {
             Atom atom = angleAtoms.get(i);
+            atom.aAtom = i;
             String atomName = atom.getFullName();
             AngleBoundary angleBoundary = angleBoundaries.get(atomName);
             //if angleBoundary is present for that atom, replace value at there respected indices
