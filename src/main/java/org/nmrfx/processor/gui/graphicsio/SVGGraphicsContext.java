@@ -265,6 +265,34 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         return String.format("%.2f", value);
     }
 
+    private String getTextStyle(boolean fillMode) {
+//        style="font-family: Arial;
+//                 font-size  : 34;
+//                 stroke     : #000000;
+//                 fill       : #00ff00;
+//                "
+        StringBuilder builder = new StringBuilder();
+        builder.append("stroke: ");
+        if (!fillMode) {
+            builder.append(toRGBCode(stroke));
+        } else {
+            builder.append("none");
+        }
+        builder.append(';');
+        builder.append("fill: ");
+        if (fillMode) {
+            builder.append(toRGBCode(fill));
+        } else {
+            builder.append("none");
+        }
+        builder.append(';');
+        builder.append("font-size: ");
+        builder.append(fontSize);
+        builder.append(';');
+        return builder.toString();
+
+    }
+
     private String getStyle(boolean fillMode) {
         StringBuilder builder = new StringBuilder();
         builder.append("stroke: ");
@@ -394,7 +422,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("text-anchor", getTextAnchor());
             writer.writeAttribute("dy", getTextDY());
 
-            writer.writeAttribute("fill", toRGBCode(fill));
+            writer.writeAttribute("style", getTextStyle(true));
             writer.writeAttribute("x", format(x));
             writer.writeAttribute("y", format(y));
             writer.writeCharacters(text);
@@ -413,7 +441,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             if (transform != null) {
                 writer.writeAttribute("transform", getTransformText());
             }
-            writer.writeAttribute("fill", toRGBCode(fill));
+            writer.writeAttribute("style", getTextStyle(true));
             writer.writeAttribute("x", format(x));
             writer.writeAttribute("y", format(y));
             writer.writeCharacters(text);
@@ -583,7 +611,8 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void setFont(Font f) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.font = f;
+        fontSize = f.getSize();
     }
 
     @Override
@@ -762,7 +791,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     public void strokeText(String text, double x, double y) throws GraphicsIOException {
         try {
             writer.writeStartElement("text");
-            writer.writeAttribute("fill", "black");
+            writer.writeAttribute("style", getTextStyle(false));
             writer.writeAttribute("x", format(x));
             writer.writeAttribute("y", format(y));
             writer.writeCharacters(text);
@@ -778,7 +807,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         // fixme doesn't use maxWidth
         try {
             writer.writeStartElement("text");
-            writer.writeAttribute("fill", "black");
+            writer.writeAttribute("style", getTextStyle(false));
             writer.writeAttribute("x", format(x));
             writer.writeAttribute("y", format(y));
             writer.writeCharacters(text);
