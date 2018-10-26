@@ -45,6 +45,7 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.controls.FractionPane;
 import org.nmrfx.processor.utilities.Util;
 import org.nmrfx.structure.chemistry.Atom;
@@ -236,7 +237,7 @@ public class AtomBrowser {
             List<DrawItem> items = getDrawItems(peaks, atomSpec, true);
             controller.setBorderState(true);
             controller.setNCharts(items.size());
-            controller.arrange(FractionPane.ORIENTATION.HORIZONTAL);
+            controller.arrange(FractionCanvas.ORIENTATION.HORIZONTAL);
             String activeRange = rangeSelector.getValue();
             RangeItem rangeItem = rangeItems.get(activeRange);
             double rMin = rangeItem.min;
@@ -249,13 +250,13 @@ public class AtomBrowser {
                 datasetList.add(item.dataset.getName());
                 List<String> peakListList = new ArrayList<>();
                 peakListList.add(item.peakList.getName());
-                chart.setTitle(item.dataset.getTitle());
+               // fixme chart.setTitle(item.dataset.getTitle());
                 chart.updateDatasets(datasetList);
                 chart.updatePeakLists(peakListList);
-                chart.setStyle("-fx-padding: 0px");
-                chart.getChildrenUnmodifiable().stream().filter((node) -> (node instanceof Label)).forEachOrdered((node) -> {
-                    node.setOnMouseClicked(e -> System.out.println("Clicked node " + item.dataset.getName()));
-                });
+                // fixme
+//                chart.getChildrenUnmodifiable().stream().filter((node) -> (node instanceof Label)).forEachOrdered((node) -> {
+//                    node.setOnMouseClicked(e -> System.out.println("Clicked node " + item.dataset.getName()));
+//                });
 
                 Double ppm = item.getShift();
                 double delta = 0.1;

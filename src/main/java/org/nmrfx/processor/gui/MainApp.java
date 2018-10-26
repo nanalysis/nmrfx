@@ -51,6 +51,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import static javafx.application.Application.launch;
 import javafx.geometry.Point2D;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.CheckMenuItem;
@@ -62,6 +63,7 @@ import org.nmrfx.processor.datasets.peaks.Analyzer;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
+import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.project.GUIStructureProject;
 import org.nmrfx.processor.utilities.WebConnect;
@@ -81,6 +83,7 @@ public class MainApp extends Application implements DatasetListener {
     public static DocWindowController docWindowController;
     public static DatasetsController datasetController;
     public static AnalyzerController analyzerController;
+    public static MultipletController multipletController;
     public static HostServices hostServices;
     private static String version = null;
     static String appName = "NMRFx Analyst";
@@ -98,6 +101,7 @@ public class MainApp extends Application implements DatasetListener {
     public static RNAPeakGeneratorSceneController rnaPeakGenController;
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
+    Analyzer analyzer = null;
 
     public static boolean isAnalyst() {
         return true;
@@ -197,7 +201,8 @@ public class MainApp extends Application implements DatasetListener {
             PolyChart chart = FXMLController.getActiveController().getActiveChart();
             double x = chart.getMouseX();
             double y = chart.getMouseY();
-            Point2D sXY = chart.localToScreen(x, y);
+            Canvas canvas = chart.canvas;
+            Point2D sXY = canvas.localToScreen(x, y);
             if (peakAtomPicker == null) {
                 peakAtomPicker = new PeakAtomPicker();
                 peakAtomPicker.create();
@@ -337,11 +342,11 @@ public class MainApp extends Application implements DatasetListener {
 
         Menu arrangeMenu = new Menu("Arrange");
         MenuItem horizItem = new MenuItem("Horizontal");
-        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionPane.ORIENTATION.HORIZONTAL));
+        horizItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.HORIZONTAL));
         MenuItem vertItem = new MenuItem("Vertical");
-        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionPane.ORIENTATION.VERTICAL));
+        vertItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.VERTICAL));
         MenuItem gridItem = new MenuItem("Grid");
-        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionPane.ORIENTATION.GRID));
+        gridItem.setOnAction(e -> FXMLController.getActiveController().arrange(FractionCanvas.ORIENTATION.GRID));
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(e -> FXMLController.getActiveController().overlay());
         MenuItem minimizeItem = new MenuItem("Minimize Borders");
@@ -422,6 +427,8 @@ public class MainApp extends Application implements DatasetListener {
 
         MenuItem peakAnalyzerMenuItem = new MenuItem("Analyze");
         peakAnalyzerMenuItem.setOnAction(e -> analyze1D());
+        MenuItem multipletMenuItem = new MenuItem("Multiplets...");
+        multipletMenuItem.setOnAction(e -> showMultipletAnalyzer(e));
 
         Menu assignCascade = new Menu("Assign Tools");
 
@@ -434,7 +441,7 @@ public class MainApp extends Application implements DatasetListener {
         atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
         assignCascade.getItems().addAll(peakAssignerItem, assignOnPick, atomBrowserMenuItem);
 
-        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem, peakAnalyzerMenuItem, assignCascade);
+        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem, peakAnalyzerMenuItem, multipletMenuItem, assignCascade);
 
         // Window Menu
         // TBD standard window menu items
@@ -669,7 +676,7 @@ public class MainApp extends Application implements DatasetListener {
             alert.showAndWait();
             return;
         }
-        Analyzer analyzer = new Analyzer(dataset);
+        analyzer = new Analyzer(dataset);
         try {
             analyzer.analyze();
             PeakList peakList = analyzer.getPeakList();
@@ -679,6 +686,10 @@ public class MainApp extends Application implements DatasetListener {
         } catch (IOException ex) {
             Logger.getLogger(MainApp.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    public Analyzer getAnalyzer() {
+        return analyzer;
     }
 
     public final static GUIStructureProject getActive() {
@@ -814,6 +825,15 @@ public class MainApp extends Application implements DatasetListener {
             analyzerController = new AnalyzerController();
         }
         analyzerController.load();
+    }
+
+    @FXML
+    private void showMultipletAnalyzer(ActionEvent event) {
+        if (multipletController == null) {
+            multipletController = MultipletController.create();
+        }
+        multipletController.getStage().show();
+        multipletController.getStage().toFront();
     }
 
     void closeProject() {
