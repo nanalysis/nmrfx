@@ -518,8 +518,11 @@ public class RNARotamer {
             if (delta > Math.PI) {
                 delta = 2.0 * Math.PI - delta;
             }
-            double sdevValue = sdevs[index];
-            double p = (1.0 / (sdevValue * Math.sqrt(2.0 * Math.PI))) * Math.exp(-(delta * delta) / (2.0 * sdevValue * sdevValue));
+            double sdevValue = sdev[index];
+            double coeff = 1.0 / (sdevValue * Math.sqrt(2.0 * Math.PI));
+            double normalizedDelta = delta / sdevValue;
+            double exponent = -(1.0 / 2.0) * normalizedDelta * normalizedDelta;
+            double p = coeff * Math.exp(exponent);
             totalProb *= p;
         }
         return totalProb;
