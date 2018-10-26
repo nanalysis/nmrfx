@@ -153,6 +153,10 @@ public class PolyChart implements PeakListener {
     double height = 200.0;
     double xPos = 0.0;
     double yPos = 0.0;
+    double leftBorder = 0.0;
+    double rightBorder = 0.0;
+    double topBorder = 0.0;
+    double bottomBorder = 0.0;
 
     int iVec = 0;
 //    Vec vec;
@@ -1656,22 +1660,35 @@ public class PolyChart implements PeakListener {
                 useImmediateMode = true;
             }
         }
-        double bottomBorder = 50.0;
-        double leftBorder = 80.0;
         GraphicsContext gCC = canvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         try {
             gC.clearRect(xPos, yPos, width, height);
             xAxis.setTickFontSize(PreferencesController.getTickFontSize());
-            xAxis.setWidth(width - leftBorder);
+            xAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
+            bottomBorder = xAxis.getBorderSize();
+
+            yAxis.setTickFontSize(PreferencesController.getTickFontSize());
+            yAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
+            leftBorder = yAxis.getBorderSize();
+
+            topBorder = bottomBorder / 4;
+            rightBorder = leftBorder / 4;
+            topBorder = Math.max(topBorder, 10);
+            rightBorder = Math.max(rightBorder, 10);
+
+            xAxis.setWidth(width - leftBorder - rightBorder);
             xAxis.setHeight(bottomBorder);
             xAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
-            yAxis.setTickFontSize(PreferencesController.getTickFontSize());
-            yAxis.setHeight(height - bottomBorder);
+
+            yAxis.setHeight(height - bottomBorder - topBorder);
             yAxis.setWidth(leftBorder);
             yAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
+
             xAxis.draw(gC);
             yAxis.draw(gC);
+            gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
+            gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
             peakCanvas.setWidth(canvas.getWidth());
             peakCanvas.setHeight(canvas.getHeight());
             GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
@@ -1721,6 +1738,8 @@ public class PolyChart implements PeakListener {
     protected void exportVectorGraphics(SVGGraphicsContext svgGC) throws GraphicsIOException {
         xAxis.draw(svgGC);
         yAxis.draw(svgGC);
+        svgGC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
+        svgGC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
         drawDatasets(svgGC);
         if (!datasetAttributesList.isEmpty()) {
             drawPeakLists(true, svgGC);

@@ -237,7 +237,7 @@ public class Axis {
     public double getScale() {
         return 1.0;
     }
-    
+
     public void setTickFontSize(int size) {
         ticFontSize = size;
         ticFont = new Font(ticFontSize);
@@ -297,10 +297,28 @@ public class Axis {
         }
     }
 
+    public double getBorderSize() {
+        if (orientation == HORIZONTAL) {
+            int gap1 = ticFontSize / 4;
+            int gap2 = labelFontSize / 4;
+            ticSize = ticFontSize * 0.75;
+            return ticSize + gap1 + ticFontSize + gap1 + labelFontSize + gap2;
+
+        } else {
+            int gap1 = ticFontSize / 4;
+            int gap2 = labelFontSize / 4;
+            ticSize = ticFontSize * 0.75;
+            double nChar = Math.round(Math.abs(Math.log10(getUpperBound()))) + 2;
+            return ticSize + gap1 + ticFontSize * 0.75 * nChar + gap1 + labelFontSize + gap2;
+        }
+    }
+
     private void drawHorizontalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
 
         gC.strokeLine(xOrigin, yOrigin, xOrigin + width, yOrigin);
         double value = minorTickStart;
+        int gap1 = ticFontSize / 4;
+        ticSize = ticFontSize * 0.75;
 
         while (value < upperBound) {
             double x = getDisplayPosition(value);
@@ -310,7 +328,7 @@ public class Axis {
                 String ticString = String.format(ticFormatString, value);
                 double y2 = yOrigin + ticSize;
                 gC.strokeLine(x, y1, x, y2);
-                gC.fillText(ticString, x, y2 + 2.0);
+                gC.fillText(ticString, x, y2 + gap1);
             } else {
                 double y2 = yOrigin + ticSize / 2;
                 gC.strokeLine(x, y1, x, y2);
@@ -318,9 +336,9 @@ public class Axis {
             value += minorTickSpace;
         }
         if (label.length() != 0) {
-            gC.setTextBaseline(VPos.BOTTOM);
+            gC.setTextBaseline(VPos.TOP);
             gC.setFont(labelFont);
-            double labelTop = yOrigin + height - 2;
+            double labelTop = yOrigin + ticSize + gap1 + ticFontSize + gap1;
             gC.fillText(label, xOrigin + width / 2, labelTop);
             //gC.drawText(label, leftBorder + width / 2, labelTop, "n", 0.0);
         }
@@ -334,6 +352,9 @@ public class Axis {
         gC.setTextAlign(TextAlignment.RIGHT);
         getTickPositions();
         gC.strokeLine(xOrigin, yOrigin, xOrigin, yOrigin - height);
+        int gap1 = ticFontSize / 4;
+        int gap2 = labelFontSize / 4;
+        ticSize = ticFontSize * 0.75;
         double value = majorTickStart;
         int ticStringLen = 0;
         while (value < upperBound) {
@@ -347,7 +368,7 @@ public class Axis {
                 }
                 double x2 = x1 - ticSize;
                 gC.strokeLine(x1, y, x2, y);
-                gC.fillText(ticString, x2 - 2, y);
+                gC.fillText(ticString, x2 - gap1, y);
             } else {
                 double x2 = x1 - ticSize / 2;
                 gC.strokeLine(x1, y, x2, y);
@@ -361,7 +382,7 @@ public class Axis {
             gC.setTextBaseline(VPos.TOP);
             gC.setTextAlign(TextAlignment.CENTER);
             gC.save();
-            gC.translate(xOrigin - width + labelFontSize / 2, yOrigin - height / 2);
+            gC.translate(xOrigin - width + gap2, yOrigin - height / 2);
             gC.rotate(270);
             gC.fillText(label, 0, 0);
             gC.restore();
