@@ -1,7 +1,7 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.datasets.Region;
+import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.math.Vec.IndexValue;
 
@@ -948,7 +948,7 @@ public class Multiplets {
         return peaks;
     }
 
-    public static void splitRegionsByPeakSep(Set<Region> regions, PeakList peakList, Vec vec) {
+    public static void splitRegionsByPeakSep(Set<DatasetRegion> regions, PeakList peakList, Vec vec) {
         double maxSplitting = 18.0;
         int[] dim = new int[peakList.nDim];
         for (int i = 0; i < dim.length; i++) {
@@ -957,11 +957,11 @@ public class Multiplets {
         double sf = peakList.getSpectralDim(0).getSf();
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         double[][] limits = new double[1][2];
-        Set<Region> newRegions = new TreeSet<>();
+        Set<DatasetRegion> newRegions = new TreeSet<>();
         regions.stream().forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
             limits[0][1] = region.getRegionEnd(0);
-            Region newRegion = null;
+            DatasetRegion newRegion = null;
             List<Peak> peaks = locatePeaks(peakList, limits, dim);
             if (peaks.size() > 1) {
                 List<PeakDim> peakDims = new ArrayList<>();
@@ -994,19 +994,19 @@ public class Multiplets {
         }
     }
 
-    public static void splitRegionsByPeakCount(Set<Region> regions, PeakList peakList, Vec vec, int maxPeaks) {
+    public static void splitRegionsByPeakCount(Set<DatasetRegion> regions, PeakList peakList, Vec vec, int maxPeaks) {
         int[] dim = new int[peakList.nDim];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
         }
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         double[][] limits = new double[1][2];
-        Set<Region> newRegions = new TreeSet<>();
+        Set<DatasetRegion> newRegions = new TreeSet<>();
         while (true) {
             regions.stream().forEach(region -> {
                 limits[0][0] = region.getRegionStart(0);
                 limits[0][1] = region.getRegionEnd(0);
-                Region newRegion = null;
+                DatasetRegion newRegion = null;
                 List<Peak> peaks = locatePeaks(peakList, limits, dim);
                 if (peaks.size() > maxPeaks) {
                     List<PeakDim> peakDims = new ArrayList<>();
@@ -1041,17 +1041,17 @@ public class Multiplets {
         }
     }
 
-    public static void linkPeaksInRegion(PeakList peakList, Set<Region> regions) {
+    public static void linkPeaksInRegion(PeakList peakList, Set<DatasetRegion> regions) {
         int[] dim = new int[peakList.nDim];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
         }
         double[][] limits = new double[1][2];
-        Set<Region> newRegions = new TreeSet<>();
+        Set<DatasetRegion> newRegions = new TreeSet<>();
         regions.stream().forEach(region -> {
             limits[0][0] = region.getRegionStart(0);
             limits[0][1] = region.getRegionEnd(0);
-            Region newRegion = null;
+            DatasetRegion newRegion = null;
             List<Peak> peaks = locatePeaks(peakList, limits, dim);
             if (peaks.size() > 1) {
                 List<PeakDim> needsLinking = new ArrayList<>();
@@ -1095,7 +1095,7 @@ public class Multiplets {
         });
     }
 
-    public static void groupPeaks(PeakList peakList, Set<Region> regions) throws IOException {
+    public static void groupPeaks(PeakList peakList, Set<DatasetRegion> regions) throws IOException {
         if (peakList.size() == 0) {
             return;
         }

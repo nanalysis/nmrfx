@@ -97,7 +97,7 @@ public class PeakFitting {
             List<PeakDim> peakDims = new ArrayList<>();
             peakDims.add(peak.peakDim[0]);
             double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, peak.peakDim[0].getChemShift());
-System.out.println(peak.peakDim[0].getChemShift() + " " + bounds);
+            System.out.println(peak.peakDim[0].getChemShift() + " " + bounds);
             value = fitPeakDims(peakDims, mode, bounds, fitMode);
         } catch (PeakFitException | IOException | IllegalArgumentException e) {
             System.out.println(e.getMessage());
@@ -133,13 +133,20 @@ System.out.println(peak.peakDim[0].getChemShift() + " " + bounds);
     public double jfitLinkedPeak(Peak peak, boolean doFit) {
         double value = 0.0;
         String mode = "jfit";
+        Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
+        double regionShift = peak.peakDim[0].getChemShift();
+        if (multiplet != null) {
+            regionShift = multiplet.measureCenter();
+        }
 
         String fitMode = doFit ? "all" : "rms";
         try {
             List<PeakDim> peakDims = new ArrayList<>();
             peakDims.add(peak.peakDim[0]);
-            double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, peak.peakDim[0].getChemShift());
-System.out.println(peak.peakDim[0].getChemShift() + " " + bounds[0] + " " + bounds[1]);
+            double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, regionShift);
+            if ((bounds == null) && (multiplet != null)) {
+                bounds = Multiplets.getBoundsOfPeakDims(multiplet.getPeakDims(), 1.5, regionShift);
+            }
             value = fitPeakDims(peakDims, mode, bounds, fitMode);
         } catch (PeakFitException | IOException | IllegalArgumentException e) {
             System.out.println(e.getMessage());
