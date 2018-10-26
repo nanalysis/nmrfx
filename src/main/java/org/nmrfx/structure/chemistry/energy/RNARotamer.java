@@ -430,6 +430,37 @@ public class RNARotamer {
         return -FastMath.log(prob);
     }
 
+    private static double[] calcNormDeltas(RotamerScore score) {
+        double[] normDeltas = new double[7];
+        double[] rotamerAngles = score.rotamer.angles;
+        double[] testAngles = score.angles;
+        double[] stdev = score.rotamer.sdev;
+        for (int i = 0; i < 7; i++) {
+            double delta = Math.abs(testAngles[i] - rotamerAngles[i]);
+            if (delta > Math.PI) {
+                delta = 2.0 * Math.PI - delta;
+            }
+            normDeltas[i] = delta / stdev[i];
+        }
+        return normDeltas;
+    }
+
+    private static double calcBeta(double[] normDeltas) {
+        double beta = 0;
+        for (double normDelta : normDeltas) {
+            beta += (-((1.0) / (2.0)) * (normDelta * normDelta));
+        }
+        return beta;
+    }
+
+    private static double calcAlpha(RotamerScore score) {
+        double alpha = 1;
+        double[] stdevs = score.rotamer.sdev;
+        for (double stdev : stdevs) {
+            alpha *= (1.0 / (stdev * Math.sqrt(2.0 * Math.PI)));
+        }
+        return alpha;
+    }
     public double score(double[] testAngles, int[] indices, double[] halfWidths) {
         if (testAngles.length != angles.length) {
             throw new IllegalArgumentException("Must specify " + angles.length + " angles");
