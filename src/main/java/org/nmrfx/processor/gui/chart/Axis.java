@@ -61,6 +61,7 @@ public class Axis {
     private Color color = Color.BLACK;
     private Font ticFont = new Font(ticFontSize);
     private Font labelFont = new Font(labelFontSize);
+    public static double targetPix = 120;
 
     public Axis(Orientation orientation, double lowerBound, double upperBound, double width, double height) {
         this.orientation = orientation;
@@ -251,7 +252,6 @@ public class Axis {
     private void getTickPositions() {
         double length = VERTICAL == getOrientation() ? getHeight() : getWidth();
         if (length > 0) {
-            double targetPix = 140;
             double nTic1 = length / targetPix;
             double range = getRange();
             double scale = range / nTic1;
@@ -355,7 +355,7 @@ public class Axis {
         int gap1 = ticFontSize / 4;
         int gap2 = labelFontSize / 4;
         ticSize = ticFontSize * 0.75;
-        double value = majorTickStart;
+        double value = minorTickStart;
         int ticStringLen = 0;
         while (value < upperBound) {
             double y = getDisplayPosition(value);
