@@ -67,6 +67,7 @@ public class PreferencesController implements Initializable {
     static Integer nProcesses = null;
     static IntegerProperty tickFontSizeProp = null;
     static IntegerProperty labelFontSizeProp = null;
+    static IntegerProperty peakFontSizeProp = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -105,14 +106,21 @@ public class PreferencesController implements Initializable {
                     tickFontSizeProp.setValue((Integer) c);
                 },
                 getTickFontSize(), 1, 32, "Spectra", "TicFontSize", "Font size for tic mark labels");
-        prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem, nProcessesItem, ticFontSizeItem);
-
+        
         IntRangeOperationItem labelFontSizeItem = new IntRangeOperationItem(
                 (a, b, c) -> {
                     labelFontSizeProp.setValue((Integer) c);
                 },
                 getLabelFontSize(), 1, 32, "Spectra", "LabelFontSize", "Font size for axis labels");
-        prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem, nProcessesItem, ticFontSizeItem, labelFontSizeItem);
+        
+        IntRangeOperationItem peakFontSizeItem = new IntRangeOperationItem(
+                (a, b, c) -> {
+                    peakFontSizeProp.setValue((Integer) c);
+                },
+                getPeakFontSize(), 1, 32, "Spectra", "PeakFontSize", "Font size for peak box labels");
+        
+        prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
+                nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem);
 
     }
 
@@ -372,6 +380,11 @@ public class PreferencesController implements Initializable {
     public static Integer getLabelFontSize() {
         labelFontSizeProp = getInteger(labelFontSizeProp, "LABEL_FONT_SIZE", 12);
         return labelFontSizeProp.getValue();
+    }
+    
+    public static Integer getPeakFontSize() {
+        peakFontSizeProp = getInteger(peakFontSizeProp, "PEAK_FONT_SIZE", 12);
+        return peakFontSizeProp.getValue();
     }
 
     public static IntegerProperty getInteger(IntegerProperty prop, String name, int defValue) {

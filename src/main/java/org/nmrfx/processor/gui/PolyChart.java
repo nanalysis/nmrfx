@@ -68,6 +68,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.input.DragEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.text.Font;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
@@ -157,6 +158,7 @@ public class PolyChart implements PeakListener {
     double rightBorder = 0.0;
     double topBorder = 0.0;
     double bottomBorder = 0.0;
+    Font peakFont = new Font(12);
 
     int iVec = 0;
 //    Vec vec;
@@ -2123,6 +2125,10 @@ public class PolyChart implements PeakListener {
                 if (peakGC instanceof GraphicsContextProxy) {
                     peakGC.clearRect(xPos, yPos, width, height);
                 }
+                if (peakFont.getSize() != PreferencesController.getPeakFontSize()) {
+                    peakFont = new Font(PreferencesController.getPeakFontSize());
+                }
+                peakGC.setFont(peakFont);
 
                 final Iterator<PeakListAttributes> peakListIterator = peakListAttributesList.iterator();
                 while (peakListIterator.hasNext()) {
