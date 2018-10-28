@@ -538,8 +538,14 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokeLine(double x1, double y1, double x2, double y2) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void strokeLine(double x1, double y1, double x2, double y2) throws GraphicsIOException {
+        try {
+            contentStream.moveTo(tX(x1), tY(y1));
+            contentStream.lineTo(tX(x2), tY(y2));
+            contentStream.stroke();
+        } catch (IOException ioE) {
+            throw new GraphicsIOException(ioE.getMessage());
+        }
     }
 
     @Override
@@ -553,8 +559,16 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokePolyline(double[] xPoints, double[] yPoints, int nPoints) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void strokePolyline(double[] x, double[] y, int n) throws GraphicsIOException {
+        try {
+            contentStream.moveTo(tX(x[0]), tY(y[0]));
+            for (int i = 1; i < n; i++) {
+                contentStream.lineTo(tX(x[i]), tY(y[i]));
+            }
+            contentStream.stroke();
+        } catch (IOException ioE) {
+            throw new GraphicsIOException(ioE.getMessage());
+        }
     }
 
     @Override
@@ -589,7 +603,14 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void strokeText(String text, double x, double y, double maxWidth) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        // fixme not using maxWidth
+        try {
+            startText();
+            showText(text, tX(x), tY(y));
+            endText();
+        } catch (GraphicsIOException ex) {
+            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
