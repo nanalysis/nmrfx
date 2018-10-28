@@ -236,7 +236,7 @@ public class Axis {
     }
 
     public double getScale() {
-        return 1.0;
+        return calcScale();
     }
 
     public void setTickFontSize(int size) {
