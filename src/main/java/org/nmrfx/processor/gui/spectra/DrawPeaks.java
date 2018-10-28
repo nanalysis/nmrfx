@@ -36,6 +36,7 @@ import java.util.*;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.VPos;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Path;
@@ -49,6 +50,7 @@ import org.nmrfx.processor.datasets.peaks.Peak.Corner;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.gui.chart.Axis;
 import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
+import org.nmrfx.processor.gui.graphicsio.GraphicsContextProxy;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
 /**
@@ -119,8 +121,9 @@ public class DrawPeaks {
     Bounds lastTextBox = null;
     GraphicsContextInterface g2;
 
-    public DrawPeaks(PolyChart chart) {
+    public DrawPeaks(PolyChart chart, Canvas peakCanvas) {
         this.chart = chart;
+        this.g2 = new GraphicsContextProxy(peakCanvas.getGraphicsContext2D());
         //   setParameters();
         regions = new HashSet[nRegions];
 
@@ -189,7 +192,7 @@ public class DrawPeaks {
 
     public void drawSimSum(GraphicsContextInterface g2, ArrayList peaks, int[] dim) throws GraphicsIOException {
         //int colorMode = setColor(g2, peak, offset);
-        Peak1DRep peakRep = new Peak1DRep(dim[0], peaks);
+        Peak1DRep peakRep = new Peak1DRep(g2, dim[0], peaks);
     }
 
     public synchronized void drawPeak(PeakListAttributes peakAttr, GraphicsContextInterface g2, Peak peak, int[] dim,
@@ -551,7 +554,7 @@ public class DrawPeaks {
                     normVal = multiplet.getVolume() / peak.peakList.scale;
                 }
                 label = Format.format2(normVal) + " " + multiplet.getMultiplicity() + " " + couplings
-                        + "\n" + Format.format4(multiplet.getCenter());
+                        + "\n" + Format.format3(multiplet.getCenter());
 
                 break;
             case PeakDisplayParameters.MULTIPLET_LABEL_PPM:
@@ -670,7 +673,7 @@ public class DrawPeaks {
         g2.strokeRect(bounds.getMinX() - border, bounds.getMinY() - border, bounds.getWidth() + 2 * border, bounds.getHeight() + 2 * border);
     }
 
-    protected boolean pick1DPeak(PeakListAttributes peakAttr, Peak peak, int[] dim, double hitX, double hitY)  {
+    protected boolean pick1DPeak(PeakListAttributes peakAttr, Peak peak, int[] dim, double hitX, double hitY) {
         if ((dim[0] < 0) || (dim[0] >= peak.peakDim.length)) {
             return false;
         }
@@ -859,7 +862,7 @@ public class DrawPeaks {
         float x = peak.peakDim[dim[0]].getChemShiftValue();
         float intensity = peak.getIntensity();
 
-        double textY = xAxis.getYOrigin() - g2.getFont().getSize() -5;
+        double textY = xAxis.getYOrigin() - g2.getFont().getSize() - 5;
 
         Peak1DRep peakRep = new Peak1DRep(peakAttr, dim[0], x, intensity, textY, label, colorMode, peak);
 
@@ -1041,8 +1044,14 @@ public class DrawPeaks {
         if ((lastTextBox == null) || (!lastTextBox.intersects(bounds))) {
             lastTextBox = bounds;
             g2.setTextBaseline(VPos.BOTTOM);
-            g2.fillText(label, x1, yText);
-            g2.setStroke(color);
+            String[] segments = label.split("\n");
+            double lineIncr = g2.getFont().getSize();
+            double lineOffset = lineIncr * (segments.length - 1);
+            for (String segment : segments) {
+                g2.fillText(segment, x1, yText - lineOffset);
+                g2.setStroke(color);
+                lineOffset -= lineIncr;
+            }
             g2.strokeLine(x1, y1, x1, yText);
         }
 
@@ -1443,13 +1452,13 @@ public class DrawPeaks {
             this.peakAttr = peakAttr;
         }
 
-        Peak1DRep(int dim, ArrayList peaks) throws GraphicsIOException {
+        Peak1DRep(GraphicsContextInterface g2, int dim, ArrayList peaks) throws GraphicsIOException {
             this.peaks = peaks;
             this.dim = dim;
-            generateDerivedPath();
+            generateDerivedPath(g2);
         }
 
-        void generateDerivedPath() throws GraphicsIOException {
+        void generateDerivedPath(GraphicsContextInterface g2) throws GraphicsIOException {
             double min = Double.MAX_VALUE;
             double max = Double.NEGATIVE_INFINITY;
             double minWid = Double.MAX_VALUE;

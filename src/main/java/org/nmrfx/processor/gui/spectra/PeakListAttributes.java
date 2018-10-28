@@ -41,6 +41,8 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableSet;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -64,7 +66,7 @@ public class PeakListAttributes implements PeakListener {
     Optional<List<Peak>> peaksInRegion = Optional.empty();
     Optional<List<Multiplet>> multipletsInRegion = Optional.empty();
     Set<Peak> selectedPeaks = new HashSet<>();
-    Set<MultipletSelection> selectedMultiplets = new HashSet<>();
+    Set<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
     NMRAxis xAxis = null;
     NMRAxis yAxis = null;
 
@@ -392,6 +394,7 @@ public class PeakListAttributes implements PeakListener {
 
     public void selectPeak(DrawPeaks drawPeaks, double pickX, double pickY, boolean append) {
         Optional<Peak> hit = Optional.empty();
+        System.out.println("sel pe");
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
             xAxis = (NMRAxis) chart.getXAxis();
@@ -425,7 +428,8 @@ public class PeakListAttributes implements PeakListener {
                         selectedPeaks.clear();
                     }
                 }
-                if (multipletsInRegion.isPresent()) {
+           System.out.println("sel me");
+             if (multipletsInRegion.isPresent()) {
                     for (Multiplet multiplet : multipletsInRegion.get()) {
                         Optional<MultipletSelection> lineHit = drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY);
                         if (lineHit.isPresent()) {
@@ -440,8 +444,8 @@ public class PeakListAttributes implements PeakListener {
                                 selectedMultiplets.clear();
                             }
                         }
-
                     }
+                    chart.updateSelectedMultiplets();
                 }
             }
 

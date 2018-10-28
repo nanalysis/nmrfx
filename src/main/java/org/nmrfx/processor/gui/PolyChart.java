@@ -54,6 +54,8 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
@@ -166,6 +168,8 @@ public class PolyChart implements PeakListener {
 //    DatasetAttributes datasetAttributes = null;
     ObservableList<DatasetAttributes> datasetAttributesList = FXCollections.observableArrayList();
     ObservableList<PeakListAttributes> peakListAttributesList = FXCollections.observableArrayList();
+    ObservableSet<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
+
     FXMLController controller;
     ProcessorController processorController = null;
     BooleanProperty sliceStatus = new SimpleBooleanProperty(true);
@@ -190,6 +194,17 @@ public class PolyChart implements PeakListener {
             );
         }
 
+    }
+
+    public void updateSelectedMultiplets() {
+        selectedMultiplets.clear();
+        for (PeakListAttributes peakAttr : peakListAttributesList) {
+            selectedMultiplets.addAll(peakAttr.getSelectedMultiplets());
+        }
+    }
+
+    public void addMultipletListener(SetChangeListener listener) {
+        selectedMultiplets.addListener(listener);
     }
 
     public void setPeakStatus(boolean state) {
@@ -262,7 +277,7 @@ public class PolyChart implements PeakListener {
         initChart();
         width = canvas.getWidth();
         height = canvas.getHeight();
-        drawPeaks = new DrawPeaks(this);
+        drawPeaks = new DrawPeaks(this, peakCanvas);
 
     }
 
@@ -978,6 +993,7 @@ public class PolyChart implements PeakListener {
                     double newLower = positions[axis] - range / 2;
                     double newUpper = positions[axis] + range / 2;
                     setAxis(axis, newLower, newUpper);
+                    refresh();
                 }
             }
         }
@@ -996,6 +1012,7 @@ public class PolyChart implements PeakListener {
                     double newLower = positions[axis] - range / 2;
                     double newUpper = positions[axis] + range / 2;
                     setAxis(axis, newLower, newUpper);
+                    refresh();
                 }
             }
         }
@@ -2324,6 +2341,7 @@ public class PolyChart implements PeakListener {
                         try {
                             drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, false, 0);
                         } catch (GraphicsIOException ex) {
+                            System.out.println(ex.getMessage());
                         }
                         roots.add(multiplet.getPeakDim().getPeak());
                     });
