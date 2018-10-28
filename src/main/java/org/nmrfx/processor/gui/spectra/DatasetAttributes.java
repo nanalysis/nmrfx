@@ -422,6 +422,23 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return offsetProperty().get();
     }
 
+    private DoubleProperty integralScale;
+
+    public DoubleProperty integralScaleProperty() {
+        if (integralScale == null) {
+            integralScale = new SimpleDoubleProperty(this, "integralScale", 10.0);
+        }
+        return integralScale;
+    }
+
+    public void setIntegralScale(double value) {
+        integralScaleProperty().set(value);
+    }
+
+    public double getIntegralScale() {
+        return integralScaleProperty().get();
+    }
+
     private BooleanProperty pos;
 
     public BooleanProperty posProperty() {
