@@ -14,6 +14,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Set;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -46,7 +49,7 @@ import org.nmrfx.processor.gui.spectra.PeakListAttributes;
  *
  * @author brucejohnson
  */
-public class MultipletController implements Initializable {
+public class MultipletController implements Initializable, SetChangeListener<MultipletSelection> {
 
     Stage stage = null;
     ToolBar navigatorToolBar;
@@ -168,11 +171,16 @@ public class MultipletController implements Initializable {
     }
 
     void updateMultipletField() {
+        updateMultipletField(true);
+    }
+
+    void updateMultipletField(boolean resetView) {
         if (activeMultiplet.isPresent()) {
             multipletIdField.setText(String.valueOf(activeMultiplet.get().getIDNum()));
-            refreshPeakView(activeMultiplet.get());
+            if (resetView) {
+                refreshPeakView(activeMultiplet.get());
+            }
             String mult = activeMultiplet.get().getMultiplicity();
-            System.out.println(mult);
             Coupling coup = activeMultiplet.get().getCoupling();
             updateCouplingChoices(coup);
         } else {
@@ -275,6 +283,7 @@ public class MultipletController implements Initializable {
             stage.show();
             stage.toFront();
             controller.chart = controller.getChart();
+            controller.chart.addMultipletListener(controller);
         } catch (IOException ioE) {
             ioE.printStackTrace();
             System.out.println(ioE.getMessage());
@@ -352,6 +361,31 @@ public class MultipletController implements Initializable {
                     chart.moveTo(ppms, widths);
                 } else {
                     chart.moveTo(ppms);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onChanged(Change<? extends MultipletSelection> change) {
+        ObservableSet<MultipletSelection> mSet = (ObservableSet<MultipletSelection>) change.getSet();
+        boolean allreadyPresent = false;
+        if (!mSet.isEmpty()) {
+            if (activeMultiplet.isPresent()) {
+                for (MultipletSelection mSel : mSet) {
+                    if (mSel.getMultiplet() == activeMultiplet.get()) {
+                        // current active multiplet in selection so don't change anything
+                        allreadyPresent = true;
+                        break;
+                    }
+                }
+
+            }
+            if (!allreadyPresent) {
+                for (MultipletSelection mSel : mSet) {
+                    activeMultiplet = Optional.of(mSel.getMultiplet());
+                    updateMultipletField(false);
+                    break;
                 }
             }
         }
