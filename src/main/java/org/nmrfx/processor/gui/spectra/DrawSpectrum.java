@@ -788,13 +788,12 @@ public class DrawSpectrum {
                 return false;
             }
         }
-        double level = dataAttributes.lvlProperty().get();
         double height = axes[1].getHeight();
-        double scale = -height / 10.0 / level;
+        double scale = axes[1].getScale();
         double offset = height * (1.0 - dataAttributes.getMapOffset(rowIndex));
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> intensity * scale + offset, offsetMode, false);
+                (index, intensity) -> axes[1].getDisplayPosition(intensity), offsetMode, false);
 
         if (iChunk < 0) {
             return false;
@@ -846,13 +845,10 @@ public class DrawSpectrum {
             ioE.printStackTrace();
             return false;
         }
-        double level = dataAttributes.lvlProperty().get();
-        double height = axes[1].getHeight();
-        double scale = -height / 100.0 / level;
-        double offset = height * (1.0 - dataAttributes.getMapOffset(rowIndex));
+        double scale = dataAttributes.getIntegralScale();
         drawVector(specVec, orientation, 0, axMode, drawReal, 0.0, 0.0, null,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> intensity * scale + offset, offsetMode, true);
+                (index, intensity) -> axes[1].getDisplayPosition(intensity / scale), offsetMode, true);
 
         return true;
     }
