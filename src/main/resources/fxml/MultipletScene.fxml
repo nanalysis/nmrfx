@@ -12,6 +12,7 @@
             <items>
                 <Button text="Fit" onAction="#fitSelected"/>
                 <Button text="Split" onAction="#splitSelected"/>
+                <Button text="To Doublets" onAction="#guessMultiplicity"/>
             </items>
         </ToolBar>
     </top>

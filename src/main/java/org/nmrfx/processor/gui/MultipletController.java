@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
@@ -62,14 +64,14 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
     TextField[] slopeFields;
     private PolyChart chart;
     Optional<Multiplet> activeMultiplet = Optional.empty();
+    boolean ignoreCouplingChanges = false;
+    ChangeListener<String> patternListener;
 
     public MultipletController() {
-        System.out.println("ne con");
     }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        System.out.println("init");
         String[] patterns = {"d", "t", "q", "p", "h", "dd", "ddd", "dddd"};
         int nCouplings = 5;
         double width1 = 30;
@@ -103,7 +105,14 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             gridPane.add(slopeFields[iRow], 3, iRow);
         }
         initNavigator(toolBar);
-        System.out.println("get init from chart " + chart);
+        patternListener = new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                couplingChanged();
+            }
+        };
+        addPatternListener();
+
     }
 
     public void initNavigator(ToolBar toolBar) {
@@ -187,15 +196,29 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         }
     }
 
+    void clearPatternListener() {
+        for (ChoiceBox<String> cBox : patternChoices) {
+            cBox.valueProperty().removeListener(patternListener);
+        }
+    }
+
+    void addPatternListener() {
+        for (ChoiceBox<String> cBox : patternChoices) {
+            cBox.valueProperty().addListener(patternListener);
+        }
+    }
+
     void clearCouplingChoices() {
         for (int i = 0; i < patternChoices.length; i++) {
             patternChoices[i].setValue("");
             couplingFields[i].setText("");
             slopeFields[i].setText("");
         }
+        ignoreCouplingChanges = false;
     }
 
     void updateCouplingChoices(Coupling coup) {
+        clearPatternListener();
         String[] couplingNames = {"", "s", "d", "t", "q", "p", "h"};
         clearCouplingChoices();
         if (coup instanceof ComplexCoupling) {
@@ -213,10 +236,10 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         } else if (coup instanceof Singlet) {
             patternChoices[0].setValue("s");
         }
+        addPatternListener();
     }
 
     void firstMultiplet(ActionEvent e) {
-        System.out.println("get first from chart " + chart + " " + this);
         List<Multiplet> multiplets = getMultiplets();
         if (!multiplets.isEmpty()) {
             activeMultiplet = Optional.of(multiplets.get(0));
@@ -295,7 +318,6 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
     }
 
     Optional<PeakList> getPeakList() {
-        System.out.println("get peak from chart " + chart);
         Optional<PeakList> peakListOpt = Optional.empty();
         List<PeakListAttributes> attrs = chart.getPeakListAttributes();
         if (!attrs.isEmpty()) {
@@ -308,12 +330,12 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
     PolyChart getChart() {
         FXMLController controller = FXMLController.getActiveController();
         PolyChart activeChart = controller.getActiveChart();
-        System.out.println("get chart " + this + " " + activeChart);
         return activeChart;
     }
 
     void refresh() {
         chart.refresh();
+        updateMultipletField(false);
 
     }
 
@@ -339,6 +361,13 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         refresh();
     }
 
+    public void guessMultiplicity() {
+        activeMultiplet.ifPresent(m -> {
+            Multiplets.guessMultiplicityFromGeneric(m);
+        });
+        refresh();
+    }
+
     public void guessGeneric() {
         activeMultiplet.ifPresent(m -> {
             Multiplets.guessMultiplicityFromGeneric(m);
@@ -350,8 +379,7 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         if (multiplet != null) {
             double bounds = multiplet.getBoundsValue();
             double center = multiplet.measureCenter();
-            System.out.println(bounds + " " + center);
-            double widthScale = 1.5;
+            double widthScale = 2.5;
             if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
                 Double[] ppms = {center};
@@ -363,6 +391,24 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
                 }
             }
         }
+    }
+
+    private void couplingChanged() {
+        activeMultiplet.ifPresent(m -> {
+            StringBuilder sBuilder = new StringBuilder();
+            for (ChoiceBox<String> choice : patternChoices) {
+                String value = choice.getValue().trim();
+                if (value.length() > 0) {
+                    sBuilder.append(value);
+                }
+            }
+            String multNew = sBuilder.toString();
+            String multOrig = m.getMultiplicity();
+            if (!multNew.equals(multOrig)) {
+                Multiplets.convertMultiplicity(m, multOrig, multNew);
+                refresh();
+            }
+        });
     }
 
     @Override
