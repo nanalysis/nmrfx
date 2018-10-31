@@ -21,13 +21,16 @@ import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Point3;
+import org.python.modules.math;
 
 public class RNARotamer {
 
@@ -374,36 +377,49 @@ public class RNARotamer {
     }
 
     public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n) {
+        return getNBest(polymer, residueNum, n, null);
+    }
+
+    public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n, EnergyCoords ec) {
         /* getNBest finds n of the best rotamer confirmations and returns a 
            list of rotamer scores containing the type of rotamer and the 
            probability. The function takes the polymer and a residue number.
-        */
-        
-        RotamerScore[] bestScores = new RotamerScore[n];
-        double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum);
-        for (RNARotamer rotamer : ROTAMERS.values()) {
-            // Note i am not using the fraction of times rotamers are found in 
-            // each position as an input
-            double probability = rotamer.probability(testAngles, indices, 1.0);
+         */
 
-            if (!(bestScores[n - 1] == null || probability > bestScores[n - 1].prob)) {
-                continue;
-            }
+        RotamerScore[] bestScores = new RotamerScore[n];
+        double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum, ec);
+        List<RotamerScore> rotamerScores = new ArrayList<>();
+        for (RNARotamer rotamer : ROTAMERS.values()) {
+            double probability = rotamer.probability(testAngles, new int[]{0, 1, 2, 3, 4, 5, 6}, rotamer.fraction);
             RotamerScore rotScore = new RotamerScore(rotamer, 0.0, probability, testAngles, null);
-            for (int i = 0; i < n; i++) {
-                Double storedProb = bestScores[i] == null ? null : bestScores[i].prob;
-                if (storedProb == null) {
-                    bestScores[i] = rotScore;
-                    break;
-                } else if (probability > storedProb) {
-                    for (int j = n - 1; j > i; j--) {
-                        bestScores[j] = bestScores[j - 1];
-                    }
-                    bestScores[i] = rotScore;
-                    break;
-                }
-            }
+            rotamerScores.add(rotScore);
         }
+        rotamerScores = rotamerScores.stream().sorted(Comparator.comparingDouble(RotamerScore::getProb).reversed()).limit(n).collect(Collectors.toList());
+        
+        // The commented out code may be a bit faster but less legible. 
+//        for (RNARotamer rotamer : ROTAMERS.values()) {
+//            double probability = rotamer.probability(testAngles, new int[]{1, 2, 3, 4, 5, 6}, rotamer.fraction);
+//            // If the last element in the list is null or if the last elements probability is less than the calculated probability
+              // the bestScores array should be edited. If not, we should just continue.
+//            if (!(bestScores[n - 1] == null || probability > bestScores[n - 1].prob)) {
+//                continue;
+//            }
+//            RotamerScore rotScore = new RotamerScore(rotamer, 0.0, probability, testAngles, null);
+//            for (int i = 0; i < n; i++) {
+//                Double storedProb = bestScores[i] == null ? null : bestScores[i].prob;
+//                if (storedProb == null) {
+//                    bestScores[i] = rotScore;
+//                    break;
+//                } else if (probability > storedProb) {
+//                    for (int j = n - 1; j > i; j--) {
+//                        bestScores[j] = bestScores[j - 1];
+//                    }
+//                    bestScores[i] = rotScore;
+//                    break;
+//                }
+//            }
+//        }
+        bestScores = rotamerScores.toArray(bestScores);
         return bestScores;
     }
 
