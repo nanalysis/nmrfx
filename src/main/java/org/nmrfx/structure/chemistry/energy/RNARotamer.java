@@ -600,11 +600,15 @@ public class RNARotamer {
     }
 
     public static double[] getDihedrals(Polymer polymer, int residueNum) {
+        return getDihedrals(polymer, residueNum, null);
+    }
+
+    public static double[] getDihedrals(Polymer polymer, int residueNum, EnergyCoords ec) {
         double[] angles = new double[suiteAtoms.length];
         if (residueNum > 0) {
             int i = 0;
             for (String[] atomNames : suiteAtoms) {
-                Point3[] pts = new Point3[4];
+                Atom[] angleAtoms = new Atom[4];
                 int j = 0;
                 for (String aName : atomNames) {
                     int colonPos = aName.indexOf(':');
@@ -616,12 +620,16 @@ public class RNARotamer {
                     }
                     Residue residue = polymer.getResidue(residueNum + delta);
                     Atom atom = residue.getAtom(aName);
-                    pts[j++] = atom.getPoint();
+                    angleAtoms[j++] = atom;
                     if (j == 3) {
                         atoms[i] = atom;
                     }
                 }
-                angles[i++] = AtomMath.calcDihedral(pts[0], pts[1], pts[2], pts[3]);
+                if (ec == null) {
+                    angles[i++] = AtomMath.calcDihedral(angleAtoms[0].getPoint(), angleAtoms[1].getPoint(), angleAtoms[2].getPoint(), angleAtoms[3].getPoint());
+                } else {
+                    angles[i++] = ec.calcDihedral(angleAtoms[0].eAtom, angleAtoms[1].eAtom, angleAtoms[2].eAtom, angleAtoms[3].eAtom);
+                }
             }
         }
         return angles;
