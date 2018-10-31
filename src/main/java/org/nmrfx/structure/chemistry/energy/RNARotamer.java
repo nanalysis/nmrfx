@@ -125,6 +125,7 @@ public class RNARotamer {
         double prob;
         double[] angles;
         String message;
+        double[] normDeltas = new double[7];
 
         public RotamerScore(RNARotamer rotamer, double score, double prob, double[] angles) {
             this(rotamer, score, prob, angles, "");
@@ -136,6 +137,21 @@ public class RNARotamer {
             this.angles = angles;
             this.message = message;
             this.prob = prob;
+        }
+
+        private void calcNormDeltas() {
+            for (int i = 0; i < 7; i++) {
+                double delta = angles[i] - rotamer.angles[i];
+//                double delta = Math.abs(angles[i] - rotamer.angles[i]);
+
+                if (delta > Math.PI) {
+                    delta = -(2.0 * Math.PI - delta);
+                }
+                if (delta < -Math.PI) {
+                    delta = 2.0 * Math.PI + delta;
+                }
+                normDeltas[i] = delta / rotamer.sdev[i];
+            }
         }
 
         public String getName() {
@@ -441,63 +457,30 @@ public class RNARotamer {
         /* calcRotamerEnergy takes a list of RotamerScore objects and computes
            an energy based on the probabilities stored in each RotamerScore 
            object. 
-        */
-        double prob = 0;
+         */
+        double totalProb = 0;
         for (RotamerScore score : scores) {
-            prob += score.prob;
-        }
-        return -FastMath.log(prob);
-    }
-
-    private static double[] calcNormDeltas(RotamerScore score) {
-        double[] normDeltas = new double[7];
-        double[] rotamerAngles = score.rotamer.angles;
-        double[] testAngles = score.angles;
-        double[] stdev = score.rotamer.sdev;
-        for (int i = 0; i < 7; i++) {
-            double delta = Math.abs(testAngles[i] - rotamerAngles[i]);
-            if (delta > Math.PI) {
-                delta = 2.0 * Math.PI - delta;
+            score.calcNormDeltas();
+            double prob = score.prob;
+            if (prob < 10e-200) {
+                System.out.println("probability changed");
+                prob = 10e-200;
+                score.prob = prob;
             }
-            normDeltas[i] = delta / stdev[i];
-        }
-        return normDeltas;
-    }
+            totalProb += score.prob;
 
-    private static double calcBeta(double[] normDeltas) {
-        double beta = 0;
-        for (double normDelta : normDeltas) {
-            beta += (-((1.0) / (2.0)) * (normDelta * normDelta));
         }
-        return beta;
-    }
-
-    private static double calcAlpha(RotamerScore score) {
-        double alpha = 1;
-        double[] stdevs = score.rotamer.sdev;
-        for (double stdev : stdevs) {
-            alpha *= (1.0 / (stdev * Math.sqrt(2.0 * Math.PI)));
-        }
-        return alpha;
+        return -FastMath.log(totalProb);
     }
 
     public static Map<Integer, Double> calcDerivs(RotamerScore[] scores, double rotEnergy) {
-        double[] betas = new double[scores.length];
-        double[] alphas = new double[scores.length];
-        double[][] normDeltas = new double[scores.length][7];
         int i = 0;
-        for (RotamerScore score : scores) {
-            normDeltas[i] = calcNormDeltas(score);
-            betas[i] = calcBeta(normDeltas[i]);
-            alphas[i] = calcAlpha(score);
-            i++;
-        }
         Map<Integer, Double> derivMap = new HashMap<>();
-        double eRotEnergy = Math.log(rotEnergy);
+        double eRotEnergy = Math.exp(rotEnergy);
         for (i = 0; i < 7; i++) {
             double sum = 0;
             for (int j = 0; j < scores.length; j++) {
-                sum += (alphas[j] * Math.exp(betas[j]) * normDeltas[j][i] * scores[j].rotamer.sdev[i]);
+                sum += (scores[j].prob * scores[j].normDeltas[i] * (1.0 / scores[j].rotamer.sdev[i]));
             }
             double deriv = eRotEnergy * sum;
             int angleIndex = atoms[i].aAtom;
