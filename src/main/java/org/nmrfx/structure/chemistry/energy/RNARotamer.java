@@ -449,7 +449,6 @@ public class RNARotamer {
     public static double calcEnergy(Polymer polymer, int residueNum, int n) {
         /* This calcRotamerEnergy can use n possible rotamer configurations.*/
         RotamerScore[] scores = getNBest(polymer, residueNum, n);
-        double prob = 0;
         return calcEnergy(scores);
     }
 
@@ -523,6 +522,9 @@ public class RNARotamer {
             double exponent = -(1.0 / 2.0) * normalizedDelta * normalizedDelta;
             double p = coeff * Math.exp(exponent);
             totalProb *= p;
+        }
+        if (totalProb > 1) {
+            totalProb = 1;
         }
         return totalProb;
     }
