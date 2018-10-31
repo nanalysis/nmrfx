@@ -43,6 +43,7 @@ import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords.ViolationStats;
+import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
 
 public class EnergyLists {
 
@@ -841,8 +842,30 @@ public class EnergyLists {
         return totalEnergy;
     }
 
-    public double calcProbDih(boolean calcDeriv) {
+    public double calcProbDih(boolean calcDeriv, double[] derivs) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
         double totalEnergy = 0;
+        List<Polymer> polymers = molecule.getPolymers();
+        for (Polymer polymer : polymers) {
+            if (polymer.isRNA()) {
+                for (int i = 1; i < polymer.size(); i++) {
+                    RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
+                    double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
+                    //System.out.printf("%5.3g  ", rotamerEnergy);
+                    if (calcDeriv) {
+                        Map<Integer, Double> rotDerivs = RNARotamer.calcDerivs(rotamerScores, rotamerEnergy);
+                        for (int atomIndex : rotDerivs.keySet()) {
+                            double deriv = forceWeight.getDihedralProb() * rotDerivs.get(atomIndex);
+                            derivs[atomIndex] += (deriv);
+                        }
+                    }
+                    totalEnergy += (forceWeight.getDihedralProb() * rotamerEnergy);
+                }
+               // System.out.println();
+
+            }
+        }
+
         //        for (AngleBoundary angleBoundary : angleBoundList) {
         //            AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
         //            totalEnergy += energy.getEnergy();
@@ -1046,7 +1069,7 @@ public class EnergyLists {
             }
 
             if (forceWeight.getDihedralProb() > 0.0) {
-                energyTotal += calcProbDih(calcDeriv);
+                energyTotal += calcProbDih(calcDeriv, gradient);
             }
             if (forceWeight.getDihedral() > 0.0) {
                 energyTotal += calcDihedralEnergyFast(gradient);
