@@ -8,6 +8,7 @@ import xplor
 import reader
 
 from org.nmrfx.structure.chemistry import Molecule
+from org.nmrfx.structure.chemistry import Atom
 from org.nmrfx.structure.chemistry.energy import EnergyLists
 from org.nmrfx.structure.chemistry.energy import ForceWeight
 from org.nmrfx.structure.chemistry.energy import Dihedral
@@ -1704,7 +1705,7 @@ class refine:
         rDyn.continueDynamics2(tempLambda,econLambda,stepsAnneal2,timeStep)
         rDyn.run(switchFrac)
 
-        self.setForces(repel=1.0, bondWt = 25.0)
+        self.setForces(repel=1.0, bondWt = 25.0, tors=0.1)
         self.setPars(useh=True,hardSphere=0.0,shrinkValue=0.0,shrinkHValue=0.0, swap=swap)
         self.setPars(optDict=stage2)
 
