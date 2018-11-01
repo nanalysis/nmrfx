@@ -1846,6 +1846,8 @@ public class PolyChart implements PeakListener {
         }
         double xMin = xAxis.getLowerBound();
         double xMax = xAxis.getUpperBound();
+        double height = yAxis.getHeight();
+        double integralOffset = height * 0.75;
         for (DatasetRegion region : regions) {
             double[] ppms = new double[2];
             ppms[0] = region.getRegionStart(0);
@@ -1860,9 +1862,9 @@ public class PolyChart implements PeakListener {
                     double[][] xy = drawSpectrum.getXY();
                     int nPoints = drawSpectrum.getNPoints();
                     int rowIndex = drawSpectrum.getRowIndex();
-                    gC.translate(0, -100);
+                    gC.translate(0, -integralOffset);
                     drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy);
-                    gC.translate(0, 100);
+                    gC.translate(0, integralOffset);
                 }
             }
         }
