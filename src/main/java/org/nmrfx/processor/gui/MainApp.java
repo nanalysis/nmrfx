@@ -332,7 +332,7 @@ public class MainApp extends Application implements DatasetListener {
 
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, openSTARMenuItem, saveSTARMenuItem);
 
-        fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), pdfMenuItem, svgMenuItem, loadPeakListMenuItem);
+        fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
