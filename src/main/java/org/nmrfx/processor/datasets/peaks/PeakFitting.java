@@ -118,11 +118,15 @@ public class PeakFitting {
         return fitRoots;
     }
 
-    public List<Peak> jfitLinkedPeaks(PeakList peakList, boolean doFit) {
+    public List<Peak> jfitLinkedPeaks(PeakList peakList) {
+        return jfitLinkedPeaks(peakList, "all");
+    }
+
+    public List<Peak> jfitLinkedPeaks(PeakList peakList, String fitMode) {
         List<Peak> fitRoots = new ArrayList<>();
         List<Peak> peaks = Multiplets.getLinkRoots(peakList);
         for (Peak peak : peaks) {
-            jfitLinkedPeak(peak, doFit);
+            jfitLinkedPeak(peak, fitMode);
             if (anyFit) {
                 fitRoots.add(peak);
             }
@@ -130,7 +134,7 @@ public class PeakFitting {
         return fitRoots;
     }
 
-    public double jfitLinkedPeak(Peak peak, boolean doFit) {
+    public double jfitLinkedPeak(Peak peak, String fitMode) {
         double value = 0.0;
         String mode = "jfit";
         Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
@@ -139,7 +143,6 @@ public class PeakFitting {
             regionShift = multiplet.measureCenter();
         }
 
-        String fitMode = doFit ? "all" : "rms";
         try {
             List<PeakDim> peakDims = new ArrayList<>();
             peakDims.add(peak.peakDim[0]);

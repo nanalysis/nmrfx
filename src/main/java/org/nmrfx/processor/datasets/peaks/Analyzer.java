@@ -530,7 +530,59 @@ public class Analyzer {
         DatasetRegion newRegion = new DatasetRegion(min, max);
         regions.add(newRegion);
     }
-    
+
+    public void splitRegion(double ppm) throws IOException {
+        Set<DatasetRegion> regions = getRegions();
+        Optional<DatasetRegion> found = getRegion(regions, 0, ppm);
+        if (found.isPresent()) {
+            DatasetRegion region = found.get();
+            double start = region.getRegionStart(0);
+            double end = region.getRegionEnd(0);
+            regions.remove(region);
+            double pt1 = dataset.ppmToDPoint(0, ppm);
+            double ppm1 = dataset.pointToPPM(0, pt1 + 1);
+            double ppm2 = dataset.pointToPPM(0, pt1 - 1);
+            if (start < end) {
+                double hold = ppm1;
+                ppm1 = ppm2;
+                ppm2 = hold;
+            }
+            System.out.println(start + " " + ppm1 + " " + ppm2 + " " + end);
+            DatasetRegion newRegion1 = new DatasetRegion(start, ppm1);
+            DatasetRegion newRegion2 = new DatasetRegion(ppm2, end);
+            regions.add(newRegion1);
+            regions.add(newRegion2);
+            integrate();
+            setVolumesFromIntegrals();
+            DatasetRegion[] newRegions = {newRegion1, newRegion2};
+            PeakFitting peakFitting = new PeakFitting(dataset);
+            for (DatasetRegion newRegion : newRegions) {
+                Multiplets.unlinkPeaksInRegion(peakList, newRegion);
+                PeakDim rootPeak = Multiplets.linkPeaksInRegion(peakList, newRegion);
+                peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
+                Multiplets.analyzeMultiplet(rootPeak.myPeak);
+                fitMultiplet(rootPeak.getMultiplet());
+            }
+        }
+    }
+
+    public void analyzeRegion(double ppm) throws IOException {
+        Set<DatasetRegion> regions = getRegions();
+        Optional<DatasetRegion> found = getRegion(regions, 0, ppm);
+        if (found.isPresent()) {
+            DatasetRegion region = found.get();
+            PeakFitting peakFitting = new PeakFitting(dataset);
+
+            integrate();
+            setVolumesFromIntegrals();
+            Multiplets.unlinkPeaksInRegion(peakList, region);
+            PeakDim rootPeak = Multiplets.linkPeaksInRegion(peakList, region);
+            peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
+            Multiplets.analyzeMultiplet(rootPeak.myPeak);
+            fitMultiplet(rootPeak.getMultiplet());
+        }
+    }
+
     public void fitLinkedPeaks() {
         PeakFitting peakFitting = new PeakFitting(dataset);
         peakFitting.fitLinkedPeaks(peakList, true);
@@ -542,15 +594,17 @@ public class Analyzer {
     }
 
     public void fitMultiplet(Multiplet multiplet) {
-        PeakFitting peakFitting = new PeakFitting(dataset);
-        Peak peak = multiplet.getPeakDim().getPeak();
-        peak.setFlag(4, false);
-        peakFitting.jfitLinkedPeak(peak, true);
+        if (multiplet != null) {
+            PeakFitting peakFitting = new PeakFitting(dataset);
+            Peak peak = multiplet.getPeakDim().getPeak();
+            peak.setFlag(4, false);
+            peakFitting.jfitLinkedPeak(peak, "all");
+        }
     }
 
     public void jfitLinkedPeaks() {
         PeakFitting peakFitting = new PeakFitting(dataset);
-        peakFitting.jfitLinkedPeaks(peakList, true);
+        peakFitting.jfitLinkedPeaks(peakList);
     }
 
     public void analyzeMultiplets() {
