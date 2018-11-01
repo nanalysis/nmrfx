@@ -86,7 +86,11 @@ public class CrossHairs {
             for (int jOrient = 0; jOrient < 2; jOrient++) {
                 int iAxis = jOrient == 0 ? 1 : 0;
                 NMRAxis axis = chart.getAxis(iAxis);
-                if (crossHairStates[iCross][jOrient] && crossHairLines[iCross][jOrient].isVisible()) {
+                if (!isCrossHairInRange(iCross, jOrient)) {
+                    crossHairLines[iCross][jOrient].setVisible(false);
+                    double value = iCross == 1 ? axis.getLowerBound() : axis.getUpperBound();
+                    statusBar.setCrossText(jOrient, iCross, value, true);
+                } else if (crossHairStates[iCross][jOrient] && crossHairLines[iCross][jOrient].isVisible()) {
                     drawCrossHair(iCross, jOrient);
                 } else {
                     double value = iCross == 1 ? axis.getLowerBound() : axis.getUpperBound();
@@ -144,6 +148,34 @@ public class CrossHairs {
                 chart.drawSlices();
             }
         }
+    }
+
+    public boolean isCrossHairInRange(int iCross, int iOrient) {
+        double value = crossHairPositions[iCross][iOrient];
+
+        double width = xAxis.getWidth();
+        double height = yAxis.getHeight();
+        double xOrigin = xAxis.getXOrigin();
+        double yOrigin = xAxis.getYOrigin();
+        boolean ok = true;
+
+        if (iOrient == HORIZONTAL) {
+            value = yAxis.getDisplayPosition(value);
+            if (value > yOrigin) {
+                ok = false;
+            } else if (value < (yOrigin - height)) {
+                ok = false;
+            }
+        } else {
+            value = xAxis.getDisplayPosition(value);
+            if (value > (xOrigin + width)) {
+                ok = false;
+            } else if (value < xOrigin) {
+                ok = false;
+            }
+        }
+        return ok;
+
     }
 
     public double crossHairInRange(int iCross, int iOrient, double value) {
