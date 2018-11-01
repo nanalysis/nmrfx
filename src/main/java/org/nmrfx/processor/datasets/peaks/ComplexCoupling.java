@@ -52,10 +52,10 @@ public class ComplexCoupling extends Coupling {
         double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
         multiplet.setIntensity(multiplet.getMultipletMax());
         int i = 0;
-        System.out.println("setup cmplex center " + center);
+        //System.out.println("setup cmplex center " + center);
         for (PeakDim peakDim : multiplet.getPeakDims()) {
             double shift = center - frequencyOffsets[i] / sf;
-            System.out.println("peakshift " + shift + " hz " + frequencyOffsets[i] + " int " + intensities[i]);
+            //System.out.println("peakshift " + shift + " hz " + frequencyOffsets[i] + " int " + intensities[i]);
             peakDim.setChemShiftValueNoCheck((float) shift);
             peakDim.getPeak().setIntensity((float) intensities[i]);
             i++;
