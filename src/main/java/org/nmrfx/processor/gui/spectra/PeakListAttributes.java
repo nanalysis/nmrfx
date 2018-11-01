@@ -394,7 +394,6 @@ public class PeakListAttributes implements PeakListener {
 
     public void selectPeak(DrawPeaks drawPeaks, double pickX, double pickY, boolean append) {
         Optional<Peak> hit = Optional.empty();
-        System.out.println("sel pe");
         if (peaksInRegion.isPresent()) {
             int[] peakDim = getPeakDim();
             xAxis = (NMRAxis) chart.getXAxis();
@@ -428,7 +427,6 @@ public class PeakListAttributes implements PeakListener {
                         selectedPeaks.clear();
                     }
                 }
-           System.out.println("sel me");
              if (multipletsInRegion.isPresent()) {
                     for (Multiplet multiplet : multipletsInRegion.get()) {
                         Optional<MultipletSelection> lineHit = drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY);
