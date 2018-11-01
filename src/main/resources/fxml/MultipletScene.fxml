@@ -6,31 +6,23 @@
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" fx:id="attrBorderPane" fx:controller="org.nmrfx.processor.gui.MultipletController">
+<BorderPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" styleClass="mainFxmlClass" fx:id="attrBorderPane" fx:controller="org.nmrfx.processor.gui.MultipletController">
     <top>
-        <ToolBar fx:id="toolBar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
-            <items>
-                <Button text="Fit" onAction="#fitSelected"/>
-                <Button text="Split" onAction="#splitSelected"/>
-                <Button text="To Doublets" onAction="#guessMultiplicity"/>
-            </items>
-        </ToolBar>
+        <VBox>
+            <children>
+                <HBox fx:id="toolBar" />
+                <HBox  fx:id = "regionToolBar" />
+                <HBox  fx:id = "peakToolBar"/>
+            </children>
+        </VBox>
     </top>
     <center>
-        <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
-            <tabs>
-                <Tab text="Align">
-                    <content>
-                        <BorderPane>
-                            <top>
-                            </top>
-                            <center>
-                                <GridPane fx:id="gridPane"/>
-                            </center>
-                        </BorderPane>
-                    </content>
-                </Tab>
-            </tabs>
-        </TabPane>
+        <BorderPane>
+            <top>
+            </top>
+            <center>
+                <GridPane fx:id="gridPane"/>
+            </center>
+        </BorderPane>
     </center>
 </BorderPane>

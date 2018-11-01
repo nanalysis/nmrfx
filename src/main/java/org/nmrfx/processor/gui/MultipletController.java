@@ -29,8 +29,13 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -53,12 +58,20 @@ import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 public class MultipletController implements Initializable, SetChangeListener<MultipletSelection> {
 
     Stage stage = null;
-    ToolBar navigatorToolBar;
+    HBox navigatorToolBar;
     TextField multipletIdField;
     @FXML
-    ToolBar toolBar;
+    HBox toolBar;
+    @FXML
+    HBox regionToolBar;
+    @FXML
+    HBox peakToolBar;
     @FXML
     GridPane gridPane;
+    @FXML
+    Button splitButton;
+    @FXML
+    Button splitRegionButton;
     ChoiceBox<String>[] patternChoices;
     TextField[] couplingFields;
     TextField[] slopeFields;
@@ -105,6 +118,7 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             gridPane.add(slopeFields[iRow], 3, iRow);
         }
         initNavigator(toolBar);
+        initTools();
         patternListener = new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
@@ -115,11 +129,12 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
 
     }
 
-    public void initNavigator(ToolBar toolBar) {
+    public void initNavigator(HBox toolBar) {
         this.navigatorToolBar = toolBar;
         multipletIdField = new TextField();
-        multipletIdField.setMinWidth(75);
-        multipletIdField.setMaxWidth(75);
+        multipletIdField.setMinWidth(35);
+        multipletIdField.setMaxWidth(35);
+        multipletIdField.setPrefWidth(35);
 
         String iconSize = "12px";
         String fontSize = "7pt";
@@ -139,14 +154,18 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         bButton.setOnAction(e -> lastMultiplet(e));
         buttons.add(bButton);
         Button deleteButton = GlyphsDude.createIconButton(FontAwesomeIcon.BAN, "", fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
+
         // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
         // a second space bar hit would activate
         deleteButton.setOnKeyPressed(e -> e.consume());
         deleteButton.setOnAction(e -> deleteMultiplet());
 
-        toolBar.getItems().addAll(buttons);
-        toolBar.getItems().add(multipletIdField);
-        toolBar.getItems().add(deleteButton);
+        toolBar.getChildren().addAll(buttons);
+        toolBar.getChildren().add(multipletIdField);
+        toolBar.getChildren().add(deleteButton);
+        HBox spacer = new HBox();
+        toolBar.getChildren().add(spacer);
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
         multipletIdField.setOnKeyReleased(kE -> {
             if (null != kE.getCode()) {
@@ -160,6 +179,69 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             }
         });
 
+    }
+
+    ImageView getIcon(String name) {
+        Image imageIcon = new Image("/images/" + name + ".png", true);
+        ImageView imageView = new ImageView(imageIcon);
+        return imageView;
+    }
+
+    void initTools() {
+        Font font = new Font(7);
+        List<Button> peakButtons = new ArrayList<>();
+        List<Button> regionButtons = new ArrayList<>();
+        Button button;
+
+        button = new Button("Split Region", getIcon("region_split"));
+        button.setOnAction(e -> splitRegion());
+        regionButtons.add(button);
+
+        button = new Button("Fit", getIcon("region_split"));
+        button.setOnAction(e -> fitSelected());
+        regionButtons.add(button);
+
+        button = new Button("Split", getIcon("region_split"));
+        button.setOnAction(e -> splitSelected());
+        regionButtons.add(button);
+
+        button = new Button("Add 1", getIcon("peak_add1"));
+        button.setOnAction(e -> addPeak());
+        peakButtons.add(button);
+
+        button = new Button("Add 2", getIcon("peak_add2"));
+        button.setOnAction(e -> addTwoPeaks());
+        peakButtons.add(button);
+
+        button = new Button("Add Auto", getIcon("peak_auto"));
+        button.setOnAction(e -> addAuto());
+        peakButtons.add(button);
+
+        button = new Button("To Doublets", getIcon("peak_auto"));
+        button.setOnAction(e -> toDoublets());
+        peakButtons.add(button);
+
+        for (Button button1 : regionButtons) {
+            button1.setContentDisplay(ContentDisplay.TOP);
+            button1.setFont(font);
+            button1.getStyleClass().add("toolButton");
+
+            regionToolBar.getChildren().add(button1);
+        }
+        for (Button button1 : peakButtons) {
+            button1.setContentDisplay(ContentDisplay.TOP);
+            button1.setFont(font);
+            button1.getStyleClass().add("toolButton");
+            peakToolBar.getChildren().add(button1);
+        }
+
+        /*
+extract.png				region_add.png		wizard
+merge.png				region_adjust.png
+		region_delete.png
+
+
+         */
     }
 
     void deleteMultiplet() {
@@ -184,13 +266,19 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
 
     void updateMultipletField(boolean resetView) {
         if (activeMultiplet.isPresent()) {
-            multipletIdField.setText(String.valueOf(activeMultiplet.get().getIDNum()));
+            Multiplet multiplet = activeMultiplet.get();
+            multipletIdField.setText(String.valueOf(multiplet.getIDNum()));
             if (resetView) {
-                refreshPeakView(activeMultiplet.get());
+                refreshPeakView(multiplet);
             }
-            String mult = activeMultiplet.get().getMultiplicity();
-            Coupling coup = activeMultiplet.get().getCoupling();
+            String mult = multiplet.getMultiplicity();
+            Coupling coup = multiplet.getCoupling();
             updateCouplingChoices(coup);
+//            if (multiplet.isGenericMultiplet()) {
+//                splitButton.setDisable(true);
+//            } else {
+//                splitButton.setDisable(false);
+//            }
         } else {
             multipletIdField.setText("");
         }
@@ -349,21 +437,82 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         Analyzer analyzer = MainApp.mainApp.getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             analyzer.fitMultiplet(m);
+            rms();
         });
         refresh();
     }
 
     public void splitSelected() {
         activeMultiplet.ifPresent(m -> {
-            Multiplets.addOuterCoupling(2, m);
-            Multiplets.guessMultiplicityFromGeneric(m);
+            if (m.isGenericMultiplet()) {
+            } else {
+                Multiplets.splitToMultiplicity(m, "d");
+                Multiplets.updateAfterMultipletConversion(m);
+            }
         });
         refresh();
     }
 
-    public void guessMultiplicity() {
+    public void splitRegion() {
+        double ppm = chart.getVerticalCrosshairPositions()[0];
+        Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+        try {
+            analyzer.splitRegion(ppm);
+        } catch (IOException ex) {
+        }
+        chart.refresh();
+    }
+
+    public void rms() {
         activeMultiplet.ifPresent(m -> {
-            Multiplets.guessMultiplicityFromGeneric(m);
+            Optional<Double> result = Multiplets.rms(m);
+            if (result.isPresent()) {
+                System.out.println("rms " + result.get());
+            }
+        });
+    }
+
+    public void addAuto() {
+        activeMultiplet.ifPresent(m -> {
+            Optional<Double> result = Multiplets.deviation(m);
+            if (result.isPresent()) {
+                System.out.println("dev pos " + result.get());
+                Multiplets.addPeaksToMutliplet(m, result.get());
+                chart.refresh();
+                refresh();
+
+            }
+
+        });
+
+    }
+
+    public void addPeak() {
+        addPeaks(false);
+    }
+
+    public void addTwoPeaks() {
+        addPeaks(true);
+    }
+
+    public void addPeaks(boolean both) {
+        activeMultiplet.ifPresent(m -> {
+            double ppm1 = chart.getVerticalCrosshairPositions()[0];
+            double ppm2 = chart.getVerticalCrosshairPositions()[1];
+            if (both) {
+                Multiplets.addPeaksToMutliplet(m, ppm1, ppm2);
+            } else {
+                Multiplets.addPeaksToMutliplet(m, ppm1);
+
+            }
+            chart.refresh();
+            refresh();
+        });
+    }
+
+    public void toDoublets() {
+        activeMultiplet.ifPresent(m -> {
+            Multiplets.toDoublets(m);
         });
         refresh();
     }
@@ -403,9 +552,13 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
                 }
             }
             String multNew = sBuilder.toString();
+
             String multOrig = m.getMultiplicity();
+            System.out.println("convert " + multOrig + " " + multNew);
             if (!multNew.equals(multOrig)) {
+                Analyzer analyzer = MainApp.mainApp.getAnalyzer();
                 Multiplets.convertMultiplicity(m, multOrig, multNew);
+                analyzer.fitMultiplet(m);
                 refresh();
             }
         });
