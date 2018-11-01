@@ -426,7 +426,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
     public DoubleProperty integralScaleProperty() {
         if (integralScale == null) {
-            integralScale = new SimpleDoubleProperty(this, "integralScale", 10.0);
+            integralScale = new SimpleDoubleProperty(this, "integralScale", 100.0);
         }
         return integralScale;
     }
