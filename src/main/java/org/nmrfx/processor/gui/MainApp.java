@@ -271,14 +271,27 @@ public class MainApp extends Application implements DatasetListener {
         }
         // File Menu (items TBD)
         Menu fileMenu = new Menu("File");
-        MenuItem openMenuItem = new MenuItem("Open and Draw...");
-        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openAction(e));
-        MenuItem addMenuItem = new MenuItem("Open...");
+        MenuItem openMenuItem = new MenuItem("Open FID...");
+        openMenuItem.setOnAction(e -> FXMLController.getActiveController().openFIDAction(e));
+        MenuItem openDatasetMenuItem = new MenuItem("Open Dataset...");
+        openDatasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDatasetAction(e));
+        MenuItem addMenuItem = new MenuItem("Open Dataset (No Display) ...");
         addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
         MenuItem newMenuItem = new MenuItem("New Window...");
         newMenuItem.setOnAction(e -> newGraphics(e));
-        Menu recentMenuItem = new Menu("Open and Draw Recent");
+        Menu recentFIDMenuItem = new Menu("Recent FIDs");
+        List<Path> recentFIDs = PreferencesController.getRecentFIDs();
+        for (Path path : recentFIDs) {
+            int count = path.getNameCount();
+            int first = count - 3;
+            first = first >= 0 ? first : 0;
+            Path subPath = path.subpath(first, count);
 
+            MenuItem datasetMenuItem = new MenuItem(subPath.toString());
+            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openFile(path.toString(), false, false));
+            recentFIDMenuItem.getItems().add(datasetMenuItem);
+        }
+        Menu recentDatasetMenuItem = new Menu("Recent Datasets");
         List<Path> recentDatasets = PreferencesController.getRecentDatasets();
         for (Path path : recentDatasets) {
             int count = path.getNameCount();
@@ -287,8 +300,8 @@ public class MainApp extends Application implements DatasetListener {
             Path subPath = path.subpath(first, count);
 
             MenuItem datasetMenuItem = new MenuItem(subPath.toString());
-            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openFile(path.toString(), false, false));
-            recentMenuItem.getItems().add(datasetMenuItem);
+            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDataset(path.toFile()));
+            recentDatasetMenuItem.getItems().add(datasetMenuItem);
         }
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
@@ -332,7 +345,8 @@ public class MainApp extends Application implements DatasetListener {
 
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, openSTARMenuItem, saveSTARMenuItem);
 
-        fileMenu.getItems().addAll(openMenuItem, addMenuItem, newMenuItem, recentMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
+        fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
+                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
