@@ -275,6 +275,10 @@ public class PreferencesController implements Initializable {
     public static List<Path> getRecentDatasets() {
         return getRecentFileItem("RECENT-DATASETS");
     }
+    
+    public static List<Path> getRecentFIDs() {
+        return getRecentFileItem("RECENT-FIDS");
+    }
 
     public static List<Path> getRecentProjects() {
         return getRecentFileItem("RECENT-PROJECTS");
@@ -286,6 +290,10 @@ public class PreferencesController implements Initializable {
 
     public static void saveRecentDatasets(String fileName) {
         saveRecentFileItems(fileName, "RECENT-DATASETS");
+    }
+
+    public static void saveRecentFIDs(String fileName) {
+        saveRecentFileItems(fileName, "RECENT-FIDS");
     }
 
     public static void saveRecentFileItems(String fileName, String mode) {

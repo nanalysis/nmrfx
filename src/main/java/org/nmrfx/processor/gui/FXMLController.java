@@ -60,6 +60,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.ChoiceBox;
@@ -340,10 +341,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void openAction(ActionEvent event) {
+    void openFIDAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(getInitialDirectory());
-        fileChooser.setTitle("Open NMR FID/Dataset");
+        fileChooser.setTitle("Open NMR FID");
         fileChooser.getExtensionFilters().addAll(
                 new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx"),
                 new ExtensionFilter("Any File", "*.*")
@@ -352,6 +353,37 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (selectedFile != null) {
             setInitialDirectory(selectedFile.getParentFile());
             openFile(selectedFile.toString(), true, false);
+        }
+        stage.setResizable(true);
+    }
+
+    @FXML
+    void openDatasetAction(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(getInitialDirectory());
+        fileChooser.setTitle("Open NMR Dataset");
+        fileChooser.getExtensionFilters().addAll(
+                new ExtensionFilter("NMR Dataset", "*.nv", "*.ucsf", "*.dx", "*.jdx"),
+                new ExtensionFilter("Any File", "*.*")
+        );
+        File selectedFile = fileChooser.showOpenDialog(null);
+        openDataset(selectedFile);
+    }
+    
+    void openDataset(File selectedFile) {
+        if (selectedFile != null) {
+            try {
+                setInitialDirectory(selectedFile.getParentFile());
+                NMRData nmrData = NMRDataUtil.getFID(selectedFile.toString());
+                if (nmrData instanceof NMRViewData) {
+                    PreferencesController.saveRecentDatasets(selectedFile.toString());
+                    NMRViewData nvData = (NMRViewData) nmrData;
+                    Dataset dataset = nvData.getDataset();
+                    addDataset(dataset, false, true);
+
+                }
+            } catch (IOException ex) {
+            }
         }
         stage.setResizable(true);
     }
@@ -438,14 +470,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
             if (nmrData != null) {
                 if ((nmrData instanceof NMRViewData) && !nmrData.isFID()) {
-                    NMRViewData nvData = (NMRViewData) nmrData;
-                    Dataset dataset = nvData.getDataset();
-                    addDataset(dataset, appendFile, reload);
+                    Alert alert = new Alert(Alert.AlertType.WARNING, "Use \"Open Dataset\" to open non-fid file");
+                    alert.showAndWait();
+                    return;
                 } else {
                     addFID(nmrData, clearOps, reload);
                 }
             }
-            PreferencesController.saveRecentDatasets(filePath);
+            PreferencesController.saveRecentFIDs(filePath);
         } catch (IOException ioE) {
         }
         undoManager.clear();
@@ -1390,7 +1422,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
         ButtonBase bButton;
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FOLDER_OPEN, "Open", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> openAction(e));
+        bButton.setOnAction(e -> openFIDAction(e));
         // buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FILE, "Datasets", iconSize, fontSize, ContentDisplay.TOP);
         bButton.setOnAction(e -> showDatasetsAction(e));
