@@ -367,10 +367,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 new ExtensionFilter("Any File", "*.*")
         );
         File selectedFile = fileChooser.showOpenDialog(null);
-        openDataset(selectedFile);
+        openDataset(selectedFile, false);
     }
     
-    void openDataset(File selectedFile) {
+    public void openDataset(File selectedFile, boolean append) {
         if (selectedFile != null) {
             try {
                 setInitialDirectory(selectedFile.getParentFile());
@@ -379,7 +379,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     PreferencesController.saveRecentDatasets(selectedFile.toString());
                     NMRViewData nvData = (NMRViewData) nmrData;
                     Dataset dataset = nvData.getDataset();
-                    addDataset(dataset, false, true);
+                    addDataset(dataset, append, true);
 
                 }
             } catch (IOException ex) {

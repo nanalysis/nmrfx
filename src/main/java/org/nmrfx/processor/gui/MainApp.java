@@ -74,7 +74,7 @@ public class MainApp extends Application implements DatasetListener {
     Boolean isMac = null;
     static MainApp mainApp = null;
     static ConsoleController consoleController = null;
-    
+
     public static boolean isAnalyst() {
         return false;
     }
@@ -244,7 +244,7 @@ public class MainApp extends Application implements DatasetListener {
             Path subPath = path.subpath(first, count);
 
             MenuItem datasetMenuItem = new MenuItem(subPath.toString());
-            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDataset(path.toFile()));
+            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDataset(path.toFile(), false));
             recentDatasetMenuItem.getItems().add(datasetMenuItem);
         }
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
@@ -281,7 +281,7 @@ public class MainApp extends Application implements DatasetListener {
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                 recentDatasetMenuItem, recentFIDMenuItem, newMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
+                recentDatasetMenuItem, recentFIDMenuItem, newMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
@@ -393,9 +393,10 @@ public class MainApp extends Application implements DatasetListener {
     }
 
     /**
-     * The main() method is ignored in correctly deployed JavaFX application. main() serves only as fallback in case the
-     * application can not be launched through deployment artifacts, e.g., in IDEs with limited FX support. NetBeans
-     * ignores main().
+     * The main() method is ignored in correctly deployed JavaFX application.
+     * main() serves only as fallback in case the application can not be
+     * launched through deployment artifacts, e.g., in IDEs with limited FX
+     * support. NetBeans ignores main().
      *
      * @param args the command line arguments
      */

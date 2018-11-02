@@ -297,8 +297,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     public void viewDatasetInApp() {
         if (chartProcessor.datasetFile != null) {
             boolean viewingDataset = isViewingDataset();
-            String datasetPath = chartProcessor.datasetFile.getPath();
-            chart.controller.openFile(datasetPath, false, false);
+            chart.controller.openDataset(chartProcessor.datasetFile, false);
             viewMode.getSelectionModel().select(1);
             if (!viewingDataset) {
                 chart.full();
@@ -344,8 +343,9 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
                 /**
                  *
-                 * If we are deleting the last element, select the previous, else select the next element. If this is
-                 * the first element, then unselect the scriptView.
+                 * If we are deleting the last element, select the previous,
+                 * else select the next element. If this is the first element,
+                 * then unselect the scriptView.
                  */
                 if (index + 1 == operationList.size()) {
                     scriptView.getSelectionModel().selectPrevious();

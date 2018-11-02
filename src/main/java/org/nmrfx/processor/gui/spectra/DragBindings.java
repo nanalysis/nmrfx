@@ -68,7 +68,7 @@ public class DragBindings {
                         boolean appendFile = true;
 
                         for (File file : files) {
-                            chart.getController().openFile(file.getAbsolutePath(), false, appendFile);
+                            chart.getController().openDataset(file, appendFile);
                             appendFile = true;
                         }
                     } else {
