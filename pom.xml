@@ -4,7 +4,7 @@
 
     <groupId>org.nmrfx</groupId>
     <artifactId>analyst</artifactId>
-    <version>10.3.1</version>
+    <version>10.3.2</version>
     <name>analyst</name>
     <packaging>jar</packaging>
 
@@ -17,7 +17,7 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>processor</artifactId>
-            <version>10.3.1</version>
+            <version>10.3.2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
