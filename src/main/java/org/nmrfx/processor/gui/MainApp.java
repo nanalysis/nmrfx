@@ -300,7 +300,7 @@ public class MainApp extends Application implements DatasetListener {
             Path subPath = path.subpath(first, count);
 
             MenuItem datasetMenuItem = new MenuItem(subPath.toString());
-            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDataset(path.toFile()));
+            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDataset(path.toFile(), false));
             recentDatasetMenuItem.getItems().add(datasetMenuItem);
         }
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
