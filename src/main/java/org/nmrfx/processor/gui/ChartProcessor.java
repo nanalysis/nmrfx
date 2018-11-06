@@ -620,7 +620,7 @@ public class ChartProcessor {
             processorController.processIfIdle();
         } else {
             execScriptList(false);
-        }
+            }
 
     }
 

@@ -615,7 +615,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 }
             }
         }
-        chartProcessor.setScripts(headerList, mapOpLists);
+   chartProcessor.setScripts(headerList, mapOpLists);
         //textArea.setText(getFullScript());
         textArea.replaceText(getFullScript());
         chartProcessor.setScriptValid(true);
