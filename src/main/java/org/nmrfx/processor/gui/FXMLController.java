@@ -759,7 +759,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         PolyChart chart = getActiveChart();
         double sliderPH0 = ph0Slider.getValue();
         double sliderPH1 = ph1Slider.getValue();
-        double deltaPH0 = 0.0;
         double deltaPH1 = 0.0;
         if (chart.hasData()) {
             deltaPH1 = sliderPH1 - (chart.getDataPH1() + chart.getPh1());
@@ -772,7 +771,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         sliderPH1 = Math.round(sliderPH1 * 10) / 10.0;
 
         setPH0Slider(sliderPH0);
-        deltaPH0 = 0.0;
+        double deltaPH0 = 0.0;
         deltaPH1 = 0.0;
         if (chart.hasData()) {
             deltaPH0 = sliderPH0 - chart.getDataPH0();
@@ -1351,7 +1350,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         label.setOpacity(1.0);
         label.setTextFill(Color.WHITE);
         label.setFont(Font.font("Arial", FontWeight.BOLD, 16d));
-        label.setStyle("-fx-background-color: " + color.toString()
+        label.setStyle("-fx-background-color: " + color
                 + ";-fx-alignment:center;-fx-text-alignment:center;");
         label.setManaged(false);
         label.chart = chart;
@@ -1728,6 +1727,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         chartGroup.layoutChildren();
     }
 
+    @Override
     public void prepareChildren(int nRows, int nCols) {
         int iChild = 0;
         double xMax = 0;
@@ -1768,6 +1768,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return hitChart;
     }
 
+    @Override
     public void redrawChildren() {
         // fixme
 //        chartGroup.getChildrenUnmodifiable().stream().map((node) -> (PolyChart) node).forEachOrdered((chart) -> {

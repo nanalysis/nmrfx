@@ -80,7 +80,7 @@ public class ChartProcessor {
     /**
      * The InteractiveInterpreter in which processing commands will be executed.
      */
-    private InteractiveInterpreter interpreter;
+    private final InteractiveInterpreter interpreter;
     /**
      * The dimension of datasetFile that is in use for interactive processing.
      */
@@ -625,7 +625,7 @@ public class ChartProcessor {
     }
 
     public void setVecDim(String dimName) {
-        int value = 0;
+        int value;
         boolean isDim;
         //dimName = dimName.substring(1);
         //System.out.println("set vdim " + vecDimName + " " + dimName + " " + processorController.isViewingDataset());
@@ -698,7 +698,7 @@ public class ChartProcessor {
     public String getScriptDir() {
         String directory = null;
         String locMode = PreferencesController.getLocation();
-        File dirFile = null;
+        File dirFile;
         if (locMode.startsWith("FID") && (getNMRData() != null)) {
             dirFile = new File(getNMRData().getFilePath());
         } else {
@@ -986,7 +986,7 @@ public class ChartProcessor {
                     //   acqMode[vecDim] = "";
                     //}
                 } else {
-                    boolean flagValue = flagParts[1].equals("1") ? true : false;
+                    boolean flagValue = flagParts[1].equals("1");
                     //System.out.println(flagParts[0] + " " + flagValue);
                     flags.put(flagParts[0], flagValue);
                 }
@@ -1005,8 +1005,8 @@ public class ChartProcessor {
 
         int nDim = nmrData.getNDim();
         int nArray = 0;
-        for (int i = 0; i < acqOrder.length; i++) {
-            if (acqOrder[i].charAt(0) == 'a') {
+        for (String acqOrderElem : acqOrder) {
+            if (acqOrderElem.charAt(0) == 'a') {
                 nArray++;
             }
         }
@@ -1090,9 +1090,7 @@ public class ChartProcessor {
         if (!clearOps) {
             setScripts(saveHeaderList, listOfScripts);
         }
-        if (data != null) {
             NMRDataUtil.setCurrentData(data);
-        }
         addFIDToPython();
     }
 
