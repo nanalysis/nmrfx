@@ -103,7 +103,7 @@ public class CrossHairs {
     }
 
     private static void updateAllCharts(PolyChart source, int iCross, int iOrient, double position, String dimLabel) {
-        PolyChart.charts.stream().filter((c) -> (c != source)).forEach((c) -> {
+        PolyChart.CHARTS.stream().filter((c) -> (c != source)).forEach((c) -> {
             c.getCrossHairs().syncCrosshair(iCross, iOrient, dimLabel, position);
         });
     }

@@ -74,7 +74,7 @@ public class AxisChangeListener implements ChangeListener<Number> {
                     String name = names.get(axNum);
                     int syncGroup = chart.getSyncGroup(name);
 
-                    PolyChart.charts.stream().filter((otherChart) -> (otherChart != chart)).forEach((otherChart) -> {
+                    PolyChart.CHARTS.stream().filter((otherChart) -> (otherChart != chart)).forEach((otherChart) -> {
                         List<String> otherNames = otherChart.getDimNames();
                         int i = 0;
                         for (String otherName : otherNames) {
