@@ -28,9 +28,11 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.prefs.Preferences;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -41,6 +43,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -106,19 +110,19 @@ public class PreferencesController implements Initializable {
                     tickFontSizeProp.setValue((Integer) c);
                 },
                 getTickFontSize(), 1, 32, "Spectra", "TicFontSize", "Font size for tic mark labels");
-        
+
         IntRangeOperationItem labelFontSizeItem = new IntRangeOperationItem(
                 (a, b, c) -> {
                     labelFontSizeProp.setValue((Integer) c);
                 },
                 getLabelFontSize(), 1, 32, "Spectra", "LabelFontSize", "Font size for axis labels");
-        
+
         IntRangeOperationItem peakFontSizeItem = new IntRangeOperationItem(
                 (a, b, c) -> {
                     peakFontSizeProp.setValue((Integer) c);
                 },
                 getPeakFontSize(), 1, 32, "Spectra", "PeakFontSize", "Font size for peak box labels");
-        
+
         prefSheet.getItems().addAll(nestaFileItem, locationTypeItem, locationFileItem,
                 nProcessesItem, ticFontSizeItem, labelFontSizeItem, peakFontSizeItem);
 
@@ -267,6 +271,44 @@ public class PreferencesController implements Initializable {
 
     }
 
+    public static void setupRecentMenus(Menu recentFIDMenuItem, Menu recentDatasetMenuItem) {
+        List<Path> recentFIDs = PreferencesController.getRecentFIDs();
+        List<Path> recentDatasets = PreferencesController.getRecentDatasets();
+        Set<Path> fidSet = new LinkedHashSet<>();
+        for (Path path : recentFIDs) {
+            fidSet.add(path);
+        }
+        Set<Path> datasetSet = new LinkedHashSet<>();
+        for (Path path : recentDatasets) {
+            if (path.endsWith("fid") || path.endsWith("ser")) {
+                fidSet.add(path);
+            } else {
+                datasetSet.add(path);
+            }
+        }
+        for (Path path : fidSet) {
+            int count = path.getNameCount();
+            int first = count - 3;
+            first = first >= 0 ? first : 0;
+            Path subPath = path.subpath(first, count);
+            MenuItem datasetMenuItem = new MenuItem(subPath.toString());
+            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openFile(path.toString(), false, false));
+            recentFIDMenuItem.getItems().add(datasetMenuItem);
+        }
+        for (Path path : datasetSet) {
+            int count = path.getNameCount();
+            int first = count - 3;
+            first = first >= 0 ? first : 0;
+            Path subPath = path.subpath(first, count);
+            // special check to put existing (from previous version of code)
+            // FID files  in FID menu
+            MenuItem datasetMenuItem = new MenuItem(subPath.toString());
+            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDataset(path.toFile(), false));
+            recentDatasetMenuItem.getItems().add(datasetMenuItem);
+
+        }
+    }
+
     /**
      * Saves recently opened datasets. The path is persisted in the OS specific
      * registry.
@@ -275,7 +317,7 @@ public class PreferencesController implements Initializable {
     public static List<Path> getRecentDatasets() {
         return getRecentFileItem("RECENT-DATASETS");
     }
-    
+
     public static List<Path> getRecentFIDs() {
         return getRecentFileItem("RECENT-FIDS");
     }
@@ -389,7 +431,7 @@ public class PreferencesController implements Initializable {
         labelFontSizeProp = getInteger(labelFontSizeProp, "LABEL_FONT_SIZE", 12);
         return labelFontSizeProp.getValue();
     }
-    
+
     public static Integer getPeakFontSize() {
         peakFontSizeProp = getInteger(peakFontSizeProp, "PEAK_FONT_SIZE", 12);
         return peakFontSizeProp.getValue();
