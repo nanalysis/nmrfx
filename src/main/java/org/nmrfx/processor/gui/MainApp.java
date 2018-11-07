@@ -280,29 +280,9 @@ public class MainApp extends Application implements DatasetListener {
         MenuItem newMenuItem = new MenuItem("New Window...");
         newMenuItem.setOnAction(e -> newGraphics(e));
         Menu recentFIDMenuItem = new Menu("Recent FIDs");
-        List<Path> recentFIDs = PreferencesController.getRecentFIDs();
-        for (Path path : recentFIDs) {
-            int count = path.getNameCount();
-            int first = count - 3;
-            first = first >= 0 ? first : 0;
-            Path subPath = path.subpath(first, count);
-
-            MenuItem datasetMenuItem = new MenuItem(subPath.toString());
-            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openFile(path.toString(), false, false));
-            recentFIDMenuItem.getItems().add(datasetMenuItem);
-        }
         Menu recentDatasetMenuItem = new Menu("Recent Datasets");
-        List<Path> recentDatasets = PreferencesController.getRecentDatasets();
-        for (Path path : recentDatasets) {
-            int count = path.getNameCount();
-            int first = count - 3;
-            first = first >= 0 ? first : 0;
-            Path subPath = path.subpath(first, count);
+        PreferencesController.setupRecentMenus(recentFIDMenuItem, recentDatasetMenuItem);
 
-            MenuItem datasetMenuItem = new MenuItem(subPath.toString());
-            datasetMenuItem.setOnAction(e -> FXMLController.getActiveController().openDataset(path.toFile(), false));
-            recentDatasetMenuItem.getItems().add(datasetMenuItem);
-        }
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
         MenuItem svgMenuItem = new MenuItem("Export SVG...");
@@ -838,7 +818,12 @@ public class MainApp extends Application implements DatasetListener {
         if (analyzerController == null) {
             analyzerController = new AnalyzerController();
         }
-        analyzerController.load();
+        try {
+            analyzerController.load();
+        } catch (IOException ex) {
+            ExceptionDialog dialog = new ExceptionDialog(ex);
+            dialog.showAndWait();
+        }
     }
 
     @FXML
