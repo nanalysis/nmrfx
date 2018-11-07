@@ -28,6 +28,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.application.Application;
@@ -630,7 +632,12 @@ public class MainApp extends Application implements DatasetListener {
         if (analyzerController == null) {
             analyzerController = new AnalyzerController();
         }
-        analyzerController.load();
+        try {
+            analyzerController.load();
+        } catch (IOException ex) {
+            ExceptionDialog dialog = new ExceptionDialog(ex);
+            dialog.showAndWait();
+        }
     }
 
 }

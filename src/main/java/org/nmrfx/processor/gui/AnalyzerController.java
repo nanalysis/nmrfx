@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,7 +57,7 @@ public class AnalyzerController implements Initializable {
 
     private AutoComplete autoComplete;
 
-    private Map<String, TextField> fieldMap = new HashMap<>();
+    private final Map<String, TextField> fieldMap = new HashMap<>();
 
     /*
     protected int npoints = 0;
@@ -78,8 +79,7 @@ public class AnalyzerController implements Initializable {
         int iCol = 0;
         int iRow = 0;
         String[] fields = RegionData.getFields();
-        for (int i = 0; i < fields.length; i++) {
-            String field = fields[i];
+        for (String field : fields) {
             Label label = new Label(field);
             TextField textField = new TextField();
             fieldMap.put(field, textField);
@@ -94,29 +94,24 @@ public class AnalyzerController implements Initializable {
 
     }
 
-    public void load() {
-        try {
-            if (stage != null) {
-                stage.show();
-                stage.toFront();
-            } else {
-                MainApp.analyzerController = this;
+    public void load() throws IOException {
+        if (stage != null) {
+            stage.show();
+            stage.toFront();
+        } else {
+            MainApp.analyzerController = this;
 
-                Parent root = FXMLLoader.load(DocWindowController.class.getResource("/fxml/AnalyzerScene.fxml"));
+            Parent root = FXMLLoader.load(DocWindowController.class.getResource("/fxml/AnalyzerScene.fxml"));
 
-                Scene scene = new Scene(root);
-                scene.getStylesheets().add("/styles/Styles.css");
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add("/styles/Styles.css");
 
-                stage = new Stage();
+            stage = new Stage();
 
-                stage.setTitle("Analyzer");
-                stage.setScene(scene);
-                stage.show();
-                stage.toFront();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("load error!");
+            stage.setTitle("Analyzer");
+            stage.setScene(scene);
+            stage.show();
+            stage.toFront();
         }
     }
 
@@ -134,20 +129,29 @@ public class AnalyzerController implements Initializable {
             for (String field : fields) {
                 String sValue;
                 TextField textField = fieldMap.get(field);
-                if (field.equals("N")) {
-                    int value = rData.getNpoints();
-                    sValue = String.valueOf(value);
-                } else if (field.equals("MaxPt")) {
-                    int[] value = rData.getMaxPoint();
-                    StringBuilder sBuilder = new StringBuilder();
-                    for (int val : value) {
-                        sBuilder.append(val);
-                        sBuilder.append(" ");
-                    }
-                    sValue = sBuilder.toString().trim();
-                } else {
-                    double value = rData.getValue(field);
-                    sValue = String.format("%f", value);
+                switch (field) {
+                    case "N":
+                        {
+                            int value = rData.getNpoints();
+                            sValue = String.valueOf(value);
+                            break;
+                        }
+                    case "MaxPt":
+                        {
+                            int[] value = rData.getMaxPoint();
+                            StringBuilder sBuilder = new StringBuilder();
+                            for (int val : value) {
+                                sBuilder.append(val);
+                                sBuilder.append(" ");
+                            }       sValue = sBuilder.toString().trim();
+                            break;
+                        }
+                    default:
+                        {
+                            double value = rData.getValue(field);
+                            sValue = String.format("%f", value);
+                            break;
+                        }
                 }
                 textField.setText(sValue);
             }
