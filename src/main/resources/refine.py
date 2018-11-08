@@ -262,6 +262,8 @@ class refine:
         self.dihedral.updateAt(n)
 
     def setForces(self,forceDict):
+        if not forceDict:
+            return
         forceWeightOrig = self.energyLists.getForceWeight()
         getOrigWeight = {
             'elec'   : forceWeightOrig.getElectrostatic(),
@@ -405,6 +407,8 @@ class refine:
          print coarseGrain,includeH,hardSphere,shrinkValue,shrinkHValue,deltaStart,deltaEnd,disLim
 
     def setPars(self,parsDict):
+        if not parsDict:
+            return
         parFuncs = {
             'coarse'      : self.energyLists.setCourseGrain,
             'useh'        : self.energyLists.setIncludeH,
@@ -1637,122 +1641,17 @@ class refine:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 
     def anneal(self,dOpt=None,stage1={},stage2={}):
+        from anneal import runStage
+        from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
         self.annealPrep(dOpt, 100)
-
         self.updateAt(dOpt.update)
-        irp = dOpt.irpWeight
-        swap = dOpt.swap
-        self.setForces({'repel':0.5,'dis':1.0,'dih':5,'irp':irp})
-        self.setPars({'end':1000,'useh':False,'hardSphere':0.15,'shrinkValue':0.20, 'swap':swap})
-        self.setPars(stage1)
         energy = self.energy()
-
         rDyn = self.rinertia()
         rDyn.setKinEScale(dOpt.kinEScale)
-
-        steps = dOpt.steps
-        stepsEnd = dOpt.stepsEnd
-        stepsHigh = int(round(steps*dOpt.highFrac))
-        stepsAnneal1 = int(round((steps-stepsEnd-stepsHigh)*dOpt.toMedFrac))
-        stepsAnneal2 = steps-stepsHigh-stepsEnd-stepsAnneal1
-
-        rDyn.initDynamics2(dOpt.highTemp,dOpt.econHigh,stepsHigh,dOpt.timeStep)
-        rDyn.run()
-        medTemp = round(dOpt.highTemp * dOpt.medFrac)
-        tempVals =  [       #upTemp           downTemp                 time
-                        [dOpt.highTemp,      medTemp,            dOpt.timePowerHigh],
-                        [  medTemp,           1.0,                dOpt.timePowerMed],
-                        None,
-                        0.0
-                    ]
-
-        econVals =  [
-                        dOpt.econHigh,
-                        lambda f: dOpt.econHigh*(pow(0.5,f)),
-                        None,
-                        dOpt.econLow
-                    ]
-
-        nStepVals =  [
-                        int(round((steps-stepsEnd-stepsHigh)*dOpt.toMedFrac)),
-                        steps-stepsHigh-stepsEnd-stepsAnneal1,
-                        None,
-                        stepsEnd
-                     ]
-
-        runGMin = [False, True, True, True]
-
-        switchFracVals = [None, dOpt.switchFrac, None, None]
-
-        defaultParams = [
-            None,
-            {
-                'useh' : False,
-                'hardSphere' : 0.0,
-                'shrinkValue' : 0.0,
-                'swap' :swap
-            },
-            {
-                'useh' : True,
-                'hardSphere' : 0.0,
-                'shrinkValue' : 0.0,
-                'shrinkHValue' : 0.0,
-                'swap':swap
-            },
-            None
-        ]
-
-        defaultForces = [
-            None,
-            None,
-            {
-                'repel'  : 1.0,
-                'bondWt' : 25.0,
-                'tors'   : 0.1
-            },
-            {
-                'repel' : 2.0
-            }
-        ]
-
-        def runStage(tempFunc=None, econFunc = None, nSteps = -1, doGMin=False, switchFrac=None, params=None, forces=None):
-            '''
-                tempFuncVars is a list or scalar or None. If None continueDynamics2 will use just one param
-                econFunc is either a scalar or lambda function
-                nSteps is a scalar, used in the continueDynamics call
-                gminsteps is a scalar, if set gmin is run
-                switchFrac if defined will add it as a param to rDyn.run
-                params and forces are dictionaries to set for each step.
-            '''
-            if params:
-                self.setPars(params)
-            if forces:
-                print forces
-                self.setForces(forces)
-            timeStep = rDyn.getTimeStep()/2.0
-            if doGMin :
-                self.gmin(nsteps=dOpt.minSteps, tolerance=1.0e-6)
-            if tempFunc:
-                # n
-                try:
-                    upTemp, downTemp, time = tempFunc
-                    tempLambda = lambda f: (upTemp - downTemp) * pow((1.0 - f), time) + downTemp
-                except ValueError:
-                    tempLambda = tempFuncVars
-
-                econLambda = econFunc
-                rDyn.continueDynamics2(tempLambda, econLambda, nSteps, timeStep)
-            else:
-                rDyn.continueDynamics2(timeStep)
-            if switchFrac:
-                rDyn.run(switchFrac)
-            else:
-                rDyn.run()
-
-        nStages = 4
-        for i in range(nStages):
-            runStage(tempFunc=tempVals[i], econFunc=econVals[i], nSteps=nStepVals[i], doGMin=runGMin[i],switchFrac=switchFracVals[i],params=defaultParams[i],forces=defaultForces[i])
+        stages = getAnnealStages(dOpt)
+        for stage in stages:
+            runStage(stage, self, rDyn)
 
         self.gmin(nsteps=dOpt.polishSteps,tolerance=1.0e-6)
 
