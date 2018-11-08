@@ -1657,52 +1657,104 @@ class refine:
         stepsAnneal1 = int(round((steps-stepsEnd-stepsHigh)*dOpt.toMedFrac))
         stepsAnneal2 = steps-stepsHigh-stepsEnd-stepsAnneal1
 
-        timeStep = dOpt.timeStep
-        highTemp = dOpt.highTemp
+        rDyn.initDynamics2(dOpt.highTemp,dOpt.econHigh,stepsHigh,dOpt.timeStep)
+        rDyn.run()
         medTemp = round(dOpt.highTemp * dOpt.medFrac)
-        econHigh = dOpt.econHigh
-        econLow = dOpt.econLow
-        switchFrac = dOpt.switchFrac
-        timePowerHigh = dOpt.timePowerHigh
-        timePowerMed = dOpt.timePowerMed
-        minSteps = dOpt.minSteps
-        polishSteps = dOpt.polishSteps
+        tempVals =  [       #upTemp           downTemp                 time
+                        [dOpt.highTemp,      medTemp,            dOpt.timePowerHigh],
+                        [  medTemp,           1.0,                dOpt.timePowerMed],
+                        None,
+                        0.0
+                    ]
 
-        rDyn.initDynamics2(highTemp,econHigh,stepsHigh,timeStep)
-        rDyn.run()
+        econVals =  [
+                        dOpt.econHigh,
+                        lambda f: dOpt.econHigh*(pow(0.5,f)),
+                        None,
+                        dOpt.econLow
+                    ]
 
-        timeStep = rDyn.getTimeStep()/2.0
+        nStepVals =  [
+                        int(round((steps-stepsEnd-stepsHigh)*dOpt.toMedFrac)),
+                        steps-stepsHigh-stepsEnd-stepsAnneal1,
+                        None,
+                        stepsEnd
+                     ]
 
-        tempLambda = lambda f: (highTemp - medTemp) * pow((1.0 - f), timePowerHigh) + medTemp
+        runGMin = [False, True, True, True]
 
-        rDyn.continueDynamics2(tempLambda,econHigh,stepsAnneal1,timeStep)
-        rDyn.run()
+        switchFracVals = [None, dOpt.switchFrac, None, None]
 
-        self.setPars(useh=False,hardSphere=0.0,shrinkValue=0.0, swap=swap)
-        self.gmin(nsteps=minSteps,tolerance=1.0e-6)
+        defaultParams = [
+            None,
+            {
+                'useh' : False,
+                'hardSphere' : 0.0,
+                'shrinkValue' : 0.0,
+                'swap' :swap
+            },
+            {
+                'useh' : True,
+                'hardSphere' : 0.0,
+                'shrinkValue' : 0.0,
+                'shrinkHValue' : 0.0,
+                'swap':swap
+            },
+            None
+        ]
 
-        timeStep = rDyn.getTimeStep()/2.0
-        tempLambda = lambda f: (medTemp - 1.0) * pow((1.0 - f), timePowerMed) + 1.0
-        econLambda = lambda f: econHigh*(pow(0.5,f))
+        defaultForces = [
+            None,
+            None,
+            {
+                'repel'  : 1.0,
+                'bondWt' : 25.0,
+                'tors'   : 0.1
+            },
+            {
+                'repel' : 2.0
+            }
+        ]
 
-        rDyn.continueDynamics2(tempLambda,econLambda,stepsAnneal2,timeStep)
-        rDyn.run(switchFrac)
+        def runStage(tempFunc=None, econFunc = None, nSteps = -1, doGMin=False, switchFrac=None, params=None, forces=None):
+            '''
+                tempFuncVars is a list or scalar or None. If None continueDynamics2 will use just one param
+                econFunc is either a scalar or lambda function
+                nSteps is a scalar, used in the continueDynamics call
+                gminsteps is a scalar, if set gmin is run
+                switchFrac if defined will add it as a param to rDyn.run
+                params and forces are dictionaries to set for each step.
+            '''
+            if params:
+                self.setPars(params)
+            if forces:
+                print forces
+                self.setForces(forces)
+            timeStep = rDyn.getTimeStep()/2.0
+            if doGMin :
+                self.gmin(nsteps=dOpt.minSteps, tolerance=1.0e-6)
+            if tempFunc:
+                # n
+                try:
+                    upTemp, downTemp, time = tempFunc
+                    tempLambda = lambda f: (upTemp - downTemp) * pow((1.0 - f), time) + downTemp
+                except ValueError:
+                    tempLambda = tempFuncVars
 
-        self.setForces(repel=1.0, bondWt = 25.0, tors=0.1)
-        self.setPars(useh=True,hardSphere=0.0,shrinkValue=0.0,shrinkHValue=0.0, swap=swap)
-        self.setPars(optDict=stage2)
+                econLambda = econFunc
+                rDyn.continueDynamics2(tempLambda, econLambda, nSteps, timeStep)
+            else:
+                rDyn.continueDynamics2(timeStep)
+            if switchFrac:
+                rDyn.run(switchFrac)
+            else:
+                rDyn.run()
 
-        timeStep = rDyn.getTimeStep()/2.0
-        self.gmin(nsteps=minSteps,tolerance=1.0e-6)
-        rDyn.continueDynamics2(timeStep)
-        rDyn.run()
+        nStages = 4
+        for i in range(nStages):
+            runStage(tempFunc=tempVals[i], econFunc=econVals[i], nSteps=nStepVals[i], doGMin=runGMin[i],switchFrac=switchFracVals[i],params=defaultParams[i],forces=defaultForces[i])
 
-        timeStep = rDyn.getTimeStep()/2.0
-        self.setForces(repel=2.0)
-        self.gmin(nsteps=minSteps,tolerance=1.0e-6)
-        rDyn.continueDynamics2(0.0,econLow,stepsEnd,timeStep )
-        rDyn.run()
-        self.gmin(nsteps=polishSteps,tolerance=1.0e-6)
+        self.gmin(nsteps=dOpt.polishSteps,tolerance=1.0e-6)
 
     def cdynamics(self, steps, hiTemp, medTemp, timeStep=1.0e-3):
         self.updateAt(20)
