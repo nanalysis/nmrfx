@@ -215,12 +215,19 @@ public class SpectrumMeasureBar {
         for (int i = 0; i < dataset.getNDim(); i++) {
             int disDim0 = chart.getDatasetAttributes().get(0).getDim(i);
             int jOrient = i == 0 ? 1 : 0;
-            Double value = chart.crossHairStates[iCross][jOrient] ? chart.crossHairPositions[iCross][jOrient] : null;
-            if (value == null) {
-                ok = false;
-                break;
+            Double value = null;
+            if (i > 1) {
+                int pt1 = (int) chart.axes[i].getLowerBound();
+                int pt2 = (int) chart.axes[i].getUpperBound();
+                pts[disDim0] = (pt1 + pt2) / 2;
+            } else {
+                value = chart.crossHairStates[iCross][jOrient] ? chart.crossHairPositions[iCross][jOrient] : null;
+                if (value == null) {
+                    ok = false;
+                    break;
+                }
+                pts[disDim0] = dataset.ppmToPoint(disDim0, value);
             }
-            pts[disDim0] = dataset.ppmToPoint(disDim0, value);
         }
         if (ok) {
             String strValue;
