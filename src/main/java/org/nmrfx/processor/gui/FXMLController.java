@@ -157,7 +157,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     ChartProcessor chartProcessor;
     DocWindowController dwc = null;
     static SpecAttrWindowController specAttrWindowController = null;
-    static boolean popOverMode = true;
+    static boolean popOverMode = false;
     static PeakAttrController peakAttrController = null;
     ProcessorController processorController = null;
     ScannerController scannerController = null;
@@ -627,6 +627,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             } else {
                 specAttrWindowController.getStage().show();
                 stage.setResizable(true);
+                stage.toFront();
             }
         } else {
             System.out.println("Coudn't make controller");
