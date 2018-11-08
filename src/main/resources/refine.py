@@ -261,30 +261,27 @@ class refine:
     def updateAt(self,n):
         self.dihedral.updateAt(n)
 
-    def setForces(self,robson=None,repel=None,elec=None,dis=None,tors=None,dih=None,irp=None, shift=None, bondWt=None):
+    def setForces(self,forceDict):
         forceWeightOrig = self.energyLists.getForceWeight()
-        if robson == None:
-            robson = forceWeightOrig.getRobson()
-        if repel == None:
-            repel = forceWeightOrig.getRepel()
-        if elec == None:
-            elec = forceWeightOrig.getElectrostatic()
-        if dis == None:
-            dis = forceWeightOrig.getNOE()
-        if tors == None:
-            tors = forceWeightOrig.getDihedralProb()
-        if dih == None:
-            dih = forceWeightOrig.getDihedral()
-        if irp == None:
-            irp = forceWeightOrig.getIrp()
-        if shift == None:
-            shift = forceWeightOrig.getShift()
-        if bondWt == None:
-            bondWt = forceWeightOrig.getBondWt()
-        else:
-            if bondWt < 1:
+        getOrigWeight = {
+            'elec'   : forceWeightOrig.getElectrostatic(),
+            'robson' : forceWeightOrig.getRobson(),
+            'repel'  : forceWeightOrig.getRepel(),
+            'dis'    : forceWeightOrig.getNOE(),
+            'tors'   : forceWeightOrig.getDihedralProb(),
+            'dih'    : forceWeightOrig.getDihedral(),
+            'irp'    : forceWeightOrig.getIrp(),
+            'shift'  : forceWeightOrig.getShift(),
+            'bondWt' : forceWeightOrig.getBondWt()
+        }
+        forces = ('elec','robson','repel','dis','tors','dih','irp','shift','bondWt')
+        forceWeights = []
+        for force in forces:
+            forceWeight = forceDict[force] if force in forceDict else getOrigWeight[force]
+            if force == 'bondWt' and forceWeight < 1:
                 raise ValueError('The bond weight should not be less than 1')
-        forceWeight = ForceWeight(elec,robson,repel,dis,tors,dih,irp,shift,bondWt)
+            forceWeights.append(forceWeight)
+        forceWeight = ForceWeight(*forceWeights)
         self.energyLists.setForceWeight(forceWeight)
 
     def getForces(self):
@@ -407,34 +404,23 @@ class refine:
          disLim = el.getDistanceLimit()
          print coarseGrain,includeH,hardSphere,shrinkValue,shrinkHValue,deltaStart,deltaEnd,disLim
 
-    def setPars(self,coarse=None,useh=None,dislim=-1,end=-1,start=-1,hardSphere=-1.0,shrinkValue=-1.0,shrinkHValue=-1.0,swap=None,optDict={}):
-        #  there must be a better way to do this
-        for opt in optDict:
-            if opt == 'hardSphere':
-                hardSphere = optDict[opt]
-            elif opt == 'shrinkValue':
-                shrinkValue = optDict[opt]
-            elif opt == 'shrinkHValue':
-                shrinkHValue = optDict[opt]
-
-        if (coarse != None):
-            self.energyLists.setCourseGrain(coarse)
-        if (useh != None):
-            self.energyLists.setIncludeH(useh)
-        if (hardSphere >=0):
-            self.energyLists.setHardSphere(hardSphere)
-        if (start >= 0):
-            self.energyLists.setDeltaStart(start)
-        if (end >=0):
-            self.energyLists.setDeltaEnd(end)
-        if (shrinkValue >=0):
-            self.energyLists.setShrinkValue(shrinkValue)
-        if (shrinkHValue >=0):
-            self.energyLists.setShrinkHValue(shrinkHValue)
-        if (dislim >=0):
-            self.energyLists.setDistanceLimit(dislim)
-        if (swap != None):
-            self.energyLists.setSwap(swap)
+    def setPars(self,parsDict):
+        parFuncs = {
+            'coarse'      : self.energyLists.setCourseGrain,
+            'useh'        : self.energyLists.setIncludeH,
+            'hardSphere'  : self.energyLists.setHardSphere,
+            'start'       : self.energyLists.setDeltaStart,
+            'end'         : self.energyLists.setDeltaEnd,
+            'shrinkValue' : self.energyLists.setShrinkValue,
+            'shrinkHValue': self.energyLists.setShrinkHValue,
+            'dislim'      : self.energyLists.setDistanceLimit,
+            'swap'        : self.energyLists.setSwap
+        }
+        for par,parValue in parsDict.iteritems():
+            parFunc = parFuncs.get(par)
+            if not parFunc:
+                raise ValueError('There is no ' + par + ' parameter to alter')
+            parFunc(parValue)
         self.energyLists.resetConstraints()
 
     def setupEnergy(self,molName,eList=None, useH=False,usePseudo=True,useCourseGrain=False,useShifts=False):
@@ -453,7 +439,7 @@ class refine:
                 distance = float(distance)
                 self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
 
-        refine.setForces(self,repel=0.5,dis=1)
+        self.setForces({'repel':0.5,'dis':1})
         energyLists.setCourseGrain(useCourseGrain)
         energyLists.setIncludeH(useH)
         energyLists.setHardSphere(0.15)
@@ -1591,12 +1577,11 @@ class refine:
         self.seed = seed
         self.eTimeStart = time.time()
         self.useDegrees = False
-
         self.setupEnergy(self.molName,usePseudo=usePseudo,useShifts=useShifts)
         self.loadDihedrals(self.angleStrings)
         self.addRingClosures() # Broken bonds are stored in molecule after tree generation. This is to fix broken bonds
-        self.setForces(repel=0.5,dis=1,dih=5)
-        self.setPars(coarse=False,useh=False,dislim=self.disLim,end=2,hardSphere=0.15,shrinkValue=0.20)
+        self.setForces({'repel':0.5,'dis':1,'dih':5})
+        self.setPars({'coarse':False,'useh':False,'dislim':self.disLim,'end':2,'hardSphere':0.15,'shrinkValue':0.20})
         if writeTrajectory:
             self.trajectoryWriter = TrajectoryWriter(self.molecule,"output.traj","traj")
             selection = "*.ca,c,n,o,p,o5',c5',c4',c3',o3'"
@@ -1620,13 +1605,13 @@ class refine:
         self.randomizeAngles()
         energy = self.energy()
         self.updateAt(5)
-        self.setForces(repel=0.5,dis=1,dih=5)
-        self.setPars(useh=False,dislim=self.disLim,end=2,hardSphere=0.0,shrinkValue=0.20)
+        self.setForces({'repel':0.5,'dis':1,'dih':5})
+        self.setPars({'useh':False,'dislim':self.disLim,'end':2,'hardSphere':0.0,'shrinkValue':0.20})
         if steps > 0:
             self.refine(nsteps=steps,radius=20, alg=alg);
         if gsteps > 0:
             self.gmin(nsteps=gsteps,tolerance=1.0e-10)
-        self.setPars(useh=False,dislim=self.disLim,end=1000,hardSphere=0.0,shrinkValue=0.20)
+        self.setPars({'useh':False,'dislim':self.disLim,'end':1000,'hardSphere':0.0,'shrinkValue':0.20})
         self.gmin(nsteps=100,tolerance=1.0e-6)
         if self.eFileRoot != None:
             self.dump(0.1,self.eFileRoot+'_prep.txt')
@@ -1642,27 +1627,25 @@ class refine:
         irp = dOpt.irpWeight
 
         self.updateAt(5)
-        self.setForces(repel=0.5,dis=1,dih=5,irp=irp)
+        self.setForces({'repel':0.5,'dis':1,'dih':5,'irp':irp})
 
         for end in [3,10,20,1000]:
-            self.setPars(useh=False,dislim=self.disLim,end=end,hardSphere=0.15,shrinkValue=0.20)
+            self.setPars({'useh':False,'dislim':self.disLim,'end':end,'hardSphere':0.15,'shrinkValue':0.20})
             self.gmin(nsteps=steps,tolerance=1.0e-6)
 
         if self.eFileRoot != None:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 
     def anneal(self,dOpt=None,stage1={},stage2={}):
-        if (dOpt==None):
-            dOpt = dynOptions()
-
+        dOpt = dOpt if dOpt else dynOptions()
         self.annealPrep(dOpt, 100)
 
         self.updateAt(dOpt.update)
         irp = dOpt.irpWeight
         swap = dOpt.swap
-        self.setForces(repel=0.5,dis=1.0,dih=5,irp=irp)
-        self.setPars(end=1000,useh=False,hardSphere=0.15,shrinkValue=0.20, swap=swap)
-        self.setPars(optDict=stage1)
+        self.setForces({'repel':0.5,'dis':1.0,'dih':5,'irp':irp})
+        self.setPars({'end':1000,'useh':False,'hardSphere':0.15,'shrinkValue':0.20, 'swap':swap})
+        self.setPars(stage1)
         energy = self.energy()
 
         rDyn = self.rinertia()
@@ -1723,8 +1706,8 @@ class refine:
 
     def cdynamics(self, steps, hiTemp, medTemp, timeStep=1.0e-3):
         self.updateAt(20)
-        self.setForces(repel=5.0,dis=1.0,dih=5)
-        self.setPars(coarse=True, end=1000,useh=False,hardSphere=0.15,shrinkValue=0.20)
+        self.setForces({'repel':5.0,'dis':1.0,'dih':5})
+        self.setPars({'coarse':True, 'end':1000,'useh':False,'hardSphere':0.15,'shrinkValue':0.20})
         rDyn = self.rinertia()
         steps0 =  5000
         steps1 = (steps-steps0)/3
@@ -1741,7 +1724,7 @@ class refine:
         rDyn.continueDynamics(medTemp,2.0,steps2,timeStep)
         rDyn.run(0.65)
 
-        self.setPars(useh=True,shrinkValue=0.05,shrinkHValue=0.05)
+        self.setPars({'useh':True,'shrinkValue':0.05,'shrinkHValue':0.05})
 
         timeStep = rDyn.getTimeStep()/2.0
         rDyn.continueDynamics(timeStep)
@@ -1754,9 +1737,9 @@ class refine:
 
     def dynrun(self, steps, temp, timeStep=1.0e-3, timePower=4.0, stage1={}):
         self.updateAt(20)
-        self.setForces(repel=0.5,dis=1.0,dih=5)
-        self.setPars(end=1000,useh=False,hardSphere=0.15,shrinkValue=0.20)
-        self.setPars(optDict=stage1)
+        self.setForces({'repel':0.5,'dis':1.0,'dih':5})
+        self.setPars({'end':1000,'useh':False,'hardSphere':0.15,'shrinkValue':0.20})
+        self.setPars(stage1)
         rDyn = self.rinertia()
         rDyn.initDynamics(temp,temp,steps,timeStep, timePower)
         rDyn.run(1.0)
@@ -1769,22 +1752,22 @@ class refine:
 
         self.updateAt(dOpt.update)
         irp = dOpt.irpWeight
-        self.setForces(repel=0.5,dis=1.0,dih=5,irp=irp)
-        self.setPars(end=1000,useh=False,hardSphere=0.15,shrinkValue=0.20)
-        self.setPars(optDict=stage1)
+        self.setForces({'repel':0.5,'dis':1.0,'dih':5,'irp':irp})
+        self.setPars({'end':1000,'useh':False,'hardSphere':0.15,'shrinkValue':0.20})
+        self.setPars(stage1)
         energy = self.energy()
 
         steps = dOpt.steps
         self.sgdmin(2*steps/3)
-        self.setPars(useh=True,hardSphere=0.0,shrinkValue=0.0,shrinkHValue=0.0)
+        self.setPars({'useh':True,'hardSphere':0.0,'shrinkValue':0.0,'shrinkHValue':0.0})
         self.sgdmin(steps/3)
 
 
     def polish(self, steps, usePseudo=False, stage1={}):
         self.refine(nsteps=steps/2,useDegrees=self.useDegrees,radius=0.1);
-        self.setForces(repel=2.0,dis=1.0,dih=5)
-        self.setPars(dislim=self.disLim,end=1000,useh=True,shrinkValue=0.07,shrinkHValue=0.00)
-        self.setPars(optDict=stage1)
+        self.setForces({'repel':2.0,'dis':1.0,'dih':5})
+        self.setPars({'dislim':self.disLim,'end':1000,'useh':True,'shrinkValue':0.07,'shrinkHValue':0.00})
+        self.setPars(stage1)
         self.usePseudo(usePseudo)
         self.refine(nsteps=steps/2,radius=0.01);
         self.gmin(nsteps=800,tolerance=1.0e-10)
