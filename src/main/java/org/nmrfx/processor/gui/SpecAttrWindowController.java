@@ -347,7 +347,8 @@ public class SpecAttrWindowController implements Initializable {
         SpecAttrWindowController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);
         try {
-            Scene scene = new Scene((Pane) loader.load());
+            Pane pane = (Pane) loader.load();
+            Scene scene = new Scene(pane);
             stage.setScene(scene);
             scene.getStylesheets().add("/styles/Styles.css");
 
@@ -929,10 +930,10 @@ public class SpecAttrWindowController implements Initializable {
                     axis.upperBoundProperty().setValue(formatter.parse(limitFields[i][1].get()));
                 }
             }
-        chart.layoutPlotChildren();
+            chart.layoutPlotChildren();
             if (isSceneMode()) {
                 List<PolyChart> charts = chart.getSceneMates(false);
-          charts.stream().forEach(c -> c.layoutPlotChildren());
+                charts.stream().forEach(c -> c.layoutPlotChildren());
             }
         } catch (ParseException parseE) {
         }
