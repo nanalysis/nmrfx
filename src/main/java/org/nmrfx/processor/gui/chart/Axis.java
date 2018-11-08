@@ -58,6 +58,7 @@ public class Axis {
     private double yOrigin = 800.0;
     private int labelFontSize = 16;
     private int ticFontSize = 12;
+    private double lineWidth = 1.0;
     private Color color = Color.BLACK;
     private Font ticFont = new Font(ticFontSize);
     private Font labelFont = new Font(labelFontSize);
@@ -289,12 +290,17 @@ public class Axis {
         gC.setFill(color);
         gC.setStroke(color);
         gC.setFont(ticFont);
+        gC.setLineWidth(lineWidth);
         getTickPositions();
         if (orientation == VERTICAL) {
             drawVerticalAxis(gC);
         } else {
             drawHorizontalAxis(gC);
         }
+    }
+    
+    public double getLineWidth() {
+        return lineWidth;
     }
 
     public double getBorderSize() {
