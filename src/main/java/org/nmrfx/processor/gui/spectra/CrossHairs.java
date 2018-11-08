@@ -25,6 +25,7 @@ import org.nmrfx.processor.gui.PolyChart;
 import static org.nmrfx.processor.gui.PolyChart.CROSSHAIR_TOL;
 import static org.nmrfx.processor.gui.PolyChart.HORIZONTAL;
 import static org.nmrfx.processor.gui.PolyChart.VERTICAL;
+import org.nmrfx.processor.gui.SpectrumMeasureBar;
 import org.nmrfx.processor.gui.SpectrumStatusBar;
 
 /**
@@ -303,6 +304,7 @@ public class CrossHairs {
         if (crossHairStates[iCross][iOrient]) {
             double value = crossHairPositions[iCross][iOrient];
             getController().getStatusBar().setCrossText(iOrient, iCross, value, false);
+            updateMeasureBar(dataset, iOrient);
             if (iOrient == HORIZONTAL) {
                 value = yAxis.getDisplayPosition(value);
                 crossHairLines[iCross][iOrient].setStartX(xOrigin);
@@ -318,6 +320,15 @@ public class CrossHairs {
             }
             crossHairLines[iCross][iOrient].setVisible(true);
             crossHairLines[iCross][iOrient].setVisible(true);
+        }
+    }
+
+    public void updateMeasureBar(Dataset dataset, int iOrient) {
+        SpectrumMeasureBar measureBar = getController().getSpectrumMeasureBar();
+        if (measureBar != null) {
+            Double value0 = crossHairStates[0][iOrient] ? crossHairPositions[0][iOrient] : null;
+            Double value1 = crossHairStates[1][iOrient] ? crossHairPositions[1][iOrient] : null;
+            measureBar.setCrossText(chart, dataset, iOrient, value0, value1);
         }
     }
 

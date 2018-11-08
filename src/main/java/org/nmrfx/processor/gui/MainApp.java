@@ -290,8 +290,10 @@ public class MainApp extends Application implements DatasetListener {
         alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
         MenuItem analyzeMenuItem = new MenuItem("Analyzer...");
         analyzeMenuItem.setOnAction(e -> showAnalyzer(e));
+        MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
+        measureMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumMeasureBar());
 
-        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem, alignMenuItem, analyzeMenuItem);
+        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem, alignMenuItem, analyzeMenuItem, measureMenuItem);
 
         // Format (items TBD)
 //        Menu formatMenu = new Menu("Format");

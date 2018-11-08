@@ -174,6 +174,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     ObservableList<PolyChart> charts = FXCollections.observableArrayList();
     PolyChart activeChart = null;
     SpectrumStatusBar statusBar;
+    SpectrumMeasureBar measureBar = null;
     BooleanProperty sliceStatus = new SimpleBooleanProperty(false);
     File initialDir = null;
 
@@ -369,7 +370,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         File selectedFile = fileChooser.showOpenDialog(null);
         openDataset(selectedFile, false);
     }
-    
+
     public void openDataset(File selectedFile, boolean append) {
         if (selectedFile != null) {
             try {
@@ -1591,6 +1592,26 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (peakSlider != null) {
             bottomBox.getChildren().remove(peakSlider.getToolBar());
             peakSlider = null;
+        }
+    }
+    
+    public SpectrumMeasureBar getSpectrumMeasureBar() {
+        return measureBar;
+    }
+
+    public void showSpectrumMeasureBar() {
+        if (measureBar == null) {
+            GridPane navBar = new GridPane();
+            measureBar = new SpectrumMeasureBar(this, this::removeSpectrumMeasureBar);
+            measureBar.buildBar(navBar);
+            bottomBox.getChildren().add(navBar);
+        }
+    }
+
+    public void removeSpectrumMeasureBar(Object o) {
+        if (measureBar != null) {
+            bottomBox.getChildren().remove(measureBar.getToolBar());
+            measureBar = null;
         }
     }
 
