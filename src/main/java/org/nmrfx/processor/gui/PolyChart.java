@@ -1659,6 +1659,7 @@ public class PolyChart implements PeakListener {
         GraphicsContext gCC = canvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         try {
+            gC.save();
             gC.clearRect(xPos, yPos, width, height);
             xAxis.setTickFontSize(PreferencesController.getTickFontSize());
             xAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
@@ -1683,12 +1684,15 @@ public class PolyChart implements PeakListener {
 
             xAxis.draw(gC);
             yAxis.draw(gC);
+            gC.setLineWidth(xAxis.getLineWidth());
             gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
             gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
             peakCanvas.setWidth(canvas.getWidth());
             peakCanvas.setHeight(canvas.getHeight());
             GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
             peakGC.clearRect(xPos, yPos, width, height);
+            gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+            gC.clip();
 //
 //        if (annoCanvas != null) {
 //            annoCanvas.setWidth(width);
@@ -1701,6 +1705,7 @@ public class PolyChart implements PeakListener {
                 // if we used immediate mode and didn't finish in time try again
                 // useImmediate mode will have been set to false
                 Platform.runLater(() -> layoutPlotChildren());
+                gC.restore();
                 return;
             }
 
@@ -1715,6 +1720,7 @@ public class PolyChart implements PeakListener {
 //        });
 //
             crossHairs.refreshCrossHairs();
+            gC.restore();
         } catch (GraphicsIOException ioE) {
 
         }
