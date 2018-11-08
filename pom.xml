@@ -62,9 +62,9 @@
             <version>1.0.5x</version>
         </dependency>
         <dependency>
-            <groupId>de.jensd</groupId>
+          <groupId>de.jensd</groupId>
             <artifactId>fontawesomefx</artifactId>
-            <version>8.6</version>
+          <version>8.9</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
