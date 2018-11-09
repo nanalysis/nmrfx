@@ -2378,6 +2378,49 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 //
 //        interp.setResult(list);
 //    }
+    synchronized public double measureSDev(int[][] pt, int[] dim, double sDevIn, double ratio)
+            throws IOException {
+
+        if (vecMat != null) {
+            setSize(0, vecMat.getSize());
+            blockSize[0] = vecMat.getSize();
+            blockElements = blockSize[0] * 4;
+        }
+        int[] counterSizes = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            if (pt[i][1] >= pt[i][0]) {
+                counterSizes[i] = pt[i][1] - pt[i][0] + 1;
+            } else {
+                counterSizes[i] = getSize(dim[i]) + (pt[i][1] - pt[i][0] + 1);
+            }
+        }
+        DimCounter counter = new DimCounter(counterSizes);
+        DimCounter.Iterator cIter = counter.iterator();
+        double sumSq = 0.0;
+        double sum = 0.0;
+        int n = 0;
+        while (cIter.hasNext()) {
+            int[] points = cIter.next();
+            for (int i = 0; i < nDim; i++) {
+                points[i] += pt[i][0];
+                if (points[i] >= getSize(dim[i])) {
+                    points[i] = points[i] - getSize(dim[i]);
+                }
+            }
+            double value = readPoint(points, dim);
+            if (value != Double.MAX_VALUE) {
+                sum += value;
+                sumSq += value * value;
+                n++;
+            }
+        }
+        double sDev = 0.0;
+        if (n > 1) {
+            sDev = Math.sqrt(sumSq / n - ((sum / n) * (sum / n)));
+        }
+        return sDev;
+    }
+
     /**
      * Get an array representing the dimensions that will be used in specifying
      * slices through the dataset. The specified dimension will be in the first
