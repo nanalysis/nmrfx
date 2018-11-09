@@ -1,6 +1,7 @@
 from org.nmrfx.structure.chemistry.io import PDBFile
 from org.nmrfx.structure.chemistry.io import SDFile
 from org.nmrfx.structure.chemistry.io import Sequence
+from org.nmrfx.structure.chemistry import Molecule
 from java.util import ArrayList
 def updateAtomArray():
     ''' Updates the molecule atom array '''
@@ -55,3 +56,12 @@ def readSequence(seqFile, convert=False):
     seqReader = Sequence()
     seqReader.read(seqFile)
     updateAtomArray()
+
+def readYaml(file):
+    from java.io import FileInputStream
+    from org.yaml.snakeyaml import Yaml
+
+    input = FileInputStream(file)
+    yaml = Yaml()
+    data = yaml.load(input)
+    return data
