@@ -144,7 +144,10 @@ public class Sequence {
         
         // fixme this needs to be changed for non-amino acid residue atoms
         if (isProtein) {
-            residue.getAtom("O").dihedralAngle = (float) Math.PI;
+            Atom refAtom = residue.getAtom("O");
+            if (refAtom != null){
+                residue.getAtom("O").dihedralAngle = (float) Math.PI;
+            }
         }
     }
 
@@ -477,7 +480,7 @@ public class Sequence {
                 if (ext.equals(".pdb")) {
                     compound = PDBFile.readResidue(localFile + ext, null, molecule, coordSetName, residue);
                 } else {
-                    compound = SDFile.readResidue(localFile + ext, null, molecule, coordSetName, residue);
+                    compound = SDFile.read(localFile + ext, null, molecule, coordSetName, residue);
                 }
                 break;
             }
@@ -538,7 +541,6 @@ public class Sequence {
         String iRes = "1";
         String[] stringArg = new String[2];
         Pattern pattern = Pattern.compile("[-/\\w/\\.]+");
-        boolean gotMolecule = false;
         String molName = "";
         String coordSetName = molName;
         ArrayList<String> coordSetNames = new ArrayList<>();
@@ -546,6 +548,10 @@ public class Sequence {
         ArrayList<File> ligandFiles = new ArrayList<>();
         Set<String> isNotCapped = new TreeSet<>();
         String polymerType = null;
+        molecule = Molecule.getActive();
+        // First sequence is always a new polymer even if no '-' args are added
+        boolean newPolymer = true;
+
         for (String inputString : inputStrings) {
             inputString = inputString.trim();
 
@@ -574,10 +580,15 @@ public class Sequence {
             boolean isResidue = false;
 
             if (stringArg[0].startsWith("-")) {
-                gotMolecule = false;
+                newPolymer = true;
                 iRes = "1";
                 if ("-molecule".startsWith(stringArg[0])) {
                     molName = stringArg[1];
+                    /* NOTE: This molName is never used and would always be overwritten
+                       by polymerName. With this in mind, modifications to make this
+                       function not default to creating a molecule without editing
+                       initMolFromSeqFile
+                      */
                 } else if ("-polymer".startsWith(stringArg[0])) {
                     polymerName = stringArg[1];
                     coordSetNames.clear();
@@ -626,10 +637,12 @@ public class Sequence {
 
             if (!isResidue) {
                 continue;
-            } else if (!gotMolecule) {
+            } else if (newPolymer) {
                 if (coordSetNames.isEmpty()) {
                     coordSetName = polymerName;
-                    molName = polymerName;
+                    // Prevent new molecules from being created everytime 
+                    // readSequence is called 
+                    molName = molecule == null ? polymerName : molecule.getName();
                     coordSetNames.add(coordSetName);
                 }
 
@@ -642,7 +655,7 @@ public class Sequence {
                     }
                 }
 
-                gotMolecule = true;
+                newPolymer = false;
             }
 
             if (molecule == null) {
@@ -722,7 +735,7 @@ public class Sequence {
             if (ligandFile.getPath().endsWith("pdb")) {
                 PDBFile.readResidue(ligandFile.getPath(), null, molecule, coordSetName);
             } else {
-                SDFile.readResidue(ligandFile.getPath(), null, molecule, coordSetName);
+                SDFile.read(ligandFile.getPath(), null, molecule, coordSetName);
             }
         }
         if ((connectBond != null) && (connectBond.end == null)) {
