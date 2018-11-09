@@ -60,6 +60,7 @@ public class Atom implements IAtom {
     static int lastAtom = 0;
     public int iAtom = 1;
     public int eAtom = -1;
+    public int aAtom = 1;
     private int origIndex = 0;
     public Atom parent = null;
     public String name;
