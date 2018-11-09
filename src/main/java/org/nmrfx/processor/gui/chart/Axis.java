@@ -20,6 +20,7 @@ package org.nmrfx.processor.gui.chart;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.DoublePropertyBase;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Orientation;
 import static javafx.geometry.Orientation.VERTICAL;
 import static javafx.geometry.Orientation.HORIZONTAL;
@@ -38,10 +39,6 @@ public class Axis {
 
     Orientation orientation;
     double ticSize = 10.0;
-    private double lowerBound;
-    private double upperBound;
-    private DoubleProperty lowerBoundProp;
-    private DoubleProperty upperBoundProp;
     private double width;
     private DoubleProperty widthProp;
     private double height;
@@ -63,13 +60,47 @@ public class Axis {
     private Font ticFont = new Font(ticFontSize);
     private Font labelFont = new Font(labelFontSize);
     public static double targetPix = 120;
+    private double defaultUpper;
+    private double defaultLower;
 
     public Axis(Orientation orientation, double lowerBound, double upperBound, double width, double height) {
         this.orientation = orientation;
-        this.lowerBound = lowerBound;
-        this.upperBound = upperBound;
+        this.defaultLower = lowerBound;
+        this.defaultUpper = upperBound;
         this.width = width;
         this.height = height;
+    }
+    private DoubleProperty lowerBound;
+
+    public DoubleProperty lowerBoundProperty() {
+        if (lowerBound == null) {
+            lowerBound = new SimpleDoubleProperty(this, "lower", defaultLower);
+        }
+        return lowerBound;
+    }
+
+    public void setLowerBound(double value) {
+        lowerBoundProperty().set(value);
+    }
+
+    public double getLowerBound() {
+        return lowerBoundProperty().get();
+    }
+    private DoubleProperty upperBound;
+
+    public DoubleProperty upperBoundProperty() {
+        if (upperBound == null) {
+            upperBound = new SimpleDoubleProperty(this, "upper", defaultUpper);
+        }
+        return upperBound;
+    }
+
+    public void setUpperBound(double value) {
+        upperBoundProperty().set(value);
+    }
+
+    public double getUpperBound() {
+        return upperBoundProperty().get();
     }
 
     public Number getValueForDisplay(double displayPosition) {
@@ -82,7 +113,7 @@ public class Axis {
         } else if (!isReversed() && (getOrientation() == Orientation.VERTICAL)) {
             displayPosition = length - displayPosition;
         }
-        return ((displayPosition) / scaleValue) + lowerBound;
+        return ((displayPosition) / scaleValue) + getLowerBound();
 
     }
 
@@ -98,7 +129,7 @@ public class Axis {
     }
 
     public double getDisplayPosition(Number value) {
-        double f = (value.doubleValue() - lowerBound) / (upperBound - lowerBound);
+        double f = (value.doubleValue() - getLowerBound()) / (getUpperBound() - getLowerBound());
         double displayPosition;
         if (orientation == HORIZONTAL) {
             if (reverse) {
@@ -114,68 +145,6 @@ public class Axis {
             }
         }
         return displayPosition;
-    }
-
-    public DoubleProperty lowerBoundProperty() {
-        if (null == lowerBoundProp) {
-            lowerBoundProp = new DoublePropertyBase(lowerBound) {
-                @Override
-                public Object getBean() {
-                    return Axis.this;
-                }
-
-                @Override
-                public String getName() {
-                    return "lowerBound";
-                }
-            };
-        }
-        return lowerBoundProp;
-    }
-
-    public DoubleProperty upperBoundProperty() {
-        if (null == upperBoundProp) {
-            upperBoundProp = new DoublePropertyBase(upperBound) {
-                @Override
-                public Object getBean() {
-                    return Axis.this;
-                }
-
-                @Override
-                public String getName() {
-                    return "upperBound";
-                }
-            };
-        }
-        return upperBoundProp;
-    }
-
-    /**
-     * @return the lowerBound
-     */
-    public double getLowerBound() {
-        return lowerBound;
-    }
-
-    /**
-     * @param lowerBound the lowerBound to set
-     */
-    public void setLowerBound(double lowerBound) {
-        this.lowerBound = lowerBound;
-    }
-
-    /**
-     * @return the upperBound
-     */
-    public double getUpperBound() {
-        return upperBound;
-    }
-
-    /**
-     * @param upperBound the upperBound to set
-     */
-    public void setUpperBound(double upperBound) {
-        this.upperBound = upperBound;
     }
 
     public void setOrigin(double x, double y) {
@@ -228,12 +197,17 @@ public class Axis {
     }
 
     public double getRange() {
-        return upperBound - lowerBound;
+        return getUpperBound() - getLowerBound();
     }
 
     public void setMinMax(double min, double max) {
-        lowerBound = min;
-        upperBound = max;
+        /*
+                lowerBoundProperty().setValue(min);
+        upperBoundProperty().setValue(max);
+
+         */
+        lowerBoundProperty().set(min);
+        upperBoundProperty().set(max);
     }
 
     public double getScale() {
@@ -279,8 +253,8 @@ public class Axis {
             double incValue = selValue * Math.pow(10.0, floorScale);
             majorTickSpace = incValue;
             minorTickSpace = incValue / 5.0;
-            minorTickStart = Math.ceil(lowerBound / minorTickSpace) * minorTickSpace;
-            majorTickStart = Math.ceil(lowerBound / majorTickSpace) * majorTickSpace;
+            minorTickStart = Math.ceil(getLowerBound() / minorTickSpace) * minorTickSpace;
+            majorTickStart = Math.ceil(getLowerBound() / majorTickSpace) * majorTickSpace;
         }
     }
 
@@ -298,7 +272,7 @@ public class Axis {
             drawHorizontalAxis(gC);
         }
     }
-    
+
     public double getLineWidth() {
         return lineWidth;
     }
@@ -325,8 +299,8 @@ public class Axis {
         double value = minorTickStart;
         int gap1 = ticFontSize / 4;
         ticSize = ticFontSize * 0.75;
-
-        while (value < upperBound) {
+        double upper = getUpperBound();
+        while (value < upper) {
             double x = getDisplayPosition(value);
             double y1 = yOrigin;
             double delta = Math.abs(value - Math.round(value / majorTickSpace) * majorTickSpace);
@@ -363,7 +337,8 @@ public class Axis {
         ticSize = ticFontSize * 0.75;
         double value = minorTickStart;
         int ticStringLen = 0;
-        while (value < upperBound) {
+        double upper = getUpperBound();
+        while (value < upper) {
             double y = getDisplayPosition(value);
             double x1 = xOrigin;
             double delta = Math.abs(value - Math.round(value / majorTickSpace) * majorTickSpace);

@@ -2822,12 +2822,11 @@ public class PolyChart implements PeakListener {
     List<PolyChart> getSceneMates(boolean includeThis) {
         List<PolyChart> sceneMates = new ArrayList<>();
         for (PolyChart chart : CHARTS) {
-            // fixme
-//            if (chart.getScene() == getScene()) {
-//                if (includeThis || (chart != this)) {
-//                    sceneMates.add(chart);
-//                }
-//            }
+            if (chart.canvas == canvas) {
+                if (includeThis || (chart != this)) {
+                    sceneMates.add(chart);
+                }
+            }
         }
         return sceneMates;
     }

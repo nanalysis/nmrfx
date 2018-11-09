@@ -68,7 +68,6 @@ public class AxisChangeListener implements ChangeListener<Number> {
                     int center = (pt1 + pt2) / 2;
                     chart.controller.getStatusBar().updatePlaneSpinner(center, axNum);
                 }
-                chart.refresh();
                 if (PolyChart.getNSyncGroups() > 0) {
                     List<String> names = chart.getDimNames();
                     String name = names.get(axNum);
@@ -86,9 +85,7 @@ public class AxisChangeListener implements ChangeListener<Number> {
                                     } else {
                                         otherChart.axes[i].setUpperBound(newBound);
                                     }
-                                    if (otherNames.indexOf(otherName) > 1) {
-                                        otherChart.layoutPlotChildren();
-                                    }
+                                    otherChart.refresh();
                                 }
                             }
                             i++;
