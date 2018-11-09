@@ -253,49 +253,47 @@ public class SpectrumMeasureBar {
         boolean absMode = absModeButton.isSelected();
 
         for (int iCross = 0; iCross < 3; iCross++) {
-            Double value = iCross < 2 ? values[iCross] : 0.0;
             String strValue = "";
             String strPtValue = "";
-            if (value != null) {
-                int chartDim = iOrient == 0 ? 1 : 0;
-                if ((chartDim == 0) || (chart.getNDim() > 1)) {
-                    int disDim = chart.getDatasetAttributes().get(0).getDim(chartDim);
-                    boolean freqMode = dataset.getFreqDomain(disDim);
-                    if (iCross < 2) {
-                        if (freqMode) {
-                            double hz;
-                            int pt = dataset.ppmToPoint(disDim, value);
-                            if (gridMode) {
-                                pts[iCross] = pt;
-                                hz = dataset.pointToHz(disDim, pts[iCross]);
-                                hz = -(hz - dataset.getSw(disDim) / 2.0);
-                                strPtValue = String.format("%d pts", pt);
-                            } else {
-                                pts[iCross] = dataset.ppmToDPoint(disDim, value);
-                                hz = dataset.pointToHz(disDim, pts[iCross]);
-                                hz = -(hz - dataset.getSw(disDim) / 2.0);
-                                strPtValue = String.format("%.1f pts", pts[iCross]);
-                            }
-
-                            hzs[iCross] = hz;
-                            mHzs[iCross] = dataset.getSf(disDim) * 1.0e6 + hz;
-                            if (absMode) {
-                                strValue = String.format("%,.1f Hz", mHzs[iCross]);
-                            } else {
-                                strValue = String.format("%.1f Hz", hz);
-                            }
+            int chartDim = iOrient == 0 ? 1 : 0;
+            if ((chartDim == 0) || (chart.getNDim() > 1)) {
+                int disDim = chart.getDatasetAttributes().get(0).getDim(chartDim);
+                boolean freqMode = dataset.getFreqDomain(disDim);
+                if (iCross < values.length) {
+                    Double value = iCross < values.length ? values[iCross] : 0.0;
+                    if (freqMode) {
+                        double hz;
+                        int pt = dataset.ppmToPoint(disDim, value);
+                        if (gridMode) {
+                            pts[iCross] = pt;
+                            hz = dataset.pointToHz(disDim, pts[iCross]);
+                            hz = -(hz - dataset.getSw(disDim) / 2.0);
+                            strPtValue = String.format("%d pts", pt);
                         } else {
-                            pts[iCross] = (int) Math.round(value * dataset.getSw(disDim));
-                            hzs[iCross] = value;
-                            mHzs[iCross] = value;
-                            strPtValue = String.valueOf(pts[iCross]) + " pts";
-                            strValue = String.format("%.1f Hz", value);
+                            pts[iCross] = dataset.ppmToDPoint(disDim, value);
+                            hz = dataset.pointToHz(disDim, pts[iCross]);
+                            hz = -(hz - dataset.getSw(disDim) / 2.0);
+                            strPtValue = String.format("%.1f pts", pts[iCross]);
+                        }
+
+                        hzs[iCross] = hz;
+                        mHzs[iCross] = dataset.getSf(disDim) * 1.0e6 + hz;
+                        if (absMode) {
+                            strValue = String.format("%,.1f Hz", mHzs[iCross]);
+                        } else {
+                            strValue = String.format("%.1f Hz", hz);
                         }
                     } else {
-                        if ((values[0] != null) && (values[1] != null)) {
-                            strValue = String.format("%.1f Hz", Math.abs(hzs[1] - hzs[0]));
-                            strPtValue = String.format("%.0f pts", Math.abs(pts[1] - pts[0]));
-                        }
+                        pts[iCross] = (int) Math.round(value * dataset.getSw(disDim));
+                        hzs[iCross] = value;
+                        mHzs[iCross] = value;
+                        strPtValue = String.valueOf(pts[iCross]) + " pts";
+                        strValue = String.format("%.1f Hz", value);
+                    }
+                } else {
+                    if ((values.length == 2) && (values[0] != null) && (values[1] != null)) {
+                        strValue = String.format("%.1f Hz", Math.abs(hzs[1] - hzs[0]));
+                        strPtValue = String.format("%.0f pts", Math.abs(pts[1] - pts[0]));
                     }
                 }
             }
