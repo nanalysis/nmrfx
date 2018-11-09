@@ -185,28 +185,58 @@ class Constraint:
             self.pairs.append(pair)
 
 
+class StrictDict(dict):
+    def __init__(self, defaultErr = 'this setting', defaultDict={}):
+        self.update(defaultDict)
+        self.defaultErr = defaultErr
+        self.allowedKeys = []
+    def setInclusions(self, allowedKeys):
+        self.allowedKeys = allowedKeys
+    def strictUpdate(self, changesDict={}):
+        if changesDict is None:
+            changesDict = {}
+        for key in changesDict:
+            if key not in self and key not in self.allowedKeys:
+                raise KeyError("{} is not a valid option for {}".format(key,self.defaultErr))
+            else:
+                self[key] = changesDict[key]
 
+class dynOptions(StrictDict):
+    defaults = {
+        'steps'         : 15000,
+        'highTemp'      : 5000.0,
+        'medFrac'       : 0.05,
+        'update'        : 20,
+        'highFrac'      : 0.3,
+        'toMedFrac'     : 0.5,
+        'switchFrac'    : 0.65,
+        'timeStep'      : 4.0,
+        'stepsEnd'      : 100,
+        'econHigh'      : 0.005,
+        'econLow'       : 0.001,
+        'timePowerHigh' : 4.0,
+        'timePowerMed'  : 4.0,
+        'minSteps'      : 100,
+        'polishSteps'   : 500,
+        'kinEScale'     : 200.0,
+    }
+    def __init__(self,initDict={}):
+        StrictDict.__init__(self,defaultErr="dynamics", defaultDict=dynOptions.defaults)
+        #self.update(dynOptions.defaults)
+        self.strictUpdate(initDict)
 
-class dynOptions:
-    def __init__(self,steps=15000,highTemp=5000.0,medFrac=0.05,update=20,highFrac=0.3,toMedFrac=0.5,switchFrac=0.65):
-        self.steps = steps
-        self.highTemp = highTemp
-        self.medFrac = medFrac
-        self.update = update
-        self.highFrac = highFrac
-        self.toMedFrac = toMedFrac
-        self.switchFrac = switchFrac
-        self.timeStep = 4.0
-        self.stepsEnd = 100
-        self.econHigh = 0.005
-        self.econLow = 0.001
-        self.timePowerHigh = 4.0
-        self.timePowerMed = 4.0
-        self.minSteps = 100
-        self.polishSteps = 500
-        self.irpWeight = 0.015
-        self.kinEScale = 200.0
-        self.swap = 0
+def createStrictDict(initDict, type):
+    if initDict is None:
+        initDict = {}
+    allowedKeys = {}
+    allowedKeys['param'] = ['coarse', 'useh', 'hardSphere', 'start', 'end', 'shrinkValue', 'shrinkHValue', 'dislim', 'swap']
+    allowedKeys['force'] = ['elec', 'robson', 'repel', 'dis', 'tors', 'dih', 'irp', 'shift', 'bondWt']
+    allowedKeys = allowedKeys[type]
+
+    strictDict = StrictDict(defaultErr=type+'s')
+    strictDict.setInclusions(allowedKeys)
+    strictDict.strictUpdate(initDict)
+    return strictDict
 
 class refine:
     def __init__(self):
@@ -854,21 +884,19 @@ class refine:
             self.findHelices(rnaDict['vienna'])
 
     def readAnnealDict(self, annealDict):
-        dOpt = dynOptions()
-        if 'steps' in annealDict:
-            dOpt.steps = annealDict['steps']
-        if 'highTemp' in annealDict:
-            dOpt.highTemp = annealDict['highTemp']
-        if 'highFrac' in annealDict:
-            dOpt.highFrac = annealDict['highFrac']
-        if 'kinEScale' in annealDict:
-            dOpt.kinEScale = annealDict['kinEScale']
-        if 'irpWeight' in annealDict:
-            dOpt.irpWeight = annealDict['irpWeight']
-        if 'swap' in annealDict:
-            dOpt.swap = annealDict['swap']
-
+        dOpt = dynOptions(annealDict['dynOptions'])
+        del annealDict['dynOptions']
+        self.settings = annealDict
         return dOpt
+        #dOptDict = var(dOpt)
+        #
+        #for key in annealDict:
+        #    if key in dOptDict:
+        #        dOptDict[key] = annealDict[key]
+        #    else:
+        #        raise KeyError("Key '{}' is not an acceptable annealing parameter. See documentation for list of parameters.".format(key))
+        #
+        #return dOpt
 
     def readShiftDict(self, shiftDict,residues):
         wt = -1.0
@@ -1628,7 +1656,7 @@ class refine:
 
         self.randomizeAngles()
         energy = self.energy()
-        irp = dOpt.irpWeight
+        irp = self.settings['force'].get('irp', 0.0)
 
         self.updateAt(5)
         self.setForces({'repel':0.5,'dis':1,'dih':5,'irp':irp})
@@ -1645,15 +1673,15 @@ class refine:
         from anneal import getAnnealStages
         dOpt = dOpt if dOpt else dynOptions()
         self.annealPrep(dOpt, 100)
-        self.updateAt(dOpt.update)
+        self.updateAt(dOpt['update'])
         energy = self.energy()
         rDyn = self.rinertia()
-        rDyn.setKinEScale(dOpt.kinEScale)
-        stages = getAnnealStages(dOpt)
+        rDyn.setKinEScale(dOpt['kinEScale'])
+        stages = getAnnealStages(dOpt, self.settings)
         for stage in stages:
             runStage(stage, self, rDyn)
 
-        self.gmin(nsteps=dOpt.polishSteps,tolerance=1.0e-6)
+        self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
 
     def cdynamics(self, steps, hiTemp, medTemp, timeStep=1.0e-3):
         self.updateAt(20)
@@ -1701,14 +1729,14 @@ class refine:
 
         self.annealPrep(dOpt, 100)
 
-        self.updateAt(dOpt.update)
-        irp = dOpt.irpWeight
+        self.updateAt(dOpt['update'])
+        irp = dOpt['irpWeight']
         self.setForces({'repel':0.5,'dis':1.0,'dih':5,'irp':irp})
         self.setPars({'end':1000,'useh':False,'hardSphere':0.15,'shrinkValue':0.20})
         self.setPars(stage1)
         energy = self.energy()
 
-        steps = dOpt.steps
+        steps = dOpt['steps']
         self.sgdmin(2*steps/3)
         self.setPars({'useh':True,'hardSphere':0.0,'shrinkValue':0.0,'shrinkHValue':0.0})
         self.sgdmin(steps/3)
@@ -1861,7 +1889,7 @@ def doAnneal(seed,dOpt=None,homeDir=None, writeTrajectory=False):
     refiner.setup(dataDir,seed,writeTrajectory)
     refiner.rootName = "temp"
     if dOpt == None:
-        dOpt = dynOptions(highFrac=0.4)
+        dOpt = dynOptions({'highFrac':0.4})
     refiner.anneal(dOpt)
     refiner.output()
 
@@ -1874,6 +1902,6 @@ def doSGD(seed,homeDir=None):
     refiner.molecule.setMethylRotationActive(True)
     refiner.setup(dataDir,seed)
     refiner.rootName = "temp"
-    dOpt = dynOptions(150000,highFrac=0.4)
+    dOpt = dynOptions({'steps':150000,'highFrac':0.4})
     refiner.sgd(dOpt)
     refiner.output()

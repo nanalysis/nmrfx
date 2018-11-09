@@ -1,95 +1,106 @@
-def getAnnealStages(dOpt):
+def getAnnealStages(dOpt, settings):
     ''' getAnnealStages returns a list of 5 dictionaries that have values for
         running each stage of the dynamics program and requires the dynOptions
         object
     '''
-
-    steps = dOpt.steps
-    stepsEnd = dOpt.stepsEnd
-    stepsHigh = int(round(steps*dOpt.highFrac))
-    stepsAnneal1 = int(round((steps-stepsEnd-stepsHigh)*dOpt.toMedFrac))
+    from refine import createStrictDict
+    steps = dOpt['steps']
+    stepsEnd = dOpt['stepsEnd']
+    stepsHigh = int(round(steps*dOpt['highFrac']))
+    stepsAnneal1 = int(round((steps-stepsEnd-stepsHigh)*dOpt['toMedFrac']))
     stepsAnneal2 = steps-stepsHigh-stepsEnd-stepsAnneal1
-    medTemp = round(dOpt.highTemp * dOpt.medFrac)
+    medTemp = round(dOpt['highTemp'] * dOpt['medFrac'])
 
     stage1 = {
-        'tempVal'        : dOpt.highTemp,
-        'econVal'        : dOpt.econHigh,
+        'tempVal'        : dOpt['highTemp'],
+        'econVal'        : dOpt['econHigh'],
         'nStepVal'       : stepsHigh,
         'gMinSteps'      : None,
         'switchFracVal'  : None,
-        'defaultParam'   : {
+        'param'   : {
                                 'end':1000,
                                 'useh':False,
                                 'hardSphere':0.15,
                                 'shrinkValue':0.20,
-                                'swap':dOpt.swap
                            },
-        'defaultForce'   : {
+        'force'   : {
                                 'repel':0.5,
                                 'dis':1.0,
                                 'dih':5,
-                                'irp':dOpt.irpWeight
                             },
-        'timestep'       : dOpt.timeStep
+        'timestep'       : dOpt['timeStep']
     }
 
     stage2 = {
-        'tempVal'        : [dOpt.highTemp, medTemp, dOpt.timePowerHigh],
-        'econVal'        : dOpt.econHigh,
-        'nStepVal'       : int(round((steps-stepsEnd-stepsHigh)*dOpt.toMedFrac)),
+        'tempVal'        : [dOpt['highTemp'], medTemp, dOpt['timePowerHigh']],
+        'econVal'        : dOpt['econHigh'],
+        'nStepVal'       : int(round((steps-stepsEnd-stepsHigh)*dOpt['toMedFrac'])),
         'gMinSteps'      : None,
         'switchFracVal'  : None,
-        'defaultParam'   : None,
-        'defaultForce'   : None
+        'param'          : None,
+        'force'          : None
     }
 
     stage3 = {
-        'tempVal'        : [medTemp, 1.0, dOpt.timePowerMed],
-        'econVal'        : lambda f: dOpt.econHigh*(pow(0.5,f)),
+        'tempVal'        : [medTemp, 1.0, dOpt['timePowerMed']],
+        'econVal'        : lambda f: dOpt['econHigh']*(pow(0.5,f)),
         'nStepVal'       : steps-stepsHigh-stepsEnd-stepsAnneal1,
-        'gMinSteps'      : dOpt.minSteps,
-        'switchFracVal'  : dOpt.switchFrac,
-        'defaultParam'   : {
+        'gMinSteps'      : dOpt['minSteps'],
+        'switchFracVal'  : dOpt['switchFrac'],
+        'param'          : {
                             'useh' : False,
                             'hardSphere' : 0.0,
                             'shrinkValue' : 0.0,
-                            'swap' :dOpt.swap
                            },
-        'defaultForce'   : None
+        'force'          : None
     }
 
     stage4 = {
         'tempVal'        : None,
         'econVal'        : None,
         'nStepVal'       : None,
-        'gMinSteps'      : dOpt.minSteps,
+        'gMinSteps'      : dOpt['minSteps'],
         'switchFracVal'  : None,
-        'defaultParam'   : {
+        'param'          : {
                             'useh' : True,
                             'hardSphere' : 0.0,
                             'shrinkValue' : 0.0,
                             'shrinkHValue' : 0.0,
-                            'swap':dOpt.swap
                             },
-        'defaultForce'   : {
+        'force'          : {
                             'repel'  : 1.0,
                             'bondWt' : 25.0,
-                            'tors'   : 0.1
                             }
     }
 
     stage5 = {
         'tempVal'        : 0.0,
-        'econVal'        : dOpt.econLow,
+        'econVal'        : dOpt['econLow'],
         'nStepVal'       : stepsEnd,
-        'gMinSteps'      : dOpt.minSteps,
+        'gMinSteps'      : dOpt['minSteps'],
         'switchFracVal'  : None,
-        'defaultParam'   : None,
-        'defaultForce'   : {
+        'param'          : None,
+        'force'          : {
                             'repel'  : 2.0,
                             }
     }
     stages = [stage1, stage2, stage3, stage4, stage5]
+    for i,stage in enumerate(stages):
+
+        ''' The default settings have the lowest priority '''
+        stage['param'] = createStrictDict(stage['param'],'param')
+        stage['force'] = createStrictDict(stage['force'],'force')
+
+        ''' General settings made by the user have a medium priority '''
+        stage['param'].strictUpdate(settings.get('param'))
+        stage['force'].strictUpdate(settings.get('force'))
+
+        ''' Specific stage settings have the highest priority '''
+        userStageKey = "stage"+str(i+1)
+        userStage = settings.get(userStageKey, {})
+        if userStage:
+            stage['param'].strictUpdate(userStage.get('param'))
+            stage['force'].strictUpdate(userStage.get('force'))
     return stages
 
 
@@ -102,8 +113,8 @@ def runStage(stage, refiner, rDyn):
         time the method is called. If so, it will initialize the dynamics and
         all other calls will continue the dynamics.
     '''
-    refiner.setPars(stage['defaultParam'])
-    refiner.setForces(stage['defaultForce'])
+    refiner.setPars(stage['param'])
+    refiner.setForces(stage['force'])
     timeStep = rDyn.getTimeStep()/2.0
     gminSteps = stage['gMinSteps']
     if gminSteps:
