@@ -43,6 +43,7 @@ import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords.ViolationStats;
+import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
 
 public class EnergyLists {
 
@@ -587,6 +588,8 @@ public class EnergyLists {
         int nIrp = 0;
         double shiftTotEnergy = 0.0;
         int nShift = 0;
+        double probDih = 0.0;
+        int nRotamers = 0;
         try {
 
             //            if (forceWeight.getDihedralProb() > 0.0) {
@@ -675,6 +678,22 @@ public class EnergyLists {
                     }
                 }
             }
+            if (forceWeight.getDihedralProb() > 0.0) {
+                EnergyCoords eCoords = molecule.getEnergyCoords();
+                List<Polymer> polymers = molecule.getPolymers();
+                for (Polymer polymer : polymers) {
+                    if (polymer.isRNA()) {
+                        for (int i = 1; i < polymer.size(); i++) {
+                            nRotamers++;
+                            RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
+                            double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
+                            rotamerEnergy *= forceWeight.getDihedralProb();
+                            probDih += rotamerEnergy;
+                            writer.format("Tor: %2d %4s %4s %4.3f\n", i, polymer.getResidue(i).getName(), rotamerScores[0].rotamer.name, rotamerEnergy);
+                        }
+                    }
+                }
+            }
             if (forceWeight.getIrp() > 0.0) {
                 for (Atom atom : angleAtoms) {
                     if ((atom.irpIndex > 1) && atom.rotActive) {
@@ -690,11 +709,11 @@ public class EnergyLists {
 
             }
 
-            double energySum = dihEnergy + robsonEnergy + repelEnergy + distanceEnergy + irpEnergy + shiftTotEnergy;
+            double energySum = dihEnergy + robsonEnergy + repelEnergy + distanceEnergy + irpEnergy + shiftTotEnergy + probDih;
             writer.format(
-                    "Irp %5d %.3f Dih %5d %.3f Robson %5d %.3f Repel %5d %.3f Distance %5d %.3f %.3f Shift %5d %.3f Total %.3f\n",
+                    "Irp %5d %.3f Dih %5d %.3f Robson %5d %.3f Repel %5d %.3f Distance %5d %.3f %.3f Shift %5d %.3f ProbT %5d %.3f Total %.3f\n",
                     nIrp, irpEnergy, nDih, dihEnergy, nRobson, robsonEnergy, nRepel, repelEnergy, nDistance, distanceEnergy,
-                    maxDis, nShift, shiftTotEnergy, energySum);
+                    maxDis, nShift, shiftTotEnergy, nRotamers, probDih, energySum);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -841,8 +860,30 @@ public class EnergyLists {
         return totalEnergy;
     }
 
-    public double calcProbDih(boolean calcDeriv) {
+    public double calcProbDih(boolean calcDeriv, double[] derivs) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
         double totalEnergy = 0;
+        List<Polymer> polymers = molecule.getPolymers();
+        for (Polymer polymer : polymers) {
+            if (polymer.isRNA()) {
+                for (int i = 1; i < polymer.size(); i++) {
+                    RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
+                    double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
+                    //System.out.printf("%5.3g  ", rotamerEnergy);
+                    if (calcDeriv) {
+                        Map<Integer, Double> rotDerivs = RNARotamer.calcDerivs(rotamerScores, rotamerEnergy);
+                        for (int atomIndex : rotDerivs.keySet()) {
+                            double deriv = forceWeight.getDihedralProb() * rotDerivs.get(atomIndex);
+                            derivs[atomIndex] += (deriv);
+                        }
+                    }
+                    totalEnergy += (forceWeight.getDihedralProb() * rotamerEnergy);
+                }
+                // System.out.println();
+
+            }
+        }
+
         //        for (AngleBoundary angleBoundary : angleBoundList) {
         //            AtomEnergy energy = AtomMath.calcTorsionAngleEnergy(angleBoundary, forceWeight);
         //            totalEnergy += energy.getEnergy();
@@ -1046,7 +1087,7 @@ public class EnergyLists {
             }
 
             if (forceWeight.getDihedralProb() > 0.0) {
-                energyTotal += calcProbDih(calcDeriv);
+                energyTotal += calcProbDih(calcDeriv, gradient);
             }
             if (forceWeight.getDihedral() > 0.0) {
                 energyTotal += calcDihedralEnergyFast(gradient);

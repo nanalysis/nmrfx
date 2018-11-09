@@ -58,12 +58,6 @@ public class SDFile {
     int structureNumber = 0;
     List<Atom> atomList = new ArrayList<>();
 
-    public static Molecule read(String fileName, String fileContent)
-            throws MoleculeIOException {
-        SDFile sdFile = new SDFile();
-        return sdFile.readMol(fileName, fileContent);
-    }
-
     void getMolName(String fileName) {
         File file = new File(fileName);
 
@@ -392,25 +386,42 @@ public class SDFile {
         return molecule;
     }
 
-    public static Compound readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName) throws MoleculeIOException {
-        return readResidue(fileName, fileContent, molecule, coordSetName, null);
+    public static Compound read(String fileName, String fileContent, Molecule molecule, String coordSetName) throws MoleculeIOException {
+        return read(fileName, fileContent, molecule, coordSetName, null);
     }
 
-    public static Compound readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName, Residue residue) throws MoleculeIOException {
+    public static Compound read(String fileName, String fileContent, Molecule molecule, String coordSetName, Residue residue) throws MoleculeIOException {
         if (coordSetName == null) {
-            // XXX
-            coordSetName = ((CoordSet) molecule.coordSets.values().iterator().next()).getName();
+            if (molecule != null) {
+                coordSetName = ((CoordSet) molecule.coordSets.values().iterator().next()).getName();
+            } else {
+                coordSetName = "mol";
+            }
         }
+        Compound compound = null;
         SDFile sdFile = new SDFile();
-        sdFile.getMolName(fileName);
-        String compoundName = sdFile.molName;
-        Compound compound = residue != null ? residue : new Compound("1", compoundName);;
-        compound.molecule = molecule;
-        compound.assemblyID = molecule.entityLabels.size() + 1;
-        if (residue == null) {
-            molecule.addEntity(compound, coordSetName);
+        if (molecule != null) {
+            sdFile.getMolName(fileName);
+            String compoundName = sdFile.molName;
+            compound = residue != null ? residue : new Compound("1", compoundName);;
+            compound.molecule = molecule;
+            compound.assemblyID = molecule.entityLabels.size() + 1;
+            if (residue == null) {
+                molecule.addEntity(compound, coordSetName);
+            }
+            sdFile.readMol(fileName, fileContent, compound);
+        } else {
+            System.out.println("Creating molecule");
+            molecule = sdFile.readMol(fileName, fileContent);
+            compound = molecule.getLigands().get(0);
         }
-        sdFile.readMol(fileName, fileContent, compound);
         return compound;
+
+    }
+
+    public static Molecule read(String fileName, String fileContent)
+            throws MoleculeIOException {
+        SDFile sdFile = new SDFile();
+        return sdFile.readMol(fileName, fileContent);
     }
 }
