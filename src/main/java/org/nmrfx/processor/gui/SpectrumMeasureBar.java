@@ -28,8 +28,10 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
 import org.nmrfx.processor.datasets.Dataset;
 import java.text.DecimalFormat;
+import java.util.Optional;
 import java.util.function.Consumer;
 import javafx.beans.value.ChangeListener;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -48,6 +50,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.math.Vec;
 
 /**
@@ -63,6 +66,8 @@ public class SpectrumMeasureBar {
     }
     TextField[][][] crossText = new TextField[3][2][2];
     TextField[] intensityField = new TextField[2];
+    TextField sdevField = new TextField();
+    TextField snField = new TextField();
     FXMLController controller;
     GridPane gridPane;
     boolean[][] iconStates = new boolean[2][2];
@@ -76,6 +81,7 @@ public class SpectrumMeasureBar {
     ToggleButton gridModeButton;
     PolyChart chart = null;
     Dataset dataset = null;
+    Double sDev = null;
 
     public SpectrumMeasureBar(FXMLController controller, Consumer closeAction) {
         this.controller = controller;
@@ -95,11 +101,15 @@ public class SpectrumMeasureBar {
         gridModeButton.setFont(font);
         absModeButton.setOnAction(e -> update());
         gridModeButton.setOnAction(e -> update());
+        Button sdevButton = new Button("SD");
+        sdevButton.setStyle("-fx-font-weight: normal; -fx-font-size:10pt;");
+        sdevButton.setFont(font);
+        sdevButton.setOnAction(e -> measureSDev());
 
         gridPane.add(closeButton, 0, 0);
         gridPane.add(absModeButton, 0, 1);
         gridPane.add(gridModeButton, 0, 2);
-        double[] prefWidths = {100.0, 150.0};
+        double[] prefWidths = {75.0, 120.0};
         String[] rowNames = {"1", "2", "\u0394"};
 
         String[] xys = {"x", "y"};
@@ -128,7 +138,7 @@ public class SpectrumMeasureBar {
         }
         for (int i = 0; i < intensityField.length; i++) {
             intensityField[i] = new TextField();
-            intensityField[i].setPrefWidth(125);
+            intensityField[i].setPrefWidth(100.0);
             intensityField[i].setFont(font);
             Label label = new Label("Int " + (i + 1) + ":");
             label.setFont(font);
@@ -138,6 +148,21 @@ public class SpectrumMeasureBar {
             gridPane.add(label, 7, i);
             gridPane.add(intensityField[i], 8, i);
         }
+        sdevField.setFont(font);
+        sdevField.setPrefWidth(100.0);
+        snField.setFont(font);
+        snField.setPrefWidth(100.0);
+        Label snLabel = new Label("S/N:");
+        snLabel.setFont(font);
+        snLabel.setPrefWidth(60);
+        snLabel.setTextAlignment(TextAlignment.RIGHT);
+        snLabel.setAlignment(Pos.CENTER_RIGHT);
+
+        GridPane.setHalignment(sdevButton, HPos.RIGHT);
+        gridPane.add(sdevButton, 9, 0);
+        gridPane.add(sdevField, 10, 0);
+        gridPane.add(snLabel, 9, 1);
+        gridPane.add(snField, 10, 1);
 
     }
 
@@ -235,6 +260,11 @@ public class SpectrumMeasureBar {
                 double value = dataset.readPoint(pts);
                 strValue = String.format("%.7f", value);
                 intensityField[iCross].setText(strValue);
+                if ((iCross == 0) && (sDev != null)) {
+                    double sn = value / sDev;
+                    snField.setText(String.format("%.3f", sn));
+
+                }
             } catch (IOException | IllegalArgumentException ex) {
                 strValue = "";
             }
@@ -303,6 +333,108 @@ public class SpectrumMeasureBar {
         getIntensity(chart, dataset, 0);
         getIntensity(chart, dataset, 1);
 
+    }
+
+    protected Double measureSDev() {
+        if (chart == null) {
+            return null;
+        }
+        sdevField.setText("");
+        Optional<DatasetAttributes> dataAttrOpt = chart.getFirstDatasetAttributes();
+        if (dataAttrOpt.isPresent()) {
+            DatasetAttributes dataAttr = dataAttrOpt.get();
+
+            Dataset dataset = dataAttr.getDataset();
+
+            int nDim = dataset.getNDim();
+            int[][] pt = new int[nDim][2];
+            int[] dim = new int[nDim];
+            int[] width = new int[nDim];
+            for (int iDim = 0; iDim < nDim; iDim++) {
+                int[] limits = new int[2];
+                limits[0] = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getLowerBound());
+                limits[1] = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getUpperBound());
+
+                if (limits[0] < limits[1]) {
+                    pt[iDim][0] = limits[0];
+                    pt[iDim][1] = limits[1];
+                } else {
+                    pt[iDim][0] = limits[1];
+                    pt[iDim][1] = limits[0];
+                }
+                dim[iDim] = dataAttr.dim[iDim];
+                width[iDim] = pt[iDim][1] - pt[iDim][0];
+            }
+            int[][] ptTest = new int[nDim][2];
+            for (int iDim = 0; iDim < nDim; iDim++) {
+                ptTest[iDim] = pt[iDim].clone();
+            }
+            try {
+                int cols = width[0] / 16;
+                if (cols > 512) {
+                    cols = 512;
+                } else if (cols < 4) {
+                    cols = 4;
+                }
+                int colIncr = 1;
+                int rowIncr = 1;
+                int m = 1;
+                int rows = 1;
+                if (nDim > 1) {
+                    cols = cols / 4;
+                    if (cols < 8) {
+                        cols = 8;
+                    }
+                    rows = width[1] / 16;
+                    if (rows > 32) {
+                        rows = 32;
+                    } else if (rows < 4) {
+                        rows = 4;
+                    }
+                    if (rows > width[1]) {
+                        rows = width[1] / 4;
+                    }
+                    if (rows < 1) {
+                        rows = 1;
+                    }
+                    int nPoints = cols * rows;
+                    if (nPoints > 1024) {
+                        cols = (int) (cols * Math.sqrt(1.0 * 1024 / nPoints));
+                        rows = (int) (rows * Math.sqrt(1.0 * 1024 / nPoints));
+                    }
+                    if (rows < 1) {
+                        rows = 1;
+                    }
+
+                    m = pt[1][1] - pt[1][0] - rows;
+                    colIncr = cols / 4;
+                    colIncr = Math.max(1, colIncr);
+                    rowIncr = rows / 4;
+                    rowIncr = Math.max(1, rowIncr);
+                }
+                int n = pt[0][1] - pt[0][0] - cols;
+                double sdevMin = Double.MAX_VALUE;
+                for (int i = 0; i < n; i += colIncr) {
+                    ptTest[0][0] = pt[0][0] + i;
+                    ptTest[0][1] = pt[0][0] + i + cols;
+                    for (int j = 0; j < m; j += rowIncr) {
+                        if (nDim > 1) {
+                            ptTest[1][0] = pt[1][0] + j;
+                            ptTest[1][1] = pt[1][0] + j + rows;
+                        }
+                        double value = dataset.measureSDev(ptTest, dim, 0, 0);
+                        if (value < sdevMin) {
+                            sdevMin = value;
+                        }
+                    }
+                }
+                sdevField.setText(String.format("%.6f", sdevMin));
+                sDev = sdevMin;
+            } catch (IOException ioE) {
+
+            }
+        }
+        return sDev;
     }
 
 }
