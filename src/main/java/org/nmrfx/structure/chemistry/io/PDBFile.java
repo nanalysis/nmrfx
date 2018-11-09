@@ -1045,8 +1045,14 @@ public class PDBFile {
 
     public static Compound readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName, Residue residue)
             throws MoleculeIOException {
-        String molName = molecule.name;
-
+        String molName;
+        if (molecule == null){
+            coordSetName = coordSetName == null ? "mol" : coordSetName;
+            molName = coordSetName;
+            molecule = new Molecule(molName);
+        } else {
+            molName = molecule.getName();
+        }
         if (coordSetName == null) {
             // XXX
             coordSetName = ((CoordSet) molecule.coordSets.values().iterator().next()).getName();
