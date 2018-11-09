@@ -1,10 +1,9 @@
 import sys
 from refine import *
+from reader import readYaml
 import os
 import osfiles
 import runpy
-from org.yaml.snakeyaml import Yaml
-from java.io import FileInputStream
 from optparse import OptionParser
 
 def parseArgs():
@@ -29,9 +28,7 @@ def parseArgs():
         os.mkdir(outDir)
 
     if argFile.endswith('.yaml'):
-        input = FileInputStream(argFile)
-        yaml = Yaml()
-        data = yaml.load(input)
+        data = readYaml(argFile)
         global refiner
         refiner=refine()
         osfiles.setOutFiles(refiner,dataDir, seed)
