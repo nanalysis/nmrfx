@@ -157,16 +157,23 @@ public class PeakFit implements MultivariateFunction {
         return result;
     }
 
-    public int maxPosDev(final double[] point) {
+    public int maxPosDev(final double[] point, int halfSize) {
         fillMatrix(point);
         RealVector ampVector = fitSignalAmplitudesNN(A.copy());
         RealVector yCalc = A.operate(ampVector);
         double maxPosDev = Double.NEGATIVE_INFINITY;
         int devLoc = 0;
-        for (int i = 0; i < xv.length; i++) {
-            double delta = yv[i] - yCalc.getEntry(i);
-            if (delta > maxPosDev) {
-                maxPosDev = delta;
+
+        for (int i = halfSize; i < (xv.length - halfSize); i++) {
+            double sumDelta = 0.0;
+            for (int j = -halfSize; j <= halfSize; j++) {
+                int k = i + j;
+                if (yv[k] > yCalc.getEntry(k)) {
+                    sumDelta += yv[k] - yCalc.getEntry(k);
+                }
+            }
+            if (sumDelta > maxPosDev) {
+                maxPosDev = sumDelta;
                 devLoc = (int) xv[i];
             }
         }

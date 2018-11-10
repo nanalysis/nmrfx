@@ -400,7 +400,7 @@ public class PeakFitter {
             rms = peakFit.rms(guesses);
             result = rms;
         } else if (fitMode == PeakList.FIT_MAX_DEV) {
-            int maxDev = peakFit.maxPosDev(guesses);
+            int maxDev = peakFit.maxPosDev(guesses,3);
             double maxDevFreq = theFile.pointToPPM(0, maxDev + p2[0][0]);
             result = maxDevFreq;
             return result;
