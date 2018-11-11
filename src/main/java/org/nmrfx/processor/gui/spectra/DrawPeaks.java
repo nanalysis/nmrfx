@@ -1533,7 +1533,9 @@ public class DrawPeaks {
                 f += delta;
             }
             g2.beginPath();
-            BezierPath.makeBezierCurve(bpCoords, 1, g2, 1.0, x, 0.0, 1.0, 0.0, xAxis, yAxis);
+            BezierPath.makeBezierCurve(bpCoords, 1, g2, 1.0, x, 0.0, 1.0, 1.0, xAxis, yAxis);
+            //            GraphicsContextInterface gC, double smoothValue, double xOffset, double yOffset, double width, double height, NMRAxis xAxis, NMRAxis yAxis) throws GraphicsIOException {
+
             g2.stroke();
 
         }
