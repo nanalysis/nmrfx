@@ -139,6 +139,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     public void set(double centerPPM, double[] freqs, double[] amplitudes) {
         if (coupling instanceof ComplexCoupling) {
+            this.center = centerPPM;
             coupling = new ComplexCoupling(this, center, freqs, amplitudes);
         }
     }
