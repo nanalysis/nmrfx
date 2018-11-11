@@ -13,6 +13,8 @@
                 <HBox fx:id="toolBar" />
                 <HBox  fx:id = "regionToolBar" />
                 <HBox  fx:id = "peakToolBar"/>
+                <HBox  fx:id = "multipletToolBar"/>
+                <HBox  fx:id = "fittingToolBar"/>
             </children>
         </VBox>
     </top>

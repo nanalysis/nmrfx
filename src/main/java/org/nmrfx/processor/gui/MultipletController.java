@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableSet;
@@ -67,6 +69,10 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
     @FXML
     HBox peakToolBar;
     @FXML
+    HBox multipletToolBar;
+    @FXML
+    HBox fittingToolBar;
+    @FXML
     GridPane gridPane;
     @FXML
     Button splitButton;
@@ -93,6 +99,9 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         patternChoices = new ChoiceBox[nCouplings];
         couplingFields = new TextField[nCouplings];
         slopeFields = new TextField[nCouplings];
+        Button doubletButton = new Button("To Doublets");
+        doubletButton.setOnAction(e -> toDoublets());
+        gridPane.add(doubletButton, 0, 0, 2, 1);
         for (int iRow = 0; iRow < nCouplings; iRow++) {
             Label rowLabel = new Label(String.valueOf(iRow + 1));
             rowLabel.setPrefWidth(width1);
@@ -112,10 +121,10 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             slopeFields[iRow] = new TextField();
             couplingFields[iRow].setPrefWidth(width3);
             slopeFields[iRow].setPrefWidth(width3);
-            gridPane.add(rowLabel, 0, iRow);
-            gridPane.add(patternChoices[iRow], 1, iRow);
-            gridPane.add(couplingFields[iRow], 2, iRow);
-            gridPane.add(slopeFields[iRow], 3, iRow);
+            gridPane.add(rowLabel, 0, iRow + 1);
+            gridPane.add(patternChoices[iRow], 1, iRow + 1);
+            gridPane.add(couplingFields[iRow], 2, iRow + 1);
+            gridPane.add(slopeFields[iRow], 3, iRow + 1);
         }
         initNavigator(toolBar);
         initTools();
@@ -191,18 +200,24 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         Font font = new Font(7);
         List<Button> peakButtons = new ArrayList<>();
         List<Button> regionButtons = new ArrayList<>();
+        List<Button> multipletButtons = new ArrayList<>();
+        List<Button> fitButtons = new ArrayList<>();
         Button button;
 
-        button = new Button("Split Region", getIcon("region_split"));
-        button.setOnAction(e -> splitRegion());
+        button = new Button("Add", getIcon("region_add"));
+        button.setOnAction(e -> addRegion());
         regionButtons.add(button);
 
-        button = new Button("Fit", getIcon("region_split"));
-        button.setOnAction(e -> fitSelected());
+        button = new Button("Adjust", getIcon("region_adjust"));
+        button.setOnAction(e -> adjustRegion());
         regionButtons.add(button);
 
         button = new Button("Split", getIcon("region_split"));
-        button.setOnAction(e -> splitSelected());
+        button.setOnAction(e -> splitRegion());
+        regionButtons.add(button);
+
+        button = new Button("Delete", getIcon("region_delete"));
+        button.setOnAction(e -> removeRegion());
         regionButtons.add(button);
 
         button = new Button("Add 1", getIcon("peak_add1"));
@@ -213,19 +228,34 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         button.setOnAction(e -> addTwoPeaks());
         peakButtons.add(button);
 
-        button = new Button("Add Auto", getIcon("peak_auto"));
+        button = new Button("AutoAdd", getIcon("peak_auto"));
         button.setOnAction(e -> addAuto());
         peakButtons.add(button);
 
-        button = new Button("To Doublets", getIcon("peak_auto"));
-        button.setOnAction(e -> toDoublets());
+        button = new Button("Delete", getIcon("editdelete"));
+        button.setOnAction(e -> removeWeakPeak());
         peakButtons.add(button);
+
+        button = new Button("Extract", getIcon("extract"));
+        button.setOnAction(e -> addAuto());
+        multipletButtons.add(button);
+
+        button = new Button("Merge", getIcon("merge"));
+        button.setOnAction(e -> addAuto());
+        multipletButtons.add(button);
+
+        button = new Button("Transfer", getIcon("transfer"));
+        button.setOnAction(e -> addAuto());
+        multipletButtons.add(button);
+
+        button = new Button("Fit", getIcon("reload"));
+        button.setOnAction(e -> fitSelected());
+        fitButtons.add(button);
 
         for (Button button1 : regionButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
             button1.setFont(font);
             button1.getStyleClass().add("toolButton");
-
             regionToolBar.getChildren().add(button1);
         }
         for (Button button1 : peakButtons) {
@@ -233,6 +263,18 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             button1.setFont(font);
             button1.getStyleClass().add("toolButton");
             peakToolBar.getChildren().add(button1);
+        }
+        for (Button button1 : multipletButtons) {
+            button1.setContentDisplay(ContentDisplay.TOP);
+            button1.setFont(font);
+            button1.getStyleClass().add("toolButton");
+            multipletToolBar.getChildren().add(button1);
+        }
+        for (Button button1 : fitButtons) {
+            button1.setContentDisplay(ContentDisplay.TOP);
+            button1.setFont(font);
+            button1.getStyleClass().add("toolButton");
+            fittingToolBar.getChildren().add(button1);
         }
 
         /*
@@ -463,6 +505,40 @@ merge.png				region_adjust.png
         chart.refresh();
     }
 
+    public void adjustRegion() {
+        Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+        double ppm0 = chart.getVerticalCrosshairPositions()[0];
+        double ppm1 = chart.getVerticalCrosshairPositions()[1];
+        analyzer.removeRegion((ppm0 + ppm1) / 2);
+        analyzer.addRegion(ppm0, ppm1);
+        try {
+            analyzer.analyzeRegion((ppm0 + ppm1) / 2);
+              chart.refresh();
+      } catch (IOException ex) {
+        }
+    }
+
+    public void addRegion() {
+        Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+        double ppm0 = chart.getVerticalCrosshairPositions()[0];
+        double ppm1 = chart.getVerticalCrosshairPositions()[1];
+        analyzer.addRegion(ppm0, ppm1);
+        try {
+            analyzer.analyzeRegion((ppm0 + ppm1) / 2);
+            chart.refresh();
+        } catch (IOException ex) {
+        }
+    }
+
+    public void removeRegion() {
+        activeMultiplet.ifPresent(m -> {
+            double ppm = m.measureCenter();
+            Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+            analyzer.removeRegion(ppm);
+            chart.refresh();
+        });
+    }
+
     public void rms() {
         activeMultiplet.ifPresent(m -> {
             Optional<Double> result = Multiplets.rms(m);
@@ -506,6 +582,13 @@ merge.png				region_adjust.png
 
             }
             chart.refresh();
+            refresh();
+        });
+    }
+
+    void removeWeakPeak() {
+        activeMultiplet.ifPresent(m -> {
+            Multiplets.removeWeakPeaksInMultiplet(m, 1);
             refresh();
         });
     }
