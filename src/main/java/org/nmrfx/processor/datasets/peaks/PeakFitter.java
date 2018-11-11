@@ -348,9 +348,6 @@ public class PeakFitter {
     }
 
     double fitNow(final double[] guesses, final double[] lower, final double[] upper) throws IllegalArgumentException {
-        for (int i = 0; i < guesses.length; i++) {
-            System.out.println(guesses[i] + " " + lower[i] + " " + upper[i]);
-        }
         PeakFit peakFit = new PeakFit();
 
         int size = p2[0][1] - p2[0][0] + 1;
@@ -422,11 +419,11 @@ public class PeakFitter {
             }
             long duration = System.currentTimeMillis() - startTime;
             rms = peakFit.getBestValue();
-            System.out.println(peakFit.getBestValue());
+            //System.out.println(peakFit.getBestValue());
             double[] point = peakFit.getBestPoint();
-            for (double pValue : point) {
-                System.out.print(pValue + " ");
-            }
+//            for (double pValue : point) {
+//               System.out.print(pValue + " ");
+//          }
 //            System.out.println(duration);
         }
 
@@ -503,7 +500,6 @@ public class PeakFitter {
                     }
 
                     double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
-                    System.out.println("generic1 " + centerPPM);
                     multiplet.set(centerPPM, freqs, amplitudes);
 
                 } else {
