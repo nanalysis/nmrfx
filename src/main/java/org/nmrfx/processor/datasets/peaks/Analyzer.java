@@ -362,6 +362,23 @@ public class Analyzer {
         regions.addAll(newRegions);
     }
 
+    public void removeRegion(double shift) {
+        Set<DatasetRegion> newRegions = new TreeSet<>();
+        Set<DatasetRegion> regions = getRegions();
+        int rDim = 0;
+
+        regions.stream().forEach(region -> {
+            double start = region.getRegionStart(rDim);
+            double end = region.getRegionEnd(rDim);
+            if ((shift < start) || (shift > end)) {
+                newRegions.add(region);
+            }
+        });
+        regions.clear();
+        regions.addAll(newRegions);
+        removePeaksFromNonRegions();
+    }
+
     public void groupPeaks() throws IOException {
         Set<DatasetRegion> regions = getRegions();
 
