@@ -2346,6 +2346,7 @@ public class PolyChart implements PeakListener {
                                     break;
                                 }
                             }
+                            gC.setStroke(Color.RED);
                             drawPeaks.drawSimSum(gC, overlappedPeaks, dim);
                             overlappedPeaks.clear();
                         }
