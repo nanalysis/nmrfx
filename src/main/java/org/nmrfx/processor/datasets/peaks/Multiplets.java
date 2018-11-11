@@ -921,7 +921,7 @@ public class Multiplets {
             i++;
         }
         multiplet.setCouplingValues(values, nValues, 1.0, sin2thetas);
-
+        updateAfterMultipletConversion(multiplet);
     }
 
     public static int getMultiplicityCount(String pattern) {
