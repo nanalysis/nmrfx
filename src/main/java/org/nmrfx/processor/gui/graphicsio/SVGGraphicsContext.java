@@ -349,7 +349,20 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void bezierCurveTo(double xc1, double yc1, double xc2, double yc2, double x1, double y1) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        pathBuilder.append('C');
+        pathBuilder.append(format(xc1));
+        pathBuilder.append(',');
+        pathBuilder.append(format(yc1));
+        pathBuilder.append(' ');
+        pathBuilder.append(format(xc2));
+        pathBuilder.append(',');
+        pathBuilder.append(format(yc2));
+        pathBuilder.append(' ');
+        pathBuilder.append(format(x1));
+        pathBuilder.append(',');
+        pathBuilder.append(format(y1));
+        pathBuilder.append(' ');
+
     }
 
     @Override
