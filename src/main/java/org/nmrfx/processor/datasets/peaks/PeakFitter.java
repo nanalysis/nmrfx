@@ -348,6 +348,9 @@ public class PeakFitter {
     }
 
     double fitNow(final double[] guesses, final double[] lower, final double[] upper) throws IllegalArgumentException {
+        for (int i = 0; i < guesses.length; i++) {
+            System.out.println(guesses[i] + " " + lower[i] + " " + upper[i]);
+        }
         PeakFit peakFit = new PeakFit();
 
         int size = p2[0][1] - p2[0][0] + 1;
@@ -400,7 +403,7 @@ public class PeakFitter {
             rms = peakFit.rms(guesses);
             result = rms;
         } else if (fitMode == PeakList.FIT_MAX_DEV) {
-            int maxDev = peakFit.maxPosDev(guesses,3);
+            int maxDev = peakFit.maxPosDev(guesses, 3);
             double maxDevFreq = theFile.pointToPPM(0, maxDev + p2[0][0]);
             result = maxDevFreq;
             return result;
@@ -419,13 +422,13 @@ public class PeakFitter {
             }
             long duration = System.currentTimeMillis() - startTime;
             rms = peakFit.getBestValue();
-            //System.out.println(peakFit.getBestValue());
+            System.out.println(peakFit.getBestValue());
             double[] point = peakFit.getBestPoint();
-//            for (double pValue : point) {
-//               System.out.print(pValue + " ");
-//          }
-//            System.out.println(duration);
+            for (double pValue : point) {
+                System.out.print(pValue + " ");
             }
+//            System.out.println(duration);
+        }
 
 //        if (fitMode == PeakListCmd.FIT_LW_AMPLITUDES) {
 ////            fcn.initLWAmpFit(guesses);
@@ -498,9 +501,9 @@ public class PeakFitter {
                         double delta = freqs[iFreq] - peakFit.getCFreq(iPeak);
                         freqs[iFreq] = theFile.ptWidthToHz(0, delta);
                     }
-                    System.out.println("generic1");
 
                     double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
+                    System.out.println("generic1 " + centerPPM);
                     multiplet.set(centerPPM, freqs, amplitudes);
 
                 } else {
