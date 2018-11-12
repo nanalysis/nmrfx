@@ -11,6 +11,7 @@ import java.util.Collection;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -180,6 +181,97 @@ public class Multiplets {
         peakList.compress();
         peakList.sortPeaks(0, false);
         peakList.reNumber();
+    }
+
+    public static Optional<Multiplet> extractMultiplet(List<Peak> peaks0) {
+        Optional<Multiplet> result = Optional.empty();
+
+        if (peaks0.size() > 0) {
+            Peak peak0 = peaks0.get(0);
+            List<PeakDim> peakDims = new ArrayList<>();
+            peakDims.addAll(peak0.getPeakDim(0).getCoupledPeakDims());
+            List<Peak> peaks1 = new ArrayList<>();
+            for (PeakDim peakDim : peakDims) {
+                if (!peaks0.contains(peakDim.getPeak())) {
+                    peaks1.add(peakDim.getPeak());
+                }
+            }
+
+            for (PeakDim peakDim : peakDims) {
+                peakDim.unLink();
+            }
+            PeakDim peakDim0 = peak0.getPeakDim(0);
+            for (Peak peak : peaks0) {
+                PeakDim peakDim = peak.getPeakDim(0);
+                if (peakDim != peakDim0) {
+                    PeakList.couplePeakDims(peakDim0, peakDim);
+                }
+            }
+            PeakDim peakDim1 = peaks1.get(0).getPeakDim(0);
+            for (Peak peak : peaks1) {
+                PeakDim peakDim = peak.getPeakDim(0);
+                if (peakDim != peakDim1) {
+                    PeakList.couplePeakDims(peakDim1, peakDim);
+                }
+            }
+            PeakList peakList = peak0.getPeakList();
+            peakList.compress();
+            peakList.sortPeaks(0, true);
+            peakList.reNumber();
+            peakList.refreshMultiplets();
+            result = Optional.of(peakDim0.getMultiplet());
+        }
+        return result;
+    }
+
+    public static Optional<Multiplet> mergePeaks(List<Peak> peaks0) {
+        Optional<Multiplet> result = Optional.empty();
+        if (peaks0.size() > 0) {
+            Set<PeakDim> peakDims = new HashSet<>();
+            for (Peak peak : peaks0) {
+                peakDims.addAll(peak.getPeakDim(0).getCoupledPeakDims());
+            }
+            for (PeakDim peakDim : peakDims) {
+                peakDim.unLink();
+            }
+            PeakDim firstPeakDim = null;
+            for (PeakDim peakDim : peakDims) {
+                if (firstPeakDim == null) {
+                    firstPeakDim = peakDim;
+                } else {
+                    PeakList.couplePeakDims(firstPeakDim, peakDim);
+                }
+            }
+
+            PeakList peakList = firstPeakDim.getPeak().getPeakList();
+            peakList.compress();
+            peakList.sortPeaks(0, true);
+            peakList.reNumber();
+            peakList.refreshMultiplets();
+            result = Optional.of(firstPeakDim.getMultiplet());
+        }
+        return result;
+    }
+
+    public static Optional<Multiplet> transferPeaks(Multiplet multiplet, List<Peak> peaks0) {
+        Optional<Multiplet> result = Optional.empty();
+        if (peaks0.size() > 0) {
+            PeakDim refDim = multiplet.getPeakDim();
+            Peak peak0 = peaks0.get(0);
+            for (Peak peak : peaks0) {
+                peak.getPeakDim(0).unLink();
+            }
+            for (Peak peak : peaks0) {
+                multiplet.addPeakDim(peak.getPeakDim(0));
+            }
+            PeakList peakList = peak0.getPeakList();
+            peakList.compress();
+            peakList.sortPeaks(0, true);
+            peakList.reNumber();
+            peakList.refreshMultiplets();
+            result = Optional.of(refDim.getMultiplet());
+        }
+        return result;
     }
 
     public static void addPeaksToMutliplet(Multiplet multiplet, double... ppms) {
