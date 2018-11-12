@@ -154,11 +154,14 @@ public class PeakList {
 
     /**
      * Copies an existing peak list.
+     *
      * @param name a string with the name of an existing peak list.
-     * @param allLinks a boolean specifying whether or not to link peak dimensions.
+     * @param allLinks a boolean specifying whether or not to link peak
+     * dimensions.
      * @param merge a boolean specifying whether or not to merge peak labels.
      * @return a list that is a copy of the peak list with the input name.
-     * @throws IllegalArgumentException if a peak with the input name doesn't exist.
+     * @throws IllegalArgumentException if a peak with the input name doesn't
+     * exist.
      */
     public PeakList copy(final String name, final boolean allLinks, boolean merge) {
         PeakList newPeakList;
@@ -253,6 +256,7 @@ public class PeakList {
 
     /**
      * Rename the peak list.
+     *
      * @param newName
      */
     public void setName(String newName) {
@@ -648,6 +652,18 @@ public class PeakList {
         multipletsSorted = false;
     }
 
+    public void refreshMultiplets() {
+        int iDim = 0;
+        multiplets.clear();
+        for (Peak peak : peaks) {
+            Multiplet m = peak.getPeakDim(iDim).getMultiplet();
+            if (m != null) {
+                multiplets.add(m);
+            }
+        }
+        multipletsSorted = false;
+    }
+
     public String getXPKHeader() {
         StringBuilder result = new StringBuilder();
         String sep = " ";
@@ -730,10 +746,11 @@ public class PeakList {
     /**
      * Search peak list for peaks that match the specified chemical shifts.
      * Before using, a search template needs to be set up.
+     *
      * @param ppms An array of chemical shifts to search
      * @return A list of matching peaks
-     * @throws IllegalArgumentException thrown if ppm length not equal to search template length 
-     * or if peak labels don't match search template
+     * @throws IllegalArgumentException thrown if ppm length not equal to search
+     * template length or if peak labels don't match search template
      */
     public List<Peak> findPeaks(double[] ppms)
             throws IllegalArgumentException {
@@ -832,11 +849,13 @@ public class PeakList {
 
     /**
      * Locate what peaks are contained within certain limits.
-     * 
-     * @param limits A multidimensional array of chemical shift plot limits to search.
-     * @param dim An array of which peak list dim corresponds to dim in the limit array.
-     * @param foldLimits An optional multidimensional array of plot limits where folded peaks should appear.
-     * Can be null.
+     *
+     * @param limits A multidimensional array of chemical shift plot limits to
+     * search.
+     * @param dim An array of which peak list dim corresponds to dim in the
+     * limit array.
+     * @param foldLimits An optional multidimensional array of plot limits where
+     * folded peaks should appear. Can be null.
      * @return A list of matching peaks
      */
     public List<Peak> locatePeaks(double[][] limits, int[] dim, double[][] foldLimits) {
