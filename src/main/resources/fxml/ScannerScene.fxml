@@ -28,6 +28,7 @@
                                 <MenuItem mnemonicParsing="false" onAction="#saveTableAction" text="Save Table..." />
                                 <MenuItem mnemonicParsing="false" onAction="#processScanDirAndCombine" text="Process and Combine" />
                                 <MenuItem mnemonicParsing="false" onAction="#processScanDir" text="Process" />
+                                <MenuItem mnemonicParsing="false" onAction="#loadFromDataset" text="Load From Dataset" />
                             </items>
                         </MenuButton>
                         <MenuButton  mnemonicParsing="false" text="Table">

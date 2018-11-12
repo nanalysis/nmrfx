@@ -259,7 +259,7 @@ public class ScannerController implements Initializable {
         return null;
 
     }
-    
+
     void stageClosed() {
         chart.setDrawlist(Collections.EMPTY_LIST);
         stage.close();
@@ -318,6 +318,11 @@ public class ScannerController implements Initializable {
         ObservableList<FileTableItem> tempItems = FXCollections.observableArrayList();
         tempItems.addAll(tableView.getItems());
         scanTable.getItems().setAll(tempItems);
+    }
+
+    @FXML
+    private void loadFromDataset(ActionEvent event) {
+        scanTable.loadFromDataset();
     }
 
     @FXML

@@ -167,8 +167,7 @@ public class ScanTable {
                         dataset = Dataset.getDataset(datasetName);
                         if (dataset == null) {
                             File datasetFile = new File(scanOutputDir, datasetName);
-                            String datasetFilePath = datasetFile.getAbsolutePath();
-                            FXMLController.getActiveController().openFile(datasetFilePath, false, false);
+                            FXMLController.getActiveController().openDataset(datasetFile, false);
                         } else {
                             List<String> datasetNames = new ArrayList<>();
                             datasetNames.add(datasetName);
@@ -451,6 +450,65 @@ public class ScanTable {
             setScanOutputDirectory();
         }
         return scanOutputDir;
+    }
+
+    public void loadFromDataset() {
+        PolyChart chart = scannerController.getChart();
+        Dataset dataset = chart.getDataset();
+        fileListItems.clear();
+        int nRows = dataset.getSize(1);
+        HashMap<String, String> fieldMap = new HashMap();
+        System.out.println("add " + nRows);
+        double[] values = dataset.getValues(1);
+        for (int iRow = 0; iRow < nRows; iRow++) {
+            double value = 0;
+            if ((values != null) && (iRow < values.length)) {
+                value = values[iRow];
+                System.out.println("value " + value);
+            }
+            long eTime = (long) (value * 1000);
+            fileListItems.add(new FileTableItem(dataset.getName(), "", 1, eTime, iRow + 1, dataset.getName(), fieldMap));
+        }
+        String[] headers = {};
+        boolean[] notDouble = new boolean[0];
+        boolean[] notInteger = new boolean[0];
+
+        for (int i = 0; i < headers.length; i++) {
+            if (!notInteger[i]) {
+                columnTypes.put(headers[i], "I");
+            } else if (!notDouble[i]) {
+                columnTypes.put(headers[i], "D");
+            } else {
+                columnTypes.put(headers[i], "S");
+            }
+        }
+        columnTypes.put("path", "S");
+        columnTypes.put("sequence", "S");
+        columnTypes.put("ndim", "I");
+        columnTypes.put("row", "I");
+        columnTypes.put("dataset", "S");
+        columnTypes.put("etime", "I");
+        Long firstDate = 0L;
+        for (FileTableItem item : fileListItems) {
+            item.setDate(item.getDate() - firstDate);
+            item.setTypes(headers, notDouble, notInteger);
+        }
+        updateTable(headers);
+        fileTableFilter.resetFilter();
+        updateDataFrame();
+        String firstDatasetName = dataset.getFileName();
+        if (firstDatasetName.length() > 0) {
+            String dirName = dataset.getFile().getParent();
+            if (scanOutputDir == null) {
+                scanOutputDir = dirName;
+            }
+            FXMLController.getActiveController().openDataset(dataset.getFile(), false);
+            List<Integer> rows = new ArrayList<>();
+            rows.add(0);
+            chart.setDrawlist(rows);
+            chart.full();
+            chart.autoScale();
+        }
     }
 
     private void loadScanTable(File file) {
