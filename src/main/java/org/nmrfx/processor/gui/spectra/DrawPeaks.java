@@ -213,16 +213,21 @@ public class DrawPeaks {
 
     public synchronized void drawMultiplet(PeakListAttributes peakAttr, GraphicsContextInterface g2, Multiplet multiplet, int[] dim,
             double[] offset, boolean selected, int line) throws GraphicsIOException {
-        Peak peak = multiplet.getPeakDim().getPeak();
-        int nPeakDim = peak.peakList.nDim;
-        int colorMode = setColor(peakAttr, g2, peak, offset);
-        if (((colorMode == 0) && !peakDisOn) || ((colorMode != 0) && !peakDisOff)) {
-            return;
-        }
-        if ((disDim != 0) && (nPeakDim > 1)) {
+        if ((multiplet != null)) {
+            PeakDim peakDim = multiplet.getPeakDim();
+            if (peakDim != null) {
+                Peak peak = multiplet.getPeakDim().getPeak();
+                int nPeakDim = peak.peakList.nDim;
+                int colorMode = setColor(peakAttr, g2, peak, offset);
+                if (((colorMode == 0) && !peakDisOn) || ((colorMode != 0) && !peakDisOff)) {
+                    return;
+                }
+                if ((disDim != 0) && (nPeakDim > 1)) {
 //            draw2DPeak(peakAttr, g2, dim, peak, false, false);
-        } else {
-            draw1DMultiplet(peakAttr, g2, dim, multiplet, colorMode, selected, line);
+                } else {
+                    draw1DMultiplet(peakAttr, g2, dim, multiplet, colorMode, selected, line);
+                }
+            }
         }
     }
 

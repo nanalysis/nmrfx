@@ -2322,7 +2322,7 @@ public class PolyChart implements PeakListener {
                 if (dim.length == 1) { // only draw multiples for 1D 
                     List<Multiplet> multiplets = peakListAttr.getMultipletsInRegion();
                     List<Peak> roots = new ArrayList<>();
-                    multiplets.stream().forEach((multiplet) -> {
+                    multiplets.stream().filter(m -> m.getPeakDim() != null).forEach((multiplet) -> {
                         try {
                             drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, false, 0);
                         } catch (GraphicsIOException ex) {

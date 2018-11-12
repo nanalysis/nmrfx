@@ -370,6 +370,7 @@ public class PeakListAttributes implements PeakListener {
         List<Multiplet> multiplets = peakList.getMultiplets()
                 .stream()
                 .parallel()
+                .filter(m -> m.getPeakDim() != null)
                 .filter(multiplet -> multiplet.inRegion(limits, null, peakDim))
                 .collect(Collectors.toList());
         multipletsInRegion = Optional.of(multiplets);
@@ -427,7 +428,7 @@ public class PeakListAttributes implements PeakListener {
                         selectedPeaks.clear();
                     }
                 }
-             if (multipletsInRegion.isPresent()) {
+                if (multipletsInRegion.isPresent()) {
                     for (Multiplet multiplet : multipletsInRegion.get()) {
                         Optional<MultipletSelection> lineHit = drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY);
                         if (lineHit.isPresent()) {
