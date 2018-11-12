@@ -14,8 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableSet;
@@ -25,12 +23,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -47,6 +45,8 @@ import org.nmrfx.processor.datasets.peaks.Coupling;
 import org.nmrfx.processor.datasets.peaks.CouplingPattern;
 import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Multiplets;
+import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.Singlet;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -237,15 +237,15 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         peakButtons.add(button);
 
         button = new Button("Extract", getIcon("extract"));
-        button.setOnAction(e -> addAuto());
+        button.setOnAction(e -> extractMultiplet());
         multipletButtons.add(button);
 
         button = new Button("Merge", getIcon("merge"));
-        button.setOnAction(e -> addAuto());
+        button.setOnAction(e -> mergePeaks());
         multipletButtons.add(button);
 
         button = new Button("Transfer", getIcon("transfer"));
-        button.setOnAction(e -> addAuto());
+        button.setOnAction(e -> transferPeaks());
         multipletButtons.add(button);
 
         button = new Button("Fit", getIcon("reload"));
@@ -513,8 +513,8 @@ merge.png				region_adjust.png
         analyzer.addRegion(ppm0, ppm1);
         try {
             analyzer.analyzeRegion((ppm0 + ppm1) / 2);
-              chart.refresh();
-      } catch (IOException ex) {
+            chart.refresh();
+        } catch (IOException ex) {
         }
     }
 
@@ -605,6 +605,40 @@ merge.png				region_adjust.png
             Multiplets.guessMultiplicityFromGeneric(m);
         });
         refresh();
+    }
+
+    public void extractMultiplet() {
+        List<Peak> peaks = chart.getSelectedPeaks();
+        if (peaks.size() > 0) {
+            Peak peak0 = peaks.get(0);
+            List<PeakDim> peakDims = peak0.getPeakDim(0).getCoupledPeakDims();
+            if (peaks.size() == peakDims.size()) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Can't extract all peaks in multiplet");
+                alert.showAndWait();
+                return;
+            }
+            activeMultiplet = Multiplets.extractMultiplet(peaks);
+            refresh();
+        }
+    }
+
+    public void transferPeaks() {
+        List<Peak> peaks = chart.getSelectedPeaks();
+        if (peaks.size() > 0) {
+            activeMultiplet.ifPresent(m -> {
+                activeMultiplet = Multiplets.transferPeaks(m, peaks);
+            });
+            refresh();
+        }
+    }
+
+    public void mergePeaks() {
+        List<Peak> peaks = chart.getSelectedPeaks();
+        if (peaks.size() > 0) {
+            activeMultiplet = Multiplets.mergePeaks(peaks);
+            refresh();
+        }
     }
 
     public void refreshPeakView(Multiplet multiplet) {
