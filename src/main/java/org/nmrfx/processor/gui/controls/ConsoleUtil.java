@@ -89,9 +89,9 @@ public class ConsoleUtil {
     }
 
     public void prompt() {
-        runOnFxThread(() -> outputArea.appendText(prompt));
-        runOnFxThread(() -> outputArea.positionCaret(outputArea.getLength()));
-    }
+            runOnFxThread(() -> outputArea.appendText(prompt));
+            runOnFxThread(() -> outputArea.positionCaret(outputArea.getLength()));
+        }
 
     public void save() {
         System.out.println("save");
