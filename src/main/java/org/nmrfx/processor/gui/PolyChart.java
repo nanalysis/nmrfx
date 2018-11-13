@@ -725,7 +725,7 @@ public class PolyChart implements PeakListener {
         double center = (max + min) / 2.0;
 
         if (is1D()) {
-            center -= y / scale;
+            center += y / scale;
             min = center - range / 2.0;
             max = center + range / 2.0;
             double f = (0.0 - min) / (max - min);
@@ -735,7 +735,7 @@ public class PolyChart implements PeakListener {
 
             setYAxis(min, max);
         } else {
-            center += y / scale;
+            center -= y / scale;
             min = center - range / 2.0;
             max = center + range / 2.0;
             double[] limits = getRange(1, min, max);
