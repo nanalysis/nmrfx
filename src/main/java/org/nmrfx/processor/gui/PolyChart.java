@@ -69,6 +69,9 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.input.DragEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.shape.LineTo;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.PathElement;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
 import org.controlsfx.dialog.ExceptionDialog;
@@ -1646,10 +1649,6 @@ public class PolyChart implements PeakListener {
 
     protected void layoutPlotChildren() {
 
-//        bcPath.getElements().clear();
-//        bcPath.setStroke(Color.ORANGE);
-//        bcPath.setStrokeWidth(3.0);
-//        bcList.clear();
         if (!useImmediateMode) {
             long lastPlotTime = drawSpectrum.getLastPlotTime();
             if ((lastPlotTime != 0) && (lastPlotTime < 1000)) {
@@ -1682,6 +1681,7 @@ public class PolyChart implements PeakListener {
             yAxis.setWidth(leftBorder);
             yAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
 
+            gC.setStroke(Color.BLACK);
             xAxis.draw(gC);
             yAxis.draw(gC);
             gC.setLineWidth(xAxis.getLineWidth());
@@ -1693,6 +1693,7 @@ public class PolyChart implements PeakListener {
             peakGC.clearRect(xPos, yPos, width, height);
             gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
             gC.clip();
+            gC.beginPath();
 //
 //        if (annoCanvas != null) {
 //            annoCanvas.setWidth(width);
@@ -1787,12 +1788,14 @@ public class PolyChart implements PeakListener {
                             drawSpectrum.setToLastChunk(datasetAttributes);
                             boolean ok;
                             do {
+                                bcPath.getElements().clear();
                                 ok = drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
                                 double[][] xy = drawSpectrum.getXY();
                                 int nPoints = drawSpectrum.getNPoints();
                                 int rowIndex = drawSpectrum.getRowIndex();
                                 drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
                                 draw1DIntegral(datasetAttributes, gC);
+                                drawBaseLine(gC, bcPath);
                             } while (ok);
                         }
                         drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
@@ -1868,6 +1871,28 @@ public class PolyChart implements PeakListener {
             }
             gC.setLineCap(StrokeLineCap.BUTT);
             gC.strokePolyline(xy[0], xy[1], nPoints);
+        }
+    }
+
+    void drawBaseLine(GraphicsContextInterface gC, Path path) throws GraphicsIOException {
+        List<PathElement> elems = path.getElements();
+        int nMove = 0;
+        if (elems.size() > 1) {
+            gC.beginPath();
+            for (PathElement elem : elems) {
+                if (elem instanceof MoveTo) {
+                    MoveTo mv = (MoveTo) elem;
+                    nMove++;
+                    gC.moveTo(mv.getX(), mv.getY());
+                } else if (elem instanceof LineTo) {
+                    LineTo ln = (LineTo) elem;
+                    gC.lineTo(ln.getX(), ln.getY());
+                }
+            }
+
+            gC.setStroke(Color.ORANGE);
+            gC.setLineWidth(3.0);
+            gC.stroke();
         }
     }
 
@@ -2545,9 +2570,6 @@ public class PolyChart implements PeakListener {
     }
 
     protected void loadData() {
-        bcPath = new Path();
-        bcPath.setMouseTransparent(true);
-
         canvas.setCache(true);
         peakCanvas.setCache(true);
         peakCanvas.setMouseTransparent(true);

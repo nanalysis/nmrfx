@@ -326,8 +326,6 @@ public class Axis {
     }
 
     private void drawVerticalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
-        gC.setFill(color);
-        gC.setStroke(color);
         gC.setTextBaseline(VPos.CENTER);
         gC.setTextAlign(TextAlignment.RIGHT);
         getTickPositions();

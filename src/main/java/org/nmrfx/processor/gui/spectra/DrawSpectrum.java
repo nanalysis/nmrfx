@@ -1022,6 +1022,7 @@ public class DrawSpectrum {
                     } else {
                         intensity = vec.getReal(i - dataOffset);
                     }
+                    intensity = 0.0;
                     double xValue = xFunction.applyAsDouble(dValue, intensity);
                     double yValue = yFunction.applyAsDouble(dValue, intensity);
                     if (i == start) {
@@ -1044,7 +1045,7 @@ public class DrawSpectrum {
                     }
                     if ((i - last) > 10) {
                         if (inBase) {
-                            bcPath.getElements().add(new LineTo(xValue, yValue));
+                            //bcPath.getElements().add(new LineTo(xValue, yValue));
                             last = i;
                         }
                     }
