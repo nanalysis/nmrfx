@@ -153,15 +153,14 @@ public class HanserRingFinder implements RingFinder {
             List<Atom> ringAtoms = ring.getAtoms();
             for (int i = 0; i < ringAtoms.size() - 1; i++) {
                 Atom atom = ringAtoms.get(i);
+                List<Ring> rings;
                 if (atom.getProperty("rings") == null){
-                    List<Ring> rings = new ArrayList<>();
-                    rings.add(ring);
-                    atom.setProperty("rings", rings);
+                    rings = new ArrayList<>();
                 } else {
-                    List<Ring> rings = (List) atom.getProperty("rings");
-                    rings.add(ring);
-                    atom.setProperty("rings", rings);
+                    rings = (List) atom.getProperty("rings");
                 }
+                rings.add(ring);
+                atom.setProperty("rings",rings);
             }
             ringNumber++;
         }
