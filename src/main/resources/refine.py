@@ -221,6 +221,8 @@ class dynOptions(StrictDict):
         'kinEScale'     : 200.0,
     }
     def __init__(self,initDict={}):
+        if initDict is None:
+            initDict = {}
         StrictDict.__init__(self,defaultErr="dynamics", defaultDict=dynOptions.defaults)
         #self.update(dynOptions.defaults)
         self.strictUpdate(initDict)
@@ -884,8 +886,10 @@ class refine:
             self.findHelices(rnaDict['vienna'])
 
     def readAnnealDict(self, annealDict):
-        dOpt = dynOptions(annealDict['dynOptions'])
-        del annealDict['dynOptions']
+        dynDict = annealDict.get('dynOptions')
+        dOpt = dynOptions(dynDict)
+        if dynDict:
+            del annealDict['dynOptions']
         self.settings = annealDict
         return dOpt
         #dOptDict = var(dOpt)
@@ -1656,7 +1660,8 @@ class refine:
 
         self.randomizeAngles()
         energy = self.energy()
-        irp = self.settings['force'].get('irp', 0.0)
+        forceDict = self.settings.get('force')
+        irp = forceDict.get('irp', 0.0) if forceDict else 0.0
 
         self.updateAt(5)
         self.setForces({'repel':0.5,'dis':1,'dih':5,'irp':irp})
