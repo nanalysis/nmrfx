@@ -1661,7 +1661,7 @@ class refine:
         self.randomizeAngles()
         energy = self.energy()
         forceDict = self.settings.get('force')
-        irp = forceDict.get('irp', 0.0) if forceDict else 0.0
+        irp = forceDict.get('irp', 0.015) if forceDict else 0.015
 
         self.updateAt(5)
         self.setForces({'repel':0.5,'dis':1,'dih':5,'irp':irp})
