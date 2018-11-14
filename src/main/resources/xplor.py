@@ -29,7 +29,7 @@ def addElements(captures, resNames):
         appending.append(item)
     return appending
 
-def getAtomPairs(atoms):
+def getAtomPairs(atoms,mode='shuffle'):
     ''' getAtomPairs finds all the atom pairs from two lists of atoms
         atoms must be a list of two lists of full atom names.
         This returns the list of strings for atom pairs that complies with the
@@ -37,8 +37,13 @@ def getAtomPairs(atoms):
 
     atomPairs = []
     startAtoms, endAtoms = atoms
-    for startAtom in startAtoms:
-        for endAtom in endAtoms:
+    if mode == 'shuffle':
+        for startAtom in startAtoms:
+            for endAtom in endAtoms:
+                atomPair = ' '.join([startAtom,endAtom]) if startAtom < endAtom else ' '.join([endAtom, startAtom])
+                atomPairs.append(atomPair)
+    elif mode == 'pairwise':
+        for startAtom, endAtom in zip(startAtoms,endAtoms):
             atomPair = ' '.join([startAtom,endAtom]) if startAtom < endAtom else ' '.join([endAtom, startAtom])
             atomPairs.append(atomPair)
     return atomPairs
@@ -50,21 +55,39 @@ def parseConstraints(constraints, type):
     constraintDicts = []
     for constraint in constraints:
         atoms = [[],[]] if type == 'distance' else constraint[:-1]
+        constraintValues = ""
         if type == 'distance':
             prevAtom = False
             placement = 0
-            for element in constraint[:-1]:
-                if element.lower() != 'or':
+            afterValues = False
+            pairMode = 'pairwise'
+            for element in constraint:
+                print element
+                if len(element.split()) == 3:
+                    ''' This indicates that the values here are the constraint
+                        values. We set an afterValues bool as we treat ors
+                        before slightly differently than the ors after
+                    '''
+                    afterValues = True
+                    constraintValues = element
+                    placement = 0;
+                elif element.lower() != 'or':
                     if prevAtom:
                         placement += 1
                     atoms[placement].append(element)
                     prevAtom = True
                 else:
-                    prevAtom = False
-            atomPairs = getAtomPairs(atoms)
+                    if not afterValues:
+                        pairMode = 'shuffle'
+                        prevAtom = False
+                    else:
+                        placement = 0;
+                        prevAtom = False
+            atomPairs = getAtomPairs(atoms,mode=pairMode)
         else:
             atomPairs = atoms
-        lower, upper = getBounds(constraint[-1], type)
+            constraintValues = constraint[-1]
+        lower, upper = getBounds(constraintValues, type)
         constraint = {'atomPairs':atomPairs, 'lower':lower,'upper':upper}
         constraintDicts.append(constraint)
     return constraintDicts
