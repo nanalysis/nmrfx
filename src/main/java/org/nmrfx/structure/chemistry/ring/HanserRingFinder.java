@@ -80,7 +80,7 @@ public class HanserRingFinder implements RingFinder {
 
         for (int i = 0; i < rings.size(); i++) {
             List<Boolean> ringEdgeMap = new ArrayList<>();
-            for (int _ = 0; _ < edges.size(); _++) {  // Initialize all values to false
+            for (int u = 0; u < edges.size(); u++) {  // Initialize all values to false
                 ringEdgeMap.add(Boolean.FALSE);
             }
             Ring ring = rings.get(i);
