@@ -166,6 +166,32 @@ public class Analyzer {
         }
     }
 
+    public void peakPickRegion(double ppm1, double ppm2) {
+        Nuclei nuc = dataset.getNucleus(0);
+        if (nuc == Nuclei.H1) {
+
+        }
+        if (manThreshold.isPresent()) {
+            threshold = manThreshold.get();
+        } else {
+            calculateThreshold();
+        }
+        String datasetName = dataset.getName();
+        String listName = PeakList.getNameForDataset(datasetName);
+        double level = threshold;
+        PeakPick peakPickPar = (new PeakPick(dataset, listName)).level(level).mode("appendif");
+        peakPickPar.pos(true).neg(false);
+        peakPickPar.calcRange();
+        peakPickPar.limit(0, ppm1, ppm2);
+        PeakPicker picker = new PeakPicker(peakPickPar);
+        peakList = null;
+        try {
+            peakList = picker.peakPick();
+        } catch (IOException | IllegalArgumentException ex) {
+        }
+    }
+
+
     /*
     
 
@@ -546,6 +572,7 @@ public class Analyzer {
         Set<DatasetRegion> regions = getRegions();
         DatasetRegion newRegion = new DatasetRegion(min, max);
         regions.add(newRegion);
+        peakPickRegion(min, max);
     }
 
     public void splitRegion(double ppm) throws IOException {
@@ -594,9 +621,11 @@ public class Analyzer {
             setVolumesFromIntegrals();
             Multiplets.unlinkPeaksInRegion(peakList, region);
             PeakDim rootPeak = Multiplets.linkPeaksInRegion(peakList, region);
-            peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
-            Multiplets.analyzeMultiplet(rootPeak.myPeak);
-            fitMultiplet(rootPeak.getMultiplet());
+            if (rootPeak != null) {
+                peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
+                Multiplets.analyzeMultiplet(rootPeak.myPeak);
+                fitMultiplet(rootPeak.getMultiplet());
+            }
         }
     }
 
