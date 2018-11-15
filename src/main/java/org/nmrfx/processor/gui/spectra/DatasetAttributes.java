@@ -1011,13 +1011,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public boolean Vector(Vec specVec, int iChunk) throws IOException {
         int[][] ptC = new int[pt.length][2];
         int[] dimC = new int[pt.length];
-        int iDim = 0;
+        int iDim = 1;
         int minDimSize = Integer.MAX_VALUE;
         for (int i = 0; i < pt.length; i++) {
             ptC[i][0] = pt[i][0];
             ptC[i][1] = pt[i][1];
             int size = (int) Math.abs(pt[i][0] - pt[i][1]);
-            if (size < minDimSize) {
+            if ((i > 0) && (size < minDimSize)) {
                 minDimSize = size;
                 iDim = i;
             }
@@ -1029,12 +1029,15 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 ptC[iDim][0] = pt[iDim][0] + iChunk;
                 ptC[iDim][1] = pt[iDim][0] + iChunk;
                 if (ptC[iDim][1] > pt[iDim][1]) {
+                System.out.println("ret a " + iDim);
                     return (false);
                 }
                 if (ptC[iDim][0] < pt[iDim][0]) {
+                System.out.println("ret b " + iDim);
                     return (false);
                 }
             } else if (iChunk < 0) {
+                System.out.println("ret c " + iDim+ " " + iChunk);
                 return (false);
             } else {
                 ptC[1][0] = drawList[iChunk];
