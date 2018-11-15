@@ -44,8 +44,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The Processor contains all processes. It also contains the "current ProcessOps", which is the process which
- * operations will be added to if a process is not specified.
+ * The Processor contains all processes. It also contains the "current
+ * ProcessOps", which is the process which operations will be added to if a
+ * process is not specified.
  *
  * @author johnsonb
  */
@@ -114,15 +115,18 @@ public class Processor {
      */
     private int vectorSize;
     /**
-     * True if the file has been completely read so that loading vectors will stop.
+     * True if the file has been completely read so that loading vectors will
+     * stop.
      */
     private boolean endOfFile;
     /**
-     * If True then processes will stop querying for unprocessed vectors to process.
+     * If True then processes will stop querying for unprocessed vectors to
+     * process.
      */
     public static boolean stopProcessing = false;
     /**
-     * Processor is a singleton which is able to control and communicate with processes.
+     * Processor is a singleton which is able to control and communicate with
+     * processes.
      */
     private static Processor processor;
     /**
@@ -135,12 +139,13 @@ public class Processor {
      */
     private static ArrayList<ProcessOps> dimProcesses = null;
     /**
-     * The name of the current ProcessOps that Operations and Vec vector will automatically be added to.
+     * The name of the current ProcessOps that Operations and Vec vector will
+     * automatically be added to.
      */
     private static ProcessOps defaultProcess;
     /**
-     * Each LinkedList<Vec> will hold one set of arraylists for a process. The outer List is synchronized but the inner
-     * List is not synchronized.
+     * Each LinkedList<Vec> will hold one set of arraylists for a process. The
+     * outer List is synchronized but the inner List is not synchronized.
      */
     private LinkedBlockingQueue<ArrayList<Vec>> unprocessedVectorQueue;
     /**
@@ -304,7 +309,8 @@ public class Processor {
     }
 
     /**
-     * Get the name of the current process which operations and vectors will be added to by default.
+     * Get the name of the current process which operations and vectors will be
+     * added to by default.
      *
      * @return Name of the current default process.
      */
@@ -356,7 +362,8 @@ public class Processor {
     }
 
     /**
-     * Open a NMRView file, specifying the points to read from and writability. If pt is null, read whole file.
+     * Open a NMRView file, specifying the points to read from and writability.
+     * If pt is null, read whole file.
      *
      * @param fileName
      * @param pt Points to read from, or null to read whole file
@@ -517,7 +524,8 @@ public class Processor {
     /**
      * Set dataset dimension for already opened file
      *
-     * @param iDim Dimensions corresponding to points, or null to read whole file
+     * @param iDim Dimensions corresponding to points, or null to read whole
+     * file
      * @return True if the file is opened
      */
     public boolean setDim(int iDim) {
@@ -528,7 +536,8 @@ public class Processor {
      * Set dataset dimension for already opened file.
      *
      * @param newPt Points to read from, or null to read whole file
-     * @param iDim Dimensions corresponding to points, or null to read whole file
+     * @param iDim Dimensions corresponding to points, or null to read whole
+     * file
      * @return True if the file is opened
      */
     public boolean setDim(int[][] newPt, int iDim) {
@@ -1022,7 +1031,8 @@ public class Processor {
     }
 
     /**
-     * Gets the next 'vectorsPerProcess' Vecs from the data file and returns them to the calling ProcessOps.
+     * Gets the next 'vectorsPerProcess' Vecs from the data file and returns
+     * them to the calling ProcessOps.
      *
      * @return ArrayList of Vecs from the dataset.
      */
@@ -1099,8 +1109,8 @@ public class Processor {
     }
 
     /**
-     * Get the next group of input Vecs to be read, and set where they should be written to. input Vecs may be used with
-     * Combine operation.
+     * Get the next group of input Vecs to be read, and set where they should be
+     * written to. input Vecs may be used with Combine operation.
      *
      * @param vecNum
      * @return VecIndex: inVecs outVecs arrays
@@ -1339,6 +1349,7 @@ public class Processor {
     public void runProcesses() throws IncompleteProcessException {
         long startTime = System.currentTimeMillis();
         clearProcessorError();
+        int nDimsProcessed = 0;
         for (ProcessOps p : dimProcesses) {
             // check if this process corresponds to dimension that should be skipped
             if (mapToDataset(p.getDim()) == -1) {
@@ -1367,6 +1378,7 @@ public class Processor {
                     setDim(p.getDim());
                 }
                 run(p);
+                nDimsProcessed = Math.max(nDimsProcessed, p.getDim() + 1);
                 nvDataset = true;
             }
         }
@@ -1379,6 +1391,10 @@ public class Processor {
         if (!keepDatasetOpen) {
             if (dataset.fFormat == Dataset.FFORMAT.UCSF) {
                 dataset.writeHeaderUCSF(false);
+            }
+            dataset.setNFreqDims(nDimsProcessed);
+            for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
+                dataset.setFreqDomain(i, false);
             }
             dataset.writeParFile();
             dataset.close();
@@ -1404,8 +1420,8 @@ public class Processor {
     }
 
     /**
-     * Allows a user to create a process and then run it explicitly. This allows multiple processes to be created and
-     * then run sequentially.
+     * Allows a user to create a process and then run it explicitly. This allows
+     * multiple processes to be created and then run sequentially.
      *
      * @param p
      */
