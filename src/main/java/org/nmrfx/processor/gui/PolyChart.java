@@ -2149,13 +2149,13 @@ public class PolyChart implements PeakListener {
             peakCanvas.setWidth(canvas.getWidth());
             peakCanvas.setHeight(canvas.getHeight());
             try {
-                peakGC.save();
+//                peakGC.save();
                 if (peakGC instanceof GraphicsContextProxy) {
                     peakGC.clearRect(xPos, yPos, width, height);
                 }
-                peakGC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
-                peakGC.clip();
-                peakGC.beginPath();
+//                peakGC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+//                peakGC.clip();
+//                peakGC.beginPath();
                 if (peakFont.getSize() != PreferencesController.getPeakFontSize()) {
                     peakFont = new Font(PreferencesController.getPeakFontSize());
                 }
@@ -2180,7 +2180,7 @@ public class PolyChart implements PeakListener {
 //                drawSelectedPeaks(peakListAttr);
                     }
                 }
-                peakGC.restore();
+//                peakGC.restore();
             } catch (GraphicsIOException ioE) {
 
             }
