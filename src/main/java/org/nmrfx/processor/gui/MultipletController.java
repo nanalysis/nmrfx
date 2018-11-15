@@ -103,9 +103,6 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         doubletButton.setOnAction(e -> toDoublets());
         gridPane.add(doubletButton, 0, 0, 2, 1);
         for (int iRow = 0; iRow < nCouplings; iRow++) {
-            Label rowLabel = new Label(String.valueOf(iRow + 1));
-            rowLabel.setPrefWidth(width1);
-            rowLabel.setTextAlignment(TextAlignment.CENTER);
             patternChoices[iRow] = new ChoiceBox<>();
             patternChoices[iRow].setPrefWidth(width2);
             if (iRow == 0) {
@@ -121,10 +118,9 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             slopeFields[iRow] = new TextField();
             couplingFields[iRow].setPrefWidth(width3);
             slopeFields[iRow].setPrefWidth(width3);
-            gridPane.add(rowLabel, 0, iRow + 1);
-            gridPane.add(patternChoices[iRow], 1, iRow + 1);
-            gridPane.add(couplingFields[iRow], 2, iRow + 1);
-            gridPane.add(slopeFields[iRow], 3, iRow + 1);
+            gridPane.add(patternChoices[iRow], 0, iRow + 1);
+            gridPane.add(couplingFields[iRow], 1, iRow + 1);
+            gridPane.add(slopeFields[iRow], 2, iRow + 1);
         }
         initNavigator(toolBar);
         initTools();
@@ -432,6 +428,8 @@ merge.png				region_adjust.png
             controller.stage = stage;
             stage.setTitle("Multiplets");
             stage.setScene(scene);
+            stage.setMinWidth(200);
+            stage.setMinHeight(400);
             stage.show();
             stage.toFront();
             controller.chart = controller.getChart();
