@@ -62,7 +62,6 @@ def parseConstraints(constraints, type):
             afterValues = False
             pairMode = 'pairwise'
             for element in constraint:
-                print element
                 if len(element.split()) == 3:
                     ''' This indicates that the values here are the constraint
                         values. We set an afterValues bool as we treat ors
