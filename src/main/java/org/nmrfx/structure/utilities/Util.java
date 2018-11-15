@@ -30,12 +30,15 @@ public class Util {
     public static final boolean nefMatch(String str, String pat) {
         boolean result = false;
         int percentIndex = pat.indexOf('%');
+        int singleWildIndex = pat.indexOf('#');
         int wildIndex = pat.indexOf('*');
         String rePat = null;
         if (percentIndex != -1) {
             rePat = pat.substring(0, percentIndex) + "[0-9]+";
         } else if (wildIndex != -1) {
             rePat = pat.substring(0, wildIndex) + "\\S+";
+        } else if (singleWildIndex != -1){
+            rePat = pat.substring(0, singleWildIndex) + "[0-9]+";
         }
         if (rePat != null) {
             Pattern rePattern = Pattern.compile(rePat);
