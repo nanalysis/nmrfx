@@ -2149,13 +2149,9 @@ public class PolyChart implements PeakListener {
             peakCanvas.setWidth(canvas.getWidth());
             peakCanvas.setHeight(canvas.getHeight());
             try {
-//                peakGC.save();
                 if (peakGC instanceof GraphicsContextProxy) {
                     peakGC.clearRect(xPos, yPos, width, height);
                 }
-//                peakGC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
-//                peakGC.clip();
-//                peakGC.beginPath();
                 if (peakFont.getSize() != PreferencesController.getPeakFontSize()) {
                     peakFont = new Font(PreferencesController.getPeakFontSize());
                 }
@@ -2338,8 +2334,14 @@ public class PolyChart implements PeakListener {
     }
 
     void drawPeakList(PeakListAttributes peakListAttr, GraphicsContextInterface gC) {
-        try {
-            if (peakListAttr.getDrawPeaks()) {
+        if (peakListAttr.getDrawPeaks()) {
+            gC.save();
+            try {
+                gC.beginPath();
+                gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+                gC.clip();
+                gC.beginPath();
+
                 List<Peak> peaks = peakListAttr.getPeaksInRegion();
                 int[] dim = peakListAttr.getPeakDim();
                 double[] offsets = new double[dim.length];
@@ -2383,11 +2385,12 @@ public class PolyChart implements PeakListener {
 
                     }
                 }
+
+            } catch (GraphicsIOException gioE) {
+            } finally {
+                gC.restore();
             }
-        } catch (GraphicsIOException gioE) {
-
         }
-
     }
 
     void drawSelectedPeaks(PeakListAttributes peakListAttr) {
