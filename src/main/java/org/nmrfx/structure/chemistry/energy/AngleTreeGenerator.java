@@ -15,6 +15,8 @@ import org.nmrfx.structure.chemistry.Point3;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
+import org.nmrfx.structure.chemistry.ring.HanserRingFinder;
+import org.nmrfx.structure.chemistry.ring.Ring;
 
 /**
  *
@@ -248,6 +250,14 @@ public class AngleTreeGenerator {
             atom.parent = null;
         }
         Map<Atom, List<Bond>> bondMap = new HashMap<>();
+        HanserRingFinder ringFinder = new HanserRingFinder();
+        Molecule mol;
+        if (itree instanceof Molecule){
+            mol = (Molecule) itree;
+        } else {
+            mol = Molecule.activeMol;
+        }
+        ringFinder.findSmallestRings(mol);
         atomTree.forEach((branch) -> {
             Atom a0 = branch.get(0);
             Atom a1 = branch.get(1);
@@ -327,14 +337,27 @@ public class AngleTreeGenerator {
                     rotatable = false;
                 } else if (a3.getFlag(Atom.RING) && a2.getFlag(Atom.RING)) {
                     rotatable = false;
+                }
 
+                if (a3.getProperty("rings") != null && a2.getProperty("rings") != null) {
+                    ArrayList<Ring> a3Rings = (ArrayList) a3.getProperty("rings");
+                    ArrayList<Ring> a2Rings = (ArrayList) a2.getProperty("rings");
+                    boolean isRot = true;
+                    for (Ring ring : a3Rings) {
+                        if (a2Rings.contains(ring)) {
+                            isRot = false;
+                            break;
+                        }
+                    }
+                    if (isRot) {
+                        rotatable = true;
+                    }
                 }
                 int currIRP = a3.irpIndex;
                 if (currIRP == 0) {
                     currIRP = 1;
                 }
                 a3.irpIndex = rotatable ? currIRP : 0;
-                //                System.out.println(a3.getShortName() + " " + a3.irpIndex + " " + rotatable);
             }
         });
         for (Atom atom : itree.getAtomArray()) {
@@ -357,7 +380,7 @@ public class AngleTreeGenerator {
             addRingClosurePairs(bond.end, bond.begin);
         }
         if (itree instanceof Molecule) {
-            Molecule mol = (Molecule) itree;
+            mol = (Molecule) itree;
             Molecule.makeAtomList();
             mol.resetGenCoords();
             mol.setupRotGroups();
