@@ -421,9 +421,9 @@ public class MainApp extends Application implements DatasetListener {
         MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
         peakSliderMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakSlider());
 
-        MenuItem peakAnalyzerMenuItem = new MenuItem("Analyze");
+        MenuItem peakAnalyzerMenuItem = new MenuItem("Analyze 1D Multiplets");
         peakAnalyzerMenuItem.setOnAction(e -> analyze1D());
-        MenuItem multipletMenuItem = new MenuItem("Multiplets...");
+        MenuItem multipletMenuItem = new MenuItem("Multiplet Analyzer...");
         multipletMenuItem.setOnAction(e -> showMultipletAnalyzer(e));
 
         Menu assignCascade = new Menu("Assign Tools");
@@ -685,6 +685,17 @@ public class MainApp extends Application implements DatasetListener {
     }
 
     public Analyzer getAnalyzer() {
+        if (analyzer == null) {
+            PolyChart chart = PolyChart.getActiveChart();
+            Dataset dataset = chart.getDataset();
+            if ((dataset == null) || (dataset.getNDim() > 1)) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Chart must have a 1D dataset");
+                alert.showAndWait();
+                return null;
+            }
+            analyzer = new Analyzer(dataset);
+        }
         return analyzer;
     }
 
