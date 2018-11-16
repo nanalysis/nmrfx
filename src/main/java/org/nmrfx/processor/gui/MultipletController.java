@@ -331,7 +331,6 @@ merge.png				region_adjust.png
                 refreshPeakView(multiplet);
             }
             String mult = multiplet.getMultiplicity();
-            System.out.println(multiplet.getIDNum() + " " + multiplet.getCenter() + " " + mult);
             Coupling coup = multiplet.getCoupling();
             updateCouplingChoices(coup);
 //            if (multiplet.isGenericMultiplet()) {
@@ -564,7 +563,6 @@ merge.png				region_adjust.png
         analyzer.addRegion(ppm0, ppm1);
         try {
             activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
-            System.out.println("update " + activeMultiplet.get().getIDNum());
             updateMultipletField(false);
             chart.refresh();
 
