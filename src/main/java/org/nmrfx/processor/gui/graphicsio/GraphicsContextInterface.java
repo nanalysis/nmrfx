@@ -123,11 +123,11 @@ public interface GraphicsContextInterface {
 
     void rect(double x, double y, double w, double h) throws GraphicsIOException;
 
-    void restore() throws GraphicsIOException;
+    void restore();
 
     void rotate(double degrees) throws GraphicsIOException;
 
-    void save() throws GraphicsIOException;
+    void save();
 
     void scale(double x, double y) throws GraphicsIOException;
 
