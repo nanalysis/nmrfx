@@ -832,6 +832,8 @@ public class MainApp extends Application implements DatasetListener {
     private void showMultipletAnalyzer(ActionEvent event) {
         if (multipletController == null) {
             multipletController = MultipletController.create();
+        } else {
+            multipletController.initMultiplet();
         }
         multipletController.getStage().show();
         multipletController.getStage().toFront();
