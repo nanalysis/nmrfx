@@ -488,6 +488,16 @@ merge.png				region_adjust.png
         List<PeakListAttributes> attrs = chart.getPeakListAttributes();
         if (!attrs.isEmpty()) {
             peakListOpt = Optional.of(attrs.get(0).getPeakList());
+        } else {
+            Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+            PeakList peakList = analyzer.getPeakList();
+            if (peakList != null) {
+                List<String> peakListNames = new ArrayList<>();
+                peakListNames.add(peakList.getName());
+                chart.updatePeakLists(peakListNames);
+                attrs = chart.getPeakListAttributes();
+                peakListOpt = Optional.of(attrs.get(0).getPeakList());
+            }
         }
         return peakListOpt;
 
@@ -563,6 +573,15 @@ merge.png				region_adjust.png
         analyzer.addRegion(ppm0, ppm1);
         try {
             activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
+            // this will force updating peaklist and adding to chart if not there
+            Optional<PeakList> peakListOpt = getPeakList();
+            if (peakListOpt.isPresent()) {
+                PeakList peakList = peakListOpt.get();
+                if (peakList.getMultiplets().size() == 1) {
+                    double volume = activeMultiplet.get().getVolume();
+                    peakList.scale = volume;
+                }
+            }
             updateMultipletField(false);
             chart.refresh();
 
