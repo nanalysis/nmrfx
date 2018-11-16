@@ -27,7 +27,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -36,7 +35,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.processor.datasets.peaks.Analyzer;
@@ -286,6 +284,29 @@ merge.png				region_adjust.png
 
     }
 
+    public void initMultiplet() {
+        if (!gotoSelectedMultiplet()) {
+            List<Multiplet> multiplets = getMultiplets();
+            if (!multiplets.isEmpty()) {
+                Multiplet m = multiplets.get(0);
+                activeMultiplet = Optional.of(m);
+                updateMultipletField(false);
+            }
+        }
+    }
+
+    public boolean gotoSelectedMultiplet() {
+        boolean result = false;
+        List<MultipletSelection> multiplets = chart.getSelectedMultiplets();
+        if (!multiplets.isEmpty()) {
+            Multiplet m = multiplets.get(0).getMultiplet();
+            activeMultiplet = Optional.of(m);
+            updateMultipletField(false);
+            result = true;
+        }
+        return result;
+    }
+
     List<Multiplet> getMultiplets() {
         List<Multiplet> multiplets = Collections.EMPTY_LIST;
         Optional<PeakList> peakListOpt = getPeakList();
@@ -310,6 +331,7 @@ merge.png				region_adjust.png
                 refreshPeakView(multiplet);
             }
             String mult = multiplet.getMultiplicity();
+            System.out.println(multiplet.getIDNum() + " " + multiplet.getCenter() + " " + mult);
             Coupling coup = multiplet.getCoupling();
             updateCouplingChoices(coup);
 //            if (multiplet.isGenericMultiplet()) {
@@ -384,8 +406,21 @@ merge.png				region_adjust.png
             }
             List<Multiplet> multiplets = getMultiplets();
             activeMultiplet = Optional.of(multiplets.get(id));
+            updateMultipletField();
+        } else {
+            firstMultiplet(e);
         }
-        updateMultipletField();
+
+    }
+
+    void gotoPrevious(int id) {
+        id--;
+        if (id < 0) {
+            id = 0;
+        }
+        List<Multiplet> multiplets = getMultiplets();
+        activeMultiplet = Optional.of(multiplets.get(id));
+        updateMultipletField(false);
 
     }
 
@@ -399,8 +434,10 @@ merge.png				region_adjust.png
                 id = last;
             }
             activeMultiplet = Optional.of(multiplets.get(id));
+            updateMultipletField();
+        } else {
+            firstMultiplet(e);
         }
-        updateMultipletField();
     }
 
     void lastMultiplet(ActionEvent e) {
@@ -434,6 +471,8 @@ merge.png				region_adjust.png
             stage.toFront();
             controller.chart = controller.getChart();
             controller.chart.addMultipletListener(controller);
+            controller.initMultiplet();
+
         } catch (IOException ioE) {
             ioE.printStackTrace();
             System.out.println(ioE.getMessage());
@@ -497,7 +536,8 @@ merge.png				region_adjust.png
         double ppm = chart.getVerticalCrosshairPositions()[0];
         Analyzer analyzer = MainApp.mainApp.getAnalyzer();
         try {
-            analyzer.splitRegion(ppm);
+            activeMultiplet = analyzer.splitRegion(ppm);
+            updateMultipletField(false);
         } catch (IOException ex) {
         }
         chart.refresh();
@@ -510,7 +550,8 @@ merge.png				region_adjust.png
         analyzer.removeRegion((ppm0 + ppm1) / 2);
         analyzer.addRegion(ppm0, ppm1);
         try {
-            analyzer.analyzeRegion((ppm0 + ppm1) / 2);
+            activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
+            updateMultipletField(false);
             chart.refresh();
         } catch (IOException ex) {
         }
@@ -522,17 +563,22 @@ merge.png				region_adjust.png
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
         analyzer.addRegion(ppm0, ppm1);
         try {
-            analyzer.analyzeRegion((ppm0 + ppm1) / 2);
+            activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
+            System.out.println("update " + activeMultiplet.get().getIDNum());
+            updateMultipletField(false);
             chart.refresh();
+
         } catch (IOException ex) {
         }
     }
 
     public void removeRegion() {
         activeMultiplet.ifPresent(m -> {
+            int id = m.getIDNum();
             double ppm = m.measureCenter();
             Analyzer analyzer = MainApp.mainApp.getAnalyzer();
             analyzer.removeRegion(ppm);
+            gotoPrevious(id);
             chart.refresh();
         });
     }
