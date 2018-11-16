@@ -575,9 +575,10 @@ public class Analyzer {
         peakPickRegion(min, max);
     }
 
-    public void splitRegion(double ppm) throws IOException {
+    public Optional<Multiplet> splitRegion(double ppm) throws IOException {
         Set<DatasetRegion> regions = getRegions();
         Optional<DatasetRegion> found = getRegion(regions, 0, ppm);
+        Optional<Multiplet> result = Optional.empty();
         if (found.isPresent()) {
             DatasetRegion region = found.get();
             double start = region.getRegionStart(0);
@@ -606,12 +607,18 @@ public class Analyzer {
                 peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
                 Multiplets.analyzeMultiplet(rootPeak.myPeak);
                 fitMultiplet(rootPeak.getMultiplet());
+                result = Optional.of(rootPeak.getMultiplet());
             }
+            PeakList peakList = result.get().getPeakDim().getPeak().getPeakList();
+            peakList.getMultiplets();
+            peakList.refreshMultiplets();
         }
+        return result;
     }
 
-    public void analyzeRegion(double ppm) throws IOException {
+    public Optional<Multiplet> analyzeRegion(double ppm) throws IOException {
         Set<DatasetRegion> regions = getRegions();
+        Optional<Multiplet> result = Optional.empty();
         Optional<DatasetRegion> found = getRegion(regions, 0, ppm);
         if (found.isPresent()) {
             DatasetRegion region = found.get();
@@ -624,9 +631,15 @@ public class Analyzer {
             if (rootPeak != null) {
                 peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
                 Multiplets.analyzeMultiplet(rootPeak.myPeak);
-                fitMultiplet(rootPeak.getMultiplet());
+                rootPeak.getPeak().getPeakList().getMultiplets();
+                rootPeak.getPeak().getPeakList().refreshMultiplets();
+                // do this to sort multiplets after analyzing new
+                Multiplet multiplet = rootPeak.getMultiplet();
+                fitMultiplet(multiplet);
+                result = Optional.of(multiplet);
             }
         }
+        return result;
     }
 
     public void fitLinkedPeaks() {
