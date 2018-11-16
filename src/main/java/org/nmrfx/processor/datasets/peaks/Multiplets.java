@@ -611,6 +611,9 @@ public class Multiplets {
         Optional<Double> result = Optional.empty();
         if (dataset != null) {
             double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, refPeak.peakDim[0].getChemShift());
+            for (PeakDim apeakDim : peakDims) {
+                apeakDim.getPeak().setFlag(4, false);
+            }
 
             PeakFitting peakFitting = new PeakFitting(dataset);
             try {
@@ -918,6 +921,7 @@ public class Multiplets {
     public static void toDoublets(Multiplet multiplet) {
         if (multiplet.isGenericMultiplet()) {
             guessMultiplicityFromGeneric(multiplet);
+            updateAfterMultipletConversion(multiplet);
         } else {
             String cPat = multiplet.getMultiplicity();
             switch (cPat) {
