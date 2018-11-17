@@ -731,6 +731,7 @@ class refine:
 
     def loadFromYaml(self,data, seed, pdbFile=""):
         """Reading in all the structures"""
+        molData = {}
         if pdbFile != '':
             reader.readPDB(pdbFile)
             residues = None
