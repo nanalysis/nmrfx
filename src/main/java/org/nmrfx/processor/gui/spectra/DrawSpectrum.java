@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -50,7 +51,6 @@ import javafx.scene.shape.Path;
 import org.apache.commons.math3.complex.Complex;
 import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
-import javafx.scene.shape.StrokeLineCap;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
@@ -1180,4 +1180,196 @@ public class DrawSpectrum {
         xy[1][iLine++] = (yFunction.applyAsDouble(dValue, ve[end - vStart]));
         return iLine;
     }
+
+    public Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetRegion region) throws GraphicsIOException {
+        return drawActiveRegion(g2, region, false, 0, 0);
+    }
+
+    public Optional<IntegralHit> hitRegion(DatasetRegion region, double pickX, double pickY) {
+        Optional<IntegralHit> result;
+        try {
+            result = drawActiveRegion(null, region, true, pickX, pickY);
+        } catch (GraphicsIOException ex) {
+            result = Optional.empty();
+        }
+        return result;
+    }
+
+    public class IntegralHit {
+
+        final DatasetRegion region;
+        final int handle;
+
+        IntegralHit(DatasetRegion region, int handle) {
+            this.region = region;
+            this.handle = handle;
+        }
+    }
+
+    public Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetRegion region, boolean pick, double pickX, double pickY) throws GraphicsIOException {
+        Optional<IntegralHit> result = Optional.empty();
+        double rx2 = region.getRegionStart(0);
+        double rx1 = region.getRegionEnd(0);
+        double ryB1 = region.getRegionStartIntensity(0);
+        double ryB2 = region.getRegionEndIntensity(0);
+        double ry1;
+        double ry2;
+        if (region.getNDims() > 1) {
+            ry1 = region.getRegionStart(1);
+            ry2 = region.getRegionEnd(1);
+        } else {
+            ry2 = axes[1].getUpperBound();
+            ry1 = axes[1].getLowerBound();
+        }
+
+        double px1 = axes[0].getDisplayPosition(rx1);
+        double py1 = axes[1].getDisplayPosition(ry1);
+
+        double px2 = axes[0].getDisplayPosition(rx2);
+        double py2 = axes[1].getDisplayPosition(ry1);
+
+        double pxb1 = axes[0].getDisplayPosition(rx1);
+        double pyb1 = axes[1].getDisplayPosition(ryB1);
+
+        double pxb2 = axes[0].getDisplayPosition(rx2);
+        double pyb2 = axes[1].getDisplayPosition(ryB2);
+
+        double pxb1p = axes[0].getDisplayPosition(rx1);
+        double pyb1p = axes[1].getDisplayPosition(ryB1) - 25;
+        double pxb2p = axes[0].getDisplayPosition(rx2);
+        double pyb2p = axes[1].getDisplayPosition(ryB2) - 25;
+
+        if ((px2 - px1) < 2) {
+            px1 = px1 - 1;
+            px2 = px2 + 1;
+        }
+
+        double px3 = axes[0].getDisplayPosition(rx2);
+        double py3 = axes[1].getDisplayPosition(ry2);
+
+        double px4 = axes[0].getDisplayPosition(rx1);
+        double py4 = axes[1].getDisplayPosition(ry2);
+
+        if ((px4 - px3) < 2) {
+            px3 = px3 - 1;
+            px4 = px4 + 1;
+        }
+
+        if (pick) {
+            int[] deltas = new int[4];
+            int delP1 = (int) (Math.abs(pickX - pxb1));
+            int delP2 = (int) (Math.abs(pickY - pyb1));
+            deltas[0] = delP1 + delP2;
+            delP1 = (int) (Math.abs(pickX - pxb2));
+            delP2 = (int) (Math.abs(pickY - pyb2));
+            deltas[1] = delP1 + delP2;
+            delP1 = (int) (Math.abs(pickX - pxb1p));
+            delP2 = (int) (Math.abs(pickY - pyb1p));
+            deltas[2] = delP1 + delP2;
+            delP1 = (int) (Math.abs(pickX - pxb2p));
+            delP2 = (int) (Math.abs(pickY - pyb2p));
+            deltas[3] = delP1 + delP2;
+            int minDelta = Integer.MAX_VALUE;
+            int iMin = -1;
+            int iValue = 0;
+            for (int delta : deltas) {
+                if (delta < minDelta) {
+                    minDelta = delta;
+                    iMin = iValue;
+                }
+                iValue++;
+            }
+            double pickJiggle = 2.0;
+            double minPickDel = 2.0;
+            if ((minDelta < pickJiggle) && (minDelta < minPickDel)) {
+                minPickDel = minDelta;
+                result = Optional.of(new IntegralHit(region, iMin + 1));
+            } else if ((pickX > (pxb1 + pickJiggle)) && (pickX < (pxb2 - pickJiggle))) {
+                double f = (1.0 * pickX - pxb1) / (pxb2 - pxb1);
+                int yVal = (int) (pyb1 + f * (pyb2 - pyb1));
+                int delta1 = (int) Math.abs(pickY - yVal);
+                if (delta1 < pickJiggle) {
+                    minPickDel = delta1;
+                    result = Optional.of(new IntegralHit(region, 0));
+                }
+            }
+        } else {
+            //g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            //g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setStroke(Color.GREEN);
+
+            g2.strokeLine(px1, py1 - 5, px4, py4 + 5);
+            g2.strokeLine(px2, py2 - 5, px3, py3 + 5);
+            g2.strokeLine(pxb1, pyb1, pxb2, pyb2);
+
+            drawHandleV(g2, pxb1, pyb1);
+            drawHandleV(g2, pxb2, pyb2);
+            drawHandleH(g2, pxb1p, pyb1p);
+            drawHandleH(g2, pxb2p, pyb2p);
+        }
+
+        return result;
+    }
+
+    void drawHandleV(GraphicsContextInterface g2, double x, double y) throws GraphicsIOException {
+        int handleSize = 6;
+        int handleSize2 = 9;
+
+        g2.beginPath();
+        g2.moveTo(x, y - handleSize2);
+        g2.lineTo(x, y + handleSize2);
+
+        g2.moveTo(x, y - handleSize2);
+        g2.lineTo(x - handleSize / 2, y - handleSize);
+        g2.moveTo(x, y - handleSize2);
+        g2.lineTo(x + handleSize / 2, y - handleSize);
+
+        g2.moveTo(x, y + handleSize2);
+        g2.lineTo(x - handleSize / 2, y + handleSize);
+        g2.moveTo(x, y + handleSize2);
+        g2.lineTo(x + handleSize / 2, y + handleSize);
+
+        g2.moveTo(x - handleSize / 2, y - handleSize / 2);
+        g2.lineTo(x + handleSize / 2, y - handleSize / 2);
+        g2.lineTo(x + handleSize / 2, y + handleSize / 2);
+        g2.lineTo(x - handleSize / 2, y + handleSize / 2);
+        g2.lineTo(x - handleSize / 2, y - handleSize / 2);
+
+        g2.setFill(Color.WHITE);
+        g2.fill();
+        g2.setLineWidth(2);
+        g2.setStroke(Color.BLACK);
+        g2.stroke();
+    }
+
+    void drawHandleH(GraphicsContextInterface g2, double x, double y) throws GraphicsIOException {
+        int handleSize = 6;
+        int handleSize2 = 9;
+        g2.beginPath();
+        g2.moveTo(x - handleSize, y);
+        g2.lineTo(x + handleSize, y);
+
+        g2.moveTo(x - handleSize2, y);
+        g2.lineTo(x - handleSize, y - handleSize / 2);
+        g2.moveTo(x - handleSize2, y);
+        g2.lineTo(x - handleSize, y + handleSize / 2);
+
+        g2.moveTo(x + handleSize2, y);
+        g2.lineTo(x + handleSize, y - handleSize / 2);
+        g2.moveTo(x + handleSize2, y);
+        g2.lineTo(x + handleSize, y + handleSize / 2);
+
+        g2.moveTo(x - handleSize / 2, y - handleSize / 2);
+        g2.lineTo(x + handleSize / 2, y - handleSize / 2);
+        g2.lineTo(x + handleSize / 2, y + handleSize / 2);
+        g2.lineTo(x - handleSize / 2, y + handleSize / 2);
+        g2.lineTo(x - handleSize / 2, y - handleSize / 2);
+
+        g2.setFill(Color.WHITE);
+        g2.fill();
+        g2.setLineWidth(2);
+        g2.setStroke(Color.BLACK);
+        g2.stroke();
+    }
+
 }
