@@ -32,7 +32,7 @@ public class Analyzer {
     boolean scaleToLargest = false;
     int nWin = 32;
     double maxRatio = 20.0;
-    double sdRatio = 40.0;
+    double sdRatio = 30.0;
 
     int regionWindow = 20;
     double regionRatio = 50.0;
@@ -125,6 +125,7 @@ public class Analyzer {
         if (threshold < sdRatio * sDev) {
             if (dataset.getNucleus(0) == Nuclei.H1) {
                 threshold = sdRatio * sDev;
+                System.out.println(sdRatio + " " + sDev);
             } else {
                 threshold = sdRatio / 5.0 * sDev;
             }
@@ -144,6 +145,7 @@ public class Analyzer {
         String datasetName = dataset.getName();
         String listName = PeakList.getNameForDataset(datasetName);
         double level = threshold;
+        System.out.println("level " + level);
         PeakPick peakPickPar = (new PeakPick(dataset, listName)).level(level).mode("replaceif");
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
