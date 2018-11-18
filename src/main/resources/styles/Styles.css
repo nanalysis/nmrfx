@@ -1,0 +1,80 @@
+.root {
+/*
+    -fx-base: rgba(100, 100, 100, 255); // dark
+*/
+    -fx-base: #ececec
+}
+
+.button {
+    -fx-font-weight: bold;
+}
+
+.toolButton {
+    -fx-content-display:top;
+    -fx-font-weight: normal;
+    -fx-font-size:7pt;
+    -fx-fill:#8A0808;
+}
+.toolButton > .glyph-icon  {
+    -fx-fill:black;
+}
+.menuButton {
+    -fx-font-weight: normal;
+    -fx-font-size:7pt;
+}
+#expandButton {
+    -fx-graphic:url('/images/viewmag.png');
+}
+#printButton {
+    -fx-graphic:url('/images/fileprint.png');
+}
+#fullButton {
+    -fx-graphic:url('/images/viewmagfit.png');
+}
+#autoScaleButton {
+    -fx-graphic:url('/images/autoscale22.png');
+}
+#openButton {
+    -fx-graphic:url('/images/fileopen.png');
+}
+#openScriptButton {
+    -fx-graphic:url('/images/fileopen.png');
+}
+#writeScriptButton {
+    -fx-graphic:url('/images/text-editor.png');
+}
+
+.keyword {
+    -fx-fill: red;
+    -fx-font-weight: bold;
+}
+.props {
+    -fx-fill: purple;
+    -fx-font-weight: bold;
+}
+.ops {
+    -fx-fill: blue;
+    -fx-font-weight: bold;
+}
+.semicolon {
+    -fx-font-weight: bold;
+}
+.paren {
+    -fx-fill: firebrick;
+    -fx-font-weight: bold;
+}
+.bracket {
+    -fx-fill: darkgreen;
+    -fx-font-weight: bold;
+}
+.brace {
+    -fx-fill: teal;
+    -fx-font-weight: bold;
+}
+.string {
+    -fx-fill: brown;
+}
+
+.comment {
+	-fx-fill: cadetblue;
+}
