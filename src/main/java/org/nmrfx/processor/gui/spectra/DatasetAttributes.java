@@ -49,6 +49,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public boolean masked = false;
     Map<Integer, Color> colorMap = new HashMap<>();
     Map<Integer, Double> offsetMap = new HashMap<>();
+    Optional<IntegralHit> activeRegion = Optional.empty();
 
     // used to tell if dataset has a level value already so we don't need to call autoLevel.
     // used in processing same dataset multiple times, so it's easier to compare the processing without the level changing
@@ -543,6 +544,14 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return theFile;
     }
 
+    public Optional<IntegralHit> getActiveRegion() {
+        return activeRegion;
+    }
+
+    public void setActiveRegion(Optional<IntegralHit> activeRegion) {
+        this.activeRegion = activeRegion;
+    }
+
     public void setMapColor(int index, String colorName) {
         Color color = Color.web(colorName);
         colorMap.put(index, color);
@@ -1029,15 +1038,15 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 ptC[iDim][0] = pt[iDim][0] + iChunk;
                 ptC[iDim][1] = pt[iDim][0] + iChunk;
                 if (ptC[iDim][1] > pt[iDim][1]) {
-                System.out.println("ret a " + iDim);
+                    System.out.println("ret a " + iDim);
                     return (false);
                 }
                 if (ptC[iDim][0] < pt[iDim][0]) {
-                System.out.println("ret b " + iDim);
+                    System.out.println("ret b " + iDim);
                     return (false);
                 }
             } else if (iChunk < 0) {
-                System.out.println("ret c " + iDim+ " " + iChunk);
+                System.out.println("ret c " + iDim + " " + iChunk);
                 return (false);
             } else {
                 ptC[1][0] = drawList[iChunk];
@@ -1796,6 +1805,39 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
         }
         return offsets;
+    }
+
+    public void moveRegion(NMRAxis[] axes, double[] oldValue, double[] newValue) {
+        activeRegion.ifPresent(iHit -> {
+            DatasetRegion r = iHit.getDatasetRegion();
+            int handle = iHit.handle;
+            double oldX = axes[0].getValueForDisplay(oldValue[0]).doubleValue();
+            double oldY = axes[1].getValueForDisplay(oldValue[1]).doubleValue();
+            double newX = axes[0].getValueForDisplay(newValue[0]).doubleValue();
+            double newY = axes[1].getValueForDisplay(newValue[1]).doubleValue();
+            double deltaX = newX - oldX;
+            double deltaY = newY - oldY;
+            switch (handle) {
+                case 1:
+                    double oldEnd = r.getRegionEndIntensity(0);
+                    double deltaEnd = oldEnd - r.getRegionStartIntensity(0);
+                    r.setRegionStartIntensity(0, newY);
+                    r.setRegionEndIntensity(0, newY + deltaEnd);
+                    break;
+                case 2:
+                    r.setRegionEndIntensity(0, newY);
+                    break;
+                case 3:
+                    r.setRegionEnd(0, newX);
+                    break;
+                case 4:
+                    r.setRegionStart(0, newX);
+                    break;
+                default:
+                    break;
+            }
+
+        });
     }
 
 }

@@ -1181,32 +1181,21 @@ public class DrawSpectrum {
         return iLine;
     }
 
-    public Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetRegion region) throws GraphicsIOException {
-        return drawActiveRegion(g2, region, false, 0, 0);
+    public Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetAttributes datasetAttr, DatasetRegion region) throws GraphicsIOException {
+        return drawActiveRegion(g2, datasetAttr, region, false, 0, 0);
     }
 
-    public Optional<IntegralHit> hitRegion(DatasetRegion region, double pickX, double pickY) {
+    public Optional<IntegralHit> hitRegion(DatasetAttributes datasetAttr, DatasetRegion region, double pickX, double pickY) {
         Optional<IntegralHit> result;
         try {
-            result = drawActiveRegion(null, region, true, pickX, pickY);
+            result = drawActiveRegion(null, datasetAttr, region, true, pickX, pickY);
         } catch (GraphicsIOException ex) {
             result = Optional.empty();
         }
         return result;
     }
 
-    public class IntegralHit {
-
-        final DatasetRegion region;
-        final int handle;
-
-        IntegralHit(DatasetRegion region, int handle) {
-            this.region = region;
-            this.handle = handle;
-        }
-    }
-
-    public Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetRegion region, boolean pick, double pickX, double pickY) throws GraphicsIOException {
+    public Optional<IntegralHit> drawActiveRegion(GraphicsContextInterface g2, DatasetAttributes datasetAttr, DatasetRegion region, boolean pick, double pickX, double pickY) throws GraphicsIOException {
         Optional<IntegralHit> result = Optional.empty();
         double rx2 = region.getRegionStart(0);
         double rx1 = region.getRegionEnd(0);
@@ -1283,14 +1272,14 @@ public class DrawSpectrum {
             double minPickDel = 2.0;
             if ((minDelta < pickJiggle) && (minDelta < minPickDel)) {
                 minPickDel = minDelta;
-                result = Optional.of(new IntegralHit(region, iMin + 1));
+                result = Optional.of(new IntegralHit(datasetAttr, region, iMin + 1));
             } else if ((pickX > (pxb1 + pickJiggle)) && (pickX < (pxb2 - pickJiggle))) {
                 double f = (1.0 * pickX - pxb1) / (pxb2 - pxb1);
                 int yVal = (int) (pyb1 + f * (pyb2 - pyb1));
                 int delta1 = (int) Math.abs(pickY - yVal);
                 if (delta1 < pickJiggle) {
                     minPickDel = delta1;
-                    result = Optional.of(new IntegralHit(region, 0));
+                    result = Optional.of(new IntegralHit(datasetAttr, region, 0));
                 }
             }
         } else {

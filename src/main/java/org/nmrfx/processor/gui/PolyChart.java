@@ -88,6 +88,7 @@ import org.nmrfx.processor.gui.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DragBindings;
+import org.nmrfx.processor.gui.spectra.IntegralHit;
 import org.nmrfx.processor.gui.spectra.GestureBindings;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.MouseBindings;
@@ -1854,6 +1855,126 @@ public class PolyChart implements PeakListener {
                 }
             }
         }
+        datasetAttr.getActiveRegion().ifPresent(r -> {
+            try {
+                drawSpectrum.drawActiveRegion(gC, datasetAttr, r.getDatasetRegion());
+            } catch (GraphicsIOException ex) {
+            }
+        });
+    }
+
+    public Optional<IntegralHit> hitIntegral(double pickX, double pickY) {
+        Optional<IntegralHit> hit = Optional.empty();
+        for (DatasetAttributes datasetAttr : datasetAttributesList) {
+            hit = hitIntegral(datasetAttr, pickX, pickY);
+            if (hit.isPresent()) {
+                break;
+            }
+        }
+        return hit;
+    }
+
+    public Optional<IntegralHit> hitIntegral(DatasetAttributes datasetAttr, double pickX, double pickY) {
+        Optional<IntegralHit> hit = Optional.empty();
+        Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
+        if (regions != null) {
+            double xMin = xAxis.getLowerBound();
+            double xMax = xAxis.getUpperBound();
+            double chartHeight = yAxis.getHeight();
+            double integralOffset = chartHeight * 0.75;
+            int hitRange = 4;
+            for (DatasetRegion region : regions) {
+                double[] ppms = new double[2];
+                ppms[0] = region.getRegionStart(0);
+                ppms[1] = region.getRegionEnd(0);
+                double[] offsets = new double[2];
+                offsets[0] = region.getRegionStartIntensity(0);
+                offsets[1] = region.getRegionEndIntensity(0);
+
+                if ((ppms[1] > xMin) && (ppms[0] < xMax)) {
+                    boolean regionOK = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppms, offsets);
+                    if (regionOK) {
+                        double[][] xy = drawSpectrum.getXY();
+                        int nPoints = drawSpectrum.getNPoints();
+                        for (int i = 0; i < nPoints; i++) {
+                            double x = xy[0][i];
+                            double y = xy[1][i] - integralOffset;
+                            if ((Math.abs(pickX - x) < hitRange) && (Math.abs(pickY - y) < hitRange)) {
+                                hit = Optional.of(new IntegralHit(datasetAttr, region, 0));
+                                break;
+                            }
+                        }
+                        if (hit.isPresent()) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return hit;
+    }
+
+    public boolean selectRegion(double pickX, double pickY) {
+        for (DatasetAttributes datasetAttr : datasetAttributesList) {
+            datasetAttr.setActiveRegion(Optional.empty());
+        }
+        Optional<IntegralHit> hit = hitRegion(pickX, pickY);
+        hit.ifPresent(iHit -> {
+            iHit.getDatasetAttr().setActiveRegion(Optional.of(iHit));
+        });
+        return hit.isPresent();
+    }
+
+    public boolean selectIntegral(double pickX, double pickY) {
+        for (DatasetAttributes datasetAttr : datasetAttributesList) {
+            datasetAttr.setActiveRegion(Optional.empty());
+        }
+        Optional<IntegralHit> hit = hitIntegral(pickX, pickY);
+        hit.ifPresent(iHit -> {
+            iHit.getDatasetAttr().setActiveRegion(hit);
+        });
+        return hit.isPresent();
+
+    }
+
+    public void refreshActiveRegion(boolean hit) {
+        if (!hit) {
+            boolean hadHit = false;
+            for (DatasetAttributes datasetAttr : datasetAttributesList) {
+                if (datasetAttr.getActiveRegion().isPresent()) {
+                    hadHit = true;
+                }
+                datasetAttr.setActiveRegion(Optional.empty());
+            }
+            if (hadHit) {
+                refresh();
+            }
+        } else {
+            refresh();
+        }
+    }
+
+    public Optional<IntegralHit> hitRegion(double pickX, double pickY) {
+        Optional<IntegralHit> hit = Optional.empty();
+        for (DatasetAttributes datasetAttr : datasetAttributesList) {
+
+            Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
+            if (regions == null) {
+                continue;
+            }
+            for (DatasetRegion region : regions) {
+                hit = drawSpectrum.hitRegion(datasetAttr, region, pickX, pickY);
+                if (hit.isPresent()) {
+                    break;
+                }
+            }
+            if (hit.isPresent()) {
+                break;
+            }
+
+        }
+
+        return hit;
     }
 
     public void addAnnotation(CanvasAnnotation anno) {
@@ -2007,6 +2128,17 @@ public class PolyChart implements PeakListener {
             multiplets.addAll(mSels);
         });
         return multiplets;
+    }
+
+    public void dragRegion(double[] dragStart, double x, double y, boolean widthMode) {
+        double[] dragPos = {x, y};
+        for (DatasetAttributes datasetAttr : datasetAttributesList) {
+            if (datasetAttr.getActiveRegion().isPresent()) {
+                datasetAttr.moveRegion(axes, dragStart, dragPos);
+                refresh();
+            }
+        }
+
     }
 
     public void dragPeak(double[] dragStart, double x, double y, boolean widthMode) {
@@ -2215,7 +2347,7 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    public void selectPeaks(double pickX, double pickY, boolean append) {
+    public boolean selectPeaks(double pickX, double pickY, boolean append) {
         if (!append) {
             for (PolyChart chart : CHARTS) {
                 if (chart != this) {
@@ -2234,6 +2366,7 @@ public class PolyChart implements PeakListener {
 
         List<Peak> selPeaks = new ArrayList<>();
         drawPeakLists(false);
+        boolean hitPeak = false;
         if (peakStatus.get()) {
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
                 if (peakListAttr.getDrawPeaks()) {
@@ -2241,6 +2374,10 @@ public class PolyChart implements PeakListener {
                     Set<Peak> peaks = peakListAttr.getSelectedPeaks();
                     if (!peaks.isEmpty()) {
                         selPeaks.addAll(peaks);
+                        hitPeak = true;
+                    }
+                    if (!selectedMultiplets.isEmpty()) {
+                        hitPeak = true;
                     }
                     drawSelectedPeaks(peakListAttr);
                 }
@@ -2253,6 +2390,7 @@ public class PolyChart implements PeakListener {
             }
             controller.selPeaks.set(allSelPeaks);
         }
+        return hitPeak;
     }
 
     double[][] getRegionLimits(DatasetAttributes dataAttr) {

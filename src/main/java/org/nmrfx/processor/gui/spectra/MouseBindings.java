@@ -22,6 +22,7 @@ import javafx.event.Event;
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.spectra.IntegralHit;
 
 /**
  *
@@ -36,6 +37,7 @@ public class MouseBindings {
         DRAG_EXPAND,
         DRAG_PEAK,
         DRAG_PEAK_WIDTH,
+        DRAG_REGION,
         CROSSHAIR
     }
 
@@ -97,6 +99,9 @@ public class MouseBindings {
                         case DRAG_PEAK_WIDTH:
                             chart.dragPeak(dragStart, x, y, true);
                             break;
+                        case DRAG_REGION:
+                            chart.dragRegion(dragStart, x, y, true);
+                            break;
                         case DRAG_VIEW:
                             double dx = x - dragStart[0];
                             double dy = y - dragStart[1];
@@ -136,6 +141,12 @@ public class MouseBindings {
             } else {
                 if (mouseEvent.isPrimaryButtonDown()) {
                     Optional<Peak> hit = chart.hitPeak(x, y);
+                    if (!hit.isPresent()) {
+                        Optional<IntegralHit> hitR = chart.hitRegion(x, y);
+                        if (!hitR.isPresent()) {
+                            hitR = chart.hitIntegral(x, y);
+                        }
+                    }
                     if (mouseEvent.isShiftDown()) {
                         mouseAction = MOUSE_ACTION.DRAG_SELECTION;
                         chart.selectPeaks(x, y, true);
@@ -146,8 +157,20 @@ public class MouseBindings {
                             mouseAction = MOUSE_ACTION.DRAG_EXPAND;
                         }
                     } else {
-                        chart.selectPeaks(x, y, false);
-                        mouseAction = MOUSE_ACTION.DRAG_PEAK;
+                        boolean hitPeak = chart.selectPeaks(x, y, false);
+                        if (!hitPeak) {
+                            boolean hitRegion = chart.selectRegion(x, y);
+                            if (!hitRegion) {
+                                hitRegion = chart.selectIntegral(x, y);
+                            }
+                            chart.refreshActiveRegion(hitRegion);
+                            if (hitRegion) {
+                                mouseAction = MOUSE_ACTION.DRAG_REGION;
+                            }
+                        }
+                        if (hit.isPresent() || hitPeak) {
+                            mouseAction = MOUSE_ACTION.DRAG_PEAK;
+                        }
                     }
                 } else if (mouseEvent.isMiddleButtonDown()) {
                     mouseAction = MOUSE_ACTION.DRAG_VIEW;
