@@ -74,6 +74,7 @@ import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.PathElement;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
@@ -1836,21 +1837,25 @@ public class PolyChart implements PeakListener {
         double chartHeight = yAxis.getHeight();
         double integralOffset = chartHeight * 0.75;
         for (DatasetRegion region : regions) {
-            double[] ppms = new double[2];
-            ppms[0] = region.getRegionStart(0);
-            ppms[1] = region.getRegionEnd(0);
+            double ppm1 = region.getRegionStart(0);
+            double ppm2 = region.getRegionEnd(0);
             double[] offsets = new double[2];
             offsets[0] = region.getRegionStartIntensity(0);
             offsets[1] = region.getRegionEndIntensity(0);
 
-            if ((ppms[1] > xMin) && (ppms[0] < xMax)) {
-                boolean regionOK = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppms, offsets);
-                if (regionOK) {
+            if ((ppm2 > xMin) && (ppm1 < xMax)) {
+                Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppm1, ppm2, offsets);
+                if (result.isPresent()) {
                     double[][] xy = drawSpectrum.getXY();
                     int nPoints = drawSpectrum.getNPoints();
                     int rowIndex = drawSpectrum.getRowIndex();
                     gC.translate(0, -integralOffset);
+                    gC.setTextAlign(TextAlignment.CENTER);
                     drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy);
+                    String text = String.format("%.3f", result.get());
+                    double xCenter = (xy[0][0] + xy[0][nPoints - 1]) / 2.0;
+                    double yCenter = (xy[1][0] + xy[1][nPoints - 1]) / 2.0;
+                    gC.strokeText(text, xCenter, yCenter);
                     gC.translate(0, integralOffset);
                 }
             }
@@ -1884,16 +1889,15 @@ public class PolyChart implements PeakListener {
             double integralOffset = chartHeight * 0.75;
             int hitRange = 4;
             for (DatasetRegion region : regions) {
-                double[] ppms = new double[2];
-                ppms[0] = region.getRegionStart(0);
-                ppms[1] = region.getRegionEnd(0);
+                double ppm1 = region.getRegionStart(0);
+                double ppm2 = region.getRegionEnd(0);
                 double[] offsets = new double[2];
                 offsets[0] = region.getRegionStartIntensity(0);
                 offsets[1] = region.getRegionEndIntensity(0);
 
-                if ((ppms[1] > xMin) && (ppms[0] < xMax)) {
-                    boolean regionOK = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppms, offsets);
-                    if (regionOK) {
+                if ((ppm2 > xMin) && (ppm1 < xMax)) {
+                    Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppm1, ppm2, offsets);
+                    if (result.isPresent()) {
                         double[][] xy = drawSpectrum.getXY();
                         int nPoints = drawSpectrum.getNPoints();
                         for (int i = 0; i < nPoints; i++) {

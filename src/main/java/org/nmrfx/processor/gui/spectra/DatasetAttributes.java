@@ -928,16 +928,95 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return VectorIntegral(specVec, iChunk, ppms, null);
     }
 
-    public boolean VectorIntegral(Vec specVec, int iChunk, double[] ppms, double[] offsets) throws IOException {
+    public boolean getIntegralVec(Vec specVec, int iChunk, double ppm1, double ppm2, double[] offsets) throws IOException {
         int[][] ptC = new int[pt.length][2];
         int[] dimC = new int[pt.length];
-        int iDim = 0;
+        int iDim = 1;
         int minDimSize = Integer.MAX_VALUE;
         for (int i = 0; i < pt.length; i++) {
             ptC[i][0] = pt[i][0];
             ptC[i][1] = pt[i][1];
             int size = (int) Math.abs(pt[i][0] - pt[i][1]);
-            if (size < minDimSize) {
+            if ((i > 0) && (size < minDimSize)) {
+                minDimSize = size;
+                iDim = i;
+            }
+            dimC[i] = dim[i];
+        }
+
+        if (theFile.getNDim() > 1) {
+            if (drawList == null) {
+                ptC[iDim][0] = pt[iDim][0] + iChunk;
+                ptC[iDim][1] = pt[iDim][0] + iChunk;
+                if (ptC[iDim][1] > pt[iDim][1]) {
+                    return (false);
+                }
+                if (ptC[iDim][0] < pt[iDim][0]) {
+                    return (false);
+                }
+            } else if (iChunk < 0) {
+                return (false);
+            } else {
+                ptC[1][0] = drawList[iChunk];
+                ptC[1][1] = drawList[iChunk];
+            }
+
+        } else if ((iChunk < 0) || (iChunk > 1)) {
+            return (false);
+        }
+        rearrangeDim(dimC, ptC);
+        int pt1 = theFile.ppmToPoint(dimC[0], ppm1);
+        int pt2 = theFile.ppmToPoint(dimC[0], ppm2);
+        if (pt2 < pt1) {
+            int hold = pt1;
+            pt1 = pt2;
+            pt2 = hold;
+        }
+
+        int dimSize = pt2 - pt1 + 1;
+        specVec.resize(dimSize, false);
+        ptC[0][0] = pt1;
+        ptC[0][1] = pt2;
+        if (theFile.getVec() == null) {
+            theFile.readVectorFromDatasetFile(ptC, dimC, specVec);
+        } else {
+            int j = 0;
+            Vec vec = theFile.getVec();
+
+            if (vec.isComplex()) {
+                for (int i = ptC[0][0]; i <= ptC[0][1]; i++) {
+                    specVec.rvec[j++] = vec.getReal(i) / theFile.getScale();
+                }
+            } else {
+                for (int i = ptC[0][0]; i <= ptC[0][1]; i++) {
+                    if (vec.rvec[i] == Double.MAX_VALUE) {
+                        specVec.rvec[j++] = vec.getReal(i);
+                    } else {
+                        specVec.rvec[j++] = vec.getReal(i) / theFile.getScale();
+                    }
+                }
+            }
+        }
+        int lastPoint = 0;
+
+        if (offsets != null) {
+            specVec.integrate(0, dimSize, offsets[1], offsets[0]);
+        } else {
+            specVec.integrate(0, dimSize);
+        }
+        return true;
+    }
+
+    public boolean VectorIntegral(Vec specVec, int iChunk, double[] ppms, double[] offsets) throws IOException {
+        int[][] ptC = new int[pt.length][2];
+        int[] dimC = new int[pt.length];
+        int iDim = 1;
+        int minDimSize = Integer.MAX_VALUE;
+        for (int i = 0; i < pt.length; i++) {
+            ptC[i][0] = pt[i][0];
+            ptC[i][1] = pt[i][1];
+            int size = (int) Math.abs(pt[i][0] - pt[i][1]);
+            if ((i > 0) && (size < minDimSize)) {
                 minDimSize = size;
                 iDim = i;
             }

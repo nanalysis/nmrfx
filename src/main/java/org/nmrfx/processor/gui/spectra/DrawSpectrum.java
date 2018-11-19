@@ -831,31 +831,45 @@ public class DrawSpectrum {
         return offsets;
     }
 
-    public boolean draw1DIntegrals(DatasetAttributes dataAttributes, int orientation,
-            AXMODE axMode, double[] ppms, double[] offsets) {
+    public Optional<Double> draw1DIntegrals(DatasetAttributes dataAttributes, int orientation,
+            AXMODE axMode, double ppm1, double ppm2, double[] offsets) {
         Vec specVec = new Vec(32);
+        Optional<Double> result = Optional.empty();
         boolean drawReal = dataAttributes.getDrawReal();
-        boolean offsetMode = true;
         try {
-            if (!dataAttributes.VectorIntegral(specVec, iChunk + 1, ppms, offsets)) {
+            if (!dataAttributes.getIntegralVec(specVec, iChunk + 1, ppm1, ppm2, offsets)) {
                 System.out.println("no  vec int");
-                return false;
+                return result;
             }
         } catch (IOException ioE) {
             ioE.printStackTrace();
-            return false;
+            return result;
         }
+        Double integralValue = specVec.getReal(specVec.getSize() - 1);
+        result = Optional.of(integralValue);
         double scale = dataAttributes.getIntegralScale();
-        drawVector(specVec, orientation, 0, axMode, drawReal, 0.0, 0.0, null,
+        drawSubVector(specVec, orientation, 0, axMode,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> axes[1].getDisplayPosition(intensity / scale), offsetMode, true);
+                (index, intensity) -> axes[1].getDisplayPosition(intensity / scale), ppm1, ppm2);
 
-        return true;
+        return result;
     }
 
     private int vecIndexer(Vec vec, double position) {
         int point = vec.refToPt(position);
         return point;
+    }
+
+    public void drawSubVector(Vec vec, int orientation, int dataOffset, AXMODE axMode,
+            DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, double ppm1, double ppm2) {
+        int size = vec.getSize();
+        NMRAxis indexAxis = orientation == PolyChart.HORIZONTAL ? axes[0] : axes[1];
+
+        double indexAxisDelta = (ppm1 - ppm2) / vec.getSize();
+        double dValue = ppm2;
+
+        nPoints = drawVectoreCore(vec, dataOffset, true, 0.0, 0.0, xy, null, xFunction,
+                yFunction, true, 0, vec.getSize()-1, size, dValue, 0.0, indexAxisDelta, true);
     }
 
     public void drawVector(Vec vec, int orientation, int dataOffset, AXMODE axMode, boolean drawReal, double ph0, double ph1, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec, boolean integralMode) {
