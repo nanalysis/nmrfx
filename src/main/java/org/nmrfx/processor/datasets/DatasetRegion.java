@@ -1,6 +1,5 @@
 package org.nmrfx.processor.datasets;
 
-
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
@@ -90,11 +89,25 @@ public class DatasetRegion implements Comparator, Comparable {
         return x[dim * 2];
     }
 
+    public void setRegionStart(int dim, double value) {
+        if (dim >= getNDims()) {
+            throw new IllegalArgumentException("Invalid dimension");
+        }
+        x[dim * 2] = value;
+    }
+
     public double getRegionEnd(int dim) {
         if (dim >= getNDims()) {
             throw new IllegalArgumentException("Invalid dimension");
         }
         return x[dim * 2 + 1];
+    }
+
+    public void setRegionEnd(int dim, double value) {
+        if (dim >= getNDims()) {
+            throw new IllegalArgumentException("Invalid dimension");
+        }
+        x[dim * 2 + 1] = value;
     }
 
     public double getRegionStartIntensity(int dim) {
@@ -104,11 +117,25 @@ public class DatasetRegion implements Comparator, Comparable {
         return startIntensity[dim * 2];
     }
 
+    public void setRegionStartIntensity(int dim, double value) {
+        if (dim >= getNDims()) {
+            throw new IllegalArgumentException("Invalid dimension");
+        }
+        startIntensity[dim * 2] = value;
+    }
+
     public double getRegionEndIntensity(int dim) {
         if (dim >= getNDims()) {
             throw new IllegalArgumentException("Invalid dimension");
         }
         return endIntensity[dim * 2];
+    }
+
+    public void setRegionEndIntensity(int dim, double value) {
+        if (dim >= getNDims()) {
+            throw new IllegalArgumentException("Invalid dimension");
+        }
+        endIntensity[dim * 2] = value;
     }
 
     public String toString() {
