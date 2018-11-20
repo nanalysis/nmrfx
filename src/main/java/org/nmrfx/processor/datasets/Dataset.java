@@ -117,6 +117,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     private double lvl;
     private boolean lvlSet = false;
     private double scale = 1.0;
+    private double norm = 1.0;
     private int rdims;
     private String solvent = null;
     private double temperature = 0.0;
@@ -1999,6 +2000,26 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public void setScale(double scale) {
         this.scale = scale;
+    }
+
+    /**
+     * Get the norm value used to divide intensity values in dataset. This is
+     * used to translate dataset intensities of regions into atom numbers.
+     *
+     * @return the norm
+     */
+    public double getNorm() {
+        return norm;
+    }
+
+    /**
+     * Set the norm value used to divide intensity values in dataset. This is
+     * used to translate dataset intensities of regions into atom numbers.
+     *
+     * @param norm the norm to set
+     */
+    public void setNorm(double norm) {
+        this.norm = norm;
     }
 
     /**
