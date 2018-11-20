@@ -514,6 +514,31 @@ public class Analyzer {
         });
     }
 
+    public void normalizeIntegrals() {
+        int[] dim = new int[peakList.nDim];
+        for (int i = 0; i < dim.length; i++) {
+            dim[i] = i;
+        }
+        double[][] limits = new double[1][2];
+        Set<DatasetRegion> regions = getRegions();
+
+        regions.stream().forEach(region -> {
+            limits[0][0] = region.getRegionStart(0);
+            limits[0][1] = region.getRegionEnd(0);
+            double integral = region.getIntegral();
+            List<Peak> peaks = locatePeaks(peakList, limits, dim);
+            for (Peak peak : peaks) {
+                double vol = peak.getPeakDim(0).getMultiplet().getVolume();
+                double nInt = vol / peak.getPeakList().getScale();
+                // find the first peak normalized volume near at least 1.0
+                if (nInt > 0.8) {
+                    dataset.setNorm(dataset.getScale() * integral / nInt);
+                    break;
+                }
+            }
+        });
+    }
+
     public Set<DatasetRegion> getRegions() {
         Set<DatasetRegion> regions = dataset.getRegions();
 
@@ -931,6 +956,7 @@ public class Analyzer {
         findSolventPeaks();
         renumber();
         normalizeMultiplets();
+        normalizeIntegrals();
 
 //        ::dcs::regions::restorePurgedRegions
 //        ::dcs::peaks::gui::clearPeaks
