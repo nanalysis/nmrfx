@@ -26,6 +26,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.RotateEvent;
 import javafx.scene.input.ScrollEvent;
+import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 
@@ -40,7 +41,33 @@ public class CanvasBindings {
         canvas.setFocusTraversable(false);
         mouseNode.setOnContextMenuRequested((ContextMenuEvent event) -> {
             PolyChart chart = controller.getActiveChart();
-            chart.getSpectrumMenu().show(mouseNode.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+            double x = event.getX();
+            double y = event.getY();
+            Optional<Peak> hitPeak = chart.hitPeak(x, y);
+            ChartMenu menu = null;
+            System.out.println("context menu " + x + " " + y + " " + hitPeak.isPresent());
+            if (hitPeak.isPresent()) {
+                menu = chart.getPeakMenu();
+            } else {
+                Optional<IntegralHit> hitRegion = chart.hitRegion(x, y);
+                System.out.println("hit reg " + hitRegion.isPresent());
+                if (hitRegion.isPresent()) {
+                    menu = chart.getRegionMenu();
+                } else {
+                    Optional<IntegralHit> hitIntegral = chart.hitIntegral(x, y);
+                    System.out.println("hit int " + hitIntegral.isPresent());
+
+                    if (hitIntegral.isPresent()) {
+                        menu = chart.getIntegralMenu();
+                        ((IntegralMenu) menu).setHit(hitIntegral.get());
+                    }
+                }
+            }
+            if (menu == null) {
+                menu = chart.getSpectrumMenu();
+            }
+            menu.show(mouseNode.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+
         });
         mouseNode.setOnKeyPressed((KeyEvent keyEvent) -> {
             PolyChart chart = controller.getActiveChart();

@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui;
 
+import org.nmrfx.processor.gui.spectra.SpectrumMenu;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.spectra.DrawSpectrum;
 import org.nmrfx.processor.datasets.Dataset;
@@ -58,6 +59,7 @@ import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
+import javafx.geometry.VPos;
 import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
@@ -86,14 +88,18 @@ import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.graphicsio.GraphicsContextProxy;
 import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 import org.nmrfx.processor.gui.graphicsio.SVGGraphicsContext;
+import org.nmrfx.processor.gui.spectra.ChartMenu;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DragBindings;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
 import org.nmrfx.processor.gui.spectra.GestureBindings;
+import org.nmrfx.processor.gui.spectra.IntegralMenu;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.MouseBindings;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
+import org.nmrfx.processor.gui.spectra.PeakMenu;
+import org.nmrfx.processor.gui.spectra.RegionMenu;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
 
 public class PolyChart implements PeakListener {
@@ -246,7 +252,10 @@ public class PolyChart implements PeakListener {
         OneDX, OneDY, TwoD;
     };
     ObjectProperty<DISDIM> disDimProp = new SimpleObjectProperty(TwoD);
-    SpectrumMenu specMenu;
+    ChartMenu specMenu;
+    ChartMenu peakMenu;
+    ChartMenu integralMenu;
+    ChartMenu regionMenu;
     KeyBindings keyBindings;
     MouseBindings mouseBindings;
     GestureBindings gestureBindings;
@@ -343,6 +352,9 @@ public class PolyChart implements PeakListener {
         gestureBindings = new GestureBindings(this);
         dragBindings = new DragBindings(controller, canvas);
         specMenu = new SpectrumMenu(this);
+        peakMenu = new PeakMenu(this);
+        regionMenu = new RegionMenu(this);
+        integralMenu = new IntegralMenu(this);
         crossHairs = new CrossHairs(activeChart, crossHairPositions, crossHairStates, crossHairLines);
         setDragHandlers(canvas);
         canvas.requestFocus();
@@ -421,8 +433,20 @@ public class PolyChart implements PeakListener {
         return keyBindings;
     }
 
-    public SpectrumMenu getSpectrumMenu() {
+    public ChartMenu getSpectrumMenu() {
         return specMenu;
+    }
+
+    public ChartMenu getPeakMenu() {
+        return peakMenu;
+    }
+
+    public ChartMenu getIntegralMenu() {
+        return integralMenu;
+    }
+
+    public ChartMenu getRegionMenu() {
+        return regionMenu;
     }
 
     final protected void setDragHandlers(Node mouseNode) {
@@ -1261,7 +1285,7 @@ public class PolyChart implements PeakListener {
         return newCenter;
     }
 
-    protected void addRegionRange() {
+    public void addRegionRange() {
         Dataset dataset = getDataset();
         if (dataset == null) {
             return;
@@ -1311,7 +1335,7 @@ public class PolyChart implements PeakListener {
         processorController.propertyManager.addExtractRegion(min, max, f1, f2);
     }
 
-    protected void addBaselineRange(boolean clearMode) {
+    public void addBaselineRange(boolean clearMode) {
         Dataset dataset = getDataset();
         if (dataset == null) {
             return;
@@ -1353,7 +1377,7 @@ public class PolyChart implements PeakListener {
         processorController.propertyManager.addBaselineRegion(currentRegions, f1, f2, clearMode);
     }
 
-    protected void clearBaselineRanges() {
+    public void clearBaselineRanges() {
         processorController.propertyManager.clearBaselineRegions();
     }
 
@@ -1836,6 +1860,7 @@ public class PolyChart implements PeakListener {
         double xMax = xAxis.getUpperBound();
         double chartHeight = yAxis.getHeight();
         double integralOffset = chartHeight * 0.75;
+        double norm = datasetAttr.getDataset().getNorm() / datasetAttr.getDataset().getScale();
         for (DatasetRegion region : regions) {
             double ppm1 = region.getRegionStart(0);
             double ppm2 = region.getRegionEnd(0);
@@ -1851,11 +1876,12 @@ public class PolyChart implements PeakListener {
                     int rowIndex = drawSpectrum.getRowIndex();
                     gC.translate(0, -integralOffset);
                     gC.setTextAlign(TextAlignment.CENTER);
+                    gC.setTextBaseline(VPos.BASELINE);
                     drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy);
-                    String text = String.format("%.3f", result.get());
+                    String text = String.format("%.1f", result.get() / norm);
                     double xCenter = (xy[0][0] + xy[0][nPoints - 1]) / 2.0;
                     double yCenter = (xy[1][0] + xy[1][nPoints - 1]) / 2.0;
-                    gC.strokeText(text, xCenter, yCenter);
+                    gC.fillText(text, xCenter, yCenter);
                     gC.translate(0, integralOffset);
                 }
             }
@@ -1939,6 +1965,17 @@ public class PolyChart implements PeakListener {
         });
         return hit.isPresent();
 
+    }
+
+    public boolean hasActiveRegion() {
+        boolean hasRegion = false;
+        for (DatasetAttributes datasetAttr : datasetAttributesList) {
+            if (datasetAttr.getActiveRegion().isPresent()) {
+                hasRegion = true;
+                break;
+            }
+        }
+        return hasRegion;
     }
 
     public void refreshActiveRegion(boolean hit) {
@@ -2173,7 +2210,7 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    void fitPeaks() {
+    public void fitPeaks() {
         peakListAttributesList.forEach((peakListAttr) -> {
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             if (!peaks.isEmpty()) {
@@ -2197,7 +2234,7 @@ public class PolyChart implements PeakListener {
 //        });
     }
 
-    void fitPeakLists() {
+    public void fitPeakLists() {
         peakListAttributesList.forEach((peakListAttr) -> {
             Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
             if (dataset != null) {
@@ -2218,7 +2255,7 @@ public class PolyChart implements PeakListener {
 //        });
     }
 
-    void tweakPeaks() {
+    public void tweakPeaks() {
         peakListAttributesList.forEach((peakListAttr) -> {
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             if (!peaks.isEmpty()) {
@@ -2249,7 +2286,7 @@ public class PolyChart implements PeakListener {
 //        });
     }
 
-    void tweakPeakLists() {
+    public void tweakPeakLists() {
         peakListAttributesList.forEach((peakListAttr) -> {
             Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
             if (dataset != null) {

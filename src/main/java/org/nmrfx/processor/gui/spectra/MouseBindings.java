@@ -159,11 +159,14 @@ public class MouseBindings {
                     } else {
                         boolean hitPeak = chart.selectPeaks(x, y, false);
                         if (!hitPeak) {
+                            boolean hadRegion = chart.hasActiveRegion();
                             boolean hitRegion = chart.selectRegion(x, y);
                             if (!hitRegion) {
                                 hitRegion = chart.selectIntegral(x, y);
                             }
-                            chart.refreshActiveRegion(hitRegion);
+                            if ((hadRegion && !hitRegion) || (!hadRegion && hitRegion)) {
+                                chart.refresh();
+                            }
                             if (hitRegion) {
                                 mouseAction = MOUSE_ACTION.DRAG_REGION;
                             }

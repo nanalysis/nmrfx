@@ -15,30 +15,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.nmrfx.processor.gui;
+package org.nmrfx.processor.gui.spectra;
 
 import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import javafx.stage.Window;
+import org.nmrfx.processor.gui.PolyChart;
 
 /**
  *
  * @author Bruce Johnson
  */
-public class SpectrumMenu {
-
-    PolyChart chart;
-    ContextMenu specMenu;
+public class SpectrumMenu extends ChartMenu {
 
     public SpectrumMenu(PolyChart chart) {
-        this.chart = chart;
-        makeSpecMenu();
+        super(chart);
     }
 
-    private void makeSpecMenu() {
-        specMenu = new ContextMenu();
+    void makeChartMenu() {
+        chartMenu = new ContextMenu();
         MenuItem attrItem = new MenuItem("Attributes");
         attrItem.setOnAction((ActionEvent e) -> {
             chart.getController().showSpecAttrAction(e);
@@ -92,7 +88,7 @@ public class SpectrumMenu {
 
         MenuItem inspectPeakItem = new MenuItem("Inspect Peak");
         inspectPeakItem.setOnAction((ActionEvent e) -> {
-            chart.showHitPeak(chart.mouseBindings.getMousePressX(), chart.mouseBindings.getMousePressY());
+            chart.showHitPeak(chart.getMouseBindings().getMousePressX(), chart.getMouseBindings().getMousePressY());
         });
 
         peakMenu.getItems().add(inspectPeakItem);
@@ -134,16 +130,11 @@ public class SpectrumMenu {
         });
         refMenu.getItems().add(diagRefMenuItem);
 
-        specMenu.getItems().add(attrItem);
-        specMenu.getItems().add(viewMenu);
-        specMenu.getItems().add(peakMenu);
-        specMenu.getItems().add(refMenu);
-        specMenu.getItems().add(baselineMenu);
-        specMenu.getItems().add(extractItem);
+        chartMenu.getItems().add(attrItem);
+        chartMenu.getItems().add(viewMenu);
+        chartMenu.getItems().add(peakMenu);
+        chartMenu.getItems().add(refMenu);
+        chartMenu.getItems().add(baselineMenu);
+        chartMenu.getItems().add(extractItem);
     }
-
-    public void show(Window window, double x, double y) {
-        specMenu.show(window, x, y);
-    }
-
 }

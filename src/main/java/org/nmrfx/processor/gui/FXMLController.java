@@ -612,7 +612,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    void showSpecAttrAction(ActionEvent event) {
+    public void showSpecAttrAction(ActionEvent event) {
         if (specAttrWindowController == null) {
             if (popOverMode) {
                 specAttrWindowController = SpecAttrWindowController.createPane();
