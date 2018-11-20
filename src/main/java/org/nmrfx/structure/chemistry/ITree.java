@@ -10,5 +10,5 @@ import java.util.List;
 public interface ITree {
     
     public List<Atom> getAtomArray();
-    
+    public List<Bond> getBondList();
 }
