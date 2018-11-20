@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.util.List;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
+import org.nmrfx.structure.chemistry.Entity;
+import org.nmrfx.structure.chemistry.ITree;
 import org.nmrfx.structure.chemistry.Molecule;
 
 /**
@@ -41,13 +43,13 @@ public class PathGraph {
     private List<Atom> atoms;
     private int maxRingSize;
 
-    public PathGraph(Molecule molecule) {
+    public PathGraph(ITree itree) {
         edges = new ArrayList();
         atoms = new ArrayList();
         maxRingSize = -1;
 
-        loadEdges(molecule);
-        loadNodes(molecule);
+        loadEdges(itree);
+        loadNodes(itree);
     }
 
     public void setMaximumRingSize(int maxRingSize) {
@@ -124,16 +126,23 @@ public class PathGraph {
         return result;
     }
 
-    private void loadEdges(Molecule molecule) {
+    private void loadEdges(ITree itree) {
+        Molecule molecule;
+        if (itree instanceof Molecule){
+            molecule = (Molecule) itree;
+        }  else {
+            Entity entity = (Entity) itree;
+            molecule = entity.molecule;
+        }
         molecule.updateBondArray();
-        List<Bond> bonds = molecule.getBondList();
+        List<Bond> bonds = itree.getBondList();
         for (Bond bond : bonds) {
             edges.add(new PathEdge(Arrays.asList(bond.begin, bond.end)));
         }
     }
 
-    private void loadNodes(Molecule molecule) {
-        for (Atom atom : molecule.getAtoms()) {
+    private void loadNodes(ITree itree) {
+        for (Atom atom : itree.getAtomArray()) {
             atoms.add(atom);
         }
     }
