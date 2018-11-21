@@ -41,12 +41,12 @@ public class IntegralMenu extends ChartMenu {
         chartMenu = new ContextMenu();
         for (int i = 1; i <= 6; i++) {
             final int iNorm = i;
-            MenuItem fitItem = new MenuItem(String.valueOf(iNorm));
-            fitItem.setOnAction((ActionEvent e) -> {
+            MenuItem normItem = new MenuItem(String.valueOf(iNorm));
+            normItem.setOnAction((ActionEvent e) -> {
                 setIntegralNorm(iNorm);
             });
 
-            chartMenu.getItems().add(fitItem);
+            chartMenu.getItems().add(normItem);
         }
     }
 
