@@ -35,13 +35,6 @@ public class PeakMenu extends ChartMenu {
     @Override
     void makeChartMenu() {
         chartMenu = new ContextMenu();
-        MenuItem fitItem = new MenuItem("Fit");
-        fitItem.setOnAction((ActionEvent e) -> {
-            System.out.println("fit");
-        });
-
-        chartMenu.getItems().add(fitItem);
-
     }
 
 }
