@@ -25,7 +25,6 @@ package org.nmrfx.utils.properties;
 
 import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
-import javafx.scene.control.Slider;
 import org.controlsfx.property.editor.AbstractPropertyEditor;
 
 /**
@@ -34,21 +33,20 @@ import org.controlsfx.property.editor.AbstractPropertyEditor;
  */
 public class IntPropertySliderEditor extends AbstractPropertyEditor<Object, Node> {
 
-    public IntPropertySliderEditor(IntRangeOperationItem item, Slider slider) {
+    public IntPropertySliderEditor(IntRangeOperationItem item, IntSlider slider) {
         super(item, slider);
     }
 
     @Override
     protected ObservableValue<Object> getObservableValue() {
-        Slider slider = (Slider) getEditor();
-        return (ObservableValue) slider.valueProperty();
+        IntSlider slider = (IntSlider) getEditor();
+        return (ObservableValue) slider.getSlider().valueProperty();
     }
 
     @Override
     public void setValue(Object t) {
-        Slider slider = (Slider) getEditor();
+        IntSlider slider = (IntSlider) getEditor();
         double dValue = ((Number) t).doubleValue();
-        slider.setValue(dValue);
+        slider.getSlider().setValue(dValue);
     }
-
 }

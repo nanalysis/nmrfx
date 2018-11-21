@@ -29,6 +29,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.GridPane;
+import static javafx.scene.layout.GridPane.setHgrow;
+import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
@@ -125,6 +127,7 @@ public class ZoomSlider extends GridPane {
     private void addControls() {
         add(textField, 0, 0);
         add(slider, 1, 0);
+        setHgrow(slider, Priority.ALWAYS);
         add(downButton, 2, 0);
         add(upButton, 3, 0);
     }
