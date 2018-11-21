@@ -35,19 +35,6 @@ public class RegionMenu extends ChartMenu {
     @Override
     void makeChartMenu() {
         chartMenu = new ContextMenu();
-        for (int i = 0; i <= 6; i++) {
-            final int iNorm = i;
-            MenuItem fitItem = new MenuItem(String.valueOf(iNorm));
-            fitItem.setOnAction((ActionEvent e) -> {
-                setIntegralNorm(iNorm);
-            });
-
-            chartMenu.getItems().add(fitItem);
-        }
-    }
-    
-    void setIntegralNorm(int i) {
-        
     }
 
 }
