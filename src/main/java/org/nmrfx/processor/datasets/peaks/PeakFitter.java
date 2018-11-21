@@ -400,7 +400,7 @@ public class PeakFitter {
             rms = peakFit.rms(guesses);
             result = rms;
         } else if (fitMode == PeakList.FIT_MAX_DEV) {
-            int maxDev = peakFit.maxPosDev(guesses);
+            int maxDev = peakFit.maxPosDev(guesses, 3);
             double maxDevFreq = theFile.pointToPPM(0, maxDev + p2[0][0]);
             result = maxDevFreq;
             return result;
@@ -425,7 +425,7 @@ public class PeakFitter {
 //               System.out.print(pValue + " ");
 //          }
 //            System.out.println(duration);
-            }
+        }
 
 //        if (fitMode == PeakListCmd.FIT_LW_AMPLITUDES) {
 ////            fcn.initLWAmpFit(guesses);
@@ -498,7 +498,6 @@ public class PeakFitter {
                         double delta = freqs[iFreq] - peakFit.getCFreq(iPeak);
                         freqs[iFreq] = theFile.ptWidthToHz(0, delta);
                     }
-                    System.out.println("generic1");
 
                     double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
                     multiplet.set(centerPPM, freqs, amplitudes);

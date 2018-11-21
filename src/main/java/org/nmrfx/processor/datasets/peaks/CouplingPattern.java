@@ -167,10 +167,10 @@ public class CouplingPattern extends Coupling {
             }
 
             sbuf.append(Format.format2(couplingItems[i].getCoupling()));
-            sbuf.append(" ");
-            sbuf.append(couplingItems[i].getNSplits() - 1);
-            sbuf.append(" ");
-            sbuf.append(Format.format2(couplingItems[i].getSin2Theta()));
+//            sbuf.append(" ");
+//            sbuf.append(couplingItems[i].getNSplits() - 1);
+//            sbuf.append(" ");
+//            sbuf.append(Format.format2(couplingItems[i].getSin2Theta()));
         }
 
         return sbuf.toString();

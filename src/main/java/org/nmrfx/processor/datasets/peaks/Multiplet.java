@@ -139,6 +139,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     public void set(double centerPPM, double[] freqs, double[] amplitudes) {
         if (coupling instanceof ComplexCoupling) {
+            this.center = centerPPM;
             coupling = new ComplexCoupling(this, center, freqs, amplitudes);
         }
     }
@@ -331,6 +332,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         int nExtra = nFreqs - fiValues.freqs.length;
         if (nExtra > 0) {
             removeExtraLinkedPeaks(nExtra);
+            coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
             setMultipletComponentValues();
         } else if (nExtra < 0) {
             nExtra = -nExtra;
@@ -338,6 +340,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
             coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
             setMultipletComponentValues();
         } else {
+            coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
             setMultipletComponentValues();
         }
 
@@ -345,19 +348,28 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public void removeExtraLinkedPeaks(int nExtra) {
-        List<PeakDim> links = myPeakDim.getLinkedPeakDims();
+        List<PeakDim> links = new ArrayList<>();
+        links.addAll(myPeakDim.getLinkedPeakDims());
         int nRemoved = 0;
-        for (int i = 0; i < links.size(); i++) {
+        int nPeaks = links.size();
+        for (int i = 0; i < nPeaks; i++) {
             PeakDim peakDim = links.get(i);
-            PeakList.unLinkPeak(peakDim.myPeak);
-            peakDim.myPeak.setStatus(-1);
-            nRemoved++;
-
-            if (nRemoved >= nExtra) {
-                break;
+            if (peakDim != myPeakDim) {
+                PeakList.unLinkPeak(peakDim.myPeak);
+                peakDim.myPeak.setStatus(-1);
+                nRemoved++;
+                if (nRemoved >= nExtra) {
+                    System.out.println("got " + nRemoved + " " + nExtra);
+                    break;
+                }
             }
         }
         myPeakDim.myPeak.peakList.compress();
+        List<PeakDim> links2 = myPeakDim.getLinkedPeakDims();
+        peakDims.clear();
+        for (PeakDim pD : links2) {
+            peakDims.add(pD);
+        }
     }
 
     public void addExtraLinkedPeaks(int nExtra) {
@@ -384,6 +396,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     public void updateCenter() {
         center = measureCenter();
     }
+
     public double measureCenter() {
         double value = peakDims.stream().collect(Collectors.averagingDouble(PeakDim::getChemShift));
         return value;

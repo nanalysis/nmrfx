@@ -42,8 +42,9 @@ import org.renjin.sexp.IntArrayVector;
 import org.renjin.sexp.SEXP;
 
 /**
- * Instances of this class represent NMR datasets. The class is typically used for processed NMR spectra (rather than
- * FID data). The actual data values are either stored in random access file, a memory based representation of a file,
+ * Instances of this class represent NMR datasets. The class is typically used
+ * for processed NMR spectra (rather than FID data). The actual data values are
+ * either stored in random access file, a memory based representation of a file,
  * or an NMRView Vec object.
  *
  * @author brucejohnson
@@ -116,6 +117,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     private double lvl;
     private boolean lvlSet = false;
     private double scale = 1.0;
+    private double norm = 1.0;
     private int rdims;
     private String solvent = null;
     private double temperature = 0.0;
@@ -184,7 +186,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Enum for possible file types consistent with structure available in the Dataset format
+     * Enum for possible file types consistent with structure available in the
+     * Dataset format
      */
     public static enum FFORMAT {
 
@@ -204,11 +207,12 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     public FFORMAT fFormat = FFORMAT.NMRVIEW;
 
     /**
-     * Create a new Dataset object that refers to an existing random access file in a format that can be described by
-     * this class.
+     * Create a new Dataset object that refers to an existing random access file
+     * in a format that can be described by this class.
      *
      * @param fullName The full path to the file
-     * @param name The short name (and initial title) to be used for the dataset.
+     * @param name The short name (and initial title) to be used for the
+     * dataset.
      * @param writable true if the file should be opened in a writable mode.
      * @throws IOException if an I/O error occurs
      */
@@ -383,8 +387,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 
     // create in memory file
     /**
-     * Create a dataset in memory for fast access. This is an experimental mode, and the dataset is not currently
-     * written to disk so can't be persisted.
+     * Create a dataset in memory for fast access. This is an experimental mode,
+     * and the dataset is not currently written to disk so can't be persisted.
      *
      * @param title Dataset title
      * @param dimSizes Sizes of the dataset dimensions
@@ -462,8 +466,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the type of the data values. At present, only single precision float values are used in the dataset. This is
-     * indicated with a return value of 0.
+     * Set the type of the data values. At present, only single precision float
+     * values are used in the dataset. This is indicated with a return value of
+     * 0.
      *
      * @param value the datatype to set
      */
@@ -507,8 +512,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     /**
      * Get a a name that can be used for the file that hasn't already been used
      *
-     * @param fileName The root part of the name. An integer number will be appended so that the name is unique among
-     * open files.
+     * @param fileName The root part of the name. An integer number will be
+     * appended so that the name is unique among open files.
      * @return the new name
      */
     public static String getUniqueName(final String fileName) {
@@ -529,8 +534,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Return whether the dataset is writable. Datasets that store data in a Vec object are always writable. Datasets
-     * that store data in a file are only writable if the underlying file has been opened writable.
+     * Return whether the dataset is writable. Datasets that store data in a Vec
+     * object are always writable. Datasets that store data in a file are only
+     * writable if the underlying file has been opened writable.
      *
      * @return true if the dataset can be written to.
      */
@@ -561,7 +567,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Writes out 0 bytes into full dataset size, thereby taking up appropriate space in file system.
+     * Writes out 0 bytes into full dataset size, thereby taking up appropriate
+     * space in file system.
      */
     public void initialize() {
         int nBytes = 4;
@@ -632,7 +639,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the Vec object. Null if the dataset stores data in a data file, rather than Vec object.
+     * Get the Vec object. Null if the dataset stores data in a data file,
+     * rather than Vec object.
      *
      * @return Vec storing data or null if data file mode.
      */
@@ -693,8 +701,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the type of the data values. At present, only single precision float values are used in the dataset. This is
-     * indicated with a return value of 0.
+     * Get the type of the data values. At present, only single precision float
+     * values are used in the dataset. This is indicated with a return value of
+     * 0.
      *
      * @return the data value, 0 for single precision floats
      */
@@ -793,24 +802,24 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set mode to be Big Endian. This does not change actual data file, so the existing data format must be consistent
-     * with this.
+     * Set mode to be Big Endian. This does not change actual data file, so the
+     * existing data format must be consistent with this.
      */
     public void setBigEndian() {
         littleEndian = false;
     }
 
     /**
-     * Set mode to be Little Endian This does not change actual data file, so the existing data format must be
-     * consistent with this.
+     * Set mode to be Little Endian This does not change actual data file, so
+     * the existing data format must be consistent with this.
      */
     public void setLittleEndian() {
         littleEndian = true;
     }
 
     /**
-     * Set the byte order. This does not change the actual data file, so the existing data format must be consistent
-     * with the specified value.
+     * Set the byte order. This does not change the actual data file, so the
+     * existing data format must be consistent with the specified value.
      *
      * @param order Byte Order
      */
@@ -1066,8 +1075,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Convert a chemical shift to a point position. The point is always aliased so that it is within the size of the
-     * specified dimension.
+     * Convert a chemical shift to a point position. The point is always aliased
+     * so that it is within the size of the specified dimension.
      *
      * @param iDim Dataset dimension index
      * @param ppm position in PPM
@@ -1118,7 +1127,20 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public double ppmToHz(int iDim, double ppm) {
         double pt = ppmToDPoint(iDim, ppm);
-        double hz = pt / (getSize(iDim) - 1) * getSw(iDim);
+        double hz = pt / getSize(iDim) * getSw(iDim);
+
+        return (hz);
+    }
+
+    /**
+     * Convert dataset position in points to position in Hz
+     *
+     * @param iDim dataset dimension index
+     * @param pt position in points
+     * @return position in Hz
+     */
+    public double pointToHz(int iDim, double pt) {
+        double hz = pt / getSize(iDim) * getSw(iDim);
 
         return (hz);
     }
@@ -1160,7 +1182,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the valid size for the specified dimension. Valid size is the index of the last vector written to, plus 1.
+     * Get the valid size for the specified dimension. Valid size is the index
+     * of the last vector written to, plus 1.
      *
      * @param iDim Dimension number.
      * @return the valid size of this dimension
@@ -1176,8 +1199,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the valid size for the specified dimension after last parameter sync. Valid size is the index of the last
-     * vector written to, plus 1.
+     * Get the valid size for the specified dimension after last parameter sync.
+     * Valid size is the index of the last vector written to, plus 1.
      *
      * @param iDim Dimension number.
      * @return the valid size of this dimension
@@ -1307,7 +1330,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the size of the zero-filled time domain data along the specified dimension.
+     * Set the size of the zero-filled time domain data along the specified
+     * dimension.
      *
      * @param iDim Dataset dimension index
      * @param size the zfSize to set
@@ -1409,7 +1433,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the dataset point at which the reference value is set for the specified dimension.
+     * Get the dataset point at which the reference value is set for the
+     * specified dimension.
      *
      * @param iDim Dataset dimension index
      * @return the reference point
@@ -1425,7 +1450,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the dataset point at which the reference value is set for the specified dimension.
+     * Set the dataset point at which the reference value is set for the
+     * specified dimension.
      *
      * @param iDim Dataset dimension index
      * @param refPt the reference point to set
@@ -1471,7 +1497,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the zero order phase parameter that was used in processing the specified dimension
+     * Get the zero order phase parameter that was used in processing the
+     * specified dimension
      *
      * @param iDim Dataset dimension index
      * @return the phase value
@@ -1487,7 +1514,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the zero order phase parameter that was used in processing the specified dimension
+     * Set the zero order phase parameter that was used in processing the
+     * specified dimension
      *
      * @param iDim Dataset dimension index
      * @param ph0 the phase value to set
@@ -1500,7 +1528,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the first order phase parameter that was used in processing the specified dimension
+     * Get the first order phase parameter that was used in processing the
+     * specified dimension
      *
      * @param iDim Dataset dimension index
      * @return the first order phase
@@ -1516,7 +1545,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the first order phase parameter that was used in processing the specified dimension
+     * Set the first order phase parameter that was used in processing the
+     * specified dimension
      *
      * @param iDim Dataset dimension index
      * @param ph1 the first order phase
@@ -1558,7 +1588,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the dataset point at which the reference value is set for the specified dimension.
+     * Get the dataset point at which the reference value is set for the
+     * specified dimension.
      *
      * @param iDim Dataset dimension index
      * @return the reference point
@@ -1574,7 +1605,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the dataset point at which the reference value is set for the specified dimension.
+     * Set the dataset point at which the reference value is set for the
+     * specified dimension.
      *
      * @param iDim Dataset dimension index
      * @param refPt_r the reference point to set
@@ -1619,7 +1651,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the zero order phase parameter that was used in processing the specified dimension
+     * Get the zero order phase parameter that was used in processing the
+     * specified dimension
      *
      * @param iDim Dataset dimension index
      * @return the zeroth order phase
@@ -1635,7 +1668,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the zero order phase parameter that was used in processing the specified dimension
+     * Set the zero order phase parameter that was used in processing the
+     * specified dimension
      *
      * @param iDim Dataset dimension index
      * @param ph0_r the zeroth order phase to set
@@ -1648,7 +1682,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the first order phase parameter that was used in processing the specified dimension
+     * Get the first order phase parameter that was used in processing the
+     * specified dimension
      *
      * @param iDim Dataset dimension index
      * @return the first order phase
@@ -1664,7 +1699,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the first order phase parameter that was used in processing the specified dimension
+     * Set the first order phase parameter that was used in processing the
+     * specified dimension
      *
      * @param iDim Dataset dimension index
      * @param ph1_r the first order phase to set
@@ -1752,7 +1788,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * Get the frequency domain mode of the specified dimension
      *
      * @param iDim Dataset dimension index
-     * @return true if the data in the specified dimension is in the frequency domain
+     * @return true if the data in the specified dimension is in the frequency
+     * domain
      */
     public boolean getFreqDomain(final int iDim) {
         final boolean value;
@@ -1782,7 +1819,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * Get the frequency domain mode of the specified dimension
      *
      * @param iDim Dataset dimension index
-     * @return true if the data in the specified dimension is in the frequency domain
+     * @return true if the data in the specified dimension is in the frequency
+     * domain
      */
     public boolean getFreqDomain_r(final int iDim) {
         final boolean value;
@@ -1894,8 +1932,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get value indicating whether default drawing mode should include positive and/or negative contours. 0: no
-     * contours, 1: positive, 2: negative, 3: both
+     * Get value indicating whether default drawing mode should include positive
+     * and/or negative contours. 0: no contours, 1: positive, 2: negative, 3:
+     * both
      *
      * @return the mode
      */
@@ -1904,8 +1943,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set value indicating whether default drawing mode should include positive and/or negative contours. 0: no
-     * contours, 1: positive, 2: negative, 3: both
+     * Set value indicating whether default drawing mode should include positive
+     * and/or negative contours. 0: no contours, 1: positive, 2: negative, 3:
+     * both
      *
      * @param posneg the posneg to set
      */
@@ -1914,7 +1954,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the display level (contour level or 1D scale) to be used as a default when displaying dataset.
+     * Get the display level (contour level or 1D scale) to be used as a default
+     * when displaying dataset.
      *
      * @return the default display level
      */
@@ -1923,7 +1964,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the display level (contour level or 1D scale) to be used as a default when displaying dataset.
+     * Set the display level (contour level or 1D scale) to be used as a default
+     * when displaying dataset.
      *
      * @param lvl the display level to set
      */
@@ -1933,7 +1975,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get whether lvl has been set (so that GUI programs can decide to do an auto level)
+     * Get whether lvl has been set (so that GUI programs can decide to do an
+     * auto level)
      *
      * @return true if lvl value has been explicitly set.
      */
@@ -1957,6 +2000,26 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public void setScale(double scale) {
         this.scale = scale;
+    }
+
+    /**
+     * Get the norm value used to divide intensity values in dataset. This is
+     * used to translate dataset intensities of regions into atom numbers.
+     *
+     * @return the norm
+     */
+    public double getNorm() {
+        return norm;
+    }
+
+    /**
+     * Set the norm value used to divide intensity values in dataset. This is
+     * used to translate dataset intensities of regions into atom numbers.
+     *
+     * @param norm the norm to set
+     */
+    public void setNorm(double norm) {
+        this.norm = norm;
     }
 
     /**
@@ -2143,8 +2206,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     //    }
 
     /**
-     * Calculate a noise level for the dataset by analyzing the rms value of data points in a corner of dataset. The
-     * resulting value is stored and can be retrieved with getNoiseLevel
+     * Calculate a noise level for the dataset by analyzing the rms value of
+     * data points in a corner of dataset. The resulting value is stored and can
+     * be retrieved with getNoiseLevel
      *
      * @return the noise level
      */
@@ -2175,13 +2239,16 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Calculate basic descriptive statistics on the specified region of the dataset.
+     * Calculate basic descriptive statistics on the specified region of the
+     * dataset.
      *
      * @param pt The bounds of the region in dataset points
      * @param cpt The center point of each region
      * @param width the width of each region
-     * @param dim the dataset dimensions that the pt, cpt, and width parameters use
-     * @return RegionData with statistical information about the specified region
+     * @param dim the dataset dimensions that the pt, cpt, and width parameters
+     * use
+     * @return RegionData with statistical information about the specified
+     * region
      * @throws java.io.IOException if an I/O error ocurrs
      */
     synchronized public RegionData analyzeRegion(int[][] pt, int[] cpt, double[] width, int[] dim)
@@ -2332,10 +2399,54 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 //
 //        interp.setResult(list);
 //    }
+    synchronized public double measureSDev(int[][] pt, int[] dim, double sDevIn, double ratio)
+            throws IOException {
+
+        if (vecMat != null) {
+            setSize(0, vecMat.getSize());
+            blockSize[0] = vecMat.getSize();
+            blockElements = blockSize[0] * 4;
+        }
+        int[] counterSizes = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            if (pt[i][1] >= pt[i][0]) {
+                counterSizes[i] = pt[i][1] - pt[i][0] + 1;
+            } else {
+                counterSizes[i] = getSize(dim[i]) + (pt[i][1] - pt[i][0] + 1);
+            }
+        }
+        DimCounter counter = new DimCounter(counterSizes);
+        DimCounter.Iterator cIter = counter.iterator();
+        double sumSq = 0.0;
+        double sum = 0.0;
+        int n = 0;
+        while (cIter.hasNext()) {
+            int[] points = cIter.next();
+            for (int i = 0; i < nDim; i++) {
+                points[i] += pt[i][0];
+                if (points[i] >= getSize(dim[i])) {
+                    points[i] = points[i] - getSize(dim[i]);
+                }
+            }
+            double value = readPoint(points, dim);
+            if (value != Double.MAX_VALUE) {
+                sum += value;
+                sumSq += value * value;
+                n++;
+            }
+        }
+        double sDev = 0.0;
+        if (n > 1) {
+            sDev = Math.sqrt(sumSq / n - ((sum / n) * (sum / n)));
+        }
+        return sDev;
+    }
+
     /**
-     * Get an array representing the dimensions that will be used in specifying slices through the dataset. The
-     * specified dimension will be in the first position [0] of array and remaining dimensions in increasing order in
-     * the rest of the array.
+     * Get an array representing the dimensions that will be used in specifying
+     * slices through the dataset. The specified dimension will be in the first
+     * position [0] of array and remaining dimensions in increasing order in the
+     * rest of the array.
      *
      * @param iDim Dataset dimension index
      * @return Array of dimension indices
@@ -2358,8 +2469,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Measure the rmsd value of vectors along the specified dataset dimension. These values can be used to form a local
-     * threshold during peak picking
+     * Measure the rmsd value of vectors along the specified dataset dimension.
+     * These values can be used to form a local threshold during peak picking
      *
      * @param iDim index of the dataset dimension
      * @throws java.io.IOException if an I/O error ocurrs
@@ -2416,7 +2527,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Check if dataset has stored rmsd values along each dimension as calculated by measureSliceRMSD
+     * Check if dataset has stored rmsd values along each dimension as
+     * calculated by measureSliceRMSD
      *
      * @return true if has stored rmsd values
      *
@@ -2449,8 +2561,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the rmsd value for a point in the dataset. The value is calculated as the maximum value of all the rmsd
-     * values for vectors that intersect at the specified point
+     * Get the rmsd value for a point in the dataset. The value is calculated as
+     * the maximum value of all the rmsd values for vectors that intersect at
+     * the specified point
      *
      * @param pt indices of point
      * @return rmsd value for point
@@ -2476,8 +2589,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Calculate ratio of slice based rmsd to a specified level. The ratio is used in peak picker to determine if a
-     * point should be picked at specified point.
+     * Calculate ratio of slice based rmsd to a specified level. The ratio is
+     * used in peak picker to determine if a point should be picked at specified
+     * point.
      *
      * @param level Peak picking level
      * @param pt indices of dataset
@@ -2617,8 +2731,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get a list of positions that are within an elliptical region around a set of points. Used to find points that
-     * should be included when doing peak fitting.
+     * Get a list of positions that are within an elliptical region around a set
+     * of points. Used to find points that should be included when doing peak
+     * fitting.
      *
      * @param p2 Bounds of peak regions
      * @param cpt Array of centers of peak positions
@@ -2679,7 +2794,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the number of dimensions for this dataset. Will reset all reference information.
+     * Set the number of dimensions for this dataset. Will reset all reference
+     * information.
      *
      * @param nDim Number of dataset dimensions
      */
@@ -2689,7 +2805,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Will reset all reference fields so they are sized corresponding to current dataset dimension.
+     * Will reset all reference fields so they are sized corresponding to
+     * current dataset dimension.
      *
      */
     public void setNDim() {
@@ -2733,9 +2850,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Some parameters (complex, refvalue, refpt, sw, phase,valid size) have two copies. One that is set when writing to
-     * file, and one that is read from file. This command synchronizes the two by copying the written values to the read
-     * values.
+     * Some parameters (complex, refvalue, refpt, sw, phase,valid size) have two
+     * copies. One that is set when writing to file, and one that is read from
+     * file. This command synchronizes the two by copying the written values to
+     * the read values.
      *
      * @param iDim Datatset dimension index
      */
@@ -2756,7 +2874,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set size of dataset to valid size for specified dimension (only used for dimensions above the first)
+     * Set size of dataset to valid size for specified dimension (only used for
+     * dimensions above the first)
      *
      * @param iDim Dataset dimension index
      */
@@ -2776,7 +2895,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set size of file along specified dimension. Causes reset of various size related parameters.
+     * Set size of file along specified dimension. Causes reset of various size
+     * related parameters.
      *
      * @param iDim Dataset dimension index
      * @param newSize new size for dimension.
@@ -2790,8 +2910,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set valid size for specified dimension. Normally used to track number of rows, columns etc. that have had valid
-     * data written to.
+     * Set valid size for specified dimension. Normally used to track number of
+     * rows, columns etc. that have had valid data written to.
      *
      * @param iDim Dataset dimension index
      * @param newSize Valid size for dimension.
@@ -2803,8 +2923,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set valid size for specified dimension. Normally used to track number of rows, columns etc. that have had valid
-     * data written to.
+     * Set valid size for specified dimension. Normally used to track number of
+     * rows, columns etc. that have had valid data written to.
      *
      * @param iDim Dataset dimension index
      * @param newSize Valid size for dimension
@@ -2816,7 +2936,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the size of blocks along the specified dimension. Setting this will reset various size related parameters.
+     * Set the size of blocks along the specified dimension. Setting this will
+     * reset various size related parameters.
      *
      * @param iDim Dataset dimension index
      * @param newSize New block size
@@ -2830,7 +2951,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the size of blocks along the specified dimension. Doesn't call dimDataset;
+     * Set the size of blocks along the specified dimension. Doesn't call
+     * dimDataset;
      *
      * @param iDim Dataset dimension index
      * @param newSize New block size
@@ -2843,7 +2965,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Read the header of an NMRView format dataset file into the fields of this Dataset object.
+     * Read the header of an NMRView format dataset file into the fields of this
+     * Dataset object.
      *
      * @return 0 if successful, 1 if there was an error
      */
@@ -2993,7 +3116,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Read the header of an UCSF format dataset file into the fields of this Dataset object.
+     * Read the header of an UCSF format dataset file into the fields of this
+     * Dataset object.
      *
      * @return 0 if successful, 1 if there was an error
      */
@@ -3188,7 +3312,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Initialize headers to default values based on currently set number of dimensions
+     * Initialize headers to default values based on currently set number of
+     * dimensions
      */
     public final synchronized void newHeader() {
         magic = 0x3418abcd;
@@ -3256,8 +3381,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get a standard label for the specified dimension. The label is based on the name of the nucleus detected on this
-     * dimension.
+     * Get a standard label for the specified dimension. The label is based on
+     * the name of the nucleus detected on this dimension.
      *
      * @param iDim Dataset dimension index
      * @return The name of the nucleus
@@ -3863,8 +3988,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param pt indices of point to read
      * @return the dataset value
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if point is outside the range of dataset ( less than 0 or greater than or equal
-     * to size)
+     * @throws IllegalArgumentException if point is outside the range of dataset
+     * ( less than 0 or greater than or equal to size)
      */
     public double readPoint(int[] pt) throws IOException, IllegalArgumentException {
         int i;
@@ -3892,8 +4017,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param dim dimension indices that used for the point values
      * @return the dataset value
      * @throws java.io.IOException if an I/O error occurs
-     * @throws IllegalArgumentException if point is outside range of dataset ( less than 0 or greater than or equal to
-     * size)
+     * @throws IllegalArgumentException if point is outside range of dataset (
+     * less than 0 or greater than or equal to size)
      */
     public double readPoint(int[] pt, int[] dim) throws IOException, IllegalArgumentException {
         int i;
@@ -3924,8 +4049,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param pt indices of point to write
      * @param value to write
      * @throws java.io.IOException if an I/O error occurs
-     * @throws IllegalArgumentException if point is outside range of dataset ( less than 0 or greater than or equal to
-     * size)
+     * @throws IllegalArgumentException if point is outside range of dataset (
+     * less than 0 or greater than or equal to size)
      */
     public void writePoint(int[] pt, double value) throws IOException, IllegalArgumentException {
         int i;
@@ -3946,12 +4071,15 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Read an N dimensional matrix of values within the specified region of the matrix
+     * Read an N dimensional matrix of values within the specified region of the
+     * matrix
      *
-     * @param theFile The dataset to read. Redundant since this is an instance method. fixme
+     * @param theFile The dataset to read. Redundant since this is an instance
+     * method. fixme
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
-     * @param matrix A matrix in which to store the read values. Must be at least as big as region.
+     * @param matrix A matrix in which to store the read values. Must be at
+     * least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
@@ -3985,12 +4113,15 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Read an N dimensional matrix of values within the specified region of the matrix
+     * Read an N dimensional matrix of values within the specified region of the
+     * matrix
      *
-     * @param theFile The dataset to read. Redundant since this is an instance method. fixme
+     * @param theFile The dataset to read. Redundant since this is an instance
+     * method. fixme
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
-     * @param matrix A matrix in which to store the read values. Must be at least as big as region.
+     * @param matrix A matrix in which to store the read values. Must be at
+     * least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error ocurrs
      */
@@ -4027,11 +4158,13 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Read an N dimensional matrix of values within the specified region of the matrix
+     * Read an N dimensional matrix of values within the specified region of the
+     * matrix
      *
      * @param pt The region to read
      * @param dim The dataset dimensions used by the region points
-     * @param matrix A matrix in which to store the read values. Must be at least as big as region.
+     * @param matrix A matrix in which to store the read values. Must be at
+     * least as big as region.
      * @return The maximum of the absolute values of the read values
      * @throws java.io.IOException if an I/O error occurs
      */
@@ -4076,7 +4209,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Write the data values to a file. Only works if the dataset values are in a Vec object (not dataset file)
+     * Write the data values to a file. Only works if the dataset values are in
+     * a Vec object (not dataset file)
      *
      * @param fullName Name of file to write
      * @throws java.io.IOException if an I/O error ocurrs
@@ -4266,7 +4400,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * Return the value for a specified property
      *
      * @param name The name of the property
-     * @return the value for the property or empty string if property doesn't exist
+     * @return the value for the property or empty string if property doesn't
+     * exist
      */
     public String getProperty(String name) {
         String value = (String) properties.get(name);
@@ -4281,8 +4416,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     /**
      * Get the default color to be used in displaying dataset.
      *
-     * @param getPositive true if the color for positive values should be returned and false if the color for negative
-     * values should be returned
+     * @param getPositive true if the color for positive values should be
+     * returned and false if the color for negative values should be returned
      * @return the color
      */
     public String getColor(boolean getPositive) {
@@ -4296,7 +4431,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     /**
      * Set the default color.
      *
-     * @param setPositive If true set the color for positive values, if false set the value for negative values.
+     * @param setPositive If true set the color for positive values, if false
+     * set the value for negative values.
      * @param newColor the new color
      */
     public void setColor(boolean setPositive, String newColor) {
@@ -4554,6 +4690,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         rwVector.resize(rwVector.getSize(), getComplex_r(dim[0]));
         rwVector.centerFreq = getSf(dim[0]);
         rwVector.dwellTime = 1.0 / getSw_r(dim[0]);
+        if (rwVector.getSize() != getSize(dim[0])) {
+            rwVector.dwellTime *= (double) getSize(dim[0]) / rwVector.getSize();
+        }
         rwVector.setPh0(getPh0_r(dim[0]));
         rwVector.setPh1(getPh1_r(dim[0]));
         rwVector.setTDSize(getTDSize(dim[0]));
@@ -4612,7 +4751,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Read specified values along specified row. Only appropriate for 2D datasets
+     * Read specified values along specified row. Only appropriate for 2D
+     * datasets
      *
      * @param row the row to read
      * @param indices List of points to read along row
@@ -4655,7 +4795,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Read specified values along specified column. Only appropriate for 2D datasets
+     * Read specified values along specified column. Only appropriate for 2D
+     * datasets
      *
      * @param column the column of dataset to read
      * @param indices List of points to read along column
@@ -4685,7 +4826,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param columnIndices List of columns
      * @return the matrix of values
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if row or column indices is null or empty
+     * @throws IllegalArgumentException if row or column indices is null or
+     * empty
      */
     public Array2DRowRealMatrix getSubMatrix(ArrayList<Integer> rowIndices, ArrayList<Integer> columnIndices) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || rowIndices.isEmpty()) {
@@ -4715,7 +4857,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param columnIndices List of columns
      * @return the matrix of values
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if row or column indices is null or empty
+     * @throws IllegalArgumentException if row or column indices is null or
+     * empty
      */
     public Array2DRowRealMatrix getSubMatrix(int[] rowIndices, int[] columnIndices) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || (rowIndices.length == 0)) {
@@ -4774,7 +4917,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param dataTbl Names for rows and columns
      * @return a BucketMatrix object containing the bucket values from dataset
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if row or column indices is null or empty
+     * @throws IllegalArgumentException if row or column indices is null or
+     * empty
      */
     public BucketedMatrix getBucketedSubMatrix(int[] rowIndices, int[] columnIndices, int bucketSize, String[][] dataTbl) throws IOException, IllegalArgumentException {
         if ((rowIndices == null) || (rowIndices.length == 0)) {
@@ -4965,11 +5109,13 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Read a vector from the dataset at the location stored in the vector's header
+     * Read a vector from the dataset at the location stored in the vector's
+     * header
      *
      * @param vector Store data values in this vector object.
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException If the vector doesn't have a location in header.
+     * @throws IllegalArgumentException If the vector doesn't have a location in
+     * header.
      */
     public void readVector(Vec vector) throws IOException, IllegalArgumentException {
         if ((vector.getPt() == null) || (vector.getDim() == null)) {
@@ -5007,15 +5153,17 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Write vector to the dataset at the specified location. The location is specified with indices indicating the
-     * offset for each dimension and the vector is written along the specified dimension. The location at which the
-     * vector is written is stored in the vector header.
+     * Write vector to the dataset at the specified location. The location is
+     * specified with indices indicating the offset for each dimension and the
+     * vector is written along the specified dimension. The location at which
+     * the vector is written is stored in the vector header.
      *
      * @param vector the vector to write
      * @param indices The location at which to write the vector.
      * @param iDim Vector is written parallel to this dimension.
      * @throws IOException if an I/O exception occurs
-     * @throws IllegalArgumentException if dataset stores data in a Vec object (not dataset file)
+     * @throws IllegalArgumentException if dataset stores data in a Vec object
+     * (not dataset file)
      */
     public void writeVector(Vec vector, int[] indices, int iDim) throws IOException, IllegalArgumentException {
         int[] dim = new int[nDim];
@@ -5046,7 +5194,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      *
      * @param vector the vector to write
      * @throws IOException if an I/O error occurs
-     * @throws IllegalArgumentException if dataset stores data in a Vec object (not dataset file)
+     * @throws IllegalArgumentException if dataset stores data in a Vec object
+     * (not dataset file)
      */
     public void writeVector(Vec vector) throws IOException, IllegalArgumentException {
         if ((vector.getPt() == null) || (vector.getDim() == null)) {
@@ -5056,11 +5205,13 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Write the vector out to the specified location of dataset. The vector is written along the dimension specified in
-     * the first entry of the dim array.
+     * Write the vector out to the specified location of dataset. The vector is
+     * written along the dimension specified in the first entry of the dim
+     * array.
      *
      * @param pt index in points where vector should be written.
-     * @param dim Specify the dimension that each entry in the pt array refers to
+     * @param dim Specify the dimension that each entry in the pt array refers
+     * to
      * @param vector the vector to write
      * @throws IOException if an I/O error occurs
      */
@@ -5157,7 +5308,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the number of dimensions represent frequencies (as opposed to, for example, relaxation time increments).
+     * Get the number of dimensions represent frequencies (as opposed to, for
+     * example, relaxation time increments).
      *
      * @return the number of frequency dimensions.
      */
@@ -5166,7 +5318,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set the number of dimensions represent frequencies (as opposed to, for example, relaxation time increments).
+     * Set the number of dimensions represent frequencies (as opposed to, for
+     * example, relaxation time increments).
      *
      * @param rdims the number of frequency dimensions.
      */
@@ -5428,7 +5581,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get iterator that allows iterating over all the vectors along the specified dimension of the dataset.
+     * Get iterator that allows iterating over all the vectors along the
+     * specified dimension of the dataset.
      *
      * @param iDim Index of dataset dimension to read vectors from
      * @return iterator an Iterator to iterate over vectors in dataset
@@ -5440,8 +5594,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get iterator that allows iterating over the indices of all the vectors along the specified dimension of the
-     * dataset.
+     * Get iterator that allows iterating over the indices of all the vectors
+     * along the specified dimension of the dataset.
      *
      * @param iDim Index of dataset dimension to read vectors from
      * @return iterator an Iterator to iterate over vectors in dataset

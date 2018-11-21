@@ -55,8 +55,8 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.util.Precision;
 
 /**
- * BrukerData implements NMRData methods for opening and reading parameters and FID data acquired using a Bruker
- * instrument.
+ * BrukerData implements NMRData methods for opening and reading parameters and
+ * FID data acquired using a Bruker instrument.
  *
  * @author bfetler
  * @see NMRData
@@ -133,7 +133,8 @@ public class BrukerData implements NMRData {
     }
 
     /**
-     * Finds data, given a path to search for vendor-specific files and directories.
+     * Finds data, given a path to search for vendor-specific files and
+     * directories.
      *
      * @param bpath full path for data
      * @return if data was successfully found or not
@@ -191,7 +192,8 @@ public class BrukerData implements NMRData {
     } // findData
 
     /**
-     * Finds FID data, given a path to search for vendor-specific files and directories.
+     * Finds FID data, given a path to search for vendor-specific files and
+     * directories.
      *
      * @param bpath full path for FID data
      * @return if FID data was successfully found or not
@@ -880,8 +882,22 @@ public class BrukerData implements NMRData {
                     }
                 }
             }
+            result = fixArraySize(result, smallDim);
         }
         return result;
+    }
+
+    private List<Double> fixArraySize(List<Double> values, int iDim) {
+        int dimSize = getSize(iDim);
+        if (values.size() * 2 == dimSize) {
+            List<Double> newValues = new ArrayList<>();
+            for (int i = 0; i < dimSize; i++) {
+                newValues.add(values.get(i / 2));
+            }
+            values.clear();
+            values.addAll(newValues);
+        }
+        return values;
     }
 
     private void setArrayPars(int nDim) {
@@ -968,10 +984,12 @@ public class BrukerData implements NMRData {
     }
 
     /**
-     * Set flags before FID data is read using readVector. Flags are only active on BrukerData. Allowable flags are
-     * 'fixdsp', 'exchange', 'swapbits', 'negatepairs', with values of True or False. For example, in python:
+     * Set flags before FID data is read using readVector. Flags are only active
+     * on BrukerData. Allowable flags are 'fixdsp', 'exchange', 'swapbits',
+     * 'negatepairs', with values of True or False. For example, in python:
      * <p>
-     * f = FID(serDir) f.flags = {'fixdsp':True, 'shiftdsp':True,'exchange':True, 'swapbits':True, 'negatepairs':False}
+     * f = FID(serDir) f.flags = {'fixdsp':True,
+     * 'shiftdsp':True,'exchange':True, 'swapbits':True, 'negatepairs':False}
      * CREATE(serDir+'hmqc.nv', dSizes, f)
      * </p>
      *

@@ -37,11 +37,11 @@ class SimDataGenerator extends DataGenerator {
         }
     }
 
-    public float[][] Matrix2(int iChunk, String chunkLabelStr, int[][] apt) {
+    public float[][] readMatrix(int iChunk, String chunkLabelStr, int[][] apt, float[][] matrix) {
         return (null);
     }
 
-    public int getMatrixRegion(int iChunk, int mode, int[][] apt,
+    public int getMatrixRegion(int iChunk, int maxChunkSize, int mode, int[][] apt,
             double[] offset, StringBuffer chunkLabel) {
         return 0;
     }

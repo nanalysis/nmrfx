@@ -476,15 +476,15 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         return (matrix);
     }
 
-    public int getMatrixRegion(int iChunk, int mode, int[][] apt,
+    public int getMatrixRegion(int iChunk, int maxChunkSize, int mode, int[][] apt,
             double[] offset, StringBuffer chunkLabel) {
         Float extremeValue;
         boolean fastMode = false;
         chunkLabel.append(dim[0] + ".");
-        chunkSize[0] = 64;
+        chunkSize[0] = maxChunkSize;
 
         if (theFile.getNDim() > 1) {
-            chunkSize[1] = 64;
+            chunkSize[1] = maxChunkSize;
         }
 
         chunkOffset[0] = 1;
@@ -592,9 +592,12 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         return (0);
     }
 
-    public float[][] Matrix2(int iChunk, String chunkLabelStr, int[][] apt) throws IOException {
-        float[][] matrix = new float[apt[1][1] - apt[1][0] + 1][apt[0][1]
-                - apt[0][0] + 1];
+    public float[][] readMatrix(int iChunk, String chunkLabelStr, int[][] apt, float[][] matrix) throws IOException {
+        int ny = apt[1][1] - apt[1][0] + 1;
+        int nx = apt[0][1] - apt[0][0] + 1;
+        if ((matrix == null) || (matrix.length != ny) || (matrix[0].length != nx)) {
+            matrix = new float[ny][nx];
+        }
         float maxValue = theFile.readMatrix(theFile, apt, dim, matrix);
         extremes.put(chunkLabelStr + iChunk, new Float(maxValue));
 
