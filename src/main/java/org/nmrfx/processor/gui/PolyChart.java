@@ -1765,11 +1765,16 @@ public class PolyChart implements PeakListener {
     }
 
     protected void exportVectorGraphics(SVGGraphicsContext svgGC) throws GraphicsIOException {
+        svgGC.save();
         xAxis.draw(svgGC);
         yAxis.draw(svgGC);
         svgGC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
         svgGC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
+        svgGC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+        svgGC.clip();
+        svgGC.beginPath();
         drawDatasets(svgGC);
+        svgGC.restore();
         if (!datasetAttributesList.isEmpty()) {
             drawPeakLists(true, svgGC);
             drawSelectedPeaks(svgGC);

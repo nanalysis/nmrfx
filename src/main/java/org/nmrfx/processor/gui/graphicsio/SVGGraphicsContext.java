@@ -64,6 +64,8 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     StringBuilder pathBuilder = new StringBuilder();
     Affine transform = null;
     List<Object> transforms = new ArrayList<>();
+    boolean clipActive = false;
+    int clipIndex = 1;
 
     GCCache cache = new GCCache();
     private List<Object> ArrayList;
@@ -372,7 +374,31 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void clip() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            if (clipActive) {
+                writer.writeEndElement();
+            }
+            clipPath += pathBuilder.toString();
+            if (clipPath.length() > 0) {
+                writer.writeStartElement("defs");
+                writer.writeStartElement("clipPath");
+                writer.writeAttribute("id", "clipPath" + clipIndex);
+                writer.writeStartElement("path");
+                writer.writeAttribute("d", clipPath);
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeEndElement();
+                writer.writeStartElement("g");
+                writer.writeAttribute("style", "clip-path: url(#clipPath" + clipIndex + ");");
+                clipActive = true;
+                clipIndex++;
+            } else {
+                clipActive = false;
+            }
+
+        } catch (XMLStreamException ex) {
+            System.out.println(ex.getMessage());
+        }
     }
 
     @Override
@@ -585,11 +611,23 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void rect(double x, double y, double w, double h) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        moveTo(x, y);
+        lineTo(x + w, y);
+        lineTo(x + w, y + h);
+        lineTo(x, y + h);
+        lineTo(x, y);
     }
 
     @Override
     public void restore() {
+        if (clipActive) {
+            try {
+                writer.writeEndElement();
+            } catch (XMLStreamException ex) {
+            }
+            clipActive = false;
+        }
+        pathBuilder.setLength(0);
         cache.restore(this);
     }
 
