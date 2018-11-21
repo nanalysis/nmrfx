@@ -80,11 +80,11 @@
                                         <ButtonBar HBox.hgrow="ALWAYS">
                                             <buttons>
                                                 <Button mnemonicParsing="false" onAction="#layoutSS" prefHeight="27.0" prefWidth="87.0" text="Draw" />
-                                                <CheckBox fx:id="numbersCheckBox" text="Numbers"/>
-                                                <CheckBox fx:id="activeCheckBox" text="Active"/>
                                                 <ChoiceBox fx:id="nAtomsChoiceBox"/>
                                                 <MenuButton fx:id="peakListMenuButton" text="PeakList"/>
+                                                <MenuButton fx:id="modeMenuButton" text="Modes"/>
                                                 <ChoiceBox fx:id="constraintTypeChoiceBox"/>
+
                                             </buttons>
                                         </ButtonBar>
                                     </children>

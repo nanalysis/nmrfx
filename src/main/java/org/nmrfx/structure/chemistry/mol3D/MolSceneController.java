@@ -24,7 +24,7 @@ import javafx.scene.Scene;
 import javafx.scene.SubScene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
@@ -43,6 +43,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.FreezeListener;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.AtomController;
@@ -62,7 +63,7 @@ import org.nmrfx.structure.chemistry.SSViewer;
  *
  * @author Bruce Johnson
  */
-public class MolSceneController implements Initializable, MolSelectionListener {
+public class MolSceneController implements Initializable, MolSelectionListener, FreezeListener {
 
     private Stage stage;
     SSViewer ssViewer;
@@ -74,10 +75,6 @@ public class MolSceneController implements Initializable, MolSelectionListener {
     BorderPane molBorderPane;
     @FXML
     BorderPane ligandBorderPane;
-    @FXML
-    CheckBox numbersCheckBox;
-    @FXML
-    CheckBox activeCheckBox;
     @FXML
     ChoiceBox<Integer> nAtomsChoiceBox;
     @FXML
@@ -91,13 +88,20 @@ public class MolSceneController implements Initializable, MolSelectionListener {
     @FXML
     MenuButton peakListMenuButton;
     @FXML
+    MenuButton modeMenuButton;
+    @FXML
     ChoiceBox<String> constraintTypeChoiceBox;
+    @FXML
+    CheckMenuItem frozenCheckBox = new CheckMenuItem("Frozen");
+    CheckMenuItem activeCheckBox = new CheckMenuItem("Active");
+    CheckMenuItem numbersCheckBox = new CheckMenuItem("Numbers");
 
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
     Pane twoDPane = new Pane();
     Pane ligandCanvasPane;
+    PeakList peakList = null;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -139,7 +143,11 @@ public class MolSceneController implements Initializable, MolSelectionListener {
 
         PeakList.peakListTable.addListener(mapChangeListener);
         updatePeakListMenu();
+        modeMenuButton.getItems().add(numbersCheckBox);
+        modeMenuButton.getItems().add(activeCheckBox);
+        modeMenuButton.getItems().add(frozenCheckBox);
 
+        frozenCheckBox.selectedProperty().addListener(e -> updatePeaks());
     }
 
     public Stage getStage() {
@@ -502,26 +510,45 @@ public class MolSceneController implements Initializable, MolSelectionListener {
     }
 
     void setPeakList(String peakListName) {
-        PeakList peakList = PeakList.get(peakListName);
-        List<String> constraintPairs = new ArrayList<>();
-        if (peakList.valid()) {
-            for (Peak peak : peakList.peaks()) {
-                String name1 = peak.getPeakDim(0).getLabel();
-                String name2 = peak.getPeakDim(1).getLabel();
-                if (!name1.equals("") && !name2.equals("")) {
-                    constraintPairs.add(name1);
-                    constraintPairs.add(name2);
+        peakList = PeakList.get(peakListName);
+        PeakList.registerFreezeListener(this);
+        updatePeaks();
+    }
+
+    void updatePeaks() {
+        if (peakList != null) {
+            List<String> constraintPairs = new ArrayList<>();
+            boolean onlyFrozen = frozenCheckBox.isSelected();
+            if (peakList.valid()) {
+                for (Peak peak : peakList.peaks()) {
+                    boolean frozen1 = peak.getPeakDim(0).isFrozen();
+                    boolean frozen2 = peak.getPeakDim(1).isFrozen();
+                    if (!onlyFrozen || (frozen1 && frozen2)) {
+                        String name1 = peak.getPeakDim(0).getLabel();
+                        String name2 = peak.getPeakDim(1).getLabel();
+                        if (!name1.equals("") && !name2.equals("")) {
+                            constraintPairs.add(name1);
+                            constraintPairs.add(name2);
+                        }
+                    }
+                }
+                String datasetName = peakList.getDatasetName();
+                if ((datasetName != null) && !datasetName.equals("") && (Molecule.getActive() != null)) {
+                    Dataset dataset = Dataset.getDataset(datasetName);
+                    String labelScheme = dataset.getProperty("labelScheme");
+                    RNALabels rnaLabels = new RNALabels();
+                    rnaLabels.parseSelGroups(Molecule.getActive(), labelScheme);
                 }
             }
-            String datasetName = peakList.getDatasetName();
-            if ((datasetName != null) && !datasetName.equals("") && (Molecule.getActive() != null)) {
-                Dataset dataset = Dataset.getDataset(datasetName);
-                String labelScheme = dataset.getProperty("labelScheme");
-                RNALabels rnaLabels = new RNALabels();
-                rnaLabels.parseSelGroups(Molecule.getActive(), labelScheme);
-            }
+            ssViewer.setConstraintPairs(constraintPairs);
+            ssViewer.drawSS();
         }
-        ssViewer.setConstraintPairs(constraintPairs);
-        ssViewer.drawSS();
+    }
+
+    @Override
+    public void freezeHappened(Peak peak, boolean state) {
+        if (frozenCheckBox.isSelected() && peak.getPeakList() == peakList) {
+            updatePeaks();
+        }
     }
 }

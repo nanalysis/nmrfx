@@ -285,12 +285,14 @@ public class PeakSlider {
             try {
                 peak.tweak(dataset, planes);
                 peak.setFrozen(true, false);
+                PeakList.notifyFreezeListeners(peak, true);
                 for (Peak lPeak : peaksB) {
                     peakList = lPeak.getPeakList();
                     dataset = Dataset.getDataset(peakList.fileName);
                     if (dataset != null) {
                         lPeak.tweak(dataset, planes);
                         lPeak.setFrozen(true, false);
+                        PeakList.notifyFreezeListeners(lPeak, true);
                     }
                 }
             } catch (IOException ioE) {
