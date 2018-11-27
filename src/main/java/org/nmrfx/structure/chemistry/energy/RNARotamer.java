@@ -21,13 +21,16 @@ import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Point3;
+import org.python.modules.math;
 
 public class RNARotamer {
 
@@ -122,6 +125,7 @@ public class RNARotamer {
         double prob;
         double[] angles;
         String message;
+        double[] normDeltas = new double[7];
 
         public RotamerScore(RNARotamer rotamer, double score, double prob, double[] angles) {
             this(rotamer, score, prob, angles, "");
@@ -133,6 +137,21 @@ public class RNARotamer {
             this.angles = angles;
             this.message = message;
             this.prob = prob;
+        }
+
+        private void calcNormDeltas() {
+            for (int i = 0; i < 7; i++) {
+                double delta = angles[i] - rotamer.angles[i];
+//                double delta = Math.abs(angles[i] - rotamer.angles[i]);
+
+                if (delta > Math.PI) {
+                    delta = -(2.0 * Math.PI - delta);
+                }
+                if (delta < -Math.PI) {
+                    delta = 2.0 * Math.PI + delta;
+                }
+                normDeltas[i] = delta / rotamer.sdev[i];
+            }
         }
 
         public String getName() {
@@ -374,36 +393,49 @@ public class RNARotamer {
     }
 
     public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n) {
+        return getNBest(polymer, residueNum, n, null);
+    }
+
+    public static RotamerScore[] getNBest(Polymer polymer, int residueNum, int n, EnergyCoords ec) {
         /* getNBest finds n of the best rotamer confirmations and returns a 
            list of rotamer scores containing the type of rotamer and the 
            probability. The function takes the polymer and a residue number.
-        */
-        
-        RotamerScore[] bestScores = new RotamerScore[n];
-        double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum);
-        for (RNARotamer rotamer : ROTAMERS.values()) {
-            // Note i am not using the fraction of times rotamers are found in 
-            // each position as an input
-            double probability = rotamer.probability(testAngles, indices, 1.0);
+         */
 
-            if (!(bestScores[n - 1] == null || probability > bestScores[n - 1].prob)) {
-                continue;
-            }
+        RotamerScore[] bestScores = new RotamerScore[n];
+        double[] testAngles = RNARotamer.getDihedrals(polymer, residueNum, ec);
+        List<RotamerScore> rotamerScores = new ArrayList<>();
+        for (RNARotamer rotamer : ROTAMERS.values()) {
+            double probability = rotamer.probability(testAngles, new int[]{0, 1, 2, 3, 4, 5, 6}, rotamer.fraction);
             RotamerScore rotScore = new RotamerScore(rotamer, 0.0, probability, testAngles, null);
-            for (int i = 0; i < n; i++) {
-                Double storedProb = bestScores[i] == null ? null : bestScores[i].prob;
-                if (storedProb == null) {
-                    bestScores[i] = rotScore;
-                    break;
-                } else if (probability > storedProb) {
-                    for (int j = n - 1; j > i; j--) {
-                        bestScores[j] = bestScores[j - 1];
-                    }
-                    bestScores[i] = rotScore;
-                    break;
-                }
-            }
+            rotamerScores.add(rotScore);
         }
+        rotamerScores = rotamerScores.stream().sorted(Comparator.comparingDouble(RotamerScore::getProb).reversed()).limit(n).collect(Collectors.toList());
+        
+        // The commented out code may be a bit faster but less legible. 
+//        for (RNARotamer rotamer : ROTAMERS.values()) {
+//            double probability = rotamer.probability(testAngles, new int[]{1, 2, 3, 4, 5, 6}, rotamer.fraction);
+//            // If the last element in the list is null or if the last elements probability is less than the calculated probability
+              // the bestScores array should be edited. If not, we should just continue.
+//            if (!(bestScores[n - 1] == null || probability > bestScores[n - 1].prob)) {
+//                continue;
+//            }
+//            RotamerScore rotScore = new RotamerScore(rotamer, 0.0, probability, testAngles, null);
+//            for (int i = 0; i < n; i++) {
+//                Double storedProb = bestScores[i] == null ? null : bestScores[i].prob;
+//                if (storedProb == null) {
+//                    bestScores[i] = rotScore;
+//                    break;
+//                } else if (probability > storedProb) {
+//                    for (int j = n - 1; j > i; j--) {
+//                        bestScores[j] = bestScores[j - 1];
+//                    }
+//                    bestScores[i] = rotScore;
+//                    break;
+//                }
+//            }
+//        }
+        bestScores = rotamerScores.toArray(bestScores);
         return bestScores;
     }
 
@@ -417,7 +449,6 @@ public class RNARotamer {
     public static double calcEnergy(Polymer polymer, int residueNum, int n) {
         /* This calcRotamerEnergy can use n possible rotamer configurations.*/
         RotamerScore[] scores = getNBest(polymer, residueNum, n);
-        double prob = 0;
         return calcEnergy(scores);
     }
 
@@ -425,63 +456,30 @@ public class RNARotamer {
         /* calcRotamerEnergy takes a list of RotamerScore objects and computes
            an energy based on the probabilities stored in each RotamerScore 
            object. 
-        */
-        double prob = 0;
+         */
+        double totalProb = 0;
         for (RotamerScore score : scores) {
-            prob += score.prob;
-        }
-        return -FastMath.log(prob);
-    }
-
-    private static double[] calcNormDeltas(RotamerScore score) {
-        double[] normDeltas = new double[7];
-        double[] rotamerAngles = score.rotamer.angles;
-        double[] testAngles = score.angles;
-        double[] stdev = score.rotamer.sdev;
-        for (int i = 0; i < 7; i++) {
-            double delta = Math.abs(testAngles[i] - rotamerAngles[i]);
-            if (delta > Math.PI) {
-                delta = 2.0 * Math.PI - delta;
+            score.calcNormDeltas();
+            double prob = score.prob;
+            if (prob < 10e-200) {
+                System.out.println("probability changed");
+                prob = 10e-200;
+                score.prob = prob;
             }
-            normDeltas[i] = delta / stdev[i];
-        }
-        return normDeltas;
-    }
+            totalProb += score.prob;
 
-    private static double calcBeta(double[] normDeltas) {
-        double beta = 0;
-        for (double normDelta : normDeltas) {
-            beta += (-((1.0) / (2.0)) * (normDelta * normDelta));
         }
-        return beta;
-    }
-
-    private static double calcAlpha(RotamerScore score) {
-        double alpha = 1;
-        double[] stdevs = score.rotamer.sdev;
-        for (double stdev : stdevs) {
-            alpha *= (1.0 / (stdev * Math.sqrt(2.0 * Math.PI)));
-        }
-        return alpha;
+        return -FastMath.log(totalProb);
     }
 
     public static Map<Integer, Double> calcDerivs(RotamerScore[] scores, double rotEnergy) {
-        double[] betas = new double[scores.length];
-        double[] alphas = new double[scores.length];
-        double[][] normDeltas = new double[scores.length][7];
         int i = 0;
-        for (RotamerScore score : scores) {
-            normDeltas[i] = calcNormDeltas(score);
-            betas[i] = calcBeta(normDeltas[i]);
-            alphas[i] = calcAlpha(score);
-            i++;
-        }
         Map<Integer, Double> derivMap = new HashMap<>();
-        double eRotEnergy = Math.log(rotEnergy);
+        double eRotEnergy = Math.exp(rotEnergy);
         for (i = 0; i < 7; i++) {
             double sum = 0;
             for (int j = 0; j < scores.length; j++) {
-                sum += (alphas[j] * Math.exp(betas[j]) * normDeltas[j][i] * scores[j].rotamer.sdev[i]);
+                sum += (scores[j].prob * scores[j].normDeltas[i] * (1.0 / scores[j].rotamer.sdev[i]));
             }
             double deriv = eRotEnergy * sum;
             int angleIndex = atoms[i].aAtom;
@@ -518,12 +516,12 @@ public class RNARotamer {
             if (delta > Math.PI) {
                 delta = 2.0 * Math.PI - delta;
             }
-            double sdevValue = sdev[index];
-            double coeff = 1.0 / (sdevValue * Math.sqrt(2.0 * Math.PI));
-            double normalizedDelta = delta / sdevValue;
-            double exponent = -(1.0 / 2.0) * normalizedDelta * normalizedDelta;
-            double p = coeff * Math.exp(exponent);
+            double sdevValue = sdevs[index];
+            double p = (1.0 / (sdevValue * Math.sqrt(2.0 * Math.PI))) * Math.exp(-(delta * delta) / (2.0 * sdevValue * sdevValue));
             totalProb *= p;
+        }
+        if (totalProb > 1) {
+            totalProb = 1;
         }
         return totalProb;
     }
@@ -601,11 +599,15 @@ public class RNARotamer {
     }
 
     public static double[] getDihedrals(Polymer polymer, int residueNum) {
+        return getDihedrals(polymer, residueNum, null);
+    }
+
+    public static double[] getDihedrals(Polymer polymer, int residueNum, EnergyCoords ec) {
         double[] angles = new double[suiteAtoms.length];
         if (residueNum > 0) {
             int i = 0;
             for (String[] atomNames : suiteAtoms) {
-                Point3[] pts = new Point3[4];
+                Atom[] angleAtoms = new Atom[4];
                 int j = 0;
                 for (String aName : atomNames) {
                     int colonPos = aName.indexOf(':');
@@ -617,12 +619,16 @@ public class RNARotamer {
                     }
                     Residue residue = polymer.getResidue(residueNum + delta);
                     Atom atom = residue.getAtom(aName);
-                    pts[j++] = atom.getPoint();
+                    angleAtoms[j++] = atom;
                     if (j == 3) {
                         atoms[i] = atom;
                     }
                 }
-                angles[i++] = AtomMath.calcDihedral(pts[0], pts[1], pts[2], pts[3]);
+                if (ec == null) {
+                    angles[i++] = AtomMath.calcDihedral(angleAtoms[0].getPoint(), angleAtoms[1].getPoint(), angleAtoms[2].getPoint(), angleAtoms[3].getPoint());
+                } else {
+                    angles[i++] = ec.calcDihedral(angleAtoms[0].eAtom, angleAtoms[1].eAtom, angleAtoms[2].eAtom, angleAtoms[3].eAtom);
+                }
             }
         }
         return angles;
