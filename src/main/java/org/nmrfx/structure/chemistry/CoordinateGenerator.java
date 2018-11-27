@@ -30,11 +30,6 @@ public class CoordinateGenerator {
             for (Atom atom : branch) {
                 int index = atom == null ? oStart++ : atom.iAtom;
                 genVecs[iAtom][jAtom++] = index;
-                if (jAtom == 2) {
-                    if (atom != null) {
-                        System.out.println(atom.getFullName() + " " + atom.iAtom);
-                    }
-                }
             }
             iAtom++;
         }
