@@ -56,12 +56,7 @@
             <artifactId>centerdevice-nsmenufx</artifactId>
             <version>2.1.4</version>
         </dependency>
-        <dependency>
-            <groupId>eu.hansolo</groupId>
-            <artifactId>charts</artifactId>
-            <version>1.0.5x</version>
-        </dependency>
-        <dependency>
+         <dependency>
           <groupId>de.jensd</groupId>
             <artifactId>fontawesomefx</artifactId>
           <version>8.9</version>
@@ -118,6 +113,7 @@
                             <excludeGroupIds>junit,org.mockito,org.hamcrest</excludeGroupIds>
                             <outputFile>target/myFilter.properties</outputFile>
                             <prefix>$dir/lib</prefix>
+                            <fileSeparator>/</fileSeparator>
                         </configuration>
                     </execution>
                     <execution>
@@ -129,9 +125,9 @@
                         <configuration>
                             <outputFilterFile>true</outputFilterFile>
                             <outputFile>target/myFilterBat.properties</outputFile>
-                            <prefix>%dir%\\lib</prefix>
+                            <prefix>%dir%/lib</prefix>
                             <pathSeparator>;</pathSeparator>
-                            <fileSeparator>\\\\</fileSeparator>
+                            <fileSeparator>/</fileSeparator>
                         </configuration>
                     </execution>
                 </executions>
