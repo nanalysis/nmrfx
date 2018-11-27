@@ -219,6 +219,7 @@ class dynOptions(StrictDict):
         'minSteps'      : 100,
         'polishSteps'   : 500,
         'kinEScale'     : 200.0,
+	'irpWeight'     : 0.015
     }
     def __init__(self,initDict={}):
         if initDict is None:
@@ -245,7 +246,8 @@ class refine:
         self.cyanaAngleFiles = []
         self.xplorAngleFiles = []
         self.nvAngleFiles = []
-        self.cyanaDistanceFiles = {}
+        self.nmrfxDistanceFiles = {}
+	self.cyanaDistanceFiles = {}
         self.xplorDistanceFiles = {}
         self.suiteAngleFiles = []
         self.nvDistanceFiles = {}
@@ -623,7 +625,7 @@ class refine:
             lower = constraint['lower']
             upper = constraint['upper']
             atomPairs = constraint['atomPairs']
-            firstAtomPair = atomPairs[0]
+	    firstAtomPair = atomPairs[0]
             if firstAtomPair not in self.constraints:
                 constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
                 self.constraints[firstAtomPair] = constraint
@@ -980,6 +982,52 @@ class refine:
                 except:
                     print "err",fullAtoms
                     pass
+
+
+    def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
+	# constList is a list of dictionaries w/ keys: 'lower', 'upper', and 'atomPairs'
+	constList = self.nmrfxDistReader(fileName)
+	for constraint in constList:
+	    lower = constraint['lower']
+            upper = constraint['upper']
+            atomPairs = constraint['atomPairs']
+            firstAtomPair = atomPairs[0]
+            if firstAtomPair not in self.constraints:
+                constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
+                self.constraints[firstAtomPair] = constraint
+                for atomPair in atomPairs[1:]:
+                    self.constraints[atomPair] = constraint
+                    constraint.addPair(atomPair)
+                self.constraints[firstAtomPair].addBound(upper,'upper');
+            else:
+                self.constraints[firstAtomPair].addBound(lower, 'lower');
+                self.constraints[firstAtomPair].addBound(upper, 'upper');
+	
+
+
+    def nmrfxDistReader(self, fileName):
+        constraintDicts = []
+	checker = {}
+
+	with open(fileName, 'r') as fInput:
+            fRead = fInput.readlines()
+            for line in fRead:
+                splitList = line.split("\t")
+                group = splitList[1]
+                atomPair = tuple(splitList[2:4])
+		atomPair = ' '.join(atomPair) if atomPair[0] < atomPair[1] else ' '.join([atomPair[1], atomPair[0]])
+
+		if group in checker:
+		    checker[group]['atomPairs'].append(atomPair)
+		    continue
+
+		lower, upper = tuple(map(float, splitList[-2:]))
+		# checks lower and upper bound to make sure they are positive values
+		constraints = {'atomPairs': [],'lower': lower,'upper': upper}
+		constraints['atomPairs'].append(atomPair)
+		checker[group] = constraints
+        return constraintDicts 
+
 
 
 #set dc [list 283.n3 698.h1 1.8 2.0]
@@ -1506,6 +1554,8 @@ class refine:
             self.cyanaDistanceFiles[file] = keep
         elif mode == 'xplor':
             self.xplorDistanceFiles[file] = keep
+	elif mode == 'nmrfx':
+	    self.nmrfxDistanceFiles[file] = keep
         else:
             self.nvDistanceFiles[file] = keep
 
@@ -1524,12 +1574,16 @@ class refine:
             lowerFileName = file+'.lol'
             upperFileName = file+'.upl'
             self.readCYANADistances([lowerFileName, upperFileName],self.molName, keepSetting=self.cyanaDistanceFiles[file])
+	
+	for file in self.nmrfxDistanceFiles.keys():
+	    self.readNMRFxDistanceConstraints(file, keepSetting = self.nmrfxDistanceFiles[file])
 
         for file in self.nvDistanceFiles.keys():
             self.loadDistancesFromFile(file, keepSetting=self.nvDistanceFiles[file])
 
         for file in self.xplorDistanceFiles.keys():
             xplorConstraints = self.readXPLORDistanceConstraints(file, keepSetting = self.xplorDistanceFiles[file])
+
         self.addDistanceConstraints()
 
     def addDistanceConstraints(self):
@@ -1546,6 +1600,8 @@ class refine:
                 atomName1, atomName2 = pair.split()
                 atomNames1.add(atomName1)
                 atomNames2.add(atomName2)
+	    errMsg = "\nPlease check negative bound(s) at atom pair: {0}".format(' '.join([atomName1, atomName2]))
+	    assert (lower > 0.0 and upper > 0.0), errMsg
             self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
 
 
@@ -1652,12 +1708,12 @@ class refine:
         if self.eFileRoot != None:
             self.dump(0.1,self.eFileRoot+'_prep.txt')
 
-
     def annealPrep(self,dOpt, steps=100):
         ranfact=20.0
         self.setSeed(self.seed)
         #self.putPseudo(18.0,45.0)
-
+        ec = self.molecule.getEnergyCoords()
+        #raise ValueError()
         self.randomizeAngles()
         energy = self.energy()
         forceDict = self.settings.get('force')
@@ -1669,7 +1725,7 @@ class refine:
         for end in [3,10,20,1000]:
             self.setPars({'useh':False,'dislim':self.disLim,'end':end,'hardSphere':0.15,'shrinkValue':0.20})
             self.gmin(nsteps=steps,tolerance=1.0e-6)
-
+	ec.dumpRestraints()
         if self.eFileRoot != None:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 
