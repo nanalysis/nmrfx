@@ -4690,8 +4690,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         rwVector.resize(rwVector.getSize(), getComplex_r(dim[0]));
         rwVector.centerFreq = getSf(dim[0]);
         rwVector.dwellTime = 1.0 / getSw_r(dim[0]);
-        if (rwVector.getSize() != getSize(dim[0])) {
-            rwVector.dwellTime *= (double) getSize(dim[0]) / rwVector.getSize();
+        int dSize = getComplex_r(dim[0]) ? getSize(dim[0]) / 2 : getSize(dim[0]);
+        if (rwVector.getSize() != dSize) {
+            rwVector.dwellTime *= (double) dSize / rwVector.getSize();
         }
         rwVector.setPh0(getPh0_r(dim[0]));
         rwVector.setPh1(getPh1_r(dim[0]));
