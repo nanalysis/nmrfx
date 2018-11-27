@@ -349,9 +349,9 @@ public class EnergyCoords {
             String iAtomName = iAtom.getFullName();
             String jAtomName = jAtom.getFullName();
             char wild = 'n';
-            if (!newGroup) {
-                wild = ijWild(prevIAtom, prevJAtom, iAtomName, jAtomName);
-            }
+            //if (!newGroup) {
+            //    wild = ijWild(prevIAtom, prevJAtom, iAtomName, jAtomName);
+            //}
             // If there is a new write out the values, if not, make empty
             String lower = newGroup ? doubFormatter.format(rLow[i]) : "";
             String upper = newGroup ? doubFormatter.format(rUp[i]) : "";
