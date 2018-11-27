@@ -44,7 +44,7 @@ public class EnergyCoords {
     {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
     };
 
-    final static private int DEFAULTSIZE = 160000;
+    final static private int DEFAULTSIZE = 300000;
     FastVector3D[] vecCoords = null;
     int[] resNums = null;
     Atom[] atoms = null;
