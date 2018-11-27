@@ -316,7 +316,7 @@ public class Residue extends Compound {
             return this.getAtom(firstBackBoneAtomName);
         }
         String pType = polymer.getPolymerType(); // 'polypeptide' or 'nucleicacid'
-        String searchString = pType.equals("polypeptide") ? "N" : "P";
+        String searchString = pType.contains("polypeptide") ? "N" : "P";
         Atom atom = this.getAtom(searchString);
         return atom;
     }
