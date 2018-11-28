@@ -802,41 +802,7 @@ public class Molecule implements Serializable, ITree {
         } else {
             atomList = treeAtoms;
         }
-        for (int i = 0; i < genVecs.length; i++) {
-            if (genVecs[i].length > 3) {
-                Atom atom = atomList.get(genVecs[i][2]);
-                String angleDaughterName = atom.daughterAtom != null ? atom.daughterAtom.getShortName() : "____";
-                String atomParentName = atom.parent != null ? atom.parent.getShortName() : "___";
-                System.out.printf("%8s %8s %8s %3d %3d %3d\n", atomParentName, atom.getShortName(), angleDaughterName,
-                        atom.irpIndex, atom.rotUnit, atom.iAtom);
-                double dihedralAngle = 0;
-                int a3Index = genVecs[i][2];
-                int a2Index = genVecs[i][1];
-                int a1Index = genVecs[i][0];
-                Atom a3 = a3Index >= 0 ? atomList.get(a3Index) : null;
-                Atom a2 = a2Index >= 0 ? atomList.get(a2Index) : null;
-                Atom a1 = a1Index >= 0 ? atomList.get(a1Index) : null;
-                for (int j = 3; j < genVecs[i].length; j++) {
-                    int a4Index = genVecs[i][j];
-                    if (a4Index < 0) {
-                        continue;
-                    }
-                    Atom a4 = atomList.get(a4Index);
-
-                    String name = a4.getShortName();
-                    String parentName = a3 != null ? a3.getShortName() : a3Index + "";
-                    String grandParentName = a2 != null ? a2.getShortName() : a2Index + "";
-                    String greatGrandParentName = a1 != null ? a1.getShortName() : a1Index + "";
-                    dihedralAngle += a4.dihedralAngle;
-                    double dihedralAnglePrint = dihedralAngle * (180.0 / Math.PI);
-                    double bondLength = a4.bondLength;
-                    double valenceAngle = a4.valanceAngle * (180.0 / Math.PI);
-                    System.out.printf("    %8s %8s %8s %8s %10.2f %10.3f %10.3f %3d\n", greatGrandParentName, grandParentName,
-                            parentName, name, bondLength, valenceAngle, dihedralAnglePrint, a4.iAtom);
-
-                }
-            }
-        }
+        CoordinateGenerator.dumpCoordsGen(genVecs, atomList);
     }
 
     public void resetGenCoords() {
