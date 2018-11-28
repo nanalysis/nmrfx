@@ -1434,6 +1434,9 @@ class refine:
                 treeStartAtom = self.entityEntryDict[entityName]
                 if prfStartAtom == treeStartAtom:
                     continue
+                else:
+                    ### NEED TO REMEASURE ###
+                    entity.genCoordinates(self.getAtom((entityName, self.entityEntryDict[entityName])))
             self.setupAtomProperties(entity)
             if entityName in self.entityEntryDict:
                 entity.genMeasuredTree(self.getAtom((entityName, self.entityEntryDict[entityName])))

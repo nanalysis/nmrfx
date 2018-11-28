@@ -285,6 +285,18 @@ public class Entity implements AtomContainer, Serializable, ITree {
         Collections.sort(atoms, Atom::compareByIndex);
     }
 
+    public void genCoordinates(Atom startAtom) {
+        AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
+        List<List<Atom>> atomTree = aTreeGen.genTree(this, startAtom, null);
+        List<Atom> atomList = aTreeGen.getPathList();
+        int[][] genVecs = CoordinateGenerator.setupCoords(atomTree);
+        CoordinateGenerator.prepareAtoms(atomList);
+        for (Atom atom : atomList) {
+            atom.setPointValidity(false);
+        }
+        CoordinateGenerator.genCoords(genVecs, atomList);
+    }
+    
     public void genMeasuredTree(Atom startAtom) {
         if (startAtom == null) {
             startAtom = atoms.get(0);
