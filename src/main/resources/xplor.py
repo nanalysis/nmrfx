@@ -130,7 +130,7 @@ class XPLOR:
             four provide atoms (atomsSels) and then adds in the constraint'''
         # EX: fullAtoms = ["2koc:1.C5'","2koc:1.C4'","2koc:1.C3'","2koc:1.O3'"]
         validAtomSelections = AngleBoundary.allowRotation(atomsSels)
-        if validAtomSelections:
+	if validAtomSelections:
             lower, upper = bounds
             if lower == upper:
                 lower = lower - 20
@@ -191,3 +191,11 @@ class XPLOR:
             atomSels = constraint['atomPairs']
             bounds = [constraint['lower'],constraint['upper']]
             self.processAngleConstraints(dihedral, atomSels, bounds)
+
+        if self.invalidAtomSelections:
+            invalidAtoms = ''
+            for atomSels in self.invalidAtomSelections:
+                atoms = ' '.join(atomSels)
+                invalidAtoms += atoms + '\n'
+            errMsg = "\nPlease check invalid atom selection(s) in your XPLOR angle constraint file.\n{}".format(invalidAtoms)
+            raise ValueError(errMsg)
