@@ -244,6 +244,7 @@ class refine:
         self.cyanaDistanceFiles = {}
         self.xplorDistanceFiles = {}
         self.suiteAngleFiles = []
+        self.nmrfxDistanceFiles = {}
         self.nvDistanceFiles = {}
         self.constraints = {} # map of atom pairs to
         self.angleStrings = []
@@ -978,6 +979,54 @@ class refine:
                     pass
 
 
+    def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
+	# constList is a list of dictionaries w/ keys: 'lower', 'upper', and 'atomPairs'
+	constList = self.nmrfxDistReader(fileName)
+	for constraint in constList:
+	    lower = constraint['lower']
+            upper = constraint['upper']
+            atomPairs = constraint['atomPairs']
+            firstAtomPair = atomPairs[0]
+            if firstAtomPair not in self.constraints:
+                constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
+                self.constraints[firstAtomPair] = constraint
+                for atomPair in atomPairs[1:]:
+                    self.constraints[atomPair] = constraint
+                    constraint.addPair(atomPair)
+                self.constraints[firstAtomPair].addBound(upper,'upper');
+            else:
+                self.constraints[firstAtomPair].addBound(lower, 'lower');
+                self.constraints[firstAtomPair].addBound(upper, 'upper');
+	
+
+
+    def nmrfxDistReader(self, fileName):
+        constraintDicts = []
+	checker = {}
+
+	with open(fileName, 'r') as fInput:
+            fRead = fInput.readlines()
+            for line in fRead:
+                splitList = line.split("\t")
+                group = splitList[1]
+                atomPair = tuple(splitList[2:4])
+		atomPair = ' '.join(atomPair) if atomPair[0] < atomPair[1] else ' '.join([atomPair[1], atomPair[0]])
+
+		if group in checker:
+		    checker[group]['atomPairs'].append(atomPair)
+		    continue
+
+		lower, upper = tuple(map(float, splitList[-2:]))
+		# checks lower and upper bound to make sure they are positive values
+		constraints = {'atomPairs': [],'lower': lower,'upper': upper}
+		constraints['atomPairs'].append(atomPair)
+		checker[group] = constraints
+        return constraintDicts 
+
+
+
+
+
 #set dc [list 283.n3 698.h1 1.8 2.0]
 # 283  RCYT  H6          283  RCYT  H2'          4.00    1.00E+00
 # 283  RCYT  H6          283  RCYT  H3'          3.00    1.00E+00
@@ -1502,6 +1551,8 @@ class refine:
             self.cyanaDistanceFiles[file] = keep
         elif mode == 'xplor':
             self.xplorDistanceFiles[file] = keep
+	elif mode == 'nmrfx':
+	    self.nmrfxDistanceFiles[file] = keep
         else:
             self.nvDistanceFiles[file] = keep
 
@@ -1512,6 +1563,8 @@ class refine:
             xplorFile = xplor.XPLOR(file)
             resNames = self.getResNameLookUpDict()
             xplorFile.readXPLORAngleConstraints(self.dihedral, resNames)
+	for file in self.nmrfxDistanceFiles.keys():
+	    self.readNMRFxDistanceConstraints(file, keepSetting = self.nmrfxDistanceFiles[file])
         for file in self.nvAngleFiles:
             self.loadDihedralsFromFile(file)
 
@@ -1542,8 +1595,9 @@ class refine:
                 atomName1, atomName2 = pair.split()
                 atomNames1.add(atomName1)
                 atomNames2.add(atomName2)
+	    errMsg = "\nPlease check negative bound(s) at atom pair: {0}".format(' '.join([atomName1, atomName2]))
+	    assert (lower > 0.0 and upper > 0.0), errMsg
             self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
-
 
     def predictShifts(self):
         from org.nmrfx.structure.chemistry.energy import RingCurrentShift
