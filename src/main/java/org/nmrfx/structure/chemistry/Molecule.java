@@ -781,7 +781,7 @@ public class Molecule implements Serializable, ITree {
         updateAtomArray();
         if (atomTree == null) {
             AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
-            atomTree = aTreeGen.genTree(this, atoms.get(0), null);
+            atomTree = aTreeGen.genTree(this, null, null);
         }
         nullCoords();
         makeAtomList();
