@@ -984,53 +984,68 @@ public class EnergyLists {
                 }
             }
 
-            boolean ok = false;
             if ((distancePair.atomPairs.length == 1)) {
+                boolean ok = false;
+                Atom atom1 = distancePair.atomPairs[0].atoms1[0];
+                Atom atom2 = distancePair.atomPairs[0].atoms2[0];
                 if (deltaEnd == 0) {
                     ok = true;
                 } else {
-                    Atom atom1 = distancePair.atomPairs[0].atoms1[0];
-                    Atom atom2 = distancePair.atomPairs[0].atoms2[0];
                     Compound compound1 = (Compound) atom1.entity;
                     Compound compound2 = (Compound) atom2.entity;
                     int iRes = Integer.parseInt(compound1.number);
                     int jRes = Integer.parseInt(compound2.number);
                     if (FastMath.abs(iRes - jRes) < deltaEnd) {
-                        int iAtom = atom1.eAtom;
-                        int jAtom = atom2.eAtom;
-                        // fixme is this right  probably should use -1 for group
-                        int iUnit = -1;
-                        if (atom1.rotGroup != null) {
-                            iUnit = atom1.rotGroup.rotUnit;
-                        }
-                        int jUnit = -1;
-                        if (atom2.rotGroup != null) {
-                            jUnit = atom2.rotGroup.rotUnit;
-                        }
-                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond,
-                                iGroup, weight);
+                        ok = true;
                     }
-
                 }
-
-            } else if (deltaEnd == 0) {
-                ok = true;
+                if (ok) {
+                    int iAtom = atom1.eAtom;
+                    int jAtom = atom2.eAtom;
+                    // fixme is this right  probably should use -1 for group
+                    int iUnit = -1;
+                    if (atom1.rotGroup != null) {
+                        iUnit = atom1.rotGroup.rotUnit;
+                    }
+                    int jUnit = -1;
+                    if (atom2.rotGroup != null) {
+                        jUnit = atom2.rotGroup.rotUnit;
+                    }
+                    eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond,
+                            iGroup, weight);
+                }
             } else {
-                int nPairs = distancePair.atomPairs.length;
-                for (AtomDistancePair atomDistancePair : distancePair.atomPairs) {
-                    Atom atom1 = atomDistancePair.atoms1[0];
-                    Atom atom2 = atomDistancePair.atoms2[0];
-                    Compound compound1 = (Compound) atom1.entity;
-                    Compound compound2 = (Compound) atom2.entity;
-                    int iRes = Integer.parseInt(compound1.number);
-                    int jRes = Integer.parseInt(compound2.number);
-                    if (FastMath.abs(iRes - jRes) < deltaEnd) {
+                boolean ok = false;
+                if (deltaEnd == 0) {
+                    ok = true;
+                } else {
+                    boolean allInRange = true;
+                    for (AtomDistancePair atomDistancePair : distancePair.atomPairs) {
+                        Atom atom1 = atomDistancePair.atoms1[0];
+                        Atom atom2 = atomDistancePair.atoms2[0];
+                        Compound compound1 = (Compound) atom1.entity;
+                        Compound compound2 = (Compound) atom2.entity;
+                        int iRes = Integer.parseInt(compound1.number);
+                        int jRes = Integer.parseInt(compound2.number);
+                        if (FastMath.abs(iRes - jRes) >= deltaEnd) {
+                            allInRange = false;
+                            break;
+                        }
+                    }
+                    ok = allInRange;
+                }
+                if (ok) {
+                    int nPairs = distancePair.atomPairs.length;
+                    for (AtomDistancePair atomDistancePair : distancePair.atomPairs) {
+                        Atom atom1 = atomDistancePair.atoms1[0];
+                        Atom atom2 = atomDistancePair.atoms2[0];
                         int iAtom = atom1.eAtom;
                         int jAtom = atom2.eAtom;
                         int iUnit = atom1.rotGroup.rotUnit;
                         int jUnit = atom2.rotGroup.rotUnit;
                         eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond,
                                 iGroup, weight / nPairs);
+
                     }
                 }
             }
