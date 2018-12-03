@@ -64,6 +64,7 @@ public class DrawPeaks {
     static double widthLimit = 0.0001;
     char[] anchorS = {'s', ' '};
     char[] anchorW = {' ', 'w'};
+
     /**
      * Creates a new instance of PeakRenderer
      */
@@ -115,6 +116,8 @@ public class DrawPeaks {
     int iPeakList = 0;
     float dY = 0;
     float dXRegion = 0.0f;
+    double deltaY = 12.0;
+
     HashSet[] regions = null;
     Color selectFill = new Color(1.0f, 1.0f, 0.0f, 0.4f);
     private boolean multipletMode = false;
@@ -687,8 +690,7 @@ public class DrawPeaks {
         double x1 = xAxis.getDisplayPosition(x);
         float intensity = peak.getIntensity();
 
-        double height = yAxis.getHeight();
-        double textY = height - g2.getFont().getSize() - 5;
+        double textY = xAxis.getYOrigin() - g2.getFont().getSize() - 5;
         double y1 = textY;
         Bounds bounds;
         if (peakAttr.getLabelType() == PPM) {
@@ -936,7 +938,6 @@ public class DrawPeaks {
     }
 
     void renderToMulti(GraphicsContextInterface g2, Color color, double xC, double xE, double y, double max, double nY, boolean selMode) throws GraphicsIOException {
-        double deltaY = 25.0;
         double x1 = xAxis.getDisplayPosition(xC);
         double y1 = yAxis.getDisplayPosition(y);
         double x2 = xAxis.getDisplayPosition(xE);
@@ -1013,7 +1014,6 @@ public class DrawPeaks {
     }
 
     boolean hitMultipletLine(double xE, double y, double max, double nY, double hitX, double hitY) {
-        double deltaY = 25.0;
         double y1 = yAxis.getDisplayPosition(y);
         double x2 = xAxis.getDisplayPosition(xE);
 
@@ -1024,7 +1024,6 @@ public class DrawPeaks {
     }
 
     void renderMultipletLabel(GraphicsContextInterface g2, String label, Color color, double xC, double y, double max) throws GraphicsIOException {
-        double deltaY = 25.0;
         double x1 = xAxis.getDisplayPosition(xC);
         double y1 = yAxis.getDisplayPosition(y);
         if (max < 0.0) {
@@ -1033,7 +1032,7 @@ public class DrawPeaks {
             y1 -= (1 + max) * 2 * deltaY;
 
         }
-        double yText = y1 - 5;
+        double yText = y1 - deltaY;
         g2.setTextAlign(TextAlignment.CENTER);
         Bounds bounds = measureText(label, g2.getFont(), 0, x1, yText);
         int nTries = 5;
@@ -1426,7 +1425,6 @@ public class DrawPeaks {
         }
 
         Bounds trBds = aT.transform(useBounds);
-
         Bounds ab = new BoundingBox(trBds.getMinX() - xOffset, trBds.getMinY() + yOffset, trBds.getWidth(), trBds.getHeight());
 
         return ab;
