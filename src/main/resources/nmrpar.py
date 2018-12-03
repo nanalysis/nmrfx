@@ -80,7 +80,7 @@ def refByRatio(refSF,refCenter,sf,nucleus):
 def getWaterPPM (temp):
     a = -0.009552
     b = 5.011718
-    ppm =   a*(temp - 273.0) + b
+    ppm =   a*(temp - 273.15) + b
     return ppm
 
 def pairList(alist):
