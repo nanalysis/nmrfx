@@ -583,7 +583,6 @@ public class PeakReader {
         PythonInterpreter interpreter = new PythonInterpreter();
         interpreter.exec("import sparky");
         String rdString;
-        ;
         interpreter.set("pMap", pMap);
         interpreter.exec("sparky.pMap=pMap");
         rdString = String.format("sparky.loadSaveFile('%s','%s')", fileName, listName);
