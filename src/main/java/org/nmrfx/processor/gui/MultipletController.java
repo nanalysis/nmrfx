@@ -703,6 +703,7 @@ merge.png				region_adjust.png
     }
 
     public void refreshPeakView(Multiplet multiplet) {
+        boolean resize = false;
         if (multiplet != null) {
             double bounds = multiplet.getBoundsValue();
             double center = multiplet.measureCenter();
@@ -711,7 +712,7 @@ merge.png				region_adjust.png
                 DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
                 Double[] ppms = {center};
                 Double[] widths = {bounds * widthScale};
-                if (widthScale > 0.0) {
+                if (resize && (widthScale > 0.0)) {
                     chart.moveTo(ppms, widths);
                 } else {
                     chart.moveTo(ppms);
