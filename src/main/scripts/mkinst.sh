@@ -5,7 +5,7 @@ version="1.8.0_152"
 os=macosx-amd64
 tail="_unpacked"
 
-for os in "macosx-amd64" "linux-amd64"
+for os in "macosx-amd64" "linux-amd64" "windows-amd64"
 do
     fileName=${os}-$version$tail".tar.gz"
     echo $fileName
