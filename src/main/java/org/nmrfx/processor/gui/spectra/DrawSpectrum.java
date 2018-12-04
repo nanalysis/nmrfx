@@ -869,7 +869,7 @@ public class DrawSpectrum {
         double dValue = ppm2;
 
         nPoints = drawVectoreCore(vec, dataOffset, true, 0.0, 0.0, xy, null, xFunction,
-                yFunction, true, 0, vec.getSize()-1, size, dValue, 0.0, indexAxisDelta, true);
+                yFunction, true, 0, vec.getSize() - 1, size, dValue, 0.0, indexAxisDelta, true);
     }
 
     public void drawVector(Vec vec, int orientation, int dataOffset, AXMODE axMode, boolean drawReal, double ph0, double ph1, Path bcPath, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction, boolean offsetVec, boolean integralMode) {
