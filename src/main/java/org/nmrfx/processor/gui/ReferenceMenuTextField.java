@@ -23,11 +23,14 @@
  */
 package org.nmrfx.processor.gui;
 
+import java.util.Optional;
 import org.nmrfx.utils.properties.MenuTextField;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 import javafx.event.ActionEvent;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextInputDialog;
 
 /**
  *
@@ -36,12 +39,13 @@ import javafx.scene.control.MenuItem;
 public class ReferenceMenuTextField extends MenuTextField {
 
     ProcessorController processorController;
-    String[] mainMenuLabels = {"default", "H2O", "0.0"};
+    String[] mainMenuLabels = {"default", "H2O", "H2O PPM", "0.0"};
     String[] nucleusMenuLabels = {"C", "D", "H", "N", "P"};
-    String[] crosshairMenuItems = {"0.0", "H2O", "DSS", "Acetone", "DMSO"};
+    String[] crosshairMenuItems = {"0.0", "H2O", "DSS", "Acetone", "DMSO", "Input..."};
 
     public ReferenceMenuTextField(ProcessorController processorController) {
         super();
+        setPrompt("Using default!");
         this.processorController = processorController;
 
         Menu cascadeMenu = new Menu("PPM at Center");
@@ -72,21 +76,30 @@ public class ReferenceMenuTextField extends MenuTextField {
     private void menuAction(ActionEvent event) {
         MenuItem menuItem = (MenuItem) event.getSource();
         String menuLabel = menuItem.getText();
-        PolyChart chart = processorController.chartProcessor.chart;
-        double ppm = chart.crossHairPositions[0][1];
-        System.out.println(ppm);
         if (menuLabel.equals("default")) {
             setText("");
+        } else if (menuLabel.equals("H2O PPM")) {
+            setText(String.format("%.3f", getWaterPPM()));
         } else {
             setText(menuLabel);
         }
 
     }
 
+    double getWaterPPM() {
+        NMRData nmrData = processorController.chartProcessor.getNMRData();
+        double waterPPM = 4.773;
+        if (nmrData != null) {
+            double temp = nmrData.getTempK();
+            waterPPM = getWaterPPM(temp);
+        }
+        return waterPPM;
+    }
+
     double getWaterPPM(double temp) {
         double a = -0.009552;
         double b = 5.011718;
-        double ppm = a * (temp - 273.0) + b;
+        double ppm = a * (temp - 273.15) + b;
         return ppm;
 
     }
@@ -108,15 +121,27 @@ public class ReferenceMenuTextField extends MenuTextField {
         } else if (menuLabel.equals("Acetone")) {
             newCenter = chart.getRefPositionFromCrossHair(2.04);
         } else if (menuLabel.equals("H2O")) {
-            double waterPPM = 4.73;
-            if (nmrData != null) {
-                double temp = nmrData.getTempK();
-                waterPPM = getWaterPPM(temp);
-            }
+            double waterPPM = getWaterPPM();
             newCenter = chart.getRefPositionFromCrossHair(waterPPM);
+        } else if (menuLabel.equals("Input...")) {
+            TextInputDialog dialog = new TextInputDialog();
+            dialog.setContentText("Enter shift at crosshair:");
+            dialog.setHeaderText("");
+            dialog.setTitle("Chemical Shift Reference");
+            Optional<String> value = dialog.showAndWait();
+            if (value.isPresent()) {
+                try {
+                    double dValue = Double.parseDouble(value.get());
+                    newCenter = chart.getRefPositionFromCrossHair(dValue);
+                } catch (NumberFormatException nfE) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setContentText("Invalid number");
+                    alert.showAndWait();
+                    return;
+                }
+            }
         }
         setText(String.format("%.4f", newCenter));
-
     }
 
 }
