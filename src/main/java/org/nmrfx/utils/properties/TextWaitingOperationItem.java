@@ -101,7 +101,6 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
 
     @Override
     public void addListener(ChangeListener<? super String> listener) {
-        System.out.println("add Listener " + name);
         this.listener = listener;
     }
 
@@ -132,7 +131,6 @@ public class TextWaitingOperationItem extends OperationItem implements Observabl
             defaultBackground = textField.getBackground();
         }
         if ((event.getCode() == KeyCode.ENTER) || (textField.getText().length() == 0)) {
-            System.out.println("do " + textField.getText());
             textField.setBackground(defaultBackground);
             f.accept(this);
         } else {

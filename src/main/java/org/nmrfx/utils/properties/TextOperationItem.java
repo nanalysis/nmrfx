@@ -91,7 +91,6 @@ public class TextOperationItem extends OperationItem implements ObservableString
 
     @Override
     public void addListener(ChangeListener<? super String> listener) {
-        System.out.println("add Listener " + name);
         this.listener = listener;
     }
 

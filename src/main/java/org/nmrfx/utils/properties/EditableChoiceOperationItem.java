@@ -34,7 +34,6 @@ public class EditableChoiceOperationItem extends ChoiceOperationItem {
 
     public EditableChoiceOperationItem(ChangeListener listener, String defaultValue, Collection<?> choices, String category, String name, String description) {
         super(listener, defaultValue, choices, category, name, description);
-        System.out.println("made editor");
     }
 
     @Override

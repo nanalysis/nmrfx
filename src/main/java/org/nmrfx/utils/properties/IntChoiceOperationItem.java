@@ -103,7 +103,6 @@ public class IntChoiceOperationItem extends OperationItem implements ObservableI
 
     @Override
     public void addListener(ChangeListener<? super Number> listener) {
-        System.out.println("add Listener " + name);
         this.listener = listener;
     }
 
