@@ -24,9 +24,9 @@
 package org.nmrfx.utils.properties;
 
 import javafx.scene.control.MenuButton;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
+import org.controlsfx.control.textfield.CustomTextField;
 
 /**
  *
@@ -34,7 +34,7 @@ import javafx.scene.text.Font;
  */
 public class MenuTextField extends GridPane {
 
-    private final TextField textField = new TextField();
+    private final CustomTextField textField = new CustomTextField();
     private final MenuButton menuButton = new MenuButton("");
 
     public MenuTextField() {
@@ -49,7 +49,7 @@ public class MenuTextField extends GridPane {
         add(menuButton, 1, 0);
     }
 
-    public TextField getTextField() {
+    public CustomTextField getTextField() {
         return textField;
     }
 
@@ -59,8 +59,16 @@ public class MenuTextField extends GridPane {
     public MenuButton getMenuButton() {
         return menuButton;
     }
+    
+    public void setPrompt(String text) {
+        textField.setPromptText(text);
+    }
 
     public void setText(String text) {
+        if (text == null) {
+            text = "";
+        }
+        text = text.trim();
         textField.setText(text);
     }
 
