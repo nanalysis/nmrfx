@@ -1681,6 +1681,7 @@ public class PolyChart implements PeakListener {
                 useImmediateMode = true;
             }
         }
+        useImmediateMode = false;
         GraphicsContext gCC = canvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         try {
