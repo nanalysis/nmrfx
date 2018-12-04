@@ -46,7 +46,7 @@ public class MenuTextFieldEditor extends AbstractPropertyEditor<Object, Node> {
     @Override
     public void setValue(Object t) {
         MenuTextField menuTextField = (MenuTextField) getEditor();
-        menuTextField.getTextField().setText(t.toString());
+        menuTextField.setText(t.toString());
     }
 
 }
