@@ -1141,9 +1141,22 @@ public class PolyChart implements PeakListener {
         } else {
             Dataset dataset = dataAttr.getDataset();
             Double sdev = dataset.guessNoiseLevel();
+            double[] percentile = null;
+            try {
+                percentile = getPercentile(dataAttr, 90.0);
+            } catch (IOException ex) {
+                percentile = null;
+            }
+
             if (sdev != null) {
-                dataAttr.setLvl(sdev * 5.0);
-                level = sdev * 5.0;
+                double value = sdev * 5.0;
+                if (percentile != null) {
+                    if (value < percentile[0]) {
+                        value = percentile[0];
+                    }
+                }
+                dataAttr.setLvl(value);
+                level = value;
             }
         }
     }
@@ -3126,6 +3139,28 @@ public class PolyChart implements PeakListener {
 
         }
         return rData;
+    }
+
+    protected double[] getPercentile(DatasetAttributes dataAttr, double p) throws IOException {
+        Dataset dataset = dataAttr.getDataset();
+
+        int nDim = dataset.getNDim();
+        int[][] pt = new int[nDim][2];
+        int[] dim = new int[nDim];
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            int[] limits = getPlotLimits(dataAttr, iDim);
+
+            if (limits[0] < limits[1]) {
+                pt[iDim][0] = limits[0];
+                pt[iDim][1] = limits[1];
+            } else {
+                pt[iDim][0] = limits[1];
+                pt[iDim][1] = limits[0];
+            }
+            dim[iDim] = dataAttr.dim[iDim];
+        }
+        double[] value = dataset.getPercentile(p, pt, dim);
+        return value;
     }
 
     public void adjustDiagonalReference() {
