@@ -35,6 +35,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
 import org.renjin.sexp.AttributeMap;
 import org.renjin.sexp.DoubleVector;
 import org.renjin.sexp.DoubleArrayVector;
@@ -2399,6 +2400,46 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 //
 //        interp.setResult(list);
 //    }
+    public double[] getPercentile(double p, int[][] pt, int[] dim) throws IOException {
+        PSquarePercentile pSquarePos = new PSquarePercentile(p);
+        PSquarePercentile pSquareNeg = new PSquarePercentile(p);
+
+        if (vecMat != null) {
+            setSize(0, vecMat.getSize());
+            blockSize[0] = vecMat.getSize();
+            blockElements = blockSize[0] * 4;
+        }
+        int[] counterSizes = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            if (pt[i][1] >= pt[i][0]) {
+                counterSizes[i] = pt[i][1] - pt[i][0] + 1;
+            } else {
+                counterSizes[i] = getSize(dim[i]) + (pt[i][1] - pt[i][0] + 1);
+            }
+        }
+        DimCounter counter = new DimCounter(counterSizes);
+        DimCounter.Iterator cIter = counter.iterator();
+        while (cIter.hasNext()) {
+            int[] points = cIter.next();
+            for (int i = 0; i < nDim; i++) {
+                points[i] += pt[i][0];
+                if (points[i] >= getSize(dim[i])) {
+                    points[i] = points[i] - getSize(dim[i]);
+                }
+            }
+            double value = readPoint(points, dim);
+
+            if ((value != Double.MAX_VALUE) && (value >= 0.0)) {
+                pSquarePos.increment(value);
+            } else if ((value != Double.MAX_VALUE) && (value <= 0.0)) {
+                pSquareNeg.increment(value);
+            }
+        }
+        double[] result = {pSquarePos.getResult(), pSquareNeg.getResult()};
+        return result;
+
+    }
+
     synchronized public double measureSDev(int[][] pt, int[] dim, double sDevIn, double ratio)
             throws IOException {
 
