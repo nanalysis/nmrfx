@@ -61,9 +61,6 @@ def openTclChannel(fileName,mode):
 def closeTclChannel(handle):
     tcl('close '+handle)
 
-def savePDB(molecule, fileName,structureNum=0):
-    molecule.writeXYZToPDB(fileName, structureNum)
-
 def getHelix(pairs,vie):
     inHelix = False
     iHelix = -1
@@ -1772,7 +1769,7 @@ class refine:
             energyFile = osfiles.getEnergyFile(self)
 
             self.writeAngles(angleFile)
-            savePDB(self.molecule, pdbFile)
+            molio.savePDB(self.molecule, pdbFile)
             strOutput = "%d %.2f\n" % (self.seed,energy)
             osfiles.logEnergy(self, strOutput)
             self.dump(0.1,0.2,energyFile)

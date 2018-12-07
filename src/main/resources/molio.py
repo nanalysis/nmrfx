@@ -70,3 +70,7 @@ def readYaml(file):
     yaml = Yaml()
     data = yaml.load(input)
     return data
+
+def savePDB(molecule, fileName,structureNum=0):
+    molecule.writeXYZToPDB(fileName, structureNum)
+
