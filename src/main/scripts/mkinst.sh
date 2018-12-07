@@ -1,14 +1,21 @@
 #!/bin/bash
 
-
-version="1.8.0_152"
-os=macosx-amd64
-tail="_unpacked"
-
 for os in "macosx-amd64" "linux-amd64" "windows-amd64"
 do
-    fileName=${os}-$version$tail".tar.gz"
-    echo $fileName
+    jversion=192
+    tail=""
+    if [[ $os == "linux-amd64" ]]
+    then
+        jversion=152
+    fi
+    if [[ $os == "macosx-amd64" ]]
+    then
+        tail="_unpacked"
+    fi
+    version=1.8.0_${jversion}
+
+    jreFileName=${os}-$version$tail".tar.gz"
+    echo $jreFileName
 
     dir=installers/$os
     if [ -e $dir ]
@@ -18,16 +25,15 @@ do
 
     mkdir -p $dir
     cd $dir
-    cp -r -p ../../target/analystgui-*-bin/analystgui* .
+    cp -r -p ../../target/analystgui-*-bin/proc* .
     sdir=`ls -d analystgui-*`
     cd $sdir
     cp -p ../../../../analyst/target/analyst-*-bin/analyst-*/nmrfxa .
     cp -p ../../../../analyst/target/analyst-*-bin/analyst-*/nmrfxa.bat .
 
-
     mkdir jre
     cd jre
-    tar xzf ~/.install4j6/jres/$fileName
+    tar xzf ~/.install4j6/jres/$jreFileName
     cd ..
     cd ..
     pwd
@@ -38,7 +44,6 @@ do
         rm -rf $sdir/jre
         mv junk $sdir/jre
     fi
-    tail=""
     fname=`echo $sdir | tr '.' '_'`
     if [[ $os == "linux-amd64" ]]
     then

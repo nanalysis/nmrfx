@@ -67,9 +67,9 @@
                         <configuration>
                             <outputFilterFile>true</outputFilterFile>
                             <outputFile>target/myFilterBat.properties</outputFile>
-                            <prefix>%dir%\\lib</prefix>
+                            <prefix>%dir%lib</prefix>
                             <pathSeparator>;</pathSeparator>
-                            <fileSeparator>\\\\</fileSeparator>
+                            <fileSeparator>/</fileSeparator>
                         </configuration>
                     </execution>
                 </executions>
