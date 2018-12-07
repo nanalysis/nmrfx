@@ -15,17 +15,17 @@ if "%OS%" == "Windows_NT" setlocal
 set nvjver=${project.version}
 set nvjpmain=org.nmrfx.processor.gui.MainApp
 
-
 set dir=%~dp0
 
 set javaexe=java
-set cp="%dir%\processorgui-%nvjver%.jar;${wclasspath};%CLASSPATH%"
+${wwwclasspath}
+set cp="%dir%processorgui-%nvjver%.jar;%wclasspath%"
 
-set testjava=%dir%jre\bin\java
+set testjava=%dir%jre\bin\java.exe
 
 if exist %testjava% (
     set javaexe="%testjava%"
-    set cp="%dir%\lib\processorgui-%nvjver%.jar;${wclasspath};%CLASSPATH%"
+    set cp="%dir%lib/processorgui-%nvjver%.jar;%wclasspath%"
 )
 
 
