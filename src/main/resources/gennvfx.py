@@ -1,6 +1,6 @@
 import sys
 from refine import *
-from reader import readYaml
+from molio import readYaml
 import os
 import osfiles
 import runpy

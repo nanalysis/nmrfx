@@ -4,7 +4,7 @@ import os
 import osfiles
 import runpy
 import rnapred
-import reader
+import molio
 from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
 from org.nmrfx.structure.chemistry import ProteinPredictor
@@ -86,7 +86,7 @@ if argFile.endswith('.yaml'):
     rnapred.predictFromSequence()
     rnapred.dumpPredictions(mol)
 elif argFile.endswith('.pdb'):
-    mol = reader.readPDB(argFile)
+    mol = molio.readPDB(argFile)
     # fixme, need to do this by polymer so you can have protein-rna complex
     if isRNA(mol):
         refiner=refine()

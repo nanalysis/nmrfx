@@ -5,7 +5,7 @@ import random
 import seqalgs
 import re
 import xplor
-import reader
+import molio
 
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import Atom
@@ -736,7 +736,7 @@ class refine:
         """Reading in all the structures"""
         molData = {}
         if pdbFile != '':
-            reader.readPDB(pdbFile)
+            molio.readPDB(pdbFile)
             residues = None
         else:
             if 'molecule' in data:
@@ -814,19 +814,19 @@ class refine:
             linkers = molDict.get('link')
             index = molDict.get('indexing')
             resStrings = getSequenceArray(index, seqString, linkers, polyType)
-            reader.readSequenceString('p', resStrings)
+            molio.readSequenceString('p', resStrings)
         else:
             file = molDict['file']
             type = molDict.get('type','nv')
             compound = None
             if type == 'fasta':
-                reader.readSequence(file, True)
+                molio.readSequence(file, True)
             elif type == 'pdb':
-                compound = reader.readPDB(file, not 'ptype' in molDict)
+                compound = molio.readPDB(file, not 'ptype' in molDict)
             elif type == 'sdf' or type == 'mol':
-                compound = reader.readSDF(file)
+                compound = molio.readSDF(file)
             else:
-                reader.readSequence(file)
+                molio.readSequence(file)
             resNum = molDict.get('resnum')
             if resNum and compound:
                 compound.setNumber(str(resNum))
