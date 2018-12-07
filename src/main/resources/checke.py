@@ -7,6 +7,7 @@ from org.nmrfx.structure.chemistry.energy import EnergyLists
 from org.nmrfx.structure.chemistry import SuperMol
 from org.nmrfx.structure.chemistry.energy import AtomEnergyProp
 from org.nmrfx.structure.chemistry.io import PDBFile
+import reader
 from refine import *
 from osfiles import writeLines
 from osfiles import getFileName
@@ -17,7 +18,7 @@ global outDir;
 def setupFile(fileName,disFile=''):
 
     refiner = refine()
-    molecule = refiner.readPDBFile(fileName)
+    molecule = reader.readPDB(fileName)
     if disFile != '':
         refiner.addDistanceFile(disFile,mode='NV')
     else:

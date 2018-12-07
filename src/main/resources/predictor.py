@@ -4,6 +4,7 @@ import os
 import osfiles
 import runpy
 import rnapred
+import reader
 from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
 from org.nmrfx.structure.chemistry import ProteinPredictor
@@ -85,13 +86,13 @@ if argFile.endswith('.yaml'):
     rnapred.predictFromSequence()
     rnapred.dumpPredictions(mol)
 elif argFile.endswith('.pdb'):
-    refiner=refine()
-    refiner.readPDBFile(argFile)
+    mol = reader.readPDB(argFile)
     # fixme, need to do this by polymer so you can have protein-rna complex
-    if isRNA(refiner.molecule):
+    if isRNA(mol):
+        refiner=refine()
         shifts = refiner.predictShifts()
         for atomShift in shifts:
             aname,shift = atomShift
             print aname,shift
     else:
-        predictProtein(refiner.molecule)
+        predictProtein(mol)
