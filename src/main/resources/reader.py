@@ -24,10 +24,11 @@ def readPDB(fileName, isCompound = False):
     pdb = PDBFile()
     if not isCompound:
         pdb.readSequence(fileName,0)
+        mol = Molecule.getActive()
     else:
-        compound = pdb.readResidue(fileName, None, Molecule.getActive(), None)
+        mol = pdb.readResidue(fileName, None, Molecule.getActive(), None)
     updateAtomArray()
-    return compound
+    return mol
 def readSDF(fileName, newMolecule = False):
     sdf = SDFile()
     molecule = Molecule.getActive() if not newMolecule else None
@@ -46,6 +47,8 @@ def readSequenceString(polymerName, sequence):
     seqReader = Sequence()
     seqReader.read(polymerName, seqAList, "")
     updateAtomArray()
+    mol = Molecule.getActive()
+    return mol
 
 def readSequence(seqFile, convert=False):
     if convert:
@@ -56,6 +59,8 @@ def readSequence(seqFile, convert=False):
     seqReader = Sequence()
     seqReader.read(seqFile)
     updateAtomArray()
+    mol = Molecule.getActive()
+    return mol
 
 def readYaml(file):
     from java.io import FileInputStream
