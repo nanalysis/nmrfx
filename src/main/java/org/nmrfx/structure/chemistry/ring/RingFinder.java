@@ -27,6 +27,7 @@ package org.nmrfx.structure.chemistry.ring;
 
 import java.util.Collection;
 import java.util.List;
+import org.nmrfx.structure.chemistry.ITree;
 import org.nmrfx.structure.chemistry.Molecule;
 
 /**
@@ -38,7 +39,7 @@ public interface RingFinder {
 
     public int getMaximumRingSize();
 
-    public Collection<Ring> findRings(Molecule molecule);
+    public Collection<Ring> findRings(ITree itree);
     
-    public Collection<Ring> findSmallestRings(Molecule molecule);
+    public Collection<Ring> findSmallestRings(ITree itree);
 }

@@ -230,9 +230,9 @@ public class Entity implements AtomContainer, Serializable, ITree {
     public Atom getAtom(int index) {
         return atoms.get(index);
     }
-    
-    public Atom getLastAtom(){
-        return getAtom(atoms.size()-1);
+
+    public Atom getLastAtom() {
+        return getAtom(atoms.size() - 1);
     }
 
     public boolean hasEquivalentAtoms() {
@@ -265,6 +265,10 @@ public class Entity implements AtomContainer, Serializable, ITree {
         bonds.remove(bond);
     }
 
+    public List<Bond> getBondList() {
+        return bonds;
+    }
+
     public void setHasEquivalentAtoms(boolean state) {
         hasEquivalentAtoms = state;
     }
@@ -285,7 +289,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
         if (startAtom == null) {
             startAtom = atoms.get(0);
         }
-        
+
         AngleTreeGenerator aTreeGen = new AngleTreeGenerator();
         List<List<Atom>> atomTree = aTreeGen.genTree(this, startAtom, null);
         aTreeGen.measureAtomTree(this, atomTree);

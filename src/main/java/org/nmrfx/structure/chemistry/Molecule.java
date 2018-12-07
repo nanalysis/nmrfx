@@ -785,32 +785,9 @@ public class Molecule implements Serializable, ITree {
         }
         nullCoords();
         makeAtomList();
-        genVecs = new int[atomTree.size()][];
-        for (Atom a3 : atomList) {
-            if (!a3.getPointValidity()) {
-                a3.setPointValidity(true);
-            }
-            double bondLength = a3.bondLength;
-            double valanceAngle = a3.valanceAngle;
-            a3.bndSin = (float) (bondLength * FastMath.sin(Math.PI - valanceAngle));
-            a3.bndCos = (float) (bondLength * FastMath.cos(Math.PI - valanceAngle));
-
-        }
-        int iAtom = 0;
-        for (List<Atom> branch : atomTree) {
-            genVecs[iAtom] = new int[branch.size()];
-            int jAtom = 0;
-            int oStart = -1;
-            if (branch.get(1) == null) {
-                oStart = -2;
-            }
-            for (Atom atom : branch) {
-                int index = atom == null ? oStart++ : atom.iAtom;
-                genVecs[iAtom][jAtom++] = index;
-            }
-            iAtom++;
-        }
         //dumpCoordsGen();
+        genVecs = CoordinateGenerator.setupCoords(atomTree);
+        CoordinateGenerator.prepareAtoms(atomList);
     }
 
     public void dumpCoordsGen() {
@@ -896,7 +873,6 @@ public class Molecule implements Serializable, ITree {
                 return 0;
             }
         }
-        int nAngles = 0;
 
         if (genVecs == null) {
             setupGenCoords();
@@ -912,65 +888,7 @@ public class Molecule implements Serializable, ITree {
                 atom.setPointValidity(iStructure, false);
             }
         }
-        Atom a3 = atomList.get(genVecs[0][2]);
-        if (!a3.getPointValidity(iStructure)) {
-            a3.setPointValidity(iStructure, true);
-        }
-        Point3[] origins = new Point3[3];
-        origins[0] = new Point3(-1.0, -1.0, 0.0);
-        origins[1] = new Point3(-1.0, 0.0, 0.0);
-        origins[2] = new Point3(0.0, 0.0, 0.0);
-
-        Point3[] pts = new Point3[4];
-        for (int i = 0; i < genVecs.length; i++) {
-            if (genVecs[i].length > 3) {
-                if (genVecs[i][0] < 0) {
-                    if (fillCoords) {
-                        //continue;
-                    }
-                    pts[0] = origins[genVecs[i][0] + 2];
-                } else {
-                    pts[0] = atomList.get(genVecs[i][0]).spatialSet.getPoint(iStructure);
-                }
-                if (genVecs[i][1] < 0) {
-                    if (fillCoords) {
-                        //continue;
-                    }
-                    pts[1] = origins[genVecs[i][1] + 2];
-                } else {
-                    pts[1] = atomList.get(genVecs[i][1]).spatialSet.getPoint(iStructure);
-                }
-                pts[2] = atomList.get(genVecs[i][2]).spatialSet.getPoint(iStructure);
-                for (int j = 0; j < 3; j++) {
-                    if (pts[j] == null) {
-                        System.out.println(i + " " + j + " " + atomList.get(genVecs[i][j]).getShortName());
-                    }
-                }
-                Coordinates coords = new Coordinates(pts[0], pts[1], pts[2]);
-                if (!coords.setup()) {
-                    //                    if (fillCoords) {
-                    //                       continue;
-                    //                    }
-                    throw new RuntimeException("genCoords: coordinates the same for " + i + " " + pts[2].toString());
-                }
-                double dihedralAngle = 0;
-                for (int j = 3; j < genVecs[i].length; j++) {
-                    Atom a4 = atomList.get(genVecs[i][j]);
-                    if (dihedralAngles == null) {
-                        dihedralAngle += a4.dihedralAngle;
-                    } else {
-                        dihedralAngle += dihedralAngles[nAngles];
-                    }
-                    nAngles++;
-                    if (!a4.getPointValidity()) {
-                        a4.setPointValidity(true);
-                        Point3 p4 = coords.calculate(dihedralAngle, a4.bndCos, a4.bndSin);
-                        a4.setPoint(iStructure, p4);
-                    }
-                }
-            }
-
-        }
+        int nAngles = CoordinateGenerator.genCoords(genVecs, atomList, iStructure, dihedralAngles);
         structures.add(iStructure);
         resetActiveStructures();
         updateVecCoords();

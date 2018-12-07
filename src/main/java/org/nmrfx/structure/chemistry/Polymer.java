@@ -186,6 +186,13 @@ public class Polymer extends Entity {
     }
 
     public String getPolymerType() {
+        if (polymerType == null) {
+            if (isRNA()){
+                return "nucleicacid";
+            } else {
+                return "polypeptide";
+            }
+        }
         return polymerType;
     }
 

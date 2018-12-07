@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
+import org.nmrfx.structure.chemistry.ITree;
 import org.nmrfx.structure.chemistry.Molecule;
 
 /**
@@ -166,8 +167,8 @@ public class HanserRingFinder implements RingFinder {
         }
     }
 
-    public Collection<Ring> findSmallestRings(Molecule mol) {
-        findRings(mol);
+    public Collection<Ring> findSmallestRings(ITree itree) {
+        findRings(itree);
 
         Collections.sort(rings, new Comparator<Ring>() {
             public int compare(Ring ring1, Ring ring2) {
@@ -178,18 +179,18 @@ public class HanserRingFinder implements RingFinder {
         List<List<Boolean>> edgeMap = generateEdgeMap(rings, edges);
         rings = removeLargeRings(edgeMap);
 
-        setAtomRings(mol.getAtoms());
+        setAtomRings(itree.getAtomArray());
 
         return rings;
     }
 
-    public Collection<Ring> findRings(Molecule molecule) {
+    public Collection<Ring> findRings(ITree itree) {
         rings.clear();
 
-        PathGraph graph = new PathGraph(molecule);
+        PathGraph graph = new PathGraph(itree);
 
         graph.setMaximumRingSize(maxRingSize);
-        List<Atom> atoms = molecule.getAtoms();
+        List<Atom> atoms = itree.getAtomArray();
         for (Atom atom : atoms) {
             List<PathEdge> edges = graph.remove(atom);
             for (PathEdge edge : edges) {
