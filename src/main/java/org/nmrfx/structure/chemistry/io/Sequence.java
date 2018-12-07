@@ -125,7 +125,11 @@ public class Sequence {
             residue.addConnectors();
             startAtom = residue.getAtom("X");
         } else {
-            startAtom = isProtein ? residue.getAtom("CAX") : residue.getAtom("C3'X");
+            if (residue.getFirstBackBoneAtom() != null) {
+                startAtom = residue.getFirstBackBoneAtom();
+            } else {
+                startAtom = isProtein ? residue.getAtom("CAX") : residue.getAtom("C3'X");
+            }
         }
         //molecule.updateBondArray();
         residue.getLastBackBoneAtom().setProperty("connector", true);
@@ -141,12 +145,17 @@ public class Sequence {
         residue.removeConnectors();
 
         makeConnection(residue);
-        
+
         // fixme this needs to be changed for non-amino acid residue atoms
         if (isProtein) {
             Atom refAtom = residue.getAtom("O");
-            if (refAtom != null){
+            if (refAtom != null) {  
                 residue.getAtom("O").dihedralAngle = (float) Math.PI;
+            } else {
+                List<Atom> atoms = residue.getLastBackBoneAtom().getChildren();
+                if (atoms.size() == 1){
+                    atoms.get(0).dihedralAngle = (float) Math.PI;
+                }
             }
         }
     }

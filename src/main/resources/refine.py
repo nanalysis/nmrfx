@@ -1425,12 +1425,15 @@ class refine:
     def measureTree(self):
         for entity in [entity for entity in self.molecule.getEntities()]:
             entityName = entity.getName()
-            print "Setup " + entityName
             if type(entity) is Polymer:
-                prfStartAtom = self.getEntityTreeStartAtom(entity).getShortName()
-                treeStartAtom = self.entityEntryDict[entityName]
-                if prfStartAtom == treeStartAtom:
+                prfStartAtom = self.getEntityTreeStartAtom(entity)
+                prfStartAtomName = prfStartAtom.getShortName()
+                treeStartAtomName = self.entityEntryDict[entityName]
+                if prfStartAtomName == treeStartAtomName:
                     continue
+                else:
+                    ### To remeasure, coordinates should be generated for the entity ###
+                    entity.genCoordinates(None)
             self.setupAtomProperties(entity)
             if entityName in self.entityEntryDict:
                 entity.genMeasuredTree(self.getAtom((entityName, self.entityEntryDict[entityName])))
