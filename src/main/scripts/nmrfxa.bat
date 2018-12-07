@@ -18,13 +18,14 @@ set nvjpmain=org.python.util.jython
 set dir=%~dp0
 
 set javaexe=java
-set cp="%dir%\analsyt-%nvjver%.jar;${wclasspath};%CLASSPATH%"
+${wwwclasspath}
+set cp="%dir%analyst-%nvjver%.jar;%wclasspath%"
 
-set testjava=%dir%jre\bin\java
+set testjava=%dir%jre\bin\java.exe
 
 if exist %testjava% (
     set javaexe="%testjava%"
-    set cp="%dir%\lib\analsyt-%nvjver%.jar;${wclasspath};%CLASSPATH%"
+    set cp="%dir%lib/analyst-%nvjver%.jar;%wclasspath%"
 )
 
 
