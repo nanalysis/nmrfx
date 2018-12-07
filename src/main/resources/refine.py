@@ -719,6 +719,9 @@ class refine:
                     raise ValueError(entName + " is not a valid entitiy. Entities within molecule are " + ', '.join(allEntities))
                 if entName in unusedEntities:
                     unusedEntities.remove(entName)
+        else:
+            if len(unusedEntities) > 0:
+                linkerList = ArrayList()
         for entityName in unusedEntities:
             entity = self.molecule.getEntity(entityName)
             print entityName + " had no defined linker."
