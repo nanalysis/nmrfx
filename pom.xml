@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.nmrfx</groupId>
     <artifactId>nmrfxutils</artifactId>
-    <version>10.3.9</version>
+    <version>10.3.10</version>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
