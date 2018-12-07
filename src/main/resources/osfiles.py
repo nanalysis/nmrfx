@@ -1,7 +1,7 @@
 import os
 import os.path
 import glob
-import reader
+import molio
 
 def getDataDir(homeDir):
     if homeDir == None:
@@ -20,7 +20,7 @@ def guessFiles(refiner,homeDir):
         pdbFile = os.path.join(homeDir,'*.pdb')
         pdbFiles = glob.glob(pdbFile)
         if (len(pdbFiles) > 0):
-            reader.readPDB(pdbFiles[0])
+            molio.readPDB(pdbFiles[0])
 
     angleFiles = glob.glob(os.path.join(homeDir,'dihedral*.tbl'))
     for file in angleFiles:
