@@ -889,7 +889,6 @@ public class Molecule implements Serializable, ITree {
             for (Atom atom : atoms) {
                 if (atom.getPointValidity(iStructure)) {
                     anyInvalid = true;
-                    System.out.println("inval " + atom.getFullName());
                     break;
                 }
             }
