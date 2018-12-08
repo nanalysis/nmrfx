@@ -59,6 +59,7 @@ import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.GUIProject;
+import org.nmrfx.project.Project;
 
 public class MainApp extends Application implements DatasetListener {
 
@@ -509,7 +510,7 @@ public class MainApp extends Application implements DatasetListener {
         }
     }
 
-    public final static GUIProject getActive() {
+    public static Project getActive() {
         return GUIProject.getActive();
     }
 
@@ -541,7 +542,7 @@ public class MainApp extends Application implements DatasetListener {
         chooser.setTitle("Project Creator");
         File directoryFile = chooser.showSaveDialog(null);
         if (directoryFile != null) {
-            GUIProject activeProject = getActive();
+            GUIProject activeProject = (GUIProject) getActive();
             if (activeProject != null) {
                 GUIProject newProject = GUIProject.replace(appName, activeProject);
 
@@ -558,7 +559,7 @@ public class MainApp extends Application implements DatasetListener {
     }
 
     private void saveProject() {
-        GUIProject project = getActive();
+        GUIProject project = (GUIProject) getActive();
         if (project.hasDirectory()) {
             try {
                 project.saveProject();
