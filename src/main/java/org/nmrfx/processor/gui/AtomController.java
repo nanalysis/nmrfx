@@ -418,7 +418,7 @@ public class AtomController implements Initializable, FreezeListener {
                     return;
                 }
             }
-            PythonInterpreter interp = MainApp.getInterpreter();
+            PythonInterpreter interp = AnalystApp.getInterpreter();
             interp.exec("import rnapred\nrnapred.predictFromSequence()");
             atomTableView.refresh();
         }
@@ -445,7 +445,7 @@ public class AtomController implements Initializable, FreezeListener {
         } else {
             try {
                 if (isRNA) {
-                    PythonInterpreter interp = MainApp.getInterpreter();
+                    PythonInterpreter interp = AnalystApp.getInterpreter();
                     interp.exec("import refine\nrefiner=refine.refine()\nrefiner.predictShifts()");
                 } else {
                     predictProtein(molecule, 0);

@@ -30,7 +30,7 @@ import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
-import org.nmrfx.processor.gui.MainApp;
+import org.nmrfx.processor.gui.AnalystApp;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
 import org.python.util.PythonInterpreter;
@@ -78,7 +78,7 @@ public class GUIStructureProject extends StructureProject {
 
     public void close() {
         clearAllMolecules();
-        MainApp.closeAll();
+        AnalystApp.closeAll();
 
     }
 
@@ -217,7 +217,7 @@ public class GUIStructureProject extends StructureProject {
     void loadWindows(Path directory) throws IOException {
         Pattern pattern = Pattern.compile("(.+)\\.(yaml)");
         Predicate<String> predicate = pattern.asPredicate();
-        final PythonInterpreter interp = MainApp.getInterpreter();
+        final PythonInterpreter interp = AnalystApp.getInterpreter();
         interp.exec("import nwyaml\\n");
         if (Files.isDirectory(directory)) {
             Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
@@ -239,8 +239,8 @@ public class GUIStructureProject extends StructureProject {
             throw new IllegalArgumentException("Project directory not set");
         }
         Path projectDir = this.projectDir;
-        PythonInterpreter interp = MainApp.getInterpreter();
-        List<Stage> stages = MainApp.getStages();
+        PythonInterpreter interp = AnalystApp.getInterpreter();
+        List<Stage> stages = AnalystApp.getStages();
         int i = 0;
         interp.exec("import nwyaml\\n");
 

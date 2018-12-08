@@ -489,7 +489,7 @@ merge.png				region_adjust.png
         if (!attrs.isEmpty()) {
             peakListOpt = Optional.of(attrs.get(0).getPeakList());
         } else {
-            Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+            Analyzer analyzer = AnalystApp.mainApp.getAnalyzer();
             PeakList peakList = analyzer.getPeakList();
             if (peakList != null) {
                 List<String> peakListNames = new ArrayList<>();
@@ -522,7 +522,7 @@ merge.png				region_adjust.png
     }
 
     public void fitSelected() {
-        Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+        Analyzer analyzer = AnalystApp.mainApp.getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             analyzer.fitMultiplet(m);
             rms();
@@ -543,7 +543,7 @@ merge.png				region_adjust.png
 
     public void splitRegion() {
         double ppm = chart.getVerticalCrosshairPositions()[0];
-        Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+        Analyzer analyzer = AnalystApp.mainApp.getAnalyzer();
         try {
             activeMultiplet = analyzer.splitRegion(ppm);
             updateMultipletField(false);
@@ -553,7 +553,7 @@ merge.png				region_adjust.png
     }
 
     public void adjustRegion() {
-        Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+        Analyzer analyzer = AnalystApp.mainApp.getAnalyzer();
         double ppm0 = chart.getVerticalCrosshairPositions()[0];
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
         analyzer.removeRegion((ppm0 + ppm1) / 2);
@@ -567,7 +567,7 @@ merge.png				region_adjust.png
     }
 
     public void addRegion() {
-        Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+        Analyzer analyzer = AnalystApp.mainApp.getAnalyzer();
         double ppm0 = chart.getVerticalCrosshairPositions()[0];
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
         analyzer.addRegion(ppm0, ppm1);
@@ -593,7 +593,7 @@ merge.png				region_adjust.png
         activeMultiplet.ifPresent(m -> {
             int id = m.getIDNum();
             double ppm = m.measureCenter();
-            Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+            Analyzer analyzer = AnalystApp.mainApp.getAnalyzer();
             analyzer.removeRegion(ppm);
             gotoPrevious(id);
             chart.refresh();
@@ -735,7 +735,7 @@ merge.png				region_adjust.png
             String multOrig = m.getMultiplicity();
             System.out.println("convert " + multOrig + " " + multNew);
             if (!multNew.equals(multOrig)) {
-                Analyzer analyzer = MainApp.mainApp.getAnalyzer();
+                Analyzer analyzer = AnalystApp.mainApp.getAnalyzer();
                 Multiplets.convertMultiplicity(m, multOrig, multNew);
                 analyzer.fitMultiplet(m);
                 refresh();
