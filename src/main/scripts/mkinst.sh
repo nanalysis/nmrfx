@@ -8,10 +8,6 @@ do
     then
         jversion=152
     fi
-    if [[ $os == "macosx-amd64" ]]
-    then
-        tail="_unpacked"
-    fi
     version=1.8.0_${jversion}
     jreFileName=${os}-$version$tail".tar.gz"
     echo $jreFileName
@@ -24,7 +20,7 @@ do
 
     mkdir -p $dir
     cd $dir
-    cp -r -p ../../target/structure-*-bin/proc* .
+    cp -r -p ../../target/structure-*-bin/structure* .
     sdir=`ls -d structure-*`
     cd $sdir
 
