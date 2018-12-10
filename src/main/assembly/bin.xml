@@ -48,6 +48,11 @@
             <filtered>true</filtered>
             <fileMode>0744</fileMode>
         </file>
+        <file>
+            <source>target/Manifest.jar</source>
+            <filtered>false</filtered>
+            <outputDirectory>lib</outputDirectory>
+        </file>
     </files>
     <dependencySets>
         <dependencySet>

@@ -13,19 +13,18 @@ rem
 if "%OS%" == "Windows_NT" setlocal
 
 set nvjver=${project.version}
-set nvjpmain=org.nmrfx.processor.gui.MainApp
+set nvjpmain=org.nmrfx.processor.gui.AnalystApp
 
 set dir=%~dp0
 
 set javaexe=java
-${wwwclasspath}
-set cp="%dir%analystgui-%nvjver%.jar;%wclasspath%"
+set cp="%dir%analystgui-%nvjver%.jar;%dir%lib/Manifest.jar"
 
 set testjava=%dir%jre\bin\java.exe
 
 if exist %testjava% (
     set javaexe="%testjava%"
-    set cp="%dir%lib/analystgui-%nvjver%.jar;%wclasspath%"
+    set cp="%dir%lib/analystgui-%nvjver%.jar;%dir%lib/%Manifest.jar"
 )
 
 

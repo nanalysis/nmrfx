@@ -8,10 +8,6 @@ do
     then
         jversion=152
     fi
-    if [[ $os == "macosx-amd64" ]]
-    then
-        tail="_unpacked"
-    fi
     version=1.8.0_${jversion}
 
     jreFileName=${os}-$version$tail".tar.gz"
@@ -25,7 +21,7 @@ do
 
     mkdir -p $dir
     cd $dir
-    cp -r -p ../../target/analystgui-*-bin/proc* .
+    cp -r -p ../../target/analystgui-*-bin/analyst* .
     sdir=`ls -d analystgui-*`
     cd $sdir
     cp -p ../../../../analyst/target/analyst-*-bin/analyst-*/nmrfxa .

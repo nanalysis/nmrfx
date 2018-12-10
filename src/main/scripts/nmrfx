@@ -16,7 +16,7 @@ else
 fi
 
 nvjver=${project.version}
-nvjmain=org.nmrfx.processor.gui.MainApp
+nvjmain=org.nmrfx.processor.gui.AnalystApp
 iscygwin=false
 ismsys=false
 case "`uname`" in
@@ -40,7 +40,7 @@ while [ -h "$pgm" ]; do
 done
 
 dir=`dirname "$pgm"`
-CLASSPATH=${classpath}
+CLASSPATH=${dir}"/lib/Manifest.jar"
 
 if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
     JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
