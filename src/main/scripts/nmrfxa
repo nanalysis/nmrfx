@@ -39,8 +39,7 @@ while [ -h "$pgm" ]; do
 done
 
 dir=`dirname "$pgm"`
-echo $dir
-CLASSPATH=${classpath}
+CLASSPATH=${dir}"/lib/Manifest.jar"
 
 if [ -d "${dir}/../jre.bundle/Contents/Home/jre/bin" ] ; then
     JAVA="${dir}/../jre.bundle/Contents/Home/jre/bin/java"
