@@ -18,14 +18,14 @@ set nvjpmain=org.nmrfx.processor.gui.MainApp
 set dir=%~dp0
 
 set javaexe=java
-${wwwclasspath}
-set cp="%dir%processorgui-%nvjver%.jar;%wclasspath%"
+set cp="%dir%processorgui-%nvjver%.jar;%dir%lib/Manifest.jar"
+
 
 set testjava=%dir%jre\bin\java.exe
 
 if exist %testjava% (
     set javaexe="%testjava%"
-    set cp="%dir%lib/processorgui-%nvjver%.jar;%wclasspath%"
+    set cp="%dir%lib/processorgui-%nvjver%.jar;%dir%lib/%Manifest.jar"
 )
 
 

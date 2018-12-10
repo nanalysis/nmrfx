@@ -112,22 +112,7 @@
                             <excludeScope>system</excludeScope>
                             <excludeGroupIds>junit,org.mockito,org.hamcrest</excludeGroupIds>
                             <outputFile>target/myFilter.properties</outputFile>
-                            <prefix>$dir/lib</prefix>
-                            <fileSeparator>/</fileSeparator>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>assembly:packageBat</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>build-classpath</goal>
-                        </goals>
-                        <configuration>
-                            <outputFilterFile>true</outputFilterFile>
-                            <outputFile>target/myFilterBat.properties</outputFile>
-                            <prefix>%dir%lib</prefix>
-                            <pathSeparator>;</pathSeparator>
-                            <fileSeparator>/</fileSeparator>
+                            <prefix>.</prefix>
                         </configuration>
                     </execution>
                 </executions>
@@ -155,23 +140,19 @@
                             </arguments>
                         </configuration>
                     </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>properties-maven-plugin</artifactId>
-                <version>1.0.0</version>
-                <executions>
                     <execution>
+                        <id>maniJar</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>read-project-properties</goal>
+                            <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <files>
-                                <file>target/myFilter.properties</file>
-                                <file>target/myFilterBat.properties</file>
-                            </files>
+                            <executable>jar</executable>
+                            <arguments>
+                                <argument>cfm</argument>
+                                <argument>target/Manifest.jar</argument>
+                                <argument>target/Manifest.txt</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>
