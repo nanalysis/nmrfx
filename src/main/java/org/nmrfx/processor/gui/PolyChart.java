@@ -1008,10 +1008,10 @@ public class PolyChart implements PeakListener {
                     double newLower = positions[axis] - range / 2;
                     double newUpper = positions[axis] + range / 2;
                     setAxis(axis, newLower, newUpper);
-                    refresh();
                 }
             }
         }
+        refresh();
     }
 
     protected void moveTo(Double[] positions, Double[] widths) {
@@ -1026,10 +1026,10 @@ public class PolyChart implements PeakListener {
                     double newLower = positions[axis] - range / 2;
                     double newUpper = positions[axis] + range / 2;
                     setAxis(axis, newLower, newUpper);
-                    refresh();
                 }
             }
         }
+        refresh();
     }
 
     public void firstPlane(int axis) {
