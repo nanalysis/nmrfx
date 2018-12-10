@@ -18,14 +18,14 @@ set nvjpmain=org.python.util.jython
 set dir=%~dp0
 
 set javaexe=java
-${wwwclasspath}
-set cp="%dir%structure-%nvjver%.jar;%wclasspath%"
+set cp="%dir%structure-%nvjver%.jar;%dir%lib/Manifest.jar"
+set pgm=%~f0
 
 set testjava=%dir%jre\bin\java.exe
 
 if exist %testjava% (
     set javaexe="%testjava%"
-    set cp="%dir%lib/structure-%nvjver%.jar;%wclasspath%"
+    set cp="%dir%lib/structure-%nvjver%.jar;%dir%lib/%Manifest.jar"
 )
 
 
