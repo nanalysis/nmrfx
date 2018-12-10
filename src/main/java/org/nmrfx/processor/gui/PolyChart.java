@@ -1859,11 +1859,15 @@ public class PolyChart implements PeakListener {
         });
         boolean finished = true;
         if (!draw2DList.isEmpty()) {
-            if (useImmediateMode) {
-                finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList, axModes);
-                useImmediateMode = finished;
+            if (gC instanceof GraphicsContextProxy) {
+                if (useImmediateMode) {
+                    finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList, axModes);
+                    useImmediateMode = finished;
+                } else {
+                    drawSpectrum.drawSpectrum(draw2DList, axModes, false);
+                }
             } else {
-                drawSpectrum.drawSpectrum(draw2DList, axModes, false);
+                finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList, axModes);
             }
         }
         return finished;
