@@ -1324,7 +1324,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 //        PolyChart chart2 = new PolyChart();
 //        charts.add(chart2);
 //        chart2.setController(this);
-        chartGroup = new FractionCanvas(canvas, charts);
+        chartGroup = new FractionCanvas(this, canvas, charts);
         LayoutControlCanvas layoutControl = new LayoutControlCanvas(chartGroup);
         chartGroup.setControlPane(layoutControl);
         chartPane.getChildren().addAll(chartGroup, plotContent, layoutControl);
@@ -1595,7 +1595,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             peakSlider = null;
         }
     }
-    
+
     public SpectrumMeasureBar getSpectrumMeasureBar() {
         return measureBar;
     }
@@ -1750,31 +1750,44 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @Override
-    public void prepareChildren(int nRows, int nCols) {
+    public double[][] prepareChildren(int nRows, int nCols) {
         int iChild = 0;
-        double xMax = 0;
-        double yMax = 0;
+        double maxBorderX = 0.0;
+        double maxBorderY = 0.0;
+        double[][] bordersGrid = new double[4][];
+        bordersGrid[0] = new double[nCols];
+        bordersGrid[1] = new double[nCols];
+        bordersGrid[2] = new double[nRows];
+        bordersGrid[3] = new double[nRows];
+
         for (PolyChart chart : charts) {
             int iRow = iChild / nCols;
             int iCol = iChild % nCols;
             if (minimizeBorders) {
                 chart.setAxisState(iCol == 0, iRow == (nRows - 1));
-                xMax = Math.max(xMax, chart.yAxis.getWidth());
-                yMax = Math.max(yMax, chart.xAxis.getHeight());
             } else {
                 chart.setAxisState(true, true);
             }
+            double[] borders = chart.getMinBorders();
+//            System.out.println("prepare " + iChild + " " + iRow + " " + iCol + " " + borders[0] + " " + borders[1] + " " + borders[2] + " " + borders[3]);
+            bordersGrid[0][iCol] = Math.max(bordersGrid[0][iCol], borders[0]);
+            bordersGrid[1][iCol] = Math.max(bordersGrid[1][iCol], borders[1]);
+            bordersGrid[2][iRow] = Math.max(bordersGrid[2][iRow], borders[2]);
+            bordersGrid[3][iRow] = Math.max(bordersGrid[3][iRow], borders[3]);
+            maxBorderX = Math.max(maxBorderX, borders[0]);
+            maxBorderY = Math.max(maxBorderY, borders[2]);
             iChild++;
         }
-        if (nRows == 1) {
-            yMax = 0.0;
+        iChild = 0;
+        for (PolyChart chart : charts) {
+            int iRow = iChild / nCols;
+            int iCol = iChild % nCols;
+            chart.minLeftBorder = bordersGrid[0][iCol];
+            chart.minBottomBorder = bordersGrid[2][iRow];
+            iChild++;
         }
-        if (nCols == 1) {
-            xMax = 0.0;
-        }
-        chartGroup.setExtraOnLeft(xMax);
-        chartGroup.setExtraOnBottom(yMax);
 
+        return bordersGrid;
     }
 
     public Optional<PolyChart> getChart(double x, double y) {

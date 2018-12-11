@@ -171,6 +171,8 @@ public class PolyChart implements PeakListener {
     double rightBorder = 0.0;
     double topBorder = 0.0;
     double bottomBorder = 0.0;
+    double minLeftBorder = 0.0;
+    double minBottomBorder = 0.0;
     Font peakFont = new Font(12);
 
     int iVec = 0;
@@ -1558,12 +1560,20 @@ public class PolyChart implements PeakListener {
     public void setAxisState(boolean leftEdge, boolean bottomEdge) {
         yAxis.setShowTicsAndLabels(leftEdge);
         xAxis.setShowTicsAndLabels(bottomEdge);
+        xAxis.setTickLabelsVisible(bottomEdge);
+        xAxis.setTickMarksVisible(bottomEdge);
+        xAxis.setLabelVisible(bottomEdge);
+        yAxis.setTickLabelsVisible(leftEdge);
+        yAxis.setTickMarksVisible(leftEdge);
+        yAxis.setLabelVisible(leftEdge);
     }
 
     void setAxisState(NMRAxis axis, String axisLabel) {
         boolean state = axis.getShowTicsAndLabels();
         axis.setTickLabelsVisible(state);
         axis.setTickMarksVisible(state);
+        axis.setLabelVisible(state);
+
         axis.setVisible(true);
         if (!state) {
             axis.setLabel("");
@@ -1686,6 +1696,30 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    public double[] getMinBorders() {
+        xAxis.setTickFontSize(PreferencesController.getTickFontSize());
+        xAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
+        double[] borders = new double[4];
+
+        yAxis.setTickFontSize(PreferencesController.getTickFontSize());
+        yAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
+        borders[0] = yAxis.getBorderSize();
+        borders[2] = xAxis.getBorderSize();
+
+        borders[1] = borders[0] / 4;
+        borders[3] = borders[2] / 4;
+        borders[3] = 7.0;
+        borders[1] = 7.0;
+        return borders;
+    }
+
+    public double[] getUseBorders() {
+        double[] borders = getMinBorders();
+        borders[0] = Math.max(borders[0], minLeftBorder);
+        borders[2] = Math.max(borders[2], minBottomBorder);
+        return borders;
+    }
+
     protected void layoutPlotChildren() {
 
         if (!useImmediateMode) {
@@ -1702,16 +1736,14 @@ public class PolyChart implements PeakListener {
             gC.clearRect(xPos, yPos, width, height);
             xAxis.setTickFontSize(PreferencesController.getTickFontSize());
             xAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
-            bottomBorder = xAxis.getBorderSize();
 
             yAxis.setTickFontSize(PreferencesController.getTickFontSize());
             yAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
-            leftBorder = yAxis.getBorderSize();
-
-            topBorder = bottomBorder / 4;
-            rightBorder = leftBorder / 4;
-            topBorder = Math.max(topBorder, 10);
-            rightBorder = Math.max(rightBorder, 10);
+            double[] borders = getUseBorders();
+            leftBorder = borders[0];
+            rightBorder = borders[1];
+            bottomBorder = borders[2];
+            topBorder = borders[3];
 
             xAxis.setWidth(width - leftBorder - rightBorder);
             xAxis.setHeight(bottomBorder);

@@ -33,6 +33,6 @@ import org.nmrfx.processor.gui.FXMLController;
  * @author Bruce Johnson
  */
 public interface FractionPaneChild {
-    public void prepareChildren(int nRows, int nCols);
+    public double[][] prepareChildren(int nRows, int nCols);
     public void redrawChildren();
 }

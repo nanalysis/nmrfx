@@ -27,6 +27,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.NonInvertibleTransformException;
 import javafx.scene.transform.Transform;
+import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 
 /**
@@ -35,51 +36,21 @@ import org.nmrfx.processor.gui.PolyChart;
  */
 public class FractionCanvas extends Pane {
 
-    /**
-     * @param extraOnLeft the extraOnLeft to set
-     */
-    public void setExtraOnLeft(double extraOnLeft) {
-        this.extraOnLeft = extraOnLeft;
-    }
-
-    /**
-     * @param extraOnRight the extraOnRight to set
-     */
-    public void setExtraOnRight(double extraOnRight) {
-        this.extraOnRight = extraOnRight;
-    }
-
-    /**
-     * @param extraOnTop the extraOnTop to set
-     */
-    public void setExtraOnTop(double extraOnTop) {
-        this.extraOnTop = extraOnTop;
-    }
-
-    /**
-     * @param extraOnBottom the extraOnBottom to set
-     */
-    public void setExtraOnBottom(double extraOnBottom) {
-        this.extraOnBottom = extraOnBottom;
-    }
-
     public enum ORIENTATION {
         HORIZONTAL, VERTICAL, GRID;
     }
     ORIENTATION orient = null;
+    FXMLController controller;
     LayoutControlCanvas controlPane;
     static int[] nRowDefaults = {1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 2, 3, 3, 3, 4};
     int setRows = -1;
-    private double extraOnLeft = 0.0;
-    private double extraOnRight = 0.0;
-    private double extraOnTop = 0.0;
-    private double extraOnBottom = 0.0;
     private int currentRows = 1;
     private int currentCols = 1;
     ObservableList<PolyChart> charts;
     final Canvas canvas;
 
-    public FractionCanvas(Canvas canvas, ObservableList<PolyChart> charts) {
+    public FractionCanvas(FXMLController controller, Canvas canvas, ObservableList<PolyChart> charts) {
+        this.controller = controller;
         this.charts = charts;
         this.canvas = canvas;
         layoutBoundsProperty().addListener((ObservableValue<? extends Bounds> arg0, Bounds arg1, Bounds arg2) -> {
@@ -214,64 +185,56 @@ public class FractionCanvas extends Pane {
         int nRows = getRows();
         int nCols = getColumns();
 
-        double delX = 0.0;
-        double delY = 0.0;
-        double itemWidth = 1.0;
-        double itemHeight = 1.0;
         if ((orient == null) || (orient == ORIENTATION.HORIZONTAL)) {
-            delX = (width - extraOnLeft - extraOnRight) / nChildren;
-            delY = 0.0;
-            itemWidth = delX;
-            itemHeight = height;
             nCols = nChildren;
             nRows = 1;
         } else if (orient == ORIENTATION.VERTICAL) {
-            delX = 0.0;
-            delY = (height - extraOnTop - extraOnBottom) / nChildren;
-            itemHeight = delY;
-            itemWidth = width;
             nRows = nChildren;
             nCols = 1;
         } else {
-            delX = (width - extraOnLeft - extraOnRight) / nCols;
-            itemWidth = delX;
-            itemHeight = (height - extraOnTop - extraOnBottom) / nRows;
-            delY = 0.0;
         }
         currentRows = nRows;
         currentCols = nCols;
-        //children.prepareChildren(nRows, nCols);
-        double x = 0.0;
-        double y = 0.0;
+        double[][] bordersGrid = controller.prepareChildren(nRows, nCols);
+        double sumX = 0.0;
+        double sumY = 0.0;
+        for (int i = 0; i < bordersGrid[0].length; i++) {
+            sumX += bordersGrid[0][i] + bordersGrid[1][i];
+        }
+        for (int i = 0; i < bordersGrid[2].length; i++) {
+            sumY += bordersGrid[2][i] + bordersGrid[3][i];
+        }
+
+        double deltaX = (width - sumX) / nCols;
+        double deltaY = (height - sumY) / nRows;
+
+//        System.out.println("layout " + nRows + " " + nCols + " " + deltaX + " " + sumX + " " + width
+//                + " " + deltaY + " " + sumY + " " + height);
+        double[][] offsets = new double[2][];
+        offsets[0] = new double[nCols];
+        offsets[1] = new double[nRows];
+
+        for (int i = 0; i < bordersGrid[0].length - 1; i++) {
+            offsets[0][i + 1] = offsets[0][i] + bordersGrid[0][i] + deltaX + bordersGrid[1][i];
+        }
+        for (int i = 0; i < bordersGrid[2].length - 1; i++) {
+            offsets[1][i + 1] = offsets[1][i] + bordersGrid[2][i] + deltaY + bordersGrid[3][i];
+        }
         int iChild = 0;
+
+        iChild = 0;
         for (PolyChart node : charts) {
             int iRow = iChild / nCols;
             int iCol = iChild % nCols;
-            double extraWidth = 0.0;
-            if (iCol == 0) {
-                extraWidth += extraOnLeft;
-            }
-            if (iCol == (nCols - 1)) {
-                extraWidth += extraOnRight;
-            }
-            double extraHeight = 0.0;
-            if (iRow == 0) {
-                extraHeight += extraOnTop;
-            }
-            if (iRow == (nRows - 1)) {
-                extraHeight += extraOnBottom;
-            }
-//            System.out.printf("%2d %2d %2d %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f\n", iChild, iRow, iCol, x, y, itemWidth, extraWidth, itemHeight, extraHeight);
-            node.resizeRelocate(x, y, itemWidth + extraWidth, itemHeight + extraHeight);
-            x += delX + extraWidth;
-            y += delY;
+            double x = offsets[0][iCol];
+            double y = offsets[1][iRow];
+            double itemWidth = bordersGrid[0][iCol] + deltaX + bordersGrid[1][iCol];
+            double itemHeight = bordersGrid[2][iRow] + deltaY + bordersGrid[3][iRow];
+
+//            System.out.printf("%2d %2d %2d %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f\n",
+//                    iChild, iRow, iCol, x, y, itemWidth, itemHeight, offsets[0][iCol], offsets[1][iRow]);
+            node.resizeRelocate(x, y, itemWidth, itemHeight);
             iChild++;
-            if (orient == ORIENTATION.GRID) {
-                if (iCol == (nCols - 1)) {
-                    x = 0.0;
-                    y += itemHeight + extraHeight;
-                }
-            }
         }
         for (PolyChart chart : charts) {
             chart.refresh();
