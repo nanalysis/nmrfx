@@ -62,6 +62,9 @@ public class Axis {
     public static double targetPix = 120;
     private double defaultUpper;
     private double defaultLower;
+    private boolean tickMarksVisible = true;
+    private boolean tickLabelsVisible = true;
+    private boolean labelVisible = true;
 
     public Axis(Orientation orientation, double lowerBound, double upperBound, double width, double height) {
         this.orientation = orientation;
@@ -282,43 +285,72 @@ public class Axis {
             int gap1 = ticFontSize / 4;
             int gap2 = labelFontSize / 4;
             ticSize = ticFontSize * 0.75;
-            return ticSize + gap1 + ticFontSize + gap1 + labelFontSize + gap2;
+            double border = 0.0;
+            if (tickMarksVisible) {
+                border += ticSize + gap1;
+                if (tickLabelsVisible) {
+                    border += ticFontSize + gap1;
+                }
+            }
+            if (labelVisible) {
+                border += labelFontSize + gap2;
+            }
+            return border;
 
         } else {
             int gap1 = ticFontSize / 4;
             int gap2 = labelFontSize / 4;
             ticSize = ticFontSize * 0.75;
             double nChar = Math.round(Math.abs(Math.log10(getUpperBound()))) + 2;
-            return ticSize + gap1 + ticFontSize * 0.75 * nChar + gap1 + labelFontSize + gap2;
+            double border = 0.0;
+            if (tickMarksVisible) {
+                border += ticSize + gap1;
+                if (tickLabelsVisible) {
+                    border += ticFontSize * 0.75 * nChar + gap1;
+                }
+            }
+            if (labelVisible) {
+                border += labelFontSize + gap2;
+            }
+            return border;
         }
     }
 
     private void drawHorizontalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
-
         gC.strokeLine(xOrigin, yOrigin, xOrigin + width, yOrigin);
         double value = minorTickStart;
         int gap1 = ticFontSize / 4;
         ticSize = ticFontSize * 0.75;
         double upper = getUpperBound();
-        while (value < upper) {
-            double x = getDisplayPosition(value);
-            double y1 = yOrigin;
-            double delta = Math.abs(value - Math.round(value / majorTickSpace) * majorTickSpace);
-            if (delta < (minorTickSpace / 10.0)) {
-                String ticString = String.format(ticFormatString, value);
-                double y2 = yOrigin + ticSize;
-                gC.strokeLine(x, y1, x, y2);
-                gC.fillText(ticString, x, y2 + gap1);
-            } else {
-                double y2 = yOrigin + ticSize / 2;
-                gC.strokeLine(x, y1, x, y2);
+        if (tickMarksVisible) {
+            while (value < upper) {
+                double x = getDisplayPosition(value);
+                double y1 = yOrigin;
+                double delta = Math.abs(value - Math.round(value / majorTickSpace) * majorTickSpace);
+                if (delta < (minorTickSpace / 10.0)) {
+                    String ticString = String.format(ticFormatString, value);
+                    double y2 = yOrigin + ticSize;
+                    gC.strokeLine(x, y1, x, y2);
+                    if (tickLabelsVisible) {
+                        gC.fillText(ticString, x, y2 + gap1);
+                    }
+                } else {
+                    double y2 = yOrigin + ticSize / 2;
+                    gC.strokeLine(x, y1, x, y2);
+                }
+                value += minorTickSpace;
             }
-            value += minorTickSpace;
         }
-        if (label.length() != 0) {
+        if (labelVisible && label.length() != 0) {
             gC.setTextBaseline(VPos.TOP);
             gC.setFont(labelFont);
-            double labelTop = yOrigin + ticSize + gap1 + ticFontSize + gap1;
+            double labelTop = yOrigin;
+            if (tickMarksVisible) {
+                labelTop += ticSize + gap1;
+                if (tickLabelsVisible) {
+                    labelTop += ticFontSize + gap1;
+                }
+            }
             gC.fillText(label, xOrigin + width / 2, labelTop);
             //gC.drawText(label, leftBorder + width / 2, labelTop, "n", 0.0);
         }
@@ -328,34 +360,38 @@ public class Axis {
     private void drawVerticalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
         gC.setTextBaseline(VPos.CENTER);
         gC.setTextAlign(TextAlignment.RIGHT);
-        getTickPositions();
         gC.strokeLine(xOrigin, yOrigin, xOrigin, yOrigin - height);
-        int gap1 = ticFontSize / 4;
         int gap2 = labelFontSize / 4;
-        ticSize = ticFontSize * 0.75;
-        double value = minorTickStart;
-        int ticStringLen = 0;
-        double upper = getUpperBound();
-        while (value < upper) {
-            double y = getDisplayPosition(value);
-            double x1 = xOrigin;
-            double delta = Math.abs(value - Math.round(value / majorTickSpace) * majorTickSpace);
-            if (delta < (minorTickSpace / 10.0)) {
-                String ticString = String.format(ticFormatString, value);
-                if (ticString.length() > ticStringLen) {
-                    ticStringLen = ticString.length();
+        if (tickMarksVisible) {
+            getTickPositions();
+            int gap1 = ticFontSize / 4;
+            gap2 = labelFontSize / 4;
+            ticSize = ticFontSize * 0.75;
+            double value = minorTickStart;
+            int ticStringLen = 0;
+            double upper = getUpperBound();
+            while (value < upper) {
+                double y = getDisplayPosition(value);
+                double x1 = xOrigin;
+                double delta = Math.abs(value - Math.round(value / majorTickSpace) * majorTickSpace);
+                if (delta < (minorTickSpace / 10.0)) {
+                    String ticString = String.format(ticFormatString, value);
+                    if (ticString.length() > ticStringLen) {
+                        ticStringLen = ticString.length();
+                    }
+                    double x2 = x1 - ticSize;
+                    gC.strokeLine(x1, y, x2, y);
+                    if (tickLabelsVisible) {
+                        gC.fillText(ticString, x2 - gap1, y);
+                    }
+                } else {
+                    double x2 = x1 - ticSize / 2;
+                    gC.strokeLine(x1, y, x2, y);
                 }
-                double x2 = x1 - ticSize;
-                gC.strokeLine(x1, y, x2, y);
-                gC.fillText(ticString, x2 - gap1, y);
-            } else {
-                double x2 = x1 - ticSize / 2;
-                gC.strokeLine(x1, y, x2, y);
-
+                value += minorTickSpace;
             }
-            value += minorTickSpace;
         }
-        if (label.length() != 0) {
+        if (labelVisible && label.length() != 0) {
             gC.setFont(labelFont);
 
             gC.setTextBaseline(VPos.TOP);
@@ -368,15 +404,18 @@ public class Axis {
 
             //gC.drawText(label, labelRight, bottomBorder - height / 2, "s", 90.0);
         }
-
     }
 
     public void setTickMarksVisible(boolean state) {
-
+        tickMarksVisible = state;
     }
 
     public void setTickLabelsVisible(boolean state) {
+        tickLabelsVisible = state;
+    }
 
+    public void setLabelVisible(boolean state) {
+        labelVisible = state;
     }
 
     public void setVisible(boolean state) {
