@@ -65,6 +65,7 @@ public class Axis {
     private boolean tickMarksVisible = true;
     private boolean tickLabelsVisible = true;
     private boolean labelVisible = true;
+    private boolean centerTick = false;
 
     public Axis(Orientation orientation, double lowerBound, double upperBound, double width, double height) {
         this.orientation = orientation;
@@ -229,6 +230,7 @@ public class Axis {
 
     private void getTickPositions() {
         double length = VERTICAL == getOrientation() ? getHeight() : getWidth();
+        centerTick = false;
         if (length > 0) {
             double nTic1 = length / targetPix;
             double range = getRange();
@@ -254,10 +256,23 @@ public class Axis {
                 }
             }
             double incValue = selValue * Math.pow(10.0, floorScale);
-            majorTickSpace = incValue;
-            minorTickSpace = incValue / 5.0;
-            minorTickStart = Math.ceil(getLowerBound() / minorTickSpace) * minorTickSpace;
-            majorTickStart = Math.ceil(getLowerBound() / majorTickSpace) * majorTickSpace;
+            if ((getLowerBound() + 1.2 * incValue) > getUpperBound()) {
+                majorTickSpace = incValue;
+                minorTickSpace = incValue / 5.0;
+                minorTickStart = (getLowerBound() + getUpperBound()) / 2.0;
+                majorTickStart = minorTickStart;
+                centerTick = true;
+            } else {
+                majorTickSpace = incValue;
+                minorTickSpace = incValue / 5.0;
+                minorTickStart = Math.ceil(getLowerBound() / minorTickSpace) * minorTickSpace;
+                majorTickStart = Math.ceil(getLowerBound() / majorTickSpace) * majorTickSpace;
+            }
+        } else {
+            majorTickSpace = getUpperBound() - getLowerBound();
+            minorTickSpace = majorTickSpace / 5.0;
+            minorTickStart = getLowerBound();
+            majorTickStart = minorTickStart;
         }
     }
 
@@ -327,7 +342,7 @@ public class Axis {
                 double x = getDisplayPosition(value);
                 double y1 = yOrigin;
                 double delta = Math.abs(value - Math.round(value / majorTickSpace) * majorTickSpace);
-                if (delta < (minorTickSpace / 10.0)) {
+                if (centerTick || (delta < (minorTickSpace / 10.0))) {
                     String ticString = String.format(ticFormatString, value);
                     double y2 = yOrigin + ticSize;
                     gC.strokeLine(x, y1, x, y2);
@@ -337,6 +352,9 @@ public class Axis {
                 } else {
                     double y2 = yOrigin + ticSize / 2;
                     gC.strokeLine(x, y1, x, y2);
+                }
+                if (centerTick) {
+                    break;
                 }
                 value += minorTickSpace;
             }
@@ -363,7 +381,6 @@ public class Axis {
         gC.strokeLine(xOrigin, yOrigin, xOrigin, yOrigin - height);
         int gap2 = labelFontSize / 4;
         if (tickMarksVisible) {
-            getTickPositions();
             int gap1 = ticFontSize / 4;
             gap2 = labelFontSize / 4;
             ticSize = ticFontSize * 0.75;
@@ -374,7 +391,7 @@ public class Axis {
                 double y = getDisplayPosition(value);
                 double x1 = xOrigin;
                 double delta = Math.abs(value - Math.round(value / majorTickSpace) * majorTickSpace);
-                if (delta < (minorTickSpace / 10.0)) {
+                if (centerTick || (delta < (minorTickSpace / 10.0))) {
                     String ticString = String.format(ticFormatString, value);
                     if (ticString.length() > ticStringLen) {
                         ticStringLen = ticString.length();
@@ -388,6 +405,10 @@ public class Axis {
                     double x2 = x1 - ticSize / 2;
                     gC.strokeLine(x1, y, x2, y);
                 }
+                if (centerTick) {
+                    break;
+                }
+
                 value += minorTickSpace;
             }
         }
