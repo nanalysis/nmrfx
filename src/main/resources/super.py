@@ -18,11 +18,13 @@ def median(values):
         v1 = values[n/2]
         v2 = values[(n-1)/2]
         return (v1+v2)/2.0
-     
-    
 
 def loadPDBModels(files):
-    fileName = files[0]
+    try:
+        fileName = files[0]
+    except IndexError:
+	errMsg = "\nCan't find the PDB files to load PDB models. Please inspect the 'final' and 'output' directories."
+        raise LookupError(errMsg)
     pdb = PDBFile()
     molecule = pdb.read(fileName)
     iFile = 1
