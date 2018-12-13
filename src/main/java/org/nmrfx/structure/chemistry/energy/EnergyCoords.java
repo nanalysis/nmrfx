@@ -1007,7 +1007,6 @@ public class EnergyCoords {
             }
 //            System.out.println("");
         }
-        System.out.println("Nfix " + nFixed + " " + nAtoms);
         //dumpFixed();
     }
 

@@ -721,12 +721,12 @@ class refine:
                 linkerList = ArrayList()
         for entityName in unusedEntities:
             entity = self.molecule.getEntity(entityName)
-            print entityName + " had no defined linker."
+            #print entityName + " had no defined linker."
             startAtom = firstEntity.getLastAtom().getFullName()
             endAtom = self.getEntityTreeStartAtom(entity).getFullName()
             newLinker = {'atoms': [startAtom, endAtom]}
             linkerList.append(newLinker)
-            print "linker added between " + startAtom + " and " + endAtom
+            #print "linker added between " + startAtom + " and " + endAtom
         return linkerList
 
     def loadFromYaml(self,data, seed, pdbFile=""):
