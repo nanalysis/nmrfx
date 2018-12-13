@@ -73,7 +73,6 @@ def genRNAData(seqList, pairs):
     for elem in elems:
         rnaData[elem] = []
     for pair in pairInfo:
-        # print pair
         (index, start, match, end) = pair
         nucRes = start.split(':')[-1]
         nuc = nucRes[0]
@@ -278,7 +277,6 @@ def predictFromAttr(seqList, outLines):
                     shift = wshift
                     #print res,targetNuc,targetAtom,attrValues,shift
                 result[res + '.' + targetAtom] = (shift, errorVal)
-    RNAAttributes.dump()
     return result
 
 
@@ -408,7 +406,7 @@ def dumpPredictions(molecule, refMode=True):
                              name = atom.getFullName()
                          else:
                              name = atom.getShortName()
-                         print name,ppmV.getValue()
+                         print "%s %.2f %s %s" % (name,ppmV.getValue(),RNAAttributes.getStats(atom),RNAAttributes.get(atom))
 
 def predictFromSequence(molecule = None, vienna = None):
     if molecule == None:
