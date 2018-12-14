@@ -18,7 +18,6 @@ def getAnnealStages(dOpt, settings):
     stepsAnneal1 = int(round((steps-stepsEnd-stepsHigh)*dOpt['toMedFrac']))
     stepsAnneal2 = steps-stepsHigh-stepsEnd-stepsAnneal1
     medTemp = round(dOpt['highTemp'] * dOpt['medFrac'])
-    print("this is type of settings: {}".format(type(settings).__name__))
 
     stage1 = {
         'tempVal'        : dOpt['highTemp'],
