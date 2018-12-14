@@ -1560,7 +1560,7 @@ class refine:
 
         ringShifts = RingCurrentShift()
         ringShifts.makeRingList(self.molecule)
-        filterString = "*.H8,H6,H2,H1',H2'"
+        filterString="*.H8,H6,H5,H2,H1',H2',H3'"
 
         molFilter = MolFilter(filterString)
         spatialSets = Molecule.matchAtoms(molFilter)
