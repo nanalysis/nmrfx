@@ -43,7 +43,7 @@ class XPLOR:
         self.regex = r"\([^\(]*resi\w*\s+([0-9]+)\s+[\w\s]+\s(\w+[0-9'\*#]*)\s*\)|(or)|(-?[0-9\.]+\s+-?[0-9\.]+\s+-?[0-9\.]+)"
         ''' Four matching groups within regex: residueNum , atomName, "or", bounds'''
 
-    def addElements(self, captures, resNames):
+    def addElements(self, captures, resNames, segId):
         ''' Takes in a list of lists. Each internal list has 4 items.
             capture[0] : Residue number
             capture[1] : Atom name
@@ -54,6 +54,7 @@ class XPLOR:
             produces a single list of alternating atomnames and ors and possibly ends in
             a capture with just bounds information.  Captures comes from an entire
             line and resNames is needed to rename atoms in IUPAC standards'''
+	
         appending = []
         for capture in captures:
             item = ""
@@ -71,6 +72,8 @@ class XPLOR:
                 atomName = AtomParser.xplorToIUPAC(resName, capture[1])
                 atomName = atomName if atomName else capture[1]
                 item = '.'.join([capture[0], atomName])
+                if segId:
+		    item = ':'.join([segId, item])
             else:
                 item = capture[2] if capture[2] else capture[3]
             appending.append(item)
@@ -161,15 +164,19 @@ class XPLOR:
             if (lower < -180) and (upper < 0.0):
                 lower += 360
                 upper += 360
-            # if dihedral is None:
-            #     pass
-            #     print "atomSels : ", atomsSels
-            #     print "bounds : ", bounds
-            # else:
             dihedral.addBoundary(atomsSels, lower, upper, scale)
         else:
             self.invalidAtomSelections.append(atomsSels)
             #raise ValueError("Rotation about atom selections not permissible.")
+
+    def getSegmentId(self, string):
+        segIdRegex = r'[^\s]*?segid\s[^.]?\s*([A-Z]).?'
+        pat = re.compile(segIdRegex, re.I)
+        match = pat.search(string)
+	if match:
+            return match.group(1)
+	else:
+	    return None
 
     def parseXPLORFile(self, resNames):
         ''' parseXPLORFile parses the xplor file to produce constraint lists
@@ -187,13 +194,14 @@ class XPLOR:
             if not self.s:
                 if elements:
                     constraints.append(elements)
-                break;
+                break
             elif 'assi' in self.s or 'ASSI' in self.s:
                 if elements:
                     constraints.append(elements)
                 elements = []
             m = pat.findall(self.s)
-            elements += self.addElements(m, resNames)
+            segmentId = self.getSegmentId(self.s)
+            elements += self.addElements(m, resNames, segmentId)
         self.f.close()
         return constraints
 
