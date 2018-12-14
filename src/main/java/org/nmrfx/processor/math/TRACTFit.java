@@ -44,7 +44,7 @@ public class TRACTFit {
         this.rA = rA;
         this.rB = rB;
         double tolAbs = 1E-12;
-        double min = 5.0e-9;
+        double min = 1.0e-9;
         double max = 300.0e-9;
         MatchFunction f = new MatchFunction();
         UnivariateObjectiveFunction fOpt = new UnivariateObjectiveFunction(f);
