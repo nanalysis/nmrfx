@@ -45,7 +45,6 @@ public class SuperMol {
         Point3 pt2;
         double t_rms = 0.0;
         List<SpatialSet> selected = molecule.getAtomsByProp(Atom.SUPER);
-        System.out.println("size is " + selected.size());
         x = new double[selected.size()][3];
         y = new double[selected.size()][3];
         ArrayList<SuperResult> superRMS = new ArrayList<SuperResult>();
@@ -92,7 +91,6 @@ public class SuperMol {
 
                 if (j >= 3) {
                     cal_super(x, y, j);
-                    System.out.println("rms is " + rms);
                     SuperResult sResult = new SuperResult(iFix, iMov, rms);
                     superRMS.add(sResult);
                     t_rms += rms;
