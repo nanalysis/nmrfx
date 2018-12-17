@@ -27,7 +27,7 @@ public class AngleTreeGenerator {
     static final double TO_RAD = 180.0 / Math.PI;
     Map<Atom, Map<Atom, Double>> ringClosures;
     List<Bond> closureBonds = new ArrayList<>();
-
+    List<Atom> atomPathList = new ArrayList<>();
     class BondSort implements Comparable<BondSort> {
 
         final Bond bond;
@@ -68,6 +68,7 @@ public class AngleTreeGenerator {
 
     public List<List<Atom>> genTree(ITree itree, Atom startAtom, Atom endAtom) {
         MTree mTree = new MTree();
+
         Map<Atom, Integer> hash = new HashMap<>();
         int i = 0;
         int startIndex = -1;
@@ -141,7 +142,7 @@ public class AngleTreeGenerator {
         int lastNodeIndex = 0;
         int nShells = pathNodes.get(pathNodes.size() - 1).getShell() + 1;
         int iAtom = 0;
-        List<Atom> atomPathList = new ArrayList<>();
+        atomPathList = new ArrayList<>();
         List<List<Atom>> atomTree = new ArrayList<>();
         List<Atom> branchList = null;
         for (int iShell = 0; iShell < nShells; iShell++) {
@@ -443,6 +444,10 @@ public class AngleTreeGenerator {
                 addRingClosure(a1, a2);
             }
         }
+    }
+    
+    public List<Atom> getPathList(){
+        return atomPathList;
     }
 
     private boolean testTerminal(Atom a) {

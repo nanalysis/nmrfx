@@ -4,7 +4,7 @@ import os.path
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import SuperMol
 from org.nmrfx.structure.chemistry.io import PDBFile
-import refine
+import molio
 from java.util import TreeSet
 
 def median(values):
@@ -146,7 +146,7 @@ def saveModels(mol, files):
         (dir,fileName) = os.path.split(file)
         newFileName = 'sup_' + fileName
         newFile = os.path.join(dir,newFileName)
-        refine.savePDB(mol, newFile, i)
+        molio.savePDB(mol, newFile, i)
 
 def runSuper(files,newBase='super'):    
     mol = loadPDBModels(files)

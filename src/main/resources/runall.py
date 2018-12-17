@@ -35,7 +35,7 @@ def getCmd():
     dir = os.path.dirname(jarPath)
     dir = os.path.dirname(dir)
     print dir
-    cmd = os.path.join(dir,'nmrfxstructure')
+    cmd = os.path.join(dir,'nmrfxs')
     return cmd
 
 def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapMemory=512):
