@@ -1,8 +1,16 @@
 def getAnnealStages(dOpt, settings):
-    ''' getAnnealStages returns a list of 5 dictionaries that have values for
-        running each stage of the dynamics program and requires the dynOptions
-        object
-    '''
+    """
+    # Parameters:
+
+    * dOpt (dict); dictionary containing parameters and values for the dynamic simulation
+    * settings (LinkedHashMap); java HashMap that contains force and dynamic program parameters and their values
+
+    # Returns:
+
+    stages (list); a list of 5 dictionarys that have values for running each stage of the dynamics program
+
+    See also: `refine.anneal(...)` in refine.py
+    """
     from refine import createStrictDict
     steps = dOpt['steps']
     stepsEnd = dOpt['stepsEnd']
@@ -106,13 +114,25 @@ def getAnnealStages(dOpt, settings):
 
 initialize = True
 def runStage(stage, refiner, rDyn):
-    '''
-        runStage runs a stage of the dynamics using a stage dictionary that has
-        keys as demonstrated above in the getAnnealStages. This function uses a
-        global variable stored in the module to assess whether it is the first
-        time the method is called. If so, it will initialize the dynamics and
-        all other calls will continue the dynamics.
-    '''
+    """
+    Runs a stage of the dynamics using a stage dictionary that has
+    keys as demonstrated above in the getAnnealStages. This function uses a
+    global variable stored in the module to assess whether it is the first
+    time the method is called. If so, it will initialize the dynamics and
+    all other calls will continue the dynamics.
+
+    # Parameters:
+
+    * stage (dict);
+    * refiner (refine); instance object of refine class
+    * rDyn (RotationalDynamics); instance rotational dynamics object to run dynamics simulation
+
+    # Returns:
+
+    _ (None); Performs
+
+    See also: `anneal(...)` in refine.py
+    """
     refiner.setPars(stage['param'])
     refiner.setForces(stage['force'])
     timeStep = rDyn.getTimeStep()/2.0
