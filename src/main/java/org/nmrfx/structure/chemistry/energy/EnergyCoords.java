@@ -69,7 +69,7 @@ public class EnergyCoords {
     double[] weights = new double[DEFAULTSIZE];
 
     double[] derivs = new double[DEFAULTSIZE];
-    int repelStart = 20000;
+    int repelStart = 40000;
     int repelEnd = repelStart;
     int disEnd = 0;
     int nAtoms = 0;
@@ -352,6 +352,88 @@ public class EnergyCoords {
             //if (!newGroup) {
             //    wild = ijWild(prevIAtom, prevJAtom, iAtomName, jAtomName);
             //}
+            // If there is a new write out the values, if not, make empty
+            String lower = newGroup ? doubFormatter.format(rLow[i]) : "";
+            String upper = newGroup ? doubFormatter.format(rUp[i]) : "";
+            String[] lineElements = {iIndex, iGroup, iAtomName, jAtomName, lower, upper};
+
+            // If we find a wild, no need to add another line, can just use star
+            // for wild in the line that wouldve preceded the new element
+            if (wild == 'n') {
+                groupLineElements.add(lineElements);
+            } else {
+                int editIndex = wild == 'i' ? 2 : 3;
+                lineElements = groupLineElements.get(groupLineElements.size() - 1);
+                String atomName = lineElements[editIndex];
+                atomName = atomName.substring(0, atomName.length() - 1) + "*";
+                lineElements[editIndex] = atomName;
+            }
+
+            prevGroup = iGroup;
+            prevIAtom = iAtomName;
+            prevJAtom = jAtomName;
+        }
+    }
+
+    private char ijWild(String iAtomOld, String jAtomOld, String iAtomNew, String jAtomNew) {
+        /* Returns i, j, or n depending if it was found to wild. 
+            the char return is i or j if there was a suitable wild found and 
+            n if no wild is found.*/
+        String iAtomOldSub = iAtomOld.substring(0, iAtomOld.length() - 1);
+        String iAtomNewSub = iAtomNew.substring(0, iAtomNew.length() - 1);
+        
+        String atomName = iAtomNewSub.substring(iAtomNewSub.indexOf(".") + 1);
+        if (atomName.length() < 1){
+            return 'n';
+        };
+        
+        if (iAtomOldSub.equals(iAtomNewSub) && jAtomNew.equals(jAtomOld)) {
+            return 'i';
+        }
+        
+        String jAtomOldSub = jAtomOld.substring(0, jAtomOld.length() - 1);
+        String jAtomNewSub = jAtomNew.substring(0, jAtomNew.length() - 1);
+        
+        atomName = jAtomNewSub.substring(jAtomNewSub.indexOf(".") + 1);
+        if (atomName.length() < 1){
+            return 'n';
+        }
+        if (jAtomOldSub.equals(jAtomNewSub) && iAtomNew.equals(iAtomOld)) {
+            return 'j';
+        }
+        return 'n';
+    }
+
+    public void dumpRestraints() {
+        DecimalFormat doubFormatter = new DecimalFormat("#.0");
+        ArrayList<String[]> groupLineElements = new ArrayList<>();
+        String prevGroup = "";
+        String prevIAtom = "";
+        String prevJAtom = "";
+
+        for (int i = 0; i < disEnd; i++) {
+            String iIndex = Integer.toString(i);
+            String iGroup = Integer.toString(iGroups[i]);
+            boolean newGroup = !prevGroup.equals(iGroup);
+            if (newGroup) {
+                for (String[] lineElements : groupLineElements) {
+                    String line = String.join("\t", lineElements);
+                    System.out.println(line);
+                }
+                groupLineElements.clear();
+            }
+            int iAtomIndex = iAtoms[i];
+            int jAtomIndex = jAtoms[i];
+            Molecule mol = Molecule.getActive();
+            Atom iAtom = atoms[iAtomIndex];
+            Atom jAtom = atoms[jAtomIndex];
+
+            String iAtomName = iAtom.getFullName();
+            String jAtomName = jAtom.getFullName();
+            char wild = 'n';
+//            if (!newGroup) {
+//                wild = ijWild(prevIAtom, prevJAtom, iAtomName, jAtomName);
+//            }
             // If there is a new write out the values, if not, make empty
             String lower = newGroup ? doubFormatter.format(rLow[i]) : "";
             String upper = newGroup ? doubFormatter.format(rUp[i]) : "";
