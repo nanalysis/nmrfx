@@ -83,6 +83,7 @@ def parseConstraints(constraints, type):
                         placement = 0;
                         prevAtom = False
             atomPairs = getAtomPairs(atoms,mode=pairMode)
+	    
         else:
             atomPairs = atoms
             constraintValues = constraint[-1]
@@ -106,7 +107,7 @@ class XPLOR:
         self.s = ""
         self.invalidAtomSelections = []
         self.regex = r"\([^\(]*resi\w*\s+([0-9]+)\s+[\w\s]+\s(\w+[0-9'\*#]*)\s*\)|(or)|(-?[0-9\.]+\s+-?[0-9\.]+\s+-?[0-9\.]+)"
-        ''' Four matching groups within regex: residueNum , atomName, "or", bounds'''
+        # Four matching groups within regex: residueNum , atomName, "or", bounds
 
     def getNextString(self):
         ''' getNextString finds the next data-containing line in the file'''
@@ -191,3 +192,5 @@ class XPLOR:
             atomSels = constraint['atomPairs']
             bounds = [constraint['lower'],constraint['upper']]
             self.processAngleConstraints(dihedral, atomSels, bounds)
+	if self.invalidAtomSelections:
+	    raise ValueError("Please check invalid atom selections in your XPLOR angle constraint file.\n{}".format(self.invalidAtomSelections))
