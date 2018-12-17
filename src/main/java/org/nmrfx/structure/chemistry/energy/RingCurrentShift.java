@@ -42,25 +42,37 @@ public class RingCurrentShift {
     private static final HashMap<String, PPMv> refShifts = new HashMap<String, PPMv>();
 
     static {
-        refShifts.put("A.H2", new PPMv(7.93));
-        refShifts.put("A.H8", new PPMv(8.33));
-        refShifts.put("G.H8", new PPMv(7.87));
-        refShifts.put("C.H5", new PPMv(5.84));
-        refShifts.put("U.H5", new PPMv(5.76));
-        refShifts.put("C.H6", new PPMv(8.02));
-        refShifts.put("U.H6", new PPMv(8.01));
-        refShifts.put("A.H1'", new PPMv(5.38));
+        refShifts.put("A.H2", new PPMv(7.87));
+        refShifts.put("A.H8", new PPMv(8.24));
+        refShifts.put("G.H8", new PPMv(7.84));
+        refShifts.put("C.H5", new PPMv(5.90));
+        refShifts.put("U.H5", new PPMv(5.86));
+        refShifts.put("C.H6", new PPMv(7.96));
+        refShifts.put("U.H6", new PPMv(8.03));
+        refShifts.put("A.H1'", new PPMv(5.45));
         refShifts.put("G.H1'", new PPMv(5.37));
-        refShifts.put("C.H1'", new PPMv(5.45));
-        refShifts.put("U.H1'", new PPMv(5.50));
-        refShifts.put("A.H2'", new PPMv(4.54));
-        refShifts.put("G.H2'", new PPMv(4.59));
-        refShifts.put("C.H2'", new PPMv(4.54));
-        refShifts.put("U.H2'", new PPMv(4.54));
-        refShifts.put("A.H3'", new PPMv(4.59));
-        refShifts.put("G.H3'", new PPMv(4.59));
-        refShifts.put("C.H3'", new PPMv(4.59));
-        refShifts.put("U.H3'", new PPMv(4.59));
+        refShifts.put("C.H1'", new PPMv(5.48));
+        refShifts.put("U.H1'", new PPMv(5.52));
+        refShifts.put("A.H2'", new PPMv(4.49));
+        refShifts.put("G.H2'", new PPMv(4.49));
+        refShifts.put("C.H2'", new PPMv(4.49));
+        refShifts.put("U.H2'", new PPMv(4.49));
+        refShifts.put("A.H3'", new PPMv(4.56));
+        refShifts.put("G.H3'", new PPMv(4.56));
+        refShifts.put("C.H3'", new PPMv(4.56));
+        refShifts.put("U.H3'", new PPMv(4.56));
+        refShifts.put("A.H4'", new PPMv(4.37));
+        refShifts.put("G.H4'", new PPMv(4.37));
+        refShifts.put("C.H4'", new PPMv(4.37));
+        refShifts.put("U.H4'", new PPMv(4.37));
+        refShifts.put("A.H5'", new PPMv(4.36));
+        refShifts.put("G.H5'", new PPMv(4.36));
+        refShifts.put("C.H5'", new PPMv(4.36));
+        refShifts.put("U.H5'", new PPMv(4.36));
+        refShifts.put("A.H5''", new PPMv(4.11));
+        refShifts.put("G.H5''", new PPMv(4.11));
+        refShifts.put("C.H5''", new PPMv(4.11));
+        refShifts.put("U.H5''", new PPMv(4.11));
     }
 
     static class RingType {
