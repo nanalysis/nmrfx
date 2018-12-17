@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import libsvm.*;
@@ -28,7 +27,7 @@ public class SVMPredict {
 
     public svm_model getModel(String atomName) {
         if (!models.containsKey(atomName)) {
-            InputStream modelStream = ClassLoader.getSystemResourceAsStream("data/rnasvm/svr_in_" + atomName + ".txt.trim.model");
+            InputStream modelStream = this.getClass().getClassLoader().getSystemResourceAsStream("data/rnasvm/svr_in_" + atomName + ".txt.trim.model");
             BufferedReader modelReader = new BufferedReader(new InputStreamReader(modelStream));
             svm_model model;
             try {

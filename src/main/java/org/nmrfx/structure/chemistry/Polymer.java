@@ -25,7 +25,7 @@ public class Polymer extends Entity {
     public ArrayList<Residue> residueList = null;
     public Residue firstResidue = null;
     public Residue lastResidue = null;
-    private String polymerType = "polypeptide(L)";
+    private String polymerType = "";
     private String strandID = "A";
     private String oneLetterCode = "";
     private String nomenclature = "IUPAC";

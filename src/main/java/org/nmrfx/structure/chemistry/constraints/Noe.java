@@ -15,10 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.constraints;
 
-import cern.colt.list.DoubleArrayList;
 import cern.jet.stat.Descriptive;
 import org.nmrfx.structure.chemistry.*;
 import org.nmrfx.processor.datasets.peaks.AtomResonance;
@@ -31,6 +29,8 @@ import org.nmrfx.structure.utilities.Util;
 import java.io.Serializable;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -406,7 +406,6 @@ public class Noe implements Constraint, Serializable {
 //   //
 //
 //    }
-
     public SpatialSetGroup getSPG(int setNum, boolean getSwapped, boolean filterMode) {
         if (setNum == 0) {
             if ((filterMode && filterSwapped) || (!filterMode && swapped && getSwapped)) {
@@ -637,7 +636,7 @@ public class Noe implements Constraint, Serializable {
         if (structures.length == 0) {
             structures = new int[1];
         }
-        DoubleArrayList dList = new DoubleArrayList();
+        ArrayList<Double> dList = new ArrayList<>();
         for (Noe noe : noeList) {
             dList.clear();
             double bound = noe.upper;
@@ -661,13 +660,15 @@ public class Noe implements Constraint, Serializable {
                 }
             }
             double fracInBound = (double) nInBounds / nStructures;
-            dList.sort();
-            double minDis = Descriptive.min(dList);
-            double maxDis = Descriptive.max(dList);
-            double meanDis = Descriptive.mean(dList);
+            SummaryStatistics stat = new SummaryStatistics();
+            dList.stream().forEach(stat::addValue);
+            double minDis = stat.getMin();
+            double maxDis = stat.getMax();
+            double meanDis = stat.getMean();
+
             double stdDevDis = 0.0;
             if (dList.size() > 1) {
-                stdDevDis = Descriptive.standardDeviation(Descriptive.sampleVariance(dList, meanDis));
+                stdDevDis = stat.getStandardDeviation();
             }
             DistanceStat dStat = new DistanceStat(minDis, maxDis, meanDis, stdDevDis, fracInBound, violStructures);
             noe.disStat = dStat;
@@ -933,7 +934,7 @@ public class Noe implements Constraint, Serializable {
     }
 
     public static HashMap<PeakList, ArrayList<Double>> calcMedian(String mMode, PeakList whichList) {
-        Map<PeakList, DoubleArrayList> valuesMap = new HashMap<PeakList, DoubleArrayList>();
+        Map<PeakList, ArrayList<Double>> valuesMap = new HashMap<PeakList, ArrayList<Double>>();
         for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
             PeakList peakList = entry.getKey().peakList;
             if ((whichList != null) && (whichList != peakList)) {
@@ -978,9 +979,9 @@ public class Noe implements Constraint, Serializable {
                 }
                 foundActive = true;
             }
-            DoubleArrayList dList = valuesMap.get(peakList);
+            ArrayList<Double> dList = valuesMap.get(peakList);
             if (dList == null) {
-                dList = new DoubleArrayList();
+                dList = new ArrayList<>();
                 valuesMap.put(peakList, dList);
             }
             if (foundActive) {
@@ -988,12 +989,13 @@ public class Noe implements Constraint, Serializable {
             }
         }
         HashMap<PeakList, ArrayList<Double>> medianMap = new HashMap<PeakList, ArrayList<Double>>();
-        for (Entry<PeakList, DoubleArrayList> entry : valuesMap.entrySet()) {
+        for (Entry<PeakList, ArrayList<Double>> entry : valuesMap.entrySet()) {
             PeakList peakList = entry.getKey();
-            DoubleArrayList dList = entry.getValue();
+            ArrayList<Double> dList = entry.getValue();
             ArrayList<Double> valueList = new ArrayList<Double>();
-            dList.sort();
-            double median = cern.jet.stat.Descriptive.median(dList);
+            DescriptiveStatistics stat = new DescriptiveStatistics();
+            dList.forEach(stat::addValue);
+            double median = stat.getPercentile(50.0);
 
             int m = dList.size();
             valueList.add(dList.get(0));
@@ -1894,13 +1896,13 @@ public class Noe implements Constraint, Serializable {
                 double ppm = peakDim.getChemShift();
                 matchCriteria[0].setPPM(ppm);
 //                ArrayList res1s = peakDim.getResonances();
-ArrayList res1s = new ArrayList();
+                ArrayList res1s = new ArrayList();
 
                 peakDim = peak.getPeakDim(matchCriteria[1].getDim());
                 ppm = peakDim.getChemShift();
                 matchCriteria[1].setPPM(ppm);
 //                ArrayList res2s = peakDim.getResonances();
-ArrayList res2s = new ArrayList();
+                ArrayList res2s = new ArrayList();
 
                 ArrayList noeList = Noe.getPeakList(peak);
 

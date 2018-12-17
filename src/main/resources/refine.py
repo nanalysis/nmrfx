@@ -5,7 +5,7 @@ import random
 import seqalgs
 import re
 import xplor
-import reader
+import molio
 
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import Atom
@@ -854,6 +854,9 @@ class refine:
                     raise ValueError(entName + " is not a valid entitiy. Entities within molecule are " + ', '.join(allEntities))
                 if entName in unusedEntities:
                     unusedEntities.remove(entName)
+        else:
+            if len(unusedEntities) > 0:
+                linkerList = ArrayList()
         for entityName in unusedEntities:
             entity = self.molecule.getEntity(entityName)
             print entityName + " had no defined linker."
@@ -867,8 +870,9 @@ class refine:
     def loadFromYaml(self,data, seed, pdbFile=""):
         #XXX: Need to complete docstring
         """Reading in all the structures"""
+        molData = {}
         if pdbFile != '':
-            reader.readPDB(pdbFile)
+            molio.readPDB(pdbFile)
             residues = None
         else:
             if 'molecule' in data:
@@ -946,19 +950,19 @@ class refine:
             linkers = molDict.get('link')
             index = molDict.get('indexing')
             resStrings = getSequenceArray(index, seqString, linkers, polyType)
-            reader.readSequenceString('p', resStrings)
+            molio.readSequenceString('p', resStrings)
         else:
             file = molDict['file']
             type = molDict.get('type','nv')
             compound = None
             if type == 'fasta':
-                reader.readSequence(file, True)
+                molio.readSequence(file, True)
             elif type == 'pdb':
-                compound = reader.readPDB(file, not 'ptype' in molDict)
+                compound = molio.readPDB(file, not 'ptype' in molDict)
             elif type == 'sdf' or type == 'mol':
-                compound = reader.readSDF(file)
+                compound = molio.readSDF(file)
             else:
-                reader.readSequence(file)
+                molio.readSequence(file)
             resNum = molDict.get('resnum')
             if resNum and compound:
                 compound.setNumber(str(resNum))
@@ -1635,12 +1639,15 @@ class refine:
     def measureTree(self):
         for entity in [entity for entity in self.molecule.getEntities()]:
             entityName = entity.getName()
-            print "Setup " + entityName
             if type(entity) is Polymer:
-                prfStartAtom = self.getEntityTreeStartAtom(entity).getShortName()
-                treeStartAtom = self.entityEntryDict[entityName]
-                if prfStartAtom == treeStartAtom:
+                prfStartAtom = self.getEntityTreeStartAtom(entity)
+                prfStartAtomName = prfStartAtom.getShortName()
+                treeStartAtomName = self.entityEntryDict[entityName]
+                if prfStartAtomName == treeStartAtomName:
                     continue
+                else:
+                    ### To remeasure, coordinates should be generated for the entity ###
+                    entity.genCoordinates(None)
             self.setupAtomProperties(entity)
             if entityName in self.entityEntryDict:
                 entity.genMeasuredTree(self.getAtom((entityName, self.entityEntryDict[entityName])))
@@ -2039,7 +2046,7 @@ class refine:
             energyFile = osfiles.getEnergyFile(self)
 
             self.writeAngles(angleFile)
-            savePDB(self.molecule, pdbFile)
+            molio.savePDB(self.molecule, pdbFile)
             strOutput = "%d %.2f\n" % (self.seed,energy)
             osfiles.logEnergy(self, strOutput)
             self.dump(0.1,0.2,energyFile)
