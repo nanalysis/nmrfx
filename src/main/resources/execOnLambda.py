@@ -40,8 +40,8 @@ def execOnLambda(nefBucket, pdbBucket, rootName, seed):
     refiner.useDegrees = False
 
     refiner.setupEnergy(molName,eList=energyList)
-    refiner.setForces(repel=0.5,dis=1,dih=5)
-    refiner.setPars(coarse=False,useh=False,dislim=refiner.disLim,end=100,hardSphere=0.15,shrinkValue=0.20)
+    refiner.setForces({'repel':0.5,'dis':1.0,'dih':5})
+    refiner.setPars({'coarse':False,'useh':False,'dislim':refiner.disLim,'end':500,'hardSphere':0.15,'shrinkValue':0.20})
 
     dOpt = refine.dynOptions(highFrac=0.4)
     refiner.anneal(dOpt)
