@@ -394,7 +394,7 @@ public class PDBFile {
             if (!listMode) {
                 Sequence sequence = new Sequence();
                 sequence.read(molName, residueList, null);
-                readCoordinates(fileName, 0, true);
+                readCoordinates(fileName, 0, true, true);
             }
         } catch (IOException e) {
             System.err.println(e.getMessage());
@@ -507,7 +507,7 @@ public class PDBFile {
                         molecule.structures.clear();
                         readMolSeq = false;
                     }
-                    readCoordinates(entry.toString(), iStruct++, noComplain);
+                    readCoordinates(entry.toString(), iStruct++, noComplain, true);
                 }
             }
         }
@@ -529,11 +529,11 @@ public class PDBFile {
                 molecule.structures.clear();
                 readMolSeq = false;
             }
-            readCoordinates(entry.toString(), iStruct++, noComplain);
+            readCoordinates(entry.toString(), iStruct++, noComplain, true);
         }
     }
 
-    public void readCoordinates(String fileName, int structureNumber, final boolean noComplain)
+    public void readCoordinates(String fileName, int structureNumber, final boolean noComplain, boolean genCoords)
             throws MoleculeIOException {
         LineNumberReader lineReader;
         String lastChain = "";
@@ -563,7 +563,9 @@ public class PDBFile {
             structureNumber = 0;
         }
 
-        molecule.structures.add(Integer.valueOf(structureNumber));
+        if (readJustOne && !molecule.structures.contains(Integer.valueOf(structureNumber))) {
+            molecule.structures.add(Integer.valueOf(structureNumber));
+        }
 
         String polymerName = null;
         polymerName = molName;
@@ -712,9 +714,11 @@ public class PDBFile {
                             structureNumber = Integer.parseInt(modString);
                         }
                     }
-                    Integer intStructure = Integer.valueOf(structureNumber);
-                    selSet.add(intStructure);
-                    molecule.structures.add(intStructure);
+                    if (!molecule.structures.contains(Integer.valueOf(structureNumber))) {
+                        Integer intStructure = Integer.valueOf(structureNumber);
+                        selSet.add(intStructure);
+                        molecule.structures.add(intStructure);
+                    }
 
                     Iterator iterator = molecule.entities.values().iterator();
 
@@ -725,8 +729,10 @@ public class PDBFile {
                         }
                     }
                 } else if (string.startsWith("ENDMDL")) {
-                    molecule.genCoords(structureNumber, true);
-                    coordsGen = true;
+                    if (genCoords) {
+                        molecule.genCoords(structureNumber, true);
+                        coordsGen = true;
+                    }
                     if (readJustOne) {
                         break;
                     }
@@ -746,7 +752,7 @@ public class PDBFile {
 
             return;
         }
-        if (!coordsGen) {
+        if (genCoords && !coordsGen) {
             molecule.genCoords(structureNumber, true);
         }
         molecule.setActiveStructures(selSet);
@@ -1046,7 +1052,7 @@ public class PDBFile {
     public static Compound readResidue(String fileName, String fileContent, Molecule molecule, String coordSetName, Residue residue)
             throws MoleculeIOException {
         String molName;
-        if (molecule == null){
+        if (molecule == null) {
             coordSetName = coordSetName == null ? "mol" : coordSetName;
             molName = coordSetName;
             molecule = new Molecule(molName);
