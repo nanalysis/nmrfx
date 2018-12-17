@@ -30,7 +30,7 @@ from org.nmrfx.structure.chemistry.energy import AngleTreeGenerator
 
 #from tcl.lang import NvLiteShell
 #from tcl.lang import Interp
-from java.lang import String
+from java.lang import String, NullPointerException, IllegalArgumentException
 from java.util import ArrayList
 
 #tclInterp = Interp()
@@ -46,20 +46,6 @@ protein3To1 = {"ALA":"A","ASP":"D","ASN":"N","ARG":"R","CYS":"C","GLU":"E","GLN"
 bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
 
 protein1To3 = {protein3To1[key]: key for key in protein3To1}
-
-def tcl(cmd):
-    global tclInterp
-    #runs the file using tcl interpreter
-    tclInterp.eval(cmd)
-    #returns string value of the object
-    return tclInterp.getResult().toString()
-
-def openTclChannel(fileName,mode):
-    chanName = tcl('open '+fileName+' '+mode)
-    return chanName
-
-def closeTclChannel(handle):
-    tcl('close '+handle)
 
 def getHelix(pairs,vie):
     inHelix = False
@@ -179,13 +165,56 @@ class Constraint:
 
 
 class StrictDict(dict):
-    def __init__(self, defaultErr = 'this setting', defaultDict={}):
+    """
+    This subclass inherits from dict.
+    Helps prevent the creation of keys that do not exist in a map of default parameters.
+
+    # Attributes:
+
+    * defaultErr (string); a string used to convey descriptive errors about invalid input settings
+    * defaultDict (dict); dictionary that contains parameters and default values for dynamic simulation
+
+    # Methods:
+
+    * setInclusions
+    * strictUpdate
+    """
+
+
+    def __init__(self, defaultErr='this setting', defaultDict={}):
         self.update(defaultDict)
         self.defaultErr = defaultErr
         self.allowedKeys = []
+
     def setInclusions(self, allowedKeys):
+        """Based on type (param or forces) specified into createStrictDict, a list of valid parameters will be initialized.
+        If user specifies a key to update in input dictionary which is not in this list, an error will be raised.
+
+	# Parameters:
+
+        allowedKeys (list); list to identify allowed keys based on input specification 
+        for the type of parameters/keys to update. 
+
+        # Returns:
+
+        _ (None); sets the self.allowedKeys empty list to a list of parameters that are allowed to update.
+
+        See also: `createStrictDict(...)`
+        """
         self.allowedKeys = allowedKeys
+
     def strictUpdate(self, changesDict={}):
+        """
+        # Parameters:
+
+        changesDict (dict); a dictionary provided to update specified parameters/keys with new values. 
+
+        # Returns:
+
+        _ (None); If valid parameter/key in changesDict, then value will be updated. Otherwise, throws error.
+    
+        See also: `createStrictDict(...)`
+        """
         if changesDict is None:
             changesDict = {}
         for key in changesDict:
@@ -195,6 +224,21 @@ class StrictDict(dict):
                 self[key] = changesDict[key]
 
 class dynOptions(StrictDict):
+    """
+    This subclass inherits from the StrictDict subclass. 
+    Contains a dictionary with default parameters and values used for the dynamic simulation. 
+    These default dictionary keys cannot be changed or removed. Users can only update the strict 
+    dictionary only if the keys specifed in dictionary used to update parameters exists within the 
+    list referenced by the strictDict instance variable 'allowedKeys'. Otherwise an error will be thrown. 
+    The values can be updated by instantiating a dictionary of known key parameters and values 
+    which would override the default values.
+
+    # Attributes:
+
+    * defaults (dict); keys correspond to parameters used in the dynamic simulation, values are default values chosen
+    * initDict (dict); empty dictionary that can be used to update the values of parameters using method in StrictDict
+    """
+
     defaults = {
         'steps'         : 15000,
         'highTemp'      : 5000.0,
@@ -212,6 +256,7 @@ class dynOptions(StrictDict):
         'minSteps'      : 100,
         'polishSteps'   : 500,
         'kinEScale'     : 200.0,
+	'irpWeight'     : 0.0
     }
     def __init__(self,initDict={}):
         if initDict is None:
@@ -221,10 +266,20 @@ class dynOptions(StrictDict):
         self.strictUpdate(initDict)
 
 def createStrictDict(initDict, type):
+    """
+    # Parameters:
+
+    * initDict (dict); a dictionary of 
+    * type (string); 
+
+    # Returns:
+
+    strictDict (dict); a dictionary that contains values to update the dynamic simulation parameters (if they are valid)
+    """
     if initDict is None:
         initDict = {}
     allowedKeys = {}
-    allowedKeys['param'] = ['coarse', 'useh', 'hardSphere', 'start', 'end', 'shrinkValue', 'shrinkHValue', 'dislim', 'swap']
+    allowedKeys['param'] = ['coarse', 'useh', 'hardSphere', 'start', 'end', 'shrinkValue', 'shrinkHValue', 'dislim', 'swap'] 
     allowedKeys['force'] = ['elec', 'robson', 'repel', 'dis', 'tors', 'dih', 'irp', 'shift', 'bondWt']
     allowedKeys = allowedKeys[type]
 
@@ -242,6 +297,7 @@ class refine:
 	self.cyanaDistanceFiles = {}
         self.xplorDistanceFiles = {}
         self.suiteAngleFiles = []
+        self.nmrfxDistanceFiles = {}
         self.nvDistanceFiles = {}
         self.constraints = {} # map of atom pairs to
         self.angleStrings = []
@@ -259,9 +315,31 @@ class refine:
         self.angleDelta = value
 
     def writeAngles(self,fileName):
+        """
+        # Parameters:
+
+        fileName (string); The name of file with angles/dihedral constraints
+
+        # Returns:
+
+        _ (None); This method serves as a setter method to write dihedral angles to a specified file.
+
+        See also: `writeDihedrals(fileName)`
+        """
         self.dihedral.writeDihedrals(fileName)
 
     def readAngles(self,fileName):
+        """
+        # Parameters:
+
+        fileName (string); The name of file with angles/dihedral constraints
+
+        # Return:
+
+        _ (None); This method serves as a helper that reads from a specified file.
+
+        See also: `readDihedrals(fileName)`
+        """
         self.dihedral.readDihedrals(fileName)
 
     def numericalDerivatives(self,delta,report):
@@ -279,15 +357,55 @@ class refine:
         self.dihedral.putPseudoAngle(angle1,angle2)
 
     def setAngles(self,ranfact,mode):
+        """
+        # Parameters:
+
+        * ranfact (_); 
+        * mode (bool); Describes whether or not to use random initial angles.
+	
+	# Returns:
+
+	_ (None);
+
+        See also: `putInitialAngles(...)` in Dihedrals.java
+        """
+
         self.dihedral.putInitialAngles(mode)
 
     def randomizeAngles(self):
+        """ Generates random angles
+
+        See also: `randomizeAngles(...)` in Dihedrals.java
+        """
+
         self.dihedral.randomizeAngles()
 
     def updateAt(self,n):
+        #XXX: Need to complete docstring
+        """
+        # Parameters:
+
+        n (int); 
+
+        See also: `updateAt(...)` in Dihedrals.java
+        """
         self.dihedral.updateAt(n)
 
     def setForces(self,forceDict):
+        #XXX: Need to complete docstring
+        """
+        # Parameters:
+
+        * robson (_);
+        * repel (_);
+        * elec (_);
+        * dis (_);
+        * tors (_);
+        * dih (_);
+        * shift (_);
+        * bondWt (_);
+        """
+
         if not forceDict:
             return
         forceWeightOrig = self.energyLists.getForceWeight()
@@ -312,7 +430,14 @@ class refine:
         forceWeight = ForceWeight(*forceWeights)
         self.energyLists.setForceWeight(forceWeight)
 
-    def getForces(self):
+    def getForces(self): 
+        #XXX: Need to complete docstring
+        """
+        # Return:
+
+        output (string); string that contains values of the calculated forces
+        """
+
         fW = self.energyLists.getForceWeight()
         output = "robson %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f shift %5.2f bondWt %5.2f" % (fW.getRobson(),fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp(), fW.getShift(), fW.getBondWt())
         return output
@@ -416,9 +541,6 @@ class refine:
             #atomName1, atomName2, distance = distanceConstraint.split()
             #self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
 
-
-    def testy(self):
-        print('testynow')
 
     def printPars(self):
          el = self.energyLists
@@ -617,7 +739,8 @@ class refine:
             lower = constraint['lower']
             upper = constraint['upper']
             atomPairs = constraint['atomPairs']
-	    firstAtomPair = atomPairs[0]
+            firstAtomPair = atomPairs[0]
+
             if firstAtomPair not in self.constraints:
                 constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
                 self.constraints[firstAtomPair] = constraint
@@ -681,6 +804,18 @@ class refine:
         return treeDict
 
     def getAtom(self, atomTuple):
+        """
+	Gets atom from a tuple that contains entity and atom name.
+
+        # Parameters:
+
+        atomTuple (tuple); contains atom entity and name of the atom
+
+        # Returns:
+
+        atom (Entity); retrieves atom entity
+        """
+
         entityName, atomName = atomTuple
         entity = self.molecule.getEntity(entityName)
         atomArr = atomName.split('.')
@@ -731,6 +866,7 @@ class refine:
         return linkerList
 
     def loadFromYaml(self,data, seed, pdbFile=""):
+        #XXX: Need to complete docstring
         """Reading in all the structures"""
         molData = {}
         if pdbFile != '':
@@ -890,15 +1026,6 @@ class refine:
             del annealDict['dynOptions']
         self.settings = annealDict
         return dOpt
-        #dOptDict = var(dOpt)
-        #
-        #for key in annealDict:
-        #    if key in dOptDict:
-        #        dOptDict[key] = annealDict[key]
-        #    else:
-        #        raise KeyError("Key '{}' is not an acceptable annealing parameter. See documentation for list of parameters.".format(key))
-        #
-        #return dOpt
 
     def readShiftDict(self, shiftDict,residues):
         wt = -1.0
@@ -978,6 +1105,70 @@ class refine:
                 except:
                     print "err",fullAtoms
                     pass
+
+    def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
+	"""
+	# Parameters:
+
+	* fileName (string); the name of the distance constraint file that'll be passed to reader function
+	* keepSettings (None);
+
+	# Returns:
+
+	_ (None); processes the constraint dictionary provided by nmrfxDistReader and add distance constraints
+
+	See also: `nmrfxDistReader(...)` and `Constraints.addBound(...)`
+	"""
+	# constList is a list of dictionaries w/ keys: 'lower', 'upper', and 'atomPairs'
+	constList = self.nmrfxDistReader(fileName)
+	for constraint in constList:
+	    lower = constraint['lower']
+            upper = constraint['upper']
+            atomPairs = constraint['atomPairs']
+            firstAtomPair = atomPairs[0]
+            if firstAtomPair not in self.constraints:
+                constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
+                self.constraints[firstAtomPair] = constraint
+                for atomPair in atomPairs[1:]:
+                    self.constraints[atomPair] = constraint
+                    constraint.addPair(atomPair)
+                self.constraints[firstAtomPair].addBound(upper,'upper');
+            else:
+                self.constraints[firstAtomPair].addBound(lower, 'lower');
+                self.constraints[firstAtomPair].addBound(upper, 'upper');
+
+    def nmrfxDistReader(self, fileName):
+	"""Reads the distance constraint from an input file and assembles a dictionary with contraint information.
+
+	# Parameters:
+
+	fileName (string); the name of a distance constraint file with the nmrfx format
+
+	# Returns:
+
+	constraintDicts (dict); dictionary containing atom pairs, lower and upper bounds of each constraint
+	"""
+        constraintDicts = []
+	checker = {}
+
+	with open(fileName, 'r') as fInput:
+            fRead = fInput.readlines()
+            for line in fRead:
+                splitList = line.split("\t")
+                group = splitList[1]
+                atomPair = tuple(splitList[2:4])
+		atomPair = ' '.join(atomPair) if atomPair[0] < atomPair[1] else ' '.join([atomPair[1], atomPair[0]])
+
+		if group in checker:
+		    checker[group]['atomPairs'].append(atomPair)
+		    continue
+
+		lower, upper = tuple(map(float, splitList[-2:]))
+		# checks lower and upper bound to make sure they are positive values
+		constraints = {'atomPairs': [],'lower': lower,'upper': upper}
+		constraints['atomPairs'].append(atomPair)
+		checker[group] = constraints
+        return constraintDicts 
 
 
     def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
@@ -1145,7 +1336,7 @@ class refine:
            elif (angle,resName) in angleMap:
                atoms = angleMap[angle,resName]
            else:
-               print "no such angle",angle,resName
+               print "no such angle: ", angle,resName
                exit()
            res = int(res)
            fullAtoms = []
@@ -1165,10 +1356,30 @@ class refine:
            if lower == upper:
                lower = lower - 20
                upper = upper + 20
-           if (lower < -180) and (upper < 0.0):
-                lower += 360
-                upper += 360
-           self.dihedral.addBoundary(fullAtoms,lower,upper,scale)
+           if (lower < -180.0) and (upper < 0.0):
+                lower += 360.0
+                upper += 360.0
+	   try:
+               self.dihedral.addBoundary(fullAtoms,lower,upper,scale)
+	   except IllegalArgumentException as IAE:
+               atoms = ' -> '.join(map(lambda x: x.split(':')[-1], fullAtoms))
+	       err = IAE.getMessage()
+	       errMsg = "\nPlease evaluate the dihedral constraints for the following boundary information [{0}]:".format(fileName)
+	       errMsg += "\n\t- resNum.resName: {}".format(atoms)
+	       errMsg += "\n\nReason for Error: {}".format(err)
+	       raise ValueError(errMsg)
+	   except NullPointerException:
+               atoms = ' -> '.join(map(lambda x: x.split(':')[-1], fullAtoms))
+               errMsg = "\nPlease evaluate the dihedral constraints for the following boundary information [{0}]:".format(fileName)
+	       errMsg += "\n\t- resNum.resName: {}".format(atoms)
+	       errMsg += "\n\nHere's a list of things that could've gone wrong:\n"
+	       errMsg += "\t1) Atoms provided do not have an order for which a dihedral angle could be properly calculated.\n"
+	       errMsg += "\t2) Information in the constraint file does not match the information in the sequence file or the NMRFxStructure residue library." 
+	       errMsg += "\nNote: Make sure residue number is within the "
+               raise ValueError(errMsg)
+	   except:
+	       print("Internal Java Error: Need to evaluate addBoundary(...) method in Dihedral.java\n")
+	       raise 
         fIn.close()
 
     def addSuiteAngles(self, fileName):
@@ -1565,6 +1776,8 @@ class refine:
             xplorFile = xplor.XPLOR(file)
             resNames = self.getResNameLookUpDict()
             xplorFile.readXPLORAngleConstraints(self.dihedral, resNames)
+	for file in self.nmrfxDistanceFiles.keys():
+	    self.readNMRFxDistanceConstraints(file, keepSetting = self.nmrfxDistanceFiles[file])
         for file in self.nvAngleFiles:
             self.loadDihedralsFromFile(file)
 
@@ -1599,12 +1812,27 @@ class refine:
                 atomName1, atomName2 = pair.split()
                 atomNames1.add(atomName1)
                 atomNames2.add(atomName2)
-	    errMsg = "\nPlease check negative bound(s) at atom pair: {0}".format(' '.join([atomName1, atomName2]))
-	    assert (lower > 0.0 and upper > 0.0), errMsg
+	    if (lower < 0.0 and upper <= 0.0):
+	        newAtomStr = map(lambda x: "(residue number: '{0}' and residue name: '{1}')".format(x.split('.')[0], x.split('.')[-1]), [atomName1, atomName2])
+	        strAtomNames = ', '.join(newAtomStr)
+	        errMsg = "\nPlease evaluate bound(s) at atom pair:\n\t- {0}".format(strAtomNames)
+	        errMsg += "\n\nNote:"
+	        errMsg += " The lower bound ({0}) and the upper bound ({1}) should be nonnegative.".format(lower, upper)
+	        errMsg += " The upper bound should be greater than zero."
+	        errMsg += " These values were calculate from the constraints provided in the constraint file"
+	        errMsg += " for the atom pair seen above."
+		raise AssertionError(errMsg)
+
             self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
 
+    def predictShifts(self):
+        #XXX: Need to complete docstring
+        """Predict chemical shifts 
 
-    def predictShifts(self, structureNum=0):
+        # Returns:
+
+        shifts (list);
+        """
         from org.nmrfx.structure.chemistry.energy import RingCurrentShift
         from org.nmrfx.structure.chemistry import MolFilter
 
@@ -1659,6 +1887,18 @@ class refine:
         atoms = self.energyLists.getRefAtoms()
 
     def setShifts(self,shiftFile):
+        #XXX: Need to complete docstring
+        """Reads a chemical shifts from file and returns array of shifts
+
+        # Parameters:
+
+        shiftFile (string); chemical shifts file
+
+        # Returns:
+
+        shifts (list);
+        """
+
         file = open(shiftFile,"r")
         data = file.read()
         file.close()
@@ -1679,6 +1919,18 @@ class refine:
 
 
     def setup(self,homeDir,seed,writeTrajectory=False,usePseudo=False, useShifts = False):
+        #XXX: Need to complete docstring
+        """ Set up parameters and methods to run program and generate structure.
+
+        # Parameters:
+
+        homeDir (string);
+        seed (int);
+        writeTrajectory (bool);
+        usePseudo (bool);
+        useShifts (bool);
+        """
+
         self.seed = seed
         self.eTimeStart = time.time()
         self.useDegrees = False
@@ -1694,6 +1946,7 @@ class refine:
             self.molecule.setAtomProperty(2,True)
 
     def addRingClosures(self):
+        """ Close ring structure using distance constraint on specified atoms within ring."""
         ringClosures = self.molecule.getRingClosures();
         if ringClosures:
             for atom1 in ringClosures:
@@ -1738,7 +1991,6 @@ class refine:
         for end in [3,10,20,1000]:
             self.setPars({'useh':False,'dislim':self.disLim,'end':end,'hardSphere':0.15,'shrinkValue':0.20})
             self.gmin(nsteps=steps,tolerance=1.0e-6)
-	ec.dumpRestraints()
         if self.eFileRoot != None:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 
@@ -1817,6 +2069,17 @@ class refine:
 
 
     def polish(self, steps, usePseudo=False, stage1={}):
+        #XXX: Need to complete docstring
+        """ Calls the functions relevant for generation of structures...?
+
+        # Parameters:
+
+        * steps (int);
+        * usePseudo (bool);
+        * stage1 (dict);
+
+        """
+
         self.refine(nsteps=steps/2,useDegrees=self.useDegrees,radius=0.1);
         self.setForces({'repel':2.0,'dis':1.0,'dih':5})
         self.setPars({'dislim':self.disLim,'end':1000,'useh':True,'shrinkValue':0.07,'shrinkHValue':0.00})
@@ -1833,6 +2096,10 @@ class refine:
             self.dump(0.1,self.eFileRoot+'_polish.txt')
 
     def output(self):
+        """ Prints out energy and execution time to the commandline.
+            Handles parameters for various methods if output directory has been generated.
+        """
+
         energy = self.energy()
         if self.outDir != None:
             import osfiles
@@ -1859,6 +2126,19 @@ class refine:
         return pairs
 
     def dumpDis(self, fileName, delta=0.5, atomPat='*.H*',maxDis=4.5,prob=1.1,fixLower=0.0):
+        """ Writes a dump file containing distance violations based on input distance
+            constraints and actual distance between atoms.
+
+        # Parameters:
+
+        * fileName (string); name of the output dump file
+        * delta (float);
+        * atomPat (string);
+        * maxDis (float);
+        * prob (float);
+        * fixLower (float);
+        """
+
         molecule = self.molecule
         self.molecule.selectAtoms(atomPat)
         pairs =  molecule.getDistancePairs(maxDis,False)
@@ -1884,6 +2164,18 @@ class refine:
                     fOut.write(outStr)
 
     def dumpAngles(self, fileName, delta=10):
+        """ Writes a dump file containing dihedral violations based on input dihedral constraints and actual dihedral.
+
+        # Parameters:
+
+        * fileName (string); name of angles file
+        * delta (int); 
+
+	# Returns:
+
+	_ (None);
+        """
+
         molecule = self.molecule
         molecule.setupAngles()
         angleAtoms = molecule.getAngleAtoms()
@@ -1908,6 +2200,19 @@ class refine:
                             fOut.write(outStr)
 
     def setPeptideDihedrals(self, phi, psi):
+        #XXX: Need to complete docstring
+        """Using specified phi and psi angles to calculate dihedral angle and generate coordinates.
+
+        # Parameters:
+
+        * phi (float); rotation angles around bonds b/t N - Calpha
+        * psi (float); rotation angles around bonds b/t Calpha - C
+
+        # Returns:
+
+	_ (None);
+        """
+
         molecule = self.molecule
         polymers = self.molecule.getPolymers()
         for polymer in polymers:
