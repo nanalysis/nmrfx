@@ -29,7 +29,7 @@ def loadPDBModels(files):
     molecule = pdb.read(fileName)
     iFile = 1
     for file in files:
-        pdb.readCoordinates(file,iFile,False)
+        pdb.readCoordinates(file,iFile,False, False)
         iFile += 1
     return molecule
 
@@ -156,6 +156,8 @@ def runSuper(files,newBase='super'):
         print 'repModel',minI,'rms',rms,'avgrms',avgRMS
         coreRes = findCore(mol, minI)
         print 'coreResidues',coreRes
+        (minI,rms,avgRMS) = findRepresentative(mol, coreRes)
+        print 'repModel',minI,'rms',rms,'avgrms',avgRMS
         superImpose(mol, minI, coreRes)
     else:
         (minI,rms,avgRMS) = findRepresentative(mol,'*','c*,n*,o*,p*')
