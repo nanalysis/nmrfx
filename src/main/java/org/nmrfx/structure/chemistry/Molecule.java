@@ -3284,8 +3284,6 @@ public class Molecule implements Serializable, ITree {
                 }
             }
         }
-
-        System.err.println("Added " + nBonds + " bonds");
     }
 
     public void calcBonds() {
@@ -3319,8 +3317,6 @@ public class Molecule implements Serializable, ITree {
                 }
             }
         }
-
-        System.err.println("Added " + nBonds + " bonds");
     }
 
     public ArrayList<AtomPairDistance> getDistancePairs(double tolerance, boolean requireActive) {
