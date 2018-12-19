@@ -149,12 +149,16 @@ def prioritizePolymers(molList):
 class Constraint:
     def __init__(self, pair, distance, mode, setting = None):
         Constraint.lastViewed = self
+        if not isinstance(distance,float):
+            raise ValueError("Value " + distance + " not float")
         self.pairs = [pair]
         self.lower = distance if mode == 'lower' else None
         self.upper = distance if mode == 'upper' else None
         self.tester = 0 if not setting else -1 if setting == 'narrow' else 1
 
     def addBound(self, distance, mode):
+        if not isinstance(distance,float):
+            raise ValueError("Value " + distance + " not float")
         self.lower = distance if mode == 'lower' and (not self.lower or ((self.lower-distance)*self.tester >= 0 )) else self.lower
         self.upper = distance if mode == 'upper' and (not self.upper or ((distance - self.upper)*self.tester >= 0)) else self.upper
         Constraint.lastViewed = self
@@ -1233,7 +1237,13 @@ class refine:
                     if line[0] == '#':
                         continue
                     fields = line.split()
-                    res1, _, atom1, res2, _, atom2, distance = fields
+                    if len(fields) == 7:
+                        res1, _, atom1, res2, _, atom2, distance = fields
+                    elif len(fields) == 8:
+                        res1, _, atom1, res2, _, atom2, distance, weight = fields
+                    else:
+                        raise ValueError("Incorrect number of fields " + fields)
+                  
                     distance = float(distance)
                     fullAtom1 = molName+':'+res1+'.'+atom1
                     fullAtom2 = molName+':'+res2+'.'+atom2
@@ -1808,6 +1818,10 @@ class refine:
             upper = constraint.upper
             atomNames1 = ArrayList()
             atomNames2 = ArrayList()
+            if lower == None:
+                lower = 1.5
+            if upper == None:
+                upper = 100.0
             for pair in constraint.pairs:
                 atomName1, atomName2 = pair.split()
                 atomNames1.add(atomName1)
