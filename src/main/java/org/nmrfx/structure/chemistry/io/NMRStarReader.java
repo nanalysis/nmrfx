@@ -276,10 +276,14 @@ public class NMRStarReader {
     public void addNEFResidues(Saveframe saveframe, Molecule molecule, List<String> indexColumn, List<String> chainCodeColumn, List<String> seqCodeColumn, List<String> residueNameColumn, List<String> linkingColumn, List<String> variantColumn, List<String> cisPeptideColumn) throws ParseException {
         String reslibDir = PDBFile.getReslibDir("IUPAC");
         Polymer polymer = null;
-        Sequence sequence = new Sequence();
+        Sequence sequence = new Sequence(molecule);
         int entityID = 1;
         String lastChain = "";
         for (int i = 0; i < chainCodeColumn.size(); i++) {
+            String linkType = linkingColumn.get(i);
+            if (linkType.equals("dummy")) {
+                continue;
+            }
             String chainCode = (String) chainCodeColumn.get(i);
             if (chainCode.equals(".")) {
                 chainCode = "A";
