@@ -27,10 +27,13 @@ def parseArgs():
         if 'pdbPath' in data:
             pdbFilePath = data['pdbPath']
             del data['pdbPath']
+            pdbFiles = getFiles(pdbFilePath)
         else:
-            print "Must specify a pdbFilePath"
-            return
-        pdbFiles = getFiles(pdbFilePath)
+            if len(args) > 1:
+                pdbFiles = args[1:]
+            else:
+                print "Must specify a pdbFilePath"
+                return
         outFiles = loadPDBModels(pdbFiles,data,outDir)
         summary(outFiles)
     else:

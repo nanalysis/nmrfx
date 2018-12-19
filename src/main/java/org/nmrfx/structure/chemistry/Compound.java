@@ -136,7 +136,6 @@ public class Compound extends Entity implements AtomContainer {
                 }
             }
         }
-        System.err.println("Added " + nBonds + " bonds");
     }
 
     public int renameAtom(String oldName, String newName) {

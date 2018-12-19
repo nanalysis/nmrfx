@@ -830,12 +830,15 @@ public class Molecule implements Serializable, ITree {
         if (fillCoords) {
             boolean anyInvalid = false;
             for (Atom atom : atoms) {
-                if (atom.getPointValidity(iStructure)) {
+                if (!atom.getPointValidity(iStructure)) {
                     anyInvalid = true;
                     break;
                 }
             }
             if (!anyInvalid) {
+                structures.add(iStructure);
+                resetActiveStructures();
+                updateVecCoords();
                 return 0;
             }
         }
@@ -3281,8 +3284,6 @@ public class Molecule implements Serializable, ITree {
                 }
             }
         }
-
-        System.err.println("Added " + nBonds + " bonds");
     }
 
     public void calcBonds() {
@@ -3316,8 +3317,6 @@ public class Molecule implements Serializable, ITree {
                 }
             }
         }
-
-        System.err.println("Added " + nBonds + " bonds");
     }
 
     public ArrayList<AtomPairDistance> getDistancePairs(double tolerance, boolean requireActive) {

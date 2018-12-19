@@ -45,6 +45,7 @@ public class Sequence {
     private final static List<String> AMINO_ACID_NAMES = new ArrayList<>();
     private String entryAtomName = null;
     private String exitAtomName = null;
+    public static boolean useCoarse = false;
 
     static {
         residueAliases.put("rade", "a");
@@ -149,11 +150,11 @@ public class Sequence {
         // fixme this needs to be changed for non-amino acid residue atoms
         if (isProtein) {
             Atom refAtom = residue.getAtom("O");
-            if (refAtom != null) {  
+            if (refAtom != null) {
                 residue.getAtom("O").dihedralAngle = (float) Math.PI;
             } else {
                 List<Atom> atoms = residue.getLastBackBoneAtom().getChildren();
-                if (atoms.size() == 1){
+                if (atoms.size() == 1) {
                     atoms.get(0).dihedralAngle = (float) Math.PI;
                 }
             }
@@ -169,6 +170,9 @@ public class Sequence {
                 checkFieldCount(fields);
                 String aName = fields[1];
                 String aType = fields[2];
+                if (aType.endsWith("cg") && !useCoarse) {
+                    return;
+                }
                 String aTypeName = "H";
                 if (aType.substring(0, 1).equals("M") && aName.startsWith("H")) {
                     aTypeName = "H";
@@ -232,6 +236,9 @@ public class Sequence {
                 }
                 for (int iField = 3; iField < fields.length; iField++) {
                     String atomName = fields[iField];
+                    if (atomName.endsWith("c") && !useCoarse) {
+                        continue;
+                    }
                     Order order = Order.SINGLE;
                     if (atomName.charAt(0) == '=') {
                         atomName = atomName.substring(1);
@@ -597,7 +604,7 @@ public class Sequence {
                        by polymerName. With this in mind, modifications to make this
                        function not default to creating a molecule without editing
                        initMolFromSeqFile
-                      */
+                     */
                 } else if ("-polymer".startsWith(stringArg[0])) {
                     polymerName = stringArg[1];
                     coordSetNames.clear();
@@ -750,7 +757,7 @@ public class Sequence {
         if ((connectBond != null) && (connectBond.end == null)) {
             connectBond.begin.removeBondTo(null);
         }
-        
+
         return molecule;
     }
 
