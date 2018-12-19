@@ -830,12 +830,15 @@ public class Molecule implements Serializable, ITree {
         if (fillCoords) {
             boolean anyInvalid = false;
             for (Atom atom : atoms) {
-                if (atom.getPointValidity(iStructure)) {
+                if (!atom.getPointValidity(iStructure)) {
                     anyInvalid = true;
                     break;
                 }
             }
             if (!anyInvalid) {
+                structures.add(iStructure);
+                resetActiveStructures();
+                updateVecCoords();
                 return 0;
             }
         }
