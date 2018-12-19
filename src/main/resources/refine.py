@@ -890,7 +890,8 @@ class refine:
                         self.readMoleculeDict(molDict)
                 else:
                     #Only one entity in the molecule
-                    residues = ",".join(molDict['residues'].split()) if 'residues' in molData else None
+                    #residues = ",".join(molDict['residues'].split()) if 'residues' in molData else None
+                    residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
                     self.readMoleculeDict(molData)
         self.molecule = Molecule.getActive()
         self.molName = self.molecule.getName()
