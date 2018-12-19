@@ -91,6 +91,13 @@ public class Sequence {
 
     }
 
+    public Sequence() {
+    }
+
+    public Sequence(Molecule molecule) {
+        this.molecule = molecule;
+    }
+
     private void makeConnection(Residue residue) {
         /**
          * makeConnection creates a bond for @param residue to the previous
