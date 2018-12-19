@@ -24,6 +24,50 @@ def getAtomPairs(atoms,mode='shuffle'):
             atomPairs.append(atomPair)
     return atomPairs
 
+def parseConstraints(constraints, type):
+    ''' parseConstraints takes the xplorInternalized constraint lists and
+        creates more easy to parse contraint dictionaries to be used in either
+        refine.py (when type is "distance") or internally in xplor.py (type is "angles")'''
+    constraintDicts = []
+    for constraint in constraints:
+        atoms = [[],[]] if type == 'distance' else constraint[:-1]
+        constraintValues = ""
+        if type == 'distance':
+            prevAtom = False
+            placement = 0
+            afterValues = False
+            pairMode = 'pairwise'
+            for element in constraint:
+                if len(element.split()) == 3:
+                    ''' This indicates that the values here are the constraint
+                        values. We set an afterValues bool as we treat ors
+                        before slightly differently than the ors after
+                    '''
+                    afterValues = True
+                    constraintValues = element
+                    placement = 0;
+                elif element.lower() != 'or':
+                    if prevAtom:
+                        placement += 1
+                    atoms[placement].append(element)
+                    prevAtom = True
+                else:
+                    if not afterValues:
+                        pairMode = 'shuffle'
+                        prevAtom = False
+                    else:
+                        placement = 0;
+                        prevAtom = False
+            atomPairs = getAtomPairs(atoms,mode=pairMode)
+	    
+        else:
+            atomPairs = atoms
+            constraintValues = constraint[-1]
+        lower, upper = getBounds(constraintValues, type)
+        constraint = {'atomPairs':atomPairs, 'lower':lower,'upper':upper}
+        constraintDicts.append(constraint)
+    return constraintDicts
+
 def getBounds(xplorBounds, type):
     '''getBounds returns the lower and upper bounds for a constraint once given
         values parsed from the constraint file'''
@@ -41,7 +85,7 @@ class XPLOR:
 	self.invalidDistAtomPairs = []
         self.invalidAtomSelections = []
         self.regex = r"\([^\(]*resi\w*\s+([0-9]+)\s+[\w\s]+\s(\w+[0-9'\*#]*)\s*\)|(or)|(-?[0-9\.]+\s+-?[0-9\.]+\s+-?[0-9\.]+)"
-        ''' Four matching groups within regex: residueNum , atomName, "or", bounds'''
+        # Four matching groups within regex: residueNum , atomName, "or", bounds
 
     def addElements(self, captures, resNames, segId):
         ''' Takes in a list of lists. Each internal list has 4 items.

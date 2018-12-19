@@ -252,7 +252,13 @@ public class AngleTreeGenerator {
         }
         Map<Atom, List<Bond>> bondMap = new HashMap<>();
         HanserRingFinder ringFinder = new HanserRingFinder();
-        ringFinder.findSmallestRings(itree);
+        Molecule mol;
+        if (itree instanceof Molecule){
+            mol = (Molecule) itree;
+        } else {
+            mol = Molecule.activeMol;
+        }
+        ringFinder.findSmallestRings(mol);
         atomTree.forEach((branch) -> {
             Atom a0 = branch.get(0);
             Atom a1 = branch.get(1);
@@ -375,7 +381,7 @@ public class AngleTreeGenerator {
             addRingClosurePairs(bond.end, bond.begin);
         }
         if (itree instanceof Molecule) {
-            Molecule mol = (Molecule) itree;
+            mol = (Molecule) itree;
             Molecule.makeAtomList();
             mol.resetGenCoords();
             mol.setupRotGroups();

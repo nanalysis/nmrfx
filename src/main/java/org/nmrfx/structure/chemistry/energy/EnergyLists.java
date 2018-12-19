@@ -249,7 +249,7 @@ public class EnergyLists {
     }
 
     public void setRingShifts() {
-        setRingShifts("*.H8,H6,H5,H2,H1',H2',H3'");
+        setRingShifts("*.H8,H6,H5,H2,H1',H2',H3',H4',H5',H5''");
     }
 
     public void updateShifts() {

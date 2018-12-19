@@ -47,9 +47,6 @@ bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
 
 protein1To3 = {protein3To1[key]: key for key in protein3To1}
 
-def savePDB(molecule, fileName,structureNum=0):
-    molecule.writeXYZToPDB(fileName, structureNum)
-
 def getHelix(pairs,vie):
     inHelix = False
     iHelix = -1
@@ -152,12 +149,16 @@ def prioritizePolymers(molList):
 class Constraint:
     def __init__(self, pair, distance, mode, setting = None):
         Constraint.lastViewed = self
+        if not isinstance(distance,float):
+            raise ValueError("Value " + distance + " not float")
         self.pairs = [pair]
         self.lower = distance if mode == 'lower' else None
         self.upper = distance if mode == 'upper' else None
         self.tester = 0 if not setting else -1 if setting == 'narrow' else 1
 
     def addBound(self, distance, mode):
+        if not isinstance(distance,float):
+            raise ValueError("Value " + distance + " not float")
         self.lower = distance if mode == 'lower' and (not self.lower or ((self.lower-distance)*self.tester >= 0 )) else self.lower
         self.upper = distance if mode == 'upper' and (not self.upper or ((distance - self.upper)*self.tester >= 0)) else self.upper
         Constraint.lastViewed = self
@@ -296,7 +297,8 @@ class refine:
         self.cyanaAngleFiles = []
         self.xplorAngleFiles = []
         self.nvAngleFiles = []
-        self.cyanaDistanceFiles = {}
+        self.nmrfxDistanceFiles = {}
+	self.cyanaDistanceFiles = {}
         self.xplorDistanceFiles = {}
         self.suiteAngleFiles = []
         self.nmrfxDistanceFiles = {}
@@ -859,12 +861,12 @@ class refine:
                 linkerList = ArrayList()
         for entityName in unusedEntities:
             entity = self.molecule.getEntity(entityName)
-            print entityName + " had no defined linker."
+            #print entityName + " had no defined linker."
             startAtom = firstEntity.getLastAtom().getFullName()
             endAtom = self.getEntityTreeStartAtom(entity).getFullName()
             newLinker = {'atoms': [startAtom, endAtom]}
             linkerList.append(newLinker)
-            print "linker added between " + startAtom + " and " + endAtom
+            #print "linker added between " + startAtom + " and " + endAtom
         return linkerList
 
     def loadFromYaml(self,data, seed, pdbFile=""):
@@ -1174,6 +1176,52 @@ class refine:
         return constraintDicts 
 
 
+    def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
+	# constList is a list of dictionaries w/ keys: 'lower', 'upper', and 'atomPairs'
+	constList = self.nmrfxDistReader(fileName)
+	for constraint in constList:
+	    lower = constraint['lower']
+            upper = constraint['upper']
+            atomPairs = constraint['atomPairs']
+            firstAtomPair = atomPairs[0]
+            if firstAtomPair not in self.constraints:
+                constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
+                self.constraints[firstAtomPair] = constraint
+                for atomPair in atomPairs[1:]:
+                    self.constraints[atomPair] = constraint
+                    constraint.addPair(atomPair)
+                self.constraints[firstAtomPair].addBound(upper,'upper');
+            else:
+                self.constraints[firstAtomPair].addBound(lower, 'lower');
+                self.constraints[firstAtomPair].addBound(upper, 'upper');
+	
+
+
+    def nmrfxDistReader(self, fileName):
+        constraintDicts = []
+	checker = {}
+
+	with open(fileName, 'r') as fInput:
+            fRead = fInput.readlines()
+            for line in fRead:
+                splitList = line.split("\t")
+                group = splitList[1]
+                atomPair = tuple(splitList[2:4])
+		atomPair = ' '.join(atomPair) if atomPair[0] < atomPair[1] else ' '.join([atomPair[1], atomPair[0]])
+
+		if group in checker:
+		    checker[group]['atomPairs'].append(atomPair)
+		    continue
+
+		lower, upper = tuple(map(float, splitList[-2:]))
+		# checks lower and upper bound to make sure they are positive values
+		constraints = {'atomPairs': [],'lower': lower,'upper': upper}
+		constraints['atomPairs'].append(atomPair)
+		checker[group] = constraints
+        return constraintDicts 
+
+
+
 #set dc [list 283.n3 698.h1 1.8 2.0]
 # 283  RCYT  H6          283  RCYT  H2'          4.00    1.00E+00
 # 283  RCYT  H6          283  RCYT  H3'          3.00    1.00E+00
@@ -1190,7 +1238,13 @@ class refine:
                     if line[0] == '#':
                         continue
                     fields = line.split()
-                    res1, _, atom1, res2, _, atom2, distance = fields
+                    if len(fields) == 7:
+                        res1, _, atom1, res2, _, atom2, distance = fields
+                    elif len(fields) == 8:
+                        res1, _, atom1, res2, _, atom2, distance, weight = fields
+                    else:
+                        raise ValueError("Incorrect number of fields " + fields)
+                  
                     distance = float(distance)
                     fullAtom1 = molName+':'+res1+'.'+atom1
                     fullAtom2 = molName+':'+res2+'.'+atom2
@@ -1743,12 +1797,16 @@ class refine:
             lowerFileName = file+'.lol'
             upperFileName = file+'.upl'
             self.readCYANADistances([lowerFileName, upperFileName],self.molName, keepSetting=self.cyanaDistanceFiles[file])
+	
+	for file in self.nmrfxDistanceFiles.keys():
+	    self.readNMRFxDistanceConstraints(file, keepSetting = self.nmrfxDistanceFiles[file])
 
         for file in self.nvDistanceFiles.keys():
             self.loadDistancesFromFile(file, keepSetting=self.nvDistanceFiles[file])
 
         for file in self.xplorDistanceFiles.keys():
             xplorConstraints = self.readXPLORDistanceConstraints(file, keepSetting = self.xplorDistanceFiles[file])
+
         self.addDistanceConstraints()
 
     def addDistanceConstraints(self):
@@ -1761,6 +1819,10 @@ class refine:
             upper = constraint.upper
             atomNames1 = ArrayList()
             atomNames2 = ArrayList()
+            if lower == None:
+                lower = 1.5
+            if upper == None:
+                upper = 100.0
             for pair in constraint.pairs:
                 atomName1, atomName2 = pair.split()
                 atomNames1.add(atomName1)
@@ -1788,28 +1850,42 @@ class refine:
         """
         from org.nmrfx.structure.chemistry.energy import RingCurrentShift
         from org.nmrfx.structure.chemistry import MolFilter
+
+        # old
         refShifts = {"A.H2":7.93, "A.H8":8.33, "G.H8":7.87, "C.H5":5.84, "U.H5":5.76,
             "C.H6":8.02, "U.H6":8.01, "A.H1'":5.38, "G.H1'":5.37, "C.H1'":5.45,
             "U.H1'":5.50, "A.H2'":4.54, "G.H2'":4.59, "C.H2'":4.54, "U.H2'":4.54,
             "A.H3'":4.59, "G.H3'":4.59, "C.H3'":4.59, "U.H3'":4.59
         }
+        filterString="*.H8,H6,H5,H2,H1',H2',H3'"
+
+        refShifts = {"A.H2":7.87,"A.H8":8.24,"G.H8":7.84,"C.H5":5.90,"U.H5":5.86,"C.H6":7.96,"U.H6":8.03,"A.H1'":5.45,"G.H1'":5.37,"C.H1'":5.48,"U.H1'":5.52,"A.H2'":4.49,"G.H2'":4.49,"C.H2'":4.49,"U.H2'":4.49,"A.H3'":4.56,"G.H3'":4.56,"C.H3'":4.56,"U.H3'":4.56,"A.H4'":4.37,"G.H4'":4.37,"C.H4'":4.37,"U.H4'":4.37,"A.H5'":4.36,"G.H5'":4.36,"C.H5'":4.36,"U.H5'":4.36,"A.H5''":4.11,"G.H5''":4.11,"C.H5''":4.11,"U.H5''":4.1}
+        filterString="*.H8,H6,H5,H2,H1',H2',H3',H4',H5',H5''"
+
+
 
         ringShifts = RingCurrentShift()
         ringShifts.makeRingList(self.molecule)
-        filterString = "*.H8,H6,H2,H1',H2'"
 
         molFilter = MolFilter(filterString)
         spatialSets = Molecule.matchAtoms(molFilter)
 
-        ringRatio = 0.56
+        ringRatio = 0.54
         shifts = []
+        print 'snum',structureNum
         for sp in spatialSets:
             name = sp.atom.getShortName()
             aName = sp.atom.getName()
             nucName = sp.atom.getEntity().getName()
 
             basePPM = refShifts[nucName+"."+aName]
-            ringPPM = ringShifts.calcRingContributions(sp,0,ringRatio)
+            if isinstance(structureNum,(list,tuple)):
+                ringPPM = 0.0
+                for iStruct in structureNum:
+                    ringPPM += ringShifts.calcRingContributions(sp,iStruct,ringRatio)
+                ringPPM /= len(structureNum)
+            else:
+                ringPPM = ringShifts.calcRingContributions(sp,structureNum,ringRatio)
             ppm = basePPM+ringPPM
 
             atom = Molecule.getAtomByName(name)
@@ -1913,12 +1989,12 @@ class refine:
         if self.eFileRoot != None:
             self.dump(0.1,self.eFileRoot+'_prep.txt')
 
-
     def annealPrep(self,dOpt, steps=100):
         ranfact=20.0
         self.setSeed(self.seed)
         #self.putPseudo(18.0,45.0)
-
+        ec = self.molecule.getEnergyCoords()
+        #raise ValueError()
         self.randomizeAngles()
         energy = self.energy()
         forceDict = self.settings.get('force')

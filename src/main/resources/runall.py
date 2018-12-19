@@ -29,13 +29,15 @@ def cleanDirs():
             os.remove(file)
 
 def getCmd():
-    classPath = System.getenv('CLASSPATH').split(':')
-    jarPath = classPath[1]
-    print jarPath
-    dir = os.path.dirname(jarPath)
-    dir = os.path.dirname(dir)
-    print dir
-    cmd = os.path.join(dir,'nmrfxs')
+    classPath = System.getProperties().get('java.class.path').split(':')
+    cmd = System.getenv("pgm")
+    if cmd == None:
+        jarPath = classPath[1]
+        print jarPath
+        dir = os.path.dirname(jarPath)
+        dir = os.path.dirname(dir)
+        print dir
+        cmd = os.path.join(dir,'nmrfxs')
     return cmd
 
 def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapMemory=512):
