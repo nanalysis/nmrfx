@@ -51,7 +51,7 @@ def loadPDBModels(files, yaml, out):
     print yaml
     for file in files:
         outFile = os.path.join(outDir,'output'+str(iFile)+'.txt')
-        pdb.readCoordinates(file,0,False)
+        pdb.readCoordinates(file,0,False, False)
         refiner.setPars({'coarse':False,'useh':True,'dislim':5.0,'end':10000,'hardSphere':0.0,'shrinkValue':0.0, 'shrinkHValue':0.0})
 
         if 'shift' in data:
