@@ -186,7 +186,7 @@ public class Polymer extends Entity {
     }
 
     public String getPolymerType() {
-        if (polymerType == null) {
+        if ((polymerType == null) || (polymerType.equals(""))) {
             if (isRNA()){
                 return "nucleicacid";
             } else {
