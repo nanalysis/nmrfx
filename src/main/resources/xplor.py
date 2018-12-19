@@ -3,7 +3,7 @@ import re
 from java.util import ArrayList
 from org.nmrfx.structure.chemistry.energy import AngleBoundary
 from org.nmrfx.structure.chemistry.io import AtomParser
-
+from java.lang import NullPointerException, IllegalArgumentException
 
 def getAtomPairs(atoms,mode='shuffle'):
     ''' getAtomPairs finds all the atom pairs from two lists of atoms
@@ -155,7 +155,15 @@ class XPLOR:
         ''' processAngleConstraints verifies an angle boundary can exist between
             four provide atoms (atomsSels) and then adds in the constraint'''
         # EX: fullAtoms = ["2koc:1.C5'","2koc:1.C4'","2koc:1.C3'","2koc:1.O3'"]
-        validAtomSelections = AngleBoundary.allowRotation(atomsSels)
+	try:
+            validAtomSelections = AngleBoundary.allowRotation(atomsSels)
+	except NullPointerException:
+	    errMsg = "Invalid list of atom selections passed to 'AngleBoundary.allowRotation(...)': {}".format(atomsSels)
+	    raise ValueError(errMsg)
+	except IllegalArgumentException as IAE:
+	    errMsg = IAE.getMessage()
+	    raise ValueError(errMsg)
+
 	if validAtomSelections:
             lower, upper = bounds
             if lower == upper:
