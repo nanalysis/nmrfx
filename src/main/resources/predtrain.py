@@ -1,9 +1,11 @@
 import os
+import os.path
 import math
 import seqalgs
 import molio
 import super
 import rnapred
+import urllib2
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import MolFilter
 from org.nmrfx.structure.chemistry.energy import RingCurrentShift
@@ -13,7 +15,22 @@ from org.apache.commons.math3.linear import Array2DRowRealMatrix
 from org.apache.commons.math3.linear import ArrayRealVector
 from org.apache.commons.math3.linear import SingularValueDecomposition
 
+#atomNames= ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
 atomNames= ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
+ringTypes = ["A0","A1","G0","G1","C0","U0"]
+
+def getPDBFile(pdbID):
+    pdbFile="pdbfiles/"+pdbID+".pdb"
+
+    if ( not os.path.exists(pdbFile)):
+        print 'fetch PDB '+pdbID
+        try:
+            pdbEntry = urllib2.urlopen('http://www.rcsb.org/pdb/files/'+str(pdbID)+'.pdb').read()
+        except:
+            return(False)
+        with open(pdbFile, 'w') as tmp_file:
+            tmp_file.write(str(pdbEntry))
+    return(True)
 
 def loadRCTrainingMatrix(fileName):
     """
@@ -45,7 +62,7 @@ def loadRCTrainingMatrix(fileName):
     bVec = ArrayRealVector(b)
     return AMat,bVec
 
-def genRCMat(mol, atomNames, f1):
+def genRCMat(mol, atomNames, f1, ringMode):
     """
     Generate training data from molecule for parameterizing ring-current shifts.
     Data is appended to the specified file.
@@ -100,9 +117,18 @@ def genRCMat(mol, atomNames, f1):
             continue
         ppm = atom.getRefPPM()
         ringPPM = ringShifts.calcRingContributions(sp,0,ringRatio)
-#/ 5.45
-        s = "%.3f" % (ringPPM)
-        row.append(s)
+        ringFactors = ringShifts.calcRingGeometricFactors(sp, 0)
+        if ringMode:
+            for ringType in ringTypes:
+                if ringType in ringFactors:
+                    factor = ringFactors[ringType]
+                else:
+                    factor = 0.0
+                s = "%.6f" % (factor * 5.45)
+                row.append(s)
+        else:
+            s = "%.3f" % (ringPPM)
+            row.append(s)
         s = "%.3f" % (ppm)
         row.append(s)
         f1.write('\t'.join(row)+'\n')
@@ -142,8 +168,8 @@ def predictWithRCFromPDB(pdbFile, refShifts, ringRatio):
             structList = list(activeStructures)
         else:
             structList=[0]
-    shifts = rnapred.predictRCShifts(mol, structList, refShifts, ringRatio)
-    return shifts
+    shifts = rnapred.predictRCShifts(mol, structList, refShifts, ringRatio, ringTypes)
+    return mol, shifts
 
 def getDStat(values):
    dStat = DescriptiveStatistics(values)
@@ -187,20 +213,47 @@ def analyzeFiles(pdbs, bmrbs,refShifts=None,ringRatio=None):
 
     ppmDatas=[]
     aNames = {}
+    chains = ['','A','B','C','D']
+    offsets = {}
+    offsets['15857']={}
+    offsets['15857']['B']=58
+    offsets['15858']={}
+    offsets['15858']['A']=12
+    offsets['15858']['B']=58
+    offsets['18893']={}
+    offsets['18893']['B']=58
+    offsets['19662']={}
+    offsets['19662']['B']=100
+
     for pdbID,bmrbID in zip(pdbs,bmrbs):
         print pdbID,bmrbID
-        bmrbFile = 'star2/bmr'+bmrbID+'.str'
+        bmrbFile = 'star/bmr'+bmrbID+'.str'
+        if not os.path.exists(bmrbFile):
+            bmrbFile = 'star2/bmr'+bmrbID+'.str'
+            if not os.path.exists(bmrbFile):
+                print 'skip',bmrbFile
+                continue
         pdb = 'pdbfiles/'+pdbID+'.pdb'
+        if not getPDBFile(pdbID):
+            print 'skip',pdb
+            continue
         shiftDict = seqalgs.readBMRBShifts(bmrbID, bmrbFile)
-        shifts = predictWithRCFromPDB(pdb, refShifts, ringRatio)
-        for bID in shiftDict:
+        mol, shifts = predictWithRCFromPDB(pdb, refShifts, ringRatio)
+        polymers = mol.getPolymers()
+        chainP = [polymer.getName() for polymer in polymers]
+        for bID in shiftDict.keys():
             for chain in shiftDict[bID]:
+                chainName = chains[chain]
+                offset = 0
+                if bID in offsets:
+                    if chainName in offsets[bID]:
+                        offset = offsets[bID][chainName]
                 for res in shiftDict[bID][chain]:
                     for aname in shiftDict[bID][chain][res]:
-                        atomSpec = chain+':'+str(res)+'.'+aname  
+                        atomSpec = chainName+':'+str(res+offset)+'.'+aname  
                         atom = Molecule.getAtomByName(atomSpec)
                         if atom == None:
-                            print 'no atom',atomSpec
+                            print 'no atom',chain,atomSpec
                         else:
                             ppmV = atom.getRefPPM(0)
                             if (ppmV != None):
@@ -235,7 +288,7 @@ def reref(ppmDatas, bmrbs):
         deltaValues = [ppmData.exp-ppmData.pred for ppmData in ppmDatas if ppmData.bID == bID]
         dStat = getDStat(deltaValues)
         deltaB[bID] = dStat.getMean()
-        print "%s %.3f" % (bID,deltaB[bID])
+        print "%s %3d %.3f" % (bID,len(deltaValues),deltaB[bID])
 
     sumAbs = 0.0
     for ppmData in ppmDatas:
@@ -338,7 +391,7 @@ def readTrainingFiles(fileName):
     return pdbs,dotBrackets
 
 
-def genRCTrainingMatrix(outFileName, pdbFiles, dotBrackets, atomNames):
+def genRCTrainingMatrix(outFileName, pdbFiles, dotBrackets, atomNames, ringMode):
     """
     Generate the training data from a list of pdbFiles and dotBracket values.
     Each file is predicted using the attribute method based on a specified
@@ -365,9 +418,9 @@ def genRCTrainingMatrix(outFileName, pdbFiles, dotBrackets, atomNames):
             Molecule.removeAll()
             mol = molio.readPDB(pdbFile)
             rnapred.predictFromSequence(mol,dotBracket)
-            genRCMat(mol,atomNames,f1)
+            genRCMat(mol,atomNames,f1, ringMode)
         
-def trainRC(trainingFileName, matrixFileName):
+def trainRC(trainingFileName, matrixFileName, ringMode):
     """
     Traing the ring-current shift model using specified training data.
 
@@ -382,13 +435,18 @@ def trainRC(trainingFileName, matrixFileName):
     """
 
     pdbFiles,dotBrackets = readTrainingFiles(trainingFileName)
-    genRCTrainingMatrix(matrixFileName, pdbFiles, dotBrackets, atomNames)
+    genRCTrainingMatrix(matrixFileName, pdbFiles, dotBrackets, atomNames, ringMode)
     AMat,bVec = loadRCTrainingMatrix(matrixFileName)
     svd = SingularValueDecomposition(AMat)
     coefVec = svd.getSolver().solve(bVec)
     coefs = coefVec.getDataRef()
-    ringRatio = coefs[-1]
-    coefs = coefs[0:-1]
+    if ringMode:
+         nRings = len(ringTypes)
+         ringRatios = list(coefs[-nRings:])
+    else:
+         nRings = 1;
+         ringRatios = coefs[-1]
+    coefs = coefs[0:-nRings]
     coefDict = {}
     for (aName,coef) in zip(atomNames,coefs):
         if aName.find(".") == -1:
@@ -398,4 +456,4 @@ def trainRC(trainingFileName, matrixFileName):
         for aDotName in aDotNames:
             coefDict[aDotName] = coef
 
-    return coefDict,ringRatio
+    return coefDict,ringRatios
