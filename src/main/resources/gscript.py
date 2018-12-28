@@ -4,6 +4,8 @@ from org.nmrfx.processor.gui import GUIScripter
 import argparse
 import dscript
 
+dimNames = ['x','y','z','a','b','c','d']
+
 
 class NMRFxWindowScripting:
     def __init__(self,winName=None):
@@ -17,6 +19,9 @@ class NMRFxWindowScripting:
         chart=activeController.getActiveChart()
         dAttrs = chart.getDatasetAttributes()
         return dAttrs
+
+    def useActive(self):
+        self.cmd.setActiveController()
 
     def getActiveChart(self):
         activeController = self.cmd.getController()
@@ -104,13 +109,28 @@ class NMRFxWindowScripting:
             return self.cmd.limit()
         else:
             if pars != None:
-                print 'pars',pars
                 for elem in pars:
-                    (v1,v2) = pars[elem] 
+                    value = pars[elem]
+                    if isinstance(value, (float,int)):
+                        v1 = value
+                        v2 = value
+                    elif len(value) == 1:
+                        v1 = value[0]
+                        v2 = v1
+                    else:
+                        (v1,v2) = value 
                     self.cmd.limit(elem, v1, v2)
             for elem in kwargs:
-                (v1,v2) = kwargs[elem]
-                self.cmd.limit(elem, v1, v2)
+                    value = kwargs[elem]
+                    if isinstance(value, (float,int)):
+                        v1 = value
+                        v2 = value
+                    elif len(value) == 1:
+                        v1 = value[0]
+                        v2 = v1
+                    else:
+                        (v1,v2) = value 
+                    self.cmd.limit(elem, v1, v2)
         self.cmd.draw()
 
     def axlim(self, axis, v1, v2):
@@ -138,6 +158,38 @@ class NMRFxWindowScripting:
                     dAttr.config(elem,kwargs[elem])
         chart = self.getActiveChart()
         chart.draw()
+
+    def center(self, *pArgs, **dimArgs):
+        pos=[]
+        nUsed = 0
+        for dimName,pArg in zip(dimNames,pArgs):
+            dimArgs[dimName] = pArg
+      
+        for dim in dimNames:
+            if dim in dimArgs:
+                pos.append(dimArgs[dim])
+                nUsed += 1
+            else:
+                pos.append(None)
+            if nUsed == len(dimArgs):
+                break         
+        pos = pos[:nUsed]
+        self.cmd.center(pos)
+
+    def zoom(self, factor=1.2):
+       self.cmd.zoom(factor)
+
+    def expand(self):
+        self.cmd.expand()
+
+    def full(self, dimName = ""):
+        dimNum = -1
+        if dimName in dimNames:
+            dimNum = dimNames.index(dimName)
+        self.cmd.full(dimNum)
+
+    def draw(self):
+        self.cmd.draw()
 
 def parseArgs(argv):
     nw = NMRFxWindowScripting()

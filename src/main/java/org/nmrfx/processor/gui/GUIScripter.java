@@ -30,8 +30,12 @@ public class GUIScripter {
         useChart = null;
     }
 
-    public static  void setController(FXMLController controllerValue) {
+    public static void setController(FXMLController controllerValue) {
         controller = controllerValue;
+    }
+
+    public static void setActiveController() {
+        controller = FXMLController.getActiveController();
     }
 
     public static FXMLController getController() {
@@ -39,6 +43,10 @@ public class GUIScripter {
             controller = FXMLController.getActiveController();
         }
         return controller;
+    }
+
+    public static FXMLController getActiveController() {
+        return FXMLController.getActiveController();
     }
 
     public GUIScripter(String chartName) {
@@ -55,7 +63,7 @@ public class GUIScripter {
         if (useChart != null) {
             chart = useChart;
         } else {
-            chart = getController().getActiveChart();
+            chart = getActiveController().getActiveChart();
         }
         return chart;
     }
@@ -108,8 +116,16 @@ public class GUIScripter {
     }
 
     public void full() {
+        full(-1);
+    }
+
+    public void full(int dimNum) {
         ConsoleUtil.runOnFxThread(() -> {
-            getChart().full();
+            if (dimNum < 0) {
+                getChart().full();
+            } else {
+                getChart().full(dimNum);
+            }
         });
     }
 
@@ -117,6 +133,18 @@ public class GUIScripter {
         ConsoleUtil.runOnFxThread(() -> {
             getChart().expand();
         });
+    }
+
+    public void center(Double[] positions) {
+        ConsoleUtil.runOnFxThread(() -> {
+            if ((positions == null) || (positions.length == 0)) {
+                Double[] crossPositions = getChart().getCrossHairs().getCrossHairPositions();
+                getChart().moveTo(crossPositions);
+            } else {
+                getChart().moveTo(positions);
+            }
+        });
+
     }
 
     public double[] ppm(String axis) {

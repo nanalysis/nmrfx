@@ -72,8 +72,9 @@ def loadYamlWin(yamlFile, createNewStage=True):
         nw.lim(lim)
         for dataset in datasets:
             name = dataset['name']
-            cfg = dataset['config']
-            nw.config(datasets=[name],pars=cfg)
+            if 'config' in dataset:
+                cfg = dataset['config']
+                nw.config(datasets=[name],pars=cfg)
 
         if 'peaklists' in v:
             peakLists = v['peaklists']
