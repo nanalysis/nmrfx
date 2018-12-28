@@ -10,27 +10,27 @@ def loadResProps(fileName):
         for (header,value) in zip(headers[1:],fields[1:]):
             resProps[fields[0],header] = float(value)
 
-def readBMRBShifts(fileName):
+def readBMRBShifts(bmrbID, fileName):
     f1 = open(fileName)
     lines = f1.read().split('\n')
-    readSequence(fileName,lines)
-    processBMRBLines(fileName,lines)
+    readSequence(bmrbID,lines)
+    shiftDict = processBMRBLines(bmrbID,lines)
     f1.close()
+    return shiftDict
 
 
-def readSequence(fileName,lines):
+def readSequence(bmrbID,lines):
     global shiftDict
     global resDict
     shiftDict = {}
     resDict = {}
-    shiftDict[fileName] = {}
-    shiftDict[fileName]['A'] = {}
-    pdb = fileName
+    chain = 1
+    shiftDict[bmrbID] = {}
+    shiftDict[bmrbID][chain] = {}
     start_trigger=0
     end_trigger=0
     assignment_list=[]
     state = 'searching'
-    chain = 'A'
     hasAuthCode = False
     for line in lines:
         fields = line.strip().split()
@@ -45,53 +45,75 @@ def readSequence(fileName,lines):
             elif state == 'inSeq':
                 if fields[0] == "stop_":
                     break
+
                 if len(fields) > 2:
                     if hasAuthCode:
                         for (resStr,resAuthStr,resName) in zip(fields[0::3],fields[1::3],fields[2::3]):
                             res = int(resStr)
-                            if not res in shiftDict[pdb][chain]:
-                                shiftDict[pdb][chain][res] = {}
-                                resDict[pdb,chain,res] = resName
+                            if not res in shiftDict[bmrbID][chain]:
+                                shiftDict[bmrbID][chain][res] = {}
+                                resDict[bmrbID,chain,res] = resName
                     else:
                         for (resStr,resName) in zip(fields[0::2],fields[1::2]):
                             res = int(resStr)
-                            if not res in shiftDict[pdb][chain]:
-                                shiftDict[pdb][chain][res] = {}
-                                resDict[pdb,chain,res] = resName
+                            if not res in shiftDict[bmrbID][chain]:
+                                shiftDict[bmrbID][chain][res] = {}
+                                resDict[bmrbID,chain,res] = resName
 
 
-def processBMRBLines(fileName,lines):
+def processBMRBLines(bmrbID, lines):
     global shiftDict
     global resDict
-    pdb = fileName 
     start_trigger=0
     end_trigger=0
     assignment_list=[]
     state = 'preShifts'
-    chain = 'A'
+    shiftLoopTags = []
     for line in lines:
         fields = line.strip().split()
         if len(fields) > 0:
             if state == 'preShifts':
-                if fields[0] == "_Chem_shift_ambiguity_code":
-                    state = 'inShifts'
-            elif state == 'inShifts':
+                if fields[0] == "_Atom_shift_assign_ID":
+                    state = 'inShiftCat'
+                    starMode = 2
+                elif fields[0] == "_Atom_chem_shift.ID":
+                    state = 'inShiftCat'
+                    starMode = 3
+            if state == 'inShiftCat':
+                if fields[0].startswith("_"):
+                    shiftLoopTags += fields
+                else:
+                    state = "inShifts"
+                
+            if state == 'inShifts':
                 if fields[0] == "stop_":
                     break
+                #print shiftLoopTags
                 #print fields
-                if len(fields) == 8:
-                    (i,res,resName,aname,atype,shift,err,ambig) = fields
+                if starMode == 3:
+                    chainID = shiftLoopTags.index("_Atom_chem_shift.Entity_ID")
+                    chain = int(fields[chainID])
+                    resI = shiftLoopTags.index("_Atom_chem_shift.Seq_ID")
+                    anameI = shiftLoopTags.index("_Atom_chem_shift.Atom_ID")
+                    resNameI = shiftLoopTags.index("_Atom_chem_shift.Comp_ID")
+                    shiftI = shiftLoopTags.index("_Atom_chem_shift.Val")
                 else:
-                    (i,resa,res,resName,aname,atype,shift,err,ambig) = fields
-                res = int(res)
-                shift = float(shift)
-                if not res in shiftDict[pdb][chain]:
-                    shiftDict[pdb][chain][res] = {}
-                    resDict[pdb,chain,res] = resName
-                shiftDict[pdb][chain][res][aname] = shift
-
-
-
+                    chain = 1
+                    resI = shiftLoopTags.index("_Residue_seq_code")
+                    anameI = shiftLoopTags.index("_Atom_name")
+                    resNameI = shiftLoopTags.index("_Residue_label")
+                    shiftI = shiftLoopTags.index("_Chem_shift_value")
+                if not chain in shiftDict[bmrbID]:
+                    shiftDict[bmrbID][chain] = {}
+                res = int(fields[resI])
+                shift = float(fields[shiftI])
+                aname = fields[anameI].strip('"')
+                resName = fields[resNameI]
+                if not res in shiftDict[bmrbID][chain]:
+                    shiftDict[bmrbID][chain][res] = {}
+                    resDict[bmrbID,chain,res] = resName
+                shiftDict[bmrbID][chain][res][aname] = shift
+    return shiftDict
 
 def openCorrTable(fileName):
     global corrTable
