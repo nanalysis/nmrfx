@@ -258,6 +258,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public PolyChart getActiveChart() {
         return activeChart;
     }
+    
+    public Stage getStage() {
+        return stage;
+    }
 
     public boolean hasSlider() {
         return peakSlider != null;
@@ -1246,7 +1250,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
     }
 
-    void setActiveController() {
+    public void setActiveController() {
         activeController = this;
     }
 
