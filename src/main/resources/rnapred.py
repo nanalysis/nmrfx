@@ -21,6 +21,8 @@ from org.nmrfx.processor.datasets.peaks import Peak
 from org.nmrfx.processor.datasets.peaks import PeakList
 from org.nmrfx.structure.chemistry.predict import RNAStats
 from org.nmrfx.structure.chemistry.predict import RNAAttributes
+from org.nmrfx.structure.chemistry.energy import RingCurrentShift
+from org.nmrfx.structure.chemistry import MolFilter
 from java.io import FileWriter
 from subprocess import check_output
 
@@ -418,3 +420,70 @@ def predictFromSequence(molecule = None, vienna = None):
     outLines = genRNAData(seqList, pairs)
     predPPMs = predictFromAttr(seqList, outLines)
     setPredictions(molecule, predPPMs)
+
+def predictRCShifts(mol, structureNum=0, refShifts=None, ringRatio=None, ringTypes=None):
+    defaultRefShifts = {
+        "U.H6":8.00,"U.H3'":4.56,"U.H5":5.80,"U.H5'":4.36,
+        "A.H5'":4.36,"G.H5''":4.11,"U.H1'":5.49,"A.H3'":4.56,
+        "G.H1'":5.43,"G.H3'":4.56,"G.H5'":4.36,"A.H5''":4.11,
+        "C.H2'":4.48,"C.H4'":4.38,"G.H8":7.77,"A.H1'":5.51,
+        "U.H4'":4.38,"A.H8":8.21,"C.H6":7.94,"C.H5''":4.11,
+        "C.H5":5.85,"U.H2'":4.48,"A.H4'":4.38,"G.H2'":4.48,
+        "A.H2":7.79,"C.H5'":4.36,"G.H4'":4.38,"U.H5''":4.11,
+        "C.H1'":5.46,"C.H3'":4.56,"A.H2'":4.4}
+
+    if refShifts == None:
+        refShifts = defaultRefShifts
+    if ringRatio == None:
+        ringRatio = 0.475
+    filterString = ""
+    inFilter = {}
+    for atomId in refShifts:
+        dotIndex =  atomId.find(".")
+        if dotIndex != -1:
+            atomId = atomId[2:]
+        if atomId in inFilter:
+            continue
+        inFilter[atomId] = True
+        if filterString == "":
+            filterString = "*."+atomId
+        else:
+            filterString += ","+atomId
+
+    ringShifts = RingCurrentShift()
+    ringShifts.makeRingList(mol)
+    if isinstance(ringRatio,(tuple,list,array)):
+        for ringType,factor in zip(ringTypes,ringRatio):
+            ringShifts.setRingFactor(ringType,factor)
+        ringRatio = 1.0
+
+    molFilter = MolFilter(filterString)
+    spatialSets = Molecule.matchAtoms(molFilter)
+
+    shifts = []
+    for sp in spatialSets:
+        name = sp.atom.getShortName()
+        aName = sp.atom.getName()
+        nucName = sp.atom.getEntity().getName()
+
+        if not nucName+"."+aName in refShifts:
+            continue
+        basePPM = refShifts[nucName+"."+aName]
+        if isinstance(structureNum,(list,tuple)):
+            ringPPM = 0.0
+            for iStruct in structureNum:
+                ringPPM += ringShifts.calcRingContributions(sp,iStruct,ringRatio)
+            ringPPM /= len(structureNum)
+        else:
+            ringPPM = ringShifts.calcRingContributions(sp,structureNum,ringRatio)
+        ppm = basePPM+ringPPM
+
+        atom = Molecule.getAtomByName(name)
+        atom.setRefPPM(ppm)
+
+        shift = []
+        shift.append(str(name))
+        shift.append(ppm)
+        shifts.append(shift)
+    return shifts
+
