@@ -233,19 +233,14 @@ public class GUIStructureProject extends StructureProject {
     }
 
     void saveWindows() throws IOException {
-        FileSystem fileSystem = FileSystems.getDefault();
-
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
-        Path projectDir = this.projectDir;
         PythonInterpreter interp = AnalystApp.getInterpreter();
-        List<Stage> stages = AnalystApp.getStages();
         int i = 0;
         interp.exec("import nwyaml\\n");
-
+        FXMLController activeController = GUIScripter.getController();
         List<FXMLController> controllers = FXMLController.getControllers();
-
         for (FXMLController controller : controllers) {
             GUIScripter.setController(controller);
             String fileName = i + "_stage.yaml";
@@ -253,5 +248,6 @@ public class GUIStructureProject extends StructureProject {
             interp.exec("nwyaml.dumpYamlWin('" + path.toString() + "')");
             i++;
         }
+        GUIScripter.setController(activeController);
     }
 }
