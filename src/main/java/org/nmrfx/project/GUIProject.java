@@ -28,6 +28,8 @@ import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.nmrfx.processor.gui.FXMLController;
+import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.python.util.PythonInterpreter;
@@ -208,28 +210,30 @@ public class GUIProject extends Project {
                     forEach(path -> {
                         String fileName = path.getFileName().toString();
                         Optional<Integer> fileNum = getIndex(fileName);
-                        interp.exec("nwyaml.loadYamlWin('" + path.toString() + "')");
+                        if (fileNum.isPresent()) {
+                            interp.exec("nwyaml.loadYamlWin('" + path.toString() + "'" + "," + String.valueOf(fileNum.get()) + ")");
+                        }
                     });
         }
     }
 
     void saveWindows() throws IOException {
-        FileSystem fileSystem = FileSystems.getDefault();
-
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
-        Path projectDir = this.projectDir;
         PythonInterpreter interp = MainApp.getInterpreter();
-        List<Stage> stages = MainApp.getStages();
         int i = 0;
         interp.exec("import nwyaml\\n");
-
-        for (Stage stage : stages) {
+        FXMLController activeController = GUIScripter.getController();
+        List<FXMLController> controllers = FXMLController.getControllers();
+        for (FXMLController controller : controllers) {
+            GUIScripter.setController(controller);
             String fileName = i + "_stage.yaml";
             Path path = Paths.get(projectDir.toString(), "windows", fileName);
             interp.exec("nwyaml.dumpYamlWin('" + path.toString() + "')");
             i++;
         }
+        GUIScripter.setController(activeController);
     }
+
 }
