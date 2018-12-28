@@ -58,6 +58,16 @@ public class CrossHairs {
         return controller;
     }
 
+    public Double[] getCrossHairPositions() {
+        Double x = crossHairStates[0][VERTICAL] ? crossHairPositions[0][VERTICAL] : null;
+        Double y = null;
+        if (chart.getNDim() > 1) {
+            y = crossHairStates[0][HORIZONTAL] ? crossHairPositions[0][HORIZONTAL] : null;
+        }
+        Double[] result = {x, y};
+        return result;
+    }
+
     public void hideCrossHairs() {
         SpectrumStatusBar statusBar = getController().getStatusBar();
         for (int iCross = 0; iCross < 2; iCross++) {
