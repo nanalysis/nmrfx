@@ -42,37 +42,37 @@ public class RingCurrentShift {
     private static final HashMap<String, PPMv> refShifts = new HashMap<String, PPMv>();
 
     static {
-        refShifts.put("A.H2", new PPMv(7.87));
-        refShifts.put("A.H8", new PPMv(8.24));
-        refShifts.put("G.H8", new PPMv(7.84));
-        refShifts.put("C.H5", new PPMv(5.90));
-        refShifts.put("U.H5", new PPMv(5.86));
-        refShifts.put("C.H6", new PPMv(7.96));
-        refShifts.put("U.H6", new PPMv(8.03));
-        refShifts.put("A.H1'", new PPMv(5.45));
-        refShifts.put("G.H1'", new PPMv(5.37));
-        refShifts.put("C.H1'", new PPMv(5.48));
-        refShifts.put("U.H1'", new PPMv(5.52));
-        refShifts.put("A.H2'", new PPMv(4.49));
-        refShifts.put("G.H2'", new PPMv(4.49));
-        refShifts.put("C.H2'", new PPMv(4.49));
-        refShifts.put("U.H2'", new PPMv(4.49));
-        refShifts.put("A.H3'", new PPMv(4.56));
-        refShifts.put("G.H3'", new PPMv(4.56));
-        refShifts.put("C.H3'", new PPMv(4.56));
+        refShifts.put("U.H6", new PPMv(8.00));
         refShifts.put("U.H3'", new PPMv(4.56));
-        refShifts.put("A.H4'", new PPMv(4.37));
-        refShifts.put("G.H4'", new PPMv(4.37));
-        refShifts.put("C.H4'", new PPMv(4.37));
-        refShifts.put("U.H4'", new PPMv(4.37));
-        refShifts.put("A.H5'", new PPMv(4.36));
-        refShifts.put("G.H5'", new PPMv(4.36));
-        refShifts.put("C.H5'", new PPMv(4.36));
+        refShifts.put("U.H5", new PPMv(5.80));
         refShifts.put("U.H5'", new PPMv(4.36));
-        refShifts.put("A.H5''", new PPMv(4.11));
+        refShifts.put("A.H5'", new PPMv(4.36));
         refShifts.put("G.H5''", new PPMv(4.11));
+        refShifts.put("U.H1'", new PPMv(5.49));
+        refShifts.put("A.H3'", new PPMv(4.56));
+        refShifts.put("G.H1'", new PPMv(5.43));
+        refShifts.put("G.H3'", new PPMv(4.56));
+        refShifts.put("G.H5'", new PPMv(4.36));
+        refShifts.put("A.H5''", new PPMv(4.11));
+        refShifts.put("C.H2'", new PPMv(4.48));
+        refShifts.put("C.H4'", new PPMv(4.38));
+        refShifts.put("G.H8", new PPMv(7.77));
+        refShifts.put("A.H1'", new PPMv(5.51));
+        refShifts.put("U.H4'", new PPMv(4.38));
+        refShifts.put("A.H8", new PPMv(8.21));
+        refShifts.put("C.H6", new PPMv(7.94));
         refShifts.put("C.H5''", new PPMv(4.11));
+        refShifts.put("C.H5", new PPMv(5.85));
+        refShifts.put("U.H2'", new PPMv(4.48));
+        refShifts.put("A.H4'", new PPMv(4.38));
+        refShifts.put("G.H2'", new PPMv(4.48));
+        refShifts.put("A.H2", new PPMv(7.79));
+        refShifts.put("C.H5'", new PPMv(4.36));
+        refShifts.put("G.H4'", new PPMv(4.38));
         refShifts.put("U.H5''", new PPMv(4.11));
+        refShifts.put("C.H1'", new PPMv(5.46));
+        refShifts.put("C.H3'", new PPMv(4.56));
+        refShifts.put("A.H2'", new PPMv(4.48));
     }
 
     static class RingType {
@@ -267,7 +267,7 @@ public class RingCurrentShift {
 
     public void predictShifts() {
         for (SpatialSet sp : refSP) {
-            double ringRatio = 0.560;
+            double ringRatio = 0.475;
             double basePPM = sp.getPPM(1).getValue();
             double ringPPM = calcRingContributions(sp, 0, ringRatio);
             double ppm = basePPM + ringPPM;
