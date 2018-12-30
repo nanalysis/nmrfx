@@ -57,11 +57,14 @@ def loadYamlWin(yamlFile, createNewStage=True):
     for v in spectra :
         print v
         datasets = v['datasets']
-        (iRow, iCol) = v['grid']
+        if 'grid' in v:
+            (iRow, iCol) = v['grid']
+        else:
+            iRow = 0
+            iCol = 0
         activeWin = iRow*cols+iCol
         print 'g',iRow,iCol,activeWin
         nw.active(activeWin)
-        lim = v['lim']
         datasetValues = []
         for dataset in datasets:
             print dataset
@@ -69,7 +72,9 @@ def loadYamlWin(yamlFile, createNewStage=True):
             datasetValues.append(name)
         print 'dv',datasetValues
         nw.cmd.datasets(datasetValues)
-        nw.lim(lim)
+        if 'lim' in v:
+            lim = v['lim']
+            nw.lim(lim)
         for dataset in datasets:
             name = dataset['name']
             if 'config' in dataset:
@@ -87,7 +92,8 @@ def loadYamlWin(yamlFile, createNewStage=True):
             nw.cmd.peakLists(peakListValues)
             for peakList in peakLists:
                 name = peakList['name']
-                cfg = peakList['config']
-                nw.pconfig(peakLists=[name],pars=cfg)
+                if 'config' in peakList:
+                    cfg = peakList['config']
+                    nw.pconfig(peakLists=[name],pars=cfg)
 
 nw = gscript.NMRFxWindowScripting()
