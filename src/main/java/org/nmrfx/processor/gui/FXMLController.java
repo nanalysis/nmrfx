@@ -33,11 +33,13 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
@@ -258,7 +260,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public PolyChart getActiveChart() {
         return activeChart;
     }
-    
+
     public Stage getStage() {
         return stage;
     }
@@ -1265,6 +1267,33 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     @Override
     public void refreshPeakView(Peak peak) {
         if (peak != null) {
+            Set<String> dimsUsed = new HashSet<>();
+            PeakList peakList = peak.getPeakList();
+            int nDim = peakList.getNDim();
+            for (int i = 0; i < nDim; i++) {
+                String peakLabel = peakList.getSpectralDim(i).getDimName();
+                boolean ok1 = true;
+                for (PolyChart chart : charts) {
+                    if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
+                        DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
+                        int aDim = dataAttr.nDim;
+                        boolean ok2 = false;
+                        for (int j = 0; j < aDim; j++) {
+                            if (dataAttr.getLabel(j).equals(peakLabel)) {
+                                ok2 = true;
+                                break;
+                            }
+                        }
+                        if (!ok2) {
+                            ok1 = false;
+                            break;
+                        }
+                    }
+                }
+                if (ok1) {
+                    dimsUsed.add(peakLabel);
+                }
+            }
             for (PolyChart chart : charts) {
                 if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                     DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
@@ -1273,6 +1302,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     Double[] ppms = new Double[cDim];
                     Double[] widths = new Double[cDim];
                     for (int i = 0; i < aDim; i++) {
+                        if (!dimsUsed.contains(dataAttr.getLabel(i))) {
+                            continue;
+                        }
                         PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
                         if (peakDim != null) {
                             ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
