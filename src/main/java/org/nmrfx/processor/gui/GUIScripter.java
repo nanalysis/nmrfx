@@ -31,6 +31,7 @@ public class GUIScripter {
     }
 
     public static void setController(FXMLController controllerValue) {
+        controllerValue.setActiveController();
         controller = controllerValue;
     }
 
