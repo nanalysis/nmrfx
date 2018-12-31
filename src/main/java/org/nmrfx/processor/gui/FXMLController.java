@@ -1790,11 +1790,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         int iChild = 0;
         double maxBorderX = 0.0;
         double maxBorderY = 0.0;
-        double[][] bordersGrid = new double[4][];
+        double[][] bordersGrid = new double[6][];
         bordersGrid[0] = new double[nCols];
         bordersGrid[1] = new double[nCols];
         bordersGrid[2] = new double[nRows];
         bordersGrid[3] = new double[nRows];
+        bordersGrid[4] = new double[nCols];
+        bordersGrid[5] = new double[nRows];
 
         for (PolyChart chart : charts) {
             int iRow = iChild / nCols;
@@ -1812,6 +1814,18 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             bordersGrid[3][iRow] = Math.max(bordersGrid[3][iRow], borders[3]);
             maxBorderX = Math.max(maxBorderX, borders[0]);
             maxBorderY = Math.max(maxBorderY, borders[2]);
+
+            double ppmX0 = chart.getXAxis().getLowerBound();
+            double ppmX1 = chart.getXAxis().getUpperBound();
+            double ppmY0 = chart.getYAxis().getLowerBound();
+            double ppmY1 = chart.getYAxis().getUpperBound();
+            if (minimizeBorders) {
+                bordersGrid[4][iCol] = Math.max(bordersGrid[4][iCol], Math.abs(ppmX0 - ppmX1));
+                bordersGrid[5][iRow] = Math.max(bordersGrid[5][iRow], Math.abs(ppmY0 - ppmY1));
+            } else {
+                bordersGrid[4][iCol] = 100.0;
+                bordersGrid[5][iRow] = 100.0;
+            }
             iChild++;
         }
         iChild = 0;

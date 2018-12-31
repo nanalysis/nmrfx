@@ -198,15 +198,19 @@ public class FractionCanvas extends Pane {
         double[][] bordersGrid = controller.prepareChildren(nRows, nCols);
         double sumX = 0.0;
         double sumY = 0.0;
+        double sumPPMX = 0.0;
+        double sumPPMY = 0.0;
         for (int i = 0; i < bordersGrid[0].length; i++) {
             sumX += bordersGrid[0][i] + bordersGrid[1][i];
+            sumPPMX += bordersGrid[4][i];
         }
         for (int i = 0; i < bordersGrid[2].length; i++) {
             sumY += bordersGrid[2][i] + bordersGrid[3][i];
+            sumPPMY += bordersGrid[5][i];
         }
 
-        double deltaX = (width - sumX) / nCols;
-        double deltaY = (height - sumY) / nRows;
+        double deltaX = (width - sumX);
+        double deltaY = (height - sumY);
 
 //        System.out.println("layout " + nRows + " " + nCols + " " + deltaX + " " + sumX + " " + width
 //                + " " + deltaY + " " + sumY + " " + height);
@@ -215,10 +219,12 @@ public class FractionCanvas extends Pane {
         offsets[1] = new double[nRows];
 
         for (int i = 0; i < bordersGrid[0].length - 1; i++) {
-            offsets[0][i + 1] = offsets[0][i] + bordersGrid[0][i] + deltaX + bordersGrid[1][i];
+            double fX = bordersGrid[4][i] / sumPPMX;
+            offsets[0][i + 1] = offsets[0][i] + bordersGrid[0][i] + deltaX * fX + bordersGrid[1][i];
         }
         for (int i = 0; i < bordersGrid[2].length - 1; i++) {
-            offsets[1][i + 1] = offsets[1][i] + bordersGrid[2][i] + deltaY + bordersGrid[3][i];
+            double fY = bordersGrid[5][i] / sumPPMY;
+            offsets[1][i + 1] = offsets[1][i] + bordersGrid[2][i] + deltaY * fY + bordersGrid[3][i];
         }
         int iChild = 0;
 
@@ -228,8 +234,10 @@ public class FractionCanvas extends Pane {
             int iCol = iChild % nCols;
             double x = offsets[0][iCol];
             double y = offsets[1][iRow];
-            double itemWidth = bordersGrid[0][iCol] + deltaX + bordersGrid[1][iCol];
-            double itemHeight = bordersGrid[2][iRow] + deltaY + bordersGrid[3][iRow];
+            double fX = bordersGrid[4][iCol] / sumPPMX;
+            double fY = bordersGrid[5][iRow] / sumPPMY;
+            double itemWidth = bordersGrid[0][iCol] + deltaX * fX + bordersGrid[1][iCol];
+            double itemHeight = bordersGrid[2][iRow] + deltaY * fY + bordersGrid[3][iRow];
 
 //            System.out.printf("%2d %2d %2d %6.1f %6.1f %6.1f %6.1f %6.1f %6.1f\n",
 //                    iChild, iRow, iCol, x, y, itemWidth, itemHeight, offsets[0][iCol], offsets[1][iRow]);
