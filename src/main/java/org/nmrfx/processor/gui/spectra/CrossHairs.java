@@ -69,26 +69,41 @@ public class CrossHairs {
     }
 
     public void hideCrossHairs() {
-        SpectrumStatusBar statusBar = getController().getStatusBar();
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {
-                crossHairLines[iCross][jOrient].setVisible(false);
-                int iAxis = jOrient == 0 ? 1 : 0;
-                double value = iCross == 1 ? chart.getAxis(iAxis).getLowerBound() : chart.getAxis(iAxis).getUpperBound();
-                statusBar.setCrossText(jOrient, iCross, value, true);
+                hideCrossHair(iCross, jOrient);
             }
         }
+    }
+
+    public void hideCrossHair(int iCross, int jOrient) {
+        SpectrumStatusBar statusBar = getController().getStatusBar();
+        crossHairLines[iCross][jOrient].setVisible(false);
+        int iAxis = jOrient == 0 ? 1 : 0;
+        double value = iCross == 1 ? chart.getAxis(iAxis).getLowerBound() : chart.getAxis(iAxis).getUpperBound();
+        statusBar.setCrossText(jOrient, iCross, value, true);
     }
 
     public void setCrossHairState(boolean value) {
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {
-                crossHairStates[iCross][jOrient] = value;
+                crossHairStates[iCross][jOrient] = controller.getCrossHairState(iCross, jOrient) && value;
             }
         }
         if (!value) {
             hideCrossHairs();
         }
+    }
+
+    public void setCrossHairState(int iCross, int jOrient, boolean value) {
+        crossHairStates[iCross][jOrient] = controller.getCrossHairState(iCross, jOrient) && value;
+        if (!value) {
+            hideCrossHair(iCross, jOrient);
+        }
+    }
+
+    public boolean getCrossHairState(int iCross, int jOrient) {
+        return crossHairStates[iCross][jOrient];
     }
 
     public void refreshCrossHairs() {

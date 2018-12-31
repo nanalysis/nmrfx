@@ -319,6 +319,12 @@ public class SpectrumStatusBar {
         } else {
             line.setStroke(Color.BLACK);
         }
+        rect.setMouseTransparent(true);
+        line.setMouseTransparent(true);
+        stackPane.setOnMouseClicked(e -> {
+            controller.toggleCrossHairState(i, j);
+            e.consume();
+        });
         return stackPane;
     }
 
@@ -518,9 +524,21 @@ public class SpectrumStatusBar {
                 crossText[iCross][iOrient].setRight(limitTextIcons[iCross][iOrient]);
             } else {
                 crossText[iCross][iOrient].setRight(crossTextIcons[iCross][iOrient]);
-
             }
         }
+    }
+
+    public void setIconState(int iCross, int jOrient, boolean state) {
+        Rectangle rect;
+        Line line;
+        StackPane pane = (StackPane) crossText[iCross][jOrient].getRight();
+        rect = (Rectangle) pane.getChildren().get(0);
+        line = (Line) pane.getChildren().get(1);
+        Color color = state ? Color.LIGHTGRAY : Color.BLACK;
+        rect.setFill(color);
+        color = state & (iCross == 1) ? Color.RED : Color.BLACK;
+        line.setStroke(color);
+
     }
 
     private void dimMenuAction(ActionEvent event, int iAxis) {
