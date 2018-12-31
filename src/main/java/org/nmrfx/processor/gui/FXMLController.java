@@ -1866,7 +1866,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         refList.clearSearchDims();
         refList.addSearchDim(dimName1, 0.05);
         refList.addSearchDim(dimName2, 0.1);
-        refList.clusterPeaks();
+        //refList.clusterPeaks();
         int[] dims = activeAttr.dim.clone();
 
         for (int i = 2; i < dims.length; i++) {
@@ -1877,12 +1877,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrList) {
                 if (dataAttr != activeAttr) {
-                    PeakList movingList = PeakPicking.peakPickActive(activeChart, dataAttr, false, false, "movingList");
+                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, false, false, "movingList");
                     movingList.unLinkPeaks();
                     movingList.clearSearchDims();
                     movingList.addSearchDim(dimName1, 0.05);
                     movingList.addSearchDim(dimName2, 0.1);
-                    movingList.clusterPeaks();
+                    //movingList.clusterPeaks();
+                    System.out.println("act " + dataAttr.getFileName() + " " + movingList.size());
 
                     System.out.println("test " + movingList.getName());
                     double[] centers = refList.centerAlign(movingList, dims);
