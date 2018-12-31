@@ -1355,6 +1355,16 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return label;
 
     }
+    
+    public int[] getDims() {
+        return dim.clone();
+    }
+    
+    public void setDims(int[] dims) {
+        for (int i=0;i<dims.length;i++) {
+            setDim(i, dims[i]);
+        }
+    }
 
     public synchronized int getDim(int userDim) {
         if ((userDim >= 0) && (userDim < dim.length)) {

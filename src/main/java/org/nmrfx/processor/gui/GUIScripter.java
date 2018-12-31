@@ -323,7 +323,35 @@ public class GUIScripter {
         });
         ConsoleUtil.runOnFxThread(future);
         return future.get();
+    }
 
+    public int[] getDims(String datasetName) throws InterruptedException, ExecutionException {
+        FutureTask<int[]> future = new FutureTask(() -> {
+            PolyChart chart = getChart();
+            List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+            for (DatasetAttributes dataAttr : dataAttrs) {
+                if ((datasetName == null) || dataAttr.getFileName().equals(datasetName)) {
+                    return dataAttr.getDims();
+                }
+            }
+            return new HashMap<>();
+
+        });
+        ConsoleUtil.runOnFxThread(future);
+        return future.get();
+    }
+
+    public void setDims(String datasetName, int[] dims) throws InterruptedException, ExecutionException {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+            for (DatasetAttributes dataAttr : dataAttrs) {
+                if ((datasetName == null) || dataAttr.getFileName().equals(datasetName)) {
+                    dataAttr.setDims(dims);
+                    break;
+                }
+            }
+        });
     }
 
     public Map<String, Object> pconfig(List<String> peakListNames) throws InterruptedException, ExecutionException {

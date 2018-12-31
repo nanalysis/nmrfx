@@ -98,6 +98,17 @@ class NMRFxWindowScripting:
                 configData.update(kwargs)
             self.cmd.pconfig(peakLists,configData)
 
+    def getDims(self,dataset):
+        if dataset != None:
+            return self.cmd.getDims(dataset)
+        else:
+            return None
+
+    def setDims(self, dataset=None, dims=None):
+        if dataset != None:
+            print 'setdims',dataset
+            self.cmd.setDims(dataset,dims)
+
     def colors(self, indices, colorName, dataset=None):
         self.cmd.colorMap(dataset, indices, colorName)
 

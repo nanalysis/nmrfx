@@ -26,6 +26,7 @@ def dumpYamlWin(yamlFile):
             dset = {}
             dset['name']=dataset
             dset['config']= nw.config(dataset)
+            dset['dims'] = nw.getDims(dataset)
             sd['datasets'].append(dset)
         sd['peaklists'] = []
         peakLists = nw.peakLists() 
@@ -80,6 +81,9 @@ def loadYamlWin(yamlFile, createNewStage=True):
             if 'config' in dataset:
                 cfg = dataset['config']
                 nw.config(datasets=[name],pars=cfg)
+            if 'dims' in dataset:
+                dims = dataset['dims']
+                nw.setDims(dataset=name,dims=dims)
 
         if 'peaklists' in v:
             peakLists = v['peaklists']
