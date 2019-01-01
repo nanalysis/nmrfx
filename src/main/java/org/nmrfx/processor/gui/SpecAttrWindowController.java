@@ -479,16 +479,18 @@ public class SpecAttrWindowController implements Initializable {
     public void setChart(PolyChart chart) {
         this.chart = chart;
         // disDimCombo.valueProperty().addListener(e -> setDisDim());
-        updateDatasetTableView();
-        updatePeakListTableView();
-        clearDimActions();
-        bindToChart(chart);
-        setLimits();
-        updateDatasetView();
-        updatePeakView();
-        updateDims();
-        setupDimActions();
-        datasetTableView.getSelectionModel().clearSelection();
+        if (isShowing()) {
+            updateDatasetTableView();
+            updatePeakListTableView();
+            clearDimActions();
+            bindToChart(chart);
+            setLimits();
+            updateDatasetView();
+            updatePeakView();
+            updateDims();
+            setupDimActions();
+            datasetTableView.getSelectionModel().clearSelection();
+        }
     }
 
     void initToolBar() {

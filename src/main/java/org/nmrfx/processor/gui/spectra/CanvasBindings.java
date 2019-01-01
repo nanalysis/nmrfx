@@ -36,7 +36,16 @@ import org.nmrfx.processor.gui.PolyChart;
  */
 public class CanvasBindings {
 
-    public final static void setHandlers(FXMLController controller, Canvas canvas) {
+    final FXMLController controller;
+    final Canvas canvas;
+
+    public CanvasBindings(FXMLController controller, Canvas canvas) {
+        this.controller = controller;
+        this.canvas = canvas;
+
+    }
+
+    public final void setHandlers() {
         Node mouseNode = canvas;
         canvas.setFocusTraversable(false);
         mouseNode.setOnContextMenuRequested((ContextMenuEvent event) -> {

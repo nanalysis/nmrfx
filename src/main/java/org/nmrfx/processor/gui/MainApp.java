@@ -113,17 +113,16 @@ public class MainApp extends Application implements DatasetListener {
 
     @Override
     public void start(Stage stage) throws Exception {
-        stages.add(stage);
+        FXMLController controller = FXMLController.create(stage);
         mainApp = this;
-        Parent root = FXMLLoader.load(getClass().getResource("/fxml/NMRScene.fxml"));
         Platform.setImplicitExit(true);
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add("/styles/Styles.css");
-        hostServices = getHostServices();
-
-        stage.setTitle(appName + " " + getVersion());
-        stage.setScene(scene);
-        stage.show();
+//        Scene scene = new Scene(root);
+//        scene.getStylesheets().add("/styles/Styles.css");
+//        hostServices = getHostServices();
+//
+//        stage.setTitle(appName + " " + getVersion());
+//        stage.setScene(scene);
+//        stage.show();
 
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(appName);
