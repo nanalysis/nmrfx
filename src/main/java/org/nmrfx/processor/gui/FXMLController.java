@@ -222,9 +222,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         controllers.remove(this);
         PolyChart activeChart = PolyChart.getActiveChart();
         if (activeChart == null) {
-            System.out.println("anull");
             if (!PolyChart.CHARTS.isEmpty()) {
-                System.out.println("bnull");
                 activeChart = PolyChart.CHARTS.get(0);
             }
         }
@@ -1841,8 +1839,17 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             double ppmY0 = chart.getYAxis().getLowerBound();
             double ppmY1 = chart.getYAxis().getUpperBound();
             if (minimizeBorders) {
-                bordersGrid[4][iCol] = Math.max(bordersGrid[4][iCol], Math.abs(ppmX0 - ppmX1));
-                bordersGrid[5][iRow] = Math.max(bordersGrid[5][iRow], Math.abs(ppmY0 - ppmY1));
+                double nucScaleX = 1.0;
+                double nucScaleY = 1.0;
+                if (!chart.getDatasetAttributes().isEmpty()) {
+                    DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                    nucScaleX = dataAttr.getDataset().getNucleus(dataAttr.getDim(0)).getFreqRatio();
+                    if (dataAttr.nDim > 1) {
+                        nucScaleY = dataAttr.getDataset().getNucleus(dataAttr.getDim(1)).getFreqRatio();
+                    }
+                }
+                bordersGrid[4][iCol] = Math.max(bordersGrid[4][iCol], Math.abs(ppmX0 - ppmX1)) * nucScaleX;
+                bordersGrid[5][iRow] = Math.max(bordersGrid[5][iRow], Math.abs(ppmY0 - ppmY1)) * nucScaleY;
             } else {
                 bordersGrid[4][iCol] = 100.0;
                 bordersGrid[5][iRow] = 100.0;
