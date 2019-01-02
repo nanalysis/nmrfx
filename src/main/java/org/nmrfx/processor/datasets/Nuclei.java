@@ -213,6 +213,15 @@ public enum Nuclei {
     }
 
     /**
+     * Return the frequency ratio. Scale with H=1.0;
+     *
+     * @return the ratio
+     */
+    public double getFreqRatio() {
+        return freqRatio;
+    }
+
+    /**
      * Return Unicode string for the isotope number in superscript format
      *
      * @return Unicode superscript string
@@ -267,7 +276,8 @@ public enum Nuclei {
     }
 
     /**
-     * Return nuclei object that matches the test string. Will find matches for formats like 13C, C13 and C.
+     * Return nuclei object that matches the test string. Will find matches for
+     * formats like 13C, C13 and C.
      *
      * @param test name of nucleus to test
      * @return Nuclei object that matches the test string.
@@ -291,7 +301,8 @@ public enum Nuclei {
     }
 
     /**
-     * Return an array of nuclei that matches the array of frequencies, assuming that the highest frequency is 1H
+     * Return an array of nuclei that matches the array of frequencies, assuming
+     * that the highest frequency is 1H
      *
      * @param frequencies array of frequencies to test
      * @return array of Nuclei that match frequencies.
