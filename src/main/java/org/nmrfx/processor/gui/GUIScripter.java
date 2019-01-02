@@ -84,9 +84,9 @@ public class GUIScripter {
             return false;
         }
         ConsoleUtil.runOnFxThread(() -> {
-            List<PolyChart> charts = getController().charts;
+            List<PolyChart> charts = getActiveController().charts;
             if (charts.size() >= index) {
-                getController().setActiveChart(charts.get(index));
+                getActiveController().setActiveChart(charts.get(index));
             } else {
                 // fixme throwing from fx thread
                 throw new IllegalArgumentException("Invalid chart index");
@@ -102,9 +102,9 @@ public class GUIScripter {
         // fixme needs to be set on thread
         boolean success = true;
         ConsoleUtil.runOnFxThread(() -> {
-            Optional<PolyChart> chartOpt = getController().charts.stream().filter(c -> c.getName().equals(chartName)).findFirst();
+            Optional<PolyChart> chartOpt = getActiveController().charts.stream().filter(c -> c.getName().equals(chartName)).findFirst();
             if (chartOpt.isPresent()) {
-                getController().setActiveChart(chartOpt.get());
+                getActiveController().setActiveChart(chartOpt.get());
             }
         });
         return success;
@@ -431,7 +431,7 @@ public class GUIScripter {
         int nCharts = rows * columns;
         FractionPane.ORIENTATION orient = FractionPane.getOrientation("grid");
         ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = getController();
+            FXMLController controller = getActiveController();
             PolyChart chart = controller.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
             controller.setNCharts(nCharts);
@@ -445,7 +445,7 @@ public class GUIScripter {
     public void grid(int nCharts, String orientName) {
         FractionCanvas.ORIENTATION orient = FractionCanvas.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = getController();
+            FXMLController controller = getActiveController();
             PolyChart chart = controller.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
             controller.setNCharts(nCharts);
@@ -458,7 +458,7 @@ public class GUIScripter {
     public void grid(List<String> datasetNames, String orientName) {
         FractionCanvas.ORIENTATION orient = FractionCanvas.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = getController();
+            FXMLController controller = getActiveController();
             PolyChart chart = controller.getActiveChart();
             List<Dataset> datasets = new ArrayList<>();
             controller.setNCharts(datasetNames.size());
@@ -478,7 +478,7 @@ public class GUIScripter {
 
     public int nCharts() throws InterruptedException, ExecutionException {
         FutureTask<Integer> future = new FutureTask(() -> {
-            FXMLController controller = getController();
+            FXMLController controller = getActiveController();
             return controller.charts.size();
         });
         ConsoleUtil.runOnFxThread(future);
@@ -504,7 +504,7 @@ public class GUIScripter {
 
     public void addDataset(Dataset dataset) {
         ConsoleUtil.runOnFxThread(() -> {
-            FXMLController controller = getController();
+            FXMLController controller = getActiveController();
             controller.addDataset(dataset, true, false);
         });
     }
