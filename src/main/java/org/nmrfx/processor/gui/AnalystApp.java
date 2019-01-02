@@ -89,7 +89,7 @@ public class AnalystApp extends MainApp {
     public static MolSceneController molController;
     public static AtomBrowser atomBrowser;
     public static RNAPeakGeneratorSceneController rnaPeakGenController;
-    
+
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     Analyzer analyzer = null;
@@ -124,18 +124,11 @@ public class AnalystApp extends MainApp {
 
     @Override
     public void start(Stage stage) throws Exception {
-        System.out.println("Start Analyst App");
-        stages.add(stage);
+        FXMLController controller = FXMLController.create(stage);
         mainApp = this;
-        Parent root = FXMLLoader.load(getClass().getResource("/fxml/NMRScene.fxml"));
         Platform.setImplicitExit(true);
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add("/styles/Styles.css");
         hostServices = getHostServices();
-
         stage.setTitle(appName + " " + getVersion());
-        stage.setScene(scene);
-        stage.show();
 
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(appName);
@@ -143,7 +136,7 @@ public class AnalystApp extends MainApp {
         Parameters parameters = getParameters();
         System.out.println(parameters.getRaw());
 
-        interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *");
+        interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *\nimport os");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
         Dataset.addObserver(this);
