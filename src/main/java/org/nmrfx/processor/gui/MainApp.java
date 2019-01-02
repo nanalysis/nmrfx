@@ -116,13 +116,8 @@ public class MainApp extends Application implements DatasetListener {
         FXMLController controller = FXMLController.create(stage);
         mainApp = this;
         Platform.setImplicitExit(true);
-//        Scene scene = new Scene(root);
-//        scene.getStylesheets().add("/styles/Styles.css");
-//        hostServices = getHostServices();
-//
-//        stage.setTitle(appName + " " + getVersion());
-//        stage.setScene(scene);
-//        stage.show();
+        hostServices = getHostServices();
+        stage.setTitle(appName + " " + getVersion());
 
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(appName);
