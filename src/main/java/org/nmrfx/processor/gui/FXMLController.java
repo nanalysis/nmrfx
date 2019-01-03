@@ -1868,6 +1868,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return bordersGrid;
     }
 
+    public List<PolyChart> getCharts() {
+        return charts;
+    }
+
     public Optional<PolyChart> getChart(double x, double y) {
         Optional<PolyChart> hitChart = Optional.empty();
         // go backwards so we find the last added chart if they overlap
