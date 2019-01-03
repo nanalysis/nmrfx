@@ -57,6 +57,7 @@ import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.DatasetListener;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
+import org.nmrfx.processor.gui.tools.RunAbout;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.GUIProject;
 import org.nmrfx.project.Project;
@@ -319,6 +320,8 @@ public class MainApp extends Application implements DatasetListener {
 
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
         peakNavigatorMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakNavigator());
+        MenuItem runAboutMenuItem = new MenuItem("Show RunAbout");
+        runAboutMenuItem.setOnAction(e -> showRunAbout());
 
         MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
         linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
@@ -482,6 +485,10 @@ public class MainApp extends Application implements DatasetListener {
                 }
             }
         });
+    }
+
+    void showRunAbout() {
+        RunAbout.create();
     }
 
     public static InteractiveInterpreter getInterpreter() {
