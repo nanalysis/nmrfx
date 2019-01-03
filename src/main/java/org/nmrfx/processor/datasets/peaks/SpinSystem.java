@@ -123,6 +123,10 @@ public class SpinSystem {
         addPeak(peak, 1.0);
     }
 
+    public Peak getRootPeak() {
+        return rootPeak;
+    }
+
     public void addPeak(Peak peak, double prob) {
         PeakMatch peakMatch = new PeakMatch(peak, prob);
         peakMatches.add(peakMatch);
