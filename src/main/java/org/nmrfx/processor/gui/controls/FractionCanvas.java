@@ -23,6 +23,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.NonInvertibleTransformException;
@@ -181,6 +182,10 @@ public class FractionCanvas extends Pane {
         double height = bounds.getHeight();
         canvas.setWidth(width);
         canvas.setHeight(height);
+        GraphicsContext gC = canvas.getGraphicsContext2D();
+        gC.save();
+        gC.clearRect(0, 0, width, height);
+
         int nChildren = charts.size();
         int nRows = getRows();
         int nCols = getColumns();
