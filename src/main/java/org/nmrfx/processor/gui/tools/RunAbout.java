@@ -36,6 +36,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
@@ -81,6 +82,7 @@ public class RunAbout implements PeakListener {
     SpinSystems spinSystems = new SpinSystems();
     boolean useSpinSystem = false;
     Map<String, Object> yamlData = null;
+    Double[][] widths;
 
     private RunAbout(PeakNavigable peakNavigable) {
         this.peakNavigable = peakNavigable;
@@ -308,13 +310,8 @@ public class RunAbout implements PeakListener {
 
     public void setPeak(Peak peak) {
         currentPeak = peak;
-        peakNavigable.refreshPeakView(peak);
         if (peak != null) {
-            if (refPeakList != peak.getPeakList()) {
-                refPeakList = peak.getPeakList();
-                refPeakList.registerListener(this);
-                peakNavigable.refreshPeakListView(refPeakList);
-            }
+            drawWins(peak);
             updateDeleteStatus();
         }
         updateAtomLabels(peak);
@@ -584,15 +581,40 @@ def getType(types, row, dDir):
         int[] iDims = new int[dims.size()];
         int j = 0;
         for (String dim : dims) {
+            String dimName;
+            int sepPos = dim.indexOf("_");
+            if (sepPos != -1) {
+                dimName = dim.substring(0, sepPos);
+            } else {
+                dimName = dim;
+            }
             for (int iDim = 0; iDim < nDim; iDim++) {
                 // fixme need more sophisticated test of label match
-                if (dim.charAt(0) == dataset.getLabel(iDim).charAt(0)) {
+                if (dimName.charAt(0) == dataset.getLabel(iDim).charAt(0)) {
                     iDims[j] = iDim;
                 }
             }
             j++;
         }
         return iDims;
+    }
+
+    Double[] getDimWidth(List<String> dims) {
+        Double[] widths = new Double[dims.size()];
+        int j = 0;
+        for (String dim : dims) {
+            Double width;
+            int sepPos = dim.indexOf("_");
+            System.out.println(dim + " " + sepPos);
+            if (sepPos != -1) {
+                width = Double.parseDouble(dim.substring(sepPos + 1));
+            } else {
+                width = null;
+            }
+            widths[j] = width;
+            j++;
+        }
+        return widths;
     }
 
     void genWin(String arrangeName) {
@@ -610,6 +632,7 @@ def getType(types, row, dDir):
             List<Map<String, String>> typeList = (List<Map<String, String>>) yamlData.get("types");
             Map<String, String> datasetMap = (Map<String, String>) yamlData.get("datasets");
             Map<String, List<String>> dimLabels = (Map<String, List<String>>) yamlData.get("dims");
+            widths = new Double[nCharts][];
 
             int iChart = 0;
             for (String row : rows) {
@@ -630,14 +653,55 @@ def getType(types, row, dDir):
                                 System.out.println("nda " + chart.getDatasetAttributes().size());
                                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                                 int[] iDims = getIDims(dName.get(), dimNames);
+                                widths[iChart] = getDimWidth(dimNames);
+                                for (int id = 0; id < widths[iChart].length; id++) {
+                                    System.out.println(id + " " + widths[iChart][id]);
+                                }
                                 dataAttr.setDims(iDims);
-
                             }
                         }
                     }
                     iChart++;
                 }
             }
+            if (currentPeak != null) {
+                drawWins(currentPeak);
+            } else {
+                firstPeak(null);
+            }
+
+        }
+    }
+
+    void drawWins(Peak peak) {
+        List<PolyChart> charts = controller.getCharts();
+        int iChart = 0;
+        for (PolyChart chart : charts) {
+            if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
+                DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
+                int cDim = chart.getNDim();
+                int aDim = dataAttr.nDim;
+                Double[] ppms = new Double[cDim];
+                System.out.println("chart " + iChart + " " + chart);
+                for (int i = 0; i < aDim; i++) {
+                    PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
+                    if (peakDim != null) {
+                        ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
+                        if (widths[iChart][i] == null) {
+                            System.out.println("full " + i);
+                            chart.full(i);
+                        } else {
+                            chart.moveTo(i, ppms[i], widths[iChart][i]);
+                            System.out.println("goto " + ppms[i] + " " + widths[iChart][i]);
+                        }
+                    } else {
+                        System.out.println("fullx " + i);
+                        chart.full(i);
+                    }
+                }
+                chart.refresh();
+            }
+            iChart++;
         }
     }
 
