@@ -395,6 +395,12 @@ public class PolyChart implements PeakListener {
     }
 
     public void close() {
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                plotContent.getChildren().remove(crossHairLines[i][j]);
+            }
+        }
+
         CHARTS.remove(this);
         controller.removeChart(this);
         if (this == activeChart) {
@@ -1032,6 +1038,21 @@ public class PolyChart implements PeakListener {
             }
         }
         refresh();
+    }
+
+    public void moveTo(int axis, Double position, Double width) {
+        if (position != null) {
+            if (axis > 1) {
+                DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
+                int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, position);
+                setAxis(axis, plane, plane);
+            } else {
+                double range = width;
+                double newLower = position - range / 2;
+                double newUpper = position + range / 2;
+                setAxis(axis, newLower, newUpper);
+            }
+        }
     }
 
     public void firstPlane(int axis) {
