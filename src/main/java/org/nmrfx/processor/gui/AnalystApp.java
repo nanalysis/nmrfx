@@ -279,7 +279,7 @@ public class AnalystApp extends MainApp {
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
-        deleteItem.setOnAction(e -> FXMLController.getActiveController().removeChart());
+        deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().close());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
         syncMenuItem.setOnAction(e -> PolyChart.activeChart.syncSceneMates());
 
@@ -386,7 +386,13 @@ public class AnalystApp extends MainApp {
         atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
         assignCascade.getItems().addAll(peakAssignerItem, assignOnPick, atomBrowserMenuItem);
 
-        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem, peakAnalyzerMenuItem, multipletMenuItem, assignCascade);
+        MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
+        runAboutMenuItem.setOnAction(e -> showRunAbout());
+
+        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
+                linkPeakDimsMenuItem, peakSliderMenuItem,
+                peakAnalyzerMenuItem,
+                multipletMenuItem, assignCascade);
 
         // Window Menu
         // TBD standard window menu items
