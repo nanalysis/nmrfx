@@ -28,6 +28,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
+import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
 
@@ -225,8 +227,7 @@ public class Molecule implements Serializable, ITree {
             Method m = c.getDeclaredMethod("observableArrayList", argTypes);
             Object[] args = new Object[0];
             atoms = (List<Atom>) m.invoke(args);
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException
-                | IllegalArgumentException | InvocationTargetException ex) {
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             atoms = new ArrayList<>();
         }
         activeMol = this;
@@ -2423,6 +2424,163 @@ public class Molecule implements Serializable, ITree {
                 sp1.setOrder((float) bFactor);
             }
         }
+    }
+
+    public void calcDistanceInputMatrix(final int iStruct, double distLim, String filename, boolean useAllowed) {
+        String[] atomSources = RNAAttributes.getAtomSources();
+        ArrayList<double[]> inputs = new ArrayList<>();
+        ArrayList<String> targetNames = new ArrayList<>();
+
+        for (Atom targetAtom : atoms) {
+            Point3 targetPt = targetAtom.getPoint(iStruct);
+            String prefix = targetAtom.getEntity().getName();
+//            for (Atom sourceAtom : atoms) {
+//                if ((targetAtom != sourceAtom) && (sourceAtom.getAtomicNumber() != 1) && (sourceAtom.getEntity().getIDNum() != targetAtom.getEntity().getIDNum())) {
+//                    Point3 sourcePt = sourceAtom.getPoint(iStruct);
+//                    if ((targetPt != null) && (sourcePt != null)) {
+//                        double r = Atom.calcDistance(targetPt, sourcePt);
+//                        if (r < distLim) {
+//                            String atomName = sourceAtom.getName();
+//                            if (Arrays.asList(atomSources).contains(atomName)) {
+//                                prefix = targetAtom.getName();
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+            double[] distRow = calcDistanceInputMatrixRow(iStruct, distLim, targetAtom, useAllowed);
+            inputs.add(distRow);
+            targetNames.add(prefix + ";" + targetAtom.getFullName());
+        }
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
+
+            bw.write("#" + "\t" + "\t" + "\t");
+            for (int i = 0; i < atomSources.length; i++) {
+                bw.write(atomSources[i] + "\t");
+            }
+            bw.newLine();
+            for (int i = 0; i < inputs.size(); i++) {
+                bw.write(targetNames.get(i) + "\t");
+                for (int j = 0; j < inputs.get(i).length; j++) {
+                    bw.write(inputs.get(i)[j] + "\t");
+                }
+                bw.newLine();
+            }
+            bw.flush();
+        } catch (IOException e) {
+
+        }
+    }
+
+//    J. Phys. Chem. B 2014, 118, 12168–12175
+    public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom, boolean useAllowed) {
+        String[] atomSources = RNAAttributes.getAtomSources();
+
+        int numAtomSources = atomSources.length;
+        Map<String, Double> distances = new HashMap<>();
+        double[] distValues = new double[numAtomSources];
+
+        if (useAllowed) {
+            List allowed = getAllowedSources(iStruct, atomSources, targetAtom);
+            atomSources = new String[allowed.size()];
+            for (int i = 0; i < atomSources.length; i++) {
+                atomSources[i] = String.valueOf(allowed.get(i));
+            }
+        }
+        Point3 targetPt = targetAtom.getPoint(iStruct);
+        distances.clear();
+        for (Atom sourceAtom : atoms) {
+            String resName = sourceAtom.getEntity().getName();
+            String atomName = sourceAtom.getName();
+            boolean resAtomInSources = Arrays.asList(atomSources).contains(resName + atomName);
+            boolean atomInSources = Arrays.asList(atomSources).contains(atomName);
+            if ((targetAtom != sourceAtom) && (sourceAtom.getAtomicNumber() != 1) && ((sourceAtom.getEntity().getIDNum() != targetAtom.getEntity().getIDNum())//) {
+                    || (resAtomInSources || atomInSources))) {
+                Point3 sourcePt = sourceAtom.getPoint(iStruct);
+                if ((targetPt != null) && (sourcePt != null)) {
+                    double r = Atom.calcDistance(targetPt, sourcePt);
+                    if (r < distLim && (resAtomInSources || atomInSources)) {
+                        String key = resName + atomName;
+                        if (Arrays.asList(RNAAttributes.getAtomSources()).contains(atomName)) {
+                            key = atomName;
+                        }
+                        int keyInd = Arrays.asList(RNAAttributes.getAtomSources()).indexOf(key);
+//                                System.out.println(keyInd + " " + key);
+                        double dis3 = Math.pow(r, -3);
+                        if (r == 0) {
+                            dis3 = 0.0;
+                        }
+                        if (!distances.containsKey(key)) {
+                            distances.put(key, 0.0);
+                        }
+                        double sum = distances.get(key) + dis3;
+                        distances.put(key, sum);
+//                                System.out.println(key + ": " + distances.get(key));
+                        distValues[keyInd] = distances.get(key);
+                    }
+                }
+            }
+        }
+
+        return distValues;
+    }
+
+    public List getAllowedSources(final int iStruct, String[] atomSources, Atom targetAtom) {
+        String targetAtomName = targetAtom.getName();
+        String targetResName = targetAtom.getEntity().getName();
+        List allowedSources = Arrays.asList("AN9", "AC8", "AN7", "AC5", "AC4", "AN3", "AC2", "AN1", "AC6", "AN6",
+                "CN1", "CC2", "CO2", "CN3", "CC4", "CN4", "CC5", "CC6",
+                "GN9", "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
+                "UN1", "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6");
+        if (!targetAtomName.contains("'") && !targetAtomName.contains("P")) { // target atom name doesn't contain a prime or a P
+            int sameResStartInd = 0;
+            int sameResEndInd = 9;
+            switch (targetResName) {
+                case "C":
+                    sameResStartInd = 10;
+                    sameResEndInd = 17;
+                    break;
+                case "G":
+                    sameResStartInd = 18;
+                    sameResEndInd = 28;
+                    break;
+                case "U":
+                    sameResStartInd = 29;
+                    sameResEndInd = 36;
+                    break;
+                default:
+                    break;
+            }
+            List allowedSources1 = new ArrayList<>();
+            allowedSources1.addAll(allowedSources);
+            List sameResList = allowedSources1.subList(sameResStartInd, sameResEndInd);
+            allowedSources1.removeAll(sameResList);
+            allowedSources1.remove("C1'");
+            allowedSources = new ArrayList<>();
+            allowedSources.addAll(Arrays.asList("C1'", "C2'", "C3'", "C4'", "C5'", "P", "OP1", "OP2", "O2'", "O3'", "O4'", "O5'"));
+            allowedSources.addAll(allowedSources1);
+        } else if (targetAtomName.contains("'")) { // target atom name does contain a prime
+            String num = targetAtomName.substring(1, 2);
+            allowedSources = new ArrayList<>();
+            allowedSources.addAll(Arrays.asList(atomSources));
+            if (targetAtomName.equals("H" + num + "'") || targetAtomName.equals("H" + num + "''") || targetAtomName.equals("O" + num + "'")) {
+                allowedSources.remove("C" + num + "'");
+                allowedSources.remove("C" + String.valueOf(Integer.valueOf(num) - 1) + "'");
+                allowedSources.remove("C" + String.valueOf(Integer.valueOf(num) + 1) + "'");
+                allowedSources.remove("O" + num + "'");
+            } else if (targetAtomName.equals("C" + num + "'")) {
+                allowedSources.remove("C" + String.valueOf(Integer.valueOf(num) - 1) + "'");
+                allowedSources.remove("C" + String.valueOf(Integer.valueOf(num) + 1) + "'");
+                allowedSources.remove("O" + num + "'");
+                if (num.equals("1")) {
+                    allowedSources.remove("O4'");
+                }
+            } else if (targetAtomName.equals("HO2'")) {
+                allowedSources.remove("C2'");
+            }
+        }
+        return allowedSources;
     }
 
     // J. AM. CHEM. SOC. 2002, 124, 12654-12655
