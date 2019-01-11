@@ -555,7 +555,7 @@ public class Sequence {
         return molecule;
     }
 
-    public Molecule read(String polymerName, ArrayList<String> inputStrings, String parentDir)
+    public Molecule read(String polymerName, List<String> inputStrings, String parentDir)
             throws MoleculeIOException {
         LineNumberReader lineReader = null;
         Polymer polymer = null;
