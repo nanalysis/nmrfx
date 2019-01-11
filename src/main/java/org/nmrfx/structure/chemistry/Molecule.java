@@ -2530,9 +2530,9 @@ public class Molecule implements Serializable, ITree {
         String targetAtomName = targetAtom.getName();
         String targetResName = targetAtom.getEntity().getName();
         List allowedSources = Arrays.asList("AC8", "AN7", "AC5", "AC4", "AN3", "AC2", "AN1", "AC6", "AN6",
-                 "CC2", "CO2", "CN3", "CC4", "CN4", "CC5", "CC6",
-                 "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
-                 "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6");
+                "CC2", "CO2", "CN3", "CC4", "CN4", "CC5", "CC6",
+                "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
+                "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6");
         if (!targetAtomName.contains("'")) { // target atom name doesn't contain a prime or a P
             allowedSources = new ArrayList<>();
             allowedSources.addAll(Arrays.asList("C2'", "C3'", "C4'", "C5'", "P", "OP1", "OP2", "O2'", "O3'", "O4'", "O5'"));
@@ -3829,13 +3829,15 @@ public class Molecule implements Serializable, ITree {
                     if (!hashJ.containsKey(atomStart)) {
                         hashJ.put(atomStart, iAtom);
                         eAtomListJ.add(atomStart);
-                        mTreeJ.addNode();
+                        MNode jNode = mTreeJ.addNode();
+                        jNode.setAtom(atomStart);
                         iAtom++;
                     }
                     if (!hashJ.containsKey(atomEnd)) {
                         hashJ.put(atomEnd, iAtom);
                         eAtomListJ.add(atomEnd);
-                        mTreeJ.addNode();
+                        MNode jNode = mTreeJ.addNode();
+                        jNode.setAtom(atomEnd);
                         iAtom++;
                     }
                     Integer iNodeBegin = hashJ.get(atomStart);
@@ -3992,6 +3994,7 @@ public class Molecule implements Serializable, ITree {
                 atomList.add(atom);
 
                 MNode mNode = mTree.addNode();
+                mNode.setAtom(atom);
                 mNode.setValue(atom.canonValue);
 
                 //mNode.atom = atom;
