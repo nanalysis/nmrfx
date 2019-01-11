@@ -1,6 +1,7 @@
 package org.nmrfx.structure.chemistry.predict;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
