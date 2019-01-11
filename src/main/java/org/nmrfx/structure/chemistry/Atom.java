@@ -162,8 +162,8 @@ public class Atom implements IAtom {
 
     void setAtomTypeFromNumber() {
         /**
-         * setAtomTypeFromNumber sets a starting atomType for an initialized atom.
-         * The type set may not be the most appropriate to use later on in 
+         * setAtomTypeFromNumber sets a starting atomType for an initialized
+         * atom. The type set may not be the most appropriate to use later on in
          * calculating repulsion energies but allows for all atoms to contribute
          * to repulsive interactions.
          */
@@ -1402,6 +1402,44 @@ public class Atom implements IAtom {
         }
     }
 
+    public boolean isMethylCarbon() {
+        boolean result = false;
+        if (aNum == 6) {
+            List<Atom> atoms = getConnected();
+            int nH = 0;
+            for (Atom atom : atoms) {
+                if (atom.getAtomicNumber() == 1) {
+                    nH++;
+                }
+            }
+            result = nH == 3;
+        }
+        return result;
+    }
+
+    public Optional<Atom> getMethylCarbonPartner() {
+        Optional<Atom> result = Optional.empty();
+        if ((parent != null) && (aNum == 6)) {
+            List<Atom> partners = parent.getConnected();
+            int nMethyl = 0;
+            Atom mPartner = null;
+            for (Atom partner : partners) {
+                if (partner.getAtomicNumber() == 6) {
+                    if (partner.isMethylCarbon()) {
+                        nMethyl++;
+                        if (partner != this) {
+                            mPartner = partner;
+                        }
+                    }
+                }
+            }
+            if (nMethyl == 2) {
+                result = Optional.of(mPartner);
+            }
+        }
+        return result;
+    }
+
     public Point3 getMethylCenter(int structNum) {
         Atom parent = getParent();
         List<Atom> children = parent.getChildren();
@@ -1455,7 +1493,6 @@ public class Atom implements IAtom {
     }
 
     public Optional<Atom> getMethylenePartner() {
-
         Optional<Atom> result = Optional.empty();
         if ((parent != null) && (aNum == 1)) {
             List<Atom> partners = parent.getConnected();
