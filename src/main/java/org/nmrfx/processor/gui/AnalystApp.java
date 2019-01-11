@@ -94,10 +94,6 @@ public class AnalystApp extends MainApp {
     CheckMenuItem assignOnPick;
     Analyzer analyzer = null;
 
-    public static boolean isAnalyst() {
-        return true;
-    }
-
     public static void closeAll() {
         Stage mainStage = getMainStage();
         for (Stage stage : stages) {
@@ -124,6 +120,7 @@ public class AnalystApp extends MainApp {
 
     @Override
     public void start(Stage stage) throws Exception {
+        MainApp.setAnalyst();
         FXMLController controller = FXMLController.create(stage);
         mainApp = this;
         Platform.setImplicitExit(true);
