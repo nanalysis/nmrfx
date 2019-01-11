@@ -2182,7 +2182,7 @@ public class PeakList {
     }
 
     public void quantifyPeaks(String mode) {
-        if (peaks.isEmpty()) {
+        if ((peaks == null) || peaks.isEmpty()) {
             return;
         }
         Dataset dataset = Dataset.getDataset(fileName);
