@@ -2500,13 +2500,13 @@ public class Molecule implements Serializable, ITree {
                 Point3 sourcePt = sourceAtom.getPoint(iStruct);
                 if ((targetPt != null) && (sourcePt != null)) {
                     double r = Atom.calcDistance(targetPt, sourcePt);
-                    if (r < distLim && (resAtomInSources || atomInSources)) {
-                        String key = resName + atomName;
-                        if (Arrays.asList(RNAAttributes.getAtomSources()).contains(atomName)) {
-                            key = atomName;
-                        }
-                        int keyInd = Arrays.asList(RNAAttributes.getAtomSources()).indexOf(key);
+                    String key = resName + atomName;
+                    if (Arrays.asList(RNAAttributes.getAtomSources()).contains(atomName)) {
+                        key = atomName;
+                    }
+                    int keyInd = Arrays.asList(RNAAttributes.getAtomSources()).indexOf(key);
 //                                System.out.println(keyInd + " " + key);
+                    if (r < distLim && (keyInd != -1)) {
                         double dis3 = Math.pow(r, -3);
                         if (r == 0) {
                             dis3 = 0.0;
@@ -2529,37 +2529,14 @@ public class Molecule implements Serializable, ITree {
     public List getAllowedSources(final int iStruct, String[] atomSources, Atom targetAtom) {
         String targetAtomName = targetAtom.getName();
         String targetResName = targetAtom.getEntity().getName();
-        List allowedSources = Arrays.asList("AN9", "AC8", "AN7", "AC5", "AC4", "AN3", "AC2", "AN1", "AC6", "AN6",
-                "CN1", "CC2", "CO2", "CN3", "CC4", "CN4", "CC5", "CC6",
-                "GN9", "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
-                "UN1", "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6");
-        if (!targetAtomName.contains("'") && !targetAtomName.contains("P")) { // target atom name doesn't contain a prime or a P
-            int sameResStartInd = 0;
-            int sameResEndInd = 9;
-            switch (targetResName) {
-                case "C":
-                    sameResStartInd = 10;
-                    sameResEndInd = 17;
-                    break;
-                case "G":
-                    sameResStartInd = 18;
-                    sameResEndInd = 28;
-                    break;
-                case "U":
-                    sameResStartInd = 29;
-                    sameResEndInd = 36;
-                    break;
-                default:
-                    break;
-            }
-            List allowedSources1 = new ArrayList<>();
-            allowedSources1.addAll(allowedSources);
-            List sameResList = allowedSources1.subList(sameResStartInd, sameResEndInd);
-            allowedSources1.removeAll(sameResList);
-            allowedSources1.remove("C1'");
+        List allowedSources = Arrays.asList("AC8", "AN7", "AC5", "AC4", "AN3", "AC2", "AN1", "AC6", "AN6",
+                 "CC2", "CO2", "CN3", "CC4", "CN4", "CC5", "CC6",
+                 "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
+                 "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6");
+        if (!targetAtomName.contains("'")) { // target atom name doesn't contain a prime or a P
             allowedSources = new ArrayList<>();
-            allowedSources.addAll(Arrays.asList("C1'", "C2'", "C3'", "C4'", "C5'", "P", "OP1", "OP2", "O2'", "O3'", "O4'", "O5'"));
-            allowedSources.addAll(allowedSources1);
+            allowedSources.addAll(Arrays.asList("C2'", "C3'", "C4'", "C5'", "P", "OP1", "OP2", "O2'", "O3'", "O4'", "O5'"));
+            //allowedSources.addAll(allowedSources1);
         } else if (targetAtomName.contains("'")) { // target atom name does contain a prime
             String num = targetAtomName.substring(1, 2);
             allowedSources = new ArrayList<>();
@@ -2576,8 +2553,6 @@ public class Molecule implements Serializable, ITree {
                 if (num.equals("1")) {
                     allowedSources.remove("O4'");
                 }
-            } else if (targetAtomName.equals("HO2'")) {
-                allowedSources.remove("C2'");
             }
         }
         return allowedSources;
