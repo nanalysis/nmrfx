@@ -242,6 +242,7 @@ public class PDBFile {
         }
     }
 
+// fixme change capping atom names to new PDB standard H,H2  O,OXT,HXT
     public static void capPolymer(Polymer polymer) {
         Residue residue = polymer.firstResidue;
         List<Atom> atoms = residue.getAtoms();
