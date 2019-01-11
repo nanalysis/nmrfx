@@ -15,11 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.utilities;
 
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.nmrfx.structure.chemistry.Atom;
 
 /**
  *
@@ -27,9 +28,36 @@ import java.util.regex.Pattern;
  */
 public class Util {
 
+    public static final boolean nefMatch(Atom atom, String pat) {
+        boolean result = nefMatch(atom.name.toLowerCase(), pat);
+        if (result && (pat.endsWith("x") || pat.endsWith("y"))) {
+            Optional<Atom> partner = Optional.empty();
+            Atom atom1 = atom;
+            if (atom.isMethylene()) {
+                partner = atom.getMethylenePartner();
+            } else if ((atom.getAtomicNumber() == 1) && (atom.parent != null) && atom.parent.isMethylCarbon()) {
+                atom1 = atom.parent;
+                partner = atom1.getMethylCarbonPartner();
+            }
+            if (partner.isPresent()) {
+                Atom partnerAtom = partner.get();
+                boolean lessThan = atom1.getIndex() < partnerAtom.getIndex();
+                result = pat.endsWith("x") ? lessThan : !lessThan;
+            } else {
+                result = false;
+            }
+        }
+        return result;
+    }
+
     public static final boolean nefMatch(String str, String pat) {
         boolean result = false;
         int percentIndex = pat.indexOf('%');
+        if (percentIndex == -1) {
+            if (pat.endsWith("x") || pat.endsWith("y")) {
+                percentIndex = pat.length() - 1;
+            }
+        }
         int singleWildIndex = pat.indexOf('#');
         int wildIndex = pat.indexOf('*');
         String rePat = null;
@@ -37,11 +65,11 @@ public class Util {
             rePat = pat.substring(0, percentIndex) + "[0-9]+";
         } else if (wildIndex != -1) {
             rePat = pat.substring(0, wildIndex) + "\\S+";
-        } else if (singleWildIndex != -1){
+        } else if (singleWildIndex != -1) {
             rePat = pat.substring(0, singleWildIndex) + "[0-9]+";
         }
         if (rePat != null) {
-            Pattern rePattern = Pattern.compile(rePat);
+            Pattern rePattern = Pattern.compile(rePat, Pattern.CASE_INSENSITIVE);
             Matcher matcher = rePattern.matcher(str);
             if (matcher.matches()) {
                 result = true;
@@ -57,8 +85,9 @@ public class Util {
      *
      * stringMatch --
      *
-     * See if a particular string matches a particular pattern. The matching operation permits the following special
-     * characters in the pattern: *?\[] (see the manual entry for details on what these mean).
+     * See if a particular string matches a particular pattern. The matching
+     * operation permits the following special characters in the pattern: *?\[]
+     * (see the manual entry for details on what these mean).
      *
      * Results: True if the string matches with the pattern.
      *

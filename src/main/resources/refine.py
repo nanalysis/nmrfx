@@ -7,6 +7,7 @@ import re
 import xplor
 import molio
 
+from org.nmrfx.structure.chemistry.energy import EnergyCoords
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import Atom
 from org.nmrfx.structure.chemistry.energy import EnergyLists
@@ -294,10 +295,12 @@ def createStrictDict(initDict, type):
 
 class refine:
     def __init__(self):
+	self.NEFfile = ''
+        self.energyLists = None
+        self.dihedrals = None
         self.cyanaAngleFiles = []
         self.xplorAngleFiles = []
         self.nvAngleFiles = []
-        self.nmrfxDistanceFiles = {}
 	self.cyanaDistanceFiles = {}
         self.xplorDistanceFiles = {}
         self.suiteAngleFiles = []
@@ -481,6 +484,7 @@ class refine:
                 startEntName, startAtom = (entName1, startAtom1)
                 endEntName, endAtom = (entName2, startAtom2)
 
+	    # XXX: what is 'n'?
             n = linkerDict['n'] if 'n' in linkerDict else 6
             startEnt = self.molecule.getEntity(startEntName)
             endEnt = self.molecule.getEntity(endEntName)
@@ -501,7 +505,7 @@ class refine:
                 polymerNames = [polymer.getName() for polymer in polymers]
                 if len(polymers) != 1 and "pName" not in bondDict:
                     raise ValueError("Multiple polymers in structure but no specification for which to by made cyclic")
-                    return []
+                    #return []
                 polymer = None
                 if "pName" in bondDict:
                     if bondDict["pName"] in polymerNames:
@@ -877,11 +881,25 @@ class refine:
             molio.readPDB(pdbFile)
             residues = None
         else:
+	    # Checks if NEF file is specified to process it. 
+	    # Even if NEF file is specified, this control flow
+	    # still checks whether 'molecule' data block is specified
+            # in the YAML file.
+	    if 'nef' in data:
+		fileName = data['nef']
+		self.NEFReader(fileName)
+
+	    # Checks if 'molecule' data block is specified.
             if 'molecule' in data:
                 molData = data['molecule']
+		# Checks if a residue library is included in 'molecule' code block
+		# for information about different entities.
                 self.reslib = molData['reslib'] if 'reslib' in molData else None
                 if self.reslib:
                     PDBFile.setLocalResLibDir(self.reslib)
+
+		# Different entities can be specified. Via sequence files
+		# or input residues.
                 if 'entities' in molData:
                     molList = molData['entities']
                     molList = prioritizePolymers(molList)
@@ -890,14 +908,15 @@ class refine:
                         self.readMoleculeDict(molDict)
                 else:
                     #Only one entity in the molecule
-                    #residues = ",".join(molDict['residues'].split()) if 'residues' in molData else None
                     residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
                     self.readMoleculeDict(molData)
+
+	print("printing data : {}".format(data))
         self.molecule = Molecule.getActive()
         self.molName = self.molecule.getName()
-
+	#print("self.molecule = {}".format(self.molecule.getEntities()[0].getName()))
+	#exit()
         treeDict = data['tree'] if 'tree' in data else None
-
         linkerList = molData['link'] if 'link' in molData else None
 
 
@@ -1110,6 +1129,19 @@ class refine:
                 except:
                     print "err",fullAtoms
                     pass
+    def NEFReader(self, fileName):
+        from java.io import FileReader
+        from java.io import BufferedReader
+        from org.nmrfx.processor.star import STAR3
+        from org.nmrfx.structure.chemistry.io import NMRStarReader
+        from org.nmrfx.structure.chemistry.io import NMRStarWriter
+        fileReader = FileReader(fileName)
+        bfR = BufferedReader(fileReader)
+        star = STAR3(bfR,'star3')
+        star.scanFile()
+        reader = NMRStarReader(star)
+        self.dihedrals = reader.processNEF()
+        self.energyLists = self.dihedrals.energyList
 
     def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
 	"""
@@ -1787,8 +1819,6 @@ class refine:
             xplorFile = xplor.XPLOR(file)
             resNames = self.getResNameLookUpDict()
             xplorFile.readXPLORAngleConstraints(self.dihedral, resNames)
-	for file in self.nmrfxDistanceFiles.keys():
-	    self.readNMRFxDistanceConstraints(file, keepSetting = self.nmrfxDistanceFiles[file])
         for file in self.nvAngleFiles:
             self.loadDihedralsFromFile(file)
 
@@ -1949,7 +1979,7 @@ class refine:
         self.seed = seed
         self.eTimeStart = time.time()
         self.useDegrees = False
-        self.setupEnergy(self.molName,usePseudo=usePseudo,useShifts=useShifts)
+        self.setupEnergy(self.molName,self.energyLists, usePseudo=usePseudo,useShifts=useShifts)
         self.loadDihedrals(self.angleStrings)
         self.addRingClosures() # Broken bonds are stored in molecule after tree generation. This is to fix broken bonds
         self.setForces({'repel':0.5,'dis':1,'dih':5})
@@ -2008,6 +2038,7 @@ class refine:
             self.gmin(nsteps=steps,tolerance=1.0e-6)
         if self.eFileRoot != None:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
+	ec.dumpRestraints()
 
     def anneal(self,dOpt=None,stage1={},stage2={}):
         from anneal import runStage

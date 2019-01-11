@@ -202,7 +202,8 @@ class XPLOR:
 	try:
             validAtomSelections = AngleBoundary.allowRotation(atomsSels)
 	except NullPointerException:
-	    errMsg = "Invalid list of atom selections passed to 'AngleBoundary.allowRotation(...)': {}".format(atomsSels)
+	    errMsg = "Couldn't read list of atom selections passed to 'AngleBoundary.allowRotation(...)': {}".format(atomsSels)
+	    errMsg += "\nEvaluate the atom selections and ensure entity (if specified), residue, and atom name are properly being read."
 	    raise ValueError(errMsg)
 	except IllegalArgumentException as IAE:
 	    errMsg = IAE.getMessage()
