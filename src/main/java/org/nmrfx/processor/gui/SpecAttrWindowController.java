@@ -344,7 +344,6 @@ public class SpecAttrWindowController implements Initializable {
 
     public static SpecAttrWindowController create() {
         FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/SpecAttrScene.fxml"));
-        SpecAttrWindowController controller = null;
         Stage stage = new Stage(StageStyle.DECORATED);
         try {
             Pane pane = (Pane) loader.load();
@@ -352,18 +351,18 @@ public class SpecAttrWindowController implements Initializable {
             stage.setScene(scene);
             scene.getStylesheets().add("/styles/Styles.css");
 
-            controller = loader.<SpecAttrWindowController>getController();
+            SpecAttrWindowController controller = loader.<SpecAttrWindowController>getController();
             controller.stage = stage;
             stage.setTitle("Spectrum Attributes");
             stage.setAlwaysOnTop(true);
+            stage.setOnShown(e -> controller.update());
             stage.show();
+            return controller;
         } catch (IOException ioE) {
             ioE.printStackTrace();
             System.out.println(ioE.getMessage());
+            return null;
         }
-
-        return controller;
-
     }
 
     public static SpecAttrWindowController createPane() {
@@ -479,7 +478,13 @@ public class SpecAttrWindowController implements Initializable {
     public void setChart(PolyChart chart) {
         this.chart = chart;
         // disDimCombo.valueProperty().addListener(e -> setDisDim());
+        update();
+    }
+
+    public void update() {
         if (isShowing()) {
+            FXMLController fxmlController = FXMLController.getActiveController();
+            chart = fxmlController.getActiveChart();
             updateDatasetTableView();
             updatePeakListTableView();
             clearDimActions();

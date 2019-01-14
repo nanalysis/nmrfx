@@ -642,7 +642,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 stage.setResizable(true);
                 stage.toFront();
             }
-            specAttrWindowController.setChart(getActiveChart());
         } else {
             System.out.println("Coudn't make controller");
         }
@@ -1262,6 +1261,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void setActiveController() {
         activeController = this;
+        if (specAttrWindowController != null) {
+            specAttrWindowController.update();
+        }
     }
 
     public static FXMLController getActiveController() {
