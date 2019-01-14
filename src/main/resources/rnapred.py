@@ -486,4 +486,70 @@ def predictRCShifts(mol, structureNum=0, refShifts=None, ringRatio=None, ringTyp
         shift.append(ppm)
         shifts.append(shift)
     return shifts
+def predictDistShifts(mol, structureNum=0, refShifts=None, alphas=None):
+        defaultRefShifts = {
+            "A.H2":7.87,"A.H8":8.24,
+            "G.H8":7.84,"C.H5":5.90,
+            "U.H5":5.86,"C.H6":7.96,"U.H6":8.03,
+            "A.H1'":5.45,"G.H1'":5.37,"C.H1'":5.48,
+            "U.H1'":5.52,"A.H2'":4.49,"G.H2'":4.49,
+            "C.H2'":4.49,"U.H2'":4.49,"A.H3'":4.56,
+            "G.H3'":4.56,"C.H3'":4.56,"U.H3'":4.56,
+            "A.H4'":4.37,"G.H4'":4.37,"C.H4'":4.37,
+            "U.H4'":4.37,"A.H5'":4.36,"G.H5'":4.36,
+            "C.H5'":4.36,"U.H5'":4.36,"A.H5''":4.11,
+            "G.H5''":4.11,"C.H5''":4.11,"U.H5''":4.1}
+
+        if refShifts == None:
+            refShifts = defaultRefShifts
+        if alphas == None:
+            alphas = [0.54 for i in range(len(refShifts))]
+        filterString = ""
+        inFilter = {}
+        for atomId in refShifts:
+            dotIndex =  atomId.find(".")
+            if dotIndex != -1:
+                atomId = atomId[2:]
+            if atomId in inFilter:
+                continue
+            inFilter[atomId] = True
+            if filterString == "":
+                filterString = "*."+atomId
+            else:
+                filterString += ","+atomId
+
+        molFilter = MolFilter(filterString)
+        spatialSets = Molecule.matchAtoms(molFilter)
+
+        shifts = []
+        rmax =15.0
+        for sp in spatialSets:
+            name = sp.atom.getShortName()
+            aName = sp.atom.getName()
+            nucName = sp.atom.getEntity().getName()
+
+            if (nucName+"."+aName in refShifts):
+                basePPM = refShifts[nucName+"."+aName]
+            else: continue
+            if isinstance(structureNum,(list,tuple)):
+                ringPPM = 0.0
+                for iStruct in structureNum:
+                    distances = mol.calcDistanceInputMatrixRow(iStruct, rmax, sp.atom)
+                    #print 'alphas =', len(alphas)
+                    #print 'distances =', len(distances)
+                    distPPM = sum([alphas[i] * distances[i] for i in range(len(alphas))])
+            else:
+                distances = mol.calcDistanceInputMatrixRow(iStruct, rmax, sp.atom)
+                distPPM = sum([alphas[i] * distances[i] for i in range(len(alphas))])
+
+            ppm = basePPM+distPPM
+
+            atom = Molecule.getAtomByName(name)
+            atom.setRefPPM(ppm)
+
+            shift = []
+            shift.append(str(name))
+            shift.append(ppm)
+            shifts.append(shift)
+        return shifts
 
