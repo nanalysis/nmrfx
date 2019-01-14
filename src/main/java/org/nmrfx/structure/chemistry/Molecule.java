@@ -3824,13 +3824,15 @@ public class Molecule implements Serializable, ITree {
                     if (!hashJ.containsKey(atomStart)) {
                         hashJ.put(atomStart, iAtom);
                         eAtomListJ.add(atomStart);
-                        mTreeJ.addNode();
+                        MNode jNode = mTreeJ.addNode();
+                        jNode.setAtom(atomStart);
                         iAtom++;
                     }
                     if (!hashJ.containsKey(atomEnd)) {
                         hashJ.put(atomEnd, iAtom);
                         eAtomListJ.add(atomEnd);
-                        mTreeJ.addNode();
+                        MNode jNode = mTreeJ.addNode();
+                        jNode.setAtom(atomEnd);
                         iAtom++;
                     }
                     Integer iNodeBegin = hashJ.get(atomStart);
@@ -3988,6 +3990,7 @@ public class Molecule implements Serializable, ITree {
 
                 MNode mNode = mTree.addNode();
                 mNode.setValue(atom.canonValue);
+                mNode.setAtom(atom);
 
                 //mNode.atom = atom;
                 i++;
