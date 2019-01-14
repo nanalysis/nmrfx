@@ -2463,7 +2463,6 @@ public class Molecule implements Serializable, ITree {
     public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom) {
         List origAtomSources = RNAAttributes.getAtomSources();
         int numAtomSources = origAtomSources.size();
-        Map<String, Double> distances = new HashMap<>();
         double[] distValues = new double[numAtomSources];
 
         List atomSources = new ArrayList(origAtomSources);
@@ -2483,7 +2482,6 @@ public class Molecule implements Serializable, ITree {
         }
 
         Point3 targetPt = targetAtom.getPoint(iStruct);
-        distances.clear();
         for (Atom sourceAtom : atoms) {
             String resName = sourceAtom.getEntity().getName();
             String atomName = sourceAtom.getName();
@@ -2500,18 +2498,11 @@ public class Molecule implements Serializable, ITree {
                     double r = Atom.calcDistance(targetPt, sourcePt);
                     if (r < distLim && origAtomSources.contains(key)) {
                         int keyInd = origAtomSources.indexOf(key);
-//                        System.out.println(keyInd + " " + key);
                         double dis3 = Math.pow(r, -3);
                         if (r == 0) {
                             dis3 = 0.0;
                         }
-                        if (!distances.containsKey(key)) {
-                            distances.put(key, 0.0);
-                        }
-                        double sum = distances.get(key) + dis3;
-                        distances.put(key, sum);
-//                        System.out.println(key + ": " + distances.get(key));
-                        distValues[keyInd] = distances.get(key);
+                        distValues[keyInd] += dis3;
                     }
                 }
             }
