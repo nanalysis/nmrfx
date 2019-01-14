@@ -88,6 +88,7 @@ public class Molecule implements Serializable, ITree {
     public static final Map compoundMap = new HashMap();
     public Map<Atom, Map<Atom, Double>> ringClosures;
     List<List<Atom>> atomTree = null;
+    HashMap<String, List> allowedSourcesMap = new HashMap<>();
 
     static {
         labelTypes.put(Integer.valueOf(LABEL_NONE), "none");
@@ -2426,29 +2427,14 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
-    public void calcDistanceInputMatrix(final int iStruct, double distLim, String filename, boolean useAllowed) {
-        String[] atomSources = RNAAttributes.getAtomSources();
+    public void calcDistanceInputMatrix(final int iStruct, double distLim, String filename) {
+        List atomSources = RNAAttributes.getAtomSources();
         ArrayList<double[]> inputs = new ArrayList<>();
         ArrayList<String> targetNames = new ArrayList<>();
 
         for (Atom targetAtom : atoms) {
-            Point3 targetPt = targetAtom.getPoint(iStruct);
             String prefix = targetAtom.getEntity().getName();
-//            for (Atom sourceAtom : atoms) {
-//                if ((targetAtom != sourceAtom) && (sourceAtom.getAtomicNumber() != 1) && (sourceAtom.getEntity().getIDNum() != targetAtom.getEntity().getIDNum())) {
-//                    Point3 sourcePt = sourceAtom.getPoint(iStruct);
-//                    if ((targetPt != null) && (sourcePt != null)) {
-//                        double r = Atom.calcDistance(targetPt, sourcePt);
-//                        if (r < distLim) {
-//                            String atomName = sourceAtom.getName();
-//                            if (Arrays.asList(atomSources).contains(atomName)) {
-//                                prefix = targetAtom.getName();
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-            double[] distRow = calcDistanceInputMatrixRow(iStruct, distLim, targetAtom, useAllowed);
+            double[] distRow = calcDistanceInputMatrixRow(iStruct, distLim, targetAtom);
             inputs.add(distRow);
             targetNames.add(prefix + ";" + targetAtom.getFullName());
         }
@@ -2456,8 +2442,8 @@ public class Molecule implements Serializable, ITree {
             BufferedWriter bw = new BufferedWriter(new FileWriter(filename));
 
             bw.write("#" + "\t" + "\t" + "\t");
-            for (int i = 0; i < atomSources.length; i++) {
-                bw.write(atomSources[i] + "\t");
+            for (int i = 0; i < atomSources.size(); i++) {
+                bw.write(atomSources.get(i) + "\t");
             }
             bw.newLine();
             for (int i = 0; i < inputs.size(); i++) {
@@ -2474,39 +2460,47 @@ public class Molecule implements Serializable, ITree {
     }
 
 //    J. Phys. Chem. B 2014, 118, 12168–12175
-    public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom, boolean useAllowed) {
-        String[] atomSources = RNAAttributes.getAtomSources();
-
-        int numAtomSources = atomSources.length;
+    public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom) {
+        List origAtomSources = RNAAttributes.getAtomSources();
+        int numAtomSources = origAtomSources.size();
         Map<String, Double> distances = new HashMap<>();
         double[] distValues = new double[numAtomSources];
 
-        if (useAllowed) {
-            List allowed = getAllowedSources(iStruct, atomSources, targetAtom);
-            atomSources = new String[allowed.size()];
-            for (int i = 0; i < atomSources.length; i++) {
-                atomSources[i] = String.valueOf(allowed.get(i));
-            }
+        List atomSources = new ArrayList(origAtomSources);
+        String targetResName = targetAtom.getEntity().getName();
+        String targetAtomName = targetAtom.getName();
+        String targetKey = targetResName + targetAtomName;
+        if (targetAtomName.contains("'")) {
+            targetKey = targetAtomName;
         }
+        if (!allowedSourcesMap.containsKey(targetKey)) {
+            allowedSourcesMap.put(targetKey, getAllowedSources(iStruct, origAtomSources, targetAtom));
+//                System.out.println(allowedSourcesMap.keySet());
+        }
+        if (allowedSourcesMap.containsKey(targetKey)) {
+            atomSources = allowedSourcesMap.get(targetKey);//getAllowedSources(iStruct, origAtomSources, targetAtom);
+//                System.out.println(targetKey + ": " + atomSources);
+        }
+
         Point3 targetPt = targetAtom.getPoint(iStruct);
         distances.clear();
         for (Atom sourceAtom : atoms) {
             String resName = sourceAtom.getEntity().getName();
             String atomName = sourceAtom.getName();
-            boolean resAtomInSources = Arrays.asList(atomSources).contains(resName + atomName);
-            boolean atomInSources = Arrays.asList(atomSources).contains(atomName);
-            if ((targetAtom != sourceAtom) && (sourceAtom.getAtomicNumber() != 1) && ((sourceAtom.getEntity().getIDNum() != targetAtom.getEntity().getIDNum())//) {
-                    || (resAtomInSources || atomInSources))) {
+            String key = resName + atomName;
+            if (atomName.contains("'") || atomName.contains("P")) {
+                key = atomName;
+            }
+            int sourceResID = sourceAtom.getEntity().getIDNum();
+            int targetResID = targetAtom.getEntity().getIDNum();
+            if ((targetAtom != sourceAtom) && (sourceAtom.getAtomicNumber() != 1)
+                    && ((sourceResID != targetResID) || atomSources.contains(key))) {
                 Point3 sourcePt = sourceAtom.getPoint(iStruct);
                 if ((targetPt != null) && (sourcePt != null)) {
                     double r = Atom.calcDistance(targetPt, sourcePt);
-                    String key = resName + atomName;
-                    if (Arrays.asList(RNAAttributes.getAtomSources()).contains(atomName)) {
-                        key = atomName;
-                    }
-                    int keyInd = Arrays.asList(RNAAttributes.getAtomSources()).indexOf(key);
-//                                System.out.println(keyInd + " " + key);
-                    if (r < distLim && (keyInd != -1)) {
+                    if (r < distLim && origAtomSources.contains(key)) {
+                        int keyInd = origAtomSources.indexOf(key);
+//                        System.out.println(keyInd + " " + key);
                         double dis3 = Math.pow(r, -3);
                         if (r == 0) {
                             dis3 = 0.0;
@@ -2516,42 +2510,43 @@ public class Molecule implements Serializable, ITree {
                         }
                         double sum = distances.get(key) + dis3;
                         distances.put(key, sum);
-//                                System.out.println(key + ": " + distances.get(key));
+//                        System.out.println(key + ": " + distances.get(key));
                         distValues[keyInd] = distances.get(key);
                     }
                 }
             }
         }
-
         return distValues;
     }
 
-    public List getAllowedSources(final int iStruct, String[] atomSources, Atom targetAtom) {
+    public List getAllowedSources(final int iStruct, List atomSources, Atom targetAtom) {
         String targetAtomName = targetAtom.getName();
         String targetResName = targetAtom.getEntity().getName();
-        List allowedSources = Arrays.asList("AC8", "AN7", "AC5", "AC4", "AN3", "AC2", "AN1", "AC6", "AN6",
-                "CC2", "CO2", "CN3", "CC4", "CN4", "CC5", "CC6",
-                "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
-                "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6");
-        if (!targetAtomName.contains("'")) { // target atom name doesn't contain a prime or a P
-            allowedSources = new ArrayList<>();
-            allowedSources.addAll(Arrays.asList("C2'", "C3'", "C4'", "C5'", "P", "OP1", "OP2", "O2'", "O3'", "O4'", "O5'"));
-            //allowedSources.addAll(allowedSources1);
+        List allowedSources = new ArrayList<>();
+        allowedSources.addAll(atomSources);
+        List allowedRes = Arrays.asList("A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "C", "C", "C", "C", "C", "C", "C", "C",
+                "G", "G", "G", "G", "G", "G", "G", "G", "G", "G", "G", "U", "U", "U", "U", "U", "U", "U", "U");
+        if (!targetAtomName.contains("'")) { // target atom name doesn't contain a prime
+            int sameResStartInd = allowedRes.indexOf(targetResName) + 12; //0;
+            int sameResEndInd = allowedRes.lastIndexOf(targetResName) + 1 + 12; //10;
+            List sameResList = atomSources.subList(sameResStartInd, sameResEndInd);
+            allowedSources.removeAll(sameResList);
+            if (((targetResName.equals("C") || targetResName.equals("U")) && targetAtomName.equals("N1")) || targetAtomName.equals("N9")) {
+                allowedSources.removeAll(Arrays.asList("O4'", "C1'", "C2'"));
+            } else if (((targetResName.equals("C") || targetResName.equals("U")) && (targetAtomName.equals("C2") || targetAtomName.equals("C6")))
+                    || ((targetResName.equals("A") || targetResName.equals("G")) && (targetAtomName.equals("C4") || targetAtomName.equals("C8")))
+                    || targetAtomName.equals("H6") || targetAtomName.equals("H8")) {
+                allowedSources.remove("C1'");
+            }
         } else if (targetAtomName.contains("'")) { // target atom name does contain a prime
             String num = targetAtomName.substring(1, 2);
-            allowedSources = new ArrayList<>();
-            allowedSources.addAll(Arrays.asList(atomSources));
-            if (targetAtomName.equals("H" + num + "'") || targetAtomName.equals("H" + num + "''") || targetAtomName.equals("O" + num + "'")) {
-                allowedSources.remove("C" + num + "'");
-                allowedSources.remove("C" + String.valueOf(Integer.valueOf(num) - 1) + "'");
-                allowedSources.remove("C" + String.valueOf(Integer.valueOf(num) + 1) + "'");
-                allowedSources.remove("O" + num + "'");
-            } else if (targetAtomName.equals("C" + num + "'")) {
-                allowedSources.remove("C" + String.valueOf(Integer.valueOf(num) - 1) + "'");
-                allowedSources.remove("C" + String.valueOf(Integer.valueOf(num) + 1) + "'");
-                allowedSources.remove("O" + num + "'");
+            if (targetAtomName.equals("C" + num + "'") || targetAtomName.equals("H" + num + "'") || targetAtomName.equals("H" + num + "''")) {
+                allowedSources.removeAll(Arrays.asList("C" + num + "'", "O" + num + "'", "C" + String.valueOf(Integer.valueOf(num) - 1) + "'",
+                        "C" + String.valueOf(Integer.valueOf(num) + 1) + "'"));
                 if (num.equals("1")) {
-                    allowedSources.remove("O4'");
+                    allowedSources.removeAll(Arrays.asList("O4'", "AN9", "AC4", "AC8", "GN9", "GC4", "GC8", "CN1", "CC2", "CC6", "UN1", "UC2", "UC6"));
+                } else if (num.equals("2")) {
+                    allowedSources.removeAll(Arrays.asList("AN9", "GN9", "CN1", "UN1"));
                 }
             }
         }
@@ -3829,15 +3824,13 @@ public class Molecule implements Serializable, ITree {
                     if (!hashJ.containsKey(atomStart)) {
                         hashJ.put(atomStart, iAtom);
                         eAtomListJ.add(atomStart);
-                        MNode jNode = mTreeJ.addNode();
-                        jNode.setAtom(atomStart);
+                        mTreeJ.addNode();
                         iAtom++;
                     }
                     if (!hashJ.containsKey(atomEnd)) {
                         hashJ.put(atomEnd, iAtom);
                         eAtomListJ.add(atomEnd);
-                        MNode jNode = mTreeJ.addNode();
-                        jNode.setAtom(atomEnd);
+                        mTreeJ.addNode();
                         iAtom++;
                     }
                     Integer iNodeBegin = hashJ.get(atomStart);
@@ -3994,7 +3987,6 @@ public class Molecule implements Serializable, ITree {
                 atomList.add(atom);
 
                 MNode mNode = mTree.addNode();
-                mNode.setAtom(atom);
                 mNode.setValue(atom.canonValue);
 
                 //mNode.atom = atom;
