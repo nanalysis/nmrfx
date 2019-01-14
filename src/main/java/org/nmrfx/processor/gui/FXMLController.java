@@ -635,7 +635,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
         }
         if (specAttrWindowController != null) {
-            specAttrWindowController.setChart(getActiveChart());
             if (popOverMode) {
                 showAttributesPopOver(event);
             } else {
@@ -643,6 +642,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 stage.setResizable(true);
                 stage.toFront();
             }
+            specAttrWindowController.setChart(getActiveChart());
         } else {
             System.out.println("Coudn't make controller");
         }
