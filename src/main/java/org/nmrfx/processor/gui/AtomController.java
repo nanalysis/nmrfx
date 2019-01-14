@@ -524,14 +524,16 @@ public class AtomController implements Initializable, FreezeListener {
     void readCoordinates() {
         FileChooser fileChooser = new FileChooser();
         List<File> files = fileChooser.showOpenMultipleDialog(null);
-        PDBFile pdbFile = new PDBFile();
-        try {
-            pdbFile.readMultipleCoordinateFiles(files, true);
-        } catch (MoleculeIOException | IOException ex) {
-            ExceptionDialog dialog = new ExceptionDialog(ex);
-            dialog.showAndWait();
+        if ((files != null) && !files.isEmpty()) {
+            PDBFile pdbFile = new PDBFile();
+            try {
+                pdbFile.readMultipleCoordinateFiles(files, true);
+            } catch (MoleculeIOException | IOException ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+            setFilterString("");
         }
-        setFilterString("");
     }
 
 }
