@@ -2521,24 +2521,11 @@ public class Molecule implements Serializable, ITree {
 
     public List getAllowedSources(final int iStruct, List atomSources, Atom targetAtom) {
         String targetAtomName = targetAtom.getName();
-        String targetResName = targetAtom.getEntity().getName();
         List allowedSources = new ArrayList<>();
-        allowedSources.addAll(atomSources);
-        List allowedRes = Arrays.asList("A", "A", "A", "A", "A", "A", "A", "A", "A", "A", "C", "C", "C", "C", "C", "C", "C", "C",
-                "G", "G", "G", "G", "G", "G", "G", "G", "G", "G", "G", "U", "U", "U", "U", "U", "U", "U", "U");
         if (!targetAtomName.contains("'")) { // target atom name doesn't contain a prime
-            int sameResStartInd = allowedRes.indexOf(targetResName) + 12; //0;
-            int sameResEndInd = allowedRes.lastIndexOf(targetResName) + 1 + 12; //10;
-            List sameResList = atomSources.subList(sameResStartInd, sameResEndInd);
-            allowedSources.removeAll(sameResList);
-            if (((targetResName.equals("C") || targetResName.equals("U")) && targetAtomName.equals("N1")) || targetAtomName.equals("N9")) {
-                allowedSources.removeAll(Arrays.asList("O4'", "C1'", "C2'"));
-            } else if (((targetResName.equals("C") || targetResName.equals("U")) && (targetAtomName.equals("C2") || targetAtomName.equals("C6")))
-                    || ((targetResName.equals("A") || targetResName.equals("G")) && (targetAtomName.equals("C4") || targetAtomName.equals("C8")))
-                    || targetAtomName.equals("H6") || targetAtomName.equals("H8")) {
-                allowedSources.remove("C1'");
-            }
+            allowedSources.addAll(Arrays.asList("C2'", "C3'", "C4'", "C5'", "P", "OP1", "OP2", "O2'", "O3'", "O4'", "O5'"));
         } else if (targetAtomName.contains("'")) { // target atom name does contain a prime
+            allowedSources.addAll(atomSources);
             String num = targetAtomName.substring(1, 2);
             if (targetAtomName.equals("C" + num + "'") || targetAtomName.equals("H" + num + "'") || targetAtomName.equals("H" + num + "''")) {
                 allowedSources.removeAll(Arrays.asList("C" + num + "'", "O" + num + "'", "C" + String.valueOf(Integer.valueOf(num) - 1) + "'",
