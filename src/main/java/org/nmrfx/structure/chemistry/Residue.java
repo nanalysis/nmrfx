@@ -313,11 +313,12 @@ public class Residue extends Compound {
     
     public Atom getFirstBackBoneAtom() {
         if (firstBackBoneAtomName != null){
-            return this.getAtom(firstBackBoneAtomName);
+            Atom atom = getAtom(firstBackBoneAtomName);
+            return atom;
         }
         String pType = polymer.getPolymerType(); // 'polypeptide' or 'nucleicacid'
         String searchString = pType.contains("polypeptide") ? "N" : "P";
-        Atom atom = this.getAtom(searchString);
+        Atom atom = getAtom(searchString);
         return atom;
     }
 
