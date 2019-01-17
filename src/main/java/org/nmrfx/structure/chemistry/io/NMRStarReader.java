@@ -294,6 +294,7 @@ public class NMRStarReader {
                     polymer.molecule.genCoords(false);
                     polymer.molecule.setupRotGroups();
                 }
+                sequence.newPolymer();
                 polymer = new Polymer(chainCode, chainCode);
                 polymer.setNomenclature("IUPAC");
                 polymer.setIDNum(entityID);
@@ -316,6 +317,12 @@ public class NMRStarReader {
             } catch (MoleculeIOException psE) {
                 throw new ParseException(psE.getMessage());
             }
+            if (linkType.equals("start")) {
+                residue.capFirstResidue();
+            } else if (linkType.equals("end")) {
+                residue.capLastResidue();
+            }
+
         }
         if (polymer != null) {
             polymer.molecule.genCoords(false);
