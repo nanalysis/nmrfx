@@ -21,6 +21,7 @@ import java.util.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.energy.AtomMath;
+import static org.nmrfx.structure.chemistry.io.PDBFile.isIUPACMode;
 import org.nmrfx.structure.chemistry.miner.IBond;
 
 public class Residue extends Compound {
@@ -304,26 +305,27 @@ public class Residue extends Compound {
         }
         return dihedral;
     }
+
     public void setFirstBackBoneAtom(String name) {
         firstBackBoneAtomName = name;
     }
-    public void setLastBackBoneAtom(String name){
+
+    public void setLastBackBoneAtom(String name) {
         lastBackBoneAtomName = name;
     }
-    
+
     public Atom getFirstBackBoneAtom() {
-        if (firstBackBoneAtomName != null){
-            Atom atom = getAtom(firstBackBoneAtomName);
-            return atom;
+        if (firstBackBoneAtomName != null) {
+            return this.getAtom(firstBackBoneAtomName);
         }
         String pType = polymer.getPolymerType(); // 'polypeptide' or 'nucleicacid'
         String searchString = pType.contains("polypeptide") ? "N" : "P";
-        Atom atom = getAtom(searchString);
+        Atom atom = this.getAtom(searchString);
         return atom;
     }
 
     public Atom getLastBackBoneAtom() {
-        if (lastBackBoneAtomName != null){
+        if (lastBackBoneAtomName != null) {
             return this.getAtom(lastBackBoneAtomName);
         }
         String pType = polymer.getPolymerType();
@@ -391,7 +393,7 @@ public class Residue extends Compound {
                 count++;
             }
         }
-        double scalarMultiplier = 1.0/count;
+        double scalarMultiplier = 1.0 / count;
         return new Point3(vec.scalarMultiply(scalarMultiplier));
     }
 
@@ -443,5 +445,91 @@ public class Residue extends Compound {
         pt = coords.calculate(dih, aX.bndCos, aX.bndSin);
         aX.setPoint(pt);
 
+    }
+
+    public void capFirstResidue() {
+        List<Atom> firstResidueAtoms = getAtoms();
+        if (firstResidueAtoms.size() > 2) {
+            Atom firstAtom = getAtoms().get(0);
+            Atom secondAtom = getAtoms().get(1);
+            Atom thirdAtom = getAtoms().get(2);
+            if (firstAtom.getName().equals("N") && (secondAtom.getName().equals("H") || secondAtom.getName().equals("HN"))) {
+                secondAtom.remove();
+                String newRoot = "H";
+                if (!isIUPACMode()) {
+                    newRoot = "HT";
+                }
+                System.out.println("cap " + newRoot);
+                thirdAtom.valanceAngle = (float) (180.0 * Math.PI / 180.0);
+                thirdAtom.dihedralAngle = (float) (0.0 * Math.PI / 180.0);
+                Atom newAtom = firstAtom.add(newRoot + "3", "H", Order.SINGLE);
+                newAtom.setType("H");
+                newAtom.bondLength = 1.08f;
+                newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
+                newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+                newAtom = firstAtom.add(newRoot + "2", "H", Order.SINGLE);
+                newAtom.setType("H");
+                newAtom.bondLength = 1.08f;
+                newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
+                newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+                newAtom = firstAtom.add(newRoot + "1", "H", Order.SINGLE);
+                newAtom.setType("H");
+                newAtom.bondLength = 1.08f;
+                newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
+                newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+            }
+            if (firstResidueAtoms.size() > 4) {
+                Atom fourthAtom = getAtoms().get(4);
+                if (fourthAtom.getName().equals("O5'")) {
+                    Atom newAtom = firstAtom.add("OP3", "O", Order.SINGLE);
+                    newAtom.setType("O");
+                    newAtom.bondLength = 1.48f;
+                    newAtom.dihedralAngle = (float) (71.58 * Math.PI / 180.0);
+                    newAtom.valanceAngle = (float) (0 * Math.PI / 180.0);
+                }
+            }
+        }
+    }
+
+    public void capLastResidue() {
+        List<Atom> lastResidueAtoms = getAtoms();
+
+        Atom lastAtom = lastResidueAtoms.get(lastResidueAtoms.size() - 1);
+        Atom secondAtom = lastResidueAtoms.get(lastResidueAtoms.size() - 2);
+        if (lastAtom.getName().equals("O")) {
+            if ((secondAtom.getName().equals("C"))) {
+                lastAtom.remove();
+                String newRoot = "O";
+                if (!isIUPACMode()) {
+                    newRoot = "OT";
+                }
+                Atom newAtom;
+                if (!isIUPACMode()) {
+                    newAtom = secondAtom.add(newRoot + "2", "O", Order.DOUBLE);
+                } else {
+                    newAtom = secondAtom.add(newRoot + "''", "O", Order.DOUBLE);
+                }
+                newAtom.bondLength = 1.24f;
+                newAtom.dihedralAngle = (float) (180.0 * Math.PI / 180.0);
+                newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
+                newAtom.setType("O");
+
+                if (!isIUPACMode()) {
+                    newAtom = secondAtom.add(newRoot + "1", "O", Order.SINGLE);
+                } else {
+                    newAtom = secondAtom.add(newRoot + "'", "O", Order.SINGLE);
+                }
+                newAtom.bondLength = 1.24f;
+                newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
+                newAtom.dihedralAngle = (float) (180.0 * Math.PI / 180.0);
+                newAtom.setType("O");
+            }
+        } else if (lastAtom.getName().equals("O3'")) {
+            Atom newAtom = lastAtom.add("HO3'", "H", Order.SINGLE);
+            newAtom.setType("H");
+            newAtom.bondLength = 0.98f;
+            newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
+            newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
+        }
     }
 }
