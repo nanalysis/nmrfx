@@ -911,7 +911,6 @@ class refine:
                     residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
                     self.readMoleculeDict(molData)
 
-	print("printing data : {}".format(data))
         self.molecule = Molecule.getActive()
         self.molName = self.molecule.getName()
 	#print("self.molecule = {}".format(self.molecule.getEntities()[0].getName()))
@@ -1867,7 +1866,6 @@ class refine:
 	        errMsg += " These values were calculate from the constraints provided in the constraint file"
 	        errMsg += " for the atom pair seen above."
 		raise AssertionError(errMsg)
-
             self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
 
     def predictShifts(self):
@@ -2038,7 +2036,6 @@ class refine:
             self.gmin(nsteps=steps,tolerance=1.0e-6)
         if self.eFileRoot != None:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
-	ec.dumpRestraints()
 
     def anneal(self,dOpt=None,stage1={},stage2={}):
         from anneal import runStage
