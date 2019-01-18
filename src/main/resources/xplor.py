@@ -84,26 +84,51 @@ class XPLOR:
         self.s = ""
 	self.invalidDistAtomPairs = []
         self.invalidAtomSelections = []
-        self.regex = r"\([^\(]*resi\w*\s+([0-9]+)\s+[\w\s]+\s(\w+[0-9'\*#]*)\s*\)|(or)|(-?[0-9\.]+\s+-?[0-9\.]+\s+-?[0-9\.]+)"
-        # Four matching groups within regex: residueNum , atomName, "or", bounds
+        # Three matching groups within regex: information enclosed in parentheses, "or", bounds.
+	# Retraint information such as segment id, residue id, and atom name must be enclosed
+	# within at least one set of parenthesis in order for this regular expression to grab
+	# the aforementioned information.
+        self.regex = r"\(([^\(\)]*)\)|(or)|(-?[0-9\.]+\s+-?[0-9\.]+\s+-?[0-9\.]+)"
 
-    def addElements(self, captures, resNames, segId):
+    def addElements(self, captures, resNames):
         ''' Takes in a list of lists. Each internal list has 4 items.
-            capture[0] : Residue number
-            capture[1] : Atom name
-            capture[2] : "or"
-            capture[3] : bounds, a string of three numbers
+            capture[0] : full information enclosed within parentheses (segment id, residue id, atom name)
+            capture[1] : "or"
+            capture[2] : bounds, a string of three numbers
             Each element will either have a value or an empty string. An empty string
             means nothing was found of that type in that capture. This function
             produces a single list of alternating atomnames and ors and possibly ends in
             a capture with just bounds information.  Captures comes from an entire
-            line and resNames is needed to rename atoms in IUPAC standards'''
-	
+            line and resNames is needed to rename atoms in IUPAC standards
+	'''
         appending = []
         for capture in captures:
             item = ""
+
             if capture[0]:
-                resNum = capture[0]
+	        segId = ""
+                fields = capture[0].upper().split("AND")
+
+                values = {}
+                for field in fields:
+                    field = field.strip()
+		    if field.startswith("SEG"):
+			segId = self.getSegmentId(field)
+			continue
+                    field = field.split()
+                    key = field[0]
+                    if key.startswith("RES"):
+			values["RESI"] = field[1]
+		    elif key.startswith("NAM"):
+                    	values["NAME"] = field[1]
+		    else:
+			errMsg = "Could not identify the key '{0}' in [{1}]. ".format(key, self.fileName)
+			errMsg += "Please evaluate restraint information."
+			raise KeyError(errMsg)
+
+		resNum = values["RESI"] if "RESI" in values else "-1"
+		atomName = values["NAME"] if "NAME" in values else "noname"
+
                 try:
                     resName = resNames[resNum]
                 except KeyError:
@@ -113,13 +138,12 @@ class XPLOR:
                                                                                                        capture[1])
                     errMsg += "\n\nNote: Make sure the residue number exists in the sequence input file."
                     raise LookupError(errMsg)
-                atomName = AtomParser.xplorToIUPAC(resName, capture[1])
-                atomName = atomName if atomName else capture[1]
-                item = '.'.join([capture[0], atomName])
-                if segId:
-		    item = ':'.join([segId, item])
+
+                atomName = AtomParser.xplorToIUPAC(resName, atomName)
+                item = segId+resNum+"."+atomName
             else:
-                item = capture[2] if capture[2] else capture[3]
+                item = capture[1] if capture[1] else capture[2]
+
             appending.append(item)
         return appending
 
@@ -227,9 +251,9 @@ class XPLOR:
         pat = re.compile(segIdRegex, re.I)
         match = pat.search(string)
 	if match:
-            return match.group(1)
+            return match.group(1) + ":"
 	else:
-	    return None
+	    return ""
 
     def parseXPLORFile(self, resNames):
         ''' parseXPLORFile parses the xplor file to produce constraint lists
@@ -252,9 +276,8 @@ class XPLOR:
                 if elements:
                     constraints.append(elements)
                 elements = []
-            m = pat.findall(self.s)
-            segmentId = self.getSegmentId(self.s)
-            elements += self.addElements(m, resNames, segmentId)
+            match = pat.findall(self.s)
+            elements += self.addElements(match, resNames)
         self.f.close()
         return constraints
 
