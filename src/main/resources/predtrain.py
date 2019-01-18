@@ -236,9 +236,6 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, refShifts=None,ringRatio=None):
     offsets['19662']={}
     offsets['19662']['B']=100
 
-    if typeRCDist.lower() == 'dist':
-        ppmDatas=[]
-        aNames = {}
     for pdbID,bmrbID in zip(pdbs,bmrbs):
         print pdbID,bmrbID
         bmrbFile = 'star/bmr'+bmrbID+'.str'
@@ -376,13 +373,16 @@ def getAtomStats(aNames, ppmDatas):
     """
 
     rms = {}
+    deltaMeanSum = 0.0
     for aname in aNames:
         deltaValues = [ppmData.exp-ppmData.pred for ppmData in ppmDatas if ppmData.aName == aname and ppmData.valid]
         dStat = getDStat(deltaValues)
         meanDelta = dStat.getMean()
         sumDV2 = dStat.getSumsq()
         rms[aname] = math.sqrt(sumDV2/len(deltaValues))
+        deltaMeanSum += meanAbs(deltaValues)
         print "%s %3d %.3f %.3f" % (aname,len(deltaValues),meanAbs(deltaValues),rms[aname])
+    print "avg Delta Values = ", deltaMeanSum/len(aNames)
 
 def readTestFiles(fileName):
     bmrbs = []
