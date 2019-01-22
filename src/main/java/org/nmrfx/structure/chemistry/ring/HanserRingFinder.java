@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
 import org.nmrfx.structure.chemistry.ITree;
@@ -67,9 +68,17 @@ public class HanserRingFinder implements RingFinder {
             for (int i = 0; i < ringSize; i++) {
                 Atom atom1 = ring.getAtom(i);
                 Atom atom2 = ring.getAtom(i + 1);
-                Bond bond = atom1.getBond(atom2).get();
-                if (!edges.contains(bond)) {
-                    edges.add(bond);
+                // for ring closures (like in phe) need to check both atoms
+                // for the bond
+                Optional<Bond> bondOpt = atom1.getBond(atom2);
+                if (!bondOpt.isPresent()) {
+                    bondOpt = atom2.getBond(atom1);
+                }
+                if (bondOpt.isPresent()) {
+                    Bond bond = bondOpt.get();
+                    if (!edges.contains(bond)) {
+                        edges.add(bond);
+                    }
                 }
             }
         }
@@ -89,8 +98,16 @@ public class HanserRingFinder implements RingFinder {
             for (int j = 0; j < ringSize; j++) {
                 Atom atom1 = ring.getAtom(j);
                 Atom atom2 = ring.getAtom(j + 1);
-                Bond bond = atom1.getBond(atom2).get();
-                ringEdgeMap.set(edges.indexOf(bond), Boolean.TRUE);
+                // for ring closures (like in phe) need to check both atoms
+                // for the bond
+                Optional<Bond> bondOpt = atom1.getBond(atom2);
+                if (!bondOpt.isPresent()) {
+                    bondOpt = atom2.getBond(atom1);
+                }
+                if (bondOpt.isPresent()) {
+                    Bond bond = bondOpt.get();
+                    ringEdgeMap.set(edges.indexOf(bond), Boolean.TRUE);
+                }
             }
             edgeMap.add(i, ringEdgeMap);
         }
@@ -155,13 +172,13 @@ public class HanserRingFinder implements RingFinder {
             for (int i = 0; i < ringAtoms.size() - 1; i++) {
                 Atom atom = ringAtoms.get(i);
                 List<Ring> rings;
-                if (atom.getProperty("rings") == null){
+                if (atom.getProperty("rings") == null) {
                     rings = new ArrayList<>();
                 } else {
                     rings = (List) atom.getProperty("rings");
                 }
                 rings.add(ring);
-                atom.setProperty("rings",rings);
+                atom.setProperty("rings", rings);
             }
             ringNumber++;
         }

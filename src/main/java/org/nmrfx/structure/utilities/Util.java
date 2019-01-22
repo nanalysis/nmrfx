@@ -30,7 +30,7 @@ public class Util {
 
     public static final boolean nefMatch(Atom atom, String pat) {
         boolean result = nefMatch(atom.name.toLowerCase(), pat);
-        if (result && (pat.endsWith("x") || pat.endsWith("y"))) {
+        if (result && (pat.contains("x") || pat.contains("y"))) {
             Optional<Atom> partner = Optional.empty();
             Atom atom1 = atom;
             if (atom.isMethylene()) {
@@ -42,22 +42,16 @@ public class Util {
             if (partner.isPresent()) {
                 Atom partnerAtom = partner.get();
                 boolean lessThan = atom1.getIndex() < partnerAtom.getIndex();
-                result = pat.endsWith("x") ? lessThan : !lessThan;
+                result = pat.contains("x") ? lessThan : !lessThan;
             } else {
                 result = false;
             }
         }
         return result;
     }
-
     public static final boolean nefMatch(String str, String pat) {
         boolean result = false;
-        int percentIndex = pat.indexOf('%');
-        if (percentIndex == -1) {
-            if (pat.endsWith("x") || pat.endsWith("y")) {
-                percentIndex = pat.length() - 1;
-            }
-        }
+        int percentIndex = pat.contains("x") ? pat.indexOf("x") : (pat.contains("y") ? pat.indexOf("y") : pat.indexOf("%"));
         int singleWildIndex = pat.indexOf('#');
         int wildIndex = pat.indexOf('*');
         String rePat = null;
@@ -77,7 +71,6 @@ public class Util {
         } else if (str.equals(pat)) {
             result = true;
         }
-
         return result;
     }
 

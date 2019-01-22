@@ -97,6 +97,10 @@ public class Sequence {
     public Sequence(Molecule molecule) {
         this.molecule = molecule;
     }
+    
+    public void newPolymer() {
+        connectBranch = null;
+    }
 
     private void makeConnection(Residue residue) {
         /**
