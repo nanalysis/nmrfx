@@ -44,11 +44,13 @@ def loadRCTrainingMatrix(fileName):
 
     # Returns:
 
-    A,b (Matrix, Vector) the matrix and vector to be used in fitting 
+    A,b,atomCts,atomIDs (Matrix, Vector, Dictionary, Vector) the matrix and vector to be used in fitting, a dictionary of atom counts, and a vector of atom names
     """
 
     A = []
     b = []
+    atomCts = {}
+    atomIDs = []
     with open(fileName,'r') as f1:
         for line in f1:
             line = line.strip()
@@ -56,9 +58,15 @@ def loadRCTrainingMatrix(fileName):
             row = [float(v) for v in fields[1:-1]]
             A.append(row)
             b.append(float(fields[-1]))
+            key = fields[0][2:]
+            atomIDs.append(key)
+            if not key in atomCts.keys():
+                atomCts[key] = 1
+            elif key in atomCts.keys():
+                atomCts[key] += 1
     AMat = Array2DRowRealMatrix(A)
     bVec = ArrayRealVector(b)
-    return AMat,bVec
+    return AMat, bVec, atomCts, atomIDs
 
 def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
     """
@@ -70,6 +78,8 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
     mol (Molecule); the molecule to be analyzed
     atoms (list); a list of atoms to be used
     f1 (File); the output file
+    ringMode (boolean):
+    typeRCDist (String): Type of analysis to perform, 'rc' (ring current) or 'dist' (distances)
 
     # Returns:
 
@@ -77,6 +87,7 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
 
     See also: `loadRCTrainingMatrix(...)`
     """
+
     if  (typeRCDist.lower()=='rc'):
         ringShifts = RingCurrentShift()
         ringShifts.makeRingList(mol)
@@ -147,6 +158,7 @@ def predictWithRCFromPDB(pdbFile, refShifts, ringRatio, typeRCDist):
     pdbFile (str); the name of the PDB file
     refShifts (dict); the reference shifts for each atom to be predicted.
     ringRatio (float); A scale parameter to multiply the ring-current contributions by
+    typeRCDist (String): Type of analysis to perform, 'rc' (ring current) or 'dist' (distances)
 
     # Returns:
 
@@ -202,7 +214,7 @@ class PPMData:
         self.aName = a
         self.valid = True
 
-def analyzeFiles(pdbs, bmrbs, typeRCDist, refShifts=None,ringRatio=None):
+def analyzeFiles(pdbs, bmrbs, typeRCDist, offsets, refShifts=None, ringRatio=None):
     """
     Analyze a whole set of pdb files and associated chemical shifts in bmrb files
     Chemical shifts will be predicted with 3D Ring Current shift code
@@ -213,6 +225,8 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, refShifts=None,ringRatio=None):
 
     pdbs (list); The list of pdb identifiers. The actual files must be in a pdbfiles subdirectory
     bmrbs (list); The list of bmrb identifiers. The actual files must be in a star2 subdirectory
+    typeRCDist (String): Type of analysis to perform, 'rc' (ring current) or 'dist' (distances)
+    offsets (dict): the offset values for certain bmrb files
     refShifts (dict); the reference shifts for each atom to be predicted.
     ringRatio (float); A scale parameter to multiply the ring-current contributions by
 
@@ -225,16 +239,6 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, refShifts=None,ringRatio=None):
     ppmDatas=[]
     aNames = {}
     chains = ['','A','B','C','D']
-    offsets = {}
-    offsets['15857']={}
-    offsets['15857']['B']=58
-    offsets['15858']={}
-    offsets['15858']['A']=12
-    offsets['15858']['B']=58
-    offsets['18893']={}
-    offsets['18893']['B']=58
-    offsets['19662']={}
-    offsets['19662']['B']=100
 
     for pdbID,bmrbID in zip(pdbs,bmrbs):
         print pdbID,bmrbID
@@ -283,7 +287,7 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, refShifts=None,ringRatio=None):
                                 #print bID,chain,res,aname,expPPM,predPPM,delta
     return (ppmDatas,aNames.keys())
 
-         
+
 def reref(ppmDatas, bmrbs):
     """
     Adjust referencing of bmrb data.  Use the average deviation between predicted
@@ -336,7 +340,7 @@ def removeOutliers(aNames, ppmDatas, mul=3.0):
 
     # Parameters:
 
-    aNames (list); list of atom names to use 
+    aNames (list); list of atom names to use
     ppmDatas (list); list of PPMData objects to analyze
     mul (float); standard deviation is multiplied by this value
 
@@ -382,7 +386,7 @@ def getAtomStats(aNames, ppmDatas):
         rms[aname] = math.sqrt(sumDV2/len(deltaValues))
         deltaMeanSum += meanAbs(deltaValues)
         print "%s %3d %.3f %.3f" % (aname,len(deltaValues),meanAbs(deltaValues),rms[aname])
-    print "avg Delta Values = ", deltaMeanSum/len(aNames)
+    print "%s %.3f" % ("avg Delta Values =", deltaMeanSum/len(aNames))
 
 def readTestFiles(fileName):
     bmrbs = []
@@ -426,6 +430,9 @@ def genRCTrainingMatrix(outFileName, pdbFiles, dotBrackets, atomNames, ringMode,
     outFileName (str); The output file name.  File is deleted if present already.
     pdbFiles (list); list of PDB Files to use
     dotBrackets (list); list of dot-bracket values (vienna string) to use for each pdb file
+    atomNames (list): list of atom names
+    ringMode
+    typeRCDist (String): Type of analysis to perform, 'rc' (ring current) or 'dist' (distances)
 
     # Returns:
 
@@ -443,7 +450,7 @@ def genRCTrainingMatrix(outFileName, pdbFiles, dotBrackets, atomNames, ringMode,
             mol = molio.readPDB(pdbFile)
             rnapred.predictFromSequence(mol,dotBracket)
             genRCMat(mol,atomNames,f1, ringMode, typeRCDist)
-        
+
 def trainRC(atomNames, trainingFileName, matrixFileName, ringMode, typeRCDist):
     """
     Training the ring-current shift model using specified training data.
@@ -452,6 +459,8 @@ def trainRC(atomNames, trainingFileName, matrixFileName, ringMode, typeRCDist):
 
     trainingFileName (str); the name of the file containing training pdb file and dot-bracket entries
     matrixFileName (str); the name of the output file for training matrix
+    ringMode
+    typeRCDist (String): Type of analysis to perform, 'rc' (ring current) or 'dist' (distances)
 
     # Returns:
 
@@ -460,7 +469,15 @@ def trainRC(atomNames, trainingFileName, matrixFileName, ringMode, typeRCDist):
 
     pdbFiles,dotBrackets = readTrainingFiles(trainingFileName)
     genRCTrainingMatrix(matrixFileName, pdbFiles, dotBrackets, atomNames, ringMode, typeRCDist)
-    AMat,bVec = loadRCTrainingMatrix(matrixFileName)
+    AMat, bVec, atomCtsDict, atomIDs = loadRCTrainingMatrix(matrixFileName)
+    atomTot = float(sum(atomCtsDict.values()))
+    atomFract = [float(atomCtsDict.values()[i])/atomTot for i in range(len(atomCtsDict))]
+    atomNormDict = {atomCtsDict.keys()[i]: (1.0/len(atomCtsDict))/(atomFract[i]) for i in range(len(atomCtsDict))}
+    atomNorm = [atomNormDict[atomID] for atomID in atomIDs]
+    AMatNRows = AMat.getRowDimension()
+    AMatNCols = AMat.getColumnDimension()
+    AMat = Array2DRowRealMatrix([[AMat.getEntry(i,j) * atomNorm[i] for j in range(AMatNCols)] for i in range(AMatNRows)])
+    bVec = bVec.ebeMultiply(ArrayRealVector(atomNorm))
     svd = SingularValueDecomposition(AMat)
     coefVec = svd.getSolver().solve(bVec)
     bPred = AMat.operate(coefVec)
