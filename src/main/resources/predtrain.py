@@ -382,7 +382,7 @@ def getAtomStats(aNames, ppmDatas):
         rms[aname] = math.sqrt(sumDV2/len(deltaValues))
         deltaMeanSum += meanAbs(deltaValues)
         print "%s %3d %.3f %.3f" % (aname,len(deltaValues),meanAbs(deltaValues),rms[aname])
-    print "avg Delta Values = ", deltaMeanSum/len(aNames)
+    print "%s %.3f" % ("avg Delta Values =", deltaMeanSum/len(aNames))
 
 def readTestFiles(fileName):
     bmrbs = []
