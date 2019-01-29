@@ -99,7 +99,7 @@ public class BucketedMatrix {
         }
     }
 
-    public void writeMatrix(String fileName) {
+    public void writeMatrix(String fileName) throws IOException {
         int nTableCols = dataTbl[0].length;
         StringBuilder sBuilder = new StringBuilder();
         try (BufferedWriter writer = Files.newBufferedWriter(
@@ -138,8 +138,6 @@ public class BucketedMatrix {
                 content = sBuilder.toString();
                 writer.write(content, 0, content.length());
             }
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
         }
     }
 }
