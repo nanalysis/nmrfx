@@ -41,7 +41,7 @@ public class WebConnect {
     public WebConnect() {
     }
 
-    private String fetchContent(String urlStr)
+    public String fetchContent(String urlStr)
             throws Exception {
         URL url;
         BufferedReader bufferedReader = null;
