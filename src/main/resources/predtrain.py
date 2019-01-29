@@ -126,6 +126,8 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
         if not found:
             continue
         ppm = atom.getRefPPM()
+        if ppm == None:
+            continue
         if  (typeRCDist.lower()=='rc'):
             ringPPM = ringShifts.calcRingContributions(sp,0,ringRatio)
             ringFactors = ringShifts.calcRingGeometricFactors(sp, 0)
@@ -398,7 +400,7 @@ def readTestFiles(fileName):
                 continue
             if line.startswith("#"):
                 continue
-            bmrb,pdb = line.split()
+            pdb,bmrb = line.split()
             bmrbs.append(bmrb)
             pdbs.append(pdb)
     return bmrbs,pdbs
@@ -414,12 +416,34 @@ def readTrainingFiles(fileName):
             if line.startswith("#"):
                 continue
             pdb,dotBracket = line.split()
-            pdbs.append('trainpdb/'+pdb)
+            pdbs.append(pdb)
             dotBrackets.append(dotBracket)
     return pdbs,dotBrackets
 
+def setRefShiftsFromBMRB(bmrbID, offsets):
+    bmrbFile = 'star/bmr'+bmrbID+'.str'
+    shiftDict = seqalgs.readBMRBShifts(bmrbID, bmrbFile)
+    chains = ['','A','B','C','D']
+    for bID in shiftDict.keys():
+        for chain in shiftDict[bID]:
+            chainName = chains[chain]
+            offset = 0
+            if bID in offsets:
+                if chainName in offsets[bID]:
+                    offset = offsets[bID][chainName]
+            for res in shiftDict[bID][chain]:
+                for aname in shiftDict[bID][chain][res]:
+                    atomSpec = chainName+':'+str(res+offset)+'.'+aname
+                    atom = Molecule.getAtomByName(atomSpec)
+                    ppm = shiftDict[bID][chain][res][aname]
+                    if atom == None:
+                        print 'no atom',chain,atomSpec
+                    else:
+                        atom.setRefPPM(ppm)
+                        #atom.setRefError(errorVal)
 
-def genRCTrainingMatrix(outFileName, pdbFiles, dotBrackets, atomNames, ringMode, typeRCDist):
+
+def genRCTrainingMatrix(outFileName, pdbFiles, shiftSources, atomNames, ringMode, typeRCDist):
     """
     Generate the training data from a list of pdbFiles and dotBracket values.
     Each file is predicted using the attribute method based on a specified
@@ -429,7 +453,7 @@ def genRCTrainingMatrix(outFileName, pdbFiles, dotBrackets, atomNames, ringMode,
 
     outFileName (str); The output file name.  File is deleted if present already.
     pdbFiles (list); list of PDB Files to use
-    dotBrackets (list); list of dot-bracket values (vienna string) to use for each pdb file
+    shiftSources (list); list of sources for shifts.  Either dot-bracket values (vienna string) or bmrb id to use for each pdb file 
     atomNames (list): list of atom names
     ringMode
     typeRCDist (String): Type of analysis to perform, 'rc' (ring current) or 'dist' (distances)
@@ -445,10 +469,18 @@ def genRCTrainingMatrix(outFileName, pdbFiles, dotBrackets, atomNames, ringMode,
         pass
 
     with open(outFileName,'a') as f1:
-        for pdbFile,dotBracket in zip(pdbFiles,dotBrackets):
+        for pdbID,shiftSource in zip(pdbFiles,shiftSources):
             Molecule.removeAll()
+            pdbFile = 'pdbfiles/'+pdbID+'.pdb'
+            if not getPDBFile(pdbID):
+                print 'skip',pdbFile
+                continue
+            print 'train',pdbFile
             mol = molio.readPDB(pdbFile)
-            rnapred.predictFromSequence(mol,dotBracket)
+            if shiftSource[0]=="." or shiftSource[0]=="(":
+                rnapred.predictFromSequence(mol,shiftSource)
+            else:
+                setRefShiftsFromBMRB(shiftSource, {})
             genRCMat(mol,atomNames,f1, ringMode, typeRCDist)
 
 def trainRC(atomNames, trainingFileName, matrixFileName, ringMode, typeRCDist):
