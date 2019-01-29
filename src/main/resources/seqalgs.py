@@ -18,6 +18,13 @@ def readBMRBShifts(bmrbID, fileName):
     f1.close()
     return shiftDict
 
+def readBMRBOffsets(bmrbID, fileName):
+    f1 = open(fileName)
+    lines = f1.read().split('\n')
+    readSequence(bmrbID,lines)
+    offsetDict = makeOffsetDict(bmrbID,lines)
+    f1.close()
+    return offsetDict
 
 def readSequence(bmrbID,lines):
     global shiftDict
@@ -118,6 +125,51 @@ def processBMRBLines(bmrbID, lines):
                     resDict[bmrbID,chain,res] = resName
                 shiftDict[bmrbID][chain][res][aname] = shift
     return shiftDict
+
+offsetDict = {}
+def makeOffsetDict(bmrbID, lines):
+    state = 'preShifts'
+    shiftLoopTags = []
+    for line in lines:
+        fields = line.strip().split()
+        if len(fields) > 0:
+            if state == 'preShifts':
+                if fields[0] == "_Atom_shift_assign_ID":
+                    state = 'inShiftCat'
+                    starMode = 2
+                elif fields[0] == "_Atom_chem_shift.ID":
+                    state = 'inShiftCat'
+                    starMode = 3
+            if state == 'inShiftCat':
+                if fields[0].startswith("_"):
+                    shiftLoopTags += fields
+                else:
+                    state = "inShifts"
+                
+            if state == 'inShifts':
+                if fields[0] == "stop_":
+                    break
+                #print shiftLoopTags
+                #print fields
+                if starMode == 3:
+                    chainID = shiftLoopTags.index("_Atom_chem_shift.Entity_ID")
+                    chain = int(fields[chainID])
+                    resI = shiftLoopTags.index("_Atom_chem_shift.Seq_ID")
+                    resIa = shiftLoopTags.index("_Atom_chem_shift.Auth_seq_ID")
+                else:
+                    chain = 1
+                    resI = shiftLoopTags.index("_Residue_seq_code")
+                    resIa = shiftLoopTags.index("_Residue_author_seq_code")
+                res = int(fields[resI])
+                if (fields[resIa] != ".") and (fields[resIa] != fields[resI]):
+                    res = int(fields[resIa])
+                    offset = float(fields[resIa]) - float(fields[resI])
+                    if not bmrbID in offsetDict:
+                        offsetDict[bmrbID] = {}
+                    if not chain in offsetDict[bmrbID]:
+                        offsetDict[bmrbID][chr(chain+64)] = offset   
+    
+    return offsetDict
 
 def openCorrTable(fileName):
     global corrTable
