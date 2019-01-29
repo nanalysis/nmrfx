@@ -49,7 +49,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
     private final int blockHeaderSize;
     final boolean writable;
     private final int mapSize;
-    private final List<MapInfo> mappings = new ArrayList<MapInfo>();
+    private final List<MapInfo> mappings = new ArrayList<>();
     private final int BYTES = 4;
 
     /**
@@ -58,6 +58,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
      * @param dataset Dataset object that uses this mapped matrix file
      * @param raFile The Random access file that actually stores data
      * @param writable true if the mapping should be writable
+     * @throws java.io.IOException
      */
     public BigMappedMatrixFile(final Dataset dataset, final RandomAccessFile raFile, final boolean writable) throws IOException {
         this.raFile = raFile;
@@ -182,7 +183,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
             } else {
                 return getMapping(mapN).getInt(offN);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             StringBuilder sBuilder = new StringBuilder();
             for (int offset : offsets) {
                 sBuilder.append(offset).append(" ");
@@ -208,7 +209,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
             } else {
                 getMapping(mapN).putInt(offN, (int) d);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             StringBuilder sBuilder = new StringBuilder();
             for (int offset : offsets) {
                 sBuilder.append(offset).append(" ");
@@ -242,10 +243,9 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
             int offN = (int) (p % mapSize);
             try {
                 sum += getMapping(mapN).getFloat(offN);
-            } catch (Exception e) {
+            } catch (IOException e) {
                 MappedByteBuffer mapping = getMapping(mapN);
                 System.out.println(mapN + " Err " + offN + " " + mapping.capacity() + " " + mapping.limit());
-                e.printStackTrace();
                 System.exit(0);
             }
         }
@@ -263,7 +263,6 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
                 sum += mapping.getFloat(p);
             } catch (Exception e) {
                 System.out.println(p + " Err " + mapping.capacity() + " " + mapping.limit());
-                e.printStackTrace();
                 System.exit(0);
             }
         }
