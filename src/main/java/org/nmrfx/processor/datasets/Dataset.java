@@ -141,12 +141,12 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     @Override
     protected SEXP cloneWithNewAttributes(AttributeMap newAttributes) {
         // fixme should clone to in-memory Dataset or Dataset pointing to same raFile etc. not DoubleArrayVector??
-        double[] values = toDoubleArray();
-        DoubleArrayVector clone = DoubleArrayVector.unsafe(values, newAttributes);
+        double[] arrayValues = toDoubleArray();
+        DoubleArrayVector clone = DoubleArrayVector.unsafe(arrayValues, newAttributes);
         return clone;
     }
 
-    void setDimAttributes() {
+    private void setDimAttributes() {
         unsafeSetAttributes(AttributeMap.builder().addAllFrom(getAttributes()).setDim(new IntArrayVector(size)).build());
     }
 
@@ -555,6 +555,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * Change the writable state of the file to the specified value
      *
      * @param writable The new writable state for the file
+     * @throws java.io.IOException
      */
     public void changeWriteMode(boolean writable) throws IOException {
         if (dataFile != null) {
@@ -760,7 +761,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     /**
      * Set the file header size
      *
-     * @param the size
+     * @param size the header size
      */
     public void setFileHeaderSize(int size) {
         fileHeaderSize = size;
@@ -769,7 +770,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     /**
      * Set the block header size
      *
-     * @param the size
+     * @param size the block header size
      */
     public void setBlockHeaderSize(int size) {
         blockHeaderSize = size;
@@ -912,7 +913,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             }
             dataFile = null;
             raFile = null;
-        } catch (Exception e) {
+        } catch (IOException e) {
             //LOGGER.warn(e.getMessage());
         }
 
@@ -2779,6 +2780,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param p2 Bounds of peak regions
      * @param cpt Array of centers of peak positions
      * @param width Array of widths of peaks
+     * @param pdim Array of integers indicating mapping of peak dimension to
+     * dataset dimension
      * @param multiplier unused?? should multiply width of regions
      * @return List of points near peak centers
      */
@@ -2792,8 +2795,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             }
         }
         int nPoints = 1;
-        for (int size : sizes) {
-            nPoints *= size;
+        for (int dimSize : sizes) {
+            nPoints *= dimSize;
         }
         ArrayList<int[]> posArray = new ArrayList<>();
         DimCounter counter = new DimCounter(sizes);
@@ -3040,7 +3043,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                     return 1;
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println(e.getMessage());
 
             return 1;
@@ -3146,7 +3149,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 
             rmsd = new double[nDim][];
             values = new double[nDim][];
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println(e.getMessage());
 
             return 1;
@@ -3183,7 +3186,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println(e.getMessage());
 
             return 1;
@@ -3270,7 +3273,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                     setFreqDomain_r(iDim, true);
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             //LOGGER.error("Can't read header ", e);
             return 1;
         }
@@ -3326,8 +3329,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      *
      * @param temperature The temperature
      */
-    public void setTempK(double value) {
-        this.temperature = value;
+    public void setTempK(double temperature) {
+        this.temperature = temperature;
     }
 
     /**
@@ -4674,14 +4677,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         }
         DimCounter counter = new DimCounter(counterSizes);
         DimCounter.Iterator cIter = counter.iterator();
-        while (cIter.hasNext()) {
-            int[] points = cIter.next();
-        }
-        times[3] = System.currentTimeMillis();
-        System.out.println("xxx");
-
-        counter = new DimCounter(counterSizes);
-        cIter = counter.iterator();
         while (cIter.hasNext()) {
             int[] points = cIter.next();
             dataFile.position(points);
