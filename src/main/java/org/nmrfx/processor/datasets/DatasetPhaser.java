@@ -77,6 +77,8 @@ public class DatasetPhaser {
      * Calculate phasing along the specified dataset dimension.
      *
      * @param iDim index of the dataset dimension
+     * @param phaseWinSize size of window to use in analysis
+     * @param phaseRatio ratio of signal to noise to use in finding baseline
      * @throws java.io.IOException if an I/O error occurs
      */
     public void setup(int iDim, int phaseWinSize, double phaseRatio) throws IOException {
