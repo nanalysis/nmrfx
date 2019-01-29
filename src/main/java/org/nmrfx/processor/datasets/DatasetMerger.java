@@ -72,9 +72,11 @@ public class DatasetMerger {
             }
             iFile++;
         }
-        outputDataset.writeHeader();
-        outputDataset.writeParFile();
-        outputDataset.close();
+        if (outputDataset != null) {
+            outputDataset.writeHeader();
+            outputDataset.writeParFile();
+            outputDataset.close();
+        }
     }
 
 }
