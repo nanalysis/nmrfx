@@ -81,7 +81,7 @@ public class AnalystApp extends MainApp {
     private static MenuBar mainMenuBar = null;
     Boolean isMac = null;
 
-    static AnalystApp mainApp = null;
+    static AnalystApp analystApp = null;
 
     public static MultipletController multipletController;
     public static MinerController minerController;
@@ -121,8 +121,9 @@ public class AnalystApp extends MainApp {
     @Override
     public void start(Stage stage) throws Exception {
         MainApp.setAnalyst();
-        FXMLController controller = FXMLController.create(stage);
         mainApp = this;
+        analystApp = this;
+        FXMLController controller = FXMLController.create(stage);
         Platform.setImplicitExit(true);
         hostServices = getHostServices();
         stage.setTitle(appName + " " + getVersion());
@@ -164,6 +165,10 @@ public class AnalystApp extends MainApp {
 
     public static MenuBar getMenuBar() {
         return mainApp.makeMenuBar(appName);
+    }
+
+    public static AnalystApp getAnalystApp() {
+        return analystApp;
     }
 
     public void quit() {
