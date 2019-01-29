@@ -28,6 +28,10 @@ class NMRFxWindowScripting:
         chart=activeController.getActiveChart()
         return chart
 
+    def getCursor(self):
+        chart = self.getActiveChart()
+        return chart.getCursor()
+
     def new(self):
         self.cmd.newStage()
         return self
