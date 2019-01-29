@@ -94,18 +94,22 @@ def processBMRBLines(bmrbID, lines):
                     chainID = shiftLoopTags.index("_Atom_chem_shift.Entity_ID")
                     chain = int(fields[chainID])
                     resI = shiftLoopTags.index("_Atom_chem_shift.Seq_ID")
+                    resIa = shiftLoopTags.index("_Atom_chem_shift.Auth_seq_ID")
                     anameI = shiftLoopTags.index("_Atom_chem_shift.Atom_ID")
                     resNameI = shiftLoopTags.index("_Atom_chem_shift.Comp_ID")
                     shiftI = shiftLoopTags.index("_Atom_chem_shift.Val")
                 else:
                     chain = 1
                     resI = shiftLoopTags.index("_Residue_seq_code")
+                    resIa = shiftLoopTags.index("_Residue_author_seq_code")
                     anameI = shiftLoopTags.index("_Atom_name")
                     resNameI = shiftLoopTags.index("_Residue_label")
                     shiftI = shiftLoopTags.index("_Chem_shift_value")
                 if not chain in shiftDict[bmrbID]:
                     shiftDict[bmrbID][chain] = {}
                 res = int(fields[resI])
+                if (fields[resIa] != ".") and (fields[resIa] != fields[resI]):
+                    res = int(fields[resIa])
                 shift = float(fields[shiftI])
                 aname = fields[anameI].strip('"')
                 resName = fields[resNameI]
