@@ -27,10 +27,12 @@ public class FloatDataBuffer extends DataBuffer {
         this.buffer = buffer;
     }
 
+    @Override
     public double get(int index) {
         return buffer.get(index);
     }
 
+    @Override
     public float[] getBlock(int size) {
         float[] vector = new float[size];
         buffer.rewind();
@@ -38,10 +40,12 @@ public class FloatDataBuffer extends DataBuffer {
         return vector;
     }
 
+    @Override
     public void put(int index, double value) {
         buffer.put(index, (float) value);
     }
 
+    @Override
     public int capacity() {
         return buffer.capacity();
     }
