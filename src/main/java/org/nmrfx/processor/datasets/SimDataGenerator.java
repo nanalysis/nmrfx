@@ -22,6 +22,7 @@ class SimDataGenerator extends DataGenerator {
     public boolean selected;
     public boolean intSelected;
 
+    @Override
     public float[][] Matrix(int iChunk, int[] offset) {
         float[][] matrix;
 
@@ -37,27 +38,33 @@ class SimDataGenerator extends DataGenerator {
         }
     }
 
+    @Override
     public float[][] readMatrix(int iChunk, String chunkLabelStr, int[][] apt, float[][] matrix) {
         return (null);
     }
 
+    @Override
     public int getMatrixRegion(int iChunk, int maxChunkSize, int mode, int[][] apt,
             double[] offset, StringBuffer chunkLabel) {
         return 0;
     }
 
+    @Override
     public int[][] bounds(int iChunk) {
         return (pt);
     }
 
+    @Override
     public DataCoordTransformer setBounds(double[][] limits) {
         return null;
     }
 
+    @Override
     public int nRows(int iChunk) {
         return (32);
     }
 
+    @Override
     public int nCols(int iChunk) {
         return (32);
     }
