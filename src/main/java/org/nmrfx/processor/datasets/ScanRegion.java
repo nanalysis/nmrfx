@@ -30,14 +30,14 @@ public class ScanRegion {
     private int[] iVec;
     private int[] iBlock;
     private int[] iPointAbs = null;
-    private ArrayList<int[]> scanVector = new ArrayList<int[]>(512);
+    private final ArrayList<int[]> scanVector = new ArrayList<>(512);
     private int scanIn = 0;
     private int[][] pt = null;
     private int[] dim = null;
-    private int[] blockSize;
-    private int[] nBlocks;
+    private final int[] blockSize;
+    private final int[] nBlocks;
     private int[] offsetBlocks;
-    private int[] vecRange;
+    private final int[] vecRange;
     ArrayList<int[]> indexList = null;
 
     public ScanRegion(final int[][] pt, final int[] dim, final String datasetName) {
@@ -87,7 +87,7 @@ public class ScanRegion {
         setup();
     }
 
-    public void setup() {
+    private void setup() {
         scanIn = 0;
         offsetBlocks = new int[nDim];
         block = new int[nDim][2];
@@ -245,7 +245,7 @@ public class ScanRegion {
     }
 
     public int buildIndex() {
-        indexList = new ArrayList<int[]>(16384);
+        indexList = new ArrayList<>(16384);
         reset();
         while (true) {
             int[] nextPoint = nextPoint();
