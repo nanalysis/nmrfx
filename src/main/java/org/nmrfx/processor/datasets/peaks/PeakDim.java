@@ -169,6 +169,7 @@ public class PeakDim {
         }
         if (aMultiplet == null) {
             multiplet = new Multiplet(this);
+            getPeak().peakList.addMultiplet(multiplet);
             aMultiplet = multiplet;
         }
 
@@ -191,6 +192,7 @@ public class PeakDim {
         if (multiplet != null) {
             multiplet.removePeakDim(this);
             multiplet = new Multiplet(this);
+            getPeak().peakList.addMultiplet(multiplet);
         }
 
         peakDimUpdated();
