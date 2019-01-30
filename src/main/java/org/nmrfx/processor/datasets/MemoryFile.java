@@ -65,10 +65,12 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
         floatBuffer = byteBuffer.asFloatBuffer();
     }
 
+    @Override
     public boolean isWritable() {
         return writable;
     }
 
+    @Override
     public long position(int... offsets) {
         long position;
         boolean subMatrix = true;
@@ -92,27 +94,33 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
         return position;
     }
 
+    @Override
     public int getSize(final int dim) {
         return sizes[dim];
     }
 
+    @Override
     public long getTotalSize() {
         return totalSize;
     }
 
+    @Override
     public float getFloat(int... offsets) throws IOException {
         int p = (int) position(offsets);
         return floatBuffer.get(p);
     }
 
+    @Override
     public void setFloat(float d, int... offsets) throws IOException {
         int p = (int) position(offsets);
         floatBuffer.put(p, d);
     }
 
+    @Override
     public void close() throws IOException {
     }
 
+    @Override
     public double sum() throws IOException {
         double sum = 0.0;
         for (int i = 0; i < totalSize; i++) {
@@ -121,6 +129,7 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
         return sum;
     }
 
+    @Override
     public double sumFast() throws IOException {
         double sum = 0.0;
         for (int i = 0; i < totalSize; i++) {
@@ -129,12 +138,14 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
         return sum;
     }
 
+    @Override
     public void zero() throws IOException {
         for (int i = 0; i < totalSize; i++) {
             floatBuffer.put(i, 0.0f);
         }
     }
 
+    @Override
     public void force() {
     }
 }
