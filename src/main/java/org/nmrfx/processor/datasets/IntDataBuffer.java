@@ -27,10 +27,12 @@ public class IntDataBuffer extends DataBuffer {
         this.buffer = buffer;
     }
 
+    @Override
     public double get(int index) {
         return buffer.get(index);
     }
 
+    @Override
     public float[] getBlock(int size) {
         float[] vector = new float[size];
         int[] ivector = new int[size];
@@ -43,10 +45,12 @@ public class IntDataBuffer extends DataBuffer {
 
     }
 
+    @Override
     public void put(int index, double value) {
         buffer.put(index, (int) value);
     }
 
+    @Override
     public int capacity() {
         return buffer.capacity();
     }
