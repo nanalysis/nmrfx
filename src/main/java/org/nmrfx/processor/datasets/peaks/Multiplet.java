@@ -84,7 +84,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
     public Multiplet(PeakDim peakDim) {
         peakDims.add(peakDim);
         myPeakDim = peakDim;
-        peakDim.getPeak().peakList.addMultiplet(this);
     }
 
     @Override
@@ -563,7 +562,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
         if (nType < 1) {
             throw new IllegalArgumentException("Invalid coupling type: " + couplingType);
         }
-        double[] intensities = getIntensities();
         if (oldCoupling == null) {
             oldCoupling = coupling;
         }
