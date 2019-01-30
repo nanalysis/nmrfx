@@ -35,7 +35,7 @@ public class CouplingPattern extends Coupling {
 
     public final static String COUPLING_CHARS = "sdtqphx";
 
-    private CouplingItem[] couplingItems;
+    private final CouplingItem[] couplingItems;
     private final double intensity;
     static final private int[][] PASCALS_TRIANGLE = new int[16][];
 
