@@ -64,6 +64,7 @@ public class CouplingItem implements Comparable {
         return nSplits;
     }
 
+    @Override
     public int compareTo(Object o) {
         int result = -1;
         if (o instanceof CouplingItem) {
