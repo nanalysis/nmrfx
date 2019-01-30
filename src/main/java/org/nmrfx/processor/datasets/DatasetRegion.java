@@ -45,9 +45,7 @@ public class DatasetRegion implements Comparator, Comparable {
         x = new double[newRegion.length];
         startIntensity = new double[x.length / 2];
         endIntensity = new double[x.length / 2];
-        for (int i = 0; i < x.length; i++) {
-            x[i] = newRegion[i];
-        }
+        System.arraycopy(newRegion, 0, x, 0, x.length);
         sortEachDim();
     }
 
@@ -55,9 +53,7 @@ public class DatasetRegion implements Comparator, Comparable {
         x = new double[newRegion.length];
         startIntensity = new double[x.length / 2];
         endIntensity = new double[x.length / 2];
-        for (int i = 0; i < x.length; i++) {
-            x[i] = newRegion[i];
-        }
+        System.arraycopy(newRegion, 0, x, 0, x.length);
         for (int i = 0; i < newIntensities.length; i += 2) {
             startIntensity[i / 2] = newIntensities[2 * i];
             endIntensity[i / 2] = newIntensities[2 * i + 1];
@@ -138,6 +134,7 @@ public class DatasetRegion implements Comparator, Comparable {
         endIntensity[dim * 2] = value;
     }
 
+    @Override
     public String toString() {
         if (x == null) {
             return "";
@@ -147,6 +144,7 @@ public class DatasetRegion implements Comparator, Comparable {
         }
     }
 
+    @Override
     public int compare(Object o1, Object o2) {
         // FIXME do we need to test type of object?
         int result = 0;
@@ -167,10 +165,12 @@ public class DatasetRegion implements Comparator, Comparable {
         return result;
     }
 
+    @Override
     public int compareTo(Object o2) {
         return compare(this, o2);
     }
 
+    @Override
     public boolean equals(Object o2) {
         return (compare(this, o2) == 0);
     }
