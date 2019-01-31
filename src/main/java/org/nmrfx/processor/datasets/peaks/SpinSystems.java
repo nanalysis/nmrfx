@@ -42,8 +42,8 @@ public class SpinSystems {
         for (int i = 0; i < aMatch.length; i++) {
             if (aMatch[i] != -1) {
                 double tolA = peakA.getPeakList().getSpectralDim(i).getTol();
-                Float valueA = peakA.peakDim[i].getChemShift();
-                Float valueB = peakB.peakDim[aMatch[i]].getChemShift();
+                Float valueA = peakA.peakDims[i].getChemShift();
+                Float valueB = peakB.peakDims[aMatch[i]].getChemShift();
                 if ((valueA != null) && (valueB != null)) {
                     double delta = Math.abs(valueA - valueB);
                     if (delta > 2.0 * tolA) {
