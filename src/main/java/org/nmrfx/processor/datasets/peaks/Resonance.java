@@ -40,7 +40,7 @@ public interface Resonance {
     public String getIDString();
 
     public long getID();
-    
+
     public void setID(long value);
 
     public void merge(Resonance resB);
