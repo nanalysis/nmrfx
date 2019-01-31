@@ -1121,7 +1121,7 @@ public class Peak implements Comparable, PeakOrMulti {
         int iCoupling;
     }
 
-    public CouplingUpdate startUpdateCouplings(int iDim) {
+    private CouplingUpdate startUpdateCouplings(int iDim) {
         CouplingUpdate cUpdate;
         PeakDim pDim = peakDims[iDim];
 
