@@ -35,10 +35,10 @@ public class ResonanceFactory {
     }
 
     public void clean() {
-        Map<Long, Resonance> resonancesNew = new TreeMap<Long, Resonance>();
+        Map<Long, Resonance> resonancesNew = new TreeMap<>();
         for (Map.Entry<Long, Resonance> entry : map.entrySet()) {
             Resonance resonance = entry.getValue();
-            if (((resonance.getPeakDims() != null) && (resonance.getPeakDims().size() != 0))) {
+            if (((resonance.getPeakDims() != null) && (!resonance.getPeakDims().isEmpty()))) {
                 resonancesNew.put(entry.getKey(), resonance);
             }
         }
