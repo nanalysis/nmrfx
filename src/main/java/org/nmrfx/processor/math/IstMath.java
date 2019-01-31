@@ -36,25 +36,25 @@ public class IstMath {
      * @see #ist
      * @see #cutAboveThreshold
      */
-    private double threshold;
+    private final double threshold;
 
     /**
      * Number of loops to iterate over : e.g. 300.
      *
      * @see #ist
      */
-    private int loops;
+    private final int loops;
 
     /**
      * Adjust threshold based on loop count.
      *
      * @see #ist
      */
-    private boolean adjustThreshold;
+    private final boolean adjustThreshold;
 
-    private boolean allValues;
+    private final boolean allValues;
 
-    private boolean scaleValues = false;
+    private final boolean scaleValues = false;
 
     /**
      * Sample schedule used for non-uniform sampling. Specifies array elements where data is present.
@@ -209,8 +209,8 @@ public class IstMath {
     private double scale(Complex[] origFid, Complex[] newFid, int n) {
         double sum = 0.0;
         int[][] samples = sampleSchedule.getSamples();
-        for (int i = 0; i < samples.length; i++) {
-            int j = samples[i][0];
+        for (int[] sample : samples) {
+            int j = sample[0];
             sum += newFid[j].abs() / origFid[j].abs();
         }
         double scale = sum / samples.length;
@@ -238,8 +238,9 @@ public class IstMath {
             //for (i = 0, k = 0; i < vsize / 2; i++) {
             for (int i = 0, k = 0; i < vsize; i++) {
                 boolean found = false;
-                for (int j = 0; j < samples.length; j++) {
-                    if (i == samples[j][0]) {  // 2D index only
+                for (int[] sample : samples) {
+                    if (i == sample[0]) {
+                        // 2D index only
                         found = true;
                         break;
                     }
@@ -277,8 +278,8 @@ public class IstMath {
     private void copyValues(Complex[] source, Complex[] target) {
         if (sampleSchedule != null) {
             int[][] samples = sampleSchedule.getSamples();
-            for (int j = 0; j < samples.length; j++) {
-                int k = samples[j][0];
+            for (int[] sample : samples) {
+                int k = sample[0];
                 target[k] = source[k];
             }
         }
@@ -309,13 +310,17 @@ public class IstMath {
      * @see #alg
      */
     private void cutAboveThreshold(Complex[] input, Complex[] add, int nIterations) {
-        if (alg.equals("phased")) {
-            cutAboveComplexPhasedThreshold(input, add, nIterations);
-        } else if (alg.equals("phasedpos")) {
-            cutAboveComplexPhasedPosThreshold(input, add, nIterations);
-        } else // if (alg.equals("abs"))
-        {
-            cutAboveComplexAbsThreshold(input, add, nIterations);
+        switch (alg) {
+            case "phased":
+                cutAboveComplexPhasedThreshold(input, add, nIterations);
+                break;
+            case "phasedpos":
+                cutAboveComplexPhasedPosThreshold(input, add, nIterations);
+                break;
+        // if (alg.equals("abs"))
+            default:
+                cutAboveComplexAbsThreshold(input, add, nIterations);
+                break;
         }
     }
 
