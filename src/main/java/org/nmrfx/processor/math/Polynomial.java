@@ -52,6 +52,7 @@ public class Polynomial {
 
     static class ComplexComparator implements Comparator {
 
+        @Override
         public int compare(Object o1, Object o2) {
             int result = 0;
             if (o1 == null) {
@@ -197,7 +198,6 @@ public class Polynomial {
         // double r,th,ang,temp,sigma,pi2
         // double small,big,xsmall,xbig
         // parameter(pi2=6.2831853071796,sigma=0.7)
-        int nzeros = 0;
         double sigma = 0.7;
         double xsmall = Math.log(small);
         double xbig = Math.log(big);
@@ -224,7 +224,7 @@ public class Polynomial {
         double r = 0.0;
         for (int i = 1; i <= n; i++) {
             if (h[i]) {
-                nzeros = i - iold;
+                int nzeros = i - iold;
                 double temp = (a[iold] - a[i]) / nzeros;
                 // check if the modulus is too small
                 if ((temp < -xbig) && (temp >= xsmall)) {
@@ -307,7 +307,7 @@ public class Polynomial {
         double az = z.abs();
         // if |z|<=1 then apply ruffini-horner's rule for p(z)/p'(z)
         // and for the computation of the inclusion radius
-        boolean again = true;
+        boolean again;
         if (az <= 1) {
             Complex p = new Complex(poly[n].getReal(), poly[n].getImaginary());
             Complex p1 = new Complex(p.getReal(), p.getImaginary());
@@ -534,14 +534,13 @@ public class Polynomial {
         int ir = right(h, i);
         // check the convexity of the angle formed by il,i,ir
         if (ctest(n, a, il, i, ir)) {
-            return;
         } else {
             // continue the search of a pair of vertices in the left and right
             // sets which yield the upper convex hull
             h[i] = false;
             while (true) {
-                boolean tstl = true;
-                boolean tstr = true;
+                boolean tstl;
+                boolean tstr;
                 int ill = 0;
                 int irr = 0;
                 if (il == (i - m)) {
@@ -739,16 +738,19 @@ public class Polynomial {
     }
 
     private static void printCVec(String name, double[] ar, double[] ai) {
-        double avg = 0.0, abs = 0.0, sig = 0.0, max = 0.0, min = Double.MAX_VALUE;
-        Complex[] arry = new Complex[ar.length];
+        double avg = 0.0;
+        double sig = 0.0;
+        double max = 0.0;
+        double min = Double.MAX_VALUE;
+        Complex[] cValues = new Complex[ar.length];
         if (0 == 0) {
             return;
         }
 
-        System.out.print("  Polynomial: pcvec " + name + " len=" + arry.length + " ");
-        for (int jj = 0; jj < arry.length; jj++) {
-            arry[jj] = new Complex(ar[jj], ai[jj]);
-            abs = arry[jj].abs();
+        System.out.print("  Polynomial: pcvec " + name + " len=" + cValues.length + " ");
+        for (int jj = 0; jj < cValues.length; jj++) {
+            cValues[jj] = new Complex(ar[jj], ai[jj]);
+            double abs = cValues[jj].abs();
             avg += abs;
             if (abs > max) {
                 max = abs;
@@ -757,22 +759,22 @@ public class Polynomial {
                 min = abs;
             }
         }
-        avg /= arry.length;
-        for (int jj = 0; jj < arry.length; jj++) {
-            abs = arry[jj].abs();
+        avg /= cValues.length;
+        for (Complex cValue : cValues) {
+            double abs = cValue.abs();
             sig += (avg - abs) * (avg - abs);
         }
-        sig = Math.sqrt(sig / arry.length);
-        System.out.print(arry[0] + " ");
-        if (arry.length > 4) {
-            System.out.print(arry[arry.length / 2 - 2] + " ");
+        sig = Math.sqrt(sig / cValues.length);
+        System.out.print(cValues[0] + " ");
+        if (cValues.length > 4) {
+            System.out.print(cValues[cValues.length / 2 - 2] + " ");
         }
-        System.out.print(arry[arry.length / 2 - 1] + " ");
-        System.out.print(arry[arry.length / 2] + " ");
-        if (arry.length > 4) {
-            System.out.print(arry[arry.length / 2 + 1] + " ");
+        System.out.print(cValues[cValues.length / 2 - 1] + " ");
+        System.out.print(cValues[cValues.length / 2] + " ");
+        if (cValues.length > 4) {
+            System.out.print(cValues[cValues.length / 2 + 1] + " ");
         }
-        System.out.print(arry[arry.length - 1] + " ");
+        System.out.print(cValues[cValues.length - 1] + " ");
         System.out.print(": abs avg=" + avg + " sigma=" + sig + " max=" + max + " min=" + min);
         System.out.println();
     }
