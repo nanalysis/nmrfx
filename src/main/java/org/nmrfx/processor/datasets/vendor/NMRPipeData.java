@@ -67,7 +67,7 @@ public class NMRPipeData implements NMRData {
     private SampleSchedule sampleSchedule = null;
     Map<Integer, FileChannel> fcMap;
 
-    static final Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
     boolean swapBits = true;
     /**
      * open Varian parameter and data files
@@ -224,12 +224,12 @@ public class NMRPipeData implements NMRData {
         try {
             fileChannel = FileChannel.open(path, StandardOpenOption.READ);
         } catch (IOException ex) {
-            logger.log(Level.WARNING, (fpath + "/n" + ex.getMessage()));
+            LOGGER.log(Level.WARNING, "{0}/n{1}", new String[]{fpath, ex.getMessage()});
             if (fileChannel != null) {
                 try {
                     fileChannel.close();
                 } catch (IOException e) {
-                    logger.log(Level.WARNING, e.getMessage());
+                    LOGGER.log(Level.WARNING, e.getMessage());
                 }
             }
         }
@@ -241,12 +241,12 @@ public class NMRPipeData implements NMRData {
         try {
             fc = FileChannel.open(Paths.get(datapath), StandardOpenOption.READ);
         } catch (IOException ex) {
-            logger.log(Level.WARNING, (fpath + "/n" + ex.getMessage()));
+            LOGGER.log(Level.WARNING, "{0}/n{1}", new String[]{fpath, ex.getMessage()});
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException e) {
-                    logger.log(Level.WARNING, e.getMessage());
+                    LOGGER.log(Level.WARNING, e.getMessage());
                 }
             }
         }
@@ -257,7 +257,7 @@ public class NMRPipeData implements NMRData {
         try {
             fc.close();
         } catch (IOException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
         }
     }
 
@@ -292,7 +292,7 @@ public class NMRPipeData implements NMRData {
     }
 
     @Override
-    public int getNDim() {
+    public final int getNDim() {
         return FIELDS.FDDIMCOUNT.getInt(fileHeader);
     }
 
@@ -305,7 +305,7 @@ public class NMRPipeData implements NMRData {
     }
 
     @Override
-    public int getSize(int dim) {
+    public final int getSize(int dim) {
         int size = FIELDS.getSize(fileHeader, dim);
         if (dim > 0) {
             size /= 2;
@@ -328,7 +328,7 @@ public class NMRPipeData implements NMRData {
         return FIELDS.FDTEMPERATURE.getFloat(fileHeader);
     }
 
-    public double getDMXValue() {
+    public final double getDMXValue() {
         return FIELDS.FDDMXVAL.getFloat(fileHeader);
     }
 
@@ -682,21 +682,21 @@ public class NMRPipeData implements NMRData {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " / " + index + " out of bounds");
             }
         } catch (EOFException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
             if (iFC != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    logger.log(Level.WARNING, ex.getMessage());
+                    LOGGER.log(Level.WARNING, ex.getMessage());
                 }
             }
         } catch (IOException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
             if (iFC != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    logger.log(Level.WARNING, ex.getMessage());
+                    LOGGER.log(Level.WARNING, ex.getMessage());
                 }
             }
         }
@@ -715,21 +715,21 @@ public class NMRPipeData implements NMRData {
             buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2 + 4, 4);
             nread = fc.read(buf, skips + stride / 2);
         } catch (EOFException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    logger.log(Level.WARNING, ex.getMessage());
+                    LOGGER.log(Level.WARNING, ex.getMessage());
                 }
             }
         } catch (IOException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    logger.log(Level.WARNING, ex.getMessage());
+                    LOGGER.log(Level.WARNING, ex.getMessage());
                 }
             }
         }
@@ -809,7 +809,7 @@ public class NMRPipeData implements NMRData {
         }
     }
 
-    void getSizes() throws IOException {
+    final void getSizes() throws IOException {
         sizes = new int[DIMSIZE];
         for (int dim = 0; dim < DIMSIZE; dim++) {
             int size = FIELDS.getSize(fileHeader, dim);
@@ -867,6 +867,7 @@ public class NMRPipeData implements NMRData {
             super(maxEntries);
         }
 
+        @Override
         protected boolean removeLRU(LinkEntry<Integer, FileChannel> entry) {
             FileChannel fileChannel = entry.getValue();
             try {
@@ -955,18 +956,21 @@ public class NMRPipeData implements NMRData {
 
     enum FTYPES {
         INT {
+            @Override
             String toString(FIELDS field, Header header) {
                 int value = field.getInt(header);
                 return String.format("%d", value);
             }
         },
         FLOAT {
+            @Override
             String toString(FIELDS field, Header header) {
                 float value = field.getFloat(header);
                 return String.format("%.5f", value);
             }
         },
         STRING {
+            @Override
             String toString(FIELDS field, Header header) {
                 return header.getString(field.offset * 4, field.stringLen);
             }
@@ -1071,19 +1075,23 @@ public class NMRPipeData implements NMRData {
         FDF2GB(374),
         FDF2GOFF(382),
         FDF2C1(418) {
+            @Override
             float getFloat(Header header) {
                 return header.getFloat(offset) + 1.0f;
             }
 
+            @Override
             void setFloat(Header header, float value) {
                 header.setFloat(offset, value - 1.0f);
             }
         },
         FDF2ZF(108, FTYPES.INT) {
+            @Override
             int getInt(Header header) {
                 return -header.getInt(offset);
             }
 
+            @Override
             void setInt(Header header, int value) {
                 header.setInt(offset, -value);
             }
@@ -1118,19 +1126,23 @@ public class NMRPipeData implements NMRData {
         FDF1GB(375),
         FDF1GOFF(383),
         FDF1C1(423) {
+            @Override
             float getFloat(Header header) {
                 return header.getFloat(offset) + 1.0f;
             }
 
+            @Override
             void setFloat(Header header, float value) {
                 header.setFloat(offset, value - 1.0f);
             }
         },
         FDF1ZF(437, FTYPES.INT) {
+            @Override
             int getInt(Header header) {
                 return -header.getInt(offset);
             }
 
+            @Override
             void setInt(Header header, int value) {
                 header.setInt(offset, -value);
             }
@@ -1163,19 +1175,23 @@ public class NMRPipeData implements NMRData {
         FDF3GB(376),/* Added for NMRPipe. */
         FDF3GOFF(384),/* Added for NMRPipe. */
         FDF3C1(404) {
+            @Override
             float getFloat(Header header) {
                 return header.getFloat(offset) + 1.0f;
             }
 
+            @Override
             void setFloat(Header header, float value) {
                 header.setFloat(offset, value - 1.0f);
             }
         },
         FDF3ZF(438, FTYPES.INT) {
+            @Override
             int getInt(Header header) {
                 return -header.getInt(offset);
             }
 
+            @Override
             void setInt(Header header, int value) {
                 header.setInt(offset, -value);
             }
@@ -1208,19 +1224,23 @@ public class NMRPipeData implements NMRData {
         FDF4GB(377),/* Added for NMRPipe. */
         FDF4GOFF(385),/* Added for NMRPipe. */
         FDF4C1(409) {
+            @Override
             float getFloat(Header header) {
                 return header.getFloat(offset) + 1.0f;
             }
 
+            @Override
             void setFloat(Header header, float value) {
                 header.setFloat(offset, value - 1.0f);
             }
         },
         FDF4ZF(439, FTYPES.INT) {
+            @Override
             int getInt(Header header) {
                 return -header.getInt(offset);
             }
 
+            @Override
             void setInt(Header header, int value) {
                 header.setInt(offset, -value);
             }
@@ -1431,7 +1451,7 @@ public class NMRPipeData implements NMRData {
         }
     }
 
-    public void readHeader(String fileName) {
+    public final void readHeader(String fileName) {
         ByteBuffer buffer = null;
         try (FileChannel fileChannel = FileChannel.open(Paths.get(fileName), StandardOpenOption.READ)) {
             buffer = ByteBuffer.allocate(2048);
@@ -1449,7 +1469,7 @@ public class NMRPipeData implements NMRData {
 
     }
 
-    public void dumpHeader(Header header) {
+    private void dumpHeader(Header header) {
         int nDim = FIELDS.FDDIMCOUNT.getInt(header);
         String[] pars = {"MAGIC", "FLTFORMAT", "FLTORDER", "SIZE", "SPECNUM", "QUADFLAG", "2DPHASE", "TRANSPOSED", "DIMCOUNT",
             "DIMORDER", "DIMORDER1", "DIMORDER2", "DIMORDER3", "DIMORDER4", "NUSDIM",
@@ -1476,6 +1496,5 @@ public class NMRPipeData implements NMRData {
             System.out.printf("%12s", FIELDS.getString(header, par));
             System.out.println("");
         }
-
     }
 }
