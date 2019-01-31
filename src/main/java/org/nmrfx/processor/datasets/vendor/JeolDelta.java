@@ -36,7 +36,7 @@ public class JeolDelta {
     private Strip[] strips;
     private int subMatrixPointCount;
     private int sectionByteCount;
-    static final Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
 
     class Strip {
 
@@ -65,7 +65,7 @@ public class JeolDelta {
         try {
             raFile.close();
         } catch (IOException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
         }
     }
 
@@ -87,12 +87,12 @@ public class JeolDelta {
         int nSections = 1;
         sectionByteCount = 8;
         subMatrixPointCount = 1;
-        for (int i = 0; i < axes.length; i++) {
-            if (axes[i].nPoints != 0) {
-                subMatrixPointCount *= axes[i].subMatrixEdge;
-                sectionByteCount *= axes[i].nPoints;
+        for (JeolDeltaAxis axe : axes) {
+            if (axe.nPoints != 0) {
+                subMatrixPointCount *= axe.subMatrixEdge;
+                sectionByteCount *= axe.nPoints;
             }
-            nSections *= axes[i].type.getSectionCount();
+            nSections *= axe.type.getSectionCount();
         }
         strips = new Strip[nSections];
         for (int i = 0; i < nSections; i++) {
