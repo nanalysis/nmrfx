@@ -27,8 +27,8 @@ import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer
 public class PeakPath {
 
     OptFunction optFunction = new Quadratic10();
-    ArrayList<PeakList> peakLists = new ArrayList<PeakList>();
-    ArrayList<ArrayList<Peak>> filteredLists = new ArrayList<ArrayList<Peak>>();
+    ArrayList<PeakList> peakLists = new ArrayList<>();
+    ArrayList<ArrayList<Peak>> filteredLists = new ArrayList<>();
     final PeakList firstList;
     final double[] concentrations;
     final double[] binderConcs;
@@ -75,6 +75,7 @@ public class PeakPath {
             this.distance = distance;
         }
 
+        @Override
         public int compareTo(PeakDistance peakDis2) {
             return Double.compare(distance, peakDis2.distance);
         }
@@ -84,7 +85,7 @@ public class PeakPath {
         int iList = -1;
         filteredLists.clear();
         for (PeakList peakList : peakLists) {
-            ArrayList<Peak> peakArray = new ArrayList<Peak>();
+            ArrayList<Peak> peakArray = new ArrayList<>();
             filteredLists.add(peakArray);
             iList++;
             if (iList == 0) {
@@ -128,7 +129,7 @@ public class PeakPath {
             double tol = Math.sqrt(sum / peakDims.length);
             int iList = -1;
             boolean ok = true;
-            ArrayList<Peak> minPeaks = new ArrayList<Peak>();
+            ArrayList<Peak> minPeaks = new ArrayList<>();
             for (PeakList peakList : peakLists) {
                 iList++;
                 if (iList == 0) {
@@ -195,7 +196,6 @@ public class PeakPath {
             retVal = v.getPoint();
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
-            ex.printStackTrace();
         }
         return retVal;
 
@@ -216,7 +216,7 @@ public class PeakPath {
 
     public ArrayList<Peak> scan(final String startPeakName, double radius, double tolMul, int midListIndex, final String lastPeakName) {
         Peak startPeak = PeakList.getAPeak(startPeakName);
-        ArrayList<PeakDistance> peakDistances = new ArrayList<PeakDistance>();
+        ArrayList<PeakDistance> peakDistances = new ArrayList<>();
         if (lastPeakName.length() != 0) {
             Peak lastPeak = PeakList.getAPeak(lastPeakName);
             double distance = calcDistance(startPeak, lastPeak);
@@ -240,7 +240,7 @@ public class PeakPath {
         double firstBConc = binderConcs[0];
         double midBConc = binderConcs[midListIndex];
         double lastBConc = binderConcs[binderConcs.length - 1];
-        ArrayList<Peak> bestPath = new ArrayList<Peak>();
+        ArrayList<Peak> bestPath = new ArrayList<>();
         double sum = 0.0;
         for (int iDim : peakDims) {
             double boundary = startPeak.getPeakDim(iDim).getBoundsValue();
@@ -252,7 +252,7 @@ public class PeakPath {
             Peak lastPeak = peakDistance.peak;
             double startToLast = peakDistance.distance;
             //System.out.println("end " + lastPeak.getName() + " " + startToLast);
-            ArrayList<PeakDistance> midDistancePeaks = new ArrayList<PeakDistance>();
+            ArrayList<PeakDistance> midDistancePeaks = new ArrayList<>();
             for (Peak midPeak : midPeaks) {
                 double startToMid = calcDistance(startPeak, midPeak);
                 if (startToMid > startToLast) {
@@ -302,7 +302,7 @@ public class PeakPath {
                     polyCoef[jDim++] = poly(midConc, lastConc, midDis, lastDis);
                 }
                 double pathSum = 0.0;
-                ArrayList<Peak> path = new ArrayList<Peak>();
+                ArrayList<Peak> path = new ArrayList<>();
                 path.add(startPeak);
                 boolean pathOK = true;
                 for (int iList = 1; iList < filteredLists.size() - 1; iList++) {
