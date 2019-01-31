@@ -36,6 +36,7 @@ public class PeakEvent extends EventObject {
 
     /**
      * Creates a new instance of PeakEvent
+     * @param object event object
      */
     public PeakEvent(Object object) {
         super(object);
