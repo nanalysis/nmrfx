@@ -441,7 +441,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
                     // XXX 1.05 is a fudge factor to make the volume calculated here closer to those from
                     // summing data points across peak, not unreasonable because you have to sum out to infinity
                     // to get the whole integral
-                    lPeakDim.myPeak.setVolume1((float) (lPeakDim.myPeak.getIntensity() * Math.abs(lPeakDim.myPeak.peakDim[0].getLineWidthValue()) * Math.PI / 2.0 / 1.05));
+                    lPeakDim.myPeak.setVolume1((float) (lPeakDim.myPeak.getIntensity() * Math.abs(lPeakDim.myPeak.peakDims[0].getLineWidthValue()) * Math.PI / 2.0 / 1.05));
                     j++;
 
                 }
@@ -458,7 +458,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
             // XXX 1.05 is a fudge factor to make the volume calculated here closer to those from
             // summing data points across peak, not unreasonable because you have to sum out to infinity
             // to get the whole integral
-            lPeakDim.myPeak.setVolume1((float) (lPeakDim.myPeak.getIntensity() * Math.abs(lPeakDim.myPeak.peakDim[0].getLineWidthValue()) * Math.PI / 2.0 / 1.05));
+            lPeakDim.myPeak.setVolume1((float) (lPeakDim.myPeak.getIntensity() * Math.abs(lPeakDim.myPeak.peakDims[0].getLineWidthValue()) * Math.PI / 2.0 / 1.05));
             sumV += lPeakDim.myPeak.getVolume1();
         }
         volume = sumV;
