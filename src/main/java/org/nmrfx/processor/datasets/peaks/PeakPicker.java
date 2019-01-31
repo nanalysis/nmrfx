@@ -276,7 +276,7 @@ public class PeakPicker {
 
                     try {
                         testValue = sign * readPoint(checkPoint, dim);
-                    } catch (Exception e) {
+                    } catch (IOException e) {
                         System.err.println(i + " " + delta + " " + fold[i]
                                 + " " + dim[i] + " " + checkPoint[i]);
                         System.err.println(checkPoint[0] + " " + checkPoint[1]
@@ -411,18 +411,20 @@ public class PeakPicker {
         double minTol = Math.round(100 * 2.0 * getSw(dDim) / getSf(dDim) / getSize(dDim)) / 100.0;
         double tol = minTol;
         Nuclei nuc = dataset.getNucleus(dDim);
-        if (null != nuc) switch (nuc) {
-            case H1:
-                tol = 0.05;
-                break;
-            case C13:
-                tol = 0.6;
-                break;
-            case N15:
-                tol = 0.2;
-                break;
-            default:
-                tol = minTol;
+        if (null != nuc) {
+            switch (nuc) {
+                case H1:
+                    tol = 0.05;
+                    break;
+                case C13:
+                    tol = 0.6;
+                    break;
+                case N15:
+                    tol = 0.2;
+                    break;
+                default:
+                    tol = minTol;
+            }
         }
         tol = Math.min(tol, minTol);
 
@@ -442,7 +444,6 @@ public class PeakPicker {
         int nPeaks = 0;
         int nMatch;
         double checkValue;
-        boolean findMax;
         dim = peakPickPar.dim;
         pt = peakPickPar.pt;
         Double noiseLevel = dataset.getNoiseLevel();
@@ -492,9 +493,9 @@ public class PeakPicker {
                     throw new IllegalArgumentException("Error picking list" + peakPickPar.listName + ", invalid dimension " + pdim[i]);
                 }
                 configureDim(sDim, dim[i]);
-             }
+            }
         } else if (mode.equalsIgnoreCase("append")) {
-            if (!listExists) {
+            if (peakList == null) {
                 throw new IllegalArgumentException(MSG_PEAK_LIST + peakPickPar.listName + "doesn't exist");
             }
 
@@ -529,14 +530,10 @@ public class PeakPicker {
             for (int i = 0; i < peakPickPar.nPeakDim; i++) {
                 SpectralDim sDim = peakList.getSpectralDim(pdim[i]);
                 configureDim(sDim, dim[i]);
-             }
+            }
 
         }
-        if (!peakPickPar.fixedPick && peakPickPar.region.equalsIgnoreCase("point")) {
-            findMax = true;
-        } else {
-            findMax = false;
-        }
+        boolean findMax = !peakPickPar.fixedPick && peakPickPar.region.equalsIgnoreCase("point");
 
         if (peakList == null) {
             throw new IllegalArgumentException("nv_dataset peakPick: invalid mode");
@@ -661,7 +658,7 @@ public class PeakPicker {
         }
         return foundAny;
     }
-    
+
     public Peak getLastPick() {
         return lastPeakPicked;
     }
