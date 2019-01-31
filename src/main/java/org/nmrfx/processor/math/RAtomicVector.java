@@ -5,7 +5,6 @@
  */
 package org.nmrfx.processor.math;
 
-import org.renjin.eval.Context;
 import org.renjin.eval.EvalException;
 import org.renjin.sexp.AtomicVector;
 import org.renjin.sexp.AttributeMap;
