@@ -118,6 +118,7 @@ public class SimpleResonance implements Resonance {
 
     }
 
+    @Override
     public List<PeakDim> getPeakDims() {
         // fixme should be unmodifiable or copy
         return peakDims;
