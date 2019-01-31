@@ -49,7 +49,6 @@ public class Cfft {
         int n;
         int m;
         int length;
-        Complex w = new Complex(0.0, 0.0);
 
         n = 1;
 
@@ -108,12 +107,18 @@ public class Cfft {
             length = 2 * li;
             Complex u = Complex.ONE;
 
-            if (li == 1) {
-                w = new Complex(-1.0, 0.0);
-            } else if (li == 2) {
-                w = new Complex(0.0, 1.0);
-            } else {
-                w = new Complex(cosTable[li], sineTable[li]);
+            Complex w;
+
+            switch (li) {
+                case 1:
+                    w = new Complex(-1.0, 0.0);
+                    break;
+                case 2:
+                    w = new Complex(0.0, 1.0);
+                    break;
+                default:
+                    w = new Complex(cosTable[li], sineTable[li]);
+                    break;
             }
 
             for (j = 0; j < li; j++) {
@@ -163,8 +168,6 @@ public class Cfft {
                 m++;
             }
         }
-
-        return;
     }
 
     /* ifft -- inverse FFT using the same interface as fft() */
@@ -185,8 +188,6 @@ public class Cfft {
             //  cvec[i].imaginary = cvec[i].imaginary * mul;
             //  cvec[i].real = -cvec[i].real * mul;
         }
-
-        return;
     }
     /*
      public static void rfft(double[] vec, int n, int mode) {
