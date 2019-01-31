@@ -1570,7 +1570,7 @@ public class Noe implements Constraint, Serializable {
 
         for (int i = 0; i < peak.peakList.nDim; i++) {
             atoms[i] = null;
-            String label = peak.peakDim[i].getLabel();
+            String label = peak.peakDims[i].getLabel();
             String[] elems = label.split(" ");
 
             if (elems.length == 0) {
