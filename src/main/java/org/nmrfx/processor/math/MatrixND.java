@@ -69,9 +69,7 @@ public class MatrixND implements MatrixType {
 
     public MatrixND(MatrixND source) {
         this(source.sizes);
-        for (int i = 0; i < data.length; i++) {
-            data[i] = source.data[i];
-        }
+        System.arraycopy(source.data, 0, data, 0, data.length);
     }
 
     public MatrixND(double[][] data2D) {
@@ -165,6 +163,7 @@ public class MatrixND implements MatrixType {
         dump(null);
     }
 
+    @Override
     public void dump(String outName) throws IOException {
 
         FileWriter fileWriter = null;
@@ -195,6 +194,7 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    @Override
     public int getIndex() {
         if (pt == null) {
             return 0;
@@ -223,7 +223,7 @@ public class MatrixND implements MatrixType {
         return nDim;
     }
 
-    private final static int[] calcStrides(int[] shape) {
+    private static int[] calcStrides(int[] shape) {
         int[] strides = new int[shape.length];
         int stride = 1;
         for (int i = shape.length - 1; i >= 0; i--) {
@@ -308,7 +308,7 @@ public class MatrixND implements MatrixType {
         }
         int n = riVec[0].length;
         for (int i = 0; i < n; i++) {
-            data[offset] = riVec[0][i];;
+            data[offset] = riVec[0][i];
             offset += strides[axis];
         }
     }
@@ -322,9 +322,9 @@ public class MatrixND implements MatrixType {
         }
         int n = sizes[axis] / 2;
         for (int i = 0; i < n; i++) {
-            data[offset] = riVec[0][i];;
+            data[offset] = riVec[0][i];
             offset += strides[axis];
-            data[offset] = riVec[1][i];;
+            data[offset] = riVec[1][i];
             offset += strides[axis];
         }
     }
@@ -512,6 +512,7 @@ public class MatrixND implements MatrixType {
         }
     }
 
+    @Override
     public void phase(double[] phase) {
         doPhaseTD(phase);
     }
@@ -673,9 +674,7 @@ public class MatrixND implements MatrixType {
         if (!checkShapes(src)) {
             throw new ProcessingException("copyMatrix dimensions not equal");
         }
-        for (int i = 0; i < data.length; i++) {
-            data[i] = src.data[i];
-        }
+        System.arraycopy(src.data, 0, data, 0, data.length);
 
     }
 
