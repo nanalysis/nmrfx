@@ -75,7 +75,7 @@ public class GRINS {
             MatrixND matrixCopy = new MatrixND(matrix);
             double[] addBuffer = new double[matrix.getNElems()];
             int nPeaks = 0;
-            int iteration = 0;
+            int iteration;
             double lastThreshold = Double.MAX_VALUE;
             for (iteration = 0; iteration < iterations; iteration++) {
                 matrix.doFTtoReal();
