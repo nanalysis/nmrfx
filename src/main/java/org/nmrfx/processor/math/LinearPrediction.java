@@ -347,7 +347,6 @@ public class LinearPrediction {
             csvd = new ComplexSingularValueDecomposition(A);
         } catch (Exception jpE) {
             System.out.println(jpE.getMessage());
-            jpE.printStackTrace();
             return null;
         }
 
@@ -471,7 +470,6 @@ public class LinearPrediction {
         try {
             csvd = new ComplexSingularValueDecomposition(chqrd.R);
         } catch (Exception ex) {
-            ex.printStackTrace();
             throw new Exception("CSVD Failed");
         }
 
@@ -571,7 +569,6 @@ public class LinearPrediction {
 
         } catch (OutOfRangeException | NumberIsTooLargeException | DimensionMismatchException | NumberIsTooSmallException e) {
             System.out.println(e.getMessage());
-            e.printStackTrace();
             return null;
         }
 
