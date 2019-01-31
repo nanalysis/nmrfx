@@ -53,8 +53,8 @@ public class PeakNeighbors {
 //    {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
 //    {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
 //    };
-    private static final int[][] offsets2d = {{0, 0}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
-    private static final int[][] offsets2dFull = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {0, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}};
+    private static final int[][] OFFSETS2D = {{0, 0}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+    private static final int[][] OFFSETS2D_FULL = {{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {0, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}};
 
     public PeakNeighbors(PeakList peakList, int nCells, String[] dimNames) {
         this.peakLists[0] = peakList;
@@ -125,7 +125,6 @@ public class PeakNeighbors {
     final void setCells(int iP) {
         int nDim = dimNames.length;
         double[][] bounds = getBoundaries();
-        int[] nCells = new int[nDim];
         strides = new int[nDim];
         int[] iDims = new int[nDim];
 
@@ -136,10 +135,10 @@ public class PeakNeighbors {
             if (iDims[j] < 0) {
                 throw new IllegalArgumentException("Invalid dimension " + dimNames[j]);
             }
-            nCells[j] = 1 + (int) Math.floor(bounds[j][1] / cellSizes[j]);
+            int nCell = 1 + (int) Math.floor(bounds[j][1] / cellSizes[j]);
             strides[j] = nStride;
-            nStride *= nCells[j];
-            nCellsTotal *= nCells[j];
+            nStride *= nCell;
+            nCellsTotal *= nCell;
         }
         List<Peak> listPeaks = peakLists[iP].peaks();
         int nPeaks = listPeaks.size();
@@ -176,12 +175,12 @@ public class PeakNeighbors {
     public void findNeighbors() {
         List<Peak> listPeaks = peakLists[0].peaks();
         int nCellsTotal = cellCounts[0].length;
-        int[] offsets1 = new int[offsets2d.length];
+        int[] offsets1 = new int[OFFSETS2D.length];
         int nDim = dimNames.length;
         for (int i = 0; i < offsets1.length; i++) {
             int delta = 0;
             for (int j = 0; j < nDim; j++) {
-                delta += offsets2d[i][j] * strides[j];
+                delta += OFFSETS2D[i][j] * strides[j];
             }
             offsets1[i] = delta;
         }
@@ -221,7 +220,7 @@ public class PeakNeighbors {
         List<Peak> listPeaksA = peakLists[0].peaks();
         List<Peak> listPeaksB = peakLists[1].peaks();
         int nCellsTotal = cellCounts[1].length;
-        int[] offsets1 = new int[offsets2dFull.length];
+        int[] offsets1 = new int[OFFSETS2D_FULL.length];
         int nDim = dimNames.length;
         if (shiftOffset == null) {
             shiftOffset = new double[nDim];
@@ -229,7 +228,7 @@ public class PeakNeighbors {
         for (int i = 0; i < offsets1.length; i++) {
             int delta = 0;
             for (int j = 0; j < nDim; j++) {
-                delta += offsets2dFull[i][j] * strides[j];
+                delta += OFFSETS2D_FULL[i][j] * strides[j];
             }
             offsets1[i] = delta;
         }
@@ -284,12 +283,12 @@ public class PeakNeighbors {
     public void optimizePeakLabelPositions() {
         List<Peak> listPeaks = peakLists[0].peaks();
         int nCellsTotal = cellCounts[0].length;
-        int[] offsets1 = new int[offsets2dFull.length];
+        int[] offsets1 = new int[OFFSETS2D_FULL.length];
         int nDim = dimNames.length;
         for (int i = 0; i < offsets1.length; i++) {
             int delta = 0;
             for (int j = 0; j < nDim; j++) {
-                delta += offsets2dFull[i][j] * strides[j];
+                delta += OFFSETS2D_FULL[i][j] * strides[j];
             }
             offsets1[i] = delta;
         }
@@ -316,13 +315,13 @@ public class PeakNeighbors {
                     }
                 }
             }
-            Peak[] closestInArc = new Peak[8];
+            Peak[] closestPeaks = new Peak[8];
             double[] disInArc = new double[8];
             double tolLimit = 1.5;
             if (!neighbors.isEmpty()) {
                 double sumInvDistance = 0.0;
-                for (int i = 0; i < closestInArc.length; i++) {
-                    closestInArc[i] = null;
+                for (int i = 0; i < closestPeaks.length; i++) {
+                    closestPeaks[i] = null;
                     disInArc[i] = Double.MAX_VALUE;
                 }
                 // find closest peak within 8 arcs
@@ -341,15 +340,14 @@ public class PeakNeighbors {
                         arcIndex = 0;
                     }
                     double distance = Math.sqrt(dx * dx + dy * dy);
-                    ;
 
-                    if ((closestInArc[arcIndex] == null) || (disInArc[arcIndex] > distance)) {
-                        closestInArc[arcIndex] = peak2;
+                    if ((closestPeaks[arcIndex] == null) || (disInArc[arcIndex] > distance)) {
+                        closestPeaks[arcIndex] = peak2;
                         disInArc[arcIndex] = distance;
                     }
                 }
-                for (int i = 0; i < closestInArc.length; i++) {
-                    if (closestInArc[i] != null) {
+                for (int i = 0; i < closestPeaks.length; i++) {
+                    if (closestPeaks[i] != null) {
                         double distance = disInArc[i];
                         if (distance < tolLimit) {
                             sumInvDistance += 1.0 / distance;
@@ -358,9 +356,9 @@ public class PeakNeighbors {
                 }
                 double sumDx = 0.0;
                 double sumDy = 0.0;
-                for (int i = 0; i < closestInArc.length; i++) {
-                    if (closestInArc[i] != null) {
-                        Peak peak2 = closestInArc[i];
+                for (Peak closestPeak : closestPeaks) {
+                    if (closestPeak != null) {
+                        Peak peak2 = closestPeak;
                         double dx = (peak1.getPeakDim(dims[0][0]).getChemShift() - peak2.getPeakDim(dims[0][0]).getChemShift()) / cellSizes[0];
                         double dy = 0.0;
                         if (dims[0].length > 1) {
@@ -397,6 +395,7 @@ public class PeakNeighbors {
                 bestValue = Double.MAX_VALUE;
             }
 
+            @Override
             public double value(double[] x) {
                 double[] minOffsets = new double[iOffsets.length];
                 for (int i = 0; i < minOffsets.length; i++) {
@@ -428,7 +427,7 @@ public class PeakNeighbors {
         }
         BOBYQAOptimizer optimizer = new BOBYQAOptimizer(nInterp, initialTrust, stopTrust);
         double[] initialGuess = new double[iOffsets.length];
-        PointValuePair result = null;
+        PointValuePair result;
         try {
             result = optimizer.optimize(
                     new MaxEval(nSteps),
