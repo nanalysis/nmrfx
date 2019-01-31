@@ -41,8 +41,8 @@ import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
 
 /**
- * BrukerData implements NMRData methods for opening and reading parameters and FID data acquired using a Bruker
- * instrument.
+ * JCAMPData implements NMRData methods for opening and reading parameters and
+ * FID data in a JCAMP file.
  *
  * @author bfetler
  * @see NMRData
@@ -61,28 +61,28 @@ class JCAMPData implements NMRData {
     private boolean negatePairs = false;
     private boolean fixDSP = true;
     private boolean fixByShift = false;
-    private boolean[] complexDim = new boolean[5];
-    private double[] f1coef[] = new double[5][];   // FnMODE,2 MC2,2
-    private String[] f1coefS = new String[5];   // FnMODE,2 MC2,2
-    private String fttype[] = new String[5];
-    private int tdsize[] = new int[5];  // TD,1 TD,2 etc.
-    private int maxSize[] = new int[5];  // TD,1 TD,2 etc.
+    private final boolean[] complexDim = new boolean[5];
+    private final double[] f1coef[] = new double[5][];   // FnMODE,2 MC2,2
+    private final String[] f1coefS = new String[5];   // FnMODE,2 MC2,2
+    private final String fttype[] = new String[5];
+    private final int tdsize[] = new int[5];  // TD,1 TD,2 etc.
+    private final int maxSize[] = new int[5];  // TD,1 TD,2 etc.
     private double deltaPh0_2 = 0.0;
     // fixme dynamically determine size
-    private Double[] Ref = new Double[5];
-    private Double[] Sf = new Double[5];
-    private Double[] Sw = new Double[5];
-    private String[] Tn = new String[5];
+    private final Double[] Ref = new Double[5];
+    private final Double[] Sf = new Double[5];
+    private final Double[] Sw = new Double[5];
+    private final String[] Tn = new String[5];
     private String text = null;
 
     private final String fpath;
     private FileChannel fc = null;
     private HashMap<String, String> parMap = null;
-    private static HashMap<String, Double> phaseTable = null;
+    private static final HashMap<String, Double> PHASE_TABLE = null;
     private String[] acqOrder;
     private SampleSchedule sampleSchedule = null;
-    final static Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
-    final static double scale = 1.0;
+    final static Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+    final static double SCALE = 1.0;
     boolean hasFID = false;
     boolean hasSpectrum = false;
     ASDFParser rparser = null;
@@ -102,16 +102,18 @@ class JCAMPData implements NMRData {
         openDataFile(path);
     }
 
+    @Override
     public void close() {
         try {
             fc.close();
         } catch (IOException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
         }
     }
 
     /**
-     * Finds data, given a path to search for vendor-specific files and directories.
+     * Finds data, given a path to search for vendor-specific files and
+     * directories.
      *
      * @param bpath full path for data
      * @return if data was successfully found or not
@@ -127,7 +129,8 @@ class JCAMPData implements NMRData {
     }
 
     /**
-     * Finds FID data, given a path to search for vendor-specific files and directories.
+     * Finds FID data, given a path to search for vendor-specific files and
+     * directories.
      *
      * @param bpath full path for FID data
      * @return if FID data was successfully found or not
@@ -219,11 +222,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public boolean getNegateImag(int iDim) {
-        if (iDim > 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return iDim > 0;
     }
 
     @Override
@@ -318,7 +317,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public void setRef(int iDim, double ref) {
-        Ref[iDim] = Double.valueOf(ref);
+        Ref[iDim] = ref;
     }
 
     @Override
@@ -348,7 +347,7 @@ class JCAMPData implements NMRData {
 
     @Override
     public String getTN(int iDim) {
-        String tn = "";
+        String tn;
         if (Tn[iDim] != null) {
             tn = Tn[iDim];
         } else {
@@ -395,6 +394,7 @@ class JCAMPData implements NMRData {
         return s;
     }
 
+    @Override
     public long getDate() {
         String s;
         long seconds = 0;
@@ -402,7 +402,7 @@ class JCAMPData implements NMRData {
             try {
                 System.out.println("sec " + s);
                 seconds = Long.parseLong(s);
-            } catch (Exception e) {
+            } catch (NumberFormatException e) {
             }
         } else {
             System.out.println("no date");
@@ -491,13 +491,13 @@ class JCAMPData implements NMRData {
 
     // open Bruker parameter file(s)
     private void openParFile(String parpath) {
-        parMap = new LinkedHashMap<String, String>(200);
+        parMap = new LinkedHashMap<>(200);
         // process proc files if they exist
         String path = parpath;
         try {
             BrukerPar.processBrukerParFile(parMap, path, 1, true);
         } catch (NMRParException ex) {
-            logger.log(Level.WARNING, ex.getMessage());
+            LOGGER.log(Level.WARNING, ex.getMessage());
         }
         // process acqu files if they exist
         int acqdim = 1;
@@ -517,10 +517,10 @@ class JCAMPData implements NMRData {
         double firstX = 0;
         double lastX = 0;
         int nPoints = 0;
-        double xFactor = 1.0;
-        double yFactor = 1.0;
-        double rFactor = 1.0;
-        double iFactor = 1.0;
+        double xFactor;
+        double yFactor;
+        double rFactor;
+        double iFactor;
         String units = "";
         if (dataClass.equals("XYDATA")) {
             Sf[0] = getParDouble(".OBSERVEFREQUENCY," + (iDim + 1));
@@ -581,19 +581,28 @@ class JCAMPData implements NMRData {
         Tn[0] = Tn[0].replace("^", "");
         double sf = Sf[0];
         Sw[0] = 1000.0;
-        if (units.equals("HZ")) {
-            Sw[0] = Math.abs(lastX - firstX);
-            double swP = (Sw[0] / sf);
-            Ref[0] = firstX / Sf[0];
-        } else if (units.equals("PPM")) {
-            double swP = Math.abs(lastX - firstX);
-            Sw[0] = sf / swP;
-            Ref[0] = firstX;
-        } else if (units.equals("SECONDS")) {
-            double dwell = Math.abs(lastX - firstX) / nPoints;
-            Sw[0] = 1.0 / dwell;
-            double swP = (Sw[0] / sf);
-            Ref[0] = 0.0;
+        switch (units) {
+            case "HZ": {
+                Sw[0] = Math.abs(lastX - firstX);
+                double swP = (Sw[0] / sf);
+                Ref[0] = firstX / Sf[0];
+                break;
+            }
+            case "PPM": {
+                double swP = Math.abs(lastX - firstX);
+                Sw[0] = sf / swP;
+                Ref[0] = firstX;
+                break;
+            }
+            case "SECONDS": {
+                double dwell = Math.abs(lastX - firstX) / nPoints;
+                Sw[0] = 1.0 / dwell;
+                double swP = (Sw[0] / sf);
+                Ref[0] = 0.0;
+                break;
+            }
+            default:
+                break;
         }
         maxSize[iDim] = tdsize[iDim];
 
@@ -619,10 +628,12 @@ class JCAMPData implements NMRData {
     }
 
     /**
-     * Set flags before FID data is read using readVector. Flags are only active on BrukerData. Allowable flags are
-     * 'fixdsp', 'exchange', 'swapbits', 'negatepairs', with values of True or False. For example, in python:
+     * Set flags before FID data is read using readVector. Flags are only active
+     * on BrukerData. Allowable flags are 'fixdsp', 'exchange', 'swapbits',
+     * 'negatepairs', with values of True or False. For example, in python:
      * <p>
-     * f = FID(serDir) f.flags = {'fixdsp':True, 'shiftdsp':True,'exchange':True, 'swapbits':True, 'negatepairs':False}
+     * f = FID(serDir) f.flags = {'fixdsp':True,
+     * 'shiftdsp':True,'exchange':True, 'swapbits':True, 'negatepairs':False}
      * CREATE(serDir+'hmqc.nv', dSizes, f)
      * </p>
      *
@@ -684,12 +695,12 @@ class JCAMPData implements NMRData {
         try {
             fc = FileChannel.open(Paths.get(datapath), StandardOpenOption.READ);
         } catch (IOException ex) {
-            logger.log(Level.WARNING, ex.getMessage());
+            LOGGER.log(Level.WARNING, ex.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException e) {
-                    logger.log(Level.WARNING, e.getMessage());
+                    LOGGER.log(Level.WARNING, e.getMessage());
                 }
             }
         }
@@ -822,37 +833,37 @@ class JCAMPData implements NMRData {
                 px = Integer.reverseBytes(px);
                 py = Integer.reverseBytes(py);
             }
-            cdata[j / 2] = new Complex((double) px / scale, (double) py / scale);
+            cdata[j / 2] = new Complex((double) px / SCALE, (double) py / SCALE);
         }
     }
 
     // read i'th data block
     private void readVecBlock(int i, byte[] dataBuf) {
         try {
-            int nread = 0, skips = i * tbytes;
+            int skips = i * tbytes;
             ByteBuffer buf = ByteBuffer.wrap(dataBuf);
-            nread = fc.read(buf, skips);
+            int nread = fc.read(buf, skips);
             if (nread < tbytes) // nread < tbytes, nread < np
             {
                 throw new ArrayIndexOutOfBoundsException("file index " + i + " out of bounds");
             }
             //System.out.println("readVecBlock read "+nread+" bytes");
         } catch (EOFException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    logger.log(Level.WARNING, ex.getMessage());
+                    LOGGER.log(Level.WARNING, ex.getMessage());
                 }
             }
         } catch (IOException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    logger.log(Level.WARNING, ex.getMessage());
+                    LOGGER.log(Level.WARNING, ex.getMessage());
                 }
             }
         }
@@ -867,21 +878,21 @@ class JCAMPData implements NMRData {
             ByteBuffer buf = ByteBuffer.wrap(dataBuf, vecIndex * 4 * 2, 4 * 2);
             nread = fc.read(buf, skips);
         } catch (EOFException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    logger.log(Level.WARNING, ex.getMessage());
+                    LOGGER.log(Level.WARNING, ex.getMessage());
                 }
             }
         } catch (IOException e) {
-            logger.log(Level.WARNING, e.getMessage());
+            LOGGER.log(Level.WARNING, e.getMessage());
             if (fc != null) {
                 try {
                     fc.close();
                 } catch (IOException ex) {
-                    logger.log(Level.WARNING, ex.getMessage());
+                    LOGGER.log(Level.WARNING, ex.getMessage());
                 }
             }
         }
@@ -899,9 +910,9 @@ class JCAMPData implements NMRData {
                 py = Integer.reverseBytes(py);
             }
             if (exchangeXY) {
-                data[j / 2] = new Complex((double) py / scale, (double) px / scale);
+                data[j / 2] = new Complex((double) py / SCALE, (double) px / SCALE);
             } else {
-                data[j / 2] = new Complex((double) px / scale, -(double) py / scale);
+                data[j / 2] = new Complex((double) px / SCALE, -(double) py / SCALE);
             }
         }
         if (negatePairs) {
@@ -921,11 +932,11 @@ class JCAMPData implements NMRData {
                 py = Integer.reverseBytes(py);
             }
             if (exchangeXY) {
-                rdata[j / 2] = (double) py / scale;
-                idata[j / 2] = (double) px / scale;
+                rdata[j / 2] = (double) py / SCALE;
+                idata[j / 2] = (double) px / SCALE;
             } else {
-                rdata[j / 2] = (double) px / scale;
-                idata[j / 2] = -(double) py / scale;
+                rdata[j / 2] = (double) px / SCALE;
+                idata[j / 2] = -(double) py / SCALE;
             }
         }
         if (negatePairs) {
@@ -941,7 +952,7 @@ class JCAMPData implements NMRData {
             if (swapBits) {
                 px = Integer.reverseBytes(px);
             }
-            data[j] = (double) px / scale;
+            data[j] = (double) px / SCALE;
         }
         // cannot exchange XY, only real data
         if (negatePairs) {
