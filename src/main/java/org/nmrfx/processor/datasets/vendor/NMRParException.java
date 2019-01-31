@@ -27,10 +27,10 @@ import java.util.logging.Logger;
  */
 public class NMRParException extends IOException {
 
-    static Logger logger = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
+    static final Logger LOGGER = Logger.getLogger("org.nmrfx.processor.datasets.Dataset");
 
     NMRParException(String msg) {
-        logger.log(Level.WARNING, msg); // need a better logger
+        LOGGER.log(Level.WARNING, msg); // need a better logger
     }
 
 }
