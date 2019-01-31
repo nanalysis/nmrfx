@@ -98,7 +98,6 @@ public class PeakPick {
         int j = 0;
         String arg;
         boolean ptMode = true;
-        int i = 0;
         int dataDim = theFile.getNDim();
         pt = new int[dataDim][2];
         cpt = new double[dataDim];
@@ -106,7 +105,7 @@ public class PeakPick {
         ptMax = new int[dataDim][2];
         dim = new int[dataDim];
 
-        for (i = 0; i < dataDim; i++) {
+        for (int i = 0; i < dataDim; i++) {
             pt[i][0] = 0;
             pt[i][1] = theFile.getSize(i) - 1;
             ptMax[i][0] = 0;
@@ -133,9 +132,6 @@ public class PeakPick {
     }
 
     void fixLimits() {
-        int nDims = 1;
-        int flatDim = 0;
-        int bigDim = 0;
         int maxSize = 0;
         int dataDim = theFile.getNDim();
 
@@ -167,7 +163,9 @@ public class PeakPick {
         }
 
         if (nPeakDim > 1) {
-            nDims = 0;
+            int flatDim = 0;
+            int bigDim = 0;
+            int nDims = 0;
             DimSizes[] dimSizes = new DimSizes[dataDim];
             for (int i = 0; i < dataDim; i++) {
                 int dimSize = Math.abs(pt[i][1] - pt[i][0]) + 1;
@@ -226,9 +224,10 @@ public class PeakPick {
             this.dimSize = dimSize;
         }
 
+        @Override
         public int compareTo(Object o2) {
             DimSizes d2 = (DimSizes) o2;
-            int result = 0;
+            int result;
             if (dimSize < d2.dimSize) {
                 result = 1;
             } else if (dimSize > d2.dimSize) {
