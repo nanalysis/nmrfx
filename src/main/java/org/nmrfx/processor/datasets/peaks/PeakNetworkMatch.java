@@ -187,7 +187,7 @@ public class PeakNetworkMatch {
         int nDim = dimNamesI.length;
         double[] tol = new double[nDim];
 
-        if ((dimNamesI == null) || (dimNamesI.length == 0)) {
+        if (dimNamesI.length == 0) {
             dimsI = new int[nDim];
             for (int k = 0; k < dimsI.length; k++) {
                 dimsI[k] = k;
@@ -229,10 +229,9 @@ public class PeakNetworkMatch {
         int[] matching = matchResult.matching;
         for (int i = 0; i < iMList.size(); i++) {
             MatchItem iItem = iMList.get(i);
-            MatchItem jItem = null;
             Peak iPeak = (Peak) iList.getPeak(iItem.itemIndex);
             if ((matching[i] >= 0) && (matching[i] < jMList.size())) {
-                jItem = jMList.get(matching[i]);
+                MatchItem jItem = jMList.get(matching[i]);
                 double deltaSqSum = getMatchingDistanceSq(iItem, offsets[0], jItem, offsets[1], tol);
                 double delta = Math.sqrt(deltaSqSum);
                 String matchString = iPeak.getIdNum() + " " + jItem.itemIndex + " " + delta;
@@ -267,7 +266,7 @@ public class PeakNetworkMatch {
         List<PeakDim> iPeakDims = PeakList.getLinkedPeakDims(iPeak, iDim);
         List<PeakDim> jPeakDims = PeakList.getLinkedPeakDims(jPeak, jDim);
 
-        List<MatchItem> iPPMs = new ArrayList<MatchItem>();
+        List<MatchItem> iPPMs = new ArrayList<>();
         int i = 0;
         for (PeakDim peakDim : iPeakDims) {
             if ((peakDim != iPeakDim) && (peakDim.getSpectralDim() == iDim)) {
@@ -280,7 +279,7 @@ public class PeakNetworkMatch {
             i++;
         }
         i = 0;
-        List<MatchItem> jPPMs = new ArrayList<MatchItem>();
+        List<MatchItem> jPPMs = new ArrayList<>();
         for (PeakDim peakDim : jPeakDims) {
             if ((peakDim != jPeakDim) && (peakDim.getSpectralDim() == jDim)) {
                 Peak peak = peakDim.getPeak();
@@ -295,9 +294,9 @@ public class PeakNetworkMatch {
         double[] iOffsets = {0.0};
         double[] jOffsets = {0.0};
         double[] tol = {0.1};
-        MatchResult matchResult = doBPMatch(iPPMs, iOffsets, jPPMs, jOffsets, tol, false);
+        MatchResult result = doBPMatch(iPPMs, iOffsets, jPPMs, jOffsets, tol, false);
 //System.out.println(matchResult.score + " " + matchResult.nMatches);
-        return matchResult.score;
+        return result.score;
     }
 
     double getMatchingDistanceSq(MatchItem iItem, double[] iOffsets, MatchItem jItem, double[] jOffsets, double[] tol) {
@@ -329,7 +328,7 @@ public class PeakNetworkMatch {
     }
 
     List<MatchItem> getMatchingItems(PeakList peakList, int[] dims, final double[][] boundary) {
-        List<MatchItem> matchList = new ArrayList<MatchItem>();
+        List<MatchItem> matchList = new ArrayList<>();
         int nPeaks = peakList.size();
         HashSet usedPeaks = new HashSet();
         for (int j = 0; j < nPeaks; j++) {
@@ -369,7 +368,7 @@ public class PeakNetworkMatch {
     }
 
     List<MatchItem> getMatchingItems(double[][] positions) {
-        List<MatchItem> matchList = new ArrayList<MatchItem>();
+        List<MatchItem> matchList = new ArrayList<>();
         for (int j = 0; j < positions.length; j++) {
             MatchItem matchItem = new MatchItem(j, positions[j]);
             matchList.add(matchItem);
@@ -453,8 +452,8 @@ public class PeakNetworkMatch {
             }
 
         }
-        MatchResult matchResult = new MatchResult(matching, nMatches, score);
-        return matchResult;
+        MatchResult result = new MatchResult(matching, nMatches, score);
+        return result;
     }
 
     private void optimizeMatch(final List<MatchItem> iMList, final double[] iOffsets, final List<MatchItem> jMList, final double[] jOffsets, final double[] tol, int minDim, double min, double max) {
@@ -467,6 +466,7 @@ public class PeakNetworkMatch {
                 bestValue = Double.MAX_VALUE;
             }
 
+            @Override
             public double value(double[] x) {
                 double[] minOffsets = new double[iOffsets.length];
                 for (int i = 0; i < minOffsets.length; i++) {
@@ -499,7 +499,7 @@ public class PeakNetworkMatch {
         }
         BOBYQAOptimizer optimizer = new BOBYQAOptimizer(nInterp, initialTrust, stopTrust);
         double[] initialGuess = new double[iOffsets.length];
-        PointValuePair result = null;
+        PointValuePair result;
         try {
             result = optimizer.optimize(
                     new MaxEval(nSteps),
