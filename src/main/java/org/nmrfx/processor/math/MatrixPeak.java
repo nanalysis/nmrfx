@@ -109,6 +109,7 @@ public class MatrixPeak implements Comparator<MatrixPeak> {
         return overlaps;
     }
 
+    @Override
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
         for (int i = 0; i < intensities.length; i++) {
