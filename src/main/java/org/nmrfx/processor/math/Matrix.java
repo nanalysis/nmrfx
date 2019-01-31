@@ -126,9 +126,7 @@ public class Matrix implements MatrixType {
         int msize22 = msize2 * 2;
         Matrix zfMatrix = new Matrix(msize12, msize22);
         for (int j = 0; j < msize1; j++) {
-            for (int i = 0; i < msize2; i++) {
-                zfMatrix.matrix[j][i] = matrix[j][i];
-            }
+            System.arraycopy(matrix[j], 0, zfMatrix.matrix[j], 0, msize2);
         }
         return zfMatrix;
     }
@@ -156,6 +154,7 @@ public class Matrix implements MatrixType {
         return pt;
     }
 
+    @Override
     public int getIndex() {
         return pt[pt.length - 1][0];
     }
@@ -165,9 +164,7 @@ public class Matrix implements MatrixType {
             throw new ProcessingException("copyMatrix dimensions not equal");
         }
         for (int i = 0; i < (matrix.length); i++) {
-            for (int j = 0; j < (matrix[0].length); j++) {
-                matrix[i][j] = src[i][j];
-            }
+            System.arraycopy(src[i], 0, matrix[i], 0, matrix[0].length);
         }
     }
 
@@ -175,9 +172,7 @@ public class Matrix implements MatrixType {
         int msize1 = matrix.length < src.length ? matrix.length : src.length;
         int msize2 = matrix[0].length < src[0].length ? matrix[0].length : src[0].length;
         for (int i = 0; i < (matrix.length); i++) {
-            for (int j = 0; j < (matrix[0].length); j++) {
-                matrix[i][j] = src[i][j];
-            }
+            System.arraycopy(src[i], 0, matrix[i], 0, matrix[0].length);
         }
     }
 
@@ -203,6 +198,7 @@ public class Matrix implements MatrixType {
         dump(null);
     }
 
+    @Override
     public void dump(String outName) throws IOException {
         FileWriter fileWriter = null;
         if (outName != null) {
@@ -239,9 +235,7 @@ public class Matrix implements MatrixType {
 
     private void row2r(int row, double[][] dataRI) {
         int size = dataRI[0].length;
-        for (int i = 0; i < size; i++) {
-            dataRI[0][i] = matrix[row][i];
-        }
+        System.arraycopy(matrix[row], 0, dataRI[0], 0, size);
     }
 
     private void ri2row(int row, double[][] dataRI) {
@@ -266,9 +260,7 @@ public class Matrix implements MatrixType {
 
     private void riReal2row(int row, double[][] dataRI) {
         int size = dataRI[0].length;
-        for (int i = 0; i < size; i++) {
-            matrix[row][i] = dataRI[0][i];
-        }
+        System.arraycopy(dataRI[0], 0, matrix[row], 0, size);
     }
 
     private void column2ri(int col, double[][] dataRI) {
@@ -510,6 +502,7 @@ public class Matrix implements MatrixType {
 
     private final static int NPHASE = 4;
 
+    @Override
     public void phase(double[] ph) {
         if (ph.length < 1) {
             return;  // no need to do phasing
