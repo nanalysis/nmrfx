@@ -81,6 +81,8 @@ public class SpectralDim {
 
     /**
      * Creates a new instance of SpectralDim
+     * @param peakList The Peak List that this spectral dimension is part of
+     * @param iDim  The dimension number of this spectral dimension
      */
     public SpectralDim(PeakList peakList, int iDim) {
         this.peakList = peakList;
@@ -130,11 +132,11 @@ public class SpectralDim {
     }
 
     public String toSTAR3LoopPeakCharString() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         String sep = " ";
         char stringQuote = '"';
-        result.append(String.valueOf(getDataDim() + 1) + sep);
-        result.append(getAtomType() + sep);
+        result.append(String.valueOf(getDataDim() + 1)).append(sep);
+        result.append(getAtomType()).append(sep);
         result.append(getAtomIsotope());
         result.append(sep);
         result.append(stringQuote);
@@ -253,17 +255,17 @@ public class SpectralDim {
     public Integer getAtomIsotope() {
         if (atomIsotope == null) {
             int isotope = guessIsotope(sf);
-            atomIsotope = Integer.valueOf(isotope);
+            atomIsotope = isotope;
         }
         return atomIsotope;
     }
 
     public void setAtomIsotopeValue(int iValue) {
-        atomIsotope = Integer.valueOf(iValue);
+        atomIsotope = iValue;
     }
 
     public int getAtomIsotopeValue() {
-        int isotope = getAtomIsotope().intValue();
+        int isotope = getAtomIsotope();
         return isotope;
     }
 
@@ -279,7 +281,7 @@ public class SpectralDim {
     }
 
     public String getAtomTypeFromIsotope() {
-        String isotopeAtomType = "";
+        String isotopeAtomType;
         int isotope = getAtomIsotopeValue();
         switch (isotope) {
             case 1:
