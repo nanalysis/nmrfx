@@ -15,15 +15,15 @@ public class SpinSystem {
 
     final Peak rootPeak;
     List<PeakMatch> peakMatches = new ArrayList<>();
-    static String[] ATOM_TYPES = {"h", "n", "c", "ha", "ca", "cb"};
+    static final String[] ATOM_TYPES = {"h", "n", "c", "ha", "ca", "cb"};
     static int[][] nAtmPeaks = {
         {0, 0, 0, 0, 2, 2},
         {7, 7, 0, 0, 1, 1}
     };
     static int[] RES_MTCH = {4, 5};
 
-    static int CA_INDEX = ATOM_TYPES.length - 2;
-    static int CB_INDEX = ATOM_TYPES.length - 1;
+    static final int CA_INDEX = ATOM_TYPES.length - 2;
+    static final int CB_INDEX = ATOM_TYPES.length - 1;
 
     static double[] tols = {0.04, 0.5, 0.6, 0.04, 0.6, 0.6};
     double[][] values = new double[2][ATOM_TYPES.length];
@@ -127,7 +127,7 @@ public class SpinSystem {
         return rootPeak;
     }
 
-    public void addPeak(Peak peak, double prob) {
+    public final void addPeak(Peak peak, double prob) {
         PeakMatch peakMatch = new PeakMatch(peak, prob);
         peakMatches.add(peakMatch);
     }
@@ -151,10 +151,10 @@ public class SpinSystem {
             allResPats[i] = new String[counts[i]];
             allAtomPats[i] = new String[counts[i]];
             int j = 0;
-            for (int iRes = 0; iRes < resPats.length; iRes++) {
-                for (int iAtom = 0; iAtom < atomPats.length; iAtom++) {
-                    allResPats[i][j] = resPats[iRes];
-                    allAtomPats[i][j] = atomPats[iAtom];
+            for (String resPat : resPats) {
+                for (String atomPat : atomPats) {
+                    allResPats[i][j] = resPat;
+                    allAtomPats[i][j] = atomPat;
                     j++;
                 }
             }
@@ -472,13 +472,12 @@ public class SpinSystem {
     }
 
     public void assignAtoms() {
-        for (int i = 0; i < ATOM_TYPES.length; i++) {
+        for (String atomType : ATOM_TYPES) {
             for (PeakMatch peakMatch : peakMatches) {
                 Peak peak = peakMatch.peak;
                 int nDims = peak.getPeakList().getNDim();
                 for (int iDim = 0; iDim < nDims; iDim++) {
                     double value = peak.getPeakDim(iDim).getChemShift();
-
                 }
 
             }
@@ -498,6 +497,7 @@ public class SpinSystem {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
         sBuilder.append(rootPeak.getName());
