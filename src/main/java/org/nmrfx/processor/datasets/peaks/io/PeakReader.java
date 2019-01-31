@@ -459,7 +459,6 @@ public class PeakReader {
         boolean gotHeader = false;
         String[] dataHeader = null;
         Map<String, Integer> dataMap = null;
-        PeakList peakList = null;
         String units = "ppm";
         try (final BufferedReader fileReader = Files.newBufferedReader(path)) {
             String line = fileReader.readLine();
@@ -471,7 +470,7 @@ public class PeakReader {
                 listMap.put(field, values);
             }
             int nDim = listMap.get("label").size();
-            peakList = new PeakList(listName, nDim);
+            PeakList peakList = new PeakList(listName, nDim);
             for (String field : listFields) {
                 if (!field.equals("dataset")) {
                     for (int iDim = 0; iDim < nDim; iDim++) {
