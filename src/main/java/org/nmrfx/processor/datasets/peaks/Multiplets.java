@@ -287,11 +287,11 @@ public class Multiplets {
             Peak peak = refList.getNewPeak();
             peak.setIntensity((float) intensity / 2.0f);
             peak.setVolume1((float) volume / 2.0f);
-            peak.peakDim[iDim].setLineWidthValue((float) width);
-            peak.peakDim[iDim].setBoundsValue((float) bounds);
-            peak.peakDim[iDim].setChemShiftValue((float) ppm);
+            peak.peakDims[iDim].setLineWidthValue((float) width);
+            peak.peakDims[iDim].setBoundsValue((float) bounds);
+            peak.peakDims[iDim].setChemShiftValue((float) ppm);
             peak.setType(type);
-            PeakList.couplePeakDims(peakDim, peak.peakDim[iDim]);
+            PeakList.couplePeakDims(peakDim, peak.peakDims[iDim]);
         }
         updateAfterMultipletConversion(multiplet);
         //analyzeMultiplet(multiplet.getOrigin());
@@ -362,11 +362,11 @@ public class Multiplets {
                 }
                 newPeak.setIntensity((float) intensity / 2.0f);
                 newPeak.setVolume1((float) volume / 2.0f);
-                newPeak.peakDim[iDim].setLineWidthValue((float) width);
-                newPeak.peakDim[iDim].setBoundsValue((float) bounds);
-                newPeak.peakDim[iDim].setChemShiftValue((float) ppmNew);
+                newPeak.peakDims[iDim].setLineWidthValue((float) width);
+                newPeak.peakDims[iDim].setBoundsValue((float) bounds);
+                newPeak.peakDims[iDim].setChemShiftValue((float) ppmNew);
                 newPeak.setType(type);
-                PeakList.couplePeakDims(peakDim, newPeak.peakDim[iDim]);
+                PeakList.couplePeakDims(peakDim, newPeak.peakDims[iDim]);
             }
         }
     }
@@ -423,7 +423,7 @@ public class Multiplets {
         float jValue = widthNew;
         for (int i = 0; i < nNew; i++) {
             Peak newPeak = peakDim.myPeak.peakList.getNewPeak();
-            PeakDim newPeakDim = newPeak.peakDim[0];
+            PeakDim newPeakDim = newPeak.peakDims[0];
             peakDims.add(newPeakDim);
         }
         int i = 0;
@@ -590,7 +590,7 @@ public class Multiplets {
         Optional<Double> result = Optional.empty();
 
         if (dataset != null) {
-            double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, refPeak.peakDim[0].getChemShift());
+            double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, refPeak.peakDims[0].getChemShift());
             PeakFitting peakFitting = new PeakFitting(dataset);
             try {
                 double rms = peakFitting.fitPeakDims(peakDims, "jfit", bounds, mode);
@@ -610,7 +610,7 @@ public class Multiplets {
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
         Optional<Double> result = Optional.empty();
         if (dataset != null) {
-            double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, refPeak.peakDim[0].getChemShift());
+            double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, refPeak.peakDims[0].getChemShift());
             for (PeakDim apeakDim : peakDims) {
                 apeakDim.getPeak().setFlag(4, false);
             }
@@ -681,10 +681,10 @@ public class Multiplets {
 
     public static void analyzeMultiplet(Peak peak) {
         CouplingData couplingData = determineMultiplicity(peak, true);
-        List<PeakDim> peakSet = peak.peakDim[0].getCoupledPeakDims();
+        List<PeakDim> peakSet = peak.peakDims[0].getCoupledPeakDims();
         System.out.println(peak.getName() + " " + couplingData.toString() + " " + peakSet.size());
         dumpPeakDims(peakSet);
-        Multiplet multiplet = peak.peakDim[0].getMultiplet();
+        Multiplet multiplet = peak.peakDims[0].getMultiplet();
         dumpPeakDims(peakSet);
         if (peakSet.size() == 1) {
             multiplet.setSinglet();
@@ -704,14 +704,14 @@ public class Multiplets {
             double[] sin2thetas = new double[values.length];
             multiplet.setCouplingValues(values, nValues, 1.0, sin2thetas);
         }
-        peakSet = peak.peakDim[0].getCoupledPeakDims();
+        peakSet = peak.peakDims[0].getCoupledPeakDims();
         dumpPeakDims(peakSet);
 
     }
 
     public static CouplingData determineMultiplicity(Peak peak, boolean pow2Mode) {
         PeakList peakList = peak.peakList;
-        PeakDim refPeakDim = peak.peakDim[0];
+        PeakDim refPeakDim = peak.peakDims[0];
         List<PeakDim> peakSet = refPeakDim.getCoupledPeakDims();
 
         List<PeakDim> peakDims = peakSet.stream().
@@ -1135,7 +1135,7 @@ public class Multiplets {
             if (peaks.size() > 1) {
                 List<PeakDim> peakDims = new ArrayList<>();
                 for (Peak peak : peaks) {
-                    peakDims.add(peak.peakDim[0]);
+                    peakDims.add(peak.peakDims[0]);
                 }
                 peakDims.sort(comparing(PeakDim::getChemShiftValue));
                 for (int i = 0; i < peakDims.size() - 1; i += 2) {
@@ -1180,7 +1180,7 @@ public class Multiplets {
                 if (peaks.size() > maxPeaks) {
                     List<PeakDim> peakDims = new ArrayList<>();
                     peaks.forEach((peak) -> {
-                        peakDims.add(peak.peakDim[0]);
+                        peakDims.add(peak.peakDims[0]);
                     });
                     int nSplits = peaks.size() / maxPeaks;
                     peakDims.sort(comparing(PeakDim::getChemShiftValue));
@@ -1235,7 +1235,7 @@ public class Multiplets {
             rootPeak = peaks.get(0).getPeakDim(0);
             List<PeakDim> peakDims = new ArrayList<>();
             for (Peak peak : peaks) {
-                peakDims.add(peak.peakDim[0]);
+                peakDims.add(peak.peakDims[0]);
             }
             peakDims.sort(comparing(PeakDim::getChemShiftValue));
             for (PeakDim peakDim : peakDims) {
@@ -1365,7 +1365,7 @@ public class Multiplets {
                 continue;
             }
             peaks.add(peak);
-            List<PeakDim> cpeakDims = peak.peakDim[0].getCoupledPeakDims();
+            List<PeakDim> cpeakDims = peak.peakDims[0].getCoupledPeakDims();
             for (PeakDim peakDim : cpeakDims) {
                 if (peakDim.myPeak.getStatus() > 0) {
                     peakDim.myPeak.setStatus(0);

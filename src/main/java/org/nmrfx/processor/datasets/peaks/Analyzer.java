@@ -343,8 +343,8 @@ public class Analyzer {
                 double min = Double.MAX_VALUE;
                 double max = Double.NEGATIVE_INFINITY;
                 for (Peak peak : peaks) {
-                    double ppm = peak.peakDim[iDim].getChemShift();
-                    double width = Math.abs(peak.peakDim[iDim].getLineWidth());
+                    double ppm = peak.peakDims[iDim].getChemShift();
+                    double width = Math.abs(peak.peakDims[iDim].getLineWidth());
                     double tppm = ppm + trimRatio * width;
                     max = Math.max(tppm, max);
                     tppm = ppm - trimRatio * width;
