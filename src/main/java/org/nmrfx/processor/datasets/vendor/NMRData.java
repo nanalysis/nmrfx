@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -601,7 +600,6 @@ public interface NMRData {
      *
      * @param path The path to the file containing the sampling schedule
      * @param demo set to true to indicate that dataset actually has full sampling. We just want to simulate NUS.
-     * @param nmrdata The NMRData object that this schedule will be associated with
      * @return the SampleSchedule object
      * @throws IOException if an I/O error occurs
      * @throws ProcessingException if a processing error occurs
@@ -672,16 +670,16 @@ public interface NMRData {
                     values.put(parName, getSequence());
                     break;
                 case "sf":
-                    values.put(parName, Double.valueOf(getSF(0)));
+                    values.put(parName, getSF(0));
                     break;
                 case "sw":
-                    values.put(parName, Double.valueOf(getSW(0)));
+                    values.put(parName, getSW(0));
                     break;
                 case "te":
-                    values.put(parName, Double.valueOf(getTempK()));
+                    values.put(parName, getTempK());
                     break;
                 case "nd":
-                    values.put(parName, Integer.valueOf(getNDim()));
+                    values.put(parName, getNDim());
                     break;
                 case "tn":
                     values.put(parName, getTN(0));
@@ -690,7 +688,7 @@ public interface NMRData {
                     values.put(parName, getVendor());
                     break;
                 case "nv":
-                    values.put(parName, Integer.valueOf(getNVectors()));
+                    values.put(parName, getNVectors());
                     break;
                 case "time":
                     String dateTime = getZonedDate().format(DateTimeFormatter.ISO_DATE_TIME);
