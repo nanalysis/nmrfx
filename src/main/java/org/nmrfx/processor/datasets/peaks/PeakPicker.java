@@ -202,10 +202,10 @@ public class PeakPicker {
         if (!measurePeak) {
             for (i = 0; i < nDim; i++) {
                 double bndHz = 15.0 * dataset.getSize(dim[i]) / dataset.getSw(dim[i]);
-                peak.peakDim[i].setLineWidthValue((float) dataset.ptWidthToPPM(dim[i], bndHz / 2.0));
-                peak.peakDim[i].setBoundsValue((float) dataset.ptWidthToPPM(dim[i], bndHz));
+                peak.peakDims[i].setLineWidthValue((float) dataset.ptWidthToPPM(dim[i], bndHz / 2.0));
+                peak.peakDims[i].setBoundsValue((float) dataset.ptWidthToPPM(dim[i], bndHz));
                 fPt = (float) cpt[i];
-                peak.peakDim[i].setChemShiftValueNoCheck((float) dataset.pointToPPM(dim[i], fPt));
+                peak.peakDims[i].setChemShiftValueNoCheck((float) dataset.pointToPPM(dim[i], fPt));
             }
             peak.setIntensity((float) (sign * centerValue));
             return true;
@@ -231,7 +231,7 @@ public class PeakPicker {
         halfHeightValue = (centerValue / 2.0);
 
         for (i = 0; i < nPeakDim; i++) {
-            peak.peakDim[pldim[i]].setLineWidthValue(0.0f);
+            peak.peakDims[pldim[i]].setLineWidthValue(0.0f);
             boolean widthOK[] = {true, true};
             for (iDir = 0; iDir < 2; iDir++) {
                 sideWidth[iDir] = 0.0;
@@ -371,7 +371,7 @@ public class PeakPicker {
                 bounds = 1.1 * bounds2;
             }
 
-            peak.peakDim[pldim[i]].setBoundsValue((float) dataset.ptWidthToPPM(dim[i], bounds));
+            peak.peakDims[pldim[i]].setBoundsValue((float) dataset.ptWidthToPPM(dim[i], bounds));
 
             double width = halfWidth[0] + halfWidth[1];
             double width2 = 2.0 * halfWidth[useSide];
@@ -379,10 +379,10 @@ public class PeakPicker {
                 width = 1.1 * width2;
             }
 
-            peak.peakDim[pldim[i]].setLineWidthValue((float) dataset.ptWidthToPPM(dim[i], width));
+            peak.peakDims[pldim[i]].setLineWidthValue((float) dataset.ptWidthToPPM(dim[i], width));
 
-            if (peak.peakDim[pldim[i]].getLineWidthValue() == 0.0) {
-                peak.peakDim[pldim[i]].setLineWidthValue((float) (peak.peakDim[pldim[i]].getBoundsValue() * 0.7));
+            if (peak.peakDims[pldim[i]].getLineWidthValue() == 0.0) {
+                peak.peakDims[pldim[i]].setLineWidthValue((float) (peak.peakDims[pldim[i]].getBoundsValue() * 0.7));
             }
 
             fPt = (float) pt[i];
@@ -395,7 +395,7 @@ public class PeakPicker {
                 fPt = (float) cpt[i];
             }
 
-            peak.peakDim[pldim[i]].setChemShiftValueNoCheck((float) dataset.pointToPPM(dim[i], fPt));
+            peak.peakDims[pldim[i]].setChemShiftValueNoCheck((float) dataset.pointToPPM(dim[i], fPt));
         }
 
         peak.setIntensity((float) (sign * centerValue));

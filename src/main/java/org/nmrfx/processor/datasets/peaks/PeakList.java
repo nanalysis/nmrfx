@@ -194,9 +194,9 @@ public class PeakList {
                 peak.copyLabels(newPeak);
             }
             if (!merge && allLinks) {
-                for (int j = 0; j < peak.peakDim.length; j++) {
-                    PeakDim peakDim1 = peak.peakDim[j];
-                    PeakDim peakDim2 = newPeak.peakDim[j];
+                for (int j = 0; j < peak.peakDims.length; j++) {
+                    PeakDim peakDim1 = peak.peakDims[j];
+                    PeakDim peakDim2 = newPeak.peakDims[j];
                     PeakList.linkPeakDims(peakDim1, peakDim2);
                 }
             }
@@ -207,9 +207,9 @@ public class PeakList {
             for (int i = 0; i < peaks.size(); i++) {
                 Peak oldPeak = peaks.get(i);
                 Peak newPeak = newPeakList.getPeak(i);
-                for (int j = 0; j < oldPeak.peakDim.length; j++) {
+                for (int j = 0; j < oldPeak.peakDims.length; j++) {
                     List<PeakDim> linkedPeakDims = getLinkedPeakDims(oldPeak, j);
-                    PeakDim newPeakDim = newPeak.peakDim[j];
+                    PeakDim newPeakDim = newPeak.peakDims[j];
                     for (PeakDim peakDim : linkedPeakDims) {
                         Peak linkPeak = peakDim.getPeak();
                         if ((linkPeak != oldPeak) && (this == linkPeak.getPeakList())) {
@@ -607,7 +607,7 @@ public class PeakList {
 
         if (peakList != null) {
             for (Peak peak : peakList.peaks) {
-                for (PeakDim peakDim : peak.peakDim) {
+                for (PeakDim peakDim : peak.peakDims) {
                     peakDim.remove();
                     if (peakDim.hasMultiplet()) {
                         Multiplet multiplet = peakDim.getMultiplet();
@@ -798,10 +798,10 @@ public class PeakList {
 
     public static void sortPeaks(final List<Peak> peaks, int iDim, boolean ascending) {
         if (ascending) {
-            peaks.sort((Peak a, Peak b) -> compare(a.peakDim[iDim].getChemShift(), b.peakDim[iDim].getChemShift()));
+            peaks.sort((Peak a, Peak b) -> compare(a.peakDims[iDim].getChemShift(), b.peakDims[iDim].getChemShift()));
         } else {
             // fixme
-            peaks.sort((Peak a, Peak b) -> compare(a.peakDim[iDim].getChemShift(), b.peakDim[iDim].getChemShift()));
+            peaks.sort((Peak a, Peak b) -> compare(a.peakDims[iDim].getChemShift(), b.peakDims[iDim].getChemShift()));
 
         }
     }
@@ -907,7 +907,7 @@ public class PeakList {
                     continue;
                 }
 
-                ctr = peak.peakDim[dim[j]].getChemShiftValue();
+                ctr = peak.peakDims[dim[j]].getChemShiftValue();
                 if ((foldLimits != null) && (foldLimits[j] != null)) {
                     double fDelta = getFoldAmount(dim[j]);
                     fDelta = Math.abs(foldLimits[j][0] - foldLimits[j][1]);
@@ -968,27 +968,27 @@ public class PeakList {
                 ok = false;
                 if (useOrder) {
                     if (useRegExp) {
-                        Matcher matcher = patterns[k].matcher(peak.peakDim[k].getLabel().toUpperCase());
+                        Matcher matcher = patterns[k].matcher(peak.peakDims[k].getLabel().toUpperCase());
                         if (matcher.find()) {
                             ok = true;
                         }
-                    } else if (Util.stringMatch(peak.peakDim[k].getLabel().toUpperCase(), simplePat[k])) {
+                    } else if (Util.stringMatch(peak.peakDims[k].getLabel().toUpperCase(), simplePat[k])) {
                         ok = true;
-                    } else if ((simplePat[k].length() == 0) && (peak.peakDim[k].getLabel().length() == 0)) {
+                    } else if ((simplePat[k].length() == 0) && (peak.peakDims[k].getLabel().length() == 0)) {
                         ok = true;
                     }
                 } else {
                     for (l = 0; l < nDim; l++) {
                         if (useRegExp) {
-                            Matcher matcher = patterns[k].matcher(peak.peakDim[l].getLabel().toUpperCase());
+                            Matcher matcher = patterns[k].matcher(peak.peakDims[l].getLabel().toUpperCase());
                             if (matcher.find()) {
                                 ok = true;
                                 break;
                             }
-                        } else if (Util.stringMatch(peak.peakDim[l].getLabel().toUpperCase(), simplePat[k])) {
+                        } else if (Util.stringMatch(peak.peakDims[l].getLabel().toUpperCase(), simplePat[k])) {
                             ok = true;
                             break;
-                        } else if ((simplePat[k].length() == 0) && (peak.peakDim[l].getLabel().length() == 0)) {
+                        } else if ((simplePat[k].length() == 0) && (peak.peakDims[l].getLabel().length() == 0)) {
                             ok = true;
                             break;
                         }
@@ -1141,7 +1141,7 @@ public class PeakList {
         }
         int iDim = peakList.getPeakDim(peakSpecifier);
 
-        return peak.peakDim[iDim];
+        return peak.peakDims[iDim];
     }
 
     public Peak getPeakByID(int idNum) throws IllegalArgumentException {
@@ -1364,8 +1364,8 @@ public class PeakList {
                     if (!phaseRel.isSigned()) {
                         phaseRelTest = PhaseRelationship.getType(iPeak.getIntensity(), jPeak.getIntensity());
                     } else {
-                        phaseRelTest = PhaseRelationship.getType(iPeak.peakDim[dimVal].getChemShiftValue(),
-                                iPeak.getIntensity(), jPeak.peakDim[dimVal].getChemShiftValue(), jPeak.getIntensity());
+                        phaseRelTest = PhaseRelationship.getType(iPeak.peakDims[dimVal].getChemShiftValue(),
+                                iPeak.getIntensity(), jPeak.peakDims[dimVal].getChemShiftValue(), jPeak.getIntensity());
                     }
 
                     if (phaseRelTest != phaseRel) {
@@ -1377,8 +1377,8 @@ public class PeakList {
                 double deltaMatch = 0.0;
 
                 for (int iDim = 0; iDim < nDim; iDim++) {
-                    double delta = Math.abs(iPeak.peakDim[iDim].getChemShiftValue()
-                            - jPeak.peakDim[iDim].getChemShiftValue());
+                    double delta = Math.abs(iPeak.peakDims[iDim].getChemShiftValue()
+                            - jPeak.peakDims[iDim].getChemShiftValue());
 
                     if ((delta < minTol[iDim]) || (delta > maxTol[iDim])) {
                         ok = false;
@@ -1412,8 +1412,8 @@ public class PeakList {
                 float iIntensity = Math.abs(iPeak.getIntensity());
                 float jIntensity = Math.abs(jPeak.getIntensity());
                 for (int iDim = 0; iDim < nDim; iDim++) {
-                    PeakDim iPDim = iPeak.peakDim[iDim];
-                    PeakDim jPDim = jPeak.peakDim[iDim];
+                    PeakDim iPDim = iPeak.peakDims[iDim];
+                    PeakDim jPDim = jPeak.peakDims[iDim];
 
                     float iCenter = iPDim.getChemShiftValue();
                     float jCenter = jPDim.getChemShiftValue();
@@ -1491,8 +1491,8 @@ public class PeakList {
                 double sum = 0.0;
 
                 for (int iDim = 0; iDim < nDim; iDim++) {
-                    deltas[iDim] = (iPeak.peakDim[iDim].getChemShiftValue()
-                            - jPeak.peakDim[iDim].getChemShiftValue()) / maxTol[iDim];
+                    deltas[iDim] = (iPeak.peakDims[iDim].getChemShiftValue()
+                            - jPeak.peakDims[iDim].getChemShiftValue()) / maxTol[iDim];
 
                     double absDelta = Math.abs(deltas[iDim]);
 
@@ -1636,7 +1636,7 @@ public class PeakList {
                     if ((j < names.length) && (item.itemIndex < peakItems.size())) {
                         Peak peak = peaks.get(item.itemIndex);
                         for (int iDim = 0; iDim < dims.length; iDim++) {
-                            peak.peakDim[dims[iDim]].setLabel(names[j][iDim]);
+                            peak.peakDims[dims[iDim]].setLabel(names[j][iDim]);
                         }
                     }
                 }
@@ -1905,7 +1905,7 @@ public class PeakList {
                     for (int iPeak = 0; iPeak < linkedPeaks.size(); iPeak++) {
                         Peak peak2 = (Peak) linkedPeaks.get(iPeak);
                         peak2.setStatus(1);
-                        datum.v[k] += peak2.peakDim[sDim.iDim].getChemShiftValue();
+                        datum.v[k] += peak2.peakDims[sDim.iDim].getChemShiftValue();
                     }
 
                     datum.v[k] /= linkedPeaks.size();
@@ -2819,23 +2819,23 @@ public class PeakList {
     }
 
     public DoubleSummaryStatistics shiftStats(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDim[iDim].getChemShift()).summaryStatistics();
+        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getChemShift()).summaryStatistics();
         return stats;
 
     }
 
     public DoubleSummaryStatistics widthStats(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDim[iDim].getLineWidthHz()).summaryStatistics();
+        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidthHz()).summaryStatistics();
         return stats;
     }
 
     public DoubleSummaryStatistics widthStatsPPM(int iDim) {
-        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDim[iDim].getLineWidth()).summaryStatistics();
+        DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidth()).summaryStatistics();
         return stats;
     }
 
     public double center(int iDim) {
-        OptionalDouble avg = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDim[iDim].getChemShift()).average();
+        OptionalDouble avg = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getChemShift()).average();
         return avg.getAsDouble();
     }
 
@@ -2859,7 +2859,7 @@ public class PeakList {
 
     public void shiftPeak(final int iDim, final double value) {
         peaks.stream().forEach(p -> {
-            PeakDim pDim = p.peakDim[iDim];
+            PeakDim pDim = p.peakDims[iDim];
             float shift = pDim.getChemShift();
             shift += value;
             pDim.setChemShiftValue(shift);
