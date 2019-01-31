@@ -28,7 +28,7 @@ import org.apache.commons.math3.complex.Complex;
 public class DataConvert {
 // copy read data into double array
 
-    enum DataType {
+    public enum DataType {
         FLOAT,
         DOUBLE,
         SHORT,
