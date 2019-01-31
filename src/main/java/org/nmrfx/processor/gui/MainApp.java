@@ -119,8 +119,8 @@ public class MainApp extends Application implements DatasetListener {
 
     @Override
     public void start(Stage stage) throws Exception {
-        FXMLController controller = FXMLController.create(stage);
         mainApp = this;
+        FXMLController controller = FXMLController.create(stage);
         Platform.setImplicitExit(true);
         hostServices = getHostServices();
         stage.setTitle(appName + " " + getVersion());
