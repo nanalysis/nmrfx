@@ -114,6 +114,7 @@ public class PeakFit implements MultivariateFunction {
         return ampVector;
     }
 
+    @Override
     public double value(final double[] parameters) {
         return valueWithUnScaled(unscalePar(parameters));
     }
@@ -201,26 +202,24 @@ public class PeakFit implements MultivariateFunction {
     public void dumpSignals() {
         for (int i = 0; i < cplItems.length; i++) {
             CouplingPattern.jSplittings(cplItems[i], freqs[i], amplitudes[i]);
-            for (int j = 0; j < cplItems[i].length; j++) {
-                System.out.print("coup " + cplItems[i][j].getCoupling());
+            for (CouplingItem cplItem : cplItems[i]) {
+                System.out.print("coup " + cplItem.getCoupling());
             }
 
             System.out.println("");
         }
 
-        for (int i = 0; i < amplitudes.length; i++) {
-            for (int j = 0; j < amplitudes[i].length; j++) {
-                System.out.print("amp " + amplitudes[i][j]);
+        for (double[] amplitude : amplitudes) {
+            for (int j = 0; j < amplitude.length; j++) {
+                System.out.print("amp " + amplitude[j]);
             }
-
             System.out.println("");
         }
 
-        for (int i = 0; i < freqs.length; i++) {
-            for (int j = 0; j < freqs[i].length; j++) {
-                System.out.print("freq " + freqs[i][j]);
+        for (double[] freq : freqs) {
+            for (int j = 0; j < freq.length; j++) {
+                System.out.print("freq " + freq[j]);
             }
-
             System.out.println("");
         }
 
@@ -260,8 +259,8 @@ public class PeakFit implements MultivariateFunction {
                 ampStart += nFreqs;
                 nSigAmps[i] = nFreqs;
             } else {
-                for (int j = 0; j < cplItems[i].length; j++) {
-                    nFreqs = nFreqs * cplItems[i][j].getNSplits();
+                for (CouplingItem cplItem : cplItems[i]) {
+                    nFreqs = nFreqs * cplItem.getNSplits();
                 }
                 ampStart++;
                 nSigAmpsTotal++;
@@ -348,7 +347,7 @@ public class PeakFit implements MultivariateFunction {
 
     public double calculateOneSig(double[] a, int iSig, double x) {
         int start = sigStarts[iSig];
-        double lw = a[start++];
+        double sigLw = a[start++];
         freqs[iSig][0] = a[start++];
         for (int i = 0; i < cplItems[iSig].length; i++) {
             cplItems[iSig][i] = new CouplingItem(a[start++], cplItems[iSig][i].getNSplits());
@@ -365,7 +364,7 @@ public class PeakFit implements MultivariateFunction {
         double y = 0.0;
 
         for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-            double yTemp = lShape(x, lw, freqs[iSig][iLine]);
+            double yTemp = lShape(x, sigLw, freqs[iSig][iLine]);
 
             if (amplitudes[iSig][iLine] < 0) {
                 yTemp = -yTemp;
@@ -384,14 +383,14 @@ public class PeakFit implements MultivariateFunction {
         int iCol = 0;
         for (int iSig = 0; iSig < nSignals; iSig++) {
             int start = sigStarts[iSig];
-            double lw = a[start++];
+            double sigLw = a[start++];
             if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].getNSplits() < 0)) { // generic multiplet
                 for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
                     freqs[iSig][iLine] = a[start++];
                 }
                 for (int i = 0; i < xv.length; i++) {
                     for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-                        double y = lShape(xv[i], lw, freqs[iSig][iLine]);
+                        double y = lShape(xv[i], sigLw, freqs[iSig][iLine]);
 //                    System.out.println(iSig + " " + i+ " " + iLine + " " + yTemp + " " + lw + " " + freqs[iSig][iLine]);
                         if (amplitudes[iSig][iLine] < 0) {
                             y = -y;
@@ -419,7 +418,7 @@ public class PeakFit implements MultivariateFunction {
                     double y = 0.0;
                     for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
 
-                        double yTemp = lShape(xv[i], lw, freqs[iSig][iLine]);
+                        double yTemp = lShape(xv[i], sigLw, freqs[iSig][iLine]);
 //                    System.out.println(iSig + " " + i+ " " + iLine + " " + yTemp + " " + lw + " " + freqs[iSig][iLine]);
                         if (amplitudes[iSig][iLine] < 0) {
                             yTemp = -yTemp;
@@ -437,8 +436,9 @@ public class PeakFit implements MultivariateFunction {
     }
 
     public double lShape(double x, double b, double freq) {
-        double y = 0.0;
-        if (true) {
+        double y;
+        boolean LORENTZIAN = true;
+        if (LORENTZIAN) {
             b *= 0.5;
             y = (b * b) / ((b * b) + ((x - freq) * (x - freq)));
         } else {
@@ -456,14 +456,8 @@ public class PeakFit implements MultivariateFunction {
         int nCols = A.getColumnDimension();
         double[] b = new double[nRows];
 
-        for (int i = 0; i < nRows; i++) {
-            b[i] = yv[i];
-        }
+        System.arraycopy(yv, 0, b, 0, nRows);
 
-        int[] pvtA = new int[nCols];
-        for (int j = 0; j < nCols; j++) {
-            pvtA[j] = j;
-        }
         RealMatrix BR = new Array2DRowRealMatrix(b);
         NNLSMat nnlsMat = new NNLSMat(AR, BR);
         double[] XR = nnlsMat.getX();
