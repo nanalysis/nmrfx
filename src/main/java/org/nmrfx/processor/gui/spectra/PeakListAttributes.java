@@ -481,7 +481,7 @@ public class PeakListAttributes implements PeakListener {
         int[] peakDims = getPeakDim();
         int nDim = Math.min(peakDims.length, oldValue.length);
         for (int i = 0; i < nDim; i++) {
-            PeakDim peakDim = peak.peakDim[peakDims[i]];
+            PeakDim peakDim = peak.peakDims[peakDims[i]];
             if (!peakDim.isFrozen()) {
                 // check if this is peakDim is coupled in pattern.  If so don't move it
                 //   you have to move the multiplet tree items to change coupling values
@@ -508,14 +508,14 @@ public class PeakListAttributes implements PeakListener {
         int nDim = Math.min(peakDim.length, oldValue.length);
         for (int i = 0; i < nDim; i++) {
             double newAxisValue = getAxisValue(i, newValue[i]);
-            double bound = peak.peakDim[peakDim[i]].getBoundsValue();
-            double shift = peak.peakDim[peakDim[i]].getChemShiftValue();
+            double bound = peak.peakDims[peakDim[i]].getBoundsValue();
+            double shift = peak.peakDims[peakDim[i]].getChemShiftValue();
             double newWidth = 2 * Math.abs(newAxisValue - shift);
 
-            peak.peakDim[peakDim[i]].setBoundsValue((float) newWidth);
+            peak.peakDims[peakDim[i]].setBoundsValue((float) newWidth);
             double scale = newWidth / bound;
-            double width = peak.peakDim[peakDim[i]].getLineWidthValue();
-            peak.peakDim[peakDim[i]].setLineWidthValue((float) (width * scale));
+            double width = peak.peakDims[peakDim[i]].getLineWidthValue();
+            peak.peakDims[peakDim[i]].setLineWidthValue((float) (width * scale));
         }
     }
 
@@ -564,8 +564,8 @@ public class PeakListAttributes implements PeakListener {
         double height = yAxis.getHeight();
         y = height - y;
         int[] peakDim = getPeakDim();
-        double bou = peak.peakDim[0].getBoundsValue();
-        double ctr = peak.peakDim[0].getChemShiftValue();
+        double bou = peak.peakDims[0].getBoundsValue();
+        double ctr = peak.peakDims[0].getChemShiftValue();
         Rectangle box = getBox(ctr, bou, 20);
         boolean result = box.contains(x, y);
         return result;
@@ -577,10 +577,10 @@ public class PeakListAttributes implements PeakListener {
         double[] bou = {0.0, 0.0};
         int[] peakDim = getPeakDim();
 
-        bou[0] = peak.peakDim[peakDim[0]].getBoundsValue();
-        bou[1] = peak.peakDim[peakDim[1]].getBoundsValue();
-        ctr[0] = peak.peakDim[peakDim[0]].getChemShiftValue();
-        ctr[1] = peak.peakDim[peakDim[1]].getChemShiftValue();
+        bou[0] = peak.peakDims[peakDim[0]].getBoundsValue();
+        bou[1] = peak.peakDims[peakDim[1]].getBoundsValue();
+        ctr[0] = peak.peakDims[peakDim[0]].getChemShiftValue();
+        ctr[1] = peak.peakDims[peakDim[1]].getChemShiftValue();
         Rectangle box = getBox(ctr, bou);
         boolean result = box.contains(x, y);
 //        System.out.println(box.toString() + " " + x + " " + y + " " + result);

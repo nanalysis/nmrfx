@@ -332,12 +332,12 @@ public class DrawPeaks {
                         labels.append(" ");
                     }
 
-                    if ((peak.peakDim[i].getLabel().length() == 0)
-                            || peak.peakDim[i].getLabel().equals("?")) {
+                    if ((peak.peakDims[i].getLabel().length() == 0)
+                            || peak.peakDims[i].getLabel().equals("?")) {
                         labels.append("?").append(String.valueOf(peak.getIdNum()));
                     } else {
                         iAsg = true;
-                        labels.append(peak.peakDim[i].getLabel());
+                        labels.append(peak.peakDims[i].getLabel());
                     }
                 }
 
@@ -355,7 +355,7 @@ public class DrawPeaks {
                 int residue = 0;
 
                 for (i = 0; i < nPeakDim; i++) {
-                    plab = peak.peakDim[i].getLabel().trim();
+                    plab = peak.peakDims[i].getLabel().trim();
 
                     if ((plab.length() != 0) && !plab.startsWith("?")) {
                         residue = getResidueFromLabel(plab);
@@ -386,7 +386,7 @@ public class DrawPeaks {
             case SglResidue:
 
                 for (i = 0; i < nPeakDim; i++) {
-                    plab = peak.peakDim[0].getLabel().trim();
+                    plab = peak.peakDims[0].getLabel().trim();
                     if ((plab.length() != 0) && !plab.startsWith("?")) {
                         label = getResidueStringFromLabel(plab);
                         if ((label != null) && (label.length() != 0)) {
@@ -408,7 +408,7 @@ public class DrawPeaks {
                         labels.append(" ");
                     }
 
-                    plab = peak.peakDim[i].getLabel().trim();
+                    plab = peak.peakDims[i].getLabel().trim();
 
                     if ((plab.length() != 0) && !plab.startsWith("?")) {
                         labels.append(getAtomFromLabel(plab));
@@ -431,7 +431,7 @@ public class DrawPeaks {
             case User:
 
                 for (i = 0; i < nPeakDim; i++) {
-                    labels.append(peak.peakDim[i].getUser()).append(" ");
+                    labels.append(peak.peakDims[i].getUser()).append(" ");
                 }
 
                 label = labels.toString().trim();
@@ -447,16 +447,16 @@ public class DrawPeaks {
                 double normVal = 0;
 
                 // FIXME  make precision in ctr a function of dig resolution  sw/sfrq/size
-                if (multipletMode && peak.peakDim[0].hasMultiplet()) {
-                    String couplings = peak.peakDim[0].getMultiplet().getCouplingsAsSimpleString();
+                if (multipletMode && peak.peakDims[0].hasMultiplet()) {
+                    String couplings = peak.peakDims[0].getMultiplet().getCouplingsAsSimpleString();
                     if (peak.peakList.scale > 0.0) {
-                        normVal = peak.peakDim[0].getMultiplet().getVolume() / peak.peakList.scale;
+                        normVal = peak.peakDims[0].getMultiplet().getVolume() / peak.peakList.scale;
                     }
-                    label = Format.format2(normVal) + " " + peak.peakDim[0].getMultiplet().getMultiplicity() + " " + couplings
-                            + "\n" + Format.format4(peak.peakDim[0].getMultiplet().getCenter());
+                    label = Format.format2(normVal) + " " + peak.peakDims[0].getMultiplet().getMultiplicity() + " " + couplings
+                            + "\n" + Format.format4(peak.peakDims[0].getMultiplet().getCenter());
                 } else {
                     //label = (String.valueOf(peak.getIdNum()));
-                    double ppm = peak.peakDim[0].getChemShiftValue();
+                    double ppm = peak.peakDims[0].getChemShiftValue();
                     if (ppm > 20.0) {
                         label = Format.format2(ppm);
                     } else {
@@ -466,7 +466,7 @@ public class DrawPeaks {
 
                 break;
             case PPM:
-                double ppm = peak.peakDim[0].getChemShiftValue();
+                double ppm = peak.peakDims[0].getChemShiftValue();
                 if (ppm > 20.0) {
                     label = Format.format2(ppm);
                 } else {
@@ -538,7 +538,7 @@ public class DrawPeaks {
                         labels.append(" ");
                     }
 
-                    plab = peak.peakDim[i].getLabel().trim();
+                    plab = peak.peakDims[i].getLabel().trim();
 
                     if ((plab.length() != 0) && !plab.startsWith("?")) {
                         labels.append(getAtomFromLabel(plab));
@@ -608,8 +608,8 @@ public class DrawPeaks {
                 boolean iAsg = true;
 
                 for (int i = 0; i < nPeakDim; i++) {
-                    if ((peak.peakDim[i].getLabel().length() == 0)
-                            || peak.peakDim[i].getLabel().equals("?")) {
+                    if ((peak.peakDims[i].getLabel().length() == 0)
+                            || peak.peakDims[i].getLabel().equals("?")) {
                         iAsg = false;
 
                         break;
@@ -627,8 +627,8 @@ public class DrawPeaks {
                 boolean isOK = true;
 
                 for (int i = 0; i < nPeakDim; i++) {
-                    if ((peak.peakDim[i].getError()[0] != '+')
-                            || (peak.peakDim[i].getError()[1] != '+')) {
+                    if ((peak.peakDims[i].getError()[0] != '+')
+                            || (peak.peakDims[i].getError()[1] != '+')) {
                         isOK = false;
 
                         break;
@@ -682,11 +682,11 @@ public class DrawPeaks {
     }
 
     protected boolean pick1DPeak(PeakListAttributes peakAttr, Peak peak, int[] dim, double hitX, double hitY) {
-        if ((dim[0] < 0) || (dim[0] >= peak.peakDim.length)) {
+        if ((dim[0] < 0) || (dim[0] >= peak.peakDims.length)) {
             return false;
         }
         String label = getLabel(peak, peakAttr);
-        double x = peak.peakDim[dim[0]].getChemShiftValue();
+        double x = peak.peakDims[dim[0]].getChemShiftValue();
         double x1 = xAxis.getDisplayPosition(x);
         float intensity = peak.getIntensity();
 
@@ -749,16 +749,16 @@ public class DrawPeaks {
 //    }
     private boolean pick2DPeak(PeakListAttributes peakAttr, DatasetAttributes dataAttr, GraphicsContextInterface g2, int[] dim, Peak peak, double x,
             double y) {
-        if ((dim[0] < 0) || (dim[0] >= peak.peakDim.length)) {
+        if ((dim[0] < 0) || (dim[0] >= peak.peakDims.length)) {
             return false;
         }
         double[] ctr = {0.0, 0.0};
         double[] bou = {0.0, 0.0};
 
-        bou[0] = peak.peakDim[dim[0]].getBoundsValue();
-        bou[1] = peak.peakDim[dim[1]].getBoundsValue();
-        ctr[0] = peak.peakDim[dim[0]].getChemShiftValue();
-        ctr[1] = peak.peakDim[dim[1]].getChemShiftValue();
+        bou[0] = peak.peakDims[dim[0]].getBoundsValue();
+        bou[1] = peak.peakDims[dim[1]].getBoundsValue();
+        ctr[0] = peak.peakDims[dim[0]].getChemShiftValue();
+        ctr[1] = peak.peakDims[dim[1]].getChemShiftValue();
         Rectangle box = getBox(ctr, bou);
         boolean result = box.contains(x, y);
 
@@ -862,11 +862,11 @@ public class DrawPeaks {
 //    }
 
     void draw1DPeak(PeakListAttributes peakAttr, GraphicsContextInterface g2, int[] dim, Peak peak, int colorMode, boolean selected) throws GraphicsIOException {
-        if ((dim[0] < 0) || (dim[0] >= peak.peakDim.length)) {
+        if ((dim[0] < 0) || (dim[0] >= peak.peakDims.length)) {
             return;
         }
         String label = getLabel(peak, peakAttr);
-        float x = peak.peakDim[dim[0]].getChemShiftValue();
+        float x = peak.peakDims[dim[0]].getChemShiftValue();
         float intensity = peak.getIntensity();
 
         double textY = xAxis.getYOrigin() - g2.getFont().getSize() - 5;
@@ -1144,18 +1144,18 @@ public class DrawPeaks {
         double[] bou = {0.0, 0.0};
         double[] wid = {0.0, 0.0};
 
-        if ((jmode == 0) && peak.peakDim[dim[0]].hasMultiplet() && (peak.peakDim[dim[0]].getMultiplet().isCoupled())) {
+        if ((jmode == 0) && peak.peakDims[dim[0]].hasMultiplet() && (peak.peakDims[dim[0]].getMultiplet().isCoupled())) {
             jx = 2;
         }
 
         if ((dim.length > 1)
-                && ((jmode == 1) && peak.peakDim[dim[1]].hasMultiplet() && (peak.peakDim[dim[1]].getMultiplet().isCoupled()))) {
+                && ((jmode == 1) && peak.peakDims[dim[1]].hasMultiplet() && (peak.peakDims[dim[1]].getMultiplet().isCoupled()))) {
             jy = 2;
         }
-        bou[0] = peak.peakDim[dim[0]].getBoundsValue();
-        bou[1] = peak.peakDim[dim[1]].getBoundsValue();
-        wid[0] = peak.peakDim[dim[0]].getLineWidth();
-        wid[1] = peak.peakDim[dim[1]].getLineWidth();
+        bou[0] = peak.peakDims[dim[0]].getBoundsValue();
+        bou[1] = peak.peakDims[dim[1]].getBoundsValue();
+        wid[0] = peak.peakDims[dim[0]].getLineWidth();
+        wid[1] = peak.peakDims[dim[1]].getLineWidth();
         /* fixme draw twoD coupling
          if ((dim.length > 1) && ((jx > 1) || (jy > 1))) {
          ax = dim[0];
@@ -1184,8 +1184,8 @@ public class DrawPeaks {
          bou[1] = Math.abs(peak.peakDim[dim[1]].getBoundsValue()) + Math.abs(coupling / peak.peakList.getSpectralDim(ax).getSf());
          }
          */
-        ctr0 = peak.peakDim[dim[0]].getChemShiftValue();
-        ctr1 = peak.peakDim[dim[1]].getChemShiftValue();
+        ctr0 = peak.peakDims[dim[0]].getChemShiftValue();
+        ctr1 = peak.peakDims[dim[1]].getChemShiftValue();
         // fixme fold
 //        ctr0 = (float) specPar.foldPPM(ctr0, 0);
 //        ctr1 = (float) specPar.foldPPM(ctr1, 1);
@@ -1308,8 +1308,8 @@ public class DrawPeaks {
         if (g2 == null) {
             return;
         }
-        PeakDim peakDim0 = peak.peakDim[dim[0]];
-        PeakDim peakDim1 = peak.peakDim[dim[1]];
+        PeakDim peakDim0 = peak.peakDims[dim[0]];
+        PeakDim peakDim1 = peak.peakDims[dim[1]];
         double ppmX = peakDim0.getChemShift();
         double ppmY = peakDim1.getChemShift();
         double posX = xAxis.getDisplayPosition(ppmX);
@@ -1325,7 +1325,7 @@ public class DrawPeaks {
             for (PeakDim peakDim : linkedPeakDims) {
                 Peak peak0 = peakDim.getPeak();
                 if (peak0.getPeakList() == peakList) {
-                    double shift = peak0.peakDim[0].getChemShift();
+                    double shift = peak0.peakDims[0].getChemShift();
                     if ((shift > edge1) && (shift < edge2)) {
                         minX = Math.min(shift, minX);
                         maxX = Math.max(shift, maxX);
@@ -1354,7 +1354,7 @@ public class DrawPeaks {
             for (PeakDim peakDim : linkedPeakDims) {
                 Peak peak1 = peakDim.getPeak();
                 if (peak1.getPeakList() == peakList) {
-                    double shift = peak1.peakDim[1].getChemShift();
+                    double shift = peak1.peakDims[1].getChemShift();
                     if ((shift > edge1) && (shift < edge2)) {
                         minY = Math.min(shift, minY);
                         maxY = Math.max(shift, maxY);
@@ -1472,7 +1472,7 @@ public class DrawPeaks {
                 List<Peak> lPeaks = PeakList.getLinks(kPeak, true);
 
                 for (Peak lPeak : lPeaks) {
-                    double wid = Math.abs(lPeak.peakDim[0].getLineWidthValue());
+                    double wid = Math.abs(lPeak.peakDims[0].getLineWidthValue());
                     if (wid < widthLimit) {
                         wid = widthLimit;
                     }
@@ -1481,13 +1481,13 @@ public class DrawPeaks {
                         minWid = wid;
                     }
 
-                    double v = lPeak.peakDim[0].getChemShiftValue() - (3 * Math.abs(lPeak.peakDim[0].getLineWidthValue()));
+                    double v = lPeak.peakDims[0].getChemShiftValue() - (3 * Math.abs(lPeak.peakDims[0].getLineWidthValue()));
 
                     if (v < min) {
                         min = v;
                     }
 
-                    v = lPeak.peakDim[0].getChemShiftValue() + (3 * Math.abs(lPeak.peakDim[0].getLineWidthValue()));
+                    v = lPeak.peakDims[0].getChemShiftValue() + (3 * Math.abs(lPeak.peakDims[0].getLineWidthValue()));
 
                     if (v > max) {
                         max = v;
@@ -1521,8 +1521,8 @@ public class DrawPeaks {
                     List<Peak> lPeaks = PeakList.getLinks(kPeak, true);
 
                     for (Peak lPeak : lPeaks) {
-                        double c = lPeak.peakDim[0].getChemShiftValue();
-                        double w = Math.abs(lPeak.peakDim[0].getLineWidthValue());
+                        double c = lPeak.peakDims[0].getChemShiftValue();
+                        double w = Math.abs(lPeak.peakDims[0].getLineWidthValue());
                         if (w < widthLimit) {
                             w = widthLimit;
                         }
@@ -1644,7 +1644,7 @@ public class DrawPeaks {
 //
 
         void renderSimulated(GraphicsContextInterface g2, boolean eraseFirst) throws GraphicsIOException {
-            double w = peak.peakDim[dim].getLineWidthValue();
+            double w = peak.peakDims[dim].getLineWidthValue();
             if (w < widthLimit) {
                 w = widthLimit;
             }
