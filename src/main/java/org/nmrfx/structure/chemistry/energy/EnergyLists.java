@@ -711,7 +711,7 @@ public class EnergyLists {
 
             double energySum = dihEnergy + robsonEnergy + repelEnergy + distanceEnergy + irpEnergy + shiftTotEnergy + probDih;
             writer.format(
-                    "Irp %5d %.3f Dih %5d %.3f Robson %5d %.3f Repel %5d %.3f Distance %5d %.3f %.3f Shift %5d %.3f ProbT %5d %.3f Total %.3f\n",
+                    "Irp %5d %8.3f Dih %5d %8.3f Robson %5d %8.3f Repel %5d %8.3f Distance %5d %8.3f %8.3f Shift %5d %8.3f ProbT %5d %8.3f Total %8.3f\n",
                     nIrp, irpEnergy, nDih, dihEnergy, nRobson, robsonEnergy, nRepel, repelEnergy, nDistance, distanceEnergy,
                     maxDis, nShift, shiftTotEnergy, nRotamers, probDih, energySum);
         } catch (Exception e) {
