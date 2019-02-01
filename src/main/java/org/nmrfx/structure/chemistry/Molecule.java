@@ -2981,7 +2981,7 @@ public class Molecule implements Serializable, ITree {
                                 if (isPseudo) {
                                     continue;
                                 }
-                                boolean nameMatches = Util.nefMatch(atom.name.toLowerCase(), atomName);
+                                boolean nameMatches = Util.nefMatch(atom, atomName);
                                 if (isInverse) {
                                     if (!nameMatches) {
                                         SpatialSet spatialSet = atom.getSpatialSet();
