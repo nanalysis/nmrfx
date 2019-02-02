@@ -38,6 +38,7 @@ public class Signal implements Comparable<Signal> {
         this.decay = signal.decay;
     }
 
+    @Override
     public String toString() {
         String result = String.format("%8.4f %8.4f %8.4f %8.4f", amplitude, phase, frequency, decay);
         return result;
