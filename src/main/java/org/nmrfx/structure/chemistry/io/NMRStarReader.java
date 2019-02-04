@@ -41,6 +41,7 @@ import java.util.*;
 import org.nmrfx.processor.datasets.peaks.Resonance;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.nmrfx.processor.utilities.NvUtil;
+import org.nmrfx.structure.utilities.Util;
 
 /**
  *
@@ -51,6 +52,7 @@ public class NMRStarReader {
     static String[] polymerEntityStrings = {"_Entity.Sf_category", "_Entity.Sf_framecode", "_Entity.Entry_ID", "_Entity.ID", "_Entity.Name", "_Entity.Type", "_Entity.Polymer_type", "_Entity.Polymer_strand_ID", "_Entity.Polymer_seq_one_letter_code_can", "_Entity.Polymer_seq_one_letter_code"};
 
     final STAR3 star3;
+
     Map entities = new HashMap();
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
@@ -1167,7 +1169,7 @@ public class NMRStarReader {
             try {
                 dihedral.addBoundary(atoms, lower, upper, scale);
             } catch (InvalidMoleculeException imE) {
-
+                
             }
 
         }
@@ -1358,8 +1360,10 @@ public class NMRStarReader {
             if (!lowerValue.equals(".")) {
                 lower = Double.parseDouble(lowerValue);
             }
-
+            
+            Util.setStrictlyNEF(true);
             energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper);
+            Util.setStrictlyNEF(false);
         }
     }
 
@@ -1451,5 +1455,5 @@ public class NMRStarReader {
         }
         return dihedral;
     }
-
+    
 }
