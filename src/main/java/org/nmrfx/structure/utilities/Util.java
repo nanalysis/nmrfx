@@ -27,6 +27,16 @@ import org.nmrfx.structure.chemistry.Atom;
  * @author Bruce Johnson
  */
 public class Util {
+    
+    static boolean strictlyNEF;
+
+    static public void setStrictlyNEF(boolean state) {
+        strictlyNEF = state;
+    }
+
+    static public boolean isStrictlyNEF() {
+        return strictlyNEF;
+    }
 
     public static final boolean nefMatch(Atom atom, String pat) {
         boolean result = nefMatch(atom.name.toLowerCase(), pat);
@@ -49,18 +59,21 @@ public class Util {
         }
         return result;
     }
-    public static final boolean nefMatch(String str, String pat) {
+
+    private static boolean nefMatch(String str, String pat) {
         boolean result = false;
         int percentIndex = pat.contains("x") ? pat.indexOf("x") : (pat.contains("y") ? pat.indexOf("y") : pat.indexOf("%"));
         int singleWildIndex = pat.indexOf('#');
         int wildIndex = pat.indexOf('*');
         String rePat = null;
         if (percentIndex != -1) {
-            rePat = pat.substring(0, percentIndex) + "[0-9]+";
+            rePat = pat.substring(0, percentIndex) + "[0-9]*";
         } else if (wildIndex != -1) {
-            rePat = pat.substring(0, wildIndex) + "\\S+";
+            String substr = pat.substring(0, wildIndex);
+            rePat = strictlyNEF ? substr + "\\S+" : substr + "\\S*";
         } else if (singleWildIndex != -1) {
-            rePat = pat.substring(0, singleWildIndex) + "[0-9]+";
+            String substr = pat.substring(0, singleWildIndex);
+            rePat = strictlyNEF ? substr + "[0-9]+" : substr + "[0-9]*";
         }
         if (rePat != null) {
             Pattern rePattern = Pattern.compile(rePat, Pattern.CASE_INSENSITIVE);

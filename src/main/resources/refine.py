@@ -484,7 +484,8 @@ class refine:
                 startEntName, startAtom = (entName1, startAtom1)
                 endEntName, endAtom = (entName2, startAtom2)
 
-	    # XXX: what is 'n'?
+	    # n is the number of rotational points within a link established between any 2 entities.
+            # default is 6.
             n = linkerDict['n'] if 'n' in linkerDict else 6
             startEnt = self.molecule.getEntity(startEntName)
             endEnt = self.molecule.getEntity(endEntName)
@@ -875,11 +876,16 @@ class refine:
 
     def loadFromYaml(self,data, seed, pdbFile=""):
         #XXX: Need to complete docstring
-        """Reading in all the structures"""
+        """
+        This procedure grabs the data presented in the YAML file and executes a series
+        of programs to set up the structure parameters (i.e read sequence, distance files, etc.)
+        """
+
         molData = {}
+	residues = None
+
         if pdbFile != '':
             molio.readPDB(pdbFile)
-            residues = None
         else:
 	    # Checks if NEF file is specified to process it. 
 	    # Even if NEF file is specified, this control flow
@@ -911,10 +917,10 @@ class refine:
                     residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
                     self.readMoleculeDict(molData)
 
+        
         self.molecule = Molecule.getActive()
         self.molName = self.molecule.getName()
-	#print("self.molecule = {}".format(self.molecule.getEntities()[0].getName()))
-	#exit()
+
         treeDict = data['tree'] if 'tree' in data else None
         linkerList = molData['link'] if 'link' in molData else None
 
@@ -928,7 +934,9 @@ class refine:
             if len(self.molecule.getEntities()) > 1:
                 raise TypeError("Tree mode must be run on molecules with more than one entity")
 
-        self.addLinkers(linkerList)
+        if linkerList:
+            self.addLinkers(linkerList)
+
         if 'distances' in data:
             disWt = self.readDistanceDict(data['distances'],residues)
         if 'angles' in data:
@@ -983,7 +991,11 @@ class refine:
             elif type == 'sdf' or type == 'mol':
                 compound = molio.readSDF(file)
             else:
-                molio.readSequence(file)
+                if 'chain' in molDict:
+                    pName = molDict['chain']
+                    molio.readSequence(file, polymerName=pName)
+                else:
+                    molio.readSequence(file)
             resNum = molDict.get('resnum')
             if resNum and compound:
                 compound.setNumber(str(resNum))
@@ -1128,6 +1140,7 @@ class refine:
                 except:
                     print "err",fullAtoms
                     pass
+
     def NEFReader(self, fileName):
         from java.io import FileReader
         from java.io import BufferedReader
@@ -1277,6 +1290,10 @@ class refine:
                         raise ValueError("Incorrect number of fields " + fields)
                   
                     distance = float(distance)
+                    # FIXME : Sometimes molecule name should be polymer name, or vice versa. ('A' instead of '2MQN')
+                    # During NEF testing, the full name of atom was prefixed using the polymer name instead of the 
+                    # molecule name. Thus, it required the quick fix below. Same had to be done in 'readCYANAAngles(..)' 
+		    #molName = 'A' # Teddy
                     fullAtom1 = molName+':'+res1+'.'+atom1
                     fullAtom2 = molName+':'+res2+'.'+atom2
                     fullAtom1 = fullAtom1.replace('"',"''")
@@ -1293,6 +1310,7 @@ class refine:
                             Constraint.lastViewed.addPair(atomPair)
                             self.constraints[atomPair] = Constraint.lastViewed
 
+
 #ZETA:  C3'(i-1)-O3'(i-1)-P-O5'   -73
 #ALPHA: O3'(i-1)-P-O5'-C5'        -62
 #BETA:  P-O5'-C5'-C4'             180
@@ -1306,7 +1324,7 @@ class refine:
 #283   RCYT  GAMMA     23.0    73.0  1.00E+00
 
 
-    def readCYANAAngles(self, fileName,mol):
+    def readCYANAAngles(self, fileName,molName):
         angleMap = {}
         angleMap['DELTA']= ["C5'","C4'","C3'","O3'"]
         angleMap['EPSI']= ["C4'","C3'","O3'","1:P"]
@@ -1389,7 +1407,8 @@ class refine:
                    atom = split_atom[1]
                else:
                    dRes = 0
-               fullAtom = mol+':'+str(res + dRes)+'.'+atom
+	       #molName = 'A' #Teddy 
+               fullAtom = molName + ':' + str(res + dRes) + '.' + atom
                fullAtom = fullAtom.replace('"',"''")
                fullAtoms.append(fullAtom)
            scale = 1.0
@@ -1415,13 +1434,12 @@ class refine:
                errMsg = "\nPlease evaluate the dihedral constraints for the following boundary information [{0}]:".format(fileName)
 	       errMsg += "\n\t- resNum.resName: {}".format(atoms)
 	       errMsg += "\n\nHere's a list of things that could've gone wrong:\n"
-	       errMsg += "\t1) Atoms provided do not have an order for which a dihedral angle could be properly calculated.\n"
+	       errMsg += "\t1) Atoms provided do not have required format to properly calculate dihedral angle(s).\n"
 	       errMsg += "\t2) Information in the constraint file does not match the information in the sequence file or the NMRFxStructure residue library." 
-	       errMsg += "\nNote: Make sure residue number is within the "
                raise ValueError(errMsg)
 	   except:
 	       print("Internal Java Error: Need to evaluate addBoundary(...) method in Dihedral.java\n")
-	       raise 
+	       raise
         fIn.close()
 
     def addSuiteAngles(self, fileName):
@@ -2036,6 +2054,8 @@ class refine:
             self.gmin(nsteps=steps,tolerance=1.0e-6)
         if self.eFileRoot != None:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
+	#ec.dumpRestraints()
+	#exit()
 
     def anneal(self,dOpt=None,stage1={},stage2={}):
         from anneal import runStage
@@ -2049,7 +2069,7 @@ class refine:
         stages = getAnnealStages(dOpt, self.settings)
         for stage in stages:
             runStage(stage, self, rDyn)
-
+				
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
 
     def cdynamics(self, steps, hiTemp, medTemp, timeStep=1.0e-3):
