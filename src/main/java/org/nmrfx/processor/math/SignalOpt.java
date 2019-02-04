@@ -33,6 +33,10 @@ import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.NotPositiveException;
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.exception.TooManyEvaluationsException;
 
 public class SignalOpt implements MultivariateFunction {
 
@@ -94,26 +98,31 @@ public class SignalOpt implements MultivariateFunction {
         for (int i = 0; i < parameters.length; i++) {
             normBoundaries[0][i] = 0.0;
             normBoundaries[1][i] = 100.0;
-            if ((i % 4) == 0) {
-                boundaries[0][i] = parameters[i] - 0.1;
-                boundaries[1][i] = parameters[i] + 0.1;
-                if (boundaries[0][i] <= 0.0) {
-                    boundaries[0][i] = 1.0e-8;
-                }
-            } else if ((i % 4) == 1) {
-                boundaries[0][i] = parameters[i] - 0.1;
-                boundaries[1][i] = parameters[i] + 0.1;
-            } else if ((i % 4) == 2) {
-                boundaries[0][i] = parameters[i] - 0.1;
-                boundaries[1][i] = parameters[i] + 0.1;
-                //boundaries[0][i] = 0.0;
-                //boundaries[1][i] = parameters[i]+0.1;
-                if (boundaries[0][i] <= 0.0) {
-                    boundaries[0][i] = 1.0e-8;
-                }
-            } else if ((i % 4) == 3) {
-                boundaries[0][i] = parameters[i] - 0.1;
-                boundaries[1][i] = parameters[i] + 0.1;
+            switch (i % 4) {
+                case 0:
+                    boundaries[0][i] = parameters[i] - 0.1;
+                    boundaries[1][i] = parameters[i] + 0.1;
+                    if (boundaries[0][i] <= 0.0) {
+                        boundaries[0][i] = 1.0e-8;
+                    }   break;
+                case 1:
+                    boundaries[0][i] = parameters[i] - 0.1;
+                    boundaries[1][i] = parameters[i] + 0.1;
+                    break;
+                case 2:
+                    boundaries[0][i] = parameters[i] - 0.1;
+                    boundaries[1][i] = parameters[i] + 0.1;
+                    //boundaries[0][i] = 0.0;
+                    //boundaries[1][i] = parameters[i]+0.1;
+                    if (boundaries[0][i] <= 0.0) {
+                        boundaries[0][i] = 1.0e-8;
+                    }   break;
+                case 3:
+                    boundaries[0][i] = parameters[i] - 0.1;
+                    boundaries[1][i] = parameters[i] + 0.1;
+                    break;
+                default:
+                    break;
             }
             inputSigma[i] = sigma;
 
@@ -272,6 +281,7 @@ public class SignalOpt implements MultivariateFunction {
         return sumAbs;
     }
 
+    @Override
     public double value(final double[] opars) {
         denormalize(opars, parameters);
         toComplex(parameters);
@@ -310,7 +320,7 @@ public class SignalOpt implements MultivariateFunction {
                     new ObjectiveFunction(this), GoalType.MINIMIZE,
                     new SimpleBounds(normBoundaries[0], normBoundaries[1]),
                     new InitialGuess(normValues));
-        } catch (Exception e) {
+        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
             e.printStackTrace();
         }
 
