@@ -50,14 +50,15 @@ def readSequenceString(polymerName, sequence):
     mol = Molecule.getActive()
     return mol
 
-def readSequence(seqFile, convert=False):
+
+def readSequence(seqFile, convert=False, polymerName=None):
     if convert:
         import os
         import osfiles
         dir = os.path.dirname(seqFile)
         seqFile = osfiles.convertSeqFile(seqFile,dir)
     seqReader = Sequence()
-    seqReader.read(seqFile)
+    seqReader.read(seqFile, polymerName) if polymerName else seqReader.read(seqFile)
     updateAtomArray()
     mol = Molecule.getActive()
     return mol

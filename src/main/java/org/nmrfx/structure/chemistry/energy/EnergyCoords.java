@@ -17,6 +17,7 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import com.sun.corba.se.spi.activation._ActivatorImplBase;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import org.nmrfx.structure.chemistry.Atom;
@@ -32,6 +33,8 @@ import java.util.Set;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Point3;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  *
@@ -299,21 +302,21 @@ public class EnergyCoords {
             n if no wild is found.*/
         String iAtomOldSub = iAtomOld.substring(0, iAtomOld.length() - 1);
         String iAtomNewSub = iAtomNew.substring(0, iAtomNew.length() - 1);
-        
+
         String atomName = iAtomNewSub.substring(iAtomNewSub.indexOf(".") + 1);
-        if (atomName.length() < 1){
+        if (atomName.length() < 1) {
             return 'n';
         };
-        
+
         if (iAtomOldSub.equals(iAtomNewSub) && jAtomNew.equals(jAtomOld)) {
             return 'i';
         }
-        
+
         String jAtomOldSub = jAtomOld.substring(0, jAtomOld.length() - 1);
         String jAtomNewSub = jAtomNew.substring(0, jAtomNew.length() - 1);
-        
+
         atomName = jAtomNewSub.substring(jAtomNewSub.indexOf(".") + 1);
-        if (atomName.length() < 1){
+        if (atomName.length() < 1) {
             return 'n';
         }
         if (jAtomOldSub.equals(jAtomNewSub) && iAtomNew.equals(iAtomOld)) {
@@ -328,51 +331,57 @@ public class EnergyCoords {
         String prevGroup = "";
         String prevIAtom = "";
         String prevJAtom = "";
-
-        for (int i = 0; i < disEnd; i++) {
-            String iIndex = Integer.toString(i);
-            String iGroup = Integer.toString(iGroups[i]);
-            boolean newGroup = !prevGroup.equals(iGroup);
-            if (newGroup) {
-                for (String[] lineElements : groupLineElements) {
-                    String line = String.join("\t", lineElements);
-                    System.out.println(line);
+        try {
+            FileWriter writerFile = new FileWriter("nmrfxsRestraints.txt");
+            for (int i = 0; i < disEnd; i++) {
+                String iIndex = Integer.toString(i);
+                String iGroup = Integer.toString(iGroups[i]);
+                boolean newGroup = !prevGroup.equals(iGroup);
+                if (newGroup) {
+                    for (String[] elems : groupLineElements) {
+                        String line = String.format("%5s  %5s  %-13s  %-13s  %6s  %6s", elems[0], elems[1], elems[2], elems[3], elems[4], elems[5]);
+                        writerFile.write(line + "\n");
+                    }
+                    groupLineElements.clear();
                 }
-                groupLineElements.clear();
+                int iAtomIndex = iAtoms[i];
+                int jAtomIndex = jAtoms[i];
+                Molecule mol = Molecule.getActive();
+                Atom iAtom = atoms[iAtomIndex];
+                Atom jAtom = atoms[jAtomIndex];
+
+                String iAtomName = iAtom.getFullName();
+                String jAtomName = jAtom.getFullName();
+                char wild = 'n';
+                //if (!newGroup) {
+                //    wild = ijWild(prevIAtom, prevJAtom, iAtomName, jAtomName);
+                //}
+                // If there is a new write out the values, if not, make empty
+                String lower = newGroup ? doubFormatter.format(rLow[i]) : "";
+                String upper = newGroup ? doubFormatter.format(rUp[i]) : "";
+                String[] lineElements = {iIndex, iGroup, iAtomName, jAtomName, lower, upper};
+
+                // If we find a wild, no need to add another line, can just use star
+                // for wild in the line that wouldve preceded the new element
+                if (wild == 'n') {
+                    groupLineElements.add(lineElements);
+                } else {
+                    int editIndex = wild == 'i' ? 2 : 3;
+                    lineElements = groupLineElements.get(groupLineElements.size() - 1);
+                    String atomName = lineElements[editIndex];
+                    atomName = atomName.substring(0, atomName.length() - 1) + "*";
+                    lineElements[editIndex] = atomName;
+                }
+
+                prevGroup = iGroup;
+                prevIAtom = iAtomName;
+                prevJAtom = jAtomName;
             }
-            int iAtomIndex = iAtoms[i];
-            int jAtomIndex = jAtoms[i];
-            Molecule mol = Molecule.getActive();
-            Atom iAtom = atoms[iAtomIndex];
-            Atom jAtom = atoms[jAtomIndex];
-
-            String iAtomName = iAtom.getFullName();
-            String jAtomName = jAtom.getFullName();
-            char wild = 'n';
-            //if (!newGroup) {
-            //    wild = ijWild(prevIAtom, prevJAtom, iAtomName, jAtomName);
-            //}
-            // If there is a new write out the values, if not, make empty
-            String lower = newGroup ? doubFormatter.format(rLow[i]) : "";
-            String upper = newGroup ? doubFormatter.format(rUp[i]) : "";
-            String[] lineElements = {iIndex, iGroup, iAtomName, jAtomName, lower, upper};
-
-            // If we find a wild, no need to add another line, can just use star
-            // for wild in the line that wouldve preceded the new element
-            if (wild == 'n') {
-                groupLineElements.add(lineElements);
-            } else {
-                int editIndex = wild == 'i' ? 2 : 3;
-                lineElements = groupLineElements.get(groupLineElements.size() - 1);
-                String atomName = lineElements[editIndex];
-                atomName = atomName.substring(0, atomName.length() - 1) + "*";
-                lineElements[editIndex] = atomName;
-            }
-
-            prevGroup = iGroup;
-            prevIAtom = iAtomName;
-            prevJAtom = jAtomName;
+            writerFile.close();
+        } catch (IOException e) {
+            System.err.println("Error dumping NMRFxS restraints. Exception : " + e);
         }
+
     }
 
     public double dumpRestraints(boolean calcDeriv, double weight, int mode) {
@@ -957,7 +966,7 @@ public class EnergyCoords {
         fixed = new boolean[nAtoms][];
         for (int i = 0; i < nAtoms; i++) {
             int resNum = resNums[i];
-            int lastAtom = i + 200;
+            int lastAtom = i + 500;
             if (lastAtom >= nAtoms) {
                 lastAtom = nAtoms - 1;
             }
