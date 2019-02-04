@@ -32,6 +32,7 @@ public class TRACTFit {
         MatchFunction() {
         }
 
+        @Override
         public double value(double tauC) {
             double nab2 = relaxEqn.TRACTdeltaAlphaBeta(B0, tauC);
             double value = Math.abs((rB - rA) - nab2);
