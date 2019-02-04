@@ -39,7 +39,7 @@ public class VecIO {
         ArrayList<Double> rList = new ArrayList<>();
         ArrayList<Double> iList = null;
         if (vec.isComplex()) {
-            iList = new ArrayList<Double>();
+            iList = new ArrayList<>();
         }
         while (true) {
             String s = reader.readLine();
