@@ -22,12 +22,12 @@ def addParseArgs(parser):
     N/A. Modifies the parser in place.
     """
 
-    parser.add_argument('type', help="Calculation type: distance (dist) or ring current shift (rc)")
     parser.add_argument('atomNameList', nargs='*', help="List of atom types. Allowed types are " + ", ".join(allowedAtomsH))
+    parser.add_argument("-c", "--calcType", default="rc", help="Calculation type: distance (dist) or ring current shift (rc). Default is rc.")
     parser.add_argument("-r", "--ringMode", action="store_true", help="Whether to use ringMode=True")
-    parser.add_argument("-train", "--trainFile", default="trainfiles.txt",
+    parser.add_argument("-t", "--trainFile", default="trainfiles.txt",
                             help="Text file with training set file information. Default is trainfiles.txt")
-    parser.add_argument("-test", "--testFile", default="testfiles.txt",
+    parser.add_argument("-T", "--testFile", default="testfiles.txt",
                             help="Text file with test set file information. Default is testfiles.txt")
     parser.add_argument("-m", "--matrixFile", default="rcvals.txt",
                             help="Text file with the training matrix. Default is rcvals.txt")
@@ -49,7 +49,7 @@ def defineParseArgs(args):
     matrixFile (String); Name of the file that contains the training matrix information.
     """
 
-    type = args.type
+    type = args.calcType
     ringMode = args.ringMode
     atomNameList = args.atomNameList
     trainFile = args.trainFile
@@ -77,8 +77,8 @@ def defineParseArgs(args):
             atomNames += [atomNamesAll[index] for index in indices]
 
     #print atomNameList
-    if type != 'dist' and type != 'rc':
-        parser.error("Invalid calculation type " + type + ". Allowed types are dist or rc.")
+    # if type != 'dist' and type != 'rc':
+    #     parser.error("Invalid calculation type " + type + ". Allowed types are dist or rc.")
 
     if not all(elem in allowedAtoms for elem in atomNameList):
         notAllowed = list(set(atomNameList) - set(allowedAtoms))
@@ -148,7 +148,10 @@ def makeOffsetDict(trainFileName, testFileName):
                 if (len(line) == 0) or (line.startswith("#")):
                     continue
                 bmrb = line.split()[1]
-                bmrbs.append(bmrb)
+                if bmrb.startswith(".") or bmrb.startswith("(") or bmrb.startswith(")"):
+                    continue
+                else:
+                    bmrbs.append(bmrb)
     for bmrbID in bmrbs:
         bmrbFile = 'star/bmr'+bmrbID+'.str'
         if not os.path.exists(bmrbFile):
