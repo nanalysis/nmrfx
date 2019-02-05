@@ -287,6 +287,7 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, offsets, refShifts=None, ringRatio=Non
                                 ppmDatas.append(PPMData(predPPM, expPPM,bID,pdbID,chain,res,aname))
                                 aNames[aname] = 1
                                 #print bID,chain,res,aname,expPPM,predPPM,delta
+
     return (ppmDatas,aNames.keys())
 
 
@@ -400,7 +401,7 @@ def readTestFiles(fileName):
                 continue
             if line.startswith("#"):
                 continue
-            pdb,bmrb = line.split()
+            pdb,bmrb = line.split()[0], line.split()[1]
             bmrbs.append(bmrb)
             pdbs.append(pdb)
     return bmrbs,pdbs
@@ -415,7 +416,7 @@ def readTrainingFiles(fileName):
                 continue
             if line.startswith("#"):
                 continue
-            pdb,dotBracket = line.split()
+            pdb,dotBracket = line.split()[0], line.split()[1]
             pdbs.append(pdb)
             dotBrackets.append(dotBracket)
     return pdbs,dotBrackets
@@ -453,7 +454,7 @@ def genRCTrainingMatrix(outFileName, pdbFiles, shiftSources, atomNames, ringMode
 
     outFileName (str); The output file name.  File is deleted if present already.
     pdbFiles (list); list of PDB Files to use
-    shiftSources (list); list of sources for shifts.  Either dot-bracket values (vienna string) or bmrb id to use for each pdb file 
+    shiftSources (list); list of sources for shifts.  Either dot-bracket values (vienna string) or bmrb id to use for each pdb file
     atomNames (list): list of atom names
     ringMode
     typeRCDist (String): Type of analysis to perform, 'rc' (ring current) or 'dist' (distances)
