@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import sun.misc.Cleaner;
-import sun.nio.ch.DirectBuffer;
 
 /**
  * Create a memory-mapped interface to a Dataset file
@@ -49,7 +47,8 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
     private final long BYTES = 4;
 
     /**
-     * An object that represents a mapping of specified dataset with a memory map.
+     * An object that represents a mapping of specified dataset with a memory
+     * map.
      *
      * @param dataset Dataset object that uses this mapped matrix file
      * @param raFile The Random access file that actually stores data
@@ -199,9 +198,6 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
         if (mapping == null) {
             return;
         }
-        Cleaner cleaner = ((DirectBuffer) mapping).cleaner();
-        if (cleaner != null) {
-            cleaner.clean();
-        }
+        MapInfo.closeDirectBuffer(mapping);
     }
 }
