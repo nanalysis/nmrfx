@@ -311,8 +311,10 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                 boolean ok = updateDotBracket(dotBracket);
                 if (ok) {
                     Molecule mol = Molecule.getActive();
-                    mol.setDotBracket(dotBracket);
-                    layoutSS();
+                    if (mol != null) {
+                        mol.setDotBracket(dotBracket);
+                        layoutSS();
+                    }
                     //dotBracketField.clear();
                 }
             }
@@ -354,8 +356,10 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         boolean ok = updateDotBracket(newDotBracket.toString());
         if (ok) {
             Molecule mol = Molecule.getActive();
-            mol.setDotBracket(newDotBracket.toString());
-            layoutSS();
+            if (mol != null) {
+                mol.setDotBracket(newDotBracket.toString());
+                layoutSS();
+            }
         }
     }
 
@@ -473,17 +477,18 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     @Override
     public void processSelection(String nodeDescriptor, MouseEvent event) {
         Molecule molecule = Molecule.getActive();
-        String[] fields = nodeDescriptor.split(" ");
-        if (fields.length > 0) {
-            if (fields[0].equals("atom") && (fields.length > 1)) {
-                try {
-                    molecule.selectAtoms(fields[1]);
-                } catch (InvalidMoleculeException ex) {
-                    Logger.getLogger(MolSceneController.class.getName()).log(Level.SEVERE, null, ex);
+        if (molecule != null) {
+            String[] fields = nodeDescriptor.split(" ");
+            if (fields.length > 0) {
+                if (fields[0].equals("atom") && (fields.length > 1)) {
+                    try {
+                        molecule.selectAtoms(fields[1]);
+                    } catch (InvalidMoleculeException ex) {
+                        Logger.getLogger(MolSceneController.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else if (fields[0].equals("clear")) {
+                    molecule.clearSelected();
                 }
-            } else if (fields[0].equals("clear")) {
-                molecule.clearSelected();
-
             }
         }
     }
