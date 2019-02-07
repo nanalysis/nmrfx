@@ -22,6 +22,7 @@
                         <MenuButton  mnemonicParsing="false" text="Scripts">
                             <items>
                                 <MenuItem mnemonicParsing="false" onAction="#genDefaultScript" text="Auto Generate" />
+                                <MenuItem mnemonicParsing="false" onAction="#genDefaultScriptArrayed" text="Auto Generate (Arrayed)" />
                                 <MenuItem mnemonicParsing="false" onAction="#openDefaultScriptAction" text="Open (process.py)" />
                                 <MenuItem mnemonicParsing="false" onAction="#openScriptAction" text="Open..." />
                                 <MenuItem mnemonicParsing="false" onAction="#writeDefaultScriptAction" text="Save (process.py)" />

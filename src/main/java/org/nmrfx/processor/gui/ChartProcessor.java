@@ -1259,9 +1259,10 @@ public class ChartProcessor {
 
     }
 
-    public String getGenScript() {
+    public String getGenScript(boolean arrayed) {
         addFIDToPython();
-        PyObject pyDocObject = interpreter.eval("genScript()");
+        String arrayVal = arrayed ? "True" : "False";
+        PyObject pyDocObject = interpreter.eval("genScript(arrayed="+arrayVal+")");
         String scriptString = (String) pyDocObject.__tojava__(String.class);
         return scriptString;
     }

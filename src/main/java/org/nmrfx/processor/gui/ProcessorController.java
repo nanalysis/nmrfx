@@ -552,7 +552,13 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     @FXML
     private void genDefaultScript() {
-        String scriptString = chartProcessor.getGenScript();
+        String scriptString = chartProcessor.getGenScript(false);
+        parseScript(scriptString);
+    }
+
+    @FXML
+    private void genDefaultScriptArrayed() {
+        String scriptString = chartProcessor.getGenScript(true);
         parseScript(scriptString);
     }
 
