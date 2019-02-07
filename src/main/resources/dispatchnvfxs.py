@@ -10,6 +10,11 @@ if len(sys.argv) > 0:
         import gennvfx
     elif sys.argv[0] == "predict":
         import predictor
+    elif sys.argv[0] == "train":
+        print sys.argv
+        if (len(sys.argv) > 2) and (sys.argv[1] == "rna"):
+            print 'do rna'
+            import train_rna
     else:
         scriptName = sys.argv[0]
         runpy.run_path(scriptName)
