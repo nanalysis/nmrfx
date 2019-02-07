@@ -1383,7 +1383,7 @@ def CSHIFT(shift=0, disabled=False, vector=None, process=None):
     return op
 
 @generic_operation
-def COADD(coef=None):
+def COADD(coef=None, disabled=False, vector=None, process=None):
     '''Coaddition of a set of vectors to yield one result vector.
     Parameters
     ---------
