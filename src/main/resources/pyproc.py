@@ -3598,7 +3598,7 @@ def genScript(arrayed=False):
         script += 'FT()\n'
         script += 'PHASE(ph0=0.0,ph1=0.0)\n'
         fCoef = fidInfo.getSymbolicCoefs(1)
-        if fCoef != None and fCoef == 'sep':
+        if fCoef != None and fCoef == 'sep' and not arrayed:
             script += "COMB(coef='sep')\n"
         if fidInfo.nd > 2 and fidInfo.fidObj.getSampleSchedule() != None:
             multiDim = 'DIM(2'
