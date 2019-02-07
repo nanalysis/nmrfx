@@ -469,6 +469,7 @@ public class Processor {
     }
 
     void setupDirectDim() {
+        int vectorsMultiDataMin = 1;
         NMRData nmrData = nmrDataSets.get(0);
         if (acqOrder == null) {
             acqOrder = nmrData.getAcqOrder();
@@ -508,16 +509,20 @@ public class Processor {
                 }
             }
             totalVecGroups = vectorsToWrite / tmult.getGroupSize();
+            vectorsMultiDataMin = nmrDataSets.size() * tmult.getGroupSize();
         } else {
             totalVecGroups = 1;
         }
         vectorsPerProcess = totalVecGroups / numProcessors;
-        System.out.println("totalVecGroups " + totalVecGroups + " vectorsPerProcess " + vectorsPerProcess);
+        System.out.println("totalVecGroups " + totalVecGroups + " vectorsPerProcess " + vectorsPerProcess + " vecto " + vectorsToWrite);
         if (vectorsPerProcess > maxVectorsPerProcess) {
             vectorsPerProcess = maxVectorsPerProcess;
         }
         if (vectorsPerProcess < Math.pow(2, nDim - 1)) {
             vectorsPerProcess = (int) Math.pow(2, nDim - 1);
+        }
+        if ((vectorsPerProcess % vectorsMultiDataMin) != 0) {
+            vectorsPerProcess = vectorsMultiDataMin;
         }
     }
 
@@ -1077,6 +1082,7 @@ public class Processor {
                 vectorsPerGroup = tmult.getGroupSize();
             }
             int nSteps = vectorsPerProcess / vectorsPerGroup;
+            System.out.println("vPP " + vectorsPerProcess + " vPG " + vectorsPerGroup + " ns " + nSteps);
             for (int iStep = 0; iStep < nSteps;) {
                 int vecGroup = incrementVecGroupsRead();
                 if (vecGroup > getTotalVecGroups() - 1) {
