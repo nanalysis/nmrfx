@@ -4312,7 +4312,15 @@ public class Vec extends PySequence implements MatrixType {
      * @return the location
      */
     public int[][] getPt() {
-        return pt;
+        int[][] ptCopy = null;
+        if (pt != null) {
+            ptCopy = new int[pt.length][];
+            for (int i = 0; i < pt.length; i++) {
+                ptCopy[i] = pt[i].clone();
+            }
+        }
+
+        return ptCopy;
     }
 
     /**
@@ -4321,7 +4329,11 @@ public class Vec extends PySequence implements MatrixType {
      * @return the dimension
      */
     public int[] getDim() {
-        return dim;
+        int[] newDim = null;
+        if (dim != null) {
+            newDim = dim.clone();
+        }
+        return newDim;
     }
 
     /**
