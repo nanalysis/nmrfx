@@ -1401,6 +1401,7 @@ public class Processor {
             dataset.setNFreqDims(nDimsProcessed);
             for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
                 dataset.setFreqDomain(i, false);
+                dataset.setComplex(i, false);
             }
             dataset.writeParFile();
             dataset.close();
