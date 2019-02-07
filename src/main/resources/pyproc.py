@@ -3568,7 +3568,7 @@ def convertUnitStringToObject(unitString):
             unit = Index(num)
     return unit
 
-def genScript():
+def genScript(arrayed=False):
     global fidInfo
     script = ''
     if fidInfo.nd < 2:
@@ -3613,6 +3613,8 @@ def genScript():
         if fidInfo.mapToDatasetList[iDim-1] == -1:
             continue
         if not fidInfo.fidObj.isFrequencyDim(iDim-1):
+            continue
+        if (iDim >= fidInfo.nd) and arrayed:
             continue
         script += 'DIM('+str(iDim)+')\n'
         if iDim == 2 and fidInfo.nd == 2 and fidInfo.fidObj.getSampleSchedule() != None:
