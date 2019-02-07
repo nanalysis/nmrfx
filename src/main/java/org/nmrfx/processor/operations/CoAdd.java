@@ -58,7 +58,6 @@ public class CoAdd extends Operation {
                 subList.clear();
                 int[][] pt = vectors.get(iVec).getPt();
                 int[] dim = vectors.get(iVec).getDim();
-                vectors.get(iVec).printLocation();
                 for (int j = 0; j < numInputVec; j++) {
                     subList.add(vectors.get(iVec++));
                 }
@@ -71,7 +70,6 @@ public class CoAdd extends Operation {
                     vec.copy(outVec);
                 }
                 vec.setPt(pt, dim);
-                vec.printLocation();
             }
         }
         int newSize = vectors.size() / numInputVec;
