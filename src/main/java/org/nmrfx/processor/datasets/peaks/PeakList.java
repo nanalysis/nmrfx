@@ -2320,10 +2320,10 @@ public class PeakList {
         List<Peak> peaks = new ArrayList<>();
 
         for (int iArg = start, iPeak = 0; iArg < argv.length; iArg++, iPeak++) {
-            Peak peak = getAPeak(argv[iArg].toString());
+            Peak peak = getAPeak(argv[iArg]);
             if (peak == null) {
                 throw new IllegalArgumentException(
-                        "Couln't find peak \"" + argv[iArg].toString() + "\"");
+                        "Couln't find peak \"" + argv[iArg] + "\"");
             }
             peaks.add(peak);
         }
