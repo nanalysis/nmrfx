@@ -203,6 +203,9 @@ class NMRFxWindowScripting:
             dimNum = dimNames.index(dimName)
         self.cmd.full(dimNum)
 
+    def showPeak(self, peakSpecifier):
+        self.showPeak.(peakS)
+
     def draw(self):
         self.cmd.draw()
 
