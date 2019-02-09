@@ -1082,7 +1082,6 @@ public class Processor {
                 vectorsPerGroup = tmult.getGroupSize();
             }
             int nSteps = vectorsPerProcess / vectorsPerGroup;
-            System.out.println("vPP " + vectorsPerProcess + " vPG " + vectorsPerGroup + " ns " + nSteps);
             for (int iStep = 0; iStep < nSteps;) {
                 int vecGroup = incrementVecGroupsRead();
                 if (vecGroup > getTotalVecGroups() - 1) {
