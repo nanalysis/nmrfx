@@ -604,6 +604,13 @@ public class GUIScripter {
 
     }
 
+    public static void showPeak(String peakSpecifier) {
+        ConsoleUtil.runOnFxThread(() -> {
+            FXMLController activeController = getActiveController();
+            activeController.refreshPeakView(peakSpecifier);
+        });
+    }
+
     public List<Stage> getStages() {
         return MainApp.getStages();
     }
