@@ -669,47 +669,84 @@ public class PeakDim {
     }
 
     public void setAttribute(String name, String value) {
-        if (name.equals("Chem_shift_val")) {
-            float fvalue = ConvUtil.getFloatValue(value);
-            setChemShiftValueNoCheck(fvalue);
-        } else if (name.equals("Detail")) {
-            setUser(value);
-        } else if (name.equals("Peak_err")) {
-            setError(value);
-        } else if (name.equals("Coupling_detail")) {
-            // fixme getMultiplet().setCouplingValues(value);
-        } else if (name.equals("Bounding_box_val")) {
-            float fvalue = ConvUtil.getFloatValue(value);
-            setBoundsValue(fvalue);
-        } else if (name.equals("Line_width_val")) {
-            float fvalue = ConvUtil.getFloatValue(value);
-            SpectralDim sDim = getPeak().peakList.getSpectralDim(spectralDim);
-            float lwPPM = (float) (fvalue / (sDim.getSf()));
-            setLineWidthValue(lwPPM);
-        } else if (name.equals("Bounding_box_val_err")) {
-            float fvalue = ConvUtil.getFloatValue(value);
-            setBoundsErrorValue(fvalue);
-        } else if (name.equals("Chem_shift_val_err")) {
-            float fvalue = ConvUtil.getFloatValue(value);
-            setChemShiftErrorValue(fvalue);
-        } else if (name.equals("Line_width_val_err")) {
-            float fvalue = ConvUtil.getFloatValue(value);
-            setLineWidthErrorValue(fvalue);
-        } else if (name.equals("Phase_val")) {
-            float fvalue = ConvUtil.getFloatValue(value);
-            setPhaseValue(fvalue);
-        } else if (name.equals("Phase_val_err")) {
-            float fvalue = ConvUtil.getFloatValue(value);
-            setPhaseErrorValue(fvalue);
-        } else if (name.equals("Decay_rate_val")) {
-            float fvalue = ConvUtil.getFloatValue(value);
-            setDecayRateValue(fvalue);
-        } else if (name.equals("Decay_rate_val_err")) {
-            float fvalue = ConvUtil.getFloatValue(value);
-            setDecayRateErrorValue(fvalue);
-        } else if (name.equals("Frozen")) {
-            frozen = value.equals("1");
-            // fixme unused } else if (name.equals("Derivation_method")) {
+        switch (name) {
+            case "Chem_shift_val":
+                {
+                    float fvalue = ConvUtil.getFloatValue(value);
+                    setChemShiftValueNoCheck(fvalue);
+                    break;
+                }
+            case "Detail":
+                setUser(value);
+                break;
+            case "Peak_err":
+                setError(value);
+                break;
+        // fixme getMultiplet().setCouplingValues(value);
+            case "Coupling_detail":
+                break;
+            case "Bounding_box_val":
+                {
+                    float fvalue = ConvUtil.getFloatValue(value);
+                    setBoundsValue(fvalue);
+                    break;
+                }
+            case "Line_width_val":
+                {
+                    float fvalue = ConvUtil.getFloatValue(value);
+                    SpectralDim sDim = getPeak().peakList.getSpectralDim(spectralDim);
+                    float lwPPM = (float) (fvalue / (sDim.getSf()));
+                    setLineWidthValue(lwPPM);
+                    break;
+                }
+            case "Bounding_box_val_err":
+                {
+                    float fvalue = ConvUtil.getFloatValue(value);
+                    setBoundsErrorValue(fvalue);
+                    break;
+                }
+            case "Chem_shift_val_err":
+                {
+                    float fvalue = ConvUtil.getFloatValue(value);
+                    setChemShiftErrorValue(fvalue);
+                    break;
+                }
+            case "Line_width_val_err":
+                {
+                    float fvalue = ConvUtil.getFloatValue(value);
+                    setLineWidthErrorValue(fvalue);
+                    break;
+                }
+            case "Phase_val":
+                {
+                    float fvalue = ConvUtil.getFloatValue(value);
+                    setPhaseValue(fvalue);
+                    break;
+                }
+            case "Phase_val_err":
+                {
+                    float fvalue = ConvUtil.getFloatValue(value);
+                    setPhaseErrorValue(fvalue);
+                    break;
+                }
+            case "Decay_rate_val":
+                {
+                    float fvalue = ConvUtil.getFloatValue(value);
+                    setDecayRateValue(fvalue);
+                    break;
+                }
+            case "Decay_rate_val_err":
+                {
+                    float fvalue = ConvUtil.getFloatValue(value);
+                    setDecayRateErrorValue(fvalue);
+                    break;
+                }
+            case "Frozen":
+                frozen = value.equals("1");
+                // fixme unused } else if (name.equals("Derivation_method")) {
+                break;
+            default:
+                break;
         }
     }
 
