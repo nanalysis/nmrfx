@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -61,6 +62,7 @@ import org.nmrfx.processor.gui.tools.RunAbout;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.GUIProject;
 import org.nmrfx.project.Project;
+import org.nmrfx.server.Server;
 
 public class MainApp extends Application implements DatasetListener {
 
@@ -79,6 +81,7 @@ public class MainApp extends Application implements DatasetListener {
     static MainApp mainApp = null;
     static ConsoleController consoleController = null;
     static boolean isAnalyst = false;
+    Consumer<String> socketFunction = null;
 
     public static void setAnalyst() {
         isAnalyst = true;
@@ -629,4 +632,12 @@ public class MainApp extends Application implements DatasetListener {
         }
     }
 
+    public void startSocketListener(int port) {
+        socketFunction = s -> invokeListenerFunction(s);
+        Server.startServer(port, socketFunction);
+    }
+
+    void invokeListenerFunction(String s) {
+        System.out.println("invoke " + s);
+    }
 }
