@@ -143,7 +143,7 @@ public class PeakList {
             spectralDims[i] = new SpectralDim(this, i);
         }
 
-        peaks = new Vector();
+        peaks = new ArrayList<>();
         indexMap.clear();
 
         peakListTable.put(listName, this);
@@ -515,7 +515,7 @@ public class PeakList {
             if (devMul > 20.0) {
                 devMul = 20.0;
             }
-            double erf = 1.0;
+            double erf;
             try {
                 erf = org.apache.commons.math3.special.Erf.erf(devMul / Math.sqrt(2.0));
             } catch (MaxCountExceededException mathE) {
@@ -1210,7 +1210,7 @@ public class PeakList {
             idNum = Integer.parseInt(peakSpecifier.substring(dot + 1, lastDot));
         }
 
-        Peak peak = (Peak) peakList.getPeak(idNum);
+        Peak peak = peakList.getPeak(idNum);
 
         return (peak);
     }
@@ -1249,7 +1249,7 @@ public class PeakList {
         if ((i >= 0) && (i < peaks.size())) {
             return (peaks.get(i));
         } else {
-            return ((Peak) null);
+            return null;
         }
     }
 
@@ -1825,7 +1825,7 @@ public class PeakList {
     public static int clusterPeaks(List<PeakList> peakLists)
             throws IllegalArgumentException {
         Clusters clusters = new Clusters();
-        ArrayList clustPeaks = new ArrayList();
+        List<Peak> clustPeaks = new ArrayList<>();
         double[] tol = null;
 
         for (PeakList peakList : peakLists) {
@@ -1878,7 +1878,7 @@ public class PeakList {
                     datum.v[k] = 0.0;
 
                     for (int iPeak = 0; iPeak < linkedPeaks.size(); iPeak++) {
-                        Peak peak2 = (Peak) linkedPeaks.get(iPeak);
+                        Peak peak2 = linkedPeaks.get(iPeak);
                         peak2.setStatus(1);
                         datum.v[k] += peak2.peakDims[sDim.iDim].getChemShiftValue();
                     }
@@ -1911,8 +1911,8 @@ public class PeakList {
 
                     if (iDatum.proto[0] == jDatum.proto[0]) {
                         for (int iDim = 0; iDim < fDim; iDim++) {
-                            Peak iPeak = (Peak) clustPeaks.get(iDatum.idNum);
-                            Peak jPeak = (Peak) clustPeaks.get(jDatum.idNum);
+                            Peak iPeak = clustPeaks.get(iDatum.idNum);
+                            Peak jPeak = clustPeaks.get(jDatum.idNum);
                             SearchDim iSDim = iPeak.peakList.searchDims.get(iDim);
                             SearchDim jSDim = jPeak.peakList.searchDims.get(iDim);
 
