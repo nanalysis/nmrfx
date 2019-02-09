@@ -1276,6 +1276,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void refreshPeakView(String peakSpecifier) {
         Peak peak = PeakList.getAPeak(peakSpecifier);
+        System.out.println("show peak2 " + peakSpecifier + " " + peak);
+
         if (peak != null) {
             refreshPeakView(peak);
         }

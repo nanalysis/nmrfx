@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.controls.FractionPane;
@@ -608,6 +609,13 @@ public class GUIScripter {
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController activeController = getActiveController();
             activeController.refreshPeakView(peakSpecifier);
+        });
+    }
+
+    public static void showPeak(Peak peak) {
+        ConsoleUtil.runOnFxThread(() -> {
+            FXMLController activeController = getActiveController();
+            activeController.refreshPeakView(peak);
         });
     }
 

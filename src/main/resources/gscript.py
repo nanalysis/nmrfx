@@ -204,7 +204,7 @@ class NMRFxWindowScripting:
         self.cmd.full(dimNum)
 
     def showPeak(self, peakSpecifier):
-        self.showPeak.(peakS)
+        self.cmd.showPeak(peakSpecifier)
 
     def draw(self):
         self.cmd.draw()
