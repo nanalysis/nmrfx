@@ -20,10 +20,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.processor.cluster.Clusters;
 import org.nmrfx.processor.cluster.Datum;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.math.*;
 import org.nmrfx.processor.optimization.*;
-import org.nmrfx.processor.star.*;
-import org.nmrfx.processor.utilities.NvUtil;
 import org.nmrfx.processor.utilities.Util;
 import java.io.*;
 import static java.lang.Double.compare;
@@ -73,14 +70,14 @@ public class PeakList {
     public double scale;
     private List<Peak> peaks;
     public int idLast;
-    private Map<Integer, Peak> indexMap = new HashMap<>();
+    private final Map<Integer, Peak> indexMap = new HashMap<>();
     private String details = "";
     private String sampleLabel = "";
     private String sampleConditionLabel = "";
-    private HashSet<Multiplet> multiplets = new HashSet<Multiplet>();
-    private ArrayList<Multiplet> sortedMultiplets = new ArrayList<Multiplet>();
-    static Vector globalListeners = new Vector();
-    Vector listeners = new Vector();
+    private HashSet<Multiplet> multiplets = new HashSet<>();
+    private ArrayList<Multiplet> sortedMultiplets = new ArrayList<>();
+    static List<PeakListener> globalListeners = new ArrayList<>();
+    List<PeakListener> listeners = new ArrayList<>();
     static List<FreezeListener> freezeListeners = new ArrayList<>();
     private boolean thisListUpdated = false;
     boolean changed = false;
@@ -97,6 +94,7 @@ public class PeakList {
 
     class UpdateTask implements Runnable {
 
+        @Override
         public void run() {
             if (aListUpdated) {
                 needToFireEvent = true;
@@ -329,46 +327,29 @@ public class PeakList {
     // FIXME need to make safe
 
     public void removeListener(PeakListener oldListener) {
-        for (int i = 0; i < listeners.size(); i++) {
-            PeakListener listener = (PeakListener) listeners.get(i);
-            if (listener == oldListener) {
-                listeners.remove(i);
-                break;
-            }
-
-        }
+        listeners.remove(oldListener);
     }
 
     public void registerListener(PeakListener newListener) {
-        for (int i = 0; i < listeners.size(); i++) {
-            PeakListener listener = (PeakListener) listeners.get(i);
-            if (listener == newListener) {
-                return;
-            }
+        if (!listeners.contains(newListener)) {
+            listeners.add(newListener);
         }
-        listeners.add(newListener);
     }
 
     static void registerGlobalListener(PeakListener newListener) {
-        for (int i = 0; i < globalListeners.size(); i++) {
-            PeakListener listener = (PeakListener) globalListeners.get(i);
-            if (listener == newListener) {
-                return;
-            }
+        if (!globalListeners.contains(newListener)) {
+            globalListeners.add(newListener);
         }
-        globalListeners.add(newListener);
     }
 
     void notifyListeners() {
-        for (int i = 0; i < listeners.size(); i++) {
-            PeakListener listener = (PeakListener) listeners.get(i);
+        for (PeakListener listener : listeners) {
             listener.peakListChanged(new PeakEvent(this));
         }
     }
 
     static void notifyGlobalListeners() {
-        for (int i = 0; i < globalListeners.size(); i++) {
-            PeakListener listener = (PeakListener) globalListeners.get(i);
+        for (PeakListener listener : globalListeners) {
             listener.peakListChanged(new PeakEvent("*"));
         }
     }
@@ -467,7 +448,7 @@ public class PeakList {
     }
 
     private void sortMultiplets() {
-        sortedMultiplets = new ArrayList<Multiplet>();
+        sortedMultiplets = new ArrayList<>();
         sortedMultiplets.addAll(multiplets);
         Collections.sort(sortedMultiplets);
         int i = 0;
@@ -478,7 +459,7 @@ public class PeakList {
     }
 
     public synchronized ArrayList<Multiplet> getMultiplets() {
-        if (((sortedMultiplets.size() == 0) && (multiplets.size() > 0)) || !multipletsSorted) {
+        if (((sortedMultiplets.isEmpty()) && (multiplets.size() > 0)) || !multipletsSorted) {
             sortMultiplets();
             multipletsSorted = true;
         }
@@ -573,11 +554,7 @@ public class PeakList {
     }
 
     public boolean valid() {
-        if (get(listName) == null) {
-            return false;
-        } else {
-            return true;
-        }
+        return get(listName) != null;
     }
 
     public static List<PeakList> getLists() {
@@ -864,9 +841,7 @@ public class PeakList {
 
         int i;
         int j;
-        Peak peak = null;
-        boolean ok = true;
-        double ctr = 0.0;
+        Peak peak;
         int nSearchDim = limits.length;
         if (nSearchDim > nDim) {
             nSearchDim = nDim;
@@ -898,7 +873,7 @@ public class PeakList {
 
         for (i = 0; i < nPeaks; i++) {
             peak = peaks.get(i);
-            ok = true;
+            boolean ok = true;
 
             double sumDistance = 0.0;
 
@@ -907,10 +882,9 @@ public class PeakList {
                     continue;
                 }
 
-                ctr = peak.peakDims[dim[j]].getChemShiftValue();
+                double ctr = peak.peakDims[dim[j]].getChemShiftValue();
                 if ((foldLimits != null) && (foldLimits[j] != null)) {
-                    double fDelta = getFoldAmount(dim[j]);
-                    fDelta = Math.abs(foldLimits[j][0] - foldLimits[j][1]);
+                    double fDelta = Math.abs(foldLimits[j][0] - foldLimits[j][1]);
                     ctr = foldPPM(ctr, fDelta, foldLimits[j][0], foldLimits[j][1]);
                 }
 
@@ -1359,7 +1333,7 @@ public class PeakList {
                 }
 
                 if (phaseRel != PhaseRelationship.ANYPHASE) {
-                    PhaseRelationship phaseRelTest = null;
+                    PhaseRelationship phaseRelTest;
 
                     if (!phaseRel.isSigned()) {
                         phaseRelTest = PhaseRelationship.getType(iPeak.getIntensity(), jPeak.getIntensity());
@@ -1462,7 +1436,7 @@ public class PeakList {
         final ArrayList matches = new ArrayList();
 
         double[] deltas = new double[nDim];
-        DistanceMatch[][] dMatches = null;
+        DistanceMatch[][] dMatches;
         dMatches = new DistanceMatch[peaks.size()][];
 
         for (int i = 0, n = peaks.size(); i < n; i++) {
@@ -1675,7 +1649,7 @@ public class PeakList {
     }
 
     List<MatchItem> getMatchingItems(double[][] positions) {
-        List<MatchItem> matchList = new ArrayList<MatchItem>();
+        List<MatchItem> matchList = new ArrayList<>();
         for (int j = 0; j < positions.length; j++) {
             MatchItem matchItem = new MatchItem(j, positions[j]);
             matchList.add(matchItem);
@@ -1737,9 +1711,8 @@ public class PeakList {
         nMatches = 0;
         for (int i = 0; i < iNPeaks; i++) {
             MatchItem matchI = iMList.get(i);
-            MatchItem matchJ = null;
             if ((matching[i] >= 0) && (matching[i] < jMList.size())) {
-                matchJ = jMList.get(matching[i]);
+                MatchItem matchJ = jMList.get(matching[i]);
                 double deltaSqSum = getMatchingDistanceSq(matchI, iOffsets, matchJ, jOffsets, tol);
                 if (deltaSqSum < minDelta) {
                     score += 1.0 - Math.exp(-deltaSqSum);
@@ -1758,8 +1731,9 @@ public class PeakList {
 
     class UnivariateRealPointValuePairChecker implements ConvergenceChecker {
 
-        ConvergenceChecker<PointValuePair> cCheck = new SimplePointChecker<PointValuePair>();
+        ConvergenceChecker<PointValuePair> cCheck = new SimplePointChecker<>();
 
+        @Override
         public boolean converged(final int iteration, final Object previous, final Object current) {
             UnivariatePointValuePair pPair = (UnivariatePointValuePair) previous;
             UnivariatePointValuePair cPair = (UnivariatePointValuePair) current;
@@ -1784,6 +1758,7 @@ public class PeakList {
                 this.minDim = minDim;
             }
 
+            @Override
             public double value(double x) {
                 double[] minOffsets = new double[iOffsets.length];
                 System.arraycopy(iOffsets, 0, minOffsets, 0, minOffsets.length);
@@ -2170,8 +2145,8 @@ public class PeakList {
     public boolean inEllipse(final int pt[], final int cpt[], final double[] width) {
         double r2 = 0.0;
         boolean inEllipse = false;
-        int nDim = cpt.length;
-        for (int ii = 0; ii < nDim; ii++) {
+        int cptDim = cpt.length;
+        for (int ii = 0; ii < cptDim; ii++) {
             int delta = Math.abs(pt[ii] - cpt[ii]);
             r2 += (delta * delta) / (width[ii] * width[ii]);
         }
@@ -2362,8 +2337,6 @@ public class PeakList {
         int[] pdim = new int[dataDim];
         int[][] p1 = new int[dataDim][2];
         int[][] p2 = new int[dataDim][2];
-        int[] dim = new int[dataDim];
-        double[] plane = {0.0, 0.0};
         int nPeaks = peaks.size();
         int[][] cpt = new int[nPeaks][dataDim];
         double[][] width = new double[nPeaks][dataDim];
@@ -2379,8 +2352,8 @@ public class PeakList {
         }
 
         List<Object> peaksResult = new ArrayList<>();
-        ArrayList<GuessValue> guessList = new ArrayList<GuessValue>();
-        ArrayList<CenterRef> centerList = new ArrayList<CenterRef>();
+        ArrayList<GuessValue> guessList = new ArrayList<>();
+        ArrayList<CenterRef> centerList = new ArrayList<>();
         boolean firstPeak = true;
         int iPeak = -1;
         double globalMax = 0.0;
@@ -2613,7 +2586,7 @@ public class PeakList {
     }
 
     public Set<Set<Peak>> getOverlappingPeaks() {
-        Set<Set<Peak>> result = new HashSet<Set<Peak>>();
+        Set<Set<Peak>> result = new HashSet<>();
         boolean[] used = new boolean[size()];
         for (int i = 0, n = size(); i < n; i++) {
             Peak peak = getPeak(i);
@@ -2630,7 +2603,7 @@ public class PeakList {
     }
 
     public Set<Set<Peak>> getOverlappingPeaks(Collection<Peak> fitPeaks) {
-        Set<Set<Peak>> result = new HashSet<Set<Peak>>();
+        Set<Set<Peak>> result = new HashSet<>();
         Set<Peak> used = new HashSet<>();
         for (Peak peak : fitPeaks) {
             if (used.contains(peak)) {
@@ -2647,7 +2620,7 @@ public class PeakList {
 
     static public class PhaseRelationship {
 
-        private static final TreeMap typesList = new TreeMap();
+        private static final TreeMap TYPES_LIST = new TreeMap();
         public static final PhaseRelationship ANYPHASE = new PhaseRelationship(
                 "anyphase");
         public static final PhaseRelationship INPHASE = new PhaseRelationship(
@@ -2666,7 +2639,7 @@ public class PeakList {
 
         private PhaseRelationship(String name) {
             this.name = name;
-            typesList.put(name, this);
+            TYPES_LIST.put(name, this);
         }
 
         @Override
@@ -2675,11 +2648,11 @@ public class PeakList {
         }
 
         public boolean isSigned() {
-            return (toString().indexOf("_") != -1);
+            return (toString().contains("_"));
         }
 
         public static PhaseRelationship getFromString(String name) {
-            return (PhaseRelationship) typesList.get(name);
+            return (PhaseRelationship) TYPES_LIST.get(name);
         }
 
         public static PhaseRelationship getType(double intensity1,
@@ -2699,8 +2672,8 @@ public class PeakList {
 
         public static PhaseRelationship getType(double ctr1, double intensity1,
                 double ctr2, double intensity2) {
-            double left = 0.0;
-            double right = 0.0;
+            double left;
+            double right;
 
             if (ctr1 > ctr2) {
                 left = intensity1;
@@ -2737,9 +2710,7 @@ public class PeakList {
             this.delta = delta;
             this.deltas = new double[deltas.length];
 
-            for (int j = 0; j < deltas.length; j++) {
-                this.deltas[j] = deltas[j];
-            }
+            System.arraycopy(deltas, 0, this.deltas, 0, deltas.length);
         }
 
         double getDelta() {
@@ -2776,7 +2747,7 @@ public class PeakList {
 
         @Override
         public String toString() {
-            StringBuffer sBuf = new StringBuffer();
+            StringBuilder sBuf = new StringBuilder();
             sBuf.append(iPeak);
             sBuf.append(" ");
             sBuf.append(jPeak);
