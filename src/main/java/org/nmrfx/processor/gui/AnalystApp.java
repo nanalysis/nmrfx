@@ -27,7 +27,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -62,7 +61,6 @@ import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.project.GUIStructureProject;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.Project;
-import org.nmrfx.server.Server;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
 import org.nmrfx.structure.chemistry.io.NMRStarReader;
@@ -92,7 +90,6 @@ public class AnalystApp extends MainApp {
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     Analyzer analyzer = null;
-    Consumer<String> socketFunction = null;
 
     public static void closeAll() {
         Stage mainStage = getMainStage();
@@ -875,13 +872,8 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    public void startSocketListener(int port) {
-        socketFunction = s -> invokeListenerFunction(s);
-        Server.startServer(port, socketFunction);
-    }
-
+    @Override
     void invokeListenerFunction(String s) {
-        System.out.println("invoke " + s);
+        System.out.println("invoke analystapp: " + s);
     }
-
 }
