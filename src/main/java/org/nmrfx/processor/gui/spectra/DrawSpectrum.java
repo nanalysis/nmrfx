@@ -790,10 +790,10 @@ public class DrawSpectrum {
         }
         double height = axes[1].getHeight();
         double scale = axes[1].getScale();
-        double offset = height * (1.0 - dataAttributes.getMapOffset(rowIndex));
+        double offset = height * dataAttributes.getMapOffset(rowIndex);
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> axes[1].getDisplayPosition(intensity), offsetMode, false);
+                (index, intensity) -> axes[1].getDisplayPosition(intensity) - offset, offsetMode, false);
 
         if (iChunk < 0) {
             return false;
