@@ -20,6 +20,7 @@ package org.nmrfx.processor.gui.controls;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -37,6 +38,7 @@ public class FileTableItem {
     private SimpleIntegerProperty nDim;
     private SimpleIntegerProperty row;
     private SimpleLongProperty date;
+    private SimpleIntegerProperty group;
     private HashMap<String, String> extras = new HashMap<>();
     private HashMap<String, Integer> intExtras = new HashMap<>();
     private HashMap<String, Double> doubleExtras = new HashMap<>();
@@ -47,6 +49,7 @@ public class FileTableItem {
         this.nDim = new SimpleIntegerProperty(nDim);
         this.date = new SimpleLongProperty(date);
         this.row = new SimpleIntegerProperty(row);
+        this.group = new SimpleIntegerProperty(0);
         this.datasetName = new SimpleStringProperty(datasetName);
     }
 
@@ -57,6 +60,10 @@ public class FileTableItem {
 
     public StringProperty fileNameProperty() {
         return fileName;
+    }
+
+    public IntegerProperty groupProperty() {
+        return group;
     }
 
     public StringProperty datasetNameProperty() {
@@ -73,6 +80,14 @@ public class FileTableItem {
 
     public void setFileName(String fileName) {
         this.fileName.set(fileName);
+    }
+
+    public int getGroup() {
+        return group.get();
+    }
+
+    public void setGroup(int group) {
+        this.group.set(group);
     }
 
     public void setDatasetName(String fileName) {
@@ -199,6 +214,9 @@ public class FileTableItem {
                 }
                 default: {
                     String type = columnTypes.get(header);
+                    if (type == null) {
+                        type = "S";
+                    }
                     switch (type) {
                         case "D": {
                             sBuilder.append(getDoubleExtra(header));

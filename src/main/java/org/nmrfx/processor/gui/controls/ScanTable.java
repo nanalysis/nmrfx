@@ -37,6 +37,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -48,12 +51,14 @@ import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -72,6 +77,7 @@ import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.processor.gui.ScannerController;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.python.util.PythonInterpreter;
 import org.renjin.primitives.vector.RowNamesVector;
 import org.renjin.sexp.AttributeMap;
@@ -101,6 +107,10 @@ public class ScanTable {
     HashMap<String, String> columnTypes = new HashMap<>();
     HashMap<String, String> columnDescriptors = new HashMap<>();
     boolean processingTable = false;
+    List<String> groupNames = new ArrayList<>();
+    Map<String, Map<String, Integer>> groupMap = new HashMap<>();
+    Color colors[] = {Color.BLACK, Color.RED, Color.GREEN, Color.ORANGE, Color.BLUE};
+    int groupSize = 1;
 
     public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
         this.scannerController = controller;
@@ -135,6 +145,7 @@ public class ScanTable {
         columnTypes.put("row", "I");
         columnTypes.put("dataset", "S");
         columnTypes.put("etime", "I");
+        columnTypes.put("group", "I");
 
     }
 
@@ -152,6 +163,8 @@ public class ScanTable {
         if (processingTable) {
             return;
         }
+        Map<Integer, Color> colorMap = new HashMap<>();
+        Map<Integer, Double> offsetMap = new HashMap<>();
 
         ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
         if ((processorController == null) || processorController.isViewingDataset() || !processorController.getStage().isShowing()) {
@@ -162,6 +175,9 @@ public class ScanTable {
                     FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
                     Integer row = fileTableItem.getRow();
                     String datasetName = fileTableItem.getDatasetName();
+                    int iGroup = fileTableItem.getGroup();
+                    Color color = getGroupColor(iGroup);
+                    double offset = iGroup * 1.0 / groupSize * 0.8;
                     Dataset dataset = chart.getDataset();
                     if ((dataset == null) || (chart.getDatasetAttributes().size() != 1) || !dataset.getName().equals(datasetName)) {
                         dataset = Dataset.getDataset(datasetName);
@@ -175,10 +191,16 @@ public class ScanTable {
                         }
                     }
                     if (row != null) {
+                        colorMap.put(row - 1, color);
+                        offsetMap.put(row - 1, offset);
                         rows.add(row - 1); // rows index from 1
                     }
                 }
+
                 chart.setDrawlist(rows);
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                dataAttr.setMapColors(colorMap);
+                dataAttr.setMapOffsets(offsetMap);
                 chart.refresh();
             }
         }
@@ -328,7 +350,8 @@ public class ScanTable {
                 if (combineFileMode) {
                     // merge datasets into single pseudo-nd dataset
                     DatasetMerger merger = new DatasetMerger();
-                    String mergedFilepath = new File(scanOutputDir, combineFileName).getAbsolutePath();
+                    File mergedFile = new File(scanOutputDir, combineFileName);
+                    String mergedFilepath = mergedFile.getAbsolutePath();
                     try {
                         // merge all the 1D files into a pseudo 2D file
                         merger.merge(fileNames, mergedFilepath);
@@ -343,7 +366,7 @@ public class ScanTable {
                         }
 
                         // load merged dataset
-                        FXMLController.getActiveController().openFile(mergedFilepath, false, false);
+                        FXMLController.getActiveController().openDataset(mergedFile, false);
                         List<Integer> rows = new ArrayList<>();
                         rows.add(0);
                         chart.setDrawlist(rows);
@@ -354,8 +377,7 @@ public class ScanTable {
                 } else {
                     // load first output dataset
                     File datasetFile = new File(scanOutputDir, "process" + 1 + ".nv");
-                    String datasetFilePath = datasetFile.getAbsolutePath();
-                    FXMLController.getActiveController().openFile(datasetFilePath, false, false);
+                    FXMLController.getActiveController().openDataset(datasetFile, false);
                 }
                 chart.full();
                 chart.autoScale();
@@ -488,6 +510,7 @@ public class ScanTable {
         columnTypes.put("row", "I");
         columnTypes.put("dataset", "S");
         columnTypes.put("etime", "I");
+        columnTypes.put("group", "I");
         Long firstDate = 0L;
         for (FileTableItem item : fileListItems) {
             item.setDate(item.getDate() - firstDate);
@@ -650,7 +673,7 @@ public class ScanTable {
                 scanOutputDir = dirName;
             }
             Path path = FileSystems.getDefault().getPath(dirName, firstDatasetName);
-            FXMLController.getActiveController().openFile(path.toString(), false, false);
+            FXMLController.getActiveController().openDataset(path.toFile(), false);
             PolyChart chart = scannerController.getChart();
             List<Integer> rows = new ArrayList<>();
             rows.add(0);
@@ -658,7 +681,7 @@ public class ScanTable {
             chart.full();
             chart.autoScale();
         }
-
+        addGroupColumn();
     }
 
     public void saveScanTable() {
@@ -736,6 +759,10 @@ public class ScanTable {
         return columnName;
     }
 
+    public void addGroupColumn() {
+        addTableColumn("Group", "S");
+    }
+
     public void addTableColumn(String newName, String type) {
         ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
         boolean present = false;
@@ -773,10 +800,34 @@ public class ScanTable {
         rowColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getRow()));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("Date"));
         datasetColumn.setCellValueFactory((e) -> new SimpleStringProperty(e.getValue().getDatasetName()));
+
+        TableColumn<FileTableItem, Number> groupColumn = new TableColumn<>("group");
+        groupColumn.setCellValueFactory((e) -> new SimpleIntegerProperty(e.getValue().getGroup()));
+
+        groupColumn.setCellFactory(column -> {
+            return new TableCell<FileTableItem, Number>() {
+                @Override
+                protected void updateItem(Number group, boolean empty) {
+                    super.updateItem(group, empty);
+                    if (group == null || empty) {
+                        setText(null);
+                        setStyle("");
+                    } else {
+                        // Format date.
+                        setText(String.valueOf(group));
+                        setTextFill(getGroupColor(group.intValue()));
+                    }
+                }
+            };
+        });
+
         tableView.getColumns().clear();
-        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn, datasetColumn);
+        tableView.getColumns().addAll(fileColumn, seqColumn, nDimColumn, dateColumn, rowColumn, datasetColumn, groupColumn);
         for (String header : headers) {
             if (header.equalsIgnoreCase("path") || header.equalsIgnoreCase("Sequence") || header.equalsIgnoreCase("nDim") || header.equalsIgnoreCase("eTime") || header.equalsIgnoreCase("row") || header.equalsIgnoreCase("dataset") || header.equalsIgnoreCase("fid")) {
+                continue;
+            }
+            if (header.equals("group")) {
                 continue;
             }
             String type = columnTypes.get(header);
@@ -796,7 +847,6 @@ public class ScanTable {
                 TableColumn<FileTableItem, String> extraColumn = new TableColumn<>(header);
                 extraColumn.setCellValueFactory((e) -> new SimpleStringProperty(String.valueOf(e.getValue().getExtra(header))));
                 tableView.getColumns().add(extraColumn);
-
             }
         }
         updateFilter();
@@ -944,6 +994,7 @@ public class ScanTable {
     }
 
     public void updateDataFrame() {
+        getGroups();
         ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
 
         ListVector.NamedBuilder builder = new ListVector.NamedBuilder();
@@ -1020,5 +1071,49 @@ public class ScanTable {
                 env.setVariableUnsafe("scntbl", dFrame);
             }
         }
+    }
+
+    public void makeGroupMap() {
+        ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
+        groupMap.clear();
+        for (String groupName : groupNames) {
+            Set<String> group = new TreeSet<>();
+            for (FileTableItem item : getItems()) {
+                String value = item.getExtra(groupName);
+                group.add(value);
+            }
+            Map<String, Integer> map = new HashMap<>();
+            for (String value : group) {
+                map.put(value, map.size());
+
+            }
+            groupMap.put(groupName, map);
+        }
+    }
+
+    private Color getGroupColor(int index) {
+        index = Math.min(index, colors.length - 1);
+        return colors[index];
+    }
+
+    public void getGroups() {
+        makeGroupMap();
+        int maxValue = 0;
+        for (FileTableItem item : getItems()) {
+            int mul = 1;
+            int iValue = 0;
+            for (String groupName : groupNames) {
+                Map<String, Integer> map = groupMap.get(groupName);
+                if (!map.isEmpty()) {
+                    String value = item.getExtra(groupName);
+                    int index = map.get(value);
+                    iValue += index * mul;
+                    mul *= map.size();
+                }
+            }
+            item.setGroup(iValue);
+            maxValue = Math.max(maxValue, iValue);
+        }
+        groupSize = maxValue + 1;
     }
 }
