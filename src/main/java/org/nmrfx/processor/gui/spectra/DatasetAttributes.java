@@ -561,6 +561,11 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         colorMap.put(index, color);
     }
 
+    public void setMapColors(Map<Integer, Color> map) {
+        colorMap.clear();
+        colorMap.putAll(map);
+    }
+
     public void clearColors() {
         colorMap.clear();
     }
@@ -582,6 +587,11 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
     public void clearOffsets() {
         offsetMap.clear();
+    }
+
+    public void setMapOffsets(Map<Integer, Double> map) {
+        offsetMap.clear();
+        offsetMap.putAll(map);
     }
 
     public double getMapOffset(int index) {
@@ -1355,13 +1365,13 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         return label;
 
     }
-    
+
     public int[] getDims() {
         return dim.clone();
     }
-    
+
     public void setDims(int[] dims) {
-        for (int i=0;i<dims.length;i++) {
+        for (int i = 0; i < dims.length; i++) {
             setDim(i, dims[i]);
         }
     }
