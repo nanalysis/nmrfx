@@ -19,7 +19,6 @@ package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.gui.controls.FractionPane;
 import de.codecentric.centerdevice.MenuToolkit;
 import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
 import java.io.File;
@@ -29,16 +28,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.application.HostServices;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -63,6 +57,7 @@ import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.GUIProject;
 import org.nmrfx.project.Project;
 import org.nmrfx.server.Server;
+import org.nmrfx.processor.gui.GUIScripter;
 
 public class MainApp extends Application implements DatasetListener {
 
@@ -89,6 +84,10 @@ public class MainApp extends Application implements DatasetListener {
 
     public static boolean isAnalyst() {
         return isAnalyst;
+    }
+    
+    public static MainApp getMainApp() {
+        return mainApp;
     }
 
     public static void removeStage(Stage stage) {
@@ -229,6 +228,8 @@ public class MainApp extends Application implements DatasetListener {
         addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
         MenuItem newMenuItem = new MenuItem("New Window...");
         newMenuItem.setOnAction(e -> newGraphics(e));
+        MenuItem portMenuItem = new MenuItem("New Server...");
+        portMenuItem.setOnAction(e -> newServer(e));
         Menu recentFIDMenuItem = new Menu("Recent FIDs");
         Menu recentDatasetMenuItem = new Menu("Recent Datasets");
         PreferencesController.setupRecentMenus(recentFIDMenuItem, recentDatasetMenuItem);
@@ -267,7 +268,7 @@ public class MainApp extends Application implements DatasetListener {
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
+                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
@@ -458,6 +459,11 @@ public class MainApp extends Application implements DatasetListener {
     private void newGraphics(ActionEvent event) {
         FXMLController controller = FXMLController.create();
     }
+    
+    private void newServer(ActionEvent event) {
+        int port = 8021;
+        startSocketListener(port);
+    }
 
     @FXML
     void showDatasetsTable(ActionEvent event) {
@@ -639,5 +645,6 @@ public class MainApp extends Application implements DatasetListener {
 
     void invokeListenerFunction(String s) {
         System.out.println("invoke " + s);
+        GUIScripter.showPeak(s.split(" ")[2]);
     }
 }
