@@ -410,7 +410,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
     public DoubleProperty offsetProperty() {
         if (offset == null) {
-            offset = new SimpleDoubleProperty(this, "offset", 0.05);
+            offset = new SimpleDoubleProperty(this, "offset", 0.0);
         }
         return offset;
     }
@@ -600,7 +600,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             offset = offsetMap.get(index);
         }
         if (offset == null) {
-            offset = getOffset();
+            offset = 0.0;
         }
         return offset;
     }
@@ -1922,6 +1922,10 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                     double deltaEnd = oldEnd - r.getRegionStartIntensity(0);
                     r.setRegionStartIntensity(0, newY);
                     r.setRegionEndIntensity(0, newY + deltaEnd);
+                    try {
+                        r.measure(theFile);
+                    } catch (IOException ioE) {
+                    }
                     break;
                 case 2:
                     r.setRegionEndIntensity(0, newY);
