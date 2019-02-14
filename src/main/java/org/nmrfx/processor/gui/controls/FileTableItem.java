@@ -162,12 +162,15 @@ public class FileTableItem {
 
     public void setTypes(String[] headers, boolean[] notDouble, boolean[] notInteger) {
         for (int i = 0; i < headers.length; i++) {
-            if (!notInteger[i]) {
-                intExtras.put(headers[i], Integer.parseInt(extras.get(headers[i])));
-                extras.remove(headers[i]);
-            } else if (!notDouble[i]) {
-                doubleExtras.put(headers[i], Double.parseDouble(extras.get(headers[i])));
-                extras.remove(headers[i]);
+            String value = extras.get(headers[i]);
+            if (value != null) {
+                if (!notInteger[i]) {
+                    intExtras.put(headers[i], Integer.parseInt(value));
+                    extras.remove(headers[i]);
+                } else if (!notDouble[i]) {
+                    doubleExtras.put(headers[i], Double.parseDouble(value));
+                    extras.remove(headers[i]);
+                }
             }
         }
     }
