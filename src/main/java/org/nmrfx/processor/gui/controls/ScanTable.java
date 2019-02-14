@@ -36,6 +36,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -109,8 +110,33 @@ public class ScanTable {
     boolean processingTable = false;
     List<String> groupNames = new ArrayList<>();
     Map<String, Map<String, Integer>> groupMap = new HashMap<>();
-    Color colors[] = {Color.BLACK, Color.RED, Color.GREEN, Color.ORANGE, Color.BLUE};
     int groupSize = 1;
+    ListChangeListener filterItemListener = new ListChangeListener() {
+        @Override
+        public void onChanged(ListChangeListener.Change c) {
+            getGroups();
+        }
+    };
+
+    static Color color0 = Color.web("#4d615d");
+    static Color color1 = Color.web("#9822ac");
+    static Color color2 = Color.web("#3b702b");
+    static Color color3 = Color.web("#5e3abe");
+    static Color color4 = Color.web("#795717");
+    static Color color5 = Color.web("#4d2f7e");
+    static Color color6 = Color.web("#aa321c");
+    static Color color7 = Color.web("#475a91");
+    static Color color8 = Color.web("#af2446");
+    static Color color9 = Color.web("#3a4d20");
+    static Color color10 = Color.web("#9f2c84");
+    static Color color11 = Color.web("#1e2f2c");
+    static Color color12 = Color.web("#78395b");
+    static Color color13 = Color.web("#311e3c");
+    static Color color14 = Color.web("#7a3e2a");
+    static Color color15 = Color.web("#4c2927");
+
+    static Color[] colors = {color11, color9, color15, color1, color4, color2, color13,
+        color8, color7, color6, color10, color0, color3, color14, color12, color5};
 
     public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
         this.scannerController = controller;
@@ -165,6 +191,7 @@ public class ScanTable {
         }
         Map<Integer, Color> colorMap = new HashMap<>();
         Map<Integer, Double> offsetMap = new HashMap<>();
+        Set<Integer> groupSet = new HashSet<>();
 
         ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
         if ((processorController == null) || processorController.isViewingDataset() || !processorController.getStage().isShowing()) {
@@ -176,6 +203,7 @@ public class ScanTable {
                     Integer row = fileTableItem.getRow();
                     String datasetName = fileTableItem.getDatasetName();
                     int iGroup = fileTableItem.getGroup();
+                    groupSet.add(iGroup);
                     Color color = getGroupColor(iGroup);
                     double offset = iGroup * 1.0 / groupSize * 0.8;
                     Dataset dataset = chart.getDataset();
@@ -197,10 +225,16 @@ public class ScanTable {
                     }
                 }
 
-                chart.setDrawlist(rows);
-                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                dataAttr.setMapColors(colorMap);
-                dataAttr.setMapOffsets(offsetMap);
+                if (!chart.getDatasetAttributes().isEmpty()) {
+                    chart.setDrawlist(rows);
+                    DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                    dataAttr.setMapColors(colorMap);
+                    if (groupSet.size() > 1) {
+                        dataAttr.setMapOffsets(offsetMap);
+                    } else {
+                        dataAttr.clearOffsets();
+                    }
+                }
                 chart.refresh();
             }
         }
@@ -760,7 +794,7 @@ public class ScanTable {
     }
 
     public void addGroupColumn() {
-        addTableColumn("Group", "S");
+        addTableColumn("group", "I");
     }
 
     public void addTableColumn(String newName, String type) {
@@ -862,6 +896,9 @@ public class ScanTable {
         builder = TableFilter.forTableView(tableView);
         fileTableFilter = builder.apply();
         fileTableFilter.resetFilter();
+        tableView.getItems().removeListener(filterItemListener);
+        tableView.getItems().addListener(filterItemListener);
+        getGroups();
     }
 
     public ObservableList<FileTableItem> getItems() {
@@ -1028,6 +1065,8 @@ public class ScanTable {
                         iVec = new IntColumnVector(name, item -> item.getNDim());
                     } else if (name.equalsIgnoreCase("etime")) {
                         iVec = new IntColumnVector(name, item -> item.getDate().intValue());
+                    } else if (name.equalsIgnoreCase("group")) {
+                        iVec = new IntColumnVector(name, item -> item.getGroup());
                     } else {
                         iVec = new IntColumnVector(name, item -> item.getIntegerExtra(fullName));
                     }
@@ -1078,7 +1117,7 @@ public class ScanTable {
         groupMap.clear();
         for (String groupName : groupNames) {
             Set<String> group = new TreeSet<>();
-            for (FileTableItem item : getItems()) {
+            for (FileTableItem item : tableView.getItems()) {
                 String value = item.getExtra(groupName);
                 group.add(value);
             }
@@ -1099,7 +1138,7 @@ public class ScanTable {
     public void getGroups() {
         makeGroupMap();
         int maxValue = 0;
-        for (FileTableItem item : getItems()) {
+        for (FileTableItem item : tableView.getItems()) {
             int mul = 1;
             int iValue = 0;
             for (String groupName : groupNames) {
