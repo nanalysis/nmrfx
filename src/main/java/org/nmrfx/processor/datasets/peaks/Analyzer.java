@@ -455,32 +455,9 @@ public class Analyzer {
     }
 
     public void integrate() throws IOException {
-        int[] pt = new int[1];
         Set<DatasetRegion> regions = getRegions();
-
         for (DatasetRegion region : regions) {
-            double start = region.getRegionStart(0);
-            double end = region.getRegionEnd(0);
-            int istart = dataset.ppmToPoint(0, start);
-            int iend = dataset.ppmToPoint(0, end);
-            if (istart > iend) {
-                int hold = istart;
-                istart = iend;
-                iend = hold;
-            }
-            double sum = 0.0;
-            double min = Double.MAX_VALUE;
-            double max = Double.NEGATIVE_INFINITY;
-            for (int i = istart; i <= iend; i++) {
-                pt[0] = i;
-                double value = dataset.readPoint(pt);
-                min = Math.min(min, value);
-                max = Math.max(max, value);
-                sum += value;
-            }
-            region.setIntegral(sum);
-            region.setMax(max);
-            region.setMin(min);
+            region.measure(dataset);
         }
     }
 
