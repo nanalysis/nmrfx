@@ -44,7 +44,6 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.image.Image;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
-import static javafx.application.Application.launch;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.stage.DirectoryChooser;
@@ -57,7 +56,7 @@ import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.GUIProject;
 import org.nmrfx.project.Project;
 import org.nmrfx.server.Server;
-import org.nmrfx.processor.gui.GUIScripter;
+import static javafx.application.Application.launch;
 
 public class MainApp extends Application implements DatasetListener {
 
@@ -77,6 +76,7 @@ public class MainApp extends Application implements DatasetListener {
     static ConsoleController consoleController = null;
     static boolean isAnalyst = false;
     Consumer<String> socketFunction = null;
+    static NMRFxServer server = null;
 
     public static void setAnalyst() {
         isAnalyst = true;
@@ -85,7 +85,7 @@ public class MainApp extends Application implements DatasetListener {
     public static boolean isAnalyst() {
         return isAnalyst;
     }
-    
+
     public static MainApp getMainApp() {
         return mainApp;
     }
@@ -228,8 +228,8 @@ public class MainApp extends Application implements DatasetListener {
         addMenuItem.setOnAction(e -> FXMLController.getActiveController().addNoDrawAction(e));
         MenuItem newMenuItem = new MenuItem("New Window...");
         newMenuItem.setOnAction(e -> newGraphics(e));
-        MenuItem portMenuItem = new MenuItem("New Server...");
-        portMenuItem.setOnAction(e -> newServer(e));
+        MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
+        portMenuItem.setOnAction(e -> startServer(e));
         Menu recentFIDMenuItem = new Menu("Recent FIDs");
         Menu recentDatasetMenuItem = new Menu("Recent Datasets");
         PreferencesController.setupRecentMenus(recentFIDMenuItem, recentDatasetMenuItem);
@@ -459,11 +459,6 @@ public class MainApp extends Application implements DatasetListener {
     private void newGraphics(ActionEvent event) {
         FXMLController controller = FXMLController.create();
     }
-    
-    private void newServer(ActionEvent event) {
-        int port = 8021;
-        startSocketListener(port);
-    }
 
     @FXML
     void showDatasetsTable(ActionEvent event) {
@@ -636,6 +631,19 @@ public class MainApp extends Application implements DatasetListener {
             ExceptionDialog dialog = new ExceptionDialog(ex);
             dialog.showAndWait();
         }
+    }
+
+    private void newServer(ActionEvent event) {
+        server = NMRFxServer.create();
+    }
+
+    public static void setServer(NMRFxServer Server) {
+        server = Server;
+    }
+
+    public void startServer(ActionEvent event) {
+        int port = NMRFxServer.makePortFile(8021, true);
+        startSocketListener(port);
     }
 
     public void startSocketListener(int port) {
