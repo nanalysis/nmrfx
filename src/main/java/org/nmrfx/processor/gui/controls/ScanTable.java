@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,8 +59,10 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -134,13 +137,22 @@ public class ScanTable {
     static Color color13 = Color.web("#311e3c");
     static Color color14 = Color.web("#7a3e2a");
     static Color color15 = Color.web("#4c2927");
+    List<String> standardHeaders;
 
     static Color[] colors = {color11, color9, color15, color1, color4, color2, color13,
         color8, color7, color6, color10, color0, color3, color14, color12, color5};
 
+    static double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
+
     public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
         this.scannerController = controller;
         this.tableView = tableView;
+        standardHeaders = Arrays.asList("path", "sequence", "row", "etime", "ndim");
+        int i = 0;
+        for (double hue : hues) {
+            colors[i] = Color.hsb(hue, 0.9, 0.9);
+        }
+
         init();
     }
 
@@ -578,7 +590,6 @@ public class ScanTable {
         HashMap<String, String> fieldMap = new HashMap();
         boolean[] notDouble = null;
         boolean[] notInteger = null;
-        String[] standardHeaders = {"path", "sequence", "row", "etime", "ndim"};
         String firstDatasetName = "";
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -885,6 +896,37 @@ public class ScanTable {
         }
         updateFilter();
         updateDataFrame();
+
+        for (TableColumn column : tableView.getColumns()) {
+            String text = column.getText().toLowerCase();
+            if (!standardHeaders.contains(text) && !text.equals("group")
+                    && !text.contains(":") & !text.equals("dataset")) {
+                Rectangle rect = new Rectangle(10, 10);
+                rect.setFill(Color.WHITE);
+                rect.setStroke(Color.BLACK);
+                rect.setOnMousePressed(e -> hitColumnGrouper(e, rect, text));
+                rect.setOnMouseReleased(e -> e.consume());
+                rect.setOnMouseClicked(e -> e.consume());
+                column.setGraphic(rect);
+            }
+        }
+    }
+
+    private void hitColumnGrouper(MouseEvent e, Rectangle rect, String text) {
+        e.consume();
+
+        text = text.toLowerCase();
+        if (groupNames.contains(text)) {
+            groupNames.remove(text);
+            rect.setFill(Color.WHITE);
+        } else {
+            groupNames.add(text);
+            rect.setFill(Color.GREEN);
+        }
+        getGroups();
+        tableView.refresh();
+        selectionChanged(tableView.getSelectionModel().getSelectedIndices());
+
     }
 
     public void saveFilters() {
