@@ -85,7 +85,7 @@ public class MainApp extends Application implements DatasetListener {
     public static boolean isAnalyst() {
         return isAnalyst;
     }
-    
+
     public static MainApp getMainApp() {
         return mainApp;
     }
@@ -459,7 +459,7 @@ public class MainApp extends Application implements DatasetListener {
     private void newGraphics(ActionEvent event) {
         FXMLController controller = FXMLController.create();
     }
-    
+
     private void newServer(ActionEvent event) {
         int port = 8021;
         startSocketListener(port);
