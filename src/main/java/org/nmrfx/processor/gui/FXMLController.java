@@ -1274,6 +1274,17 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return statusBar;
     }
 
+    public void refreshPeakView(int peakNum) {
+        PolyChart chart = getActiveChart();
+        if (!chart.getPeakListAttributes().isEmpty()) {
+            PeakList peakList = chart.getPeakListAttributes().get(0).getPeakList();
+            Peak peak = peakList.getPeakByID(peakNum);
+            if (peak != null) {
+                refreshPeakView(peak);
+            }
+        }
+    }
+
     public void refreshPeakView(String peakSpecifier) {
         Peak peak = PeakList.getAPeak(peakSpecifier);
         System.out.println("show peak2 " + peakSpecifier + " " + peak);
