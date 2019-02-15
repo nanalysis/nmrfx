@@ -1,5 +1,6 @@
 package org.nmrfx.processor.datasets;
 
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
@@ -272,5 +273,35 @@ public class DatasetRegion implements Comparator, Comparable {
 
     public void setAuto(boolean value) {
         isAuto = value;
+    }
+
+    public void measure(Dataset dataset) throws IOException {
+        int[] pt = new int[1];
+        double start = getRegionStart(0);
+        double end = getRegionEnd(0);
+        int istart = dataset.ppmToPoint(0, start);
+        int iend = dataset.ppmToPoint(0, end);
+        if (istart > iend) {
+            int hold = istart;
+            istart = iend;
+            iend = hold;
+        }
+        double sum = 0.0;
+        min = Double.MAX_VALUE;
+        max = Double.NEGATIVE_INFINITY;
+        double offset = startIntensity[0];
+        double delta = (endIntensity[0] - startIntensity[0]) / (iend - istart);
+
+        for (int i = istart; i <= iend; i++) {
+            pt[0] = i;
+
+            double value = dataset.readPoint(pt);
+            value -= offset;
+            offset += delta;
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+            sum += value;
+        }
+        setIntegral(sum);
     }
 }
