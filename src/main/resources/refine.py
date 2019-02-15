@@ -315,6 +315,7 @@ class refine:
         self.trajectoryWriter = None
         self.molecule = Molecule.getActive()
         self.entityEntryDict = {} # map of entity name to linker
+        self.reportDump = False
         if self.molecule != None:
             self.molName = self.molecule.getName()
 
@@ -353,6 +354,9 @@ class refine:
         grefine = GradientRefinement(self.dihedral)
 
         grefine.numericalDerivatives(delta,report)
+
+    def setReportDump(self, value):
+        self.reportDump = bool(value)
 
     def setSeed(self,seed):
         self.dihedral.seed(seed)
@@ -2052,7 +2056,7 @@ class refine:
         for end in [3,10,20,1000]:
             self.setPars({'useh':False,'dislim':self.disLim,'end':end,'hardSphere':0.15,'shrinkValue':0.20})
             self.gmin(nsteps=steps,tolerance=1.0e-6)
-        if self.eFileRoot != None:
+        if self.eFileRoot != None and self.reportDump:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 	#ec.dumpRestraints()
 	#exit()

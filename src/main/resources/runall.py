@@ -80,8 +80,8 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
         time.sleep(1)
 
 def keepStructures(nStructures,newName='final',rootName=''):
-    pat = re.compile('.*\D([0-9]+).pdb')
-    ePat = re.compile('.*\sTotal\s([0-9\.\0]+)')
+    pat = re.compile(r'.*\D([0-9]+).pdb')
+    ePat = re.compile(r'.*\sTotal\s+([0-9\.\0]+)')
     pdbFiles = glob.glob(os.path.join(outDir,rootName+'*.pdb'))
     eValues = []
     for pdbFile in pdbFiles:
@@ -107,7 +107,8 @@ def keepStructures(nStructures,newName='final',rootName=''):
 
         if os.path.exists(aFile):
             shutil.copyfile(aFile,os.path.join(finDir,newName+str(iFile)+'.ang'))
-        fOut.write(str(iFile)+' '+eLine+'\n');
+        outLine = "%-3s %-3s %s" % (str(iFile), structNum, (eLine+'\n'))
+        fOut.write(outLine);
         iFile += 1
     fOut.close()
 
@@ -141,7 +142,6 @@ def parseArgs():
     homeDir = options.directory
     outDir = os.path.join(homeDir,'output')
     finDir = os.path.join(homeDir,'final')
-
     nStructures = int(options.nStructures)
     clean = options.clean
 
