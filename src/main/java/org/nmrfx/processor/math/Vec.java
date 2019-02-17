@@ -4459,6 +4459,46 @@ public class Vec extends PySequence implements MatrixType {
         }
         return this;
     }
+    
+    public Vec bcWhit(double lambda, int order, boolean baselineMode) {
+        int vecSize = getSize();
+
+        boolean[] isInSignalRegion = getSignalRegion();
+
+        if ((isInSignalRegion != null) && (isInSignalRegion.length > 4)) {
+            double[] w = new double[vecSize + 1];
+            double[] z = new double[vecSize + 1];
+            double[] y = new double[vecSize + 1];
+            if (isComplex()) {
+                makeReal();
+            }
+            for (int i = 0; i < vecSize; i++) {
+                y[i + 1] = rvec[i];
+                if (isInSignalRegion[i]) {
+                    w[i + 1] = 0;
+                } else {
+                    w[i + 1] = 1;
+                }
+            }
+            double[] a = new double[order + 1];
+
+            Util.pascalrow(a, order);
+
+            //is this fine?
+            Util.asmooth(w, y, z, a, lambda, vecSize, order);
+            if (baselineMode) {
+                for (int i = 0; i < vecSize; i++) {
+                    rvec[i] = z[i + 1];
+                }
+            } else {
+                for (int i = 0; i < vecSize; i++) {
+                    rvec[i] -= z[i + 1];
+                }
+            }
+        }
+        return this;
+    }
+
 
     /**
      * Bucket a vector into a smaller size by summing adjacent points (within each bucket)
