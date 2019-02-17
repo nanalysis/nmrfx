@@ -36,9 +36,14 @@
                                 <MenuItem mnemonicParsing="false" onAction="#purgeInactive" text="Use Current State" />
                             </items>
                         </MenuButton>
-                        <MenuButton  mnemonicParsing="false" text="Analyze">
+                        <MenuButton  mnemonicParsing="false" text="Regions">
                             <items>
-                                <MenuItem mnemonicParsing="false" onAction="#measure" text="Measure" />
+                                <MenuItem mnemonicParsing="false" onAction="#measure" text="Add Crosshair Region..." />
+                                <MenuItem mnemonicParsing="false" onAction="#saveRegions" text="Save Regions..." />
+                                <MenuItem mnemonicParsing="false" onAction="#loadRegions" text="Load Regions..." />
+                                <MenuItem mnemonicParsing="false" onAction="#measureRegions" text="Measure All" />
+                                <MenuItem mnemonicParsing="false" onAction="#showRegions" text="Show All" />
+                                <MenuItem mnemonicParsing="false" onAction="#clearRegions" text="Clear All" />
                             </items>
                         </MenuButton>
                     </children>

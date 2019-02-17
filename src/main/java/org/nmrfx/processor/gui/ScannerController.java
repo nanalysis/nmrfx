@@ -5,16 +5,24 @@
  */
 package org.nmrfx.processor.gui;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -24,17 +32,21 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.PropertySheet.Item;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.Measure;
 import org.nmrfx.processor.datasets.Measure.MeasureTypes;
 import org.nmrfx.processor.datasets.Measure.OffsetTypes;
@@ -73,6 +85,10 @@ public class ScannerController implements Initializable {
     ScanTable scanTable;
     ChoicePropertyItem measureItem;
     OffsetPropertyItem offsetItem;
+
+    static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
+    static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
+    static final Pattern[] PATS = {WPAT, RPAT};
 
     class CustomPropertyItem implements Item {
 
@@ -130,7 +146,7 @@ public class ScannerController implements Initializable {
 
         private String key;
         private String category, name, description;
-        private MeasureTypes value = MeasureTypes.VOLUME;
+        private MeasureTypes value = MeasureTypes.V;
 
         public ChoicePropertyItem(String name, String category, String description) {
             this.name = name;
@@ -178,7 +194,7 @@ public class ScannerController implements Initializable {
 
         private String key;
         private String category, name, description;
-        private OffsetTypes value = OffsetTypes.NONE;
+        private OffsetTypes value = OffsetTypes.N;
 
         public OffsetPropertyItem(String name, String category, String description) {
             this.name = name;
@@ -348,25 +364,65 @@ public class ScannerController implements Initializable {
         return fxmlController;
     }
 
+    private boolean hasColumnName(String columnName) {
+        List<String> headers = scanTable.getHeaders();
+        boolean result = false;
+        for (String header : headers) {
+            int colon = header.indexOf(":");
+            if (colon != -1) {
+                if (header.substring(0, colon).equals(columnName)) {
+                    result = true;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
     @FXML
     private void measure(ActionEvent event) {
-        Dataset dataset = chart.getDataset();
-        Measure measure = new Measure(dataset);
-        double[] ppms = chart.getVerticalCrosshairPositions();
-        double[] wppms = new double[2];
-        wppms[0] = chart.getAxis(0).getLowerBound();
-        wppms[1] = chart.getAxis(0).getUpperBound();
+        TextInputDialog textInput = new TextInputDialog();
+        textInput.setHeaderText("New column name");
+        Optional<String> columNameOpt = textInput.showAndWait();
+        if (columNameOpt.isPresent()) {
+            String columnName = columNameOpt.get();
+            columnName = columnName.replace(':', '_').replace(' ', '_');
+            if (!columnName.equals("")) {
+                if (hasColumnName(columnName)) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Column exists");
+                    alert.showAndWait();
+                    return;
+                }
+            }
+            Dataset dataset = chart.getDataset();
+            double[] ppms = chart.getVerticalCrosshairPositions();
+            double[] wppms = new double[2];
+            wppms[0] = chart.getAxis(0).getLowerBound();
+            wppms[1] = chart.getAxis(0).getUpperBound();
+            measureRegion(dataset, columnName, ppms, wppms, offsetItem.getValue(), measureItem.getValue());
+        }
+    }
+
+    private void measureRegion(Dataset dataset, String name, double[] ppms, double[] wppms, OffsetTypes offsetType, MeasureTypes measureType) {
         int extra = 1;
         List<Double> values;
+        Measure measure = new Measure(name, 0, ppms[0], ppms[1], wppms[0], wppms[1], extra, offsetType, measureType);
+        String columnDescriptor = measure.getColumnDescriptor();
+        String columnPrefix = scanTable.getNextColumnName(name, columnDescriptor);
+        measure.setName(columnPrefix);
+        String newColumnName = columnPrefix + ":" + columnDescriptor;
+
         try {
-            values = measure.measure(0, ppms[0], ppms[1], wppms[0], wppms[1], extra, offsetItem.getValue(), measureItem.getValue());
+            values = measure.measure(dataset);
         } catch (IOException ex) {
             Logger.getLogger(ScannerController.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
-        String columnDescriptor = getColumnDescriptor(ppms[0], ppms[1], wppms[0], wppms[1]);
-        String newColumnName = scanTable.getNextColumnName(columnDescriptor) + ":" + columnDescriptor;
+        setItems(newColumnName, values);
+        scanTable.addTableColumn(newColumnName, "D");
+    }
 
+    void setItems(String columnName, List<Double> values) {
         ObservableList<FileTableItem> items = scanTable.getItems();
         Map<Integer, FileTableItem> map = new HashMap<>();
         for (FileTableItem item : items) {
@@ -378,28 +434,173 @@ public class ScannerController implements Initializable {
         for (int i = 0; i < values.size(); i++) {
             double value = values.get(i);
             FileTableItem item = map.get(i);
-            item.setExtra(newColumnName, value);
+            item.setExtra(columnName, value);
         }
-        scanTable.addTableColumn(newColumnName, "D");
     }
 
-    public String getColumnDescriptor(double ppm1, double ppm2, double ppm1w, double ppm2w) {
-        String newColumnName = measureItem.getValue().toString().substring(0, 3).toLowerCase();
-        if (null == offsetItem.getValue()) {
-            newColumnName = String.format("%s_%.4f_%.4f%s", newColumnName, ppm1, ppm2, "_no_");
-        } else {
-            switch (offsetItem.getValue()) {
-                case WINDOW:
-                    newColumnName = String.format("%s_%.4f_%.4f_%.4f_%.4f%s", newColumnName, ppm1, ppm2, ppm1w, ppm2w, "_we_");
-                    break;
-                case REGION:
-                    newColumnName = String.format("%s_%.4f_%.4f%s", newColumnName, ppm1, ppm2, "_re_");
-                    break;
-                default:
-                    newColumnName = String.format("%s_%.4f_%.4f%s", newColumnName, ppm1, ppm2, "_no_");
-                    break;
+    @FXML
+    void measureRegions() {
+        Dataset dataset = chart.getDataset();
+        List<String> headers = scanTable.getHeaders();
+        for (String header : headers) {
+            System.out.println(header);
+            Optional<Measure> measureOpt = matchHeader(header);
+            if (measureOpt.isPresent()) {
+                try {
+                    List<Double> values = measureOpt.get().measure(dataset);
+                    setItems(header, values);
+                } catch (IOException ex) {
+                    Logger.getLogger(ScannerController.class.getName()).log(Level.SEVERE, null, ex);
+                    return;
+                }
             }
         }
-        return newColumnName;
+        scanTable.refresh();
+    }
+
+    @FXML
+    void showRegions() {
+        Dataset dataset = chart.getDataset();
+        List<String> headers = scanTable.getHeaders();
+        Set<DatasetRegion> regions = new TreeSet<>();
+
+        for (String header : headers) {
+            System.out.println(header);
+            Optional<Measure> measureOpt = matchHeader(header);
+            if (measureOpt.isPresent()) {
+                Measure measure = measureOpt.get();
+                DatasetRegion region = new DatasetRegion(measure.ppm1, measure.ppm2);
+                regions.add(region);
+            }
+        }
+        dataset.setRegions(regions);
+        chart.setRegions(true);
+        chart.setIntegrals(false);
+        chart.refresh();
+    }
+
+    @FXML
+    void clearRegions() {
+        Dataset dataset = chart.getDataset();
+        Set<DatasetRegion> regions = new TreeSet<>();
+
+        dataset.setRegions(regions);
+        chart.setRegions(false);
+        chart.refresh();
+    }
+
+    @FXML
+    void loadRegions() {
+        FileChooser chooser = new FileChooser();
+        File file = chooser.showOpenDialog(null);
+        if (file != null) {
+            try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+                while (true) {
+                    String s = reader.readLine();
+                    if (s == null) {
+                        break;
+                    }
+                    String[] fields = s.split(" +");
+                    if (fields.length > 2) {
+                        String name = fields[0];
+                        StringBuilder sBuilder = new StringBuilder();
+                        for (int i = 1; i < fields.length; i++) {
+                            sBuilder.append(fields[i]);
+                            if (i != fields.length - 1) {
+                                sBuilder.append("_");
+                            }
+                        }
+                        String columnPrefix;
+                        if (name.startsWith("V.")) {
+                            columnPrefix = scanTable.getNextColumnName("", sBuilder.toString());
+                        } else {
+                            columnPrefix = name;
+                        }
+                        sBuilder.insert(0, ':');
+                        sBuilder.insert(0, columnPrefix);
+                        scanTable.addTableColumn(sBuilder.toString(), "D");
+                    }
+                }
+            } catch (IOException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Couldn't read file");
+                alert.showAndWait();
+            }
+
+        }
+    }
+
+    @FXML
+    void saveRegions() {
+        FileChooser chooser = new FileChooser();
+        File file = chooser.showSaveDialog(null);
+        if (file != null) {
+            try {
+                file.createNewFile();
+                try (FileWriter writer = new FileWriter(file)) {
+                    List<String> headers = scanTable.getHeaders();
+                    for (String header : headers) {
+                        System.out.println(header);
+                        Optional<Measure> measure = matchHeader(header);
+                        if (measure.isPresent()) {
+                            System.out.println(" has " + measure.get().getFileString());
+                            writer.write(measure.get().getFileString());
+                            writer.write('\n');
+                        }
+                    }
+                }
+            } catch (IOException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Couldn't save file");
+                alert.showAndWait();
+            }
+        }
+    }
+
+    public static Optional<Measure> matchHeader(String header) {
+        Optional<Measure> result = Optional.empty();
+        String columnName;
+        String oMode;
+        String mMode;
+        String group = "VN";
+        double ppm1;
+        double ppm2;
+        double ppmw1;
+        double ppmw2;
+        for (Pattern pat : PATS) {
+            Matcher matcher = pat.matcher(header);
+            if (matcher.matches()) {
+                columnName = matcher.group(1);
+                int nGroups = matcher.groupCount();
+                ppm1 = Double.parseDouble(matcher.group(2));
+                ppm2 = Double.parseDouble(matcher.group(3));
+                if (nGroups == 6) {
+                    ppmw1 = Double.parseDouble(matcher.group(4));
+                    ppmw2 = Double.parseDouble(matcher.group(5));
+                } else {
+                    ppmw1 = ppm1;
+                    ppmw2 = ppm2;
+                }
+
+                if (nGroups >= 4) {
+                    String lastGroup = matcher.group(nGroups);
+                    if (lastGroup != null) {
+                        group = lastGroup;
+                    }
+                }
+
+                mMode = group.substring(1, 2);
+                oMode = group.substring(2, 3);
+
+                OffsetTypes oType = OffsetTypes.valueOf(oMode);
+                MeasureTypes mType = MeasureTypes.valueOf(mMode);
+                Measure measure = new Measure(columnName, 0, ppm1, ppm2, ppmw1, ppmw2,
+                        0, oType, mType);
+                result = Optional.of(measure);
+                break;
+            }
+        }
+        return result;
+
     }
 }

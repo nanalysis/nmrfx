@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.gui.controls;
 
+import impl.org.controlsfx.table.ColumnFilter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -40,6 +41,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -111,13 +113,14 @@ public class ScanTable {
     HashMap<String, String> columnTypes = new HashMap<>();
     HashMap<String, String> columnDescriptors = new HashMap<>();
     boolean processingTable = false;
-    List<String> groupNames = new ArrayList<>();
+    Set<String> groupNames = new TreeSet<>();
     Map<String, Map<String, Integer>> groupMap = new HashMap<>();
     int groupSize = 1;
     ListChangeListener filterItemListener = new ListChangeListener() {
         @Override
         public void onChanged(ListChangeListener.Change c) {
             getGroups();
+            selectionChanged();
         }
     };
 
@@ -139,20 +142,30 @@ public class ScanTable {
     static Color color15 = Color.web("#4c2927");
     List<String> standardHeaders;
 
-    static Color[] colors = {color11, color9, color15, color1, color4, color2, color13,
-        color8, color7, color6, color10, color0, color3, color14, color12, color5};
+////    static Color[] colors = {color11, color9, color15, color1, color4, color2, color13,
+////        color8, color7, color6, color10, color0, color3, color14, color12, color5};
+    static final Color[] COLORS = new Color[17];
+    static final double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
 
-    static double[] hues = {0.0, 0.5, 0.25, 0.75, 0.125, 0.375, 0.625, 0.875, 0.0625, 0.1875, 0.3125, 0.4375, 0.5625, 0.6875, 0.8125, 0.9375};
+    static {
+        COLORS[0] = Color.BLACK;
+        int i = 1;
+        double brightness = 0.8;
+        for (double hue : hues) {
+            if (i > 8) {
+                brightness = 0.5;
+            } else if (i > 4) {
+                brightness = 0.65;
+            }
+            COLORS[i++] = Color.hsb(hue * 360.0, 0.9, brightness);
+        }
+
+    }
 
     public ScanTable(ScannerController controller, TableView<FileTableItem> tableView) {
         this.scannerController = controller;
         this.tableView = tableView;
         standardHeaders = Arrays.asList("path", "sequence", "row", "etime", "ndim");
-        int i = 0;
-        for (double hue : hues) {
-            colors[i] = Color.hsb(hue, 0.9, 0.9);
-        }
-
         init();
     }
 
@@ -173,8 +186,7 @@ public class ScanTable {
         setDragHandlers(tableView);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         ListChangeListener selectionListener = (ListChangeListener) (ListChangeListener.Change c) -> {
-            ObservableList<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
-            selectionChanged(selected);
+            selectionChanged();
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         columnTypes.put("path", "S");
@@ -187,6 +199,10 @@ public class ScanTable {
 
     }
 
+    public void refresh() {
+        tableView.refresh();
+    }
+
     final protected String getActiveDatasetName() {
         PolyChart chart = scannerController.getChart();
         Dataset dataset = chart.getDataset();
@@ -197,62 +213,71 @@ public class ScanTable {
         return name;
     }
 
-    final protected void selectionChanged(ObservableList<Integer> selected) {
+    final protected void selectionChanged() {
         if (processingTable) {
             return;
         }
         Map<Integer, Color> colorMap = new HashMap<>();
         Map<Integer, Double> offsetMap = new HashMap<>();
         Set<Integer> groupSet = new HashSet<>();
+        List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
 
         ProcessorController processorController = scannerController.getFXMLController().getProcessorController(false);
         if ((processorController == null) || processorController.isViewingDataset() || !processorController.getStage().isShowing()) {
-            if (!selected.isEmpty()) {
-                PolyChart chart = scannerController.getChart();
-                List<Integer> rows = new ArrayList<>();
-                for (Integer index : selected) {
-                    FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
-                    Integer row = fileTableItem.getRow();
-                    String datasetName = fileTableItem.getDatasetName();
-                    int iGroup = fileTableItem.getGroup();
-                    groupSet.add(iGroup);
-                    Color color = getGroupColor(iGroup);
-                    double offset = iGroup * 1.0 / groupSize * 0.8;
-                    Dataset dataset = chart.getDataset();
-                    if ((dataset == null) || (chart.getDatasetAttributes().size() != 1) || !dataset.getName().equals(datasetName)) {
-                        dataset = Dataset.getDataset(datasetName);
-                        if (dataset == null) {
-                            File datasetFile = new File(scanOutputDir, datasetName);
-                            FXMLController.getActiveController().openDataset(datasetFile, false);
-                        } else {
-                            List<String> datasetNames = new ArrayList<>();
-                            datasetNames.add(datasetName);
-                            chart.updateDatasets(datasetNames);
-                        }
-                    }
-                    if (row != null) {
-                        colorMap.put(row - 1, color);
-                        offsetMap.put(row - 1, offset);
-                        rows.add(row - 1); // rows index from 1
-                    }
+            List<Integer> showRows = new ArrayList<>();
+            if (selected.isEmpty()) {
+                for (int i = 0, n = tableView.getItems().size(); i < n; i++) {
+                    showRows.add(i);
                 }
-
-                if (!chart.getDatasetAttributes().isEmpty()) {
-                    chart.setDrawlist(rows);
-                    DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                    dataAttr.setMapColors(colorMap);
-                    if (groupSet.size() > 1) {
-                        dataAttr.setMapOffsets(offsetMap);
-                    } else {
-                        dataAttr.clearOffsets();
-                    }
-                }
-                chart.refresh();
+            } else {
+                showRows.addAll(selected);
             }
+            PolyChart chart = scannerController.getChart();
+            List<Integer> rows = new ArrayList<>();
+            for (Integer index : showRows) {
+                FileTableItem fileTableItem = (FileTableItem) tableView.getItems().get(index);
+                Integer row = fileTableItem.getRow();
+                String datasetName = fileTableItem.getDatasetName();
+                int iGroup = fileTableItem.getGroup();
+                groupSet.add(iGroup);
+                Color color = getGroupColor(iGroup);
+                double offset = iGroup * 1.0 / groupSize * 0.8;
+                Dataset dataset = chart.getDataset();
+                if ((dataset == null) || (chart.getDatasetAttributes().size() != 1) || !dataset.getName().equals(datasetName)) {
+                    dataset = Dataset.getDataset(datasetName);
+                    if (dataset == null) {
+                        File datasetFile = new File(scanOutputDir, datasetName);
+                        FXMLController.getActiveController().openDataset(datasetFile, false);
+                    } else {
+                        List<String> datasetNames = new ArrayList<>();
+                        datasetNames.add(datasetName);
+                        chart.updateDatasets(datasetNames);
+                    }
+                }
+                if (row != null) {
+                    colorMap.put(row - 1, color);
+                    offsetMap.put(row - 1, offset);
+                    rows.add(row - 1); // rows index from 1
+                }
+            }
+
+            if (!chart.getDatasetAttributes().isEmpty()) {
+                chart.setDrawlist(rows);
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                dataAttr.setMapColors(colorMap);
+                if (groupSet.size() > 1) {
+                    dataAttr.setMapOffsets(offsetMap);
+                } else {
+                    dataAttr.clearOffsets();
+                }
+            }
+            chart.refresh();
+
         }
     }
 
-    final protected void setDragHandlers(Node mouseNode) {
+    final protected void setDragHandlers(Node mouseNode
+    ) {
 
         mouseNode.setOnDragOver(new EventHandler<DragEvent>() {
             @Override
@@ -741,14 +766,19 @@ public class ScanTable {
         }
     }
 
-    private void saveScanTable(File file) {
-        Charset charset = Charset.forName("US-ASCII");
+    public List<String> getHeaders() {
         ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
         List<String> headers = new ArrayList<>();
         for (TableColumn column : columns) {
             String name = column.getText();
             headers.add(name);
         }
+        return headers;
+    }
+
+    private void saveScanTable(File file) {
+        Charset charset = Charset.forName("US-ASCII");
+        List<String> headers = getHeaders();
 
         try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
             boolean first = true;
@@ -769,36 +799,29 @@ public class ScanTable {
         }
     }
 
-    public String getNextColumnName(String columnDescriptor) {
-        int nChars = columnDescriptor.length();
-        boolean measureType = false;
-        if ((nChars > 4)) {
-            String start = columnDescriptor.substring(0, 4);
-            if (start.equals("vol_") || start.equals("min_") || start.equals("max_") || start.equals("ext_")) {
-                measureType = true;
-            }
-        }
-        if (!measureType) {
-            return "";
-        }
+    public String getNextColumnName(String name, String columnDescriptor) {
         String columnName = columnDescriptors.get(columnDescriptor);
         int maxColumn = -1;
         if (columnName == null) {
-            for (String name : columnTypes.keySet()) {
-                Integer columnNum = null;
-                if (name.startsWith("V.")) {
-                    try {
-                        int colonPos = name.indexOf(":");
-                        columnNum = Integer.parseInt(name.substring(2, colonPos));
-                        if (columnNum > maxColumn) {
-                            maxColumn = columnNum;
+            if (!name.equals("")) {
+                columnName = name;
+            } else {
+                for (String columnType : columnTypes.keySet()) {
+                    Integer columnNum = null;
+                    if (columnType.startsWith("V.")) {
+                        try {
+                            int colonPos = columnType.indexOf(":");
+                            columnNum = Integer.parseInt(columnType.substring(2, colonPos));
+                            if (columnNum > maxColumn) {
+                                maxColumn = columnNum;
+                            }
+                        } catch (NumberFormatException nfE) {
+                            columnNum = null;
                         }
-                    } catch (NumberFormatException nfE) {
-                        columnNum = null;
                     }
                 }
+                columnName = "V." + (maxColumn + 1);
             }
-            columnName = "V." + (maxColumn + 1);
             columnDescriptors.put(columnDescriptor, columnName);
         }
         return columnName;
@@ -883,6 +906,19 @@ public class ScanTable {
             if (type.equals("D")) {
                 TableColumn<FileTableItem, Number> doubleExtraColumn = new TableColumn<>(header);
                 doubleExtraColumn.setCellValueFactory((e) -> new SimpleDoubleProperty(e.getValue().getDoubleExtra(header)));
+                doubleExtraColumn.setCellFactory(col
+                        -> new TableCell<FileTableItem, Number>() {
+                    @Override
+                    public void updateItem(Number value, boolean empty) {
+                        super.updateItem(value, empty);
+                        if (empty) {
+                            setText(null);
+                        } else {
+                            setText(String.format("%.4f", value.doubleValue()));
+                        }
+                    }
+                });
+
                 tableView.getColumns().add(doubleExtraColumn);
             } else if (type.equals("I")) {
                 TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);
@@ -898,18 +934,55 @@ public class ScanTable {
         updateDataFrame();
 
         for (TableColumn column : tableView.getColumns()) {
-            String text = column.getText().toLowerCase();
-            if (!standardHeaders.contains(text) && !text.equals("group")
-                    && !text.contains(":") & !text.equals("dataset")) {
-                Rectangle rect = new Rectangle(10, 10);
-                rect.setFill(Color.WHITE);
-                rect.setStroke(Color.BLACK);
-                rect.setOnMousePressed(e -> hitColumnGrouper(e, rect, text));
-                rect.setOnMouseReleased(e -> e.consume());
-                rect.setOnMouseClicked(e -> e.consume());
-                column.setGraphic(rect);
-            }
+            setColumnGraphic(column);
+            column.graphicProperty().addListener(e -> {
+                graphicChanged(column);
+            });
         }
+    }
+
+    private void graphicChanged(TableColumn column) {
+        Node node = column.getGraphic();
+        boolean isFiltered = (node != null) && !(node instanceof Rectangle);
+        if ((node == null) || isFiltered) {
+            setColumnGraphic(column);
+        }
+    }
+
+    private void setColumnGraphic(TableColumn column) {
+        String text = column.getText().toLowerCase();
+        if (isGroupable(text)) {
+            boolean isGrouped = groupNames.contains(text);
+            Node node = column.getGraphic();
+            boolean isFiltered = isFiltered(column);
+            Rectangle rect = new Rectangle(10, 10);
+            Color color;
+            if (isGrouped) {
+                color = isFiltered ? Color.RED : Color.BLUE;
+            } else {
+                color = isFiltered ? Color.ORANGE : Color.WHITE;
+            }
+            rect.setFill(color);
+            rect.setStroke(Color.BLACK);
+            rect.setOnMousePressed(e -> hitColumnGrouper(e, rect, text));
+            rect.setOnMouseReleased(e -> e.consume());
+            rect.setOnMouseClicked(e -> e.consume());
+            column.setGraphic(rect);
+        }
+    }
+
+    private boolean isFiltered(TableColumn column) {
+        boolean filtered = false;
+        Optional<ColumnFilter> opt = fileTableFilter.getColumnFilter(column);
+        if (opt.isPresent()) {
+            filtered = opt.get().isFiltered();
+        }
+        return filtered;
+    }
+
+    private boolean isGroupable(String text) {
+        return !standardHeaders.contains(text) && !text.equals("group")
+                && !text.contains(":") & !text.equals("dataset");
     }
 
     private void hitColumnGrouper(MouseEvent e, Rectangle rect, String text) {
@@ -924,9 +997,8 @@ public class ScanTable {
             rect.setFill(Color.GREEN);
         }
         getGroups();
+        selectionChanged();
         tableView.refresh();
-        selectionChanged(tableView.getSelectionModel().getSelectedIndices());
-
     }
 
     public void saveFilters() {
@@ -1173,11 +1245,15 @@ public class ScanTable {
     }
 
     private Color getGroupColor(int index) {
-        index = Math.min(index, colors.length - 1);
-        return colors[index];
+        index = Math.min(index, COLORS.length - 1);
+        return COLORS[index];
     }
 
     public void getGroups() {
+        System.out.println("getgroups");
+        for (TableColumn column : tableView.getColumns()) {
+            setColumnGraphic(column);
+        }
         makeGroupMap();
         int maxValue = 0;
         for (FileTableItem item : tableView.getItems()) {
