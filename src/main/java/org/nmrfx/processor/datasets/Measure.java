@@ -27,41 +27,109 @@ import java.util.List;
  */
 public class Measure {
 
-    final List<Dataset> datasets;
+    String name = "";
+    final int iDim;
+    public final double ppm1;
+    public final double ppm2;
+
+    final double wppm1;
+    final double wppm2;
+    final int extra;
+    final OffsetTypes offsetType;
+    final MeasureTypes measureType;
 
     public enum MeasureTypes {
-        VOLUME, MAX, MIN, EXTREME;
+        V("V", "Volume"), M("M", "Maximum"), m("m", "Minimum"), E("E", "Extreme");
+
+        final String name;
+        final String symbol;
+
+        MeasureTypes(String symbol, String name) {
+            this.symbol = symbol;
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+
+        public String getSymbol() {
+            return symbol;
+        }
+
     }
 
     public enum OffsetTypes {
-        NONE, REGION, WINDOW;
+        N("None"), R("Region"), W("Window");
+
+        final String name;
+
+        OffsetTypes(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+
+        public String getSymbol() {
+            return name.substring(0, 1);
+        }
+
     }
 
-    public Measure(Dataset dataset) {
-        this.datasets = new ArrayList<>();
-        datasets.add(dataset);
+//    public Measure(Dataset dataset) {
+//        this.datasets = new ArrayList<>();
+//        datasets.add(dataset);
+//    }
+//
+//    public Measure(List<Dataset> datasets) {
+//        this.datasets = new ArrayList<>();
+//        this.datasets.addAll(datasets);
+//    }
+    public Measure(String name, int iDim, double ppm1, double ppm2) {
+        this.name = name;
+        this.iDim = iDim;
+        this.ppm1 = ppm1;
+        this.ppm2 = ppm2;
+        this.wppm1 = ppm1;
+        this.wppm2 = ppm2;
+        this.extra = 0;
+        this.offsetType = OffsetTypes.N;
+        this.measureType = MeasureTypes.V;
     }
 
-    public Measure(List<Dataset> datasets) {
-        this.datasets = new ArrayList<>();
-        this.datasets.addAll(datasets);
+    public Measure(String name, int iDim, double ppm1, double ppm2, OffsetTypes oType, MeasureTypes mType) {
+        this.name = name;
+        this.iDim = iDim;
+        this.ppm1 = ppm1;
+        this.ppm2 = ppm2;
+        this.wppm1 = ppm1;
+        this.wppm2 = ppm2;
+        this.extra = 0;
+        this.offsetType = oType;
+        this.measureType = mType;
     }
 
-    public List<Double> measure(int iDim, double ppm1, double ppm2) throws IOException {
-        return measure(iDim, ppm1, ppm2, ppm1, ppm2, 0, OffsetTypes.REGION, MeasureTypes.VOLUME);
+    public Measure(String name, int iDim, double ppm1, double ppm2, double wppm1, double wppm2, int extra, OffsetTypes oType, MeasureTypes mType) {
+        this.name = name;
+        this.iDim = iDim;
+        this.ppm1 = ppm1;
+        this.ppm2 = ppm2;
+        this.wppm1 = wppm1;
+        this.wppm2 = wppm2;
+        this.extra = extra;
+        this.offsetType = oType;
+        this.measureType = mType;
     }
 
-    public List<Double> measure(int iDim, double ppm1, double ppm2, double wppm1, double wppm2, int extra, OffsetTypes offsetType, MeasureTypes mode) throws IOException {
-        Dataset dataset = datasets.get(0);
-        int pt1 = dataset.ppmToPoint(iDim, ppm1);
-        int pt2 = dataset.ppmToPoint(iDim, ppm2);
-        int wpt1 = dataset.ppmToPoint(iDim, wppm1);
-        int wpt2 = dataset.ppmToPoint(iDim, wppm2);
-        return measure(iDim, pt1, pt2, wpt1, wpt2, extra, offsetType, mode);
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public List<Double> measure(int iDim, int pt1, int pt2, int wpt1, int wpt2, int extra, OffsetTypes offsetType, MeasureTypes mode) throws IOException {
-        Dataset dataset = datasets.get(0);
+    public List<Double> measure(Dataset dataset) throws IOException {
         int alongDim = iDim == 0 ? 1 : 0;
         int size = dataset.getSize(alongDim);
         int nDim = dataset.getNDim();
@@ -70,6 +138,11 @@ public class Measure {
         int[] edge1 = new int[nDim];
         int[] edge2 = new int[nDim];
         int[] cpt = new int[nDim];
+        int pt1 = dataset.ppmToPoint(iDim, ppm1);
+        int pt2 = dataset.ppmToPoint(iDim, ppm2);
+        int wpt1 = dataset.ppmToPoint(iDim, wppm1);
+        int wpt2 = dataset.ppmToPoint(iDim, wppm2);
+
         double[] width = new double[nDim];
         if (pt1 > pt2) {
             int hold = pt1;
@@ -86,7 +159,7 @@ public class Measure {
         // fixme  need to switch dim for iDim != 0
         List<Double> values = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            if (offsetType == OffsetTypes.WINDOW) {
+            if (offsetType == OffsetTypes.W) {
                 edge1[0] = wpt1 - extra;
                 edge2[0] = wpt2 - extra;
             } else {
@@ -119,40 +192,65 @@ public class Measure {
             v2 = dv * (1.0 * pt2 - edge1[0]) / (edge2[0] - edge1[0]) + v1;
             double iCorr = 0.0;
             double vCorr = 0.0;
-            if (offsetType != OffsetTypes.NONE) {
+            if (offsetType != OffsetTypes.N) {
                 iCorr = (v1 + v2) / 2.0;
                 vCorr = Math.abs(pt[0][0] - pt[0][1]) * iCorr;
             }
             RegionData region = dataset.analyzeRegion(pt, cpt, width, dim);
             double value;
-            switch (mode) {
-                case VOLUME: {
+            switch (measureType) {
+                case V: {
                     value = region.getVolume_r();
                     value -= vCorr;
                     break;
                 }
-                case MAX: {
+                case M: {
                     value = region.getMax();
                     value -= iCorr;
                     break;
                 }
-                case MIN: {
+                case m: {
                     value = region.getMin();
                     value -= iCorr;
                     break;
                 }
-                case EXTREME: {
+                case E: {
                     value = region.getExtreme();
                     value -= iCorr;
                     break;
                 }
                 default: {
-                    throw new IllegalArgumentException("Invalid mode " + mode);
+                    throw new IllegalArgumentException("Invalid mode " + measureType.toString());
                 }
             }
             values.add(value);
         }
         return values;
+    }
+
+    public String getColumnDescriptor() {
+        String measureName = measureType.getSymbol();
+        String columnDescriptor;
+        if (null == offsetType) {
+            columnDescriptor = String.format("_%s_%.4f_%.4f%s", measureName, ppm1, ppm2, "_no_");
+        } else {
+            switch (offsetType) {
+                case W:
+                    columnDescriptor = String.format("%.4f_%.4f_%.4f_%.4f_%sW", ppm1, ppm2, wppm1, wppm2, measureName);
+                    break;
+                case R:
+                    columnDescriptor = String.format("%.4f_%.4f_%sR", ppm1, ppm2, measureName, "R");
+                    break;
+                default:
+                    columnDescriptor = String.format("%.4f_%.4f_%sN", ppm1, ppm2, measureName);
+                    break;
+            }
+        }
+        return columnDescriptor;
+    }
+
+    public String getFileString() {
+        return name + " " + getColumnDescriptor().replace('_', ' ').trim();
     }
 
 }
