@@ -66,15 +66,17 @@ import org.python.core.PyType;
 import org.renjin.sexp.AttributeMap;
 
 /**
- * A class for representing vectors of data (typically for NMR). The data is stored as real or complex values. If
- * complex, the data can be stored in two formats. In the first, the real values are stored in one array of doubles and
- * the imaginary in a second array of doubles. In the second format the complex values are stored in an array of Complex
- * objects. The storage arrays can be resized and may have a capacity larger than the number of valid data values they
- * contain. Because of this the user must always pay attention to the size field which indicates the number of valid
- * points.
+ * A class for representing vectors of data (typically for NMR). The data is
+ * stored as real or complex values. If complex, the data can be stored in two
+ * formats. In the first, the real values are stored in one array of doubles and
+ * the imaginary in a second array of doubles. In the second format the complex
+ * values are stored in an array of Complex objects. The storage arrays can be
+ * resized and may have a capacity larger than the number of valid data values
+ * they contain. Because of this the user must always pay attention to the size
+ * field which indicates the number of valid points.
  *
- * The class extends the Jython PySequence class which allows it to be used in basic Python operations (addition,
- * subtraction etc.).
+ * The class extends the Jython PySequence class which allows it to be used in
+ * basic Python operations (addition, subtraction etc.).
  *
  * @author michael
  */
@@ -89,13 +91,14 @@ public class Vec extends PySequence implements MatrixType {
     String name = "";
 
     /**
-     * Array of doubles used for storing data when the Vec is real or the real part of complex data when a Complex array
-     * is not used
+     * Array of doubles used for storing data when the Vec is real or the real
+     * part of complex data when a Complex array is not used
      */
     public double[] rvec;
 
     /**
-     * Array of doubles used for storing imaginary values when the Vec is Complex and a Complex array is not used
+     * Array of doubles used for storing imaginary values when the Vec is
+     * Complex and a Complex array is not used
      */
     public double[] ivec;
     /**
@@ -118,12 +121,14 @@ public class Vec extends PySequence implements MatrixType {
     private boolean useApache;
     private boolean freqDomain;
     /**
-     * Location in dataset that the vector was read from, or should be written to.
+     * Location in dataset that the vector was read from, or should be written
+     * to.
      */
     private int[][] pt;
 
     /**
-     * Dimensions in dataset that the vector was read from, or should be written to.
+     * Dimensions in dataset that the vector was read from, or should be written
+     * to.
      */
     private int[] dim;
 
@@ -151,7 +156,8 @@ public class Vec extends PySequence implements MatrixType {
     private int extLast;
 
     /**
-     * Sample schedule that applies to this vector when NUS data acquisition was used.
+     * Sample schedule that applies to this vector when NUS data acquisition was
+     * used.
      */
     public SampleSchedule schedule = null;
     private static Map<String, Vec> vecMap = new HashMap<>();
@@ -207,7 +213,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Create a new Vec object for real data and with the specified size and specified dataset location.
+     * Create a new Vec object for real data and with the specified size and
+     * specified dataset location.
      *
      * @param size Size of vector.
      * @param pt dataset location
@@ -229,7 +236,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Create a new Vec object with the specified size, complex mode and dataset location
+     * Create a new Vec object with the specified size, complex mode and dataset
+     * location
      *
      * @param size Size of vector.
      * @param pt dataset location
@@ -251,7 +259,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Create a vector with the specified name, size and complex mode and store it in a Map of Vec objects.
+     * Create a vector with the specified name, size and complex mode and store
+     * it in a Map of Vec objects.
      *
      * @param size Size of vector.
      * @param name name of vector
@@ -351,8 +360,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Objects of this class store an index and value. Typically used for getting the location and value of the maximum
-     * or minimum in the vector.
+     * Objects of this class store an index and value. Typically used for
+     * getting the location and value of the maximum or minimum in the vector.
      */
     public class IndexValue {
 
@@ -451,7 +460,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Set the zeroth order phase correction that has been applied to this vector.
+     * Set the zeroth order phase correction that has been applied to this
+     * vector.
      *
      * @param p0 the phase value
      */
@@ -460,7 +470,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Set the first order phase correction that has been applied to this vector.
+     * Set the first order phase correction that has been applied to this
+     * vector.
      *
      * @param p1 the phase value
      */
@@ -523,7 +534,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Print the location value (for reading/writing to datasets) for this vector if it is set
+     * Print the location value (for reading/writing to datasets) for this
+     * vector if it is set
      */
     public void printLocation() {
         if (pt != null) {
@@ -572,7 +584,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Resize a vector and set the complex mode. Existing data will be preserved (up to smaller of new and old sizes).
+     * Resize a vector and set the complex mode. Existing data will be preserved
+     * (up to smaller of new and old sizes).
      *
      * @param newSize the new size of vector
      * @param complex true if the vector should be complex
@@ -583,8 +596,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Get array of boolean values indicating whether each point is signal or baseline. True values indicate that the
-     * corresponding point is signal.
+     * Get array of boolean values indicating whether each point is signal or
+     * baseline. True values indicate that the corresponding point is signal.
      *
      * @return boolean array with true values for signals.
      */
@@ -593,16 +606,19 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Set the signal regions. Signal regions are typically used by the baseline correction algorithms.
+     * Set the signal regions. Signal regions are typically used by the baseline
+     * correction algorithms.
      *
-     * @param region boolean array where true values indicate that point is signal.
+     * @param region boolean array where true values indicate that point is
+     * signal.
      */
     public void setSignalRegion(boolean[] region) {
         inSignalRegion = region;
     }
 
     /**
-     * Get array of double values that can be used for drawing a line. Often used for displaying apodization.
+     * Get array of double values that can be used for drawing a line. Often
+     * used for displaying apodization.
      *
      * @return double array with values.
      */
@@ -611,7 +627,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Set the annotation values. Values are typically used for display of apodization.
+     * Set the annotation values. Values are typically used for display of
+     * apodization.
      *
      * @param region double array.
      */
@@ -627,8 +644,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Copy one complex array to another. Number of values copies is the smaller of the two vector sizes. The target
-     * vector is not resized.
+     * Copy one complex array to another. Number of values copies is the smaller
+     * of the two vector sizes. The target vector is not resized.
      *
      * @param source the source array
      * @param target the target array
@@ -662,8 +679,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Copy contents of this vector to another vector. The target will be resized and the complex mode changed to agree
-     * with this vector.
+     * Copy contents of this vector to another vector. The target will be
+     * resized and the complex mode changed to agree with this vector.
      *
      * @param target the target vector
      */
@@ -772,7 +789,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Adjust the reference value because the vector was resized and/or points at beginning removed
+     * Adjust the reference value because the vector was resized and/or points
+     * at beginning removed
      *
      * @param shift the starting position of new range.
      * @param newSize the new size of the vector
@@ -783,8 +801,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Get start of "valid" data in vectors that have DSP "charge-up" at beginning. This value is calculated based on
-     * the vectors stored groupDelay parameter.
+     * Get start of "valid" data in vectors that have DSP "charge-up" at
+     * beginning. This value is calculated based on the vectors stored
+     * groupDelay parameter.
      *
      * @return first point of "valid" data
      */
@@ -856,9 +875,11 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Fix DSP charge-up with an HFT. FID is Fourier transformed, phased with specified zero order phase and calculated
-     * (from group delay) first order phase, made real, and then a Hilbert transform is done to regenerate imaginary
-     * values without the effect of charge-up. Finally, the spectrum is inverse transformed to return to time domain.
+     * Fix DSP charge-up with an HFT. FID is Fourier transformed, phased with
+     * specified zero order phase and calculated (from group delay) first order
+     * phase, made real, and then a Hilbert transform is done to regenerate
+     * imaginary values without the effect of charge-up. Finally, the spectrum
+     * is inverse transformed to return to time domain.
      *
      * @param phase apply this phase value
      */
@@ -972,7 +993,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Scale first point. Useful for artifacts from initial time. Typically 0.5 for indirect dimensions.
+     * Scale first point. Useful for artifacts from initial time. Typically 0.5
+     * for indirect dimensions.
      *
      * @param fPoint multiply first point by this value
      * @return this vector
@@ -1066,7 +1088,8 @@ public class Vec extends PySequence implements MatrixType {
         }
 
         /**
-         * If we added points new points to the Vec that contain "junk" data, zero them.
+         * If we added points new points to the Vec that contain "junk" data,
+         * zero them.
          */
         if (size < newsize) {
             //this isn't an adequate way to know what's newly allocated
@@ -1076,7 +1099,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Perform a Fast Fourier Transform (FFT) of the vector using the Apache Commons Math library.
+     * Perform a Fast Fourier Transform (FFT) of the vector using the Apache
+     * Commons Math library.
      *
      * @param negate if true negate imaginary values before the transform
      * @return this vector
@@ -1135,7 +1159,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Perform an inverse Fast Fourier Transform (FFT) of the specified complex data.
+     * Perform an inverse Fast Fourier Transform (FFT) of the specified complex
+     * data.
      *
      * @param ftIn an array of Complex values to be transformed
      * @return The original array with now containing the FFT
@@ -1193,7 +1218,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Add a Complex value to this vector. The vector will be made complex if it is not already.
+     * Add a Complex value to this vector. The vector will be made complex if it
+     * is not already.
      *
      * @param addValue the value to add
      * @return this vector
@@ -1214,8 +1240,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Add a vector to this vector. The vectors may be of different lengths. The number of values added will be the
-     * smaller of the sizes of the two vectors
+     * Add a vector to this vector. The vectors may be of different lengths. The
+     * number of values added will be the smaller of the sizes of the two
+     * vectors
      *
      * @param v2 the vector to add to this vector
      */
@@ -1247,10 +1274,11 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Add an array of values to this vector. Values must implement Java Number interface. The number of values does not
-     * have to equal the number of values between the start and end points in this vector. Interpolation of the values
-     * to be added will be done to find the value to add at each point. The values can be multiplied by a scale value
-     * before addition.
+     * Add an array of values to this vector. Values must implement Java Number
+     * interface. The number of values does not have to equal the number of
+     * values between the start and end points in this vector. Interpolation of
+     * the values to be added will be done to find the value to add at each
+     * point. The values can be multiplied by a scale value before addition.
      *
      * @param addValue The values to add
      * @param start the starting point in this vector
@@ -1304,7 +1332,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Add a one array to a multiple of a second array and store in a third array
+     * Add a one array to a multiple of a second array and store in a third
+     * array
      *
      * @param avec first array
      * @param size number of values to add
@@ -1321,7 +1350,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Add a one vector to a multiple of a second vector and store in a third vector
+     * Add a one vector to a multiple of a second vector and store in a third
+     * vector
      *
      * @param avec first vector
      * @param size number of values to add
@@ -1363,7 +1393,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Subtract Complex value from this vector. Vector will be converted to Complex if it is not already.
+     * Subtract Complex value from this vector. Vector will be converted to
+     * Complex if it is not already.
      *
      * @param subValue value to subtract
      * @return this vector
@@ -1416,7 +1447,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Divide this vector by a Complex value. If vector is not already Complex, it will be converted to Complex.
+     * Divide this vector by a Complex value. If vector is not already Complex,
+     * it will be converted to Complex.
      *
      * @param divisor divide by this value
      * @return this vector
@@ -1484,8 +1516,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Replace values in this vector by the specified value divided by the current value. If the vector is not complex,
-     * make it so.
+     * Replace values in this vector by the specified value divided by the
+     * current value. If the vector is not complex, make it so.
      *
      * @param value divide by this value
      * @return this vector
@@ -1502,7 +1534,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Replace values in this vector by the specified value divided by the current value.
+     * Replace values in this vector by the specified value divided by the
+     * current value.
      *
      * @param value divide this value by current values
      * @return this vector
@@ -1546,7 +1579,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Gets the norm of the vector, computed as the square root of the sum of the squares.
+     * Gets the norm of the vector, computed as the square root of the sum of
+     * the squares.
      *
      * @return norm
      */
@@ -1644,7 +1678,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Add Lorentzian line shapes to this vector using parameters stored in another Vec object.
+     * Add Lorentzian line shapes to this vector using parameters stored in
+     * another Vec object.
      *
      * @param par vector of parameters
      * @return this vec
@@ -1731,7 +1766,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in TPPI data collection.
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
      *
      * @param rvec vector of doubles to process
      */
@@ -1740,7 +1776,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in TPPI data collection.
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
      *
      * @param rvec real values
      * @param vecSize size of vector
@@ -1753,7 +1790,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in TPPI data collection.
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
      *
      * @param rvec real values
      * @param ivec imaginary values
@@ -1763,7 +1801,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in TPPI data collection.
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
      *
      * @param rvec real values
      * @param ivec imaginary values
@@ -1777,7 +1816,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in TPPI data collection.
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
      *
      * @param cvec complex values
      */
@@ -1786,7 +1826,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in TPPI data collection.
+     * Multiply alternate real/imaginary pairs of values by -1.0. Often used in
+     * TPPI data collection.
      *
      * @param cvec complex values
      * @param vecSize size of vector
@@ -1798,8 +1839,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Negate every other pair of points. The effect is to shift a spectrum by sw/2, moving the center frequency to the
-     * edge of the spectrum. Used for States-TPPI processing.
+     * Negate every other pair of points. The effect is to shift a spectrum by
+     * sw/2, moving the center frequency to the edge of the spectrum. Used for
+     * States-TPPI processing.
      */
     public void negatePairs() {
         if (!isComplex) {
@@ -1812,8 +1854,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Negate the imaginary values of this vector. The effect is to reverse the spectrum resulting from FFT. Negate
-     * imaginary values.
+     * Negate the imaginary values of this vector. The effect is to reverse the
+     * spectrum resulting from FFT. Negate imaginary values.
      */
     public void negateImaginary() {
         if (isComplex) {
@@ -1942,7 +1984,8 @@ public class Vec extends PySequence implements MatrixType {
     /**
      * Set a real element of vector to a specified value.
      *
-     * @param i The element of the vector to set, which can be any number from 0 to 'size - 1' of the Vec.
+     * @param i The element of the vector to set, which can be any number from 0
+     * to 'size - 1' of the Vec.
      * @param val value to set at specified index
      */
     public void set(int i, double val) {
@@ -1958,7 +2001,8 @@ public class Vec extends PySequence implements MatrixType {
     /**
      * Set the i'th element of the real and complex parts of the vector.
      *
-     * @param i The element of the vector to set, which can be any number from 0 to 'size - 1' of the Vec.
+     * @param i The element of the vector to set, which can be any number from 0
+     * to 'size - 1' of the Vec.
      * @param real The real value to set.
      * @param imag The imaginary value to set.
      */
@@ -2032,8 +2076,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Get an array of the real values of this vector. The values are copied so changes in the returned array do not
-     * effect this vector.
+     * Get an array of the real values of this vector. The values are copied so
+     * changes in the returned array do not effect this vector.
      *
      * @return the array of real values
      */
@@ -2046,8 +2090,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Get an array of the real values in a region of this vector. The values are copied so changes in the returned
-     * array do not effect this vector.
+     * Get an array of the real values in a region of this vector. The values
+     * are copied so changes in the returned array do not effect this vector.
      *
      * @param values a double array in which to put the real values
      * @param start the starting position of the Vec at which to read values
@@ -2062,9 +2106,10 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Return real or imaginary value at specified index. It's preferred to use getReal or getImag unless choice of real
-     * or imaginary needs to be made programmatically as its easy to use make errors by wrong choice of true/false with
-     * this method.
+     * Return real or imaginary value at specified index. It's preferred to use
+     * getReal or getImag unless choice of real or imaginary needs to be made
+     * programmatically as its easy to use make errors by wrong choice of
+     * true/false with this method.
      *
      * @param index position of value
      * @param imag true to get imaginary, false to get real
@@ -2196,7 +2241,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Set complex value at specified index. If vector is real, only use the real part of value.
+     * Set complex value at specified index. If vector is real, only use the
+     * real part of value.
      *
      * @param index position to set
      * @param complex value to set
@@ -2221,7 +2267,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Set complex value at specified index. If vector is real, only use the real part of value.
+     * Set complex value at specified index. If vector is real, only use the
+     * real part of value.
      *
      * @param index position to set
      * @param real the real part to set
@@ -2327,7 +2374,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Make the vector real. If vector was complex, the previous real values become real components of new values.
+     * Make the vector real. If vector was complex, the previous real values
+     * become real components of new values.
      */
     public void makeReal() {
         boolean copyFromCvec = useApache && isComplex;
@@ -2343,7 +2391,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Make the vector complex. If vector was real, the previous real values become real components of new values.
+     * Make the vector complex. If vector was real, the previous real values
+     * become real components of new values.
      */
     public void makeComplex() {
         if (!isComplex) {
@@ -2361,7 +2410,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * If vector is complex and stores real/imag in separate arrays, change to use an array of Complex.
+     * If vector is complex and stores real/imag in separate arrays, change to
+     * use an array of Complex.
      */
     public void makeApache() {
         if (!useApache) {
@@ -2377,8 +2427,8 @@ public class Vec extends PySequence implements MatrixType {
 
     /**
      *
-     * If vector is complex and stores complex values in an array of Complex, change to store in separate arrays of real
-     * and imaginary values.
+     * If vector is complex and stores complex values in an array of Complex,
+     * change to store in separate arrays of real and imaginary values.
      */
     public void makeNotApache() {
         if (useApache) {
@@ -2405,7 +2455,8 @@ public class Vec extends PySequence implements MatrixType {
      *
      * @param negatePairs negate alternate real/imaginary pairs
      * @param negateImaginary negate imaginary pairs
-     * @param fixGroupDelay modify vector to remove DSP charge-up at front of vector
+     * @param fixGroupDelay modify vector to remove DSP charge-up at front of
+     * vector
      */
     public void fft(boolean negatePairs, boolean negateImaginary, boolean fixGroupDelay) {
         if (isComplex()) {
@@ -2441,7 +2492,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Perform inverse Fast Fourier Transform (FFT) of this vector with various options.
+     * Perform inverse Fast Fourier Transform (FFT) of this vector with various
+     * options.
      *
      * @param negatePairs negate alternate real/imaginary pairs
      * @param negateImaginary negate imaginary pairs
@@ -2489,8 +2541,9 @@ public class Vec extends PySequence implements MatrixType {
     /**
      * Real FT.
      *
-     * Vec must be real. If a Vec is using cvec it will do a RFT of the real part and copy back to cvec, if a Vec is
-     * using rvec it will copy RFT back to rvec and ivec.
+     * Vec must be real. If a Vec is using cvec it will do a RFT of the real
+     * part and copy back to cvec, if a Vec is using rvec it will copy RFT back
+     * to rvec and ivec.
      *
      * @param inverse If true do the inverse FFT.
      */
@@ -2531,7 +2584,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Hilbert transform of this vector. Converts real vector into complex. No effect if vector is already complex
+     * Hilbert transform of this vector. Converts real vector into complex. No
+     * effect if vector is already complex
      *
      * @return this vector
      */
@@ -2692,7 +2746,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Return true if vector is complex and values are stored in Complex objects (not real and imaginary vectors)
+     * Return true if vector is complex and values are stored in Complex objects
+     * (not real and imaginary vectors)
      *
      * @return true if values stored as Apache Commons Mat Complex objects
      */
@@ -2701,8 +2756,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * All points in the vector are set to Math.random(). Values will be uniformly and randomly distributed between 0.0
-     * and 1.0
+     * All points in the vector are set to Math.random(). Values will be
+     * uniformly and randomly distributed between 0.0 and 1.0
      */
     public void rand() {
         if (isComplex) {
@@ -2756,7 +2811,8 @@ public class Vec extends PySequence implements MatrixType {
     /**
      * Return the sum of points in the vector.
      *
-     * @return the sum of points as a Complex number (whose imaginary part is real if the vector is real)
+     * @return the sum of points as a Complex number (whose imaginary part is
+     * real if the vector is real)
      */
     public Complex sum() {
         final Complex result;
@@ -2806,12 +2862,14 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Calculate the first four moments of distribution in the specified region of this vector. FIXME check moments
+     * Calculate the first four moments of distribution in the specified region
+     * of this vector. FIXME check moments
      *
      * @param start first point of region
      * @param end last point of region
      * @return an array of four values containing the first four moments.
-     * @throws IllegalArgumentException if not vector not real, data is null, or the range is invalid
+     * @throws IllegalArgumentException if not vector not real, data is null, or
+     * the range is invalid
      */
     public double[] moments(int start, int end)
             throws IllegalArgumentException {
@@ -2897,7 +2955,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Calculate standard deviation in a region that gives minimum standard deviation.
+     * Calculate standard deviation in a region that gives minimum standard
+     * deviation.
      *
      * @param winSize Number of points to include in calculation
      * @return the standard deviation
@@ -2927,12 +2986,14 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Calculate mean, standard deviation, skewness and kurtosis in a specified region of this vector
+     * Calculate mean, standard deviation, skewness and kurtosis in a specified
+     * region of this vector
      *
      * @param start starting point (inclusive)
      * @param end ending point (inclusive)
      * @return an array of four doubles containing the statistics
-     * @throws IllegalArgumentException if vector not real or doesn't have at least 4 values in range
+     * @throws IllegalArgumentException if vector not real or doesn't have at
+     * least 4 values in range
      */
     public double[] regionStats(int start, int end)
             throws IllegalArgumentException {
@@ -2958,11 +3019,14 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Split a complex vector into two vectors containing the real and imaginary values. Caution this method assumes the
-     * data is stored in separate double arrays. FIXME
+     * Split a complex vector into two vectors containing the real and imaginary
+     * values. Caution this method assumes the data is stored in separate double
+     * arrays. FIXME
      *
-     * @param rVec this vector will be a real vector containing the real values of the original vector
-     * @param iVec this vector will be a real vector containing the imaginary values of the original vector.
+     * @param rVec this vector will be a real vector containing the real values
+     * of the original vector
+     * @param iVec this vector will be a real vector containing the imaginary
+     * values of the original vector.
      */
     public void split(Vec rVec, Vec iVec) {
         rVec.resize(size, false);
@@ -3009,7 +3073,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Convert a real vector with real and imaginary values in alternating positons of array into a Complex vector.
+     * Convert a real vector with real and imaginary values in alternating
+     * positons of array into a Complex vector.
      *
      * @return this vector
      * @throws IllegalArgumentException if vector is already complex
@@ -3354,8 +3419,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Set the values of this vector to be those in the provided Complex array. Size of this vector will not be changed.
-     * The number of values used will be the minimum of the size of vector and array
+     * Set the values of this vector to be those in the provided Complex array.
+     * Size of this vector will not be changed. The number of values used will
+     * be the minimum of the size of vector and array
      *
      * @param newVec the complex values to set
      * @return this vector
@@ -3376,11 +3442,12 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Return the array of Complex values. Array is not copied so changes in returned array will change the vector
-     * values.
+     * Return the array of Complex values. Array is not copied so changes in
+     * returned array will change the vector values.
      *
      * @return the Complex value array
-     * @throws IllegalStateException if the vector is not Complex or doesn't use a Complex array
+     * @throws IllegalStateException if the vector is not Complex or doesn't use
+     * a Complex array
      */
     public Complex[] getCvec() {
         if (isComplex && useApache) {
@@ -3391,11 +3458,12 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Return the array of double values that store real values. Array is not copied so changes in returned array will
-     * change the vector values.
+     * Return the array of double values that store real values. Array is not
+     * copied so changes in returned array will change the vector values.
      *
      * @return the array of doubles that stores real values
-     * @throws IllegalStateException if the vector is Complex and doesn't use Complex array
+     * @throws IllegalStateException if the vector is Complex and doesn't use
+     * Complex array
      */
     public double[] getRvec() {
         if (!(isComplex && useApache)) {
@@ -3406,11 +3474,12 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Return the array of double values that store imaginary values. Array is not copied so changes in returned array
-     * will change the vector values.
+     * Return the array of double values that store imaginary values. Array is
+     * not copied so changes in returned array will change the vector values.
      *
      * @return the array of doubles that stores imaginary values
-     * @throws IllegalStateException if the vector is not Complex or uses Complex array
+     * @throws IllegalStateException if the vector is not Complex or uses
+     * Complex array
      */
     public double[] getIvec() {
         if (isComplex && !useApache) {
@@ -3501,7 +3570,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Convert position in reference units (chemical shift typically) to position in points.
+     * Convert position in reference units (chemical shift typically) to
+     * position in points.
      *
      * @param ref position to convert
      * @return position in points
@@ -3550,7 +3620,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Check if the size is a power of 2, if not resize the Vector so it is a power of 2 in length
+     * Check if the size is a power of 2, if not resize the Vector so it is a
+     * power of 2 in length
      */
     public void checkPowerOf2() {
         if (!ArithmeticUtils.isPowerOfTwo(size)) {
@@ -3580,15 +3651,19 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Automatically calculate phase values for this vector using an one of two algorithms. One based on flattening
-     * baseline regions adjacent to peaks and one based on entropy minimization
+     * Automatically calculate phase values for this vector using an one of two
+     * algorithms. One based on flattening baseline regions adjacent to peaks
+     * and one based on entropy minimization
      *
      * @param doFirst Set to true to include first order phase correction
      * @param winSize Window size used for analyzing for baseline region
-     * @param ratio Ratio Intensity to noise ratio used for indentifying baseline reginos
+     * @param ratio Ratio Intensity to noise ratio used for indentifying
+     * baseline reginos
      * @param mode Set to 0 for flattening mode and 1 for entropy mode
-     * @param ph1Limit Set limit on first order phase. Can prevent unreasonable results
-     * @return an array of 1 or two phase values (depending on whether first order mode is used)
+     * @param ph1Limit Set limit on first order phase. Can prevent unreasonable
+     * results
+     * @return an array of 1 or two phase values (depending on whether first
+     * order mode is used)
      */
     public double[] autoPhase(boolean doFirst, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
         int pivot = 0;
@@ -3695,11 +3770,13 @@ public class Vec extends PySequence implements MatrixType {
      *
      * @param p0 The zeroth order phase value
      * @param p1 The first order phase value
-     * @param pivot The pivot value at which the first order phase correction has no effect on data
-     * @param phaseAbs if false apply the specified values, if true subtract the currently stored ph0 and ph1 values
-     * from the specified values and then
-     * @param discardImaginary Discard the imaginary values and convert vector to real. Phasing is a little faster if
-     * you do this (and saves calling a seperate REAL operation.
+     * @param pivot The pivot value at which the first order phase correction
+     * has no effect on data
+     * @param phaseAbs if false apply the specified values, if true subtract the
+     * currently stored ph0 and ph1 values from the specified values and then
+     * @param discardImaginary Discard the imaginary values and convert vector
+     * to real. Phasing is a little faster if you do this (and saves calling a
+     * seperate REAL operation.
      * @return this vector
      */
     public Vec phase(double p0, double p1, int pivot, boolean phaseAbs, boolean discardImaginary) {
@@ -3761,10 +3838,11 @@ public class Vec extends PySequence implements MatrixType {
      *
      * @param p0 The zeroth order phase value
      * @param p1 The first order phase value
-     * @param phaseAbs if false apply the specified values, if true subtract the currently stored ph0 and ph1 values
-     * from the specified values and then
-     * @param discardImaginary Discard the imaginary values and convert vector to real. Phasing is a little faster if
-     * you do this (and saves calling a seperate REAL operation.
+     * @param phaseAbs if false apply the specified values, if true subtract the
+     * currently stored ph0 and ph1 values from the specified values and then
+     * @param discardImaginary Discard the imaginary values and convert vector
+     * to real. Phasing is a little faster if you do this (and saves calling a
+     * seperate REAL operation.
      * @return this vector
      */
     public Vec phase(double p0, double p1, boolean phaseAbs, boolean discardImaginary) {
@@ -3879,14 +3957,17 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Apply the specified phase values to this vector. This method can be used when applying the same phase to multiple
-     * vectors. The phase corrections are pre-calculated based on p0 and p1 and then applied to this method in the pReal
-     * and pImag arguments. The specified p0 and p1 values are only used here for updating the vector header, but are
-     * the values used for setting up pReal and pImag.
+     * Apply the specified phase values to this vector. This method can be used
+     * when applying the same phase to multiple vectors. The phase corrections
+     * are pre-calculated based on p0 and p1 and then applied to this method in
+     * the pReal and pImag arguments. The specified p0 and p1 values are only
+     * used here for updating the vector header, but are the values used for
+     * setting up pReal and pImag.
      *
      * @param p0 The zeroth order phase value.
      * @param p1 The first order phase value from the specified values and then
-     * @param discardImaginary Discard the imaginary values and convert vector to real. Phasing is a little faster
+     * @param discardImaginary Discard the imaginary values and convert vector
+     * to real. Phasing is a little faster
      *
      * @param pReal Array of real values of phase corrections
      * @param pImag Array of imaginary values of phase corrections
@@ -3933,8 +4014,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Update this vector by applying coefficients to combine adjacent values. Used by NMRFx Processor to display
-     * vectors of the FID along indirect dimensions
+     * Update this vector by applying coefficients to combine adjacent values.
+     * Used by NMRFx Processor to display vectors of the FID along indirect
+     * dimensions
      *
      * @param coefs The coefficients to use in combining values
      * @return this vector
@@ -3965,8 +4047,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Update this vector by combining adjacent values for hyper-complex acquistion. Used by NMRFx Processor to display
-     * vectors of the FID along indirect dimensions
+     * Update this vector by combining adjacent values for hyper-complex
+     * acquistion. Used by NMRFx Processor to display vectors of the FID along
+     * indirect dimensions
      *
      * @return this vector
      */
@@ -3989,8 +4072,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Multiply vector by a frequency, relative to sweep width. Used with digital filter with group delay (shift) of
-     * ncoefs/2.
+     * Multiply vector by a frequency, relative to sweep width. Used with
+     * digital filter with group delay (shift) of ncoefs/2.
      *
      * @param freq frequency in Hz (up to +/-0.5 sweep width)
      * @param shift number of points to shift scale by
@@ -4060,7 +4143,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Multiply either rvec[index] and ivec[index] or cvec[index] by (realFactor, imagFactor)
+     * Multiply either rvec[index] and ivec[index] or cvec[index] by
+     * (realFactor, imagFactor)
      *
      * @param index position to multiply
      * @param realFactor real part of value to multiply by
@@ -4116,7 +4200,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Transform a Complex Vec into a real Vec, setting each point to the Imaginary value.
+     * Transform a Complex Vec into a real Vec, setting each point to the
+     * Imaginary value.
      */
     public void imag() {
         if (isComplex) {
@@ -4129,7 +4214,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Performs multiplication on the rvec and ivec elements at index with the complex number (realFactor, imagFactor).
+     * Performs multiplication on the rvec and ivec elements at index with the
+     * complex number (realFactor, imagFactor).
      * @literal { Caller guarantees that 0 <= index < size, and the matrix is complex.}
      *
      * @index position to multiply
@@ -4143,7 +4229,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Sum real values in a region after applying a zeroth order phase correction. Used in the autophase by max method.
+     * Sum real values in a region after applying a zeroth order phase
+     * correction. Used in the autophase by max method.
      *
      * @param first start of region
      * @param last end of region
@@ -4212,8 +4299,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Copy an array of real values into vector. If the vector is smaller than size of array it will be resized up to
-     * the size of the array.
+     * Copy an array of real values into vector. If the vector is smaller than
+     * size of array it will be resized up to the size of the array.
      *
      * @param values the array of values
      */
@@ -4227,8 +4314,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Copy an array of real values and array of imaginary values into vector. If the vector is smaller than size of
-     * array it will be resized up to the size of the array.
+     * Copy an array of real values and array of imaginary values into vector.
+     * If the vector is smaller than size of array it will be resized up to the
+     * size of the array.
      *
      * @param values the array of real values values
      * @param valuesI the array of imaginary values
@@ -4243,8 +4331,10 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Return an array of bytes that represent the single precision floating point values of this vector. Note: values
-     * are normally stored in a Vec object in double precision format so there will be some loss of precision.
+     * Return an array of bytes that represent the single precision floating
+     * point values of this vector. Note: values are normally stored in a Vec
+     * object in double precision format so there will be some loss of
+     * precision.
      *
      * @return the array of bytes
      */
@@ -4337,8 +4427,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Apply a correction (typically for baseline correction) to this vector by subtracting a polynomial of the
-     * specified order and with the specified coefficients. The first (0 position) coefficient is the constant term. X
+     * Apply a correction (typically for baseline correction) to this vector by
+     * subtracting a polynomial of the specified order and with the specified
+     * coefficients. The first (0 position) coefficient is the constant term. X
      * values for the polynomial are in fractions of the vector size.
      *
      * @param order the polynomial order
@@ -4383,7 +4474,8 @@ public class Vec extends PySequence implements MatrixType {
      * @param start Starting point in original size
      * @param newSize Size after trimming
      * @return this vector
-     * @throws VecException if start is out of range of vector or vector doesn't have valid data arrays
+     * @throws VecException if start is out of range of vector or vector doesn't
+     * have valid data arrays
      */
     public Vec trim(int start, int newSize)
             throws VecException {
@@ -4434,7 +4526,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Subtract a vector from this vector. FIXME no check for size compatability.
+     * Subtract a vector from this vector. FIXME no check for size
+     * compatability.
      *
      * @param subVec the vector to subtract
      * @return this vector
@@ -4459,7 +4552,7 @@ public class Vec extends PySequence implements MatrixType {
         }
         return this;
     }
-    
+
     public Vec bcWhit(double lambda, int order, boolean baselineMode) {
         int vecSize = getSize();
 
@@ -4499,13 +4592,13 @@ public class Vec extends PySequence implements MatrixType {
         return this;
     }
 
-
     /**
-     * Bucket a vector into a smaller size by summing adjacent points (within each bucket)
+     * Bucket a vector into a smaller size by summing adjacent points (within
+     * each bucket)
      *
      * @param nBuckets The number of buckets (will be the new size of vector).
-     * @throws IllegalArgumentException if vector is complex or number of buckets larger than size or not an integer
-     * fraction of size
+     * @throws IllegalArgumentException if vector is complex or number of
+     * buckets larger than size or not an integer fraction of size
      */
     public void bucket(int nBuckets) throws IllegalArgumentException {
         if (freqDomain) {
@@ -4563,8 +4656,10 @@ public class Vec extends PySequence implements MatrixType {
     /**
      * Time-domain solvent suppression
      *
-     * @param winSize Size of window. Larger the window the narrower the region of suppression
-     * @param nPasses How many passes of filter to perform. Performing 3 passes is optimal.
+     * @param winSize Size of window. Larger the window the narrower the region
+     * of suppression
+     * @param nPasses How many passes of filter to perform. Performing 3 passes
+     * is optimal.
      * @return this vector
      * @throws VecException if winSize larger than size of vector
      */
@@ -4587,9 +4682,10 @@ public class Vec extends PySequence implements MatrixType {
     /**
      * Moving average filter.
      *
-     * @param winSize Size of window. Larger the window the narrower the region of suppression when used for solvent
-     * suppression
-     * @param nPasses How many passes of filter to perform. Performing 3 passes is optimal.
+     * @param winSize Size of window. Larger the window the narrower the region
+     * of suppression when used for solvent suppression
+     * @param nPasses How many passes of filter to perform. Performing 3 passes
+     * is optimal.
      * @return this vector
      * @throws VecException if winSize larger than size of vector
      */
@@ -4624,7 +4720,8 @@ public class Vec extends PySequence implements MatrixType {
      * @param rValues The real values
      * @param vecSize Number of values to use
      * @param winSize window size of filter
-     * @throws VecException if windows size bigger than vector or values are null
+     * @throws VecException if windows size bigger than vector or values are
+     * null
      */
     public static void movingAverageFilter(double[] rValues, int vecSize, int winSize)
             throws VecException {
@@ -4665,7 +4762,8 @@ public class Vec extends PySequence implements MatrixType {
      * @param iValues The imaginary values
      * @param vecSize Number of values to use
      * @param winSize window size of filter
-     * @throws VecException if windows size bigger than vector or values are null
+     * @throws VecException if windows size bigger than vector or values are
+     * null
      */
     public static void movingAverageFilter(double[] rValues, double[] iValues, int vecSize, int winSize)
             throws VecException {
@@ -4719,7 +4817,8 @@ public class Vec extends PySequence implements MatrixType {
      * @param cValues The Complex values
      * @param vecSize Number of values to use
      * @param winSize window size of filter
-     * @throws VecException if windows size bigger than vector or values are null
+     * @throws VecException if windows size bigger than vector or values are
+     * null
      */
     public static void movingAverageFilter(Complex[] cValues, int vecSize, int winSize)
             throws VecException {
@@ -4801,9 +4900,10 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Apply soft thresholding to vector by setting values with absolute value below threshold to 0.0 and subtracting
-     * threshold from positive values (greater than threshold) or adding threshold to negative values (less than
-     * threshold).
+     * Apply soft thresholding to vector by setting values with absolute value
+     * below threshold to 0.0 and subtracting threshold from positive values
+     * (greater than threshold) or adding threshold to negative values (less
+     * than threshold).
      *
      * @param threshold
      */
@@ -4829,12 +4929,15 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Time domain polynomial correction. Can be used for solvent suppression by fitting a polynomial to the FID.
+     * Time domain polynomial correction. Can be used for solvent suppression by
+     * fitting a polynomial to the FID.
      *
      * @param order The polynomial order
      * @param winSize Size of regions to fit
-     * @param start Start the fit at this point. Using value greater than 0 allows skipping artifacts
-     * @throws VecException if window size or polynomial order invalid for vector size
+     * @param start Start the fit at this point. Using value greater than 0
+     * allows skipping artifacts
+     * @throws VecException if window size or polynomial order invalid for
+     * vector size
      */
     public void tdpoly(int order, int winSize, int start) throws VecException {
         int m;
@@ -4922,7 +5025,8 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Correct vector by subtracting a sum of sines using coefficients stored in provided vector.
+     * Correct vector by subtracting a sum of sines using coefficients stored in
+     * provided vector.
      *
      * @param order The order of correction function
      * @param X an array of coefficients
@@ -4951,8 +5055,8 @@ public class Vec extends PySequence implements MatrixType {
      * @param winSize window size
      * @param lambda smoothing parameter
      * @param order order of fit (0 or 1)
-     * @param baselineMode if true set the vector to be the fitted baseline, rather than correcting the values. Useful
-     * for diagnostics
+     * @param baselineMode if true set the vector to be the fitted baseline,
+     * rather than correcting the values. Useful for diagnostics
      * @throws VecException if vector complex
      */
     public void esmooth(int winSize, double lambda, int order, boolean baselineMode) throws VecException {
@@ -5091,13 +5195,17 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Replace a region of a vector with a smoothed line across region. Useful for removing large (solvent) signals.
-     * Values at edge of region will retain a decreasing contribution from the original values so that the transition to
-     * the interpolated region will be gradual. Remaining values will be interpolated between the average of the left
-     * and right edge regions.
+     * Replace a region of a vector with a smoothed line across region. Useful
+     * for removing large (solvent) signals. Values at edge of region will
+     * retain a decreasing contribution from the original values so that the
+     * transition to the interpolated region will be gradual. Remaining values
+     * will be interpolated between the average of the left and right edge
+     * regions.
      *
-     * @param icenter center of region. If value less than 0 the position of maximum intensity will be used.
-     * @param nInterp Number of points within each side of region that will be fully interpolated.
+     * @param icenter center of region. If value less than 0 the position of
+     * maximum intensity will be used.
+     * @param nInterp Number of points within each side of region that will be
+     * fully interpolated.
      * @param halfWidth half width of region be zero within region.
      * @throws VecException if vector complex
      */
@@ -5265,8 +5373,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Shift values in vector to right (if shift positive) or left (if shift negative). Unoccupied positions will be set
-     * to zero. The size of vector will be expanded to accomadate shifted values so no values will be lost
+     * Shift values in vector to right (if shift positive) or left (if shift
+     * negative). Unoccupied positions will be set to zero. The size of vector
+     * will be expanded to accomadate shifted values so no values will be lost
      *
      * @param shiftValue the number of points to shift vector values by
      */
@@ -5278,8 +5387,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Shift values in vector to right (if shift positive) or left (if shift negative). Unoccupied positions will be set
-     * to zero. This is not a circular shift so values will be lost.
+     * Shift values in vector to right (if shift positive) or left (if shift
+     * negative). Unoccupied positions will be set to zero. This is not a
+     * circular shift so values will be lost.
      *
      * @param shiftValue the number of points to shift vector values by
      */
@@ -5432,11 +5542,13 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Find amplitudes that optimize the fit of signals to an array of intensities.
+     * Find amplitudes that optimize the fit of signals to an array of
+     * intensities.
      *
      * @param x The array of intensities
      * @param fd A complex array whose values represent frequency and decay rate
-     * @param useColumns Only use signals whose indexed value is set to true in this array
+     * @param useColumns Only use signals whose indexed value is set to true in
+     * this array
      * @param winSize Size of window frequencies came from
      * @param uniformWidth If true use the same linewidth for all frequencies
      * @param lineWidth If uniformWidth is true, use this line width
@@ -5574,8 +5686,9 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
-     * Integrate this vector over the specified range. Subtract a linear range of values between start and end. The
-     * values in vector are replaced with their integral.
+     * Integrate this vector over the specified range. Subtract a linear range
+     * of values between start and end. The values in vector are replaced with
+     * their integral.
      *
      * @param first starting point of range
      * @param last ending point of range
@@ -5631,7 +5744,8 @@ public class Vec extends PySequence implements MatrixType {
      * @param joinWidth Regions are joined if separation is less than this
      * @param extend Increase width of region edges by this amount
      * @param minThreshold Threshold is the larger of this and ratio times noise
-     * @return matrix of results. Each row is a region. Columns are the start, end and mean intensity.
+     * @return matrix of results. Each row is a region. Columns are the start,
+     * end and mean intensity.
      * @throws IllegalArgumentException if real value array is null
      */
     public RealMatrix idIntegrals(int winSize, double ratio,
@@ -5854,7 +5968,8 @@ public class Vec extends PySequence implements MatrixType {
      * @param ref Reference signal
      * @param exp target decay
      * @return this vector
-     * @throws IllegalArgumentException if vectors aren't all the same size and complex
+     * @throws IllegalArgumentException if vectors aren't all the same size and
+     * complex
      */
     public Vec deconv(Vec ref, Vec exp)
             throws IllegalArgumentException {
