@@ -54,6 +54,8 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -63,7 +65,9 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -918,7 +922,6 @@ public class ScanTable {
                         }
                     }
                 });
-
                 tableView.getColumns().add(doubleExtraColumn);
             } else if (type.equals("I")) {
                 TableColumn<FileTableItem, Number> intExtraColumn = new TableColumn<>(header);
@@ -943,7 +946,7 @@ public class ScanTable {
 
     private void graphicChanged(TableColumn column) {
         Node node = column.getGraphic();
-        boolean isFiltered = (node != null) && !(node instanceof Rectangle);
+        boolean isFiltered = (node != null) && !(node instanceof StackPane);
         if ((node == null) || isFiltered) {
             setColumnGraphic(column);
         }
@@ -955,7 +958,9 @@ public class ScanTable {
             boolean isGrouped = groupNames.contains(text);
             Node node = column.getGraphic();
             boolean isFiltered = isFiltered(column);
+            StackPane stackPane = new StackPane();
             Rectangle rect = new Rectangle(10, 10);
+            stackPane.getChildren().add(rect);
             Color color;
             if (isGrouped) {
                 color = isFiltered ? Color.RED : Color.BLUE;
@@ -967,7 +972,24 @@ public class ScanTable {
             rect.setOnMousePressed(e -> hitColumnGrouper(e, rect, text));
             rect.setOnMouseReleased(e -> e.consume());
             rect.setOnMouseClicked(e -> e.consume());
-            column.setGraphic(rect);
+            column.setGraphic(stackPane);
+        } else if (isData(text)) {
+            StackPane stackPane = new StackPane();
+            Rectangle rect = new Rectangle(10, 10);
+            Line line1 = new Line(1, 1, 10, 10);
+            Line line2 = new Line(1, 10, 10, 1);
+
+            line1.setStroke(Color.BLACK);
+            line2.setStroke(Color.BLACK);
+            line1.setMouseTransparent(true);
+            line2.setMouseTransparent(true);
+            stackPane.getChildren().addAll(rect, line1, line2);
+            rect.setFill(Color.WHITE);
+            rect.setStroke(Color.BLACK);
+            rect.setOnMousePressed(e -> hitDataDelete(e, column));
+            rect.setOnMouseReleased(e -> e.consume());
+            rect.setOnMouseClicked(e -> e.consume());
+            column.setGraphic(stackPane);
         }
     }
 
@@ -983,6 +1005,20 @@ public class ScanTable {
     private boolean isGroupable(String text) {
         return !standardHeaders.contains(text) && !text.equals("group")
                 && !text.contains(":") & !text.equals("dataset");
+    }
+
+    private boolean isData(String text) {
+        return !standardHeaders.contains(text) && !text.equals("group")
+                && text.contains(":") && !text.equals("dataset");
+    }
+
+    private void hitDataDelete(MouseEvent e, TableColumn column) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Delete column " + column.getText());
+        alert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                tableView.getColumns().remove(column);
+            }
+        });
     }
 
     private void hitColumnGrouper(MouseEvent e, Rectangle rect, String text) {
