@@ -443,7 +443,6 @@ public class ScannerController implements Initializable {
         Dataset dataset = chart.getDataset();
         List<String> headers = scanTable.getHeaders();
         for (String header : headers) {
-            System.out.println(header);
             Optional<Measure> measureOpt = matchHeader(header);
             if (measureOpt.isPresent()) {
                 try {
@@ -465,7 +464,6 @@ public class ScannerController implements Initializable {
         Set<DatasetRegion> regions = new TreeSet<>();
 
         for (String header : headers) {
-            System.out.println(header);
             Optional<Measure> measureOpt = matchHeader(header);
             if (measureOpt.isPresent()) {
                 Measure measure = measureOpt.get();
@@ -540,10 +538,8 @@ public class ScannerController implements Initializable {
                 try (FileWriter writer = new FileWriter(file)) {
                     List<String> headers = scanTable.getHeaders();
                     for (String header : headers) {
-                        System.out.println(header);
                         Optional<Measure> measure = matchHeader(header);
                         if (measure.isPresent()) {
-                            System.out.println(" has " + measure.get().getFileString());
                             writer.write(measure.get().getFileString());
                             writer.write('\n');
                         }

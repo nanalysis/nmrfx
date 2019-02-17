@@ -555,7 +555,6 @@ public class ScanTable {
         fileListItems.clear();
         int nRows = dataset.getSize(1);
         HashMap<String, String> fieldMap = new HashMap();
-        System.out.println("add " + nRows);
         double[] values = dataset.getValues(1);
         for (int iRow = 0; iRow < nRows; iRow++) {
             double value = 0;
@@ -1286,7 +1285,6 @@ public class ScanTable {
     }
 
     public void getGroups() {
-        System.out.println("getgroups");
         for (TableColumn column : tableView.getColumns()) {
             setColumnGraphic(column);
         }
