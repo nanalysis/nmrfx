@@ -31,16 +31,18 @@ import java.util.Arrays;
 import static org.nmrfx.processor.math.Vec.apache_ift;
 
 /**
- * A compilation of static methods which do not explicitly use Vec objects but are related to processing Vec objects and
- * generally operate on arrays of double or Complex instead of Vec objects directly.
+ * A compilation of static methods which do not explicitly use Vec objects but
+ * are related to processing Vec objects and generally operate on arrays of
+ * double or Complex instead of Vec objects directly.
  *
  * @author johnsonb
  */
 public class VecUtil {
 
     /**
-     * Do a non-negative least squares fit of AX=B to find X given A and B. Results are returned in an
-     * AmplitudeFitResult object which provides statistical information on quality of fit
+     * Do a non-negative least squares fit of AX=B to find X given A and B.
+     * Results are returned in an AmplitudeFitResult object which provides
+     * statistical information on quality of fit
      *
      * @param AR the A matrix
      * @param BR the B matrix
@@ -85,7 +87,8 @@ public class VecUtil {
     }
 
     /**
-     * Analyze a vector of complex values to determine the frequencies and decay rates
+     * Analyze a vector of complex values to determine the frequencies and decay
+     * rates
      *
      * @param x1 the complex values
      * @param winSize The size of window that the values came from
@@ -123,8 +126,8 @@ public class VecUtil {
     }
 
     /**
-     * Use an abbreviated Hilbert transform to convert a spectrum with real values to a time domain signal with complex
-     * values
+     * Use an abbreviated Hilbert transform to convert a spectrum with real
+     * values to a time domain signal with complex values
      *
      * @param x The real spectrum
      * @param n The number of valid points in spectrum
@@ -153,11 +156,12 @@ public class VecUtil {
     }
 
     /**
-     * Use an abbreviated Hilbert transform to convert a spectrum with real values to a time domain signal with complex
-     * values
+     * Use an abbreviated Hilbert transform to convert a spectrum with real
+     * values to a time domain signal with complex values
      *
-     * @param x The real spectrum as the first row of a 2D array. The time domain signal will replace the original
-     * values with real values in the first row and imaginary values in second.
+     * @param x The real spectrum as the first row of a 2D array. The time
+     * domain signal will replace the original values with real values in the
+     * first row and imaginary values in second.
      * @param n The number of valid points in spectrum
      */
     public static void hift(final double[][] x, final int n, double fpMul) {
@@ -216,8 +220,9 @@ public class VecUtil {
     /**
      * Perform a Hilbert transform of data.
      *
-     * @param x The real spectrum as the first row of a 2D array. The time domain signal will replace the original
-     * values with real values in the first row and imaginary values in second.
+     * @param x The real spectrum as the first row of a 2D array. The time
+     * domain signal will replace the original values with real values in the
+     * first row and imaginary values in second.
      * @param n The number of valid points in spectrum
      */
     public static void hft(final double[][] x, final int n) {
@@ -365,7 +370,8 @@ public class VecUtil {
     }
 
     /**
-     * Negate all the values of the provided Complex array. The sign of both real and imaginary components are changed.
+     * Negate all the values of the provided Complex array. The sign of both
+     * real and imaginary components are changed.
      *
      * @param roots the Complex array
      */
