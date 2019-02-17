@@ -175,6 +175,39 @@ public class PolyChart implements PeakListener {
     double minBottomBorder = 0.0;
     Font peakFont = new Font(12);
 
+    private BooleanProperty regions;
+
+    public BooleanProperty regionsProperty() {
+        if (regions == null) {
+            regions = new SimpleBooleanProperty(this, "-on", false);
+        }
+        return regions;
+    }
+
+    public void setRegions(boolean value) {
+        regionsProperty().set(value);
+    }
+
+    public boolean getRegions() {
+        return regionsProperty().get();
+    }
+    private BooleanProperty integrals;
+
+    public BooleanProperty integralsProperty() {
+        if (integrals == null) {
+            integrals = new SimpleBooleanProperty(this, "-on", false);
+        }
+        return integrals;
+    }
+
+    public void setIntegrals(boolean value) {
+        integralsProperty().set(value);
+    }
+
+    public boolean getIntegrals() {
+        return integralsProperty().get();
+    }
+
     int iVec = 0;
 //    Vec vec;
     FileProperty datasetFileProp = new FileProperty();
@@ -1873,6 +1906,9 @@ public class PolyChart implements PeakListener {
                         }
                     }
                     if (disDimProp.get() != DISDIM.TwoD) {
+                        if (getRegions()) {
+                            drawRegions(datasetAttributes, gC);
+                        }
                         for (int iMode = 0; iMode < 2; iMode++) {
                             if (iMode == 0) {
                                 datasetAttributes.setDrawReal(true);
@@ -1892,7 +1928,9 @@ public class PolyChart implements PeakListener {
                                 int nPoints = drawSpectrum.getNPoints();
                                 int rowIndex = drawSpectrum.getRowIndex();
                                 drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
-                                draw1DIntegral(datasetAttributes, gC);
+                                if (getIntegrals()) {
+                                    draw1DIntegral(datasetAttributes, gC);
+                                }
                                 drawBaseLine(gC, bcPath);
                             } while (ok);
                         }
@@ -1925,6 +1963,28 @@ public class PolyChart implements PeakListener {
         }
         return finished;
 
+    }
+
+    void drawRegions(DatasetAttributes datasetAttr, GraphicsContextInterface gC) throws GraphicsIOException {
+        Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
+        if (regions == null) {
+            return;
+        }
+        double chartHeight = yAxis.getHeight();
+        for (DatasetRegion region : regions) {
+            double ppm1 = region.getRegionStart(0);
+            double ppm2 = region.getRegionEnd(0);
+            double x1 = xAxis.getDisplayPosition(ppm2);
+            double x2 = xAxis.getDisplayPosition(ppm1);
+            if (x1 > x2) {
+                double hold = x1;
+                x1 = x2;
+                x2 = hold;
+            }
+            gC.setFill(Color.LIGHTYELLOW);
+            gC.fillRect(x1, 0.0, x2 - x1, chartHeight);
+
+        }
     }
 
     void draw1DIntegral(DatasetAttributes datasetAttr, GraphicsContextInterface gC) throws GraphicsIOException {
