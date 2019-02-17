@@ -562,7 +562,7 @@ public class ScannerController implements Initializable {
         String columnName;
         String oMode;
         String mMode;
-        String group = "VN";
+        String group = "_VN";
         double ppm1;
         double ppm2;
         double ppmw1;
