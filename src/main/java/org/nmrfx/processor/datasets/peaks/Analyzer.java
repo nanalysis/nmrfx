@@ -18,6 +18,8 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.nmrfx.processor.operations.IDBaseline2;
+import org.nmrfx.processor.operations.Util;
 
 /**
  *
@@ -414,7 +416,29 @@ public class Analyzer {
     }
 
     public void baselineCorrect() {
-
+        int size = dataset.getSize(0);
+        Vec vec = new Vec(size);
+        int winSize = 32;
+        int minBase = 32;
+        double ratio = 10.0;
+        double lambda = 5000.0;
+        int order = 1;
+        int dataDim = dataset.getNDim();
+        int[][] pt = new int[dataDim][2];
+        pt[0][0] = 0;
+        pt[0][1] = size - 1;
+        int[] dim = new int[dataDim];
+        dim[0] = 0;
+        try {
+            dataset.readVecFromDatasetFile(pt, dim, vec);
+            boolean[] isInSignalRegion = Util.getSignalRegionByCWTD(vec, winSize, minBase, ratio, IDBaseline2.ThreshMode.SDEV);
+            vec.setSignalRegion(isInSignalRegion);
+            vec.bcWhit(lambda, order, false);
+            dataset.writeVecToDatasetFile(pt, dim, vec);
+        } catch (IOException ex) {
+            Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
+            return;
+        }
     }
 
     public void dumpRegions() {
@@ -906,7 +930,7 @@ public class Analyzer {
 
     public void analyze() throws IOException {
         // clear
-        // baselineCorrect
+        baselineCorrect();
         // autoReference
 
         // clearRegions
