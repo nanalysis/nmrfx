@@ -632,6 +632,8 @@ public class AnalystApp extends MainApp {
             PeakList peakList = analyzer.getPeakList();
             List<String> peakListNames = new ArrayList<>();
             peakListNames.add(peakList.getName());
+            chart.setRegions(false);
+            chart.setIntegrals(true);
             chart.updatePeakLists(peakListNames);
         } catch (IOException ex) {
             Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
