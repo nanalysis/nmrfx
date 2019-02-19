@@ -18,6 +18,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +54,8 @@ public class Server implements Runnable {
             // Bind and start to accept incoming connections.
             ChannelFuture f = b.bind(port).sync(); // (7)
 
+            System.out.println("NMRFx server started using port " + port);
+
             // Wait until the server socket is closed.
             // In this example, this does not happen, but you can do that to gracefully
             // shut down your server.
@@ -69,4 +73,13 @@ public class Server implements Runnable {
         Thread myThread = new Thread(server);
         myThread.start();
     }
+
+    public static int getRandomPort() throws IOException {
+        ServerSocket s = new ServerSocket(0);
+        int port = s.getLocalPort();
+        s.close();
+//        System.out.println("random port = " + port);
+        return port;
+    }
+
 }
