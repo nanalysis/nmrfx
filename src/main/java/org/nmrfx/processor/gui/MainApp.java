@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.function.Consumer;
@@ -653,6 +654,15 @@ public class MainApp extends Application implements DatasetListener {
 
     void invokeListenerFunction(String s) {
         System.out.println("invoke " + s);
-        GUIScripter.showPeak(s.split(" ")[2]);
+        String[] peakSplit = s.split("/");
+        int showInd = Arrays.asList(peakSplit).indexOf("showpeak");
+        int nameInd = peakSplit.length - 1 - showInd;
+        if (nameInd == 2) {
+            int numInd = nameInd - 1;
+            GUIScripter.showPeak(peakSplit[nameInd] + "." + peakSplit[numInd]);
+        } else if (nameInd == 1) {
+            int numInd = nameInd;
+            GUIScripter.showPeak(peakSplit[numInd]);
+        }
     }
 }
