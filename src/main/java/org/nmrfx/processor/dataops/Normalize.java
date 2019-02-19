@@ -48,7 +48,7 @@ public class Normalize {
         return function;
     }
 
-    public double[] normalizeByStream(final Dataset dataset, final int iRow, final int regionStart, final int regionEnd, String methodName) throws IOException {
+    public Double[] normalizeByStream(final Dataset dataset, final int iRow, final int regionStart, final int regionEnd, String methodName) throws IOException {
         NORMALIZE nMethod = NORMALIZE.valueOf(methodName.toUpperCase());
         int iDim = 0;
         final int p1;
@@ -73,8 +73,7 @@ public class Normalize {
         double[] values = new double[nPoints];
         fixedVec.getReal(values, p1);
         final double fixValue = nMethod.getInstance().evaluate(values);
-        System.out.println(p1 + " " + p2 + " " + nPoints + " " + vecSize);
-        double[] scales = new double[indices.size()];
+        Double[] scales = new Double[indices.size()];
         indices.stream().parallel().forEach(vi -> {
             Vec movingVec = new Vec(vecSize);
             try {
@@ -84,7 +83,6 @@ public class Normalize {
                 movingVec.getReal(mvalues, p1);
                 double moveValue = nMethod.getInstance().evaluate(mvalues);
                 double scale = fixValue / moveValue;
-                System.out.println(fixValue + " " + moveValue + " " + scale);
                 movingVec.scale(scale);
                 scales[vi[1][0]] = scale;
 
@@ -95,6 +93,38 @@ public class Normalize {
             }
         });
         return scales;
+    }
+
+    public void normalizeByStream(final Dataset dataset, final int iRow, final int regionStart, final int regionEnd, List<Double> scales) throws IOException {
+        int iDim = 0;
+        final int p1;
+        final int p2;
+        if (regionStart > regionEnd) {
+            p1 = regionEnd;
+            p2 = regionStart;
+        } else {
+            p1 = regionStart;
+            p2 = regionEnd;
+        }
+        List<int[][]> indices = dataset.getIndices(iDim, 0, dataset.getSize(iDim) - 1);
+        int[] dim = new int[dataset.getNDim()];
+        for (int i = 0; i < dim.length; i++) {
+            dim[i] = i;
+        }
+        int[][] pt = indices.get(iRow);
+        final int vecSize = dataset.getSize(iDim);
+        indices.stream().parallel().forEach(vi -> {
+            Vec movingVec = new Vec(vecSize);
+            try {
+                movingVec.setPt(vi, dim);
+                dataset.readVector(movingVec);
+                movingVec.scale(scales.get(vi[1][0]));
+                dataset.writeVector(movingVec);
+            } catch (IOException ex) {
+                Logger.getLogger(Align.class.getName()).log(Level.SEVERE, null, ex);
+                System.out.println(ex.getMessage());
+            }
+        });
     }
 
     void normalize(Vec movingVec) {

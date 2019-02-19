@@ -81,7 +81,32 @@ public class Align {
         }
     }
 
-    public void alignByMaxStream(final Dataset dataset, final int row, final int pt1, final int pt2) throws IOException {
+    public void align(final Dataset dataset, List<Double> deltas) throws IOException {
+        List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSize(0) - 1);
+        int[] dim = new int[dataset.getNDim()];
+        for (int i = 0; i < dim.length; i++) {
+            dim[i] = i;
+        }
+
+        final int vecSize = dataset.getSize(0);
+        indices.stream().parallel().forEach(vi -> {
+            Vec vec = new Vec(vecSize);
+            try {
+                dataset.readVecFromDatasetFile(vi, dim, vec);
+                double delta = deltas.get(vi[1][0]);
+                CShift cShift = new CShift((int) Math.round(delta));
+                cShift.eval(vec);
+                dataset.writeVecToDatasetFile(vi, dim, vec);
+            } catch (IOException ex) {
+                Logger.getLogger(Align.class
+                        .getName()).log(Level.SEVERE, null, ex);
+                System.out.println(ex.getMessage());
+            }
+        });
+
+    }
+
+    public Double[] alignByMaxStream(final Dataset dataset, final int row, final int pt1, final int pt2) throws IOException {
         final int p1;
         final int p2;
         if (pt1 > pt2) {
@@ -92,7 +117,6 @@ public class Align {
             p2 = pt2;
         }
         List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSize(0) - 1);
-        System.out.println("indices " + indices.size());
         int[] dim = new int[dataset.getNDim()];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
@@ -104,13 +128,14 @@ public class Align {
         dataset.readVecFromDatasetFile(pt, dim, fixedVec);
         IndexValue indexValue = fixedVec.maxIndex(pt1, pt2);
         int refPt = indexValue.getIndex();
-        System.out.println("refPt " + refPt + " p1 " + p1 + " p2 " + p2);
+        Double[] deltas = new Double[indices.size()];
         indices.stream().parallel().forEach(vi -> {
             Vec vec = new Vec(vecSize);
             try {
                 dataset.readVecFromDatasetFile(vi, dim, vec);
-                alignByMax(vec, refPt, p1, p2);
+                double delta = alignByMax(vec, refPt, p1, p2);
                 dataset.writeVecToDatasetFile(vi, dim, vec);
+                deltas[vi[1][0]] = delta;
 
             } catch (IOException ex) {
                 Logger.getLogger(Align.class
@@ -118,9 +143,10 @@ public class Align {
                 System.out.println(ex.getMessage());
             }
         });
+        return deltas;
     }
 
-    public void alignByCovStream(final Dataset dataset, final int fixStart, final int fixEnd, final int pStart, int sectionLength, final int iWarp, final int tStart) throws IOException {
+    public Double[] alignByCovStream(final Dataset dataset, final int fixStart, final int fixEnd, final int pStart, int sectionLength, final int iWarp, final int tStart) throws IOException {
         List<int[][]> indices = dataset.getIndices(0, 0, dataset.getSize(0) - 1);
         int[] dim = new int[dataset.getNDim()];
         int[][] pt = indices.get(0);
@@ -144,24 +170,26 @@ public class Align {
         }
         final int sL = fixedVec.getSize(); // fixme   XXXXXXXXXXXXXXXXXXXXXXXX
 //        System.out.println("indices " + indices.size() + " " + vecSize + " " + startVecPos[0][0] + " " + startVecPos[0][1] + " " + sectionLength);
+        Double[] deltas = new Double[indices.size()];
 
         indices.stream().parallel().forEach(vi -> {
             Vec movingVec = new Vec(vecSize);
             try {
                 movingVec.setPt(vi, dim);
                 dataset.readVector(movingVec);
-                alignByCov(fixedVec, movingVec, pStart, sL, iWarp, tStart);
+                double delta = alignByCov(fixedVec, movingVec, pStart, sL, iWarp, tStart);
                 dataset.writeVector(movingVec);
-
+                deltas[vi[1][0]] = delta;
             } catch (IOException ex) {
                 Logger.getLogger(Align.class
                         .getName()).log(Level.SEVERE, null, ex);
                 System.out.println(ex.getMessage());
             }
         });
+        return deltas;
     }
 
-    public void alignByCov(Vec fixedVec, Vec movingVec, int pStart, int m, int iWarp, int tStart) {
+    public int alignByCov(Vec fixedVec, Vec movingVec, int pStart, int m, int iWarp, int tStart) {
         //     public static double cowCorr(Vec src, Vec target, int pStart, int m, int iWarp, int tStart)  {
         int range = 50;
         double max = Double.NEGATIVE_INFINITY;
@@ -177,17 +205,18 @@ public class Align {
         } catch (ArrayIndexOutOfBoundsException aiE) {
             aiE.printStackTrace();
         }
-        System.out.println("cov " + max + " " + iMax);
-        CShift cShift = new CShift(-iMax);
+        int delta = -iMax;
+        CShift cShift = new CShift(delta);
         cShift.eval(movingVec);
+        return delta;
     }
 
-    public void alignByMax(Vec vec, int refPt, int pt1, int pt2) {
+    public int alignByMax(Vec vec, int refPt, int pt1, int pt2) {
         Vec.IndexValue indexValue = vec.maxIndex(pt1, pt2);
         int delta = refPt - indexValue.getIndex();
-        System.out.println("delta " + delta);
         CShift cShift = new CShift(delta);
         cShift.eval(vec);
+        return delta;
     }
 
     public double centerOfMass(Vec vec1, int pt1, int pt2) {
