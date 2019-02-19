@@ -11,6 +11,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -37,6 +39,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ToolBar;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -60,6 +63,8 @@ import org.nmrfx.processor.gui.controls.ScanTable;
  */
 public class ScannerController implements Initializable {
 
+    @FXML
+    ToolBar scannerBar;
     @FXML
     private VBox mainBox;
     @FXML
@@ -85,6 +90,7 @@ public class ScannerController implements Initializable {
     ScanTable scanTable;
     ChoicePropertyItem measureItem;
     OffsetPropertyItem offsetItem;
+    static Consumer createControllerAction = null;
 
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
@@ -266,6 +272,9 @@ public class ScannerController implements Initializable {
             stage.initOwner(parent);
             stage.show();
             stage.setOnCloseRequest(e -> controller.stageClosed());
+            if (createControllerAction != null) {
+                createControllerAction.accept(controller);
+            }
             return controller;
         } catch (IOException ioE) {
             ioE.printStackTrace();
@@ -274,6 +283,10 @@ public class ScannerController implements Initializable {
 
         return null;
 
+    }
+
+    public static void addCreateAction(Consumer<ScannerController> action) {
+        createControllerAction = action;
     }
 
     void stageClosed() {
@@ -356,6 +369,10 @@ public class ScannerController implements Initializable {
         return stage;
     }
 
+    public ToolBar getToolBar() {
+        return scannerBar;
+    }
+
     public PolyChart getChart() {
         return chart;
     }
@@ -422,7 +439,7 @@ public class ScannerController implements Initializable {
         scanTable.addTableColumn(newColumnName, "D");
     }
 
-    void setItems(String columnName, List<Double> values) {
+    public void setItems(String columnName, List<Double> values) {
         ObservableList<FileTableItem> items = scanTable.getItems();
         Map<Integer, FileTableItem> map = new HashMap<>();
         for (FileTableItem item : items) {
@@ -436,6 +453,25 @@ public class ScannerController implements Initializable {
             FileTableItem item = map.get(i);
             item.setExtra(columnName, value);
         }
+    }
+
+    public List<Double> getValues(String columnName) {
+        ObservableList<FileTableItem> items = scanTable.getItems();
+        Map<Integer, FileTableItem> map = new HashMap<>();
+        List<Double> values = new ArrayList<>(items.size());
+        values.addAll(Collections.nCopies(items.size(), 0.0));
+        for (FileTableItem item : items) {
+            if (item.getRow() > 0) {
+                int row = item.getRow() - 1;
+                double value = item.getDoubleExtra(columnName);
+                values.set(row, value);
+            }
+        }
+        return values;
+    }
+    
+    public boolean hasColumn(String columnName) {
+        return scanTable.getHeaders().contains(columnName);
     }
 
     @FXML

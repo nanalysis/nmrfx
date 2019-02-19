@@ -17,8 +17,8 @@
     <children>
         <BorderPane VBox.vgrow="ALWAYS">
             <top>
-                <HBox BorderPane.alignment="CENTER" spacing="12">
-                    <children>
+                <ToolBar fx:id="scannerBar" BorderPane.alignment="CENTER">
+                    <items>
                         <MenuButton  mnemonicParsing="false" text="File">
                             <items>
                                 <MenuItem mnemonicParsing="false" onAction="#setScanDirAction" text="Set Scan Directory..." />
@@ -46,8 +46,8 @@
                                 <MenuItem mnemonicParsing="false" onAction="#clearRegions" text="Clear All" />
                             </items>
                         </MenuButton>
-                    </children>
-                </HBox>
+                    </items>
+                </ToolBar>
             </top>
             <center>
                 <TabPane minWidth="400" minHeight="100" VBox.vgrow="ALWAYS">
