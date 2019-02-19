@@ -24,142 +24,68 @@
 package org.nmrfx.processor.gui;
 
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
-import org.nmrfx.processor.gui.spectra.PeakListAttributes;
-import de.jensd.fx.glyphs.GlyphsDude;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.ResourceBundle;
-import javafx.beans.property.StringProperty;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.fxml.Initializable;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TableView;
 import javafx.scene.control.ToolBar;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import java.text.DecimalFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
-import javafx.scene.control.Tab;
-import org.controlsfx.control.ListSelectionView;
-import org.controlsfx.control.SegmentedButton;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import org.nmrfx.processor.dataops.Align;
 import org.nmrfx.processor.dataops.Normalize;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
+
 /**
  *
  * @author johnsonb
  */
-public class MinerController implements Initializable {
+public class MinerController {
 
-    static final DecimalFormat formatter = new DecimalFormat();
+    ScannerController scannerController;
 
-    private Stage stage;
-    @FXML
-    private BorderPane attrBorderPane;
-    @FXML
-    private ToolBar viewToolBar;
-    @FXML
-    private ToolBar toolBar;
-    @FXML
-    private TableView<DatasetAttributes> datasetTableView;
-    @FXML
-    private TableView<PeakListAttributes> peakListTableView;
-    @FXML
-    private GridPane viewGrid;
-    @FXML
-    private ComboBox<DISDIM> disDimCombo;
-    @FXML
-    private Tab datasetTab;
-
-    StringProperty[][] limitFields;
-    @FXML
-    Slider scaleSlider;
-
-    PolyChart chart;
-    @FXML
-    private CheckBox offsetTrackingCheckBox;
-    @FXML
-    private ColorPicker sliceColorPicker;
-    @FXML
-    Slider xOffsetSlider;
-    @FXML
-    Slider yOffsetSlider;
-    @FXML
-    private CheckBox peakStatusCheckBox;
-    SegmentedButton groupButton;
-    private ComboBox[] dimCombos;
-    Label[] axisLabels;
-    Label[] dimLabels;
-    ListSelectionView<String> datasetView;
-    static String[] rowNames = {"X", "Y", "Z", "A"};
-
-    @Override
-    public void initialize(URL url, ResourceBundle rb) {
-        initToolBar();
+    public MinerController(ScannerController scannerController) {
+        this.scannerController = scannerController;
+        makeMenus();
     }
 
-    public Stage getStage() {
-        return stage;
-    }
+    private void makeMenus() {
+        ToolBar scannerBar = scannerController.getToolBar();
+        MenuButton adjusterMenu = new MenuButton("Adjust");
+        Menu normMenu = new Menu("Normalize");
+        Menu alignMenu = new Menu("Align");
+        adjusterMenu.getItems().addAll(normMenu, alignMenu);
 
-    public static MinerController create() {
-        FXMLLoader loader = new FXMLLoader(MinerController.class.getResource("/fxml/MinerScene.fxml"));
-        MinerController controller = null;
-        Stage stage = new Stage(StageStyle.DECORATED);
-        try {
-            Scene scene = new Scene((Pane) loader.load());
-            stage.setScene(scene);
-            scene.getStylesheets().add("/styles/Styles.css");
+        scannerBar.getItems().add(adjusterMenu);
+        MenuItem maxMenuItem = new MenuItem("To Max");
+        maxMenuItem.setOnAction(e -> normalizeByMax(e));
+        MenuItem medianMenuItem = new MenuItem("To Median");
+        medianMenuItem.setOnAction(e -> normalizeByMedian(e));
+        MenuItem integralMenuItem = new MenuItem("To Integral");
+        integralMenuItem.setOnAction(e -> normalizeBySum(e));
+        MenuItem undoNormMenuItem = new MenuItem("Undo");
+        undoNormMenuItem.setOnAction(e -> undoNormalize(e));
+        normMenu.getItems().addAll(maxMenuItem, medianMenuItem, integralMenuItem, undoNormMenuItem);
 
-            controller = loader.<MinerController>getController();
-            controller.stage = stage;
-            stage.setTitle("dataChord Miner Tools");
-            stage.setAlwaysOnTop(true);
-            stage.show();
-        } catch (IOException ioE) {
-            ioE.printStackTrace();
-            System.out.println(ioE.getMessage());
-        }
-
-        return controller;
-
-    }
-
-    void initToolBar() {
-        String iconSize = "16px";
-        String fontSize = "7pt";
-        ArrayList<Button> buttons = new ArrayList<>();
-        Button bButton;
-        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.REFRESH, "Refresh", iconSize, fontSize, ContentDisplay.TOP);
-        //bButton.setOnAction(e -> refreshAction());
-        buttons.add(bButton);
-        for (Button button : buttons) {
-            button.getStyleClass().add("toolButton");
-        }
-        toolBar.getItems().addAll(buttons);
+        MenuButton alignButton = new MenuButton("Align");
+        MenuItem maxAlignMenuItem = new MenuItem("By Max");
+        maxAlignMenuItem.setOnAction(e -> alignToMax(e));
+        MenuItem covMenuItem = new MenuItem("By Covariance");
+        covMenuItem.setOnAction(e -> alignByCov(e));
+        MenuItem undoAlignMenuItem = new MenuItem("Undo");
+        undoAlignMenuItem.setOnAction(e -> undoAlign(e));
+        alignMenu.getItems().addAll(maxAlignMenuItem, covMenuItem, undoAlignMenuItem);
     }
 
     @FXML
-    public void alignToMax(ActionEvent event) {
-        PolyChart polyChart = PolyChart.activeChart;
+    public void undoAlign(ActionEvent event) {
+        PolyChart polyChart = scannerController.getChart();
         Dataset dataset = polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
@@ -172,16 +98,69 @@ public class MinerController implements Initializable {
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();
             try {
-                aligner.alignByMaxStream(dataset, 0, pt1, pt2);
+                List<Double> valueList = null;
+                if (scannerController.hasColumn("offset")) {
+                    valueList = scannerController.getValues("offset");
+                } else {
+                    return;
+                }
+                for (int i = 0; i < valueList.size(); i++) {
+                    valueList.set(i, -valueList.get(i));
+                }
+                aligner.align(dataset, valueList);
                 polyChart.refresh();
+                for (int i = 0; i < valueList.size(); i++) {
+                    valueList.set(i, 0.0);
+                }
+                scannerController.scanTable.addTableColumn("offset", "D");
+                scannerController.setItems("offset", valueList);
+                scannerController.scanTable.refresh();
             } catch (IOException ex) {
                 Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
+
+    @FXML
+    public void alignToMax(ActionEvent event) {
+        PolyChart polyChart = scannerController.getChart();
+        Dataset dataset = polyChart.getDataset();
+        if (dataset != null) {
+            double[] ppms = polyChart.getVerticalCrosshairPositions();
+            DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
+            NMRAxis axis = (NMRAxis) polyChart.getXAxis();
+            AXMODE axMode = polyChart.getAxMode(0);
+            int ptw1 = axMode.getIndex(dataAttr, 0, axis.getLowerBound());
+            int ptw2 = axMode.getIndex(dataAttr, 0, axis.getUpperBound());
+            int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
+            int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
+            Align aligner = new Align();
+            try {
+                List<Double> valueList = null;
+                if (scannerController.hasColumn("offset")) {
+                    valueList = scannerController.getValues("offset");
+                }
+                Double[] deltas = aligner.alignByMaxStream(dataset, 0, pt1, pt2);
+                polyChart.refresh();
+                if (valueList != null) {
+                    for (int i = 0; i < valueList.size(); i++) {
+                        valueList.set(i, valueList.get(i) + deltas[i]);
+                    }
+                } else {
+                    valueList = Arrays.asList(deltas);
+                }
+                scannerController.scanTable.addTableColumn("offset", "D");
+                scannerController.setItems("offset", valueList);
+                scannerController.scanTable.refresh();
+            } catch (IOException ex) {
+                Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
     @FXML
     public void reorderByCorr(ActionEvent event) {
-        PolyChart polyChart = PolyChart.activeChart;
+        PolyChart polyChart = scannerController.getChart();
         Dataset dataset = polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
@@ -204,7 +183,7 @@ public class MinerController implements Initializable {
 
     @FXML
     public void alignByCov(ActionEvent event) {
-        PolyChart polyChart = PolyChart.activeChart;
+        PolyChart polyChart = scannerController.getChart();
         Dataset dataset = polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
@@ -222,8 +201,23 @@ public class MinerController implements Initializable {
             int tStart = 0;
 
             try {
-                aligner.alignByCovStream(dataset, pt1, pt2, pStart, sectionLength, iWarp, tStart);
+                List<Double> valueList = null;
+                if (scannerController.hasColumn("offset")) {
+                    valueList = scannerController.getValues("offset");
+                }
+                Double[] deltas = aligner.alignByCovStream(dataset, pt1, pt2, pStart, sectionLength, iWarp, tStart);
                 polyChart.refresh();
+                if (valueList != null) {
+                    for (int i = 0; i < valueList.size(); i++) {
+                        valueList.set(i, valueList.get(i) + deltas[i]);
+                    }
+                } else {
+                    valueList = Arrays.asList(deltas);
+                }
+                scannerController.scanTable.addTableColumn("offset", "D");
+                scannerController.setItems("offset", valueList);
+                scannerController.scanTable.refresh();
+
             } catch (IOException ex) {
                 Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -246,22 +240,48 @@ public class MinerController implements Initializable {
         normalize("Max");
     }
 
+    @FXML
+    public void undoNormalize(ActionEvent event) {
+        normalize("Undo");
+    }
+
     public void normalize(String mode) {
-        PolyChart polyChart = PolyChart.activeChart;
+        PolyChart polyChart = scannerController.getChart();
         Dataset dataset = polyChart.getDataset();
         if (dataset != null) {
             double[] ppms = polyChart.getVerticalCrosshairPositions();
             DatasetAttributes dataAttr = (DatasetAttributes) polyChart.getDatasetAttributes().get(0);
-            NMRAxis axis = (NMRAxis) polyChart.getXAxis();
             AXMODE axMode = polyChart.getAxMode(0);
-            int ptw1 = axMode.getIndex(dataAttr, 0, axis.getLowerBound());
-            int ptw2 = axMode.getIndex(dataAttr, 0, axis.getUpperBound());
             int pt1 = axMode.getIndex(dataAttr, 0, ppms[0]);
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Normalize normalizer = new Normalize();
             try {
-                normalizer.normalizeByStream(dataset, 0, pt1, pt2, mode);
+                List<Double> valueList = null;
+                if (scannerController.hasColumn("scale")) {
+                    valueList = scannerController.getValues("scale");
+                }
+                if (mode.equals("Undo")) {
+                    if (valueList != null) {
+                        for (int i = 0; i < valueList.size(); i++) {
+                            valueList.set(i, 1.0 / valueList.get(i));
+                        }
+                        normalizer.normalizeByStream(dataset, 0, pt1, pt2, valueList);
+                        Collections.fill(valueList, 1.0);
+                    }
+                } else {
+                    Double[] values = normalizer.normalizeByStream(dataset, 0, pt1, pt2, mode);
+                    if (valueList != null) {
+                        for (int i = 0; i < valueList.size(); i++) {
+                            valueList.set(i, valueList.get(i) * values[i]);
+                        }
+                    } else {
+                        valueList = Arrays.asList(values);
+                    }
+                }
+                scannerController.scanTable.addTableColumn("scale", "D");
+                scannerController.setItems("scale", valueList);
                 polyChart.refresh();
+                scannerController.scanTable.refresh();
             } catch (IOException ex) {
                 Logger.getLogger(MinerController.class.getName()).log(Level.SEVERE, null, ex);
             }

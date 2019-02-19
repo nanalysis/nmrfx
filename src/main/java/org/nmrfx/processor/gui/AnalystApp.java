@@ -81,7 +81,6 @@ public class AnalystApp extends MainApp {
     static AnalystApp analystApp = null;
 
     public static MultipletController multipletController;
-    public static MinerController minerController;
     public static AtomController atomController;
     public static MolSceneController molController;
     public static AtomBrowser atomBrowser;
@@ -128,6 +127,7 @@ public class AnalystApp extends MainApp {
         if (mainMenuBar == null) {
             mainMenuBar = makeMenuBar(appName);
         }
+        ScannerController.addCreateAction(e -> updateScannerGUI(e));
         Parameters parameters = getParameters();
         System.out.println(parameters.getRaw());
 
@@ -136,6 +136,11 @@ public class AnalystApp extends MainApp {
         interpreter.exec("parseArgs(argv)");
         Dataset.addObserver(this);
         PeakPicking.registerSinglePickAction((c) -> pickedPeakAction(c));
+    }
+
+    private void updateScannerGUI(ScannerController scannerController) {
+        System.out.println("update scanner " + scannerController);
+        MinerController minerController = new MinerController(scannerController);
     }
 
     Object pickedPeakAction(Object peakObject) {
@@ -347,13 +352,10 @@ public class AnalystApp extends MainApp {
         MenuItem scannerMenuItem = new MenuItem("Show Scanner");
         scannerMenuItem.setOnAction(e -> FXMLController.getActiveController().showScannerAction(e));
 
-        MenuItem minerMenuItem = new MenuItem("Show Miner");
-        minerMenuItem.setOnAction(e -> showMiner(e));
-
         MenuItem rnaPeakGenMenuItem = new MenuItem("Show RNA Label Scheme");
         rnaPeakGenMenuItem.setOnAction(e -> showRNAPeakGenerator(e));
 
-        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem, minerMenuItem, rnaPeakGenMenuItem);
+        viewMenu.getItems().addAll(consoleMenuItem, dataMenuItem, attrMenuItem, procMenuItem, scannerMenuItem, rnaPeakGenMenuItem);
 
         Menu peakMenu = new Menu("Peaks");
 
@@ -566,18 +568,6 @@ public class AnalystApp extends MainApp {
             System.out.println(string);
         } else {
             consoleController.writeOutput(string);
-        }
-    }
-
-    @FXML
-    private void showMiner(ActionEvent event) {
-        if (minerController == null) {
-            minerController = MinerController.create();
-        }
-        if (minerController != null) {
-            minerController.getStage().show();
-        } else {
-            System.out.println("Coudn't make miner controller");
         }
     }
 
