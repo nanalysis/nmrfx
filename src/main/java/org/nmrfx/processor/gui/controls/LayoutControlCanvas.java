@@ -83,7 +83,8 @@ public class LayoutControlCanvas extends Pane {
         for (int i = 0; i < rects.length; i++) {
             rects[i] = (Rectangle) getChildren().get(i);
         }
-        if ((fPane.getChildren().size() < 2) || (fPane.orient == null)) {
+        int nCharts = fPane.controller.getCharts().size();
+        if ((nCharts < 2) || (fPane.orient == null)) {
             rects[0].setVisible(true);
             rects[1].setVisible(true);
             rects[2].setVisible(true);
