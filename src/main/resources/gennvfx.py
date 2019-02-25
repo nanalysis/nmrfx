@@ -11,7 +11,7 @@ def parseArgs():
     parser = OptionParser()
     parser.add_option("-s", "--seed", dest="seed",default='0', help="Random number generator seed")
     parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
-    parser.add_option("-r", "--report", dest="report",default='', help="Report violations in energy dump file ")
+    parser.add_option("-r", "--report", action="store_true",dest="report",default=False, help="Report violations in energy dump file ")
 
     (options, args) = parser.parse_args()
     homeDir = options.directory
@@ -34,7 +34,7 @@ def parseArgs():
         global refiner
         refiner=refine()
         osfiles.setOutFiles(refiner,dataDir, seed)
-        refiner.setReportDump(report) # if report == '' then False, else then True
+        refiner.setReportDump(report) # if -r seen == True; else False
         refiner.rootName = "temp"
         refiner.loadFromYaml(data,seed)
         if 'anneal' in data:
