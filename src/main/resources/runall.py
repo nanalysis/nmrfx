@@ -41,6 +41,11 @@ def getCmd():
     return cmd
 
 def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapMemory=512):
+    """
+    Returns errStatus (int)
+    - zero if calculations successful
+    - nonzero otherwise
+    """
     makeDirs()
     cmd = getCmd()
     print cmd
@@ -49,9 +54,17 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
     fOut = [None]*nProcesses
     myEnv = os.environ.copy()
     myEnv["NMRFXSTR_MEMORY"] = str(heapMemory)
+    errStatus = 0
+    errExit = False
+
     while (True):
+
+        # Submission for-loop
         for i in range(nProcesses):
-            if (processes[i]==None):
+            # errStatus is initially zero to indicate no errors and this for-loop is "good" for submission
+            # [submit process] if processes[i]==None and errStatus==0
+            # [DONT submit process] otherwise
+            if (processes[i]==None and (not errStatus)):
                 if nSubmitted < nStructures:
                     strNum = nSubmitted+startStructure
                     fOutName = os.path.join(outDir,'cmdout_'+str(strNum)+'.txt')
@@ -61,23 +74,48 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
                     outStr =  "submit %d seed: %3d Structure # %3d of %3d pid %7d" % (i,strNum,(nSubmitted+1),nStructures,pid)
                     print outStr
                     nSubmitted += 1
-                #else:
+                else:
                     #print "Submitted all",nStructures
+                    break
+
         gotProcess = False
+        # Status checking for-loop
         for i in range(nProcesses):
             if (processes[i] != None):
-                if (processes[i].poll() == None):
-                    # still running
+                retCode = processes[i].poll()
+                if (retCode == None):
+                    # still running, process hasn't terminated
                     gotProcess = True
                 else:
-                    print "Finished",i,processes[i].pid
+                    # if return code is nonzero, then an error occurred
+		    if retCode != 0:
+                        # set the error status to nonzero to signal the next preceding for-loop
+                        # that there's an error so it shouldn't submit any more processes
+                        errStatus = retCode
+                        print "Error captured", i, processes[i].pid
+                        print "Please see '{}'".format(fOut[i].name)
+                    else:
+                        print "Finished",i,processes[i].pid
                     processes[i] = None
                     fOut[i].close()
+            elif (processes[i] == None and errStatus):
+                # If a process hasn't been submitted for processing and error status is nonzero, 
+                # then we have a problem...
+                # Thus, we have to set a signal to exit due to error. 
+                errExit = True 
+
+        if errExit:
+           # A job was not submitted for processing even though
+           # there were more structures to calculate, and the error status
+           # was nonzero...So we must break 
+           break
+
         if not gotProcess:
             if  (nSubmitted == nStructures):
                 print "Done"
                 break
         time.sleep(1)
+    return errStatus
 
 def keepStructures(nStructures,newName='final',rootName=''):
     pat = re.compile(r'.*\D([0-9]+).pdb')
@@ -99,19 +137,21 @@ def keepStructures(nStructures,newName='final',rootName=''):
         f1.close()
     eValues.sort(key=lambda tup: tup[4])
     iFile = 1
-    fOut = open(os.path.join(finDir,'summary.txt'),'w')
-    for fileInfo in eValues[0:nStructures]:
-        (pdbFile,eFile,aFile,structNum,energy,eLine) = fileInfo
-        shutil.copyfile(pdbFile,os.path.join(finDir,newName+str(iFile)+'.pdb'))
-        shutil.copyfile(eFile,os.path.join(finDir,newName+str(iFile)+'.txt'))
+    sumFileName = os.path.join(finDir, 'summary.txt')
+    if eValues:
+        fOut = open(sumFileName,'w')
+        for fileInfo in eValues[0:nStructures]:
+            (pdbFile,eFile,aFile,structNum,energy,eLine) = fileInfo
+            shutil.copyfile(pdbFile,os.path.join(finDir,newName+str(iFile)+'.pdb'))
+            shutil.copyfile(eFile,os.path.join(finDir,newName+str(iFile)+'.txt'))
 
-        if os.path.exists(aFile):
-            shutil.copyfile(aFile,os.path.join(finDir,newName+str(iFile)+'.ang'))
-        outLine = "%-3s %-3s %s" % (str(iFile), structNum, (eLine+'\n'))
-        fOut.write(outLine);
-        iFile += 1
-    fOut.close()
-
+            if os.path.exists(aFile):
+                shutil.copyfile(aFile,os.path.join(finDir,newName+str(iFile)+'.ang'))
+            outLine = "%-3s %-3s %s" % (str(iFile), structNum, (eLine+'\n'))
+            fOut.write(outLine);
+            iFile += 1
+   
+        fOut.close()
 
 def parseArgs():
     global calcScript
@@ -149,7 +189,7 @@ def parseArgs():
         cleanDirs()
         if nStructures == 0:
             exit(0)
-
+    calcRetCode = 0
     nKeep = int(options.nKeep)
     heapMemory = int(options.heapMemory)
     start = int(options.start)
@@ -175,10 +215,10 @@ def parseArgs():
         else:
            print 'Must specify script'
            exit()
-        calcStructures(calcScript,start,nStructures,homeDir,nProcesses,heapMemory)
-    if nKeep > 0:
+        retCode = calcStructures(calcScript,start,nStructures,homeDir,nProcesses,heapMemory)
+    if nKeep > 0 and (not retCode):
         keepStructures(nKeep)
-    if align:
+    if align and (not retCode):
         if nStructures == 0 and len(args) > 0:
             files = args
         else:
