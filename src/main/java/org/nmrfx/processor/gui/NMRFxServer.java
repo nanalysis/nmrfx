@@ -102,8 +102,9 @@ public class NMRFxServer implements Initializable {
     }
     
     public static int makePortFile(int inputPort, boolean useRandom) {
-        String homeDir = System.getProperty("user.home");
-        File f = new File(homeDir + "/ports.txt");
+        String tempDir = System.getProperty("java.io.tmpdir");
+        String userName = System.getProperty("user.name");
+        File f = new File(tempDir + "/NMRFx_" + userName + "_port.txt");
         int port = inputPort;
         if (!f.exists() && !f.isDirectory()) {
             try {
