@@ -7,6 +7,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import javafx.event.ActionEvent;
@@ -15,9 +17,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -102,8 +101,10 @@ public class NMRFxServer implements Initializable {
     }
     
     public static int makePortFile(int inputPort, boolean useRandom) {
-        String homeDir = System.getProperty("user.home");
-        File f = new File(homeDir + "/ports.txt");
+        String tempDir = System.getProperty("java.io.tmpdir");
+        String userName = System.getProperty("user.name");
+        Path path = FileSystems.getDefault().getPath(tempDir, "NMRFx_" + userName + "_port.txt");
+        File f = path.toFile(); //new File(tempDir + "/NMRFx_" + userName + "_port.txt");
         int port = inputPort;
         if (!f.exists() && !f.isDirectory()) {
             try {
