@@ -25,8 +25,8 @@ package org.nmrfx.processor.gui.spectra;
 
 import javafx.scene.paint.Color;
 import javafx.scene.shape.StrokeLineCap;
-import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
-import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
+import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.nmrfx.graphicsio.GraphicsIOException;
 
 /**
  *

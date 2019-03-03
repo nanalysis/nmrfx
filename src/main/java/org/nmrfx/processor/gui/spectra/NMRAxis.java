@@ -24,8 +24,8 @@
 package org.nmrfx.processor.gui.spectra;
 
 import javafx.geometry.Orientation;
+import org.nmrfx.chart.Axis;
 
-import org.nmrfx.processor.gui.chart.Axis;
 
 /**
  *

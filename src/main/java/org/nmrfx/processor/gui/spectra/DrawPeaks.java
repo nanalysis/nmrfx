@@ -46,12 +46,11 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
+import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.nmrfx.graphicsio.GraphicsContextProxy;
+import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.processor.datasets.peaks.Peak.Corner;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
-import org.nmrfx.processor.gui.chart.Axis;
-import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
-import org.nmrfx.processor.gui.graphicsio.GraphicsContextProxy;
-import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
 /**
  *

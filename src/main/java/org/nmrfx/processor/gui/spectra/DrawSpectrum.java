@@ -51,11 +51,11 @@ import javafx.scene.shape.Path;
 import org.apache.commons.math3.complex.Complex;
 import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
+import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.nmrfx.graphicsio.GraphicsContextProxy;
+import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
-import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
-import org.nmrfx.processor.gui.graphicsio.GraphicsContextProxy;
-import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
 
 /**
  *

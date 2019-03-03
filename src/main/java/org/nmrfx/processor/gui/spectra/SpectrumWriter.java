@@ -24,9 +24,6 @@
 package org.nmrfx.processor.gui.spectra;
 
 import org.nmrfx.processor.math.Vec;
-import org.nmrfx.processor.gui.graphicsio.GraphicsIO;
-import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
-import org.nmrfx.processor.gui.graphicsio.PDFWriter;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
@@ -37,8 +34,11 @@ import javax.swing.SwingUtilities;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.printing.PDFPageable;
+import org.nmrfx.graphicsio.GraphicsIO;
+import org.nmrfx.graphicsio.GraphicsIOException;
+import org.nmrfx.graphicsio.PDFWriter;
+import org.nmrfx.graphicsio.SVGWriter;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.graphicsio.SVGWriter;
 
 /**
  *

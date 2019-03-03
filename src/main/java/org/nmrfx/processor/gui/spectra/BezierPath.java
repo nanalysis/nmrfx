@@ -46,8 +46,8 @@ package org.nmrfx.processor.gui.spectra;
 import javafx.scene.shape.CubicCurveTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
-import org.nmrfx.processor.gui.graphicsio.GraphicsContextInterface;
-import org.nmrfx.processor.gui.graphicsio.GraphicsIOException;
+import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.nmrfx.graphicsio.GraphicsIOException;
 
 //Algorithm from http://www.antigrain.com/research/bezier_interpolation/
 class BezierPath {
