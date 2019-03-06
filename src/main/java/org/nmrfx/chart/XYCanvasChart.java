@@ -135,6 +135,7 @@ public class XYCanvasChart {
     }
 
     void seriesChanged() {
+        autoScale(false);
         drawChart();
     }
 
@@ -150,10 +151,11 @@ public class XYCanvasChart {
                     ok = true;
                     xMax = Math.max(xMax, dataSeries.values.stream().mapToDouble(XYValue::getXValue).max().getAsDouble());
                     xMin = Math.min(xMin, dataSeries.values.stream().mapToDouble(XYValue::getXValue).min().getAsDouble());
-                    yMax = Math.max(yMax, dataSeries.values.stream().mapToDouble(XYValue::getMaxYValue).max().getAsDouble());
-                    yMin = Math.min(yMin, dataSeries.values.stream().mapToDouble(XYValue::getMinYValue).min().getAsDouble());
+                    yMax = Math.max(yMax, dataSeries.values.stream().mapToDouble(XYValue::getMaxYValue).max().getAsDouble() / dataSeries.getScale());
+                    yMin = Math.min(yMin, dataSeries.values.stream().mapToDouble(XYValue::getMinYValue).min().getAsDouble() / dataSeries.getScale());
                 }
             }
+
             if (ok) {
                 double[] bounds = {xMin, xMax, yMin, yMax};
                 return bounds;
@@ -298,11 +300,13 @@ public class XYCanvasChart {
                 for (XYValue xyValue : series.values) {
                     double x = xyValue.getXValue();
                     double y = xyValue.getYValue();
+                    y /= series.getScale();
                     double xC = xAxis.getDisplayPosition(x);
                     double yC = yAxis.getDisplayPosition(y);
                     series.symbol.draw(gC, xC, yC, radius, series.stroke, series.fill);
                     if (xyValue instanceof XYEValue) {
                         double errValue = ((XYEValue) xyValue).getError();
+                        errValue /= series.getScale();
                         double yCHi = yAxis.getDisplayPosition(y + errValue);
                         double yCLow = yAxis.getDisplayPosition(y - errValue);
                         gC.setStroke(Color.BLACK);

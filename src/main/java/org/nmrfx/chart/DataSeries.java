@@ -38,8 +38,13 @@ public class DataSeries {
     boolean fillSymbol = true;
     boolean strokeSymbol = true;
     boolean drawLine = false;
+    private double scale = 1.0;
 
     public DataSeries() {
+    }
+
+    public ObservableList<XYValue> getValues() {
+        return values;
     }
 
     public ObservableList<XYValue> getData() {
@@ -64,6 +69,20 @@ public class DataSeries {
 
     public void add(XYValue value) {
         values.add(value);
+    }
+
+    /**
+     * @return the scale
+     */
+    public double getScale() {
+        return scale;
+    }
+
+    /**
+     * @param scale the scale to set
+     */
+    public void setScale(double scale) {
+        this.scale = scale;
     }
 
 }
