@@ -50,6 +50,9 @@ public class XYCanvasChart {
     double bottomBorder = 0.0;
     double minLeftBorder = 0.0;
     double minBottomBorder = 0.0;
+    boolean showLegend = true;
+    double legendHeight = 50;
+    CanvasLegend legend;
     ObservableList<DataSeries> data = FXCollections.observableArrayList();
 
     private DoubleProperty widthProperty;
@@ -131,6 +134,7 @@ public class XYCanvasChart {
         widthProperty().addListener(e -> drawChart());
         heightProperty().addListener(e -> drawChart());
         data.addListener((ListChangeListener) (e -> seriesChanged()));
+        legend = new CanvasLegend(this);
 
     }
 
@@ -232,7 +236,6 @@ public class XYCanvasChart {
         yAxis.setLabelFontSize(12);
         borders[0] = yAxis.getBorderSize();
         borders[2] = xAxis.getBorderSize();
-
         borders[1] = borders[0] / 4;
         borders[3] = borders[2] / 4;
         borders[3] = 7.0;
@@ -244,6 +247,9 @@ public class XYCanvasChart {
         double[] borders = getMinBorders();
         borders[0] = Math.max(borders[0], minLeftBorder);
         borders[2] = Math.max(borders[2], minBottomBorder);
+        if (showLegend && (data.size() > 1)) {
+            borders[2] += legend.getLegendHeight();
+        }
         return borders;
     }
 
@@ -290,6 +296,9 @@ public class XYCanvasChart {
             gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
             gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
             gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+            if (showLegend && (data.size() > 1)) {
+                legend.draw(gC);
+            }
             gC.clip();
             gC.beginPath();
             for (DataSeries series : data) {

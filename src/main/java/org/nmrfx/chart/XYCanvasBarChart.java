@@ -35,6 +35,7 @@ public class XYCanvasBarChart extends XYCanvasChart {
         widthProperty().addListener(e -> drawChart());
         heightProperty().addListener(e -> drawChart());
         data.addListener((ListChangeListener) (e -> seriesChanged()));
+        showLegend = false;
     }
 
     public void drawChart() {
