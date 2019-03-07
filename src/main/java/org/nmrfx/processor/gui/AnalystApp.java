@@ -242,6 +242,8 @@ public class AnalystApp extends MainApp {
         svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
         MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
+        MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
+        portMenuItem.setOnAction(e -> startServer(e));
 
         Menu projectMenu = new Menu("Projects");
 
@@ -279,7 +281,7 @@ public class AnalystApp extends MainApp {
         projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, openSTARMenuItem, saveSTARMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
+                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
@@ -862,10 +864,5 @@ public class AnalystApp extends MainApp {
                 atomController.setFilterString("");
             }
         }
-    }
-
-    @Override
-    void invokeListenerFunction(String s) {
-        System.out.println("invoke analystapp: " + s);
     }
 }
