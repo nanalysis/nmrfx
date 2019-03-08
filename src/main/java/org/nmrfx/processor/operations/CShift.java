@@ -34,60 +34,66 @@ import org.apache.commons.math3.complex.Complex;
 public class CShift extends Operation {
 
     private final int shiftValue;
+    private final boolean adjustRef;
 
     /**
      *
      * @param shift The amount of points to shift by.
      */
-    public CShift(int shift) {
+    public CShift(int shift, boolean adjustRef) {
         this.shiftValue = shift;
+        this.adjustRef = adjustRef;
     }
 
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
         int size = vector.getSize();
-        int shiftValue = this.shiftValue;
 
-        if ((shiftValue != 0) && (((int) Math.abs(shiftValue)) < size)) {
+        int iShift = this.shiftValue;
+
+        if ((iShift != 0) && (((int) Math.abs(iShift)) < size)) {
             if (vector.isComplex()) {
                 vector.makeApache();
 
-                if (shiftValue > 0) {
-                    int marker = size - shiftValue;
-                    Complex[] temp = new Complex[shiftValue];
-                    System.arraycopy(vector.cvec, marker, temp, 0, shiftValue);
-                    System.arraycopy(vector.cvec, 0, vector.cvec, shiftValue,
-                            size - shiftValue);
-                    System.arraycopy(temp, 0, vector.cvec, 0, shiftValue);
+                if (iShift > 0) {
+                    int marker = size - iShift;
+                    Complex[] temp = new Complex[iShift];
+                    System.arraycopy(vector.cvec, marker, temp, 0, iShift);
+                    System.arraycopy(vector.cvec, 0, vector.cvec, iShift,
+                            size - iShift);
+                    System.arraycopy(temp, 0, vector.cvec, 0, iShift);
                 } else {
-                    shiftValue = -shiftValue;
+                    iShift = -iShift;
 
-                    int marker = size - shiftValue;
-                    Complex[] temp = new Complex[shiftValue];
-                    System.arraycopy(vector.cvec, 0, temp, 0, shiftValue);
-                    System.arraycopy(vector.cvec, shiftValue, vector.cvec, 0,
-                            size - shiftValue);
-                    System.arraycopy(temp, 0, vector.cvec, marker, shiftValue);
+                    int marker = size - iShift;
+                    Complex[] temp = new Complex[iShift];
+                    System.arraycopy(vector.cvec, 0, temp, 0, iShift);
+                    System.arraycopy(vector.cvec, iShift, vector.cvec, 0,
+                            size - iShift);
+                    System.arraycopy(temp, 0, vector.cvec, marker, iShift);
                 }
             } else {
                 vector.makeNotApache();
-                if (shiftValue > 0) {
-                    int marker = size - shiftValue;
-                    double[] temp = new double[shiftValue];
-                    System.arraycopy(vector.rvec, marker, temp, 0, shiftValue);
-                    System.arraycopy(vector.rvec, 0, vector.rvec, shiftValue, size
-                            - shiftValue);
-                    System.arraycopy(temp, 0, vector.rvec, 0, shiftValue);
+                if (iShift > 0) {
+                    int marker = size - iShift;
+                    double[] temp = new double[iShift];
+                    System.arraycopy(vector.rvec, marker, temp, 0, iShift);
+                    System.arraycopy(vector.rvec, 0, vector.rvec, iShift, size
+                            - iShift);
+                    System.arraycopy(temp, 0, vector.rvec, 0, iShift);
                 } else {
-                    shiftValue = -shiftValue;
+                    iShift = -iShift;
 
-                    int marker = size - shiftValue;
-                    double[] temp = new double[shiftValue];
-                    System.arraycopy(vector.rvec, 0, temp, 0, shiftValue);
-                    System.arraycopy(vector.rvec, shiftValue, vector.rvec, 0, size
-                            - shiftValue);
-                    System.arraycopy(temp, 0, vector.rvec, marker, shiftValue);
+                    int marker = size - iShift;
+                    double[] temp = new double[iShift];
+                    System.arraycopy(vector.rvec, 0, temp, 0, iShift);
+                    System.arraycopy(vector.rvec, iShift, vector.rvec, 0, size
+                            - iShift);
+                    System.arraycopy(temp, 0, vector.rvec, marker, iShift);
                 }
+            }
+            if (adjustRef) {
+                vector.adjustRef(-shiftValue, size);
             }
         }
 
