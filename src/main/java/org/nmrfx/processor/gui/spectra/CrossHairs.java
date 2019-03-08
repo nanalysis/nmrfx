@@ -59,10 +59,14 @@ public class CrossHairs {
     }
 
     public Double[] getCrossHairPositions() {
-        Double x = crossHairStates[0][VERTICAL] ? crossHairPositions[0][VERTICAL] : null;
+        return getCrossHairPositions(0);
+    }
+
+    public Double[] getCrossHairPositions(int iCross) {
+        Double x = crossHairStates[iCross][VERTICAL] ? crossHairPositions[iCross][VERTICAL] : null;
         Double y = null;
         if (chart.getNDim() > 1) {
-            y = crossHairStates[0][HORIZONTAL] ? crossHairPositions[0][HORIZONTAL] : null;
+            y = crossHairStates[iCross][HORIZONTAL] ? crossHairPositions[iCross][HORIZONTAL] : null;
         }
         Double[] result = {x, y};
         return result;

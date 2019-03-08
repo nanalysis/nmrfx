@@ -126,9 +126,27 @@ public class SpectrumMenu extends ChartMenu {
 
         MenuItem diagRefMenuItem = new MenuItem("Adjust Diagonal");
         diagRefMenuItem.setOnAction((ActionEvent e) -> {
-            chart.adjustDiagonalReference();
+            SpectrumAdjuster.adjustDiagonalReference();
         });
-        refMenu.getItems().add(diagRefMenuItem);
+        MenuItem shiftRefMenuItem = new MenuItem("Shift Reference");
+        shiftRefMenuItem.setOnAction((ActionEvent e) -> {
+            SpectrumAdjuster.adjustDatasetRef();
+        });
+        MenuItem setRefMenuItem = new MenuItem("Set Reference...");
+        setRefMenuItem.setOnAction((ActionEvent e) -> {
+            SpectrumAdjuster.showRefInput();
+        });
+        MenuItem undoRefMenuItem = new MenuItem("Undo");
+        undoRefMenuItem.setOnAction((ActionEvent e) -> {
+            SpectrumAdjuster.undo();
+        });
+        MenuItem writeRefMenuItem = new MenuItem("Write Reference Parameters");
+        writeRefMenuItem.setOnAction((ActionEvent e) -> {
+            SpectrumAdjuster.writePars();
+        });
+
+        refMenu.getItems().addAll(setRefMenuItem, shiftRefMenuItem, diagRefMenuItem,
+                undoRefMenuItem, writeRefMenuItem);
 
         chartMenu.getItems().add(attrItem);
         chartMenu.getItems().add(viewMenu);

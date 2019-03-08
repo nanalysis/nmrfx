@@ -3279,36 +3279,4 @@ public class PolyChart implements PeakListener {
         double[] value = dataset.getPercentile(p, pt, dim);
         return value;
     }
-
-    public void adjustDiagonalReference() {
-        if (getNDim() < 2) {
-            return;
-        }
-        if (!crossHairs.hasCrosshairState("|_")) {
-            Alert alert = new Alert(Alert.AlertType.WARNING, "Need a vertical and horizontal crosshair");
-            alert.showAndWait();
-            return;
-        }
-
-        double x = crossHairPositions[0][VERTICAL];
-        double y = crossHairPositions[0][HORIZONTAL];
-        double delta = x - y;
-        boolean ok = true;
-        if (Math.abs(delta) > 0.5) {
-            String message = String.format("Changing reference by a lot (%.3f), Continue?", delta);
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message);
-            Optional<ButtonType> response = alert.showAndWait();
-            if (response.isPresent() && !response.get().getText().equals("OK")) {
-                ok = false;
-            }
-        }
-        if (ok) {
-            datasetAttributesList.forEach((dataAttr) -> {
-                int yDim = dataAttr.dim[1];
-                double oldRef = dataAttr.getDataset().getRefValue(yDim);
-                dataAttr.getDataset().setRefValue(yDim, oldRef + delta);
-            });
-            refresh();
-        }
-    }
 }
