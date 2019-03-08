@@ -1368,18 +1368,20 @@ def TDCOMB(dim=2,coef=None, numInVec=0, numOutVec=0, inVec=None, outVec=None, di
     return op
 
 @generic_operation
-def CSHIFT(shift=0, disabled=False, vector=None, process=None):
+def CSHIFT(shift=0, adjust=False, disabled=False, vector=None, process=None):
     '''Circular shift of the data points in the vector by the specified amount.
     Parameters
     ---------
     shift : int
-        min : -2048 
-        max : 2048 
+        min : -16384 
+        max : 16384 
         Amount of points to shift the vector by.
+    adjust : bool
+        If true, adjust the referencing of the vector based on shift
 '''
     if disabled:
         return None
-    op = CShift(shift)
+    op = CShift(shift, adjust)
     return op
 
 @generic_operation
@@ -3183,19 +3185,21 @@ def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False
     return op
 
 @generic_operation
-def SHIFT(shift=1, disabled=False, vector=None, process=None):
+def SHIFT(shift=0, adjust=False, disabled=False, vector=None, process=None):
     '''Left or right shift of the data points in the vector by the specified amount.
     Parameters
     ---------
     shift : int
-        min : -16
-        max : 16
+        min : -2048
+        max : 2048
         Amount of points to shift the vector by.
+    adjust : bool
+        If true, adjust the referencing of the vector based on shift
 '''
     if disabled:
         return None
 
-    op = Shift(shift)
+    op = Shift(shift, adjust)
     return op
 
 def SCRIPT(script="", initialScript="", execFileName="", encapsulate=False, disabled=False, vector=None, process=None):
