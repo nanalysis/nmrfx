@@ -46,4 +46,8 @@ public class PPM extends Unit<Double> {
     public double getDoublePosition(Vec vec) {
         return vec.getDoublePosition(this);
     }
+
+    public double getDoubleDelta(Vec vec) {
+        return vec.getDoubleDelta(this);
+    }
 }

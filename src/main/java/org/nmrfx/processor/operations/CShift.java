@@ -23,9 +23,11 @@
  */
 package org.nmrfx.processor.operations;
 
+import java.util.Optional;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.math.units.Unit;
 
 /**
  *
@@ -34,6 +36,7 @@ import org.apache.commons.math3.complex.Complex;
 public class CShift extends Operation {
 
     private final int shiftValue;
+    private final Optional<Unit> unit;
     private final boolean adjustRef;
 
     /**
@@ -43,6 +46,27 @@ public class CShift extends Operation {
     public CShift(int shift, boolean adjustRef) {
         this.shiftValue = shift;
         this.adjustRef = adjustRef;
+        this.unit = Optional.empty();
+    }
+
+    public CShift(double shift, boolean adjustRef) {
+        this.shiftValue = (int) shift;
+        this.adjustRef = adjustRef;
+        this.unit = Optional.empty();
+    }
+
+    /**
+     *
+     * @param units The amount to shift vector by specified using units.
+     */
+    public CShift(Unit units, boolean adjustRef) {
+        this.shiftValue = 0;
+        this.adjustRef = adjustRef;
+        if (units != null) {
+            this.unit = Optional.of(units);
+        } else {
+            this.unit = Optional.empty();
+        }
     }
 
     @Override
@@ -50,6 +74,10 @@ public class CShift extends Operation {
         int size = vector.getSize();
 
         int iShift = this.shiftValue;
+        if (unit.isPresent()) {
+            iShift = (int) Math.round(unit.get().getDoubleDelta(vector));
+        }
+        double adjustAmount = iShift;
 
         if ((iShift != 0) && (((int) Math.abs(iShift)) < size)) {
             if (vector.isComplex()) {
@@ -93,7 +121,7 @@ public class CShift extends Operation {
                 }
             }
             if (adjustRef) {
-                vector.adjustRef(-shiftValue, size);
+                vector.adjustRef(-adjustAmount, size);
             }
         }
 
