@@ -53,6 +53,7 @@ import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.python.core.PyComplex;
 import java.util.regex.*;
+import org.nmrfx.utils.properties.DoubleUnitsRangeOperationItem;
 
 /**
  *
@@ -207,8 +208,9 @@ public class PropertyManager {
                 if (!appendOp && trimOp.equals(curOp)) {
                     listItems.set(opIndex, op);
                     /**
-                     * If the selected index isn't equal to the op index, or if we are not at the case where there's a
-                     * single op, then change the selected cell.
+                     * If the selected index isn't equal to the op index, or if
+                     * we are not at the case where there's a single op, then
+                     * change the selected cell.
                      */
                     if (!(scriptView.getSelectionModel().getSelectedIndex() == opIndex)
                             && !(scriptView.getSelectionModel().getSelectedIndex() == -1 && listItems.size() == 1)) {
@@ -651,11 +653,18 @@ public class PropertyManager {
                                 }
                                 defaultDouble = Double.parseDouble(defStr);
                             }
+                            if (type.equals("position")) {
+                                DoubleUnitsRangeOperationItem drItem = new DoubleUnitsRangeOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
+                                        aminDouble, amaxDouble, op, name, parDesc);
+                                drItem.setLastChar(lastChar);
+                                propItems.add(drItem);
 
-                            DoubleRangeOperationItem drItem = new DoubleRangeOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
-                                    aminDouble, amaxDouble, op, name, parDesc);
-                            drItem.setLastChar(lastChar);
-                            propItems.add(drItem);
+                            } else {
+                                DoubleRangeOperationItem drItem = new DoubleRangeOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
+                                        aminDouble, amaxDouble, op, name, parDesc);
+                                drItem.setLastChar(lastChar);
+                                propItems.add(drItem);
+                            }
 
                             break;
                         case "list":

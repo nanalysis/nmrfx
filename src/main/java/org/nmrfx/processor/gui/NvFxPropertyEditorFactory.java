@@ -31,6 +31,8 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.List;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
@@ -47,15 +49,14 @@ import org.controlsfx.property.editor.Editors;
 import org.controlsfx.property.editor.PropertyEditor;
 import org.nmrfx.utils.properties.MenuTextField;
 import org.nmrfx.utils.properties.MenuTextFieldEditor;
-import org.nmrfx.processor.gui.ProcessorController;
 import org.nmrfx.utils.properties.PropertySliderEditor;
-import org.nmrfx.processor.gui.ReferenceMenuTextField;
 import org.nmrfx.utils.properties.ZoomSlider;
 import org.nmrfx.utils.properties.BooleanOperationItem;
 import org.nmrfx.utils.properties.ChoiceOperationItem;
 import org.nmrfx.utils.properties.ComplexOperationItem;
 import org.nmrfx.utils.properties.DirectoryOperationItem;
 import org.nmrfx.utils.properties.DoubleRangeOperationItem;
+import org.nmrfx.utils.properties.DoubleUnitsRangeOperationItem;
 import org.nmrfx.utils.properties.EditableChoiceOperationItem;
 import org.nmrfx.utils.properties.FileOperationItem;
 import org.nmrfx.utils.properties.IntChoiceOperationItem;
@@ -85,13 +86,60 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         this.processorController = processorController;
     }
 
+    public void sliderIconUpdated(ZoomSlider zoomSlider, DoubleUnitsRangeOperationItem item) {
+        System.out.println("update " + zoomSlider.getIconLabel());
+        String type = zoomSlider.getIconLabel();
+        switch (type) {
+            case "h":
+                item.setLastChar('h');
+                zoomSlider.setRange(-20, 20, 0.0);
+                break;
+            case "f":
+                item.setLastChar('f');
+                zoomSlider.setRange(-0.5, 0.5, 0.0);
+                break;
+            case "P":
+                item.setLastChar('p');
+                zoomSlider.setRange(-1.0, 1.0, 0.0);
+                break;
+            case "p":
+                item.setLastChar((char) -1);
+                zoomSlider.setRange(-20, 20, 0.0);
+                break;
+            case "":
+                item.setLastChar((char) -1);
+                zoomSlider.setRange(-20, 20, 0.0);
+                break;
+            default:
+                item.setLastChar((char) -1);
+                zoomSlider.setRange(-20.0, 20.0, 0.0);
+        }
+
+    }
+
     @Override
     public PropertyEditor<?> call(Item item) {
         Class<?> type = item.getType();
 
         //TODO: add support for char and collection editors
 //        System.out.println("get editor " + item.getName() + " " + item.getType().toString());
-        if (type == DoubleRangeOperationItem.class) {
+        if (type == DoubleUnitsRangeOperationItem.class) {
+            //System.out.println("double item");
+            Slider slider = new Slider();
+            DoubleUnitsRangeOperationItem dItem = (DoubleUnitsRangeOperationItem) item;
+            slider.setMin(dItem.getMin());
+            slider.setMax(dItem.getMax());
+            slider.setShowTickLabels(true);
+            slider.setShowTickMarks(true);
+            slider.setBlockIncrement((dItem.getMax() - dItem.getMin()) / 100.0);
+            slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
+            ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.getAmin(), dItem.getAmax());
+            List<String> iconChoices = Arrays.asList("","p", "h", "P", "f");
+            zoomSlider.setIcon(iconChoices, e -> sliderIconUpdated(zoomSlider, dItem));
+            zoomSlider.updateFormat();
+            dItem.setZoomSlider(zoomSlider);
+            return new PropertySliderEditor(dItem, zoomSlider);
+        } else if (type == DoubleRangeOperationItem.class) {
             //System.out.println("double item");
             Slider slider = new Slider();
             DoubleRangeOperationItem dItem = (DoubleRangeOperationItem) item;
@@ -102,6 +150,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setBlockIncrement((dItem.getMax() - dItem.getMin()) / 100.0);
             slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
             ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.getAmin(), dItem.getAmax());
+            zoomSlider.updateFormat();
             return new PropertySliderEditor(dItem, zoomSlider);
         } else if (type == IntOperationItem.class) {
             IntOperationItem iItem = (IntOperationItem) item;

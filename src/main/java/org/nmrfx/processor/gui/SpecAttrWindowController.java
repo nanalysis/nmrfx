@@ -72,6 +72,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.scene.Node;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
@@ -86,6 +87,8 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.shape.Polygon;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PopOver;
@@ -94,6 +97,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
+import org.nmrfx.processor.gui.utils.ColorSchemes;
 import org.nmrfx.utilities.DictionarySort;
 
 /**
@@ -161,6 +165,7 @@ public class SpecAttrWindowController implements Initializable {
 
     ListChangeListener<String> peakTargetListener;
     ListChangeListener<String> datasetTargetListener;
+    Node columnMenuNode;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -615,6 +620,12 @@ public class SpecAttrWindowController implements Initializable {
         clmCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
         clmCol.setPrefWidth(50);
 
+        ContextMenu clmlMenu = new ContextMenu();
+        MenuItem unifyCLMItem = new MenuItem("unify");
+        unifyCLMItem.setOnAction(e -> unifyCLM());
+        clmCol.setContextMenu(clmlMenu);
+        clmlMenu.getItems().addAll(unifyCLMItem);
+
         TableColumn<DatasetAttributes, Boolean> posDrawOnCol = new TableColumn<>("on");
         posDrawOnCol.setCellValueFactory(new PropertyValueFactory("pos"));
         posDrawOnCol.setCellFactory(tc -> new CheckBoxTableCell<>());
@@ -679,8 +690,10 @@ public class SpecAttrWindowController implements Initializable {
         unifyPosColorItem.setOnAction(e -> unifyColor(true));
         MenuItem interpPosColor = new MenuItem("interpolate");
         interpPosColor.setOnAction(e -> interpolatePosColors());
+        MenuItem schemaPosColor = new MenuItem("schema...");
+        schemaPosColor.setOnAction(e -> setPosColorsToSchema());
         posColorCol.setContextMenu(posColorMenu);
-        posColorMenu.getItems().addAll(unifyPosColorItem, interpPosColor);
+        posColorMenu.getItems().addAll(unifyPosColorItem, interpPosColor, schemaPosColor);
 
         TableColumn<DatasetAttributes, Boolean> negDrawOnCol = new TableColumn<>("on");
         negDrawOnCol.setCellValueFactory(new PropertyValueFactory("neg"));
@@ -743,8 +756,11 @@ public class SpecAttrWindowController implements Initializable {
         unifyNegColorItem.setOnAction(e -> unifyColor(false));
         MenuItem interpNegColorItem = new MenuItem("interpolate");
         interpNegColorItem.setOnAction(e -> interpolateNegColors());
+        MenuItem schemaNegColor = new MenuItem("schema...");
+        schemaNegColor.setOnAction(e -> setNegColorsToSchema());
         negColorCol.setContextMenu(negColorMenu);
-        negColorMenu.getItems().addAll(unifyNegColorItem, interpNegColorItem);
+
+        negColorMenu.getItems().addAll(unifyNegColorItem, interpNegColorItem, schemaNegColor);
 
         TableColumn positiveColumn = new TableColumn("Positive");
         TableColumn negativeColumn = new TableColumn("Negative");
@@ -1046,7 +1062,7 @@ public class SpecAttrWindowController implements Initializable {
         }
     }
 
-    void unifyClm() {
+    void unifyCLM() {
         ObservableList<DatasetAttributes> items = datasetTableView.getItems();
         if (!items.isEmpty()) {
             int index = datasetTableView.getSelectionModel().getSelectedIndex();
@@ -1123,6 +1139,8 @@ public class SpecAttrWindowController implements Initializable {
             }
         });
         datasetTableView.refresh();
+        chart.refresh();
+
     }
 
     void setLimits() {
@@ -1178,6 +1196,7 @@ public class SpecAttrWindowController implements Initializable {
             dataAttr.setPosColor(color);
         }
         datasetTableView.refresh();
+        chart.refresh();
     }
 
     void interpolateNegColors() {
@@ -1195,6 +1214,48 @@ public class SpecAttrWindowController implements Initializable {
             dataAttr.setNegColor(color);
         }
         datasetTableView.refresh();
+        chart.refresh();
+
+    }
+
+    void setPosColorsToSchema() {
+        double x = stage.getX();
+        double y = stage.getY() + stage.getHeight() + 10;
+        ColorSchemes.showSchemaChooser(s -> updatePosColorsWithSchema(s), x, y);
+    }
+
+    void setNegColorsToSchema() {
+        double x = stage.getX();
+        double y = stage.getY() + stage.getHeight() + 10;
+        ColorSchemes.showSchemaChooser(s -> updateNegColorsWithSchema(s), x, y);
+    }
+
+    public void updateNegColorsWithSchema(String colorName) {
+        updateColorsWithSchema(colorName, false);
+
+    }
+
+    public void updatePosColorsWithSchema(String colorName) {
+        updateColorsWithSchema(colorName, true);
+    }
+
+    public void updateColorsWithSchema(String colorName, boolean posColors) {
+        ObservableList<DatasetAttributes> items = datasetTableView.getItems();
+        if (items.size() < 2) {
+            return;
+        }
+        int i = 0;
+        List<Color> colors = ColorSchemes.getColors(colorName, items.size());
+        for (DatasetAttributes dataAttr : items) {
+            Color color = colors.get(i++);
+            if (posColors) {
+                dataAttr.setPosColor(color);
+            } else {
+                dataAttr.setNegColor(color);
+            }
+        }
+        datasetTableView.refresh();
+        chart.refresh();
     }
 
     void saveParameters() {
@@ -1277,4 +1338,17 @@ public class SpecAttrWindowController implements Initializable {
             chart.refresh();
         }
     }
+
+    public Node makeColumnIcon() {
+        StackPane stackPane = new StackPane();
+        Polygon polygon = new Polygon();
+        polygon.getPoints().addAll(new Double[]{
+            4.0, 9.0,
+            0.0, 0.0,
+            9.0, 0.0});
+        polygon.setFill(Color.GREEN);
+        stackPane.getChildren().add(polygon);
+        return stackPane;
+    }
+
 }
