@@ -1368,20 +1368,21 @@ def TDCOMB(dim=2,coef=None, numInVec=0, numOutVec=0, inVec=None, outVec=None, di
     return op
 
 @generic_operation
-def CSHIFT(shift=0, adjust=False, disabled=False, vector=None, process=None):
+def CSHIFT(shift=0, adjref=False, disabled=False, vector=None, process=None):
     '''Circular shift of the data points in the vector by the specified amount.
     Parameters
     ---------
-    shift : int
-        min : -16384 
-        max : 16384 
-        Amount of points to shift the vector by.
-    adjust : bool
+    shift : position
+        min : -128
+        max : 128
+        Amount to shift the vector by.  If float or int use points.  If string, convert units
+    adjref : bool
         If true, adjust the referencing of the vector based on shift
 '''
     if disabled:
         return None
-    op = CShift(shift, adjust)
+    shiftObj = convertUnitStringToObject(shift)
+    op = CShift(shiftObj, adjref)
     return op
 
 @generic_operation
@@ -3185,7 +3186,7 @@ def KAISER(offset=0.5, beta=10.0, end=1.0,c=1.0,apodSize=0, dim=1, inverse=False
     return op
 
 @generic_operation
-def SHIFT(shift=0, adjust=False, disabled=False, vector=None, process=None):
+def SHIFT(shift=0, adjref=False, disabled=False, vector=None, process=None):
     '''Left or right shift of the data points in the vector by the specified amount.
     Parameters
     ---------
@@ -3193,13 +3194,13 @@ def SHIFT(shift=0, adjust=False, disabled=False, vector=None, process=None):
         min : -2048
         max : 2048
         Amount of points to shift the vector by.
-    adjust : bool
+    adjref : bool
         If true, adjust the referencing of the vector based on shift
 '''
     if disabled:
         return None
 
-    op = Shift(shift, adjust)
+    op = Shift(shift, adjref)
     return op
 
 def SCRIPT(script="", initialScript="", execFileName="", encapsulate=False, disabled=False, vector=None, process=None):
@@ -3535,7 +3536,7 @@ coefs3d = [1, 0, 1, 0, 0, 0, 0, 0,
            0, 0, 0, 0, 0,-1, 0, 1]
 
 def convertUnitStringToObject(unitString):
-    '''Return a Unit object (Fraction, Frequency, Index, PPM, Point, Time) from a string of the unit.  Proper format is a number, with optional decimal place, followed by a token.  f for Fraction, p for frequency, no token for index, p for PPM, no token for point, s for second.'''
+    '''Return a Unit object (Fraction, Frequency, Index, PPM, Point, Time) from a string of the unit.  Proper format is a number, with optional decimal place, followed by a token.  f for Fraction, h for frequency (Hz), no token for index, P for PPM, p or no token for point, s for second.'''
     #token = unitString.strip(' \t')[-1]
     if isinstance(unitString,(float,int)):
         return unitString
@@ -3559,8 +3560,11 @@ def convertUnitStringToObject(unitString):
     elif token == 'h':
         unit = Frequency(num)
 
-    elif token == 'p':
+    elif token == 'P':
         unit = PPM(num)
+
+    elif token == 'p':
+        unit = Point(num)
 
     elif token == 's':
         unit = Time(num)
