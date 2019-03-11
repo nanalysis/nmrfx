@@ -23,17 +23,24 @@
  */
 package org.nmrfx.utils.properties;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
-import javafx.scene.control.TextField;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.GridPane;
 import static javafx.scene.layout.GridPane.setHgrow;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.util.StringConverter;
 import javafx.util.converter.DoubleStringConverter;
+import org.controlsfx.control.textfield.CustomTextField;
 
 /**
  *
@@ -41,12 +48,88 @@ import javafx.util.converter.DoubleStringConverter;
  */
 public class ZoomSlider extends GridPane {
 
-    TextField textField = new TextField();
+    CustomTextField textField = new CustomTextField();
     Slider slider;
     Button downButton = new Button("-");
     Button upButton = new Button("+");
     double amin;
     double amax;
+    List<String> choices = new ArrayList<>();
+    Consumer labelUpdatedFunction = null;
+    Label iconLabel = null;
+    String format = "%.3f";
+
+    class DConverter extends DoubleStringConverter {
+
+        @Override
+        public String toString(Double value) {
+            return String.format(format, value);
+
+        }
+    }
+
+    public boolean hasIcon() {
+        return textField.getRight() != null;
+    }
+
+    public void setIcon(List<String> choices, Consumer labelUpdatedFunction) {
+        textField.setPrefWidth(80);
+        this.labelUpdatedFunction = labelUpdatedFunction;
+        this.choices.addAll(choices);
+        StackPane pane = new StackPane();
+        Rectangle rect = new Rectangle(14, 14);
+        rect.setFill(Color.ORANGE);
+        iconLabel = new Label(choices.get(0));
+        iconLabel.setFont(Font.font(12));
+        pane.getChildren().addAll(rect, iconLabel);
+        textField.setRight(pane);
+        iconLabel.setMouseTransparent(true);
+        rect.setOnMouseClicked(e -> updateLabel());
+
+    }
+
+    public void setIconLabel(String s) {
+        if (iconLabel != null) {
+            if ((s.length() > 0) && Character.isLetter(s.charAt(0))) {
+                iconLabel.setText(s);
+            }
+        }
+    }
+
+    public String getIconLabel() {
+        String result = "";
+        if (iconLabel != null) {
+            result = iconLabel.getText();
+        }
+        return result;
+    }
+
+    void updateLabel() {
+        String text = iconLabel.getText();
+        int index = choices.indexOf(text);
+        index += 1;
+        if (index >= choices.size()) {
+            index = 0;
+        }
+        text = choices.get(index);
+        iconLabel.setText(text);
+        slider.setValue(0.0);
+        if (labelUpdatedFunction != null) {
+            labelUpdatedFunction.accept(this);
+        }
+
+    }
+
+    public void updateFormat() {
+        double incr = slider.getBlockIncrement();
+        if (incr >= 1) {
+            format = "%.0f";
+        } else {
+            int nDigits = (int) -Math.round(Math.log10(incr));
+            nDigits++;
+            format = "%." + nDigits + "f";
+        }
+    }
 
     double[] newRange(double min, double max, double value, double divider) {
         double nSeg = 2.0 / divider;
@@ -79,6 +162,15 @@ public class ZoomSlider extends GridPane {
         return newRange;
     }
 
+    public void setRange(double min, double max, double value) {
+        slider.setMin(min);
+        slider.setMax(max);
+        slider.setBlockIncrement((max - min) / 100.0);
+        updateFormat();
+        slider.setMajorTickUnit((max - min) / 2);
+        slider.setValue(value);
+    }
+
     private void downAction(ActionEvent event) {
         Button button = (Button) event.getSource();
         double min = slider.getMin();
@@ -90,6 +182,8 @@ public class ZoomSlider extends GridPane {
         slider.setMin(min);
         slider.setMax(max);
         slider.setBlockIncrement((max - min) / 100.0);
+        updateFormat();
+
         slider.setMajorTickUnit((max - min) / 2);
     }
 
@@ -104,6 +198,8 @@ public class ZoomSlider extends GridPane {
         slider.setMin(min);
         slider.setMax(max);
         slider.setBlockIncrement((max - min) / 100.0);
+        updateFormat();
+
         slider.setMajorTickUnit((max - min) / 2);
     }
 
@@ -112,16 +208,17 @@ public class ZoomSlider extends GridPane {
         this.slider = slider;
         this.amin = amin;
         this.amax = amax;
-        upButton.setFont(new Font(9));
-        // upButton.setBorder(Border.EMPTY);
-        downButton.setFont(new Font(9));
+        upButton.getStyleClass().add("toolButton");
+        downButton.getStyleClass().add("toolButton");
+
         //downButton.setBorder(Border.EMPTY);
         textField.setFont(new Font(11));
         textField.setPrefWidth(60);
         addControls();
         downButton.addEventHandler(ActionEvent.ACTION, event -> downAction(event));
         upButton.addEventHandler(ActionEvent.ACTION, event -> upAction(event));
-        Bindings.bindBidirectional(textField.textProperty(), slider.valueProperty(), (StringConverter) new DoubleStringConverter());
+        Bindings.bindBidirectional(textField.textProperty(), slider.valueProperty(), (StringConverter) new DConverter());
+        updateFormat();
     }
 
     private void addControls() {
