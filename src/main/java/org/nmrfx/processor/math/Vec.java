@@ -3540,6 +3540,17 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
+     * Convert PPM value to delta position
+     *
+     * @param ppm position in ppm
+     * @return position in points
+     */
+    public double getDoubleDelta(PPM ppm) {
+        return ppm.doubleValue() * centerFreq * dwellTime * size;
+
+    }
+
+    /**
      * Convert frequency position to point
      *
      * @param freq position as frequency

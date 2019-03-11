@@ -55,4 +55,8 @@ public abstract class Unit<T extends java.lang.Number> extends java.lang.Number 
 
     public abstract double getDoublePosition(Vec vec);
 
+    public double getDoubleDelta(Vec vec) {
+        return getDoublePosition(vec);
+    }
+
 }
