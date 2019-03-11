@@ -94,7 +94,7 @@ public class Align {
             try {
                 dataset.readVecFromDatasetFile(vi, dim, vec);
                 double delta = deltas.get(vi[1][0]);
-                CShift cShift = new CShift((int) Math.round(delta));
+                CShift cShift = new CShift((int) Math.round(delta), false);
                 cShift.eval(vec);
                 dataset.writeVecToDatasetFile(vi, dim, vec);
             } catch (IOException ex) {
@@ -206,7 +206,7 @@ public class Align {
             aiE.printStackTrace();
         }
         int delta = -iMax;
-        CShift cShift = new CShift(delta);
+        CShift cShift = new CShift(delta, false);
         cShift.eval(movingVec);
         return delta;
     }
@@ -214,7 +214,7 @@ public class Align {
     public int alignByMax(Vec vec, int refPt, int pt1, int pt2) {
         Vec.IndexValue indexValue = vec.maxIndex(pt1, pt2);
         int delta = refPt - indexValue.getIndex();
-        CShift cShift = new CShift(delta);
+        CShift cShift = new CShift(delta, false);
         cShift.eval(vec);
         return delta;
     }
