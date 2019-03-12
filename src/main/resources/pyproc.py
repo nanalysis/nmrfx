@@ -1391,6 +1391,7 @@ def COADD(coef=None, disabled=False, vector=None, process=None):
     Parameters
     ---------
     coef : []
+        List of coefficients to scale each vector by.
 '''
     if disabled:
         return None
@@ -3664,6 +3665,24 @@ def ddoc(op,opList):
    opDesc = ''
    opMap = HashMap()
    opList.add(op.__name__)
+   example = op.__name__+"("
+   nNoDefaults = len(argNames)
+   if defaults != None:
+      nNoDefaults -= len(defaults)
+   for i in range(nNoDefaults):
+       example += argNames[i]+','
+
+   if defaults != None :
+       for (argName,defaultValue) in zip(argNames[nNoDefaults:],defaults):
+           if argName == "disabled":
+               break
+           if isinstance(defaultValue,str):
+               example += argName+"="+"'" + defaultValue + "'"
+           else:
+               example += argName+"="+str(defaultValue)
+           example += ","
+   example = example.strip(',')+")"
+   opList.add(example)
    parList = ArrayList()
    opList.add(parList)
    for line in s:
