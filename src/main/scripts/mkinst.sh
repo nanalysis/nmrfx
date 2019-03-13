@@ -2,7 +2,7 @@
 
 for os in "macosx-amd64" "linux-amd64" "windows-amd64"
 do
-    jversion=192
+    jversion=202
     tail=""
     if [[ $os == "linux-amd64" ]]
     then
@@ -33,7 +33,7 @@ do
 
     mkdir jre
     cd jre
-    tar xzf ~/.install4j6/jres/$jreFileName
+    tar xzf ~/.install4j7/jres/$jreFileName
     cd ..
     cd ..
     pwd
