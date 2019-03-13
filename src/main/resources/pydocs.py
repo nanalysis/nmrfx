@@ -85,13 +85,17 @@ def genRefDocs(ops):
     docOutput = ''
     docs=getRefDocs(ops)
     len = docs.size()
-    for i in range(0,len,3):
-        doc = docs.get(i+2) 
+    for i in range(0,len,4):
+        doc = docs.get(i+3) 
         cmd = docs.get(i) 
+        example = docs.get(i+1)
         docOutput += '<p>'
         docOutput += '<b>'+cmd+'</b>'+' '+''+doc+''
         docOutput += '</p>'
-        pars = docs.get(i+1) 
+        docOutput += '<p>'
+        docOutput += example
+        docOutput += '</p>'
+        pars = docs.get(i+2) 
         docOutput += '<ul>'
         for par in pars:
              docOutput += '<li>'
