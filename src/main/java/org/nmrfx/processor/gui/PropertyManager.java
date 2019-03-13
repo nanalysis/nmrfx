@@ -431,10 +431,10 @@ public class PropertyManager {
 
     void setupItems() {
         ArrayList pyDocs = processorController.chartProcessor.getDocs();
-        for (int i = 0; i < pyDocs.size(); i += 3) {
+        for (int i = 0; i < pyDocs.size(); i += 4) {
             String op = (String) pyDocs.get(i);
-            ArrayList parList = (ArrayList) pyDocs.get(i + 1);
-            String description = (String) pyDocs.get(i + 2);
+            ArrayList parList = (ArrayList) pyDocs.get(i + 2);
+            String description = (String) pyDocs.get(i + 3);
 
             for (Object parObj : parList) {
                 HashMap parMap = (HashMap) parObj;
