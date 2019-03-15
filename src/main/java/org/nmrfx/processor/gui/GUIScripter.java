@@ -215,7 +215,12 @@ public class GUIScripter {
             PolyChart chart = getChart();
             chart.refresh();
         });
-
+    }
+    
+    public void drawAll() {
+        ConsoleUtil.runOnFxThread(() -> {
+            getActiveController().draw();
+        });
     }
 
     public void colorMap(String datasetName, int index, String colorName) {

@@ -209,6 +209,9 @@ class NMRFxWindowScripting:
     def draw(self):
         self.cmd.draw()
 
+    def drawAll(self):
+        self.cmd.drawAll()
+
 def parseArgs(argv):
     nw = NMRFxWindowScripting()
     parser = argparse.ArgumentParser(description="Evaluate NMRFx Command Line Args")
