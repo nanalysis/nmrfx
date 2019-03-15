@@ -216,7 +216,7 @@ public class GUIScripter {
             chart.refresh();
         });
     }
-    
+
     public void drawAll() {
         ConsoleUtil.runOnFxThread(() -> {
             getActiveController().draw();
@@ -445,6 +445,7 @@ public class GUIScripter {
 
             PolyChart chartActive = controller.charts.get(0);
             controller.setActiveChart(chartActive);
+            controller.setChartDisable(false);
         });
     }
 
@@ -458,6 +459,8 @@ public class GUIScripter {
             controller.arrange(orient);
             PolyChart chartActive = controller.charts.get(0);
             controller.setActiveChart(chartActive);
+            controller.setChartDisable(false);
+
         });
     }
 
@@ -479,6 +482,7 @@ public class GUIScripter {
                 controller.setActiveChart(chartActive);
                 controller.addDataset(dataset, false, false);
             }
+            controller.setChartDisable(false);
         });
     }
 

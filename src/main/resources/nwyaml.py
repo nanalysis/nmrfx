@@ -99,5 +99,6 @@ def loadYamlWin(yamlFile, createNewStage=True):
                 if 'config' in peakList:
                     cfg = peakList['config']
                     nw.pconfig(peakLists=[name],pars=cfg)
+        nw.drawAll()
 
 nw = gscript.NMRFxWindowScripting()
