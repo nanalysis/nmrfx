@@ -122,10 +122,12 @@ public class ZoomSlider extends GridPane {
 
     public void updateFormat() {
         double incr = slider.getBlockIncrement();
-        if (incr >= 1) {
+        if (incr >= 5) {
             format = "%.0f";
+        } else if (incr >= 1) {
+            format = "%.1f";
         } else {
-            int nDigits = (int) -Math.round(Math.log10(incr));
+            int nDigits = (int) -Math.floor(Math.log10(incr));
             nDigits++;
             format = "%." + nDigits + "f";
         }
