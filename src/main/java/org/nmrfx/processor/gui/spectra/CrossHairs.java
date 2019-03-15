@@ -91,7 +91,7 @@ public class CrossHairs {
     public void setCrossHairState(boolean value) {
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {
-                crossHairStates[iCross][jOrient] = controller.getCrossHairState(iCross, jOrient) && value;
+                crossHairStates[iCross][jOrient] = getController().getCrossHairState(iCross, jOrient) && value;
             }
         }
         if (!value) {
@@ -100,7 +100,7 @@ public class CrossHairs {
     }
 
     public void setCrossHairState(int iCross, int jOrient, boolean value) {
-        crossHairStates[iCross][jOrient] = controller.getCrossHairState(iCross, jOrient) && value;
+        crossHairStates[iCross][jOrient] = getController().getCrossHairState(iCross, jOrient) && value;
         if (!value) {
             hideCrossHair(iCross, jOrient);
         }
