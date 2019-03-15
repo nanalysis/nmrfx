@@ -817,14 +817,22 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void handlePh0Reset(double ph0) {
+        handlePh0Reset(ph0, true);
+    }
+
+    public void handlePh0Reset(double ph0, boolean updateOp) {
         ph0 = Math.round(ph0 * 10) / 10.0;
-        double start = 45.0 * Math.round(ph0 / 45.0) - 90.0;
-        double end = start + 180.0;
+        double halfRange = 22.5;
+        double start = halfRange * Math.round(ph0 / halfRange) - 2.0 * halfRange;
+        double end = start + 4 * halfRange;
         ph0Slider.setMin(start);
         ph0Slider.setMax(end);
+        ph0Slider.setBlockIncrement(0.1);
         ph0Slider.setValue(ph0);
         ph0Label.setText(String.format("%.1f", ph0));
-        setPhaseOp();
+        if (updateOp) {
+            setPhaseOp();
+        }
     }
 
     @FXML
@@ -842,6 +850,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     void handlePh1Reset(double ph1) {
+        handlePh1Reset(ph1, true);
+    }
+
+    void handlePh1Reset(double ph1, boolean updateOp) {
         ph1 = Math.round(ph1 * 10) / 10.0;
         double start = 90.0 * Math.round(ph1 / 90.0) - 180.0;
         double end = start + 360.0;
@@ -849,7 +861,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         ph1Slider.setMax(end);
         ph1Slider.setValue(ph1);
         ph1Label.setText(String.format("%.1f", ph1));
-        setPhaseOp();
+        if (updateOp) {
+            setPhaseOp();
+        }
     }
 
     @FXML
@@ -986,8 +1000,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     protected void setPH0Slider(double value) {
         value = Math.round(value * 10) / 10.0;
-        double start = 45.0 * Math.round(value / 45.0) - 90.0;
-        double end = start + 180.0;
+        double halfRange = 22.5;
+        double start = halfRange * Math.round(value / halfRange) - 2.0 * halfRange;
+        double end = start + 4 * halfRange;
         ph0Slider.setMin(start);
         ph0Slider.setMax(end);
         ph0Slider.setValue(value);
@@ -1703,12 +1718,12 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         int nCurrent = charts.size();
         if (nCurrent > nCharts) {
             for (int i = nCurrent - 1; i >= nCharts; i--) {
-                charts.remove(i);
+                charts.get(i).close();
             }
         } else if (nCharts > nCurrent) {
             int nNew = nCharts - nCurrent;
             for (int i = 0; i < nNew; i++) {
-                addChart(1);
+                addChart();
             }
         }
     }
@@ -1738,6 +1753,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
     }
 
+    public void addChart() {
+        PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
+        chart.setDisable(true);
+       // chart.setController(this);
+        chartGroup.addChart(chart);
+        activeChart = chart;
+    }
+
     public Integer addChart(Integer pos) {
         FractionCanvas.ORIENTATION orient;
         if (pos < 2) {
@@ -1759,6 +1782,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return 0;
     }
 
+    public void setChartDisable(boolean state) {
+        for (PolyChart chart : charts) {
+            chart.setDisable(state);
+        }
+
+    }
+
     public int arrangeGetRows() {
         return chartGroup.getCurrentRows();
     }
@@ -1768,6 +1798,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void arrange(FractionCanvas.ORIENTATION orient) {
+        setChartDisable(true);
         if (charts.size() == 1) {
             PolyChart chart = charts.get(0);
             double xLower = chart.xAxis.getLowerBound();
@@ -1797,27 +1828,32 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                     iChart.getCrossHairs().setCrossHairState(true);
                     iChart.refresh();
                 }
+                setChartDisable(false);
                 chartGroup.layoutChildren();
                 charts.stream().forEach(c -> c.refresh());
                 return;
             }
         }
         chartGroup.setOrientation(orient, true);
+        setChartDisable(false);
         chartGroup.layoutChildren();
     }
 
     public void overlay() {
+        setChartDisable(true);
         List<DatasetAttributes> current = new ArrayList<>();
         for (PolyChart chart : charts) {
             current.addAll(chart.getDatasetAttributes());
         }
-
         setNCharts(1);
         PolyChart chart = charts.get(0);
         List<DatasetAttributes> datasetAttrs = chart.getDatasetAttributes();
         datasetAttrs.clear();
         datasetAttrs.addAll(current);
         arrange(1);
+
+        setChartDisable(false);
+        draw();
     }
 
     public void setBorderState(boolean state) {
@@ -1916,9 +1952,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 //        });
     }
 
+    public void draw() {
+        chartGroup.layoutChildren();
+    }
+
     public void arrange(int nRows) {
         chartGroup.setRows(nRows);
         int nCols = chartGroup.getColumns();
+        chartGroup.layoutChildren();
         chartGroup.layoutChildren();
     }
 
