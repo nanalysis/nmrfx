@@ -76,6 +76,7 @@ import org.nmrfx.utils.properties.TextWaitingOperationItem;
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
     ProcessorController processorController = null;
+    static ZoomSlider ph0Slider = null;
 
     public NvFxPropertyEditorFactory() {
         super();
@@ -86,8 +87,13 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
         this.processorController = processorController;
     }
 
+    public static void updatePH0Slider(double value) {
+        if (ph0Slider != null) {
+            ph0Slider.getSlider().setValue(value);
+        }
+    }
+
     public void sliderIconUpdated(ZoomSlider zoomSlider, DoubleUnitsRangeOperationItem item) {
-        System.out.println("update " + zoomSlider.getIconLabel());
         String type = zoomSlider.getIconLabel();
         switch (type) {
             case "h":
@@ -134,7 +140,7 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setBlockIncrement((dItem.getMax() - dItem.getMin()) / 100.0);
             slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
             ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.getAmin(), dItem.getAmax());
-            List<String> iconChoices = Arrays.asList("","p", "h", "P", "f");
+            List<String> iconChoices = Arrays.asList("", "p", "h", "P", "f");
             zoomSlider.setIcon(iconChoices, e -> sliderIconUpdated(zoomSlider, dItem));
             zoomSlider.updateFormat();
             dItem.setZoomSlider(zoomSlider);
@@ -151,6 +157,9 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
             ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.getAmin(), dItem.getAmax());
             zoomSlider.updateFormat();
+            if (dItem.getCategory().equals("PHASE") && dItem.getName().equals("ph0")) {
+                ph0Slider = zoomSlider;
+            }
             return new PropertySliderEditor(dItem, zoomSlider);
         } else if (type == IntOperationItem.class) {
             IntOperationItem iItem = (IntOperationItem) item;

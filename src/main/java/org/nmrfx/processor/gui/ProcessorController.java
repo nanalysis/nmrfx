@@ -23,7 +23,6 @@ import org.nmrfx.processor.processing.Processor;
 import org.nmrfx.processor.processing.ProgressUpdater;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -79,11 +78,6 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.python.util.PythonInterpreter;
 import org.fxmisc.richtext.CodeArea;
-import org.fxmisc.richtext.InlineCssTextArea;
-import org.python.util.InteractiveInterpreter;
-import org.renjin.sexp.Environment;
-import org.renjin.studiofx.StudioSession;
-import org.renjin.studiofx.console.ConsoleFx;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
@@ -142,6 +136,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private boolean doProcessWhenDone = false;
     private boolean processable = false;
     private ProcessDataset processDataset = new ProcessDataset();
+    ListChangeListener<String> opListListener = null;
 
     final ReadOnlyObjectProperty<Worker.State> stateProperty = processDataset.worker.stateProperty();
     Throwable processingThrowable;
@@ -347,14 +342,24 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                  * else select the next element. If this is the first element,
                  * then unselect the scriptView.
                  */
-                if (index + 1 == operationList.size()) {
-                    scriptView.getSelectionModel().selectPrevious();
-                } else {
-                    scriptView.getSelectionModel().selectNext();
+                propertyManager.removeScriptListener();
+                operationList.removeListener(opListListener);
+
+                try {
+                    operationList.remove(index);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                } finally {
+                    propertyManager.addScriptListener();
+                    operationList.addListener(opListListener);
+                    OperationListCell.updateCells();
+                    chartProcessor.updateOpList();
                 }
-
-                operationList.remove(index);
-
+                if (index == operationList.size()) {
+                    scriptView.getSelectionModel().select(index - 1);
+                } else {
+                    scriptView.getSelectionModel().select(index);
+                }
                 chartProcessor.execScript(getScript(), true, false);
                 chart.layoutPlotChildren();
             }
@@ -545,6 +550,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             byte[] encoded = Files.readAllBytes(Paths.get(file.toString()));
             String scriptString = new String(encoded);
             parseScript(scriptString);
+            chartProcessor.execScriptList(true);
+            PolyChart.getActiveChart().refresh();
         } catch (IOException ioe) {
             System.out.println("Can't read script");
         }
@@ -621,7 +628,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 }
             }
         }
-   chartProcessor.setScripts(headerList, mapOpLists);
+        chartProcessor.setScripts(headerList, mapOpLists);
         //textArea.setText(getFullScript());
         textArea.replaceText(getFullScript());
         chartProcessor.setScriptValid(true);
@@ -858,13 +865,14 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             }
         });
 
-        operationList.addListener(new ListChangeListener<String>() {
+        opListListener = new ListChangeListener<String>() {
             @Override
             public void onChanged(ListChangeListener.Change<? extends String> change) {
                 OperationListCell.updateCells();
                 chartProcessor.updateOpList();
             }
-        });
+        };
+        operationList.addListener(opListListener);
 
         scriptView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
             @Override

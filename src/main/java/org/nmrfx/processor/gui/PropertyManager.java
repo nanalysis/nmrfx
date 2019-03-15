@@ -78,6 +78,7 @@ public class PropertyManager {
     private TextField opTextField;
     PopOver popOver;
     ObservableList<PropertySheet.Item> propItems = FXCollections.observableArrayList();
+    ChangeListener<Number> scriptOpListener = null;
 
     PropertyManager(ProcessorController processorController, final ListView scriptView, PropertySheet propertySheet, ObservableList<String> listItems, TextField opTextField, PopOver popOver) {
         this.processorController = processorController;
@@ -89,6 +90,10 @@ public class PropertyManager {
         doubleListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
+                PropertySheet.Item item = (PropertySheet.Item) observableValue;
+                if (item.getCategory().equals("PHASE")) {
+                    updatePhases(item, number, number2);
+                }
                 updateOp((PropertySheet.Item) observableValue);
             }
         };
@@ -123,7 +128,7 @@ public class PropertyManager {
             }
         };
 
-        ChangeListener<Number> scriptOpListener = new ChangeListener<Number>() {
+        scriptOpListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 int scriptIndex = (Integer) number2;
@@ -151,6 +156,14 @@ public class PropertyManager {
         propertySheet.setModeSwitcherVisible(false);
         propertySheet.setSearchBoxVisible(false);
 
+    }
+
+    public void removeScriptListener() {
+        scriptView.getSelectionModel().selectedIndexProperty().removeListener(scriptOpListener);
+    }
+
+    public void addScriptListener() {
+        scriptView.getSelectionModel().selectedIndexProperty().addListener(scriptOpListener);
     }
 
     public int getCurrentIndex() {
@@ -225,6 +238,41 @@ public class PropertyManager {
             popOver.hide();
         }
         return opIndex;
+    }
+
+    void updatePhases(PropertySheet.Item item, Number oldValue, Number newValue) {
+        PolyChart chart = PolyChart.getActiveChart();
+        if (chart != null) {
+            if (item.getName().equals("ph1")) {
+                adjustPhasePivot(propertySheet.getItems(), oldValue, newValue);
+            } else if (item.getName().equals("ph0")) {
+                if (chart.getController().isPhaseSliderVisible()) {
+                    chart.getController().handlePh0Reset(newValue.doubleValue(), false);
+
+                }
+            }
+        }
+    }
+
+    void adjustPhasePivot(List<PropertySheet.Item> items, Number oldValue, Number newValue) {
+        DoubleRangeOperationItem ph0Item = (DoubleRangeOperationItem) items.stream().
+                filter(e -> e.getName().equals("ph0")).findFirst().get();
+        double deltaPH1 = newValue.doubleValue() - oldValue.doubleValue();
+        double oldPH0 = ph0Item.doubleValue();
+        PolyChart chart = PolyChart.getActiveChart();
+        if (chart != null) {
+            double pivotFraction = chart.getPivotFraction();
+            if (pivotFraction != 0.0) {
+                Double newPH0 = oldPH0 - deltaPH1 * pivotFraction;
+                ph0Item.setValue(newPH0);
+                NvFxPropertyEditorFactory.updatePH0Slider(newPH0);
+                if (chart.getController().isPhaseSliderVisible()) {
+                    chart.getController().handlePh0Reset(newPH0, false);
+                    chart.getController().handlePh1Reset(newValue.doubleValue(), false);
+                }
+            }
+        }
+
     }
 
     int setOp(String op, int index) {
