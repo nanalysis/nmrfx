@@ -183,7 +183,6 @@ public class FractionCanvas extends Pane {
         canvas.setWidth(width);
         canvas.setHeight(height);
         GraphicsContext gC = canvas.getGraphicsContext2D();
-        gC.save();
         gC.clearRect(0, 0, width, height);
 
         int nChildren = charts.size();
