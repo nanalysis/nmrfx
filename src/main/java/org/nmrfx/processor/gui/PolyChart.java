@@ -174,6 +174,7 @@ public class PolyChart implements PeakListener {
     double minLeftBorder = 0.0;
     double minBottomBorder = 0.0;
     Font peakFont = new Font(12);
+    boolean disabled = false;
 
     private BooleanProperty regions;
 
@@ -1773,8 +1774,15 @@ public class PolyChart implements PeakListener {
         borders[2] = Math.max(borders[2], minBottomBorder);
         return borders;
     }
+    
+    public void setDisable(boolean state) {
+        disabled = state;
+    }
 
     protected void layoutPlotChildren() {
+        if (disabled) {
+            return;
+        }
 
         if (!useImmediateMode) {
             long lastPlotTime = drawSpectrum.getLastPlotTime();
@@ -1817,7 +1825,10 @@ public class PolyChart implements PeakListener {
             peakCanvas.setHeight(canvas.getHeight());
             GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
             peakGC.clearRect(xPos, yPos, width, height);
-            gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+            gC.beginPath();
+            double clipExtra = 1;
+            gC.rect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
+                    xAxis.getWidth() - 2 * clipExtra, yAxis.getHeight() - 2 * clipExtra);
             gC.clip();
             gC.beginPath();
 //
