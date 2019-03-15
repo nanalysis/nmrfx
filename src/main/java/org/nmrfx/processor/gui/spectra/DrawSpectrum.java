@@ -135,7 +135,7 @@ public class DrawSpectrum {
         }
         jobCount++;
         ((Service) makeContours.worker).cancel();
-
+        ((Service) drawContours.worker).cancel();
         this.axModes = new AXMODE[axModes.length];
         System.arraycopy(axModes, 0, this.axModes, 0, axModes.length);
         dataAttrList.clear();
@@ -143,7 +143,6 @@ public class DrawSpectrum {
         contourQueue.clear();
         lastPlotTime = 0;
         startTime = System.currentTimeMillis();
-
         ((Service) makeContours.worker).restart();
         ((Service) drawContours.worker).restart();
     }
@@ -233,6 +232,9 @@ public class DrawSpectrum {
                                     axModes = drawSpectrum.getAxModes();
                                     axes = drawSpectrum.getAxes();
                                     drawNow(this, fileData);
+                                    if (done) {
+                                        break;
+                                    }
                                 }
                             } catch (IOException e) {
                                 System.out.println("error " + e.getMessage());
@@ -263,6 +265,7 @@ public class DrawSpectrum {
             float[][] z = null;
             do {
                 if (task.isCancelled()) {
+                    done = true;
                     break;
                 }
                 long currentTime = System.currentTimeMillis();
@@ -294,7 +297,7 @@ public class DrawSpectrum {
                                         drawSpectrum.contourQueue.put(drawObject);
                                     } catch (InterruptedException ex) {
                                         done = true;
-                                        break;
+                                        return;
                                     }
                                     // contour.drawSquares(g2, xOff, yOff);
                                 } else {
@@ -395,7 +398,7 @@ public class DrawSpectrum {
                 }
             } finally {
                 if (interrupted) {
-                    Thread.currentThread().interrupt();
+                   Thread.currentThread().interrupt();
                 }
 
             }
