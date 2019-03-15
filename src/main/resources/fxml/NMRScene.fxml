@@ -48,7 +48,7 @@
                         <VBox fx:id="phaserBox" GridPane.columnIndex="0" fillWidth="false" GridPane.hgrow="NEVER" GridPane.vgrow="ALWAYS">
                             <children>
                                 <Label text="PH0"/>
-                                <Slider fx:id="ph0Slider" blockIncrement="30.0" majorTickUnit="45.0" max="180.0" min="-180.0" minorTickCount="3" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" VBox.vgrow="ALWAYS" onValueChange="#handlePh0" onMouseReleased="#handlePh0Reset"/>
+                                <Slider fx:id="ph0Slider" blockIncrement="1.0" majorTickUnit="45.0" max="45.0" min="-45.0" minorTickCount="3" orientation="VERTICAL" showTickLabels="true" showTickMarks="true" VBox.vgrow="ALWAYS" onValueChange="#handlePh0" onMouseReleased="#handlePh0Reset"/>
                                 <Label fx:id="ph0Label" />
                                 <Separator/>
                                 <Label text="PH1"/>
