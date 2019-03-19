@@ -616,6 +616,29 @@ public class Atom implements IAtom {
         return ppmV;
     }
 
+    public Double getSDevRefPPM() {
+        PPMv ppmV = getRefPPM(0);
+        if ((ppmV != null) && ppmV.isValid()) {
+            return ppmV.getError();
+        } else {
+            return null;
+        }
+    }
+
+    public Double getDeltaPPM() {
+        Double value = getPPM();
+        Double ref = getRefPPM();
+        Double sdev = getSDevRefPPM();
+        Double delta;
+        if ((value != null) && (ref != null) && (sdev != null)) {
+            delta = (value - ref) / sdev;
+            delta = Math.round(delta * 100.0) / 100.0;
+        } else {
+            delta = null;
+        }
+        return delta;
+    }
+
     public void setPPM(double value) {
         spatialSet.setPPM(0, value, false);
     }
