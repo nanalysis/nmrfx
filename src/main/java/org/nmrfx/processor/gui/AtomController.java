@@ -84,6 +84,7 @@ import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
 import org.nmrfx.structure.chemistry.io.PDBFile;
 import org.nmrfx.structure.chemistry.io.PPMFiles;
+import org.nmrfx.structure.chemistry.predict.BMRBStats;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.python.util.PythonInterpreter;
 
@@ -227,6 +228,13 @@ public class AtomController implements Initializable, FreezeListener {
         editMenu.getItems().addAll(clearPPMItem, clearRefItem, getPPMItem);
 
         menuBar.getItems().add(editMenu);
+
+        MenuButton refMenu = new MenuButton("Reference");
+        menuBar.getItems().add(refMenu);
+        MenuItem bmrbRefItem = new MenuItem("BMRB Mean");
+        bmrbRefItem.setOnAction(e -> loadBMRBStats());
+        refMenu.getItems().addAll(bmrbRefItem);
+
         MenuButton predictMenu = new MenuButton("Predict");
         menuBar.getItems().add(predictMenu);
         MenuItem rnaAttributesItem = new MenuItem("RNA - Attributes");
@@ -331,12 +339,22 @@ public class AtomController implements Initializable, FreezeListener {
 
         ppmCol.setEditable(true);
 
-        TableColumn<Atom, Double> refCol = new TableColumn<>("Ref PPM");
+        TableColumn<Atom, Double> refCol = new TableColumn<>("Ref");
         refCol.setCellValueFactory(new PropertyValueFactory("RefPPM"));
-
+        refCol.setCellFactory(tc -> new TextFieldTableCellDouble(dsConverter));
         refCol.setEditable(false);
+        TableColumn<Atom, Double> sdevCol = new TableColumn<>("SDev");
+        sdevCol.setCellValueFactory(new PropertyValueFactory("SDevRefPPM"));
+        sdevCol.setEditable(false);
+        sdevCol.setCellFactory(tc -> new TextFieldTableCellDouble(dsConverter));
+        TableColumn<Atom, Double> deltaCol = new TableColumn<>("Delta");
+        deltaCol.setCellValueFactory(new PropertyValueFactory("DeltaPPM"));
+        deltaCol.setCellFactory(tc -> new TextFieldTableCellDouble(dsConverter));
+        deltaCol.setEditable(false);
 
-        atomTableView.getColumns().setAll(indexColumn, entityNameColumn, residueNameColumn, residueNumberColumn, atomNameCol, ppmCol, refCol);
+        atomTableView.getColumns().setAll(indexColumn, entityNameColumn,
+                residueNameColumn, residueNumberColumn, atomNameCol, ppmCol,
+                refCol, sdevCol, deltaCol);
     }
 
     public void setFilterString(String filterName) {
@@ -505,6 +523,26 @@ public class AtomController implements Initializable, FreezeListener {
         }
         atomTableView.refresh();
 
+    }
+
+    void loadBMRBStats() {
+        clearRefPPMs();
+        BMRBStats.loadAllIfEmpty();
+        Molecule mol = Molecule.getActive();
+        if (mol != null) {
+            List<Atom> molAtoms = mol.getAtoms();
+            for (Atom atom : molAtoms) {
+                String aName = atom.getName();
+                String resName = atom.getEntity().getName();
+                Optional<PPMv> ppmVOpt = BMRBStats.getValue(resName, aName);
+                if (ppmVOpt.isPresent()) {
+                    PPMv ppmV = ppmVOpt.get();
+                    atom.setRefPPM(ppmV.getValue());
+                    atom.setRefError(ppmV.getError());
+                }
+            }
+        }
+        atomTableView.refresh();
     }
 
     void clearRefPPMs() {
