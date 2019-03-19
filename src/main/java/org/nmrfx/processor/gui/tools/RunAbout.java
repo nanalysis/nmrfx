@@ -644,7 +644,8 @@ def getType(types, row, dDir):
                     if (typeName.isPresent()) {
                         Optional<String> dName = getDatasetName(datasetMap, typeName.get());
                         if (dName.isPresent()) {
-                            if (Dataset.getDataset(dName.get()) != null) {
+                            Dataset dataset = Dataset.getDataset(dName.get());
+                            if (dataset != null) {
                                 List<String> datasets = Collections.singletonList(dName.get());
                                 PolyChart chart = charts.get(iChart);
                                 chart.setActiveChart();
@@ -658,12 +659,19 @@ def getType(types, row, dDir):
                                     System.out.println(id + " " + widths[iChart][id]);
                                 }
                                 dataAttr.setDims(iDims);
+                                PeakList peakList = PeakList.getPeakListForDataset(dName.get());
+                                if (peakList != null) {
+                                    List<String> peakLists = Collections.singletonList(peakList.getName());
+                                    chart.updatePeakLists(peakLists);
+                                }
                             }
                         }
                     }
                     iChart++;
                 }
             }
+            controller.setChartDisable(false);
+
             if (currentPeak != null) {
                 drawWins(currentPeak);
             } else {
