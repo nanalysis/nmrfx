@@ -17,6 +17,9 @@
  */
 package org.nmrfx.structure.utilities;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,7 +30,7 @@ import org.nmrfx.structure.chemistry.Atom;
  * @author Bruce Johnson
  */
 public class Util {
-    
+
     static boolean strictlyNEF;
 
     static public void setStrictlyNEF(boolean state) {
@@ -215,4 +218,18 @@ public class Util {
         }
     }
 
+    public static InputStream getResourceStream(String fileName, boolean resourceMode) {
+        InputStream iStream;
+        try {
+            if (resourceMode) {
+                System.out.println("open " + fileName);
+                iStream = ClassLoader.getSystemResourceAsStream(fileName);
+            } else {
+                iStream = new FileInputStream(fileName);
+            }
+        } catch (IOException ioE) {
+            iStream = null;
+        }
+        return iStream;
+    }
 }
