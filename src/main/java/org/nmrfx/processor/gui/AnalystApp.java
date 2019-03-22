@@ -387,10 +387,11 @@ public class AnalystApp extends MainApp {
 
         MenuItem atomBrowserMenuItem = new MenuItem("Show Atom Browser");
         atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
-        assignCascade.getItems().addAll(peakAssignerItem, assignOnPick, atomBrowserMenuItem);
 
         MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
         runAboutMenuItem.setOnAction(e -> showRunAbout());
+
+        assignCascade.getItems().addAll(peakAssignerItem, assignOnPick, atomBrowserMenuItem, runAboutMenuItem);
 
         peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
                 linkPeakDimsMenuItem, peakSliderMenuItem,
