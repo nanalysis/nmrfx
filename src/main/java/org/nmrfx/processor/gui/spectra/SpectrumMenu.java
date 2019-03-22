@@ -132,6 +132,10 @@ public class SpectrumMenu extends ChartMenu {
         shiftRefMenuItem.setOnAction((ActionEvent e) -> {
             SpectrumAdjuster.adjustDatasetRef();
         });
+        MenuItem shiftPeaksMenuItem = new MenuItem("Shift Peaks");
+        shiftPeaksMenuItem.setOnAction((ActionEvent e) -> {
+            SpectrumAdjuster.shiftPeaks();
+        });
         MenuItem setRefMenuItem = new MenuItem("Set Reference...");
         setRefMenuItem.setOnAction((ActionEvent e) -> {
             SpectrumAdjuster.showRefInput();
@@ -145,7 +149,8 @@ public class SpectrumMenu extends ChartMenu {
             SpectrumAdjuster.writePars();
         });
 
-        refMenu.getItems().addAll(setRefMenuItem, shiftRefMenuItem, diagRefMenuItem,
+        refMenu.getItems().addAll(setRefMenuItem, shiftRefMenuItem,
+                diagRefMenuItem, shiftPeaksMenuItem,
                 undoRefMenuItem, writeRefMenuItem);
 
         chartMenu.getItems().add(attrItem);

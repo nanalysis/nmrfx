@@ -169,10 +169,16 @@ public class SpectrumAdjuster {
     }
 
     public static void adjustDatasetRef() {
-        adjustDatasetRef(Optional.empty(), Optional.empty());
+        adjustDatasetRef(Optional.empty(), Optional.empty(), true, false);
     }
 
-    public static void adjustDatasetRef(Optional<Double> delXOpt, Optional<Double> delYOpt) {
+    public static void shiftPeaks() {
+        adjustDatasetRef(Optional.empty(), Optional.empty(), false, true);
+
+    }
+
+    public static void adjustDatasetRef(Optional<Double> delXOpt,
+            Optional<Double> delYOpt, boolean shiftDataset, boolean alwaysShiftPeaks) {
         PolyChart chart = PolyChart.getActiveChart();
         CrossHairs crossHairs = chart.getCrossHairs();
         int nDim = 1;
@@ -196,17 +202,19 @@ public class SpectrumAdjuster {
             datasetUndo.clear();
             peakUndo.clear();
             undoChartName = chart.getName();
-            for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
-                Dataset dataset = dataAttr.getDataset();
-                for (int i = 0; i < nDim; i++) {
-                    int dataDim = dataAttr.getDim(i);
-                    double ref = dataset.getRefValue(dataDim);
-                    datasetUndo.put(dataset.getName() + ":" + dataDim, ref);
-                    double newRef = ref - deltas[i];
-                    dataset.setRefValue(dataAttr.getDim(i), newRef);
+            if (shiftDataset) {
+                for (DatasetAttributes dataAttr : chart.getDatasetAttributes()) {
+                    Dataset dataset = dataAttr.getDataset();
+                    for (int i = 0; i < nDim; i++) {
+                        int dataDim = dataAttr.getDim(i);
+                        double ref = dataset.getRefValue(dataDim);
+                        datasetUndo.put(dataset.getName() + ":" + dataDim, ref);
+                        double newRef = ref - deltas[i];
+                        dataset.setRefValue(dataAttr.getDim(i), newRef);
+                    }
                 }
             }
-            if (shiftPeaks(chart)) {
+            if (alwaysShiftPeaks || shiftPeaks(chart)) {
                 for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
                     PeakList peakList = peakAttr.getPeakList();
                     int[] peakDim = peakAttr.getPeakDim();
@@ -216,7 +224,7 @@ public class SpectrumAdjuster {
                     }
                 }
             }
-            if (saveParFiles()) {
+            if (shiftDataset && saveParFiles()) {
                 writePars(chart);
             }
             chart.refresh();
@@ -289,6 +297,8 @@ public class SpectrumAdjuster {
                 peakList.shiftPeak(iDim, -entry.getValue());
             }
             chartOpt.get().refresh();
+            datasetUndo.clear();
+            peakUndo.clear();
         }
     }
 
