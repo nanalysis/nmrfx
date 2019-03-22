@@ -10,11 +10,11 @@ import java.util.List;
 public class SpinSystems {
 
     List<SpinSystem> spinSystems = new ArrayList<>();
-    
+
     public int getSize() {
         return spinSystems.size();
     }
-    
+
     public SpinSystem get(int i) {
         return spinSystems.get(i);
     }
