@@ -617,6 +617,17 @@ def getType(types, row, dDir):
         return widths;
     }
 
+    void setupPeakLists() {
+        Map<String, String> datasetMap = (Map<String, String>) yamlData.get("datasets");
+        List<String> peakListTypes = (List<String>) yamlData.get("peakLists");
+        List<Map<String, Object>> typeList = (List<Map<String, Object>>) yamlData.get("types");
+        for (Map<String, Object> typeInfo : typeList) {
+            String datasetName = datasetMap.get((String) typeInfo.get("name"));
+            PeakList peakList = PeakList.getPeakListForDataset(datasetName);
+            List<String> patterns = (List<String>) typeInfo.get("patterns");
+        }
+    }
+
     void genWin(String arrangeName) {
         if (yamlData == null) {
 
