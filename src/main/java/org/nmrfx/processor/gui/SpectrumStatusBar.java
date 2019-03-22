@@ -89,6 +89,7 @@ public class SpectrumStatusBar {
     TextField[] planePPMField = new TextField[maxSpinners];
     Spinner[] planeSpinner = new Spinner[maxSpinners];
     MenuButton[] dimMenus = new MenuButton[maxSpinners + 2];
+    MenuButton[] rowMenus = new MenuButton[maxSpinners];
     ChangeListener<Integer>[] planeListeners = new ChangeListener[maxSpinners];
     ToolBar btoolBar;
     StackPane[][] crossTextIcons = new StackPane[2][2];
@@ -105,6 +106,7 @@ public class SpectrumStatusBar {
     HashMap<String, Cursor> cursorNameMap = new HashMap<>();
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
+    boolean arrayMode = false;
 
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
@@ -202,6 +204,22 @@ public class SpectrumStatusBar {
                 mButton.getItems().add(menuItem);
                 menuItem.addEventHandler(ActionEvent.ACTION, event -> dimMenuAction(event, iAxis));
             }
+        }
+        for (int i = 0; i < rowMenus.length; i++) {
+            final int iAxis = i + 1;
+            String rowName = rowNames[iAxis];
+
+            MenuButton mButton = new MenuButton(rowName);
+            rowMenus[i] = mButton;
+            MenuItem menuItem = new MenuItem("Full");
+            mButton.getItems().add(menuItem);
+            menuItem.addEventHandler(ActionEvent.ACTION, event -> rowMenuAction(event, iAxis));
+            menuItem = new MenuItem("First");
+            mButton.getItems().add(menuItem);
+            menuItem.addEventHandler(ActionEvent.ACTION, event -> rowMenuAction(event, iAxis));
+            menuItem = new MenuItem("Last");
+            mButton.getItems().add(menuItem);
+            menuItem.addEventHandler(ActionEvent.ACTION, event -> rowMenuAction(event, iAxis));
 
         }
 //        rangeSlider.lowValueProperty().addListener(refDimListener);
@@ -376,6 +394,14 @@ public class SpectrumStatusBar {
 
     }
 
+    public void updateRowSpinner(int row, int axNum) {
+        SpinnerValueFactory<Integer> planeFactory = (SpinnerValueFactory<Integer>) planeSpinner[axNum - 1].getValueFactory();
+        planeFactory.valueProperty().removeListener(planeListeners[axNum - 1]);
+        planeFactory.setValue(row);
+        planeFactory.valueProperty().addListener(planeListeners[axNum - 1]);
+
+    }
+
     public void updatePlaneSpinner(int plane, int axNum) {
         SpinnerValueFactory<Integer> planeFactory = (SpinnerValueFactory<Integer>) planeSpinner[axNum - 2].getValueFactory();
         planeFactory.valueProperty().removeListener(planeListeners[axNum - 2]);
@@ -403,18 +429,23 @@ public class SpectrumStatusBar {
     }
 
     void updatePlane(int iDim, int plane) {
-        int pt1 = (int) controller.getActiveChart().axes[iDim].getLowerBound();
-        int pt2 = (int) controller.getActiveChart().axes[iDim].getUpperBound();
-        int center = (pt1 + pt2) / 2;
-        int delta = center - pt1;
-        if (pt1 != (plane - delta)) {
-            pt1 = plane - delta;
-            pt2 = plane + delta;
-            ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
-            controller.getActiveChart().setAxis(iDim, pt1, pt2);
+        if (arrayMode) {
+            int newValue = controller.getActiveChart().setDrawlist(plane);
             controller.getActiveChart().refresh();
-            ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
-            controller.undoManager.add("plane", undo, redo);
+        } else {
+            int pt1 = (int) controller.getActiveChart().axes[iDim].getLowerBound();
+            int pt2 = (int) controller.getActiveChart().axes[iDim].getUpperBound();
+            int center = (pt1 + pt2) / 2;
+            int delta = center - pt1;
+            if (pt1 != (plane - delta)) {
+                pt1 = plane - delta;
+                pt2 = plane + delta;
+                ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
+                controller.getActiveChart().setAxis(iDim, pt1, pt2);
+                controller.getActiveChart().refresh();
+                ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
+                controller.undoManager.add("plane", undo, redo);
+            }
         }
     }
 
@@ -469,7 +500,39 @@ public class SpectrumStatusBar {
         planeFactory.setMax(max);
     }
 
+    public void set1DArray(int nDim, int nRows) {
+        arrayMode = true;
+        setPlaneRanges(2, nRows);
+        List<Node> nodes = new ArrayList<>();
+        nodes.add(cursorMenuButton);
+
+        HBox.setHgrow(filler1, Priority.ALWAYS);
+        HBox.setHgrow(filler2, Priority.ALWAYS);
+        nodes.add(filler1);
+
+        for (int i = 0; i < 2; i++) {
+            for (int j = 1; j >= 0; j--) {
+                nodes.add(crossText[i][j]);
+            }
+        }
+        nodes.add(filler2);
+        for (int i = 1; i < nDim; i++) {
+            nodes.add(rowMenus[i - 1]);
+            nodes.add(planeSpinner[i - 1]);
+            Pane nodeFiller = new Pane();
+            HBox.setHgrow(nodeFiller, Priority.ALWAYS);
+            nodes.add(nodeFiller);
+        }
+        //  nodes.add(phaserStatus);
+        btoolBar.getItems().clear();
+
+        btoolBar.getItems().addAll(nodes);
+        updateRowSpinner(0, 1);
+
+    }
+
     public void setMode(int mode) {
+        arrayMode = false;
         List<Node> nodes = new ArrayList<>();
         if (mode == 0) {
             nodes.add(vecSpinner);
@@ -554,6 +617,19 @@ public class SpectrumStatusBar {
             chart.lastPlane(iAxis);
         } else if (menuItem.getText().equals("Max")) {
             chart.gotoMaxPlane();
+        }
+        chart.refresh();
+    }
+
+    private void rowMenuAction(ActionEvent event, int iAxis) {
+        MenuItem menuItem = (MenuItem) event.getSource();
+        PolyChart chart = controller.getActiveChart();
+        if (menuItem.getText().equals("Full")) {
+            chart.clearDrawlist();
+        } else if (menuItem.getText().equals("First")) {
+            chart.setDrawlist(0);
+        } else if (menuItem.getText().equals("Last")) {
+            chart.setDrawlist(1000);
         }
         chart.refresh();
     }

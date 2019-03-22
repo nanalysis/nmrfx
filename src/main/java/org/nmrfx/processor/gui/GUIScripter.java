@@ -275,6 +275,22 @@ public class GUIScripter {
         });
     }
 
+    public void rows(String datasetName, List<Integer> indices) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            List<DatasetAttributes> dataAttts = chart.getDatasetAttributes();
+            for (DatasetAttributes dataAttr : dataAttts) {
+                if ((datasetName == null) || datasetName.equals(dataAttr.getFileName())) {
+                    dataAttr.setDrawList(indices);
+                   }
+            }
+            if (!indices.isEmpty()) {
+                chart.getController().getStatusBar().updateRowSpinner(indices.get(0), 1);
+            }
+            chart.refresh();
+        });
+    }
+
     public void config(String datasetName, String key, Object value) {
         ConsoleUtil.runOnFxThread(() -> {
             PolyChart chart = getChart();

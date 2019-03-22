@@ -67,8 +67,6 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.input.DragEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.LineTo;
@@ -945,20 +943,8 @@ public class PolyChart implements PeakListener {
         if (dataset.getNDim() < 2) {
             return;
         }
-        int[] drawList = datasetAttributes.drawList;
-        if ((drawList == null) || (drawList.length == 0)) {
-            setDrawlist(0);
-        } else {
-            int value = drawList[0] + amount;
+        datasetAttributes.incrDrawList(amount);
 
-            if (value < 0) {
-                value = 0;
-            }
-            if (value >= dataset.getSize(1)) {
-                value = dataset.getSize(1) - 1;
-            }
-            setDrawlist(value);
-        }
         layoutPlotChildren();
     }
 
@@ -1560,7 +1546,7 @@ public class PolyChart implements PeakListener {
             //System.out.println("set dataset " + dataset.getName() + " " + dataset.getNDim() + " " + dataset.getFreqDomain(0));
             updateAxisType();
             datasetFileProp.set(dataset.getFile());
-            datasetAttributes.drawList = null;
+            datasetAttributes.drawList.clear();
         } else {
             //statusBar.sliceStatus.setSelected(false);
             setSliceStatus(false);
@@ -1574,23 +1560,40 @@ public class PolyChart implements PeakListener {
         return datasetAttributes;
     }
 
-    public void setDrawlist(int selected) {
+    public int setDrawlist(int value) {
         if (!datasetAttributesList.isEmpty()) {
-            DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-            datasetAttributes.setDrawListSize(1);
-            datasetAttributes.drawList[0] = selected;
+            for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+                datasetAttributes.setDrawListSize(1);
+                Dataset dataset = datasetAttributes.getDataset();
+                if (value < 0) {
+                    value = 0;
+                }
+                if (value >= dataset.getSize(1)) {
+                    value = dataset.getSize(1) - 1;
+                }
+
+                datasetAttributes.setDrawList(value);
+            }
+        } else {
+            value = 0;
+        }
+        controller.getStatusBar().updateRowSpinner(value, 1);
+        return value;
+    }
+
+    public void clearDrawlist() {
+        for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+            datasetAttributes.setDrawListSize(0);
         }
     }
 
     public void setDrawlist(List<Integer> selected) {
-        if (!datasetAttributesList.isEmpty()) {
-            DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-            datasetAttributes.setDrawListSize(selected.size());
-            for (int i = 0, n = selected.size(); i < n; i++) {
-                datasetAttributes.drawList[i] = selected.get(i);
-            }
+        for (DatasetAttributes datasetAttributes : datasetAttributesList) {
+            datasetAttributes.setDrawList(selected);
         }
-
+        if (!selected.isEmpty()) {
+            controller.getStatusBar().updateRowSpinner(selected.get(0), 1);
+        }
     }
 
     public ArrayList<String> getDimNames() {
@@ -1774,7 +1777,7 @@ public class PolyChart implements PeakListener {
         borders[2] = Math.max(borders[2], minBottomBorder);
         return borders;
     }
-    
+
     public void setDisable(boolean state) {
         disabled = state;
     }

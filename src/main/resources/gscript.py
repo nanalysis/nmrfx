@@ -115,9 +115,15 @@ class NMRFxWindowScripting:
 
     def colors(self, indices, colorName, dataset=None):
         self.cmd.colorMap(dataset, indices, colorName)
+        self.cmd.draw()
 
     def offsets(self, indices, offset, dataset=None):
         self.cmd.offsetMap(dataset, indices, offset)
+        self.cmd.draw()
+
+    def rows(self, indices,  dataset=None):
+        self.cmd.rows(dataset, indices)
+        self.cmd.draw()
 
     def lim(self,pars=None,**kwargs):
         if (pars==None) and (len(kwargs) == 0):

@@ -617,7 +617,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     int[] iBlkGet;
     int[] iBlkPut;
     int[] iWDim;
-    public int[] drawList = null;
+    public List<Integer> drawList = new ArrayList<>();
     public boolean[] selectionList = null;
     public boolean selected;
     public boolean intSelected;
@@ -650,8 +650,11 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ((DatasetAttributes) o).theFile = theFile;
             ((DatasetAttributes) o).setPos(getPos());
             ((DatasetAttributes) o).setNeg(getNeg());
-            if (drawList != null) {
-                ((DatasetAttributes) o).drawList = drawList.clone();
+            if (drawList.isEmpty()) {
+                ((DatasetAttributes) o).drawList = new ArrayList<>();
+            } else {
+                ((DatasetAttributes) o).drawList = new ArrayList<>();
+                ((DatasetAttributes) o).drawList.addAll(drawList);
             }
             if (selectionList != null) {
                 ((DatasetAttributes) o).selectionList = selectionList.clone();
@@ -792,18 +795,52 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
     public void setDrawListSize(final int size) {
         if (size == 0) {
-            drawList = null;
+            drawList.clear();
             selectionList = null;
         } else {
-            drawList = new int[size];
+            drawList.clear();
             selectionList = new boolean[size];
+        }
+    }
+
+    public void incrDrawList(int delta) {
+
+        if (drawList.isEmpty()) {
+            setDrawList(0);
+        } else {
+            int value = drawList.get(0) + delta;
+
+            if (value < 0) {
+                value = 0;
+            }
+            if (value >= theFile.getSize(1)) {
+                value = theFile.getSize(1) - 1;
+            }
+            setDrawList(value);
+        }
+    }
+
+    public void setDrawList(int index) {
+        drawList.clear();
+        drawList.add(index);
+    }
+
+    public void setDrawList(List<Integer> indices) {
+        if (indices.isEmpty()) {
+            drawList.clear();
+            selectionList = null;
+        } else {
+            drawList.clear();
+            indices.stream().filter(i -> i >= 0 && i < theFile.getSize(dim[1])).
+                    forEach(i -> drawList.add(i));
+            selectionList = new boolean[indices.size()];
         }
     }
 
     public int getLastChunk(int iDim) {
         if (theFile.getNDim() < 2) {
             return (0);
-        } else if (drawList == null) {
+        } else if (drawList.isEmpty()) {
             int iLast = 0;
             for (int i = 0; i < pt.length; i++) {
                 if (i != iDim) {
@@ -812,7 +849,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             }
             return iLast;
         } else {
-            return drawList.length - 1;
+            return drawList.size() - 1;
         }
     }
 
@@ -887,12 +924,12 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
     public int getRowIndex(int iDim, int iChunk) {
         int rowIndex = -1;
         if (theFile.getNDim() > 1) {
-            if (drawList == null) {
+            if (drawList.isEmpty()) {
                 rowIndex = pt[iDim][0] + iChunk;
             } else if (iChunk < 0) {
                 rowIndex = -1;
             } else {
-                rowIndex = drawList[iChunk];
+                rowIndex = drawList.get(iChunk);
             }
         }
         return rowIndex;
@@ -955,7 +992,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         }
 
         if (theFile.getNDim() > 1) {
-            if (drawList == null) {
+            if (drawList.isEmpty()) {
                 ptC[iDim][0] = pt[iDim][0] + iChunk;
                 ptC[iDim][1] = pt[iDim][0] + iChunk;
                 if (ptC[iDim][1] > pt[iDim][1]) {
@@ -967,8 +1004,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             } else if (iChunk < 0) {
                 return (false);
             } else {
-                ptC[1][0] = drawList[iChunk];
-                ptC[1][1] = drawList[iChunk];
+                ptC[1][0] = drawList.get(iChunk);
+                ptC[1][1] = drawList.get(iChunk);
             }
 
         } else if ((iChunk < 0) || (iChunk > 1)) {
@@ -1034,7 +1071,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         }
 
         if (theFile.getNDim() > 1) {
-            if (drawList == null) {
+            if (drawList.isEmpty()) {
                 ptC[iDim][0] = pt[iDim][0] + iChunk;
                 ptC[iDim][1] = pt[iDim][0] + iChunk;
                 if (ptC[iDim][1] > pt[iDim][1]) {
@@ -1046,8 +1083,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             } else if (iChunk < 0) {
                 return (false);
             } else {
-                ptC[1][0] = drawList[iChunk];
-                ptC[1][1] = drawList[iChunk];
+                ptC[1][0] = drawList.get(iChunk);
+                ptC[1][1] = drawList.get(iChunk);
             }
 
         } else if ((iChunk < 0) || (iChunk > 1)) {
@@ -1123,7 +1160,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
         }
 
         if (theFile.getNDim() > 1) {
-            if (drawList == null) {
+            if (drawList.isEmpty()) {
                 ptC[iDim][0] = pt[iDim][0] + iChunk;
                 ptC[iDim][1] = pt[iDim][0] + iChunk;
                 if (ptC[iDim][1] > pt[iDim][1]) {
@@ -1138,8 +1175,8 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 System.out.println("ret c " + iDim + " " + iChunk);
                 return (false);
             } else {
-                ptC[1][0] = drawList[iChunk];
-                ptC[1][1] = drawList[iChunk];
+                ptC[1][0] = drawList.get(iChunk);
+                ptC[1][1] = drawList.get(iChunk);
             }
 
         } else if ((iChunk < 0) || (iChunk > 1)) {
@@ -1263,11 +1300,11 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 chunk[i] = jChunk / chunkOffset[i];
                 jChunk = iChunk % chunkOffset[i];
                 if (i == (theFile.getNDim() - 1)) {
-                    if (drawList != null) {
-                        if (chunk[i] >= drawList.length) {
+                    if (!drawList.isEmpty()) {
+                        if (chunk[i] >= drawList.size()) {
                             return 1;
                         }
-                        apt[i][0] = drawList[chunk[i]];
+                        apt[i][0] = drawList.get(chunk[i]);
                     } else {
                         apt[i][0] = chunk[i] * chunkSize[i];
                         if (apt[i][0] > pt[i][1]) {
@@ -1766,7 +1803,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ArrayList<Integer> resultList = new ArrayList<Integer>();
             for (int i = 0; i < selectionList.length; i++) {
                 if (selectionList[i]) {
-                    if (drawList != null) {
+                    if (!drawList.isEmpty()) {
                         resultList.add(i);
                     } else if (pt.length > 1) {
                         resultList.add(i);
@@ -1780,7 +1817,6 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
 
             }
         }
-
         return result;
     }
 

@@ -575,7 +575,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         ObservableList<DatasetAttributes> datasetAttrList = getActiveChart().getDatasetAttributes();
         OptionalInt maxNDim = datasetAttrList.stream().mapToInt(d -> d.nDim).max();
         if (maxNDim.isPresent()) {
-            statusBar.setMode(maxNDim.getAsInt());
+            if (getActiveChart().is1D() && (maxNDim.getAsInt() > 1)) {
+                OptionalInt maxRows = datasetAttrList.stream().
+                        mapToInt(d -> d.nDim == 1 ? 1 : d.getDataset().getSize(1)).max();
+                statusBar.set1DArray(maxNDim.getAsInt(), maxRows.getAsInt());
+            } else {
+                statusBar.setMode(maxNDim.getAsInt());
+            }
         }
 
         getPhaseOp();
@@ -1756,7 +1762,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public void addChart() {
         PolyChart chart = new PolyChart(this, plotContent, canvas, peakCanvas, annoCanvas);
         chart.setDisable(true);
-       // chart.setController(this);
+        // chart.setController(this);
         chartGroup.addChart(chart);
         activeChart = chart;
     }
