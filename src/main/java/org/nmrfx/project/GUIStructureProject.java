@@ -48,17 +48,22 @@ public class GUIStructureProject extends StructureProject {
         super(name);
     }
 
-    public static GUIStructureProject replace(String name, GUIStructureProject project) {
+    public static GUIStructureProject replace(String name, StructureProject project) {
         GUIStructureProject newProject = new GUIStructureProject(name);
-        for (String molName : project.molecules.keySet()) {
-            newProject.molecules.put(molName, project.molecules.get(molName));
-        }
+        newProject.projectDir = project.projectDir;
+        newProject.molecules.putAll(project.molecules);
         project.molecules.clear();
+        newProject.peakLists.putAll(project.peakLists);
+        project.peakLists.clear();
         return newProject;
     }
 
     public static GUIStructureProject getActive() {
         Project project = Project.getActive();
+        if ((project != null) && !(project instanceof GUIStructureProject)) {
+            project = replace(project.name, (StructureProject) project);
+        }
+
         if (project == null) {
             project = new GUIStructureProject("Untitled 1");
         }
