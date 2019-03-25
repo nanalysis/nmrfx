@@ -35,8 +35,10 @@ import org.nmrfx.graphicsio.GraphicsIOException;
 public class Contour extends java.lang.Object {
 
     GraphicsContextInterface g2;
-    double[][] pix;
-    double[][] pts;
+    final double[][] pix;
+    final double[][] pts;
+    final double scaleX;
+    final double scaleY;
     double lineWidth = 0.5;
     Color color = Color.BLACK;
 
@@ -64,6 +66,8 @@ public class Contour extends java.lang.Object {
         this.pix[0] = pix[0].clone();
         this.pix[1] = pix[1].clone();
         linesCount = new int[1];
+        scaleX = (pix[0][1] - pix[0][0]) / (pts[0][1] - pts[0][0]);
+        scaleY = (pix[1][1] - pix[1][0]) / (pts[1][1] - pts[1][0]);
     }
 
     public void setAttributes(double lineWidth, Color color) {
@@ -373,7 +377,7 @@ public class Contour extends java.lang.Object {
         //    0:3 1:4 2:9 3:14
 
         int[] saddleSides = {3, 4, 9, 14};
-        if ((offset == 5) || (offset ==10)) {
+        if ((offset == 5) || (offset == 10)) {
             offset = saddleSides[lastSide];
         }
 
@@ -389,21 +393,40 @@ public class Contour extends java.lang.Object {
         y[2] = edge2y / 255.0 + iy;
         x[3] = edge3x / 255.0 + ix;
         y[3] = iy + 1;
+
         int nextSide = 0;
         int i0 = (offset >> 2) & 3;
         int i1 = offset & 3;
         if (start) {
-            double xp1 = (x[i0] + xOffset - pts[0][0])
-                    / (pts[0][1] - pts[0][0]) * (pix[0][1] - pix[0][0]) + pix[0][0];
-            double yp1 = (y[i0] + yOffset - pts[1][0])
-                    / (pts[1][1] - pts[1][0]) * (pix[1][1] - pix[1][0]) + pix[1][0];
+            double xp1 = (x[i0] + xOffset) * scaleX + pix[0][0];
+            double yp1 = (y[i0] + yOffset) * scaleY + pix[1][0];
+            if (xp1 < pix[0][0]) {
+                xp1 = pix[0][0];
+            } else if (xp1 > pix[0][1]) {
+                xp1 = pix[0][1];
+            }
+            if (yp1 > pix[1][0]) {
+                yp1 = pix[1][0];
+            } else if (yp1 < pix[1][1]) {
+                yp1 = pix[1][1];
+            }
             g2.beginPath();
             g2.moveTo(xp1, yp1);
         }
-        double xp2 = (x[i1] + xOffset - pts[0][0])
-                / (pts[0][1] - pts[0][0]) * (pix[0][1] - pix[0][0]) + pix[0][0];
-        double yp2 = (y[i1] + yOffset - pts[1][0])
-                / (pts[1][1] - pts[1][0]) * (pix[1][1] - pix[1][0]) + pix[1][0];
+        double xp2 = (x[i1] + xOffset) * scaleX + pix[0][0];
+        double yp2 = (y[i1] + yOffset) * scaleY + pix[1][0];
+        if (xp2 < pix[0][0]) {
+            xp2 = pix[0][0];
+        } else if (xp2 > pix[0][1]) {
+            xp2 = pix[0][1];
+
+        }
+        if (yp2 > pix[1][0]) {
+            yp2 = pix[1][0];
+        } else if (yp2 < pix[1][1]) {
+            yp2 = pix[1][1];
+        }
+
         g2.lineTo(xp2, yp2);
         nextSide = i1;
         cells[iy][ix] |= 32;

@@ -1828,11 +1828,9 @@ public class PolyChart implements PeakListener {
             peakCanvas.setHeight(canvas.getHeight());
             GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
             peakGC.clearRect(xPos, yPos, width, height);
-            gC.beginPath();
             double clipExtra = 1;
-            gC.rect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
+            drawSpectrum.setClipRect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
                     xAxis.getWidth() - 2 * clipExtra, yAxis.getHeight() - 2 * clipExtra);
-            gC.clip();
             gC.beginPath();
 //
 //        if (annoCanvas != null) {
@@ -1919,39 +1917,46 @@ public class PolyChart implements PeakListener {
                             }
                         }
                     }
+
                     if (disDimProp.get() != DISDIM.TwoD) {
                         if (getRegions()) {
                             drawRegions(datasetAttributes, gC);
                         }
-                        for (int iMode = 0; iMode < 2; iMode++) {
-                            if (iMode == 0) {
-                                datasetAttributes.setDrawReal(true);
-                            } else {
-                                if (!controller.getStatusBar().complexStatus.isSelected()) {
-                                    break;
+                        gC.save();
+                        drawSpectrum.clip(gC);
+                        try {
+                            for (int iMode = 0; iMode < 2; iMode++) {
+                                if (iMode == 0) {
+                                    datasetAttributes.setDrawReal(true);
+                                } else {
+                                    if (!controller.getStatusBar().complexStatus.isSelected()) {
+                                        break;
+                                    }
+                                    datasetAttributes.setDrawReal(false);
                                 }
-                                datasetAttributes.setDrawReal(false);
+                                bcList.clear();
+                                drawSpectrum.setToLastChunk(datasetAttributes);
+                                boolean ok;
+                                do {
+                                    bcPath.getElements().clear();
+                                    ok = drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
+                                    double[][] xy = drawSpectrum.getXY();
+                                    int nPoints = drawSpectrum.getNPoints();
+                                    int rowIndex = drawSpectrum.getRowIndex();
+                                    drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
+                                    if (getIntegrals()) {
+                                        draw1DIntegral(datasetAttributes, gC);
+                                    }
+                                    drawBaseLine(gC, bcPath);
+                                } while (ok);
                             }
-                            bcList.clear();
-                            drawSpectrum.setToLastChunk(datasetAttributes);
-                            boolean ok;
-                            do {
-                                bcPath.getElements().clear();
-                                ok = drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
-                                double[][] xy = drawSpectrum.getXY();
-                                int nPoints = drawSpectrum.getNPoints();
-                                int rowIndex = drawSpectrum.getRowIndex();
-                                drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
-                                if (getIntegrals()) {
-                                    draw1DIntegral(datasetAttributes, gC);
-                                }
-                                drawBaseLine(gC, bcPath);
-                            } while (ok);
+                            drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
+                            double[][] xy = drawSpectrum.getXY();
+                            int nPoints = drawSpectrum.getNPoints();
+                            drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
+                        } finally {
+                            gC.restore();
                         }
-                        drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
-                        double[][] xy = drawSpectrum.getXY();
-                        int nPoints = drawSpectrum.getNPoints();
-                        drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
 
                     } else {
                         draw2DList.add(datasetAttributes);

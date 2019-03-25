@@ -51,6 +51,7 @@ import javafx.scene.shape.Path;
 import org.apache.commons.math3.complex.Complex;
 import javafx.geometry.Bounds;
 import javafx.scene.control.Button;
+import javafx.scene.shape.Rectangle;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
@@ -88,6 +89,7 @@ public class DrawSpectrum {
     volatile long jobCount = 0;
     private long startTime = 0;
     private long lastPlotTime = 0;
+    Rectangle clipRect = null;
 
     public DrawSpectrum(NMRAxis[] axes, Canvas canvas) {
         this.axes = axes;
@@ -116,6 +118,14 @@ public class DrawSpectrum {
 
     public void setAxes(NMRAxis[] axes) {
         this.axes = axes;
+    }
+
+    public void setClipRect(Rectangle rect) {
+        clipRect = new Rectangle(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
+    }
+
+    public void setClipRect(double x, double y, double width, double height) {
+        clipRect = new Rectangle(x, y, width, height);
     }
 
     synchronized void setLastPlotTime() {
@@ -272,11 +282,12 @@ public class DrawSpectrum {
 //                System.out.println(fileData.mChunk + " " + (currentTime - startTime));
                 int iChunk = fileData.mChunk + 1;
                 double[][] pix = getPix(axes, fileData);
+
                 try {
                     z = getData(fileData, iChunk, offset, z);
                     if (z != null) {
-                        double xOff = offset[0] + fileData.ptd[0][0];
-                        double yOff = offset[1] + fileData.ptd[1][0];
+                        double xOff = fileData.pt[0][0] - fileData.ptd[0][0];
+                        double yOff = fileData.pt[1][0] - fileData.ptd[1][0];
                         for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
                             float sign = iPosNeg == 0 ? 1.0f : -1.0f;
                             for (float level : levels) {
@@ -398,7 +409,7 @@ public class DrawSpectrum {
                 }
             } finally {
                 if (interrupted) {
-                   Thread.currentThread().interrupt();
+                    Thread.currentThread().interrupt();
                 }
 
             }
@@ -487,19 +498,38 @@ public class DrawSpectrum {
 
     }
 
+    public void clip(GraphicsContextInterface gC) {
+        try {
+            g2.beginPath();
+            Rectangle r = clipRect;
+            g2.rect(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+            g2.clip();
+            g2.beginPath();
+        } catch (GraphicsIOException ex) {
+
+        }
+
+    }
+
     static int drawSquares(DrawSpectrum drawSpectrum, DrawObject drawObject, GraphicsContextInterface g2) {
+        int result = 0;
         if (cancelled) {
-            return 0;
+            return result;
         }
         if (drawObject.count < drawSpectrum.jobCount) {
-            return 0;
+            return result;
         }
+        //g2.save();
+        result = 1;
         try {
+            //  drawSpectrum.clip(g2);
             drawObject.contour.drawSquares(g2);
         } catch (GraphicsIOException ex) {
-            return 0;
+            result = 0;
+        } finally {
+            //g2.restore();
+            return result;
         }
-        return 1;
 
     }
 
