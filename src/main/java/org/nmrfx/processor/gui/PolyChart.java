@@ -2522,7 +2522,7 @@ public class PolyChart implements PeakListener {
     public Optional<Peak> hitPeak(double pickX, double pickY) {
         Optional<Peak> hit = Optional.empty();
         if (peakStatus.get()) {
-            drawPeakLists(false);
+           // drawPeakLists(false);
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
                 if (peakListAttr.getDrawPeaks()) {
                     hit = peakListAttr.hitPeak(drawPeaks, pickX, pickY);
