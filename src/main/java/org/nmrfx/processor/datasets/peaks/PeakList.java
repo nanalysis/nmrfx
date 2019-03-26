@@ -981,6 +981,50 @@ public class PeakList {
         return (result);
     }
 
+    public int[] getDimsForDataset(Dataset dataset) {
+        return getDimsForDataset(dataset, false);
+    }
+
+    public int[] getDimsForDataset(Dataset dataset, boolean looseMode) {
+        int[] pdim = new int[nDim];
+        int dataDim = dataset.getNDim();
+        boolean[] used = new boolean[dataDim];
+        for (int j = 0; j < nDim; j++) {
+            boolean ok = false;
+            for (int i = 0; i < dataDim; i++) {
+                if (!used[i]) {
+                    if (getSpectralDim(j).getDimName().equals(dataset.getLabel(i))) {
+                        pdim[j] = i;
+                        used[i] = true;
+                        ok = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!ok && looseMode) {
+                String pNuc = getSpectralDim(j).getNucleus();
+                for (int i = 0; i < dataDim; i++) {
+                    if (!used[i]) {
+                        String dNuc = dataset.getNucleus(i).getNumberName();
+                        if (dNuc.equals(pNuc)) {
+                            pdim[j] = i;
+                            used[i] = true;
+                            ok = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!ok) {
+                throw new IllegalArgumentException(
+                        "Can't find match for peak dimension \""
+                        + getSpectralDim(j).getDimName() + "\"");
+            }
+        }
+        return pdim;
+    }
+
     public static Peak getAPeak(String peakSpecifier) {
         int dot = peakSpecifier.indexOf('.');
 
@@ -2185,9 +2229,10 @@ public class PeakList {
     }
 
     public void quantifyPeaks(Dataset dataset, java.util.function.Function<RegionData, Double> f, String mode) {
+        int[] pdim = getDimsForDataset(dataset, true);
         peaks.stream().forEach(peak -> {
             try {
-                peak.quantifyPeak(dataset, f, mode);
+                peak.quantifyPeak(dataset, pdim, f, mode);
             } catch (IOException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
                 return;
@@ -2200,12 +2245,14 @@ public class PeakList {
             throw new IllegalArgumentException("Unknown measurment type: " + mode);
         }
         int[] planes = new int[1];
+        int[] pdim = getDimsForDataset(dataset, true);
+
         peaks.stream().forEach(peak -> {
             double[] values = new double[nPlanes];
             for (int i = 0; i < nPlanes; i++) {
                 planes[0] = i;
                 try {
-                    double value = peak.measurePeak(dataset, planes, f);
+                    double value = peak.measurePeak(dataset, pdim, planes, f);
                     values[i] = value;
                 } catch (IOException ex) {
                     System.out.println(ex.getMessage());
@@ -2241,9 +2288,10 @@ public class PeakList {
     }
 
     public void tweakPeaks(Dataset dataset, Set<Peak> speaks, int[] planes) {
+        int[] pdim = getDimsForDataset(dataset, true);
         speaks.stream().forEach(peak -> {
             try {
-                peak.tweak(dataset, planes);
+                peak.tweak(dataset, pdim, planes);
             } catch (IOException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
                 return;
@@ -2253,9 +2301,11 @@ public class PeakList {
     }
 
     public void tweakPeaks(Dataset dataset, int[] planes) {
+        int[] pdim = getDimsForDataset(dataset, true);
+
         peaks.stream().forEach(peak -> {
             try {
-                peak.tweak(dataset, planes);
+                peak.tweak(dataset, pdim, planes);
             } catch (IOException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
                 return;
