@@ -132,7 +132,7 @@ public class MouseBindings {
         dragStart[0] = x;
         dragStart[1] = y;
         mouseAction = MOUSE_ACTION.NOTHING;
-        if (!mouseEvent.isControlDown()) {
+        if (!mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
             if (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR")) {
                 if (!chart.getCursor().toString().equals("CROSSHAIR")) {
                     chart.getCrossHairs().setCrossHairState(true);
@@ -186,7 +186,7 @@ public class MouseBindings {
     public void mouseReleased(Event event) {
         mouseDown = false;
         MouseEvent mouseEvent = (MouseEvent) event;
-        if (!mouseEvent.isControlDown()) {
+        if (!mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
             if (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR")) {
                 chart.handleCrossHair(mouseEvent, false);
                 if (!chart.getCursor().toString().equals("CROSSHAIR")) {
