@@ -5251,6 +5251,20 @@ public class Vec extends PySequence implements MatrixType {
         }
     }
 
+    public double polyMax(int intMax) {
+        double adjust = 0.0;
+        if ((intMax > 0) && (intMax < (size - 1))) {
+
+            double f2 = getReal(intMax + 1);
+            double f1 = getReal(intMax);
+            double f0 = getReal(intMax - 1);
+            if ((f1 > f0) && (f1 > f2)) {
+                adjust = ((f2 - f0) / (2.0 * ((2.0 * f1) - f2 - f0)));
+            }
+        }
+        return intMax + adjust;
+    }
+
     /**
      * Return the location and value of the maximum in vector
      *
