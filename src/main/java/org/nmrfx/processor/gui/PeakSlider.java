@@ -269,15 +269,17 @@ public class PeakSlider {
         PeakList peakList = peak.getPeakList();
         Dataset dataset = Dataset.getDataset(peakList.fileName);
         int[] planes = new int[0];
+        int[] pdim = peakList.getDimsForDataset(dataset, true);
+
         if (dataset != null) {
             try {
-                peak.tweak(dataset, planes);
+                peak.tweak(dataset, pdim, planes);
                 peak.setFrozen(true, false);
                 for (Peak lPeak : peaksB) {
                     peakList = lPeak.getPeakList();
                     dataset = Dataset.getDataset(peakList.fileName);
                     if (dataset != null) {
-                        lPeak.tweak(dataset, planes);
+                        lPeak.tweak(dataset, pdim, planes);
                         lPeak.setFrozen(true, false);
                     }
                 }
