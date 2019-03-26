@@ -127,7 +127,7 @@ public class Align {
         Vec fixedVec = new Vec(vecSize);
         dataset.readVecFromDatasetFile(pt, dim, fixedVec);
         IndexValue indexValue = fixedVec.maxIndex(pt1, pt2);
-        int refPt = indexValue.getIndex();
+        double refPt = fixedVec.polyMax(indexValue.getIndex());
         Double[] deltas = new Double[indices.size()];
         indices.stream().parallel().forEach(vi -> {
             Vec vec = new Vec(vecSize);
@@ -211,10 +211,10 @@ public class Align {
         return delta;
     }
 
-    public int alignByMax(Vec vec, int refPt, int pt1, int pt2) {
+    public double alignByMax(Vec vec, double refPt, int pt1, int pt2) {
         Vec.IndexValue indexValue = vec.maxIndex(pt1, pt2);
-        int delta = refPt - indexValue.getIndex();
-        CShift cShift = new CShift(delta, false);
+        double delta = refPt - vec.polyMax(indexValue.getIndex());
+        CShift cShift = new CShift((int) Math.round(delta), false);
         cShift.eval(vec);
         return delta;
     }
