@@ -191,7 +191,7 @@ public class Align {
 
     public int alignByCov(Vec fixedVec, Vec movingVec, int pStart, int m, int iWarp, int tStart) {
         //     public static double cowCorr(Vec src, Vec target, int pStart, int m, int iWarp, int tStart)  {
-        int range = 50;
+        int range = 10;
         double max = Double.NEGATIVE_INFINITY;
         int iMax = 0;
         try {
