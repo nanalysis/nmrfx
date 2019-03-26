@@ -87,6 +87,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.python.util.PythonInterpreter;
 
 /**
@@ -835,17 +836,56 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         }
     }
 
+    boolean checkDataset() {
+        boolean ok = false;
+        String datasetName = peakList.getDatasetName();
+        if ((datasetName == null) || datasetName.equals("")) {
+            PolyChart chart = PolyChart.getActiveChart();
+            Dataset dataset = chart.getDataset();
+            if (dataset != null) {
+                for (PeakListAttributes peakAttr : chart.getPeakListAttributes()) {
+                    if (peakAttr.getPeakList() == peakList) {
+                        peakList.setDatasetName(dataset.getName());
+                        ok = true;
+                        break;
+                    }
+                }
+            }
+        } else {
+            ok = true;
+        }
+        if (!ok) {
+            alert("No dataset assigned to this peak list");
+        }
+        return ok;
+    }
+
+    void alert(String text) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setContentText(text);
+        alert.showAndWait();
+    }
+
     void measureIntensities() {
+        if (!checkDataset()) {
+            return;
+        }
         peakList.quantifyPeaks("center");
         refreshPeakView();
     }
 
     void measureVolumes() {
+        if (!checkDataset()) {
+            return;
+        }
         peakList.quantifyPeaks("volume");
         refreshPeakView();
     }
 
     void measureEVolumes() {
+        if (!checkDataset()) {
+            return;
+        }
         peakList.quantifyPeaks("evolume");
         refreshPeakView();
     }
