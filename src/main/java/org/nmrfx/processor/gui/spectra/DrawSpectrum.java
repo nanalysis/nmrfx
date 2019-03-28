@@ -442,8 +442,8 @@ public class DrawSpectrum {
                 try {
                     z = getData(fileData, iChunk, offset, z);
                     if (z != null) {
-                        double xOff = offset[0] + fileData.ptd[0][0];
-                        double yOff = offset[1] + fileData.ptd[1][0];
+                        double xOff = fileData.pt[0][0] - fileData.ptd[0][0];
+                        double yOff = fileData.pt[1][0] - fileData.ptd[1][0];
                         int[][] cells = new int[z.length][z[0].length];
                         for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
                             Contour contour = contours[iPosNeg];
@@ -500,11 +500,11 @@ public class DrawSpectrum {
 
     public void clip(GraphicsContextInterface gC) {
         try {
-            g2.beginPath();
+            gC.beginPath();
             Rectangle r = clipRect;
-            g2.rect(r.getX(), r.getY(), r.getWidth(), r.getHeight());
-            g2.clip();
-            g2.beginPath();
+            gC.rect(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+            gC.clip();
+            gC.beginPath();
         } catch (GraphicsIOException ex) {
 
         }

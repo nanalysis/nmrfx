@@ -1828,9 +1828,6 @@ public class PolyChart implements PeakListener {
             peakCanvas.setHeight(canvas.getHeight());
             GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
             peakGC.clearRect(xPos, yPos, width, height);
-            double clipExtra = 1;
-            drawSpectrum.setClipRect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
-                    xAxis.getWidth() - 2 * clipExtra, yAxis.getHeight() - 2 * clipExtra);
             gC.beginPath();
 //
 //        if (annoCanvas != null) {
@@ -1877,16 +1874,11 @@ public class PolyChart implements PeakListener {
     }
 
     protected void exportVectorGraphics(SVGGraphicsContext svgGC) throws GraphicsIOException {
-        svgGC.save();
         xAxis.draw(svgGC);
         yAxis.draw(svgGC);
         svgGC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
         svgGC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
-        svgGC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
-        svgGC.clip();
-        svgGC.beginPath();
         drawDatasets(svgGC);
-        svgGC.restore();
         if (!datasetAttributesList.isEmpty()) {
             drawPeakLists(true, svgGC);
             drawSelectedPeaks(svgGC);
@@ -1923,6 +1915,10 @@ public class PolyChart implements PeakListener {
                             drawRegions(datasetAttributes, gC);
                         }
                         gC.save();
+                        double clipExtra = 1;
+                        drawSpectrum.setClipRect(xPos + leftBorder + clipExtra, yPos + topBorder + clipExtra,
+                                xAxis.getWidth() - 2 * clipExtra, yAxis.getHeight() - 2 * clipExtra);
+
                         drawSpectrum.clip(gC);
                         try {
                             for (int iMode = 0; iMode < 2; iMode++) {
@@ -2522,7 +2518,7 @@ public class PolyChart implements PeakListener {
     public Optional<Peak> hitPeak(double pickX, double pickY) {
         Optional<Peak> hit = Optional.empty();
         if (peakStatus.get()) {
-           // drawPeakLists(false);
+            // drawPeakLists(false);
             for (PeakListAttributes peakListAttr : peakListAttributesList) {
                 if (peakListAttr.getDrawPeaks()) {
                     hit = peakListAttr.hitPeak(drawPeaks, pickX, pickY);
