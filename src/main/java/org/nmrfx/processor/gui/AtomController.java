@@ -201,7 +201,7 @@ public class AtomController implements Initializable, FreezeListener {
         fileMenu.getItems().add(writePPMItem);
 
         MenuItem readPPMItem = new MenuItem("Read PPM...");
-        readPPMItem.setOnAction(e -> readPPM());
+        readPPMItem.setOnAction(e -> readPPM(false));
         fileMenu.getItems().add(readPPMItem);
 
         menuBar.getItems().add(fileMenu);
@@ -231,9 +231,14 @@ public class AtomController implements Initializable, FreezeListener {
 
         MenuButton refMenu = new MenuButton("Reference");
         menuBar.getItems().add(refMenu);
+
         MenuItem bmrbRefItem = new MenuItem("BMRB Mean");
         bmrbRefItem.setOnAction(e -> loadBMRBStats());
         refMenu.getItems().addAll(bmrbRefItem);
+
+        MenuItem readRefPPMItem = new MenuItem("Read PPM...");
+        readRefPPMItem.setOnAction(e -> readPPM(true));
+        refMenu.getItems().add(readRefPPMItem);
 
         MenuButton predictMenu = new MenuButton("Predict");
         menuBar.getItems().add(predictMenu);
@@ -403,14 +408,14 @@ public class AtomController implements Initializable, FreezeListener {
         }
     }
 
-    void readPPM() {
+    void readPPM(boolean refMode) {
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
         if (file != null) {
             Path path = file.toPath();
             Molecule molecule = Molecule.getActive();
             if (molecule != null) {
-                PPMFiles.readPPM(molecule, path, 0, false);
+                PPMFiles.readPPM(molecule, path, 0, refMode);
             }
             atomTableView.refresh();
         }
