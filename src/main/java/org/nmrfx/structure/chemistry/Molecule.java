@@ -1119,16 +1119,12 @@ public class Molecule implements Serializable, ITree {
     public int setSelected(List<SpatialSet> selected, boolean append, boolean inverse) {
         int i;
         int j;
-        Atom atom;
         SpatialSet spatialSet = null;
 
         if (!append) {
-            for (i = 0; i < globalSelected.size(); i++) {
-                spatialSet = globalSelected.get(i);
+            for (Atom atom : atoms) {
+                atom.getSpatialSet().setSelected(0);
 
-                if (spatialSet != null) {
-                    spatialSet.setSelected(0);
-                }
             }
         }
 
@@ -1143,7 +1139,7 @@ public class Molecule implements Serializable, ITree {
                 Molecule.makeAtomList();
             }
             for (i = 0; i < Molecule.atomList.size(); i++) {
-                atom = Molecule.atomList.get(i);
+                Atom atom = Molecule.atomList.get(i);
                 atom.spatialSet.setSelected(1);
             }
 
@@ -1155,7 +1151,7 @@ public class Molecule implements Serializable, ITree {
             globalSelected.clear();
 
             for (i = 0; i < Molecule.atomList.size(); i++) {
-                atom = Molecule.atomList.get(i);
+                Atom atom = Molecule.atomList.get(i);
                 spatialSet = atom.spatialSet;
                 if (spatialSet.getSelected() > 0) {
                     globalSelected.add(spatialSet);
