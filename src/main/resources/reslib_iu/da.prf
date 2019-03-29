@@ -1,71 +1,72 @@
 LNAME Adenine
-SNAME dade
+SNAME ade
 RCHAR a
-ATOM   P      P    1.60  120.70  -157.9
-ATOM   OP1    O    1.48  108.20  -116.8
-ATOM   OP2    O    1.48  108.73  -127.3
-ATOM   O5'    O    1.61  105.50   -66.3
-ATOM   C5'    C2   1.42  121.13   -77.3
-ATOM   H5'    H    1.09  110.05  -120.7
-ATOM   H5''   H    1.09  109.42  -118.7
-ATOM   C4'    C1   1.54  112.13   172.6
-ATOM   H4'    H    1.09  107.57  -118.9
-ATOM   C3'    C1   1.53  114.82    63.7
-ATOM   H3'    H    1.09  108.95   114.6
-ATOM   C2'    C2   1.54   99.85   121.0
-ATOM   H2'    H    1.09  111.91   119.7
-ATOM   H2''   H    1.09  111.91   119.7
-ATOM   C1'    C1   1.53  100.86    38.7
-ATOM   H1'    H    1.09  109.81   120.0
-ATOM   O4'    O    1.43  112.43  -121.8
-ATOM   N9     N    1.48  109.82    91.0
-ATOM   C8     CA   1.37  129.45   -97.7
-ATOM   H8     H    1.08  122.68   180.0
-ATOM   N7     N    1.31  114.54   180.0
-ATOM   C5     CB   1.40  102.94     0.0
-ATOM   C4     CB   1.37  110.92    -0.0
-ATOM   N3     N    1.36  126.98  -179.8
-ATOM   C2     CA   1.33  112.04    -0.0
-ATOM   H2     H    1.08  116.05  -180.0
-ATOM   N1     N    1.33  127.97    -0.1
-ATOM   C6     CB   1.33  118.07    -0.1
-ATOM   N6     N    1.32  113.55  -180.0
-ATOM   H61    H    1.01  119.31     0.4
-ATOM   H62    H    1.01  119.02   179.6
-ATOM   O3'    O    1.42  113.94    76.3
-
-FAMILY  -    P    O5'  OP1  OP2
-FAMILY  P    O5'  C5'
-FAMILY  O5'  C5'  C4' H5' H5''
-FAMILY  C5'  C4'  C3'  O4' H4'
+ATOM   P      P    1.60 120.58 -151.1 middle
+ATOM   Pc     Pcg  0.00 120.00 -157.9 middle
+ATOM   OP1    O    1.48 109.68 -114.8 middle
+ATOM   OP2    O    1.48 109.68 -130.4 middle
+ATOM   O5'    O    1.59 104.38  -71.6
+ATOM   HO5'   HO   1.59 104.38  -71.6 start
+ATOM   C5'    C2   1.41 120.54  -67.9
+ATOM   H5'    H    1.09 111.00 -120.0
+ATOM   H5''   H    1.09 111.00 -119.9
+ATOM   C4'    C1   1.50 110.99  171.6
+ATOM   C4c    Scg  1.27 121.27  180.0
+ATOM   H4'    H    1.09 109.02  126.2
+ATOM   C3'    C1   1.52 116.47  57.8
+ATOM   H3'    H    1.09 111.00  122.1
+ATOM   C2'    C1   1.51 101.51  121.9
+ATOM   H2'    H    1.08 111.91   119.7
+ATOM   H2''   H    1.08 111.91   119.7
+ATOM   O2'    O    1.41 108.70 -119.4
+ATOM   C1'    C1   1.52 100.57   40.3
+ATOM   H1'    H    1.09 109.40  121.8
+ATOM   O4'    O    1.41 107.16  118.8
+ATOM   N9     N'   1.48 113.50   91.3
+ATOM   C8     CA   1.35 127.39  -24.9
+ATOM   H8     H    1.08 121.31 -180.0
+ATOM   N7     N'   1.33 112.69  180.0
+ATOM   C5     CB   1.37 103.90    0.0
+ATOM   C4     CB   1.36 111.05   -0.0
+ATOM   N3     N'   1.36 128.05 -180.0
+ATOM   C2     CA   1.35 109.50   -0.0
+ATOM   H2     H'   1.08 119.99 -180.0
+ATOM   N1     N'   1.35 129.10   -0.0
+ATOM   N1c    Ccg   0   129.10   -0.0
+ATOM   C6     CA   1.36 118.50    0.0
+ATOM   N6     N'   1.36 118.10 -180.0
+ATOM   H61    H'   1.01 120.00    0.0
+ATOM   H62    H'   1.01 120.00 -180.0
+ATOM   O3'    O    1.41 112.21   78.2
+FAMILY  -    P    O5'  OP1  OP2 Pc middle
+FAMILY  P    O5'  C5' middle
+FAMILY  -    O5'  C5' HO5' start
+FAMILY  O5'  C5'  C4' H5' H5'' 
+FAMILY  C5'  C4'  C3' H4' C4c
 FAMILY  C4'  C3'  O3'  C2' H3'
 FAMILY  C3'  C2'  C1' H2' H2''
-FAMILY  C2'  C1'  N9   -O4' H1'
-FAMILY  C1'  N9   C8
-FAMILY  N9   C8   N7 H8
+FAMILY  C2'  C1'  N9  H1' O4'
+FAMILY  C1'  N9   C8 
+FAMILY  N9   C8   =N7 H8
 FAMILY  C8   N7   C5
-FAMILY  N7   C5   C4
+FAMILY  N7   C5   =C4 
 FAMILY  C5   C4   N3  -N9
-FAMILY  C4   N3   C2
-FAMILY  N3   C2   N1
-FAMILY  C2   N1   C6 H2
-FAMILY  N1   C6   N6  -C5
+FAMILY  C4   N3   =C2
+FAMILY  N3   C2   N1 H2
+FAMILY  C2   N1   =C6 N1c
+FAMILY  N1   C6   N6   -C5
 FAMILY  C6   N6   H61 H62
+FAMILY  C1'  O4'  -C4'
 FAMILY  C3'  O3'   +
-
-ANGLE     O5'      ANG1 2
-ANGLE     C5'     ANG2 2
-ANGLE     C4'     ANG3 2
-ANGLE     N9      ANG4 2
-ANGLE     O3'    ANG5 2
-
-ATREE  O5' C5'
-ATREE C5' C4'
-ATREE C4' N9
-ATREE N9 O3'
-ATREE O3' +
-PSEUDO Q2' H2' H2''
+ANGLE     P      ZETA 2 middle
+ANGLE     O5'      ALPHA 2
+ANGLE     C5'     BETA 2
+ANGLE     C4'     GAMMA 2
+ANGLE     C3'     DELTA 2
+ANGLE     C2'     NU2 2
+ANGLE     C1'     NU1 2
+ANGLE     N9      CHI 2
+ANGLE     O3'    EPSI 2
 PSEUDO Q5' H5' H5''
 PSEUDO Q6 H61 H62
 CRAD N9 5.0
-
