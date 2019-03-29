@@ -411,12 +411,12 @@ public class RNARotamer {
             rotamerScores.add(rotScore);
         }
         rotamerScores = rotamerScores.stream().sorted(Comparator.comparingDouble(RotamerScore::getProb).reversed()).limit(n).collect(Collectors.toList());
-        
+
         // The commented out code may be a bit faster but less legible. 
 //        for (RNARotamer rotamer : ROTAMERS.values()) {
 //            double probability = rotamer.probability(testAngles, new int[]{1, 2, 3, 4, 5, 6}, rotamer.fraction);
 //            // If the last element in the list is null or if the last elements probability is less than the calculated probability
-              // the bestScores array should be edited. If not, we should just continue.
+        // the bestScores array should be edited. If not, we should just continue.
 //            if (!(bestScores[n - 1] == null || probability > bestScores[n - 1].prob)) {
 //                continue;
 //            }
@@ -693,6 +693,9 @@ public class RNARotamer {
                     default:
                         atom = residue.getAtom(aName);
                         break;
+                }
+                if (atom == null) {
+                    ok = false;
                 }
                 if (ok) {
                     angleAtomNames.add(atom);
