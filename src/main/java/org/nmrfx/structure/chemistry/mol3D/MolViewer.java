@@ -447,7 +447,7 @@ public class MolViewer extends Pane {
         for (Polymer polymer : mol.getPolymers()) {
             mol.selectAtoms("*:*.*");
             mol.setAtomProperty(Atom.DISPLAY, false);
-            if (polymer.isRNA()) {
+            if (polymer.isRNA() || polymer.isDNA()) {
                 mol.selectAtoms(polymer.getName() + ":*.P,OP1");
             } else {
                 mol.selectAtoms(polymer.getName() + ":*.CA,C");
