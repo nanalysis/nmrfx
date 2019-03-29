@@ -81,7 +81,7 @@ def calcStructures(calcScript,startStructure,nStructures,dir,nProcesses=4, heapM
 
 def keepStructures(nStructures,newName='final',rootName=''):
     pat = re.compile('.*\D([0-9]+).pdb')
-    ePat = re.compile('.*\sTotal\s([0-9\.\0]+)')
+    ePat = re.compile('.*\s+Total\s+([0-9\.\0]+)')
     pdbFiles = glob.glob(os.path.join(outDir,rootName+'*.pdb'))
     eValues = []
     for pdbFile in pdbFiles:
