@@ -1558,10 +1558,10 @@ class refine:
                 print "Preceding residue is not defined"
             resJName = residues[iStartPair-i].getName()
             self.addBasePair(polymer, resI, resJ)
-            if (i+3) < length:
+            if (i != 0) and ((i+3) < length):
                 resJ = residues[iStart+i+3].getNumber()
                 self.energyLists.addDistanceConstraint(str(resI)+'.P', str(resJ)+'.P',16.5, 20.0)
-            if (i+5) < length:
+            if (i != 0) and ((i+5) < length):
                 resJ = residues[iStartPair-i-5].getNumber()
                 self.energyLists.addDistanceConstraint(str(resI)+'.P', str(resJ)+'.P',10.0, 12.0)
             if (i+1) < length:
