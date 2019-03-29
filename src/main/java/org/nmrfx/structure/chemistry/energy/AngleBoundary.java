@@ -72,6 +72,11 @@ public class AngleBoundary {
     }
     
     public AngleBoundary(List<Atom> atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
+        for (Atom atom:atoms) {
+            if (atom == null) {
+                throw new InvalidMoleculeException("null atom");
+            }
+        }
         if (atoms.size() != 4) {
             throw new IllegalArgumentException("Must specify 4 atoms in AngleBoundary constructor");
         }
