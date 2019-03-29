@@ -42,6 +42,7 @@ import java.util.*;
 import org.nmrfx.processor.datasets.peaks.Resonance;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.nmrfx.processor.utilities.NvUtil;
+import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
 import org.nmrfx.structure.utilities.Util;
 
 /**
@@ -263,11 +264,12 @@ public class NMRStarReader {
                 ccSaveFrameName = "save_" + resName;
                 ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             }
+            RES_POSITION resPos = RES_POSITION.MIDDLE;
             if (ccSaveframe != null) {
                 updateFromSTAR3ChemComp(ccSaveframe, residue);
             } else {
                 try {
-                    if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, "", false)) {
+                    if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, resPos, "", false)) {
                         throw new ParseException("Can't find residue \"" + resName + "\" in residue libraries or STAR file");
                     }
                 } catch (MoleculeIOException psE) {
@@ -315,17 +317,20 @@ public class NMRStarReader {
             residue.molecule = polymer.molecule;
             addCompound(mapID, residue);
             polymer.addResidue(residue);
+            RES_POSITION resPos = Sequence.RES_POSITION.MIDDLE;
+            if (linkType.equals("start")) {
+                resPos = RES_POSITION.START;
+                //residue.capFirstResidue();
+            } else if (linkType.equals("end")) {
+                resPos = RES_POSITION.END;
+                //residue.capLastResidue();
+            }
             try {
-                if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, "", false)) {
+                if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, resPos, "", false)) {
                     throw new ParseException("Can't find residue \"" + resName + "\" in residue libraries or STAR file");
                 }
             } catch (MoleculeIOException psE) {
                 throw new ParseException(psE.getMessage());
-            }
-            if (linkType.equals("start")) {
-                residue.capFirstResidue();
-            } else if (linkType.equals("end")) {
-                residue.capLastResidue();
             }
 
         }
