@@ -29,8 +29,6 @@ ATOM   N3c    Ccg  0.00 118.79 -180.0
 ATOM   H3     H'   1.01 120.00 -180.0
 ATOM   C4     CB   1.32 121.80   -0.0
 ATOM   O4     O    1.23 119.89 -178.5
-ATOM   H41    H'   1.01 120.00    0.0
-ATOM   H42    H'   1.01 120.00 -180.0
 ATOM   C5     CA   1.44 120.50    0.0
 ATOM   C7     C3   1.60 120.3   180.0
 ATOM   H71    M    1.00 120.3   120.0
@@ -66,5 +64,4 @@ ANGLE     C1'     NU1 2
 ANGLE     N1      CHI 2
 ANGLE     O3'    EPSI 2
 PSEUDO Q5' H5' H5''
-PSEUDO Q4 H41 H42
 CRAD N1 5.0
