@@ -41,6 +41,7 @@
                                                 <MenuItem mnemonicParsing="false" onAction="#selectHeavy" text="Heavy Atoms" />
                                                 <MenuItem mnemonicParsing="false" onAction="#selectAll" text="All Atoms" />
                                                 <MenuItem mnemonicParsing="false" onAction="#selectLigand" text="Ligand Atoms" />
+                                                <MenuItem mnemonicParsing="false" onAction="#selectResidues" text="Residues" />
                                             </items>
                                         </MenuButton>
                                         <MenuButton  mnemonicParsing="false" text="Display">

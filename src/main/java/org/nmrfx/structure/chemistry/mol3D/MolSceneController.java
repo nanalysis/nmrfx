@@ -57,6 +57,7 @@ import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.RNALabels;
 import org.nmrfx.structure.chemistry.SSLayout;
 import org.nmrfx.structure.chemistry.SSViewer;
+import org.nmrfx.structure.chemistry.SpatialSet;
 
 /**
  * FXML Controller class
@@ -370,8 +371,26 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         }
         molecule.selectAtoms("*:*.*");
         molecule.setAtomProperty(Atom.DISPLAY, false);
-        molecule.selectBonds("atoms");
+        int nBonds = molecule.selectBonds("atoms");
         molecule.setBondProperty(Bond.DISPLAY, false);
+    }
+
+    public void selectResidues() throws InvalidMoleculeException {
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            return;
+        }
+        List<SpatialSet> selected = new ArrayList<>();
+        selected.addAll(molecule.globalSelected);
+        int nPrevious = selected.size();
+        hideAll();
+        molecule.globalSelected.clear();
+        molecule.globalSelected.addAll(selected);
+        int nAtoms = molecule.selectResidues();
+        molecule.setAtomProperty(Atom.DISPLAY, true);
+        int nBonds = molecule.selectBonds("atoms");
+        molecule.setBondProperty(Bond.DISPLAY, true);
+
     }
 
     public void selectBackbone() throws InvalidMoleculeException {
