@@ -3449,11 +3449,16 @@ public class Molecule implements Serializable, ITree {
                 }
             }
             // skip hydrogens that are likely to be in rapid exchange
-            if ((atom1.getAtomicNumber() == 1) && atom1.getParent().getType().equals("N+")) {
-                continue;
-            }
-            if ((atom1.getAtomicNumber() == 1) && atom1.getParent().getType().startsWith("O")) {
-                continue;
+            if (atom1.getParent() == null) {
+                System.out.println("atom1 parent null " + atom1.getFullName());
+            } else {
+                if ((atom1.getAtomicNumber() == 1) && atom1.getParent().getType().equals("N+")) {
+                    continue;
+                }
+
+                if ((atom1.getAtomicNumber() == 1) && atom1.getParent().getType().startsWith("O")) {
+                    continue;
+                }
             }
             for (int j = i + 1; j < globalSelected.size(); j++) {
                 double extra = 0.0;
@@ -3465,11 +3470,16 @@ public class Molecule implements Serializable, ITree {
                     continue;
                 }
                 // skip hydrogens that are likely to be in rapid exchange
-                if ((atom2.getAtomicNumber() == 1) && atom2.getParent().getType().equals("N+")) {
-                    continue;
-                }
-                if ((atom2.getAtomicNumber() == 1) && atom2.getParent().getType().startsWith("O")) {
-                    continue;
+                if (atom2.getParent() == null) {
+                    System.out.println("atom2 parent null " + atom2.getFullName());
+                } else {
+
+                    if ((atom2.getAtomicNumber() == 1) && atom2.getParent().getType().equals("N+")) {
+                        continue;
+                    }
+                    if ((atom2.getAtomicNumber() == 1) && atom2.getParent().getType().startsWith("O")) {
+                        continue;
+                    }
                 }
                 if (requireActive && !atom2.isActive()) {
                     continue;
