@@ -784,7 +784,6 @@ public class Sequence {
             } else {
                 polymer.setCapped(true);
             }
-            System.out.println("res name " + resName + " " + resPos);
             addResidue(reslibDir + "/" + Sequence.getAliased(resFileName) + ".prf", residue, resPos, coordSetName, true);
             resPos = RES_POSITION.MIDDLE;
             try {
