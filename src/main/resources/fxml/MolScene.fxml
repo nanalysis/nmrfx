@@ -34,7 +34,6 @@
                             <top>
                                 <HBox>
                                     <children>
-                                        <Button mnemonicParsing="false" onAction="#drawMol" prefHeight="27.0" prefWidth="87.0" text="Draw" />
                                         <MenuButton  mnemonicParsing="false" text="Select">
                                             <items>
                                                 <MenuItem mnemonicParsing="false" onAction="#selectBackbone" text="Backbone" />
@@ -44,6 +43,7 @@
                                                 <MenuItem mnemonicParsing="false" onAction="#selectResidues" text="Residues" />
                                             </items>
                                         </MenuButton>
+                                        <TextField fx:id="selectField" prefWidth="150" />
                                         <MenuButton  mnemonicParsing="false" text="Display">
                                             <items>
                                                 <MenuItem mnemonicParsing="false" onAction="#drawLines" text="Lines" />

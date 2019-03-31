@@ -130,8 +130,6 @@ public class MolViewer extends Pane {
         rootGroup.getChildren().addAll(selGroup);
         rootGroup.getChildren().add(cameraTransform);
 
-        Sphere sphere = new Sphere(20);
-        molGroup.getChildren().add(sphere);
         addHandlers(subScene, twoDPane);
         ListChangeListener listener = new ListChangeListener() {
             @Override
@@ -146,6 +144,10 @@ public class MolViewer extends Pane {
 //        MeshView meshView = new MeshView(mesh);
 //        root.getChildren().addAll(meshView);
         twoDPane.setMouseTransparent(true);
+        try {
+            drawMol();
+        } catch (InvalidMoleculeException ex) {
+        }
         return subScene;
     }
 
@@ -316,8 +318,38 @@ public class MolViewer extends Pane {
         }
     }
 
+    public void hideItems(String mode, String type) {
+        if (mode.equals("hide")) {
+            for (Node node : molGroup.getChildren()) {
+                boolean matched = false;
+                if (node instanceof MolItem) {
+                    if (type.length() == 0) {
+                        matched = true;
+                    } else if (type.equalsIgnoreCase("all")) {
+                        matched = true;
+                    } else if (type.equals(node.getId())) {
+                        matched = true;
+                    } else {
+                        String[] tags = node.getId().split(" ");
+                        for (String tag : tags) {
+                            if (type.equals(tag)) {
+                                matched = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                Group group = (Group) node;
+                if (matched) {
+                    group.setVisible(false);
+                }
+
+            }
+        }
+    }
+
     void drawMol() throws InvalidMoleculeException {
-        createItems("spheres");
+        createItems("lines");
     }
 
     class MolPrimitives {
@@ -352,6 +384,8 @@ public class MolViewer extends Pane {
         molGroup.getChildren().clear();
         if (type.equals("spheres")) {
             addSpheres(0, 0.5, "spheres");
+        } else if (type.equals("lines")) {
+            addLines(0, "lines");
         } else if (type.equals("cyls")) {
             addCyls(0, 0.2, 0.1, "cyls");
         } else if (type.equals("tube")) {

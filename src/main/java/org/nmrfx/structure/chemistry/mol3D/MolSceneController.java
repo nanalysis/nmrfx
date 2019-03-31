@@ -9,9 +9,11 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.collections.MapChangeListener;
@@ -30,6 +32,7 @@ import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -71,6 +74,9 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     MolViewer molViewer;
 
     @FXML
+    TextField selectField;
+
+    @FXML
     BorderPane ssBorderPane;
     @FXML
     BorderPane molBorderPane;
@@ -103,6 +109,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     Pane twoDPane = new Pane();
     Pane ligandCanvasPane;
     PeakList peakList = null;
+    int itemIndex = 0;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -149,6 +156,16 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         modeMenuButton.getItems().add(frozenCheckBox);
 
         frozenCheckBox.selectedProperty().addListener(e -> updatePeaks());
+        selectField.setOnKeyReleased(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                try {
+                    selectAction(selectField.getText());
+                    selectField.clear();
+                } catch (InvalidMoleculeException ex) {
+                }
+            }
+        });
+
     }
 
     public Stage getStage() {
@@ -393,6 +410,24 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
 
     }
 
+    public void selectAction(String selection) throws InvalidMoleculeException {
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            return;
+        }
+        hideAll();
+        String[] fields = selection.split("\\s+");
+        for (String field : fields) {
+            if (field.length() > 0) {
+                molecule.selectAtoms(field);
+                molecule.setAtomProperty(Atom.DISPLAY, true);
+                molecule.selectBonds("atoms");
+                molecule.setBondProperty(Bond.DISPLAY, true);
+            }
+        }
+
+    }
+
     public void selectBackbone() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
@@ -450,33 +485,56 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         molecule.setBondProperty(Bond.DISPLAY, true);
     }
 
+    public int getIndex() {
+        itemIndex++;
+        return itemIndex;
+    }
+
     public void drawLines() {
-        molViewer.addLines(0, "lines");
+        molViewer.addLines(0, "lines " + getIndex());
     }
 
     public void drawCyls() {
-        molViewer.addCyls(0, 0.1, 0.1, "lines");
+        molViewer.addCyls(0, 0.1, 0.1, "lines " + getIndex());
     }
 
     public void drawSticks() {
-        molViewer.addCyls(0, 0.3, 0.5, "sticks");
+        molViewer.addCyls(0, 0.3, 0.5, "sticks " + getIndex());
     }
 
     public void drawSpheres() {
-        molViewer.addSpheres(0, 0.8, "spheres");
+        molViewer.addSpheres(0, 0.8, "spheres " + getIndex());
     }
 
     public void drawTubes() throws InvalidMoleculeException {
-        molViewer.addTube(0, 0.7, "tubes");
+        molViewer.addTube(0, 0.7, "tubes " + getIndex());
     }
 
     public void removeAll() {
         molViewer.deleteItems("delete", "all");
+        itemIndex = 0;
     }
 
     public void updateRemoveMenu(Collection<String> items) {
         removeMenuButton.getItems().clear();
+        // items can be like "spheres 3", so we want to add an entry to get
+        // all spheres and one to get ones just with tag 3
+        Set<String> added = new HashSet<>();
+        List<String> removeItems = new ArrayList<>();
         for (String item : items) {
+            String[] fields = item.split(" ");
+            if (fields.length > 1) {
+                if (!added.contains(fields[0])) {
+                    removeItems.add(fields[0]);
+                    added.add(fields[0]);
+                }
+            }
+        }
+        for (String item : items) {
+            removeItems.add(item);
+        }
+
+        for (String item : removeItems) {
             MenuItem menuItem = new MenuItem(item);
             menuItem.setOnAction(e -> {
                 molViewer.deleteItems("delete", item);

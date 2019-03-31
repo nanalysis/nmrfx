@@ -131,7 +131,11 @@ public class AnalystApp extends MainApp {
         Parameters parameters = getParameters();
         System.out.println(parameters.getRaw());
 
-        interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *\nimport os");
+        interpreter.exec("import os");
+        interpreter.exec("from pyproc import *\ninitLocal()");
+        interpreter.exec("from gscript import *\nnw=NMRFxWindowScripting()");
+        interpreter.exec("from dscript import *");
+        interpreter.exec("from mscript import *");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
         Dataset.addObserver(this);
