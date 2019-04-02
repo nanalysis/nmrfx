@@ -23,7 +23,8 @@ def loadPDBModels(files):
     try:
         fileName = files[0]
     except IndexError:
-	errMsg = "\nCan't find the PDB files to load PDB models. Please inspect the 'final' and 'output' directories."
+	errMsg = "\nCan't load final PDB models. Please inspect the 'final' and 'output' directories."
+        errMsg += "\nNote: problem related to the retrieval of summary lines in temp*.txt."
         raise LookupError(errMsg)
     pdb = PDBFile()
     molecule = pdb.read(fileName)
