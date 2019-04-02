@@ -13,7 +13,7 @@ if len(sys.argv) > 0:
     elif sys.argv[0] == "train":
         print sys.argv
         if (len(sys.argv) > 2) and (sys.argv[1] == "rna"):
-            print 'do rna'
+            sys.argv.pop(0)
             import train_rna
     else:
         scriptName = sys.argv[0]
