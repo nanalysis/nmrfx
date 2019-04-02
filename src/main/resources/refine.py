@@ -356,7 +356,7 @@ class refine:
         grefine.numericalDerivatives(delta,report)
 
     def setReportDump(self, value):
-        self.reportDump = bool(value)
+        self.reportDump = value
 
     def setSeed(self,seed):
         self.dihedral.seed(seed)
