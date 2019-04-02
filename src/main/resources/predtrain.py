@@ -170,8 +170,8 @@ def predictWithRCFromPDB(pdbFile, refShifts, ringRatio, typeRCDist):
 
     Molecule.removeAll()
     pdb = PDBFile()
-    #mol = molio.readPDB(pdbFile)
-    mol = pdb.read(pdbFile)
+    mol = molio.readPDB(pdbFile)
+    #mol = pdb.read(pdbFile)
     pdb.readCoordinates(pdbFile,-1,False, False)
     activeStructures = mol.getActiveStructures()
     avgOverStructures = False
@@ -477,7 +477,9 @@ def genRCTrainingMatrix(outFileName, pdbFiles, shiftSources, atomNames, ringMode
                 print 'skip',pdbFile
                 continue
             print 'train',pdbFile
+            pdb = PDBFile()
             mol = molio.readPDB(pdbFile)
+            #mol = pdb.read(pdbFile)
             if shiftSource[0]=="." or shiftSource[0]=="(":
                 rnapred.predictFromSequence(mol,shiftSource)
             else:
