@@ -286,8 +286,11 @@ public class DrawSpectrum {
                 try {
                     z = getData(fileData, iChunk, offset, z);
                     if (z != null) {
-                        double xOff = fileData.pt[0][0] - fileData.ptd[0][0];
-                        double yOff = fileData.pt[1][0] - fileData.ptd[1][0];
+                        double xOff = offset[0];
+                        double yOff = offset[1];
+//                        System.out.println("off " + xOff + " " + yOff + " " + 
+//                                fileData.ptd[0][0] + " " + fileData.ptd[1][0]);
+                        
                         for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
                             float sign = iPosNeg == 0 ? 1.0f : -1.0f;
                             for (float level : levels) {
