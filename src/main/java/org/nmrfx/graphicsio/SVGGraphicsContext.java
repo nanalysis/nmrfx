@@ -32,6 +32,7 @@ import javafx.scene.transform.Affine;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.paint.Color;
@@ -56,7 +57,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     Font font = Font.getDefault();
     double lineWidth = 1.0;
     StringBuilder sBuilder = new StringBuilder();
-    FileOutputStream stream;
+    OutputStream stream;
     XMLStreamWriter writer;
     String clipPath = "";
     TextAlignment textAlignment = TextAlignment.LEFT;
@@ -139,14 +140,19 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     public void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException {
         try {
+            OutputStream stream = new FileOutputStream(fileName);
+            create(landScape, width, height, stream);
+        } catch (FileNotFoundException ex) {
+            throw new GraphicsIOException(ex.getMessage());
+        }
+
+    }
+
+    public void create(boolean landScape, double width, double height, OutputStream stream) throws GraphicsIOException {
+        try {
             this.pageWidth = width;
             this.pageHeight = height;
             XMLOutputFactory factory = XMLOutputFactory.newFactory();
-            try {
-                stream = new FileOutputStream(fileName);
-            } catch (FileNotFoundException ex) {
-                throw new GraphicsIOException(ex.getMessage());
-            }
             try {
                 writer = factory.createXMLStreamWriter(stream);
             } catch (XMLStreamException ex) {
