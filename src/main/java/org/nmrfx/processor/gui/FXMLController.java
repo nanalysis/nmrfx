@@ -27,6 +27,7 @@ import org.nmrfx.processor.gui.controls.FractionPaneChild;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -77,7 +78,9 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
@@ -933,6 +936,33 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 eDialog.showAndWait();
             }
         }
+        stage.setResizable(true);
+    }
+
+    @FXML
+    void copySVGAction(ActionEvent event) {
+        SVGGraphicsContext svgGC = new SVGGraphicsContext();
+        try {
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            svgGC.create(true, canvas.getWidth(), canvas.getHeight(), stream);
+            for (PolyChart chart : charts) {
+                chart.exportVectorGraphics(svgGC);
+            }
+            svgGC.saveFile();
+            final Clipboard clipboard = Clipboard.getSystemClipboard();
+            final ClipboardContent content = new ClipboardContent();
+//            DataFormat svgFormat = DataFormat.lookupMimeType("image/svg+xml");
+//            if (svgFormat == null) {
+//                svgFormat = new DataFormat("image/svg+xml");
+//            }
+//            content.put(svgFormat, stream.toString());
+content.put(DataFormat.PLAIN_TEXT,stream.toString());
+            clipboard.setContent(content);
+        } catch (GraphicsIOException ex) {
+            ExceptionDialog eDialog = new ExceptionDialog(ex);
+            eDialog.showAndWait();
+        }
+
         stage.setResizable(true);
     }
 

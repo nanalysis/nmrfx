@@ -272,6 +272,8 @@ public class MainApp extends Application implements DatasetListener {
                 recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
+        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
+        copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
         deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().close());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
@@ -299,7 +301,8 @@ public class MainApp extends Application implements DatasetListener {
         MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
         measureMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumMeasureBar());
 
-        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem, alignMenuItem, analyzeMenuItem, measureMenuItem);
+        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem,
+                alignMenuItem, analyzeMenuItem, measureMenuItem, copyItem);
 
         // Format (items TBD)
 //        Menu formatMenu = new Menu("Format");
