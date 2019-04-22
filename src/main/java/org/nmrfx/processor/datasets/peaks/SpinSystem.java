@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
 
@@ -15,6 +16,8 @@ public class SpinSystem {
 
     final Peak rootPeak;
     List<PeakMatch> peakMatches = new ArrayList<>();
+    List<SpinSystemMatch> spinMatchP = new ArrayList<>();
+    List<SpinSystemMatch> spinMatchS = new ArrayList<>();
     static final String[] ATOM_TYPES = {"h", "n", "c", "ha", "ca", "cb"};
     static int[][] nAtmPeaks = {
         {0, 0, 0, 0, 2, 2},
@@ -61,7 +64,19 @@ public class SpinSystem {
                 }
                 iType++;
             }
+        }
 
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append(peak.getName()).append(" ");
+            for (int res : resType) {
+                sBuilder.append(res).append(" ");
+            }
+            for (String atomType : atomTypes) {
+                sBuilder.append(atomType).append(" ");
+            }
+            sBuilder.append(positive).append(" ").append(requireSign);
+            return sBuilder.toString();
         }
     }
 
@@ -403,8 +418,13 @@ public class SpinSystem {
             double intensity = intensities[iPeak];
             List<ResAtomPattern> okPats = new ArrayList<>();
             for (ResAtomPattern resAtomPattern : patterns) {
+                System.out.println(resAtomPattern.toString());
                 if (checkPat(resAtomPattern, intensity)) {
                     okPats.add(resAtomPattern);
+                    System.out.println("add");
+                } else {
+                    System.out.println("fail");
+                    
                 }
             }
             // allow all peaks but root peak to be unused (artifact)
@@ -467,6 +487,7 @@ public class SpinSystem {
                 int[] pt = counter.getCounts(bestIndex);
                 boolean validShifts = getShifts(nPeaks, resAtomPatterns, shiftList, pt);
                 writeShifts(shiftList);
+                saveShifts(shiftList);
             }
         }
     }
@@ -485,16 +506,33 @@ public class SpinSystem {
 
     }
 
-    public void compare(SpinSystem spinSysB, boolean prev) {
+    public Optional<Double> compare(SpinSystem spinSysB, boolean prev) {
         int idxB = prev ? 1 : 0;
         int idxA = prev ? 0 : 1;
+        double sum = 0.0;
+        boolean ok = false;
         for (int i : RES_MTCH) {
             double vA = values[idxA][i];
             double vB = spinSysB.values[idxB][i];
+            double tolA = tols[i];
             if (Double.isFinite(vA) && Double.isFinite(vB)) {
-                double delta = Math.abs(vA - vB) / tols[i];
+                double delta = Math.abs(vA - vB);
+                ok = true;
+                if (delta > 2.0 * tolA) {
+                    ok = false;
+                    break;
+                } else {
+                    delta /= tolA;
+                    sum += delta * delta;
+                }
             }
         }
+        Optional<Double> result = Optional.empty();
+        if (ok) {
+            double dis = Math.sqrt(sum);
+            result = Optional.of(Math.exp(-dis));
+        }
+        return result;
     }
 
     @Override
