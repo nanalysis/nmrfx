@@ -26,7 +26,7 @@ class NMRFxDatasetScripting:
         return dataset
 
     def createSub(self, fileName, nDim, srcDataset, title=""):
-        if isinstance(srcDataset,str):
+        if isinstance(srcDataset,basestring):
             srcDataset = nd.open(srcDataset,False)
         sizes = []
         nDimSrc = srcDataset.getNDim()
@@ -64,7 +64,7 @@ class NMRFxDatasetScripting:
         nd = NMRFxDatasetScripting()
         useDatasets = []  
         for i,dataset in enumerate(datasets):
-            if isinstance(dataset,str):
+            if isinstance(dataset,basestring):
                 dataset = nd.open(dataset,False)
             useDatasets.append(dataset)
 
@@ -85,4 +85,11 @@ class NMRFxDatasetScripting:
             dOut.writeVector(vec3)
         dOut.close()
 
+    def applyToValues(self, d, iDim, f):
+        if isinstance(d,basestring):
+            d = cmd.getDataset(d)
+        values = d.getValues(iDim)
+        values = [f(v) for v in values]
+        d.setValues(iDim, values)
+        
 nd = NMRFxDatasetScripting()
