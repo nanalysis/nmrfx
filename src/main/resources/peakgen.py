@@ -2,8 +2,9 @@ from org.nmrfx.processor.datasets.peaks import Peak
 from org.nmrfx.processor.datasets.peaks import PeakList
 from org.nmrfx.processor.datasets import Dataset
 
-def makePeakListFromDataset(listName,dataset):
-    nDim = dataset.getNDim()
+def makePeakListFromDataset(listName,dataset, nDim=0):
+    if nDim == 0:
+        nDim = dataset.getNDim()
     peakList = PeakList(listName, nDim)
     for i in range(nDim):
         specDim = peakList.getSpectralDim(i)
