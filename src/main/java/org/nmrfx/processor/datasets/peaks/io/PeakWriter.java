@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets.peaks.io;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.Map;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
@@ -415,4 +416,27 @@ public class PeakWriter {
         }
     }
 
+    public void writePeaksToSparky(Writer chan, PeakList peakList) throws IOException, IllegalArgumentException, InvalidPeakException {
+        /*
+                  Assignment       w1      w2      w3   Data Height
+  
+     ?-?-?  125.395   55.758    8.310      2164733.500
+     ?-?-?  122.041   54.953    8.450      1275542.375
+
+)*/
+        if (chan == null) {
+            throw new IllegalArgumentException("Channel null");
+        }
+        chan.write(peakList.getSparkyHeader());
+        chan.write("\n");
+        int nPeaks = peakList.size();
+        for (int i = 0; i < nPeaks; i++) {
+            Peak peak = peakList.getPeak(i);
+            if (peak == null) {
+                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+            }
+            chan.write(peak.toSparkyString());
+            chan.write("\n");
+        }
+    }
 }
