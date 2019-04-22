@@ -720,6 +720,16 @@ public class PeakList {
         return (result.toString());
     }
 
+    public String getSparkyHeader() {
+        StringBuilder result = new StringBuilder();
+        result.append("    Assignment");
+        for (int i = 0; i < getNDim(); i++) {
+            result.append("     w").append(i + 1);
+        }
+        result.append("   Data Height");
+        return result.toString();
+    }
+
     /**
      * Search peak list for peaks that match the specified chemical shifts.
      * Before using, a search template needs to be set up.

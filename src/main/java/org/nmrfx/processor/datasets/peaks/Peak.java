@@ -1039,6 +1039,29 @@ public class Peak implements Comparable, PeakOrMulti {
         return (result.toString());
     }
 
+    public String toSparkyString() {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+//      ?-?-?  125.395   55.758    8.310      2164733.500
+        result.append("   ");
+        for (int i = 0; i < getNDim(); i++) {
+            String label = peakDims[i].getLabel();
+            if (label.equals("")) {
+                label = "?";
+            }
+            if (i > 0) {
+                result.append("-");
+            }
+            result.append(label);
+        }
+        result.append(sep);
+        for (int i = 0; i < getNDim(); i++) {
+            result.append(String.format("%8.4f", peakDims[i].getChemShiftValue())).append(sep);
+        }
+        result.append(String.format("%14.3f", 1.0e6 * getIntensity()));
+        return (result.toString());
+    }
+
     public static Peak LinkStringToPeak(String string) {
         Peak peak = null;
 
