@@ -5392,6 +5392,17 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         return this.label[iDim];
     }
 
+    public int getDim(String testLabel) {
+        int iDim = -1;
+        for (int i = 0; i < label.length; i++) {
+            if (label[i].equals(testLabel)) {
+                iDim = i;
+                break;
+            }
+        }
+        return iDim;
+    }
+
     /**
      * Copy header from this dataset to another dataset
      *
