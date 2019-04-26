@@ -2059,6 +2059,7 @@ public class Vec extends PySequence implements MatrixType {
      * Set the dataset location pt for this vector
      *
      * @param pt the new location
+     * @param dim dataset dimensions for point location
      */
     public void setPt(int[][] pt, int[] dim) {
         if (pt != null) {
