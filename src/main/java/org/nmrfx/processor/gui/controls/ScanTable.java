@@ -1006,7 +1006,7 @@ public class ScanTable {
                 && !text.contains(":") & !text.equals("dataset");
     }
 
-    private boolean isData(String text) {
+    public boolean isData(String text) {
         return !standardHeaders.contains(text) && !text.equals("group")
                 && text.contains(":") && !text.equals("dataset");
     }

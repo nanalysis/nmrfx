@@ -10,7 +10,7 @@
 <?import org.fxmisc.richtext.CodeArea?>
 
 
-<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="mainBox" prefHeight="600.0" prefWidth="400.0" styleClass="mainFxmlClass"  fx:controller="org.nmrfx.processor.gui.ScannerController">
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:id="mainBox" prefHeight="600.0" prefWidth="700.0" styleClass="mainFxmlClass"  fx:controller="org.nmrfx.processor.gui.ScannerController">
     <stylesheets>
         <URL value="@/styles/Styles.css" />
     </stylesheets>
@@ -44,6 +44,11 @@
                                 <MenuItem mnemonicParsing="false" onAction="#measureRegions" text="Measure All" />
                                 <MenuItem mnemonicParsing="false" onAction="#showRegions" text="Show All" />
                                 <MenuItem mnemonicParsing="false" onAction="#clearRegions" text="Clear All" />
+                            </items>
+                        </MenuButton>
+                        <MenuButton  mnemonicParsing="false" text="Tools">
+                            <items>
+                                <MenuItem mnemonicParsing="false" onAction="#showTRACTGUI" text="TRACT Analysis..." />
                             </items>
                         </MenuButton>
                     </items>

@@ -55,6 +55,7 @@ import org.nmrfx.processor.datasets.Measure.MeasureTypes;
 import org.nmrfx.processor.datasets.Measure.OffsetTypes;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.gui.controls.ScanTable;
+import org.nmrfx.processor.gui.tools.TRACTGUI;
 
 /**
  * FXML Controller class
@@ -91,6 +92,7 @@ public class ScannerController implements Initializable {
     ChoicePropertyItem measureItem;
     OffsetPropertyItem offsetItem;
     static Consumer createControllerAction = null;
+    TRACTGUI tractGUI = null;
 
     static final Pattern WPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE]W)$");
     static final Pattern RPAT = Pattern.compile("([^:]+):([0-9\\.\\-]+)_([0-9\\.\\-]+)(_[VMmE][NR])?$");
@@ -381,6 +383,10 @@ public class ScannerController implements Initializable {
         return fxmlController;
     }
 
+    public ScanTable getScanTable() {
+        return scanTable;
+    }
+
     private boolean hasColumnName(String columnName) {
         List<String> headers = scanTable.getHeaders();
         boolean result = false;
@@ -469,9 +475,18 @@ public class ScannerController implements Initializable {
         }
         return values;
     }
-    
+
     public boolean hasColumn(String columnName) {
         return scanTable.getHeaders().contains(columnName);
+    }
+
+    @FXML
+    void showTRACTGUI() {
+        if (tractGUI == null) {
+            tractGUI = new TRACTGUI(this);
+
+        }
+        tractGUI.showMCplot();
     }
 
     @FXML
