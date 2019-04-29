@@ -82,6 +82,7 @@ public class AnalystApp extends MainApp {
 
     public static MultipletController multipletController;
     public static AtomController atomController;
+    public static LigandScannerController scannerController;
     public static MolSceneController molController;
     public static AtomBrowser atomBrowser;
     public static RNAPeakGeneratorSceneController rnaPeakGenController;
@@ -382,6 +383,9 @@ public class AnalystApp extends MainApp {
         MenuItem multipletMenuItem = new MenuItem("Multiplet Analyzer...");
         multipletMenuItem.setOnAction(e -> showMultipletAnalyzer(e));
 
+        MenuItem ligandScannerMenuItem = new MenuItem("Show Ligand Scanner");
+        ligandScannerMenuItem.setOnAction(e -> showLigandScanner(e));
+
         Menu assignCascade = new Menu("Assign Tools");
 
         assignOnPick = new CheckMenuItem("Assign on Pick");
@@ -400,7 +404,7 @@ public class AnalystApp extends MainApp {
         peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
                 linkPeakDimsMenuItem, peakSliderMenuItem,
                 peakAnalyzerMenuItem,
-                multipletMenuItem, assignCascade);
+                multipletMenuItem, ligandScannerMenuItem, assignCascade);
 
         // Window Menu
         // TBD standard window menu items
@@ -634,6 +638,18 @@ public class AnalystApp extends MainApp {
             chart.updatePeakLists(peakListNames);
         } catch (IOException ex) {
             Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @FXML
+    private void showLigandScanner(ActionEvent event) {
+        if (scannerController == null) {
+            scannerController = LigandScannerController.create();
+        }
+        if (scannerController != null) {
+            scannerController.getStage().show();
+        } else {
+            System.out.println("Coudn't make atom controller");
         }
     }
 

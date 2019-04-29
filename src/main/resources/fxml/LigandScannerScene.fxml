@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.AtomController">
+<BorderPane fx:id="attrBorderPane" prefHeight="350.0" prefWidth="550.0" styleClass="mainFxmlClass" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.nmrfx.processor.gui.LigandScannerController">
     <top>
         <ToolBar fx:id="menuBar" BorderPane.alignment="CENTER">
         </ToolBar>
@@ -24,13 +24,11 @@
             <top>
                 <HBox>
                     <children>
-                        <MenuButton fx:id="molFilterMenuButton" text="Filter" />
-                        <TextField fx:id="molFilterTextField" HBox.hgrow="ALWAYS" />
                     </children>
                 </HBox>
             </top>
             <center>
-                <TableView fx:id="atomTableView">
+                <TableView fx:id="ligandTableView">
                     <columns>
                     </columns>
                 </TableView>
