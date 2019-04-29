@@ -52,7 +52,7 @@ import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.DatasetListener;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.gui.tools.RunAbout;
+import org.nmrfx.processor.gui.tools.RunAboutGUI;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.GUIProject;
 import org.nmrfx.project.Project;
@@ -501,7 +501,7 @@ public class MainApp extends Application implements DatasetListener {
     }
 
     void showRunAbout() {
-        RunAbout.create();
+        RunAboutGUI.create();
     }
 
     public static InteractiveInterpreter getInterpreter() {
