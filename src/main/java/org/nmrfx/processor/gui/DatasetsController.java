@@ -84,6 +84,7 @@ public class DatasetsController implements Initializable {
     private int maxDim = 6;
     TableColumn dim1Column;
     Button valueButton;
+    Button saveParButton;
     Stage valueStage = null;
     TableView<ValueItem> valueTableView = null;
     Dataset valueDataset = null;
@@ -124,6 +125,11 @@ public class DatasetsController implements Initializable {
     void initToolBar() {
         ArrayList<ButtonBase> buttons = new ArrayList<>();
         Button bButton;
+
+        saveParButton = new Button("Save Par");
+        buttons.add(saveParButton);
+        saveParButton.setOnAction(e -> savePars());
+        saveParButton.setDisable(true);
         MenuButton drawButton = new MenuButton("Draw");
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(e -> drawDataset(e));
@@ -374,6 +380,7 @@ public class DatasetsController implements Initializable {
                 int nSelected = tableView.getSelectionModel().getSelectedItems().size();
                 boolean state = nSelected == 1;
                 valueButton.setDisable(!state);
+                saveParButton.setDisable(nSelected == 0);
             }
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(listener);
@@ -495,7 +502,7 @@ public class DatasetsController implements Initializable {
         if (datasets.size() == 1) {
             valueDataset = datasets.get(0);
             int nDim = valueDataset.getNDim();
-            
+
             for (int i = 0; i < nDim; i++) {
                 double[] values = valueDataset.getValues(i);
                 if ((values != null) && (values.length > 1)) {
@@ -509,8 +516,8 @@ public class DatasetsController implements Initializable {
             }
             if (valueList.isEmpty()) {
                 if (valueDataset.getNFreqDims() < nDim) {
-                    for (int i=0;i< valueDataset.getSize(nDim-1);i++) {
-                        valueList.add(new ValueItem(i,0.0));
+                    for (int i = 0; i < valueDataset.getSize(nDim - 1); i++) {
+                        valueList.add(new ValueItem(i, 0.0));
                     }
                 }
             }
@@ -546,5 +553,14 @@ public class DatasetsController implements Initializable {
         valueStage.show();
         valueStage.toFront();
         updateValueTable(valueTableView);
+    }
+
+    void savePars() {
+        ObservableList<Dataset> datasets = tableView.getSelectionModel().getSelectedItems();
+        for (Dataset dataset : datasets) {
+            dataset.writeParFile();
+
+        }
+
     }
 }
