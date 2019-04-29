@@ -51,6 +51,18 @@ public class DataSeries {
         return values;
     }
 
+    public void drawLine(boolean state) {
+        drawLine = state;
+    }
+    
+    public void drawSymbol(boolean state) {
+        strokeSymbol = state;
+    }
+    
+    public void fillSymbol(boolean state) {
+        fillSymbol = state;
+    }
+    
     public void setStroke(Color color) {
         this.stroke = color;
     }

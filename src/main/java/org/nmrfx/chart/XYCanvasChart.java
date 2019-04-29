@@ -121,6 +121,14 @@ public class XYCanvasChart {
         return yAxis;
     }
 
+    public void setShowLegend(boolean state) {
+        showLegend = state;        
+    }
+    
+    public boolean getShowLegend() {
+        return showLegend;        
+    }
+    
     public static XYCanvasChart buildChart(Canvas canvas) {
         Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 400, 100.0);
         Axis yAxis = new Axis(Orientation.VERTICAL, 0, 100, 100, 400);
@@ -306,21 +314,42 @@ public class XYCanvasChart {
                 if (series.radiusInPercent) {
                     radius = radius * minDimSize;
                 }
-                for (XYValue xyValue : series.values) {
-                    double x = xyValue.getXValue();
-                    double y = xyValue.getYValue();
-                    y /= series.getScale();
-                    double xC = xAxis.getDisplayPosition(x);
-                    double yC = yAxis.getDisplayPosition(y);
-                    series.symbol.draw(gC, xC, yC, radius, series.stroke, series.fill);
-                    if (xyValue instanceof XYEValue) {
-                        double errValue = ((XYEValue) xyValue).getError();
-                        errValue /= series.getScale();
-                        double yCHi = yAxis.getDisplayPosition(y + errValue);
-                        double yCLow = yAxis.getDisplayPosition(y - errValue);
-                        gC.setStroke(Color.BLACK);
-                        gC.strokeLine(xC, yCHi, xC, yCLow);
+                if (series.fillSymbol || series.strokeSymbol) {
+                    for (XYValue xyValue : series.values) {
+                        double x = xyValue.getXValue();
+                        double y = xyValue.getYValue();
+                        y /= series.getScale();
+                        double xC = xAxis.getDisplayPosition(x);
+                        double yC = yAxis.getDisplayPosition(y);
+                        series.symbol.draw(gC, xC, yC, radius, series.stroke, series.fill);
+                        if (xyValue instanceof XYEValue) {
+                            double errValue = ((XYEValue) xyValue).getError();
+                            errValue /= series.getScale();
+                            double yCHi = yAxis.getDisplayPosition(y + errValue);
+                            double yCLow = yAxis.getDisplayPosition(y - errValue);
+                            gC.setStroke(Color.BLACK);
+                            gC.strokeLine(xC, yCHi, xC, yCLow);
 
+                        }
+                    }
+                }
+                if (series.drawLine) {
+                    boolean firstPoint = true;
+                    double lastXC = 0.0;
+                    double lastYC = 0.0;
+                    gC.setStroke(series.stroke);
+                    for (XYValue xyValue : series.values) {
+                        double x = xyValue.getXValue();
+                        double y = xyValue.getYValue();
+                        y /= series.getScale();
+                        double xC = xAxis.getDisplayPosition(x);
+                        double yC = yAxis.getDisplayPosition(y);
+                        if (!firstPoint) {
+                            gC.strokeLine(lastXC, lastYC, xC, yC);
+                        }
+                        lastXC = xC;
+                        lastYC = yC;
+                        firstPoint = false;
                     }
                 }
             }

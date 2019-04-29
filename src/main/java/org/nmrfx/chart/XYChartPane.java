@@ -39,7 +39,6 @@ public class XYChartPane extends Pane {
         canvas.setHeight(getHeight());
         chart.setWidth(canvas.getWidth());
         chart.setHeight(canvas.getHeight());
-        System.out.println("update size " + getWidth() + " " + getHeight());
         chart.drawChart();
     }
 }
