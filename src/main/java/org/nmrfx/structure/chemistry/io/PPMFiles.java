@@ -88,7 +88,7 @@ public class PPMFiles {
                         separator = "\\s+";
                     }
                 }
-                String[] sfields = line.split(separator, -1);
+                String[] sfields = sline.split(separator, -1);
                 if (sfields.length > 1) {
                     String atomRef = sfields[0];
                     Atom atom = Molecule.getAtomByName(atomRef);
