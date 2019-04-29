@@ -449,9 +449,17 @@ public class PeakAttrController implements Initializable, PeakNavigable {
 
     void initMenuBar() {
         MenuButton fileMenu = new MenuButton("File");
-        MenuItem saveList = new MenuItem("Save...");
-        saveList.setOnAction(e -> saveList());
-        fileMenu.getItems().add(saveList);
+
+        MenuItem saveXPK2 = new MenuItem("Save XPK2...");
+        saveXPK2.setOnAction(e -> saveList());
+
+        MenuItem saveXPK = new MenuItem("Save XPK...");
+        saveXPK.setOnAction(e -> savePeaks("xpk","xpk"));
+
+        MenuItem saveSparky = new MenuItem("Save Sparky...");
+        saveSparky.setOnAction(e -> savePeaks("sparky","txt"));
+
+        fileMenu.getItems().addAll(saveXPK2, saveSparky);
 
         MenuItem readListItem = new MenuItem("Open...");
         readListItem.setOnAction(e -> readList());
@@ -831,6 +839,38 @@ public class PeakAttrController implements Initializable, PeakNavigable {
 
             } catch (IOException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
+    }
+
+    void savePeaks(String mode, String extension) {
+        if (peakList != null) {
+            try {
+                FileChooser fileChooser = new FileChooser();
+
+                File file = fileChooser.showSaveDialog(null);
+
+                if (file != null) {
+                    String listFileName = file.getPath();
+                    try (FileWriter writer = new FileWriter(listFileName)) {
+                        PeakWriter peakWriter = new PeakWriter();
+                        switch (mode) {
+                            case "xpk":
+                                peakWriter.writePeaksXPK(writer, peakList);
+                                break;
+                            case "sparky":
+                                peakWriter.writePeaksToSparky(writer, peakList);
+                                break;
+                            default:
+                                peakWriter.writePeaksXPK2(writer, peakList);
+                        }
+                        writer.close();
+                    }
+                }
+
+            } catch (IOException | InvalidPeakException ioE) {
+                ExceptionDialog dialog = new ExceptionDialog(ioE);
                 dialog.showAndWait();
             }
         }
