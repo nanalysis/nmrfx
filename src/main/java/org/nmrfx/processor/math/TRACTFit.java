@@ -58,5 +58,5 @@ public class TRACTFit {
 
         best = optValue.getPoint();
         return best;
-    }
+    }    
 }
