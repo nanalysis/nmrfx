@@ -19,7 +19,6 @@ import org.nmrfx.structure.chemistry.ProteinPredictor;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 import org.nmrfx.structure.chemistry.miner.NodeEvaluatorFactory;
-import org.nmrfx.structure.chemistry.miner.NodeValidator;
 import org.nmrfx.structure.chemistry.miner.NodeValidatorInterface;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
 import org.python.util.PythonInterpreter;
@@ -33,30 +32,156 @@ public class Predictor {
     NodeValidatorInterface nodeValidator = null;
 
     static final Map<String, Double> RNA_REF_SHIFTS = new HashMap<>();
+    static final Map<String, Double> RNA_REF_DIST_SHIFTS = new HashMap<>();
 
     static {
-        RNA_REF_SHIFTS.put("A.H2", 7.93);
-        RNA_REF_SHIFTS.put("G.H8", 7.87);
-        RNA_REF_SHIFTS.put("C.H5", 5.84);
-        RNA_REF_SHIFTS.put("U.H5", 5.76);
-
-        RNA_REF_SHIFTS.put("C.H6", 8.02);
-        RNA_REF_SHIFTS.put("U.H6", 8.01);
-        RNA_REF_SHIFTS.put("A.H1'", 5.38);
-        RNA_REF_SHIFTS.put("G.H1'", 5.37);
-        RNA_REF_SHIFTS.put("C.H1'", 5.45);
-
-        RNA_REF_SHIFTS.put("U.H1'", 5.50);
-        RNA_REF_SHIFTS.put("A.H2'", 4.54);
-        RNA_REF_SHIFTS.put("G.H2'", 4.59);
-        RNA_REF_SHIFTS.put("C.H2'", 4.54);
-        RNA_REF_SHIFTS.put("U.H2'", 4.54);
-
-        RNA_REF_SHIFTS.put("A.H3'", 4.59);
-        RNA_REF_SHIFTS.put("G.H3'", 4.59);
-        RNA_REF_SHIFTS.put("C.H3'", 4.59);
-        RNA_REF_SHIFTS.put("U.H3'", 4.59);
+        RNA_REF_SHIFTS.put("A.H1'", 5.383);
+        RNA_REF_SHIFTS.put("A.H2", 8.024);
+        RNA_REF_SHIFTS.put("A.H2'", 4.51);
+        RNA_REF_SHIFTS.put("A.H3'", 4.569);
+        RNA_REF_SHIFTS.put("A.H4'", 4.355);
+        RNA_REF_SHIFTS.put("A.H5'", 4.3);
+        RNA_REF_SHIFTS.put("A.H5''", 4.104);
+        RNA_REF_SHIFTS.put("A.H8", 8.324);
+        RNA_REF_SHIFTS.put("C.H1'", 5.481);
+        RNA_REF_SHIFTS.put("C.H2'", 4.51);
+        RNA_REF_SHIFTS.put("C.H3'", 4.569);
+        RNA_REF_SHIFTS.put("C.H4'", 4.355);
+        RNA_REF_SHIFTS.put("C.H5", 5.907);
+        RNA_REF_SHIFTS.put("C.H5'", 4.3);
+        RNA_REF_SHIFTS.put("C.H5''", 4.104);
+        RNA_REF_SHIFTS.put("C.H6", 7.99);
+        RNA_REF_SHIFTS.put("G.H1'", 5.345);
+        RNA_REF_SHIFTS.put("G.H2'", 4.51);
+        RNA_REF_SHIFTS.put("G.H3'", 4.569);
+        RNA_REF_SHIFTS.put("G.H4'", 4.355);
+        RNA_REF_SHIFTS.put("G.H5'", 4.3);
+        RNA_REF_SHIFTS.put("G.H5''", 4.104);
+        RNA_REF_SHIFTS.put("G.H8", 7.849);
+        RNA_REF_SHIFTS.put("U.H1'", 5.554);
+        RNA_REF_SHIFTS.put("U.H2'", 4.51);
+        RNA_REF_SHIFTS.put("U.H3'", 4.569);
+        RNA_REF_SHIFTS.put("U.H4'", 4.355);
+        RNA_REF_SHIFTS.put("U.H5", 5.871);
+        RNA_REF_SHIFTS.put("U.H5'", 4.3);
+        RNA_REF_SHIFTS.put("U.H5''", 4.104);
+        RNA_REF_SHIFTS.put("U.H6", 8.013);
+        RNA_REF_SHIFTS.put("A.C1'", 90.584);
+        RNA_REF_SHIFTS.put("A.C2", 154.711);
+        RNA_REF_SHIFTS.put("A.C2'", 75.401);
+        RNA_REF_SHIFTS.put("A.C3'", 72.982);
+        RNA_REF_SHIFTS.put("A.C4'", 82.45);
+        RNA_REF_SHIFTS.put("A.C5'", 65.269);
+        RNA_REF_SHIFTS.put("A.C8", 140.623);
+        RNA_REF_SHIFTS.put("C.C1'", 93.137);
+        RNA_REF_SHIFTS.put("C.C2'", 75.401);
+        RNA_REF_SHIFTS.put("C.C3'", 72.982);
+        RNA_REF_SHIFTS.put("C.C4'", 82.45);
+        RNA_REF_SHIFTS.put("C.C5", 98.444);
+        RNA_REF_SHIFTS.put("C.C5'", 65.269);
+        RNA_REF_SHIFTS.put("C.C6", 141.987);
+        RNA_REF_SHIFTS.put("G.C1'", 91.236);
+        RNA_REF_SHIFTS.put("G.C2'", 75.401);
+        RNA_REF_SHIFTS.put("G.C3'", 72.982);
+        RNA_REF_SHIFTS.put("G.C4'", 82.45);
+        RNA_REF_SHIFTS.put("G.C5'", 65.269);
+        RNA_REF_SHIFTS.put("G.C8", 137.576);
+        RNA_REF_SHIFTS.put("U.C1'", 92.782);
+        RNA_REF_SHIFTS.put("U.C2'", 75.401);
+        RNA_REF_SHIFTS.put("U.C3'", 72.982);
+        RNA_REF_SHIFTS.put("U.C4'", 82.45);
+        RNA_REF_SHIFTS.put("U.C5", 104.425);
+        RNA_REF_SHIFTS.put("U.C5'", 65.269);
+        RNA_REF_SHIFTS.put("U.C6", 142.523);
     }
+
+    static {
+        RNA_REF_DIST_SHIFTS.put("A.H1'", 6.606);
+        RNA_REF_DIST_SHIFTS.put("A.H2", 7.977);
+        RNA_REF_DIST_SHIFTS.put("A.H2'", 4.449);
+        RNA_REF_DIST_SHIFTS.put("A.H3'", 4.341);
+        RNA_REF_DIST_SHIFTS.put("A.H4'", 4.357);
+        RNA_REF_DIST_SHIFTS.put("A.H5'", 4.275);
+        RNA_REF_DIST_SHIFTS.put("A.H5''", 4.274);
+        RNA_REF_DIST_SHIFTS.put("C.H1'", 5.7);
+        RNA_REF_DIST_SHIFTS.put("C.H2'", 4.449);
+        RNA_REF_DIST_SHIFTS.put("C.H3'", 4.341);
+        RNA_REF_DIST_SHIFTS.put("C.H4'", 4.357);
+        RNA_REF_DIST_SHIFTS.put("C.H5", 5.698);
+        RNA_REF_DIST_SHIFTS.put("C.H5'", 4.275);
+        RNA_REF_DIST_SHIFTS.put("C.H5''", 4.274);
+        RNA_REF_DIST_SHIFTS.put("C.H6", 7.978);
+        RNA_REF_DIST_SHIFTS.put("G.H1'", 6.234);
+        RNA_REF_DIST_SHIFTS.put("G.H2'", 4.449);
+        RNA_REF_DIST_SHIFTS.put("G.H3'", 4.341);
+        RNA_REF_DIST_SHIFTS.put("G.H4'", 4.357);
+        RNA_REF_DIST_SHIFTS.put("G.H5'", 4.275);
+        RNA_REF_DIST_SHIFTS.put("G.H5''", 4.274);
+        RNA_REF_DIST_SHIFTS.put("G.H8", 7.871);
+        RNA_REF_DIST_SHIFTS.put("U.H1'", 5.702);
+        RNA_REF_DIST_SHIFTS.put("U.H2'", 4.449);
+        RNA_REF_DIST_SHIFTS.put("U.H3'", 4.341);
+        RNA_REF_DIST_SHIFTS.put("U.H4'", 4.357);
+        RNA_REF_DIST_SHIFTS.put("U.H5", 5.642);
+        RNA_REF_DIST_SHIFTS.put("U.H5'", 4.275);
+        RNA_REF_DIST_SHIFTS.put("U.H5''", 4.274);
+        RNA_REF_DIST_SHIFTS.put("U.H6", 8.061);
+        RNA_REF_DIST_SHIFTS.put("A.C1'", 82.375);
+        RNA_REF_DIST_SHIFTS.put("A.C2", 154.377);
+        RNA_REF_DIST_SHIFTS.put("A.C2'", 77.631);
+        RNA_REF_DIST_SHIFTS.put("A.C3'", 67.556);
+        RNA_REF_DIST_SHIFTS.put("A.C4'", 80.026);
+        RNA_REF_DIST_SHIFTS.put("A.C5'", 65.858);
+        RNA_REF_DIST_SHIFTS.put("A.C8", 141.694);
+        RNA_REF_DIST_SHIFTS.put("C.C1'", 84.088);
+        RNA_REF_DIST_SHIFTS.put("C.C2'", 77.631);
+        RNA_REF_DIST_SHIFTS.put("C.C3'", 67.556);
+        RNA_REF_DIST_SHIFTS.put("C.C4'", 80.026);
+        RNA_REF_DIST_SHIFTS.put("C.C5", 99.777);
+        RNA_REF_DIST_SHIFTS.put("C.C5'", 65.858);
+        RNA_REF_DIST_SHIFTS.put("C.C6", 142.816);
+        RNA_REF_DIST_SHIFTS.put("G.C1'", 75.366);
+        RNA_REF_DIST_SHIFTS.put("G.C2'", 77.631);
+        RNA_REF_DIST_SHIFTS.put("G.C3'", 67.556);
+        RNA_REF_DIST_SHIFTS.put("G.C4'", 80.026);
+        RNA_REF_DIST_SHIFTS.put("G.C5'", 65.858);
+        RNA_REF_DIST_SHIFTS.put("G.C8", 138.7);
+        RNA_REF_DIST_SHIFTS.put("U.C1'", 86.524);
+        RNA_REF_DIST_SHIFTS.put("U.C2'", 77.631);
+        RNA_REF_DIST_SHIFTS.put("U.C3'", 67.556);
+        RNA_REF_DIST_SHIFTS.put("U.C4'", 80.026);
+        RNA_REF_DIST_SHIFTS.put("U.C5", 105.133);
+        RNA_REF_DIST_SHIFTS.put("U.C5'", 65.858);
+        RNA_REF_DIST_SHIFTS.put("U.C6", 143.318);
+
+    }
+
+    double[] baseCAlphas = {109.797, -37.722, -42.722, 43.918, 34.351, 28.036,
+        8.282, -12.747, 22.815, -31.492, 14.434, -23.705, -99.898, 2.124,
+        18.657, -35.679, -23.634, -19.489, 46.318, -25.25, 60.338, -18.44,
+        -132.15, -36.312, 31.144, 50.921, 8.551, -34.733, 30.186, -22.981,
+        -92.437, -17.159, 46.791, -167.636, 98.993, -102.849, 48.193, 24.979,
+        -48.536, 130.381, -22.463, -83.248, -26.551, 33.386, -51.946, 157.547,
+        -78.555, -17.05};
+    double[] riboseCAlphas = {183.252, -38.602, 39.064, 39.52, 9.936, 38.416,
+        -10.434, -17.213, -24.239, -45.227, -42.626, -16.284, -165.282, 39.621,
+        -59.543, 242.874, -129.387, 76.885, -42.6, -22.678, 8.644, -11.111,
+        -208.539, -82.817, 50.68, 60.957, 132.087, -174.547, 60.461, 19.286,
+        -174.358, 68.015, -115.779, 586.809, -309.398, 200.794, -152.764,
+        91.248, 2.49, -358.12, 108.341, -157.851, -28.714, 55.599, -148.782,
+        327.803, -162.567, -2.03};
+    double[] baseHAlphas = {6.865, -3.892, -1.983, -0.507, 4.033, 1.264,
+        -0.721, -0.055, 0.83, 0.705, -0.346, -0.859, -17.689, 19.241, -4.373,
+        -34.864, 0.819, 0.957, 0.521, -1.355, 20.992, 2.978, -7.787, -1.922,
+        1.409, 10.776, -9.739, -0.055, 5.104, -2.825, -14.755, 12.592, -2.459,
+        -26.824, 2.379, 5.485, -8.897, 5.564, -2.356, 23.225, -5.205, -5.813,
+        17.198, -6.817, -20.967, 25.346, -11.519, -0.97};
+    double[] riboseHAlphas = {2.629, -1.978, -2.491, -0.551, 2.6, 2.402, -0.884,
+        0.028, 0.39, 1.681, -0.218, -1.22, -2.413, 7.099, 5.023, -26.883,
+        11.952, -0.527, -7.7, 28.734, -50.508, 19.122, -3.53, -4.062, 0.709,
+        8.823, -36.481, 21.023, 6.634, 1.267, -2.01, 6.7, 12.972, -65.587,
+        9.095, 8.952, -9.218, 4.321, 0.207, 14.587, 10.079, -3.146, -3.358,
+        1.418, -3.314, -5.648, 6.943, -0.54};
 
     private boolean isRNA(Polymer polymer) {
         boolean rna = false;
@@ -76,7 +201,7 @@ public class Predictor {
             if (!isRNA(polymer)) {
                 predictPeptidePolymer(polymer, iRef);
             } else {
-                predictRNAWithRingCurrent(polymer, iRef);
+                predictRNAWithRingCurrent(polymer, 0, iRef);
             }
         }
         boolean hasPolymer = !mol.getPolymers().isEmpty();
@@ -117,7 +242,7 @@ public class Predictor {
         }
     }
 
-    public void predictRNAWithRingCurrent(Polymer polymer, int iRef) throws InvalidMoleculeException {
+    public void predictRNAWithRingCurrent(Polymer polymer, int iStruct, int iRef) throws InvalidMoleculeException {
         RingCurrentShift ringShifts = new RingCurrentShift();
         ringShifts.makeRingList(polymer.molecule);
 
@@ -130,7 +255,7 @@ public class Predictor {
             String nucAtom = nucName + "." + aName;
             if (RNA_REF_SHIFTS.containsKey(nucAtom)) {
                 double basePPM = RNA_REF_SHIFTS.get(nucName + "." + aName);
-                double ringPPM = ringShifts.calcRingContributions(atom.getSpatialSet(), 0, ringRatio);
+                double ringPPM = ringShifts.calcRingContributions(atom.getSpatialSet(), iStruct, ringRatio);
                 double ppm = basePPM + ringPPM;
                 atom.setRefPPM(iRef, ppm);
             }
@@ -151,6 +276,49 @@ public class Predictor {
             if (ppmV != null) {
                 double basePPM = ppmV.getValue();
                 double ppm = basePPM + ringPPM;
+                atom.setRefPPM(iRef, ppm);
+            }
+        }
+    }
+
+    public void predictRNAWithDistances(Polymer polymer, int iStruct, int iRef) throws InvalidMoleculeException {
+        RingCurrentShift ringShifts = new RingCurrentShift();
+        ringShifts.makeRingList(polymer.molecule);
+        double[] alphas;
+
+        double rMax = 15.0;
+        List<Atom> atoms = polymer.getAtoms();
+        for (Atom atom : atoms) {
+            String name = atom.getShortName();
+            String aName = atom.getName();
+//            if (aName.charAt(0) == 'H') {
+//                continue;
+//            }
+            if (aName.charAt(aName.length() - 1) == '\'') {
+                if (aName.charAt(0) == 'H') {
+                    alphas = riboseHAlphas;
+                } else {
+                    alphas = riboseCAlphas;
+
+                }
+            } else {
+                if (aName.charAt(0) == 'H') {
+                    alphas = baseHAlphas;
+                } else {
+                    alphas = baseCAlphas;
+
+                }
+            }
+            String nucName = atom.getEntity().getName();
+            String nucAtom = nucName + "." + aName;
+            if (RNA_REF_DIST_SHIFTS.containsKey(nucAtom)) {
+                double basePPM = RNA_REF_DIST_SHIFTS.get(nucAtom);
+                double[] distances = polymer.molecule.calcDistanceInputMatrixRow(iStruct, rMax, atom);
+                double distPPM = 0.0;
+                for (int i = 0; i < alphas.length; i++) {
+                    distPPM += alphas[i] * distances[i];
+                }
+                double ppm = basePPM + distPPM;
                 atom.setRefPPM(iRef, ppm);
             }
         }
