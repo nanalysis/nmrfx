@@ -90,7 +90,7 @@ elif argFile.endswith('.pdb'):
     # fixme, need to do this by polymer so you can have protein-rna complex
     if isRNA(mol):
         refiner=refine()
-        shifts = refiner.predictShifts()
+        shifts = refiner.predictRNAShifts()
         for atomShift in shifts:
             aname,shift = atomShift
             print aname,shift

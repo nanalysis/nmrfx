@@ -1890,61 +1890,36 @@ class refine:
 		raise AssertionError(errMsg)
             self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
 
-    def predictShifts(self):
+    def predictRNAShifts(self, typeRCDist="dist"):
         #XXX: Need to complete docstring
         """Predict chemical shifts 
 
         # Returns:
 
+
+
+
         shifts (list);
         """
-        from org.nmrfx.structure.chemistry.energy import RingCurrentShift
-        from org.nmrfx.structure.chemistry import MolFilter
+        from org.nmrfx.structure.chemistry.predict import Predictor
+        predictor = Predictor()
+        for polymer in self.molecule.getPolymers():
+            if polymer.isRNA():
+                if  (typeRCDist.lower()=='dist'):
+                    predictor.predictRNAWithDistances(polymer, 0, 0)
+                else:
+                    predictor.predictRNAWithRingCurrent(polymer, 0, 0)
 
-        # old
-        refShifts = {"A.H2":7.93, "A.H8":8.33, "G.H8":7.87, "C.H5":5.84, "U.H5":5.76,
-            "C.H6":8.02, "U.H6":8.01, "A.H1'":5.38, "G.H1'":5.37, "C.H1'":5.45,
-            "U.H1'":5.50, "A.H2'":4.54, "G.H2'":4.59, "C.H2'":4.54, "U.H2'":4.54,
-            "A.H3'":4.59, "G.H3'":4.59, "C.H3'":4.59, "U.H3'":4.59
-        }
-        filterString="*.H8,H6,H5,H2,H1',H2',H3'"
-
-        refShifts = {"A.H2":7.87,"A.H8":8.24,"G.H8":7.84,"C.H5":5.90,"U.H5":5.86,"C.H6":7.96,"U.H6":8.03,"A.H1'":5.45,"G.H1'":5.37,"C.H1'":5.48,"U.H1'":5.52,"A.H2'":4.49,"G.H2'":4.49,"C.H2'":4.49,"U.H2'":4.49,"A.H3'":4.56,"G.H3'":4.56,"C.H3'":4.56,"U.H3'":4.56,"A.H4'":4.37,"G.H4'":4.37,"C.H4'":4.37,"U.H4'":4.37,"A.H5'":4.36,"G.H5'":4.36,"C.H5'":4.36,"U.H5'":4.36,"A.H5''":4.11,"G.H5''":4.11,"C.H5''":4.11,"U.H5''":4.1}
-        filterString="*.H8,H6,H5,H2,H1',H2',H3',H4',H5',H5''"
-
-
-
-        ringShifts = RingCurrentShift()
-        ringShifts.makeRingList(self.molecule)
-
-        molFilter = MolFilter(filterString)
-        spatialSets = Molecule.matchAtoms(molFilter)
-
-        ringRatio = 0.54
         shifts = []
-        print 'snum',structureNum
-        for sp in spatialSets:
-            name = sp.atom.getShortName()
-            aName = sp.atom.getName()
-            nucName = sp.atom.getEntity().getName()
-
-            basePPM = refShifts[nucName+"."+aName]
-            if isinstance(structureNum,(list,tuple)):
-                ringPPM = 0.0
-                for iStruct in structureNum:
-                    ringPPM += ringShifts.calcRingContributions(sp,iStruct,ringRatio)
-                ringPPM /= len(structureNum)
-            else:
-                ringPPM = ringShifts.calcRingContributions(sp,structureNum,ringRatio)
-            ppm = basePPM+ringPPM
-
-            atom = Molecule.getAtomByName(name)
-            atom.setRefPPM(ppm)
-
-            shift = []
-            shift.append(str(name))
-            shift.append(ppm)
-            shifts.append(shift)
+        atoms = self.molecule.getAtoms()
+        for atom in atoms:
+            name = atom.getShortName()
+            ppm = atom.getRefPPM()
+            if ppm != None:
+                shift = []
+                shift.append(str(name))
+                shift.append(ppm)
+                shifts.append(shift)
         return shifts
 
     def setBasePPMs(self,filterString="*.H8,H6,H5,H2,H1',H2',H3'"):
