@@ -45,8 +45,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -72,7 +70,6 @@ import org.nmrfx.processor.datasets.peaks.FreezeListener;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.MolFilter;
@@ -244,13 +241,15 @@ public class AtomController implements Initializable, FreezeListener {
         menuBar.getItems().add(predictMenu);
         MenuItem rnaAttributesItem = new MenuItem("RNA - Attributes");
         rnaAttributesItem.setOnAction(e -> predictRNAWithAttributes(e));
-        MenuItem rna3DItem = new MenuItem("RNA - 3D");
-        rna3DItem.setOnAction(e -> predictRNAWithStructure(e));
+        MenuItem rna3DRCItem = new MenuItem("RNA - 3D - RC");
+        rna3DRCItem.setOnAction(e -> predictRNAWithStructure(e, false));
+        MenuItem rna3DDistItem = new MenuItem("RNA - 3D - Dist");
+        rna3DDistItem.setOnAction(e -> predictRNAWithStructure(e, true));
         MenuItem protein3DItem = new MenuItem("Protein - 3D");
         protein3DItem.setOnAction(e -> predictProteinWithStructure(e));
         MenuItem universalItem = new MenuItem("Universal");
         universalItem.setOnAction(e -> predictAll(e));
-        predictMenu.getItems().addAll(rnaAttributesItem, rna3DItem, protein3DItem, universalItem);
+        predictMenu.getItems().addAll(rnaAttributesItem, rna3DRCItem, rna3DDistItem, protein3DItem, universalItem);
     }
 
     @Override
@@ -448,8 +447,22 @@ public class AtomController implements Initializable, FreezeListener {
     }
 
     @FXML
-    void predictRNAWithStructure(ActionEvent e) {
-        predictShiftsWithStructure(true);
+    void predictRNAWithStructure(ActionEvent e, boolean useDist) {
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
+            alert.showAndWait();
+        } else if (molecule.structures.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule coordinates", ButtonType.CLOSE);
+            alert.showAndWait();
+        } else {
+            try {
+                predictRNA3D(molecule, 0, useDist);
+            } catch (Exception ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
     }
 
     @FXML
@@ -479,6 +492,22 @@ public class AtomController implements Initializable, FreezeListener {
             }
         }
         atomTableView.refresh();
+    }
+
+    void predictRNA3D(Molecule molecule, int ppmSet, boolean useDist) throws InvalidMoleculeException {
+        List<Polymer> polymers = molecule.getPolymers();
+        Predictor predictor = new Predictor();
+        for (Polymer polymer : polymers) {
+            if (polymer.isRNA()) {
+                if (useDist) {
+                    predictor.predictRNAWithDistances(polymer, 0, ppmSet);
+                } else {
+                    predictor.predictRNAWithRingCurrent(polymer, 0, ppmSet);
+                }
+            }
+        }
+        atomTableView.refresh();
+
     }
 
     void predictProtein(Molecule molecule, int ppmSet) throws InvalidMoleculeException {
