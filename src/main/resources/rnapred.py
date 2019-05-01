@@ -22,6 +22,8 @@ from org.nmrfx.processor.datasets.peaks import PeakList
 from org.nmrfx.structure.chemistry.predict import RNAStats
 from org.nmrfx.structure.chemistry.predict import RNAAttributes
 from org.nmrfx.structure.chemistry.energy import RingCurrentShift
+from org.nmrfx.structure.chemistry.predict import Predictor
+
 from org.nmrfx.structure.chemistry import MolFilter
 from java.io import FileWriter
 from subprocess import check_output
@@ -486,24 +488,52 @@ def predictRCShifts(mol, structureNum=0, refShifts=None, ringRatio=None, ringTyp
         shift.append(ppm)
         shifts.append(shift)
     return shifts
-def predictDistShifts(mol, structureNum=0, refShifts=None, alphas=None):
+def predictDistShifts(mol, structureNum=0, refShifts=None, alphaDict=None):
         defaultRefShifts = {
-            "A.H2":7.87,"A.H8":8.24,
-            "G.H8":7.84,"C.H5":5.90,
-            "U.H5":5.86,"C.H6":7.96,"U.H6":8.03,
-            "A.H1'":5.45,"G.H1'":5.37,"C.H1'":5.48,
-            "U.H1'":5.52,"A.H2'":4.49,"G.H2'":4.49,
-            "C.H2'":4.49,"U.H2'":4.49,"A.H3'":4.56,
-            "G.H3'":4.56,"C.H3'":4.56,"U.H3'":4.56,
-            "A.H4'":4.37,"G.H4'":4.37,"C.H4'":4.37,
-            "U.H4'":4.37,"A.H5'":4.36,"G.H5'":4.36,
-            "C.H5'":4.36,"U.H5'":4.36,"A.H5''":4.11,
-            "G.H5''":4.11,"C.H5''":4.11,"U.H5''":4.1}
+         "U.H1'": 5.702,
+         "U.H2'": 4.449,
+         "U.H3'": 4.341,
+         "U.H4'": 4.357,
+         "U.H5'": 4.275,
+         "U.H5''": 4.274,
+         'U.H5': 5.642,
+         'U.H6': 8.061,
+         "A.H1'": 6.606,
+         "A.H2'": 4.449,
+         "A.H3'": 4.341,
+         "A.H4'": 4.357,
+         "A.H5'": 4.275,
+         "A.H5''": 4.274,
+         'A.H2': 7.977,
+         'A.H8': 8.316,
+         "G.H1'": 6.234,
+         "G.H2'": 4.449,
+         "G.H3'": 4.341,
+         "G.H4'": 4.357,
+         "G.H5'": 4.275,
+         "G.H5''": 4.274,
+         'G.H8': 7.871,
+         "C.H1'": 5.7,
+         "C.H2'": 4.449,
+         "C.H3'": 4.341,
+         "C.H4'": 4.357,
+         "C.H5'": 4.275,
+         "C.H5''": 4.274,
+         'C.H5': 5.698,
+         'C.H6': 7.978
+        }
+
+        defaultAlphas = {'ribose': [2.629, -1.978, -2.491, -0.551, 2.6, 2.402, -0.884, 0.028, 0.39, 1.681, -0.218, -1.22, -2.413, 7.099, 5.023, -26.883, 11.952, -0.527, -7.7, 28.734, -50.508, 19.122, -3.53, -4.062, 0.709, 8.823, -36.481, 21.023, 6.634, 1.267, -2.01, 6.7, 12.972, -65.587, 9.095, 8.952, -9.218, 4.321, 0.207, 14.587, 10.079, -3.146, -3.358, 1.418, -3.314, -5.648, 6.943, -0.543], 'base': [6.865, -3.892, -1.983, -0.507, 4.033, 1.264, -0.721, -0.055, 0.83, 0.705, -0.346, -0.859, -17.689, 19.241, -4.373, -34.864, 0.819, 0.957, 0.521, -1.355, 20.992, 2.978, -7.787, -1.922, 1.409, 10.776, -9.739, -0.055, 5.104, -2.825, -14.755, 12.592, -2.459, -26.824, 2.379, 5.485, -8.897, 5.564, -2.356, 23.225, -5.205, -5.813, 17.198, -6.817, -20.967, 25.346, -11.519, -0.974]}
 
         if refShifts == None:
             refShifts = defaultRefShifts
-        if alphas == None:
-            alphas = [0.54 for i in range(len(refShifts))]
+        if alphaDict == None:
+            alphaDict = defaultAlphas
+            #alphaDict['ribose'] = [0.54 for i in range(len(refShifts))]
+            #alphaDict['base'] = [0.54 for i in range(len(refShifts))]
+        else:
+            if not isinstance(alphaDict,(dict)):
+                 alphaDict = {'ribose':alphaDict,'base':alphaDict}
         filterString = ""
         inFilter = {}
         for atomId in refShifts:
@@ -526,20 +556,24 @@ def predictDistShifts(mol, structureNum=0, refShifts=None, alphas=None):
         for sp in spatialSets:
             name = sp.atom.getShortName()
             aName = sp.atom.getName()
+            if aName[-1] == "'":
+                aType = 'ribose'
+            else:
+                aType = 'base'
+            alphas = alphaDict[aType]
             nucName = sp.atom.getEntity().getName()
 
             if (nucName+"."+aName in refShifts):
                 basePPM = refShifts[nucName+"."+aName]
             else: continue
             if isinstance(structureNum,(list,tuple)):
-                ringPPM = 0.0
+                distPPM = 0.0
                 for iStruct in structureNum:
                     distances = mol.calcDistanceInputMatrixRow(iStruct, rmax, sp.atom)
-                    #print 'alphas =', len(alphas)
-                    #print 'distances =', len(distances)
-                    distPPM = sum([alphas[i] * distances[i] for i in range(len(alphas))])
+                    distPPM += sum([alphas[i] * distances[i] for i in range(len(alphas))])
+                distPPM = distPPM / len(structureNum)
             else:
-                distances = mol.calcDistanceInputMatrixRow(iStruct, rmax, sp.atom)
+                distances = mol.calcDistanceInputMatrixRow(structureNum, rmax, sp.atom)
                 distPPM = sum([alphas[i] * distances[i] for i in range(len(alphas))])
 
             ppm = basePPM+distPPM
@@ -552,4 +586,41 @@ def predictDistShifts(mol, structureNum=0, refShifts=None, alphas=None):
             shift.append(ppm)
             shifts.append(shift)
         return shifts
+
+def predictBuiltIn(mol, atomNames, typeRCDist, structureNum=0):
+    predictor = Predictor()
+    for polymer in mol.getPolymers():
+        if  (typeRCDist.lower()=='dist'):
+            predictor.predictRNAWithDistances(polymer, 0, 0)
+        else:
+            predictor.predictRNAWithRingCurrent(polymer, 0, 0)
+
+    filterString = ""
+    inFilter = {}
+    for atomId in atomNames:
+        dotIndex =  atomId.find(".")
+        if dotIndex != -1:
+            atomId = atomId[2:]
+        if atomId in inFilter:
+            continue
+        inFilter[atomId] = True
+        if filterString == "":
+            filterString = "*."+atomId
+        else:
+            filterString += ","+atomId
+
+    molFilter = MolFilter(filterString)
+    spatialSets = Molecule.matchAtoms(molFilter)
+
+    shifts = []
+    for sp in spatialSets:
+        ppm = sp.atom.getRefPPM()
+        name = sp.atom.getShortName()
+        if ppm != None:
+            shift = []
+            shift.append(str(name))
+            shift.append(ppm)
+            shifts.append(shift)
+    return shifts
+
 
