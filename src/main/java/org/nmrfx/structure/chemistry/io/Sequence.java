@@ -612,7 +612,7 @@ public class Sequence {
         Residue residue = null;
         boolean setPolymerType = false;
         String iRes = "1";
-        String[] stringArg = new String[2];
+        String[] stringArg = new String[3];
         Pattern pattern = Pattern.compile("[-/\\w/\\.]+");
         String molName = "";
         String coordSetName = molName;
@@ -706,6 +706,11 @@ public class Sequence {
                         iRes = stringArg[1];
                     } catch (NumberFormatException nfE) {
                         throw new MoleculeIOException(nfE.toString());
+                    }
+                }
+                if (stringArg[2] != null) {
+                    if (stringArg[2].equals("middle")) {
+                        resPos = RES_POSITION.MIDDLE;
                     }
                 }
             }
