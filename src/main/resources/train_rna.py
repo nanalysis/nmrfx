@@ -1,6 +1,8 @@
 import predtrain
 import sys, argparse, os
 import seqalgs
+from org.nmrfx.structure.chemistry.predict import RNAAttributes
+
 
 allowedAtoms = ['H', 'Hr', 'Hn', 'C', 'Cr', 'Cn']
 allowedAtoms += ["H2","H8","H5","H6","\"H1'\"","\"H2'\"","\"H3'\"","\"H4'\"","\"H5'\"","\"H5''\""]
@@ -19,6 +21,8 @@ gatomNames['Hn'] = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6"]
 gatomNames['Cn'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6"]
 gatomNamesAll = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
 gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+
+predtrain.rmax=4.6
 
 def getAtomNames(atomNameList):
     atomNames = []
@@ -168,17 +172,30 @@ def makeOffsetDict(trainFileName, testFileName):
     return offsetDict
 
 
-def dumpRefShifts(varName, coefDict):
+def dumpRefShifts(varName, coefDict, fOut):
     keys = coefDict.keys()
     keys.sort()
+    #for key in keys:
+    #    print varName+'.put("'+key+'", '+str(coefDict[key])+');'
+    fOut.write('baseshifts\n')
     for key in keys:
-        print varName+'.put("'+key+'", '+str(coefDict[key])+');'
+        print key+'\t'+str(coefDict[key])
+        outStr = "%s\t%.5f\n" %(key,coefDict[key])
+        fOut.write(outStr)
+    
 
-def dumpAlphas(eName, alphaDict):
+def dumpAlphas(eName, alphaDict, aType, fOut):
+    atomSources = RNAAttributes.getAtomSources()
     keys = alphaDict.keys()
     keys.sort()
+    #for key in keys:
+    #    print 'double[] '+key+eName+'Alphas = {'+str(alphaDict[key])[1:-2]+'};'
+    fOut.write('rmax\t'+str(predtrain.rmax)+'\t'+aType+'\n')
     for key in keys:
-        print 'double[] '+key+eName+'Alphas = {'+str(alphaDict[key])[1:-2]+'};'
+        fOut.write('coef\t'+key+'\t'+str(len(alphaDict[key]))+'\n')
+        for i,v in enumerate(alphaDict[key]):
+            outStr = "%d\t%s\t%.5f\n" %(i,atomSources[i],v)
+            fOut.write(outStr)
 
 def train(atomNameList, trainFile, testFile, matrixFile, ringMode, type):
     #print atomNames
@@ -187,7 +204,8 @@ def train(atomNameList, trainFile, testFile, matrixFile, ringMode, type):
     offsets = {}
     aType = atomNameList[0][0]
 
-
+    fileName = 'rna_pred_dist_%s_%.1f.txt' % (aType, predtrain.rmax)
+    fOut = open(fileName,'w')
     if type == "rc":
         atomNames = getAtomNames(atomNameList)
         coefDict,ringRatio = predtrain.trainRC(atomNames, trainFile, matrixFile, ringMode, type)
@@ -210,11 +228,11 @@ def train(atomNameList, trainFile, testFile, matrixFile, ringMode, type):
             alphasDict['ribose'] = alphasDict['base']
         alphasDict['ribose'] = [round(v,3) for v in alphasDict['ribose']]
         alphasDict['base'] = [round(v,3) for v in alphasDict['base']]
-        dumpAlphas(atomNameList[0][0], alphasDict)
+        dumpAlphas(atomNameList[0][0], alphasDict, aType, fOut)
 
     print coefDict,alphasDict
     bmrbs,pdbs = predtrain.readTestFiles(testFile)
-    dumpRefShifts("RNA_REF_SHIFTS",coefDict)
+    dumpRefShifts("RNA_REF_SHIFTS",coefDict, fOut)
 
     ppmDatas,aNames = predtrain.analyzeFiles(pdbs, bmrbs, type, aType, offsets, coefDict, alphasDict)
     #predtrain.dumpPPMData(ppmDatas)
@@ -224,7 +242,13 @@ def train(atomNameList, trainFile, testFile, matrixFile, ringMode, type):
     predtrain.removeOutliers(aNames, ppmDatas)
     nFinal,sumAbs = predtrain.getSumAbs(ppmDatas)
     print "nAtoms %4d MAE %4.2f" % (nFinal,sumAbs)
-    predtrain.getAtomStats(aNames, ppmDatas)
+    maeValues = predtrain.getAtomStats(aNames, ppmDatas)
+
+    fOut.write('mae\n')
+    for aname in maeValues:
+        outStr = "%s\t%.3f\n" %(aname,maeValues[aname])
+        fOut.write(outStr)
+    fOut.close()
 
 def testBuiltin(atomNameList,  testFile,  type):
     aType = atomNameList[0][0]
