@@ -295,16 +295,17 @@ public class AtomMath {
     public static double calcDeltaShift(Atom atom) {
         PPMv refPPM = atom.getRefPPM(0);
         PPMv ppm = atom.getPPM(0);
+        double diff;
         if (refPPM == null || ppm == null) {
-            throw new NullPointerException("ppm is null");
+            diff = 0.0;
         } else {
-            double diff = refPPM.getValue() - ppm.getValue();
-            return diff;
+            diff = refPPM.getValue() - ppm.getValue();
         }
+        return diff;
     }
 
-    public static double calcShiftEnergy(Double shift, ForceWeight forceWeight) {
-        return FastMath.pow(shift, 2) * forceWeight.getShift();
+    public static double calcShiftEnergy(Double deltaShift, ForceWeight forceWeight) {
+        return deltaShift * deltaShift * forceWeight.getShift();
     }
 
     public static AtomEnergy calcBond(final Point3 pt1, final Point3 pt2, final BondPair bondPair, final ForceWeight forceWeight, final boolean calcDeriv) {
