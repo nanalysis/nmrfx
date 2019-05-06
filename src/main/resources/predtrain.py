@@ -16,6 +16,7 @@ from org.apache.commons.math3.linear import ArrayRealVector
 from org.apache.commons.math3.linear import SingularValueDecomposition
 
 ringTypes = ["A0","A1","G0","G1","C0","U0"]
+#rmax = 4.6
 
 def getPDBFile(pdbID):
     pdbFile="pdbfiles/"+pdbID+".pdb"
@@ -87,8 +88,8 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
 
     See also: `loadRCTrainingMatrix(...)`
     """
-
-    if  (typeRCDist.lower()=='rc'):
+    plusRingMode = False
+    if  (typeRCDist.lower()=='rc') or plusRingMode:
         ringShifts = RingCurrentShift()
         ringShifts.makeRingList(mol)
     inFilter = {}
@@ -143,10 +144,13 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
                 s = "%.3f" % (ringPPM)
                 row.append(s)
         elif (typeRCDist.lower()=='dist'):
-            rmax = 15.0
             distances = mol.calcDistanceInputMatrixRow(0, rmax, atom)#/ 5.45
             s = [ '%.6f' % elem for elem in distances ] # "%.3f" % (distances)
             row += s
+            if plusRingMode:
+                ringPPM = ringShifts.calcRingContributions(sp,0,ringRatio)
+                s = "%.3f" % (ringPPM)
+                row.append(s)
         s = "%.3f" % (ppm)
         row.append(s)
         f1.write('\t'.join(row)+'\n')
@@ -193,7 +197,7 @@ def predictWithRCFromPDB(pdbFile, refShifts, ringRatio, typeRCDist, atomNames, b
             shifts = rnapred.predictRCShifts(mol, structList, refShifts, ringRatio, ringTypes)
         elif typeRCDist.lower() == 'dist':
             alphas = ringRatio
-            shifts = rnapred.predictDistShifts(mol, structList, refShifts, alphas)
+            shifts = rnapred.predictDistShifts(mol, rmax, structList, refShifts, alphas)
 
     return mol, shifts
 
@@ -224,6 +228,7 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, aType, offsets, refShifts=None, ringRa
     Chemical shifts will be predicted with 3D Ring Current shift code
     and the result will contain predicted and experimental
     shifts which can then be statistically analyzed.
+
 
     # Parameters:
 
@@ -378,6 +383,7 @@ def getAtomStats(aNames, ppmDatas):
     rms = {}
     deltaMeanSum = 0.0
     print "%4s %4s %4s %4s" % ("Atm","N","MAE","RMS")
+    maeValues={}
     for aname in aNames:
         deltaValues = [ppmData.exp-ppmData.pred for ppmData in ppmDatas if ppmData.aName == aname and ppmData.valid]
         dStat = getDStat(deltaValues)
@@ -386,7 +392,9 @@ def getAtomStats(aNames, ppmDatas):
         rms[aname] = math.sqrt(sumDV2/len(deltaValues))
         deltaMeanSum += meanAbs(deltaValues)
         print "%-4s %4d %4.2f %4.2f" % (aname,len(deltaValues),meanAbs(deltaValues),rms[aname])
+        maeValues[aname]=meanAbs(deltaValues)
     print "%s %.2f" % ("avg Delta Values =", deltaMeanSum/len(aNames))
+    return maeValues
 
 def readTestFiles(fileName):
     bmrbs = []

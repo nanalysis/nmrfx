@@ -488,7 +488,7 @@ def predictRCShifts(mol, structureNum=0, refShifts=None, ringRatio=None, ringTyp
         shift.append(ppm)
         shifts.append(shift)
     return shifts
-def predictDistShifts(mol, structureNum=0, refShifts=None, alphaDict=None):
+def predictDistShifts(mol, rmax, structureNum=0, refShifts=None, alphaDict=None):
         defaultRefShifts = {
          "U.H1'": 5.702,
          "U.H2'": 4.449,
@@ -551,8 +551,12 @@ def predictDistShifts(mol, structureNum=0, refShifts=None, alphaDict=None):
         molFilter = MolFilter(filterString)
         spatialSets = Molecule.matchAtoms(molFilter)
 
+        plusRingMode = False
+        if plusRingMode:
+            ringShifts = RingCurrentShift()
+            ringShifts.makeRingList(mol)
+
         shifts = []
-        rmax =15.0
         for sp in spatialSets:
             name = sp.atom.getShortName()
             aName = sp.atom.getName()
@@ -563,15 +567,21 @@ def predictDistShifts(mol, structureNum=0, refShifts=None, alphaDict=None):
             alphas = alphaDict[aType]
             nucName = sp.atom.getEntity().getName()
 
+
             if (nucName+"."+aName in refShifts):
                 basePPM = refShifts[nucName+"."+aName]
             else: continue
             if isinstance(structureNum,(list,tuple)):
                 distPPM = 0.0
+                ringPPM = 0.0
                 for iStruct in structureNum:
                     distances = mol.calcDistanceInputMatrixRow(iStruct, rmax, sp.atom)
-                    distPPM += sum([alphas[i] * distances[i] for i in range(len(alphas))])
-                distPPM = distPPM / len(structureNum)
+                    alphasOnly = alphas[0:-2]
+                    ringRatio = alphas[-1]
+                    distPPM += sum([alphasOnly[i] * distances[i] for i in range(len(alphasOnly))])
+                    if plusRingMode:
+                        ringPPM += ringShifts.calcRingContributions(sp,iStruct,ringRatio)
+                distPPM = (distPPM+ringPPM) / len(structureNum)
             else:
                 distances = mol.calcDistanceInputMatrixRow(structureNum, rmax, sp.atom)
                 distPPM = sum([alphas[i] * distances[i] for i in range(len(alphas))])
