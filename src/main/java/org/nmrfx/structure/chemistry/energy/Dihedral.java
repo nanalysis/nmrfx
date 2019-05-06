@@ -380,6 +380,9 @@ public class Dihedral {
         Atom[] atoms = new Atom[4];
         for (int i = 0; i < arrayLength; i++) {
             atoms[i] = Molecule.getAtomByName(atomNames.get(i));
+            if (atoms[i] == null) {
+                throw new IllegalArgumentException("Error adding dihedral boundary, invalid atom " + atomNames.get(i));
+            }
         }
         addBoundary(atoms, lower, upper, scale);
     }
@@ -387,6 +390,11 @@ public class Dihedral {
     public void addBoundary(final Atom[] atoms, double lower, double upper, double scale) throws InvalidMoleculeException {
         if (atoms.length != 4) {
             throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
+        }
+        for (Atom atom : atoms) {
+            if (atom == null) {
+                throw new IllegalArgumentException("Error adding dihedral boundary, invalid atom");
+            }
         }
         AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale);
         angleBoundaries.put(angleBoundary.getRefAtom().getFullName(), angleBoundary);
