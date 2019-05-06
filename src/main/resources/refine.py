@@ -260,6 +260,8 @@ class dynOptions(StrictDict):
         'timePowerMed'  : 4.0,
         'minSteps'      : 100,
         'polishSteps'   : 500,
+        'dfreeSteps'    :  0,
+        'dfreeAlg'      : 'cmaes',
         'kinEScale'     : 200.0,
 	'irpWeight'     : 0.0
     }
@@ -1073,9 +1075,10 @@ class refine:
             type = shiftDict['type']
             if type == 'str3':
                 import os
-                import osfiles
-                dir = os.path.dirname(file)
-                file = osfiles.convertStarFile(file,dir)
+                shifts = seqalgs.readBMRBShifts('shifts',file)
+                for key in shifts:
+                    for key2 in shifts[key]:
+                        print key, key2, shifts[key][key2]
                 type = 'nv'
         else:
             type = 'nv'
@@ -1088,8 +1091,8 @@ class refine:
                 changeResNums = range!=residues
                 file = osfiles.limResidues(range,file,dir,'shift',changeResNums)
             self.setShifts(file)
-            ringShifts = self.setBasePPMs()
-            self.energyLists.setRingShifts()
+            #ringShifts = self.setBasePPMs()
+            #self.energyLists.setRingShifts()
         if 'weight' in shiftDict:
             wt = shiftDict['weight']
         return wt
@@ -1148,6 +1151,7 @@ class refine:
     def NEFReader(self, fileName):
         from java.io import FileReader
         from java.io import BufferedReader
+        from java.io import File
         from org.nmrfx.processor.star import STAR3
         from org.nmrfx.structure.chemistry.io import NMRStarReader
         from org.nmrfx.structure.chemistry.io import NMRStarWriter
@@ -1155,7 +1159,8 @@ class refine:
         bfR = BufferedReader(fileReader)
         star = STAR3(bfR,'star3')
         star.scanFile()
-        reader = NMRStarReader(star)
+        file = File(fileName)
+        reader = NMRStarReader(file, star)
         self.dihedrals = reader.processNEF()
         self.energyLists = self.dihedrals.energyList
 
@@ -2050,6 +2055,8 @@ class refine:
             runStage(stage, self, rDyn)
 				
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
+        if dOpt['dfreeSteps']> 0:
+            self.refine(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
 
     def cdynamics(self, steps, hiTemp, medTemp, timeStep=1.0e-3):
         self.updateAt(20)
