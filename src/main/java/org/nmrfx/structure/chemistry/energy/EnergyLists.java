@@ -42,8 +42,10 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords.ViolationStats;
 import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
+import org.nmrfx.structure.chemistry.predict.Predictor;
 
 public class EnergyLists {
 
@@ -70,6 +72,7 @@ public class EnergyLists {
     private double shrinkHValue = 0.0;
     private ForceWeight forceWeight = new ForceWeight();
     private RingCurrentShift ringShifts = new RingCurrentShift();
+    private Predictor predictor = null;
     AtomBranch[] branches = null;
     static final double toDeg = 180.0 / FastMath.PI;
     static final double toRad = FastMath.PI / 180;
@@ -253,7 +256,16 @@ public class EnergyLists {
     }
 
     public void updateShifts() {
-        ringShifts.predictShifts();
+        if (predictor == null) {
+            predictor = new Predictor();
+        }
+        for (Polymer polymer : molecule.getPolymers()) {
+            try {
+                predictor.predictRNAWithDistances(polymer, 0, 0);
+               // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
+            } catch (InvalidMoleculeException imE) {
+            }
+        }
     }
 
     public static double calcDistance(Point3 pt1, Point3 pt2) {
@@ -617,6 +629,10 @@ public class EnergyLists {
                 for (Atom atom : refAtoms) {
                     double deltaShift = AtomMath.calcDeltaShift(atom);
                     if (deltaShift != -1.0) {
+                        Double mae = Predictor.getMAE(atom);
+                        if (mae != null) {
+                            deltaShift /= mae;
+                        }
                         double shiftEnergy = AtomMath.calcShiftEnergy(deltaShift, forceWeight);
                         shiftTotEnergy += shiftEnergy;
                         nShift++;
@@ -836,6 +852,17 @@ public class EnergyLists {
         return totalEnergy;
     }
 
+    public double calcShiftsFast(boolean calcDeriv) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
+        double weight = forceWeight.getShift();
+        double energy = eCoords.calcDistShifts(calcDeriv, 4.6, weight); // fixme set rMax
+//        if (calcDeriv) {
+//            eCoords.addRepelDerivs(branches);
+//        }
+
+        return energy;
+    }
+
     public double calcShift(boolean calcDeriv) {
         double totalEnergy = 0;
         if (calcDeriv) {
@@ -845,6 +872,10 @@ public class EnergyLists {
         updateShifts();
         for (Atom atom : refAtoms) {
             double deltaShift = AtomMath.calcDeltaShift(atom);
+            Double mae = Predictor.getMAE(atom);
+            if (mae != null) {
+                deltaShift /= mae;
+            }
             totalEnergy += AtomMath.calcShiftEnergy(deltaShift, forceWeight);
         }
         return totalEnergy;

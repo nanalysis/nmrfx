@@ -17,7 +17,6 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import com.sun.corba.se.spi.activation._ActivatorImplBase;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import org.nmrfx.structure.chemistry.Atom;
@@ -35,6 +34,9 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Point3;
 import java.io.FileWriter;
 import java.io.IOException;
+import org.nmrfx.structure.chemistry.PPMv;
+import org.nmrfx.structure.chemistry.predict.Predictor;
+import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 
 /**
  *
@@ -52,6 +54,10 @@ public class EnergyCoords {
     int[] resNums = null;
     Atom[] atoms = null;
     int[] mAtoms = null;
+    int[] shiftClass = null;
+    double[] baseShifts = null;
+    double[] shifts = null;
+    double[] refShifts = null;
     boolean[] swapped = null;
     int[] hBondable = null;
     boolean[] hasBondConstraint = null;
@@ -78,6 +84,7 @@ public class EnergyCoords {
     int nAtoms = 0;
     boolean[][] fixed;
     Map<Integer, Set<Integer>> kSwap = null;
+    boolean setupShifts = false;
 
     private static double hbondDelta = 0.60;
 
@@ -92,8 +99,13 @@ public class EnergyCoords {
             hasBondConstraint = new boolean[size];
             hBondable = new int[size];
             cellIndex = new int[size];
+            shiftClass = new int[size];
+            baseShifts = new double[size];
+            shifts = new double[size];
+            refShifts = new double[size];
             for (int i = 0; i < size; i++) {
                 vecCoords[i] = new FastVector3D();
+                shiftClass[i] = -1;
             }
         }
         nAtoms = size;
@@ -110,6 +122,37 @@ public class EnergyCoords {
         resNums[i] = resNum;
         atoms[i] = atomType;
         atomType.eAtom = i;
+        if (setupShifts) {
+            String aName = atomType.getName();
+            int atomClass = RNAAttributes.getAtomSourceIndex(aName);
+            if (atomClass >= 0) {
+                int rnaClass = 0;
+                if (aName.charAt(aName.length() - 1) == '\'') {
+                    if (aName.charAt(0) == 'H') {
+                        rnaClass = 3;
+                    } else {
+                        rnaClass = 2;
+
+                    }
+                } else {
+                    if (aName.charAt(0) == 'H') {
+                        rnaClass = 1;
+                    } else {
+                        rnaClass = 0;
+
+                    }
+                }
+                atomClass += 256 * rnaClass;
+            }
+            shiftClass[i] = atomClass;
+            Double baseValue = Predictor.getDistBaseShift(atomType);
+            baseShifts[i] = baseValue == null ? 0.0 : baseValue;
+            refShifts[i] = 0.0;
+            PPMv ppmV = atomType.getPPM(0);
+            if ((ppmV != null) && ppmV.isValid()) {
+                shifts[i] = ppmV.getValue();
+            }
+        }
     }
 
     public void clear() {
@@ -210,6 +253,47 @@ public class EnergyCoords {
 
     public ViolationStats getNOEError(int i, double limitVal, double weight) {
         return getError(i, limitVal, weight, 0);
+    }
+
+    public double calcDistShifts(boolean calcDeriv, double rLim, double weight) {
+        double r2Lim = rLim * rLim;
+        for (int i = 0; i < baseShifts.length; i++) {
+            refShifts[i] = baseShifts[i];
+        }
+
+        for (int i = repelStart; i < repelEnd; i++) {
+            int iAtom = iAtoms[i];
+            int jAtom = jAtoms[i];
+            if ((baseShifts[iAtom] != 0.0) && shiftClass[jAtom] >= 0) {
+                FastVector3D iV = vecCoords[iAtom];
+                FastVector3D jV = vecCoords[jAtom];
+                double r2 = iV.disSq(jV);
+                if (r2 <= r2Lim) {
+                    double r = FastMath.sqrt(r2);
+                    int alphaClass = shiftClass[jAtom] >> 8;
+                    int alphaIndex = shiftClass[jAtom] & 255;
+                    double alpha = Predictor.getAlpha(alphaClass, alphaIndex);
+                    double shiftContrib = alpha * r * r2;
+                    refShifts[iAtom] += shiftContrib;
+                    if (calcDeriv) {
+                        //  what is needed is actually the derivative/r, therefore
+                        // we divide by r
+                        // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
+                        //derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
+                    }
+                }
+            }
+        }
+        double sum = 0.0;
+        for (int i = 0; i < baseShifts.length; i++) {
+            if (baseShifts[i] != 0.0) {
+                double shiftDelta = shifts[i] = refShifts[i];
+                sum += weight * shiftDelta * shiftDelta;
+                System.out.println(i + " " + atoms[i].getShortName() + " " + refShifts[i]);
+                atoms[i].setRefPPM(refShifts[i]);
+            }
+        }
+        return sum;
     }
 
     class ViolationStats {
