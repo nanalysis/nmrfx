@@ -11,7 +11,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -31,84 +30,49 @@ public class EnergyConstraintPairs extends EnergyPairs {
     int[] groupSizes;
     double[] rUp2;
     double[] rUp;
-    List<ConstraintPair> pairs = new ArrayList<>();
 
     public EnergyConstraintPairs(EnergyCoords eCoords) {
         super(eCoords);
 
     }
 
-    class ConstraintPair {
-
-        int i;
-        int j;
-        int iUnit;
-        int jUnit;
-        double rLow;
-        double rUp;
-        boolean isBond;
-        int group;
-        double weight;
-
-        ConstraintPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group, double weight) {
-            this.i = i;
-            this.j = j;
-            this.iUnit = iUnit;
-            this.jUnit = jUnit;
-            this.rLow = rLow;
-            this.rUp = rUp;
-            this.isBond = isBond;
-            this.group = group;
-            this.weight = weight;
+    void resize(int size) {
+        if ((iAtoms == null) || (iAtoms.length < size)) {
+            super.resize(size);
+            int newSize = iAtoms.length;
+            iGroups = resize(iGroups, newSize);
+            groupSizes = resize(groupSizes, newSize);
+            rUp = resize(rUp, newSize);
+            rUp2 = resize(rUp2, newSize);
         }
-    }
 
-    public void initPairs(int n) {
-        super.initPairs(n);
-        rUp2 = new double[n];
-        rUp = new double[n];
-        iGroups = new int[n];
-        groupSizes = new int[n];
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group, double weight) {
-        ConstraintPair pair = new ConstraintPair(i, j, iUnit, jUnit, rLow, rUp, isBond, group, weight);
-        pairs.add(pair);
-    }
+        resize(nPairs + 1);
+        int iPair = nPairs;
+        iGroups[iPair] = group;
 
-    public void updatePairs() {
-        initPairs(pairs.size());
-        int iPair = 0;
-        for (ConstraintPair pair : pairs) {
-            iGroups[iPair] = pair.group;
+        iAtoms[iPair] = i;
+        jAtoms[iPair] = j;
+        iUnits[iPair] = iUnit;
+        jUnits[iPair] = jUnit;
 
-            iAtoms[iPair] = pair.i;
-            jAtoms[iPair] = pair.j;
-            iUnits[iPair] = pair.iUnit;
-            jUnits[iPair] = pair.jUnit;
+        this.rLow[iPair] = rLow;
+        this.rLow2[iPair] = rLow * rLow;
+        this.rUp[iPair] = rUp;
+        this.rUp2[iPair] = rUp * rUp;
+        weights[iPair] = weight;
+        derivs[iPair] = 0.0;
 
-            this.rLow[iPair] = pair.rLow;
-            this.rLow2[iPair] = pair.rLow * pair.rLow;
-            this.rUp[iPair] = pair.rUp;
-            this.rUp2[iPair] = pair.rUp * pair.rUp;
-            weights[iPair] = pair.weight;
-            derivs[iPair] = 0.0;
-
-            eCoords.hasBondConstraint[pair.i] = pair.isBond;
-            eCoords.hasBondConstraint[pair.j] = pair.isBond;
-            if (eCoords.fixed != null) {
-                if (pair.isBond) {
-                    int i = pair.i;
-                    int j = pair.j;
-                    eCoords.setFixed(i, j, true);
-                }
+        eCoords.hasBondConstraint[i] = isBond;
+        eCoords.hasBondConstraint[j] = isBond;
+        if (eCoords.fixed != null) {
+            if (isBond) {
+                eCoords.setFixed(i, j, true);
             }
-
-            iPair++;
         }
-        nPairs = pairs.size();
-
-//        repelEnd++;
+        nPairs = iPair + 1;
     }
 
     public void updateSwappable() {
@@ -256,9 +220,6 @@ public class EnergyConstraintPairs extends EnergyPairs {
     }
 
     public double calcEnergy(boolean calcDeriv, double weight) {
-        if (nPairs != pairs.size()) {
-            updatePairs();
-        }
         double sum = 0.0;
         for (int i = 0; i < nPairs; i++) {
             sum += calcEnergy(calcDeriv, weight, i);
