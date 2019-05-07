@@ -17,23 +17,12 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
 import org.nmrfx.structure.chemistry.Atom;
-import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Point3;
-import java.io.FileWriter;
-import java.io.IOException;
 import org.nmrfx.structure.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
@@ -49,8 +38,9 @@ public class EnergyCoords {
     {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
     };
 
-    final static private int DEFAULTSIZE = 300000;
     FastVector3D[] vecCoords = null;
+    EnergyPairs ePairs;
+    EnergyConstraintPairs eConstraintPairs;
     int[] resNums = null;
     Atom[] atoms = null;
     int[] mAtoms = null;
@@ -63,30 +53,17 @@ public class EnergyCoords {
     boolean[] hasBondConstraint = null;
     double[] contactRadii = null;
     int[] cellIndex = null;
-    int[] iGroups = new int[DEFAULTSIZE];
-    int[] groupSizes = new int[DEFAULTSIZE];
-    int[] iAtoms = new int[DEFAULTSIZE];
-    int[] jAtoms = new int[DEFAULTSIZE];
-    int[] iUnits = new int[DEFAULTSIZE];
-    int[] jUnits = new int[DEFAULTSIZE];
-    double[] disSq = new double[DEFAULTSIZE];
-    double[] rLow2 = new double[DEFAULTSIZE];
-    double[] rLow = new double[DEFAULTSIZE];
-    double[] rUp2 = new double[DEFAULTSIZE];
-    double[] rUp = new double[DEFAULTSIZE];
-    double[] viol = new double[DEFAULTSIZE];
-    double[] weights = new double[DEFAULTSIZE];
-
-    double[] derivs = new double[DEFAULTSIZE];
-    int repelStart = 40000;
-    int repelEnd = repelStart;
-    int disEnd = 0;
     int nAtoms = 0;
     boolean[][] fixed;
     Map<Integer, Set<Integer>> kSwap = null;
     boolean setupShifts = false;
 
     private static double hbondDelta = 0.60;
+
+    public EnergyCoords() {
+        ePairs = new EnergyPairs(this);
+        eConstraintPairs = new EnergyConstraintPairs(this);
+    }
 
     public FastVector3D[] getVecCoords(int size) {
         if ((vecCoords == null) || (vecCoords.length != size)) {
@@ -156,228 +133,57 @@ public class EnergyCoords {
     }
 
     public void clear() {
-        repelEnd = repelStart;
+        ePairs.pairs.clear();
+        ePairs.nPairs = 0;
     }
 
     public void clearDist() {
-        disEnd = 0;
+        eConstraintPairs.nPairs = 0;
+        eConstraintPairs.pairs.clear();
     }
 
     public int getNNOE() {
-        return disEnd;
+        return eConstraintPairs.nPairs;
     }
 
     public int getNContacts() {
-        return repelEnd - repelStart;
+        return ePairs.nPairs;
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double r0) {
-        iAtoms[repelEnd] = i;
-        jAtoms[repelEnd] = j;
-        iUnits[repelEnd] = iUnit;
-        jUnits[repelEnd] = jUnit;
-
-        this.rLow[repelEnd] = r0;
-        rLow2[repelEnd] = r0 * r0;
-        rUp2[repelEnd] = Double.MAX_VALUE;
-        weights[repelEnd] = 1.0;
-        repelEnd++;
+        ePairs.addPair(i, j, iUnit, jUnit, r0);
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group, double weight) {
-        iGroups[disEnd] = group;
-        iAtoms[disEnd] = i;
-        jAtoms[disEnd] = j;
-        iUnits[disEnd] = iUnit;
-        jUnits[disEnd] = jUnit;
-
-        this.rLow[disEnd] = rLow;
-        rLow2[disEnd] = rLow * rLow;
-        this.rUp[disEnd] = rUp;
-        rUp2[disEnd] = rUp * rUp;
-
-        hasBondConstraint[i] = isBond;
-        hasBondConstraint[j] = isBond;
-        weights[disEnd] = weight;
-        if (fixed != null) {
-            if (isBond) {
-                if (i < j) {
-                    fixed[i][j] = true;
-                } else {
-                    fixed[j][i] = true;
-                }
-            }
-        }
-        //if (isBond){
-        //    weights[disEnd] = 25.0;
-        //}else{
-        //    weights[disEnd] = 1.0;
-        //}
-        disEnd++;
+        eConstraintPairs.addPair(i, j, iUnit, jUnit, rLow, rUp, isBond, group, weight);
+    }
+    
+    public void updateGroups() {
+        eConstraintPairs.updateGroups();
     }
 
-    public double calcRepel(boolean calcDeriv, double weight) {
-        double sum = 0.0;
-        for (int i = repelStart; i < repelEnd; i++) {
-            int iAtom = iAtoms[i];
-            int jAtom = jAtoms[i];
-            FastVector3D iV = vecCoords[iAtom];
-            FastVector3D jV = vecCoords[jAtom];
-            double r2 = iV.disSq(jV);
-            disSq[i] = r2;
-            derivs[i] = 0.0;
-            viol[i] = 0.0;
-            if (r2 <= rLow2[i]) {
-                double r = FastMath.sqrt(r2);
-                double dif = rLow[i] - r;
-                viol[i] = weights[i] * weight * dif * dif;
-                sum += viol[i];
-                if (calcDeriv) {
-                    //  what is needed is actually the derivative/r, therefore
-                    // we divide by r
-                    // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                    derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
-                }
-            }
-        }
-        return sum;
+    public void doSwaps() {
+        eConstraintPairs.doSwaps();
     }
 
     public double calcNOE(boolean calcDeriv, double weight) {
-        return calcEnergy(calcDeriv, weight, 0);
+        return eConstraintPairs.calcEnergy(calcDeriv, weight);
+    }
+
+    public double calcRepel(boolean calcDeriv, double weight) {
+        return ePairs.calcRepel(calcDeriv, weight);
+    }
+
+    public double calcDistShifts(boolean calcDeriv, double rMax, double weight) {
+        return ePairs.calcDistShifts(calcDeriv, rMax, weight);
     }
 
     public ViolationStats getRepelError(int i, double limitVal, double weight) {
-        return getError(i, limitVal, weight, 1);
+        return ePairs.getError(i, limitVal, weight);
     }
 
     public ViolationStats getNOEError(int i, double limitVal, double weight) {
-        return getError(i, limitVal, weight, 0);
-    }
-
-    public double calcDistShifts(boolean calcDeriv, double rLim, double weight) {
-        double r2Lim = rLim * rLim;
-        for (int i = 0; i < baseShifts.length; i++) {
-            refShifts[i] = baseShifts[i];
-        }
-
-        for (int i = repelStart; i < repelEnd; i++) {
-            int iAtom = iAtoms[i];
-            int jAtom = jAtoms[i];
-            if ((baseShifts[iAtom] != 0.0) && shiftClass[jAtom] >= 0) {
-                FastVector3D iV = vecCoords[iAtom];
-                FastVector3D jV = vecCoords[jAtom];
-                double r2 = iV.disSq(jV);
-                if (r2 <= r2Lim) {
-                    double r = FastMath.sqrt(r2);
-                    int alphaClass = shiftClass[jAtom] >> 8;
-                    int alphaIndex = shiftClass[jAtom] & 255;
-                    double alpha = Predictor.getAlpha(alphaClass, alphaIndex);
-                    double shiftContrib = alpha * r * r2;
-                    refShifts[iAtom] += shiftContrib;
-                    if (calcDeriv) {
-                        //  what is needed is actually the derivative/r, therefore
-                        // we divide by r
-                        // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                        //derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
-                    }
-                }
-            }
-        }
-        double sum = 0.0;
-        for (int i = 0; i < baseShifts.length; i++) {
-            if (baseShifts[i] != 0.0) {
-                double shiftDelta = shifts[i] = refShifts[i];
-                sum += weight * shiftDelta * shiftDelta;
-                System.out.println(i + " " + atoms[i].getShortName() + " " + refShifts[i]);
-                atoms[i].setRefPPM(refShifts[i]);
-            }
-        }
-        return sum;
-    }
-
-    class ViolationStats {
-
-        int mode;
-        String aName1;
-        String aName2;
-        double dis;
-        double rUp;
-        double rLow;
-        double energy;
-        double constraintDis = 0.0;
-        double dif;
-
-        ViolationStats(int mode, String aName1, String aName2, double dis, double rLow, double rUp, double energy) {
-            this.mode = mode;
-            this.aName1 = aName1;
-            this.aName2 = aName2;
-            this.dis = dis;
-            this.rLow = rLow;
-            this.rUp = rUp;
-            this.energy = energy;
-            dif = 0.0;
-            if (mode == 1) {
-                constraintDis = rLow;
-                if (dis < rLow) {
-                    dif = dis - rLow;
-                }
-            } else {
-                if (dis < rLow) {
-                    constraintDis = rLow;
-                    dif = dis - rLow;
-                } else if (dis > rUp) {
-                    constraintDis = rUp;
-                    dif = dis - rUp;
-                }
-            }
-        }
-
-        double getViol() {
-            return dif;
-        }
-
-        public String toString() {
-            String modeType = "Dis";
-            if (mode == 1) {
-                modeType = "Rep";
-            }
-            String result = String.format("%s: %10s %10s %5.2f %5.2f %5.2f %7.3f\n", modeType, aName1, aName2, constraintDis, dis, dif, energy);
-            return result;
-
-        }
-
-    }
-
-    public ViolationStats getError(int i, double limitVal, double weight, int mode) {
-        String modeType = "Dis";
-        if (mode == 1) {
-            i += repelStart;
-            modeType = "Rep";
-        }
-        int iAtom = iAtoms[i];
-        int jAtom = jAtoms[i];
-        double r2 = disSq[i];
-        double r = FastMath.sqrt(r2);
-        double dif = 0.0;
-        double constraintDis = 0.0;
-        if (r2 <= rLow2[i]) {
-            r = FastMath.sqrt(r2);
-            dif = rLow[i] - r;
-            constraintDis = rLow[i];
-        } else if (r2 >= rUp2[i]) {
-            r = FastMath.sqrt(r2);
-            dif = rUp[i] - r;
-            constraintDis = rUp[i];
-        }
-        String result = "";
-        ViolationStats stat = null;
-        if (Math.abs(dif) > limitVal) {
-            double energy = weights[i] * weight * dif * dif;
-            stat = new ViolationStats(mode, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rLow[i], rUp[i], energy);
-        }
-
-        return stat;
+        return eConstraintPairs.getError(i, limitVal, weight);
     }
 
     private char ijWild(String iAtomOld, String jAtomOld, String iAtomNew, String jAtomNew) {
@@ -409,343 +215,51 @@ public class EnergyCoords {
         return 'n';
     }
 
-    public void dumpRestraints() {
-        DecimalFormat doubFormatter = new DecimalFormat("#.0");
-        ArrayList<String[]> groupLineElements = new ArrayList<>();
-        String prevGroup = "";
-        String prevIAtom = "";
-        String prevJAtom = "";
-        try {
-            FileWriter writerFile = new FileWriter("nmrfxsRestraints.txt");
-            for (int i = 0; i < disEnd; i++) {
-                String iIndex = Integer.toString(i);
-                String iGroup = Integer.toString(iGroups[i]);
-                boolean newGroup = !prevGroup.equals(iGroup);
-                if (newGroup) {
-                    for (String[] elems : groupLineElements) {
-                        String line = String.format("%5s  %5s  %-13s  %-13s  %6s  %6s", elems[0], elems[1], elems[2], elems[3], elems[4], elems[5]);
-                        writerFile.write(line + "\n");
-                    }
-                    groupLineElements.clear();
-                }
-                int iAtomIndex = iAtoms[i];
-                int jAtomIndex = jAtoms[i];
-                Molecule mol = Molecule.getActive();
-                Atom iAtom = atoms[iAtomIndex];
-                Atom jAtom = atoms[jAtomIndex];
-
-                String iAtomName = iAtom.getFullName();
-                String jAtomName = jAtom.getFullName();
-                char wild = 'n';
-                //if (!newGroup) {
-                //    wild = ijWild(prevIAtom, prevJAtom, iAtomName, jAtomName);
-                //}
-                // If there is a new write out the values, if not, make empty
-                String lower = newGroup ? doubFormatter.format(rLow[i]) : "";
-                String upper = newGroup ? doubFormatter.format(rUp[i]) : "";
-                String[] lineElements = {iIndex, iGroup, iAtomName, jAtomName, lower, upper};
-
-                // If we find a wild, no need to add another line, can just use star
-                // for wild in the line that wouldve preceded the new element
-                if (wild == 'n') {
-                    groupLineElements.add(lineElements);
-                } else {
-                    int editIndex = wild == 'i' ? 2 : 3;
-                    lineElements = groupLineElements.get(groupLineElements.size() - 1);
-                    String atomName = lineElements[editIndex];
-                    atomName = atomName.substring(0, atomName.length() - 1) + "*";
-                    lineElements[editIndex] = atomName;
-                }
-
-                prevGroup = iGroup;
-                prevIAtom = iAtomName;
-                prevJAtom = jAtomName;
-            }
-            writerFile.close();
-        } catch (IOException e) {
-            System.err.println("Error dumping NMRFxS restraints. Exception : " + e);
-        }
-
-    }
-
-    public double dumpRestraints(boolean calcDeriv, double weight, int mode) {
-        double sum = 0.0;
-        int start = 0;
-        int end = disEnd;
-        if (mode != 0) {
-            start = repelStart;
-            end = repelEnd;
-        }
-        for (int i = start; i < end; i++) {
-            int iAtom = iAtoms[i];
-            int jAtom = jAtoms[i];
-            FastVector3D iV = vecCoords[iAtom];
-            FastVector3D jV = vecCoords[jAtom];
-            double r2 = iV.disSq(jV);
-            derivs[i] = 0.0;
-            viol[i] = 0.0;
-            final double dif;
-            final double r;
-            if (r2 <= rLow2[i]) {
-                r = FastMath.sqrt(r2);
-                dif = rLow[i] - r;
-            } else if (r2 >= rUp2[i]) {
-                r = FastMath.sqrt(r2);
-                dif = rUp[i] - r;
-            } else {
-                continue;
-            }
-            viol[i] = weights[i] * weight * dif * dif;
-            sum += viol[i];
-            if (calcDeriv) {
-                //  what is needed is actually the derivitive/r, therefore
-                // we divide by r
-                // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
-            }
-
-        }
-        return sum;
-    }
-
-    public void updateGroups() {
-        int start = 0;
-        int end = disEnd;
-        for (int i = start; i < end;) {
-            groupSizes[i] = 1;
-            int j = i + 1;
-            while (iGroups[j] == iGroups[i] && j < end) {
-                groupSizes[i]++;
-                j++;
-            }
-            i = j;
-        }
-        updateSwappable();
-    }
-
-    public void updateSwappable() {
-        int nPartner = 0;
-        for (int i = 0; i < atoms.length; i++) {
-            Optional<Atom> partner = atoms[i].getMethylenePartner();
-            if (partner.isPresent()) {
-                mAtoms[i] = partner.get().eAtom;
-                nPartner++;
-            } else {
-                mAtoms[i] = -1;
-            }
-        }
-        int start = 0;
-        int end = disEnd;
-        kSwap = new HashMap<>();
-
-        for (int k = start; k < end; k++) {
-            int groupSize = groupSizes[k];
-            for (int kk = 0; kk < groupSize; kk++) {
-                int i = iAtoms[k + kk];
-                int j = jAtoms[k + kk];
-                int storeIndex;
-                if (mAtoms[i] != -1) {
-                    if (i < mAtoms[i]) {
-                        storeIndex = i;
-                    } else {
-                        storeIndex = mAtoms[i];
-                    }
-                    Set<Integer> swaps = kSwap.get(storeIndex);
-                    if (swaps == null) {
-                        swaps = new HashSet<>();
-                        kSwap.put(storeIndex, swaps);
-                    }
-                    swaps.add(k);
-                }
-                if (mAtoms[j] != -1) {
-                    if (j < mAtoms[j]) {
-                        storeIndex = j;
-                    } else {
-                        storeIndex = mAtoms[j];
-                    }
-                    Set<Integer> swaps = kSwap.get(storeIndex);
-                    if (swaps == null) {
-                        swaps = new HashSet<>();
-                        kSwap.put(storeIndex, swaps);
-                    }
-                    swaps.add(k);
-                }
-            }
-            if (groupSizes[k] > 1) {
-                k += groupSizes[k] - 1;
-            }
-        }
-    }
-
-    public void doSwaps() {
-        for (Entry<Integer, Set<Integer>> entry : kSwap.entrySet()) {
-            doSwap(entry.getKey(), entry.getValue());
-        }
-    }
-
-    public void doSwap(int i, Set<Integer> swaps) {
-        double preSwap = swapEnergy(swaps);
-        swapIt(i);
-        double postSwap = swapEnergy(swaps);
-        if (postSwap < preSwap) {
-            swapped[i] = !swapped[i];
-            swapped[mAtoms[i]] = !swapped[mAtoms[i]];
-        } else {
-            // restore if swap not lower energy
-            swapIt(i);
-        }
-//        double restoreSwap = swapEnergy(swaps);
-//        System.out.printf("%3d %10s %8.3f %8.3f %8.3f\n", i, atoms[i].getFullName(), preSwap, postSwap, restoreSwap);
-    }
-
-    double swapEnergy(Set<Integer> swaps) {
-        double sum = 0.0;
-        for (Integer k : swaps) {
-            sum += calcEnergy(false, 2.0, 0, k);
-        }
-        return sum;
-    }
-
-    void swapIt(int origAtom) {
-        int swapAtom = mAtoms[origAtom];
-        if (swapAtom != -1) {
-            Set<Integer> swaps = kSwap.get(origAtom);
-            if (swaps != null) {
-                for (Integer k : swaps) {
-                    int groupSize = groupSizes[k];
-                    for (int kk = 0; kk < groupSize; kk++) {
-                        int ik = kk + k;
-                        if (iAtoms[ik] == origAtom) {
-                            iAtoms[ik] = swapAtom;
-                        } else if (iAtoms[ik] == swapAtom) {
-                            iAtoms[ik] = origAtom;
-                        }
-                        if (jAtoms[ik] == origAtom) {
-                            jAtoms[ik] = swapAtom;
-                        } else if (jAtoms[ik] == swapAtom) {
-                            jAtoms[ik] = origAtom;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public void dumpSwaps() {
-        for (Entry<Integer, Set<Integer>> entry : kSwap.entrySet()) {
-            dumpSwap(entry.getKey(), entry.getValue());
-        }
-    }
-
-    public void dumpSwap(int iAtom, Set<Integer> set) {
-        System.out.print(atoms[iAtom].getFullName());
-        for (Integer k : set) {
-            int groupSize = groupSizes[k];
-            for (int kk = 0; kk < groupSize; kk++) {
-                int ik = kk + k;
-                System.out.print(" " + k + " " + ik + " " + atoms[iAtoms[ik]].getFullName() + " " + atoms[jAtoms[ik]].getFullName());
-            }
-        }
-        System.out.println("");
-    }
-
-    public double calcEnergy(boolean calcDeriv, double weight, int mode) {
-        double sum = 0.0;
-        int start = 0;
-        int end = disEnd;
-        if (mode != 0) {
-            start = repelStart;
-            end = repelEnd;
-        }
-        for (int i = start; i < end; i++) {
-            sum += calcEnergy(calcDeriv, weight, mode, i);
-            if (groupSizes[i] > 1) {
-                i += groupSizes[i] - 1;
-            }
-        }
-        return sum;
-    }
-
-    public double calcEnergy(boolean calcDeriv, double weight, int mode, int i) {
-        double sum = 0.0;
-        int groupSize = groupSizes[i];
-        int nMono = 1;
-        double r2;
-        double r2Min = Double.MAX_VALUE;
-        if (groupSize > 1) {
-            double sum2 = 0.0;
-            for (int j = 0; j < groupSize; j++) {
-                int iAtom = iAtoms[i + j];
-                int jAtom = jAtoms[i + j];
-                FastVector3D iV = vecCoords[iAtom];
-                FastVector3D jV = vecCoords[jAtom];
-                double r2Temp = iV.disSq(jV);
-                double r = FastMath.sqrt(r2Temp);
-                sum2 += FastMath.pow(r, -6);
-                derivs[i + j] = 0.0;
-                viol[i + j] = 0.0;
-                if (r2Temp < r2Min) {
-                    r2Min = r2Temp;
-                }
-            }
-            sum2 /= nMono;
-            double r = FastMath.pow(sum2, -1.0 / 6);
-            r2 = r * r;
-            for (int j = 0; j < groupSize; j++) {
-                disSq[i + j] = r2;
-            }
-        } else {
-            int iAtom = iAtoms[i];
-            int jAtom = jAtoms[i];
-            FastVector3D iV = vecCoords[iAtom];
-            FastVector3D jV = vecCoords[jAtom];
-            r2 = iV.disSq(jV);
-            disSq[i] = r2;
-            derivs[i] = 0.0;
-            viol[i] = 0.0;
-            r2Min = r2;
-        }
-        final double dif;
-        final double r;
-        if (r2Min <= rLow2[i]) {
-            r = FastMath.sqrt(r2Min);
-            dif = rLow[i] - r;
-        } else if (r2 >= rUp2[i]) {
-            r = FastMath.sqrt(r2);
-            dif = rUp[i] - r;
-        } else {
-            return 0.0;
-        }
-        viol[i] = weights[i] * weight * dif * dif;
-        sum += viol[i];
-        if (calcDeriv) {
-            //  what is needed is actually the derivative/r, therefore
-            // we divide by r
-            // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-            derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
-        }
-        if (groupSize > 1) {
-            for (int j = 1; j < groupSize; j++) {
-                viol[i + j] = viol[i];
-                sum += viol[i + j];
-                if (calcDeriv) {
-                    //  what is needed is actually the derivative/r, therefore
-                    // we divide by r
-                    // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                    derivs[i + j] = derivs[i];
-                }
-            }
-        }
-
-        return sum;
-    }
-
+//    public double dumpRestraints(boolean calcDeriv, double weight, int mode) {
+//        double sum = 0.0;
+//        int start = 0;
+//        int end = disEnd;
+//        if (mode != 0) {
+//            start = repelStart;
+//            end = repelEnd;
+//        }
+//        for (int i = start; i < end; i++) {
+//            int iAtom = iAtoms[i];
+//            int jAtom = jAtoms[i];
+//            FastVector3D iV = vecCoords[iAtom];
+//            FastVector3D jV = vecCoords[jAtom];
+//            double r2 = iV.disSq(jV);
+//            derivs[i] = 0.0;
+//            viol[i] = 0.0;
+//            final double dif;
+//            final double r;
+//            if (r2 <= rLow2[i]) {
+//                r = FastMath.sqrt(r2);
+//                dif = rLow[i] - r;
+//            } else if (r2 >= rUp2[i]) {
+//                r = FastMath.sqrt(r2);
+//                dif = rUp[i] - r;
+//            } else {
+//                continue;
+//            }
+//            viol[i] = weights[i] * weight * dif * dif;
+//            sum += viol[i];
+//            if (calcDeriv) {
+//                //  what is needed is actually the derivitive/r, therefore
+//                // we divide by r
+//                // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
+//                derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
+//            }
+//
+//        }
+//        return sum;
+//    }
     public void addRepelDerivs(AtomBranch[] branches) {
-        addDerivs(branches, 1);
+        ePairs.addDerivs(branches);
     }
 
     public void addNOEDerivs(AtomBranch[] branches) {
-        addDerivs(branches, 0);
+        eConstraintPairs.addDerivs(branches);
     }
 
     public double calcDihedral(int a, int b, int c, int d) {
@@ -771,46 +285,6 @@ public class EnergyCoords {
         Point3 c3 = new Point3(c.getX(), c.getY(), c.getZ());
         Point3 d3 = new Point3(d.getX(), d.getY(), d.getZ());
         return AtomMath.calcDihedral(a3, b3, c3, d3);
-    }
-
-    public void addDerivs(AtomBranch[] branches, int mode) {
-        int start = 0;
-        int end = disEnd;
-        if (mode != 0) {
-            start = repelStart;
-            end = repelEnd;
-        }
-        FastVector3D v1 = new FastVector3D();
-        FastVector3D v2 = new FastVector3D();
-        for (int i = start; i < end; i++) {
-            double deriv = derivs[i];
-            if (deriv == 0.0) {
-                continue;
-            }
-            int iAtom = iAtoms[i];
-            int jAtom = jAtoms[i];
-
-            FastVector3D pv1 = vecCoords[iAtom];
-            FastVector3D pv2 = vecCoords[jAtom];
-
-            pv1.crossProduct(pv2, v1);
-            v1.multiply(derivs[i]);
-
-            pv1.subtract(pv2, v2);
-            v2.multiply(derivs[i]);
-            int iUnit = iUnits[i];
-            int jUnit = jUnits[i];
-
-            if (iUnit >= 0) {
-                branches[iUnit].addToF(v1.getValues());
-                branches[iUnit].addToG(v2.getValues());
-
-            }
-            if (jUnit >= 0) {
-                branches[jUnit].subtractToF(v1.getValues());
-                branches[jUnit].subtractToG(v2.getValues());
-            }
-        }
     }
 
     double[][] getBoundaries() {
