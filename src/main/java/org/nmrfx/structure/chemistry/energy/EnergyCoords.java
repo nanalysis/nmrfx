@@ -202,9 +202,9 @@ public class EnergyCoords {
         if (fixed != null) {
             if (isBond) {
                 if (i < j) {
-                    fixed[i][j - i - 1] = true;
+                    fixed[i][j] = true;
                 } else {
-                    fixed[j][i - j - 1] = true;
+                    fixed[j][i] = true;
                 }
             }
         }
@@ -974,12 +974,7 @@ public class EnergyCoords {
                                         double adjustClose = 0.0;
                                         // fixme could we have invalid jAtom-iAtom-1, if res test inappropriate
                                         if ((iRes == jRes) || (deltaRes == 1)) {
-                                            if ((iAtom >= fixed.length) || ((jAtom - iAtom - 1) >= fixed[iAtom].length)) {
-                                                System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
-                                            }
-                                            if (fixed[iAtom][jAtom - iAtom - 1]) {
-                                                notFixed = false;
-                                            }
+                                            notFixed = !getFixed(iAtom, jAtom);
                                             if (checkCloseAtoms(atom1, atom2)) {
                                                 adjustClose = 0.2;
                                             }
@@ -1026,6 +1021,14 @@ public class EnergyCoords {
 //System.out.println("nrep " + (repelEnd-repelStart) + " " + includeH + " " + limit);
     }
 
+    boolean getFixed(int i, int j) {
+        return fixed[i][j];
+    }
+
+    void setFixed(int i, int j, boolean state) {
+        fixed[i][j] = state;
+    }
+
     public double[][][] getFixedRange() {
         int lastRes = Integer.MIN_VALUE;
         int nResidues = 0;
@@ -1046,8 +1049,8 @@ public class EnergyCoords {
                 resStarts[j++] = i;
             }
         }
-        double[][][] disRange = new double[2][nAtoms][];
-        fixed = new boolean[nAtoms][];
+        double[][][] disRange = new double[2][nAtoms][nAtoms];
+        fixed = new boolean[nAtoms][nAtoms];
         for (int i = 0; i < nAtoms; i++) {
             int resNum = resNums[i];
             int lastAtom = i + 500;
@@ -1060,10 +1063,7 @@ public class EnergyCoords {
 //            if (resNum < (nResidues - 1)) {
 //                nResAtoms += resCounts[resNum + 1];
 //            }
-            disRange[0][i] = new double[nResAtoms];
-            fixed[i] = new boolean[nResAtoms];
             Arrays.fill(disRange[0][i], Double.MAX_VALUE);
-            disRange[1][i] = new double[nResAtoms];
             Arrays.fill(disRange[1][i], Double.NEGATIVE_INFINITY);
 
         }
@@ -1073,8 +1073,8 @@ public class EnergyCoords {
     public void updateRanges(double[][][] disRanges) {
         for (int i = 0; i < nAtoms; i++) {
             FastVector3D v1 = vecCoords[i];
-            for (int j = 0, len = disRanges[0][i].length; j < len; j++) {
-                FastVector3D v2 = vecCoords[i + j + 1];
+            for (int j = 0; j < nAtoms; j++) {
+                FastVector3D v2 = vecCoords[j];
                 double dis = v1.dis(v2);
                 disRanges[0][i][j] = Math.min(dis, disRanges[0][i][j]);
                 disRanges[1][i][j] = Math.max(dis, disRanges[1][i][j]);
@@ -1086,12 +1086,11 @@ public class EnergyCoords {
         double tol = 0.2;
         int nFixed = 0;
         for (int i = 0; i < nAtoms; i++) {
-//            System.out.print(i);
-            for (int j = 0, len = disRanges[0][i].length; j < len; j++) {
-                double delta = disRanges[1][i][j] - disRanges[0][i][j];
+            for (int j = 0; j < nAtoms; j++) {
+                double delta = Math.abs(disRanges[1][i][j] - disRanges[0][i][j]);
                 //System.out.println(i + " " + j + " " + atoms[i].getShortName() + " " + atoms[i + j + 1].getShortName() + " " + delta);
-                fixed[i][j] = delta < tol;
-                if (fixed[i][j]) {
+                setFixed(i, j, delta < tol);
+                if (getFixed(i, j)) {
                     nFixed++;
                 }
 //                if (fixed[i][j]) {
