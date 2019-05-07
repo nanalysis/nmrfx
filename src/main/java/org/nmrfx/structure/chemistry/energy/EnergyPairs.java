@@ -5,8 +5,6 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.Atom;
 import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
@@ -33,34 +31,25 @@ public class EnergyPairs {
     double[] derivs;
     int nPairs;
 
-    List<RepelPair> pairs = new ArrayList<>();
-
     public EnergyPairs(EnergyCoords eCoords) {
         this.eCoords = eCoords;
 
     }
 
-    class RepelPair {
-
-        int i;
-        int j;
-        int iUnit;
-        int jUnit;
-        double r0;
-
-        RepelPair(int i, int j, int iUnit, int jUnit, double r0) {
-            this.i = i;
-            this.j = j;
-            this.iUnit = iUnit;
-            this.jUnit = jUnit;
-            this.r0 = r0;
-        }
-    }
-
     public void addPair(int i, int j, int iUnit, int jUnit, double r0) {
-        //resize(i + 1);
-        RepelPair rPair = new RepelPair(i, j, iUnit, jUnit, r0);
-        pairs.add(rPair);
+        resize(nPairs + 1);
+        int iPair = nPairs;
+        iAtoms[iPair] = i;
+        jAtoms[iPair] = j;
+        iUnits[iPair] = iUnit;
+        jUnits[iPair] = jUnit;
+
+        this.rLow[iPair] = r0;
+        rLow2[iPair] = r0 * r0;
+        weights[iPair] = 1.0;
+        derivs[iPair] = 0.0;
+        nPairs = iPair + 1;
+
     }
 
     int[] resize(int[] v, int size) {
@@ -87,57 +76,23 @@ public class EnergyPairs {
         return newV;
     }
 
-    public void resize(int size) {
-        if (iAtoms.length < size) {
-            iAtoms = resize(iAtoms, size);
-            jAtoms = resize(jAtoms, size);
-            iUnits = resize(iUnits, size);
-            jUnits = resize(jUnits, size);
-            disSq = resize(disSq, size);
-            rLow = resize(rLow, size);
-            rLow2 = resize(rLow2, size);
-            viol = resize(viol, size);
-            weights = resize(weights, size);
-            derivs = resize(derivs, size);
+    void resize(int size) {
+        if ((iAtoms == null) || (iAtoms.length < size)) {
+            int newSize = size < 4096 ? 4096 : size * 3 / 2;
+            iAtoms = resize(iAtoms, newSize);
+            jAtoms = resize(jAtoms, newSize);
+            iUnits = resize(iUnits, newSize);
+            jUnits = resize(jUnits, newSize);
+            disSq = resize(disSq, newSize);
+            rLow = resize(rLow, newSize);
+            rLow2 = resize(rLow2, newSize);
+            viol = resize(viol, newSize);
+            weights = resize(weights, newSize);
+            derivs = resize(derivs, newSize);
         }
-    }
-
-    public void initPairs(int n) {
-        iAtoms = new int[n];
-        jAtoms = new int[n];
-        iUnits = new int[n];
-        jUnits = new int[n];
-        disSq = new double[n];
-        rLow2 = new double[n];
-        rLow = new double[n];
-        viol = new double[n];
-        weights = new double[n];
-        derivs = new double[n];
-    }
-
-    public void updatePairs() {
-        initPairs(pairs.size());
-        int iPair = 0;
-        for (RepelPair pair : pairs) {
-            iAtoms[iPair] = pair.i;
-            jAtoms[iPair] = pair.j;
-            iUnits[iPair] = pair.iUnit;
-            jUnits[iPair] = pair.jUnit;
-
-            this.rLow[iPair] = pair.r0;
-            rLow2[iPair] = pair.r0 * pair.r0;
-            weights[iPair] = 1.0;
-            derivs[iPair] = 0.0;
-            iPair++;
-        }
-        nPairs = pairs.size();
-//        repelEnd++;
     }
 
     public double calcRepel(boolean calcDeriv, double weight) {
-        if (nPairs != pairs.size()) {
-            updatePairs();
-        }
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         double sum = 0.0;
         for (int i = 0; i < nPairs; i++) {

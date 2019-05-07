@@ -133,13 +133,11 @@ public class EnergyCoords {
     }
 
     public void clear() {
-        ePairs.pairs.clear();
         ePairs.nPairs = 0;
     }
 
     public void clearDist() {
         eConstraintPairs.nPairs = 0;
-        eConstraintPairs.pairs.clear();
     }
 
     public int getNNOE() {
@@ -215,45 +213,6 @@ public class EnergyCoords {
         return 'n';
     }
 
-//    public double dumpRestraints(boolean calcDeriv, double weight, int mode) {
-//        double sum = 0.0;
-//        int start = 0;
-//        int end = disEnd;
-//        if (mode != 0) {
-//            start = repelStart;
-//            end = repelEnd;
-//        }
-//        for (int i = start; i < end; i++) {
-//            int iAtom = iAtoms[i];
-//            int jAtom = jAtoms[i];
-//            FastVector3D iV = vecCoords[iAtom];
-//            FastVector3D jV = vecCoords[jAtom];
-//            double r2 = iV.disSq(jV);
-//            derivs[i] = 0.0;
-//            viol[i] = 0.0;
-//            final double dif;
-//            final double r;
-//            if (r2 <= rLow2[i]) {
-//                r = FastMath.sqrt(r2);
-//                dif = rLow[i] - r;
-//            } else if (r2 >= rUp2[i]) {
-//                r = FastMath.sqrt(r2);
-//                dif = rUp[i] - r;
-//            } else {
-//                continue;
-//            }
-//            viol[i] = weights[i] * weight * dif * dif;
-//            sum += viol[i];
-//            if (calcDeriv) {
-//                //  what is needed is actually the derivitive/r, therefore
-//                // we divide by r
-//                // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-//                derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
-//            }
-//
-//        }
-//        return sum;
-//    }
     public void addRepelDerivs(AtomBranch[] branches) {
         ePairs.addDerivs(branches);
     }
