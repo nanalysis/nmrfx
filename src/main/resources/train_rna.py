@@ -14,13 +14,17 @@ allowedAtomsH += ["C2","C8","C5","C6","\"C1'\"","\"C2'\"","\"C3'\"","\"C4'\"","a
 
 gatomNames = {}
 gatomNames['H'] = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
-gatomNames['C'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+#gatomNames['C'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+gatomNames['C'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","C1'","C2'","C3'","C4'","C5'"]
 gatomNames['Hr'] = ["A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
-gatomNames['Cr'] = ["A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+#gatomNames['Cr'] = ["A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+gatomNames['Cr'] = ["C1'","C2'","C3'","C4'","C5'"]
 gatomNames['Hn'] = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6"]
 gatomNames['Cn'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6"]
 gatomNamesAll = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
-gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+#gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+#gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","C2'","C3'","C4'","C5'"]
 
 predtrain.rmax=4.6
 
@@ -194,7 +198,11 @@ def dumpAlphas(eName, alphaDict, aType, fOut):
     for key in keys:
         fOut.write('coef\t'+key+'\t'+str(len(alphaDict[key]))+'\n')
         for i,v in enumerate(alphaDict[key]):
-            outStr = "%d\t%s\t%.5f\n" %(i,atomSources[i],v)
+            if i < len(atomSources):
+                atomSource = atomSources[i]
+            else:
+                atomSource = "chi"
+            outStr = "%d\t%s\t%.5f\n" %(i,atomSource,v)
             fOut.write(outStr)
 
 def train(atomNameList, trainFile, testFile, matrixFile, ringMode, type):

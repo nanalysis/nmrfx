@@ -89,6 +89,7 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
     See also: `loadRCTrainingMatrix(...)`
     """
     plusRingMode = False
+    chiMode = True
     if  (typeRCDist.lower()=='rc') or plusRingMode:
         ringShifts = RingCurrentShift()
         ringShifts.makeRingList(mol)
@@ -150,6 +151,14 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
             if plusRingMode:
                 ringPPM = ringShifts.calcRingContributions(sp,0,ringRatio)
                 s = "%.3f" % (ringPPM)
+                row.append(s)
+            if chiMode:
+                chi = atom.getEntity().calcChi()
+                sinchi = math.sin(chi)
+                coschi = math.cos(chi)
+                s = "%.3f" % (coschi)
+                row.append(s)
+                s = "%.3f" % (sinchi)
                 row.append(s)
         s = "%.3f" % (ppm)
         row.append(s)
@@ -534,7 +543,7 @@ def trainRC(atomNames, trainingFileName, matrixFileName, ringMode, typeRCDist):
              ringRatios = coefs[-1]
         coefs = coefs[0:-nRings]
     elif (typeRCDist.lower()=='dist'):
-        alphas = coefs[len(atomNames):-1]
+        alphas = coefs[len(atomNames):]
         coefs = coefs[0:len(atomNames)]
         ringRatios = alphas
     coefDict = {}
