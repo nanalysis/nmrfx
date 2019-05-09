@@ -354,8 +354,8 @@ public class Predictor {
     public void predictRNAWithDistances(Polymer polymer, int iStruct, int iRef) throws InvalidMoleculeException {
         if (false) {
             EnergyCoords eCoords = polymer.molecule.getEnergyCoords();
-                eCoords.setCells(null, 10000,rMax, 0.0, true, 0.0, 0.0);
-                eCoords.calcDistShifts(false, rMax, 1.0);
+            eCoords.setCells(null, 10000, rMax, 0.0, true, 0.0, 0.0);
+            eCoords.calcDistShifts(false, rMax, 1.0);
 
         } else {
             List<Atom> atoms = polymer.getAtoms();
@@ -383,12 +383,24 @@ public class Predictor {
                 }
                 String nucName = atom.getEntity().getName();
                 String nucAtom = nucName + "." + aName;
-                if (baseShiftMap.containsKey(nucAtom)) {
-                    double basePPM = baseShiftMap.get(nucAtom);
+                Double basePPM = getDistBaseShift(atom);
+                if (basePPM != null) {
                     double[] distances = polymer.molecule.calcDistanceInputMatrixRow(iStruct, rMax, atom);
                     double distPPM = 0.0;
+                    double chi = ((Residue) atom.getEntity()).calcChi();
+                    double cosChi = Math.cos(chi);
+                    double sinChi = Math.sin(chi);
                     for (int i = 0; i < alphas[alphaType].length; i++) {
-                        distPPM += alphas[alphaType][i] * distances[i];
+                        double alpha = alphas[alphaType][i];
+                        double shiftContrib;
+                        if (i == distances.length) {
+                            shiftContrib = alpha * cosChi;
+                        } else if (i == distances.length + 1) {
+                            shiftContrib = alpha * sinChi;
+                        } else {
+                            shiftContrib = alpha * distances[i];
+                        }
+                        distPPM += shiftContrib;
                     }
                     double ppm = basePPM + distPPM;
                     atom.setRefPPM(iRef, ppm);
