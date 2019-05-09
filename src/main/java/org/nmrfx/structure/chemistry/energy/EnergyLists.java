@@ -625,7 +625,7 @@ public class EnergyLists {
                 }
             }
             if (forceWeight.getShift() > 0.0) {
-                updateShifts();
+                //updateShifts();
                 for (Atom atom : refAtoms) {
                     double deltaShift = AtomMath.calcDeltaShift(atom);
                     if (deltaShift != -1.0) {
@@ -1129,7 +1129,7 @@ public class EnergyLists {
             }
 
             if (forceWeight.getShift() > 0.0) {
-                energyTotal += calcShift(calcDeriv);
+                energyTotal += calcShiftsFast(calcDeriv);
             }
 
             if (forceWeight.getDihedralProb() > 0.0) {
