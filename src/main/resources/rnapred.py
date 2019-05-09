@@ -552,6 +552,7 @@ def predictDistShifts(mol, rmax, structureNum=0, refShifts=None, alphaDict=None)
         spatialSets = Molecule.matchAtoms(molFilter)
 
         plusRingMode = False
+        chiMode = True
         if plusRingMode:
             ringShifts = RingCurrentShift()
             ringShifts.makeRingList(mol)
@@ -576,8 +577,18 @@ def predictDistShifts(mol, rmax, structureNum=0, refShifts=None, alphaDict=None)
                 ringPPM = 0.0
                 for iStruct in structureNum:
                     distances = mol.calcDistanceInputMatrixRow(iStruct, rmax, sp.atom)
-                    alphasOnly = alphas[0:-2]
-                    ringRatio = alphas[-1]
+                    if plusRingMode:
+                        alphasOnly = alphas[0:-2]
+                        ringRatio = alphas[-1]
+                    else:
+                        alphasOnly = alphas
+                    if chiMode:
+                        chi = sp.atom.getEntity().calcChi()
+                        sinchi = math.sin(chi)
+                        coschi = math.cos(chi)
+                        distances.append(coschi)
+                        distances.append(sinchi)
+
                     distPPM += sum([alphasOnly[i] * distances[i] for i in range(len(alphasOnly))])
                     if plusRingMode:
                         ringPPM += ringShifts.calcRingContributions(sp,iStruct,ringRatio)
