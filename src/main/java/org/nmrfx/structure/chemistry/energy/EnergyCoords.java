@@ -39,8 +39,9 @@ public class EnergyCoords {
     };
 
     FastVector3D[] vecCoords = null;
-    EnergyPairs ePairs;
+    EnergyDistancePairs ePairs;
     EnergyConstraintPairs eConstraintPairs;
+    EnergyShiftPairs eShiftPairs;
     int[] resNums = null;
     Atom[] atoms = null;
     int[] mAtoms = null;
@@ -61,8 +62,9 @@ public class EnergyCoords {
     private static double hbondDelta = 0.60;
 
     public EnergyCoords() {
-        ePairs = new EnergyPairs(this);
+        ePairs = new EnergyDistancePairs(this);
         eConstraintPairs = new EnergyConstraintPairs(this);
+        eShiftPairs = new EnergyShiftPairs(this);
     }
 
     public FastVector3D[] getVecCoords(int size) {
@@ -173,7 +175,7 @@ public class EnergyCoords {
     }
 
     public double calcDistShifts(boolean calcDeriv, double rMax, double weight) {
-        return ePairs.calcDistShifts(calcDeriv, rMax, weight);
+        return eShiftPairs.calcDistShifts(calcDeriv, rMax, weight);
     }
 
     public ViolationStats getRepelError(int i, double limitVal, double weight) {
