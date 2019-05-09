@@ -197,6 +197,20 @@ public class Residue extends Compound {
     public Double calcChi(int structureNum) {
         if (name.equals("ALA") || name.equals("GLY")) {
             return null;
+        } else if (name.equals("U") || name.equals("C")) {
+            Atom[] atoms = new Atom[4];
+            atoms[0] = getAtom("O4'");
+            atoms[1] = getAtom("C1'");
+            atoms[2] = getAtom("N1");
+            atoms[3] = getAtom("C2");
+            return Atom.calcDihedral(atoms, structureNum);
+        } else if (name.equals("G") || name.equals("A")) {
+            Atom[] atoms = new Atom[4];
+            atoms[0] = getAtom("O4'");
+            atoms[1] = getAtom("C1'");
+            atoms[2] = getAtom("N9");
+            atoms[3] = getAtom("C4");
+            return Atom.calcDihedral(atoms, structureNum);
         } else {
             Atom[] atoms = new Atom[4];
             atoms[0] = getAtom("N");
