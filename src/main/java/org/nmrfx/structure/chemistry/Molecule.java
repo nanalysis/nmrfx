@@ -2498,6 +2498,9 @@ public class Molecule implements Serializable, ITree {
                         if (r == 0) {
                             dis3 = 0.0;
                         }
+//                        if (targetAtom.getShortName().equals("5.C1'")) {
+//                            System.out.println(sourceAtom.getShortName() + " " + keyInd + " " + r);
+//                        }
                         distValues[keyInd] += dis3;
                     }
                 }
@@ -2506,23 +2509,32 @@ public class Molecule implements Serializable, ITree {
         return distValues;
     }
 
-    public List getAllowedSources(final int iStruct, List atomSources, Atom targetAtom) {
+    public static List getAllowedSources(final int iStruct, List atomSources, Atom targetAtom) {
         String targetAtomName = targetAtom.getName();
         List allowedSources = new ArrayList<>();
         if (!targetAtomName.contains("'")) { // target atom name doesn't contain a prime
             allowedSources.addAll(Arrays.asList("C2'", "C3'", "C4'", "C5'", "P", "OP1", "OP2", "O2'", "O3'", "O4'", "O5'"));
-        } else if (targetAtomName.contains("'")) { // target atom name does contain a prime
-            allowedSources.addAll(atomSources);
-            String num = targetAtomName.substring(1, 2);
-            if (targetAtomName.equals("C" + num + "'") || targetAtomName.equals("H" + num + "'") || targetAtomName.equals("H" + num + "''")) {
-                allowedSources.removeAll(Arrays.asList("C" + num + "'", "O" + num + "'", "C" + String.valueOf(Integer.valueOf(num) - 1) + "'",
-                        "C" + String.valueOf(Integer.valueOf(num) + 1) + "'"));
-                if (num.equals("1")) {
-                    allowedSources.removeAll(Arrays.asList("O4'", "AN9", "AC4", "AC8", "GN9", "GC4", "GC8", "CN1", "CC2", "CC6", "UN1", "UC2", "UC6"));
-                } else if (num.equals("2")) {
-                    allowedSources.removeAll(Arrays.asList("AN9", "GN9", "CN1", "UN1"));
-                }
-            }
+        } else { // target atom name does contain a prime
+            allowedSources.addAll(Arrays.asList("AC8", "AN7", "AC5", "AC4", "AN3", "AC2", "AN1", "AC6", "AN6",
+                    "CC2", "CO2", "CN3", "CC4", "CN4", "CC5", "CC6",
+                    "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
+                    "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6"));
+
+//            allowedSources.addAll(atomSources);
+//            String num = targetAtomName.substring(1, 2);
+//            if (targetAtomName.equals("C" + num + "'") || targetAtomName.equals("H" + num + "'") || targetAtomName.equals("H" + num + "''")) {
+//                allowedSources.removeAll(Arrays.asList("C" + num + "'", "O" + num + "'", "C" + String.valueOf(Integer.valueOf(num) - 1) + "'",
+//                        "C" + String.valueOf(Integer.valueOf(num) + 1) + "'"));
+//                if (num.equals("1")) {
+//                    allowedSources.removeAll(Arrays.asList("O4'", "AN9", "AC8", "AN7", "AC5", "AC4", "AN3", "AC2", "AN1", "AC6", "AN6",
+//                            "CN1", "CC2", "CO2", "CN3", "CC4", "CN4", "CC5", "CC6",
+//                            "GN9", "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
+//                            "UN1", "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6"));
+//
+//                } else if (num.equals("2")) {
+//                    allowedSources.removeAll(Arrays.asList("AN9", "GN9", "CN1", "UN1"));
+//                }
+//            }
         }
         return allowedSources;
     }
