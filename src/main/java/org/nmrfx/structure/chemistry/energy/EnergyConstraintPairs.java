@@ -24,7 +24,7 @@ import org.nmrfx.structure.fastlinear.FastVector3D;
  *
  * @author brucejohnson
  */
-public class EnergyConstraintPairs extends EnergyPairs {
+public class EnergyConstraintPairs extends EnergyDistancePairs {
 
     int[] iGroups;
     int[] groupSizes;
