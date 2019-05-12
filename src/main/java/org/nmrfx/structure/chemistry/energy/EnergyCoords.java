@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import org.nmrfx.structure.chemistry.Point3;
 import org.nmrfx.structure.chemistry.PPMv;
+import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 
@@ -157,7 +158,7 @@ public class EnergyCoords {
     public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group, double weight) {
         eConstraintPairs.addPair(i, j, iUnit, jUnit, rLow, rUp, isBond, group, weight);
     }
-    
+
     public void updateGroups() {
         eConstraintPairs.updateGroups();
     }
@@ -538,14 +539,32 @@ public class EnergyCoords {
     }
 
     public void dumpFixed() {
-        System.out.println("dump fixed");
-        for (int i = 0; i < nAtoms; i++) {
-            System.out.println(atoms[i].getShortName());
-        }
         for (int i = 0; i < fixed.length; i++) {
+            String rName1 = ((Residue) atoms[i].getEntity()).getName();
+            String aName1 = atoms[i].getName();
+            String name1;
+            if (aName1.contains("'")) {
+                name1 = aName1;
+            } else {
+                name1 = rName1 + "." + aName1;
+            }
             for (int j = 0; j < fixed[i].length; j++) {
-                if (fixed[i][j]) {
-                    System.out.println(atoms[i].getShortName() + " " + atoms[i + j + 1].getShortName());
+
+                if ((i != j) && fixed[i][j]) {
+                    String rName2 = ((Residue) atoms[j].getEntity()).getName();
+                    String aName2 = atoms[j].getName();
+                    String name2;
+                    if (aName2.contains("'")) {
+                        name2 = aName2;
+                    } else {
+                        name2 = rName2 + "." + aName2;
+                    }
+                    if (name1.compareTo(name2) <= 0) {
+                        System.out.println("fix " + name1 + " " + name2);
+                    } else {
+                        System.out.println("fix " + name2 + " " + name1);
+
+                    }
                 }
             }
         }
