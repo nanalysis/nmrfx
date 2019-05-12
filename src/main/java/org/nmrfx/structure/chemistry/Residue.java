@@ -190,6 +190,24 @@ public class Residue extends Compound {
         polymer.removeBond(bond);
     }
 
+    public Double calcNu2() {
+        return calcNu2(0);
+    }
+
+    public Double calcNu2(int structureNum) {
+        if (name.equals("U") || name.equals("C") || name.equals("G") || name.equals("A")) {
+            Atom[] atoms = new Atom[4];
+            atoms[0] = getAtom("C1'");
+            atoms[1] = getAtom("C2'");
+            atoms[2] = getAtom("C3'");
+            atoms[3] = getAtom("C4'");
+            return Atom.calcDihedral(atoms, structureNum);
+        } else {
+            return null;
+        }
+
+    }
+
     public Double calcChi() {
         return calcChi(0);
     }
