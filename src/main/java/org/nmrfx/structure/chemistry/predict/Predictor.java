@@ -9,9 +9,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.nmrfx.structure.chemistry.Atom;
@@ -24,7 +27,6 @@ import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.ProteinPredictor;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords;
-import org.nmrfx.structure.chemistry.energy.EnergyLists;
 import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 import org.nmrfx.structure.chemistry.miner.NodeEvaluatorFactory;
 import org.nmrfx.structure.chemistry.miner.NodeValidatorInterface;
@@ -217,6 +219,7 @@ public class Predictor {
     static Map<String, Double> baseShiftMap = new HashMap<>();
     static Map<String, Double> maeMap = new HashMap<>();
     static double rMax = 4.6;
+    static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
 
     private boolean isRNA(Polymer polymer) {
         boolean rna = false;
@@ -349,6 +352,34 @@ public class Predictor {
                 atom.setRefPPM(iRef, ppm);
             }
         }
+    }
+
+    public static boolean isRNAPairFixed(Atom atom1, Atom atom2) {
+        String aName1 = atom1.getName();
+        if (!aName1.contains("'")) {
+            aName1 = ((Residue) atom1.getEntity()).getName() + "." + aName1;
+        }
+        String aName2 = atom2.getName();
+        if (!aName2.contains("'")) {
+            aName2 = ((Residue) atom2.getEntity()).getName() + "." + aName2;
+        }
+        return isRNAPairFixed(aName1, aName2);
+    }
+
+    public static boolean isRNAPairFixed(String aName1, String aName2) {
+        if (rnaFixedMap.isEmpty()) {
+            try {
+                readRNAFixed("data/rnafix.txt");
+            } catch (IOException ex) {
+                return false;
+            }
+        }
+        if (rnaFixedMap.containsKey(aName1)) {
+            return rnaFixedMap.get(aName1).contains(aName2);
+        } else if (rnaFixedMap.containsKey(aName2)) {
+            return rnaFixedMap.get(aName2).contains(aName1);
+        }
+        return false;
     }
 
     public void predictRNAWithDistances(Polymer polymer, int iStruct, int iRef) throws InvalidMoleculeException {
@@ -519,6 +550,33 @@ public class Predictor {
 //            for (String key : statMap.keySet()) {
 //                System.out.println(key);
 //            }
+        }
+    }
+
+    public static void readRNAFixed(String resourceName) throws IOException {
+        ClassLoader cl = ClassLoader.getSystemClassLoader();
+        InputStream istream = cl.getResourceAsStream(resourceName);
+        if (istream == null) {
+            throw new IOException("Cannot find '" + resourceName + "' on classpath");
+        } else {
+            InputStreamReader reader = new InputStreamReader(istream);
+            BufferedReader breader = new BufferedReader(reader);
+            String aType = "";
+            while (true) {
+                String line = breader.readLine();
+                if (line == null) {
+                    break;
+                } else {
+                    if (!line.equals("")) {
+                        String[] fields = line.split("\t");
+                        Set<String> set = new HashSet<>();
+
+                        String srcName = fields[0];
+                        rnaFixedMap.put(srcName, set);
+                        set.addAll(Arrays.asList(fields));
+                    }
+                }
+            }
         }
     }
 

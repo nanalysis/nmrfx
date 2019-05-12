@@ -42,6 +42,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
+import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
@@ -2455,27 +2456,16 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
-//    J. Phys. Chem. B 2014, 118, 12168–12175
     public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom) {
+        return calcDistanceInputMatrixRow(iStruct, distLim, targetAtom, 1.0);
+
+    }
+
+    public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom, double intraRow) {
         List origAtomSources = RNAAttributes.getAtomSources();
         int numAtomSources = origAtomSources.size();
-        double[] distValues = new double[numAtomSources];
-
-        List atomSources = new ArrayList(origAtomSources);
-        String targetResName = targetAtom.getEntity().getName();
-        String targetAtomName = targetAtom.getName();
-        String targetKey = targetResName + targetAtomName;
-        if (targetAtomName.contains("'")) {
-            targetKey = targetAtomName;
-        }
-        if (!allowedSourcesMap.containsKey(targetKey)) {
-            allowedSourcesMap.put(targetKey, getAllowedSources(iStruct, origAtomSources, targetAtom));
-//                System.out.println(allowedSourcesMap.keySet());
-        }
-        if (allowedSourcesMap.containsKey(targetKey)) {
-            atomSources = allowedSourcesMap.get(targetKey);//getAllowedSources(iStruct, origAtomSources, targetAtom);
-//                System.out.println(targetKey + ": " + atomSources);
-        }
+        int sepIntra = 0;
+        double[] distValues = new double[numAtomSources * (1 + sepIntra)];
 
         Point3 targetPt = targetAtom.getPoint(iStruct);
         for (Atom sourceAtom : atoms) {
@@ -2488,7 +2478,7 @@ public class Molecule implements Serializable, ITree {
             int sourceResID = sourceAtom.getEntity().getIDNum();
             int targetResID = targetAtom.getEntity().getIDNum();
             if ((targetAtom != sourceAtom) && (sourceAtom.getAtomicNumber() != 1)
-                    && ((sourceResID != targetResID) || atomSources.contains(key))) {
+                    && ((sourceResID != targetResID) || !Predictor.isRNAPairFixed(targetAtom, sourceAtom))) {
                 Point3 sourcePt = sourceAtom.getPoint(iStruct);
                 if ((targetPt != null) && (sourcePt != null)) {
                     double r = Atom.calcDistance(targetPt, sourcePt);
@@ -2501,42 +2491,18 @@ public class Molecule implements Serializable, ITree {
 //                        if (targetAtom.getShortName().equals("5.C1'")) {
 //                            System.out.println(sourceAtom.getShortName() + " " + keyInd + " " + r);
 //                        }
+                        if (sourceResID != targetResID) {
+                            keyInd += numAtomSources * sepIntra;
+                        } else {
+                            dis3 *= intraRow;
+                        }
+
                         distValues[keyInd] += dis3;
                     }
                 }
             }
         }
         return distValues;
-    }
-
-    public static List getAllowedSources(final int iStruct, List atomSources, Atom targetAtom) {
-        String targetAtomName = targetAtom.getName();
-        List allowedSources = new ArrayList<>();
-        if (!targetAtomName.contains("'")) { // target atom name doesn't contain a prime
-            allowedSources.addAll(Arrays.asList("C2'", "C3'", "C4'", "C5'", "P", "OP1", "OP2", "O2'", "O3'", "O4'", "O5'"));
-        } else { // target atom name does contain a prime
-            allowedSources.addAll(Arrays.asList("AC8", "AN7", "AC5", "AC4", "AN3", "AC2", "AN1", "AC6", "AN6",
-                    "CC2", "CO2", "CN3", "CC4", "CN4", "CC5", "CC6",
-                    "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
-                    "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6"));
-
-//            allowedSources.addAll(atomSources);
-//            String num = targetAtomName.substring(1, 2);
-//            if (targetAtomName.equals("C" + num + "'") || targetAtomName.equals("H" + num + "'") || targetAtomName.equals("H" + num + "''")) {
-//                allowedSources.removeAll(Arrays.asList("C" + num + "'", "O" + num + "'", "C" + String.valueOf(Integer.valueOf(num) - 1) + "'",
-//                        "C" + String.valueOf(Integer.valueOf(num) + 1) + "'"));
-//                if (num.equals("1")) {
-//                    allowedSources.removeAll(Arrays.asList("O4'", "AN9", "AC8", "AN7", "AC5", "AC4", "AN3", "AC2", "AN1", "AC6", "AN6",
-//                            "CN1", "CC2", "CO2", "CN3", "CC4", "CN4", "CC5", "CC6",
-//                            "GN9", "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
-//                            "UN1", "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6"));
-//
-//                } else if (num.equals("2")) {
-//                    allowedSources.removeAll(Arrays.asList("AN9", "GN9", "CN1", "UN1"));
-//                }
-//            }
-        }
-        return allowedSources;
     }
 
     // J. AM. CHEM. SOC. 2002, 124, 12654-12655
