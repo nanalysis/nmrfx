@@ -25,10 +25,8 @@ import org.nmrfx.structure.utilities.Util;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.util.FastMath;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -2461,7 +2459,7 @@ public class Molecule implements Serializable, ITree {
 
     }
 
-    public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom, double intraRow) {
+    public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom, double intraScale) {
         List origAtomSources = RNAAttributes.getAtomSources();
         int numAtomSources = origAtomSources.size();
         int sepIntra = 0;
@@ -2488,15 +2486,11 @@ public class Molecule implements Serializable, ITree {
                         if (r == 0) {
                             dis3 = 0.0;
                         }
-//                        if (targetAtom.getShortName().equals("5.C1'")) {
-//                            System.out.println(sourceAtom.getShortName() + " " + keyInd + " " + r);
-//                        }
                         if (sourceResID != targetResID) {
                             keyInd += numAtomSources * sepIntra;
                         } else {
-                            dis3 *= intraRow;
+                            dis3 *= intraScale;
                         }
-
                         distValues[keyInd] += dis3;
                     }
                 }
