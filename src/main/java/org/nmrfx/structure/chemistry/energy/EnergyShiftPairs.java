@@ -5,15 +5,13 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.Atom;
-import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.Point3;
+import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.fastlinear.FastVector3D;
@@ -50,7 +48,7 @@ public class EnergyShiftPairs extends EnergyPairs {
         }
     }
 
-    public double calcDistShifts(boolean calcDeriv, double rLim, double weight) {
+    public double calcDistShifts(boolean calcDeriv, double rLim, double intraScale, double weight) {
         setupAtomPairs(rLim);
         double[] baseShifts = eCoords.baseShifts;
         double[] refShifts = eCoords.refShifts;
@@ -65,8 +63,11 @@ public class EnergyShiftPairs extends EnergyPairs {
         for (int i = 0; i < nPairs; i++) {
             int iAtom = iAtoms[i];
             int jAtom = jAtoms[i];
+//            if (atoms[iAtom].getShortName().equals("5.C1'")) {
+//                System.out.println(i + " " + iAtom + " " + jAtom + " " + atoms[iAtom].getShortName()+ " " + atoms[jAtom].getShortName() + " " + baseShifts[iAtom]+ " " + shiftClass[jAtom]);
+//            }
             if ((baseShifts[iAtom] != 0.0) && shiftClass[jAtom] >= 0) {
-                int alphaClass = getRNAClass(atoms[iAtom].getName());
+                int alphaClass = getRNAClass(atoms[iAtom]);
                 if (alphaClass >= 0) {
                     FastVector3D iV = vecCoords[iAtom];
                     FastVector3D jV = vecCoords[jAtom];
@@ -76,6 +77,10 @@ public class EnergyShiftPairs extends EnergyPairs {
                         int alphaIndex = shiftClass[jAtom];
                         double alpha = Predictor.getAlpha(alphaClass, alphaIndex);
                         double shiftContrib = alpha / (r * r2);
+                        if (atoms[iAtom].getEntity().getIDNum() == atoms[jAtom].getEntity().getIDNum()) {
+                            shiftContrib *= intraScale;
+
+                        }
                         refShifts[iAtom] += shiftContrib;
 //                        if (atoms[iAtom].getShortName().equals("5.C1'")) {
 //                            System.out.println(atoms[jAtom].getShortName() + " " + alphaIndex + " " + alphaClass + " " + alpha + " " + baseShifts[iAtom] + " " + shiftContrib + " " + r + " " + refShifts[iAtom]);
@@ -90,6 +95,31 @@ public class EnergyShiftPairs extends EnergyPairs {
                 }
             }
         }
+        double[] angleValues = new double[4];
+        for (int i = 0; i < baseShifts.length; i++) {
+            Atom atom = atoms[i];
+            int alphaClass = getRNAClass(atom);
+            if (alphaClass >= 0) {
+                double chi = calcChi(atom);
+                angleValues[0] = Math.cos(chi);
+                angleValues[1] = Math.sin(chi);
+                double nu2 = calcNu(atom);
+                angleValues[2] = Math.cos(nu2);
+                angleValues[3] = Math.sin(nu2);
+                double angleDelta = 0.0;
+                for (int j = 0; j < angleValues.length; j++) {
+                    double alpha = Predictor.getAngleAlpha(alphaClass, j);
+                    angleDelta += angleValues[j] * alpha;
+//                    if (atoms[i].getShortName().equals("5.C1'")) {
+//                        System.out.println(atoms[i].getShortName() + " " + alphaClass + " " +alpha + " " + chi + " " + nu2 + " " +  angleDelta + " " + (refShifts[i]+angleDelta));
+//                    }
+                }
+
+                refShifts[i] += angleDelta;
+            }
+
+        }
+
         double sum = 0.0;
         for (int i = 0; i < baseShifts.length; i++) {
             if (baseShifts[i] != 0.0) {
@@ -101,33 +131,29 @@ public class EnergyShiftPairs extends EnergyPairs {
             }
         }
         return sum;
-
     }
 
-    int getRNAClass(String aName) {
-        int rnaClass = -1;
-        if (aName.charAt(aName.length() - 1) == '\'') {
-            if (aName.charAt(0) == 'H') {
-                rnaClass = 3;
-            } else if (aName.charAt(0) == 'C') {
-                rnaClass = 1;
+    double calcChi(Atom atom) {
+        Atom[] atoms = ((Residue) atom.getEntity()).getChiAtoms();
+        return eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
+    }
 
-            }
-        } else {
-            if (aName.charAt(0) == 'H') {
-                rnaClass = 2;
-            } else if (aName.charAt(0) == 'C') {
-                rnaClass = 0;
+    double calcNu(Atom atom) {
+        Atom[] atoms = ((Residue) atom.getEntity()).getNu2Atoms();
+        return eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
+    }
 
-            }
-        }
+    int getRNAClass(Atom atom) {
+        String aName = atom.getName();
+        String nucName = atom.getEntity().getName();
+        int rnaClass = Predictor.getAlphaIndex(nucName, aName);
         return rnaClass;
     }
 
     void setupShifts(int i) {
         Atom atom = eCoords.atoms[i];
         String aName = atom.getName();
-        int atomClass = RNAAttributes.getAtomSourceIndex(aName);
+        int atomClass = RNAAttributes.getAtomSourceIndex(atom);
         eCoords.shiftClass[i] = atomClass;
         Double baseValue = Predictor.getDistBaseShift(atom);
         eCoords.baseShifts[i] = baseValue == null ? 0.0 : baseValue;
@@ -153,26 +179,9 @@ public class EnergyShiftPairs extends EnergyPairs {
 
     public void addAtomPairs(final int iStruct, double distLim, int iAtom) {
         Atom[] atoms = eCoords.atoms;
+        FastVector3D[] vecCoords = eCoords.getVecCoords();
         Atom targetAtom = atoms[iAtom];
-
         List origAtomSources = RNAAttributes.getAtomSources();
-        int numAtomSources = origAtomSources.size();
-
-        List atomSources = new ArrayList(origAtomSources);
-        String targetResName = targetAtom.getEntity().getName();
-        String targetAtomName = targetAtom.getName();
-        String targetKey = targetResName + targetAtomName;
-        if (targetAtomName.contains("'")) {
-            targetKey = targetAtomName;
-        }
-        if (!allowedSourcesMap.containsKey(targetKey)) {
-            allowedSourcesMap.put(targetKey, Molecule.getAllowedSources(iStruct, origAtomSources, targetAtom));
-//                System.out.println(allowedSourcesMap.keySet());
-        }
-        if (allowedSourcesMap.containsKey(targetKey)) {
-            atomSources = allowedSourcesMap.get(targetKey);//getAllowedSources(iStruct, origAtomSources, targetAtom);
-//                System.out.println(targetKey + ": " + atomSources);
-        }
 
         Point3 targetPt = targetAtom.getPoint(iStruct);
         for (int jAtom = 0; jAtom < atoms.length; jAtom++) {
@@ -186,10 +195,14 @@ public class EnergyShiftPairs extends EnergyPairs {
             int sourceResID = sourceAtom.getEntity().getIDNum();
             int targetResID = targetAtom.getEntity().getIDNum();
             if ((targetAtom != sourceAtom) && (sourceAtom.getAtomicNumber() != 1)
-                    && ((sourceResID != targetResID) || atomSources.contains(key))) {
+                    && ((sourceResID != targetResID) || !Predictor.isRNAPairFixed(targetAtom, sourceAtom))) {
                 Point3 sourcePt = sourceAtom.getPoint(iStruct);
                 if ((targetPt != null) && (sourcePt != null)) {
-                    double r = Atom.calcDistance(targetPt, sourcePt);
+                    FastVector3D iV = vecCoords[iAtom];
+                    FastVector3D jV = vecCoords[jAtom];
+                    double r2 = iV.disSq(jV);
+
+                    double r = Math.sqrt(r2);
                     if (r < distLim && origAtomSources.contains(key)) {
                         if (r != 0.0) {
                             int iUnit;

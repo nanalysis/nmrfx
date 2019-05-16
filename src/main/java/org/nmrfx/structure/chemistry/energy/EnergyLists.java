@@ -261,7 +261,7 @@ public class EnergyLists {
         }
         for (Polymer polymer : molecule.getPolymers()) {
             try {
-                predictor.predictRNAWithDistances(polymer, 0, 0);
+                predictor.predictRNAWithDistances(polymer, 0, 0, true);
                // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
             } catch (InvalidMoleculeException imE) {
             }
@@ -855,7 +855,7 @@ public class EnergyLists {
     public double calcShiftsFast(boolean calcDeriv) {
         EnergyCoords eCoords = molecule.getEnergyCoords();
         double weight = forceWeight.getShift();
-        double energy = eCoords.calcDistShifts(calcDeriv, 4.6, weight); // fixme set rMax
+        double energy = eCoords.calcDistShifts(calcDeriv, 4.6, Predictor.getIntraScale(), weight); // fixme set rMax
 //        if (calcDeriv) {
 //            eCoords.addRepelDerivs(branches);
 //        }

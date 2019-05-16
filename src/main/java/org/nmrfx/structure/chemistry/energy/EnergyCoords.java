@@ -104,7 +104,7 @@ public class EnergyCoords {
         atomType.eAtom = i;
         if (setupShifts) {
             String aName = atomType.getName();
-            int atomClass = RNAAttributes.getAtomSourceIndex(aName);
+            int atomClass = RNAAttributes.getAtomSourceIndex(atomType);
             if (atomClass >= 0) {
                 int rnaClass = 0;
                 if (aName.charAt(aName.length() - 1) == '\'') {
@@ -175,8 +175,8 @@ public class EnergyCoords {
         return ePairs.calcRepel(calcDeriv, weight);
     }
 
-    public double calcDistShifts(boolean calcDeriv, double rMax, double weight) {
-        return eShiftPairs.calcDistShifts(calcDeriv, rMax, weight);
+    public double calcDistShifts(boolean calcDeriv, double rMax, double intraScale, double weight) {
+        return eShiftPairs.calcDistShifts(calcDeriv, rMax, intraScale, weight);
     }
 
     public ViolationStats getRepelError(int i, double limitVal, double weight) {
