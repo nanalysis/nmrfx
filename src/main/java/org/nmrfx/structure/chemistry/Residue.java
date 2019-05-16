@@ -197,7 +197,6 @@ public class Residue extends Compound {
     public Double calcNu2(int structureNum) {
         Atom[] atoms = getNu2Atoms();
         return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
-
     }
 
     public Atom[] getNu2Atoms() {
