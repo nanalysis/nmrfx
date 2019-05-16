@@ -195,13 +195,19 @@ public class Residue extends Compound {
     }
 
     public Double calcNu2(int structureNum) {
+        Atom[] atoms = getNu2Atoms();
+        return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
+
+    }
+
+    public Atom[] getNu2Atoms() {
         if (name.equals("U") || name.equals("C") || name.equals("G") || name.equals("A")) {
             Atom[] atoms = new Atom[4];
             atoms[0] = getAtom("C1'");
             atoms[1] = getAtom("C2'");
             atoms[2] = getAtom("C3'");
             atoms[3] = getAtom("C4'");
-            return Atom.calcDihedral(atoms, structureNum);
+            return atoms;
         } else {
             return null;
         }
@@ -212,7 +218,7 @@ public class Residue extends Compound {
         return calcChi(0);
     }
 
-    public Double calcChi(int structureNum) {
+    public Atom[] getChiAtoms() {
         if (name.equals("ALA") || name.equals("GLY")) {
             return null;
         } else if (name.equals("U") || name.equals("C")) {
@@ -221,14 +227,14 @@ public class Residue extends Compound {
             atoms[1] = getAtom("C1'");
             atoms[2] = getAtom("N1");
             atoms[3] = getAtom("C2");
-            return Atom.calcDihedral(atoms, structureNum);
+            return atoms;
         } else if (name.equals("G") || name.equals("A")) {
             Atom[] atoms = new Atom[4];
             atoms[0] = getAtom("O4'");
             atoms[1] = getAtom("C1'");
             atoms[2] = getAtom("N9");
             atoms[3] = getAtom("C4");
-            return Atom.calcDihedral(atoms, structureNum);
+            return atoms;
         } else {
             Atom[] atoms = new Atom[4];
             atoms[0] = getAtom("N");
@@ -247,8 +253,15 @@ public class Residue extends Compound {
                 atom3Name = "CG";
             }
             atoms[3] = getAtom(atom3Name);
-            return Atom.calcDihedral(atoms, structureNum);
+            return atoms;
         }
+    }
+
+    public Double calcChi(int structureNum) {
+        Atom[] atoms = getChiAtoms();
+
+        return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
+
     }
 
     public Double calcChi2() {
