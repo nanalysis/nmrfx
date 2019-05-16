@@ -39,6 +39,20 @@ import org.python.util.PythonInterpreter;
 public class Predictor {
 
     /**
+     * @return the rMax
+     */
+    public static double getRMax() {
+        return rMax;
+    }
+
+    /**
+     * @param arMax the rMax to set
+     */
+    public static void setRMax(double arMax) {
+        rMax = arMax;
+    }
+
+    /**
      * @return the intraScale
      */
     public static double getIntraScale() {
@@ -145,7 +159,7 @@ public class Predictor {
     static Map<String, Double> baseShiftMap = new HashMap<>();
     static Map<String, Double> maeMap = new HashMap<>();
     static Map<String, Integer> coefMap = new HashMap<>();
-    static double rMax = 4.6;
+    private static double rMax = 4.6;
     private static double intraScale = 5.0;
     static Map<String, Set<String>> rnaFixedMap = new HashMap<>();
 
@@ -337,12 +351,11 @@ public class Predictor {
         if (eMode) {
             polymer.molecule.updateVecCoords();
             EnergyCoords eCoords = polymer.molecule.getEnergyCoords();
-
-            // eCoords.setCells(null, 10000, rMax, 0.0, true, 0.0, 0.0);
-            eCoords.calcDistShifts(false, rMax, intraScale, 1.0);
-
+           // eCoords.setCells(eCoords.getShiftPairs(), 10000, rMax, 0.0, true, 0.0, 0.0);
+            System.out.println("pred");
+            eCoords.calcDistShifts(false, getRMax(), intraScale, 1.0);
         } else {
-            System.out.println("rmax " + rMax);
+            System.out.println("rmax " + getRMax());
             List<Atom> atoms = polymer.getAtoms();
             for (Atom atom : atoms) {
                 String aName = atom.getName();
@@ -352,7 +365,7 @@ public class Predictor {
                     String nucName = atom.getEntity().getName();
                     int alphaType = getAlphaIndex(nucName, aName);
                     if (alphaType >= 0) {
-                        double[] distances = polymer.molecule.calcDistanceInputMatrixRow(iStruct, rMax, atom, getIntraScale());
+                        double[] distances = polymer.molecule.calcDistanceInputMatrixRow(iStruct, getRMax(), atom, getIntraScale());
                         double distPPM = 0.0;
                         double chi = ((Residue) atom.getEntity()).calcChi();
                         angleValues[0] = Math.cos(chi);
@@ -445,7 +458,7 @@ public class Predictor {
                         String[] fields = line.split("\t");
                         if (fields.length > 0) {
                             if (fields[0].equals("rmax")) {
-                                rMax = Double.parseDouble(fields[1]);
+                                setRMax(Double.parseDouble(fields[1]));
                                 aType = fields[2];
                                 setIntraScale(Double.parseDouble(fields[3]));
                             } else if (fields[0].equals("coef")) {
