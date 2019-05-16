@@ -135,14 +135,6 @@ public class EnergyCoords {
         }
     }
 
-    public void clear() {
-        ePairs.nPairs = 0;
-    }
-
-    public void clearDist() {
-        eConstraintPairs.nPairs = 0;
-    }
-
     public int getNNOE() {
         return eConstraintPairs.nPairs;
     }
@@ -159,6 +151,10 @@ public class EnergyCoords {
         eConstraintPairs.addPair(i, j, iUnit, jUnit, rLow, rUp, isBond, group, weight);
     }
 
+    public EnergyShiftPairs getShiftPairs() {
+        return eShiftPairs;
+    }
+    
     public void updateGroups() {
         eConstraintPairs.updateGroups();
     }
@@ -297,13 +293,14 @@ public class EnergyCoords {
         }
     }
 
-    public void setCells(EnergyLists eList, int deltaEnd, double limit, double hardSphere, boolean includeH, double shrinkValue, double shrinkHValue) {
+    public void setCells(EnergyPairs ePairs, int deltaEnd, double limit, double hardSphere, boolean includeH, double shrinkValue, double shrinkHValue) {
         double limit2 = limit * limit;
         double[][] bounds = getBoundaries();
         int[] nCells = new int[3];
         setRadii(hardSphere, includeH, shrinkValue, shrinkHValue);
 //        System.out.println("set cells");
-        clear();
+
+        ePairs.clear();
 
         for (int j = 0; j < 3; j++) {
             nCells[j] = 1 + (int) Math.floor(bounds[j][1] / limit);
@@ -442,7 +439,7 @@ public class EnergyCoords {
                                             }
                                             rH -= adjustClose;
 
-                                            addPair(iAtom, jAtom, iUnit, jUnit, rH);
+                                            ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
 
                                         }
                                     }
