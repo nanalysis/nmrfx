@@ -28,6 +28,27 @@ public class EnergyPairs {
 
     }
 
+    public void addPair(int i, int j, int iUnit, int jUnit) {
+        resize(nPairs + 1);
+        int iPair = nPairs;
+        iAtoms[iPair] = i;
+        jAtoms[iPair] = j;
+        iUnits[iPair] = iUnit;
+        jUnits[iPair] = jUnit;
+
+        weights[iPair] = 1.0;
+        derivs[iPair] = 0.0;
+        nPairs = iPair + 1;
+    }
+
+    public void clear() {
+        nPairs = 0;
+    }
+    
+    public void addPair(int i, int j, int iUnit, int jUnit, double r0) {
+        addPair(i, j, iUnit, jUnit);
+    }
+
     int[] resize(int[] v, int size) {
         int[] newV = new int[size];
         if (v != null) {

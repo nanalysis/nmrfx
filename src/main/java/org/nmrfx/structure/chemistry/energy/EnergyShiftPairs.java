@@ -28,18 +28,11 @@ public class EnergyShiftPairs extends EnergyPairs {
         super(eCoords);
     }
 
+    @Override
     public void addPair(int i, int j, int iUnit, int jUnit) {
-        resize(nPairs + 1);
-        int iPair = nPairs;
-        iAtoms[iPair] = i;
-        jAtoms[iPair] = j;
-        iUnits[iPair] = iUnit;
-        jUnits[iPair] = jUnit;
-
-        weights[iPair] = 1.0;
-        derivs[iPair] = 0.0;
-        nPairs = iPair + 1;
-
+        if (getRNAClass(eCoords.atoms[i]) >= 0) {
+            super.addPair(i, j, iUnit, jUnit);
+        }
     }
 
     void resize(int size) {

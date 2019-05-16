@@ -25,20 +25,12 @@ public class EnergyDistancePairs extends EnergyPairs {
         super(eCoords);
     }
 
+    @Override
     public void addPair(int i, int j, int iUnit, int jUnit, double r0) {
-        resize(nPairs + 1);
-        int iPair = nPairs;
-        iAtoms[iPair] = i;
-        jAtoms[iPair] = j;
-        iUnits[iPair] = iUnit;
-        jUnits[iPair] = jUnit;
-
+        addPair(i, j, iUnit, jUnit);
+        int iPair = nPairs - 1;
         this.rLow[iPair] = r0;
         rLow2[iPair] = r0 * r0;
-        weights[iPair] = 1.0;
-        derivs[iPair] = 0.0;
-        nPairs = iPair + 1;
-
     }
 
     void resize(int size) {

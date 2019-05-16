@@ -262,7 +262,7 @@ public class EnergyLists {
         for (Polymer polymer : molecule.getPolymers()) {
             try {
                 predictor.predictRNAWithDistances(polymer, 0, 0, true);
-               // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
+                // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
             } catch (InvalidMoleculeException imE) {
             }
         }
@@ -855,7 +855,7 @@ public class EnergyLists {
     public double calcShiftsFast(boolean calcDeriv) {
         EnergyCoords eCoords = molecule.getEnergyCoords();
         double weight = forceWeight.getShift();
-        double energy = eCoords.calcDistShifts(calcDeriv, 4.6, Predictor.getIntraScale(), weight); // fixme set rMax
+        double energy = eCoords.calcDistShifts(calcDeriv, Predictor.getRMax(), Predictor.getIntraScale(), weight);
 //        if (calcDeriv) {
 //            eCoords.addRepelDerivs(branches);
 //        }
@@ -994,7 +994,7 @@ public class EnergyLists {
 
     public void updateNOEPairs() {
         EnergyCoords eCoords = molecule.getEnergyCoords();
-        eCoords.clearDist();
+        eCoords.eConstraintPairs.clear();
         int iGroup = 0;
         for (DistancePair distancePair : distanceList) {
             double weight;
@@ -1508,56 +1508,9 @@ public class EnergyLists {
             }
             updateFixed(molecule.getDihedrals());
         }
-        eCoords.setCells(this, deltaEnd, distanceLimit, hardSphere, includeH, shrinkValue, shrinkHValue);
-    }
-
-    public void makeAtomListFastOff() {
-        //molecule.updateFromVecCoords();
-        if (compoundArray == null) {
-            makeCompoundList(molecule);
-        }
-        updateNOEPairs();
-        for (int i = 0; i < compoundArray.length; i++) {
-            CompoundSphere cSphere = compoundArray[i];
-            double radius = getRadius(cSphere.compound, cSphere.atom.getPoint());
-            CompoundSphere cSphereNew = new CompoundSphere(cSphere.compound, cSphere.atom, radius, cSphere.sSets);
-            compoundArray[i] = cSphereNew;
-        }
-        EnergyCoords eCoords = molecule.getEnergyCoords();
-        FastVector3D[] vecCoords = eCoords.getVecCoords();
-        eCoords.clear();
-        double aLimit = distanceLimit;
-        double aLimit2 = aLimit * aLimit;
-        // System.out.println(molecule.getAtomArray().size() + " atoms vecs" + vecCoords.length + " " + aLimit + " " + aLimit2 + " " + distanceLimit);
-        for (CompoundPair cPair : compoundPairList) {
-            int iAtom = cPair.cSphere1.atom.iAtom;
-            int jAtom = cPair.cSphere2.atom.iAtom;
-            FastVector3D v1 = vecCoords[iAtom];
-            FastVector3D v2 = vecCoords[jAtom];
-            double cutOff = distanceLimit + cPair.cSphere1.radius + cPair.cSphere2.radius;
-            double cutOffSq = cutOff * cutOff;
-            if (!FastVector3D.atomLimit(v1, v2, cutOff, cutOffSq)) {
-                continue;
-            }
-            for (AtomPair atomPair : cPair.atomPairs) {
-                iAtom = atomPair.spSet1.atom.iAtom;
-                jAtom = atomPair.spSet2.atom.iAtom;
-                if (iAtom >= vecCoords.length) {
-                    System.out.println("iatom " + iAtom + " " + atomPair.spSet1.atom.getShortName());
-                }
-                if (jAtom >= vecCoords.length) {
-                    System.out.println("jatom " + jAtom + " " + atomPair.spSet2.atom.getShortName());
-                }
-                v1 = vecCoords[iAtom];
-                v2 = vecCoords[jAtom];
-
-                if (FastVector3D.atomLimit(v1, v2, aLimit, aLimit2)) {
-                    if (getConstraintDistance(atomPair.spSet1.atom, atomPair.spSet2.atom) == null) {
-                        double rh = atomPair.ePair.rh;
-                        eCoords.addPair(iAtom, jAtom, atomPair.unit1, atomPair.unit2, rh);
-                    }
-                }
-            }
+        eCoords.setCells(eCoords.ePairs, deltaEnd, distanceLimit, hardSphere, includeH, shrinkValue, shrinkHValue);
+        if (forceWeight.getShift() > 0.0) {
+           // eCoords.setCells(eCoords.eShiftPairs, deltaEnd, distanceLimit, 0, true, 0, 0);
         }
     }
 
