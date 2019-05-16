@@ -43,9 +43,16 @@ public class RNAAttributes {
     public static List<String> getAtomSources() {
         return rnaAtomSources;
     }
-    
-    public static int getAtomSourceIndex(String atomName) {
-        Integer value = rnaAtomSourceMap.get(atomName);
+
+    public static int getAtomSourceIndex(Atom atom) {
+        String resName = atom.getEntity().getName();
+        String atomName = atom.getName();
+        String key = resName + atomName;
+        if (atomName.contains("'") || atomName.contains("P")) {
+            key = atomName;
+        }
+
+        Integer value = rnaAtomSourceMap.get(key);
         return value == null ? -1 : value;
     }
 
