@@ -65,8 +65,6 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         weights[iPair] = weight;
         derivs[iPair] = 0.0;
 
-        eCoords.hasBondConstraint[i] = isBond;
-        eCoords.hasBondConstraint[j] = isBond;
         if (eCoords.fixed != null) {
             if (isBond) {
                 eCoords.setFixed(i, j, true);

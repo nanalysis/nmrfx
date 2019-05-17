@@ -854,6 +854,7 @@ public class EnergyLists {
 
     public double calcShiftsFast(boolean calcDeriv) {
         EnergyCoords eCoords = molecule.getEnergyCoords();
+        eCoords.setupShifts();
         double weight = forceWeight.getShift();
         double energy = eCoords.calcDistShifts(calcDeriv, Predictor.getRMax(), Predictor.getIntraScale(), weight);
 //        if (calcDeriv) {
