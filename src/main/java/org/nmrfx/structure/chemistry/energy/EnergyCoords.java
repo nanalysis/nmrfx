@@ -52,7 +52,6 @@ public class EnergyCoords {
     double[] refShifts = null;
     boolean[] swapped = null;
     int[] hBondable = null;
-    boolean[] hasBondConstraint = null;
     double[] contactRadii = null;
     int[] cellIndex = null;
     int nAtoms = 0;
@@ -76,7 +75,6 @@ public class EnergyCoords {
             mAtoms = new int[size];
             swapped = new boolean[size];
             contactRadii = new double[size];
-            hasBondConstraint = new boolean[size];
             hBondable = new int[size];
             cellIndex = new int[size];
             shiftClass = new int[size];
@@ -102,37 +100,10 @@ public class EnergyCoords {
         resNums[i] = resNum;
         atoms[i] = atomType;
         atomType.eAtom = i;
-        if (setupShifts) {
-            String aName = atomType.getName();
-            int atomClass = RNAAttributes.getAtomSourceIndex(atomType);
-            if (atomClass >= 0) {
-                int rnaClass = 0;
-                if (aName.charAt(aName.length() - 1) == '\'') {
-                    if (aName.charAt(0) == 'H') {
-                        rnaClass = 3;
-                    } else {
-                        rnaClass = 2;
+    }
 
-                    }
-                } else {
-                    if (aName.charAt(0) == 'H') {
-                        rnaClass = 1;
-                    } else {
-                        rnaClass = 0;
-
-                    }
-                }
-                atomClass += 256 * rnaClass;
-            }
-            shiftClass[i] = atomClass;
-            Double baseValue = Predictor.getDistBaseShift(atomType);
-            baseShifts[i] = baseValue == null ? 0.0 : baseValue;
-            refShifts[i] = 0.0;
-            PPMv ppmV = atomType.getPPM(0);
-            if ((ppmV != null) && ppmV.isValid()) {
-                shifts[i] = ppmV.getValue();
-            }
-        }
+    public void setupShifts() {
+        eShiftPairs.setupShifts();
     }
 
     public int getNNOE() {
@@ -154,7 +125,7 @@ public class EnergyCoords {
     public EnergyShiftPairs getShiftPairs() {
         return eShiftPairs;
     }
-    
+
     public void updateGroups() {
         eConstraintPairs.updateGroups();
     }
@@ -415,10 +386,10 @@ public class EnergyCoords {
                                         boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
                                         // fixme  this is fast, but could miss interactions for atoms that are not bonded
                                         // as it doesn't test for an explicit bond between the pairs
-                                        boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
+                                       // boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
 //                                        System.out.println("        " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes + " "
 //                                                + interactable1 + " " + notConstrained);
-                                        if (notFixed && interactable1 && notConstrained) {
+                                        if (notFixed && interactable1) {
                                             int iUnit;
                                             int jUnit;
                                             if (atom1.rotGroup != null) {
