@@ -351,7 +351,7 @@ public class Predictor {
         if (eMode) {
             polymer.molecule.updateVecCoords();
             EnergyCoords eCoords = polymer.molecule.getEnergyCoords();
-           // eCoords.setCells(eCoords.getShiftPairs(), 10000, rMax, 0.0, true, 0.0, 0.0);
+            // eCoords.setCells(eCoords.getShiftPairs(), 10000, rMax, 0.0, true, 0.0, 0.0);
             System.out.println("pred");
             eCoords.calcDistShifts(false, getRMax(), intraScale, 1.0);
         } else {
