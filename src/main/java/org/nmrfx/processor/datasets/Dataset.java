@@ -1523,7 +1523,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param ph0 the phase value to set
      */
     public void setPh0(final int iDim, final double ph0) {
-        this.ph0[iDim] = ph0;
+     this.ph0[iDim] = ph0;
         if (vecMat != null) {
             vecMat.setPh0(ph0);
         }
