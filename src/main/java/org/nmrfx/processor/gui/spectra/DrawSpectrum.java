@@ -1318,8 +1318,8 @@ public class DrawSpectrum {
                 }
                 iValue++;
             }
-            double pickJiggle = 2.0;
-            double minPickDel = 2.0;
+            double pickJiggle = 10.0;
+            double minPickDel = 10.0;
             if ((minDelta < pickJiggle) && (minDelta < minPickDel)) {
                 minPickDel = minDelta;
                 result = Optional.of(new IntegralHit(datasetAttr, region, iMin + 1));
