@@ -101,6 +101,7 @@ public class OperationInfo {
         "Cascade-Regions",
         "BUCKET",
         "EXTRACT",
+        "TRIM",
         "Cascade-Measure",
         "INTEGRATE",
         "MEASURE",
