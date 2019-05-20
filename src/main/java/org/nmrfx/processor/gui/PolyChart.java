@@ -2064,7 +2064,7 @@ public class PolyChart implements PeakListener {
             double xMax = xAxis.getUpperBound();
             double chartHeight = yAxis.getHeight();
             double integralOffset = chartHeight * 0.75;
-            int hitRange = 4;
+            int hitRange = 10;
             for (DatasetRegion region : regions) {
                 double ppm1 = region.getRegionStart(0);
                 double ppm2 = region.getRegionEnd(0);
