@@ -1728,6 +1728,32 @@ def EXTRACT(start=0, end=0, mode='left', disabled=False, vector=None, process=No
                 if end == 0:
                     end = dataInfo.size[curDim]-1
                 setDataInfoSize(curDim, end - start + 1)
+def TRIM(ftrim=0.1, disabled=False, vector=None, process=None):
+    '''Trim a fraction of vector from each end.
+    Parameters
+    ---------
+    ftrim : real
+        amin : 0
+        min : 0
+        max : 0.4
+        amax : 0.4
+        Fraction of size to trim on each side
+'''
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+    fmode = True
+    fstart = ftrim
+    fend = 1.0-ftrim
+    op = Extract(fstart,fend)
+
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+        if (dataInfo.resizeable):
+            curDim = dataInfo.curDim
+            setDataInfoSize(curDim, getExtractSize(dataInfo.size[curDim],fstart,fend))
 
 def DCFID(fraction=0.06, disabled=False, vector=None, process=None):
     ''' Correct DC offset of FID real and imaginary channels 
@@ -1836,6 +1862,7 @@ def BZ(alg='ph', phase=0.0, scale=1.0, pt2=0.0, delay=None, disabled=False, vect
         try:
             delay = p('GRPDLY,1')  # read from Bruker pars
         except:
+            delay = 0.0
             pass
     if (dataInfo.resizeable):
         try:
