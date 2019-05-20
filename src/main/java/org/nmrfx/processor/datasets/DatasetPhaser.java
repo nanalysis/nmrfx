@@ -225,13 +225,16 @@ public class DatasetPhaser {
 
     public void applyPhases2(int iDim, double ph0, double ph1) throws IOException {
         Iterator<Vec> vectors = dataset.vectors(iDim);
+        double dataPh0 = dataset.getPh0(iDim) + ph0;
+        double dataPh1 = dataset.getPh1(iDim) + ph1;
         while (vectors.hasNext()) {
             Vec phaseVec = vectors.next();
             phaseVec.hft();
             phaseVec.phase(ph0, ph1);
             phaseVec.makeReal();
             dataset.writeVector(phaseVec);
-
         }
+        dataset.setPh0(iDim, dataPh0);
+        dataset.setPh1(iDim, dataPh1);
     }
 }
