@@ -67,10 +67,10 @@ public class AutoPhaseDataset extends DatasetOperation {
             phaser.setup(phaseDim, winSize, ratio);
             if (firstOrder) {
                 double[] phases = phaser.getPhase(ph1Limit);
-                phaser.applyPhases(phaseDim, phases[0], phases[1]);
+                phaser.applyPhases2(phaseDim, phases[0], phases[1]);
             } else {
                 double phase = phaser.getPhaseZero();
-                phaser.applyPhases(phaseDim, phase, 0.0);
+                phaser.applyPhases2(phaseDim, phase, 0.0);
             }
         } catch (IOException ioE) {
             throw new ProcessingException(ioE.getMessage());
