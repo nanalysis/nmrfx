@@ -500,7 +500,7 @@ public class AtomController implements Initializable, FreezeListener {
         for (Polymer polymer : polymers) {
             if (polymer.isRNA()) {
                 if (useDist) {
-                    predictor.predictRNAWithDistances(polymer, 0, ppmSet);
+                    predictor.predictRNAWithDistances(polymer, 0, ppmSet, false);
                 } else {
                     predictor.predictRNAWithRingCurrent(polymer, 0, ppmSet);
                 }
