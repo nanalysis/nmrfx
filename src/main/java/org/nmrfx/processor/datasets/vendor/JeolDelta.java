@@ -882,6 +882,8 @@ public class JeolDelta implements NMRData {
 //            dimSizes[0] = origSize - 2 * nTrim;
             vec.resize(dimSizes[0], true);
             vec.setGroupDelay(0.0);
+            vec.setPh0(0.0);
+            vec.setPh1(0.0);
         }
     }
 
