@@ -93,6 +93,8 @@ public final class NMRDataUtil {
                 return new JCAMPData(bpath.toString());
             } else if (NMRPipeData.findFID(bpath)) {
                 return new NMRPipeData(bpath.toString(), nusFile);
+            } else if (JeolDelta.findFID(bpath)) {
+                return new JeolDelta(bpath.toString());
             } else {
                 throw new IOException("FID not found: " + fpath);
             }
