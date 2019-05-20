@@ -956,7 +956,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 //                svgFormat = new DataFormat("image/svg+xml");
 //            }
 //            content.put(svgFormat, stream.toString());
-content.put(DataFormat.PLAIN_TEXT,stream.toString());
+            content.put(DataFormat.PLAIN_TEXT, stream.toString());
             clipboard.setContent(content);
         } catch (GraphicsIOException ex) {
             ExceptionDialog eDialog = new ExceptionDialog(ex);

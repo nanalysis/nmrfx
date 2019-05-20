@@ -2800,7 +2800,7 @@ public class PolyChart implements PeakListener {
             return;
         }
         int mapDim = controller.chartProcessor.mapToDataset(phaseDim);
-        if (mapDim != -1) {
+       if (mapDim != -1) {
             chartPhases[0][mapDim] = ph0;
         }
     }
