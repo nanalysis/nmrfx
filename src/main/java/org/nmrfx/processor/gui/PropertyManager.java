@@ -92,7 +92,10 @@ public class PropertyManager {
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 PropertySheet.Item item = (PropertySheet.Item) observableValue;
                 if (item.getCategory().equals("PHASE")) {
-                    updatePhases(item, number, number2);
+                   // System.out.println(item.getName());
+                    if (item.getName().equals("ph0") || item.getName().equals("ph1")) {
+                        updatePhases(item, number, number2);
+                    }
                 }
                 updateOp((PropertySheet.Item) observableValue);
             }
@@ -246,10 +249,10 @@ public class PropertyManager {
             if (item.getName().equals("ph1")) {
                 adjustPhasePivot(propertySheet.getItems(), oldValue, newValue);
             } else if (item.getName().equals("ph0")) {
-                if (chart.getController().isPhaseSliderVisible()) {
-                    chart.getController().handlePh0Reset(newValue.doubleValue(), false);
-
-                }
+//                if (chart.getController().isPhaseSliderVisible()) {
+//                    chart.getController().handlePh0Reset(newValue.doubleValue(), false);
+//
+//                }
             }
         }
     }
@@ -266,10 +269,11 @@ public class PropertyManager {
                 Double newPH0 = oldPH0 - deltaPH1 * pivotFraction;
                 ph0Item.setValue(newPH0);
                 NvFxPropertyEditorFactory.updatePH0Slider(newPH0);
-                if (chart.getController().isPhaseSliderVisible()) {
-                    chart.getController().handlePh0Reset(newPH0, false);
-                    chart.getController().handlePh1Reset(newValue.doubleValue(), false);
-                }
+//                if (chart.getController().isPhaseSliderVisible()) {
+//                    System.out.println("ph pivot " + oldPH0 + " " + newPH0);
+//                    chart.getController().handlePh0Reset(newPH0, false);
+//                    chart.getController().handlePh1Reset(newValue.doubleValue(), false);
+//                }
             }
         }
 
