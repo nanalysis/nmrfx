@@ -229,6 +229,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         } else {
             newName = name;
         }
+        newName = newName.replace(' ', '_');
+        
         canonicalName = file.getCanonicalPath();
         fileName = newName;
 
@@ -339,7 +341,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             file = new File(fullName);
 
             canonicalName = file.getCanonicalPath();
-            fileName = file.getName();
+            fileName = file.getName().replace(' ', '_');
 
             this.nDim = dimSizes.length;
 
