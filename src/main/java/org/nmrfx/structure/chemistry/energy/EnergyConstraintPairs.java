@@ -49,28 +49,30 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group, double weight) {
-        resize(nPairs + 1);
-        int iPair = nPairs;
-        iGroups[iPair] = group;
+        if (i != j) {
+            resize(nPairs + 1);
+            int iPair = nPairs;
+            iGroups[iPair] = group;
 
-        iAtoms[iPair] = i;
-        jAtoms[iPair] = j;
-        iUnits[iPair] = iUnit;
-        jUnits[iPair] = jUnit;
+            iAtoms[iPair] = i;
+            jAtoms[iPair] = j;
+            iUnits[iPair] = iUnit;
+            jUnits[iPair] = jUnit;
 
-        this.rLow[iPair] = rLow;
-        this.rLow2[iPair] = rLow * rLow;
-        this.rUp[iPair] = rUp;
-        this.rUp2[iPair] = rUp * rUp;
-        weights[iPair] = weight;
-        derivs[iPair] = 0.0;
+            this.rLow[iPair] = rLow;
+            this.rLow2[iPair] = rLow * rLow;
+            this.rUp[iPair] = rUp;
+            this.rUp2[iPair] = rUp * rUp;
+            weights[iPair] = weight;
+            derivs[iPair] = 0.0;
 
-        if (eCoords.fixed != null) {
-            if (isBond) {
-                eCoords.setFixed(i, j, true);
+            if (eCoords.fixed != null) {
+                if (isBond) {
+                    eCoords.setFixed(i, j, true);
+                }
             }
+            nPairs = iPair + 1;
         }
-        nPairs = iPair + 1;
     }
 
     public void updateSwappable() {
