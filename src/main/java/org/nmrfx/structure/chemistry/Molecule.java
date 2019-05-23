@@ -4487,7 +4487,8 @@ public class Molecule implements Serializable, ITree {
         atom2.dihedralAngle = 180.0f * ((float) Math.PI / 180f);
     }
 
-    public void createLinker(Atom atom1, Atom atom2, int numLinks) {
+    public void createLinker(Atom atom1, Atom atom2, int numLinks, 
+         double linkLen, double valAngle, double dihAngle) {
         /**
          * createLinker is a method to create a link between atoms in two
          * separate entities
@@ -4505,9 +4506,10 @@ public class Molecule implements Serializable, ITree {
         String linkRoot = "X";
         for (int i = 1; i <= numLinks; i++) {
             newAtom = curAtom.add(linkRoot + Integer.toString(i), "X", Order.SINGLE);
-            newAtom.bondLength = 1.08f;
-            newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
-            newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+            newAtom.bondLength = 5.0f;
+            newAtom.dihedralAngle = (float) (dihAngle * Math.PI / 180.0);
+            newAtom.valanceAngle = (float) (valAngle * Math.PI / 180.0);
+
             curAtom = newAtom;
             if (i == numLinks) {
                 Atom.addBond(curAtom, atom2, Order.SINGLE, 0, false);
