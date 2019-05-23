@@ -493,6 +493,9 @@ class refine:
 	    # n is the number of rotational points within a link established between any 2 entities.
             # default is 6.
             n = linkerDict['n'] if 'n' in linkerDict else 6
+            linkLen = linkerDict['length'] if 'len' in linkerDict else 5.0
+            valAngle = linkerDict['valAngle'] if 'len' in linkerDict else 90.0
+            dihAngle = linkerDict['dihAngle'] if 'len' in linkerDict else 135.0
             startEnt = self.molecule.getEntity(startEntName)
             endEnt = self.molecule.getEntity(endEntName)
 
@@ -545,7 +548,7 @@ class refine:
                     upper = length + .0001
                     self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
         else:
-            self.molecule.createLinker(startAtom, endAtom, n)
+            self.molecule.createLinker(startAtom, endAtom, n, linkLen, valAngle, dihAngle)
         return (startEnt, endEnt)
 
     def addCyclicBond(self, polymer):
