@@ -4506,7 +4506,7 @@ public class Molecule implements Serializable, ITree {
         String linkRoot = "X";
         for (int i = 1; i <= numLinks; i++) {
             newAtom = curAtom.add(linkRoot + Integer.toString(i), "X", Order.SINGLE);
-            newAtom.bondLength = 5.0f;
+            newAtom.bondLength = (float) linkLen;
             newAtom.dihedralAngle = (float) (dihAngle * Math.PI / 180.0);
             newAtom.valanceAngle = (float) (valAngle * Math.PI / 180.0);
 
