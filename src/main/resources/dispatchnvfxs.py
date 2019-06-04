@@ -1,4 +1,5 @@
 import sys
+import os
 import runpy
 sys.argv.pop(0)
 if len(sys.argv) > 0:
@@ -6,6 +7,10 @@ if len(sys.argv) > 0:
         import runall
     elif sys.argv[0] == "score":
         import runTests
+    elif sys.argv[0] == "summary":
+        import checke
+        checke.outDir = os.getcwd()
+        checke.summary(sys.argv[1:])
     elif sys.argv[0] == "gen":
         import gennvfx
     elif sys.argv[0] == "predict":
