@@ -988,7 +988,10 @@ class refine:
             linkers = molDict.get('link')
             index = molDict.get('indexing')
             resStrings = getSequenceArray(index, seqString, linkers, polyType)
-            molio.readSequenceString('p', resStrings)
+            chain = molDict.get('chain')
+            if chain == None:
+                chain = 'p'
+            molio.readSequenceString(chain, resStrings)
         else:
             file = molDict['file']
             type = molDict.get('type','nv')
