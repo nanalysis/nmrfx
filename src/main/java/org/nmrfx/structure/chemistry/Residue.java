@@ -585,4 +585,20 @@ public class Residue extends Compound {
             newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
         }
     }
+    
+    public boolean watsonCrickPair(Residue residue) {
+        boolean result = false;
+        if (name.equals("A") && residue.getName().equals("U")) {
+            // check atom atom pairs expected for AU
+            result = true;
+            Atom hydrogen1 = getAtom("H61");
+            Atom acceptor1 = residue.getAtom("O4");
+            boolean valid = HydrogenBond.validate(hydrogen1.getSpatialSet(), acceptor1.getSpatialSet(), 0);
+            if (!valid) {
+                result = false;
+            }
+
+        }
+        return result;
+    }
 }

@@ -2370,6 +2370,25 @@ public class Molecule implements Serializable, ITree {
         return shiftMap;
     }
 
+    public void checkRNAPairs() {
+        for (Polymer polymerA : getPolymers()) {
+            for (Polymer polymerB : getPolymers()) {
+                for (Residue residueA : polymerA.getResidues()) {
+                    for (Residue residueB : polymerB.getResidues()) {
+                        if (residueA != residueB) {
+                            boolean paired = residueA.watsonCrickPair(residueB);
+                            if (paired) {
+                                System.out.println(residueA.getName() + residueA.getNumber()
+                                        + " " + residueB.getName() + residueB.getNumber() + " " + paired);
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
     public void calcLCMB(final int iStruct) {
         calcLCMB(iStruct, true);
     }
@@ -4487,8 +4506,8 @@ public class Molecule implements Serializable, ITree {
         atom2.dihedralAngle = 180.0f * ((float) Math.PI / 180f);
     }
 
-    public void createLinker(Atom atom1, Atom atom2, int numLinks, 
-         double linkLen, double valAngle, double dihAngle) {
+    public void createLinker(Atom atom1, Atom atom2, int numLinks,
+            double linkLen, double valAngle, double dihAngle) {
         /**
          * createLinker is a method to create a link between atoms in two
          * separate entities
