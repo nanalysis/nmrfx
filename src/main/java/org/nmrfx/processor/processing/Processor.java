@@ -1403,8 +1403,7 @@ public class Processor {
                 dataset.setComplex(i, false);
             }
             dataset.writeParFile();
-            dataset.close();
-            dataset = null;
+            closeDataset();
         }
         System.err.printf("Elapsed time %.2f\n", elapsedTime);
     }
@@ -1483,6 +1482,7 @@ public class Processor {
             p.getOperations().clear();
             isRunning = false;
             if (getProcessorError()) {
+                closeDataset();
                 throw new ProcessingException(errorMessage);
             }
         }
