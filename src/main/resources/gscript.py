@@ -218,6 +218,38 @@ class NMRFxWindowScripting:
     def drawAll(self):
         self.cmd.drawAll()
 
+    def strips(self, datasets, x, xwidth=0.2, dims=None, row=0, **kwargs):
+        nDatasets = len(datasets)
+        nX = len(x)
+        nColumns = nX * nDatasets
+        nRows = row+1
+        self.grid(rows=nRows, columns=nColumns)
+        for iChart in range(nColumns):
+            self.active(iChart + row * nColumns)
+            dataset = datasets[iChart % nDatasets ]
+            self.datasets([dataset])
+            if dims != None:
+                self.setDims( dataset, dims=dims)
+            xVal = x[iChart / nDatasets]
+            x0 = xVal - xwidth/2.0
+            x1 = xVal + xwidth/2.0
+            self.lim(x=[x0,x1])
+            yValue = None
+            for elem in kwargs:
+                if elem == 'y':
+                    yValue = kwargs[elem]
+                else:
+                    values = kwargs[elem]
+                    value = values[iChart / nDatasets]
+                    self.axlim(elem,value, value)
+            if yValue == None:
+                self.full('y')
+            else:
+                self.lim(y=yValue)
+        self.drawAll()
+        self.drawAll()
+            
+
 def parseArgs(argv):
     nw = NMRFxWindowScripting()
     parser = argparse.ArgumentParser(description="Evaluate NMRFx Command Line Args")
