@@ -151,11 +151,15 @@ public class Multiplets {
     public static void removeWeakPeaksInMultiplet(String mSpec, int nRemove) {
         List<PeakDim> weakPeaks = getWeakestPeaksInMultiplet(mSpec, nRemove);
         removePeaks(getPeaks(weakPeaks));
+        updateAfterMultipletConversion(getMultiplet(mSpec));
     }
 
     public static void removeWeakPeaksInMultiplet(Multiplet multiplet, int nRemove) {
         List<PeakDim> weakPeaks = getWeakestPeaksInMultiplet(multiplet, nRemove);
         removePeaks(getPeaks(weakPeaks));
+        updateAfterMultipletConversion(multiplet);
+        analyzeMultiplet(multiplet.getOrigin());
+        updateAfterMultipletConversion(multiplet);
     }
 
     public static List<Peak> getPeaks(List<PeakDim> peakDims) {
@@ -294,7 +298,8 @@ public class Multiplets {
             PeakList.couplePeakDims(peakDim, peak.peakDims[iDim]);
         }
         updateAfterMultipletConversion(multiplet);
-        //analyzeMultiplet(multiplet.getOrigin());
+        analyzeMultiplet(multiplet.getOrigin());
+        updateAfterMultipletConversion(multiplet);
     }
 
     public static void addOuterCoupling(int addNumber, String mSpec) {
