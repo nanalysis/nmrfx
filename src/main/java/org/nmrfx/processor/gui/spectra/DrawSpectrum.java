@@ -36,7 +36,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.DoubleBinaryOperator;
 import javafx.application.Platform;
 import javafx.concurrent.Service;
@@ -63,6 +68,13 @@ import org.nmrfx.processor.gui.PolyChart.DISDIM;
  * @author brucejohnson
  */
 public class DrawSpectrum {
+
+    final static ExecutorService MAKE_CONTOUR_SERVICE = Executors.newFixedThreadPool(30);
+    final static ExecutorService DRAW_CONTOUR_SERVICE = Executors.newFixedThreadPool(100);
+
+    static {
+        ((ThreadPoolExecutor) DRAW_CONTOUR_SERVICE).setKeepAliveTime(10, TimeUnit.SECONDS);
+    }
 
     static public boolean MARCH_MODE = true;
 
@@ -146,6 +158,16 @@ public class DrawSpectrum {
         jobCount++;
         ((Service) makeContours.worker).cancel();
         ((Service) drawContours.worker).cancel();
+        Executor makeExec = ((Service) makeContours.worker).getExecutor();
+        Executor drawExec = ((Service) drawContours.worker).getExecutor();
+        if (makeExec instanceof ThreadPoolExecutor) {
+            ThreadPoolExecutor tPool = (ThreadPoolExecutor) makeExec;
+            tPool.purge();
+        }
+        if (drawExec instanceof ThreadPoolExecutor) {
+            ThreadPoolExecutor tPool = (ThreadPoolExecutor) drawExec;
+            tPool.purge();
+        }
         this.axModes = new AXMODE[axModes.length];
         System.arraycopy(axModes, 0, this.axModes, 0, axModes.length);
         dataAttrList.clear();
@@ -153,8 +175,16 @@ public class DrawSpectrum {
         contourQueue.clear();
         lastPlotTime = 0;
         startTime = System.currentTimeMillis();
+
         ((Service) makeContours.worker).restart();
         ((Service) drawContours.worker).restart();
+    }
+
+    public void clearThreads() {
+        Service makeService = ((Service) makeContours.worker);
+        Service drawService = ((Service) drawContours.worker);
+        makeService.cancel();
+        drawService.cancel();
     }
 
     public boolean drawSpectrumImmediate(GraphicsContextInterface g2I, ArrayList<DatasetAttributes> dataGenerators, AXMODE[] axModes) {
@@ -261,9 +291,22 @@ public class DrawSpectrum {
                         protected void succeeded() {
                         }
 
+                        @Override
+                        protected void failed() {
+                        }
+
+                        @Override
+                        protected void running() {
+                        }
+
+                        @Override
+                        protected void scheduled() {
+                        }
+
                     };
                 }
             };
+            ((Service) worker).setExecutor(MAKE_CONTOUR_SERVICE);
         }
 
         void drawNow(Task task, DatasetAttributes fileData) throws IOException {
@@ -273,6 +316,7 @@ public class DrawSpectrum {
             //fileData.posColorProperty().set(iMode == 0 ? Color.BLACK : Color.RED);
             fileData.mChunk = -1;
             float[][] z = null;
+
             do {
                 if (task.isCancelled()) {
                     done = true;
@@ -290,7 +334,7 @@ public class DrawSpectrum {
                         double yOff = offset[1];
 //                        System.out.println("off " + xOff + " " + yOff + " " + 
 //                                fileData.ptd[0][0] + " " + fileData.ptd[1][0]);
-                        
+
                         for (int iPosNeg = 0; iPosNeg < 2; iPosNeg++) {
                             float sign = iPosNeg == 0 ? 1.0f : -1.0f;
                             for (float level : levels) {
@@ -360,9 +404,15 @@ public class DrawSpectrum {
                         protected void succeeded() {
                         }
 
+                        @Override
+                        protected void failed() {
+                        }
+
                     };
                 }
             };
+            ((Service) worker).setExecutor(DRAW_CONTOUR_SERVICE);
+
         }
 
         public int drawContourObject(DrawObject drawObject) throws InterruptedException, ExecutionException {
@@ -399,7 +449,11 @@ public class DrawSpectrum {
                     DrawObject drawObject = null;
 
                     try {
-                        drawObject = drawSpectrum.contourQueue.take();
+                        drawObject = drawSpectrum.contourQueue.poll(10, TimeUnit.SECONDS);
+                        if (drawObject == null) {
+                            break;
+                        }
+
                         try {
                             drawContourObject(drawObject);
                         } catch (ExecutionException ex) {
