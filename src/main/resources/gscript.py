@@ -1,6 +1,8 @@
 from org.nmrfx.processor.gui import FXMLController
 from org.nmrfx.processor.gui import MainApp
 from org.nmrfx.processor.gui import GUIScripter
+from org.nmrfx.processor.datasets.peaks import PeakList
+from org.nmrfx.processor.datasets import Dataset
 import argparse
 import dscript
 
@@ -110,8 +112,16 @@ class NMRFxWindowScripting:
 
     def setDims(self, dataset=None, dims=None):
         if dataset != None:
-            print 'setdims',dataset
-            self.cmd.setDims(dataset,dims)
+            if dims != None:
+                dataObj = Dataset.getDataset(dataset)
+                iDims = []
+                for dim in dims:
+                    if isinstance(dim, int):
+                       iDims.append(dim)
+                    else:
+                       iDim = dataObj.getDim(dim)
+                       iDims.append(iDim)
+            self.cmd.setDims(dataset,iDims)
 
     def colors(self, indices, colorName, dataset=None):
         self.cmd.colorMap(dataset, indices, colorName)
@@ -218,10 +228,29 @@ class NMRFxWindowScripting:
     def drawAll(self):
         self.cmd.drawAll()
 
+    def pkstrips(self, peaks, dims, xwidth=0.2, row=0):
+        nColumns = len(peaks)
+        x = []
+        z = []
+        datasets = []
+        for peak in peaks:
+            dataset = peak.getPeakList().getDatasetName()
+            if dataset != None:
+                x.append(peak.getPeakDim(dims[0]).getChemShiftValue())
+                z.append(peak.getPeakDim(dims[2]).getChemShiftValue())
+                datasets.append(dataset)
+
+        self.strips(datasets, x, xwidth, dims=dims, row=row, z=z)
+
     def strips(self, datasets, x, xwidth=0.2, dims=None, row=0, **kwargs):
         nDatasets = len(datasets)
         nX = len(x)
-        nColumns = nX * nDatasets
+        if len(datasets) == len(x):
+            nColumns = nX
+            nRepeats = 1
+        else:
+            nColumns = nX * nDatasets
+            nRepeats = nDatasets
         nRows = row+1
         self.grid(rows=nRows, columns=nColumns)
         for iChart in range(nColumns):
@@ -230,7 +259,7 @@ class NMRFxWindowScripting:
             self.datasets([dataset])
             if dims != None:
                 self.setDims( dataset, dims=dims)
-            xVal = x[iChart / nDatasets]
+            xVal = x[iChart / nRepeats]
             x0 = xVal - xwidth/2.0
             x1 = xVal + xwidth/2.0
             self.lim(x=[x0,x1])
@@ -240,7 +269,7 @@ class NMRFxWindowScripting:
                     yValue = kwargs[elem]
                 else:
                     values = kwargs[elem]
-                    value = values[iChart / nDatasets]
+                    value = values[iChart / nRepeats]
                     self.axlim(elem,value, value)
             if yValue == None:
                 self.full('y')
