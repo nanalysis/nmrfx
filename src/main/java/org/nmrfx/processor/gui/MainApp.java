@@ -134,7 +134,7 @@ public class MainApp extends Application implements DatasetListener {
         Parameters parameters = getParameters();
         System.out.println(parameters.getRaw());
 
-        interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *\nimport os");
+        interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *\nfrom pscript import *\nimport os");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
         Dataset.addObserver(this);
