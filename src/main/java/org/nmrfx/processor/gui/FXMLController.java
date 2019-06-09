@@ -561,7 +561,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         //dataset.setScale(1.0);
         int nDim = dataset.getNDim();
         // fixme kluge as not all datasets that are freq domain have attribute set
-        for (int i = 0; i < nDim; i++) {
+        for (int i = 0; ((i < nDim) && (i <2)); i++) {
             dataset.setFreqDomain(i, true);
         }
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile);

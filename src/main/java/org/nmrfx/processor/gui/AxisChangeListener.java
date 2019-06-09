@@ -28,6 +28,8 @@ import java.util.List;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.NMRAxis;
 
 /**
  *
@@ -63,9 +65,12 @@ public class AxisChangeListener implements ChangeListener<Number> {
                     limitProp.setValue(FORMATTER.format(newBound));
                 }
                 if (axNum >= 2) {
-                    int pt1 = (int) chart.axes[axNum].getLowerBound();
-                    int pt2 = (int) chart.axes[axNum].getUpperBound();
-                    int center = (pt1 + pt2) / 2;
+                    DatasetAttributes datasetAttributes = chart.getDatasetAttributes().get(0);
+                    NMRAxis axis = chart.axes[axNum];
+                    int indexL = chart.axModes[axNum].getIndex(datasetAttributes, axNum, axis.getLowerBound());
+                    int indexU = chart.axModes[axNum].getIndex(datasetAttributes, axNum, axis.getUpperBound());
+
+                    int center = (indexL + indexU) / 2;
                     chart.controller.getStatusBar().updatePlaneSpinner(center, axNum);
                 }
                 if (PolyChart.getNSyncGroups() > 0) {

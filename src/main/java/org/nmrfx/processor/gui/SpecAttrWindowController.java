@@ -133,6 +133,7 @@ public class SpecAttrWindowController implements Initializable {
     private Tab peakSelectTab;
 
     StringProperty[][] limitFields;
+    Label[] labelFields;
     @FXML
     Slider scaleSlider;
 
@@ -289,6 +290,7 @@ public class SpecAttrWindowController implements Initializable {
         disDimCombo.getItems().addAll(OneDX, TwoD);
         //disDimCombo.setValue(OneDX);
         limitFields = new StringProperty[rowNames.length][2];
+        labelFields = new Label[rowNames.length];
         int iRow = 1;
         dimCombos = new ComboBox[rowNames.length];
         axisLabels = new Label[rowNames.length];
@@ -320,10 +322,8 @@ public class SpecAttrWindowController implements Initializable {
             maxField.setPrefWidth(75.0);
             viewGrid.add(maxField, 3, iRow);
             Label label = new Label("PPM");
+            labelFields[iRow0] = label;
             label.setPrefWidth(40);
-            if (iRow > 2) {
-                label.setText("PT");
-            }
             viewGrid.add(label, 4, iRow);
             Label axisLabel = new Label("");
             axisLabel.setPrefWidth(40);
@@ -771,6 +771,7 @@ public class SpecAttrWindowController implements Initializable {
 
     void initPeakListTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
+        IntegerStringConverter isConverter = new IntegerStringConverter();
         peakListTableView.setEditable(true);
         peakListTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
@@ -868,6 +869,17 @@ public class SpecAttrWindowController implements Initializable {
         peakLabelTypeCol.setPrefWidth(100);
         peakLabelTypeCol.setMaxWidth(150);
 
+        TableColumn<PeakListAttributes, String> nPlanesCol = new TableColumn<>("npl");
+        nPlanesCol.setCellValueFactory(new PropertyValueFactory("nplanes"));
+        nPlanesCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
+        nPlanesCol.setPrefWidth(35);
+
+        ContextMenu nPlanesMenu = new ContextMenu();
+        MenuItem unifyNPlanesMenu = new MenuItem("unify");
+        unifyNPlanesMenu.setOnAction(e -> unifyNPlanes());
+        nPlanesCol.setContextMenu(nPlanesMenu);
+        nPlanesMenu.getItems().addAll(unifyNPlanesMenu);
+
         TableColumn<PeakListAttributes, Boolean> simPeaksCol = new TableColumn<>("sim");
         simPeaksCol.setCellValueFactory(new PropertyValueFactory("simPeaks"));
         simPeaksCol.setCellFactory(tc -> new CheckBoxTableCell<>());
@@ -875,7 +887,7 @@ public class SpecAttrWindowController implements Initializable {
         simPeaksCol.setMaxWidth(50);
         simPeaksCol.setResizable(false);
 
-        peakListTableView.getColumns().setAll(peakListCol, drawPeaksCol, onColorCol, peakDisTypeCol, simPeaksCol, peakLabelTypeCol);
+        peakListTableView.getColumns().setAll(peakListCol, drawPeaksCol, onColorCol, peakDisTypeCol, nPlanesCol, simPeaksCol, peakLabelTypeCol);
     }
 
     private void xFullAction(ActionEvent event) {
@@ -1150,11 +1162,31 @@ public class SpecAttrWindowController implements Initializable {
             double upper = axis.getUpperBound();
             limitFields[i][0].setValue(formatter.format(lower));
             limitFields[i][1].setValue(formatter.format(upper));
+            labelFields[i].setText(chart.axModes[i].name());
             if (i > 1) {
-                int center = (int) ((lower + upper) / 2);
-                chart.controller.getStatusBar().updatePlaneSpinner(center, i);
+                if (!chart.getDatasetAttributes().isEmpty()) {
+                    DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                    int lowPt = chart.axModes[i].getIndex(dataAttr, i, lower);
+                    int upPt = chart.axModes[i].getIndex(dataAttr, i, upper);
+
+                    int center = ((lowPt + upPt) / 2);
+                    chart.controller.getStatusBar().updatePlaneSpinner(center, i);
+                }
             }
             i++;
+        }
+    }
+
+    void unifyNPlanes() {
+        ObservableList<PeakListAttributes> items = peakListTableView.getItems();
+        if (!items.isEmpty()) {
+            int index = peakListTableView.getSelectionModel().getSelectedIndex();
+            index = index == -1 ? 0 : index;
+            final int nlvls = items.get(index).getNplanes();
+            items.stream().forEach((peakAttr) -> {
+                peakAttr.setNplanes(nlvls);
+            });
+            peakListTableView.refresh();
         }
     }
 

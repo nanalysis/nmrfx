@@ -442,6 +442,7 @@ public class PolyChart implements PeakListener {
                 activeChart = CHARTS.get(0);
             }
         }
+        drawSpectrum.clearThreads();
     }
 
     public void focus() {
@@ -973,8 +974,16 @@ public class PolyChart implements PeakListener {
                 indexU = maxLimits[1];
             }
 
-            axes[axis].setLowerBound(indexL);
-            axes[axis].setUpperBound(indexU);
+            if (axModes[axis] == AXMODE.PTS) {
+                axes[axis].setLowerBound(indexL);
+                axes[axis].setUpperBound(indexU);
+
+            } else {
+                double posL = axModes[axis].indexToValue(datasetAttributes, axis, indexL);
+                double posU = axModes[axis].indexToValue(datasetAttributes, axis, indexU);
+                axes[axis].setLowerBound(posL);
+                axes[axis].setUpperBound(posU);
+            }
             layoutPlotChildren();
             ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
             controller.undoManager.add("plane", undo, redo);
@@ -1047,8 +1056,7 @@ public class PolyChart implements PeakListener {
             if (positions[axis] != null) {
                 if (axis > 1) {
                     DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-                    int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, positions[axis]);
-                    setAxis(axis, plane, plane);
+                    setAxis(axis, positions[axis], positions[axis]);
                 } else {
                     double range = widths[axis];
                     double newLower = positions[axis] - range / 2;
@@ -1064,8 +1072,7 @@ public class PolyChart implements PeakListener {
         if (position != null) {
             if (axis > 1) {
                 DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-                int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, position);
-                setAxis(axis, plane, plane);
+                setAxis(axis, position, position);
             } else {
                 double range = width;
                 double newLower = position - range / 2;
@@ -1461,7 +1468,7 @@ public class PolyChart implements PeakListener {
                 Dataset dataset = Dataset.getDataset(s);
                 int nDim = dataset.getNDim();
                 // fixme kluge as not all datasets that are freq domain have attribute set
-                for (int i = 0; i < nDim; i++) {
+                for (int i = 0; (i < nDim) && (i < 2); i++) {
                     dataset.setFreqDomain(i, true);
                 }
                 DatasetAttributes newAttr = new DatasetAttributes(dataset);
@@ -1660,7 +1667,11 @@ public class PolyChart implements PeakListener {
             axModes[1] = AXMODE.PPM;
             for (int i = 2; i < nAxes; i++) {
                 //axes[i] = new NMRAxis(Orientation.HORIZONTAL, Position.BOTTOM, datasetAttrs.pt[i][0], datasetAttrs.pt[i][1], 4);
-                axModes[i] = AXMODE.PTS;
+                if (dataset.getFreqDomain(i)) {
+                    axModes[i] = AXMODE.PPM;
+                } else {
+                    axModes[i] = AXMODE.PTS;
+                }
                 axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
                 axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
             }
@@ -1689,9 +1700,15 @@ public class PolyChart implements PeakListener {
             axModes[0] = AXMODE.PPM;
             axModes[1] = AXMODE.PPM;
             for (int i = 2; i < nAxes; i++) {
-                axes[i] = new NMRAxis(Orientation.HORIZONTAL, dataset.getSize(i) / 2, dataset.getSize(i) / 2, 0, 1);
+                double[] ppmLimits = datasetAttributes.getMaxLimits(i);
+                double centerPPM = (ppmLimits[0] + ppmLimits[1]) / 2.0;
+                axes[i] = new NMRAxis(Orientation.HORIZONTAL, centerPPM, centerPPM, 0, 1);
                 datasetAttributes.dim[i] = i;
-                axModes[i] = AXMODE.PTS;
+                if (dataset.getFreqDomain(i)) {
+                    axModes[i] = AXMODE.PPM;
+                } else {
+                    axModes[i] = AXMODE.PTS;
+                }
                 axes[i].lowerBoundProperty().addListener(new AxisChangeListener(this, i, 0));
                 axes[i].upperBoundProperty().addListener(new AxisChangeListener(this, i, 1));
 
@@ -1716,7 +1733,7 @@ public class PolyChart implements PeakListener {
             if (dataset.getFreqDomain(1)) {
                 axModes[1] = AXMODE.PPM;
             } else {
-                axModes[1] = AXMODE.TIME;
+                axModes[1] = AXMODE.PTS;
             }
             reversedAxis = (axModes[1] == AXMODE.PPM);
             if (reversedAxis != xAxis.getReverse()) {
@@ -2800,7 +2817,7 @@ public class PolyChart implements PeakListener {
             return;
         }
         int mapDim = controller.chartProcessor.mapToDataset(phaseDim);
-       if (mapDim != -1) {
+        if (mapDim != -1) {
             chartPhases[0][mapDim] = ph0;
         }
     }
@@ -3025,6 +3042,11 @@ public class PolyChart implements PeakListener {
                         default:
                             pt[i][0] = axModes[i].getIndex(datasetAttributes, i, axes[i].getLowerBound());
                             pt[i][1] = axModes[i].getIndex(datasetAttributes, i, axes[i].getUpperBound());
+                            if (pt[i][0] > pt[i][1]) {
+                                int hold = pt[i][0];
+                                pt[i][0] = pt[i][1];
+                                pt[i][1] = hold;
+                            }
                             break;
                     }
                     cpt[i] = (pt[i][0] + pt[i][1]) / 2;
@@ -3037,9 +3059,10 @@ public class PolyChart implements PeakListener {
                     return;
                 }
                 int[] maxPoint = rData.getMaxPoint();
-                System.out.println(rData.getMax() + " " + maxPoint[2]);
-                axes[2].setLowerBound(maxPoint[2]);
-                axes[2].setUpperBound(maxPoint[2]);
+                double planeValue = axModes[2].indexToValue(datasetAttributes, 2, maxPoint[2]);
+                System.out.println(rData.getMax() + " " + maxPoint[2] + " " + planeValue);
+                axes[2].setLowerBound(planeValue);
+                axes[2].setUpperBound(planeValue);
 
             }
         }

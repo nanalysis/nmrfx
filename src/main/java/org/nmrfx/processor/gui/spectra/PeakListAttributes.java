@@ -36,8 +36,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -69,6 +71,23 @@ public class PeakListAttributes implements PeakListener {
     Set<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
     NMRAxis xAxis = null;
     NMRAxis yAxis = null;
+
+    private IntegerProperty nplanes;
+
+    public IntegerProperty nplanesProperty() {
+        if (nplanes == null) {
+            nplanes = new SimpleIntegerProperty(this, "nplanes", 0);
+        }
+        return nplanes;
+    }
+
+    public void setNplanes(Integer value) {
+        nplanesProperty().set(value);
+    }
+
+    public Integer getNplanes() {
+        return nplanesProperty().get();
+    }
 
     private ColorProperty onColor;
 
@@ -224,6 +243,14 @@ public class PeakListAttributes implements PeakListener {
             if (chart.getAxMode(i) == DatasetAttributes.AXMODE.PPM) {
                 limits[i][0] = axis.getLowerBound();
                 limits[i][1] = axis.getUpperBound();
+                double lb = chart.getAxMode(i).getIndexD(dataAttr, i, limits[i][0]);
+                double ub = chart.getAxMode(i).getIndexD(dataAttr, i, limits[i][1]);
+                if (Math.abs(lb - ub) < 0.5) {
+                    lb = lb - ((double) getNplanes()) - 0.5;
+                    ub = ub + ((double) getNplanes()) + 0.5;
+                    limits[i][1] = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, i, lb);
+                    limits[i][0] = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, i, ub);
+                }
             } else {
                 double lb = axis.getLowerBound();
                 double ub = axis.getUpperBound();
@@ -697,6 +724,9 @@ public class PeakListAttributes implements PeakListener {
                     case "simPeaks":
                         setSimPeaks(Boolean.valueOf(value.toString()));
                         break;
+                    case "nplanes":
+                        setNplanes(Integer.valueOf(value.toString()));
+                        break;
                     case "drawPeaks":
                         setDrawPeaks(Boolean.valueOf(value.toString()));
                         break;
@@ -713,7 +743,7 @@ public class PeakListAttributes implements PeakListener {
 
     public Map<String, Object> config() {
         Map<String, Object> data = new HashMap<>();
-        String[] beanNames = {"onColor", "offColor", "drawPeaks", "simPeaks", "labelType", "displayType"};
+        String[] beanNames = {"onColor", "offColor", "drawPeaks", "nplanes", "simPeaks", "labelType", "displayType"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {
