@@ -66,6 +66,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
+import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 
 /**
@@ -381,11 +382,15 @@ public class SpectrumStatusBar {
 
     public void setChart(PolyChart chart) {
         Dataset dataset = chart.getDataset();
-        if (dataset != null) {
-            for (int axNum = 2; axNum < dataset.getNDim(); axNum++) {
-                int pt1 = (int) chart.axes[axNum].getLowerBound();
-                int pt2 = (int) chart.axes[axNum].getUpperBound();
-                int center = (pt1 + pt2) / 2;
+        if (!chart.getDatasetAttributes().isEmpty()) {
+            DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+            for (int axNum = 2; axNum < dataAttr.nDim; axNum++) {
+                NMRAxis axis = chart.axes[axNum];
+                int indexL = chart.axModes[axNum].getIndex(dataAttr, axNum, axis.getLowerBound());
+                int indexU = chart.axModes[axNum].getIndex(dataAttr, axNum, axis.getUpperBound());
+
+                int center = (indexL + indexU) / 2;
+
                 updatePlaneSpinner(center, axNum);
             }
         }
