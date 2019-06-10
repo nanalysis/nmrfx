@@ -1030,9 +1030,20 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
                 localPtD[i][0] = localPtD[i][1];
                 localPtD[i][1] = holdD;
             }
-            localPt[i][0] = (int) Math.floor(localPtD[i][0]);
-            localPt[i][1] = (int) Math.ceil(localPtD[i][1]);
-            //System.out.println("dim " + i + " " + fileData.dim[i] + " " + pt[i][0] + " " + pt[i][1]);
+            if (i > 1) {
+                if (Math.abs(localPtD[i][0] - localPtD[i][1]) < 0.5) {
+                    localPt[i][0] = (int) Math.round(localPtD[i][0]);
+                    localPt[i][1] = (int) Math.round(localPtD[i][1]);
+                } else {
+                    localPt[i][0] = (int) Math.floor(localPtD[i][0]);
+                    localPt[i][1] = (int) Math.ceil(localPtD[i][1]);
+                }
+            } else {
+
+                localPt[i][0] = (int) Math.floor(localPtD[i][0]);
+                localPt[i][1] = (int) Math.ceil(localPtD[i][1]);
+            }
+//            System.out.println("dim " + i + " " + dim[i] + " " + localPtD[i][1] + " " + localPtD[i][0] + " " + pt[i][0] + " " + pt[i][1]);
         }
         setPtBounds(localPt, localPtD, limits);
     }
@@ -1656,7 +1667,7 @@ public class DatasetAttributes extends DataGenerator implements Cloneable {
             ptf = (double) pt[i][1];
             limits[i][1] = (double) theFile.pointToPPM(dim[i], ptf);
             pt[i][1] = theFile.ppmToPoint(dim[i], limits[i][1]);
-            //  System.out.println("set pt bounds " + i + " " + pt[i][0] + " " + pt[i][1] + " " + limits[i][0] + " " + limits[i][1]);
+            //System.out.println("set pt bounds " + i + " " + pt[i][0] + " " + pt[i][1] + " " + limits[i][0] + " " + limits[i][1]);
             if (pt[i][0] > pt[i][1]) {
                 int hold;
                 double fhold;
