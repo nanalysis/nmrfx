@@ -282,7 +282,7 @@ public class GUIScripter {
             for (DatasetAttributes dataAttr : dataAttts) {
                 if ((datasetName == null) || datasetName.equals(dataAttr.getFileName())) {
                     dataAttr.setDrawList(indices);
-                   }
+                }
             }
             if (!indices.isEmpty()) {
                 chart.getController().getStatusBar().updateRowSpinner(indices.get(0), 1);
@@ -419,6 +419,32 @@ public class GUIScripter {
             chart.refresh();
         });
 
+    }
+
+    public void cconfig(Map<String, Object> map) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            map.entrySet().stream().forEach(entry -> {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (key.contains("Color")  && (value != null)) {
+                    value = getColor(value.toString());
+                }
+                chart.config(key, value);
+
+            });
+            chart.refresh();
+        });
+    }
+
+    public Map<String, Object> cconfig() throws InterruptedException, ExecutionException {
+        FutureTask<Map<String, Object>> future = new FutureTask(() -> {
+            PolyChart chart = getChart();
+            return chart.config();
+
+        });
+        ConsoleUtil.runOnFxThread(future);
+        return future.get();
     }
 
     public List<Integer> grid() throws InterruptedException, ExecutionException {

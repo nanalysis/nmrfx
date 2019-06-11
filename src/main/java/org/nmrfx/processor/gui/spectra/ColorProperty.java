@@ -39,11 +39,24 @@ public class ColorProperty extends SimpleObjectProperty {
         this.color = color;
     }
 
-    void set(Color color) {
+    public void set(Color color) {
+        this.color = color;
+    }
+
+    public void setColor(Color color) {
         this.color = color;
     }
 
     public Color get() {
         return color;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " " + color;
     }
 }

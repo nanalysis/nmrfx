@@ -8,6 +8,7 @@ def dumpYamlWin(yamlFile):
     win['geometry'] = nw.geometry()
     win['title'] = "Test"
     win['grid'] = nw.getGrid()
+    win['cconfig']= nw.cconfig()
     (rows, cols) = win['grid']
     spectra=[]
     win['spectra'] = spectra

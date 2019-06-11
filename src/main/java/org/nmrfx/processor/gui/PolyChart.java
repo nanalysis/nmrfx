@@ -39,6 +39,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Line;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -50,8 +51,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
@@ -75,6 +78,7 @@ import javafx.scene.shape.PathElement;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
@@ -87,6 +91,7 @@ import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
+import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DragBindings;
@@ -173,6 +178,58 @@ public class PolyChart implements PeakListener {
     double minBottomBorder = 0.0;
     Font peakFont = new Font(12);
     boolean disabled = false;
+
+    private IntegerProperty ticFontSize;
+
+    public IntegerProperty ticFontSizeProperty() {
+        if (ticFontSize == null) {
+            ticFontSize = new SimpleIntegerProperty(this, "ticFontSize",
+                    PreferencesController.getTickFontSize());
+        }
+        return ticFontSize;
+    }
+
+    public void setTicFontSize(int value) {
+        ticFontSizeProperty().set(value);
+    }
+
+    public int getTicFontSize() {
+        return ticFontSizeProperty().get();
+    }
+    private IntegerProperty labelFontSize;
+
+    public IntegerProperty labelFontSizeProperty() {
+        if (labelFontSize == null) {
+            labelFontSize = new SimpleIntegerProperty(this, "labelFontSize",
+                    PreferencesController.getLabelFontSize());
+        }
+        return labelFontSize;
+    }
+
+    public void setLabelFontSize(int value) {
+        labelFontSizeProperty().set(value);
+    }
+
+    public int getLabelFontSize() {
+        return labelFontSizeProperty().get();
+    }
+
+    private ColorProperty bgColor;
+
+    public ColorProperty bgColorProperty() {
+        if (bgColor == null) {
+            bgColor = new ColorProperty(this, "bgColor", null);
+        }
+        return bgColor;
+    }
+
+    public void setBgColor(Color value) {
+        bgColorProperty().set(value);
+    }
+
+    public Color getBgColor() {
+        return bgColorProperty().get();
+    }
 
     private BooleanProperty regions;
 
@@ -1772,12 +1829,12 @@ public class PolyChart implements PeakListener {
     }
 
     public double[] getMinBorders() {
-        xAxis.setTickFontSize(PreferencesController.getTickFontSize());
-        xAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
+        xAxis.setTickFontSize(getTicFontSize());
+        xAxis.setLabelFontSize(getLabelFontSize());
         double[] borders = new double[4];
 
-        yAxis.setTickFontSize(PreferencesController.getTickFontSize());
-        yAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
+        yAxis.setTickFontSize(getTicFontSize());
+        yAxis.setLabelFontSize(getLabelFontSize());
         borders[0] = yAxis.getBorderSize();
         borders[2] = xAxis.getBorderSize();
 
@@ -1816,11 +1873,16 @@ public class PolyChart implements PeakListener {
         try {
             gC.save();
             gC.clearRect(xPos, yPos, width, height);
-            xAxis.setTickFontSize(PreferencesController.getTickFontSize());
-            xAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
+            if (getBgColor() != null) {
+                gC.setFill(getBgColor());
+                gC.fillRect(xPos, yPos, width, height);
+            }
 
-            yAxis.setTickFontSize(PreferencesController.getTickFontSize());
-            yAxis.setLabelFontSize(PreferencesController.getLabelFontSize());
+            xAxis.setTickFontSize(getTicFontSize());
+            xAxis.setLabelFontSize(getLabelFontSize());
+
+            yAxis.setTickFontSize(getTicFontSize());
+            yAxis.setLabelFontSize(getLabelFontSize());
             double[] borders = getUseBorders();
             leftBorder = borders[0];
             rightBorder = borders[1];
@@ -3316,5 +3378,45 @@ public class PolyChart implements PeakListener {
         }
         double[] value = dataset.getPercentile(p, pt, dim);
         return value;
+    }
+
+    public void config(String name, Object value) {
+        if (Platform.isFxApplicationThread()) {
+            try {
+                PropertyUtils.setSimpleProperty(this, name, value);
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            Platform.runLater(() -> {
+                try {
+                    PropertyUtils.setProperty(this, name, value);
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                    Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            );
+        }
+    }
+
+    public Map<String, Object> config() {
+        Map<String, Object> data = new HashMap<>();
+        String[] beanNames = {"ticFontSize", "labelFontSize", "bgColor"};
+        for (String beanName : beanNames) {
+            try {
+                if (beanName.contains("Color")) {
+                    Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
+                    if (colObj instanceof Color) {
+                        String colorName = GUIScripter.toRGBCode((Color) colObj);
+                        data.put(beanName, colorName);
+                    }
+                } else {
+                    data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
+                }
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return data;
     }
 }
