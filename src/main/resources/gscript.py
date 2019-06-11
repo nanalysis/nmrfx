@@ -115,6 +115,17 @@ class NMRFxWindowScripting:
                 configData.update(kwargs)
             self.cmd.cconfig(configData)
 
+    def sconfig(self, pars=None,  **kwargs):
+        if len(kwargs) == 0 and pars == None:
+            return self.cmd.sconfig()
+        else:
+            configData = {}
+            if pars != None:
+                configData.update(pars)
+            if len(kwargs) != 0:
+                configData.update(kwargs)
+            self.cmd.sconfig(configData)
+
     def getDims(self,dataset):
         if dataset != None:
             return self.cmd.getDims(dataset)

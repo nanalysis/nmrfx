@@ -8,6 +8,7 @@ def dumpYamlWin(yamlFile):
     win['geometry'] = nw.geometry()
     win['title'] = "Test"
     win['grid'] = nw.getGrid()
+    win['sconfig']= nw.sconfig()
     (rows, cols) = win['grid']
     spectra=[]
     win['spectra'] = spectra
@@ -55,9 +56,9 @@ def loadYamlWin(yamlFile, createNewStage=True):
     if 'grid' in data:
         (rows,cols) = data['grid']
         nw.grid(rows,cols)
-    if 'cconfig' in data:
-        cconfig = data['cconfig']
-        nw.cconfig(cconfig)
+    if 'sconfig' in data:
+        sconfig = data['sconfig']
+        nw.sconfig(sconfig)
     spectra = data['spectra']
     for v in spectra :
         print v

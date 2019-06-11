@@ -30,10 +30,12 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +45,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
@@ -101,6 +104,7 @@ import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.peaks.Peak;
@@ -112,6 +116,7 @@ import org.nmrfx.processor.gui.controls.LayoutControlCanvas;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.spectra.CanvasBindings;
+import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utilities.DictionarySort;
@@ -201,6 +206,23 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     Canvas annoCanvas = new Canvas();
     Pane plotContent = new Pane();
     boolean[][] crossHairStates = new boolean[2][2];
+
+    private ColorProperty bgColor;
+
+    public ColorProperty bgColorProperty() {
+        if (bgColor == null) {
+            bgColor = new ColorProperty(this, "bgColor", null);
+        }
+        return bgColor;
+    }
+
+    public void setBgColor(Color value) {
+        bgColorProperty().set(value);
+    }
+
+    public Color getBgColor() {
+        return bgColorProperty().get();
+    }
 
     public File getInitialDirectory() {
         if (initialDir == null) {
@@ -561,7 +583,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         //dataset.setScale(1.0);
         int nDim = dataset.getNDim();
         // fixme kluge as not all datasets that are freq domain have attribute set
-        for (int i = 0; ((i < nDim) && (i <2)); i++) {
+        for (int i = 0; ((i < nDim) && (i < 2)); i++) {
             dataset.setFreqDomain(i, true);
         }
         DatasetAttributes datasetAttributes = getActiveChart().setDataset(dataset, appendFile);
@@ -2070,13 +2092,44 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         PeakList.remove("refList");
     }
 
-    public void config() {
-        ObservableList<DatasetAttributes> datasetAttrList = getActiveChart().getDatasetAttributes();
-        datasetAttrList.stream().forEach(d -> {
-            Map<String, Object> configMap = d.config();
-            System.out.println(configMap);
-        });
+    public void config(String name, Object value) {
+        if (Platform.isFxApplicationThread()) {
+            try {
+                PropertyUtils.setSimpleProperty(this, name, value);
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            Platform.runLater(() -> {
+                try {
+                    PropertyUtils.setProperty(this, name, value);
+                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                    Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            );
+        }
+    }
 
+    public Map<String, Object> config() {
+        Map<String, Object> data = new HashMap<>();
+        String[] beanNames = {"bgColor"};
+        for (String beanName : beanNames) {
+            try {
+                if (beanName.contains("Color")) {
+                    Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
+                    if (colObj instanceof Color) {
+                        String colorName = GUIScripter.toRGBCode((Color) colObj);
+                        data.put(beanName, colorName);
+                    }
+                } else {
+                    data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
+                }
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
+                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return data;
     }
 
     public void undo() {

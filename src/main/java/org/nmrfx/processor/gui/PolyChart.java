@@ -1876,6 +1876,9 @@ public class PolyChart implements PeakListener {
             if (getBgColor() != null) {
                 gC.setFill(getBgColor());
                 gC.fillRect(xPos, yPos, width, height);
+            } else if (controller.getBgColor() != null) {
+                gC.setFill(controller.getBgColor());
+                gC.fillRect(xPos, yPos, width, height);
             }
 
             xAxis.setTickFontSize(getTicFontSize());

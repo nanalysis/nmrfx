@@ -447,6 +447,31 @@ public class GUIScripter {
         return future.get();
     }
 
+       public void sconfig(Map<String, Object> map) {
+        ConsoleUtil.runOnFxThread(() -> {
+            PolyChart chart = getChart();
+            map.entrySet().stream().forEach(entry -> {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (key.contains("Color")  && (value != null)) {
+                    value = getColor(value.toString());
+                }
+                getActiveController().config(key, value);
+
+            });
+            chart.refresh();
+        });
+    }
+
+    public Map<String, Object> sconfig() throws InterruptedException, ExecutionException {
+        FutureTask<Map<String, Object>> future = new FutureTask(() -> {
+           return getActiveController().config();
+
+        });
+        ConsoleUtil.runOnFxThread(future);
+        return future.get();
+    }
+
     public List<Integer> grid() throws InterruptedException, ExecutionException {
         FutureTask<List<Integer>> future = new FutureTask(() -> {
             PolyChart chart = getChart();
