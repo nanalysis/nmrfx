@@ -438,18 +438,28 @@ public class SpectrumStatusBar {
             int newValue = controller.getActiveChart().setDrawlist(plane);
             controller.getActiveChart().refresh();
         } else {
-            int pt1 = (int) controller.getActiveChart().axes[iDim].getLowerBound();
-            int pt2 = (int) controller.getActiveChart().axes[iDim].getUpperBound();
-            int center = (pt1 + pt2) / 2;
-            int delta = center - pt1;
-            if (pt1 != (plane - delta)) {
-                pt1 = plane - delta;
-                pt2 = plane + delta;
-                ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
-                controller.getActiveChart().setAxis(iDim, pt1, pt2);
-                controller.getActiveChart().refresh();
-                ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
-                controller.undoManager.add("plane", undo, redo);
+            PolyChart chart = controller.getActiveChart();
+
+            if (!chart.getDatasetAttributes().isEmpty()) {
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                NMRAxis axis = chart.axes[iDim];
+                int pt1 = chart.axModes[iDim].getIndex(dataAttr, iDim, axis.getLowerBound());
+                int pt2 = chart.axModes[iDim].getIndex(dataAttr, iDim, axis.getUpperBound());
+
+                int center = (pt1 + pt2) / 2;
+                int delta = center - pt1;
+                if (pt1 != (plane - delta)) {
+                    pt1 = plane - delta;
+                    pt2 = plane + delta;
+                    ChartUndoLimits undo = new ChartUndoLimits(controller.getActiveChart());
+                    double ppm1 = chart.axModes[iDim].indexToValue(dataAttr, iDim, pt1);
+                    double ppm2 = chart.axModes[iDim].indexToValue(dataAttr, iDim, pt2);
+
+                    controller.getActiveChart().setAxis(iDim, ppm1, ppm2);
+                    controller.getActiveChart().refresh();
+                    ChartUndoLimits redo = new ChartUndoLimits(controller.getActiveChart());
+                    controller.undoManager.add("plane", undo, redo);
+                }
             }
         }
     }
