@@ -8,7 +8,6 @@ def dumpYamlWin(yamlFile):
     win['geometry'] = nw.geometry()
     win['title'] = "Test"
     win['grid'] = nw.getGrid()
-    win['cconfig']= nw.cconfig()
     (rows, cols) = win['grid']
     spectra=[]
     win['spectra'] = spectra
@@ -21,6 +20,7 @@ def dumpYamlWin(yamlFile):
         iCol = iSpectrum % cols
         sd['grid'] = [iRow, iCol]
         sd['lim'] = nw.lim()
+        sd['cconfig']= nw.cconfig()
         sd['datasets'] = []
         datasets = nw.datasets() 
         for dataset in datasets:
@@ -70,6 +70,9 @@ def loadYamlWin(yamlFile, createNewStage=True):
         activeWin = iRow*cols+iCol
         print 'g',iRow,iCol,activeWin
         nw.active(activeWin)
+        if 'cconfig' in v:
+            cconfig = v['cconfig']
+            nw.cconfig(cconfig)
         datasetValues = []
         for dataset in datasets:
             print dataset
