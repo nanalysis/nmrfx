@@ -55,6 +55,9 @@ def loadYamlWin(yamlFile, createNewStage=True):
     if 'grid' in data:
         (rows,cols) = data['grid']
         nw.grid(rows,cols)
+    if 'cconfig' in data:
+        cconfig = data['cconfig']
+        nw.cconfig(cconfig)
     spectra = data['spectra']
     for v in spectra :
         print v
