@@ -230,6 +230,56 @@ public class PolyChart implements PeakListener {
     public Color getBgColor() {
         return bgColorProperty().get();
     }
+    
+    private ColorProperty axesColor;
+
+    public ColorProperty axesColorProperty() {
+        if (axesColor == null) {
+            axesColor = new ColorProperty(this, "axesColor", null);
+        }
+        return axesColor;
+    }
+
+    public void setAxesColor(Color value) {
+        axesColorProperty().set(value);
+    }
+
+    public Color getAxesColor() {
+        return axesColorProperty().get();
+    }
+
+    private ColorProperty cross0Color;
+
+    public ColorProperty cross0ColorProperty() {
+        if (cross0Color == null) {
+            cross0Color = new ColorProperty(this, "cross0Color", null);
+        }
+        return cross0Color;
+    }
+
+    public void setCross0Color(Color value) {
+        cross0ColorProperty().set(value);
+    }
+
+    public Color getCross0Color() {
+        return cross0ColorProperty().get();
+    }
+    private ColorProperty cross1Color;
+
+    public ColorProperty cross1ColorProperty() {
+        if (cross1Color == null) {
+            cross1Color = new ColorProperty(this, "cross1Color", null);
+        }
+        return cross1Color;
+    }
+
+    public void setCross1Color(Color value) {
+        cross1ColorProperty().set(value);
+    }
+
+    public Color getCross1Color() {
+        return cross1ColorProperty().get();
+    }
 
     private BooleanProperty regions;
 
@@ -1856,6 +1906,41 @@ public class PolyChart implements PeakListener {
         disabled = state;
     }
 
+    public static Color chooseBlackWhite(Color color) {
+        Color result;
+        if (color.getBrightness() > 0.5) {
+            result = Color.BLACK;
+        } else {
+            result = Color.WHITE;
+        }
+        return result;
+    }
+
+    private void setCrossHairColors(Color fillColor) {
+        Color color0 = getCross0Color();
+        if (color0 == null) {
+            color0 = chooseBlackWhite(fillColor);
+        }
+        Color color1 = getCross1Color();
+        if (color1 == null) {
+            if (color0 == Color.BLACK) {
+                color1 = Color.RED;
+            } else {
+                color1 = Color.MAGENTA;
+            }
+        }
+
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                if (i == 0) {
+                    crossHairLines[i][j].setStroke(color0);
+                } else {
+                    crossHairLines[i][j].setStroke(color1);
+                }
+            }
+        }
+    }
+
     protected void layoutPlotChildren() {
         if (disabled) {
             return;
@@ -1873,12 +1958,25 @@ public class PolyChart implements PeakListener {
         try {
             gC.save();
             gC.clearRect(xPos, yPos, width, height);
+            Color fillColor = Color.WHITE;
             if (getBgColor() != null) {
-                gC.setFill(getBgColor());
+                fillColor = getBgColor();
+                gC.setFill(fillColor);
                 gC.fillRect(xPos, yPos, width, height);
             } else if (controller.getBgColor() != null) {
-                gC.setFill(controller.getBgColor());
+                fillColor = controller.getBgColor();
+                gC.setFill(fillColor);
                 gC.fillRect(xPos, yPos, width, height);
+            }
+            setCrossHairColors(fillColor);
+
+            Color axesColorLocal = getAxesColor();
+            if (axesColorLocal == null) {
+                axesColorLocal = controller.getAxesColor();
+                if (axesColorLocal == null) {
+                    axesColorLocal = chooseBlackWhite(fillColor);
+
+                }
             }
 
             xAxis.setTickFontSize(getTicFontSize());
@@ -1900,7 +1998,9 @@ public class PolyChart implements PeakListener {
             yAxis.setWidth(leftBorder);
             yAxis.setOrigin(xPos + leftBorder, yPos + height - bottomBorder);
 
-            gC.setStroke(Color.BLACK);
+            gC.setStroke(axesColorLocal);
+            xAxis.setColor(axesColorLocal);
+            yAxis.setColor(axesColorLocal);
             xAxis.draw(gC);
             yAxis.draw(gC);
             gC.setLineWidth(xAxis.getLineWidth());
@@ -3404,7 +3504,8 @@ public class PolyChart implements PeakListener {
 
     public Map<String, Object> config() {
         Map<String, Object> data = new HashMap<>();
-        String[] beanNames = {"ticFontSize", "labelFontSize", "bgColor"};
+        String[] beanNames = {"ticFontSize", "labelFontSize", "bgColor",
+            "axesColor","cross0Color", "cross1Color"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {

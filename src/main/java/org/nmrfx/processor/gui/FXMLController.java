@@ -224,6 +224,23 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return bgColorProperty().get();
     }
 
+    private ColorProperty axesColor;
+
+    public ColorProperty axesColorProperty() {
+        if (axesColor == null) {
+            axesColor = new ColorProperty(this, "axesColor", null);
+        }
+        return axesColor;
+    }
+
+    public void setAxesColor(Color value) {
+        axesColorProperty().set(value);
+    }
+
+    public Color getAxesColor() {
+        return axesColorProperty().get();
+    }
+
     public File getInitialDirectory() {
         if (initialDir == null) {
             String homeDirName = System.getProperty("user.home");
@@ -2113,7 +2130,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public Map<String, Object> config() {
         Map<String, Object> data = new HashMap<>();
-        String[] beanNames = {"bgColor"};
+        String[] beanNames = {"bgColor", "axesColor"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {
