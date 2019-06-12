@@ -180,7 +180,6 @@ public class PolyChart implements PeakListener {
     boolean disabled = false;
     public ChartProperties chartProps = new ChartProperties(this);
 
-
     int iVec = 0;
 //    Vec vec;
     FileProperty datasetFileProp = new FileProperty();
@@ -1868,6 +1867,14 @@ public class PolyChart implements PeakListener {
             gC.setStroke(axesColorLocal);
             xAxis.setColor(axesColorLocal);
             yAxis.setColor(axesColorLocal);
+            if (chartProps.getGrid()) {
+                xAxis.setGridLength(yAxis.getHeight());
+                yAxis.setGridLength(xAxis.getWidth());
+            } else {
+                xAxis.setGridLength(0.0);
+                yAxis.setGridLength(0.0);
+
+            }
             xAxis.draw(gC);
             yAxis.draw(gC);
             gC.setLineWidth(xAxis.getLineWidth());

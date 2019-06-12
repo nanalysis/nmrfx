@@ -39,7 +39,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 public class ChartProperties {
 
     final private PolyChart polyChart;
-    
+
     private IntegerProperty labelFontSize;
     private IntegerProperty ticFontSize;
     private ColorProperty cross0Color;
@@ -172,8 +172,8 @@ public class ChartProperties {
     public boolean getIntegrals() {
         return integralsProperty().get();
     }
-    
-       public void config(String name, Object value) {
+
+    public void config(String name, Object value) {
         if (Platform.isFxApplicationThread()) {
             try {
                 PropertyUtils.setSimpleProperty(this, name, value);
@@ -195,7 +195,7 @@ public class ChartProperties {
     public Map<String, Object> config() {
         Map<String, Object> data = new HashMap<>();
         String[] beanNames = {"ticFontSize", "labelFontSize", "bgColor",
-            "axesColor","cross0Color", "cross1Color"};
+            "axesColor", "cross0Color", "cross1Color", "grid"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {
@@ -214,5 +214,21 @@ public class ChartProperties {
         return data;
     }
 
+    private BooleanProperty grid;
+
+    public BooleanProperty gridProperty() {
+        if (grid == null) {
+            grid = new SimpleBooleanProperty(polyChart, "grid", false);
+        }
+        return grid;
+    }
+
+    public void setGrid(boolean value) {
+        gridProperty().set(value);
+    }
+
+    public boolean getGrid() {
+        return gridProperty().get();
+    }
 
 }
