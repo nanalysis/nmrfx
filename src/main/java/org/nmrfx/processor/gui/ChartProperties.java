@@ -40,19 +40,90 @@ public class ChartProperties {
 
     final private PolyChart polyChart;
 
+    private IntegerProperty leftBorderSize;
+    private IntegerProperty rightBorderSize;
+    private IntegerProperty topBorderSize;
+    private IntegerProperty bottomBorderSize;
     private IntegerProperty labelFontSize;
     private IntegerProperty ticFontSize;
     private ColorProperty cross0Color;
     private ColorProperty cross1Color;
     private ColorProperty axesColor;
     private ColorProperty bgColor;
+    private BooleanProperty grid;
+    private BooleanProperty regions;
+    private BooleanProperty integrals;
 
     public ChartProperties(PolyChart chart) {
         this.polyChart = chart;
     }
 
+    public int getLeftBorderSize() {
+        return leftBorderSizeProperty().get();
+    }
+
+    public void setLeftBorderSize(int value) {
+        leftBorderSizeProperty().set(value);
+    }
+
+    public IntegerProperty leftBorderSizeProperty() {
+        if (leftBorderSize == null) {
+            leftBorderSize = new SimpleIntegerProperty(polyChart, "leftBorderSize", 0);
+        }
+        return leftBorderSize;
+    }
+
+    public int getRightBorderSize() {
+        return rightBorderSizeProperty().get();
+    }
+
+    public void setRightBorderSize(int value) {
+        rightBorderSizeProperty().set(value);
+    }
+
+    public IntegerProperty rightBorderSizeProperty() {
+        if (rightBorderSize == null) {
+            rightBorderSize = new SimpleIntegerProperty(polyChart, "rightBorderSize", 0);
+        }
+        return rightBorderSize;
+    }
+
+    public int getTopBorderSize() {
+        return topBorderSizeProperty().get();
+    }
+
+    public void setTopBorderSize(int value) {
+        topBorderSizeProperty().set(value);
+    }
+
+    public IntegerProperty topBorderSizeProperty() {
+        if (topBorderSize == null) {
+            topBorderSize = new SimpleIntegerProperty(polyChart, "topBorderSize", 7);
+        }
+        return topBorderSize;
+    }
+
+    public int getBottomBorderSize() {
+        return bottomBorderSizeProperty().get();
+    }
+
+    public void setBottomBorderSize(int value) {
+        bottomBorderSizeProperty().set(value);
+    }
+
+    public IntegerProperty bottomBorderSizeProperty() {
+        if (bottomBorderSize == null) {
+            bottomBorderSize = new SimpleIntegerProperty(polyChart, "bottomBorderSize", 7);
+        }
+        return bottomBorderSize;
+    }
+
     public int getLabelFontSize() {
         return labelFontSizeProperty().get();
+    }
+
+    public void setLabelFontSize(int value) {
+        labelFontSizeProperty().set(value);
     }
 
     public IntegerProperty labelFontSizeProperty() {
@@ -68,10 +139,6 @@ public class ChartProperties {
 
     public void setTicFontSize(int value) {
         ticFontSizeProperty().set(value);
-    }
-
-    public void setLabelFontSize(int value) {
-        labelFontSizeProperty().set(value);
     }
 
     public IntegerProperty ticFontSizeProperty() {
@@ -140,7 +207,21 @@ public class ChartProperties {
     public Color getAxesColor() {
         return axesColorProperty().get();
     }
-    private BooleanProperty regions;
+
+    public BooleanProperty gridProperty() {
+        if (grid == null) {
+            grid = new SimpleBooleanProperty(polyChart, "grid", false);
+        }
+        return grid;
+    }
+
+    public void setGrid(boolean value) {
+        gridProperty().set(value);
+    }
+
+    public boolean getGrid() {
+        return gridProperty().get();
+    }
 
     public BooleanProperty regionsProperty() {
         if (regions == null) {
@@ -156,7 +237,6 @@ public class ChartProperties {
     public boolean getRegions() {
         return regionsProperty().get();
     }
-    private BooleanProperty integrals;
 
     public BooleanProperty integralsProperty() {
         if (integrals == null) {
@@ -195,7 +275,9 @@ public class ChartProperties {
     public Map<String, Object> config() {
         Map<String, Object> data = new HashMap<>();
         String[] beanNames = {"ticFontSize", "labelFontSize", "bgColor",
-            "axesColor", "cross0Color", "cross1Color", "grid"};
+            "axesColor", "cross0Color", "cross1Color", "grid",
+            "leftBorderSize", "rightBorderSize",
+            "topBorderSize", "bottomBorderSize"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {
@@ -213,22 +295,4 @@ public class ChartProperties {
         }
         return data;
     }
-
-    private BooleanProperty grid;
-
-    public BooleanProperty gridProperty() {
-        if (grid == null) {
-            grid = new SimpleBooleanProperty(polyChart, "grid", false);
-        }
-        return grid;
-    }
-
-    public void setGrid(boolean value) {
-        gridProperty().set(value);
-    }
-
-    public boolean getGrid() {
-        return gridProperty().get();
-    }
-
 }

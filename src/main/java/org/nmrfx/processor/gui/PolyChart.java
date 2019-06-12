@@ -1756,15 +1756,17 @@ public class PolyChart implements PeakListener {
 
         borders[1] = borders[0] / 4;
         borders[3] = borders[2] / 4;
-        borders[3] = 7.0;
-        borders[1] = 7.0;
+        borders[3] = chartProps.getTopBorderSize();
+        borders[1] = chartProps.getRightBorderSize();
         return borders;
     }
 
     public double[] getUseBorders() {
         double[] borders = getMinBorders();
         borders[0] = Math.max(borders[0], minLeftBorder);
+        borders[0] = Math.max(borders[0], chartProps.getLeftBorderSize());
         borders[2] = Math.max(borders[2], minBottomBorder);
+        borders[2] = Math.max(borders[2], chartProps.getBottomBorderSize());
         return borders;
     }
 
