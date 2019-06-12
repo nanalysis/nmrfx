@@ -178,141 +178,8 @@ public class PolyChart implements PeakListener {
     double minBottomBorder = 0.0;
     Font peakFont = new Font(12);
     boolean disabled = false;
+    public ChartProperties chartProps = new ChartProperties(this);
 
-    private IntegerProperty ticFontSize;
-
-    public IntegerProperty ticFontSizeProperty() {
-        if (ticFontSize == null) {
-            ticFontSize = new SimpleIntegerProperty(this, "ticFontSize",
-                    PreferencesController.getTickFontSize());
-        }
-        return ticFontSize;
-    }
-
-    public void setTicFontSize(int value) {
-        ticFontSizeProperty().set(value);
-    }
-
-    public int getTicFontSize() {
-        return ticFontSizeProperty().get();
-    }
-    private IntegerProperty labelFontSize;
-
-    public IntegerProperty labelFontSizeProperty() {
-        if (labelFontSize == null) {
-            labelFontSize = new SimpleIntegerProperty(this, "labelFontSize",
-                    PreferencesController.getLabelFontSize());
-        }
-        return labelFontSize;
-    }
-
-    public void setLabelFontSize(int value) {
-        labelFontSizeProperty().set(value);
-    }
-
-    public int getLabelFontSize() {
-        return labelFontSizeProperty().get();
-    }
-
-    private ColorProperty bgColor;
-
-    public ColorProperty bgColorProperty() {
-        if (bgColor == null) {
-            bgColor = new ColorProperty(this, "bgColor", null);
-        }
-        return bgColor;
-    }
-
-    public void setBgColor(Color value) {
-        bgColorProperty().set(value);
-    }
-
-    public Color getBgColor() {
-        return bgColorProperty().get();
-    }
-    
-    private ColorProperty axesColor;
-
-    public ColorProperty axesColorProperty() {
-        if (axesColor == null) {
-            axesColor = new ColorProperty(this, "axesColor", null);
-        }
-        return axesColor;
-    }
-
-    public void setAxesColor(Color value) {
-        axesColorProperty().set(value);
-    }
-
-    public Color getAxesColor() {
-        return axesColorProperty().get();
-    }
-
-    private ColorProperty cross0Color;
-
-    public ColorProperty cross0ColorProperty() {
-        if (cross0Color == null) {
-            cross0Color = new ColorProperty(this, "cross0Color", null);
-        }
-        return cross0Color;
-    }
-
-    public void setCross0Color(Color value) {
-        cross0ColorProperty().set(value);
-    }
-
-    public Color getCross0Color() {
-        return cross0ColorProperty().get();
-    }
-    private ColorProperty cross1Color;
-
-    public ColorProperty cross1ColorProperty() {
-        if (cross1Color == null) {
-            cross1Color = new ColorProperty(this, "cross1Color", null);
-        }
-        return cross1Color;
-    }
-
-    public void setCross1Color(Color value) {
-        cross1ColorProperty().set(value);
-    }
-
-    public Color getCross1Color() {
-        return cross1ColorProperty().get();
-    }
-
-    private BooleanProperty regions;
-
-    public BooleanProperty regionsProperty() {
-        if (regions == null) {
-            regions = new SimpleBooleanProperty(this, "-on", false);
-        }
-        return regions;
-    }
-
-    public void setRegions(boolean value) {
-        regionsProperty().set(value);
-    }
-
-    public boolean getRegions() {
-        return regionsProperty().get();
-    }
-    private BooleanProperty integrals;
-
-    public BooleanProperty integralsProperty() {
-        if (integrals == null) {
-            integrals = new SimpleBooleanProperty(this, "-on", false);
-        }
-        return integrals;
-    }
-
-    public void setIntegrals(boolean value) {
-        integralsProperty().set(value);
-    }
-
-    public boolean getIntegrals() {
-        return integralsProperty().get();
-    }
 
     int iVec = 0;
 //    Vec vec;
@@ -1879,12 +1746,12 @@ public class PolyChart implements PeakListener {
     }
 
     public double[] getMinBorders() {
-        xAxis.setTickFontSize(getTicFontSize());
-        xAxis.setLabelFontSize(getLabelFontSize());
+        xAxis.setTickFontSize(chartProps.getTicFontSize());
+        xAxis.setLabelFontSize(chartProps.getLabelFontSize());
         double[] borders = new double[4];
 
-        yAxis.setTickFontSize(getTicFontSize());
-        yAxis.setLabelFontSize(getLabelFontSize());
+        yAxis.setTickFontSize(chartProps.getTicFontSize());
+        yAxis.setLabelFontSize(chartProps.getLabelFontSize());
         borders[0] = yAxis.getBorderSize();
         borders[2] = xAxis.getBorderSize();
 
@@ -1917,11 +1784,11 @@ public class PolyChart implements PeakListener {
     }
 
     private void setCrossHairColors(Color fillColor) {
-        Color color0 = getCross0Color();
+        Color color0 = chartProps.getCross0Color();
         if (color0 == null) {
             color0 = chooseBlackWhite(fillColor);
         }
-        Color color1 = getCross1Color();
+        Color color1 = chartProps.getCross1Color();
         if (color1 == null) {
             if (color0 == Color.BLACK) {
                 color1 = Color.RED;
@@ -1959,8 +1826,8 @@ public class PolyChart implements PeakListener {
             gC.save();
             gC.clearRect(xPos, yPos, width, height);
             Color fillColor = Color.WHITE;
-            if (getBgColor() != null) {
-                fillColor = getBgColor();
+            if (chartProps.getBgColor() != null) {
+                fillColor = chartProps.getBgColor();
                 gC.setFill(fillColor);
                 gC.fillRect(xPos, yPos, width, height);
             } else if (controller.getBgColor() != null) {
@@ -1970,7 +1837,7 @@ public class PolyChart implements PeakListener {
             }
             setCrossHairColors(fillColor);
 
-            Color axesColorLocal = getAxesColor();
+            Color axesColorLocal = chartProps.getAxesColor();
             if (axesColorLocal == null) {
                 axesColorLocal = controller.getAxesColor();
                 if (axesColorLocal == null) {
@@ -1979,11 +1846,11 @@ public class PolyChart implements PeakListener {
                 }
             }
 
-            xAxis.setTickFontSize(getTicFontSize());
-            xAxis.setLabelFontSize(getLabelFontSize());
+            xAxis.setTickFontSize(chartProps.getTicFontSize());
+            xAxis.setLabelFontSize(chartProps.getLabelFontSize());
 
-            yAxis.setTickFontSize(getTicFontSize());
-            yAxis.setLabelFontSize(getLabelFontSize());
+            yAxis.setTickFontSize(chartProps.getTicFontSize());
+            yAxis.setLabelFontSize(chartProps.getLabelFontSize());
             double[] borders = getUseBorders();
             leftBorder = borders[0];
             rightBorder = borders[1];
@@ -2093,7 +1960,7 @@ public class PolyChart implements PeakListener {
                     }
 
                     if (disDimProp.get() != DISDIM.TwoD) {
-                        if (getRegions()) {
+                        if (chartProps.getRegions()) {
                             drawRegions(datasetAttributes, gC);
                         }
                         gC.save();
@@ -2122,7 +1989,7 @@ public class PolyChart implements PeakListener {
                                     int nPoints = drawSpectrum.getNPoints();
                                     int rowIndex = drawSpectrum.getRowIndex();
                                     drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
-                                    if (getIntegrals()) {
+                                    if (chartProps.getIntegrals()) {
                                         draw1DIntegral(datasetAttributes, gC);
                                     }
                                     drawBaseLine(gC, bcPath);
@@ -3484,43 +3351,10 @@ public class PolyChart implements PeakListener {
     }
 
     public void config(String name, Object value) {
-        if (Platform.isFxApplicationThread()) {
-            try {
-                PropertyUtils.setSimpleProperty(this, name, value);
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } else {
-            Platform.runLater(() -> {
-                try {
-                    PropertyUtils.setProperty(this, name, value);
-                } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                    Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-            );
-        }
+        chartProps.config(name, value);
     }
 
     public Map<String, Object> config() {
-        Map<String, Object> data = new HashMap<>();
-        String[] beanNames = {"ticFontSize", "labelFontSize", "bgColor",
-            "axesColor","cross0Color", "cross1Color"};
-        for (String beanName : beanNames) {
-            try {
-                if (beanName.contains("Color")) {
-                    Object colObj = PropertyUtils.getSimpleProperty(this, beanName);
-                    if (colObj instanceof Color) {
-                        String colorName = GUIScripter.toRGBCode((Color) colObj);
-                        data.put(beanName, colorName);
-                    }
-                } else {
-                    data.put(beanName, PropertyUtils.getSimpleProperty(this, beanName));
-                }
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
-                Logger.getLogger(DatasetAttributes.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        return data;
+        return chartProps.config();
     }
 }

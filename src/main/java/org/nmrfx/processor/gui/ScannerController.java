@@ -523,8 +523,8 @@ public class ScannerController implements Initializable {
             }
         }
         dataset.setRegions(regions);
-        chart.setRegions(true);
-        chart.setIntegrals(false);
+        chart.chartProps.setRegions(true);
+        chart.chartProps.setIntegrals(false);
         chart.refresh();
     }
 
@@ -534,7 +534,7 @@ public class ScannerController implements Initializable {
         Set<DatasetRegion> regions = new TreeSet<>();
 
         dataset.setRegions(regions);
-        chart.setRegions(false);
+        chart.chartProps.setRegions(false);
         chart.refresh();
     }
 
