@@ -1932,6 +1932,36 @@ public class PolyChart implements PeakListener {
     }
 
     protected void exportVectorGraphics(SVGGraphicsContext svgGC) throws GraphicsIOException {
+        Color fillColor = Color.WHITE;
+        if (chartProps.getBgColor() != null) {
+            fillColor = chartProps.getBgColor();
+            svgGC.setFill(fillColor);
+            svgGC.fillRect(xPos, yPos, width, height);
+        } else if (controller.getBgColor() != null) {
+            fillColor = controller.getBgColor();
+            svgGC.setFill(fillColor);
+            svgGC.fillRect(xPos, yPos, width, height);
+        }
+
+        Color axesColorLocal = chartProps.getAxesColor();
+        if (axesColorLocal == null) {
+            axesColorLocal = controller.getAxesColor();
+            if (axesColorLocal == null) {
+                axesColorLocal = chooseBlackWhite(fillColor);
+            }
+        }
+        svgGC.setStroke(axesColorLocal);
+        xAxis.setColor(axesColorLocal);
+        yAxis.setColor(axesColorLocal);
+        if (chartProps.getGrid()) {
+            xAxis.setGridLength(yAxis.getHeight());
+            yAxis.setGridLength(xAxis.getWidth());
+        } else {
+            xAxis.setGridLength(0.0);
+            yAxis.setGridLength(0.0);
+
+        }
+
         xAxis.draw(svgGC);
         yAxis.draw(svgGC);
         svgGC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);

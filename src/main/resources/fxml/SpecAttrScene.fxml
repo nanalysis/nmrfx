@@ -89,26 +89,31 @@
                                             </rowConstraints>
                                             <children>
                                                 <Label text="Colors" GridPane.columnIndex="0" GridPane.rowIndex="0"  GridPane.columnSpan="3"/>
-                                                <Label text="Axis" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                                <ColorPicker fx:id="axisColorPicker" onAction="#updateProps" promptText="Slice 1 Color"
-                                                             GridPane.columnIndex="2" GridPane.rowIndex="1" /> 
-                                                <CheckBox fx:id="axisColorCheckBox" mnemonicParsing="false" onAction="#updateProps" text="" selected="true"
+
+                                                <Label text="Bg" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                <ColorPicker fx:id="bgColorPicker" onAction="#updateBGColor" promptText="Slice 2 Color"
+                                                             GridPane.columnIndex="2" GridPane.rowIndex="1"  /> 
+                                                <CheckBox fx:id="bgColorCheckBox" mnemonicParsing="false" onAction="#updateBGColor" text="" selected="true"
                                                                   GridPane.columnIndex="3" GridPane.rowIndex="1"/>
-                                                <Label text="Cross 0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                                                <ColorPicker fx:id="cross0ColorPicker" onAction="#updateProps" promptText="Slice 2 Color"
-                                                             GridPane.columnIndex="2" GridPane.rowIndex="2"  /> 
-                                                <CheckBox fx:id="cross0ColorCheckBox" mnemonicParsing="false" onAction="#updateProps" text="" selected="true"
+
+                                                <Label text="Axis" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                                <ColorPicker fx:id="axisColorPicker" onAction="#updateProps" promptText="Slice 1 Color"
+                                                             GridPane.columnIndex="2" GridPane.rowIndex="2" /> 
+                                                <CheckBox fx:id="axisColorCheckBox" mnemonicParsing="false" onAction="#updateProps" text="" selected="true"
                                                                   GridPane.columnIndex="3" GridPane.rowIndex="2"/>
-                                                <Label text="Cross 1" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                                <ColorPicker fx:id="cross1ColorPicker" onAction="#updateProps" promptText="Slice 2 Color"
+
+                                                <Label text="Cross 0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                                <ColorPicker fx:id="cross0ColorPicker" onAction="#updateProps" promptText="Slice 2 Color"
                                                              GridPane.columnIndex="2" GridPane.rowIndex="3"  /> 
-                                                <CheckBox fx:id="cross1ColorCheckBox" mnemonicParsing="false" onAction="#updateProps" text="" selected="true"
+                                                <CheckBox fx:id="cross0ColorCheckBox" mnemonicParsing="false" onAction="#updateProps" text="" selected="true"
                                                                   GridPane.columnIndex="3" GridPane.rowIndex="3"/>
-                                                <Label text="Bg" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                                                <ColorPicker fx:id="bgColorPicker" onAction="#updateProps" promptText="Slice 2 Color"
+
+                                                <Label text="Cross 1" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                                <ColorPicker fx:id="cross1ColorPicker" onAction="#updateProps" promptText="Slice 2 Color"
                                                              GridPane.columnIndex="2" GridPane.rowIndex="4"  /> 
-                                                <CheckBox fx:id="bgColorCheckBox" mnemonicParsing="false" onAction="#updateProps" text="" selected="true"
+                                                <CheckBox fx:id="cross1ColorCheckBox" mnemonicParsing="false" onAction="#updateProps" text="" selected="true"
                                                                   GridPane.columnIndex="3" GridPane.rowIndex="4"/>
+
                                             </children>
                                         </GridPane>
                                         <VBox>

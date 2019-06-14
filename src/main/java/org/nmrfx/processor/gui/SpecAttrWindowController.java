@@ -998,6 +998,30 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     @FXML
+    private void updateBGColor() {
+        // check to see if the new background color is the same as the pos color
+        // for first dataset.  If it is, change the color of the first dataset
+        // so it is visible.
+        
+        if (bgColorCheckBox.isSelected()) {
+            Color color = bgColorPicker.getValue();
+            if (!chart.getDatasetAttributes().isEmpty()) {
+                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+                Color posColor = dataAttr.getPosColor();
+                if ((posColor != null) && (color != null)) {
+                    double diff = Math.abs(posColor.getRed()- color.getRed());
+                    diff += Math.abs(posColor.getGreen() - color.getGreen());
+                    diff += Math.abs(posColor.getBlue() - color.getBlue());
+                    if (diff < 0.05) {
+                        dataAttr.setPosColor(PolyChart.chooseBlackWhite(color));
+                    }
+                }
+            }
+        }
+        updateProps();
+    }
+
+    @FXML
     private void updateProps() {
         if (bgColorCheckBox.isSelected()) {
             chart.chartProps.setBgColor(bgColorPicker.getValue());
