@@ -7,8 +7,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.paint.Color;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -44,8 +46,8 @@ public class ChartProperties {
     private IntegerProperty rightBorderSize;
     private IntegerProperty topBorderSize;
     private IntegerProperty bottomBorderSize;
-    private IntegerProperty labelFontSize;
-    private IntegerProperty ticFontSize;
+    private DoubleProperty labelFontSize;
+    private DoubleProperty ticFontSize;
     private ColorProperty cross0Color;
     private ColorProperty cross1Color;
     private ColorProperty axesColor;
@@ -83,7 +85,7 @@ public class ChartProperties {
 
     public IntegerProperty rightBorderSizeProperty() {
         if (rightBorderSize == null) {
-            rightBorderSize = new SimpleIntegerProperty(polyChart, "rightBorderSize", 0);
+            rightBorderSize = new SimpleIntegerProperty(polyChart, "rightBorderSize", 7);
         }
         return rightBorderSize;
     }
@@ -113,37 +115,37 @@ public class ChartProperties {
 
     public IntegerProperty bottomBorderSizeProperty() {
         if (bottomBorderSize == null) {
-            bottomBorderSize = new SimpleIntegerProperty(polyChart, "bottomBorderSize", 7);
+            bottomBorderSize = new SimpleIntegerProperty(polyChart, "bottomBorderSize", 0);
         }
         return bottomBorderSize;
     }
 
-    public int getLabelFontSize() {
+    public double getLabelFontSize() {
         return labelFontSizeProperty().get();
     }
 
-    public void setLabelFontSize(int value) {
+    public void setLabelFontSize(double value) {
         labelFontSizeProperty().set(value);
     }
 
-    public IntegerProperty labelFontSizeProperty() {
+    public DoubleProperty labelFontSizeProperty() {
         if (labelFontSize == null) {
-            labelFontSize = new SimpleIntegerProperty(polyChart, "labelFontSize", PreferencesController.getLabelFontSize());
+            labelFontSize = new SimpleDoubleProperty(polyChart, "labelFontSize", PreferencesController.getLabelFontSize());
         }
         return labelFontSize;
     }
 
-    public int getTicFontSize() {
+    public double getTicFontSize() {
         return ticFontSizeProperty().get();
     }
 
-    public void setTicFontSize(int value) {
+    public void setTicFontSize(double value) {
         ticFontSizeProperty().set(value);
     }
 
-    public IntegerProperty ticFontSizeProperty() {
+    public DoubleProperty ticFontSizeProperty() {
         if (ticFontSize == null) {
-            ticFontSize = new SimpleIntegerProperty(polyChart, "ticFontSize", PreferencesController.getTickFontSize());
+            ticFontSize = new SimpleDoubleProperty(polyChart, "ticFontSize", PreferencesController.getTickFontSize());
         }
         return ticFontSize;
     }

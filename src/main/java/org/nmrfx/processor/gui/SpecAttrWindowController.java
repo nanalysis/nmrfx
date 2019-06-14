@@ -154,6 +154,40 @@ public class SpecAttrWindowController implements Initializable {
     Slider xOffsetSlider;
     @FXML
     Slider yOffsetSlider;
+
+    @FXML
+    CheckBox axisColorCheckBox;
+    @FXML
+    CheckBox cross0ColorCheckBox;
+    @FXML
+    CheckBox cross1ColorCheckBox;
+    @FXML
+    CheckBox bgColorCheckBox;
+
+    @FXML
+    private ColorPicker axisColorPicker;
+    @FXML
+    private ColorPicker cross0ColorPicker;
+    @FXML
+    private ColorPicker cross1ColorPicker;
+    @FXML
+    private ColorPicker bgColorPicker;
+
+    @FXML
+    private ComboBox<Double> ticFontSizeComboBox;
+    @FXML
+    private ComboBox<Double> labelFontSizeComboBox;
+    @FXML
+    private CheckBox gridCheckBox;
+    @FXML
+    private ComboBox<Integer> leftBorderSizeComboBox;
+    @FXML
+    private ComboBox<Integer> rightBorderSizeComboBox;
+    @FXML
+    private ComboBox<Integer> topBorderSizeComboBox;
+    @FXML
+    private ComboBox<Integer> bottomBorderSizeComboBox;
+
     SegmentedButton groupButton;
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox();
 
@@ -210,6 +244,17 @@ public class SpecAttrWindowController implements Initializable {
 
         datasetView.getTargetItems().addListener(datasetTargetListener);
         peakView.getTargetItems().addListener(peakTargetListener);
+
+        ticFontSizeComboBox.getItems().addAll(5.5, 6.0, 6.5, 7.0, 8.0, 9.0,
+                10.0, 11.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0,
+                28.0, 32.0, 36.0);
+        labelFontSizeComboBox.getItems().addAll(5.5, 6.0, 6.5, 7.0, 8.0, 9.0,
+                10.0, 11.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0,
+                28.0, 32.0, 36.0);
+        leftBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
+        rightBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
+        topBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
+        bottomBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
     }
 
     public boolean isShowing() {
@@ -952,9 +997,44 @@ public class SpecAttrWindowController implements Initializable {
         chart.updateDatasets(datasetTargets);
     }
 
+    @FXML
+    private void updateProps() {
+        if (bgColorCheckBox.isSelected()) {
+            chart.chartProps.setBgColor(bgColorPicker.getValue());
+        } else {
+            chart.chartProps.setBgColor(null);
+
+        }
+        if (axisColorCheckBox.isSelected()) {
+            chart.chartProps.setAxesColor(axisColorPicker.getValue());
+        } else {
+            chart.chartProps.setAxesColor(null);
+        }
+        if (cross0ColorCheckBox.isSelected()) {
+            chart.chartProps.setCross0Color(cross0ColorPicker.getValue());
+        } else {
+            chart.chartProps.setCross0Color(null);
+        }
+        if (cross1ColorCheckBox.isSelected()) {
+            chart.chartProps.setCross1Color(cross1ColorPicker.getValue());
+        } else {
+            chart.chartProps.setCross1Color(null);
+        }
+        chart.chartProps.setTicFontSize(ticFontSizeComboBox.getValue());
+        chart.chartProps.setLabelFontSize(labelFontSizeComboBox.getValue());
+        chart.chartProps.setLeftBorderSize(leftBorderSizeComboBox.getValue());
+        chart.chartProps.setRightBorderSize(rightBorderSizeComboBox.getValue());
+        chart.chartProps.setTopBorderSize(topBorderSizeComboBox.getValue());
+        chart.chartProps.setBottomBorderSize(bottomBorderSizeComboBox.getValue());
+        chart.chartProps.setGrid(gridCheckBox.isSelected());
+
+    }
+
     private void refreshAction() {
         updateChartDatasets();
         updateChartPeakLists();
+        updateProps();
+
         try {
             chart.xAxis.lowerBoundProperty().setValue(formatter.parse(limitFields[0][0].get()));
             chart.xAxis.upperBoundProperty().setValue(formatter.parse(limitFields[0][1].get()));
@@ -1034,7 +1114,34 @@ public class SpecAttrWindowController implements Initializable {
         polyChart.sliceAttributes.scaleValueProperty().bindBidirectional(scaleSlider.valueProperty());
         slice1ColorPicker.setValue(polyChart.sliceAttributes.slice1ColorProperty().get());
         slice2ColorPicker.setValue(polyChart.sliceAttributes.slice2ColorProperty().get());
+        if (chart.chartProps.getAxesColor() == null) {
+            axisColorCheckBox.setSelected(false);
+        } else {
+            axisColorPicker.setValue(polyChart.chartProps.axesColorProperty().get());
+        }
+        if (chart.chartProps.getBgColor() == null) {
+            bgColorCheckBox.setSelected(false);
+        } else {
+            bgColorPicker.setValue(polyChart.chartProps.bgColorProperty().get());
+        }
+        if (chart.chartProps.getCross0Color() == null) {
+            cross0ColorCheckBox.setSelected(false);
+        } else {
+            cross0ColorPicker.setValue(polyChart.chartProps.cross0ColorProperty().get());
+        }
+        if (chart.chartProps.getCross1Color() == null) {
+            cross1ColorCheckBox.setSelected(false);
+        } else {
+            cross1ColorPicker.setValue(polyChart.chartProps.cross1ColorProperty().get());
+        }
         disDimCombo.setValue((DISDIM) polyChart.disDimProp.get());
+        ticFontSizeComboBox.setValue(polyChart.chartProps.getTicFontSize());
+        labelFontSizeComboBox.setValue(polyChart.chartProps.getLabelFontSize());
+        leftBorderSizeComboBox.setValue(polyChart.chartProps.getLeftBorderSize());
+        rightBorderSizeComboBox.setValue(polyChart.chartProps.getRightBorderSize());
+        topBorderSizeComboBox.setValue(polyChart.chartProps.getTopBorderSize());
+        bottomBorderSizeComboBox.setValue(polyChart.chartProps.getBottomBorderSize());
+        gridCheckBox.setSelected(polyChart.chartProps.getGrid());
 
         polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }

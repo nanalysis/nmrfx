@@ -449,7 +449,6 @@ public class GUIScripter {
 
        public void sconfig(Map<String, Object> map) {
         ConsoleUtil.runOnFxThread(() -> {
-            PolyChart chart = getChart();
             map.entrySet().stream().forEach(entry -> {
                 String key = entry.getKey();
                 Object value = entry.getValue();
@@ -459,7 +458,7 @@ public class GUIScripter {
                 getActiveController().config(key, value);
 
             });
-            chart.refresh();
+            getActiveController().draw();
         });
     }
 
