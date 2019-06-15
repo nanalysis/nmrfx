@@ -192,7 +192,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     CanvasBindings canvasBindings;
 
     private FractionCanvas chartGroup;
-    private boolean minimizeBorders = false;
 
     PeakNavigator peakNavigator;
     PeakSlider peakSlider;
@@ -206,6 +205,22 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     Canvas annoCanvas = new Canvas();
     Pane plotContent = new Pane();
     boolean[][] crossHairStates = new boolean[2][2];
+    private BooleanProperty minBorders;
+
+    public BooleanProperty minBordersProperty() {
+        if (minBorders == null) {
+            minBorders = new SimpleBooleanProperty(this, "minBorders", false);
+        }
+        return minBorders;
+    }
+
+    public void setMinBorders(boolean value) {
+        minBordersProperty().set(value);
+    }
+
+    public boolean getMinBorders() {
+        return minBordersProperty().get();
+    }
 
     private ColorProperty bgColor;
 
@@ -1932,7 +1947,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void setBorderState(boolean state) {
-        minimizeBorders = state;
+        setMinBorders(state);
         int nRows = chartGroup.getRows();
         int nCols = chartGroup.getColumns();
         chartGroup.layoutChildren();
@@ -1954,7 +1969,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         for (PolyChart chart : charts) {
             int iRow = iChild / nCols;
             int iCol = iChild % nCols;
-            if (minimizeBorders) {
+            if (getMinBorders()) {
                 chart.setAxisState(iCol == 0, iRow == (nRows - 1));
             } else {
                 chart.setAxisState(true, true);
@@ -1972,7 +1987,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             double ppmX1 = chart.getXAxis().getUpperBound();
             double ppmY0 = chart.getYAxis().getLowerBound();
             double ppmY1 = chart.getYAxis().getUpperBound();
-            if (minimizeBorders) {
+            if (getMinBorders()) {
                 double nucScaleX = 1.0;
                 double nucScaleY = 1.0;
                 if (!chart.getDatasetAttributes().isEmpty()) {
@@ -2130,7 +2145,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public Map<String, Object> config() {
         Map<String, Object> data = new HashMap<>();
-        String[] beanNames = {"bgColor", "axesColor"};
+        String[] beanNames = {"bgColor", "axesColor", "minBorders"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {
