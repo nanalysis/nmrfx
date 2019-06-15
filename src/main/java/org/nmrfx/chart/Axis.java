@@ -54,8 +54,8 @@ public class Axis {
     private boolean zeroIncluded = false;
     private double xOrigin = 100.0;
     private double yOrigin = 800.0;
-    private int labelFontSize = 16;
-    private int ticFontSize = 12;
+    private double labelFontSize = 16;
+    private double ticFontSize = 12;
     private double lineWidth = 1.0;
     private Color color = Color.BLACK;
     private Font ticFont = new Font(ticFontSize);
@@ -68,7 +68,16 @@ public class Axis {
     private boolean labelVisible = true;
     private boolean autoRanging = false;
     double autoRangeScale = 10.0;
+    private double gridLength = 0.0;
     TickInfo tInfo = new TickInfo();
+
+    public void setColor(Color value) {
+        color = value;
+    }
+
+    public Color getColor() {
+        return color;
+    }
 
     public Axis(Orientation orientation, double lowerBound, double upperBound, double width, double height) {
         this.orientation = orientation;
@@ -219,6 +228,14 @@ public class Axis {
         this.autoRanging = value;
     }
 
+    public void setGridLength(double value) {
+        gridLength = value;
+    }
+
+    public double getGridLength() {
+        return gridLength;
+    }
+
     public double[] autoRange(double min, double max) {
         double length = VERTICAL == getOrientation() ? getHeight() : getWidth();
         boolean keepMin = false;
@@ -287,12 +304,12 @@ public class Axis {
         return calcScale();
     }
 
-    public void setTickFontSize(int size) {
+    public void setTickFontSize(double size) {
         ticFontSize = size;
         ticFont = new Font(ticFontSize);
     }
 
-    public void setLabelFontSize(int size) {
+    public void setLabelFontSize(double size) {
         labelFontSize = size;
         labelFont = new Font(labelFontSize);
     }
@@ -395,8 +412,8 @@ public class Axis {
     public double getBorderSize() {
         getTickPositions();
         if (orientation == HORIZONTAL) {
-            int gap1 = ticFontSize / 4;
-            int gap2 = labelFontSize / 4;
+            double gap1 = ticFontSize / 4;
+            double gap2 = labelFontSize / 4;
             ticSize = ticFontSize * 0.75;
             double border = 0.0;
             if (tickMarksVisible) {
@@ -411,8 +428,8 @@ public class Axis {
             return border;
 
         } else {
-            int gap1 = ticFontSize / 4;
-            int gap2 = labelFontSize / 4;
+            double gap1 = ticFontSize / 4;
+            double gap2 = labelFontSize / 4;
             ticSize = ticFontSize * 0.75;
             int nChar = tInfo.nDecimals;
             int nLeftDig = (int) Math.round(Math.log10(getUpperBound()));
@@ -434,7 +451,7 @@ public class Axis {
     private void drawHorizontalAxis(GraphicsContextInterface gC) throws GraphicsIOException {
         gC.strokeLine(xOrigin, yOrigin, xOrigin + width, yOrigin);
         double value = tInfo.minorStart;
-        int gap1 = ticFontSize / 4;
+        double gap1 = ticFontSize / 4;
         ticSize = ticFontSize * 0.75;
         double upper = getUpperBound();
         if (tickMarksVisible) {
@@ -449,6 +466,13 @@ public class Axis {
                     if (tickLabelsVisible) {
                         gC.fillText(ticString, x, y2 + gap1);
                     }
+                    if (gridLength > 0) {
+                        gC.setLineWidth(0.5);
+                        gC.strokeLine(x, y1, x, y1 - gridLength);
+                        gC.setLineWidth(lineWidth);
+
+                    }
+
                 } else {
                     double y2 = yOrigin + ticSize / 2;
                     gC.strokeLine(x, y1, x, y2);
@@ -479,9 +503,9 @@ public class Axis {
         gC.setTextBaseline(VPos.CENTER);
         gC.setTextAlign(TextAlignment.RIGHT);
         gC.strokeLine(xOrigin, yOrigin, xOrigin, yOrigin - height);
-        int gap2 = labelFontSize / 4;
+        double gap2 = labelFontSize / 4;
         if (tickMarksVisible) {
-            int gap1 = ticFontSize / 4;
+            double gap1 = ticFontSize / 4;
             gap2 = labelFontSize / 4;
             ticSize = ticFontSize * 0.75;
             double value = tInfo.minorStart;
@@ -500,6 +524,11 @@ public class Axis {
                     gC.strokeLine(x1, y, x2, y);
                     if (tickLabelsVisible) {
                         gC.fillText(ticString, x2 - gap1, y);
+                    }
+                    if (gridLength > 0) {
+                        gC.setLineWidth(0.5);
+                        gC.strokeLine(x1, y, x1 + gridLength, y);
+                        gC.setLineWidth(lineWidth);
                     }
                 } else {
                     double x2 = x1 - ticSize / 2;
