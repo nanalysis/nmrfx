@@ -46,6 +46,7 @@ import javafx.stage.StageStyle;
 import javafx.util.converter.DoubleStringConverter;
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -64,6 +65,8 @@ import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import javafx.collections.ListChangeListener;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 
 /**
@@ -85,6 +88,7 @@ public class DatasetsController implements Initializable {
     TableColumn dim1Column;
     Button valueButton;
     Button saveParButton;
+    Button closeButton;
     Stage valueStage = null;
     TableView<ValueItem> valueTableView = null;
     Dataset valueDataset = null;
@@ -130,6 +134,12 @@ public class DatasetsController implements Initializable {
         buttons.add(saveParButton);
         saveParButton.setOnAction(e -> savePars());
         saveParButton.setDisable(true);
+
+        closeButton = new Button("Close");
+        buttons.add(closeButton);
+        closeButton.setOnAction(e -> closeDatasets());
+        closeButton.setDisable(true);
+
         MenuButton drawButton = new MenuButton("Draw");
         MenuItem overlayItem = new MenuItem("Overlay");
         overlayItem.setOnAction(e -> drawDataset(e));
@@ -381,6 +391,7 @@ public class DatasetsController implements Initializable {
                 boolean state = nSelected == 1;
                 valueButton.setDisable(!state);
                 saveParButton.setDisable(nSelected == 0);
+                closeButton.setDisable(nSelected == 0);
             }
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(listener);
@@ -559,8 +570,18 @@ public class DatasetsController implements Initializable {
         ObservableList<Dataset> datasets = tableView.getSelectionModel().getSelectedItems();
         for (Dataset dataset : datasets) {
             dataset.writeParFile();
-
         }
 
+    }
+
+    void closeDatasets() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Close selected datasets");
+        Optional<ButtonType> response = alert.showAndWait();
+        if (response.isPresent() && response.get().getText().equals("OK")) {
+            ObservableList<Dataset> datasets = tableView.getSelectionModel().getSelectedItems();
+            for (Dataset dataset : datasets) {
+                dataset.close();
+            }
+        }
     }
 }

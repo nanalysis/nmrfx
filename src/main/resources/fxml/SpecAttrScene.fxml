@@ -159,7 +159,7 @@
                                 </HBox>
                             </center>
                             <top>
-                                <ToolBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+                                <ToolBar fx:id="styleToolBar" prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
                                     <items>
                                     </items>
                                 </ToolBar>

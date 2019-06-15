@@ -60,6 +60,23 @@ public class ChartProperties {
         this.polyChart = chart;
     }
 
+    public void copyTo(PolyChart destChart) {
+        ChartProperties destProps = destChart.chartProps;
+        destProps.setLeftBorderSize(getLeftBorderSize());
+        destProps.setRightBorderSize(getRightBorderSize());
+        destProps.setTopBorderSize(getTopBorderSize());
+        destProps.setBottomBorderSize(getBottomBorderSize());
+        
+        destProps.setLabelFontSize(getLabelFontSize());
+        destProps.setTicFontSize(getTicFontSize());
+        
+        destProps.setCross0Color(getCross0Color());
+        destProps.setCross1Color(getCross1Color());
+        destProps.setBgColor(getBgColor());
+        destProps.setAxesColor(getAxesColor());
+        
+        destProps.setGrid(getGrid());
+    }
     public int getLeftBorderSize() {
         return leftBorderSizeProperty().get();
     }

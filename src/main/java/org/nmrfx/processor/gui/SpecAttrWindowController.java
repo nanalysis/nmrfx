@@ -118,6 +118,8 @@ public class SpecAttrWindowController implements Initializable {
     @FXML
     private ToolBar toolBar;
     @FXML
+    private ToolBar styleToolBar;
+    @FXML
     private TableView<DatasetAttributes> datasetTableView;
     @FXML
     private TableView<PeakListAttributes> peakListTableView;
@@ -207,6 +209,7 @@ public class SpecAttrWindowController implements Initializable {
         tabPane.setStyle("-fx-font-size:8pt;");
         initToolBar();
         initViewToolBar();
+        initStyleToolBar();
         initTable();
         initPeakListTable();
         createViewGrid();
@@ -255,6 +258,11 @@ public class SpecAttrWindowController implements Initializable {
         rightBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
         topBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
         bottomBorderSizeComboBox.getItems().addAll(0, 1, 2, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150);
+
+        bgColorPicker.disableProperty().bind(bgColorCheckBox.selectedProperty().not());
+        axisColorPicker.disableProperty().bind(axisColorCheckBox.selectedProperty().not());
+        cross0ColorPicker.disableProperty().bind(cross0ColorCheckBox.selectedProperty().not());
+        cross1ColorPicker.disableProperty().bind(cross1ColorCheckBox.selectedProperty().not());
     }
 
     public boolean isShowing() {
@@ -615,6 +623,25 @@ public class SpecAttrWindowController implements Initializable {
         viewToolBar.getItems().add(filler2);
         chartButton.setSelected(true);
 
+    }
+
+    void initStyleToolBar() {
+        String iconSize = "16px";
+        String fontSize = "7pt";
+        Pane filler1 = new Pane();
+        Pane filler2 = new Pane();
+        HBox.setHgrow(filler1, Priority.ALWAYS);
+        HBox.setHgrow(filler2, Priority.ALWAYS);
+        ArrayList<ButtonBase> buttons = new ArrayList<>();
+        Button bButton;
+        bButton = new Button("Apply");
+        buttons.add(bButton);
+        bButton.setOnAction(e -> copyProps());
+        for (ButtonBase button : buttons) {
+            button.getStyleClass().add("toolButton");
+            button.setMinWidth(50);
+        }
+        styleToolBar.getItems().addAll(buttons);
     }
 
     void initTable() {
@@ -1002,14 +1029,14 @@ public class SpecAttrWindowController implements Initializable {
         // check to see if the new background color is the same as the pos color
         // for first dataset.  If it is, change the color of the first dataset
         // so it is visible.
-        
+
         if (bgColorCheckBox.isSelected()) {
             Color color = bgColorPicker.getValue();
             if (!chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
                 Color posColor = dataAttr.getPosColor();
                 if ((posColor != null) && (color != null)) {
-                    double diff = Math.abs(posColor.getRed()- color.getRed());
+                    double diff = Math.abs(posColor.getRed() - color.getRed());
                     diff += Math.abs(posColor.getGreen() - color.getGreen());
                     diff += Math.abs(posColor.getBlue() - color.getBlue());
                     if (diff < 0.05) {
@@ -1512,6 +1539,16 @@ public class SpecAttrWindowController implements Initializable {
         polygon.setFill(Color.GREEN);
         stackPane.getChildren().add(polygon);
         return stackPane;
+    }
+
+    private void copyProps() {
+        List<PolyChart> charts = chart.getController().getCharts();
+        for (PolyChart polyChart : charts) {
+            if (chart != polyChart) {
+                chart.chartProps.copyTo(polyChart);
+            }
+        }
+        chart.getController().draw();
     }
 
 }
