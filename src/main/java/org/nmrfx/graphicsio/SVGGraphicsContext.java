@@ -778,7 +778,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("y1", format(y1));
             writer.writeAttribute("x2", format(x2));
             writer.writeAttribute("y2", format(y2));
-            writer.writeAttribute("style", "stroke:black;");
+            writer.writeAttribute("style", getStyle(true, false));
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
             throw new GraphicsIOException(ex.getMessage());
