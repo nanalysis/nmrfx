@@ -23,6 +23,13 @@ public class RNAAttributes {
             "GN9", "GC8", "GN7", "GC5", "GC4", "GN3", "GC2", "GN2", "GN1", "GC6", "GO6",
             "UN1", "UC2", "UO2", "UN3", "UC4", "UO4", "UC5", "UC6");
     static List<String> types = new ArrayList<>();
+    static Map<String, Integer> rnaAtomSourceMap = new HashMap<>();
+
+    static {
+        for (int i = 0; i < rnaAtomSources.size(); i++) {
+            rnaAtomSourceMap.put(rnaAtomSources.get(i), i);
+        }
+    }
 
     public static void setTypes(List<String> newTypes) {
         types.clear();
@@ -35,6 +42,18 @@ public class RNAAttributes {
 
     public static List<String> getAtomSources() {
         return rnaAtomSources;
+    }
+
+    public static int getAtomSourceIndex(Atom atom) {
+        String resName = atom.getEntity().getName();
+        String atomName = atom.getName();
+        String key = resName + atomName;
+        if (atomName.contains("'") || atomName.contains("P")) {
+            key = atomName;
+        }
+
+        Integer value = rnaAtomSourceMap.get(key);
+        return value == null ? -1 : value;
     }
 
     public static void put(String resName, String attributes) {

@@ -66,6 +66,7 @@ public class PPMFiles {
     }
 
     public static void readPPM(Molecule molecule, Path path, int ppmSet, boolean refMode) {
+        String separator = "";
 
         try (BufferedReader fileReader = Files.newBufferedReader(path)) {
             while (true) {
@@ -80,7 +81,14 @@ public class PPMFiles {
                 if (sline.charAt(0) == '#') {
                     continue;
                 }
-                String[] sfields = line.split("\t", -1);
+                if (separator.equals("")) {
+                    if (sline.contains("\t")) {
+                        separator = "\t";
+                    } else {
+                        separator = "\\s+";
+                    }
+                }
+                String[] sfields = sline.split(separator, -1);
                 if (sfields.length > 1) {
                     String atomRef = sfields[0];
                     Atom atom = Molecule.getAtomByName(atomRef);

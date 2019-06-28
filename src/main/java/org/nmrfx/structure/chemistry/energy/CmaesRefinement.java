@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.Atom;
@@ -184,7 +183,8 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
 
         double energyStart = value(dihedrals);
         System.out.println("energyStart: " + energyStart);
-        double energyLim = energyStart + Math.abs(energyStart * limMul);
+        double energyDelta = Math.abs(energyStart) < 0.2 ? 0.2 : energyStart;
+        double energyLim = energyStart + Math.abs(energyDelta * limMul);
         double ranfact = 1.0;
         int nSamples = 10;
         int nTries = 20;
@@ -210,11 +210,11 @@ public class CmaesRefinement extends Refinement implements MultivariateFunction 
                     energyMax = energy;
                 }
             }
-            if (nAbove > (nSamples / 2)) {
+            double f = (double) nAbove / nSamples;
+            System.out.printf("%.2f %.3f %8.2f %8.2f %8.2f\n", f, ranfact, energyStart, energyMin, energyMax);
+            if (f > 0.5) {
                 ranfact *= 0.64;
-            }
-            System.out.printf("%2d %.3f %.1f %.1f %.1f\n", nAbove, ranfact, energyStart, energyMin, energyMax);
-            if (nAbove < (nSamples / 2)) {
+            } else {
                 break;
             }
         }

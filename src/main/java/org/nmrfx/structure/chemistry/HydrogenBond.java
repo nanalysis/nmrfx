@@ -38,6 +38,13 @@ public class HydrogenBond {
         return validate(hydrogen, acceptor, structureNum);
     }
 
+    /**
+     * Test if two atoms have the correct geometry to be in a hydrogen bond
+     * @param hydrogen SpatialSet for the hydrogen
+     * @param acceptor SpatialSet for the hydrogen bond acceptor (typically O or N)
+     * @param structureNum
+     * @return boolean depending on whether the geometry is correct
+     */
     public static boolean validate(SpatialSet hydrogen, SpatialSet acceptor, int structureNum) {
         boolean valid = false;
         final double tolerance;

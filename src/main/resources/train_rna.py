@@ -1,6 +1,8 @@
 import predtrain
 import sys, argparse, os
 import seqalgs
+from org.nmrfx.structure.chemistry.predict import RNAAttributes
+
 
 allowedAtoms = ['H', 'Hr', 'Hn', 'C', 'Cr', 'Cn']
 allowedAtoms += ["H2","H8","H5","H6","\"H1'\"","\"H2'\"","\"H3'\"","\"H4'\"","\"H5'\"","\"H5''\""]
@@ -9,6 +11,33 @@ allowedAtoms += ["C2","C8","C5","C6","\"C1'\"","\"C2'\"","\"C3'\"","\"C4'\"","\"
 allowedAtomsH = ['H (all H)', 'Hr (ribose H)', 'Hn (base H)', 'C (all C)', 'Cr (ribose C)', 'Cn (base C)']
 allowedAtomsH += ["H2","H8","H5","H6","\"H1'\"","\"H2'\"","\"H3'\"","\"H4'\"","\"H5'\"","\"H5''\""]
 allowedAtomsH += ["C2","C8","C5","C6","\"C1'\"","\"C2'\"","\"C3'\"","\"C4'\"","and \"C5'\""]
+
+gatomNames = {}
+gatomNames['H'] = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
+#gatomNames['C'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+gatomNames['C'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","C1'","C2'","C3'","C4'","C5'"]
+gatomNames['Hr'] = ["A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
+#gatomNames['Cr'] = ["A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+gatomNames['Cr'] = ["C1'","C2'","C3'","C4'","C5'"]
+gatomNames['Hn'] = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6"]
+gatomNames['Cn'] = ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6"]
+gatomNamesAll = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
+#gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+#gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
+gatomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","C2'","C3'","C4'","C5'"]
+
+predtrain.rmax=4.6
+
+def getAtomNames(atomNameList):
+    atomNames = []
+    for atom in atomNameList:
+        if atom in gatomNames:
+            atomNames = gatomNames[atom]
+        else:
+            indices = [i for i, e in enumerate(gatomNamesAll) if (e[2:] == atom) or (e == atom)]
+            atomNames += [gatomNamesAll[index] for index in indices]
+    return atomNames
+
 
 def addParseArgs(parser):
     """
@@ -25,6 +54,7 @@ def addParseArgs(parser):
     parser.add_argument('atomNameList', nargs='*', help="List of atom types. Allowed types are " + ", ".join(allowedAtomsH))
     parser.add_argument("-c", "--calcType", default="rc", help="Calculation type: distance (dist) or ring current shift (rc). Default is rc.")
     parser.add_argument("-r", "--ringMode", action="store_true", help="Whether to use ringMode=True")
+    parser.add_argument("-b", "--builtin", action="store_true",default=False, help="Whether to skip training and use built-in values=False")
     parser.add_argument("-t", "--trainFile", default="trainfiles.txt",
                             help="Text file with training set file information. Default is trainfiles.txt")
     parser.add_argument("-T", "--testFile", default="testfiles.txt",
@@ -55,26 +85,7 @@ def defineParseArgs(args):
     trainFile = args.trainFile
     testFile = args.testFile
     matrixFile = args.matrixFile
-
-    atomNamesAll = ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
-    atomNamesAll += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
-    atomNames = []
-    for atom in atomNameList:
-        if atom == 'H': #all H
-            atomNames += ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6","A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
-        elif atom == 'C': #all C
-            atomNames += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6","A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
-        elif atom == 'Hr': #ribose H
-            atomNames += ["A.H1'","G.H1'","C.H1'","U.H1'","H2'","H3'","H4'","H5'","H5''"]
-        elif atom == 'Cr': #ribose C
-            atomNames += ["A.C1'","G.C1'","C.C1'","U.C1'","C2'","C3'","C4'","C5'"]
-        elif atom == 'Hn': #base  H
-            atomNames += ["A.H2","A.H8","G.H8","C.H5","U.H5","C.H6","U.H6"]
-        elif atom == 'Cn': #base C
-            atomNames += ["A.C2","A.C8","G.C8","C.C5","U.C5","C.C6","U.C6"]
-        else:
-            indices = [i for i, e in enumerate(atomNamesAll) if (e[2:] == atom) or (e == atom)]
-            atomNames += [atomNamesAll[index] for index in indices]
+    builtin = args.builtin
 
     #print atomNameList
     # if type != 'dist' and type != 'rc':
@@ -88,7 +99,7 @@ def defineParseArgs(args):
     print 'ringMode is', ringMode
     print trainFile, testFile, matrixFile
 
-    return type, ringMode, atomNames, trainFile, testFile, matrixFile
+    return type, ringMode, atomNameList, trainFile, testFile, matrixFile, builtin
 
 def appendOffsets(trainFileName, testFileName, offsetDict):
     """
@@ -142,6 +153,8 @@ def makeOffsetDict(trainFileName, testFileName):
     bmrbs = []
     fileNames = [trainFileName, testFileName]
     for name in fileNames:
+        if name == None:
+            continue
         with open(name,'r') as f1:
             for line in f1:
                 line = line.strip()
@@ -162,20 +175,97 @@ def makeOffsetDict(trainFileName, testFileName):
         offsetDict = seqalgs.readBMRBOffsets(bmrbID, bmrbFile)
     return offsetDict
 
-def train(atomNames, trainFile, testFile, matrixFile, ringMode, type):
+
+def dumpRefShifts(varName, coefDict, fOut):
+    keys = coefDict.keys()
+    keys.sort()
+    #for key in keys:
+    #    print varName+'.put("'+key+'", '+str(coefDict[key])+');'
+    fOut.write('baseshifts\n')
+    for key in keys:
+        print key+'\t'+str(coefDict[key])
+        outStr = "%s\t%.5f\n" %(key,coefDict[key])
+        fOut.write(outStr)
+    
+
+def dumpAlphas(eName, alphaDict, aType, fOut):
+    atomSources = RNAAttributes.getAtomSources()
+    keys = alphaDict.keys()
+    keys.sort()
+    #for key in keys:
+    #    print 'double[] '+key+eName+'Alphas = {'+str(alphaDict[key])[1:-2]+'};'
+    fOut.write('rmax\t'+str(predtrain.rmax)+'\t'+aType+'\n')
+    for key in keys:
+        fOut.write('coef\t'+key+'\t'+str(len(alphaDict[key]))+'\n')
+        for i,v in enumerate(alphaDict[key]):
+            if i < len(atomSources):
+                atomSource = atomSources[i]
+            else:
+                atomSource = "chi"
+            outStr = "%d\t%s\t%.5f\n" %(i,atomSource,v)
+            fOut.write(outStr)
+
+def train(atomNameList, trainFile, testFile, matrixFile, ringMode, type):
     #print atomNames
     offsetDict = makeOffsetDict(trainFile, testFile) #{'15857': {'B': 58}, '15858': {'A': 12, 'B': 58}, '18893': {'B': 58}, '19662': {'B': 100}}
-    #appendOffsets('trainfiles.txt', 'testfiles.txt', offsetDict)
     print "offsetDict = ", offsetDict
     offsets = {}
+    aType = atomNameList[0][0]
 
-    coefDict,alphas = predtrain.trainRC(atomNames, trainFile, matrixFile, ringMode, type)
-    print coefDict,alphas
+    fileName = 'rna_pred_dist_%s_%.1f.txt' % (aType, predtrain.rmax)
+    fOut = open(fileName,'w')
+    if type == "rc":
+        atomNames = getAtomNames(atomNameList)
+        coefDict,ringRatio = predtrain.trainRC(atomNames, trainFile, matrixFile, ringMode, type)
+        for aName in coefDict:
+            coefDict[aName] = round(coefDict[aName],3)
+        alphasDict = round(ringRatio,3)
+    else:
+        alphasDict={}
+        coefDict={}
+        thisDict={}
+        for atomName in atomNameList:
+            dictName = 'base'
+            if atomName[-1] == 'r':
+                dictName = 'ribose'
+            thisDict,alphasDict[dictName] = predtrain.trainRC(gatomNames[atomName], trainFile, matrixFile, ringMode, type)
+            for aName in thisDict:
+                coefDict[aName] = round(thisDict[aName],3)
 
+        if not 'ribose' in alphasDict:
+            alphasDict['ribose'] = alphasDict['base']
+        alphasDict['ribose'] = [round(v,3) for v in alphasDict['ribose']]
+        alphasDict['base'] = [round(v,3) for v in alphasDict['base']]
+        dumpAlphas(atomNameList[0][0], alphasDict, aType, fOut)
+
+    print coefDict,alphasDict
     bmrbs,pdbs = predtrain.readTestFiles(testFile)
+    dumpRefShifts("RNA_REF_SHIFTS",coefDict, fOut)
 
-    ppmDatas,aNames = predtrain.analyzeFiles(pdbs, bmrbs, type, offsets, coefDict, alphas)
+    ppmDatas,aNames = predtrain.analyzeFiles(pdbs, bmrbs, type, aType, offsets, coefDict, alphasDict)
     #predtrain.dumpPPMData(ppmDatas)
+    predtrain.reref(ppmDatas, bmrbs)
+    nTotal,sumAbs = predtrain.getSumAbs(ppmDatas)
+    print "nAtoms %4d MAE %4.2f" % (nTotal,sumAbs)
+    predtrain.removeOutliers(aNames, ppmDatas)
+    nFinal,sumAbs = predtrain.getSumAbs(ppmDatas)
+    print "nAtoms %4d MAE %4.2f" % (nFinal,sumAbs)
+    maeValues = predtrain.getAtomStats(aNames, ppmDatas)
+
+    fOut.write('mae\n')
+    for aname in maeValues:
+        outStr = "%s\t%.3f\n" %(aname,maeValues[aname])
+        fOut.write(outStr)
+    fOut.close()
+
+def testBuiltin(atomNameList,  testFile,  type):
+    aType = atomNameList[0][0]
+    offsetDict = makeOffsetDict(None, testFile) #{'15857': {'B': 58}, '15858': {'A': 12, 'B': 58}, '18893': {'B': 58}, '19662': {'B': 100}}
+    print "offsetDict = ", offsetDict
+    offsets = {}
+    bmrbs,pdbs = predtrain.readTestFiles(testFile)
+    atomNames = getAtomNames(atomNameList)
+    ppmDatas,aNames = predtrain.analyzeFiles(pdbs, bmrbs, type, aType, offsets, None, None,atomNames,  True)
     predtrain.reref(ppmDatas, bmrbs)
     nTotal,sumAbs = predtrain.getSumAbs(ppmDatas)
     print "nAtoms %4d MAE %4.2f" % (nTotal,sumAbs)
@@ -187,6 +277,9 @@ def train(atomNames, trainFile, testFile, matrixFile, ringMode, type):
 parser = argparse.ArgumentParser()
 addParseArgs(parser)
 args = parser.parse_args()
-type, ringMode, atomNames, trainFile, testFile, matrixFile = defineParseArgs(args)
+type, ringMode, atomNameList, trainFile, testFile, matrixFile, builtin = defineParseArgs(args)
 
-train(atomNames, trainFile, testFile, matrixFile, ringMode, type)
+if builtin:
+    testBuiltin(atomNameList, testFile, type)
+else:
+    train(atomNameList, trainFile, testFile, matrixFile, ringMode, type)

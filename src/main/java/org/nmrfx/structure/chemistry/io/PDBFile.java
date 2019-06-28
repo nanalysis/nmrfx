@@ -595,8 +595,8 @@ public class PDBFile {
                         atom = residue.getAtomLoose(atomParse.atomName);
 
                         if (atom == null) {
-                            System.err.println("null atom " + atomParse.atomName);
-                            System.err.println("null atom " + string);
+                            //System.err.println("null atom " + atomParse.atomName);
+                            //System.err.println("null atom " + string);
                             continue;
                         }
 

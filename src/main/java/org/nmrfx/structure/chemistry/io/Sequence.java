@@ -20,6 +20,7 @@ package org.nmrfx.structure.chemistry.io;
 import org.nmrfx.structure.chemistry.*;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +47,12 @@ public class Sequence {
     private String entryAtomName = null;
     private String exitAtomName = null;
     public static boolean useCoarse = false;
+
+    enum RES_POSITION {
+        START,
+        MIDDLE,
+        END;
+    }
 
     static {
         residueAliases.put("rade", "a");
@@ -97,7 +104,7 @@ public class Sequence {
     public Sequence(Molecule molecule) {
         this.molecule = molecule;
     }
-    
+
     public void newPolymer() {
         connectBranch = null;
     }
@@ -174,15 +181,22 @@ public class Sequence {
 
     public enum PRFFields {
 
-        ATOM("ATOM", 6, 6) {
+        ATOM("ATOM", 6, 7) {
             @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, String coordSetName)
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
                     throws MoleculeIOException {
                 checkFieldCount(fields);
                 String aName = fields[1];
                 String aType = fields[2];
                 if (aType.endsWith("cg") && !useCoarse) {
                     return;
+                }
+                if (fields.length > 6) {
+                    if (fields[6].equals("middle") && (resPos != RES_POSITION.MIDDLE)) {
+                        return;
+                    } else if (fields[6].equals("start") && (resPos != RES_POSITION.START)) {
+                        return;
+                    }
                 }
                 String aTypeName = "H";
                 if (aType.substring(0, 1).equals("M") && aName.startsWith("H")) {
@@ -215,12 +229,37 @@ public class Sequence {
         },
         FAMILY("FAMILY", 3, 10) {
             @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, String coordSetName)
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
                     throws MoleculeIOException {
+
                 checkFieldCount(fields);
+                int nFields = fields.length;
+                if (fields[nFields - 1].equals("middle")) {
+                    if (resPos != RES_POSITION.MIDDLE) {
+                        return;
+                    } else {
+                        nFields--;
+                    }
+                } else if (fields[nFields - 1].equals("start")) {
+                    if (resPos != RES_POSITION.START) {
+                        return;
+                    } else {
+                        nFields--;
+                    }
+                } else if (fields[nFields - 1].equals("end")) {
+                    if (resPos != RES_POSITION.END) {
+                        return;
+                    } else {
+                        nFields--;
+                    }
+                }
                 final Atom parent;
                 String parentField = fields[1];
                 Atom refAtom = residue.getAtom(fields[2]);
+                if (refAtom == null) {
+                    System.out.println(Arrays.asList(fields));
+                    throw new MoleculeIOException("No refAtom " + fields[2]);
+                }
                 boolean connectee = false;
                 if (parentField.equals("-")) {
                     if (sequence.connectAtom != null) {
@@ -245,7 +284,7 @@ public class Sequence {
                     bond = new Bond(refAtom, parent);
                     refAtom.addBond(bond);
                 }
-                for (int iField = 3; iField < fields.length; iField++) {
+                for (int iField = 3; iField < nFields; iField++) {
                     String atomName = fields[iField];
                     if (atomName.endsWith("c") && !useCoarse) {
                         continue;
@@ -292,18 +331,25 @@ public class Sequence {
                 }
             }
         },
-        ANGLE("ANGLE", 4, 4) {
+        ANGLE("ANGLE", 4, 5) {
             @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, String coordSetName)
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
                     throws MoleculeIOException {
                 checkFieldCount(fields);
+                if (fields.length > 4) {
+                    if (fields[4].equals("middle") && (resPos != RES_POSITION.MIDDLE)) {
+                        return;
+                    } else if (fields[4].equals("start") && (resPos != RES_POSITION.START)) {
+                        return;
+                    }
+                }
                 Atom angleAtom = residue.getAtom(fields[1]);
                 angleAtom.irpIndex = Integer.parseInt(fields[3]);
             }
         },
         PSEUDO("PSEUDO", 4, 12) {
             @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, String coordSetName)
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
                     throws MoleculeIOException {
                 checkFieldCount(fields);
                 String pseudoAtomName = fields[1];
@@ -317,13 +363,13 @@ public class Sequence {
         },
         CRAD("CRAD", 6, 6) {
             @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, String coordSetName)
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
                     throws MoleculeIOException {
             }
         },
         ATREE("ATREE", 6, 6) {
             @Override
-            public void processLine(Sequence sequence, String[] fields, Residue residue, String coordSetName)
+            public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
                     throws MoleculeIOException {
                 Atom atom1 = residue.getAtom(fields[1]);
                 if (sequence.connectBranch != null) {
@@ -356,7 +402,7 @@ public class Sequence {
             this.maxFields = maxFields;
         }
 
-        public abstract void processLine(Sequence sequence, String[] fields, Residue residue, String coordSetName)
+        public abstract void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
                 throws MoleculeIOException;
 
         String getFieldString(String[] fields) {
@@ -454,7 +500,7 @@ public class Sequence {
         return fieldArray;
     }
 
-    public boolean addResidue(String fileName, Residue residue, String coordSetName, boolean throwTclException)
+    public boolean addResidue(String fileName, Residue residue, RES_POSITION resPos, String coordSetName, boolean throwTclException)
             throws MoleculeIOException {
         ArrayList<String[]> fieldArray = loadResidue(fileName, throwTclException);
         boolean result = false;
@@ -464,7 +510,7 @@ public class Sequence {
                 try {
                     PRFFields prfField = PRFFields.valueOf(fields[0]);
                     if (prfField != null) {
-                        prfField.processLine(this, fields, residue, coordSetName);
+                        prfField.processLine(this, fields, residue, resPos, coordSetName);
                     }
                 } catch (IllegalArgumentException iAE) {
                     // ignore field
@@ -566,7 +612,7 @@ public class Sequence {
         Residue residue = null;
         boolean setPolymerType = false;
         String iRes = "1";
-        String[] stringArg = new String[2];
+        String[] stringArg = new String[3];
         Pattern pattern = Pattern.compile("[-/\\w/\\.]+");
         String molName = "";
         String coordSetName = molName;
@@ -578,6 +624,7 @@ public class Sequence {
         molecule = Molecule.getActive();
         // First sequence is always a new polymer even if no '-' args are added
         boolean newPolymer = true;
+        RES_POSITION resPos = RES_POSITION.START;
 
         for (String inputString : inputStrings) {
             inputString = inputString.trim();
@@ -619,6 +666,7 @@ public class Sequence {
                 } else if ("-polymer".startsWith(stringArg[0])) {
                     polymerName = stringArg[1];
                     coordSetNames.clear();
+                    resPos = RES_POSITION.START;
                 } else if ("-ptype".startsWith(stringArg[0])) {
                     setPolymerType = true;
                     polymerType = stringArg[1];
@@ -658,6 +706,11 @@ public class Sequence {
                         iRes = stringArg[1];
                     } catch (NumberFormatException nfE) {
                         throw new MoleculeIOException(nfE.toString());
+                    }
+                }
+                if (stringArg[2] != null) {
+                    if (stringArg[2].equals("middle")) {
+                        resPos = RES_POSITION.MIDDLE;
                     }
                 }
             }
@@ -736,7 +789,8 @@ public class Sequence {
             } else {
                 polymer.setCapped(true);
             }
-            addResidue(reslibDir + "/" + Sequence.getAliased(resFileName) + ".prf", residue, coordSetName, true);
+            addResidue(reslibDir + "/" + Sequence.getAliased(resFileName) + ".prf", residue, resPos, coordSetName, true);
+            resPos = RES_POSITION.MIDDLE;
             try {
                 String[] matches = iRes.split("[^\\-0-9]+");
 

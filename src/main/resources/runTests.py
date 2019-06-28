@@ -10,37 +10,6 @@ from java.io import FileInputStream
 homeDir = os.getcwd()
 
 def parseArgs():
-    homeDir = os.getcwd()
-    parser = OptionParser()
-    parser.add_option("-d", "--directory", dest="directory",default=homeDir, help="Base directory for output files ")
-    (options, args) = parser.parse_args()
-    homeDir = options.directory
-    outDir = os.path.join(homeDir,'analysis')
-    argFile = args[0]
-    if not os.path.exists(outDir):
-        os.mkdir(outDir)
-
-    if argFile.endswith('.yaml'):
-        input = FileInputStream(argFile)
-        yaml = Yaml()
-        data = yaml.load(input)
-        if 'pdbPath' in data:
-            pdbFilePath = data['pdbPath']
-            del data['pdbPath']
-            pdbFiles = getFiles(pdbFilePath)
-        else:
-            if len(args) > 1:
-                pdbFiles = args[1:]
-            else:
-                print "Must specify a pdbFilePath"
-                return
-        outFiles = loadPDBModels(pdbFiles,data,outDir)
-        summary(outFiles)
-    else:
-        print "Provide a proper yaml file"
-        runpy.run_path(argFile)
-
-def runTests():
     parser = OptionParser()
     parser.add_option("-p", "--pdbs", dest="pdbPath", default="")
     parser.add_option("-o", "--outDir", dest="outDir", default="analysis")
@@ -49,7 +18,7 @@ def runTests():
     parser.add_option("-y", "--yaml", dest="yamlFile", default=None)
 
     #Will now be used to add addition files to parse that are not included in the yaml file
-    parser.add_option("-c", "--convert", action='store_true', dest="modifyFileType", default=False)
+    parser.add_option("-c", "--convert", action='store_true', dest="modifyFileType", default=False) # not used!
     parser.add_option("-s", "--shifts", dest="shiftFile", default=None)
     parser.add_option("-d", "--distances", dest="disFile", default=None)
     parser.add_option("-r", "--range", dest="resRange", default="")
