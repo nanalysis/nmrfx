@@ -190,13 +190,50 @@ public class Residue extends Compound {
         polymer.removeBond(bond);
     }
 
+    public Double calcNu2() {
+        return calcNu2(0);
+    }
+
+    public Double calcNu2(int structureNum) {
+        Atom[] atoms = getNu2Atoms();
+        return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
+    }
+
+    public Atom[] getNu2Atoms() {
+        if (name.equals("U") || name.equals("C") || name.equals("G") || name.equals("A")) {
+            Atom[] atoms = new Atom[4];
+            atoms[0] = getAtom("C1'");
+            atoms[1] = getAtom("C2'");
+            atoms[2] = getAtom("C3'");
+            atoms[3] = getAtom("C4'");
+            return atoms;
+        } else {
+            return null;
+        }
+
+    }
+
     public Double calcChi() {
         return calcChi(0);
     }
 
-    public Double calcChi(int structureNum) {
+    public Atom[] getChiAtoms() {
         if (name.equals("ALA") || name.equals("GLY")) {
             return null;
+        } else if (name.equals("U") || name.equals("C")) {
+            Atom[] atoms = new Atom[4];
+            atoms[0] = getAtom("O4'");
+            atoms[1] = getAtom("C1'");
+            atoms[2] = getAtom("N1");
+            atoms[3] = getAtom("C2");
+            return atoms;
+        } else if (name.equals("G") || name.equals("A")) {
+            Atom[] atoms = new Atom[4];
+            atoms[0] = getAtom("O4'");
+            atoms[1] = getAtom("C1'");
+            atoms[2] = getAtom("N9");
+            atoms[3] = getAtom("C4");
+            return atoms;
         } else {
             Atom[] atoms = new Atom[4];
             atoms[0] = getAtom("N");
@@ -215,8 +252,15 @@ public class Residue extends Compound {
                 atom3Name = "CG";
             }
             atoms[3] = getAtom(atom3Name);
-            return Atom.calcDihedral(atoms, structureNum);
+            return atoms;
         }
+    }
+
+    public Double calcChi(int structureNum) {
+        Atom[] atoms = getChiAtoms();
+
+        return atoms != null ? Atom.calcDihedral(atoms, structureNum) : null;
+
     }
 
     public Double calcChi2() {
@@ -319,8 +363,17 @@ public class Residue extends Compound {
             return this.getAtom(firstBackBoneAtomName);
         }
         String pType = polymer.getPolymerType(); // 'polypeptide' or 'nucleicacid'
-        String searchString = pType.contains("polypeptide") ? "N" : "P";
-        Atom atom = this.getAtom(searchString);
+        String searchString = pType.contains("polypeptide") ? "N" : "HO5'";
+
+        Atom atom;
+        if (pType.contains("polypeptide")) {
+            atom = this.getAtom("N");
+        } else {
+            atom = this.getAtom("P");
+            if (atom == null) {
+                atom = this.getAtom("HO5'");
+            }
+        }
         return atom;
     }
 
@@ -531,5 +584,21 @@ public class Residue extends Compound {
             newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
             newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
         }
+    }
+    
+    public boolean watsonCrickPair(Residue residue) {
+        boolean result = false;
+        if (name.equals("A") && residue.getName().equals("U")) {
+            // check atom atom pairs expected for AU
+            result = true;
+            Atom hydrogen1 = getAtom("H61");
+            Atom acceptor1 = residue.getAtom("O4");
+            boolean valid = HydrogenBond.validate(hydrogen1.getSpatialSet(), acceptor1.getSpatialSet(), 0);
+            if (!valid) {
+                result = false;
+            }
+
+        }
+        return result;
     }
 }

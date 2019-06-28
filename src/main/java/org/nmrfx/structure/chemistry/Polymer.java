@@ -187,7 +187,7 @@ public class Polymer extends Entity {
 
     public String getPolymerType() {
         if ((polymerType == null) || (polymerType.equals(""))) {
-            if (isRNA()){
+            if (isRNA()) {
                 return "nucleicacid";
             } else {
                 return "polypeptide";
@@ -311,6 +311,22 @@ public class Polymer extends Entity {
             }
         }
         return rna;
+    }
+
+    public boolean isDNA() {
+        boolean dna = false;
+        for (Residue residue : getResidues()) {
+            String resName = residue.getName();
+            if (resName.equals("DA") || resName.equals("DC") || resName.equals("DG") || resName.equals("DT")) {
+                dna = true;
+                break;
+            }
+            if (resName.equals("ADE") || resName.equals("CYT") || resName.equals("GUA") || resName.equals("THY")) {
+                dna = true;
+                break;
+            }
+        }
+        return dna;
     }
 
     /**

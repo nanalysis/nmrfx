@@ -37,10 +37,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.util.*;
 import org.nmrfx.processor.datasets.peaks.Resonance;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.nmrfx.processor.utilities.NvUtil;
+import org.nmrfx.structure.chemistry.io.Sequence.RES_POSITION;
 import org.nmrfx.structure.utilities.Util;
 
 /**
@@ -52,13 +54,15 @@ public class NMRStarReader {
     static String[] polymerEntityStrings = {"_Entity.Sf_category", "_Entity.Sf_framecode", "_Entity.Entry_ID", "_Entity.ID", "_Entity.Name", "_Entity.Type", "_Entity.Polymer_type", "_Entity.Polymer_strand_ID", "_Entity.Polymer_seq_one_letter_code_can", "_Entity.Polymer_seq_one_letter_code"};
 
     final STAR3 star3;
+    final File starFile;
 
     Map entities = new HashMap();
     boolean hasResonances = false;
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
 
-    public NMRStarReader(final STAR3 star3) {
+    public NMRStarReader(final File starFile, final STAR3 star3) {
         this.star3 = star3;
+        this.starFile = starFile;
 //        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
@@ -74,7 +78,7 @@ public class NMRStarReader {
         STAR3 star = new STAR3(bfR, "star3");
 
         star.scanFile();
-        NMRStarReader reader = new NMRStarReader(star);
+        NMRStarReader reader = new NMRStarReader(starFile, star);
         reader.process();
     }
 
@@ -260,11 +264,12 @@ public class NMRStarReader {
                 ccSaveFrameName = "save_" + resName;
                 ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             }
+            RES_POSITION resPos = RES_POSITION.MIDDLE;
             if (ccSaveframe != null) {
                 updateFromSTAR3ChemComp(ccSaveframe, residue);
             } else {
                 try {
-                    if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, "", false)) {
+                    if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, resPos, "", false)) {
                         throw new ParseException("Can't find residue \"" + resName + "\" in residue libraries or STAR file");
                     }
                 } catch (MoleculeIOException psE) {
@@ -312,17 +317,20 @@ public class NMRStarReader {
             residue.molecule = polymer.molecule;
             addCompound(mapID, residue);
             polymer.addResidue(residue);
+            RES_POSITION resPos = Sequence.RES_POSITION.MIDDLE;
+            if (linkType.equals("start")) {
+                resPos = RES_POSITION.START;
+                //residue.capFirstResidue();
+            } else if (linkType.equals("end")) {
+                resPos = RES_POSITION.END;
+                //residue.capLastResidue();
+            }
             try {
-                if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, "", false)) {
+                if (!sequence.addResidue(reslibDir + "/" + Sequence.getAliased(resName.toLowerCase()) + ".prf", residue, resPos, "", false)) {
                     throw new ParseException("Can't find residue \"" + resName + "\" in residue libraries or STAR file");
                 }
             } catch (MoleculeIOException psE) {
                 throw new ParseException(psE.getMessage());
-            }
-            if (linkType.equals("start")) {
-                residue.capFirstResidue();
-            } else if (linkType.equals("end")) {
-                residue.capLastResidue();
             }
 
         }
@@ -374,10 +382,12 @@ public class NMRStarReader {
         if (datasetName.equals("")) {
             datasetName = file.getAbsolutePath();
         }
-        Dataset dataset = null;
         try {
             System.err.println("open " + file.getAbsolutePath());
-            dataset = new Dataset(file.getAbsolutePath(), datasetName, false);
+            if (!file.exists()) {
+                file = FileSystems.getDefault().getPath(starFile.getParentFile().getParent(), "datasets", file.getName()).toFile();
+            }
+            Dataset dataset = new Dataset(file.getAbsolutePath(), datasetName, false);
         } catch (IOException | IllegalArgumentException tclE) {
             System.err.println(tclE.getMessage());
         }
@@ -875,7 +885,7 @@ public class NMRStarReader {
                 if (tag.equals("Resonance_ID") || tag.equals("Resonance_count")) {
                     continue;
                 }
-                List<String> column = loop.getColumnAsList(tag);
+                List<String> column = loop.getColumnAsListIfExists(tag);
                 if (column != null) {
                     for (int i = 0, n = column.size(); i < n; i++) {
                         int idNum = Integer.parseInt((String) peakIdColumn.get(i));
@@ -1169,7 +1179,7 @@ public class NMRStarReader {
             try {
                 dihedral.addBoundary(atoms, lower, upper, scale);
             } catch (InvalidMoleculeException imE) {
-                
+
             }
 
         }
@@ -1360,7 +1370,7 @@ public class NMRStarReader {
             if (!lowerValue.equals(".")) {
                 lower = Double.parseDouble(lowerValue);
             }
-            
+
             Util.setStrictlyNEF(true);
             energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper);
             Util.setStrictlyNEF(false);
@@ -1455,5 +1465,5 @@ public class NMRStarReader {
         }
         return dihedral;
     }
-    
+
 }

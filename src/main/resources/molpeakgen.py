@@ -220,7 +220,7 @@ class MolPeakGen:
             listName = self.getListName(dataset)
         labelScheme = dataset.getProperty("labelScheme")
         self.setLabelScheme(labelScheme)
-        peakList = peakgen.makePeakListFromDataset(listName, dataset)
+        peakList = peakgen.makePeakListFromDataset(listName, dataset, 2)
         peakList.setSampleConditionLabel(condition)
 
         sf1 = dataset.getSf(0)

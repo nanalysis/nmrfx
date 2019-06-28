@@ -25,10 +25,8 @@ import org.nmrfx.structure.utilities.Util;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.util.FastMath;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,6 +40,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
+import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.search.MNode;
 import org.nmrfx.structure.chemistry.search.MTree;
@@ -1119,16 +1118,12 @@ public class Molecule implements Serializable, ITree {
     public int setSelected(List<SpatialSet> selected, boolean append, boolean inverse) {
         int i;
         int j;
-        Atom atom;
         SpatialSet spatialSet = null;
 
         if (!append) {
-            for (i = 0; i < globalSelected.size(); i++) {
-                spatialSet = globalSelected.get(i);
+            for (Atom atom : atoms) {
+                atom.getSpatialSet().setSelected(0);
 
-                if (spatialSet != null) {
-                    spatialSet.setSelected(0);
-                }
             }
         }
 
@@ -1143,7 +1138,7 @@ public class Molecule implements Serializable, ITree {
                 Molecule.makeAtomList();
             }
             for (i = 0; i < Molecule.atomList.size(); i++) {
-                atom = Molecule.atomList.get(i);
+                Atom atom = Molecule.atomList.get(i);
                 atom.spatialSet.setSelected(1);
             }
 
@@ -1155,7 +1150,7 @@ public class Molecule implements Serializable, ITree {
             globalSelected.clear();
 
             for (i = 0; i < Molecule.atomList.size(); i++) {
-                atom = Molecule.atomList.get(i);
+                Atom atom = Molecule.atomList.get(i);
                 spatialSet = atom.spatialSet;
                 if (spatialSet.getSelected() > 0) {
                     globalSelected.add(spatialSet);
@@ -2375,6 +2370,25 @@ public class Molecule implements Serializable, ITree {
         return shiftMap;
     }
 
+    public void checkRNAPairs() {
+        for (Polymer polymerA : getPolymers()) {
+            for (Polymer polymerB : getPolymers()) {
+                for (Residue residueA : polymerA.getResidues()) {
+                    for (Residue residueB : polymerB.getResidues()) {
+                        if (residueA != residueB) {
+                            boolean paired = residueA.watsonCrickPair(residueB);
+                            if (paired) {
+                                System.out.println(residueA.getName() + residueA.getNumber()
+                                        + " " + residueB.getName() + residueB.getNumber() + " " + paired);
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
     public void calcLCMB(final int iStruct) {
         calcLCMB(iStruct, true);
     }
@@ -2459,27 +2473,16 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
-//    J. Phys. Chem. B 2014, 118, 12168–12175
     public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom) {
+        return calcDistanceInputMatrixRow(iStruct, distLim, targetAtom, 1.0);
+
+    }
+
+    public double[] calcDistanceInputMatrixRow(final int iStruct, double distLim, Atom targetAtom, double intraScale) {
         List origAtomSources = RNAAttributes.getAtomSources();
         int numAtomSources = origAtomSources.size();
-        double[] distValues = new double[numAtomSources];
-
-        List atomSources = new ArrayList(origAtomSources);
-        String targetResName = targetAtom.getEntity().getName();
-        String targetAtomName = targetAtom.getName();
-        String targetKey = targetResName + targetAtomName;
-        if (targetAtomName.contains("'")) {
-            targetKey = targetAtomName;
-        }
-        if (!allowedSourcesMap.containsKey(targetKey)) {
-            allowedSourcesMap.put(targetKey, getAllowedSources(iStruct, origAtomSources, targetAtom));
-//                System.out.println(allowedSourcesMap.keySet());
-        }
-        if (allowedSourcesMap.containsKey(targetKey)) {
-            atomSources = allowedSourcesMap.get(targetKey);//getAllowedSources(iStruct, origAtomSources, targetAtom);
-//                System.out.println(targetKey + ": " + atomSources);
-        }
+        int sepIntra = 0;
+        double[] distValues = new double[numAtomSources * (1 + sepIntra)];
 
         Point3 targetPt = targetAtom.getPoint(iStruct);
         for (Atom sourceAtom : atoms) {
@@ -2492,7 +2495,7 @@ public class Molecule implements Serializable, ITree {
             int sourceResID = sourceAtom.getEntity().getIDNum();
             int targetResID = targetAtom.getEntity().getIDNum();
             if ((targetAtom != sourceAtom) && (sourceAtom.getAtomicNumber() != 1)
-                    && ((sourceResID != targetResID) || atomSources.contains(key))) {
+                    && ((sourceResID != targetResID) || !Predictor.isRNAPairFixed(targetAtom, sourceAtom))) {
                 Point3 sourcePt = sourceAtom.getPoint(iStruct);
                 if ((targetPt != null) && (sourcePt != null)) {
                     double r = Atom.calcDistance(targetPt, sourcePt);
@@ -2502,33 +2505,17 @@ public class Molecule implements Serializable, ITree {
                         if (r == 0) {
                             dis3 = 0.0;
                         }
+                        if (sourceResID != targetResID) {
+                            keyInd += numAtomSources * sepIntra;
+                        } else {
+                            dis3 *= intraScale;
+                        }
                         distValues[keyInd] += dis3;
                     }
                 }
             }
         }
         return distValues;
-    }
-
-    public List getAllowedSources(final int iStruct, List atomSources, Atom targetAtom) {
-        String targetAtomName = targetAtom.getName();
-        List allowedSources = new ArrayList<>();
-        if (!targetAtomName.contains("'")) { // target atom name doesn't contain a prime
-            allowedSources.addAll(Arrays.asList("C2'", "C3'", "C4'", "C5'", "P", "OP1", "OP2", "O2'", "O3'", "O4'", "O5'"));
-        } else if (targetAtomName.contains("'")) { // target atom name does contain a prime
-            allowedSources.addAll(atomSources);
-            String num = targetAtomName.substring(1, 2);
-            if (targetAtomName.equals("C" + num + "'") || targetAtomName.equals("H" + num + "'") || targetAtomName.equals("H" + num + "''")) {
-                allowedSources.removeAll(Arrays.asList("C" + num + "'", "O" + num + "'", "C" + String.valueOf(Integer.valueOf(num) - 1) + "'",
-                        "C" + String.valueOf(Integer.valueOf(num) + 1) + "'"));
-                if (num.equals("1")) {
-                    allowedSources.removeAll(Arrays.asList("O4'", "AN9", "AC4", "AC8", "GN9", "GC4", "GC8", "CN1", "CC2", "CC6", "UN1", "UC2", "UC6"));
-                } else if (num.equals("2")) {
-                    allowedSources.removeAll(Arrays.asList("AN9", "GN9", "CN1", "UN1"));
-                }
-            }
-        }
-        return allowedSources;
     }
 
     // J. AM. CHEM. SOC. 2002, 124, 12654-12655
@@ -3449,11 +3436,16 @@ public class Molecule implements Serializable, ITree {
                 }
             }
             // skip hydrogens that are likely to be in rapid exchange
-            if ((atom1.getAtomicNumber() == 1) && atom1.getParent().getType().equals("N+")) {
-                continue;
-            }
-            if ((atom1.getAtomicNumber() == 1) && atom1.getParent().getType().startsWith("O")) {
-                continue;
+            if (atom1.getParent() == null) {
+                System.out.println("atom1 parent null " + atom1.getFullName());
+            } else {
+                if ((atom1.getAtomicNumber() == 1) && atom1.getParent().getType().equals("N+")) {
+                    continue;
+                }
+
+                if ((atom1.getAtomicNumber() == 1) && atom1.getParent().getType().startsWith("O")) {
+                    continue;
+                }
             }
             for (int j = i + 1; j < globalSelected.size(); j++) {
                 double extra = 0.0;
@@ -3465,11 +3457,16 @@ public class Molecule implements Serializable, ITree {
                     continue;
                 }
                 // skip hydrogens that are likely to be in rapid exchange
-                if ((atom2.getAtomicNumber() == 1) && atom2.getParent().getType().equals("N+")) {
-                    continue;
-                }
-                if ((atom2.getAtomicNumber() == 1) && atom2.getParent().getType().startsWith("O")) {
-                    continue;
+                if (atom2.getParent() == null) {
+                    System.out.println("atom2 parent null " + atom2.getFullName());
+                } else {
+
+                    if ((atom2.getAtomicNumber() == 1) && atom2.getParent().getType().equals("N+")) {
+                        continue;
+                    }
+                    if ((atom2.getAtomicNumber() == 1) && atom2.getParent().getType().startsWith("O")) {
+                        continue;
+                    }
                 }
                 if (requireActive && !atom2.isActive()) {
                     continue;
@@ -4509,7 +4506,8 @@ public class Molecule implements Serializable, ITree {
         atom2.dihedralAngle = 180.0f * ((float) Math.PI / 180f);
     }
 
-    public void createLinker(Atom atom1, Atom atom2, int numLinks) {
+    public void createLinker(Atom atom1, Atom atom2, int numLinks,
+            double linkLen, double valAngle, double dihAngle) {
         /**
          * createLinker is a method to create a link between atoms in two
          * separate entities
@@ -4527,9 +4525,10 @@ public class Molecule implements Serializable, ITree {
         String linkRoot = "X";
         for (int i = 1; i <= numLinks; i++) {
             newAtom = curAtom.add(linkRoot + Integer.toString(i), "X", Order.SINGLE);
-            newAtom.bondLength = 1.08f;
-            newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
-            newAtom.valanceAngle = (float) (60.0 * Math.PI / 180.0);
+            newAtom.bondLength = (float) linkLen;
+            newAtom.dihedralAngle = (float) (dihAngle * Math.PI / 180.0);
+            newAtom.valanceAngle = (float) (valAngle * Math.PI / 180.0);
+
             curAtom = newAtom;
             if (i == numLinks) {
                 Atom.addBond(curAtom, atom2, Order.SINGLE, 0, false);

@@ -16,6 +16,7 @@ from org.apache.commons.math3.linear import ArrayRealVector
 from org.apache.commons.math3.linear import SingularValueDecomposition
 
 ringTypes = ["A0","A1","G0","G1","C0","U0"]
+#rmax = 4.6
 
 def getPDBFile(pdbID):
     pdbFile="pdbfiles/"+pdbID+".pdb"
@@ -87,8 +88,9 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
 
     See also: `loadRCTrainingMatrix(...)`
     """
-
-    if  (typeRCDist.lower()=='rc'):
+    plusRingMode = False
+    chiMode = True
+    if  (typeRCDist.lower()=='rc') or plusRingMode:
         ringShifts = RingCurrentShift()
         ringShifts.makeRingList(mol)
     inFilter = {}
@@ -143,15 +145,26 @@ def genRCMat(mol, atomNames, f1, ringMode, typeRCDist):
                 s = "%.3f" % (ringPPM)
                 row.append(s)
         elif (typeRCDist.lower()=='dist'):
-            rmax = 15.0
             distances = mol.calcDistanceInputMatrixRow(0, rmax, atom)#/ 5.45
             s = [ '%.6f' % elem for elem in distances ] # "%.3f" % (distances)
             row += s
+            if plusRingMode:
+                ringPPM = ringShifts.calcRingContributions(sp,0,ringRatio)
+                s = "%.3f" % (ringPPM)
+                row.append(s)
+            if chiMode:
+                chi = atom.getEntity().calcChi()
+                sinchi = math.sin(chi)
+                coschi = math.cos(chi)
+                s = "%.3f" % (coschi)
+                row.append(s)
+                s = "%.3f" % (sinchi)
+                row.append(s)
         s = "%.3f" % (ppm)
         row.append(s)
         f1.write('\t'.join(row)+'\n')
 
-def predictWithRCFromPDB(pdbFile, refShifts, ringRatio, typeRCDist):
+def predictWithRCFromPDB(pdbFile, refShifts, ringRatio, typeRCDist, atomNames, builtin):
     """
     Reads an RNA molecule from PDB file and predict chemical shifts.
 
@@ -170,9 +183,8 @@ def predictWithRCFromPDB(pdbFile, refShifts, ringRatio, typeRCDist):
 
     Molecule.removeAll()
     pdb = PDBFile()
-    #mol = molio.readPDB(pdbFile)
-    mol = pdb.read(pdbFile)
-    pdb.readCoordinates(pdbFile,-1,False, False)
+    mol = molio.readPDB(pdbFile)
+    #pdb.readCoordinates(pdbFile,-1,False, False)
     activeStructures = mol.getActiveStructures()
     avgOverStructures = False
     if not avgOverStructures:
@@ -187,11 +199,14 @@ def predictWithRCFromPDB(pdbFile, refShifts, ringRatio, typeRCDist):
             structList = list(activeStructures)
         else:
             structList=[0]
-    if typeRCDist.lower() == 'rc':
-        shifts = rnapred.predictRCShifts(mol, structList, refShifts, ringRatio, ringTypes)
-    elif typeRCDist.lower() == 'dist':
-        alphas = ringRatio
-        shifts = rnapred.predictDistShifts(mol, structList, refShifts, alphas)
+    if builtin:
+        shifts = rnapred.predictBuiltIn(mol, atomNames, typeRCDist, structList)
+    else:
+        if typeRCDist.lower() == 'rc':
+            shifts = rnapred.predictRCShifts(mol, structList, refShifts, ringRatio, ringTypes)
+        elif typeRCDist.lower() == 'dist':
+            alphas = ringRatio
+            shifts = rnapred.predictDistShifts(mol, rmax, structList, refShifts, alphas)
 
     return mol, shifts
 
@@ -216,12 +231,13 @@ class PPMData:
         self.aName = a
         self.valid = True
 
-def analyzeFiles(pdbs, bmrbs, typeRCDist, offsets, refShifts=None, ringRatio=None):
+def analyzeFiles(pdbs, bmrbs, typeRCDist, aType, offsets, refShifts=None, ringRatio=None, atomNames=None, builtin=False):
     """
     Analyze a whole set of pdb files and associated chemical shifts in bmrb files
     Chemical shifts will be predicted with 3D Ring Current shift code
     and the result will contain predicted and experimental
     shifts which can then be statistically analyzed.
+
 
     # Parameters:
 
@@ -255,15 +271,7 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, offsets, refShifts=None, ringRatio=Non
             print 'skip',pdb
             continue
         shiftDict = seqalgs.readBMRBShifts(bmrbID, bmrbFile)
-
-        if (typeRCDist.lower() == 'rc'):
-            mol, shifts = predictWithRCFromPDB(pdb, refShifts, ringRatio, typeRCDist)
-            polymers = mol.getPolymers()
-            chainP = [polymer.getName() for polymer in polymers]
-        elif typeRCDist.lower() == 'dist':
-            alphas = ringRatio
-            #shifts = predictWithDistFromPDB(pdb, refShifts, alphas)
-            mol, shifts = predictWithRCFromPDB(pdb, refShifts, ringRatio, typeRCDist)
+        mol, shifts = predictWithRCFromPDB(pdb, refShifts, ringRatio, typeRCDist, atomNames, builtin)
         for bID in shiftDict.keys():
             for chain in shiftDict[bID]:
                 chainName = chains[chain]
@@ -273,6 +281,8 @@ def analyzeFiles(pdbs, bmrbs, typeRCDist, offsets, refShifts=None, ringRatio=Non
                         offset = offsets[bID][chainName]
                 for res in shiftDict[bID][chain]:
                     for aname in shiftDict[bID][chain][res]:
+                        if aname[0] != aType:
+                            continue
                         atomSpec = chainName+':'+str(res+offset)+'.'+aname
                         atom = Molecule.getAtomByName(atomSpec)
                         if atom == None:
@@ -381,6 +391,8 @@ def getAtomStats(aNames, ppmDatas):
 
     rms = {}
     deltaMeanSum = 0.0
+    print "%4s %4s %4s %4s" % ("Atm","N","MAE","RMS")
+    maeValues={}
     for aname in aNames:
         deltaValues = [ppmData.exp-ppmData.pred for ppmData in ppmDatas if ppmData.aName == aname and ppmData.valid]
         dStat = getDStat(deltaValues)
@@ -388,8 +400,10 @@ def getAtomStats(aNames, ppmDatas):
         sumDV2 = dStat.getSumsq()
         rms[aname] = math.sqrt(sumDV2/len(deltaValues))
         deltaMeanSum += meanAbs(deltaValues)
-        print "%s %3d %.3f %.3f" % (aname,len(deltaValues),meanAbs(deltaValues),rms[aname])
-    print "%s %.3f" % ("avg Delta Values =", deltaMeanSum/len(aNames))
+        print "%-4s %4d %4.2f %4.2f" % (aname,len(deltaValues),meanAbs(deltaValues),rms[aname])
+        maeValues[aname]=meanAbs(deltaValues)
+    print "%s %.2f" % ("avg Delta Values =", deltaMeanSum/len(aNames))
+    return maeValues
 
 def readTestFiles(fileName):
     bmrbs = []
@@ -477,6 +491,7 @@ def genRCTrainingMatrix(outFileName, pdbFiles, shiftSources, atomNames, ringMode
                 print 'skip',pdbFile
                 continue
             print 'train',pdbFile
+            pdb = PDBFile()
             mol = molio.readPDB(pdbFile)
             if shiftSource[0]=="." or shiftSource[0]=="(":
                 rnapred.predictFromSequence(mol,shiftSource)
@@ -528,7 +543,7 @@ def trainRC(atomNames, trainingFileName, matrixFileName, ringMode, typeRCDist):
              ringRatios = coefs[-1]
         coefs = coefs[0:-nRings]
     elif (typeRCDist.lower()=='dist'):
-        alphas = coefs[len(atomNames):-1]
+        alphas = coefs[len(atomNames):]
         coefs = coefs[0:len(atomNames)]
         ringRatios = alphas
     coefDict = {}

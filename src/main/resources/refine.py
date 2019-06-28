@@ -260,6 +260,8 @@ class dynOptions(StrictDict):
         'timePowerMed'  : 4.0,
         'minSteps'      : 100,
         'polishSteps'   : 500,
+        'dfreeSteps'    :  0,
+        'dfreeAlg'      : 'cmaes',
         'kinEScale'     : 200.0,
 	'irpWeight'     : 0.0
     }
@@ -315,6 +317,7 @@ class refine:
         self.trajectoryWriter = None
         self.molecule = Molecule.getActive()
         self.entityEntryDict = {} # map of entity name to linker
+        self.reportDump = False
         if self.molecule != None:
             self.molName = self.molecule.getName()
 
@@ -353,6 +356,9 @@ class refine:
         grefine = GradientRefinement(self.dihedral)
 
         grefine.numericalDerivatives(delta,report)
+
+    def setReportDump(self, value):
+        self.reportDump = value
 
     def setSeed(self,seed):
         self.dihedral.seed(seed)
@@ -487,6 +493,9 @@ class refine:
 	    # n is the number of rotational points within a link established between any 2 entities.
             # default is 6.
             n = linkerDict['n'] if 'n' in linkerDict else 6
+            linkLen = linkerDict['length'] if 'length' in linkerDict else 5.0
+            valAngle = linkerDict['valAngle'] if 'valAngle' in linkerDict else 90.0
+            dihAngle = linkerDict['dihAngle'] if 'dihAngle' in linkerDict else 135.0
             startEnt = self.molecule.getEntity(startEntName)
             endEnt = self.molecule.getEntity(endEntName)
 
@@ -539,7 +548,7 @@ class refine:
                     upper = length + .0001
                     self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
         else:
-            self.molecule.createLinker(startAtom, endAtom, n)
+            self.molecule.createLinker(startAtom, endAtom, n, linkLen, valAngle, dihAngle)
         return (startEnt, endEnt)
 
     def addCyclicBond(self, polymer):
@@ -979,7 +988,10 @@ class refine:
             linkers = molDict.get('link')
             index = molDict.get('indexing')
             resStrings = getSequenceArray(index, seqString, linkers, polyType)
-            molio.readSequenceString('p', resStrings)
+            chain = molDict.get('chain')
+            if chain == None:
+                chain = 'p'
+            molio.readSequenceString(chain, resStrings)
         else:
             file = molDict['file']
             type = molDict.get('type','nv')
@@ -1069,9 +1081,10 @@ class refine:
             type = shiftDict['type']
             if type == 'str3':
                 import os
-                import osfiles
-                dir = os.path.dirname(file)
-                file = osfiles.convertStarFile(file,dir)
+                shifts = seqalgs.readBMRBShifts('shifts',file)
+                for key in shifts:
+                    for key2 in shifts[key]:
+                        print key, key2, shifts[key][key2]
                 type = 'nv'
         else:
             type = 'nv'
@@ -1084,8 +1097,8 @@ class refine:
                 changeResNums = range!=residues
                 file = osfiles.limResidues(range,file,dir,'shift',changeResNums)
             self.setShifts(file)
-            ringShifts = self.setBasePPMs()
-            self.energyLists.setRingShifts()
+            #ringShifts = self.setBasePPMs()
+            #self.energyLists.setRingShifts()
         if 'weight' in shiftDict:
             wt = shiftDict['weight']
         return wt
@@ -1144,6 +1157,7 @@ class refine:
     def NEFReader(self, fileName):
         from java.io import FileReader
         from java.io import BufferedReader
+        from java.io import File
         from org.nmrfx.processor.star import STAR3
         from org.nmrfx.structure.chemistry.io import NMRStarReader
         from org.nmrfx.structure.chemistry.io import NMRStarWriter
@@ -1151,7 +1165,8 @@ class refine:
         bfR = BufferedReader(fileReader)
         star = STAR3(bfR,'star3')
         star.scanFile()
-        reader = NMRStarReader(star)
+        file = File(fileName)
+        reader = NMRStarReader(file, star)
         self.dihedrals = reader.processNEF()
         self.energyLists = self.dihedrals.energyList
 
@@ -1558,10 +1573,10 @@ class refine:
                 print "Preceding residue is not defined"
             resJName = residues[iStartPair-i].getName()
             self.addBasePair(polymer, resI, resJ)
-            if (i+3) < length:
+            if (i != 0) and ((i+3) < length):
                 resJ = residues[iStart+i+3].getNumber()
                 self.energyLists.addDistanceConstraint(str(resI)+'.P', str(resJ)+'.P',16.5, 20.0)
-            if (i+5) < length:
+            if (i != 0) and ((i+5) < length):
                 resJ = residues[iStartPair-i-5].getNumber()
                 self.energyLists.addDistanceConstraint(str(resI)+'.P', str(resJ)+'.P',10.0, 12.0)
             if (i+1) < length:
@@ -1886,61 +1901,36 @@ class refine:
 		raise AssertionError(errMsg)
             self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
 
-    def predictShifts(self):
+    def predictRNAShifts(self, typeRCDist="dist"):
         #XXX: Need to complete docstring
         """Predict chemical shifts 
 
         # Returns:
 
+
+
+
         shifts (list);
         """
-        from org.nmrfx.structure.chemistry.energy import RingCurrentShift
-        from org.nmrfx.structure.chemistry import MolFilter
+        from org.nmrfx.structure.chemistry.predict import Predictor
+        predictor = Predictor()
+        for polymer in self.molecule.getPolymers():
+            if polymer.isRNA():
+                if  (typeRCDist.lower()=='dist'):
+                    predictor.predictRNAWithDistances(polymer, 0, 0, False)
+                else:
+                    predictor.predictRNAWithRingCurrent(polymer, 0, 0)
 
-        # old
-        refShifts = {"A.H2":7.93, "A.H8":8.33, "G.H8":7.87, "C.H5":5.84, "U.H5":5.76,
-            "C.H6":8.02, "U.H6":8.01, "A.H1'":5.38, "G.H1'":5.37, "C.H1'":5.45,
-            "U.H1'":5.50, "A.H2'":4.54, "G.H2'":4.59, "C.H2'":4.54, "U.H2'":4.54,
-            "A.H3'":4.59, "G.H3'":4.59, "C.H3'":4.59, "U.H3'":4.59
-        }
-        filterString="*.H8,H6,H5,H2,H1',H2',H3'"
-
-        refShifts = {"A.H2":7.87,"A.H8":8.24,"G.H8":7.84,"C.H5":5.90,"U.H5":5.86,"C.H6":7.96,"U.H6":8.03,"A.H1'":5.45,"G.H1'":5.37,"C.H1'":5.48,"U.H1'":5.52,"A.H2'":4.49,"G.H2'":4.49,"C.H2'":4.49,"U.H2'":4.49,"A.H3'":4.56,"G.H3'":4.56,"C.H3'":4.56,"U.H3'":4.56,"A.H4'":4.37,"G.H4'":4.37,"C.H4'":4.37,"U.H4'":4.37,"A.H5'":4.36,"G.H5'":4.36,"C.H5'":4.36,"U.H5'":4.36,"A.H5''":4.11,"G.H5''":4.11,"C.H5''":4.11,"U.H5''":4.1}
-        filterString="*.H8,H6,H5,H2,H1',H2',H3',H4',H5',H5''"
-
-
-
-        ringShifts = RingCurrentShift()
-        ringShifts.makeRingList(self.molecule)
-
-        molFilter = MolFilter(filterString)
-        spatialSets = Molecule.matchAtoms(molFilter)
-
-        ringRatio = 0.54
         shifts = []
-        print 'snum',structureNum
-        for sp in spatialSets:
-            name = sp.atom.getShortName()
-            aName = sp.atom.getName()
-            nucName = sp.atom.getEntity().getName()
-
-            basePPM = refShifts[nucName+"."+aName]
-            if isinstance(structureNum,(list,tuple)):
-                ringPPM = 0.0
-                for iStruct in structureNum:
-                    ringPPM += ringShifts.calcRingContributions(sp,iStruct,ringRatio)
-                ringPPM /= len(structureNum)
-            else:
-                ringPPM = ringShifts.calcRingContributions(sp,structureNum,ringRatio)
-            ppm = basePPM+ringPPM
-
-            atom = Molecule.getAtomByName(name)
-            atom.setRefPPM(ppm)
-
-            shift = []
-            shift.append(str(name))
-            shift.append(ppm)
-            shifts.append(shift)
+        atoms = self.molecule.getAtoms()
+        for atom in atoms:
+            name = atom.getShortName()
+            ppm = atom.getRefPPM()
+            if ppm != None:
+                shift = []
+                shift.append(str(name))
+                shift.append(ppm)
+                shifts.append(shift)
         return shifts
 
     def setBasePPMs(self,filterString="*.H8,H6,H5,H2,H1',H2',H3'"):
@@ -2052,7 +2042,7 @@ class refine:
         for end in [3,10,20,1000]:
             self.setPars({'useh':False,'dislim':self.disLim,'end':end,'hardSphere':0.15,'shrinkValue':0.20})
             self.gmin(nsteps=steps,tolerance=1.0e-6)
-        if self.eFileRoot != None:
+        if self.eFileRoot != None and self.reportDump:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
 	#ec.dumpRestraints()
 	#exit()
@@ -2071,6 +2061,8 @@ class refine:
             runStage(stage, self, rDyn)
 				
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
+        if dOpt['dfreeSteps']> 0:
+            self.refine(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
 
     def cdynamics(self, steps, hiTemp, medTemp, timeStep=1.0e-3):
         self.updateAt(20)

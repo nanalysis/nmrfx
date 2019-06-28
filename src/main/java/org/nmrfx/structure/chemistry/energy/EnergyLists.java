@@ -42,8 +42,10 @@ import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
-import org.nmrfx.structure.chemistry.energy.EnergyCoords.ViolationStats;
+import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.structure.chemistry.energy.ViolationStats;
 import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
+import org.nmrfx.structure.chemistry.predict.Predictor;
 
 public class EnergyLists {
 
@@ -70,6 +72,7 @@ public class EnergyLists {
     private double shrinkHValue = 0.0;
     private ForceWeight forceWeight = new ForceWeight();
     private RingCurrentShift ringShifts = new RingCurrentShift();
+    private Predictor predictor = null;
     AtomBranch[] branches = null;
     static final double toDeg = 180.0 / FastMath.PI;
     static final double toRad = FastMath.PI / 180;
@@ -253,7 +256,16 @@ public class EnergyLists {
     }
 
     public void updateShifts() {
-        ringShifts.predictShifts();
+        if (predictor == null) {
+            predictor = new Predictor();
+        }
+        for (Polymer polymer : molecule.getPolymers()) {
+            try {
+                predictor.predictRNAWithDistances(polymer, 0, 0, true);
+                // predictor.predictRNAWithRingCurrent(polymer, 0, 0);
+            } catch (InvalidMoleculeException imE) {
+            }
+        }
     }
 
     public static double calcDistance(Point3 pt1, Point3 pt2) {
@@ -613,10 +625,14 @@ public class EnergyLists {
                 }
             }
             if (forceWeight.getShift() > 0.0) {
-                updateShifts();
+                //updateShifts();
                 for (Atom atom : refAtoms) {
                     double deltaShift = AtomMath.calcDeltaShift(atom);
                     if (deltaShift != -1.0) {
+                        Double mae = Predictor.getMAE(atom);
+                        if (mae != null) {
+                            deltaShift /= mae;
+                        }
                         double shiftEnergy = AtomMath.calcShiftEnergy(deltaShift, forceWeight);
                         shiftTotEnergy += shiftEnergy;
                         nShift++;
@@ -836,6 +852,18 @@ public class EnergyLists {
         return totalEnergy;
     }
 
+    public double calcShiftsFast(boolean calcDeriv) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
+        eCoords.setupShifts();
+        double weight = forceWeight.getShift();
+        double energy = eCoords.calcDistShifts(calcDeriv, Predictor.getRMax(), Predictor.getIntraScale(), weight);
+//        if (calcDeriv) {
+//            eCoords.addRepelDerivs(branches);
+//        }
+
+        return energy;
+    }
+
     public double calcShift(boolean calcDeriv) {
         double totalEnergy = 0;
         if (calcDeriv) {
@@ -845,6 +873,10 @@ public class EnergyLists {
         updateShifts();
         for (Atom atom : refAtoms) {
             double deltaShift = AtomMath.calcDeltaShift(atom);
+            Double mae = Predictor.getMAE(atom);
+            if (mae != null) {
+                deltaShift /= mae;
+            }
             totalEnergy += AtomMath.calcShiftEnergy(deltaShift, forceWeight);
         }
         return totalEnergy;
@@ -963,7 +995,7 @@ public class EnergyLists {
 
     public void updateNOEPairs() {
         EnergyCoords eCoords = molecule.getEnergyCoords();
-        eCoords.clearDist();
+        eCoords.eConstraintPairs.clear();
         int iGroup = 0;
         for (DistancePair distancePair : distanceList) {
             double weight;
@@ -1098,7 +1130,7 @@ public class EnergyLists {
             }
 
             if (forceWeight.getShift() > 0.0) {
-                energyTotal += calcShift(calcDeriv);
+                energyTotal += calcShiftsFast(calcDeriv);
             }
 
             if (forceWeight.getDihedralProb() > 0.0) {
@@ -1477,56 +1509,9 @@ public class EnergyLists {
             }
             updateFixed(molecule.getDihedrals());
         }
-        eCoords.setCells(this, deltaEnd, distanceLimit, hardSphere, includeH, shrinkValue, shrinkHValue);
-    }
-
-    public void makeAtomListFastOff() {
-        //molecule.updateFromVecCoords();
-        if (compoundArray == null) {
-            makeCompoundList(molecule);
-        }
-        updateNOEPairs();
-        for (int i = 0; i < compoundArray.length; i++) {
-            CompoundSphere cSphere = compoundArray[i];
-            double radius = getRadius(cSphere.compound, cSphere.atom.getPoint());
-            CompoundSphere cSphereNew = new CompoundSphere(cSphere.compound, cSphere.atom, radius, cSphere.sSets);
-            compoundArray[i] = cSphereNew;
-        }
-        EnergyCoords eCoords = molecule.getEnergyCoords();
-        FastVector3D[] vecCoords = eCoords.getVecCoords();
-        eCoords.clear();
-        double aLimit = distanceLimit;
-        double aLimit2 = aLimit * aLimit;
-        // System.out.println(molecule.getAtomArray().size() + " atoms vecs" + vecCoords.length + " " + aLimit + " " + aLimit2 + " " + distanceLimit);
-        for (CompoundPair cPair : compoundPairList) {
-            int iAtom = cPair.cSphere1.atom.iAtom;
-            int jAtom = cPair.cSphere2.atom.iAtom;
-            FastVector3D v1 = vecCoords[iAtom];
-            FastVector3D v2 = vecCoords[jAtom];
-            double cutOff = distanceLimit + cPair.cSphere1.radius + cPair.cSphere2.radius;
-            double cutOffSq = cutOff * cutOff;
-            if (!FastVector3D.atomLimit(v1, v2, cutOff, cutOffSq)) {
-                continue;
-            }
-            for (AtomPair atomPair : cPair.atomPairs) {
-                iAtom = atomPair.spSet1.atom.iAtom;
-                jAtom = atomPair.spSet2.atom.iAtom;
-                if (iAtom >= vecCoords.length) {
-                    System.out.println("iatom " + iAtom + " " + atomPair.spSet1.atom.getShortName());
-                }
-                if (jAtom >= vecCoords.length) {
-                    System.out.println("jatom " + jAtom + " " + atomPair.spSet2.atom.getShortName());
-                }
-                v1 = vecCoords[iAtom];
-                v2 = vecCoords[jAtom];
-
-                if (FastVector3D.atomLimit(v1, v2, aLimit, aLimit2)) {
-                    if (getConstraintDistance(atomPair.spSet1.atom, atomPair.spSet2.atom) == null) {
-                        double rh = atomPair.ePair.rh;
-                        eCoords.addPair(iAtom, jAtom, atomPair.unit1, atomPair.unit2, rh);
-                    }
-                }
-            }
+        eCoords.setCells(eCoords.ePairs, deltaEnd, distanceLimit, hardSphere, includeH, shrinkValue, shrinkHValue);
+        if (forceWeight.getShift() > 0.0) {
+           // eCoords.setCells(eCoords.eShiftPairs, deltaEnd, distanceLimit, 0, true, 0, 0);
         }
     }
 

@@ -48,17 +48,13 @@ def loadPDBModels(files, yaml, out):
 
     outFiles = []
     data = []
-    print yaml
     for file in files:
         outFile = os.path.join(outDir,'output'+str(iFile)+'.txt')
         pdb.readCoordinates(file,0,False, False)
-        refiner.setPars({'coarse':False,'useh':True,'dislim':5.0,'end':10000,'hardSphere':0.0,'shrinkValue':0.0, 'shrinkHValue':0.0})
+        mol = Molecule.getActive()
+        refiner.setPars({'coarse':False,'useh':True,'dislim':4.6,'end':10000,'hardSphere':0.0,'shrinkValue':0.0, 'shrinkHValue':0.0})
 
-        if 'shift' in data:
-            refiner.setForces({'repel':2.0,'dis':1.0,'dih':1.0,'irp':0.001,'shift':1.0})
-            refiner.energyLists.setRingShifts()
-        else:
-            refiner.setForces({'repel':2.0,'dis':1.0,'dih':1.0,'irp':0.001,'shift':-1.0})
+        refiner.setForces(yaml['anneal']['force'])
 
         refiner.energy()
 
@@ -66,6 +62,7 @@ def loadPDBModels(files, yaml, out):
         outFileName=getFileName(outFile)
 
         datum = [inFileName,outFileName]
+        refiner.molecule.updateVecCoords()
         distanceEnergy=refiner.molecule.getEnergyCoords().calcNOE(False,1.0)
         datum.append("%.1f" % (distanceEnergy))
         if ("shifts" in yaml):
@@ -97,8 +94,8 @@ def analyzeViols(nStruct,viols,limit):
     bound = viols[0].bound
     nViol = 0
     for viol in viols:
-        sum += viol.viol
         aViol = abs(viol.viol)
+        sum += aViol
         if aViol > max:
             max = viol.viol
         if aViol > limit:
@@ -109,6 +106,8 @@ def analyzeViols(nStruct,viols,limit):
 
 def summary(outFiles,limit=0.2):
     global outDir
+    if len(outFiles) == 0:
+        outFiles = glob.glob(os.path.join(outDir,'final','final*.txt'))
     iFile = 0
     viols = {}
     viols['Rep:'] = {}
