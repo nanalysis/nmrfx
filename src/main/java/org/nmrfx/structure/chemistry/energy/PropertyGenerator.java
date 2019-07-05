@@ -37,6 +37,7 @@ public class PropertyGenerator {
     static DecimalFormat formatter = (DecimalFormat) nFormat;
     Map<String, HydrogenBond> hBondMap = null;
     Map<String, Double> eShiftMap = null;
+    Map<String, Double> contactMap = null;
     Map<String, Double> valueMap = new HashMap<>();
 
     static {
@@ -139,7 +140,7 @@ public class PropertyGenerator {
         Atom atom = Molecule.getAtomByName(hydrogenAtom);
         //System.out.println(hydrogenAtom + " " + atom + " " + eShiftMap);
         double shift = 0.0;
-        if (eShiftMap != null) {
+        if ((atom != null) && (eShiftMap != null)) {
             Double shiftDouble = eShiftMap.get(atom.getFullName());
             if (shiftDouble != null) {
                 shift = shiftDouble;
@@ -166,12 +167,7 @@ public class PropertyGenerator {
     }
 
     public double getContactSum(String aname1) {
-        Atom atom = Molecule.getAtomByName(aname1);
-        double order = atom.getOrder();
-        double contactSum = 300.0;
-        if (order != 0.0) {
-            contactSum = 1.0 / order;
-        }
+        Double contactSum = contactMap.get(aname1);
         return contactSum;
     }
 
@@ -449,7 +445,7 @@ public class PropertyGenerator {
         HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data = new HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>>();
         offsetTable = loadCorrTable("corrtable.txt");
 
-        molecule.calcLCMB(0, true);
+        contactMap = molecule.calcContactSum(0, true);
 
         if (atomName.equals("N") || atomName.equals("H") || atomName.startsWith("HA")) {
             MolFilter hydrogenFilter = new MolFilter("*." + atomName);
@@ -488,6 +484,16 @@ public class PropertyGenerator {
 
         try {
             String polyName = polymer.getName();
+            valueMap.put("phiP", null);
+            valueMap.put("chiP", null);
+            valueMap.put("psiP", null);
+            valueMap.put("omega", null);
+            valueMap.put("phi", null);
+            valueMap.put("psi", null);
+            valueMap.put("phiS", null);
+            valueMap.put("chiS", null);
+            valueMap.put("psiS", null);
+
             if (prevResidue != null) {
                 if (prevResidue.previous != null) {
                     valueMap.put("phiP", calculatePhi(polyName, prevResidue));
@@ -536,12 +542,12 @@ public class PropertyGenerator {
 
     public boolean getResProps(Residue residue, String suffix) {
         try {
-            valueMap.put("HPHOB" + suffix, getProperty("HYDROPHOBICITY", residue));
+            valueMap.put("HPHB" + suffix, getProperty("HYDROPHOBICITY", residue));
             valueMap.put("BULK" + suffix, getProperty("BULK", residue));
-            valueMap.put("CHARGE" + suffix, getProperty("CHARGE", residue));
-            valueMap.put("PROLINE" + suffix, getProperty("PROLINE", residue));
-            valueMap.put("AROMATIC" + suffix, getProperty("AROMATIC", residue));
-            valueMap.put("DISULFIDE" + suffix, getProperty("DISULFIDE", residue));
+            valueMap.put("CHRG" + suffix, getProperty("CHARGE", residue));
+            valueMap.put("PRO" + suffix, getProperty("PROLINE", residue));
+            valueMap.put("ARO" + suffix, getProperty("AROMATIC", residue));
+            valueMap.put("DIS" + suffix, getProperty("DISULFIDE", residue));
         } catch (Exception e) {
             e.printStackTrace();
             return false;
