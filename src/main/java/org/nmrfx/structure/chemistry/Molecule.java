@@ -2390,14 +2390,18 @@ public class Molecule implements Serializable, ITree {
     }
 
     public void calcLCMB(final int iStruct) {
-        calcLCMB(iStruct, true);
+        calcLCMB(iStruct, true, false);
     }
 
     // Biophysical Journal 96(8) 3074–3081
-    public void calcLCMB(final int iStruct, boolean scaleEnds) {
+    public Map<String, Double> calcLCMB(final int iStruct, boolean scaleEnds, boolean useMap) {
         double r0 = 3.0;
         double a = 39.3;
         updateAtomArray();
+        Map<String, Double> lcmbMap = null;
+        if (useMap) {
+            lcmbMap = new HashMap<>();
+        }
         for (Atom atom1 : atoms) {
             SpatialSet sp1 = atom1.spatialSet;
             sp1.setOrder(0.0f);
@@ -2436,9 +2440,47 @@ public class Molecule implements Serializable, ITree {
                     }
                 }
                 double bFactor = 1.0e4 / fSum * endMultiplier;
+                if (lcmbMap != null) {
+                    lcmbMap.put(atom1.getFullName(), bFactor);
+                }
                 sp1.setOrder((float) bFactor);
             }
         }
+        return lcmbMap;
+    }
+
+    // Biophysical Journal 96(8) 3074–3081
+    public Map<String, Double> calcContactSum(final int iStruct, boolean useMap) {
+        double r0 = 3.0;
+        double a = 39.3;
+        updateAtomArray();
+        Map<String, Double> lcmbMap = null;
+        if (useMap) {
+            lcmbMap = new HashMap<>();
+        }
+        for (Atom atom1 : atoms) {
+            SpatialSet sp1 = atom1.spatialSet;
+            sp1.setOrder(0.0f);
+            Point3 pt1 = atom1.getPoint(iStruct);
+            double fSum = 0.0;
+            for (Atom atom2 : atoms) {
+                if (atom1 != atom2) {
+                    Point3 pt2 = atom2.getPoint(iStruct);
+                    if ((pt1 != null) && (pt2 != null)) {
+                        double r = Atom.calcDistance(pt1, pt2);
+                        if (r < 15.0) {
+                            fSum += a * Math.exp(-r / r0);
+                        }
+                    }
+                }
+            }
+            double contactSum = fSum;
+            if (lcmbMap != null) {
+                lcmbMap.put(atom1.getFullName(), contactSum);
+            }
+            sp1.setOrder((float) contactSum);
+        }
+        return lcmbMap;
     }
 
     public void calcDistanceInputMatrix(final int iStruct, double distLim, String filename) {
