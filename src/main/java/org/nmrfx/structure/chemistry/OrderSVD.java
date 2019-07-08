@@ -30,12 +30,17 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.EigenDecomposition;
-import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 
 public class OrderSVD {
+    
+    static RealMatrix AR;
+    static ArrayRealVector bVec;
+    static RealVector xVec;
+    static RealMatrix SR;
+    static RealMatrix Seig;
 
     /**
      * This function calculates residual dipolar couplings. Based on orderten_svd_dipole.c
@@ -66,7 +71,7 @@ public class OrderSVD {
             iRow++;
         }
         
-        RealMatrix AR = new Array2DRowRealMatrix(A);
+        AR = new Array2DRowRealMatrix(A);
 //        System.out.println("A = " + AR.toString());
         // perform SVD on the matrix A
         SingularValueDecomposition svd = new SingularValueDecomposition(AR);
@@ -75,7 +80,7 @@ public class OrderSVD {
         for (int i=0; i<dcNorm.length; i++) {
             dcNorm[i] = dc[i]/t[i];
         }
-        ArrayRealVector bVec = new ArrayRealVector(dcNorm);
+        bVec = new ArrayRealVector(dcNorm);
         int Slen = 3;
         double[][] S = new double[Slen][Slen];
         Random random = new Random();
@@ -84,7 +89,7 @@ public class OrderSVD {
         while (true) {
             System.out.println("cycle " + cycle);
             // calculate the x vector for which |Ax - b| is minimized
-            RealVector xVec = svd.getSolver().solve(bVec);
+            xVec = svd.getSolver().solve(bVec);
             // construct the order matrix S from the x vector and diagonalize it
             S[0][0] = -xVec.getEntry(0) - xVec.getEntry(1);
             S[0][1] = xVec.getEntry(2);
@@ -98,9 +103,9 @@ public class OrderSVD {
 
             if ((S[0][0] >= -0.5 && S[0][0] <= 1.0) && (S[1][1] >= -0.5 && S[1][1] <= 1.0) && (S[2][2] >= -0.5 && S[2][2] <= 1.0) && 
                 (S[1][0] >= -0.75 && S[1][0] <= 0.75) && (S[2][0] >= -0.75 && S[2][0] <= 0.75) && (S[2][1] >= -0.75 && S[2][1] <= 0.75)) {
-                RealMatrix SR = new Array2DRowRealMatrix(S);
+                SR = new Array2DRowRealMatrix(S);
                 EigenDecomposition eig = new EigenDecomposition(SR);
-                RealMatrix Seig = eig.getD();
+                Seig = eig.getD();
                 if ((Seig.getEntry(0, 0) >= -0.5 && Seig.getEntry(0, 0) <= 1.0) && (Seig.getEntry(1, 1) >= -0.5 && Seig.getEntry(1, 1) <= 1.0) && 
                     (Seig.getEntry(2, 2) >= -0.5 && Seig.getEntry(2, 2) <= 1.0)) {
                     System.out.println("Converged after " + cycle + " cycles");
@@ -182,5 +187,33 @@ public class OrderSVD {
         info.add(4, atoms);
         
         return info;
+    }
+    
+    public static RealMatrix getAMatrix() {
+        return AR;
+    }
+    
+    public static ArrayRealVector getBVector() {
+        return bVec;
+    }
+    
+    public static RealVector getXVector() {
+        return xVec;
+    }
+    
+    public static RealMatrix getSMatrix() {
+        return SR;
+    }
+    
+    public static RealMatrix getSDiag() {
+        return Seig;
+    }
+    
+    public static double getSzz() {
+        return Seig.getEntry(2, 2);
+    }
+    
+    public static double getEta() {
+        return (Seig.getEntry(1, 1) - Seig.getEntry(0, 0))/Seig.getEntry(2, 2);
     }
 }
