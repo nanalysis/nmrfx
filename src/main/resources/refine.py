@@ -6,6 +6,7 @@ import seqalgs
 import re
 import xplor
 import molio
+import os
 
 from org.nmrfx.structure.chemistry.energy import EnergyCoords
 from org.nmrfx.structure.chemistry import Molecule
@@ -1287,43 +1288,48 @@ class refine:
 # 283  RCYT  H3'   283  RCYT  H5"          3.30    1.00E+00
     def readCYANADistances(self, fileNames, molName, keepSetting=None):
         for fileName in fileNames:
-            fIn = open(fileName,'r')
-            mode = 'lower' if fileName.endswith('.lol') else 'upper'
-            with open(fileName,'r') as fIn:
-                for line in fIn:
-                    line = line.strip()
-                    if len(line) == 0:
-                        continue
-                    if line[0] == '#':
-                        continue
-                    fields = line.split()
-                    if len(fields) == 7:
-                        res1, _, atom1, res2, _, atom2, distance = fields
-                    elif len(fields) == 8:
-                        res1, _, atom1, res2, _, atom2, distance, weight = fields
-                    else:
-                        raise ValueError("Incorrect number of fields " + fields)
-                  
-                    distance = float(distance)
-                    # FIXME : Sometimes molecule name should be polymer name, or vice versa. ('A' instead of '2MQN')
-                    # During NEF testing, the full name of atom was prefixed using the polymer name instead of the 
-                    # molecule name. Thus, it required the quick fix below. Same had to be done in 'readCYANAAngles(..)' 
-		    #molName = 'A' # Teddy
-                    fullAtom1 = molName+':'+res1+'.'+atom1
-                    fullAtom2 = molName+':'+res2+'.'+atom2
-                    fullAtom1 = fullAtom1.replace('"',"''")
-                    fullAtom2 = fullAtom2.replace('"',"''")
-                    atomPair = ' '.join([fullAtom1,fullAtom2]) if fullAtom1 < fullAtom2 else ' '.join([fullAtom2, fullAtom1])
-                    if distance != 0.0:
-                        if atomPair not in self.constraints:
-                            constraint = Constraint(atomPair, distance, mode, setting=keepSetting)
-                            self.constraints[atomPair] = constraint
+            if os.path.exists(fileName):
+                mode = 'lower' if fileName.endswith('.lol') else 'upper'
+                with open(fileName,'r') as fIn:
+                    for lineNum, line in enumerate(fIn):
+                        line = line.strip()
+                        if len(line) == 0:
+                            continue
+                        if line[0] == '#':
+                            continue
+                        fields = line.split()
+                        nFields = len(fields)
+                        if nFields == 7:
+                            res1, _, atom1, res2, _, atom2, distance = fields
+                        elif nFields == 8:
+                            res1, _, atom1, res2, _, atom2, distance, weight = fields
+                        elif nFields > 8:
+                            res1, _, atom1, res2, _, atom2, distance, weight = fields[:8]
                         else:
-                            self.constraints[atomPair].addBound(distance, mode)
-                    else:
-                        if mode == 'upper':
-                            Constraint.lastViewed.addPair(atomPair)
-                            self.constraints[atomPair] = Constraint.lastViewed
+                            errMsg = "Invalid number of fields: %d [file -> '%s']" % (len(fields), fIn.name)
+                            errMsg += "\n\tLine : (%d) '%s'" % (lineNum+1, line)
+                            raise ValueError(errMsg)
+                  
+                        distance = float(distance)
+                        # FIXME : Sometimes molecule name should be polymer name, or vice versa. ('A' instead of '2MQN')
+                        # During NEF testing, the full name of atom was prefixed using the polymer name instead of the 
+                        # molecule name. Thus, it required the quick fix below. Same had to be done in 'readCYANAAngles(..)' 
+	    	        #molName = 'A'
+                        fullAtom1 = molName+':'+res1+'.'+atom1
+                        fullAtom2 = molName+':'+res2+'.'+atom2
+                        fullAtom1 = fullAtom1.replace('"',"''")
+                        fullAtom2 = fullAtom2.replace('"',"''")
+                        atomPair = ' '.join([fullAtom1,fullAtom2]) if fullAtom1 < fullAtom2 else ' '.join([fullAtom2, fullAtom1])
+                        if distance != 0.0:
+                            if atomPair not in self.constraints:
+                                constraint = Constraint(atomPair, distance, mode, setting=keepSetting)
+                                self.constraints[atomPair] = constraint
+                            else:
+                                self.constraints[atomPair].addBound(distance, mode)
+                        else:
+                            if mode == 'upper':
+                                Constraint.lastViewed.addPair(atomPair)
+                                self.constraints[atomPair] = Constraint.lastViewed
 
 
 #ZETA:  C3'(i-1)-O3'(i-1)-P-O5'   -73
@@ -1399,21 +1405,31 @@ class refine:
         angleMap['CHI4','ARG']= ["CD","NE","CZ","NH1"]
 
         fIn = open(fileName,'r')
-        for line in fIn:
+        for lineNum, line in enumerate(fIn):
            line = line.strip()
            if len(line) == 0:
                continue
            if line[0] == '#':
                continue
-           (res,resName, angle,lower,upper) = line.split()
+           splitLines = line.split()
+           nFields = len(splitLines)
+           weight = None
+           if nFields == 5:
+               (res, resName, angle, lower, upper) = splitLines
+           elif nFields == 6:
+               (res, resName, angle, lower, upper, weight) = splitLines
+           else:
+               errorString = "Number of fields in line (%d) '%s' could not be processed. [file -> '%s']" % (lineNum+1, line, fIn.name)
+               fIn.close()
+               raise ValueError(errorString) 
            if angle in angleMap:
                atoms = angleMap[angle]
            elif (angle,resName) in angleMap:
                atoms = angleMap[angle,resName]
            else:
-               print "no such angle: ", angle,resName
-               exit()
+               raise ValueError("No such angle: %s, %s in line (%d) '%s'" % (angle, resName, lineNum+1, line))
            res = int(res)
+
            fullAtoms = []
            for atom in atoms:
                if ':' in atom:
@@ -1426,7 +1442,7 @@ class refine:
                fullAtom = molName + ':' + str(res + dRes) + '.' + atom
                fullAtom = fullAtom.replace('"',"''")
                fullAtoms.append(fullAtom)
-           scale = 1.0
+           scale = float(weight) if weight else 1.0
            lower = float(lower)
            upper = float(upper)
            if lower == upper:
@@ -1440,9 +1456,10 @@ class refine:
 	   except IllegalArgumentException as IAE:
                atoms = ' -> '.join(map(lambda x: x.split(':')[-1], fullAtoms))
 	       err = IAE.getMessage()
-	       errMsg = "\nPlease evaluate the dihedral constraints for the following boundary information [{0}]:".format(fileName)
-	       errMsg += "\n\t- resNum.resName: {}".format(atoms)
-	       errMsg += "\n\nReason for Error: {}".format(err)
+               errMsg = "\nPlease evaluate dihedral constraints for the following boundary information [file -> '%s']" % (fIn.name)
+               errMsg += "\n\tLine : (%d) '%s'" % (lineNum+1, line)
+	       errMsg += "\n\tAtoms : %s\n\t(Note : 'x.y' == x: residue num, y: residue name.)" % (atoms)
+	       errMsg += "\n\nJava Error Msg : %s" % (err)
 	       raise ValueError(errMsg)
 	   except NullPointerException:
                atoms = ' -> '.join(map(lambda x: x.split(':')[-1], fullAtoms))
@@ -1869,7 +1886,9 @@ class refine:
         for file in self.xplorDistanceFiles.keys():
             xplorConstraints = self.readXPLORDistanceConstraints(file, keepSetting = self.xplorDistanceFiles[file])
 
+        # FIXME : should return the name of the file in which an error is found!
         self.addDistanceConstraints()
+        
 
     def addDistanceConstraints(self):
         alreadyAdded = []
@@ -1898,18 +1917,19 @@ class refine:
 	        errMsg += " The upper bound should be greater than zero."
 	        errMsg += " These values were calculate from the constraints provided in the constraint file"
 	        errMsg += " for the atom pair seen above."
-		raise AssertionError(errMsg)
-            self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
+                raise AssertionError(errMsg)
+            try:
+                self.energyLists.addDistanceConstraint(atomNames1, atomNames2, lower, upper)
+            except IllegalArgumentException as IAE:
+                errMsg = "Illegal Argument received." 
+                errMsg += "\nJava Error Msg : %s" % (IAE.getMessage())
+                raise ValueError(errMsg)
 
     def predictRNAShifts(self, typeRCDist="dist"):
         #XXX: Need to complete docstring
         """Predict chemical shifts 
 
         # Returns:
-
-
-
-
         shifts (list);
         """
         from org.nmrfx.structure.chemistry.predict import Predictor
