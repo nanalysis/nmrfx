@@ -23,6 +23,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import org.apache.commons.lang3.StringUtils;
@@ -36,11 +38,38 @@ import org.apache.commons.math3.linear.SingularValueDecomposition;
 
 public class OrderSVD {
     
-    static RealMatrix AR;
-    static ArrayRealVector bVec;
-    static RealVector xVec;
-    static RealMatrix SR;
-    static RealMatrix Seig;
+    static double mu0 = 4.0e-7 * Math.PI;
+    static double hbar = 1.054e-34;
+    static HashMap<String, Double> maxRDCDict = new HashMap<>(); 
+    static HashMap gammaIDict = new HashMap();
+    static HashMap gammaSDict = new HashMap();
+    
+    static {maxRDCDict.put("HN", 24350.0);
+        maxRDCDict.put("HC", -60400.0);
+        maxRDCDict.put("HH", -240200.0);
+        maxRDCDict.put("CN", 6125.0);
+        maxRDCDict.put("CC", -15200.0);
+        maxRDCDict.put("NH", 24350.0);
+        maxRDCDict.put("CH", -60400.0);
+        maxRDCDict.put("NC", 6125.0);
+        gammaIDict.put("N", -2.71e7);
+        gammaIDict.put("C", 6.73e7);
+        gammaIDict.put("H", 2.68e8);
+        gammaSDict.put("N", -2.71e7);
+        gammaSDict.put("C", 6.73e7);
+        gammaSDict.put("H", 2.68e8);}
+    
+    
+    RealMatrix AR;
+    ArrayRealVector bVec;
+    RealVector xVec;
+    RealMatrix SR;
+    RealMatrix Seig;
+    double Q;
+    double[] maxRDCs;
+    RealVector dcDiffs;
+    double[] bCalc;
+    double[] bCalcNorm;
 
     /**
      * This function calculates residual dipolar couplings. Based on orderten_svd_dipole.c
@@ -189,31 +218,192 @@ public class OrderSVD {
         return info;
     }
     
-    public static RealMatrix getAMatrix() {
+    public RealMatrix getAMatrix() {
         return AR;
     }
     
-    public static ArrayRealVector getBVector() {
+    public ArrayRealVector getBVector() {
         return bVec;
     }
     
-    public static RealVector getXVector() {
+    public RealVector getXVector() {
         return xVec;
     }
     
-    public static RealMatrix getSMatrix() {
+    public RealMatrix getSMatrix() {
         return SR;
     }
     
-    public static RealMatrix getSDiag() {
+    public RealMatrix getSDiag() {
         return Seig;
     }
     
-    public static double getSzz() {
+    public double getSzz() {
         return Seig.getEntry(2, 2);
     }
     
-    public static double getEta() {
+    public double calcEta() {
         return (Seig.getEntry(1, 1) - Seig.getEntry(0, 0))/Seig.getEntry(2, 2);
     }
+    
+    public double getQ() {
+        return Q;
+    }
+    
+    public void setQ(double q) {
+        Q = q;
+    }
+    
+    public HashMap getMaxRDCDict() {
+        return maxRDCDict;
+    }
+    
+    public double[] getMaxRDCs() {
+        return maxRDCs;
+    }
+    
+    public void setMaxRDCs(double[] maxRDC) {
+        maxRDCs = maxRDC;
+    }
+     
+    public RealVector calcBVectorNorm() {
+        return AR.operate(xVec);
+    }
+    
+    public void setCalcBVectorNorm(RealVector calcBVecNorm) {
+        bCalcNorm = calcBVecNorm.toArray();
+    }
+    
+    public RealVector calcBVector() {
+        RealVector calcBVecNorm = calcBVectorNorm();
+        RealVector tValsR = new ArrayRealVector(maxRDCs);
+        RealVector calcBVec = calcBVecNorm.ebeMultiply(tValsR);
+        return calcBVec;
+    }
+    
+    public void setCalcBVector(RealVector calcBVec) {
+        bCalcNorm = calcBVec.toArray();
+    }
+    
+    public RealVector getRDCDiffs() {
+        return dcDiffs; 
+    }
+    
+    public void setRDCDiffs(RealVector rdcDiffs) {
+        dcDiffs = rdcDiffs; 
+    }
+    
+    public double[] getCalcBVectorNorm() {
+        return bCalcNorm;
+    }
+    
+    public double[] getCalcBVector() {
+        return bCalc;
+    }
+    
+    public static HashMap calcVector(String atomName1, String atomName2, boolean calcTVal, boolean scale) {
+      
+        HashMap atomInfo = new HashMap();
+        
+        Atom atom1 = Molecule.getAtomByName(atomName1);
+        Atom atom2 = Molecule.getAtomByName(atomName2);
+        if (atom1 != null & atom2 != null) {
+            Point3 v1 = atom1.getPoint();
+            Point3 v2 = atom2.getPoint();
+            Vector3D vector = v1.subtract(v2);
+            String atom1Full = atom1.getName();//.split(":")[1].split("\\.")[1];
+            String atom2Full = atom2.getName();//.split(":")[1].split("\\.")[1];
+            atomInfo.put("Atom1", atom1Full);
+            atomInfo.put("Atom2", atom2Full);
+            atomInfo.put("Vector", vector);
+            String a1 = atom1Full.substring(0,1);
+            String a2 = atom2Full.substring(0,1);
+            Double newFactor = maxRDCDict.get(a1+a2);
+            if (calcTVal) {
+                Double r = Vector3D.distance(v1, v2)*1e-10;
+                Double preFactor = -(mu0*hbar)/(4*(Math.PI*Math.PI));
+                Double gammaI = (Double) gammaIDict.get(a1);
+                Double gammaS = (Double) gammaSDict.get(a2);
+                newFactor = preFactor*((gammaI*gammaS)/(r*r*r));
+//                System.out.print("calcTVal True new factor = " + newFactor + " ");
+                if (scale) {
+                    Double gammaH = (Double) gammaIDict.get("H");
+                    Double gammaN = (Double) gammaSDict.get("N");
+                    Double scaleHN = (gammaH*gammaN)/((1.0e-10)*(1.0e-10)*(1.0e-10));
+                    newFactor = 24350.0*(gammaI*gammaS)/((r*r*r)*scaleHN);
+                }
+//                maxRDCDict.put(a1+a2, newFactor);
+//                maxRDCDict.put(a2+a1, newFactor);
+            } 
+//            System.out.println(a1+a2+" new factor = " + newFactor);
+            atomInfo.put("maxRDC", newFactor);//atomInfo.put("maxRDC", maxRDCDict.get(a1+a2));
+        }
+//        System.out.println("atomInfo = " + atomInfo);
+        return atomInfo;
+    }
+    
+    
+    public static void calcRDC(String[][] atomPairs, double[] rdc, double[] errors, boolean calcTVal, boolean scale) {
+        List<HashMap> infoMaps = new ArrayList<>();
+        List<Double> rdc1 = new ArrayList<>();
+        List<Double> errors1 = new ArrayList<>();
+        for (int i=0; i<atomPairs.length; i++) {
+            HashMap info = calcVector(atomPairs[i][0], atomPairs[i][1], calcTVal, scale);
+            if (info.isEmpty()) {
+                continue;
+            }
+            infoMaps.add(info);
+            rdc1.add(rdc[i]);
+            errors1.add(errors[i]);
+        }
+        ArrayList<Vector3D> vectors = new ArrayList<>();
+        for (int i=0; i<infoMaps.size(); i++) {
+            vectors.add((Vector3D) infoMaps.get(i).get("Vector"));
+        }
+        double[] maxRDC = new double[infoMaps.size()];
+        for (int i=0; i<maxRDC.length; i++) {
+            maxRDC[i] = (Double) infoMaps.get(i).get("maxRDC");
+        }
+        
+        double[] rdc1a = new double[rdc1.size()];
+        double[] errors1a = new double[errors1.size()];
+        for (int i=0; i<rdc1a.length; i++) {
+            rdc1a[i] = rdc1.get(i);
+            errors1a[i] = errors1.get(i);
+        }
+        
+     
+        if (!vectors.isEmpty()) {
+            OrderSVD orderSVD = new OrderSVD(vectors, rdc1a, maxRDC, errors1a);
+        
+            orderSVD.setMaxRDCs(maxRDC);
+
+            double[] b = orderSVD.getBVector().toArray();
+            RealVector bCalcVecNorm = orderSVD.calcBVectorNorm();
+            orderSVD.setCalcBVectorNorm(bCalcVecNorm);
+            RealVector bCalcVec = orderSVD.calcBVector();
+            orderSVD.setCalcBVector(bCalcVec);
+
+            RealVector rdcR = new ArrayRealVector(rdc1a);
+            RealVector dcSq = rdcR.ebeMultiply(rdcR);
+            RealVector dcDiff = bCalcVec.subtract(rdcR);
+            orderSVD.setRDCDiffs(dcDiff);
+
+            RealVector dcDiffs1 = orderSVD.getRDCDiffs();
+            RealVector dcDiffSq = dcDiffs1.ebeMultiply(dcDiffs1); 
+            double dcDiffSqSum = 0;
+            for (int i=0; i<dcDiffSq.getDimension(); i++) {
+                dcDiffSqSum += dcDiffSq.getEntry(i);
+            }
+            double dcSqSum = 0;
+            for (int i=0; i<dcSq.getDimension(); i++) {
+                dcSqSum += dcSq.getEntry(i);
+            }
+
+            double q = Math.sqrt(dcDiffSqSum/dcDiffs1.getDimension())/Math.sqrt(dcSqSum/rdc1a.length);
+            orderSVD.setQ(q);
+            System.out.println("Q = " + String.valueOf(orderSVD.getQ()));
+        }
+    }
+    
 }
