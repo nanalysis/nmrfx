@@ -68,8 +68,11 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
 
             if (eCoords.fixed != null) {
                 if (isBond) {
+                    eCoords.setFixed(j, i, true);
                     eCoords.setFixed(i, j, true);
                 }
+            } else {
+                System.out.println("null fixed");
             }
             nPairs = iPair + 1;
         }
