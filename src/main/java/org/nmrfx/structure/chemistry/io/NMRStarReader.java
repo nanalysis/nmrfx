@@ -415,6 +415,17 @@ public class NMRStarReader {
         }
     }
 
+    public void buildRDCConstraints() throws ParseException {
+        Iterator iter = star3.getSaveFrames().values().iterator();
+        while (iter.hasNext()) {
+            Saveframe saveframe = (Saveframe) iter.next();
+            if (saveframe.getCategoryName().equals("RDCs")) {
+                System.err.println("process RDC constraints " + saveframe.getName());
+                processRDCConstraints(saveframe);
+            }
+        }
+    }
+
     public void buildEntity(Molecule molecule, Map tagMap) throws ParseException {
         String entityAssemblyIDString = STAR3.getTokenFromMap(tagMap, "ID");
         String entityIDString = STAR3.getTokenFromMap(tagMap, "Entity_ID");
@@ -1185,6 +1196,38 @@ public class NMRStarReader {
         }
     }
 
+    public void processRDCConstraints(Saveframe saveframe) throws ParseException {
+        Loop loop = saveframe.getLoop("_RDC");
+        if (loop == null) {
+            throw new ParseException("No \"_RDC\" loop");
+        }
+        //saveframe.getTagsIgnoreMissing(tagCategory);
+        List<String>[] entityAssemblyIDColumns = new ArrayList[2];
+        List<String>[] entityIDColumns = new ArrayList[2];
+        List<String>[] compIdxIDColumns = new ArrayList[2];
+        List<String>[] atomColumns = new ArrayList[2];
+        List<String>[] resonanceColumns = new ArrayList[2];
+        for (int i = 1; i <= 2; i++) {
+            entityAssemblyIDColumns[i - 1] = loop.getColumnAsList("Entity_assembly_ID_" + i);
+            entityIDColumns[i - 1] = loop.getColumnAsList("Entity_ID_" + i);
+            compIdxIDColumns[i - 1] = loop.getColumnAsList("Comp_index_ID_" + i);
+            atomColumns[i - 1] = loop.getColumnAsList("Atom_ID_" + i);
+            resonanceColumns[i - 1] = loop.getColumnAsList("Resonance_ID_" + i);
+        }
+        List<Double> valColumn = loop.getColumnAsDoubleList("Val", null);
+        List<Double> errColumn = loop.getColumnAsDoubleList("Val_err", null);
+        List<Double> lengthColumn = loop.getColumnAsDoubleList("Val_bond_length", null);
+        RDCConstraintSet rdcSet = RDCConstraintSet.addSet(saveframe.getName().substring(5));
+        for (int i = 0; i < entityAssemblyIDColumns[0].size(); i++) {
+            SpatialSet[] spSets = new SpatialSet[4];
+            for (int iAtom = 0; iAtom < 2; iAtom++) {
+                spSets[iAtom] = getSpatialSet(entityAssemblyIDColumns[iAtom], entityIDColumns[iAtom], compIdxIDColumns[iAtom], atomColumns[iAtom], resonanceColumns[iAtom], i).getFirstSet();
+            }
+            RDC aCon = new RDC(rdcSet, spSets[0], spSets[1], valColumn.get(i), errColumn.get(i));
+            rdcSet.add(aCon);
+        }
+    }
+
     public void processGenDistConstraints(Saveframe saveframe) throws ParseException {
         Loop loop = saveframe.getLoop("_Gen_dist_constraint");
         if (loop == null) {
@@ -1406,6 +1449,8 @@ public class NMRStarReader {
             buildGenDistConstraints();
             System.err.println("process angle constraints");
             buildDihedralConstraints();
+            System.err.println("process rdc constraints");
+            buildRDCConstraints();
             System.err.println("process runabout");
             buildRunAbout();
             System.err.println("clean resonances");
