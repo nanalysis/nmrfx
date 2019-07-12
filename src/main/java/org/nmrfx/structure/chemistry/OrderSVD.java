@@ -76,10 +76,10 @@ public class OrderSVD {
      * 
      * @param vectors List of bond vector coordinates
      * @param dc List of dipolar couplings
-     * @param t List of maximum static dipolar coupling values (r^(-3))
+     * @param maxRDC List of maximum static dipolar coupling values (r^(-3))
      * @param error List of error values
      */
-    public OrderSVD(ArrayList<Vector3D> vectors, double[] dc, double[] t, double[] error) {
+    public OrderSVD(ArrayList<Vector3D> vectors, double[] dc, double[] maxRDC, double[] error) {
         int nVectors = vectors.size();
         double[][] A = new double[nVectors][5];
         int iRow = 0;
@@ -107,7 +107,7 @@ public class OrderSVD {
         // construct the b vector, which contains the normalized dipolar couplings 
         double[] dcNorm = new double[dc.length];
         for (int i=0; i<dcNorm.length; i++) {
-            dcNorm[i] = dc[i]/t[i];
+            dcNorm[i] = dc[i]/maxRDC[i];
         }
         bVec = new ArrayRealVector(dcNorm);
         int Slen = 3;
@@ -172,9 +172,11 @@ public class OrderSVD {
     public static List readInputFile(String file) {
         ArrayList<Vector3D> vectors = new ArrayList<>();
         ArrayList<Double> dc = new ArrayList<>();
-        ArrayList<Double> t = new ArrayList<>();
+        ArrayList<Double> maxRDC = new ArrayList<>();
         ArrayList<Double> errors = new ArrayList<>();
         ArrayList<String> atoms = new ArrayList<>();
+        ArrayList<Double[]> a1Coords = new ArrayList<>();
+        ArrayList<Double[]> a2Coords = new ArrayList<>();
         
         try {
             BufferedReader bf = new BufferedReader(new FileReader(file));
@@ -193,14 +195,18 @@ public class OrderSVD {
                 }
                 String[] sfields = sline.split("\\s+", -1);
                 if (sfields.length > 7 && StringUtils.isNumeric(sfields[7])) {
-                    double X = Double.parseDouble(sfields[0]) - Double.parseDouble(sfields[3]);
-                    double Y = Double.parseDouble(sfields[1]) - Double.parseDouble(sfields[4]);
-                    double Z = Double.parseDouble(sfields[2]) - Double.parseDouble(sfields[5]);
-                    vectors.add(new Vector3D(X, Y, Z));
+                    Point3 v1 = new Point3(Double.parseDouble(sfields[0]), Double.parseDouble(sfields[1]), Double.parseDouble(sfields[2]));
+                    Point3 v2 = new Point3(Double.parseDouble(sfields[3]), Double.parseDouble(sfields[4]), Double.parseDouble(sfields[5]));
+                    Vector3D vector = v1.subtract(v2);
+                    vectors.add(vector);
                     dc.add(Double.parseDouble(sfields[6]));
-                    t.add(Double.parseDouble(sfields[7]));
+                    maxRDC.add(Double.parseDouble(sfields[7]));
                     errors.add(Double.parseDouble(sfields[8]));
                     atoms.add(sfields[10]);
+                    Double[] a1XYZ = {Double.parseDouble(sfields[0]), Double.parseDouble(sfields[1]), Double.parseDouble(sfields[2])};
+                    Double[] a2XYZ = {Double.parseDouble(sfields[3]), Double.parseDouble(sfields[4]), Double.parseDouble(sfields[5])};
+                    a1Coords.add(a1XYZ);
+                    a2Coords.add(a2XYZ);
                 }
             }
         } catch (IOException ioe) {
@@ -211,9 +217,11 @@ public class OrderSVD {
         List info = new ArrayList<>();
         info.add(0, vectors);
         info.add(1, dc);
-        info.add(2, t);
+        info.add(2, maxRDC);
         info.add(3, errors);
         info.add(4, atoms);
+        info.add(5, a1Coords);
+        info.add(6, a2Coords);
         
         return info;
     }
@@ -301,61 +309,95 @@ public class OrderSVD {
         return bCalc;
     }
     
-    public static HashMap calcVector(String atomName1, String atomName2, boolean calcTVal, boolean scale) {
+    public static HashMap calcVector(String atomName1, String atomName2, boolean calcMaxRDC, boolean scale, double[]... xyzCoords) {
       
         HashMap atomInfo = new HashMap();
         
-        Atom atom1 = Molecule.getAtomByName(atomName1);
-        Atom atom2 = Molecule.getAtomByName(atomName2);
-        if (atom1 != null & atom2 != null) {
-            Point3 v1 = atom1.getPoint();
-            Point3 v2 = atom2.getPoint();
-            Vector3D vector = v1.subtract(v2);
-            String atom1Full = atom1.getName();//.split(":")[1].split("\\.")[1];
-            String atom2Full = atom2.getName();//.split(":")[1].split("\\.")[1];
-            atomInfo.put("Atom1", atom1Full);
-            atomInfo.put("Atom2", atom2Full);
+        Point3 v1 = new Point3(0.0, 0.0, 0.0);
+        Point3 v2 = new Point3(0.0, 0.0, 0.0);
+        String atom1Full = atomName1;
+        String atom2Full = atomName2;
+        if (xyzCoords.length > 0) {
+            v1 = new Point3(xyzCoords[0][0], xyzCoords[0][1], xyzCoords[0][2]);
+            v2 = new Point3(xyzCoords[1][0], xyzCoords[1][1], xyzCoords[1][2]);
+        } else {
+            Atom atom1 = Molecule.getAtomByName(atomName1);
+            Atom atom2 = Molecule.getAtomByName(atomName2);
+            if (atom1 != null & atom2 != null) {
+                v1 = atom1.getPoint();
+                v2 = atom2.getPoint();
+                atom1Full = atom1.getName();
+                atom2Full = atom2.getName();
+            }
+        }
+ 
+        Vector3D vector = v1.subtract(v2);
+        Double r = Vector3D.distance(v1, v2)*1e-10;
+        atomInfo.put("Atom1", atom1Full);
+        atomInfo.put("Atom2", atom2Full);
+        if (r != 0.0) {
             atomInfo.put("Vector", vector);
-            String a1 = atom1Full.substring(0,1);
-            String a2 = atom2Full.substring(0,1);
-            Double newFactor = maxRDCDict.get(a1+a2);
-            if (calcTVal) {
-                Double r = Vector3D.distance(v1, v2)*1e-10;
-                Double preFactor = -(mu0*hbar)/(4*(Math.PI*Math.PI));
-                Double gammaI = (Double) gammaIDict.get(a1);
-                Double gammaS = (Double) gammaSDict.get(a2);
+        }
+        String aType1 = atom1Full.substring(0,1);
+        String aType2 = atom2Full.substring(0,1);
+        Double newFactor = 1.0;
+        if (maxRDCDict.containsKey(aType1+aType2)) {
+            newFactor = maxRDCDict.get(aType1+aType2);
+        } 
+        if (calcMaxRDC) {
+            Double preFactor = -(mu0*hbar)/(4*(Math.PI*Math.PI));
+            Double gammaI = (Double) gammaIDict.get(aType1);
+            Double gammaS = (Double) gammaSDict.get(aType2);
+            if (gammaI != null & gammaS != null & r != 0.0) {
                 newFactor = preFactor*((gammaI*gammaS)/(r*r*r));
-//                System.out.print("calcTVal True new factor = " + newFactor + " ");
-                if (scale) {
-                    Double gammaH = (Double) gammaIDict.get("H");
-                    Double gammaN = (Double) gammaSDict.get("N");
-                    Double scaleHN = (gammaH*gammaN)/((1.0e-10)*(1.0e-10)*(1.0e-10));
+            }
+            if (scale) {
+                Double gammaH = (Double) gammaIDict.get("H");
+                Double gammaN = (Double) gammaSDict.get("N");
+                Double scaleHN = (gammaH*gammaN)/((1.0e-10)*(1.0e-10)*(1.0e-10));
+                if (gammaI != null & gammaS != null & r != 0.0) {
                     newFactor = 24350.0*(gammaI*gammaS)/((r*r*r)*scaleHN);
                 }
-//                maxRDCDict.put(a1+a2, newFactor);
-//                maxRDCDict.put(a2+a1, newFactor);
-            } 
-//            System.out.println(a1+a2+" new factor = " + newFactor);
-            atomInfo.put("maxRDC", newFactor);//atomInfo.put("maxRDC", maxRDCDict.get(a1+a2));
-        }
+            }
+        } 
+        atomInfo.put("maxRDC", newFactor);
+
 //        System.out.println("atomInfo = " + atomInfo);
-        return atomInfo;
+    return atomInfo;
     }
     
-    
-    public static void calcRDC(String[][] atomPairs, double[] rdc, double[] errors, boolean calcTVal, boolean scale) {
+    public static void calcRDC(List<List<String>> atomPairs, List<Double> rdc, List<Double> errors, boolean calcMaxRDC, boolean scale, double[][]... xyzCoords) {
         List<HashMap> infoMaps = new ArrayList<>();
         List<Double> rdc1 = new ArrayList<>();
         List<Double> errors1 = new ArrayList<>();
-        for (int i=0; i<atomPairs.length; i++) {
-            HashMap info = calcVector(atomPairs[i][0], atomPairs[i][1], calcTVal, scale);
+        for (int i=0; i<atomPairs.size(); i++) {
+            HashMap info = new HashMap();
+            String atom1 = atomPairs.get(i).get(0);
+            String atom2 = atomPairs.get(i).get(1);
+            try {
+                info = calcVector(atom1, atom2, calcMaxRDC, scale);
+            } catch (IllegalArgumentException iae) {
+                if (i == 0) {
+                    System.out.println("No Molecule object found. Using XYZ coordinates for vector calculation.");
+                }
+                if (xyzCoords.length > 0) {
+                    info = calcVector(atom1, atom2, calcMaxRDC, scale, xyzCoords[i]);
+                } else {
+                    System.out.println("No XYZ coordinates provided. Stopping calculation.");
+                    break;
+                }
+            }
             if (info.isEmpty()) {
                 continue;
             }
+            Vector3D vec = (Vector3D) info.get("Vector");
+            if (vec == null) {
+                continue;
+            }
             infoMaps.add(info);
-            rdc1.add(rdc[i]);
-            errors1.add(errors[i]);
-        }
+            rdc1.add(rdc.get(i));
+            errors1.add(errors.get(i));
+        } 
         ArrayList<Vector3D> vectors = new ArrayList<>();
         for (int i=0; i<infoMaps.size(); i++) {
             vectors.add((Vector3D) infoMaps.get(i).get("Vector"));
@@ -372,7 +414,7 @@ public class OrderSVD {
             errors1a[i] = errors1.get(i);
         }
         
-     
+        
         if (!vectors.isEmpty()) {
             OrderSVD orderSVD = new OrderSVD(vectors, rdc1a, maxRDC, errors1a);
         
