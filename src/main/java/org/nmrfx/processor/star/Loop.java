@@ -222,6 +222,24 @@ public class Loop {
         return column;
     }
 
+    public List<Double> getColumnAsDoubleList(String tag, Double defaultValue) throws ParseException {
+        ArrayList<String> column = loopTags.get(tag);
+        List<Double> values;
+        if (column == null) {
+            values = Collections.nCopies(nRows, (Double) null);
+        } else {
+            values = new ArrayList<>();
+            for (String s : column) {
+                if (s.equals(".")) {
+                    values.add(defaultValue);
+                } else {
+                    values.add(Double.parseDouble(s));
+                }
+            }
+        }
+        return values;
+    }
+
     public List<String> getColumnAsListIfExists(String tag) throws ParseException {
         ArrayList<String> column = loopTags.get(tag);
         return column;
