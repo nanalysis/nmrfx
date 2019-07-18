@@ -66,6 +66,10 @@ public class STAR3 {
         usePrevious = false;
     }
 
+    public int getLastLine() {
+        return lineReader.getLineNumber();
+    }
+
     public Saveframe getSaveframe(String saveFrameName) throws ParseException {
         Saveframe saveframe = (Saveframe) getSaveFrames().get(saveFrameName);
         return saveframe;
@@ -279,39 +283,72 @@ public class STAR3 {
 
     class STARTokenizer {
 
-        String regex = "\"([^\"]|\"[^ \t])*\"|'([^']|'[^ \t])*'|[^ \t]+";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = null;
+        String s;
+        int pos;
+        int length = 0;
 
-        void initialize(final String s) {
-//            this.s = s;
-//            currentPosition = 0;
-//            if (s == null) {
-//                stringLength = 0;
-//            } else {
-//                stringLength = s.length();
-//            }
-            matcher = pattern.matcher(s);
+        void initialize(final String newStr) {
+            pos = 0;
+            s = newStr;
+            if (newStr == null) {
+                length = 0;
+            } else {
+                length = s.length();
+            }
         }
 
         String nextToken() {
-            if (matcher.find()) {
-                String group = matcher.group();
-                if (group != null) {
-                    int length = group.length();
-                    if (length > 1) {
-                        char firstChar = group.charAt(0);
-                        char lastChar = group.charAt(length - 1);
-                        if ((lastChar == firstChar) && ((firstChar == '\'') || (firstChar == '"'))) {
-                            group = group.substring(1, length - 1);
-                        }
-                    }
-                }
-                return group;
-
-            } else {
+            if (pos >= length) {
                 return null;
             }
+            int fChar;
+            int lChar;
+            boolean gotWS = false;
+            while (pos < length) {
+                if (Character.isWhitespace(s.charAt(pos))) {
+                    gotWS = true;
+                } else {
+                    break;
+                }
+                pos++;
+            }
+            if (pos == length) {
+                return null;
+            }
+            fChar = pos;
+            lChar = pos;
+            if (gotWS && (s.charAt(pos) == '\'' || s.charAt(pos) == '"')) {
+                char qChar = s.charAt(pos);
+                pos++;
+                while (pos < length) {
+                    if ((s.charAt(pos) == qChar) && ((pos == length - 1) || Character.isWhitespace(s.charAt(pos + 1)))) {
+                        lChar = pos;
+                        pos++;
+                        break;
+                    }
+                    pos++;
+                }
+            } else {
+                while (pos < length) {
+                    if (Character.isWhitespace(s.charAt(pos))) {
+                        break;
+                    }
+                    lChar = pos;
+                    pos++;
+                }
+            }
+            String token = s.substring(fChar, lChar + 1);
+            token = token.trim();
+            int length = token.length();
+            if (length > 1) {
+                char firstChar = token.charAt(0);
+                char lastChar = token.charAt(length - 1);
+                if ((lastChar == firstChar) && ((firstChar == '\'') || (firstChar == '"'))) {
+                    token = token.substring(1, length - 1);
+                }
+            }
+
+            return token;
         }
     }
 
