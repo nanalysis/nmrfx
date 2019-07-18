@@ -77,7 +77,11 @@ public class NMRStarReader {
 
         STAR3 star = new STAR3(bfR, "star3");
 
+        try {
         star.scanFile();
+        } catch (ParseException parseEx) {
+            throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
+        }
         NMRStarReader reader = new NMRStarReader(starFile, star);
         reader.process();
     }
