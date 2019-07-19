@@ -82,7 +82,7 @@ public class OrderSVD {
      * @param maxRDC List of maximum static dipolar coupling values (r^(-3))
      * @param error List of error values
      */
-    public OrderSVD(ArrayList<Vector3D> vectors, List<Double> dc, double[] maxRDC, List<Double> error) {
+    public OrderSVD(List<Vector3D> vectors, List<Double> dc, double[] maxRDC, List<Double> error) {
         int nVectors = vectors.size();
         double[][] A = new double[nVectors][5];
         int iRow = 0;
@@ -173,10 +173,10 @@ public class OrderSVD {
     }
     
     /**
-     * Reads input files that are formatted in the same way as example.inp. Example file located in orderten_svd_dipole.
+     * Reads input files that are formatted in the same way as example.inp. Example file located in orderten_svd_dipole.c
      * 
      * @param file String of the name of the file.
-     * @return
+     * @return List of Lists of vectors, RDC values, maxRDC values, error values, atom names, and XYZ coordinates for both atoms. 
      */
     public static List readInputFile(String file) {
         ArrayList<Vector3D> vectors = new ArrayList<>();
@@ -235,62 +235,137 @@ public class OrderSVD {
         return info;
     }
     
+    /**
+     * Returns the A matrix used in the SVD.
+     * 
+     * @return RealMatrix A matrix containing the direction cosines used the SVD: Ax = b.
+     */
     public RealMatrix getAMatrix() {
         return AR;
     }
     
+    /**
+     * Returns the b vector used in the SVD.
+     * 
+     * @return ArrayRealVector b vector containing the normalized experimental RDC values used to solve for x in the SVD: Ax = b.
+     */
     public ArrayRealVector getBVector() {
         return bVec;
     }
     
+    /**
+     * Returns the x vector solved for in the SVD.
+     * 
+     * @return RealVector x solved for in the SVD using the direction cosine A matrix and the normalized experimental RDC b vector: Ax = b.
+     */
     public RealVector getXVector() {
         return xVec;
     }
     
+    /**
+     * Returns the order matrix S.
+     * 
+     * @return RealMatrix 3x3 order matrix S.
+     */
     public RealMatrix getSMatrix() {
         return SR;
     }
     
+    /**
+     * Returns the diagonalized order matrix S.
+     * 
+     * @return RealMatrix Diagonalized 3x3 order matrix S.
+     */
     public RealMatrix getSDiag() {
         return Seig;
     }
     
+    /**
+     * Returns the Szz element of the diagonalized order matrix S.
+     * 
+     * @return double Sz'z' element of the diagonalized order matrix S.
+     */
     public double getSzz() {
         return Seig.getEntry(2, 2);
     }
     
+    /**
+     * Calculates the eta value.
+     * 
+     * @return double Asymmetry parameter: eta = (Sy'y' - Sx'x')/Sz'z'. S is the diagonalized order matrix.
+     */
     public double calcEta() {
         return (Seig.getEntry(1, 1) - Seig.getEntry(0, 0))/Seig.getEntry(2, 2);
     }
     
+    /**
+     * Returns the Q factor.
+     * 
+     * @return double Q factor.
+     */
     public double getQ() {
         return Q;
     }
     
+    /**
+     * Sets the Q factor.
+     * 
+     * @param q double Q factor.
+     */
     public void setQ(double q) {
         Q = q;
     }
     
+    /**
+     * Returns the maximum RDC values associated with different atom types.
+     * 
+     * @return HashMap of the maxRDC values for different atom types.
+     */
     public HashMap getMaxRDCDict() {
         return maxRDCDict;
     }
     
+    /**
+     * Returns the maximum RDC values used for different pairs of atoms in the molecule.
+     * 
+     * @return double[] Array of the maxRDC values for the atom pairs in the molecule.
+     */
     public double[] getMaxRDCs() {
         return maxRDCs;
     }
     
+    /**
+     * Sets the maximum RDC values used for different pairs of atoms in the molecule.
+     * 
+     * @param maxRDC double[] Array of the maxRDC values for the atom pairs in the molecule.
+     */
     public void setMaxRDCs(double[] maxRDC) {
         maxRDCs = maxRDC;
     }
      
+    /**
+     * Calculates the normalized RDC values using the A matrix and x vector from the SVD.
+     * 
+     * @return RealVector Normalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     */
     public RealVector calcBVectorNorm() {
         return AR.operate(xVec);
     }
     
+    /**
+     * Sets the normalized RDC values calculated using the A matrix and x vector from the SVD.
+     * 
+     * @param calcBVecNorm RealVector Normalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     */
     public void setCalcBVectorNorm(RealVector calcBVecNorm) {
         bCalcNorm = calcBVecNorm.toArray();
     }
     
+    /**
+     * Calculates the unnormalized RDC values using the A matrix and x vector from the SVD.
+     * 
+     * @return RealVector Unnormalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     */
     public RealVector calcBVector() {
         RealVector calcBVecNorm = calcBVectorNorm();
         RealVector tValsR = new ArrayRealVector(maxRDCs);
@@ -298,26 +373,59 @@ public class OrderSVD {
         return calcBVec;
     }
     
+    /**
+     * Sets the unnormalized RDC values calculated using the A matrix and x vector from the SVD.
+     * 
+     * @param calcBVec RealVector Unnormalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     */
     public void setCalcBVector(RealVector calcBVec) {
-        bCalcNorm = calcBVec.toArray();
+        bCalc = calcBVec.toArray();
     }
     
+    /**
+     * Returns the differences between the unnormalized RDC values (calculated - experimental).
+     * 
+     * @return RealVector of the differences between the unnormalized RDC values (calculated b vector - experimental b vector).
+     */
     public RealVector getRDCDiffs() {
         return dcDiffs; 
     }
     
+    /**
+     * Sets the differences between the unnormalized RDC values (calculated - experimental).
+     * 
+     * @param rdcDiffs RealVector of the differences between the unnormalized RDC values (calculated b vector - experimental b vector).
+     */
     public void setRDCDiffs(RealVector rdcDiffs) {
         dcDiffs = rdcDiffs; 
     }
     
+    /**
+     * Returns the normalized RDC values calculated using the A matrix and x vector from the SVD.
+     * 
+     * @return double[] Normalized b (calculated RDC) values calculated using the solved x vector from the SVD: Ax = b.
+     */
     public double[] getCalcBVectorNorm() {
         return bCalcNorm;
     }
     
+    /**
+     * Returns the unnormalized RDC values calculated using the A matrix and x vector from the SVD.
+     * 
+     * @return double[] Unnormalized b (calculated RDC) values calculated using the solved x vector from the SVD: Ax = b.
+     */
     public double[] getCalcBVector() {
         return bCalc;
     }
     
+    /**
+     * Calculates the vector associated with two atoms in a Molecule object.
+     * 
+     * @param atomName1 String of the name of the first atom of the vector.
+     * @param atomName2 String of the name of the second atom of the vector.
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[atom1X, atom1Y, atom1Z], [atom2X, atom2Y, atomZ]]
+     * @return Vector3D object that represents the vector associated with the two atoms.
+     */
     public static Vector3D calcVector(String atomName1, String atomName2, List<List<Double>> xyzCoords) {        
         Point3 v1 = new Point3(0.0, 0.0, 0.0);
         Point3 v2 = new Point3(0.0, 0.0, 0.0);
@@ -341,6 +449,16 @@ public class OrderSVD {
         return vector;
     }
     
+    /**
+     * Calculates the maximum RDC value associated with two atoms in a Molecule object.
+     * 
+     * @param vector Vector3D object that represents the vector associated with the two atoms.
+     * @param atomName1 String of the name of the first atom of the vector.
+     * @param atomName2 String of the name of the second atom of the vector.
+     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
+     * @return double parameter that is the maxRDC value.
+     */
     public static double calcMaxRDC(Vector3D vector, String atomName1, String atomName2, boolean calcMaxRDC, boolean scale) {
         double r = vector.getNorm()*1e-10;
         
@@ -362,8 +480,18 @@ public class OrderSVD {
         return maxRDC;
     }
     
+    /**
+     * Performs an Order SVD calculation to calculate molecular RDCs.
+     * 
+     * @param atomPairs List of List of Strings of atom name pairs: [[atom 1 name, atom 2 name], [atom 1 name, atom 2 name]...]
+     * @param rdc List of the experimental RDC values.
+     * @param errors List of the errors in the experimental RDC values.
+     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[atom1X, atom1Y, atom1Z], [atom2X, atom2Y, atomZ]]
+     */
     public static void calcRDC(List<List<String>> atomPairs, List<Double> rdc, List<Double> errors, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
-        ArrayList<Vector3D> vectors = new ArrayList<>();
+        List<Vector3D> vectors = new ArrayList<>();
         List<Double> maxRDCList = new ArrayList<>();
         List<Double> rdc1 = new ArrayList<>();
         List<Double> errors1 = new ArrayList<>();
@@ -375,6 +503,9 @@ public class OrderSVD {
             if (!atom1.equals(atom2)) {
                 try {
                     vec = calcVector(atom1, atom2, null);
+                    if (vec == null) {
+                        continue;
+                    }
                     maxRDC = calcMaxRDC(vec, atom1, atom2, calcMaxRDC, scale);
                 } catch (IllegalArgumentException iae) {
                     if (i == 0) {
@@ -382,6 +513,9 @@ public class OrderSVD {
                     }
                     if (xyzCoords != null) {
                         vec = calcVector(atom1, atom2, xyzCoords.get(i));
+                        if (vec == null) {
+                            continue;
+                        }
                         maxRDC = calcMaxRDC(vec, atom1, atom2, calcMaxRDC, scale);
                     } else {
                         System.out.println("No XYZ coordinates provided. Stopping calculation.");
@@ -389,9 +523,7 @@ public class OrderSVD {
                     }
                 }
             }
-            if (vec == null) {
-                continue;
-            }
+
             vectors.add(vec);
             maxRDCList.add(maxRDC);
             rdc1.add(rdc.get(i));
