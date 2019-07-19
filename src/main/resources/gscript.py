@@ -299,6 +299,9 @@ class NMRFxWindowScripting:
                 self.lim(y=yValue)
         self.drawAll()
         self.drawAll()
+
+    def addPolyLine(self, x, y, color="black", width=1.0):
+        self.cmd.addPolyLine(x , y, color, width)
             
 
 def parseArgs(argv):

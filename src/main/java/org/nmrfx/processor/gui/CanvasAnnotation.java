@@ -18,6 +18,7 @@
 package org.nmrfx.processor.gui;
 
 import javafx.scene.canvas.Canvas;
+import org.nmrfx.graphicsio.GraphicsContextInterface;
 
 /**
  *
@@ -53,7 +54,7 @@ public interface CanvasAnnotation {
 
     };
 
-    public void draw(Canvas canvas, double[][] bounds, double[][] world);
+    public void draw(GraphicsContextInterface gC, double[][] bounds, double[][] world);
 
     public POSTYPE getXPosType();
 

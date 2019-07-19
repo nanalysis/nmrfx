@@ -1823,6 +1823,8 @@ public class PolyChart implements PeakListener {
         useImmediateMode = false;
         GraphicsContext gCC = canvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
+        GraphicsContextInterface gCPeaks = new GraphicsContextProxy(peakCanvas.getGraphicsContext2D());
+
         try {
             gC.save();
             gC.clearRect(xPos, yPos, width, height);
@@ -1906,13 +1908,7 @@ public class PolyChart implements PeakListener {
             if (!datasetAttributesList.isEmpty()) {
                 drawPeakLists(true);
             }
-//        double[][] bounds = {{0, canvas.getWidth() - 1}, {0, canvas.getHeight() - 1}};
-//        double[][] world = {{axes[0].getLowerBound(), axes[0].getUpperBound()},
-//        {axes[1].getLowerBound(), axes[1].getUpperBound()}};
-//        canvasAnnotations.forEach((anno) -> {
-//            anno.draw(peakCanvas, bounds, world);
-//        });
-//
+            drawAnnotations(gCPeaks);
             crossHairs.refreshCrossHairs();
             gC.restore();
         } catch (GraphicsIOException ioE) {
@@ -2255,10 +2251,6 @@ public class PolyChart implements PeakListener {
         }
 
         return hit;
-    }
-
-    public void addAnnotation(CanvasAnnotation anno) {
-        canvasAnnotations.add(anno);
     }
 
     void drawSpecLine(DatasetAttributes datasetAttributes, GraphicsContextInterface gC, int iMode, int rowIndex, int nPoints, double[][] xy) throws GraphicsIOException {
@@ -2848,6 +2840,36 @@ public class PolyChart implements PeakListener {
                 });
             }
 
+        }
+    }
+
+    public void clearAnnotations() {
+        canvasAnnotations.clear();
+    }
+
+    public void addAnnotation(CanvasAnnotation anno) {
+        canvasAnnotations.add(anno);
+    }
+
+    void drawAnnotations(GraphicsContextInterface gC) {
+        if (!canvasAnnotations.isEmpty()) {
+            gC.save();
+            try {
+                gC.beginPath();
+                gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+                gC.clip();
+                gC.beginPath();
+                double[][] bounds = {{xPos + leftBorder, xPos + width - rightBorder}, {yPos + topBorder, yPos + height - bottomBorder}};
+                double[][] world = {{axes[0].getUpperBound(), axes[0].getLowerBound()},
+                {axes[1].getLowerBound(), axes[1].getUpperBound()}};
+                canvasAnnotations.forEach((anno) -> {
+                    anno.draw(gC, bounds, world);
+                });
+
+            } catch (GraphicsIOException gioE) {
+            } finally {
+                gC.restore();
+            }
         }
     }
 

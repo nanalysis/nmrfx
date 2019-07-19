@@ -12,6 +12,8 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
+import org.nmrfx.processor.gui.annotations.AnnoShape;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.controls.FractionPane;
@@ -427,7 +429,7 @@ public class GUIScripter {
             map.entrySet().stream().forEach(entry -> {
                 String key = entry.getKey();
                 Object value = entry.getValue();
-                if (key.contains("Color")  && (value != null)) {
+                if (key.contains("Color") && (value != null)) {
                     value = getColor(value.toString());
                 }
                 chart.config(key, value);
@@ -447,12 +449,12 @@ public class GUIScripter {
         return future.get();
     }
 
-       public void sconfig(Map<String, Object> map) {
+    public void sconfig(Map<String, Object> map) {
         ConsoleUtil.runOnFxThread(() -> {
             map.entrySet().stream().forEach(entry -> {
                 String key = entry.getKey();
                 Object value = entry.getValue();
-                if (key.contains("Color")  && (value != null)) {
+                if (key.contains("Color") && (value != null)) {
                     value = getColor(value.toString());
                 }
                 getActiveController().config(key, value);
@@ -464,7 +466,7 @@ public class GUIScripter {
 
     public Map<String, Object> sconfig() throws InterruptedException, ExecutionException {
         FutureTask<Map<String, Object>> future = new FutureTask(() -> {
-           return getActiveController().config();
+            return getActiveController().config();
 
         });
         ConsoleUtil.runOnFxThread(future);
@@ -696,6 +698,21 @@ public class GUIScripter {
 
     public List<Stage> getStages() {
         return MainApp.getStages();
+    }
+
+    public AnnoShape addPolyLine(List<Double> xList, List<Double> yList, String strokeName, double lineWidth) {
+        Color stroke = Color.web(strokeName);
+        AnnoShape shape = new AnnoPolyLine(xList, yList,
+                CanvasAnnotation.POSTYPE.WORLD, CanvasAnnotation.POSTYPE.WORLD);
+        shape.setStroke(stroke);
+        shape.setLineWidth(lineWidth);
+        ConsoleUtil.runOnFxThread(() -> {
+            getChart().addAnnotation(shape);
+            getChart().refresh();
+        });
+
+        return shape;
+
     }
 
 }
