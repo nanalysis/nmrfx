@@ -20,6 +20,7 @@ package org.nmrfx.processor.gui.tools;
 import java.io.File;
 import java.util.List;
 import javafx.beans.Observable;
+import javafx.collections.ListChangeListener;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -28,10 +29,14 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToolBar;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.paint.Color;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.commons.math3.optim.PointValuePair;
@@ -65,6 +70,8 @@ public class TRACTGUI {
     ChoiceBox<String> yArrayChoice = new ChoiceBox<>();
     DataSeries series0 = new DataSeries();
     DataSeries series1 = new DataSeries();
+    TextField resultsField;
+    TextField scaleField;
 
     public TRACTGUI(ScannerController scanController) {
         this.scanController = scanController;
@@ -74,8 +81,10 @@ public class TRACTGUI {
         //Create new Stage for popup window
         if (stage == null) {
             stage = new Stage();
+            stage.setTitle("TRACT Analysis");
             Label xlabel = new Label("  X Array:  ");
             Label ylabel = new Label("  Y Array:  ");
+            Label scalelabel = new Label("  X Scale:  ");
             //Populate ChoiceBoxes with fitting variable names
             xArrayChoice.getItems().clear();
             yArrayChoice.getItems().clear();
@@ -92,23 +101,74 @@ public class TRACTGUI {
                 alert.showAndWait();
                 return;
             }
-            HBox hBox = new HBox();
-            HBox.setHgrow(hBox, Priority.ALWAYS);
+            ScanTable scanTable = scanController.getScanTable();
+            scanTable.getTableView().getColumns().
+                    addListener((ListChangeListener) (c -> {
+                        updateMCPlotChoices();
+                    }));
+
+            ToolBar toolBar = new ToolBar();
             Button exportButton = new Button("Export");
             exportButton.setOnAction(e -> exportBarPlotSVGAction(e));
             Button fitButton = new Button("Fit");
-            fitButton.setOnAction(e -> analyze());
+            toolBar.getItems().addAll(exportButton, fitButton);
 
-            hBox.getChildren().addAll(exportButton, fitButton, xlabel, xArrayChoice, ylabel, yArrayChoice);            //Create the Scatter chart
+            fitButton.setOnAction(e -> analyze());
+            scaleField = new TextField("2.0e-3");
+            scaleField.setOnKeyPressed(e -> {
+                if (e.getCode() == KeyCode.ENTER) {
+                    updateMCplot();
+                }
+            });
+
+            HBox hBox = new HBox();
+            HBox.setHgrow(hBox, Priority.ALWAYS);
+            hBox.setMinWidth(600);
+            hBox.getChildren().addAll(xlabel,
+                    xArrayChoice, ylabel, yArrayChoice, scalelabel, scaleField);
+
+            VBox vBox = new VBox();
+            vBox.setMinWidth(600);
+            vBox.getChildren().addAll(toolBar, hBox);
+            //Create the Scatter chart
             XYChartPane chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
-            borderPane.setTop(hBox);
+            borderPane.setTop(vBox);
             borderPane.setCenter(chartPane);
+            resultsField = new TextField();
+            borderPane.setBottom(resultsField);
             stage.setScene(stageScene);
         }
         updateMCPlotChoices();
         stage.show();
+        stage.toFront();
         updateMCplot();
+    }
+
+    double getXValue(FileTableItem item, String xElem) {
+        double xValue;
+        if (xElem.equals("etime")) {
+            xValue = item.getDate().doubleValue();
+        } else {
+            xValue = item.getDoubleExtra(xElem);
+        }
+        double scale;
+        try {
+            scale = Double.parseDouble(scaleField.getText().trim());
+        } catch (NumberFormatException nfE) {
+            scale = 1.0;
+        }
+        xValue *= scale;
+        return xValue;
+
+    }
+
+    void updateMCplotWithLines() {
+        updateMCplot();
+        if (!series0.getData().isEmpty()) {
+            activeChart.getData().add(series0);
+            activeChart.getData().add(series1);
+        }
     }
 
     void updateMCplot() {
@@ -120,7 +180,7 @@ public class TRACTGUI {
             String xElem = xArrayChoice.getValue();
             String yElem = yArrayChoice.getValue();
             activeChart.setShowLegend(false);
-            
+
             if ((xElem != null) && (yElem != null)) {
                 xAxis.setLabel("Delay");
                 yAxis.setLabel("Intensity");
@@ -134,16 +194,12 @@ public class TRACTGUI {
                 series.getData().clear();
                 List<FileTableItem> items = scanTable.getItems();
                 for (FileTableItem item : items) {
-                    double x = 2.0e-3 * item.getDate().doubleValue();
+                    double x = getXValue(item, xElem);
                     double y = item.getDoubleExtra(yElem);
                     series.getData().add(new XYValue(x, y));
                 }
                 System.out.println("plot");
                 activeChart.getData().add(series);
-                if (!series0.getData().isEmpty()) {
-                    activeChart.getData().add(series0);
-                    activeChart.getData().add(series1);
-                }
 
                 activeChart.autoScale(true);
             }
@@ -151,6 +207,7 @@ public class TRACTGUI {
     }
 
     void updateMCPlotChoices() {
+        System.out.println("up");
         xArrayChoice.getItems().clear();
         yArrayChoice.getItems().clear();
         if (scanController != null) {
@@ -163,7 +220,9 @@ public class TRACTGUI {
             }
             xArrayChoice.getItems().add("etime");
             xArrayChoice.setValue(xArrayChoice.getItems().get(0));
-            yArrayChoice.setValue(yArrayChoice.getItems().get(0));
+            if (!yArrayChoice.getItems().isEmpty()) {
+                yArrayChoice.setValue(yArrayChoice.getItems().get(0));
+            }
         }
     }
 
@@ -181,23 +240,38 @@ public class TRACTGUI {
             double[] errValues = new double[items.size()];
             int i = 0;
             double maxX = 0.0;
-            for (FileTableItem item : items) {
-                xValues[0][i] = 2.0e-3 * item.getDate().doubleValue();
+            DataSeries series = activeChart.getData().get(0);
+            for (XYValue value : series.getData()) {
+                double xValue = value.getXValue();
+                xValues[0][i] = xValue;
                 maxX = Math.max(xValues[0][i], maxX);
                 xValues[1][i] = i % 2;
-                yValues[i] = item.getDoubleExtra(yElem);
+                yValues[i] = value.getYValue();
                 errValues[i] = 1.0;
                 i++;
             }
+//            for (FileTableItem item : items) {
+//                double xValue = getXValue(item, xElem);
+//                xValues[0][i] = xValue;
+//                maxX = Math.max(xValues[0][i], maxX);
+//                xValues[1][i] = i % 2;
+//                yValues[i] = item.getDoubleExtra(yElem);
+//                errValues[i] = 1.0;
+//                i++;
+//            }
             tractFit.setXYE(xValues, yValues, errValues);
             PolyChart chart = PolyChart.getActiveChart();
             double sf = 1.0e6 * chart.getDataset().getSf(0);
             PointValuePair result = tractFit.fit(sf); // fixme
             double[] errs = tractFit.getParErrs();
             double[] values = result.getPoint();
-            for (int j = 0; j < values.length; j++) {
-                System.out.println(values[j] + " +/- " + errs[j]);
-            }
+            StringBuilder sBuilder = new StringBuilder();
+            double r1 = tractFit.getR1(values);
+            double e1 = r1 / values[1] * errs[1];
+            sBuilder.append(String.format("%3s %.1f +/- %.1f    ", "Ra", r1, e1));
+            sBuilder.append(String.format("%3s %.1f +/- %.1f    ", "Rb", values[1], errs[1]));
+            sBuilder.append(String.format("%3s %.1f +/- %.1f ns", "tau", values[3], errs[3]));
+            resultsField.setText(sBuilder.toString());
 
             double[][] curve0 = tractFit.getSimValues(0.0, maxX, 200, false);
             double[][] curve1 = tractFit.getSimValues(0.0, maxX, 200, true);
@@ -213,7 +287,7 @@ public class TRACTGUI {
             series1.drawSymbol(false);
             series0.fillSymbol(false);
             series1.fillSymbol(false);
-            updateMCplot();
+            updateMCplotWithLines();
 
         }
 
