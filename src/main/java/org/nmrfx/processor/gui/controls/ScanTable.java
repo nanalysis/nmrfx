@@ -768,6 +768,10 @@ public class ScanTable {
             saveScanTable(file);
         }
     }
+    
+    public TableView getTableView() {
+        return tableView;
+    }
 
     public List<String> getHeaders() {
         ObservableList<TableColumn<FileTableItem, ?>> columns = tableView.getColumns();
