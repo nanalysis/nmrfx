@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import org.apache.commons.lang3.StringUtils;
@@ -40,9 +39,10 @@ public class OrderSVD {
     
     static double mu0 = 4.0e-7 * Math.PI;
     static double hbar = 1.054e-34;
+    static double preFactor = -(mu0*hbar)/(4*(Math.PI*Math.PI));
     static HashMap<String, Double> maxRDCDict = new HashMap<>(); 
-    static HashMap gammaIDict = new HashMap();
-    static HashMap gammaSDict = new HashMap();
+    static HashMap<String, Double> gammaIDict = new HashMap();
+    static HashMap<String, Double> gammaSDict = new HashMap();
     
     static {maxRDCDict.put("HN", 24350.0);
         maxRDCDict.put("HC", -60400.0);
@@ -59,6 +59,9 @@ public class OrderSVD {
         gammaSDict.put("C", 6.73e7);
         gammaSDict.put("H", 2.68e8);}
     
+    static double gammaH = 2.68e8;
+    static double gammaN = -2.71e7;
+    static double scaleHN = (gammaH*gammaN)/((1.0e-10)*(1.0e-10)*(1.0e-10));
     
     RealMatrix AR;
     ArrayRealVector bVec;
@@ -74,12 +77,12 @@ public class OrderSVD {
     /**
      * This function calculates residual dipolar couplings. Based on orderten_svd_dipole.c
      * 
-     * @param vectors List of bond vector coordinates
-     * @param dc List of dipolar couplings
+     * @param vectors List of bond vectors
+     * @param dc List of unnormalized experimental dipolar couplings
      * @param maxRDC List of maximum static dipolar coupling values (r^(-3))
      * @param error List of error values
      */
-    public OrderSVD(ArrayList<Vector3D> vectors, double[] dc, double[] maxRDC, double[] error) {
+    public OrderSVD(List<Vector3D> vectors, List<Double> dc, double[] maxRDC, List<Double> error) {
         int nVectors = vectors.size();
         double[][] A = new double[nVectors][5];
         int iRow = 0;
@@ -105,15 +108,15 @@ public class OrderSVD {
         // perform SVD on the matrix A
         SingularValueDecomposition svd = new SingularValueDecomposition(AR);
         // construct the b vector, which contains the normalized dipolar couplings 
-        double[] dcNorm = new double[dc.length];
+        double[] dcNorm = new double[dc.size()];
         for (int i=0; i<dcNorm.length; i++) {
-            dcNorm[i] = dc[i]/maxRDC[i];
+            dcNorm[i] = dc.get(i)/maxRDC[i];
         }
         bVec = new ArrayRealVector(dcNorm);
         int Slen = 3;
         double[][] S = new double[Slen][Slen];
         Random random = new Random();
-        double[] rand = new double[error.length];
+        double[] rand = new double[error.size()];
         int cycle = 0;
         while (true) {
             System.out.println("cycle " + cycle);
@@ -143,18 +146,24 @@ public class OrderSVD {
                     System.out.println("Seig = " + Seig.toString());
                     System.out.println("Sz'z' = " + Seig.getEntry(2, 2));
                     System.out.println("eta = " + (Seig.getEntry(1, 1) - Seig.getEntry(0, 0))/Seig.getEntry(2, 2));
+                    double axial = 0.333*(Seig.getEntry(2, 2)-(Seig.getEntry(0, 0)+Seig.getEntry(1, 1))/2);
+                    double rhombic = 0.333*(Seig.getEntry(0, 0)-Seig.getEntry(1, 1));
+                    System.out.println("alignment tensor axial component = " + axial);
+                    System.out.println("alignment tensor rhombic component = " + rhombic);
+                    System.out.println("rhombicity = " + rhombic/axial);
+                    System.out.println("magnitude = " + Math.sqrt(Seig.getEntry(2, 2)+Seig.getEntry(0, 0)+Seig.getEntry(1, 1)));
                     break;
                 } else {
-                    for (int i=0; i<error.length; i++) {
-                        rand[i] = random.nextGaussian()*error[i]+dcNorm[i];
+                    for (int i=0; i<error.size(); i++) {
+                        rand[i] = random.nextGaussian()*error.get(i)+dcNorm[i];
                     }
                     ArrayRealVector randVec = new ArrayRealVector(rand);
                     bVec = randVec;
                     cycle++;
                 }
             } else {
-                for (int i=0; i<error.length; i++) {
-                    rand[i] = random.nextGaussian()*error[i]+dcNorm[i];
+                for (int i=0; i<error.size(); i++) {
+                    rand[i] = random.nextGaussian()*error.get(i)+dcNorm[i];
                 }
                 ArrayRealVector randVec = new ArrayRealVector(rand);
                 bVec = randVec;
@@ -164,10 +173,10 @@ public class OrderSVD {
     }
     
     /**
-     * Reads input files that are formatted in the same way as example.inp. Example file located in orderten_svd_dipole.
+     * Reads input files that are formatted in the same way as example.inp. Example file located in orderten_svd_dipole.c
      * 
      * @param file String of the name of the file.
-     * @return
+     * @return List of Lists of vectors, unnormalized RDC values, maxRDC values, error values, atom names, and XYZ coordinates for both atoms. 
      */
     public static List readInputFile(String file) {
         ArrayList<Vector3D> vectors = new ArrayList<>();
@@ -226,62 +235,137 @@ public class OrderSVD {
         return info;
     }
     
+    /**
+     * Returns the A matrix used in the SVD.
+     * 
+     * @return RealMatrix A matrix containing the direction cosines used the SVD: Ax = b.
+     */
     public RealMatrix getAMatrix() {
         return AR;
     }
     
+    /**
+     * Returns the b vector used in the SVD.
+     * 
+     * @return ArrayRealVector b vector containing the normalized experimental RDC values used to solve for x in the SVD: Ax = b.
+     */
     public ArrayRealVector getBVector() {
         return bVec;
     }
     
+    /**
+     * Returns the x vector solved for in the SVD.
+     * 
+     * @return RealVector x solved for in the SVD using the direction cosine A matrix and the normalized experimental RDC b vector: Ax = b.
+     */
     public RealVector getXVector() {
         return xVec;
     }
     
+    /**
+     * Returns the order matrix S.
+     * 
+     * @return RealMatrix 3x3 order matrix S.
+     */
     public RealMatrix getSMatrix() {
         return SR;
     }
     
+    /**
+     * Returns the diagonalized order matrix S.
+     * 
+     * @return RealMatrix Diagonalized 3x3 order matrix S.
+     */
     public RealMatrix getSDiag() {
         return Seig;
     }
     
+    /**
+     * Returns the Szz element of the diagonalized order matrix S.
+     * 
+     * @return double Sz'z' element of the diagonalized order matrix S.
+     */
     public double getSzz() {
         return Seig.getEntry(2, 2);
     }
     
+    /**
+     * Calculates the eta value.
+     * 
+     * @return double Asymmetry parameter: eta = (Sy'y' - Sx'x')/Sz'z'. S is the diagonalized order matrix.
+     */
     public double calcEta() {
         return (Seig.getEntry(1, 1) - Seig.getEntry(0, 0))/Seig.getEntry(2, 2);
     }
     
+    /**
+     * Returns the Q factor.
+     * 
+     * @return double Q factor.
+     */
     public double getQ() {
         return Q;
     }
     
+    /**
+     * Sets the Q factor.
+     * 
+     * @param q double Q factor.
+     */
     public void setQ(double q) {
         Q = q;
     }
     
+    /**
+     * Returns the maximum RDC values associated with different atom types.
+     * 
+     * @return HashMap of the maxRDC values for different atom types.
+     */
     public HashMap getMaxRDCDict() {
         return maxRDCDict;
     }
     
+    /**
+     * Returns the maximum RDC values used for different pairs of atoms in the molecule.
+     * 
+     * @return double[] Array of the maxRDC values for the atom pairs in the molecule.
+     */
     public double[] getMaxRDCs() {
         return maxRDCs;
     }
     
+    /**
+     * Sets the maximum RDC values used for different pairs of atoms in the molecule.
+     * 
+     * @param maxRDC double[] Array of the maxRDC values for the atom pairs in the molecule.
+     */
     public void setMaxRDCs(double[] maxRDC) {
         maxRDCs = maxRDC;
     }
      
+    /**
+     * Calculates the normalized RDC values using the A matrix and x vector from the SVD.
+     * 
+     * @return RealVector Normalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     */
     public RealVector calcBVectorNorm() {
         return AR.operate(xVec);
     }
     
+    /**
+     * Sets the normalized RDC values calculated using the A matrix and x vector from the SVD.
+     * 
+     * @param calcBVecNorm RealVector Normalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     */
     public void setCalcBVectorNorm(RealVector calcBVecNorm) {
         bCalcNorm = calcBVecNorm.toArray();
     }
     
+    /**
+     * Calculates the unnormalized RDC values using the A matrix and x vector from the SVD.
+     * 
+     * @return RealVector Unnormalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     */
     public RealVector calcBVector() {
         RealVector calcBVecNorm = calcBVectorNorm();
         RealVector tValsR = new ArrayRealVector(maxRDCs);
@@ -289,136 +373,178 @@ public class OrderSVD {
         return calcBVec;
     }
     
+    /**
+     * Sets the unnormalized RDC values calculated using the A matrix and x vector from the SVD.
+     * 
+     * @param calcBVec RealVector Unnormalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     */
     public void setCalcBVector(RealVector calcBVec) {
-        bCalcNorm = calcBVec.toArray();
+        bCalc = calcBVec.toArray();
     }
     
+    /**
+     * Returns the differences between the unnormalized RDC values (calculated - experimental).
+     * 
+     * @return RealVector of the differences between the unnormalized RDC values (calculated b vector - experimental b vector).
+     */
     public RealVector getRDCDiffs() {
         return dcDiffs; 
     }
     
+    /**
+     * Sets the differences between the unnormalized RDC values (calculated - experimental).
+     * 
+     * @param rdcDiffs RealVector of the differences between the unnormalized RDC values (calculated b vector - experimental b vector).
+     */
     public void setRDCDiffs(RealVector rdcDiffs) {
         dcDiffs = rdcDiffs; 
     }
     
+    /**
+     * Returns the normalized RDC values calculated using the A matrix and x vector from the SVD.
+     * 
+     * @return double[] Normalized b (calculated RDC) values calculated using the solved x vector from the SVD: Ax = b.
+     */
     public double[] getCalcBVectorNorm() {
         return bCalcNorm;
     }
     
+    /**
+     * Returns the unnormalized RDC values calculated using the A matrix and x vector from the SVD.
+     * 
+     * @return double[] Unnormalized b (calculated RDC) values calculated using the solved x vector from the SVD: Ax = b.
+     */
     public double[] getCalcBVector() {
         return bCalc;
     }
     
-    public static HashMap calcVector(String atomName1, String atomName2, boolean calcMaxRDC, boolean scale, double[]... xyzCoords) {
-      
-        HashMap atomInfo = new HashMap();
-        
+    /**
+     * Calculates the vector associated with two atoms in a Molecule object.
+     * 
+     * @param atomName1 String of the name of the first atom of the vector.
+     * @param atomName2 String of the name of the second atom of the vector.
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[atom1X, atom1Y, atom1Z], [atom2X, atom2Y, atomZ]]
+     * @return Vector3D object that represents the vector associated with the two atoms.
+     */
+    public static Vector3D calcVector(String atomName1, String atomName2, List<List<Double>> xyzCoords) {        
         Point3 v1 = new Point3(0.0, 0.0, 0.0);
         Point3 v2 = new Point3(0.0, 0.0, 0.0);
-        String atom1Full = atomName1;
-        String atom2Full = atomName2;
-        if (xyzCoords.length > 0) {
-            v1 = new Point3(xyzCoords[0][0], xyzCoords[0][1], xyzCoords[0][2]);
-            v2 = new Point3(xyzCoords[1][0], xyzCoords[1][1], xyzCoords[1][2]);
+        if (xyzCoords != null) {
+            v1 = new Point3(xyzCoords.get(0).get(0), xyzCoords.get(0).get(1), xyzCoords.get(0).get(2));
+            v2 = new Point3(xyzCoords.get(1).get(0), xyzCoords.get(1).get(1), xyzCoords.get(1).get(2));
         } else {
             Atom atom1 = Molecule.getAtomByName(atomName1);
             Atom atom2 = Molecule.getAtomByName(atomName2);
             if (atom1 != null & atom2 != null) {
                 v1 = atom1.getPoint();
                 v2 = atom2.getPoint();
-                atom1Full = atom1.getName();
-                atom2Full = atom2.getName();
             }
         }
  
-        Vector3D vector = v1.subtract(v2);
-        Double r = Vector3D.distance(v1, v2)*1e-10;
-        atomInfo.put("Atom1", atom1Full);
-        atomInfo.put("Atom2", atom2Full);
+        double r = Vector3D.distance(v1, v2)*1e-10;
+        Vector3D vector = null;
         if (r != 0.0) {
-            atomInfo.put("Vector", vector);
+            vector = v1.subtract(v2);
         }
-        String aType1 = atom1Full.substring(0,1);
-        String aType2 = atom2Full.substring(0,1);
-        Double newFactor = 1.0;
-        if (maxRDCDict.containsKey(aType1+aType2)) {
-            newFactor = maxRDCDict.get(aType1+aType2);
-        } 
-        if (calcMaxRDC) {
-            Double preFactor = -(mu0*hbar)/(4*(Math.PI*Math.PI));
-            Double gammaI = (Double) gammaIDict.get(aType1);
-            Double gammaS = (Double) gammaSDict.get(aType2);
-            if (gammaI != null & gammaS != null & r != 0.0) {
-                newFactor = preFactor*((gammaI*gammaS)/(r*r*r));
-            }
-            if (scale) {
-                Double gammaH = (Double) gammaIDict.get("H");
-                Double gammaN = (Double) gammaSDict.get("N");
-                Double scaleHN = (gammaH*gammaN)/((1.0e-10)*(1.0e-10)*(1.0e-10));
-                if (gammaI != null & gammaS != null & r != 0.0) {
-                    newFactor = 24350.0*(gammaI*gammaS)/((r*r*r)*scaleHN);
-                }
-            }
-        } 
-        atomInfo.put("maxRDC", newFactor);
-
-//        System.out.println("atomInfo = " + atomInfo);
-    return atomInfo;
+        return vector;
     }
     
-    public static void calcRDC(List<List<String>> atomPairs, List<Double> rdc, List<Double> errors, boolean calcMaxRDC, boolean scale, double[][]... xyzCoords) {
-        List<HashMap> infoMaps = new ArrayList<>();
+    /**
+     * Calculates the maximum RDC value associated with two atoms in a Molecule object.
+     * 
+     * @param vector Vector3D object that represents the vector associated with the two atoms.
+     * @param atomName1 String of the name of the first atom of the vector.
+     * @param atomName2 String of the name of the second atom of the vector.
+     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
+     * @return double parameter that is the maxRDC value.
+     */
+    public static double calcMaxRDC(Vector3D vector, String atomName1, String atomName2, boolean calcMaxRDC, boolean scale) {
+        double r = vector.getNorm()*1e-10;
+        
+        String aType1 = atomName1.split("\\.")[1].substring(0,1);
+        String aType2 = atomName2.split("\\.")[1].substring(0,1);
+        double maxRDC = 1.0;
+        if (maxRDCDict.containsKey(aType1+aType2)) {
+            maxRDC = maxRDCDict.get(aType1+aType2);
+        } 
+        double gammaI = gammaIDict.get(aType1);
+        double gammaS = gammaSDict.get(aType2);
+        if (r != 0) {
+            if (calcMaxRDC) {
+                maxRDC = preFactor*((gammaI*gammaS)/(r*r*r));
+            } else if (scale) {
+                maxRDC = 24350.0*(gammaI*gammaS)/((r*r*r)*scaleHN);
+            }
+        }
+        return maxRDC;
+    }
+    
+    /**
+     * Performs an Order SVD calculation to calculate molecular RDCs.
+     * 
+     * @param atomPairs List of List of Strings of atom name pairs: [[atom 1 name, atom 2 name], [atom 1 name, atom 2 name]...]
+     * @param rdc List of the unnormalized experimental RDC values.
+     * @param errors List of the errors in the experimental RDC values.
+     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2 Z]]
+     */
+    public static void calcRDC(List<List<String>> atomPairs, List<Double> rdc, List<Double> errors, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
+        List<Vector3D> vectors = new ArrayList<>();
+        List<Double> maxRDCList = new ArrayList<>();
         List<Double> rdc1 = new ArrayList<>();
         List<Double> errors1 = new ArrayList<>();
         for (int i=0; i<atomPairs.size(); i++) {
-            HashMap info = new HashMap();
+            Vector3D vec = null;
+            double maxRDC = 1.0;
             String atom1 = atomPairs.get(i).get(0);
             String atom2 = atomPairs.get(i).get(1);
-            try {
-                info = calcVector(atom1, atom2, calcMaxRDC, scale);
-            } catch (IllegalArgumentException iae) {
-                if (i == 0) {
-                    System.out.println("No Molecule object found. Using XYZ coordinates for vector calculation.");
+            if (!atom1.equals(atom2)) {
+                try {
+                    vec = calcVector(atom1, atom2, null);
+                    if (vec == null) {
+                        continue;
+                    }
+                    maxRDC = calcMaxRDC(vec, atom1, atom2, calcMaxRDC, scale);
+                } catch (IllegalArgumentException iae) {
+                    if (i == 0) {
+                        System.out.println("No Molecule object found. Using XYZ coordinates for vector calculation.");
+                    }
+                    if (xyzCoords != null) {
+                        vec = calcVector(atom1, atom2, xyzCoords.get(i));
+                        if (vec == null) {
+                            continue;
+                        }
+                        maxRDC = calcMaxRDC(vec, atom1, atom2, calcMaxRDC, scale);
+                    } else {
+                        System.out.println("No XYZ coordinates provided. Stopping calculation.");
+                        break;
+                    }
                 }
-                if (xyzCoords.length > 0) {
-                    info = calcVector(atom1, atom2, calcMaxRDC, scale, xyzCoords[i]);
-                } else {
-                    System.out.println("No XYZ coordinates provided. Stopping calculation.");
-                    break;
-                }
             }
-            if (info.isEmpty()) {
-                continue;
-            }
-            Vector3D vec = (Vector3D) info.get("Vector");
-            if (vec == null) {
-                continue;
-            }
-            infoMaps.add(info);
+
+            vectors.add(vec);
+            maxRDCList.add(maxRDC);
             rdc1.add(rdc.get(i));
             errors1.add(errors.get(i));
         } 
-        ArrayList<Vector3D> vectors = new ArrayList<>();
-        for (int i=0; i<infoMaps.size(); i++) {
-            vectors.add((Vector3D) infoMaps.get(i).get("Vector"));
-        }
-        double[] maxRDC = new double[infoMaps.size()];
-        for (int i=0; i<maxRDC.length; i++) {
-            maxRDC[i] = (Double) infoMaps.get(i).get("maxRDC");
+     
+        double[] maxRDCs = new double[maxRDCList.size()];
+        for (int i=0; i<maxRDCs.length; i++) {
+            maxRDCs[i] = maxRDCList.get(i);
         }
         
         double[] rdc1a = new double[rdc1.size()];
-        double[] errors1a = new double[errors1.size()];
         for (int i=0; i<rdc1a.length; i++) {
             rdc1a[i] = rdc1.get(i);
-            errors1a[i] = errors1.get(i);
         }
         
         
         if (!vectors.isEmpty()) {
-            OrderSVD orderSVD = new OrderSVD(vectors, rdc1a, maxRDC, errors1a);
+            OrderSVD orderSVD = new OrderSVD(vectors, rdc1, maxRDCs, errors1);
         
-            orderSVD.setMaxRDCs(maxRDC);
+            orderSVD.setMaxRDCs(maxRDCs);
 
             double[] b = orderSVD.getBVector().toArray();
             RealVector bCalcVecNorm = orderSVD.calcBVectorNorm();
@@ -442,7 +568,7 @@ public class OrderSVD {
                 dcSqSum += dcSq.getEntry(i);
             }
 
-            double q = Math.sqrt(dcDiffSqSum/dcDiffs1.getDimension())/Math.sqrt(dcSqSum/rdc1a.length);
+            double q = Math.sqrt(dcDiffSqSum/dcDiffs1.getDimension())/Math.sqrt(dcSqSum/rdc1.size());
             orderSVD.setQ(q);
             System.out.println("Q = " + String.valueOf(orderSVD.getQ()));
         }
