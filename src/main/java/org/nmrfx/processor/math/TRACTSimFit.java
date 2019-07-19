@@ -78,6 +78,14 @@ public class TRACTSimFit {
 
     }
 
+    public double getR1(double[] pars) {
+        double r0 = pars[1];
+        double tauC = pars[3];
+        double nab2 = RelaxEquations.TRACTdeltaAlphaBeta(B0, tauC * 1.0e-9);
+        double r1 = r0 - nab2;
+        return r1;
+    }
+
     public double[] getPars() {
         return bestPars;
     }
@@ -92,7 +100,6 @@ public class TRACTSimFit {
         double halfMax = max0 / 2.0;
         double midDelta = Double.MAX_VALUE;
         double midX = 0.0;
-        System.out.println("ya " + yValues.length);
         for (int i = 0; i < yValues.length; i += 2) {
             double y = yValues[i];
             double delta = Math.abs(y - halfMax);
