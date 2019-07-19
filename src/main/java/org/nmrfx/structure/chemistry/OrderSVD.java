@@ -77,8 +77,8 @@ public class OrderSVD {
     /**
      * This function calculates residual dipolar couplings. Based on orderten_svd_dipole.c
      * 
-     * @param vectors List of bond vector coordinates
-     * @param dc List of dipolar couplings
+     * @param vectors List of bond vectors
+     * @param dc List of unnormalized experimental dipolar couplings
      * @param maxRDC List of maximum static dipolar coupling values (r^(-3))
      * @param error List of error values
      */
@@ -179,7 +179,7 @@ public class OrderSVD {
      * Reads input files that are formatted in the same way as example.inp. Example file located in orderten_svd_dipole.c
      * 
      * @param file String of the name of the file.
-     * @return List of Lists of vectors, RDC values, maxRDC values, error values, atom names, and XYZ coordinates for both atoms. 
+     * @return List of Lists of vectors, unnormalized RDC values, maxRDC values, error values, atom names, and XYZ coordinates for both atoms. 
      */
     public static List readInputFile(String file) {
         ArrayList<Vector3D> vectors = new ArrayList<>();
@@ -487,11 +487,11 @@ public class OrderSVD {
      * Performs an Order SVD calculation to calculate molecular RDCs.
      * 
      * @param atomPairs List of List of Strings of atom name pairs: [[atom 1 name, atom 2 name], [atom 1 name, atom 2 name]...]
-     * @param rdc List of the experimental RDC values.
+     * @param rdc List of the unnormalized experimental RDC values.
      * @param errors List of the errors in the experimental RDC values.
      * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
      * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
-     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[atom1X, atom1Y, atom1Z], [atom2X, atom2Y, atomZ]]
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2 Z]]
      */
     public static void calcRDC(List<List<String>> atomPairs, List<Double> rdc, List<Double> errors, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
         List<Vector3D> vectors = new ArrayList<>();
