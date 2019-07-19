@@ -151,7 +151,10 @@ public class OrderSVD {
                     System.out.println("alignment tensor axial component = " + axial);
                     System.out.println("alignment tensor rhombic component = " + rhombic);
                     System.out.println("rhombicity = " + rhombic/axial);
-                    System.out.println("magnitude = " + Math.sqrt(Seig.getEntry(2, 2)+Seig.getEntry(0, 0)+Seig.getEntry(1, 1)));
+//                    for (int i=0; i<maxRDC.length; i++) {
+//                        System.out.println("magnitude = " + 0.5*maxRDC[i]*axial);
+//                    }
+                    System.out.println("magnitude = " + 0.5*maxRDC[0]*axial);
                     break;
                 } else {
                     for (int i=0; i<error.size(); i++) {
@@ -523,7 +526,9 @@ public class OrderSVD {
                     }
                 }
             }
-
+            if (vec == null) {
+                continue;
+            }
             vectors.add(vec);
             maxRDCList.add(maxRDC);
             rdc1.add(rdc.get(i));
