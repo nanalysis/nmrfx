@@ -37,7 +37,7 @@ public class PeakPath {
     OptFunction optFunction = new Quadratic10();
     ArrayList<PeakList> peakLists = new ArrayList<>();
 //    ArrayList<ArrayList<PeakDistance>> filteredLists = new ArrayList<>();
-    ArrayList<Path> paths = new ArrayList<>();
+    Map<String, Path> paths = new HashMap<>();
     final PeakList firstList;
     final double[] concentrations;
     final double[] binderConcs;
@@ -48,17 +48,20 @@ public class PeakPath {
 
     public class Path implements Comparable<Path> {
 
+        Peak firstPeak;
         List<PeakDistance> peakDists = new ArrayList<>();
         double radius;
         boolean confirmed = false;
 
         Path(List<PeakDistance> path, double dis) {
             peakDists.addAll(path);
+            firstPeak = path.get(0).getPeak();
             radius = dis;
         }
 
         Path(List<PeakDistance> path) {
             peakDists.addAll(path);
+            firstPeak = path.get(0).getPeak();
             double maxDis = 0.0;
             for (PeakDistance peakDis : path) {
                 if ((peakDis != null) && (peakDis.distance > maxDis)) {
@@ -117,6 +120,10 @@ public class PeakPath {
             return checkPath(peakDists);
         }
 
+        public Peak getFirstPeak() {
+            return firstPeak;
+        }
+
         public String toString() {
             StringBuilder sBuilder = new StringBuilder();
             for (PeakDistance peakDis : peakDists) {
@@ -161,6 +168,26 @@ public class PeakPath {
         this.concentrations = concentrations;
         this.binderConcs = binderConcs;
         this.weights = weights;
+    }
+
+    public void initPaths() {
+        for (Peak peak : firstList.peaks()) {
+            if (peak.getStatus() >= 0) {
+                double[] deltas = new double[tols.length];
+                PeakDistance peakDist = new PeakDistance(peak, 0.0, deltas);
+                List<PeakDistance> peakDists = new ArrayList<>();
+                peakDists.add(peakDist);
+                Path path = new Path(peakDists);
+                if (!path.peakDists.isEmpty()) {
+                    paths.put(path.getFirstPeak().toString(), path);
+
+                }
+            }
+        }
+    }
+
+    public Path getPath(String name) {
+        return paths.get(name);
     }
 
     double calcDistance(Peak peak1, Peak peak2) {
@@ -379,38 +406,36 @@ public class PeakPath {
             maxDis = lastDis + dTol;
         }
         System.out.printf("%.3f ", maxDis);
-        List<PeakDistance> path = new ArrayList<>();
+        List<PeakDistance> newPeakDists = new ArrayList<>();
         for (ArrayList<PeakDistance> peakDists : filteredLists) {
             if (peakDists.size() > 1) {
                 double dis = peakDists.get(1).distance;
                 // there should only be one distance shorter than the maxDis
                 if (dis < maxDis) {
                     System.out.println("skip " + dis + " " + peakDists.get(1).peak.getName());
-                    path.clear();
+                    newPeakDists.clear();
+                    newPeakDists.add(filteredLists.get(0).get(0));
                     break;
                 }
             }
             if (peakDists.isEmpty()) {
-                path.add(null);
+                newPeakDists.add(null);
             } else {
-                path.add(peakDists.get(0));
+                newPeakDists.add(peakDists.get(0));
             }
         }
-        Path newPath = new Path(path);
+        Path newPath = new Path(newPeakDists);
         return newPath;
     }
 
     public void dumpPaths() {
-        paths.sort(null);
-        for (Path path : paths) {
+        paths.values().stream().sorted().forEach(path -> {
             System.out.println(path.toString());
-        }
+        });
     }
 
     public void setStatus(double radiusLimit, double checkLimit) {
-        paths.sort(null);
-        List<Path> newPaths = new ArrayList<>();
-        for (Path path : paths) {
+        paths.values().stream().sorted().forEach(path -> {
             if (path.isComplete() && path.isFree()) {
                 double check = path.check();
                 if ((path.radius < radiusLimit) && (check < checkLimit)) {
@@ -418,16 +443,22 @@ public class PeakPath {
                     for (PeakDistance peakDist : path.peakDists) {
                         peakDist.peak.setStatus(1);
                     }
-                    newPaths.add(path);
                 }
             }
-        }
-        paths.clear();
-        paths.addAll(newPaths);
+        });
+
     }
 
-    public void checkListsForUnambigous(double radius, boolean useLast) {
+    public void checkListsForUnambigous(double radius) {
         PeakList firstList = peakLists.get(0);
+        boolean useLast = true;
+        for (Path path : paths.values()) {
+            if (path.peakDists.size() > 1) {
+                useLast = false;
+                break;
+            }
+
+        }
         for (Peak peak : firstList.peaks()) {
             if (peak.getStatus() == 0) {
                 System.out.print(peak.getName() + " ");
@@ -435,7 +466,7 @@ public class PeakPath {
                         = getNearPeaks(peak, radius);
                 Path path = checkForUnambigous(filteredLists, useLast);
                 if (!path.peakDists.isEmpty()) {
-                    paths.add(path);
+                    paths.put(path.getFirstPeak().toString(), path);
                     System.out.println(path.toString());
 //                    for (PeakDistance pathPeak : path.peakDists) {
 //                        if (pathPeak != null) {
@@ -461,7 +492,7 @@ public class PeakPath {
                         = getNearPeaks(peak, radius);
                 Path path = checkPath(filteredLists, tol);
                 if (!path.peakDists.isEmpty()) {
-                    paths.add(path);
+                    paths.put(path.getFirstPeak().toString(), path);
                     System.out.println(path.toString());
 //                    for (PeakDistance pathPeak : path.peakDists) {
 //                        if (pathPeak != null) {
@@ -485,8 +516,7 @@ public class PeakPath {
                 nElems++;
             }
         }
-        Peak startPeak = path.get(0).peak;
-        double maxDelta = Double.NEGATIVE_INFINITY;
+        double maxDelta = 0.0;
         for (int iSkip = 1; iSkip < path.size(); iSkip++) {
             double deltaSum = 0.0;
             for (int iDim : peakDims) {
@@ -776,7 +806,7 @@ public class PeakPath {
         }
         Path newPath = new Path(bestPath);
         newPath.confirm();
-        paths.add(newPath);
+        paths.put(newPath.getFirstPeak().toString(), newPath);
 
         return bestPath;
     }
@@ -873,8 +903,8 @@ public class PeakPath {
         return bestPath;
     }
 
-    public List<Path> getPaths() {
-        return paths;
+    public Collection<Path> getPaths() {
+        return paths.values();
     }
 
 }
