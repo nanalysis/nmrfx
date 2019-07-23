@@ -54,6 +54,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
         "_Entity_poly_seq.Entity_ID",};
     public String name = null;
     public String label = null;
+    String pdbChain = "";
     public Molecule molecule = null;
     List<Atom> atoms = new ArrayList<Atom>();
     List<Bond> bonds = new ArrayList<Bond>();
@@ -200,6 +201,14 @@ public class Entity implements AtomContainer, Serializable, ITree {
         if (molecule != null) {
             molecule.changed();
         }
+    }
+    
+    public void setPDBChain(String name) {
+        pdbChain = name;
+    }
+    
+    public String getPDBChain() {
+        return pdbChain;
     }
 
     public void setProperty(String propName, String propValue) {
