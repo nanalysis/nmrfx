@@ -197,6 +197,7 @@ public class Molecule implements Serializable, ITree {
     // FIXME should be crystal object
     public String crystal = null;
     public LinkedHashMap<String, Entity> entities;
+    public LinkedHashMap<String, Entity> chains;
     public LinkedHashMap entityLabels = null;
     public LinkedHashMap<String, CoordSet> coordSets;
     private HashMap<String, String> propertyMap = new HashMap<String, String>();
@@ -217,6 +218,7 @@ public class Molecule implements Serializable, ITree {
     public Molecule(String name) {
         this.name = name;
         entities = new LinkedHashMap<>();
+        chains = new LinkedHashMap<>();
         entityLabels = new LinkedHashMap();
         coordSets = new LinkedHashMap<>();
         nResidues = 0;
@@ -396,6 +398,14 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
+    public CoordSet getCoordSet(String name) {
+        if (name == null) {
+            return null;
+        } else {
+            return ((CoordSet) coordSets.get(name));
+        }
+    }
+
     public CoordSet getFirstCoordSet() {
         Iterator e = coordSets.values().iterator();
         CoordSet coordSet = null;
@@ -430,6 +440,7 @@ public class Molecule implements Serializable, ITree {
         }
         entity.molecule = this;
         addCoordSet(coordSetName, entity);
+        chains.put(entity.getPDBChain(), entity);
     }
 
     public Entity getEntity(String name) {
@@ -437,6 +448,14 @@ public class Molecule implements Serializable, ITree {
             return null;
         } else {
             return ((Entity) entities.get(name));
+        }
+    }
+    
+    public Entity getChain(String name) {
+        if (name == null) {
+            return null;
+        } else {
+            return ((Entity) chains.get(name));
         }
     }
 
