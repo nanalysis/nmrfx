@@ -378,6 +378,9 @@ public class AnalystApp extends MainApp {
         MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
         peakSliderMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakSlider());
 
+        MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
+        pathToolMenuItem.setOnAction(e -> FXMLController.getActiveController().showPathTool());
+
         MenuItem peakAnalyzerMenuItem = new MenuItem("Analyze 1D Multiplets");
         peakAnalyzerMenuItem.setOnAction(e -> analyze1D());
         MenuItem multipletMenuItem = new MenuItem("Multiplet Analyzer...");
@@ -402,7 +405,7 @@ public class AnalystApp extends MainApp {
         assignCascade.getItems().addAll(peakAssignerItem, assignOnPick, atomBrowserMenuItem, runAboutMenuItem);
 
         peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
-                linkPeakDimsMenuItem, peakSliderMenuItem,
+                linkPeakDimsMenuItem, peakSliderMenuItem, pathToolMenuItem,
                 peakAnalyzerMenuItem,
                 multipletMenuItem, ligandScannerMenuItem, assignCascade);
 

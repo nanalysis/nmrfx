@@ -8,13 +8,16 @@ package org.nmrfx.processor.gui.molecule;
 import org.nmrfx.structure.chemistry.*;
 
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
+import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 
 public class CanvasMolecule implements CanvasAnnotation {
@@ -298,7 +301,7 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
-    public int pick(GraphicsContext gC, double x, double y) {
+    public int pick(GraphicsContextInterface gC, double x, double y) {
         int atomNum = genSpheres(gC, true, x, y);
 
         return atomNum;
@@ -320,7 +323,7 @@ public class CanvasMolecule implements CanvasAnnotation {
         }
     }
 
-    public void draw(Canvas canvas, double[][] canvasBounds, double[][] worldBounds) {
+    public void draw(GraphicsContextInterface gC, double[][] canvasBounds, double[][] worldBounds) {
         x1 = xPosType.transform(bx1, canvasBounds[0], worldBounds[0]);
         x2 = xPosType.transform(bx2, canvasBounds[0], worldBounds[0]);
         y1 = yPosType.transform(by1, canvasBounds[1], worldBounds[1]);
@@ -328,10 +331,10 @@ public class CanvasMolecule implements CanvasAnnotation {
 
 
         transformValid = false;
-        paintShape(canvas.getGraphicsContext2D());
+        paintShape(gC);
     }
 
-    public void paintShape(GraphicsContext g2) {
+    public void paintShape(GraphicsContextInterface g2) {
         boolean drawSpheres = true;
         boolean drawLines = true;
         Molecule molecule = null;
@@ -473,7 +476,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                 molPrims.selectionCoords, molPrims.selectionLevels);
     }
 
-    public int genSpheres(GraphicsContext gC, boolean pickMode, double pickX, double pickY) {
+    public int genSpheres(GraphicsContextInterface gC, boolean pickMode, double pickX, double pickY) {
         float dX = radius * canvasScale;
         float dY = radius * canvasScale;
 
@@ -540,40 +543,44 @@ public class CanvasMolecule implements CanvasAnnotation {
                         outline = negColor;
                     }
                 } else {
-                    outline = Color.color(sphereColors[i * 3],
-                            sphereColors[(i * 3) + 1], sphereColors[(i * 3)
-                            + 2]);
-                    fill = Color.color(sphereColors[i * 3],
-                            sphereColors[(i * 3) + 1], sphereColors[(i * 3)
-                            + 2]);
-                    gC.setFill(fill);
-                    gC.setStroke(outline);
-                    gC.setLineWidth(stroke3);
-
-                    switch (shapeMode) {
-                        case CIRCLE_SHAPE: {
-                            gC.fillOval(x, y, vRadius, vRadius);
-                            gC.strokeOval(x, y, vRadius, vRadius);
-                            break;
+                    try {
+                        outline = Color.color(sphereColors[i * 3],
+                                sphereColors[(i * 3) + 1], sphereColors[(i * 3)
+                                        + 2]);
+                        fill = Color.color(sphereColors[i * 3],
+                                sphereColors[(i * 3) + 1], sphereColors[(i * 3)
+                                        + 2]);
+                        gC.setFill(fill);
+                        gC.setStroke(outline);
+                        gC.setLineWidth(stroke3);
+                        
+                        switch (shapeMode) {
+                            case CIRCLE_SHAPE: {
+                                gC.fillOval(x, y, vRadius, vRadius);
+                                gC.strokeOval(x, y, vRadius, vRadius);
+                                break;
+                            }
+                            
+                            case SQUARE_SHAPE: {
+                                gC.fillRect(x - vRadius, y - vRadius, vRadius * 2, vRadius * 2);
+                                gC.strokeRect(x - vRadius, y - vRadius, vRadius * 2, vRadius * 2);
+                                break;
+                            }
+                            
+                            case TRIANGLE_SHAPE: {
+                                gC.beginPath();
+                                gC.moveTo(x - dX, y + triangleHeight);
+                                gC.lineTo(x + dX, y + triangleHeight);
+                                gC.lineTo(x, y - triangleHeight);
+                                gC.closePath();
+                                gC.fill();
+                                gC.stroke();
+                                break;
+                            }
+                            default: // fixme should throw Exception
                         }
-
-                        case SQUARE_SHAPE: {
-                            gC.fillRect(x - vRadius, y - vRadius, vRadius * 2, vRadius * 2);
-                            gC.strokeRect(x - vRadius, y - vRadius, vRadius * 2, vRadius * 2);
-                            break;
-                        }
-
-                        case TRIANGLE_SHAPE: {
-                            gC.beginPath();
-                            gC.moveTo(x - dX, y + triangleHeight);
-                            gC.lineTo(x + dX, y + triangleHeight);
-                            gC.lineTo(x, y - triangleHeight);
-                            gC.closePath();
-                            gC.fill();
-                            gC.stroke();
-                            break;
-                        }
-                        default: // fixme should throw Exception
+                    } catch (GraphicsIOException ex) {
+                        Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
                     }
 
                 }
@@ -583,7 +590,7 @@ public class CanvasMolecule implements CanvasAnnotation {
         return -1;
     }
 
-    public int genLabels(GraphicsContext gC) {
+    public int genLabels(GraphicsContextInterface gC) {
 
         if (!getCoordSystemTransform()) {
             return 0;
@@ -616,15 +623,19 @@ public class CanvasMolecule implements CanvasAnnotation {
                 label = molPrims.labels[i];
             }
             if ((label != null) && !label.equals("C") && !label.equals("")) {
-                gC.setStroke(Color.BLACK);
-                gC.strokeText(label, x, y);
+                try {
+                    gC.setStroke(Color.BLACK);
+                    gC.strokeText(label, x, y);
+                } catch (GraphicsIOException ex) {
+                    Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         }
 
         return -1;
     }
 
-    public int genSelectionSymbols(GraphicsContext gC) {
+    public int genSelectionSymbols(GraphicsContextInterface gC) {
 
         if (!transformValid) {
             setupTransform();
@@ -653,13 +664,17 @@ public class CanvasMolecule implements CanvasAnnotation {
                         || ((k + 1) >= molPrims.nSelected)
                         || ((Molecule.selCycleCount != 1)
                         && (((k + 1) % Molecule.selCycleCount) == 0))) {
-                    float vRadius = (canvasScale * radius) / 2.0f * (1
-                            + molPrims.selectionLevels[i]) + 2;
-                    gC.setStroke(Color.ORANGE);
-                    gC.strokeOval(x - vRadius, y - vRadius, vRadius * 2,
-                            vRadius * 2);
-
-                    break;
+                    try {
+                        float vRadius = (canvasScale * radius) / 2.0f * (1
+                                + molPrims.selectionLevels[i]) + 2;
+                        gC.setStroke(Color.ORANGE);
+                        gC.strokeOval(x - vRadius, y - vRadius, vRadius * 2,
+                                vRadius * 2);
+                        
+                        break;
+                    } catch (GraphicsIOException ex) {
+                        Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
 
@@ -694,7 +709,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                 molPrims.lineColors);
     }
 
-    public void genLines(GraphicsContext gC) {
+    public void genLines(GraphicsContextInterface gC) {
         double x1;
         double y1;
         double z1;
@@ -712,42 +727,46 @@ public class CanvasMolecule implements CanvasAnnotation {
             setupTransform();
         }
         for (int i = 0; i < molPrims.nLines; i++) {
-            x1 = molPrims.lineCoords[i * 6];
-            y1 = molPrims.lineCoords[(i * 6) + 1];
-            z1 = molPrims.lineCoords[(i * 6) + 2];
-
-            Point3D vecIn1 = new Point3D(x1, y1, z1);
-            Point3D vecOut1 = canvasTransform.transform(vecIn1);
-            x1 = vecOut1.getX() + transformPt.getX();
-            y1 = vecOut1.getY() + transformPt.getY();
-            z1 = vecOut1.getZ();
-
-            x2 = (float) molPrims.lineCoords[(i * 6) + 3];
-            y2 = (float) molPrims.lineCoords[(i * 6) + 4];
-            z2 = (float) molPrims.lineCoords[(i * 6) + 5];
-
-            Point3D vecIn2 = new Point3D(x2, y2, z2);
-            Point3D vecOut2 = canvasTransform.transform(vecIn2);
-
-            x2 = vecOut2.getX() + transformPt.getX();
-            y2 = vecOut2.getY() + transformPt.getY();
-            z2 = vecOut2.getZ();
-
-            xm = (x1 + x2) / 2.0f;
-            ym = (y1 + y2) / 2.0f;
-            Color color = Color.color(molPrims.lineColors[i * 6],
-                    molPrims.lineColors[(i * 6) + 1],
-                    molPrims.lineColors[(i * 6) + 2]);
-
-            gC.setStroke(color);
-
-            gC.strokeLine(x1, y1, xm, ym);
-
-            Color color2 = Color.color(molPrims.lineColors[(i * 6) + 3],
-                    molPrims.lineColors[(i * 6) + 4],
-                    molPrims.lineColors[(i * 6) + 5]);
-            gC.setStroke(color2);
-            gC.strokeLine(xm, ym, x2, y2);
+            try {
+                x1 = molPrims.lineCoords[i * 6];
+                y1 = molPrims.lineCoords[(i * 6) + 1];
+                z1 = molPrims.lineCoords[(i * 6) + 2];
+                
+                Point3D vecIn1 = new Point3D(x1, y1, z1);
+                Point3D vecOut1 = canvasTransform.transform(vecIn1);
+                x1 = vecOut1.getX() + transformPt.getX();
+                y1 = vecOut1.getY() + transformPt.getY();
+                z1 = vecOut1.getZ();
+                
+                x2 = (float) molPrims.lineCoords[(i * 6) + 3];
+                y2 = (float) molPrims.lineCoords[(i * 6) + 4];
+                z2 = (float) molPrims.lineCoords[(i * 6) + 5];
+                
+                Point3D vecIn2 = new Point3D(x2, y2, z2);
+                Point3D vecOut2 = canvasTransform.transform(vecIn2);
+                
+                x2 = vecOut2.getX() + transformPt.getX();
+                y2 = vecOut2.getY() + transformPt.getY();
+                z2 = vecOut2.getZ();
+                
+                xm = (x1 + x2) / 2.0f;
+                ym = (y1 + y2) / 2.0f;
+                Color color = Color.color(molPrims.lineColors[i * 6],
+                        molPrims.lineColors[(i * 6) + 1],
+                        molPrims.lineColors[(i * 6) + 2]);
+                
+                gC.setStroke(color);
+                
+                gC.strokeLine(x1, y1, xm, ym);
+                
+                Color color2 = Color.color(molPrims.lineColors[(i * 6) + 3],
+                        molPrims.lineColors[(i * 6) + 4],
+                        molPrims.lineColors[(i * 6) + 5]);
+                gC.setStroke(color2);
+                gC.strokeLine(xm, ym, x2, y2);
+            } catch (GraphicsIOException ex) {
+                Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 

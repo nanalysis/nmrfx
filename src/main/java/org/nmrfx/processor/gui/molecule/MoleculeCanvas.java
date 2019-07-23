@@ -12,6 +12,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.structure.chemistry.Molecule;
 
@@ -45,8 +46,9 @@ public class MoleculeCanvas extends Canvas {
         GraphicsContext gC = getGraphicsContext2D();
         gC.setFill(Color.DARKGRAY);
         gC.fillRect(0, 0, getWidth(), getHeight());
+        GraphicsContextProxy gCProxy = new GraphicsContextProxy(gC);
         for (CanvasMolecule canvasMol : canvasMolecules) {
-            canvasMol.draw(this, bounds, world);
+            canvasMol.draw(gCProxy, bounds, world);
         }
 
     }
