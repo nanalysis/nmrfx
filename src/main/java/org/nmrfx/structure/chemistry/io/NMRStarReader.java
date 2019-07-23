@@ -440,11 +440,8 @@ public class NMRStarReader {
             asymLabel = "A";
         }
         String pdbLabel = STAR3.getTokenFromMap(tagMap, "PDB_chain_ID", "A");
-        String shortName = entityAssemblyName;
         if (pdbLabel.equals(".")) {
-            pdbLabel = "A";
-        } else {
-            shortName = pdbLabel;
+            pdbLabel = asymLabel;       
         }
         int entityID = 1;
         int entityAssemblyID = 1;
@@ -479,8 +476,9 @@ public class NMRStarReader {
                 Polymer polymer = new Polymer(entitySaveFrameLabel, entityAssemblyName);
                 polymer.setIDNum(entityID);
                 polymer.assemblyID = entityAssemblyID;
+                polymer.setPDBChain(pdbLabel);
                 entities.put(entityAssemblyIDString + "." + entityIDString, polymer);
-                molecule.addEntity(polymer, shortName);
+                molecule.addEntity(polymer, asymLabel);
                 finishSaveFrameProcessing(polymer, saveframe, nomenclature, capped);
             } else {
                 molecule.addCoordSet(asymLabel, entity);
@@ -491,8 +489,9 @@ public class NMRStarReader {
                 Compound compound = new Compound("1", entityAssemblyName, name);
                 compound.setIDNum(1);
                 compound.assemblyID = entityAssemblyID;
+                compound.setPDBChain(pdbLabel);
                 entities.put(entityAssemblyIDString + "." + entityIDString, compound);
-                molecule.addEntity(compound, shortName);
+                molecule.addEntity(compound, asymLabel);
                 String mapID = entityAssemblyID + "." + entityID + "." + 1;
                 finishSaveFrameProcessing(this, saveframe, compound, mapID);
             }
