@@ -21,7 +21,7 @@ import java.util.*;
 
 public class Polymer extends Entity {
 
-    public Hashtable residues;
+    public Map<String, Residue> residues;
     public ArrayList<Residue> residueList = null;
     public Residue firstResidue = null;
     public Residue lastResidue = null;
@@ -70,13 +70,13 @@ public class Polymer extends Entity {
     public Polymer(String name) {
         this.name = name;
         this.label = name;
-        residues = new Hashtable();
+        residues = new HashMap<>();
     }
 
     public Polymer(String label, String name) {
         this.name = name;
         this.label = label;
-        residues = new Hashtable();
+        residues = new HashMap<>();
     }
 
     public Iterator iterator() {
@@ -90,7 +90,7 @@ public class Polymer extends Entity {
     }
 
     public Residue getResidue(String name) {
-        return ((Residue) residues.get(name.toLowerCase()));
+        return residues.get(name.toLowerCase());
     }
 
     public Residue getResidue(int resNum) {
@@ -182,6 +182,12 @@ public class Polymer extends Entity {
             residues.remove(oldNumber);
             residues.put(newNumber, residue);
             return (0);
+        }
+    }
+    
+    public void dumpResidues() {
+        for (String num:residues.keySet()) {
+            System.out.println(num + " " + residues.get(num).getName());
         }
     }
 
