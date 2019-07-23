@@ -561,9 +561,9 @@ public class PDBFile {
 
                         polymer = (Polymer) molecule.getEntity(polymerName);
 
+
                         if (polymer == null) {
-                            polymerName = molecule.getDefaultEntity();
-                            polymer = (Polymer) molecule.getEntity(polymerName);
+                            polymer = (Polymer) molecule.getChain(polymerName);
                         }
                         if (polymer == null) {
                             System.err.println("null polymer " + polymerName + " for line: " + string);
