@@ -118,6 +118,7 @@ import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
+import org.nmrfx.processor.gui.tools.PathTool;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utilities.DictionarySort;
 import org.python.core.PyObject;
@@ -195,6 +196,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     PeakNavigator peakNavigator;
     PeakSlider peakSlider;
+    PathTool pathTool;
     ListView datasetListView = new ListView();
 
     SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
@@ -1741,18 +1743,22 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             bottomBox.getChildren().add(navBar);
             peakNavigator = PeakNavigator.create(this).onClose(this::removePeakNavigator).showAtoms().initialize(navBar);
             peakNavigator.setPeakList();
-            ObservableList<Double> scaleList = FXCollections.observableArrayList(0.0, 2.5, 5.0, 7.5, 10.0, 15.0, 20.0);
-            ChoiceBox<Double> scaleBox = new ChoiceBox(scaleList);
-            scaleBox.setValue(5.0);
-            scaleBox.setOnAction(e -> {
-                widthScale = scaleBox.getValue();
-                Peak peak = peakNavigator.getPeak();
-                if (peak != null) {
-                    refreshPeakView(peak);
-                }
-            });
-            navBar.getItems().add(scaleBox);
+            addScaleBox(peakNavigator, navBar);
         }
+    }
+
+    public void addScaleBox(PeakNavigator navigator, ToolBar navBar) {
+        ObservableList<Double> scaleList = FXCollections.observableArrayList(0.0, 2.5, 5.0, 7.5, 10.0, 15.0, 20.0);
+        ChoiceBox<Double> scaleBox = new ChoiceBox(scaleList);
+        scaleBox.setValue(5.0);
+        scaleBox.setOnAction(e -> {
+            widthScale = scaleBox.getValue();
+            Peak peak = navigator.getPeak();
+            if (peak != null) {
+                refreshPeakView(peak);
+            }
+        });
+        navBar.getItems().add(scaleBox);
     }
 
     public void removePeakNavigator(Object o) {
@@ -1772,10 +1778,34 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
     }
 
+    public Peak getActivePeak() {
+        Peak peak = null;
+        if (peakNavigator != null) {
+            peak = peakNavigator.getPeak();
+        }
+        return peak;
+    }
+
     public void removePeakSlider(Object o) {
         if (peakSlider != null) {
             bottomBox.getChildren().remove(peakSlider.getToolBar());
             peakSlider = null;
+        }
+    }
+
+    public void showPathTool() {
+        if (pathTool == null) {
+            ToolBar navBar = new ToolBar();
+            bottomBox.getChildren().add(navBar);
+            pathTool = new PathTool(this, this::removePathTool);
+            pathTool.initPathTool(navBar);
+        }
+    }
+
+    public void removePathTool(Object o) {
+        if (pathTool != null) {
+            bottomBox.getChildren().remove(pathTool.getToolBar());
+            pathTool = null;
         }
     }
 

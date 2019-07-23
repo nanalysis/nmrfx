@@ -7,11 +7,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
@@ -95,7 +97,7 @@ public class PeakNavigator implements PeakListener {
         closeAction.accept(this);
     }
 
-    PeakNavigator initialize(ToolBar toolBar) {
+    public PeakNavigator initialize(ToolBar toolBar) {
         initPeakNavigator(toolBar, null);
         return this;
     }

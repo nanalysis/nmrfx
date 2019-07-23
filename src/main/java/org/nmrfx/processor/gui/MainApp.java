@@ -342,7 +342,10 @@ public class MainApp extends Application implements DatasetListener {
         MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
         peakSliderMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakSlider());
 
-        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem);
+        MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
+        pathToolMenuItem.setOnAction(e -> FXMLController.getActiveController().showPathTool());
+
+        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem, pathToolMenuItem);
 
         // Window Menu
         // TBD standard window menu items
