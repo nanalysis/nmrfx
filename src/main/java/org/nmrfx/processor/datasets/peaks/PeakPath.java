@@ -177,10 +177,12 @@ public class PeakPath {
                 PeakDistance peakDist = new PeakDistance(peak, 0.0, deltas);
                 List<PeakDistance> peakDists = new ArrayList<>();
                 peakDists.add(peakDist);
+                for (int i = 1; i < peakLists.size(); i++) {
+                    peakDists.add(null);
+                }
                 Path path = new Path(peakDists);
                 if (!path.peakDists.isEmpty()) {
                     paths.put(path.getFirstPeak().toString(), path);
-
                 }
             }
         }
@@ -415,6 +417,10 @@ public class PeakPath {
                     System.out.println("skip " + dis + " " + peakDists.get(1).peak.getName());
                     newPeakDists.clear();
                     newPeakDists.add(filteredLists.get(0).get(0));
+                    for (int i = 1; i < peakLists.size(); i++) {
+                        newPeakDists.add(null);
+                    }
+
                     break;
                 }
             }
