@@ -43,6 +43,7 @@ public class MouseBindings {
 
     PolyChart chart;
     double[] dragStart = new double[2];
+    boolean moved = false;
     MOUSE_ACTION mouseAction = MOUSE_ACTION.NOTHING;
     boolean mouseDown = false;
     Optional<Boolean> widthMode = Optional.empty();
@@ -78,6 +79,12 @@ public class MouseBindings {
     public void mouseDragged(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
+        double deltaX = Math.abs(x - dragStart[0]);
+        double deltaY = Math.abs(y - dragStart[1]);
+        double tol = 3;
+        if ((deltaX > tol) || (deltaY > tol)) {
+            moved = true;
+        }
         if (!mouseEvent.isControlDown()) {
             if (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR")) {
                 chart.handleCrossHair(mouseEvent, false);
@@ -94,10 +101,14 @@ public class MouseBindings {
                             chart.dragBox(dragStart, x, y);
                             break;
                         case DRAG_PEAK:
-                            chart.dragPeak(dragStart, x, y, false);
+                            if (moved) {
+                                chart.dragPeak(dragStart, x, y, false);
+                            }
                             break;
                         case DRAG_PEAK_WIDTH:
-                            chart.dragPeak(dragStart, x, y, true);
+                            if (moved) {
+                                chart.dragPeak(dragStart, x, y, true);
+                            }
                             break;
                         case DRAG_REGION:
                             chart.dragRegion(dragStart, x, y, true);
@@ -131,6 +142,7 @@ public class MouseBindings {
         chart.setActiveChart();
         dragStart[0] = x;
         dragStart[1] = y;
+        moved = false;
         mouseAction = MOUSE_ACTION.NOTHING;
         if (!mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
             if (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR")) {
@@ -205,18 +217,22 @@ public class MouseBindings {
                     case DRAG_PEAK:
                         dragStart[0] = x;
                         dragStart[1] = y;
-                        chart.dragPeak(dragStart, x, y, false);
+                        if (moved) {
+                            chart.dragPeak(dragStart, x, y, false);
+                        }
                         break;
                     case DRAG_PEAK_WIDTH:
                         dragStart[0] = x;
                         dragStart[1] = y;
-                        chart.dragPeak(dragStart, x, y, true);
+                        if (moved) {
+                            chart.dragPeak(dragStart, x, y, true);
+                        }
                         widthMode = Optional.empty();
                         break;
                     default:
                         dragStart[0] = x;
                         dragStart[1] = y;
-                        if (widthMode.isPresent()) {
+                        if (moved && widthMode.isPresent()) {
                             chart.dragPeak(dragStart, x, y, widthMode.get());
                         }
                         widthMode = Optional.empty();
