@@ -43,6 +43,9 @@ import org.nmrfx.processor.gui.PeakNavigable;
 import org.nmrfx.processor.gui.PeakNavigator;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
+import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 
 /**
  *
@@ -52,17 +55,11 @@ public class PathTool implements PeakNavigable {
 
     ToolBar sliderToolBar;
     FXMLController controller;
+    PolyChart chart;
     Consumer closeAction;
     Button drawButton;
     Button findButton;
     Button tweakFreezeButton;
-    Button linkButton;
-    Label atomXFieldLabel;
-    Label atomYFieldLabel;
-    Label intensityFieldLabel;
-    Label atomXLabel;
-    Label atomYLabel;
-    Label intensityLabel;
     List<Peak> selPeaks;
     List<FreezeListener> listeners = new ArrayList<>();
     List<String> datasetNames = new ArrayList<>();
@@ -75,6 +72,7 @@ public class PathTool implements PeakNavigable {
     public PathTool(FXMLController controller, Consumer closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
+        this.chart = controller.getActiveChart();
     }
 
     public ToolBar getToolBar() {
@@ -96,49 +94,64 @@ public class PathTool implements PeakNavigable {
         ArrayList<Button> buttons = new ArrayList<>();
         Button bButton;
 
-        drawButton = GlyphsDude.createIconButton(FontAwesomeIcon.LOCK, "Draw",
-                iconSize, fontSize, ContentDisplay.TOP);
-        drawButton.setOnAction(e -> drawPath());
-
-//        freezeButton.setOnMouseClicked(e -> freezePeaks(e));
-        buttons.add(drawButton);
-
-        findButton = GlyphsDude.createIconButton(FontAwesomeIcon.UNLOCK, "Find",
-                iconSize, fontSize, ContentDisplay.TOP);
-        findButton.setOnAction(e -> findPaths());
-//        thawButton.setOnMouseClicked(e -> thawPeaks(e));
-        buttons.add(findButton);
-
-        Button scanButton = new Button("Scan");
-        scanButton.setOnAction(e -> scanPath());
-        buttons.add(scanButton);
-
         buttons.forEach((button) -> {
             button.getStyleClass().add("toolButton");
         });
 
-        atomXFieldLabel = new Label("X:");
-        atomYFieldLabel = new Label("Y:");
-        intensityFieldLabel = new Label("I:");
-        atomXLabel = new Label();
-        atomXLabel.setMinWidth(75);
-        atomYLabel = new Label();
-        atomYLabel.setMinWidth(75);
-        intensityLabel = new Label();
-        intensityLabel.setMinWidth(75);
+        ArrayList<Button> dataButtons = new ArrayList<>();
+        Button allButton = new Button("All");
+        allButton.setOnAction(e -> allDatasets());
+        allButton.getStyleClass().add("toolButton");
+        dataButtons.add(allButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(e -> firstDataset(e));
+        dataButtons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(e -> previousDataset(e));
+        dataButtons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(e -> nextDataset(e));
+        dataButtons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(e -> lastDataset(e));
+        dataButtons.add(bButton);
+
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.PLUS, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(e -> addPeakToPath());
+        dataButtons.add(bButton);
+
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
+        bButton.setOnAction(e -> removePeakFromPath());
+        dataButtons.add(bButton);
 
         MenuButton actionMenu = new MenuButton("Actions");
         MenuItem loadData = new MenuItem("Load Data...");
         loadData.setOnAction(e -> loadPathData());
         actionMenu.getItems().add(loadData);
 
-        MenuItem findPath = new MenuItem("Find");
-        findPath.setOnAction(e -> checkLists());
-        actionMenu.getItems().add(findPath);
+        MenuItem findPathMenuItem = new MenuItem("Find Paths");
+        findPathMenuItem.setOnAction(e -> findPaths());
+        actionMenu.getItems().add(findPathMenuItem);
 
-        MenuItem setStatusItem = new MenuItem("Set Status");
-        setStatusItem.setOnAction(e -> setStatus());
-        actionMenu.getItems().add(setStatusItem);
+        MenuItem extendPathMenuItem = new MenuItem("Extend Paths");
+        extendPathMenuItem.setOnAction(e -> extendPaths());
+        actionMenu.getItems().add(extendPathMenuItem);
+
+        MenuItem drawMenuItem = new MenuItem("Draw Paths");
+        drawMenuItem.setOnAction(e -> drawPath());
+        actionMenu.getItems().add(drawMenuItem);
+
+        MenuItem addPathMenuItem = new MenuItem("Add Path");
+        addPathMenuItem.setOnAction(e -> addPath());
+        actionMenu.getItems().add(addPathMenuItem);
+
+        MenuItem clearPathsMenuItem = new MenuItem("Clear Paths");
+        clearPathsMenuItem.setOnAction(e -> clearPaths());
+        actionMenu.getItems().add(clearPathsMenuItem);
+
+        MenuItem clearPathMenuItem = new MenuItem("Clear Path");
+        clearPathMenuItem.setOnAction(e -> clearPath());
+        actionMenu.getItems().add(clearPathMenuItem);
 
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
@@ -155,10 +168,10 @@ public class PathTool implements PeakNavigable {
         toolBar.getItems().add(actionMenu);
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(filler2);
-        toolBar.getItems().addAll(atomXFieldLabel, atomXLabel, filler3, atomYFieldLabel, atomYLabel, filler4, intensityFieldLabel, intensityLabel);
+        toolBar.getItems().addAll(dataButtons);
 
         toolBar.getItems().add(filler5);
-        radiusField = new TextField("0.24");
+        radiusField = new TextField("0.5");
         toolBar.getItems().add(radiusField);
 
 //        controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
@@ -187,7 +200,6 @@ public class PathTool implements PeakNavigable {
     }
 
     void setupChart(List<String> datasetNames) {
-        PolyChart chart = controller.getActiveChart();
         chart.updateDatasets(datasetNames);
     }
 
@@ -260,6 +272,120 @@ public class PathTool implements PeakNavigable {
         }
     }
 
+    void clearPath() {
+        Peak startPeak = peakNavigator.getPeak();
+        if (startPeak != null) {
+            peakPath.initPath(startPeak);
+        }
+        drawPath();
+    }
+
+    void addPeakToPath() {
+        Peak startPeak = peakNavigator.getPeak();
+        List<Peak> selPeaks = chart.getSelectedPeaks();
+        System.out.println("selp " + selPeaks.size() + " " + startPeak);
+        if (selPeaks.size() == 1) {
+            if (startPeak != null) {
+                peakPath.addPeak(startPeak, selPeaks.get(0));
+            }
+        }
+        drawPath();
+    }
+
+    void removePeakFromPath() {
+        Peak startPeak = peakNavigator.getPeak();
+        List<Peak> selPeaks = chart.getSelectedPeaks();
+        if (selPeaks.size() == 1) {
+            if (startPeak != null) {
+                peakPath.removePeak(startPeak, selPeaks.get(0));
+            }
+        }
+    }
+
+    void setPeakStates() {
+        List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
+        for (PeakListAttributes peakAttr : peakAttrs) {
+            peakAttr.setDrawPeaks(peakAttr.getDatasetAttributes().getPos());
+        }
+
+    }
+
+    void firstLastPeakLists() {
+        List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
+        int i = 0;
+        for (PeakListAttributes peakAttr : peakAttrs) {
+            boolean state = (i == 0) || (i == peakAttrs.size() - 1);
+            peakAttr.setDrawPeaks(state);
+            if (i == peakAttrs.size() - 1) {
+                peakAttr.setDisplayType(PeakDisplayParameters.DisplayTypes.Cross);
+            }
+            i++;
+        }
+    }
+
+    void allDatasets() {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        for (DatasetAttributes dataAttr : dataAttrs) {
+            dataAttr.setPos(true);
+        }
+        firstLastPeakLists();
+        chart.refresh();
+    }
+
+    void setDatasetState(int active) {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        if (active < 0) {
+            active = 0;
+        }
+        if (active >= dataAttrs.size()) {
+            active = dataAttrs.size() - 1;
+        }
+        int i = 0;
+        for (DatasetAttributes dataAttr : dataAttrs) {
+            boolean state = (i == active) || (i == 0);
+            dataAttr.setPos(state);
+            i++;
+        }
+        setPeakStates();
+        chart.refresh();
+    }
+
+    int getActiveDataset() {
+        List<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+        int i = 0;
+        int active = 0;
+        for (DatasetAttributes dataAttr : dataAttrs) {
+            if (dataAttr.getPos()) {
+                if (i != 0) {
+                    active = i;
+                    break;
+                }
+            }
+            i++;
+        }
+        return active;
+    }
+
+    void firstDataset(ActionEvent e) {
+        setDatasetState(0);
+    }
+
+    void lastDataset(ActionEvent e) {
+        setDatasetState(chart.getDatasetAttributes().size() - 1);
+    }
+
+    void previousDataset(ActionEvent e) {
+        int active = getActiveDataset();
+        setDatasetState(active - 1);
+
+    }
+
+    void nextDataset(ActionEvent e) {
+        int active = getActiveDataset();
+        setDatasetState(active + 1);
+
+    }
+
     /*
     print 'check'
 checkLists(pp, 0.25, True)
@@ -280,29 +406,62 @@ checkLists(pp, 0.25, False)
 
     }
 
-    void findPaths() {
-        peakPath.checkListsForUnambigous(0.25);
-        peakPath.setStatus(0.05, 0.75);
-        peakPath.checkListsForUnambigous(0.25);
-        peakPath.setStatus(0.1, 0.75);
-        peakPath.checkListsForUnambigous(0.25);
-        peakPath.setStatus(0.15, 0.85);
-        peakPath.checkListsForUnambigous(0.25);
-        peakPath.setStatus(0.25, 0.95);
-        peakPath.checkListsForUnambigous(0.30);
-        peakPath.setStatus(0.30, 0.95);
-        peakPath.checkListsForUnambigous(0.4);
-        peakPath.setStatus(0.4, 1.00);
-        peakPath.checkListsForUnambigous(0.5);
-        peakPath.setStatus(0.5, 1.00);
-        peakPath.extendPaths(0.5, 1.0);
-        peakPath.setStatus(0.5, 1.00);
+    void clearPaths() {
+        peakPath.clearPaths();
     }
 
-    void scanPath() {
+    void findPaths() {
+        int n = 10;
+        double minRadius = 0.1;
+        double maxRadius = Double.parseDouble(radiusField.getText());
+        double radius = minRadius;
+        double minLim = 0.7;
+        double maxLim = 1.0;
+        double lim = minLim;
+        for (int i = 0; i < n; i++) {
+            radius = minRadius + i * (maxRadius - minRadius) / (n - 1);
+            lim = minLim + i * (maxLim - minLim) / (n - 1);
+            peakPath.checkListsForUnambigous(radius);
+            peakPath.setStatus(radius, lim);
+
+        }
+        drawPath();
+//        peakPath.checkListsForUnambigous(0.25);
+//        peakPath.setStatus(0.05, 0.75);
+//        peakPath.checkListsForUnambigous(0.25);
+//        peakPath.setStatus(0.1, 0.75);
+//        peakPath.checkListsForUnambigous(0.25);
+//        peakPath.setStatus(0.15, 0.85);
+//        peakPath.checkListsForUnambigous(0.25);
+//        peakPath.setStatus(0.25, 0.95);
+//        peakPath.checkListsForUnambigous(0.30);
+//        peakPath.setStatus(0.30, 0.95);
+//        peakPath.checkListsForUnambigous(0.4);
+//        peakPath.setStatus(0.4, 1.00);
+//        peakPath.checkListsForUnambigous(0.5);
+//        peakPath.setStatus(0.5, 1.00);
+    }
+
+    void extendPaths() {
+        double radius = Double.parseDouble(radiusField.getText());
+        double lim = 1.0;
+        peakPath.extendPaths(radius, lim);
+        peakPath.setStatus(radius, lim);
+        drawPath();
+    }
+
+    void addPath() {
+
+        Peak lastPeak = null;
+        List<Peak> selPeaks = chart.getSelectedPeaks();
+        if (selPeaks.size() == 1) {
+            lastPeak = selPeaks.get(0);
+        }
+
+        double radius = Double.parseDouble(radiusField.getText());
         Peak startPeak = peakNavigator.getPeak();
         if (startPeak != null) {
-            List<PeakDistance> peakDists = peakPath.scan(startPeak, 0.5, 2.0, 3, null, true);
+            List<PeakDistance> peakDists = peakPath.scan(startPeak, radius, 2.0, 4, lastPeak, true);
             for (PeakDistance peakDist : peakDists) {
                 if (peakDist != null) {
                     System.out.println(peakDist.getPeak());
@@ -313,7 +472,6 @@ checkLists(pp, 0.25, False)
     }
 
     void drawPath() {
-        PolyChart chart = controller.getActiveChart();
         chart.clearAnnotations();
         Collection<Path> paths = peakPath.getPaths();
 
@@ -345,8 +503,10 @@ checkLists(pp, 0.25, False)
 
         controller.refreshPeakView(peak);
         if ((peak != null) && (peakPath != null)) {
-            Path path = peakPath.getPath(peak.getName());
-            System.out.println(path.toString());
+            Path path = peakPath.getPath(peak);
+            if (path != null) {
+                System.out.println(path.toString());
+            }
         }
     }
 
