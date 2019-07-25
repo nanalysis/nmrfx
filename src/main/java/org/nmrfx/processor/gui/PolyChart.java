@@ -2387,8 +2387,10 @@ public class PolyChart implements PeakListener {
     public List<Peak> getSelectedPeaks() {
         List<Peak> selectedPeaks = new ArrayList<>();
         peakListAttributesList.stream().forEach(peakListAttr -> {
-            Set<Peak> peaks = peakListAttr.getSelectedPeaks();
-            selectedPeaks.addAll(peaks);
+            if (peakListAttr.getDrawPeaks()) {
+                Set<Peak> peaks = peakListAttr.getSelectedPeaks();
+                selectedPeaks.addAll(peaks);
+            }
         });
         return selectedPeaks;
     }
@@ -2396,8 +2398,10 @@ public class PolyChart implements PeakListener {
     public List<MultipletSelection> getSelectedMultiplets() {
         List<MultipletSelection> multiplets = new ArrayList<>();
         peakListAttributesList.stream().forEach(peakListAttr -> {
-            Set<MultipletSelection> mSels = peakListAttr.getSelectedMultiplets();
-            multiplets.addAll(mSels);
+            if (peakListAttr.getDrawPeaks()) {
+                Set<MultipletSelection> mSels = peakListAttr.getSelectedMultiplets();
+                multiplets.addAll(mSels);
+            }
         });
         return multiplets;
     }
