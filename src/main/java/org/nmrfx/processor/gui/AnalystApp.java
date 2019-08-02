@@ -43,7 +43,6 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.image.Image;
 import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.dialog.ExceptionDialog;
-import static javafx.application.Application.launch;
 import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
@@ -62,6 +61,8 @@ import org.nmrfx.project.GUIStructureProject;
 import org.nmrfx.processor.utilities.WebConnect;
 import org.nmrfx.project.Project;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
+import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.constraints.RDCConstraintSet;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
 import org.nmrfx.structure.chemistry.io.NMRStarReader;
 import org.nmrfx.structure.chemistry.io.NMRStarWriter;
@@ -69,6 +70,7 @@ import org.nmrfx.structure.chemistry.io.PDBFile;
 import org.nmrfx.structure.chemistry.io.SDFile;
 import org.nmrfx.structure.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
+import static javafx.application.Application.launch;
 
 public class AnalystApp extends MainApp {
 
@@ -90,6 +92,7 @@ public class AnalystApp extends MainApp {
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     Analyzer analyzer = null;
+    RDCGUI rdcGUI = null;
 
     public static void closeAll() {
         Stage mainStage = getMainStage();
@@ -331,6 +334,9 @@ public class AnalystApp extends MainApp {
         MenuItem readPDBItem = new MenuItem("Read PDB...");
         readPDBItem.setOnAction(e -> readMolecule("pdb"));
         molFileMenu.getItems().add(readPDBItem);
+        MenuItem readPDBxyzItem = new MenuItem("Read PDB XYZ...");
+        readPDBxyzItem.setOnAction(e -> readMolecule("pdb xyz"));
+        molFileMenu.getItems().add(readPDBxyzItem);
         MenuItem readMolItem = new MenuItem("Read Mol...");
         readMolItem.setOnAction(e -> readMolecule("mol"));
         molFileMenu.getItems().add(readMolItem);
@@ -340,8 +346,11 @@ public class AnalystApp extends MainApp {
 
         MenuItem molMenuItem = new MenuItem("Viewer");
         molMenuItem.setOnAction(e -> showMols(e));
+        
+        MenuItem rdcMenuItem = new MenuItem("RDC Analysis...");
+        rdcMenuItem.setOnAction(e -> showRDCGUI());
 
-        molMenu.getItems().addAll(molFileMenu, atomsMenuItem, molMenuItem);
+        molMenu.getItems().addAll(molFileMenu, atomsMenuItem, molMenuItem, rdcMenuItem);
 
         Menu viewMenu = new Menu("View");
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
@@ -834,6 +843,13 @@ public class AnalystApp extends MainApp {
         if (starFile != null) {
             try {
                 NMRStarReader.read(starFile);
+                if (rdcGUI != null) {
+                    rdcGUI.bmrbFile.setText(starFile.getName());
+                    rdcGUI.setNames = RDCConstraintSet.getNames();
+                    rdcGUI.setChoice.getItems().clear();
+                    rdcGUI.setChoice.getItems().addAll(rdcGUI.setNames);
+                    rdcGUI.setChoice.setValue(rdcGUI.setChoice.getItems().get(0));
+                }
             } catch (ParseException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
@@ -868,6 +884,16 @@ public class AnalystApp extends MainApp {
                         pdbReader.readSequence(file.toString(), false);
                         System.out.println("read mol: " + file.toString());
                         break;
+                    case "pdb xyz":
+                        PDBFile pdb = new PDBFile();
+                        pdb.readCoordinates(file.getPath(), 0, false, true);
+                        Molecule mol = Molecule.getActive();
+                        mol.updateAtomArray();
+                        System.out.println("read mol: " + file.toString());
+                        if (rdcGUI != null) {
+                            rdcGUI.pdbFile.setText(file.getName());
+                        }
+                        break;
                     case "sdf":
                     case "mol":
                         SDFile.read(file.toString(), null);
@@ -888,5 +914,12 @@ public class AnalystApp extends MainApp {
                 atomController.setFilterString("");
             }
         }
+    }
+        
+    void showRDCGUI() {
+        if (rdcGUI == null) {
+            rdcGUI = new RDCGUI(this);
+        }
+        rdcGUI.showRDCplot();
     }
 }
