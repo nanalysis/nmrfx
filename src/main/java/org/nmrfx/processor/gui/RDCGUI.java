@@ -25,8 +25,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import javafx.beans.Observable;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
@@ -105,12 +107,14 @@ public class RDCGUI {
             ToolBar toolBar = new ToolBar();
             Button rdcButton = new Button("Perform RDC Analysis");
             Button saveButton = new Button("Save Results to File");
+            Button exportButton = new Button("Export Plot");
             Label pdbLabel = new Label("  PDB File: ");
             Label bmrbLabel = new Label("  BMRB File: ");
-            toolBar.getItems().addAll(rdcButton, saveButton, bmrbLabel, bmrbFile, pdbLabel, pdbFile);
+            toolBar.getItems().addAll(rdcButton, saveButton, exportButton, bmrbLabel, bmrbFile, pdbLabel, pdbFile);
 
             rdcButton.setOnAction(e -> analyze());
             saveButton.setOnAction(e -> saveToFile());
+            exportButton.setOnAction(e -> exportPlotSVGAction(e));
 
             HBox hBox = new HBox();
             HBox.setHgrow(hBox, Priority.ALWAYS);
@@ -318,6 +322,26 @@ public class RDCGUI {
                     ExceptionDialog dialog = new ExceptionDialog(ex);
                     dialog.showAndWait();
                 }
+            }
+        }
+    }
+    
+    @FXML
+    void exportPlotSVGAction(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export to SVG");
+        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
+        File selectedFile = fileChooser.showSaveDialog(null);
+        if (selectedFile != null) {
+            SVGGraphicsContext svgGC = new SVGGraphicsContext();
+            try {
+                Canvas canvas = activeChart.getCanvas();
+                svgGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                exportChart(svgGC);
+                svgGC.saveFile();
+            } catch (GraphicsIOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
             }
         }
     }
