@@ -23,9 +23,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
@@ -34,6 +36,10 @@ import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
+import org.nmrfx.structure.chemistry.constraints.RDCConstraintSet;
+import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
+import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
+import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
 
 public class OrderSVD {
     
@@ -65,9 +71,11 @@ public class OrderSVD {
     
     RealMatrix AR;
     ArrayRealVector bVec;
+    ArrayRealVector bVecUnNorm;
     RealVector xVec;
     RealMatrix SR;
-    RealMatrix Seig;
+    EigenDecomposition eig;
+    RealMatrix Sdiag;
     double Q;
     double[] maxRDCs;
     RealVector dcDiffs;
@@ -109,10 +117,13 @@ public class OrderSVD {
         SingularValueDecomposition svd = new SingularValueDecomposition(AR);
         // construct the b vector, which contains the normalized dipolar couplings 
         double[] dcNorm = new double[dc.size()];
+        double[] dcUnNorm = new double[dc.size()];
         for (int i=0; i<dcNorm.length; i++) {
             dcNorm[i] = dc.get(i)/maxRDC[i];
+            dcUnNorm[i] = dc.get(i);
         }
         bVec = new ArrayRealVector(dcNorm);
+        bVecUnNorm = new ArrayRealVector(dcUnNorm);
         int Slen = 3;
         double[][] S = new double[Slen][Slen];
         Random random = new Random();
@@ -136,25 +147,25 @@ public class OrderSVD {
             if ((S[0][0] >= -0.5 && S[0][0] <= 1.0) && (S[1][1] >= -0.5 && S[1][1] <= 1.0) && (S[2][2] >= -0.5 && S[2][2] <= 1.0) && 
                 (S[1][0] >= -0.75 && S[1][0] <= 0.75) && (S[2][0] >= -0.75 && S[2][0] <= 0.75) && (S[2][1] >= -0.75 && S[2][1] <= 0.75)) {
                 SR = new Array2DRowRealMatrix(S);
-                EigenDecomposition eig = new EigenDecomposition(SR);
-                Seig = eig.getD();
-                if ((Seig.getEntry(0, 0) >= -0.5 && Seig.getEntry(0, 0) <= 1.0) && (Seig.getEntry(1, 1) >= -0.5 && Seig.getEntry(1, 1) <= 1.0) && 
-                    (Seig.getEntry(2, 2) >= -0.5 && Seig.getEntry(2, 2) <= 1.0)) {
+                eig = new EigenDecomposition(SR);
+                System.out.println("eig decomp getV = " + eig.getV().toString());
+                System.out.println("eig decomp getVT = " + eig.getVT().toString());
+                Sdiag = eig.getD();
+                double Sxx = Sdiag.getEntry(0, 0);
+                double Syy = Sdiag.getEntry(1, 1);
+                double Szz = Sdiag.getEntry(2, 2);
+                if ((Sxx >= -0.5 && Sxx <= 1.0) && (Syy >= -0.5 && Syy <= 1.0) && (Szz >= -0.5 && Szz <= 1.0)) {
                     System.out.println("Converged after " + cycle + " cycles");
                     System.out.println("x = " + xVec.toString());
                     System.out.println("S = " + SR.toString());
-                    System.out.println("Seig = " + Seig.toString());
-                    System.out.println("Sz'z' = " + Seig.getEntry(2, 2));
-                    System.out.println("eta = " + (Seig.getEntry(1, 1) - Seig.getEntry(0, 0))/Seig.getEntry(2, 2));
-                    double axial = 0.333*(Seig.getEntry(2, 2)-(Seig.getEntry(0, 0)+Seig.getEntry(1, 1))/2);
-                    double rhombic = 0.333*(Seig.getEntry(0, 0)-Seig.getEntry(1, 1));
+                    System.out.println("Seig = " + Sdiag.toString());
+                    System.out.println("Sz'z' = " + Szz);
+                    System.out.println("eta = " + (Syy - Sxx)/Szz);
+                    double axial = 0.333*(Szz - (Sxx + Syy)/2);
+                    double rhombic = 0.333*(Sxx - Syy);
                     System.out.println("alignment tensor axial component = " + axial);
                     System.out.println("alignment tensor rhombic component = " + rhombic);
                     System.out.println("rhombicity = " + rhombic/axial);
-//                    for (int i=0; i<maxRDC.length; i++) {
-//                        System.out.println("magnitude = " + 0.5*maxRDC[i]*axial);
-//                    }
-                    System.out.println("magnitude = " + 0.5*maxRDC[0]*axial);
                     break;
                 } else {
                     for (int i=0; i<error.size(); i++) {
@@ -257,6 +268,15 @@ public class OrderSVD {
     }
     
     /**
+     * Returns the unnormalized experimental RDC value vector.
+     * 
+     * @return ArrayRealVector b vector containing the unnormalized experimental RDC values.
+     */
+    public ArrayRealVector getBUnNormVector() {
+        return bVecUnNorm;
+    }
+    
+    /**
      * Returns the x vector solved for in the SVD.
      * 
      * @return RealVector x solved for in the SVD using the direction cosine A matrix and the normalized experimental RDC b vector: Ax = b.
@@ -280,7 +300,7 @@ public class OrderSVD {
      * @return RealMatrix Diagonalized 3x3 order matrix S.
      */
     public RealMatrix getSDiag() {
-        return Seig;
+        return Sdiag;
     }
     
     /**
@@ -289,7 +309,25 @@ public class OrderSVD {
      * @return double Sz'z' element of the diagonalized order matrix S.
      */
     public double getSzz() {
-        return Seig.getEntry(2, 2);
+        return Sdiag.getEntry(2, 2);
+    }
+    
+    /**
+     * Returns the Syy element of the diagonalized order matrix S.
+     * 
+     * @return double Sy'y' element of the diagonalized order matrix S.
+     */
+    public double getSyy() {
+        return Sdiag.getEntry(1, 1);
+    }
+    
+    /**
+     * Returns the Sxx element of the diagonalized order matrix S.
+     * 
+     * @return double Sx'x' element of the diagonalized order matrix S.
+     */
+    public double getSxx() {
+        return Sdiag.getEntry(0, 0);
     }
     
     /**
@@ -298,7 +336,53 @@ public class OrderSVD {
      * @return double Asymmetry parameter: eta = (Sy'y' - Sx'x')/Sz'z'. S is the diagonalized order matrix.
      */
     public double calcEta() {
-        return (Seig.getEntry(1, 1) - Seig.getEntry(0, 0))/Seig.getEntry(2, 2);
+        return (getSyy() - getSxx())/getSzz();
+    }
+    
+    /**
+     * Calculates the axial component of the diagonalized order matrix S.
+     * 
+     * @return double axial component = (1/3)*(Sz'z' - (Sx'x' + Sy'y')/2)
+     */
+    public double calcSAxial() {
+//        double axial = 0.333*(getSzz() - (getSxx() + getSyy())/2); //from J. Am. Chem. Soc., Vol. 121, No. 39, 1999
+        double axial = 0.5*(getSzz()); //from PALES article: NATURE PROTOCOLS|VOL.3 NO.4|2008
+        return axial;
+    }
+    
+    /**
+     * Calculates the rhombic component of the diagonalized order matrix S.
+     * 
+     * @return double rhombic component = (1/3)*(Sx'x' - Sy'y')
+     */
+    public double calcSRhombic() {
+        double rhombic = 0.333*(getSxx() - getSyy());
+        return rhombic;
+    }
+    
+    /**
+     * Calculates the rhombicity of the diagonalized order matrix S.
+     * 
+     * @return double rhombicity = (rhombic component of S)/(axial component of S).
+     */
+    public double calcRhombicity() {
+        return calcSRhombic()/calcSAxial();
+    }
+    
+    /**
+     * Calculates the magnitude of the diagonalized order matrix S.
+     * 
+     * @return double magnitude = (1/2)*maxRDCs[index of max(abs(maxRDCs))]*(axial component of S)
+     */
+    public double calcMagnitude() {
+        double[] absMaxRDCs = new double[maxRDCs.length];
+        for (int i=0; i<absMaxRDCs.length; i++) {
+            absMaxRDCs[i] = Math.abs(maxRDCs[i]);
+        }
+        double maxAbsRDC = Arrays.stream(absMaxRDCs).max().getAsDouble();
+        int maxIndex = Arrays.stream(absMaxRDCs).boxed().collect(Collectors.toList()).indexOf(maxAbsRDC);
+        
+        return 0.5*maxRDCs[maxIndex]*calcSAxial();
     }
     
     /**
@@ -421,6 +505,34 @@ public class OrderSVD {
         return bCalc;
     }
     
+    public EigenDecomposition getEig() {
+        return eig;
+    }    
+    
+    /**
+     * Calculates the Euler angles for a rotation about z, y', z''.
+     * 
+     * @param R double[][] Rotation matrix for rotation about z, y', z''.
+     * @return double[][] Euler angles (alpha, beta, gamma) for the ZYZ rotation.
+     */
+    public double[][] getEulerAngles(double[][] R) {
+        double Rxz = R[0][2];
+        double Ryz = R[1][2];
+        double Rzz = R[2][2];
+        double Rzx = R[2][0];
+        double Rzy = R[2][1];
+
+        double alpha = Math.atan(Ryz/Rxz);
+        double alpha2 = Math.atan(Ryz/-Rxz);
+        double beta = Math.acos(Rzz);
+        double beta2 = Math.acos(-Rzz);
+        double gamma = Math.atan(Rzy/-Rzx);
+        
+        double[][] euler = {{alpha, beta, gamma}, {alpha2, beta2, gamma}};
+        
+        return euler;
+    }
+    
     /**
      * Calculates the vector associated with two atoms in a Molecule object.
      * 
@@ -535,9 +647,81 @@ public class OrderSVD {
             errors1.add(errors.get(i));
         } 
      
-        double[] maxRDCs = new double[maxRDCList.size()];
+        runOrderSVD(vectors, rdc1, maxRDCList, errors1);
+    }
+    
+    /**
+     * Performs an Order SVD calculation to calculate molecular RDCs.
+     * 
+     * @param rdcSet RDCConstraintSet containing RDC information from the STAR file (e.g. atoms, rdc values, rdc error values).
+     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2 Z]]
+     * 
+     * @return List containing expt RDCs, calc RDCs, Q (RMS) value, rhombicity, magnitude, normalized expt RDCs, normalized calc RDCs, x vector,
+     * diagonalized S axial component, diagonalized S rhombic component, diagonalized S Sxx, diagonalized S Syy, diagonalized S Szz, eta,
+     * Q (Rhombicity) value, and Euler angles.
+     */
+    public static List calcRDCs(RDCConstraintSet rdcSet, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
+        List<Vector3D> vectors = new ArrayList<>();
+        List<Double> maxRDCList = new ArrayList<>();
+        List<Double> rdc1 = new ArrayList<>();
+        List<Double> errors1 = new ArrayList<>();
+        for(int i=0; i<rdcSet.getSize(); i++) {
+            String atom1 = rdcSet.get(i).getSpSets()[0].getFullName().split(":")[1];
+            String atom2 = rdcSet.get(i).getSpSets()[1].getFullName().split(":")[1];
+  
+            Vector3D vec = null;
+            Point3 v1;
+            Point3 v2;
+            double maxRDC = 1.0;
+            if (xyzCoords != null) {
+                v1 = new Point3(xyzCoords.get(i).get(0).get(0), xyzCoords.get(i).get(0).get(1), xyzCoords.get(i).get(0).get(2));
+                v2 = new Point3(xyzCoords.get(i).get(1).get(0), xyzCoords.get(i).get(1).get(1), xyzCoords.get(i).get(1).get(2));
+            } else {
+                v1 = rdcSet.get(i).getSpSets()[0].getPoint();
+                v2 = rdcSet.get(i).getSpSets()[1].getPoint();
+            }
+            if (!v1.equals(v2)) {
+                double r = Vector3D.distance(v1, v2)*1e-10;
+                if (r != 0.0) {
+                    vec = v1.subtract(v2);
+                }
+                if (vec == null) {
+                    continue;
+                }
+                maxRDC = calcMaxRDC(vec, atom1, atom2, calcMaxRDC, scale);
+            }
+            if (vec == null) {
+                continue;
+            }
+            vectors.add(vec);
+            maxRDCList.add(maxRDC);
+            rdc1.add(rdcSet.get(i).getValue());
+            errors1.add(rdcSet.get(i).getErr());
+        }
+        
+        return runOrderSVD(vectors, rdc1, maxRDCList, errors1);
+        
+    }
+    
+    /**
+     * Runs an OrderSVD calculation.
+     *
+     * @param vectors List of bond vectors
+     * @param rdc1 List of unnormalized experimental dipolar couplings
+     * @param maxRDC List of maximum static dipolar coupling values (r^(-3))
+     * @param err List of error values
+     * 
+     * @return List containing expt RDCs, calc RDCs, Q (RMS) value, rhombicity, magnitude, normalized expt RDCs, normalized calc RDCs, x vector,
+     * diagonalized S axial component, diagonalized S rhombic component, diagonalized S Sxx, diagonalized S Syy, diagonalized S Szz, eta, 
+     * Q (Rhombicity) value, and Euler angles.
+     */
+    public static List runOrderSVD(List<Vector3D> vectors, List<Double> rdc1, List<Double> maxRDC, List<Double> err) {
+               
+        double[] maxRDCs = new double[maxRDC.size()];
         for (int i=0; i<maxRDCs.length; i++) {
-            maxRDCs[i] = maxRDCList.get(i);
+            maxRDCs[i] = maxRDC.get(i);
         }
         
         double[] rdc1a = new double[rdc1.size()];
@@ -545,12 +729,12 @@ public class OrderSVD {
             rdc1a[i] = rdc1.get(i);
         }
         
-        
+        List svd = new ArrayList<>();
         if (!vectors.isEmpty()) {
-            OrderSVD orderSVD = new OrderSVD(vectors, rdc1, maxRDCs, errors1);
+            OrderSVD orderSVD = new OrderSVD(vectors, rdc1, maxRDCs, err);
         
             orderSVD.setMaxRDCs(maxRDCs);
-
+            
             double[] b = orderSVD.getBVector().toArray();
             RealVector bCalcVecNorm = orderSVD.calcBVectorNorm();
             orderSVD.setCalcBVectorNorm(bCalcVecNorm);
@@ -572,11 +756,60 @@ public class OrderSVD {
             for (int i=0; i<dcSq.getDimension(); i++) {
                 dcSqSum += dcSq.getEntry(i);
             }
-
-            double q = Math.sqrt(dcDiffSqSum/dcDiffs1.getDimension())/Math.sqrt(dcSqSum/rdc1.size());
-            orderSVD.setQ(q);
-            System.out.println("Q = " + String.valueOf(orderSVD.getQ()));
+            
+            double[][] rotMat = orderSVD.getEig().getVT().getData();
+            Rotation rot = new Rotation(rotMat, 1e-6);
+            double[] euler = rot.getAngles(RotationOrder.ZYZ, RotationConvention.VECTOR_OPERATOR);
+            
+            double[][] eulerRot = new double[2][3];
+            double[][] eulerCalc = orderSVD.getEulerAngles(rotMat);
+            for (int i=0; i<euler.length; i++) {
+                double angle = euler[i]*180.0/Math.PI;
+                double angle1 = eulerCalc[0][i]*180.0/Math.PI;
+                double angle2 = eulerCalc[1][i]*180.0/Math.PI;
+                if (i == 0) {
+                    angle += 90.;
+                    angle1 += 90.;
+                    angle2 += 90.;
+                } else if (i == 2) {
+                    angle += 180.;
+                }
+                eulerRot[0][i] = angle;
+                eulerRot[1][i] = angle2;
+                eulerCalc[0][i] = angle1;
+                eulerCalc[1][i] = angle2;      
+            }
+                        
+            double axial = orderSVD.calcSAxial();
+            double axialFactor = 21585.19; //from PALES article: NATURE PROTOCOLS|VOL.3 NO.4|2008
+            double axialNorm = axial*axialFactor;
+            double rhombicity = orderSVD.calcRhombicity();
+          
+            double qRMS = Math.sqrt(dcDiffSqSum/dcDiffs1.getDimension())/Math.sqrt(dcSqSum/rdc1.size());
+            double qRhomb = Math.sqrt(dcDiffSqSum/dcDiffs1.getDimension())/Math.sqrt(2.0*(axialNorm)*(axialNorm)*(4.0+3.0*rhombicity*rhombicity)/5.0);
+            orderSVD.setQ(qRMS);
+            System.out.println("Magnitude = " + orderSVD.calcMagnitude());
+            System.out.println("Q (rms) = " + String.valueOf(qRMS));
+            System.out.println("Q (rhomb) = " + String.valueOf(qRhomb));
+            
+            svd.add(orderSVD.getBUnNormVector().toArray());
+            svd.add(bCalcVec.toArray());
+            svd.add(qRMS);
+            svd.add(rhombicity);
+            svd.add(orderSVD.calcMagnitude());
+            svd.add(orderSVD.getBVector().toArray());
+            svd.add(bCalcVecNorm.toArray());
+            svd.add(orderSVD.getXVector().toArray());
+            svd.add(axial);
+            svd.add(orderSVD.calcSRhombic());
+            svd.add(orderSVD.getSxx());
+            svd.add(orderSVD.getSyy());
+            svd.add(orderSVD.getSzz());
+            svd.add(orderSVD.calcEta());
+            svd.add(qRhomb);
+            svd.add(eulerCalc);
         }
+        return svd;
     }
     
 }
