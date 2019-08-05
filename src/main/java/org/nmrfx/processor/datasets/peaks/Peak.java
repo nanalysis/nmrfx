@@ -123,7 +123,7 @@ public class Peak implements Comparable, PeakOrMulti {
 
         setStatus(0);
     }
-    
+
     @Override
     public String toString() {
         return getName();
