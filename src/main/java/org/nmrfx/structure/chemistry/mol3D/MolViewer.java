@@ -473,6 +473,27 @@ public class MolViewer extends Pane {
         }
     }
 
+    public void addBox(int iStructure, double radius, String tag) throws InvalidMoleculeException {
+        System.out.println("add box");
+        Molecule mol = Molecule.getActive();
+        if (mol == null) {
+            return;
+        }
+        try {
+            Vector3D corner = mol.getCorner(iStructure);
+            double[] cornerDelta = corner.toArray();
+            double[] begin = mol.getCenter(iStructure);
+            double[] end = new double[3];
+            for (int i = 0; i < 3; i++) {
+                end[i] = begin[i] + cornerDelta[i];
+            }
+            MolCylinder cyl = new MolCylinder(begin, end, radius, Color.GREEN, tag);
+
+            molGroup.getChildren().add(cyl);
+        } catch (MissingCoordinatesException ex) {
+        }
+    }
+
     public void addTube(int iStructure, double sphereRadius, String tag) throws InvalidMoleculeException {
         Molecule mol = Molecule.getActive();
         if (mol == null) {

@@ -50,6 +50,7 @@
                                                 <MenuItem mnemonicParsing="false" onAction="#drawSticks" text="Sticks" />
                                                 <MenuItem mnemonicParsing="false" onAction="#drawSpheres" text="Spheres" />
                                                 <MenuItem mnemonicParsing="false" onAction="#drawTubes" text="Tubes" />
+                                                <MenuItem mnemonicParsing="false" onAction="#drawBox" text="Box" />
                                             </items>
                                         </MenuButton>
                                         <MenuButton  mnemonicParsing="false" text="View">

@@ -510,6 +510,12 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         molViewer.addTube(0, 0.7, "tubes " + getIndex());
     }
 
+    public void drawBox() throws InvalidMoleculeException {
+        System.out.println("add box");
+        molViewer.deleteItems("delete", "box");
+        molViewer.addBox(0, 0.3, "box " + getIndex());
+    }
+
     public void removeAll() {
         molViewer.deleteItems("delete", "all");
         itemIndex = 0;
