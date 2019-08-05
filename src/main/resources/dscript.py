@@ -13,6 +13,10 @@ class NMRFxDatasetScripting:
         dataset = Dataset(fileName,"",writable)
         return dataset
 
+    def get(self, datasetName):
+        dataset = Dataset.get(datasetName)
+        return dataset
+
     def create(self, fileName, sizes, srcDataset=None, title=""):
         Dataset.createDataset(fileName, "", sizes) 
         dataset = self.open(fileName, True)
