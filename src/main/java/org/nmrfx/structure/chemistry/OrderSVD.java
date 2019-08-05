@@ -19,7 +19,9 @@
 package org.nmrfx.structure.chemistry;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
@@ -77,10 +79,13 @@ public class OrderSVD {
     EigenDecomposition eig;
     RealMatrix Sdiag;
     double Q;
+    double Qrhomb;
     double[] maxRDCs;
     RealVector dcDiffs;
     double[] bCalc;
     double[] bCalcNorm;
+    double[][] euler;
+    RDCConstraintSet rdcSet;
 
     /**
      * This function calculates residual dipolar couplings. Based on orderten_svd_dipole.c
@@ -386,21 +391,39 @@ public class OrderSVD {
     }
     
     /**
-     * Returns the Q factor.
+     * Returns the Q (rms) factor.
      * 
-     * @return double Q factor.
+     * @return double Q (rms) factor.
      */
     public double getQ() {
         return Q;
     }
     
     /**
-     * Sets the Q factor.
+     * Sets the Q (rms) factor.
      * 
-     * @param q double Q factor.
+     * @param q double Q (rms) factor.
      */
     public void setQ(double q) {
         Q = q;
+    }
+    
+    /**
+     * Returns the Q (rhombicity) factor.
+     * 
+     * @return double Q (rhombicity) factor.
+     */
+    public double getQrhomb() {
+        return Qrhomb;
+    }
+    
+    /**
+     * Sets the Q (rhombicity) factor.
+     * 
+     * @param q double Q (rhombicity) factor.
+     */
+    public void setQrhomb(double q) {
+        Qrhomb = q;
     }
     
     /**
@@ -505,17 +528,58 @@ public class OrderSVD {
         return bCalc;
     }
     
+    /**
+     * Returns the Eigenvalue Decomposition used to diagonalize the order matrix S.
+     * 
+     * @return
+     */
     public EigenDecomposition getEig() {
         return eig;
-    }    
+    }  
+    
+    /**
+     * Sets the Euler angles.
+     * 
+     * @param eulerVals
+     */
+    public void setEulerAngles(double[][] eulerVals) {
+        euler = eulerVals;
+    }
+    
+    /**
+     * Returns the Euler angles.
+     * 
+     * @return double[][] Arrays of Euler angles.
+     */
+    public double[][] getEulerAngles() {
+        return euler;
+    }
+    
+    /**
+     * Sets the RDC constraint set.
+     * 
+     * @param set
+     */
+    public void setRDCset(RDCConstraintSet set) {
+        rdcSet = set;
+    }
+    
+    /**
+     * Returns the RDC constraint set.
+     * 
+     * @return
+     */
+    public RDCConstraintSet getRDCset() {
+        return rdcSet;
+    }
     
     /**
      * Calculates the Euler angles for a rotation about z, y', z''.
      * 
-     * @param R double[][] Rotation matrix for rotation about z, y', z''.
+     * @param R double[][] Rotation matrix for clockwise rotation about z, y', z''.
      * @return double[][] Euler angles (alpha, beta, gamma) for the ZYZ rotation.
      */
-    public double[][] getEulerAngles(double[][] R) {
+    public double[][] calcEulerAngles(double[][] R) {
         double Rxz = R[0][2];
         double Ryz = R[1][2];
         double Rzz = R[2][2];
@@ -603,7 +667,7 @@ public class OrderSVD {
      * @param errors List of the errors in the experimental RDC values.
      * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
      * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
-     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2 Z]]
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2 Z]]...]
      */
     public static void calcRDC(List<List<String>> atomPairs, List<Double> rdc, List<Double> errors, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
         List<Vector3D> vectors = new ArrayList<>();
@@ -656,13 +720,11 @@ public class OrderSVD {
      * @param rdcSet RDCConstraintSet containing RDC information from the STAR file (e.g. atoms, rdc values, rdc error values).
      * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
      * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
-     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2 Z]]
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2 Z]]...]
      * 
-     * @return List containing expt RDCs, calc RDCs, Q (RMS) value, rhombicity, magnitude, normalized expt RDCs, normalized calc RDCs, x vector,
-     * diagonalized S axial component, diagonalized S rhombic component, diagonalized S Sxx, diagonalized S Syy, diagonalized S Szz, eta,
-     * Q (Rhombicity) value, and Euler angles.
+     * @return OrderSVD object containing information from the SVD calculation.
      */
-    public static List calcRDCs(RDCConstraintSet rdcSet, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
+    public static OrderSVD calcRDCs(RDCConstraintSet rdcSet, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
         List<Vector3D> vectors = new ArrayList<>();
         List<Double> maxRDCList = new ArrayList<>();
         List<Double> rdc1 = new ArrayList<>();
@@ -713,12 +775,10 @@ public class OrderSVD {
      * @param maxRDC List of maximum static dipolar coupling values (r^(-3))
      * @param err List of error values
      * 
-     * @return List containing expt RDCs, calc RDCs, Q (RMS) value, rhombicity, magnitude, normalized expt RDCs, normalized calc RDCs, x vector,
-     * diagonalized S axial component, diagonalized S rhombic component, diagonalized S Sxx, diagonalized S Syy, diagonalized S Szz, eta, 
-     * Q (Rhombicity) value, and Euler angles.
+     * @return OrderSVD object containing information from the SVD calculation.
      */
-    public static List runOrderSVD(List<Vector3D> vectors, List<Double> rdc1, List<Double> maxRDC, List<Double> err) {
-               
+    public static OrderSVD runOrderSVD(List<Vector3D> vectors, List<Double> rdc1, List<Double> maxRDC, List<Double> err) {
+                       
         double[] maxRDCs = new double[maxRDC.size()];
         for (int i=0; i<maxRDCs.length; i++) {
             maxRDCs[i] = maxRDC.get(i);
@@ -729,9 +789,9 @@ public class OrderSVD {
             rdc1a[i] = rdc1.get(i);
         }
         
-        List svd = new ArrayList<>();
+        OrderSVD orderSVD = null;
         if (!vectors.isEmpty()) {
-            OrderSVD orderSVD = new OrderSVD(vectors, rdc1, maxRDCs, err);
+            orderSVD = new OrderSVD(vectors, rdc1, maxRDCs, err);
         
             orderSVD.setMaxRDCs(maxRDCs);
             
@@ -762,7 +822,7 @@ public class OrderSVD {
             double[] euler = rot.getAngles(RotationOrder.ZYZ, RotationConvention.VECTOR_OPERATOR);
             
             double[][] eulerRot = new double[2][3];
-            double[][] eulerCalc = orderSVD.getEulerAngles(rotMat);
+            double[][] eulerCalc = orderSVD.calcEulerAngles(rotMat);
             for (int i=0; i<euler.length; i++) {
                 double angle = euler[i]*180.0/Math.PI;
                 double angle1 = eulerCalc[0][i]*180.0/Math.PI;
@@ -779,6 +839,8 @@ public class OrderSVD {
                 eulerCalc[0][i] = angle1;
                 eulerCalc[1][i] = angle2;      
             }
+            
+            orderSVD.setEulerAngles(eulerCalc);
                         
             double axial = orderSVD.calcSAxial();
             double axialFactor = 21585.19; //from PALES article: NATURE PROTOCOLS|VOL.3 NO.4|2008
@@ -788,28 +850,92 @@ public class OrderSVD {
             double qRMS = Math.sqrt(dcDiffSqSum/dcDiffs1.getDimension())/Math.sqrt(dcSqSum/rdc1.size());
             double qRhomb = Math.sqrt(dcDiffSqSum/dcDiffs1.getDimension())/Math.sqrt(2.0*(axialNorm)*(axialNorm)*(4.0+3.0*rhombicity*rhombicity)/5.0);
             orderSVD.setQ(qRMS);
+            orderSVD.setQrhomb(qRhomb);
             System.out.println("Magnitude = " + orderSVD.calcMagnitude());
             System.out.println("Q (rms) = " + String.valueOf(qRMS));
             System.out.println("Q (rhomb) = " + String.valueOf(qRhomb));
-            
-            svd.add(orderSVD.getBUnNormVector().toArray());
-            svd.add(bCalcVec.toArray());
-            svd.add(qRMS);
-            svd.add(rhombicity);
-            svd.add(orderSVD.calcMagnitude());
-            svd.add(orderSVD.getBVector().toArray());
-            svd.add(bCalcVecNorm.toArray());
-            svd.add(orderSVD.getXVector().toArray());
-            svd.add(axial);
-            svd.add(orderSVD.calcSRhombic());
-            svd.add(orderSVD.getSxx());
-            svd.add(orderSVD.getSyy());
-            svd.add(orderSVD.getSzz());
-            svd.add(orderSVD.calcEta());
-            svd.add(qRhomb);
-            svd.add(eulerCalc);
         }
-        return svd;
+        
+        return orderSVD;
+    }
+    
+    public static void writeToFile(OrderSVD svdResults, File resultsFile) throws IOException {
+        if (svdResults != null) {
+            double[] x = svdResults.getXVector().toArray();
+            double qRMS = svdResults.getQ();
+            double rhombicity = Math.abs(svdResults.calcRhombicity());
+            double mag = Math.abs(svdResults.calcMagnitude());
+            double axial = svdResults.calcSAxial();
+            double rhombic = svdResults.calcSRhombic();
+            double Sxx = svdResults.getSxx();
+            double Syy = svdResults.getSyy();
+            double Szz = svdResults.getSzz();
+            double eta = svdResults.calcEta();
+            double qRhomb = svdResults.getQrhomb();
+            double[][] eulerAngles = svdResults.getEulerAngles();
+
+            String[] atom1 = new String[svdResults.getRDCset().getSize()];
+            String[] atom2 = new String[svdResults.getRDCset().getSize()];
+            if (svdResults.getRDCset() != null) {
+                for (int i=0; i<svdResults.getRDCset().getSize(); i++) {
+                    atom1[i] = svdResults.getRDCset().get(i).getSpSets()[0].getFullName().split(":")[1];
+                    atom2[i] = svdResults.getRDCset().get(i).getSpSets()[1].getFullName().split(":")[1];
+                }
+            }
+            double[] bmrbRDC = svdResults.getBUnNormVector().toArray();
+            double[] svdRDC = svdResults.calcBVector().toArray();
+            double[] bmrbRDCNorm = svdResults.getBVector().toArray();
+            double[] svdRDCNorm = svdResults.calcBVectorNorm().toArray();
+            double[] rdcDiff = new double[svdRDC.length];
+            for (int i=0; i<rdcDiff.length; i++) {
+                rdcDiff[i] = svdRDC[i] - bmrbRDC[i];
+            }
+
+            if (resultsFile != null) {
+                String[] headerFields = {"Atom_1", "Atom_2", "BMRB_RDC", "SVD_RDC", "RDC_Diff", "Normalized_BMRB_RDC", "Normalized_SVD_RDC"};
+                String[][] atomFields = {atom1, atom2};
+                double[][] valueFields = {bmrbRDC, svdRDC, rdcDiff, bmrbRDCNorm, svdRDCNorm};
+                String[] formats = {"%.3f", "%.3f", "%.3f", "%.3E", "%.3E"};
+
+                try (FileWriter writer = new FileWriter(resultsFile)) {
+                    writer.write("Syy\tSzz\tSxy\tSxz\tSyz\n");
+                    for(double value : x) {
+                        writer.write(String.format("%.3E\t", value));
+                    }
+                    writer.write("\n\nSx'x'\tSy'y'\tSz'z'\n");
+                    writer.write(String.format("%.3E\t%.3E\t%.3E\n\n", Sxx, Syy, Szz));
+                    writer.write(String.format("Asymmetry parameter (eta) = %.3f \n", eta));
+                    writer.write(String.format("Q (RMS) = %.3f \n", qRMS));
+                    writer.write(String.format("Q (Rhombicity) = %.3f \n", qRhomb));
+                    writer.write(String.format("Magnitude = %.3f \n\n", mag));
+                    writer.write(String.format("Rhombic component = %.3E \n", rhombic));
+                    writer.write(String.format("Axial component = %.3E \n", axial));
+                    writer.write(String.format("Rhombicity = %.3f \n\n", rhombicity));
+                    writer.write("Euler Angles for clockwise rotation about z, y', z''\n");
+                    writer.write("Alpha\tBeta\tGamma\n");
+                    writer.write(String.format("%.3f\t%.3f\t%.3f\n", eulerAngles[0][0], eulerAngles[0][1], eulerAngles[0][2]));
+                    writer.write(String.format("%.3f\t%.3f\t%.3f\n", eulerAngles[0][0]+180., eulerAngles[0][1], eulerAngles[0][2]));
+                    writer.write(String.format("%.3f\t%.3f\t%.3f\n", eulerAngles[1][0], eulerAngles[1][1], eulerAngles[1][2]+180.));
+                    writer.write(String.format("%.3f\t%.3f\t%.3f\n\n", eulerAngles[1][0]+180., eulerAngles[1][1], eulerAngles[1][2]+180.));
+                    
+                    for (String header : headerFields) {
+                        writer.write(String.format("%s\t", header));
+                    }
+                    writer.write("\n");
+                    
+                    for (int i=0; i<bmrbRDC.length; i++) {
+                        StringBuilder valueBuilder = new StringBuilder();
+                        for (String[] atom : atomFields) {
+                            valueBuilder.append(String.format("%s\t", atom[i]));
+                        }
+                        for (double[] value : valueFields) {
+                            valueBuilder.append(String.format(formats[Arrays.asList(valueFields).indexOf(value)]+"\t", value[i]));
+                        }
+                        writer.write(valueBuilder.toString() + "\n");
+                    }
+                }
+            }
+        }
     }
     
 }
