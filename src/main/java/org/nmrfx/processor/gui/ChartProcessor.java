@@ -762,6 +762,7 @@ public class ChartProcessor {
         scriptBuilder.append("CREATE('").append(datasetFile.getPath().replace("\\", "/")).append("')").append(lineSep);
         String indent = "";
         scriptBuilder.append(processorController.refManager.getParString(nDim, indent));
+        scriptBuilder.append(processorController.getLSScript());
         String scriptCmds = getScriptCmds(nDim, indent, true);
         scriptBuilder.append(scriptCmds);
         return scriptBuilder.toString();

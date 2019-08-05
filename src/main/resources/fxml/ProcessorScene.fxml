@@ -72,6 +72,14 @@
                             </children>
                         </VBox>
                     </Tab>
+                    <Tab text="Options" closable="false" >
+                        <Accordion>
+                            <panes>
+                                <TitledPane fx:id="lsOptionsPane" text="LineShape Catalog">
+                                </TitledPane>
+                            </panes>
+                        </Accordion>
+                    </Tab>
                     <Tab text="Script" closable="false" onSelectionChanged="#loadScriptTab" >
                         <VBox>
                             <children>

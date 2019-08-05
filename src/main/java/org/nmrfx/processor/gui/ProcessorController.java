@@ -58,11 +58,16 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -78,6 +83,7 @@ import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.python.util.PythonInterpreter;
 import org.fxmisc.richtext.CodeArea;
+import org.nmrfx.processor.datasets.vendor.NMRData;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
@@ -122,6 +128,10 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     CodeArea textArea;
     @FXML
     CheckBox autoProcess;
+
+    CheckBox genLSCatalog;
+    TextField nLSCatFracField;
+    TextField[][] lsTextFields;
 
     //PopOver propOver = new PopOver();
     //PropertySheet propSheet = new PropertySheet();
@@ -186,6 +196,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     private Button processScanDirButton;
     @FXML
     private Button opDocButton;
+    @FXML
+    private TitledPane lsOptionsPane;
 
     ProcessingCodeAreaUtil codeAreaUtil;
     ConsoleUtil consoleUtil;
@@ -275,6 +287,98 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
             chart.controller.getStatusBar().updateVecNumChoice(nDim);
         }
+        updateLineshapeCatalog(nDim);
+    }
+
+    protected void updateLineshapeCatalog(int nDim) {
+        NMRData nmrData = null;
+        if (chartProcessor == null) {
+            chartProcessor = getChartProcessor();
+        }
+        if (chartProcessor != null) {
+            nmrData = chartProcessor.getNMRData();
+        }
+
+        BorderPane borderPane = new BorderPane();
+        HBox topBox = new HBox();
+        genLSCatalog = new CheckBox("Generate");
+        Label nFracLabel = new Label("nFrac:");
+        nFracLabel.setPrefWidth(70);
+        nLSCatFracField = new TextField("2");
+        nLSCatFracField.setPrefWidth(40);
+        topBox.getChildren().addAll(genLSCatalog, nFracLabel, nLSCatFracField);
+        GridPane gridPane = new GridPane();
+        gridPane.add(new Label("Dim"), 0, 0);
+        gridPane.add(new Label("LwMin"), 1, 0);
+        gridPane.add(new Label("LwMax"), 2, 0);
+        gridPane.add(new Label("NLw"), 3, 0);
+        gridPane.add(new Label("NPts"), 4, 0);
+        lsTextFields = new TextField[nDim][4];
+        int[] widths = {60, 60, 40, 40};
+        for (int i = 0; i < nDim; i++) {
+            Label label = new Label(String.valueOf(i + 1));
+            label.setPrefWidth(30);
+            gridPane.add(label, 0, i + 1);
+            for (int iCol = 0; iCol < 4; iCol++) {
+                lsTextFields[i][iCol] = new TextField();
+                lsTextFields[i][iCol].setPrefWidth(widths[iCol]);
+                gridPane.add(lsTextFields[i][iCol], iCol + 1, i + 1);
+            }
+            if (nmrData != null) {
+                int size = nmrData.getSize(i);
+                double sw = nmrData.getSW(i);
+                double res = 2.0 * sw / size;
+                double lwMin = res / 4;
+                double lwMax = res * 2;
+                lsTextFields[i][0].setText(String.format("%.0f", lwMin));
+                lsTextFields[i][1].setText(String.format("%.0f", lwMax));
+                lsTextFields[i][2].setText("30");
+                lsTextFields[i][3].setText("64");
+            }
+        }
+        borderPane.setTop(topBox);
+        borderPane.setCenter(gridPane);
+        lsOptionsPane.setContent(borderPane);
+    }
+
+    String getLSScript() {
+        StringBuilder sBuilder = new StringBuilder();
+        if (genLSCatalog.isSelected()) {
+            boolean ok = true;
+            //genLSCatalog(lw, nLw, nKeep, 2)
+            for (int i = 0; i < lsTextFields.length; i++) {
+                for (int j = 0; j < 2; j++) {
+                    try {
+                        Double.parseDouble(lsTextFields[i][j].getText());
+                    } catch (NumberFormatException nfE) {
+                        ok = false;
+                        break;
+                    }
+                }
+            }
+            if (ok) {
+                sBuilder.append("genLSCatalog(");
+                for (int j = 0; j < lsTextFields[0].length; j++) {
+                    if (j != 0) {
+                        sBuilder.append(",");
+                    }
+                    sBuilder.append("[");
+                    for (int i = 0; i < lsTextFields.length; i++) {
+                        if (i != 0) {
+                            sBuilder.append(",");
+                        }
+                        sBuilder.append(lsTextFields[i][j].getText());
+                    }
+                    sBuilder.append("]");
+                }
+                sBuilder.append(",");
+
+                sBuilder.append(nLSCatFracField.getText()).append(")");
+                sBuilder.append("\n");
+
+            }
+        }
+        return sBuilder.toString();
     }
 
     @FXML
