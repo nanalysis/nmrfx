@@ -43,7 +43,7 @@ public class CoAdd extends Operation {
     }
 
     @Override
-    public CoAdd eval(ArrayList<Vec> vectors) throws OperationException {
+    public CoAdd eval(List<Vec> vectors) throws OperationException {
         if (vectors.isEmpty()) {
             throw new OperationException("CoAdd cannot combine 0 vectors.");
         } else if (vectors.size() % (numInputVec) != 0) {
