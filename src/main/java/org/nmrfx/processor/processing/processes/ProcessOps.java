@@ -31,12 +31,20 @@ import org.nmrfx.processor.operations.WriteVector;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.Processor;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
+import org.nmrfx.processor.operations.Apodization;
+import org.nmrfx.processor.operations.Extract;
+import org.nmrfx.processor.operations.Ft;
+import org.nmrfx.processor.operations.Phase;
+import org.nmrfx.processor.operations.TDCombine;
+import org.nmrfx.processor.operations.Zf;
 
 /**
- * The ProcessOps class will contain a list of all Operations which will be processed. Each process represents a group of
- * Operations which need to be performed sequentially on one or more Vectors. Processors will be contained in another
- * class which will execute multiple Processes at once.
+ * The ProcessOps class will contain a list of all Operations which will be
+ * processed. Each process represents a group of Operations which need to be
+ * performed sequentially on one or more Vectors. Processors will be contained
+ * in another class which will execute multiple Processes at once.
  *
  * @author johnsonb
  */
@@ -424,7 +432,8 @@ public class ProcessOps implements Callable<Object> {
      * Execute all of the operations in the ProcessOps.
      *
      * @return
-     * @throws org.nmrfx.processor.processing.processes.IncompleteProcessException
+     * @throws
+     * org.nmrfx.processor.processing.processes.IncompleteProcessException
      */
     public Object exec() throws IncompleteProcessException {
         if (vectors.isEmpty()) {
@@ -537,5 +546,38 @@ public class ProcessOps implements Callable<Object> {
 
     public static void resetNumProcessesCreated() {
         numProcessesCreated = 0;
+    }
+
+    boolean useInSimVec(Operation op) {
+        boolean result = false;
+        if (op instanceof Apodization) {
+            result = true;
+        } else if (op.getClass().isAssignableFrom(Zf.class)) {
+            result = true;
+        } else if (op.getClass().isAssignableFrom(Ft.class)) {
+            result = true;
+        }
+        return result;
+    }
+
+    public void applyToSimVectors(List<Vec> simVectors) {
+
+        if (!simVectors.isEmpty()) {
+            for (Operation op : operations) {
+                if (useInSimVec(op)) {
+                    try {
+                        if (op instanceof Ft) {
+                            op = new Ft(false, false);
+                        }
+                        op.eval(simVectors);
+                    } catch (OperationException oe) {
+                        throw new ProcessingException(oe.getMessage());
+                    } catch (Exception e) {
+                        throw new ProcessingException(e.getMessage());
+                    }
+                }
+            }
+
+        }
     }
 }

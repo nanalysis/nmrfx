@@ -18,6 +18,7 @@
 package org.nmrfx.processor.processing;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.processing.processes.ProcessOps;
@@ -34,6 +35,7 @@ import org.nmrfx.processor.operations.Operation;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -210,6 +212,8 @@ public class Processor {
     private static ProgressUpdater progressUpdater;
     boolean modeND = true;
     private double elapsedTime = 0.0;
+
+    LineShapeCatalog simVecProcessor = null;
 
     private void addVecReadCount() {
         vecReadCount++;
@@ -913,6 +917,37 @@ public class Processor {
         return true;
     }
 
+    public void setupSim(double[] minWidths, double[] maxWidths, int[] nWidths, int[] nPoints,
+            int nFrac, String datasetName) {
+        double[][] simWidths = new double[minWidths.length][2];
+        for (int i = 0; i < minWidths.length; i++) {
+            simWidths[i][0] = minWidths[i];
+            simWidths[i][1] = maxWidths[i];
+        }
+        int[] nSimWidths = nWidths.clone();
+        int[] nKeep = nPoints.clone();
+        File file = new File(datasetName);
+        String dirName = file.getParent();
+        String fileName = file.getName();
+
+        int index = fileName.indexOf(".nv");
+        if (index == -1) {
+            index = fileName.indexOf(".ucsf");
+        }
+        String shapeName;
+        if (index != -1) {
+            shapeName = fileName.substring(0, index) + "_lshapes.txt";
+        } else {
+            shapeName = fileName + "_lshapes.txt";
+        }
+        System.out.println(fileName);
+        System.out.println(shapeName);
+        System.out.println(index);
+        simVecProcessor = new LineShapeCatalog(nmrDataSets.get(0), simWidths, nSimWidths,
+                nKeep, nFrac, dirName + File.separator + shapeName);
+
+    }
+
     public String getFidProjectName(String filename) {
         return filename.substring(
                 filename.substring(0, filename.lastIndexOf('/') - 1).lastIndexOf('/') + 1,
@@ -1352,6 +1387,9 @@ public class Processor {
     }
 
     public void runProcesses() throws IncompleteProcessException {
+        if ((simVecProcessor != null) && !nmrDataSets.isEmpty()) {
+            runSimVecProcessor(simVecProcessor, dimProcesses);
+        }
         long startTime = System.currentTimeMillis();
         clearProcessorError();
         int nDimsProcessed = 0;
@@ -1406,6 +1444,18 @@ public class Processor {
             closeDataset();
         }
         System.err.printf("Elapsed time %.2f\n", elapsedTime);
+    }
+
+    public void runSimVecProcessor(LineShapeCatalog simVecProcessor, ArrayList<ProcessOps> dimProcesses) {
+        for (ProcessOps p : dimProcesses) {
+            int iDim = p.getDim();
+            if (p.hasOperations()) {
+                if (!p.isMatrix() && !p.isDataset()) {
+                    p.applyToSimVectors(simVecProcessor.getSimVectors(iDim));
+                }
+            }
+        }
+        simVecProcessor.saveSimFids();
     }
 
     public void closeDataset() {
