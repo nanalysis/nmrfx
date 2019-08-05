@@ -36,6 +36,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
+import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.processing.LineShapeCatalog;
 import org.renjin.sexp.AttributeMap;
 import org.renjin.sexp.DoubleVector;
 import org.renjin.sexp.DoubleArrayVector;
@@ -137,6 +140,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
     private RandomAccessFile raFile = null;
     Set<DatasetRegion> regions;
+    LineShapeCatalog simVecs = null;
+    Map<String, double[]> buffers = new HashMap<>();
 
     @Override
     protected SEXP cloneWithNewAttributes(AttributeMap newAttributes) {
@@ -230,7 +235,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             newName = name;
         }
         newName = newName.replace(' ', '_');
-        
+
         canonicalName = file.getCanonicalPath();
         fileName = newName;
 
@@ -1525,7 +1530,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param ph0 the phase value to set
      */
     public void setPh0(final int iDim, final double ph0) {
-     this.ph0[iDim] = ph0;
+        this.ph0[iDim] = ph0;
         if (vecMat != null) {
             vecMat.setPh0(ph0);
         }
@@ -5721,5 +5726,96 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             System.out.println("title " + title);
             dataset.setTitle(title);
         });
+    }
+
+    public void loadSimVecs() throws IOException {
+        String dirName = file.getParent();
+        String datasetFileName = file.getName();
+
+        int index = datasetFileName.lastIndexOf(".");
+        String shapeName = datasetFileName.substring(0, index) + "_lshapes.txt";
+        String shapeFileName = dirName + File.separator + shapeName;
+        simVecs = LineShapeCatalog.loadSimFids(shapeFileName, nDim);
+        System.out.println("simVecs " + simVecs);
+    }
+
+    public void subtractPeak(Peak peak) throws IOException {
+        if (simVecs != null) {
+            simVecs.addToDataset(this, peak, -1.0);
+        }
+    }
+
+    public void addPeakList(PeakList peakList, double scale) throws IOException {
+        if (simVecs != null) {
+            simVecs.addToDataset(this, peakList, scale);
+        }
+
+    }
+
+    DimCounter.Iterator getPointIterator() {
+        int[] counterSizes = new int[nDim];
+        int[] dim = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            counterSizes[i] = getSize(i);
+            dim[i] = i;
+        }
+        DimCounter counter = new DimCounter(counterSizes);
+        DimCounter.Iterator cIter = counter.iterator();
+        return cIter;
+    }
+
+    public void clear() throws IOException {
+        DimCounter.Iterator cIter = getPointIterator();
+        while (cIter.hasNext()) {
+            int[] points = cIter.next();
+            writePoint(points, 0.0);
+        }
+    }
+
+    public boolean bufferExists(String bufferName) {
+        return buffers.containsKey(bufferName);
+    }
+
+    public boolean removeBuffer(String bufferName) {
+        return buffers.remove(bufferName) != null;
+    }
+
+    public double[] getBuffer(String bufferName) {
+        double[] buffer = buffers.get(bufferName);
+        int bufferSize = 1;
+        for (int sz : size) {
+            bufferSize *= sz;
+        }
+        if ((buffer == null) || (buffer.length != bufferSize)) {
+            buffer = new double[bufferSize];
+            buffers.put(bufferName, buffer);
+        }
+        return buffer;
+    }
+
+    public void toBuffer(String bufferName) throws IOException {
+        double[] buffer = getBuffer(bufferName);
+        DimCounter.Iterator cIter = getPointIterator();
+        int j = 0;
+        while (cIter.hasNext()) {
+            int[] points = cIter.next();
+            double value = readPoint(points);
+            buffer[j++] = value;
+        }
+    }
+
+    public void fromBuffer(String bufferName) throws IOException {
+        if (bufferExists(bufferName)) {
+            double[] buffer = getBuffer(bufferName);
+            DimCounter.Iterator cIter = getPointIterator();
+            int j = 0;
+            while (cIter.hasNext()) {
+                int[] points = cIter.next();
+                double value = buffer[j++];
+                writePoint(points, value);
+            }
+        } else {
+            throw new IllegalArgumentException("No buffer named " + bufferName);
+        }
     }
 }
