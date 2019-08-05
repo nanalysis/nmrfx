@@ -72,7 +72,7 @@ public class RDCGUI {
     TextField rhombField = new TextField("");
     TextField magField = new TextField("");
     RDCConstraintSet rdcSet;
-    List svdResults = new ArrayList<>();
+    OrderSVD svdResults = null;
     List<String> setNames = new ArrayList<>();
     Label pdbFile = new Label("");
     Label bmrbFile = new Label("");
@@ -167,9 +167,9 @@ public class RDCGUI {
                 activeChart.getData().clear();
                 //Prepare XYChart.Series objects by setting data
                 series0.getData().clear();
-                if (!svdResults.isEmpty()) {
-                    double[] xValues = (double[]) svdResults.get(0);
-                    double[] yValues = (double[]) svdResults.get(1);
+                if (svdResults != null) {
+                    double[] xValues = svdResults.getBUnNormVector().toArray();
+                    double[] yValues = svdResults.getCalcBVector();
                     if ((xValues != null) && (yValues != null)) {
                         for (int j = 0; j < xValues.length; j++) {
                             series0.getData().add(new XYValue(xValues[j], yValues[j]));
@@ -209,11 +209,12 @@ public class RDCGUI {
             }
                 
             svdResults = OrderSVD.calcRDCs(rdcSet, true, false, null);
+            svdResults.setRDCset(rdcSet);
 
-            double qRMS = (double) svdResults.get(2);
-            double qRhomb = (double) svdResults.get(14);
-            double rhombicity = Math.abs((double) svdResults.get(3));
-            double magnitude = Math.abs((double) svdResults.get(4));
+            double qRMS = svdResults.getQ();
+            double qRhomb = svdResults.getQrhomb();
+            double rhombicity = Math.abs(svdResults.calcRhombicity());
+            double magnitude = Math.abs(svdResults.calcMagnitude());
             qRMSField.setText(String.valueOf(Math.round(qRMS * 100.0) / 100.0));
             qRhombField.setText(String.valueOf(Math.round(qRhomb * 100.0) / 100.0));
             rhombField.setText(String.valueOf(Math.round(rhombicity * 100.0) / 100.0));
@@ -233,96 +234,14 @@ public class RDCGUI {
     }
     
     void saveToFile() {
-        if (!svdResults.isEmpty()) {
-            double[] x = (double[]) svdResults.get(7);
-            double qRMS = (double) svdResults.get(2);
-            double rhombicity = Math.abs((double) svdResults.get(3));
-            double mag = Math.abs((double) svdResults.get(4));
-            double axial = (double) svdResults.get(8);
-            double rhombic = (double) svdResults.get(9);
-            double Sxx = (double) svdResults.get(10);
-            double Syy = (double) svdResults.get(11);
-            double Szz = (double) svdResults.get(12);
-            double eta = (double) svdResults.get(13);
-            double qRhomb = (double) svdResults.get(14);
-            double[][] euler = (double[][]) svdResults.get(15);
-
-            String[] atom1 = new String[rdcSet.getSize()];
-            String[] atom2 = new String[rdcSet.getSize()];
-            if (rdcSet != null) {
-                for (int i=0; i<rdcSet.getSize(); i++) {
-                    atom1[i] = rdcSet.get(i).getSpSets()[0].getFullName().split(":")[1];
-                    atom2[i] = rdcSet.get(i).getSpSets()[1].getFullName().split(":")[1];
-                }
-            }
-            double[] bmrbRDC = (double[]) svdResults.get(0);
-            double[] svdRDC = (double[]) svdResults.get(1);
-            double[] bmrbRDCNorm = (double[]) svdResults.get(5);
-            double[] svdRDCNorm = (double[]) svdResults.get(6);
-            double[] rdcDiff = new double[svdRDC.length];
-            for (int i=0; i<rdcDiff.length; i++) {
-                rdcDiff[i] = svdRDC[i] - bmrbRDC[i];
-            }
-
+        try {
             FileChooser chooser = new FileChooser();
             chooser.setTitle("Save RDC Results");
             File directoryFile = chooser.showSaveDialog(null);
-            if (directoryFile != null) {
-                String[] headerFields = {"Atom_1", "Atom_2", "BMRB_RDC", "SVD_RDC", "RDC_Diff", "Normalized_BMRB_RDC", "Normalized_SVD_RDC"};
-                StringBuilder headerBuilder = new StringBuilder();
-    //            for (String field : headerFields) {
-    //                if (headerBuilder.length() > 0) {
-    //                    headerBuilder.append('\t');
-    //                }
-    //                headerBuilder.append(field);
-    //            }
-
-                String[][] atomFields = {atom1, atom2};
-                double[][] valueFields = {bmrbRDC, svdRDC, rdcDiff, bmrbRDCNorm, svdRDCNorm};
-                String[] formats = {"%.3f", "%.3f", "%.3f", "%.3E", "%.3E"};
-
-                try (FileWriter writer = new FileWriter(directoryFile)) {
-                    writer.write("Syy\tSzz\tSxy\tSxz\tSyz\n");
-                    for(double value : x) {
-                        writer.write(String.format("%.3E\t", value));
-                    }
-                    writer.write("\n\nSx'x'\tSy'y'\tSz'z'\n");
-                    writer.write(String.format("%.3E\t%.3E\t%.3E\n\n", Sxx, Syy, Szz));
-                    writer.write(String.format("Asymmetry parameter (eta) = %.3f \n", eta));
-                    writer.write(String.format("Q (RMS) = %.3f \n", qRMS));
-                    writer.write(String.format("Q (Rhombicity) = %.3f \n", qRhomb));
-                    writer.write(String.format("Magnitude = %.3f \n\n", mag));
-                    writer.write(String.format("Rhombic component = %.3E \n", rhombic));
-                    writer.write(String.format("Axial component = %.3E \n", axial));
-                    writer.write(String.format("Rhombicity = %.3f \n\n", rhombicity));
-                    writer.write("Euler Angles for rotation about z, y', z''\n");
-                    writer.write("Alpha\tBeta\tGamma\n");
-                    writer.write(String.format("%.3f\t%.3f\t%.3f\n", euler[0][0], euler[0][1], euler[0][2]));
-                    writer.write(String.format("%.3f\t%.3f\t%.3f\n", euler[0][0]+180., euler[0][1], euler[0][2]));
-                    writer.write(String.format("%.3f\t%.3f\t%.3f\n", euler[1][0], euler[1][1], euler[1][2]+180.));
-                    writer.write(String.format("%.3f\t%.3f\t%.3f\n\n", euler[1][0]+180., euler[1][1], euler[1][2]+180.));
-
-                    for (String header : headerFields) {
-                        headerBuilder.append(String.format("%s\t", header));
-                    }
-                    writer.write(headerBuilder.toString() + "\n");
-
-                    for (int i=0; i<bmrbRDC.length; i++) {
-                        StringBuilder valueBuilder = new StringBuilder();
-                        for (String[] atom : atomFields) {
-                            valueBuilder.append(String.format("%s\t", atom[i]));
-                        }
-                        for (double[] value : valueFields) {
-                            valueBuilder.append(String.format(formats[Arrays.asList(valueFields).indexOf(value)]+"\t", value[i]));
-                        }
-                        writer.write(valueBuilder.toString() + "\n");
-                    }
-
-                } catch (IOException ex) {
-                    ExceptionDialog dialog = new ExceptionDialog(ex);
-                    dialog.showAndWait();
-                }
-            }
+            OrderSVD.writeToFile(svdResults, directoryFile);
+        } catch (IOException ex) {
+            ExceptionDialog dialog = new ExceptionDialog(ex);
+            dialog.showAndWait();
         }
     }
     
