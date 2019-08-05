@@ -397,6 +397,10 @@ def label(*pars):
 
     fidInfo.setLabel(pars)
 
+def genLSCatalog(lwMin, lwMax,  nLw, nKeep, nFrac):
+    datasetName = dataInfo.filename
+    processor.setupSim(lwMin, lwMax, nLw, nKeep, nFrac, datasetName)
+
 def flags(**keywords):
     fidInfo.setFlags(keywords)
 
