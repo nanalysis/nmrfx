@@ -2,10 +2,14 @@ from itertools import izip
 import array
 from shutil import copyfile
 from org.nmrfx.processor.datasets import Dataset
+from org.nmrfx.processor.datasets.peaks import PeakPick
+from org.nmrfx.processor.datasets.peaks import PeakList
+from org.nmrfx.processor.datasets.peaks import PeakPicker
 from org.nmrfx.processor.datasets.vendor import NMRPipeData
 from org.nmrfx.processor.math import Vec
 
 class NMRFxDatasetScripting:
+    dimNames = ['x','y','z','a','b','c','d']
     def __init__(self):
         self.cmd = Dataset
 
@@ -14,7 +18,7 @@ class NMRFxDatasetScripting:
         return dataset
 
     def get(self, datasetName):
-        dataset = Dataset.get(datasetName)
+        dataset = Dataset.getDataset(datasetName)
         return dataset
 
     def create(self, fileName, sizes, srcDataset=None, title=""):
@@ -95,5 +99,23 @@ class NMRFxDatasetScripting:
         values = d.getValues(iDim)
         values = [f(v) for v in values]
         d.setValues(iDim, values)
+
+    def pick(self, dataset, listName=None, level=1.0, mode="new", region="box",pos=True, neg=False, **kwargs):
+        if isinstance(dataset,basestring):
+            dataset = self.get(dataset)
+        if listName == None:
+           listName = PeakList.getNameForDataset(dataset.getName()) 
+        peakPickPar = PeakPick(dataset, listName).mode(mode).region(region).pos(pos).neg(neg).level(level)
+        peakPickPar.calcRange()
+        for dim in kwargs:
+            (lim1,lim2) = kwargs[dim]
+            iDim = NMRFxDatasetScripting.dimNames.index(dim)
+            peakPickPar = peakPickPar.limit(iDim,lim1,lim2)
+
+        peakPicker = PeakPicker(peakPickPar)
+        peakList = peakPicker.peakPick()
+      
+        return peakList
+
         
 nd = NMRFxDatasetScripting()
