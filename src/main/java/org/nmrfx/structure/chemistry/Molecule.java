@@ -450,7 +450,7 @@ public class Molecule implements Serializable, ITree {
             return ((Entity) entities.get(name));
         }
     }
-    
+
     public Entity getChain(String name) {
         if (name == null) {
             return null;
