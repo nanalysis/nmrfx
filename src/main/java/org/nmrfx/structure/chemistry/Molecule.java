@@ -2164,8 +2164,8 @@ public class Molecule implements Serializable, ITree {
             Compound compound = null;
             if (entity instanceof Polymer) {
                 Polymer polymer = (Polymer) entity;
-                firstResidue = polymer.firstResidue;
-                lastResidue = polymer.lastResidue;
+                firstResidue = polymer.getFirstResidue();
+                lastResidue = polymer.getLastResidue();
                 compound = (Compound) firstResidue;
             } else {
                 compound = (Compound) entity;
@@ -2265,8 +2265,8 @@ public class Molecule implements Serializable, ITree {
             entity = (Entity) entIterator.next();
             if (entity instanceof Polymer) {
                 Polymer polymer = (Polymer) entity;
-                firstResidue = polymer.firstResidue;
-                lastResidue = polymer.lastResidue;
+                firstResidue = polymer.getFirstResidue();
+                lastResidue = polymer.getLastResidue();
                 compound = (Compound) firstResidue;
             } else {
                 compound = (Compound) entity;
@@ -2425,7 +2425,7 @@ public class Molecule implements Serializable, ITree {
             SpatialSet sp1 = atom1.spatialSet;
             sp1.setOrder(0.0f);
             Polymer polymer = null;
-            ArrayList<Residue> residues = null;
+            List<Residue> residues = null;
             double endMultiplier = 1.0;
             if (atom1.entity instanceof Residue) {
                 Residue residue = (Residue) atom1.entity;
@@ -2670,15 +2670,15 @@ public class Molecule implements Serializable, ITree {
                 if (entity instanceof Polymer) {
                     Polymer polymer = (Polymer) entity;
                     if (molFilter.firstRes.equals("*")) {
-                        firstResidue = polymer.firstResidue;
+                        firstResidue = polymer.getFirstResidue();
                     } else {
-                        firstResidue = (Residue) polymer.residues.get(molFilter.firstRes);
+                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
                     }
 
                     if (molFilter.lastRes.equals("*")) {
-                        lastResidue = polymer.lastResidue;
+                        lastResidue = polymer.getLastResidue();
                     } else {
-                        lastResidue = (Residue) polymer.residues.get(molFilter.lastRes);
+                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
                     }
 
                     compound = (Compound) firstResidue;
@@ -2800,15 +2800,15 @@ public class Molecule implements Serializable, ITree {
                 if (entity instanceof Polymer) {
                     Polymer polymer = (Polymer) entity;
                     if (molFilter.firstRes.equals("*")) {
-                        firstResidue = polymer.firstResidue;
+                        firstResidue = polymer.getFirstResidue();
                     } else {
-                        firstResidue = (Residue) polymer.residues.get(molFilter.firstRes);
+                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
                     }
 
                     if (molFilter.lastRes.equals("*")) {
-                        lastResidue = polymer.lastResidue;
+                        lastResidue = polymer.getLastResidue();
                     } else {
-                        lastResidue = (Residue) polymer.residues.get(molFilter.lastRes);
+                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
                     }
 
                     compound = (Compound) firstResidue;
@@ -2960,15 +2960,15 @@ public class Molecule implements Serializable, ITree {
                 if (entity instanceof Polymer) {
                     Polymer polymer = (Polymer) entity;
                     if (molFilter.firstRes.equals("*")) {
-                        firstResidue = polymer.firstResidue;
+                        firstResidue = polymer.getFirstResidue();
                     } else {
-                        firstResidue = (Residue) polymer.residues.get(molFilter.firstRes);
+                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
                     }
 
                     if (molFilter.lastRes.equals("*")) {
-                        lastResidue = polymer.lastResidue;
+                        lastResidue = polymer.getLastResidue();
                     } else {
-                        lastResidue = (Residue) polymer.residues.get(molFilter.lastRes);
+                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
                     }
 
                     compound = (Compound) firstResidue;
@@ -3105,9 +3105,9 @@ public class Molecule implements Serializable, ITree {
             //System.err.println(entity.name);
             if (entity instanceof Polymer) {
                 Polymer polymer = (Polymer) entity;
-                firstResidue = polymer.firstResidue;
+                firstResidue = polymer.getFirstResidue();
 
-                lastResidue = polymer.lastResidue;
+                lastResidue = polymer.getLastResidue();
                 compound = (Compound) firstResidue;
             } else {
                 compound = (Compound) entity;
@@ -3181,7 +3181,7 @@ public class Molecule implements Serializable, ITree {
 
                 if (entity instanceof Polymer) {
                     Polymer polymer = (Polymer) entity;
-                    firstResidue = (Residue) polymer.residues.get(molFilter.firstRes);
+                    firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
                     compound = (Compound) firstResidue;
                 } else {
                     compound = (Compound) entity;

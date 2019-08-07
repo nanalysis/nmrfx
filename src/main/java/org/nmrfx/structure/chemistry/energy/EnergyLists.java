@@ -477,8 +477,8 @@ public class EnergyLists {
             if (entity instanceof Polymer) {
                 Polymer polymer = (Polymer) entity;
                 //residue - each monomer of the polymer
-                firstResidue = polymer.firstResidue;
-                lastResidue = polymer.lastResidue;
+                firstResidue = polymer.getFirstResidue();
+                lastResidue = polymer.getLastResidue();
                 //Residues are compounds
                 compound = (Compound) firstResidue;
             } else {

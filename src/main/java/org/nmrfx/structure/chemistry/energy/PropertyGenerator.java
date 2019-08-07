@@ -260,7 +260,7 @@ public class PropertyGenerator {
         Molecule molecule = Molecule.getActive();
         Entity entity = molecule.getEntity(molecule.getName());
         Polymer polymer = (Polymer) entity;
-        Residue residue = polymer.firstResidue;
+        Residue residue = polymer.getFirstResidue();
         return Integer.parseInt(residue.getNumber());
     }
 
@@ -268,19 +268,19 @@ public class PropertyGenerator {
         Molecule molecule = Molecule.getActive();
         Entity entity = molecule.getEntity(molecule.getName());
         Polymer polymer = (Polymer) entity;
-        Residue residue = polymer.lastResidue;
+        Residue residue = polymer.getLastResidue();
         return Integer.parseInt(residue.getNumber());
     }
 
     public int getFirstRes(Entity entity) {
         Polymer polymer = (Polymer) entity;
-        Residue residue = polymer.firstResidue;
+        Residue residue = polymer.getFirstResidue();
         return Integer.parseInt(residue.getNumber());
     }
 
     public int getLastRes(Entity entity) {
         Polymer polymer = (Polymer) entity;
-        Residue residue = polymer.lastResidue;
+        Residue residue = polymer.getLastResidue();
         return Integer.parseInt(residue.getNumber());
     }
 
