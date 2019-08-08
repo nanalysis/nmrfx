@@ -73,7 +73,6 @@ public class RDCGUI {
     TextField magField = new TextField("");
     RDCConstraintSet rdcSet;
     OrderSVD svdResults = null;
-    List<String> setNames = new ArrayList<>();
     Label pdbFile = new Label("");
     Label bmrbFile = new Label("");
 
@@ -110,7 +109,7 @@ public class RDCGUI {
             Button exportButton = new Button("Export Plot");
             Label pdbLabel = new Label("  PDB File: ");
             Label bmrbLabel = new Label("  BMRB File: ");
-            toolBar.getItems().addAll(rdcButton, saveButton, exportButton, bmrbLabel, bmrbFile, pdbLabel, pdbFile);
+            toolBar.getItems().addAll(rdcButton, saveButton, exportButton);//, bmrbLabel, bmrbFile, pdbLabel, pdbFile);
 
             rdcButton.setOnAction(e -> analyze());
             saveButton.setOnAction(e -> saveToFile());
@@ -191,8 +190,10 @@ public class RDCGUI {
         System.out.println("up");
         setChoice.getItems().clear();
         if (analystApp != null) {
-            setChoice.getItems().add("");
-            setChoice.setValue(setChoice.getItems().get(0));
+            if (!RDCConstraintSet.getNames().isEmpty()) {
+                setChoice.getItems().addAll(RDCConstraintSet.getNames());
+                setChoice.setValue(setChoice.getItems().get(0));
+            }
         }
     }
 
@@ -201,12 +202,12 @@ public class RDCGUI {
         String name = setChoice.getValue();
         rdcSet = RDCConstraintSet.getSet(name);
         if (rdcSet != null) {
-            if (pdbFile.getText().equals("")) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Error: No PDB file loaded (Load PDB XYZ...).");
-                alert.showAndWait();
-                return;
-            }
+//            if (pdbFile.getText().equals("")) {
+//                Alert alert = new Alert(Alert.AlertType.ERROR);
+//                alert.setContentText("Error: No PDB file loaded (Load PDB XYZ...).");
+//                alert.showAndWait();
+//                return;
+//            }
                 
             svdResults = OrderSVD.calcRDCs(rdcSet, true, false, null);
             svdResults.setRDCset(rdcSet);
@@ -244,7 +245,7 @@ public class RDCGUI {
             dialog.showAndWait();
         }
     }
-    
+        
     @FXML
     void exportPlotSVGAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();

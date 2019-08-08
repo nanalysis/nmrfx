@@ -845,10 +845,12 @@ public class AnalystApp extends MainApp {
                 NMRStarReader.read(starFile);
                 if (rdcGUI != null) {
                     rdcGUI.bmrbFile.setText(starFile.getName());
-                    rdcGUI.setNames = RDCConstraintSet.getNames();
                     rdcGUI.setChoice.getItems().clear();
-                    rdcGUI.setChoice.getItems().addAll(rdcGUI.setNames);
-                    rdcGUI.setChoice.setValue(rdcGUI.setChoice.getItems().get(0));
+                    if (!RDCConstraintSet.getNames().isEmpty()) {
+                        rdcGUI.setChoice.getItems().addAll(RDCConstraintSet.getNames());
+                        rdcGUI.setChoice.setValue(rdcGUI.setChoice.getItems().get(0));
+                    }
+                    
                 }
             } catch (ParseException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
