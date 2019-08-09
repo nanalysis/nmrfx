@@ -21,13 +21,26 @@ import java.util.*;
 
 public class Polymer extends Entity {
 
-    public Hashtable residues;
-    public ArrayList<Residue> residueList = null;
-    public Residue firstResidue = null;
-    public Residue lastResidue = null;
+    /**
+     * @return the firstResidue
+     */
+    public Residue getFirstResidue() {
+        return firstResidue;
+    }
+
+    /**
+     * @return the lastResidue
+     */
+    public Residue getLastResidue() {
+        return lastResidue;
+    }
+
+    private Map<String, Residue> residues;
+    private List<Residue> residueList = new ArrayList<>();
+    private Residue firstResidue = null;
+    private Residue lastResidue = null;
     private String polymerType = "";
     private String strandID = "A";
-    private String oneLetterCode = "";
     private String nomenclature = "IUPAC";
     private boolean capped = true;
     private boolean libraryMode = true;
@@ -43,7 +56,7 @@ public class Polymer extends Entity {
 
     class PolymerIterator implements Iterator {
 
-        Residue current = firstResidue;
+        Residue current = getFirstResidue();
 
         public boolean hasNext() {
             return (current != null);
@@ -70,55 +83,43 @@ public class Polymer extends Entity {
     public Polymer(String name) {
         this.name = name;
         this.label = name;
-        residues = new Hashtable();
+        residues = new HashMap<>();
     }
 
     public Polymer(String label, String name) {
         this.name = name;
         this.label = label;
-        residues = new Hashtable();
+        residues = new HashMap<>();
     }
 
     public Iterator iterator() {
         return new PolymerIterator();
     }
 
-    public void addResidueOld(Residue residue) {
-        residues.put(residue.number.toLowerCase(), residue);
-        residues.put(residue.name.toLowerCase(), residue);
-        residueList = null;
-    }
-
     public Residue getResidue(String name) {
-        return ((Residue) residues.get(name.toLowerCase()));
+        return residues.get(name.toLowerCase());
     }
 
     public Residue getResidue(int resNum) {
-        ArrayList<Residue> vec = getResidues();
-
-        if ((resNum < 0) || (resNum >= vec.size())) {
-            return null;
-        }
-
-        return ((Residue) vec.get(resNum));
+        return residueList.get(resNum);
     }
 
     public int size() {
-        getResidues();
         return residueList.size();
     }
 
     public void addResidue(Residue residue) {
         residue.polymer = this;
         residue.molecule = molecule;
+        residue.iRes = residueList.size();
 
-        if (firstResidue == null) {
+        if (getFirstResidue() == null) {
             firstResidue = residue;
         }
 
-        residue.previous = lastResidue;
+        residue.previous = getLastResidue();
 
-        if (lastResidue != null) {
+        if (getLastResidue() != null) {
             lastResidue.next = residue;
         }
 
@@ -127,15 +128,15 @@ public class Polymer extends Entity {
         residues.put(residue.number.toLowerCase(), residue);
         residues.put(residue.name.toLowerCase(), residue);
         molecule.nResidues++;
-        residueList = null;
+        residueList.add(residue);
     }
 
     public void removeResidue(Residue residue) {
         if (residue != null) {
-            if (residue == firstResidue) {
+            if (residue == getFirstResidue()) {
                 firstResidue = residue.next;
                 firstResidue.previous = null;
-            } else if (residue == lastResidue) {
+            } else if (residue == getLastResidue()) {
                 lastResidue = residue.previous;
                 lastResidue.next = null;
             } else {
@@ -146,27 +147,11 @@ public class Polymer extends Entity {
             residues.remove(residue.name.toLowerCase());
 
             molecule.nResidues--;
-            residueList = null;
+            residueList.remove(residue);
         }
     }
 
-    public ArrayList<Residue> getResidues() {
-        StringBuffer sBuf = new StringBuffer();
-        int idNum = 1;
-        if (residueList == null) {
-            residueList = new ArrayList<>();
-
-            Residue res = firstResidue;
-
-            while (res != null) {
-                residueList.add(res);
-                res.entityID = idNum++;
-                sBuf.append(res.getOneLetter());
-                res = res.next;
-            }
-            oneLetterCode = sBuf.toString();
-        }
-
+    public List<Residue> getResidues() {
         return residueList;
     }
 
@@ -182,6 +167,12 @@ public class Polymer extends Entity {
             residues.remove(oldNumber);
             residues.put(newNumber, residue);
             return (0);
+        }
+    }
+
+    public void dumpResidues() {
+        for (String num : residues.keySet()) {
+            System.out.println(num + " " + residues.get(num).getName());
         }
     }
 
@@ -240,8 +231,11 @@ public class Polymer extends Entity {
     }
 
     public String getOneLetterCode() {
-        getResidues();
-        return oneLetterCode;
+        StringBuilder sBuf = new StringBuilder();
+        for (Residue res : residueList) {
+            sBuf.append(res.getOneLetter());
+        }
+        return sBuf.toString();
     }
 
     public ArrayList<AtomSpecifier> getDeletedAtoms() {
@@ -340,8 +334,8 @@ public class Polymer extends Entity {
         List<String> constraints = new ArrayList<>();
 
         for (int i = 0; i < cyclicClosers.length; i += 3) {
-            Atom atom1 = lastResidue.getAtom(cyclicClosers[i]);
-            Atom atom2 = firstResidue.getAtom(cyclicClosers[i + 1]);
+            Atom atom1 = getLastResidue().getAtom(cyclicClosers[i]);
+            Atom atom2 = getFirstResidue().getAtom(cyclicClosers[i + 1]);
             String distance = cyclicClosers[i + 2];
             String constraint = atom1.getFullName() + " " + atom2.getFullName() + " " + distance;
             constraints.add(constraint);

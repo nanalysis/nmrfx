@@ -54,7 +54,7 @@ public class AngleTreeGenerator {
         Atom startAtom = null;
         if (itree instanceof Entity && (Entity) itree instanceof Polymer) {
             Polymer polymer = (Polymer) (Entity) itree;
-            startAtom = polymer.firstResidue.getFirstBackBoneAtom();
+            startAtom = polymer.getFirstResidue().getFirstBackBoneAtom();
         } else {
             for (Atom atom : atoms) {
                 if (checkStartAtom(atom)) {

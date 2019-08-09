@@ -414,9 +414,9 @@ public class RingCurrentShift {
             for (Entity entity : coordSet.getEntities().values()) {
                 if (entity instanceof Polymer) {
                     Polymer polymer = (Polymer) entity;
-                    firstResidue = polymer.firstResidue;
+                    firstResidue = polymer.getFirstResidue();
 
-                    lastResidue = polymer.lastResidue;
+                    lastResidue = polymer.getLastResidue();
                     compound = (Compound) firstResidue;
                 } else {
                     compound = (Compound) entity;

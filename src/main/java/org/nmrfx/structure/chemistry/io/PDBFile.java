@@ -244,8 +244,8 @@ public class PDBFile {
 
 // fixme change capping atom names to new PDB standard H,H2  O,OXT,HXT
     public static void capPolymer(Polymer polymer) {
-        polymer.firstResidue.capFirstResidue();
-        polymer.lastResidue.capLastResidue();
+        polymer.getFirstResidue().capFirstResidue();
+        polymer.getLastResidue().capLastResidue();
 
     }
 
@@ -561,9 +561,9 @@ public class PDBFile {
 
                         polymer = (Polymer) molecule.getEntity(polymerName);
 
+
                         if (polymer == null) {
-                            polymerName = molecule.getDefaultEntity();
-                            polymer = (Polymer) molecule.getEntity(polymerName);
+                            polymer = (Polymer) molecule.getChain(polymerName);
                         }
                         if (polymer == null) {
                             System.err.println("null polymer " + polymerName + " for line: " + string);
