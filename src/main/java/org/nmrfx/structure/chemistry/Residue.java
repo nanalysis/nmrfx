@@ -101,7 +101,7 @@ public class Residue extends Compound {
         Atom atom = (Atom) atomMap.get(lName);
         if (atom == null) {
             if (lName.charAt(0) == 'h') {
-                if (polymer.isCapped() && (polymer.firstResidue == this)) {
+                if (polymer.isCapped() && (polymer.getFirstResidue() == this)) {
                     if (lName.equals("hn")) {
                         atom = (Atom) atomMap.get("h1");
                     } else if (lName.equals("h")) {
@@ -119,7 +119,7 @@ public class Residue extends Compound {
                     atom = (Atom) atomMap.get("hn");
                 }
             } else if (lName.charAt(0) == 'o') {
-                if (polymer.isCapped() && (polymer.lastResidue == this)) {
+                if (polymer.isCapped() && (polymer.getLastResidue() == this)) {
                     if (lName.equals("o")) {
                         atom = (Atom) atomMap.get("o'");
                     } else if (lName.equals("ot1")) {

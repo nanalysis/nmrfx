@@ -78,7 +78,7 @@ public class NMRStarReader {
         STAR3 star = new STAR3(bfR, "star3");
 
         try {
-        star.scanFile();
+            star.scanFile();
         } catch (ParseException parseEx) {
             throw new ParseException(parseEx.getMessage() + " " + star.getLastLine());
         }
@@ -439,6 +439,10 @@ public class NMRStarReader {
         if (asymLabel.equals(".")) {
             asymLabel = "A";
         }
+        String pdbLabel = STAR3.getTokenFromMap(tagMap, "PDB_chain_ID", "A");
+        if (pdbLabel.equals(".")) {
+            pdbLabel = asymLabel;       
+        }
         int entityID = 1;
         int entityAssemblyID = 1;
         try {
@@ -472,6 +476,7 @@ public class NMRStarReader {
                 Polymer polymer = new Polymer(entitySaveFrameLabel, entityAssemblyName);
                 polymer.setIDNum(entityID);
                 polymer.assemblyID = entityAssemblyID;
+                polymer.setPDBChain(pdbLabel);
                 entities.put(entityAssemblyIDString + "." + entityIDString, polymer);
                 molecule.addEntity(polymer, asymLabel);
                 finishSaveFrameProcessing(polymer, saveframe, nomenclature, capped);
@@ -484,6 +489,7 @@ public class NMRStarReader {
                 Compound compound = new Compound("1", entityAssemblyName, name);
                 compound.setIDNum(1);
                 compound.assemblyID = entityAssemblyID;
+                compound.setPDBChain(pdbLabel);
                 entities.put(entityAssemblyIDString + "." + entityIDString, compound);
                 molecule.addEntity(compound, asymLabel);
                 String mapID = entityAssemblyID + "." + entityID + "." + 1;
