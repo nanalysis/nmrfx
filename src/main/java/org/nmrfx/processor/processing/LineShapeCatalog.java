@@ -390,7 +390,7 @@ public class LineShapeCatalog {
         addToDatasetInterpolated(dataset, values, center, scale * peak.getIntensity());
     }
 
-    private double[] interpolate(int iDim, double ptD, double lw) {
+    public double[] interpolate(int iDim, double ptD, double lw) {
         double lwIndex = getInterpolatedIndexForWidth(iDim, lw);
         int ctr = (int) Math.round(ptD);
         double frac = ptD - ctr;
