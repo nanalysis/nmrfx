@@ -98,7 +98,7 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
         constraints.add((RDC) constraint);
         dirty = true;
     }
-
+    
     public ArrayList<RDC> get() {
         if (dirty) {
             updateAngleData();
@@ -109,7 +109,16 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
     public RDC get(int i) {
         return constraints.get(i);
     }
+    
+    public void remove(int i) {
+        constraints.remove(i);
+    }
 
+    public void add(int i, Constraint constraint) {
+        constraints.add(i, (RDC) constraint);
+        dirty = true;
+    }
+    
     public Iterator iterator() {
         return constraints.iterator();
     }
