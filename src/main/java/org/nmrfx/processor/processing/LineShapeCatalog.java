@@ -336,7 +336,7 @@ public class LineShapeCatalog {
             dIndex = 0.0;
         } else if (iUpper == n) {
             dIndex = n - 1.0 - 0.00001; // make a little smaller so floor 
-                                        // gets previous index
+            // gets previous index
         } else {
             double frac = (lw - lws[iUpper - 1]) / (lws[iUpper] - lws[iUpper - 1]);
             dIndex = (iUpper - 1) + frac;
@@ -428,8 +428,8 @@ public class LineShapeCatalog {
             double v2 = data[iDim][index2][j];
             double v3 = data[iDim][index3][j];
             double v4 = data[iDim][index4][j];
-            double v5 = (1.0 -fL) * v1 + fL * v2;
-            double v6 = (1.0 -fL) * v3 + fL * v4;
+            double v5 = (1.0 - fL) * v1 + fL * v2;
+            double v6 = (1.0 - fL) * v3 + fL * v4;
             v[i] = (1.0 - fP) * v5 + fP * v6;
         }
         return v;
