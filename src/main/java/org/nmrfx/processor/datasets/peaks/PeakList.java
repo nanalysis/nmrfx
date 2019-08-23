@@ -35,7 +35,7 @@ import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optimization.ConvergenceChecker;
 import org.apache.commons.math3.optimization.GoalType;
-import org.apache.commons.math3.optimization.PointValuePair;
+import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optimization.SimplePointChecker;
 import org.apache.commons.math3.optimization.univariate.BrentOptimizer;
 import org.apache.commons.math3.optimization.univariate.UnivariatePointValuePair;

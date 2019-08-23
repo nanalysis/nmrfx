@@ -19,12 +19,16 @@ package org.nmrfx.processor.optimization;
 
 import java.util.Random;
 import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.optimization.GoalType;
-import org.apache.commons.math3.optimization.PointValuePair;
-import org.apache.commons.math3.optimization.direct.BOBYQAOptimizer;
+import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.apache.commons.math3.optim.InitialGuess;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.SimpleBounds;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.BOBYQAOptimizer;
 
 public class LorentzGaussND implements MultivariateFunction {
 
@@ -103,11 +107,16 @@ public class LorentzGaussND implements MultivariateFunction {
         PointValuePair result = null;
         BOBYQAOptimizer optimizer = new BOBYQAOptimizer(nInterpolationPoints, 10.0, 1.0e-2);
         try {
-            result = optimizer.optimize(nSteps, this, GoalType.MINIMIZE, newStart, uniformBoundaries[0], uniformBoundaries[1]);
+            result = optimizer.optimize(
+                    new MaxEval(nSteps),
+                    new ObjectiveFunction(this), GoalType.MINIMIZE,
+                    new SimpleBounds(uniformBoundaries[0], uniformBoundaries[1]),
+                    new InitialGuess(newStart));
             result = new PointValuePair(unscalePar(result.getPoint()), result.getValue());
-        } catch (TooManyEvaluationsException tmE) {
+        } catch (TooManyEvaluationsException e) {
             result = best;
         }
+
         return result;
     }
 
