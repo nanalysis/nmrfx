@@ -2359,6 +2359,19 @@ public class PeakList {
         }
         );
     }
+    
+    public void lsCatalogFit(Dataset theFile)
+            throws IllegalArgumentException, IOException, PeakFitException {
+        Set<Set<Peak>> oPeaks = getOverlappingPeaks();
+        oPeaks.stream().forEach(oPeakSet -> {
+            try {
+                simPeakFit(theFile, oPeakSet);
+            } catch (IllegalArgumentException | IOException | PeakFitException ex) {
+                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        );
+    }
 
     public void peakFit(Dataset theFile, Collection<Peak> peaks)
             throws IllegalArgumentException, IOException, PeakFitException {
