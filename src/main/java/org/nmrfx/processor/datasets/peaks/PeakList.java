@@ -3189,7 +3189,7 @@ public class PeakList {
             gValue = new GuessValue(gValue.value - offset, gValue.lower - offset, gValue.upper - offset, gValue.floating);
             guessList.set(centerRef.index, gValue);
         }
-        double[][] positions = new double[posArray.size()][nPeakDim];
+        int[][] positions = new int[posArray.size()][nPeakDim];
         int i = 0;
         for (int[] pValues : posArray) {
             for (int j = 0; j < nPeakDim; j++) {
