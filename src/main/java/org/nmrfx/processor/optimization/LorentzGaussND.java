@@ -34,7 +34,7 @@ public class LorentzGaussND implements MultivariateFunction {
     int[] sigStarts = null;
     int nSignals;
     int nDelays = 1;
-    double[][] positions;
+    int[][] positions;
     double[][] intensities;
     double[] delays;
     double[] guesses;
@@ -51,10 +51,10 @@ public class LorentzGaussND implements MultivariateFunction {
     double fracLorentz = 1.0;
     Random generator = null;
 
-    public LorentzGaussND(final double[][] positions) {
+    public LorentzGaussND(final int[][] positions) {
         int nPoints = positions.length;
         nDim = positions[0].length;
-        this.positions = new double[nPoints][];
+        this.positions = new int[nPoints][];
         for (int i = 0; i < nPoints; i++) {
             this.positions[i] = positions[i].clone();
         }
@@ -67,7 +67,7 @@ public class LorentzGaussND implements MultivariateFunction {
         for (int size : sizes) {
             nPoints *= size;
         }
-        this.positions = new double[nPoints][sizes.length];
+        this.positions = new int[nPoints][sizes.length];
         MultidimensionalCounter counter = new MultidimensionalCounter(sizes);
         MultidimensionalCounter.Iterator iterator = counter.iterator();
         i = 0;
@@ -181,7 +181,7 @@ public class LorentzGaussND implements MultivariateFunction {
         return null;
     }
 
-    public double calculate(double[] a, double[] x, int iDelay) {
+    public double calculate(double[] a, int[] x, int iDelay) {
         double y = a[0];
         for (int k = 0; k < nSignals; k++) {
             y += calculateOneSig(a, k, x, iDelay);
@@ -190,7 +190,7 @@ public class LorentzGaussND implements MultivariateFunction {
         return y;
     }
 
-    public double calculateOneSig(double[] a, int iSig, double[] x, int iDelay) {
+    public double calculateOneSig(double[] a, int iSig, int[] x, int iDelay) {
         double y = 1.0;
         int iPar = sigStarts[iSig];
         double amplitude = a[iPar++];
