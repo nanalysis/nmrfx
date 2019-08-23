@@ -5728,7 +5728,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         });
     }
 
-    public void loadSimVecs() throws IOException {
+    public void loadLSCatalog() throws IOException {
         String dirName = file.getParent();
         String datasetFileName = file.getName();
 
