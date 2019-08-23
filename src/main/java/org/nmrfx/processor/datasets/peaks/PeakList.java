@@ -1632,7 +1632,7 @@ public class PeakList {
         }
     }
 
-    static class MatchItem {
+    public static class MatchItem {
 
         final int itemIndex;
         final double[] values;
@@ -2245,7 +2245,6 @@ public class PeakList {
                 peak.quantifyPeak(dataset, pdim, f, mode);
             } catch (IOException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
-                return;
             }
         });
     }
@@ -2304,7 +2303,6 @@ public class PeakList {
                 peak.tweak(dataset, pdim, planes);
             } catch (IOException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
-                return;
             }
         });
 
@@ -2318,7 +2316,6 @@ public class PeakList {
                 peak.tweak(dataset, pdim, planes);
             } catch (IOException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
-                return;
             }
         });
 
@@ -2770,7 +2767,7 @@ public class PeakList {
         }
     }
 
-    class DistanceMatch {
+    public class DistanceMatch {
 
         int iPeak = 0;
         int jPeak = 0;
@@ -2794,12 +2791,10 @@ public class PeakList {
                 DistanceMatch[][] bNeighbors, int jNeighbor) {
             double globalSum = 0.0;
 
-            for (int i = 0; i < aNeighbors[iNeighbor].length; i++) {
-                DistanceMatch aDis = aNeighbors[iNeighbor][i];
+            for (DistanceMatch aDis : aNeighbors[iNeighbor]) {
                 double sumMin = Double.MAX_VALUE;
 
-                for (int j = 0; j < bNeighbors[jNeighbor].length; j++) {
-                    DistanceMatch bDis = bNeighbors[jNeighbor][j];
+                for (DistanceMatch bDis : bNeighbors[jNeighbor]) {
                     double sum = 0.0;
 
                     for (int k = 0; k < deltas.length; k++) {
