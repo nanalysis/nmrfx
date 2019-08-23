@@ -321,9 +321,33 @@ public class LineShapeCatalog {
         return iMin;
     }
 
+    public double getInterpolatedIndexForWidth(int iDim, double lw) {
+        double[] lws = alineWidths[iDim];
+        int n = lws.length;
+        int iUpper = n;
+        for (int i = 0; i < n; i++) {
+            if (lws[i] > lw) {
+                iUpper = i;
+                break;
+            }
+        }
+        double dIndex;
+        if (iUpper == 0) {
+            dIndex = 0.0;
+        } else if (iUpper == n) {
+            dIndex = n - 1.0 - 0.00001; // make a little smaller so floor 
+                                        // gets previous index
+        } else {
+            double frac = (lw - lws[iUpper - 1]) / (lws[iUpper] - lws[iUpper - 1]);
+            dIndex = (iUpper - 1) + frac;
+        }
+        System.out.println(iDim + " " + iUpper + " " + dIndex + " " + lw + " " + n);
+        return dIndex;
+    }
+
     public void addToDataset(Dataset dataset, PeakList peakList, double scale) throws IOException {
         for (Peak peak : peakList.peaks()) {
-            addToDataset(dataset, peak, scale);
+            addToDatasetInterpolated(dataset, peak, scale);
         }
     }
 
@@ -346,10 +370,106 @@ public class LineShapeCatalog {
             if (indices[i] < 0) {
                 indices[i] = 0;
             }
-           // System.out.printf("%1d %4.2f %2d %7.1f %4d %4.2f %1d %2d\n", nFrac, lw, index, ptD, center[i], frac, offset, indices[i]);
+            // System.out.printf("%1d %4.2f %2d %7.1f %4d %4.2f %1d %2d\n", nFrac, lw, index, ptD, center[i], frac, offset, indices[i]);
 
         }
         addToDataset(dataset, indices, center, scale * peak.getIntensity());
+    }
+
+    public void addToDatasetInterpolated(Dataset dataset,
+            Peak peak, double scale) throws IOException {
+        int[] center = new int[dataset.getNDim()];
+        double[][] values = new double[center.length][];
+        for (int i = 0; i < center.length; i++) {
+            double lw = peak.getPeakDim(i).getLineWidthHz();
+            double ptD = dataset.ppmToDPoint(i, peak.getPeakDim(i).getChemShiftValue());
+            values[i] = interpolate(i, ptD, lw);
+            center[i] = (int) Math.round(ptD);
+        }
+//        System.out.println(peak.getName());
+        addToDatasetInterpolated(dataset, values, center, scale * peak.getIntensity());
+    }
+
+    private double[] interpolate(int iDim, double ptD, double lw) {
+        double lwIndex = getInterpolatedIndexForWidth(iDim, lw);
+        int ctr = (int) Math.round(ptD);
+        double frac = ptD - ctr;
+        boolean reverse = false;
+        if (frac < 0.0) {
+            reverse = true;
+        }
+        frac = Math.abs(frac);
+        int offset = (int) Math.floor(frac * nFrac);
+        double frac2 = nFrac * frac - offset;
+//        System.out.printf("%7.2f %3d %7.2f", ptD, ctr, frac);
+//        System.out.printf(" %3d %3d %3d %7.2f %b ", offset, index1, index2, frac2, reverse);
+        return interpolate(iDim, lwIndex, offset, frac2, reverse);
+
+    }
+
+    private double[] interpolate(int iDim, double lwIndex, int offset,
+            double fP, boolean reverse) {
+        int lwIndex1 = (int) Math.floor(lwIndex) * nFrac;
+        int lwIndex2 = lwIndex1 + nFrac;
+        System.out.printf("%d %7.2f %d %7.2f %b %2d", iDim, lwIndex, offset, fP, reverse, lwIndex1);
+        double fL = lwIndex - Math.floor(lwIndex);
+        int index1 = lwIndex1 + offset;
+        int index2 = lwIndex2 + offset;
+        int index3 = lwIndex1 + 1;
+        int index4 = lwIndex2 + 1;
+        int n = data[iDim][index1].length;
+        double[] v = new double[n];
+        for (int i = 0; i < n; i++) {
+            int j = reverse ? n - i : i;
+            if (j >= n) {
+                j = 0;
+            }
+            double v1 = data[iDim][index1][j];
+            double v2 = data[iDim][index2][j];
+            double v3 = data[iDim][index3][j];
+            double v4 = data[iDim][index4][j];
+            double v5 = (1.0 -fL) * v1 + fL * v2;
+            double v6 = (1.0 -fL) * v3 + fL * v4;
+            v[i] = (1.0 - fP) * v5 + fP * v6;
+        }
+        return v;
+    }
+
+    public void addToDatasetInterpolated(Dataset dataset, double[][] values,
+            int[] center, double scale) throws IOException {
+        int[] regionSizes = new int[values.length];
+
+        for (int i = 0; i < values.length; i++) {
+            regionSizes[i] = values[i].length;
+        }
+        MultidimensionalCounter mCounter = new MultidimensionalCounter(regionSizes);
+        MultidimensionalCounter.Iterator iter = mCounter.iterator();
+        int i = 0;
+        int[] dpt = new int[values.length];
+        int[] sizes = dataset.getSizes();
+        while (iter.hasNext()) {
+            int k = iter.next();
+            int[] pt = iter.getCounts();
+            boolean ok = true;
+            for (int j = 0; j < pt.length; j++) {
+                dpt[j] = pt[j] + center[j] - offsets[j];
+                if ((dpt[j] < 0) || (dpt[j] >= sizes[j])) {
+                    ok = false;
+                    break;
+                }
+//                System.out.print(j + " " + pt[j] + " " + dpt[j] + " ");
+            }
+            if (ok) {
+                double dataValue = dataset.readPoint(dpt);
+                double value = scale;
+                for (int j = 0; j < values.length; j++) {
+                    value *= values[j][pt[j]];
+                }
+//            System.out.printf("%10.5f %10.5f %4d\n", value, dataValue, k);
+                dataValue += value;
+                dataset.writePoint(dpt, dataValue);
+            }
+        }
     }
 
     public void addToDataset(Dataset dataset, int[] indices,
