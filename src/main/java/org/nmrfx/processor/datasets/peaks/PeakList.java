@@ -51,24 +51,75 @@ import org.nmrfx.processor.datasets.Nuclei;
 import org.nmrfx.processor.datasets.RegionData;
 import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
 
+/**
+ *
+ * @author brucejohnson
+ */
 public class PeakList {
 
+    /**
+     *
+     */
     public static final int FIT_ALL = 0;
+
+    /**
+     *
+     */
     public static final int FIT_AMPLITUDES = 2;
+
+    /**
+     *
+     */
     public static final int FIT_LW_AMPLITUDES = 1;
+
+    /**
+     *
+     */
     public static final int FIT_MAX_DEV = 3;
+
+    /**
+     *
+     */
     public static final int FIT_RMS = 4;
+
+    /**
+     *
+     */
     public static ObservableMap<String, PeakList> peakListTable = FXCollections.observableMap(new LinkedHashMap<>());
+
+    /**
+     *
+     */
     public static PeakList clusterOrigin = null;
     private String listName;
+
+    /**
+     *
+     */
     public String fileName;
     private final int listNum;
+
+    /**
+     *
+     */
     public int nDim;
+
+    /**
+     *
+     */
     public boolean inMem;
     private SpectralDim[] spectralDims = null;
     List<SearchDim> searchDims = new ArrayList<>();
+
+    /**
+     *
+     */
     public double scale;
     private List<Peak> peaks;
+
+    /**
+     *
+     */
     public int idLast;
     private final Map<Integer, Peak> indexMap = new HashMap<>();
     private String details = "";
@@ -129,6 +180,11 @@ public class PeakList {
 
     }
 
+    /**
+     *
+     * @param name
+     * @param n
+     */
     public PeakList(String name, int n) {
         listName = name;
         fileName = "";
@@ -232,6 +288,10 @@ public class PeakList {
         return peaks;
     }
 
+    /**
+     *
+     * @return
+     */
     public static Iterator iterator() {
         return peakListTable.values().iterator();
     }
@@ -271,38 +331,74 @@ public class PeakList {
         return nDim;
     }
 
+    /**
+     *
+     * @return
+     */
     public double getScale() {
         return scale;
     }
 
+    /**
+     *
+     * @param sampleLabel
+     */
     public void setSampleLabel(String sampleLabel) {
         this.sampleLabel = sampleLabel;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getSampleLabel() {
         return sampleLabel;
     }
 
+    /**
+     *
+     * @param sampleConditionLabel
+     */
     public void setSampleConditionLabel(String sampleConditionLabel) {
         this.sampleConditionLabel = sampleConditionLabel;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getSampleConditionLabel() {
         return sampleConditionLabel;
     }
 
+    /**
+     *
+     * @param datasetName
+     */
     public void setDatasetName(String datasetName) {
         this.fileName = datasetName;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getDatasetName() {
         return fileName;
     }
 
+    /**
+     *
+     * @param details
+     */
     public void setDetails(String details) {
         this.details = details;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getDetails() {
         return details;
     }
@@ -326,10 +422,18 @@ public class PeakList {
     }
     // FIXME need to make safe
 
+    /**
+     *
+     * @param oldListener
+     */
     public void removeListener(PeakListener oldListener) {
         listeners.remove(oldListener);
     }
 
+    /**
+     *
+     * @param newListener
+     */
     public void registerListener(PeakListener newListener) {
         if (!listeners.contains(newListener)) {
             listeners.add(newListener);
@@ -354,6 +458,10 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param freezeListener
+     */
     public static void registerFreezeListener(FreezeListener freezeListener) {
         if (freezeListeners.contains(freezeListener)) {
             freezeListeners.remove(freezeListener);
@@ -361,6 +469,11 @@ public class PeakList {
         freezeListeners.add(freezeListener);
     }
 
+    /**
+     *
+     * @param peak
+     * @param state
+     */
     public static void notifyFreezeListeners(Peak peak, boolean state) {
         for (FreezeListener listener : freezeListeners) {
             listener.freezeHappened(peak, state);
@@ -385,14 +498,25 @@ public class PeakList {
         startTimer();
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean isChanged() {
         return changed;
     }
 
+    /**
+     *
+     */
     public void clearChanged() {
         changed = false;
     }
 
+    /**
+     *
+     * @return
+     */
     public static boolean isAnyChanged() {
         boolean anyChanged = false;
         for (PeakList checkList : peakListTable.values()) {
@@ -405,20 +529,35 @@ public class PeakList {
         return anyChanged;
     }
 
+    /**
+     *
+     */
     public static void clearAllChanged() {
         for (Object checkList : peakListTable.values()) {
             ((PeakList) checkList).clearChanged();
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean hasMeasures() {
         return measures.isPresent();
     }
 
+    /**
+     *
+     * @param measure
+     */
     public void setMeasures(Measures measure) {
         measures = Optional.of(measure);
     }
 
+    /**
+     *
+     * @return
+     */
     public double[] getMeasureValues() {
         double[] values = null;
         if (hasMeasures()) {
@@ -427,6 +566,11 @@ public class PeakList {
         return values;
     }
 
+    /**
+     *
+     * @param name
+     * @return
+     */
     public String getProperty(String name) {
         String result = "";
         if (properties.containsKey(name)) {
@@ -435,14 +579,28 @@ public class PeakList {
         return result;
     }
 
+    /**
+     *
+     * @param name
+     * @return
+     */
     public boolean hasProperty(String name) {
         return properties.containsKey(name);
     }
 
+    /**
+     *
+     * @param name
+     * @param value
+     */
     public void setProperty(String name, String value) {
         properties.put(name, value);
     }
 
+    /**
+     *
+     * @return
+     */
     public Map<String, String> getProperties() {
         return properties;
     }
@@ -458,6 +616,10 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public synchronized ArrayList<Multiplet> getMultiplets() {
         if (((sortedMultiplets.isEmpty()) && (multiplets.size() > 0)) || !multipletsSorted) {
             sortMultiplets();
@@ -466,14 +628,26 @@ public class PeakList {
         return sortedMultiplets;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean hasSearchDims() {
         return !searchDims.isEmpty();
     }
 
+    /**
+     *
+     */
     public void clearSearchDims() {
         searchDims.clear();
     }
 
+    /**
+     *
+     * @param s
+     * @throws IllegalArgumentException
+     */
     public void setSearchDims(String s) throws IllegalArgumentException {
         String[] elements = s.split(" ");
         if ((elements.length % 2) != 0) {
@@ -487,11 +661,21 @@ public class PeakList {
 
     }
 
+    /**
+     *
+     * @param dimName
+     * @param tol
+     */
     public void addSearchDim(String dimName, double tol) {
         int iDim = getListDim(dimName);
         addSearchDim(iDim, tol);
     }
 
+    /**
+     *
+     * @param iDim
+     * @param tol
+     */
     public void addSearchDim(int iDim, double tol) {
         Iterator<SearchDim> iter = searchDims.iterator();
         while (iter.hasNext()) {
@@ -504,10 +688,17 @@ public class PeakList {
         searchDims.add(sDim);
     }
 
+    /**
+     *
+     */
     public void clearIndex() {
         indexMap.clear();
     }
 
+    /**
+     *
+     * @param noiseLevel
+     */
     public void setFOM(double noiseLevel) {
         for (int i = 0; i < peaks.size(); i++) {
             Peak peak = peaks.get(i);
@@ -526,6 +717,9 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     */
     public void reNumber() {
         for (int i = 0; i < peaks.size(); i++) {
             Peak peak = peaks.get(i);
@@ -535,6 +729,9 @@ public class PeakList {
         reIndex();
     }
 
+    /**
+     *
+     */
     public void reIndex() {
         int i = 0;
         indexMap.clear();
@@ -545,6 +742,10 @@ public class PeakList {
         peakListUpdated(this);
     }
 
+    /**
+     *
+     * @return
+     */
     public int size() {
         if (peaks == null) {
             return 0;
@@ -553,19 +754,37 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean valid() {
         return get(listName) != null;
     }
 
+    /**
+     *
+     * @return
+     */
     public static List<PeakList> getLists() {
         List<PeakList> peakLists = PeakList.peakListTable.values().stream().collect(Collectors.toList());
         return peakLists;
     }
 
+    /**
+     *
+     * @param listName
+     * @return
+     */
     public static PeakList get(String listName) {
         return ((PeakList) peakListTable.get(listName));
     }
 
+    /**
+     *
+     * @param listID
+     * @return
+     */
     public static PeakList get(int listID) {
         Iterator iter = iterator();
         PeakList peakList = null;
@@ -578,6 +797,10 @@ public class PeakList {
         return peakList;
     }
 
+    /**
+     *
+     * @param listName
+     */
     public static void remove(String listName) {
         PeakDim peakdim;
         PeakList peakList = (PeakList) peakListTable.get(listName);
@@ -615,20 +838,35 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public int countMultiplets() {
         return multiplets.size();
     }
 
+    /**
+     *
+     * @param multiplet
+     */
     public void addMultiplet(Multiplet multiplet) {
         multiplets.add(multiplet);
         multipletsSorted = false;
     }
 
+    /**
+     *
+     * @param multiplet
+     */
     public void removeMultiplet(Multiplet multiplet) {
         multiplets.remove(multiplet);
         multipletsSorted = false;
     }
 
+    /**
+     *
+     */
     public void refreshMultiplets() {
         int iDim = 0;
         multiplets.clear();
@@ -641,6 +879,10 @@ public class PeakList {
         multipletsSorted = false;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getXPKHeader() {
         StringBuilder result = new StringBuilder();
         String sep = " ";
@@ -690,6 +932,10 @@ public class PeakList {
         return (result.toString());
     }
 
+    /**
+     *
+     * @return
+     */
     public String getXPK2Header() {
         StringBuilder result = new StringBuilder();
         String sep = "\t";
@@ -720,6 +966,10 @@ public class PeakList {
         return (result.toString());
     }
 
+    /**
+     *
+     * @return
+     */
     public String getSparkyHeader() {
         StringBuilder result = new StringBuilder();
         result.append("    Assignment");
@@ -777,12 +1027,24 @@ public class PeakList {
         return (locatePeaks(limits, searchDim));
     }
 
+    /**
+     *
+     * @param dim
+     * @param ascending
+     * @throws IllegalArgumentException
+     */
     public void sortPeaks(int dim, boolean ascending) throws IllegalArgumentException {
 //        checkDim(dim);
         sortPeaks(peaks, dim, ascending);
         reIndex();
     }
 
+    /**
+     *
+     * @param peaks
+     * @param iDim
+     * @param ascending
+     */
     public static void sortPeaks(final List<Peak> peaks, int iDim, boolean ascending) {
         if (ascending) {
             peaks.sort((Peak a, Peak b) -> compare(a.peakDims[iDim].getChemShift(), b.peakDims[iDim].getChemShift()));
@@ -793,6 +1055,11 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param iDim
+     * @return
+     */
     public double getFoldAmount(int iDim) {
         double foldAmount = Math.abs(getSpectralDim(iDim).getSw() / getSpectralDim(iDim).getSf());
         return foldAmount;
@@ -815,6 +1082,12 @@ public class PeakList {
         return ppm;
     }
 
+    /**
+     *
+     * @param limits
+     * @param dim
+     * @return
+     */
     public List<Peak> locatePeaks(double[][] limits, int[] dim) {
         return locatePeaks(limits, dim, null);
     }
@@ -925,6 +1198,13 @@ public class PeakList {
         return (sPeaks);
     }
 
+    /**
+     *
+     * @param matchStrings
+     * @param useRegExp
+     * @param useOrder
+     * @return
+     */
     public List<Peak> matchPeaks(final String[] matchStrings, final boolean useRegExp, final boolean useOrder) {
         int j;
         int k;
@@ -991,10 +1271,21 @@ public class PeakList {
         return (result);
     }
 
+    /**
+     *
+     * @param dataset
+     * @return
+     */
     public int[] getDimsForDataset(Dataset dataset) {
         return getDimsForDataset(dataset, false);
     }
 
+    /**
+     *
+     * @param dataset
+     * @param looseMode
+     * @return
+     */
     public int[] getDimsForDataset(Dataset dataset, boolean looseMode) {
         int[] pdim = new int[nDim];
         int dataDim = dataset.getNDim();
@@ -1035,6 +1326,11 @@ public class PeakList {
         return pdim;
     }
 
+    /**
+     *
+     * @param peakSpecifier
+     * @return
+     */
     public static Peak getAPeak(String peakSpecifier) {
         int dot = peakSpecifier.indexOf('.');
 
@@ -1067,6 +1363,13 @@ public class PeakList {
         return peak;
     }
 
+    /**
+     *
+     * @param peakSpecifier
+     * @param iDimInt
+     * @return
+     * @throws IllegalArgumentException
+     */
     public static Peak getAPeak(String peakSpecifier,
             Integer iDimInt) throws IllegalArgumentException {
         int dot = peakSpecifier.indexOf('.');
@@ -1101,6 +1404,12 @@ public class PeakList {
         return peakList.getPeakByID(idNum);
     }
 
+    /**
+     *
+     * @param peakSpecifier
+     * @return
+     * @throws IllegalArgumentException
+     */
     public static Multiplet getAMultiplet(String peakSpecifier) throws IllegalArgumentException {
         int dot = peakSpecifier.indexOf('.');
 
@@ -1132,6 +1441,12 @@ public class PeakList {
         return sMulti.get(idNum);
     }
 
+    /**
+     *
+     * @param peakSpecifier
+     * @return
+     * @throws IllegalArgumentException
+     */
     public static PeakDim getPeakDimObject(String peakSpecifier)
             throws IllegalArgumentException {
         int dot = peakSpecifier.indexOf('.');
@@ -1172,6 +1487,12 @@ public class PeakList {
         return peak.peakDims[iDim];
     }
 
+    /**
+     *
+     * @param idNum
+     * @return
+     * @throws IllegalArgumentException
+     */
     public Peak getPeakByID(int idNum) throws IllegalArgumentException {
         if (indexMap.isEmpty()) {
             reIndex();
@@ -1180,6 +1501,11 @@ public class PeakList {
         return peak;
     }
 
+    /**
+     *
+     * @param s
+     * @return
+     */
     public int getListDim(String s) {
         int iDim = -1;
 
@@ -1194,6 +1520,11 @@ public class PeakList {
         return iDim;
     }
 
+    /**
+     *
+     * @param peakSpecifier
+     * @return
+     */
     public static int getPeakDimNum(String peakSpecifier) {
         int iDim = 0;
         int dot = peakSpecifier.indexOf('.');
@@ -1210,6 +1541,12 @@ public class PeakList {
         return iDim;
     }
 
+    /**
+     *
+     * @param peakSpecifier
+     * @return
+     * @throws IllegalArgumentException
+     */
     public int getPeakDim(String peakSpecifier)
             throws IllegalArgumentException {
         int iDim = 0;
@@ -1269,29 +1606,50 @@ public class PeakList {
         return (peak);
     }
 
+    /**
+     *
+     * @return
+     */
     public Peak getNewPeak() {
         Peak peak = new Peak(this, nDim);
         addPeak(peak);
         return peak;
     }
 
+    /**
+     *
+     * @param newPeak
+     */
     public void addPeakWithoutResonance(Peak newPeak) {
         peaks.add(newPeak);
         clearIndex();
     }
 
+    /**
+     *
+     * @param newPeak
+     */
     public void addPeak(Peak newPeak) {
         newPeak.initPeakDimContribs();
         peaks.add(newPeak);
         clearIndex();
     }
 
+    /**
+     *
+     * @return
+     */
     public int addPeak() {
         Peak peak = new Peak(this, nDim);
         addPeak(peak);
         return (peak.getIdNum());
     }
 
+    /**
+     *
+     * @param i
+     * @return
+     */
     public Peak getPeak(int i) {
         if (peaks == null) {
             return null;
@@ -1307,6 +1665,10 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param peak
+     */
     public void removePeak(Peak peak) {
         if (peaks.get(peaks.size() - 1) == peak) {
             idLast--;
@@ -1315,6 +1677,10 @@ public class PeakList {
         reIndex();
     }
 
+    /**
+     *
+     * @return
+     */
     public int compress() {
         int nRemoved = 0;
         for (int i = (peaks.size() - 1); i >= 0; i--) {
@@ -1329,6 +1695,14 @@ public class PeakList {
         return nRemoved;
     }
 
+    /**
+     *
+     * @param minTol
+     * @param maxTol
+     * @param phaseRel
+     * @param dimVal
+     * @throws IllegalArgumentException
+     */
     public void couple(double[] minTol, double[] maxTol,
             PhaseRelationship phaseRel, int dimVal) throws IllegalArgumentException {
         if (minTol.length != nDim) {
@@ -1485,6 +1859,12 @@ public class PeakList {
         compress();
     }
 
+    /**
+     *
+     * @param minTol
+     * @param maxTol
+     * @return
+     */
     public DistanceMatch[][] getNeighborDistances(double[] minTol,
             double[] maxTol) {
         final ArrayList matches = new ArrayList();
@@ -1554,6 +1934,14 @@ public class PeakList {
         return dMatches;
     }
 
+    /**
+     *
+     * @param peakListA
+     * @param peakListB
+     * @param minTol
+     * @param maxTol
+     * @throws IllegalArgumentException
+     */
     public static void mapLinkPeaks(PeakList peakListA,
             PeakList peakListB, double[] minTol, double[] maxTol)
             throws IllegalArgumentException {
@@ -1632,6 +2020,9 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     */
     public static class MatchItem {
 
         final int itemIndex;
@@ -1643,6 +2034,13 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param dims
+     * @param tol
+     * @param positions
+     * @param names
+     */
     public void assignAtomLabels(int[] dims, double[] tol, double[][] positions, String[][] names) {
         List<MatchItem> peakItems = getMatchingItems(dims);
         List<MatchItem> atomItems = getMatchingItems(positions);
@@ -1835,6 +2233,17 @@ public class PeakList {
     }
 // fixme removed bpmatchpeaks
 
+    /**
+     *
+     * @param iPeak
+     * @param dimsI
+     * @param iOffsets
+     * @param jPeak
+     * @param dimsJ
+     * @param tol
+     * @param jOffsets
+     * @return
+     */
     public double getPeakDistanceSq(Peak iPeak, int[] dimsI, double[] iOffsets, Peak jPeak, int[] dimsJ, double[] tol, double[] jOffsets) {
         double deltaSqSum = 0.0;
         for (int k = 0; k < dimsI.length; k++) {
@@ -1846,6 +2255,15 @@ public class PeakList {
         return deltaSqSum;
     }
 
+    /**
+     *
+     * @param iItem
+     * @param iOffsets
+     * @param jItem
+     * @param jOffsets
+     * @param tol
+     * @return
+     */
     public double getMatchingDistanceSq(MatchItem iItem, double[] iOffsets, MatchItem jItem, double[] jOffsets, double[] tol) {
         double deltaSqSum = 0.0;
         for (int k = 0; k < iItem.values.length; k++) {
@@ -1857,6 +2275,11 @@ public class PeakList {
         return deltaSqSum;
     }
 
+    /**
+     *
+     * @return
+     * @throws IllegalArgumentException
+     */
     public int clusterPeaks() throws IllegalArgumentException {
         List<PeakList> peakLists = new ArrayList<>();
         peakLists.add(this);
@@ -1864,6 +2287,12 @@ public class PeakList {
 
     }
 
+    /**
+     *
+     * @param peakListNames
+     * @return
+     * @throws IllegalArgumentException
+     */
     public static int clusterPeaks(String[] peakListNames) throws IllegalArgumentException {
         List<PeakList> peakLists = new ArrayList<>();
         for (String peakListName : peakListNames) {
@@ -1876,6 +2305,12 @@ public class PeakList {
         return clusterPeaks(peakLists);
     }
 
+    /**
+     *
+     * @param peakLists
+     * @return
+     * @throws IllegalArgumentException
+     */
     public static int clusterPeaks(List<PeakList> peakLists)
             throws IllegalArgumentException {
         Clusters clusters = new Clusters();
@@ -1979,6 +2414,12 @@ public class PeakList {
         return nClusters;
     }
 
+    /**
+     *
+     * @param peak
+     * @param requireSameList
+     * @return
+     */
     public static List<Peak> getLinks(Peak peak, boolean requireSameList) {
         List<PeakDim> peakDims = getLinkedPeakDims(peak, 0);
         ArrayList<Peak> peaks = new ArrayList(peakDims.size());
@@ -1990,6 +2431,11 @@ public class PeakList {
         return peaks;
     }
 
+    /**
+     *
+     * @param peak
+     * @return
+     */
     public static List getLinks(Peak peak) {
         List peakDims = getLinkedPeakDims(peak, 0);
         ArrayList peaks = new ArrayList(peakDims.size());
@@ -2000,6 +2446,12 @@ public class PeakList {
         return peaks;
     }
 
+    /**
+     *
+     * @param peak
+     * @param iDim
+     * @return
+     */
     public static List getLinks(final Peak peak, final int iDim) {
         final List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
         final ArrayList peaks = new ArrayList(peakDims.size());
@@ -2010,15 +2462,33 @@ public class PeakList {
         return peaks;
     }
 
+    /**
+     *
+     * @param peak
+     * @return
+     */
     public static List<PeakDim> getLinkedPeakDims(Peak peak) {
         return getLinkedPeakDims(peak, 0);
     }
 
+    /**
+     *
+     * @param peak
+     * @param iDim
+     * @return
+     */
     public static List<PeakDim> getLinkedPeakDims(Peak peak, int iDim) {
         PeakDim peakDim = peak.getPeakDim(iDim);
         return peakDim.getLinkedPeakDims();
     }
 
+    /**
+     *
+     * @param peakA
+     * @param dimA
+     * @param peakB
+     * @param dimB
+     */
     public static void linkPeaks(Peak peakA, String dimA, Peak peakB, String dimB) {
         PeakDim peakDimA = peakA.getPeakDim(dimA);
         PeakDim peakDimB = peakB.getPeakDim(dimB);
@@ -2027,6 +2497,13 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param peakA
+     * @param dimA
+     * @param peakB
+     * @param dimB
+     */
     public static void linkPeaks(Peak peakA, int dimA, Peak peakB, int dimB) {
         PeakDim peakDimA = peakA.getPeakDim(dimA);
         PeakDim peakDimB = peakB.getPeakDim(dimB);
@@ -2036,6 +2513,11 @@ public class PeakList {
     }
     // FIXME should check to see that nucleus is same
 
+    /**
+     *
+     * @param peakDimA
+     * @param peakDimB
+     */
     public static void linkPeakDims(PeakDim peakDimA, PeakDim peakDimB) {
         Resonance resonanceA = peakDimA.getResonance();
         Resonance resonanceB = peakDimB.getResonance();
@@ -2047,6 +2529,11 @@ public class PeakList {
     }
     // FIXME should check to see that nucleus is same
 
+    /**
+     *
+     * @param peakDimA
+     * @param peakDimB
+     */
     public static void couplePeakDims(PeakDim peakDimA, PeakDim peakDimB) {
         Resonance resonanceA = peakDimA.getResonance();
         Resonance resonanceB = peakDimB.getResonance();
@@ -2058,6 +2545,9 @@ public class PeakList {
         peakDimB.peakDimUpdated();
     }
 
+    /**
+     *
+     */
     public void unLinkPeaks() {
         int nPeaks = peaks.size();
 
@@ -2066,6 +2556,10 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param peak
+     */
     public static void unLinkPeak(Peak peak) {
         for (int i = 0; i < peak.peakList.nDim; i++) {
             List<PeakDim> peakDims = getLinkedPeakDims(peak, i);
@@ -2085,14 +2579,27 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean isSlideable() {
         return slideable;
     }
 
+    /**
+     *
+     * @param state
+     */
     public void setSlideable(boolean state) {
         slideable = state;
     }
 
+    /**
+     *
+     * @param peak
+     * @param iDim
+     */
     public static void unLinkPeak(Peak peak, int iDim) {
         PeakDim peakDim = peak.getPeakDim(iDim);
         if (peakDim != null) {
@@ -2100,6 +2607,13 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param peak1
+     * @param dim1
+     * @param peak2
+     * @return
+     */
     public static boolean isLinked(Peak peak1, int dim1, Peak peak2) {
         boolean result = false;
         List<PeakDim> peakDims = getLinkedPeakDims(peak1, dim1);
@@ -2112,6 +2626,11 @@ public class PeakList {
         return result;
     }
 
+    /**
+     *
+     * @param signals
+     * @param nExtra
+     */
     public static void trimFreqs(ArrayList signals, int nExtra) {
         while (nExtra > 0) {
             int n = signals.size();
@@ -2138,6 +2657,12 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param freqs
+     * @param amplitudes
+     * @param nExtra
+     */
     public static void trimFreqs(double[] freqs, double[] amplitudes, int nExtra) {
         double min = Double.MAX_VALUE;
         int iMin = 0;
@@ -2196,6 +2721,13 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param pt
+     * @param cpt
+     * @param width
+     * @return
+     */
     public boolean inEllipse(final int pt[], final int cpt[], final double[] width) {
         double r2 = 0.0;
         boolean inEllipse = false;
@@ -2210,6 +2742,10 @@ public class PeakList {
         return inEllipse;
     }
 
+    /**
+     *
+     * @param mode
+     */
     public void quantifyPeaks(String mode) {
         if ((peaks == null) || peaks.isEmpty()) {
             return;
@@ -2238,6 +2774,12 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param dataset
+     * @param f
+     * @param mode
+     */
     public void quantifyPeaks(Dataset dataset, java.util.function.Function<RegionData, Double> f, String mode) {
         int[] pdim = getDimsForDataset(dataset, true);
         peaks.stream().forEach(peak -> {
@@ -2249,6 +2791,13 @@ public class PeakList {
         });
     }
 
+    /**
+     *
+     * @param dataset
+     * @param f
+     * @param mode
+     * @param nPlanes
+     */
     public void quantifyPeaks(Dataset dataset, java.util.function.Function<RegionData, Double> f, String mode, int nPlanes) {
         if (f == null) {
             throw new IllegalArgumentException("Unknown measurment type: " + mode);
@@ -2296,6 +2845,12 @@ public class PeakList {
 
     }
 
+    /**
+     *
+     * @param dataset
+     * @param speaks
+     * @param planes
+     */
     public void tweakPeaks(Dataset dataset, Set<Peak> speaks, int[] planes) {
         int[] pdim = getDimsForDataset(dataset, true);
         speaks.stream().forEach(peak -> {
@@ -2308,6 +2863,11 @@ public class PeakList {
 
     }
 
+    /**
+     *
+     * @param dataset
+     * @param planes
+     */
     public void tweakPeaks(Dataset dataset, int[] planes) {
         int[] pdim = getDimsForDataset(dataset, true);
 
@@ -2321,6 +2881,15 @@ public class PeakList {
 
     }
 
+    /**
+     *
+     * @param theFile
+     * @param peakArray
+     * @return
+     * @throws IllegalArgumentException
+     * @throws IOException
+     * @throws PeakFitException
+     */
     public static List<Object> peakFit(Dataset theFile, Peak... peakArray)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean doFit = true;
@@ -2333,6 +2902,15 @@ public class PeakList {
         return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier);
     }
 
+    /**
+     *
+     * @param theFile
+     * @param peaks
+     * @return
+     * @throws IllegalArgumentException
+     * @throws IOException
+     * @throws PeakFitException
+     */
     public static List<Object> simPeakFit(Dataset theFile, Collection<Peak> peaks)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean doFit = true;
@@ -2344,6 +2922,13 @@ public class PeakList {
         return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier);
     }
 
+    /**
+     *
+     * @param theFile
+     * @throws IllegalArgumentException
+     * @throws IOException
+     * @throws PeakFitException
+     */
     public void peakFit(Dataset theFile)
             throws IllegalArgumentException, IOException, PeakFitException {
         Set<Set<Peak>> oPeaks = getOverlappingPeaks();
@@ -2357,6 +2942,13 @@ public class PeakList {
         );
     }
     
+    /**
+     *
+     * @param theFile
+     * @throws IllegalArgumentException
+     * @throws IOException
+     * @throws PeakFitException
+     */
     public void lsCatalogFit(Dataset theFile)
             throws IllegalArgumentException, IOException, PeakFitException {
         Set<Set<Peak>> oPeaks = getOverlappingPeaks();
@@ -2370,6 +2962,14 @@ public class PeakList {
         );
     }
 
+    /**
+     *
+     * @param theFile
+     * @param peaks
+     * @throws IllegalArgumentException
+     * @throws IOException
+     * @throws PeakFitException
+     */
     public void peakFit(Dataset theFile, Collection<Peak> peaks)
             throws IllegalArgumentException, IOException, PeakFitException {
         Set<Set<Peak>> oPeaks = getOverlappingPeaks(peaks);
@@ -2383,6 +2983,22 @@ public class PeakList {
         );
     }
 
+    /**
+     *
+     * @param theFile
+     * @param argv
+     * @param start
+     * @param rows
+     * @param doFit
+     * @param fitMode
+     * @param updatePeaks
+     * @param delays
+     * @param multiplier
+     * @return
+     * @throws IllegalArgumentException
+     * @throws IOException
+     * @throws PeakFitException
+     */
     public static List<Object> peakFit(Dataset theFile, String[] argv,
             int start, int[] rows, boolean doFit, int fitMode, final boolean updatePeaks, double[] delays, double multiplier)
             throws IllegalArgumentException, IOException, PeakFitException {
@@ -2400,8 +3016,34 @@ public class PeakList {
         return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier);
     }
 
+    /**
+     * Fit peaks by adjusting peak position (chemical shift), linewidth and
+     * intensity to optimize agreement with data values.  Multiple peaks are
+     * fit simultaneously.  These are normally a group of overlapping peaks.
+     * 
+     * @param theFile The dataset to fit the peaks to
+     * @param peaks  A collection of peaks to fit simultaneously
+     * @param rows An array of rows (planes etc) of the dataset to be used.
+     * This is used when the number of peak dimensions is less than the number
+     *  of dataset dimensions.
+     * @param doFit  Currently unused
+     * @param fitMode An int value that specifies whether to fit all parameters
+     * or just amplitudes
+     * @param updatePeaks If true update the peaks with the fitted parameters
+     * otherwise return a list of the fit parameters
+     * @param delays An array of doubles specifying relaxation delays.  If not
+     * null then fit peaks to lineshapes and an exponential delay model using 
+     * data values from different rows or planes of dataset
+     * @param multiplier unused?? should multiply width of regions
+     * @return a List of alternating name/values with the parameters of the fit
+     * if updatePeaks is false.  Otherwise return empty list
+     * @throws IllegalArgumentException
+     * @throws IOException
+     * @throws PeakFitException
+     */
     public static List<Object> peakFit(Dataset theFile, Collection<Peak> peaks,
-            int[] rows, boolean doFit, int fitMode, final boolean updatePeaks, double[] delays, double multiplier)
+            int[] rows, boolean doFit, int fitMode, final boolean updatePeaks,
+            double[] delays, double multiplier)
             throws IllegalArgumentException, IOException, PeakFitException {
         int dataDim = theFile.getNDim();
         int[] pdim = new int[dataDim];
@@ -2422,6 +3064,8 @@ public class PeakList {
         }
 
         List<Object> peaksResult = new ArrayList<>();
+        
+        // a list of guesses for the fitter
         ArrayList<GuessValue> guessList = new ArrayList<>();
         ArrayList<CenterRef> centerList = new ArrayList<>();
         boolean firstPeak = true;
@@ -2476,18 +3120,23 @@ public class PeakList {
             } else {
                 gValue = new GuessValue(intensity, intensity * 1.5, intensity * 0.5, true);
             }
+            // add intensity for this peak to guesses
             guessList.add(gValue);
             if (FastMath.abs(intensity) > globalMax) {
                 globalMax = FastMath.abs(intensity);
             }
+            // if rate mode add guesses for relaxation time constant 1/rate and
+            // intensity at infinite delay
             if ((delays != null) && (delays.length > 0)) {
                 gValue = new GuessValue(maxDelay / 2.0, maxDelay * 5.0, maxDelay * 0.02, true);
                 guessList.add(gValue);
                 gValue = new GuessValue(0.0, -0.5 * FastMath.abs(intensity), 0.5 * FastMath.abs(intensity), true);
                 guessList.add(gValue);
             }
+            // loop over dimensions and add guesses for width and position
 
             for (int iDim = 0; iDim < peak.peakList.nDim; iDim++) {
+                // if fit amplitudes constrain width fixme
                 if (fitMode == FIT_AMPLITUDES) {
                     gValue = new GuessValue(width[iPeak][iDim], width[iPeak][iDim] * 0.05, width[iPeak][iDim] * 1.05, false);
                 } else {
@@ -2496,6 +3145,8 @@ public class PeakList {
                 guessList.add(gValue);
                 // adding one to account for global max inserted at end
                 centerList.add(new CenterRef(guessList.size() + 1, iDim));
+                // if fit amplitudes constrain cpt to near current value  fixme
+                // and set floating parameter of GuessValue to false
                 if (fitMode == FIT_AMPLITUDES) {
                     gValue = new GuessValue(cpt[iPeak][iDim], cpt[iPeak][iDim] - width[iPeak][iDim] / 40, cpt[iPeak][iDim] + width[iPeak][iDim] / 40, false);
                 } else {
@@ -2503,6 +3154,8 @@ public class PeakList {
                 }
                 guessList.add(gValue);
 //System.out.println(iDim + " " + p1[iDim][0] + " " +  p1[iDim][1]);
+
+                // update p2 based on region of peak so it encompasses all peaks
                 if (firstPeak) {
                     p2[iDim][0] = p1[iDim][0];
                     p2[iDim][1] = p1[iDim][1];
@@ -2526,7 +3179,10 @@ public class PeakList {
             GuessValue gValue = new GuessValue(0.0, -0.5 * globalMax, 0.5 * globalMax, false);
             guessList.add(0, gValue);
         }
+        // get a list of positions that are near the centers of each of the peaks
         ArrayList<int[]> posArray = theFile.getFilteredPositions(p2, cpt, width, pdim, multiplier);
+        // adjust guesses for positions so they are relative to initial point
+        // position in each dimension
         for (CenterRef centerRef : centerList) {
             GuessValue gValue = guessList.get(centerRef.index);
             int offset = p2[centerRef.dim][0];
@@ -2655,6 +3311,10 @@ public class PeakList {
         return peaksResult;
     }
 
+    /**
+     *
+     * @return
+     */
     public Set<Set<Peak>> getOverlappingPeaks() {
         Set<Set<Peak>> result = new HashSet<>();
         boolean[] used = new boolean[size()];
@@ -2672,6 +3332,11 @@ public class PeakList {
         return result;
     }
 
+    /**
+     *
+     * @param fitPeaks
+     * @return
+     */
     public Set<Set<Peak>> getOverlappingPeaks(Collection<Peak> fitPeaks) {
         Set<Set<Peak>> result = new HashSet<>();
         Set<Peak> used = new HashSet<>();
@@ -2688,21 +3353,52 @@ public class PeakList {
         return result;
     }
 
+    /**
+     *
+     */
     static public class PhaseRelationship {
 
         private static final TreeMap TYPES_LIST = new TreeMap();
+
+        /**
+         *
+         */
         public static final PhaseRelationship ANYPHASE = new PhaseRelationship(
                 "anyphase");
+
+        /**
+         *
+         */
         public static final PhaseRelationship INPHASE = new PhaseRelationship(
                 "inphase");
+
+        /**
+         *
+         */
         public static final PhaseRelationship INPHASE_POS = new PhaseRelationship(
                 "inphase_pos");
+
+        /**
+         *
+         */
         public static final PhaseRelationship INPHASE_NEG = new PhaseRelationship(
                 "inphase_neg");
+
+        /**
+         *
+         */
         public static final PhaseRelationship ANTIPHASE = new PhaseRelationship(
                 "antiphase");
+
+        /**
+         *
+         */
         public static final PhaseRelationship ANTIPHASE_LEFT = new PhaseRelationship(
                 "antiphase_left");
+
+        /**
+         *
+         */
         public static final PhaseRelationship ANTIPHASE_RIGHT = new PhaseRelationship(
                 "antiphase_right");
         private final String name;
@@ -2717,14 +3413,29 @@ public class PeakList {
             return name;
         }
 
+        /**
+         *
+         * @return
+         */
         public boolean isSigned() {
             return (toString().contains("_"));
         }
 
+        /**
+         *
+         * @param name
+         * @return
+         */
         public static PhaseRelationship getFromString(String name) {
             return (PhaseRelationship) TYPES_LIST.get(name);
         }
 
+        /**
+         *
+         * @param intensity1
+         * @param intensity2
+         * @return
+         */
         public static PhaseRelationship getType(double intensity1,
                 double intensity2) {
             if (intensity1 > 0) {
@@ -2740,6 +3451,14 @@ public class PeakList {
             }
         }
 
+        /**
+         *
+         * @param ctr1
+         * @param intensity1
+         * @param ctr2
+         * @param intensity2
+         * @return
+         */
         public static PhaseRelationship getType(double ctr1, double intensity1,
                 double ctr2, double intensity2) {
             double left;
@@ -2767,6 +3486,9 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     */
     public class DistanceMatch {
 
         int iPeak = 0;
@@ -2787,6 +3509,14 @@ public class PeakList {
             return delta;
         }
 
+        /**
+         *
+         * @param aNeighbors
+         * @param iNeighbor
+         * @param bNeighbors
+         * @param jNeighbor
+         * @return
+         */
         public double compare(DistanceMatch[][] aNeighbors, int iNeighbor,
                 DistanceMatch[][] bNeighbors, int jNeighbor) {
             double globalSum = 0.0;
@@ -2831,6 +3561,11 @@ public class PeakList {
         }
     }
 
+    /**
+     *
+     * @param iDim
+     * @return
+     */
     public SpectralDim getSpectralDim(int iDim) {
         SpectralDim specDim = null;
         if (iDim < spectralDims.length) {
@@ -2839,6 +3574,11 @@ public class PeakList {
         return specDim;
     }
 
+    /**
+     *
+     * @param datasetName
+     * @return
+     */
     public static String getNameForDataset(String datasetName) {
         int lastIndex = datasetName.lastIndexOf(".");
         String listName = datasetName;
@@ -2848,6 +3588,11 @@ public class PeakList {
         return listName;
     }
 
+    /**
+     *
+     * @param datasetName
+     * @return
+     */
     public static PeakList getPeakListForDataset(String datasetName) {
         for (PeakList peakList : peakListTable.values()) {
             if (peakList.fileName.equals(datasetName)) {
@@ -2857,27 +3602,53 @@ public class PeakList {
         return null;
     }
 
+    /**
+     *
+     * @param iDim
+     * @return
+     */
     public DoubleSummaryStatistics shiftStats(int iDim) {
         DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getChemShift()).summaryStatistics();
         return stats;
 
     }
 
+    /**
+     *
+     * @param iDim
+     * @return
+     */
     public DoubleSummaryStatistics widthStats(int iDim) {
         DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidthHz()).summaryStatistics();
         return stats;
     }
 
+    /**
+     *
+     * @param iDim
+     * @return
+     */
     public DoubleSummaryStatistics widthStatsPPM(int iDim) {
         DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidth()).summaryStatistics();
         return stats;
     }
 
+    /**
+     *
+     * @param iDim
+     * @return
+     */
     public double center(int iDim) {
         OptionalDouble avg = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getChemShift()).average();
         return avg.getAsDouble();
     }
 
+    /**
+     *
+     * @param otherList
+     * @param dims
+     * @return
+     */
     public double[] centerAlign(PeakList otherList, int[] dims) {
         double[] deltas = new double[dims.length];
         for (int i = 0; i < dims.length; i++) {
@@ -2896,6 +3667,11 @@ public class PeakList {
         return deltas;
     }
 
+    /**
+     *
+     * @param iDim
+     * @param value
+     */
     public void shiftPeak(final int iDim, final double value) {
         peaks.stream().forEach(p -> {
             PeakDim pDim = p.peakDims[iDim];
@@ -2905,6 +3681,10 @@ public class PeakList {
         });
     }
 
+    /**
+     *
+     * @return
+     */
     public Nuclei[] guessNuclei() {
         double[] sf = new double[nDim];
         for (int i = 0; i < nDim; i++) {
@@ -2915,6 +3695,10 @@ public class PeakList {
         return nuclei;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean requireSliderCondition() {
         return requireSliderCondition;
     }
