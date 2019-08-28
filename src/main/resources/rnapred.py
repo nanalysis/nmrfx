@@ -31,7 +31,7 @@ from subprocess import check_output
 wc = {'G': 'C', 'C': 'G', 'A': 'U', 'U': 'A', 'X': '', 'x': '', 'P':'p','p':'P'}
 wobble = {'G': 'U', 'U': 'G', 'A': '', 'C': '', 'X': '', 'x': '','P':'p','p':'P'}
 
-def getPairs( vienna):
+def getPairs(vienna):
     sArray = [len(vienna)]
     seqSize = array.array('i',sArray)
     ssLay = SSLayout(seqSize)

@@ -69,6 +69,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
     public String role = "?";
     public String details = "?";
     private HashMap<String, String> propertyMap = new HashMap<String, String>();
+    private Map<String, Object> resPropertyMap = new HashMap<String, Object>();
     ArrayList<EntityCommonName> commonNames = new ArrayList<>();
 
     @Override
@@ -213,6 +214,14 @@ public class Entity implements AtomContainer, Serializable, ITree {
 
     public void setProperty(String propName, String propValue) {
         propertyMap.put(propName, propValue);
+    }
+
+    public void setResProperty(String propID, Object propValue) {
+        resPropertyMap.put(propID, propValue);
+    }
+
+    public Object getResProperty(String propID) {
+        return resPropertyMap.get(propID);
     }
 
     public String getProperty(String propName) {
