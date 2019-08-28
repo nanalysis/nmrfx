@@ -493,7 +493,9 @@ public class EnergyCoords {
             for (int j = 0; j < nAtoms; j++) {
                 double delta = Math.abs(disRanges[1][i][j] - disRanges[0][i][j]);
                 //System.out.println(i + " " + j + " " + atoms[i].getShortName() + " " + atoms[i + j + 1].getShortName() + " " + delta);
-                setFixed(i, j, delta < tol);
+                if (delta < tol) {
+                    setFixed(i, j, true);
+                }
                 if (getFixed(i, j)) {
                     nFixed++;
                 }

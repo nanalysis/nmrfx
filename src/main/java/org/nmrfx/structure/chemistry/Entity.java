@@ -54,6 +54,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
         "_Entity_poly_seq.Entity_ID",};
     public String name = null;
     public String label = null;
+    String pdbChain = "";
     public Molecule molecule = null;
     List<Atom> atoms = new ArrayList<Atom>();
     List<Bond> bonds = new ArrayList<Bond>();
@@ -68,6 +69,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
     public String role = "?";
     public String details = "?";
     private HashMap<String, String> propertyMap = new HashMap<String, String>();
+    private Map<String, Object> resPropertyMap = new HashMap<String, Object>();
     ArrayList<EntityCommonName> commonNames = new ArrayList<>();
 
     @Override
@@ -201,9 +203,25 @@ public class Entity implements AtomContainer, Serializable, ITree {
             molecule.changed();
         }
     }
+    
+    public void setPDBChain(String name) {
+        pdbChain = name;
+    }
+    
+    public String getPDBChain() {
+        return pdbChain;
+    }
 
     public void setProperty(String propName, String propValue) {
         propertyMap.put(propName, propValue);
+    }
+
+    public void setResProperty(String propID, Object propValue) {
+        resPropertyMap.put(propID, propValue);
+    }
+
+    public Object getResProperty(String propID) {
+        return resPropertyMap.get(propID);
     }
 
     public String getProperty(String propName) {

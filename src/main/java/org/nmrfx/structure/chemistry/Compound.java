@@ -25,7 +25,7 @@ public class Compound extends Entity implements AtomContainer {
     protected HashMap atomMap;
     public String number = "";
     Integer resNum;
-    public int iRes;
+    public int iRes = 0;
     public int labelNum = 1;
 
     protected Compound() {
