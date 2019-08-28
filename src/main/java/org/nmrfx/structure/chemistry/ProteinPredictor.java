@@ -15,9 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
+import com.google.common.collect.HashBiMap;
 import java.util.*;
 import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
 
@@ -30,6 +30,7 @@ public class ProteinPredictor {
 
     Map<String, HydrogenBond> hBondMapH = null;
     Map<String, Double> eShiftMapH = null;
+    Map<String, Double> lcmbMap = null;
 
     private static final int CHARGE = 0;
     private static final int HYDROPHOBICITY = 1;
@@ -37,6 +38,7 @@ public class ProteinPredictor {
     private static final int PROLINE = 3;
     private static final int BULK = 4;
     private static final int DISULFIDE = 5;
+    private static final String[] PROPS = {"chrg", "hphb", "aro", "pro", "bulk", "dis"};
     private static final HashMap<String, Integer> residueNames = new HashMap<>();
 
     private static final int ALA = 0;
@@ -283,13 +285,14 @@ public class ProteinPredictor {
         eShiftMapH = setupEShiftMap("H");
         hBondMapHA = setupHBondMap("HA");
         eShiftMapHA = setupEShiftMap("HA");
+        lcmbMap = setupLCMBMap();
         initAAMap();
         initAttrNames();
     }
 
     private double getProperty(int property, int res) {
         Residue residue = polymer.getResidue(String.valueOf(res));
-        if (property == DISULFIDE) {
+        if ((residue == null) || (property == DISULFIDE)) {
             return 0.0;
         }
         String resName = residue.getName();
@@ -336,6 +339,11 @@ public class ProteinPredictor {
         return eShiftMap;
     }
 
+    private Map<String, Double> setupLCMBMap() {
+        Molecule molecule = polymer.molecule;
+        return molecule.calcLCMB(0, true, true);
+    }
+
     private static double calcHBondShift(Map<String, HydrogenBond> hBondMap, Atom atom, double power) {
         HydrogenBond hBond = hBondMap.get(atom.getFullName());
         double shift = 0.0;
@@ -362,6 +370,15 @@ public class ProteinPredictor {
         int iStruct = 0;
         double shift = ringShifts.calcRingContributions(spSet, iStruct, 1.0);
         return shift;
+    }
+
+    public double calcLCMB(Atom atom) {
+        double lcmbValue = 0.0;
+        Double lcmbDouble = lcmbMap.get(atom.getFullName());
+        if (lcmbDouble != null) {
+            lcmbValue = lcmbDouble;
+        }
+        return lcmbValue;
     }
 
     public Double predict(Atom atom, boolean explain) {
@@ -612,6 +629,81 @@ public class ProteinPredictor {
         attrNames.add("Math.sin(psi)*Math.cos(phi)");
         attrNames.add("Math.sin(psi)*getProperty(AROMATIC,r+1)");
         attrNames.add("Math.sin(psi)*Math.sin(chi)");
+    }
+
+    public Map<String, Double> getAttributes(Atom atom) {
+        Residue residue = (Residue) atom.entity;
+        Double psiP = null;
+        Double phiS = null;
+        if (residue.previous != null) {
+            psiP = residue.previous.calcPsi();
+        }
+        Double phi = residue.calcPhi();
+        Double psi = residue.calcPsi();
+        Double chi = residue.calcChi();
+        Double chi2 = residue.calcChi2();
+        if (residue.next != null) {
+            phiS = residue.next.calcPsi();
+        }
+        double[] attributes = new double[attrNames.size()];
+        int r = Integer.parseInt(residue.getNumber());
+        Map<String, Double> attrMap = getAttributes(r, psiP, phi, psi, phiS, chi, chi2, atom, true, true);
+        return attrMap;
+    }
+
+    public Map<String, Double> getAttributes(int r, Double psiP, Double phi, Double psi, Double phiS, Double chi, Double chi2, Atom atom, boolean calcHBond, boolean calcEshift) {
+        Map<String, Double> attrMap = new HashMap<>();
+        Double hbond1 = null;
+        Double hbond2 = null;
+        Double hbond3 = null;
+        if (calcHBond && atom.getName().equals("H")) {
+            hbond1 = calcHBondShift(hBondMapH, atom, 1);
+            hbond2 = calcHBondShift(hBondMapH, atom, 2);
+            hbond3 = calcHBondShift(hBondMapH, atom, 3);
+        } else if (calcHBond && atom.getName().startsWith("HA")) {
+            hbond1 = calcHBondShift(hBondMapHA, atom, 1);
+            hbond2 = calcHBondShift(hBondMapHA, atom, 2);
+            hbond3 = calcHBondShift(hBondMapHA, atom, 3);
+        }
+
+        attrMap.put("hbond1", hbond1);
+        attrMap.put("hbond2", hbond2);
+        attrMap.put("hbond3", hbond3);
+
+        Double eshift = null;
+        if (calcEshift && atom.getName().equals("H")) {
+            eshift = calcEInteractionShift(eShiftMapH, atom);
+        } else if (calcEshift && atom.getName().startsWith("HA")) {
+            eshift = calcEInteractionShift(eShiftMapHA, atom);
+        }
+        attrMap.put("eshift", eshift);
+
+        Double ringshift = calcRingShift(atom);
+        attrMap.put("ringshift", ringshift);
+
+        Double lcmb = calcLCMB(atom);
+        attrMap.put("lcmb", lcmb);
+
+        attrMap.put("psiP", psiP);
+        attrMap.put("phi", phi);
+        attrMap.put("psi", psi);
+        attrMap.put("phiS", phiS);
+        attrMap.put("chi", chi);
+        attrMap.put("chi2", chi2);
+
+        for (int iProp = 0; iProp <= DISULFIDE; iProp++) {
+            for (int iRes = -1; iRes <= 1; iRes++) {
+                double propValue = getProperty(iProp, r - iRes);
+                String propExt = "";
+                if (iRes < 0) {
+                    propExt = "P";
+                } else if (iRes > 0) {
+                    propExt = "S";
+                }
+                attrMap.put(PROPS[iProp] + propExt, propValue);
+            }
+        }
+        return attrMap;
     }
 
     void genAttributes(double[] attrValue, int r, Double psiP, Double phi, Double psi, Double phiS, Double chi, Double chi2, Atom atom, boolean calcHBond, boolean calcEshift) {

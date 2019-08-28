@@ -47,6 +47,20 @@ def readPDBX(fileName, isCompound = False):
     mol = pdb.read(fileName)
     updateAtomArray()
     return mol
+
+def readPDBXCoords(fileName, structNum, noComplain, genCoords):
+    ''' Reads a pdb file and modifies the static Molecule object.
+        structNum is the structure number, noComplain is a boolean for
+        printing out an error message, and genCoords is a boolean for 
+        generating coordinates.
+    '''
+
+    pdb = PDBFile()
+    pdb.readCoordinates(fileName, 0, False, True)
+    updateAtomArray()
+    mol = Molecule.getActive()
+    return mol
+
 def readSDF(fileName, newMolecule = False):
     sdf = SDFile()
     molecule = Molecule.getActive() if not newMolecule else None

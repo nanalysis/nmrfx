@@ -41,6 +41,10 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
 import org.nmrfx.structure.chemistry.predict.Predictor;
@@ -200,6 +204,7 @@ public class Molecule implements Serializable, ITree {
     // FIXME should be crystal object
     public String crystal = null;
     public LinkedHashMap<String, Entity> entities;
+    public LinkedHashMap<String, Entity> chains;
     public LinkedHashMap entityLabels = null;
     public LinkedHashMap<String, CoordSet> coordSets;
     private HashMap<String, String> propertyMap = new HashMap<String, String>();
@@ -215,11 +220,13 @@ public class Molecule implements Serializable, ITree {
     int genVecs[][] = null;
     EnergyCoords eCoords = new EnergyCoords();
     Dihedral dihedrals = null;
+    OrderSVD rdcResults = null;
 
     // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
         this.name = name;
         entities = new LinkedHashMap<>();
+        chains = new LinkedHashMap<>();
         entityLabels = new LinkedHashMap();
         coordSets = new LinkedHashMap<>();
         nResidues = 0;
@@ -399,6 +406,14 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
+    public CoordSet getCoordSet(String name) {
+        if (name == null) {
+            return null;
+        } else {
+            return ((CoordSet) coordSets.get(name));
+        }
+    }
+
     public CoordSet getFirstCoordSet() {
         Iterator e = coordSets.values().iterator();
         CoordSet coordSet = null;
@@ -433,6 +448,7 @@ public class Molecule implements Serializable, ITree {
         }
         entity.molecule = this;
         addCoordSet(coordSetName, entity);
+        chains.put(entity.getPDBChain(), entity);
     }
 
     public Entity getEntity(String name) {
@@ -440,6 +456,14 @@ public class Molecule implements Serializable, ITree {
             return null;
         } else {
             return ((Entity) entities.get(name));
+        }
+    }
+
+    public Entity getChain(String name) {
+        if (name == null) {
+            return null;
+        } else {
+            return ((Entity) chains.get(name));
         }
     }
 
@@ -505,7 +529,11 @@ public class Molecule implements Serializable, ITree {
     public void setDotBracket(String value) {
         setProperty("vienna", value);
     }
-
+    
+    public void setRDCResults(OrderSVD results) {
+        rdcResults = results;
+    }
+   
     public static Point3 avgCoords(MolFilter molFilter1) throws IllegalArgumentException, InvalidMoleculeException {
         List<SpatialSet> selected1 = matchAtoms(molFilter1);
         Point3 pt1 = Atom.avgAtom(selected1, molFilter1.getStructureNum());
@@ -1814,6 +1842,62 @@ public class Molecule implements Serializable, ITree {
         }
         return new Vector3D(corner[0], corner[1], corner[2]);
     }
+    
+    /**
+     * Rotates a given set of axes based on an SVD calculation.
+     * 
+     * @param inputAxes double[][] coordinates of the orginal axes
+     * 
+     * @return RealMatrix coordinates of the rotated axes
+     */
+    public RealMatrix calcSVDAxes(double[][] inputAxes) {
+        RealMatrix rotMat = getSVDRotationMatrix();
+        RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
+        RealMatrix axes = rotMat.multiply(inputAxesM);
+        
+        return axes;
+    }
+    
+    /**
+     * Rotates a given set of axes based on a previously run RDC calculation.
+     * 
+     * @param inputAxes double[][] coordinates of the orginal axes
+     * 
+     * @return RealMatrix coordinates of the rotated axes
+     */
+    public RealMatrix getRDCAxes(double[][] inputAxes) {
+        RealMatrix rotMat = getRDCRotationMatrix();
+        RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
+        RealMatrix axes = rotMat.multiply(inputAxesM);
+ 
+        return axes;
+    }
+    
+    public RealMatrix getRDCRotationMatrix() {
+        EigenDecomposition rdcEig = rdcResults.getEig();
+        RealMatrix rotMat = rdcEig.getVT();
+        return rotMat;        
+    }
+    
+    public RealMatrix getSVDRotationMatrix() {
+        Point3 pt;
+        List<double[]> molecCoords = new ArrayList<>();
+        for (Atom atom : atoms) {
+            pt = atom.getPoint();
+            if (pt != null) {
+                double[] aCoords = pt.toArray();
+                molecCoords.add(aCoords);
+            } 
+        }
+        double[][] mCoords1 = new double[molecCoords.size()][3];
+        for (int i=0; i<mCoords1.length; i++) {
+            mCoords1[i] = molecCoords.get(i);
+        }
+        RealMatrix mCoordsR = new Array2DRowRealMatrix(mCoords1);
+        SingularValueDecomposition svd = new SingularValueDecomposition(mCoordsR);
+        RealMatrix rotMat = svd.getVT();
+        return rotMat;        
+    }
 
     public void center(int iStructure) {
         Point3 pt;
@@ -2148,8 +2232,8 @@ public class Molecule implements Serializable, ITree {
             Compound compound = null;
             if (entity instanceof Polymer) {
                 Polymer polymer = (Polymer) entity;
-                firstResidue = polymer.firstResidue;
-                lastResidue = polymer.lastResidue;
+                firstResidue = polymer.getFirstResidue();
+                lastResidue = polymer.getLastResidue();
                 compound = (Compound) firstResidue;
             } else {
                 compound = (Compound) entity;
@@ -2249,8 +2333,8 @@ public class Molecule implements Serializable, ITree {
             entity = (Entity) entIterator.next();
             if (entity instanceof Polymer) {
                 Polymer polymer = (Polymer) entity;
-                firstResidue = polymer.firstResidue;
-                lastResidue = polymer.lastResidue;
+                firstResidue = polymer.getFirstResidue();
+                lastResidue = polymer.getLastResidue();
                 compound = (Compound) firstResidue;
             } else {
                 compound = (Compound) entity;
@@ -2440,19 +2524,23 @@ public class Molecule implements Serializable, ITree {
     }
 
     public void calcLCMB(final int iStruct) {
-        calcLCMB(iStruct, true);
+        calcLCMB(iStruct, true, false);
     }
 
     // Biophysical Journal 96(8) 3074–3081
-    public void calcLCMB(final int iStruct, boolean scaleEnds) {
+    public Map<String, Double> calcLCMB(final int iStruct, boolean scaleEnds, boolean useMap) {
         double r0 = 3.0;
         double a = 39.3;
         updateAtomArray();
+        Map<String, Double> lcmbMap = null;
+        if (useMap) {
+            lcmbMap = new HashMap<>();
+        }
         for (Atom atom1 : atoms) {
             SpatialSet sp1 = atom1.spatialSet;
             sp1.setOrder(0.0f);
             Polymer polymer = null;
-            ArrayList<Residue> residues = null;
+            List<Residue> residues = null;
             double endMultiplier = 1.0;
             if (atom1.entity instanceof Residue) {
                 Residue residue = (Residue) atom1.entity;
@@ -2486,9 +2574,47 @@ public class Molecule implements Serializable, ITree {
                     }
                 }
                 double bFactor = 1.0e4 / fSum * endMultiplier;
+                if (lcmbMap != null) {
+                    lcmbMap.put(atom1.getFullName(), bFactor);
+                }
                 sp1.setOrder((float) bFactor);
             }
         }
+        return lcmbMap;
+    }
+
+    // Biophysical Journal 96(8) 3074–3081
+    public Map<String, Double> calcContactSum(final int iStruct, boolean useMap) {
+        double r0 = 3.0;
+        double a = 39.3;
+        updateAtomArray();
+        Map<String, Double> lcmbMap = null;
+        if (useMap) {
+            lcmbMap = new HashMap<>();
+        }
+        for (Atom atom1 : atoms) {
+            SpatialSet sp1 = atom1.spatialSet;
+            sp1.setOrder(0.0f);
+            Point3 pt1 = atom1.getPoint(iStruct);
+            double fSum = 0.0;
+            for (Atom atom2 : atoms) {
+                if (atom1 != atom2) {
+                    Point3 pt2 = atom2.getPoint(iStruct);
+                    if ((pt1 != null) && (pt2 != null)) {
+                        double r = Atom.calcDistance(pt1, pt2);
+                        if (r < 15.0) {
+                            fSum += a * Math.exp(-r / r0);
+                        }
+                    }
+                }
+            }
+            double contactSum = fSum;
+            if (lcmbMap != null) {
+                lcmbMap.put(atom1.getFullName(), contactSum);
+            }
+            sp1.setOrder((float) contactSum);
+        }
+        return lcmbMap;
     }
 
     public void calcDistanceInputMatrix(final int iStruct, double distLim, String filename) {
@@ -2659,15 +2785,15 @@ public class Molecule implements Serializable, ITree {
                 if (entity instanceof Polymer) {
                     Polymer polymer = (Polymer) entity;
                     if (molFilter.firstRes.equals("*")) {
-                        firstResidue = polymer.firstResidue;
+                        firstResidue = polymer.getFirstResidue();
                     } else {
-                        firstResidue = (Residue) polymer.residues.get(molFilter.firstRes);
+                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
                     }
 
                     if (molFilter.lastRes.equals("*")) {
-                        lastResidue = polymer.lastResidue;
+                        lastResidue = polymer.getLastResidue();
                     } else {
-                        lastResidue = (Residue) polymer.residues.get(molFilter.lastRes);
+                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
                     }
 
                     compound = (Compound) firstResidue;
@@ -2789,15 +2915,15 @@ public class Molecule implements Serializable, ITree {
                 if (entity instanceof Polymer) {
                     Polymer polymer = (Polymer) entity;
                     if (molFilter.firstRes.equals("*")) {
-                        firstResidue = polymer.firstResidue;
+                        firstResidue = polymer.getFirstResidue();
                     } else {
-                        firstResidue = (Residue) polymer.residues.get(molFilter.firstRes);
+                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
                     }
 
                     if (molFilter.lastRes.equals("*")) {
-                        lastResidue = polymer.lastResidue;
+                        lastResidue = polymer.getLastResidue();
                     } else {
-                        lastResidue = (Residue) polymer.residues.get(molFilter.lastRes);
+                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
                     }
 
                     compound = (Compound) firstResidue;
@@ -2949,15 +3075,15 @@ public class Molecule implements Serializable, ITree {
                 if (entity instanceof Polymer) {
                     Polymer polymer = (Polymer) entity;
                     if (molFilter.firstRes.equals("*")) {
-                        firstResidue = polymer.firstResidue;
+                        firstResidue = polymer.getFirstResidue();
                     } else {
-                        firstResidue = (Residue) polymer.residues.get(molFilter.firstRes);
+                        firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
                     }
 
                     if (molFilter.lastRes.equals("*")) {
-                        lastResidue = polymer.lastResidue;
+                        lastResidue = polymer.getLastResidue();
                     } else {
-                        lastResidue = (Residue) polymer.residues.get(molFilter.lastRes);
+                        lastResidue = (Residue) polymer.getResidue(molFilter.lastRes);
                     }
 
                     compound = (Compound) firstResidue;
@@ -3094,9 +3220,9 @@ public class Molecule implements Serializable, ITree {
             //System.err.println(entity.name);
             if (entity instanceof Polymer) {
                 Polymer polymer = (Polymer) entity;
-                firstResidue = polymer.firstResidue;
+                firstResidue = polymer.getFirstResidue();
 
-                lastResidue = polymer.lastResidue;
+                lastResidue = polymer.getLastResidue();
                 compound = (Compound) firstResidue;
             } else {
                 compound = (Compound) entity;
@@ -3170,7 +3296,7 @@ public class Molecule implements Serializable, ITree {
 
                 if (entity instanceof Polymer) {
                     Polymer polymer = (Polymer) entity;
-                    firstResidue = (Residue) polymer.residues.get(molFilter.firstRes);
+                    firstResidue = (Residue) polymer.getResidue(molFilter.firstRes);
                     compound = (Compound) firstResidue;
                 } else {
                     compound = (Compound) entity;

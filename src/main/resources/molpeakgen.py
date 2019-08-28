@@ -25,6 +25,8 @@ def writePeakList(peakList, listName=None, folder="genpeaks"):
     peakWriter.writePeaksXPK2(writer, peakList)
     writer.close()
 
+# FIXME: why are there 'ssAtomPairs' declared twice with two different 2D lists?
+"""
 ssAtomPairs = [
 ["H1'","H2'",0],
 ["H8,H6","H1',H2',H3'",0],
@@ -37,6 +39,7 @@ ssAtomPairs = [
 ["H8,H6","H5",1],
 ["H2","H1'",1],
 ["H2","H1'","x"]]
+"""
 
 ssAtomPairs = [
 ["H1'","H2',H3'",0],
@@ -251,15 +254,18 @@ class MolPeakGen:
         (d1Edited, d2Edited) = editingModes[editScheme]
 
         polymers = self.mol.getPolymers()
+	print "pairs : ", pairs
         for polymer in polymers:
             #print polymer.getName()
             residues = polymer.getResidues()
             for iRes,aResidue in enumerate(residues):
                 resNum = aResidue.getNumber()
                 resName = aResidue.getName()
+		print "A_ residue number : ", resNum
+		print "A_ residue name : ", resName
                 #print iRes,resNum,resName,pairs[iRes]
                 for (aSet, bSet, delta) in ssAtomPairs:
-                    #print aSet,bSet,delta
+                    print aSet,bSet,delta
                     self.mol.selectAtoms(resNum+"."+aSet)
                     aSelected = self.mol.listAtoms()
                     #print "A Selected", aSelected
@@ -284,6 +290,8 @@ class MolPeakGen:
 
                     bResidue = residues[jRes]
                     bResNum = bResidue.getNumber()
+		    print "B_ residue number : ", bResNum
+		    print "B_ residue name : ", bResidue.getName()
                     self.mol.selectAtoms(bResNum+"."+bSet)
                     bSelected = self.mol.listAtoms()
                     #print "B Selected", bSelected
@@ -300,7 +308,8 @@ class MolPeakGen:
             scheme = dataset.getProperty("editScheme")
         if scheme == "":
             scheme = "aa"
-            
+             
+	print(self.vienna)
         pairs = rnapred.getPairs(self.vienna)
         peakList = peakgen.makePeakListFromDataset(listName, dataset)
         peakList.setSampleConditionLabel(condition)
