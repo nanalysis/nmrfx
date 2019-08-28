@@ -27,6 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,6 +36,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.*;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -2370,23 +2373,70 @@ public class Molecule implements Serializable, ITree {
         return shiftMap;
     }
 
+    /* 
+    get vienna sequence from the pdb file by finding the number of residues (use .size() method))
+    polymer A and polymer B can be the same 
+    getResidues() returns a list of number of residues in the polymer
+    index through bp's
+    
+    
+     */
     public void checkRNAPairs() {
         for (Polymer polymerA : getPolymers()) {
             for (Polymer polymerB : getPolymers()) {
                 for (Residue residueA : polymerA.getResidues()) {
                     for (Residue residueB : polymerB.getResidues()) {
                         if (residueA != residueB) {
-                            boolean paired = residueA.watsonCrickPair(residueB);
-                            if (paired) {
-                                System.out.println(residueA.getName() + residueA.getNumber()
-                                        + " " + residueB.getName() + residueB.getNumber() + " " + paired);
-                            }
+                        
+                            int paired = residueA.basePairType(residueB);
+                            if(paired != 0){
+                            System.out.println(paired + " " + residueA.getName() + " " + residueB.getName());
+                        }
                         }
 
                     }
                 }
             }
         }
+    }
+
+    public char[] viennaSequence() {
+        List<Character> viennaSeqList = new ArrayList();
+        List<Polymer> polymers = new ArrayList();
+        polymers = getPolymers();
+        for (Polymer polymer : polymers) {
+            List<Residue> residues = new ArrayList();
+            List<Residue> RNAresidues = new ArrayList();
+            residues = polymer.getResidues();
+            for (Residue res : residues) {
+                if ("GCAU".indexOf(res.name) != -1) {
+                    RNAresidues.add(res);
+                }
+            }
+            char[] vienna = new char[RNAresidues.size()];
+            for (int j = 0; j < RNAresidues.size(); j++) {
+                vienna[j] = '.';
+            }
+            for (Residue residueA : RNAresidues) {
+                for (Residue residueB : RNAresidues) {                    
+                    int type = residueA.basePairType(residueB);
+                    if (type == 1) {
+                        if (residueA.getResNum() > residueB.getResNum()) {
+                            vienna[RNAresidues.indexOf(residueA)] = ')';
+                            vienna[RNAresidues.indexOf(residueB)] = '(';
+                        }
+                    }
+                }
+            }
+            for (int j = 0; j < vienna.length; j++) {
+                viennaSeqList.add(vienna[j]);
+            }
+        }
+        char[] viennaSeq = new char[viennaSeqList.size()];
+        for (int k = 0; k < viennaSeqList.size(); k++) {
+            viennaSeq[k] = viennaSeqList.get(k);
+        }
+        return viennaSeq;
     }
 
     public void calcLCMB(final int iStruct) {
