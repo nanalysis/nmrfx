@@ -3,6 +3,12 @@ from org.nmrfx.structure.chemistry.io import SDFile
 from org.nmrfx.structure.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry import Molecule
 from java.util import ArrayList
+from java.lang import ClassLoader
+from java.io import BufferedReader
+from java.io import InputStreamReader
+
+
+
 def updateAtomArray():
     ''' Updates the molecule atom array '''
     mol = Molecule.getActive()
@@ -42,7 +48,7 @@ def readPDBX(fileName, isCompound = False):
         This command returns either None or a compound depending on whether
         the isCompound is true.
     '''
-    compound = None
+    compound = None # FIXME: This parameter is not used
     pdb = PDBFile()
     mol = pdb.read(fileName)
     updateAtomArray()
@@ -104,6 +110,31 @@ def readYaml(file):
     data = yaml.load(input)
     return data
 
+def loadResource(resourceName):
+    cl = ClassLoader.getSystemClassLoader()
+    istream = cl.getResourceAsStream(resourceName)
+    lines = ""
+    if istream == None:
+        raise Exception("Cannot find '" + resourceName + "' on classpath")
+    else:
+        reader = InputStreamReader(istream)
+        breader = BufferedReader(reader)
+        while True:
+            line = breader.readLine()
+            if line == None:
+                break
+            if lines != '':
+                lines += '\n'
+            lines += line
+        breader.close()
+    return lines
+
 def savePDB(molecule, fileName,structureNum=0):
     molecule.writeXYZToPDB(fileName, structureNum)
 
+def readResiduePairCSV(csvFile=None):
+    if csvFile:
+        import os
+        if os.path.isfile(csvFile):
+            loadResource(csvFile)
+            
