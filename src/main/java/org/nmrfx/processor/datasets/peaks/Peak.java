@@ -1245,6 +1245,10 @@ public class Peak implements Comparable, PeakOrMulti {
         this.type = type;
         peakUpdated(this);
     }
+    
+    public boolean isDeleted() {
+        return status < 0;
+    }
 
     @Override
     public int getStatus() {
@@ -1494,6 +1498,24 @@ public class Peak implements Comparable, PeakOrMulti {
                 result = true;
             }
         } else if ((ctrA + scale * bouA / 2.0) > (ctrB - scale * bouB / 2.0)) {
+            result = true;
+        }
+        return result;
+    }
+
+    public boolean overlapsLineWidth(final Peak peak, final int dim, final double scale) {
+        boolean result = false;
+        PeakDim pdimA = getPeakDim(dim);
+        PeakDim pdimB = peak.getPeakDim(dim);
+        double ctrA = pdimA.getChemShiftValue();
+        double widA = pdimA.getLineWidthValue();
+        double ctrB = pdimB.getChemShiftValue();
+        double widB = pdimB.getLineWidthValue();
+        if (ctrA > ctrB) {
+            if ((ctrA - scale * widA / 2.0) < (ctrB + scale * widB / 2.0)) {
+                result = true;
+            }
+        } else if ((ctrA + scale * widA / 2.0) > (ctrB - scale * widB / 2.0)) {
             result = true;
         }
         return result;
