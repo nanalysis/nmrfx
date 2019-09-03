@@ -162,8 +162,7 @@ public class Residue extends Compound {
 
     @Override
     public int getIDNum() {
-        polymer.getResidues();
-        return entityID;
+        return iRes + 1;
     }
 
     public void addPseudoAtoms(String pseudoAtomName, ArrayList<String> atomGroup) {
