@@ -27,6 +27,9 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DimCounter;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.processor.datasets.Nuclei;
 
@@ -432,6 +435,90 @@ public class PeakPicker {
         sDim.setDataDim(dDim);
         sDim.setNucleus(dataset.getNucleus(dDim).getNumberName());
 
+    }
+
+    public PeakList refinePickWithLSCat() throws IOException, IllegalArgumentException {
+        if (dataset.getLSCatalog() == null) {
+            return null;
+        }
+        dataset.toBuffer("prepick");
+        int nTries = 2;
+        PeakList peakList = null;
+        for (int i = 0; i < nTries; i++) {
+            try {
+                dataset.fromBuffer("prepick");
+                peakList.peakFit(dataset);
+                dataset.addPeakList(peakList, -1.0);
+                // split
+                // combine
+                purgeOverlappingPeaks(peakList);
+                purgeSmallPeaks(peakList);
+                purgeNarrowPeaks(peakList);
+
+                dataset.fromBuffer("prepick");
+                peakList.peakFit(dataset);
+                dataset.addPeakList(peakList, -1.0);
+                if (i != (nTries - 1)) {
+                    peakPickPar.mode = "append";
+                    peakList = peakPick();
+                }
+            } catch (PeakFitException ex) {
+                Logger.getLogger(PeakPicker.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        dataset.fromBuffer("prepick");
+        return peakList;
+    }
+
+    private void purgeSmallPeaks(PeakList peakList) throws IOException {
+        for (Peak peak : peakList.peaks()) {
+            boolean aboveThreshold = dataset.getLSCatalog().
+                    addToDatasetInterpolated(dataset, peak, 1.0, peakPickPar.level);
+            if (!aboveThreshold) {
+                System.out.println("purge " + peak.getName());
+                peak.setStatus(-1);
+            }
+        }
+        peakList.compress();
+    }
+
+    private void purgeOverlappingPeaks(PeakList peakList) throws IOException {
+        for (Peak peakA : peakList.peaks()) {
+            for (Peak peakB : peakList.peaks()) {
+                if ((peakA.getStatus() >= 0) && (peakB.getStatus() >= 0)) {
+                    if ((peakA != peakB) && (peakA.getIntensity() > peakB.getIntensity())) {
+                        boolean overlaps = true;
+                        for (int iDim = 0; iDim < peakList.getNDim(); iDim++) {
+                            if (!peakA.overlapsLineWidth(peakB, iDim, 0.5)) {
+                                overlaps = false;
+                                break;
+                            }
+                        }
+                        if (overlaps) {
+                            peakB.setStatus(-1);
+                        }
+                    }
+                }
+            }
+
+        }
+        peakList.compress();
+    }
+
+    private void purgeNarrowPeaks(PeakList peakList) throws IOException {
+        for (int iDim = 0; iDim < peakList.getNDim(); iDim++) {
+            DescriptiveStatistics stats = peakList.widthDStats(iDim);
+            double mean = stats.getMean();
+            double stdDev = stats.getStandardDeviation();
+            double tol = mean - 3.0 * stdDev;
+            System.out.println("purge " + tol);
+            for (Peak peak : peakList.peaks()) {
+                if (peak.getPeakDim(iDim).getLineWidthHz() < tol) {
+                    peak.setStatus(-1);
+                }
+            }
+        }
+        peakList.compress();
     }
 
     public PeakList peakPick()
