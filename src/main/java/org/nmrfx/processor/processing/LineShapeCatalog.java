@@ -159,10 +159,8 @@ public class LineShapeCatalog {
                 break;
             }
         }
-        double width = h2 - h1;
-        double sw = vec.getSW();
-        double widthHz = (width / (vec.getSize() - 1.0)) * sw;
-        return widthHz;
+        double width = Math.abs(h2 - h1);
+        return width;
 
     }
 
@@ -341,13 +339,13 @@ public class LineShapeCatalog {
             double frac = (lw - lws[iUpper - 1]) / (lws[iUpper] - lws[iUpper - 1]);
             dIndex = (iUpper - 1) + frac;
         }
-        System.out.println(iDim + " " + iUpper + " " + dIndex + " " + lw + " " + n);
+        //System.out.println(iDim + " " + iUpper + " " + dIndex + " " + lw + " " + n);
         return dIndex;
     }
 
     public void addToDataset(Dataset dataset, PeakList peakList, double scale) throws IOException {
         for (Peak peak : peakList.peaks()) {
-            addToDatasetInterpolated(dataset, peak, scale);
+            addToDatasetInterpolated(dataset, peak, scale, null);
         }
     }
 
@@ -365,7 +363,8 @@ public class LineShapeCatalog {
                 offset = nFrac + offset;
             }
             double lw = peak.getPeakDim(i).getLineWidthHz();
-            int index = getIndexForWidth(i, lw);
+            double lwPt = dataset.hzWidthToPoints(i, lw);
+            int index = getIndexForWidth(i, lwPt);
             indices[i] = nFrac * index + offset;
             if (indices[i] < 0) {
                 indices[i] = 0;
@@ -376,18 +375,20 @@ public class LineShapeCatalog {
         addToDataset(dataset, indices, center, scale * peak.getIntensity());
     }
 
-    public void addToDatasetInterpolated(Dataset dataset,
-            Peak peak, double scale) throws IOException {
+    public boolean addToDatasetInterpolated(Dataset dataset,
+            Peak peak, double scale, Double lvl) throws IOException {
         int[] center = new int[dataset.getNDim()];
         double[][] values = new double[center.length][];
         for (int i = 0; i < center.length; i++) {
             double lw = peak.getPeakDim(i).getLineWidthHz();
+            double lwPt = dataset.hzWidthToPoints(i, lw);
             double ptD = dataset.ppmToDPoint(i, peak.getPeakDim(i).getChemShiftValue());
-            values[i] = interpolate(i, ptD, lw);
+            values[i] = interpolate(i, ptD, lwPt);
             center[i] = (int) Math.round(ptD);
         }
 //        System.out.println(peak.getName());
-        addToDatasetInterpolated(dataset, values, center, scale * peak.getIntensity());
+        return addToDatasetInterpolated(dataset, values, center,
+                scale * peak.getIntensity(), lvl);
     }
 
     public double[] interpolate(int iDim, double ptD, double lw) {
@@ -411,7 +412,7 @@ public class LineShapeCatalog {
             double fP, boolean reverse) {
         int lwIndex1 = (int) Math.floor(lwIndex) * nFrac;
         int lwIndex2 = lwIndex1 + nFrac;
-        System.out.printf("%d %7.2f %d %7.2f %b %2d", iDim, lwIndex, offset, fP, reverse, lwIndex1);
+        //System.out.printf("%d %7.2f %d %7.2f %b %2d", iDim, lwIndex, offset, fP, reverse, lwIndex1);
         double fL = lwIndex - Math.floor(lwIndex);
         int index1 = lwIndex1 + offset;
         int index2 = lwIndex2 + offset;
@@ -435,8 +436,8 @@ public class LineShapeCatalog {
         return v;
     }
 
-    public void addToDatasetInterpolated(Dataset dataset, double[][] values,
-            int[] center, double scale) throws IOException {
+    public boolean addToDatasetInterpolated(Dataset dataset, double[][] values,
+            int[] center, double scale, Double lvl) throws IOException {
         int[] regionSizes = new int[values.length];
 
         for (int i = 0; i < values.length; i++) {
@@ -467,9 +468,17 @@ public class LineShapeCatalog {
                 }
 //            System.out.printf("%10.5f %10.5f %4d\n", value, dataValue, k);
                 dataValue += value;
-                dataset.writePoint(dpt, dataValue);
+                if (lvl != null) {
+                    if (dataValue > lvl) {
+                        return true;
+                    }
+
+                } else {
+                    dataset.writePoint(dpt, dataValue);
+                }
             }
         }
+        return false;
     }
 
     public void addToDataset(Dataset dataset, int[] indices,
