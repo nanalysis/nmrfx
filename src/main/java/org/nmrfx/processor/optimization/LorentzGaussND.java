@@ -252,7 +252,7 @@ public class LorentzGaussND implements MultivariateFunction {
         return scaledPars;
     }
 
-    public final void setOffsets(final double[] start, final double[] lower, final double[] upper, boolean[] floating) {
+    public void setOffsets(final double[] start, final double[] lower, final double[] upper, boolean[] floating) {
         int nRelaxPar = 0;
         if (intensities.length > 1) {
             nRelaxPar = 2;
