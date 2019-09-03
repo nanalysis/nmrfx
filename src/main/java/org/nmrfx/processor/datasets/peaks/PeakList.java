@@ -47,9 +47,13 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.processor.datasets.Nuclei;
 import org.nmrfx.processor.datasets.RegionData;
 import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
+import smile.clustering.HierarchicalClustering;
+import smile.clustering.linkage.CompleteLinkage;
 
 /**
  *
@@ -2277,8 +2281,7 @@ public class PeakList {
 
     /**
      *
-     * @return
-     * @throws IllegalArgumentException
+     * @return @throws IllegalArgumentException
      */
     public int clusterPeaks() throws IllegalArgumentException {
         List<PeakList> peakLists = new ArrayList<>();
@@ -2412,6 +2415,54 @@ public class PeakList {
             }
         }
         return nClusters;
+    }
+
+    public void clusterPeakColumns(int iDim) {
+        double widthScale = 0.25;
+        DescriptiveStatistics dStat = widthDStats(iDim);
+        double widthPPM = dStat.getPercentile(50.0) / getSpectralDim(iDim).getSf();
+        System.out.println("cluster " + widthPPM * widthScale);
+        clusterPeakColumns(iDim, widthPPM * widthScale);
+    }
+
+    /**
+     *
+     * @param iDim
+     * @param limit
+     */
+    public void clusterPeakColumns(int iDim, double limit) {
+        compress();
+        reIndex();
+        int n = peaks.size();
+        double[][] proximity = new double[n][n];
+        for (Peak peakA : peaks) {
+            // PeakList.unLinkPeak(peakA, iDim);
+            double shiftA = peakA.getPeakDim(iDim).getChemShiftValue();
+            for (Peak peakB : peaks) {
+                double shiftB = peakB.getPeakDim(iDim).getChemShiftValue();
+                double dis = Math.abs(shiftA - shiftB);
+                proximity[peakA.getIndex()][peakB.getIndex()] = dis;
+            }
+        }
+        CompleteLinkage linkage = new CompleteLinkage(proximity);
+        HierarchicalClustering clusterer = new HierarchicalClustering(linkage);
+        int[] partition = clusterer.partition(limit);
+        int nClusters = 0;
+        for (int i = 0; i < n; i++) {
+            if (partition[i] > nClusters) {
+                nClusters = partition[i];
+            }
+        }
+        nClusters++;
+        Peak[] roots = new Peak[nClusters];
+        for (int i = 0; i < n; i++) {
+            int cluster = partition[i];
+            if (roots[cluster] == null) {
+                roots[cluster] = peaks.get(i);
+            } else {
+                PeakList.linkPeaks(roots[cluster], iDim, peaks.get(i), iDim);
+            }
+        }
     }
 
     /**
@@ -2899,7 +2950,7 @@ public class PeakList {
         double multiplier = 0.686;
         int[] rows = new int[theFile.getNDim()];
         List<Peak> peaks = Arrays.asList(peakArray);
-        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier);
+        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false);
     }
 
     /**
@@ -2911,7 +2962,7 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<Object> simPeakFit(Dataset theFile, Collection<Peak> peaks)
+    public static List<Object> simPeakFit(Dataset theFile, Collection<Peak> peaks, boolean lsFit)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean doFit = true;
         int fitMode = FIT_ALL;
@@ -2919,7 +2970,7 @@ public class PeakList {
         double[] delays = null;
         double multiplier = 0.686;
         int[] rows = new int[theFile.getNDim()];
-        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier);
+        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit);
     }
 
     /**
@@ -2929,32 +2980,12 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public void peakFit(Dataset theFile)
+    public void peakFit(Dataset theFile, boolean lsFit)
             throws IllegalArgumentException, IOException, PeakFitException {
         Set<Set<Peak>> oPeaks = getOverlappingPeaks();
         oPeaks.stream().forEach(oPeakSet -> {
             try {
-                simPeakFit(theFile, oPeakSet);
-            } catch (IllegalArgumentException | IOException | PeakFitException ex) {
-                Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
-        );
-    }
-    
-    /**
-     *
-     * @param theFile
-     * @throws IllegalArgumentException
-     * @throws IOException
-     * @throws PeakFitException
-     */
-    public void lsCatalogFit(Dataset theFile)
-            throws IllegalArgumentException, IOException, PeakFitException {
-        Set<Set<Peak>> oPeaks = getOverlappingPeaks();
-        oPeaks.stream().forEach(oPeakSet -> {
-            try {
-                simPeakFit(theFile, oPeakSet);
+                simPeakFit(theFile, oPeakSet, lsFit);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -2970,12 +3001,12 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public void peakFit(Dataset theFile, Collection<Peak> peaks)
+    public void peakFit(Dataset theFile, Collection<Peak> peaks, boolean lsFit)
             throws IllegalArgumentException, IOException, PeakFitException {
         Set<Set<Peak>> oPeaks = getOverlappingPeaks(peaks);
         oPeaks.stream().forEach(oPeakSet -> {
             try {
-                simPeakFit(theFile, oPeakSet);
+                simPeakFit(theFile, oPeakSet, lsFit);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -3013,37 +3044,39 @@ public class PeakList {
             }
             peaks.add(peak);
         }
-        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier);
+        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false);
     }
 
     /**
      * Fit peaks by adjusting peak position (chemical shift), linewidth and
-     * intensity to optimize agreement with data values.  Multiple peaks are
-     * fit simultaneously.  These are normally a group of overlapping peaks.
-     * 
+     * intensity to optimize agreement with data values. Multiple peaks are fit
+     * simultaneously. These are normally a group of overlapping peaks.
+     *
      * @param theFile The dataset to fit the peaks to
-     * @param peaks  A collection of peaks to fit simultaneously
-     * @param rows An array of rows (planes etc) of the dataset to be used.
-     * This is used when the number of peak dimensions is less than the number
-     *  of dataset dimensions.
-     * @param doFit  Currently unused
+     * @param peaks A collection of peaks to fit simultaneously
+     * @param rows An array of rows (planes etc) of the dataset to be used. This
+     * is used when the number of peak dimensions is less than the number of
+     * dataset dimensions.
+     * @param doFit Currently unused
      * @param fitMode An int value that specifies whether to fit all parameters
      * or just amplitudes
      * @param updatePeaks If true update the peaks with the fitted parameters
      * otherwise return a list of the fit parameters
-     * @param delays An array of doubles specifying relaxation delays.  If not
-     * null then fit peaks to lineshapes and an exponential delay model using 
+     * @param delays An array of doubles specifying relaxation delays. If not
+     * null then fit peaks to lineshapes and an exponential delay model using
      * data values from different rows or planes of dataset
      * @param multiplier unused?? should multiply width of regions
+     * @param lsFit If true and a lineshape catalog exists in dataset then use
+     * the lineshape catalog to fit
      * @return a List of alternating name/values with the parameters of the fit
-     * if updatePeaks is false.  Otherwise return empty list
+     * if updatePeaks is false. Otherwise return empty list
      * @throws IllegalArgumentException
      * @throws IOException
      * @throws PeakFitException
      */
     public static List<Object> peakFit(Dataset theFile, Collection<Peak> peaks,
             int[] rows, boolean doFit, int fitMode, final boolean updatePeaks,
-            double[] delays, double multiplier)
+            double[] delays, double multiplier, boolean lsFit)
             throws IllegalArgumentException, IOException, PeakFitException {
         int dataDim = theFile.getNDim();
         int[] pdim = new int[dataDim];
@@ -3064,7 +3097,7 @@ public class PeakList {
         }
 
         List<Object> peaksResult = new ArrayList<>();
-        
+
         // a list of guesses for the fitter
         ArrayList<GuessValue> guessList = new ArrayList<>();
         ArrayList<CenterRef> centerList = new ArrayList<>();
@@ -3197,7 +3230,13 @@ public class PeakList {
             }
             i++;
         }
-        LorentzGaussND peakFit = new LorentzGaussND(positions);
+        LorentzGaussND peakFit;
+        if (lsFit && (theFile.getLSCatalog() != null)) {
+            peakFit = new LorentzGaussNDWithCatalog(positions, theFile.getLSCatalog());
+        } else {
+            peakFit = new LorentzGaussND(positions);
+
+        }
         double[] guess = new double[guessList.size()];
         double[] lower = new double[guess.length];
         double[] upper = new double[guess.length];
@@ -3238,7 +3277,8 @@ public class PeakList {
                 nFloating++;
             }
         }
-        int nInterpolationPoints = (nFloating + 1) * (nFloating + 2) / 2;
+        //int nInterpolationPoints = (nFloating + 1) * (nFloating + 2) / 2;
+        int nInterpolationPoints = 2 * nFloating + 1;
         int nSteps = nInterpolationPoints * 5;
         //System.out.println(guess.length + " " + nInterpolationPoints);
         PointValuePair result;
@@ -3630,6 +3670,28 @@ public class PeakList {
      */
     public DoubleSummaryStatistics widthStatsPPM(int iDim) {
         DoubleSummaryStatistics stats = peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidth()).summaryStatistics();
+        return stats;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public DescriptiveStatistics widthDStats(int iDim) {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidthHz()).forEach(v -> stats.addValue(v));
+        return stats;
+    }
+
+    /**
+     *
+     * @param iDim
+     * @return
+     */
+    public DescriptiveStatistics shiftDStats(int iDim) {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getChemShiftValue()).forEach(v -> stats.addValue(v));
         return stats;
     }
 
