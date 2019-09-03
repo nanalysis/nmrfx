@@ -574,6 +574,16 @@ public class OrderSVD {
     }
     
     /**
+     * Sets the RDC SVD results of the Molecule object.
+     * 
+     * @param results OrderSVD results object.
+     */
+    public void setSVDResults(OrderSVD results) {
+        Molecule mol = Molecule.getActive();
+        mol.setRDCResults(results);
+    }
+    
+    /**
      * Calculates the Euler angles for a rotation about z, y', z''.
      * 
      * @param R double[][] Rotation matrix for clockwise rotation about z, y', z''.
@@ -794,6 +804,7 @@ public class OrderSVD {
             orderSVD = new OrderSVD(vectors, rdc1, maxRDCs, err);
         
             orderSVD.setMaxRDCs(maxRDCs);
+            orderSVD.setSVDResults(orderSVD);
             
             double[] b = orderSVD.getBVector().toArray();
             RealVector bCalcVecNorm = orderSVD.calcBVectorNorm();
