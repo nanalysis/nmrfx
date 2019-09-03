@@ -60,6 +60,7 @@ public class PeakDim {
     Peak myPeak = null;
     private Resonance resonance;
     private boolean frozen = false;
+    private boolean linksDrawn = false;  // used in drawing link lines
 
     void peakDimUpdated() {
         if (myPeak != null) {
@@ -632,6 +633,14 @@ public class PeakDim {
     public void setUser(String user) {
         this.user = user;
         peakDimUpdated();
+    }
+    
+    public void setLinkDrawn(boolean state) {
+        linksDrawn = state;
+    }
+    
+    public boolean isLinkDrawn() {
+        return linksDrawn;
     }
 
     public Peak getPeak() {
