@@ -113,10 +113,17 @@ public class SpectrumMenu extends ChartMenu {
 
         MenuItem fitItem = new MenuItem("Fit Selected");
         fitItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeaks();
+            chart.fitPeaks(false);
         });
         peakMenu.getItems().add(fitItem);
-        MenuItem fitListItem = new MenuItem("Fit All Lists");
+
+        MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
+        fitLSItem.setOnAction((ActionEvent e) -> {
+            chart.fitPeaks(true);
+        });
+        peakMenu.getItems().add(fitLSItem);
+        
+        MenuItem fitListItem = new MenuItem("Fit All Peaks");
         fitListItem.setOnAction((ActionEvent e) -> {
             chart.fitPeakLists();
         });
