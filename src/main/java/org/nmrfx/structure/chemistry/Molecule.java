@@ -38,6 +38,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
 import org.nmrfx.structure.chemistry.predict.Predictor;
@@ -213,6 +217,7 @@ public class Molecule implements Serializable, ITree {
     int genVecs[][] = null;
     EnergyCoords eCoords = new EnergyCoords();
     Dihedral dihedrals = null;
+    OrderSVD rdcResults = null;
 
     // fixme    public EnergyLists energyList = null;
     public Molecule(String name) {
@@ -521,7 +526,11 @@ public class Molecule implements Serializable, ITree {
     public void setDotBracket(String value) {
         setProperty("vienna", value);
     }
-
+    
+    public void setRDCResults(OrderSVD results) {
+        rdcResults = results;
+    }
+   
     public static Point3 avgCoords(MolFilter molFilter1) throws IllegalArgumentException, InvalidMoleculeException {
         List<SpatialSet> selected1 = matchAtoms(molFilter1);
         Point3 pt1 = Atom.avgAtom(selected1, molFilter1.getStructureNum());
@@ -1829,6 +1838,62 @@ public class Molecule implements Serializable, ITree {
             throw new MissingCoordinatesException("couldn't calculate center: no coordinates");
         }
         return new Vector3D(corner[0], corner[1], corner[2]);
+    }
+    
+    /**
+     * Rotates a given set of axes based on an SVD calculation.
+     * 
+     * @param inputAxes double[][] coordinates of the orginal axes
+     * 
+     * @return RealMatrix coordinates of the rotated axes
+     */
+    public RealMatrix calcSVDAxes(double[][] inputAxes) {
+        RealMatrix rotMat = getSVDRotationMatrix();
+        RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
+        RealMatrix axes = rotMat.multiply(inputAxesM);
+        
+        return axes;
+    }
+    
+    /**
+     * Rotates a given set of axes based on a previously run RDC calculation.
+     * 
+     * @param inputAxes double[][] coordinates of the orginal axes
+     * 
+     * @return RealMatrix coordinates of the rotated axes
+     */
+    public RealMatrix getRDCAxes(double[][] inputAxes) {
+        RealMatrix rotMat = getRDCRotationMatrix();
+        RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
+        RealMatrix axes = rotMat.multiply(inputAxesM);
+ 
+        return axes;
+    }
+    
+    public RealMatrix getRDCRotationMatrix() {
+        EigenDecomposition rdcEig = rdcResults.getEig();
+        RealMatrix rotMat = rdcEig.getVT();
+        return rotMat;        
+    }
+    
+    public RealMatrix getSVDRotationMatrix() {
+        Point3 pt;
+        List<double[]> molecCoords = new ArrayList<>();
+        for (Atom atom : atoms) {
+            pt = atom.getPoint();
+            if (pt != null) {
+                double[] aCoords = pt.toArray();
+                molecCoords.add(aCoords);
+            } 
+        }
+        double[][] mCoords1 = new double[molecCoords.size()][3];
+        for (int i=0; i<mCoords1.length; i++) {
+            mCoords1[i] = molecCoords.get(i);
+        }
+        RealMatrix mCoordsR = new Array2DRowRealMatrix(mCoords1);
+        SingularValueDecomposition svd = new SingularValueDecomposition(mCoordsR);
+        RealMatrix rotMat = svd.getVT();
+        return rotMat;        
     }
 
     public void center(int iStructure) {

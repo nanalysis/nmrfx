@@ -6,11 +6,9 @@ import subprocess
 import math
 import os 
 import osfiles
+import molio
 from refine import *
 from difflib import SequenceMatcher
-from java.io import InputStreamReader
-from java.io import BufferedReader
-from java.lang import ClassLoader
 from java.util import ArrayList
 from org.nmrfx.structure.chemistry import SVMPredict
 from org.nmrfx.structure.chemistry import SSLayout
@@ -31,7 +29,7 @@ from subprocess import check_output
 wc = {'G': 'C', 'C': 'G', 'A': 'U', 'U': 'A', 'X': '', 'x': '', 'P':'p','p':'P'}
 wobble = {'G': 'U', 'U': 'G', 'A': '', 'C': '', 'X': '', 'x': '','P':'p','p':'P'}
 
-def getPairs( vienna):
+def getPairs(vienna):
     sArray = [len(vienna)]
     seqSize = array.array('i',sArray)
     ssLay = SSLayout(seqSize)
@@ -284,26 +282,6 @@ def predictFromAttr(seqList, outLines):
     return result
 
 
-def loadResource(resourceName):
-    cl = ClassLoader.getSystemClassLoader()
-    istream = cl.getResourceAsStream(resourceName)
-    lines = ""
-    if istream == None:
-        raise Exception("Cannot find '" + resourceName + "' on classpath")
-    else:
-        reader = InputStreamReader(istream)
-        breader = BufferedReader(reader)
-        while True:
-            line = breader.readLine()
-            if line == None:
-                break
-            if lines != '':
-                lines += '\n'
-            lines += line
-        breader.close()
-    return lines
-
-
 # following should start working in Jython 2.7.1
 # def loadResource(resourceName):
 #    data = pyproc.__loader__.get_data(resourceName)
@@ -317,7 +295,7 @@ def setupRNASVM():
     svmAttrMap = {}
     svmSDevMap = {}
     resourceName = "data/rnasvm/svattr.txt"
-    content = loadResource(resourceName)
+    content = molio.loadResource(resourceName)
     lines = content.split('\n')
     for line in lines:
         fields = line.split()
@@ -329,7 +307,7 @@ def setupRNASVM():
             svmAttrMap[atomName, 'attrs'] = []
         svmAttrMap[atomName, 'attrs'].append(attrType)
     resourceName = "data/rnapredsdev.txt"
-    content = loadResource(resourceName)
+    content = molio.loadResource(resourceName)
     lines = content.split('\n')
     for line in lines:
         fields = line.split()
