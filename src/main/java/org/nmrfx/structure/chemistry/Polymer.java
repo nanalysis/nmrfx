@@ -113,13 +113,13 @@ public class Polymer extends Entity {
         residue.molecule = molecule;
         residue.iRes = residueList.size();
 
-        if (getFirstResidue() == null) {
+        if (firstResidue == null) {
             firstResidue = residue;
         }
 
         residue.previous = getLastResidue();
 
-        if (getLastResidue() != null) {
+        if (lastResidue != null) {
             lastResidue.next = residue;
         }
 
@@ -148,13 +148,21 @@ public class Polymer extends Entity {
 
             molecule.nResidues--;
             residueList.remove(residue);
+            renumber();
+        }
+    }
+    
+    private void renumber() {
+        int iRes = 0;
+        for (Residue res:residueList) {
+            res.iRes = iRes++;
         }
     }
 
     public List<Residue> getResidues() {
-        return residueList;
+        return Collections.unmodifiableList(residueList);
     }
-
+    
     public int renumberResidue(String oldNumber, String newNumber) {
         oldNumber = oldNumber.toLowerCase();
         newNumber = newNumber.toLowerCase();
