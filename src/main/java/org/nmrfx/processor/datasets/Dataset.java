@@ -273,6 +273,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         }
         addFile(fileName);
         setDimAttributes();
+        loadLSCatalog();
     }
 
     /**
@@ -5727,16 +5728,23 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             dataset.setTitle(title);
         });
     }
+    
+    public LineShapeCatalog getLSCatalog() {
+        return simVecs;
+    }
 
-    public void loadLSCatalog() throws IOException {
+    public final void loadLSCatalog() throws IOException {
         String dirName = file.getParent();
         String datasetFileName = file.getName();
 
         int index = datasetFileName.lastIndexOf(".");
         String shapeName = datasetFileName.substring(0, index) + "_lshapes.txt";
         String shapeFileName = dirName + File.separator + shapeName;
-        simVecs = LineShapeCatalog.loadSimFids(shapeFileName, nDim);
-        System.out.println("simVecs " + simVecs);
+        File shapeFile = new File(shapeFileName);
+        if (shapeFile.exists() && shapeFile.canRead()) {
+            simVecs = LineShapeCatalog.loadSimFids(shapeFileName, nDim);
+            System.out.println("simVecs " + simVecs);
+        }
     }
 
     public void subtractPeak(Peak peak) throws IOException {
