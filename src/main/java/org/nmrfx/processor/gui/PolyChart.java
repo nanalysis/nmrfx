@@ -2445,14 +2445,14 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    public void fitPeaks() {
+    public void fitPeaks(boolean lsFit) {
         peakListAttributesList.forEach((peakListAttr) -> {
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             if (!peaks.isEmpty()) {
                 Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
                 if (dataset != null) {
                     try {
-                        peakListAttr.getPeakList().peakFit(dataset, peaks);
+                        peakListAttr.getPeakList().peakFit(dataset, peaks, lsFit);
                     } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                         Logger.getLogger(PolyChart.class
                                 .getName()).log(Level.SEVERE, null, ex);
