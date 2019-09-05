@@ -129,7 +129,7 @@ public class MolViewer extends Pane {
         rootGroup.getChildren().addAll(molGroup);
         rootGroup.getChildren().addAll(selGroup);
         rootGroup.getChildren().add(cameraTransform);
-
+        resetTransform();
         addHandlers(subScene, twoDPane);
         ListChangeListener listener = new ListChangeListener() {
             @Override
@@ -588,8 +588,10 @@ public class MolViewer extends Pane {
 
     public void resetTransform() {
         rotTransform.setToIdentity();
+        rotTransform.appendRotation(180.0, 0.0,0.0,0.0, new Point3D(1.0, 0.0, 0.0));
         updateView();
         camera.setTranslateZ(-cameraDistance);
+        updateView();
     }
 
     private void rotate3(double dx, double dy) {
