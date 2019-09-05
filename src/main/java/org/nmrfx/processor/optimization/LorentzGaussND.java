@@ -295,11 +295,11 @@ public class LorentzGaussND implements MultivariateFunction {
                 uniformBoundaries[1][j] = 100.0;
                 boundaries[0][j] = lower[i];
                 boundaries[1][j] = upper[i];
-                unscaledPars[i] = start[i];
                 mapToAll[j] = i;
                 mapFromAll[i] = j;
                 j++;
             }
+            unscaledPars[i] = start[i];
         }
     }
 
