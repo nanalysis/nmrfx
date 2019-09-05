@@ -1303,76 +1303,90 @@ public class DrawPeaks {
         }
     }
 
-    public void drawLinkLines(PeakListAttributes peakAttr, GraphicsContextInterface g2, Peak peak, int[] dim) throws GraphicsIOException {
+    public void drawLinkLines(PeakListAttributes peakAttr, GraphicsContextInterface g2, Peak peak, int[] dim, boolean ignoreLinkDrawn) throws GraphicsIOException {
         if (g2 == null) {
             return;
         }
+        PeakList peakList = peak.getPeakList();
         PeakDim peakDim0 = peak.peakDims[dim[0]];
         PeakDim peakDim1 = peak.peakDims[dim[1]];
-        double ppmX = peakDim0.getChemShift();
-        double ppmY = peakDim1.getChemShift();
-        double posX = xAxis.getDisplayPosition(ppmX);
-        double posY = yAxis.getDisplayPosition(ppmY);
 
-        PeakList peakList = peakDim0.getPeak().getPeakList();
-        List<PeakDim> linkedPeakDims = peakDim1.getLinkedPeakDims();
-        if (linkedPeakDims.size() > 1) {
-            double minX = Double.MAX_VALUE;
-            double maxX = Double.NEGATIVE_INFINITY;
-            double edge1 = xAxis.getLowerBound();
-            double edge2 = xAxis.getUpperBound();
-            for (PeakDim peakDim : linkedPeakDims) {
-                Peak peak0 = peakDim.getPeak();
-                if (peak0.getPeakList() == peakList) {
-                    double shift = peak0.peakDims[0].getChemShift();
-                    if ((shift > edge1) && (shift < edge2)) {
-                        minX = Math.min(shift, minX);
-                        maxX = Math.max(shift, maxX);
+        if (ignoreLinkDrawn || !peakDim1.isLinkDrawn()) {
+            List<PeakDim> linkedPeakDims = peakDim1.getLinkedPeakDims();
+            if (linkedPeakDims.size() > 1) {
+                double minX = Double.MAX_VALUE;
+                double maxX = Double.NEGATIVE_INFINITY;
+                double edge1 = xAxis.getLowerBound();
+                double edge2 = xAxis.getUpperBound();
+                double sumY = 0.0;
+                int nY = 0;
+                for (PeakDim peakDim : linkedPeakDims) {
+                    Peak peak0 = peakDim.getPeak();
+                    if (peak0.getPeakList() == peakList) {
+                        peakDim.setLinkDrawn(true);
+                        double shiftX = peak0.peakDims[0].getChemShift();
+                        double shiftY = peak0.peakDims[1].getChemShift();
+                        if ((shiftX > edge1) && (shiftX < edge2)) {
+                            minX = Math.min(shiftX, minX);
+                            maxX = Math.max(shiftX, maxX);
+                        }
+                        sumY += shiftY;
+                        nY++;
                     }
                 }
-            }
-            double x1 = xAxis.getDisplayPosition(minX);
-            double x2 = xAxis.getDisplayPosition(maxX);
-            if (peakDim0.isFrozen()) {
-                g2.setStroke(Peak.FREEZE_COLORS[0]);
-            } else {
-                g2.setStroke(Color.BLACK);
+                double posY = yAxis.getDisplayPosition(sumY / nY);
 
+                double x1 = xAxis.getDisplayPosition(minX);
+                double x2 = xAxis.getDisplayPosition(maxX);
+                if (peakDim0.isFrozen()) {
+                    g2.setStroke(Peak.FREEZE_COLORS[0]);
+                } else {
+                    g2.setStroke(Color.BLACK);
+
+                }
+                g2.beginPath();
+                g2.moveTo(x1, posY);
+                g2.lineTo(x2, posY);
+                g2.stroke();
             }
-            g2.beginPath();
-            g2.moveTo(x1, posY);
-            g2.lineTo(x2, posY);
-            g2.stroke();
         }
-        linkedPeakDims = peakDim0.getLinkedPeakDims();
-        if (linkedPeakDims.size() > 1) {
-            double minY = Double.MAX_VALUE;
-            double maxY = Double.NEGATIVE_INFINITY;
-            double edge1 = yAxis.getLowerBound();
-            double edge2 = yAxis.getUpperBound();
-            for (PeakDim peakDim : linkedPeakDims) {
-                Peak peak1 = peakDim.getPeak();
-                if (peak1.getPeakList() == peakList) {
-                    double shift = peak1.peakDims[1].getChemShift();
-                    if ((shift > edge1) && (shift < edge2)) {
-                        minY = Math.min(shift, minY);
-                        maxY = Math.max(shift, maxY);
+        if (ignoreLinkDrawn || !peakDim0.isLinkDrawn()) {
+            List<PeakDim> linkedPeakDims = peakDim0.getLinkedPeakDims();
+            if (linkedPeakDims.size() > 1) {
+                double minY = Double.MAX_VALUE;
+                double maxY = Double.NEGATIVE_INFINITY;
+                double edge1 = yAxis.getLowerBound();
+                double edge2 = yAxis.getUpperBound();
+                double sumX = 0.0;
+                int nX = 0;
+                for (PeakDim peakDim : linkedPeakDims) {
+                    Peak peak1 = peakDim.getPeak();
+                    if (peak1.getPeakList() == peakList) {
+                        peakDim.setLinkDrawn(true);
+                        double shiftY = peak1.peakDims[1].getChemShift();
+                        double shiftX = peak1.peakDims[0].getChemShift();
+                        if ((shiftY > edge1) && (shiftY < edge2)) {
+                            minY = Math.min(shiftY, minY);
+                            maxY = Math.max(shiftY, maxY);
+                        }
+                        sumX += shiftX;
+                        nX++;
                     }
                 }
+                double y1 = yAxis.getDisplayPosition(minY);
+                double y2 = yAxis.getDisplayPosition(maxY);
+                double posX = xAxis.getDisplayPosition(sumX / nX);
+                if (peakDim1.isFrozen()) {
+                    g2.setStroke(Peak.FREEZE_COLORS[1]);
+                } else {
+                    g2.setStroke(Color.BLACK);
+                }
+                g2.beginPath();
+                g2.moveTo(posX, y1);
+                g2.lineTo(posX, y2);
+                g2.stroke();
             }
-            double y1 = yAxis.getDisplayPosition(minY);
-            double y2 = yAxis.getDisplayPosition(maxY);
-            if (peakDim1.isFrozen()) {
-                g2.setStroke(Peak.FREEZE_COLORS[1]);
-            } else {
-                g2.setStroke(Color.BLACK);
-            }
-            g2.beginPath();
-            g2.moveTo(posX, y1);
-            g2.lineTo(posX, y2);
-            g2.stroke();
         }
-
     }
 
     private void setLabelAlignment(GraphicsContextInterface g2, Corner corner) throws GraphicsIOException {

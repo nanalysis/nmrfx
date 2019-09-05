@@ -2474,7 +2474,7 @@ public class PolyChart implements PeakListener {
             Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
             if (dataset != null) {
                 try {
-                    peakListAttr.getPeakList().peakFit(dataset);
+                    peakListAttr.getPeakList().peakFit(dataset, false);
                 } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                     Logger.getLogger(PolyChart.class
                             .getName()).log(Level.SEVERE, null, ex);
@@ -2762,6 +2762,15 @@ public class PolyChart implements PeakListener {
                 peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
                     try {
                         drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, false);
+                        for (int iDim : dim) {
+                            peak.peakDims[iDim].setLinkDrawn(false);
+                        }
+                    } catch (GraphicsIOException ex) {
+                    }
+                });
+                peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
+                    try {
+                        drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim, false);
                     } catch (GraphicsIOException ex) {
                     }
                 });
@@ -2829,7 +2838,7 @@ public class PolyChart implements PeakListener {
                     int nPeakDim = peak.peakList.nDim;
                     if (peak.getPeakList().isSlideable() && (nPeakDim > 1)) {
                         try {
-                            drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim);
+                            drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim, true);
                         } catch (GraphicsIOException ex) {
                         }
                     }

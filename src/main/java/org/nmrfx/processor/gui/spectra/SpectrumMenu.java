@@ -21,6 +21,7 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 
 /**
@@ -117,17 +118,17 @@ public class SpectrumMenu extends ChartMenu {
         });
         peakMenu.getItems().add(fitItem);
 
-        MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
-        fitLSItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeaks(true);
-        });
-        peakMenu.getItems().add(fitLSItem);
-        
         MenuItem fitListItem = new MenuItem("Fit All Peaks");
         fitListItem.setOnAction((ActionEvent e) -> {
             chart.fitPeakLists();
         });
         peakMenu.getItems().add(fitListItem);
+
+        MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
+        fitLSItem.setOnAction((ActionEvent e) -> {
+            PeakPicking.peakPickActive(chart.getController(), true);
+        });
+        peakMenu.getItems().add(fitLSItem);
 
         Menu refMenu = new Menu("Reference");
 

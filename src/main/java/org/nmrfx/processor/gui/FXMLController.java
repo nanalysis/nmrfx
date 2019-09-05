@@ -1707,7 +1707,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         buttons.add(new Separator(Orientation.VERTICAL));
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BULLSEYE, "Pick", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> PeakPicking.peakPickActive(this));
+        bButton.setOnAction(e -> PeakPicking.peakPickActive(this, false));
         buttons.add(bButton);
 
         buttons.add(new Separator(Orientation.VERTICAL));
@@ -2086,7 +2086,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public void alignCenters() {
         DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
         // any peak lists created just for alignmnent should be deleted
-        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, "refList");
+        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false,  false, "refList");
         if (refList == null) {
             return;
         }
@@ -2107,7 +2107,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             ObservableList<DatasetAttributes> dataAttrList = chart.getDatasetAttributes();
             for (DatasetAttributes dataAttr : dataAttrList) {
                 if (dataAttr != activeAttr) {
-                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, false, false, "movingList");
+                    PeakList movingList = PeakPicking.peakPickActive(chart, dataAttr, false, false, false, "movingList");
                     movingList.unLinkPeaks();
                     movingList.clearSearchDims();
                     movingList.addSearchDim(dimName1, 0.05);

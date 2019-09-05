@@ -33,11 +33,11 @@ public class PeakPicking {
         singlePickAction = func;
     }
 
-    public static void peakPickActive(FXMLController fxmlController) {
+    public static void peakPickActive(FXMLController fxmlController, boolean refineLS) {
         PolyChart chart = fxmlController.getActiveChart();
         ObservableList<DatasetAttributes> dataList = chart.getDatasetAttributes();
         dataList.stream().forEach((DatasetAttributes dataAttr) -> {
-            peakPickActive(chart, dataAttr, chart.getCrossHairs().hasCrosshairRegion(), false, null);
+            peakPickActive(chart, dataAttr, chart.getCrossHairs().hasCrosshairRegion(), refineLS, false, null);
         });
         chart.refresh();
     }
@@ -57,7 +57,7 @@ public class PeakPicking {
         return listName;
     }
 
-    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean useCrossHairs, boolean saveFile, String listName) {
+    public static PeakList peakPickActive(PolyChart chart, DatasetAttributes dataAttr, boolean useCrossHairs, boolean refineLS, boolean saveFile, String listName) {
         Dataset dataset = dataAttr.getDataset();
         int nDim = dataset.getNDim();
 
@@ -91,7 +91,11 @@ public class PeakPicking {
         String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk2";
         PeakList peakList = null;
         try {
-            peakList = picker.peakPick();
+            if (refineLS) {
+                peakList = picker.refinePickWithLSCat();
+            } else {
+                peakList = picker.peakPick();
+            }
             chart.setupPeakListAttributes(peakList);
             if (saveFile) {
                 try (final FileWriter writer = new FileWriter(listFileName)) {
