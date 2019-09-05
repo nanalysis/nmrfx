@@ -19,6 +19,7 @@ package org.nmrfx.processor.optimization;
 
 import java.util.Random;
 import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.exception.MathIllegalStateException;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MultidimensionalCounter;
@@ -114,6 +115,9 @@ public class LorentzGaussND implements MultivariateFunction {
                     new InitialGuess(newStart));
             result = new PointValuePair(unscalePar(result.getPoint()), result.getValue());
         } catch (TooManyEvaluationsException e) {
+            result = best;
+        } catch (MathIllegalStateException e) {
+            System.out.println("illegals state " + optimizer.getEvaluations());
             result = best;
         }
 
