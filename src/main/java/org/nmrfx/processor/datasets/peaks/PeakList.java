@@ -2950,7 +2950,9 @@ public class PeakList {
         double multiplier = 0.686;
         int[] rows = new int[theFile.getNDim()];
         List<Peak> peaks = Arrays.asList(peakArray);
-        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false);
+        boolean[] fitPeaks = new boolean[peakArray.length];
+        Arrays.fill(fitPeaks, true);
+        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false);
     }
 
     /**
@@ -2962,7 +2964,7 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<Object> simPeakFit(Dataset theFile, Collection<Peak> peaks, boolean lsFit)
+    public static List<Object> simPeakFit(Dataset theFile, List<Peak> peaks, boolean[] fitPeaks, boolean lsFit)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean doFit = true;
         int fitMode = FIT_ALL;
@@ -2970,7 +2972,7 @@ public class PeakList {
         double[] delays = null;
         double multiplier = 0.686;
         int[] rows = new int[theFile.getNDim()];
-        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit);
+        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit);
     }
 
     /**
@@ -2982,10 +2984,12 @@ public class PeakList {
      */
     public void peakFit(Dataset theFile, boolean lsFit)
             throws IllegalArgumentException, IOException, PeakFitException {
-        Set<Set<Peak>> oPeaks = getOverlappingPeaks();
+        Set<List<Peak>> oPeaks = getOverlappingPeaks();
         oPeaks.stream().forEach(oPeakSet -> {
             try {
-                simPeakFit(theFile, oPeakSet, lsFit);
+                boolean[] fitPeaks = new boolean[oPeakSet.size()];
+                Arrays.fill(fitPeaks, true);
+                simPeakFit(theFile, oPeakSet, fitPeaks, lsFit);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -3003,10 +3007,31 @@ public class PeakList {
      */
     public void peakFit(Dataset theFile, Collection<Peak> peaks, boolean lsFit)
             throws IllegalArgumentException, IOException, PeakFitException {
-        Set<Set<Peak>> oPeaks = getOverlappingPeaks(peaks);
+        Set<List<Set<Peak>>> oPeaks = getPeakLayers(peaks);
+
+        // Set<Set<Peak>> oPeaks = getOverlappingPeaks(peaks);
         oPeaks.stream().forEach(oPeakSet -> {
             try {
-                simPeakFit(theFile, oPeakSet, lsFit);
+                List<Peak> lPeaks = new ArrayList<>();
+                int nFit = 0;
+                for (int i = 0; i < 3; i++) {
+//                    for (Peak peak : oPeakSet.get(i)) {
+//                        System.out.print(peak.getName() + " ");
+//                    }
+//                    System.out.println("layer " + i);
+                    lPeaks.addAll(oPeakSet.get(i));
+                    if (i == 1) {
+                        nFit = lPeaks.size();
+                    }
+
+                }
+                boolean[] fitPeaks = new boolean[lPeaks.size()];
+                Arrays.fill(fitPeaks, true);
+                for (int i = nFit; i < fitPeaks.length; i++) {
+                    fitPeaks[i] = false;
+                }
+
+                simPeakFit(theFile, lPeaks, fitPeaks, lsFit);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -3044,7 +3069,10 @@ public class PeakList {
             }
             peaks.add(peak);
         }
-        return peakFit(theFile, peaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false);
+        boolean[] fitPeaks = new boolean[peaks.size()];
+        Arrays.fill(fitPeaks, true);
+
+        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false);
     }
 
     /**
@@ -3074,7 +3102,8 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<Object> peakFit(Dataset theFile, Collection<Peak> peaks,
+    public static List<Object> peakFit(Dataset theFile, List<Peak> peaks,
+            boolean[] fitPeaks,
             int[] rows, boolean doFit, int fitMode, final boolean updatePeaks,
             double[] delays, double multiplier, boolean lsFit)
             throws IllegalArgumentException, IOException, PeakFitException {
@@ -3173,7 +3202,7 @@ public class PeakList {
                 if (fitMode == FIT_AMPLITUDES) {
                     gValue = new GuessValue(width[iPeak][iDim], width[iPeak][iDim] * 0.05, width[iPeak][iDim] * 1.05, false);
                 } else {
-                    gValue = new GuessValue(width[iPeak][iDim], width[iPeak][iDim] * 0.2, width[iPeak][iDim] * 2.0, true);
+                    gValue = new GuessValue(width[iPeak][iDim], width[iPeak][iDim] * 0.2, width[iPeak][iDim] * 2.0, fitPeaks[iPeak]);
                 }
                 guessList.add(gValue);
                 // adding one to account for global max inserted at end
@@ -3183,7 +3212,7 @@ public class PeakList {
                 if (fitMode == FIT_AMPLITUDES) {
                     gValue = new GuessValue(cpt[iPeak][iDim], cpt[iPeak][iDim] - width[iPeak][iDim] / 40, cpt[iPeak][iDim] + width[iPeak][iDim] / 40, false);
                 } else {
-                    gValue = new GuessValue(cpt[iPeak][iDim], cpt[iPeak][iDim] - width[iPeak][iDim] / 2, cpt[iPeak][iDim] + width[iPeak][iDim] / 2, true);
+                    gValue = new GuessValue(cpt[iPeak][iDim], cpt[iPeak][iDim] - width[iPeak][iDim] / 2, cpt[iPeak][iDim] + width[iPeak][iDim] / 2, fitPeaks[iPeak]);
                 }
                 guessList.add(gValue);
 //System.out.println(iDim + " " + p1[iDim][0] + " " +  p1[iDim][1]);
@@ -3201,7 +3230,6 @@ public class PeakList {
                         p2[iDim][1] = p1[iDim][1];
                     }
                 }
-                System.out.println(iDim + " " + p2[iDim][0] + " " + p2[iDim][1]);
             }
             firstPeak = false;
         }
@@ -3235,7 +3263,6 @@ public class PeakList {
             peakFit = new LorentzGaussNDWithCatalog(positions, theFile.getLSCatalog());
         } else {
             peakFit = new LorentzGaussND(positions);
-
         }
         double[] guess = new double[guessList.size()];
         double[] lower = new double[guess.length];
@@ -3355,8 +3382,8 @@ public class PeakList {
      *
      * @return
      */
-    public Set<Set<Peak>> getOverlappingPeaks() {
-        Set<Set<Peak>> result = new HashSet<>();
+    public Set<List<Peak>> getOverlappingPeaks() {
+        Set<List<Peak>> result = new HashSet<>();
         boolean[] used = new boolean[size()];
         for (int i = 0, n = size(); i < n; i++) {
             Peak peak = getPeak(i);
@@ -3364,9 +3391,38 @@ public class PeakList {
                 continue;
             }
             Set<Peak> overlaps = peak.getAllOverlappingPeaks();
-            result.add(overlaps);
+            result.add(new ArrayList<Peak>(overlaps));
             for (Peak checkPeak : overlaps) {
                 used[checkPeak.getIndex()] = true;
+            }
+        }
+        return result;
+    }
+
+    public Set<List<Set<Peak>>> getPeakLayers() {
+        return getPeakLayers(peaks);
+    }
+
+    /**
+     *
+     * @param fitPeaks
+     * @return
+     */
+    public Set<List<Set<Peak>>> getPeakLayers(Collection<Peak> fitPeaks) {
+        Set<List<Set<Peak>>> result = new HashSet<>();
+        Set<Peak> used = new HashSet<>();
+        for (Peak peak : fitPeaks) {
+            if (used.contains(peak)) {
+                continue;
+            }
+            List<Set<Peak>> overlaps = peak.getOverlapLayers(1.0);
+            result.add(overlaps);
+            Set<Peak> firstLayer = overlaps.get(1);
+            Set<Peak> secondLayer = overlaps.get(1);
+            if (secondLayer.isEmpty()) {
+                for (Peak checkPeak : firstLayer) {
+                    used.add(checkPeak);
+                }
             }
         }
         return result;
