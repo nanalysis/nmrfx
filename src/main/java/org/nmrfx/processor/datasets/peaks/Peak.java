@@ -1245,7 +1245,7 @@ public class Peak implements Comparable, PeakOrMulti {
         this.type = type;
         peakUpdated(this);
     }
-    
+
     public boolean isDeleted() {
         return status < 0;
     }
@@ -1521,6 +1521,26 @@ public class Peak implements Comparable, PeakOrMulti {
         return result;
     }
 
+    public List<Set<Peak>> getOverlapLayers(double scale) {
+        List<Set<Peak>> result = new ArrayList<>();
+        Set<Peak> firstLayer = getOverlappingPeaks();
+        Set<Peak> secondLayer = new HashSet<>();
+        for (Peak peak : firstLayer) {
+            Set<Peak> overlaps = peak.getOverlappingPeaks(scale);
+            for (Peak peak2 : overlaps) {
+                if ((peak2 != this) && !firstLayer.contains(peak2)) {
+                    secondLayer.add(peak2);
+                }
+            }
+        }
+        Set<Peak> centerLayer = new HashSet<>();
+        centerLayer.add(this);
+        result.add(centerLayer);
+        result.add(firstLayer);
+        result.add(secondLayer);
+        return result;
+    }
+
     public Set<Peak> getOverlappingPeaks(Set<Peak> overlaps) {
         Set<Peak> result = new HashSet<>();
         result.addAll(overlaps);
@@ -1543,6 +1563,10 @@ public class Peak implements Comparable, PeakOrMulti {
     }
 
     public Set<Peak> getOverlappingPeaks() {
+        return getOverlappingPeaks(1.0);
+    }
+
+    public Set<Peak> getOverlappingPeaks(double scale) {
         Set<Peak> overlaps = new HashSet<>();
         int nDim = peakList.nDim;
         for (int i = 0; i < peakList.size(); i++) {
@@ -1552,7 +1576,7 @@ public class Peak implements Comparable, PeakOrMulti {
             }
             boolean ok = true;
             for (int iDim = 0; iDim < nDim; iDim++) {
-                if (!overlaps(peak, iDim, 1.0)) {
+                if (!overlaps(peak, iDim, scale)) {
                     ok = false;
                     break;
                 }
