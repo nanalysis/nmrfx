@@ -15,6 +15,7 @@ from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import RNALabels
 from org.nmrfx.structure.chemistry import CouplingList
 from java.io import FileWriter
+import pdb as debugger
 
 
 
@@ -29,7 +30,7 @@ def writePeakList(peakList, listName=None, folder="genpeaks"):
 
 def determineType(aResObj, bResObj, pairs={}):
     """
-    Purpose: This function is meant to determine the interaction type between two residues in the same polymer.
+    Purpose: This function is meant to determine the interaction type between two residues.
 
     Parameters:
        - aResObj <Residue object> : residue 1
@@ -43,17 +44,14 @@ def determineType(aResObj, bResObj, pairs={}):
     rn1 = aResObj.getPropertyObject("resRNAInd")
     rn2 = bResObj.getPropertyObject("resRNAInd")
     if rn1 in pairs and rn2 in pairs:
-        sameLoopRef = [False] # determine whether two residues are in the same loop
         def loopClass(rn):
+            if pairs.get(rn) != -1:
+                return None
             right, left, counter = rn+1, rn-1, 1
             while (pairs.get(right) is not None or pairs.get(left) is not None):
                 if (pairs.get(right) == -1):
-                    if right == rn2:
-                        sameLoopRef[0] = True # Only way to change the value w/out getting an Assignment error
                     right +=1
                 elif (pairs.get(left) == -1):
-                    if left == rn2:
-                        sameLoopRef[0] = True
                     left -= 1
                 else:
                     break
@@ -65,43 +63,51 @@ def determineType(aResObj, bResObj, pairs={}):
             elif counter < 4 and counter > 1:
                 return "S" # smaller
             else:
-                return None
-        inSameLoop = sameLoopRef[0] # extracting bool from container
+                return "B" # bulge
+        classR1 = loopClass(rn1)
+        classR2 = loopClass(rn2)
+        dist = abs(rn1-rn2)
+        sameRes = dist == 0
+        inSamePolymer = (aResObj.getPolymer().label == bResObj.getPolymer().label)
+        hasBP = lambda rNum: pairs.get(rNum) != -1
+        bothInLoop = (not hasBP(rn1) and not hasBP(rn2)) # both are in a loop
+        bothInHelix = (hasBP(rn1) and hasBP(rn2)) # both are in a helix
+        loopAndHelix = (hasBP(rn1) and not hasBP(rn2)) or (hasBP(rn2) and not hasBP(rn1)) # one res in loop, other in helix
         prevExist = lambda rObj: (rObj.previous is not None)
         nxtExist = lambda rObj: (rObj.next is not None)
-        prev = lambda rObj: (rObj.previous.iRes if prevExist(rObj) else None) 
-        nxt = lambda rObj: (rObj.next.iRes if nxtExist(rObj) else None)
-        dist = lambda x, y: abs(x-y)
-        sameRes = dist(rn1,rn2) == 0
-        resNoPair = lambda rNum: pairs.get(rNum)==-1 # does rn1 or rn2 have a pair?
-        isBulge = lambda rObj: pairs.get(rObj.iRes)==-1 and (pairs.get(prev(rObj))!=-1 and (pairs.get(nxt(rObj))!=-1))
-        loop = loopClass(rn1) if ((not sameRes) and (resNoPair(rn1) and resNoPair(rn2))) else None
+        prev = lambda rObj: (rObj.previous.getPropertyObject("resRNAInd") if prevExist(rObj) else None) 
+        nxt = lambda rObj: (rObj.next.getPropertyObject("resRNAInd") if nxtExist(rObj) else None)
+        loop = classR1 if (not sameRes and bothInLoop) else None
+        inSameLoop = (bothInLoop and rn1 < rn2 and all([(True if pairs.get(key)==-1 else False) for key in pairs.keys() if key >= rn1 and key <= rn2]))
+        loopHelixInter = lambda c: (classR1==c or classR2==c) if loopAndHelix else False
+
         # switch-case
         switcher = {
-            "ADJ" : ((not sameRes) and (not resNoPair(rn1) and not resNoPair(rn2)) and dist(rn1,rn2)==1),
+            "ADJ" : ((not sameRes) and inSamePolymer and bothInHelix and dist==1),
             "BP" : ((not sameRes) and pairs.get(rn1)==rn2 and pairs.get(rn2)==rn1),
-            "OABP" : ((not sameRes) and (not resNoPair(rn1) and not resNoPair(rn2)) and ((prev(aResObj)==pairs.get(rn2)) or (nxt(aResObj)==pairs.get(rn2)))),
-            "L1" : ((loop=="L") and inSameLoop and dist(rn1,rn2)==1),
-	    "L2" : (loop=="L" and inSameLoop and dist(rn1,rn2)==2),
-            "L3" : (loop=="L" and inSameLoop and dist(rn1,rn2)==3),
-            "LH" : ((not sameRes) and (not resNoPair(rn1)) and resNoPair(rn2) and loopClass(rn2)=="L" and dist(rn1,rn2)==1),
-            "SRH" : (sameRes and (not resNoPair(rn1))),
-            "SRL" : (sameRes and resNoPair(rn1) and loopClass(rn1)=="L"),
-            "SRT" : (sameRes and resNoPair(rn1) and loopClass(rn1)=="T"),
-            "SRB" : (sameRes and resNoPair(rn1) and isBulge(aResObj)),
-            "S1" : (loop=="S" and inSameLoop and dist(rn1,rn2)==1),
-            "S2" : (loop=="S" and inSameLoop and dist(rn1,rn2)==2),
-            "SH" : ((not sameRes) and (not resNoPair(rn1)) and resNoPair(rn2) and loopClass(rn2)=="S" and dist(rn1,rn2)==1),
-            "T1" : (loop=="T" and inSameLoop and dist(rn1,rn2)==1),
-            "T2" : (loop=="T" and inSameLoop and dist(rn1,rn2)==2),
-            "T3" : (loop=="T" and inSameLoop and dist(rn1,rn2)==3),
-            "TB" : ((not sameRes) and resNoPair(rn1) and loopClass(rn1)=="T" and isBulge(bResObj)),
-            "TH" : ((not sameRes) and (not resNoPair(rn1)) and resNoPair(rn2) and loopClass(rn2)=="T" and dist(rn1,rn2)==1),
-            "TA" : ((not sameRes) and dist(rn1,rn2)==2 and (not resNoPair(rn1) and not resNoPair(rn2)))
+            "OABP" : ((not sameRes) and bothInHelix and ((prev(aResObj)==pairs.get(rn2)) or (nxt(aResObj)==pairs.get(rn2)))),
+            "L1" : (loop=="L" and inSameLoop and dist==1),
+	    "L2" : (loop=="L" and inSameLoop and dist==2),
+            "L3" : (loop=="L" and inSameLoop and dist==3),
+            "LH" : ((not sameRes) and loopHelixInter("L") and dist==1),
+            "SRH" : (sameRes and hasBP(rn1)),
+            "SRL" : (sameRes and classR1=="L"),
+            "SRT" : (sameRes and classR1=="T"),
+            "SRB" : (sameRes and classR1=="B"),
+            "S1" : (loop=="S" and inSameLoop and dist==1),
+            "S2" : (loop=="S" and inSameLoop and dist==2),
+            "SH" : ((not sameRes) and loopHelixInter("S") and dist==1),
+            "T1" : (loop=="T" and inSameLoop and dist==1),
+            "T2" : (loop=="T" and inSameLoop and dist==2),
+            "T3" : (loop=="T" and inSameLoop and dist==3),
+            "TB" : ((not sameRes) and bothInLoop and classR1!=classR2 and classR1 in ["B","T"] and classR2 in ["B","T"]),
+            "HB" : ((not sameRes) and loopAndHelix and (classR1=="B" or classR2=="B")),
+            "BB" : ((not sameRes) and bothInLoop and (classR1=="B" and classR2=="B")),
+            "TH" : ((not sameRes) and loopHelixInter("T") and dist==1),
+            "TA" : ((not sameRes) and inSamePolymer and dist==2 and bothInHelix)
         }
         for retCase, caseBool in switcher.items():
             if caseBool:
-                #print(retCase, caseBool)
                 return retCase
         return None # default case 
     else:
