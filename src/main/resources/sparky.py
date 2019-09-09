@@ -166,9 +166,10 @@ def addPeak():
         ppms = ornaments['peak','pos']
         ppms = [float(ppm) for ppm in ppms]
         widths = [float(width)*10.0 for width in widths]
+        bounds = [width * 2.0  for width in widths]
         if peakList == None:
             makePeakList(ppms, labels)
-        peakgen.addPeak(peakList, ppms, widths, 1.0, labels)
+        peakgen.addPeak(peakList, ppms, widths, bounds, 1.0, labels)
     #print ornaments
 
 def processParams(line):
