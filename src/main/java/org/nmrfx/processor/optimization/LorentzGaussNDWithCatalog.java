@@ -87,8 +87,8 @@ public class LorentzGaussNDWithCatalog extends LorentzGaussND {
     }
 
     public final void setOffsets(final double[] start, final double[] lower,
-            final double[] upper, boolean[] floating) {
-        super.setOffsets(start, lower, upper, floating);
+            final double[] upper, boolean[] floating, int[][] syncPars) {
+        super.setOffsets(start, lower, upper, floating, syncPars);
         catValues = new double[nSignals][nDim][];
         offsets = new int[nSignals][nDim];
     }
