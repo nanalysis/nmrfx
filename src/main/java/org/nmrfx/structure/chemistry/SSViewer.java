@@ -743,8 +743,10 @@ public class SSViewer extends Pane {
     }
 
     void drawConstraints(Group group) {
-        for (int i = 0; i < constraintPairs.size(); i += 2) {
-            connect(group, constraintPairs.get(i), constraintPairs.get(i + 1));
+        for (int i = 0; i < constraintPairs.size(); i += 3) {
+            connect(group, constraintPairs.get(i),
+                    constraintPairs.get(i + 1),
+                    constraintPairs.get(i + 2));
         }
     }
 
@@ -767,7 +769,7 @@ public class SSViewer extends Pane {
         }
     }
 
-    void connect(Group group, String a1, String a2) {
+    void connect(Group group, String a1, String a2, String intMode) {
         double width = scale * 0.2;
         if (width < 4) {
             width = 4.0;
@@ -833,8 +835,24 @@ public class SSViewer extends Pane {
             double y2 = c2.y - ddY * width / len;
 
             QuadCurve curve = new QuadCurve(x1, y1, cmx, cmy, x2, y2);
+
             curve.setFill(null);
-            curve.setStroke(Color.BLACK);
+            Color color;
+            switch (intMode) {
+                case "s":
+                    color = Color.RED;
+                    break;
+                case "m":
+                    color = Color.ORANGE;
+                    break;
+                case "w":
+                    color = Color.BLUE;
+                    break;
+                default:
+                    color = Color.DARKGRAY;
+                    break;
+            }
+            curve.setStroke(color);
             group.getChildren().add(curve);
         }
     }

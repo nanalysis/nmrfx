@@ -608,6 +608,12 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             List<String> constraintPairs = new ArrayList<>();
             boolean onlyFrozen = frozenCheckBox.isSelected();
             if (peakList.valid()) {
+                double max = Double.NEGATIVE_INFINITY;
+                for (Peak peak : peakList.peaks()) {
+                    if (peak.getIntensity() > max) {
+                        max = peak.getIntensity();
+                    }
+                }
                 for (Peak peak : peakList.peaks()) {
                     boolean frozen1 = peak.getPeakDim(0).isFrozen();
                     boolean frozen2 = peak.getPeakDim(1).isFrozen();
@@ -615,8 +621,21 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                         String name1 = peak.getPeakDim(0).getLabel();
                         String name2 = peak.getPeakDim(1).getLabel();
                         if (!name1.equals("") && !name2.equals("")) {
+                            double intensity = peak.getIntensity();
+                            double normIntensity = 100.0 * intensity / max;
+                            String intMode = "w";
+                            if (normIntensity > 10.0) {
+                                intMode = "s";
+                            } else if (normIntensity > 1.5) {
+                                intMode = "m";
+                            } else if (normIntensity > 1.0) {
+                                intMode = "w";
+                            } else {
+                                intMode = "vw";
+                            }
                             constraintPairs.add(name1);
                             constraintPairs.add(name2);
+                            constraintPairs.add(intMode);
                         }
                     }
                 }
