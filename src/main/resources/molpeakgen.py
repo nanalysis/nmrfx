@@ -66,7 +66,7 @@ def determineType(aResObj, bResObj, pairs={}):
                 return "B" # bulge
         classR1 = loopClass(rn1)
         classR2 = loopClass(rn2)
-        dist = abs(rn1-rn2)
+        dist = rn2-rn1
         sameRes = dist == 0
         inSamePolymer = (aResObj.getPolymer().label == bResObj.getPolymer().label)
         hasBP = lambda rNum: pairs.get(rNum) != -1
@@ -85,7 +85,7 @@ def determineType(aResObj, bResObj, pairs={}):
         switcher = {
             "ADJ" : ((not sameRes) and inSamePolymer and bothInHelix and dist==1),
             "BP" : ((not sameRes) and pairs.get(rn1)==rn2 and pairs.get(rn2)==rn1),
-            "OABP" : ((not sameRes) and bothInHelix and ((prev(aResObj)==pairs.get(rn2)) or (nxt(aResObj)==pairs.get(rn2)))),
+            "OABP" : ((not sameRes) and bothInHelix and (prev(aResObj)==pairs.get(rn2))),
             "L1" : (loop=="L" and inSameLoop and dist==1),
 	    "L2" : (loop=="L" and inSameLoop and dist==2),
             "L3" : (loop=="L" and inSameLoop and dist==3),
@@ -119,6 +119,7 @@ class MolPeakGen:
     widthH = 0.02
     widthC = 0.4
     residueInterMap = {}
+    minInst = 10
     basePairsMap = {}
 
     def __init__(self, mol = None):
@@ -174,6 +175,18 @@ class MolPeakGen:
         ppmAV = aAtom.getPPM(0)
         if intensity==None:
             intensity = self.intensity
+            bounds = [width * 2.0 for width in self.widths]
+        else: 
+            if intensity > 10.0:
+                widthScale = 2.0
+            elif intensity > 1.5:
+                widthScale = 1.25
+            elif intensity > 1.0:
+                widthScale = 0.85
+            else:
+                widthScale = 0.50
+            bounds = [width * widthScale for width in self.widths]
+
         if self.refMode or (ppmAV == None) or not ppmAV.isValid():
             ppmAV = aAtom.getRefPPM(0)
         if (ppmAV != None) and aAtom.isActive() and ((d1Edited == None) or (d1Edited == aAtom.parent.isActive())):
@@ -183,17 +196,17 @@ class MolPeakGen:
             if (ppmBV != None) and bAtom.isActive() and ((d2Edited == None) or (d2Edited == bAtom.parent.isActive())):
                 ppms = [ppmAV.getValue(),ppmBV.getValue()]
                 names = [[aAtom.getShortName()],[bAtom.getShortName()]]
-                peakgen.addPeak(peakList, ppms, self.widths, intensity, names)
+                peak = peakgen.addPeak(peakList, ppms, self.widths, bounds, intensity, names)
 
     def addPeaks(self, peakList, d1Edited, d2Edited, atomDistList=None):
         if (atomDistList is None) or (not atomDistList): # none or empty
             return None
-        scaleConst = 10000
+        scaleConst = 100.0/math.pow(2.0,-6)
         for aAtom, bAtom, distance in atomDistList:
             intensity = math.pow(distance, -6)*scaleConst
-            print(intensity)
-            self.addProtonPairPeak(peakList, bAtom, aAtom, d1Edited=d1Edited, d2Edited=d2Edited, intensity=intensity)
-            self.addProtonPairPeak(peakList, aAtom, bAtom, d1Edited=d1Edited, d2Edited=d2Edited, intensity=intensity)
+            if aAtom.getParent().getAtomicNumber() != 7 and bAtom.getParent().getAtomicNumber() != 7:
+                self.addProtonPairPeak(peakList, bAtom, aAtom, d1Edited=d1Edited, d2Edited=d2Edited, intensity=intensity)
+                self.addProtonPairPeak(peakList, aAtom, bAtom, d1Edited=d1Edited, d2Edited=d2Edited, intensity=intensity)
 
     def addPeak(self, peakList, a0, a1, intensity=None):
         if intensity == None:
@@ -210,7 +223,8 @@ class MolPeakGen:
             if (ppm0V != None) and (ppm1V != None):
                 ppms = [ppm0V.getValue(),ppm1V.getValue()]
                 names = [a0.getShortName(), a1.getShortName()]
-                peakgen.addPeak(peakList, ppms, self.widths, intensity, names)
+                bounds = [width * 2.0 for width in widths]
+                peakgen.addPeak(peakList, ppms, self.widths, bounds, intensity, names)
 
     def genDistancePeaks(self, dataset, listName="", condition="sim", scheme="", tol=5.0):
         self.setWidths([self.widthH, self.widthH])
@@ -313,8 +327,11 @@ class MolPeakGen:
             csvFile = molio.loadResource("data/res_pair_table.csv")
             fileList = csvFile.split("\n")
             nFields = 0
+            sums = {}
+            nVals = {}
+            # calculate averages overall all base types if atom is in ribose
             for iLine, line in enumerate(fileList):
-                row = line.split(',')
+                row = line.split('\t')
                 if iLine == 0: # field label line
                     nFields = len(row)
                     if nFields == 9:
@@ -326,19 +343,66 @@ class MolPeakGen:
                     if len(row) == nFields:
                         interType, res1, res2 = row[:3]
                         atom1, atom2 = row[3:5]
-                        distance = row[7]
-                        key = (interType, res1, res2)
-                        if key not in cls.residueInterMap:
-                            cls.residueInterMap[key] = {(atom1, atom2) : float(distance)}
+                        minDis = float(row[5])
+                        maxDis = float(row[6])
+                        avgDis = float(row[7])
+                        nInst = int(row[8])
+                        if atom1[-1] == "'":
+                            res1 = 'r'
+                        if atom2[-1] == "'":
+                            res2 = 'r'
+                        key = (interType,atom1,atom2,res1,res2)
+                        if not key in sums:
+                            sums[key] = 0.0
+                            nVals[key] = 0
+                        sums[key] += avgDis * nInst
+                        nVals[key] += nInst
+                       
+            for iLine, line in enumerate(fileList):
+                row = line.split('\t')
+                if iLine == 0: # field label line
+                    nFields = len(row)
+                    if nFields == 9:
+                        continue
+                    else:
+                        raise ValueError("The number of fields is no longer equal to 9.")
+                else:
+                    row = [fieldStr.strip() for fieldStr in row]
+                    if len(row) == nFields:
+                        interType, res1, res2 = row[:3]
+                        atom1, atom2 = row[3:5]
+                        distance = float(row[7])
+                        nInst = int(row[8])
+                        if atom1[-1] == "'":
+                            res1R = 'r'
                         else:
-                            atomPairMap = cls.residueInterMap[key]
-                            if (atom1, atom2) not in atomPairMap:
-                                atomPairMap[(atom1, atom2)] = float(distance) 
+                            res1R = res1
+                        if atom2[-1] == "'":
+                            res2R = 'r'
+                        else:
+                            res2R = res2
+                        keyR = (interType,atom1,atom2,res1R,res2R)
+                        distance = sums[keyR] / nVals[keyR]
+                        nInst = nVals[keyR]
+                        if interType[0:2] == "SR":
+                            if atom1 > atom2:
+                                atom1, atom2 = (atom2, atom1)
+                        #print keyR, distance, nInst
+                        if nInst > cls.minInst:
+                            key = (interType, res1, res2)
+                            if key not in cls.residueInterMap:
+                                cls.residueInterMap[key] = {(atom1, atom2) : distance}
                             else:
-                                continue
+                                atomPairMap = cls.residueInterMap[key]
+                                if (atom1, atom2) not in atomPairMap:
+                                    atomPairMap[(atom1, atom2)] = distance
+                                else:
+                                    continue
                             
                     else:
                         print("Evaluate the number of fields in line no. '{}'.".format(iRow+1))
+#            for key in cls.residueInterMap:
+#                print key, cls.residueInterMap[key]
             return cls.residueInterMap
 
     def stringifyAtomPairs(self, aResNum, bResNum, atomDistList=None):
@@ -350,7 +414,7 @@ class MolPeakGen:
             aSelect = '.'.join([str(aResNum), aAtomName])
             aSelected = self.mol.getAtomByName(aSelect)
             bSelect = '.'.join([str(bResNum), bAtomName])
-            bSelected = self.mol.getAtomByName(aSelect)
+            bSelected = self.mol.getAtomByName(bSelect)
             retList.append((aSelected, bSelected, dist))
         return retList
 
