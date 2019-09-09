@@ -548,6 +548,18 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         molViewer.deleteItems("delete", "rdcaxes");
         molViewer.addAxes(0, 0.3, "rdcaxes " + getIndex(), "rdc");
     }
+    
+    public void rotateMoleculeRDC() throws InvalidMoleculeException {
+        System.out.println("rotate molecule to RDC axes");
+        molViewer.resetTransform();
+        molViewer.rotateSVDRDC("rdc");
+    }
+
+    public void rotateMoleculeSVD() throws InvalidMoleculeException {
+        System.out.println("rotate molecule to SVD axes");
+        molViewer.resetTransform();
+        molViewer.rotateSVDRDC("svd");
+    }
 
     public void removeAll() {
         molViewer.deleteItems("delete", "all");

@@ -60,7 +60,8 @@
                                             <items>
                                                 <MenuItem mnemonicParsing="false" onAction="#centerOnSelection" text="Center on Selection" />
                                                 <MenuItem mnemonicParsing="false" onAction="#resetTransform" text="Reset Transform" />
-
+                                                <MenuItem mnemonicParsing="false" onAction="#rotateMoleculeSVD" text="Rotate to SVD Axes" />
+                                                <MenuItem mnemonicParsing="false" onAction="#rotateMoleculeRDC" text="Rotate to RDC Axes" />
                                             </items>
                                         </MenuButton>
 

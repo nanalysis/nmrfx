@@ -530,18 +530,18 @@ public class MolViewer extends Pane {
         try {
             Vector3D corner = mol.getCorner(iStructure);
             double[] begin = corner.toArray();//{0,0,0}
-            double[][] test = {{10,0,0}, {0,10,0}, {0,0,10}};
+            double[][] endPts = {{10,0,0}, {0,10,0}, {0,0,10}};
             Color[] colors = {Color.CORAL, Color.LIGHTGREEN, Color.LIGHTBLUE};
-            RealMatrix axes = new Array2DRowRealMatrix(test);
+            RealMatrix axes = new Array2DRowRealMatrix(endPts);
             if (type.equals("rdc")) {
                 System.out.println("add RDC axes");
-                axes = mol.getRDCAxes(iStructure, test);
+                axes = mol.getRDCAxes(endPts);
             } else if (type.equals("svd")) {
                 System.out.println("add SVD axes");
                 colors[0] = Color.MAGENTA;
                 colors[1] = Color.SEAGREEN;
                 colors[2] = Color.CYAN;
-                axes = mol.calcSVDAxes(iStructure, test);
+                axes = mol.calcSVDAxes(endPts);
             } else {
                 System.out.println("add original axes");
                 colors[0] = Color.RED;
@@ -560,6 +560,31 @@ public class MolViewer extends Pane {
         } catch (MissingCoordinatesException ex) {
         }
     }
+    
+     public void rotateSVDRDC(String type) {
+        Molecule mol = Molecule.getActive();
+        if (mol == null) {
+            return;
+        }
+        double[][] rotMat = new double[3][3];
+        if (type.equals("rdc")) {
+            rotMat = mol.getRDCRotationMatrix().getData();
+        } else if (type.equals("svd")) {
+            rotMat = mol.getSVDRotationMatrix().getData();
+        }
+        double mxx = rotMat[0][0];
+        double mxy = rotMat[0][1];
+        double mxz = rotMat[0][2];
+        double myx = -rotMat[1][0];
+        double myy = -rotMat[1][1];
+        double myz = -rotMat[1][2];
+        double mzx = -rotMat[2][0];
+        double mzy = -rotMat[2][1];
+        double mzz = -rotMat[2][2];
+        rotTransform.setToTransform(mxx, mxy, mxz, 0.0, myx, myy, myz, 0.0, mzx, mzy, mzz, 0.0);
+        updateView();
+    }
+
 
     public void addTube(int iStructure, double sphereRadius, String tag) throws InvalidMoleculeException {
         Molecule mol = Molecule.getActive();
@@ -673,7 +698,7 @@ public class MolViewer extends Pane {
         rotTransform.prependRotation(delta, 0.0, 0.0, 0.0, dy, -dx, 0.0);
         updateView();
     }
-
+    
     void updateView() {
         Affine affine2 = new Affine();
         affine2.appendTranslation(center[0], center[1], center[2]);
