@@ -51,6 +51,9 @@
                                                 <MenuItem mnemonicParsing="false" onAction="#drawSpheres" text="Spheres" />
                                                 <MenuItem mnemonicParsing="false" onAction="#drawTubes" text="Tubes" />
                                                 <MenuItem mnemonicParsing="false" onAction="#drawBox" text="Box" />
+                                                <MenuItem mnemonicParsing="false" onAction="#drawAxes" text="Axes" />
+                                                <MenuItem mnemonicParsing="false" onAction="#drawSVDAxes" text="SVD Axes" />
+                                                <MenuItem mnemonicParsing="false" onAction="#drawRDCAxes" text="RDC Axes" />
                                             </items>
                                         </MenuButton>
                                         <MenuButton  mnemonicParsing="false" text="View">

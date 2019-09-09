@@ -1,6 +1,5 @@
 package org.nmrfx.structure.chemistry.mol3D;
 
-import com.sun.javafx.scene.NodeHelper;
 import com.sun.javafx.scene.SceneUtils;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -25,12 +24,13 @@ import javafx.scene.input.ZoomEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Sphere;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
@@ -129,6 +129,7 @@ public class MolViewer extends Pane {
         rootGroup.getChildren().addAll(molGroup);
         rootGroup.getChildren().addAll(selGroup);
         rootGroup.getChildren().add(cameraTransform);
+        resetTransform();
 
         addHandlers(subScene, twoDPane);
         ListChangeListener listener = new ListChangeListener() {
@@ -473,6 +474,14 @@ public class MolViewer extends Pane {
         }
     }
 
+    /**
+     * Adds a box around the molecule.
+     * 
+     * @param iStructure int Structure number
+     * @param radius double Radius of cylinder in plot
+     * @param tag String Tag applied to every associated object
+     * @throws InvalidMoleculeException
+     */
     public void addBox(int iStructure, double radius, String tag) throws InvalidMoleculeException {
         System.out.println("add box");
         Molecule mol = Molecule.getActive();
@@ -480,16 +489,74 @@ public class MolViewer extends Pane {
             return;
         }
         try {
-            Vector3D corner = mol.getCorner(iStructure);
-            double[] cornerDelta = corner.toArray();
-            double[] begin = mol.getCenter(iStructure);
-            double[] end = new double[3];
-            for (int i = 0; i < 3; i++) {
-                end[i] = begin[i] + cornerDelta[i];
+            double[] corner = mol.getCorner(iStructure).toArray();
+            double[][] factors = {{1, 1, 1}, {-1, -1, -1}, {-1, 1, 1}, {1, -1, -1}, {1, -1, 1}, {-1, 1, -1}};
+            double[][] begin = new double[factors.length][3];
+            double[][] end = new double[factors.length][3];
+            double[][] diffs = new double[factors.length][3];
+            for (int i=0; i<begin.length; i++) {
+                for (int j=0; j<3; j++) {
+                    begin[i][j] = corner[j]*factors[i][j];
+                    end[i][j] = begin[i][j];
+                    diffs[i][j] = 2*corner[j]*factors[i][j];
+                }
             }
-            MolCylinder cyl = new MolCylinder(begin, end, radius, Color.GREEN, tag);
-
-            molGroup.getChildren().add(cyl);
+            for (int i = 0; i < begin.length; i++) {
+                for (int j = 0; j < 3; j++) {
+                    end[i][j] -= diffs[i][j];
+                    MolCylinder cyl = new MolCylinder(begin[i], end[i], radius, Color.WHITE, tag);
+                    molGroup.getChildren().add(cyl);
+                    end[i][j] = begin[i][j];
+                }
+            }
+        } catch (MissingCoordinatesException ex) {
+        }
+    }
+    
+    /**
+     * Adds molecular axes. Can be the original axes, or axes rotated based on SVD or RDC calculations.
+     * 
+     * @param iStructure int Structure number
+     * @param radius double Radius of cylinder in plot
+     * @param tag String Tag applied to every associated object
+     * @param type String Axis type (rdc, svd, original).
+     * @throws InvalidMoleculeException
+     */
+    public void addAxes(int iStructure, double radius, String tag, String type) throws InvalidMoleculeException {
+        Molecule mol = Molecule.getActive();
+        if (mol == null) {
+            return;
+        }
+        try {
+            Vector3D corner = mol.getCorner(iStructure);
+            double[] begin = corner.toArray();//{0,0,0}
+            double[][] test = {{10,0,0}, {0,10,0}, {0,0,10}};
+            Color[] colors = {Color.CORAL, Color.LIGHTGREEN, Color.LIGHTBLUE};
+            RealMatrix axes = new Array2DRowRealMatrix(test);
+            if (type.equals("rdc")) {
+                System.out.println("add RDC axes");
+                axes = mol.getRDCAxes(iStructure, test);
+            } else if (type.equals("svd")) {
+                System.out.println("add SVD axes");
+                colors[0] = Color.MAGENTA;
+                colors[1] = Color.SEAGREEN;
+                colors[2] = Color.CYAN;
+                axes = mol.calcSVDAxes(iStructure, test);
+            } else {
+                System.out.println("add original axes");
+                colors[0] = Color.RED;
+                colors[1] = Color.GREEN;
+                colors[2] = Color.BLUE;
+            }
+            double[][] end = axes.getData();//{center[0], center[1], center[2]};//new double[3];
+            double[][] endTrans = new double[3][3];
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    endTrans[i][j] = end[i][j] + corner.toArray()[j];
+                }
+                MolCylinder cyl = new MolCylinder(begin, endTrans[i], radius, colors[i], tag);
+                molGroup.getChildren().add(cyl);
+            }
         } catch (MissingCoordinatesException ex) {
         }
     }
@@ -588,6 +655,7 @@ public class MolViewer extends Pane {
 
     public void resetTransform() {
         rotTransform.setToIdentity();
+        rotTransform.appendRotation(180.0, 0.0,0.0,0.0, new Point3D(1.0, 0.0, 0.0));
         updateView();
         camera.setTranslateZ(-cameraDistance);
     }
