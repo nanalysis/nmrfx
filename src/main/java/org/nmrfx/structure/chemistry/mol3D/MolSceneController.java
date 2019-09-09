@@ -515,6 +515,51 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         molViewer.deleteItems("delete", "box");
         molViewer.addBox(0, 0.3, "box " + getIndex());
     }
+    
+    /**
+     * Draws the original axes.
+     * 
+     * @throws InvalidMoleculeException
+     */
+    public void drawAxes() throws InvalidMoleculeException {
+        System.out.println("add axes");
+        molViewer.deleteItems("delete", "axes");
+        molViewer.addAxes(0, 0.3, "axes " + getIndex(), "original");
+    }
+    
+    /**
+     * Draws the rotated axes from an SVD calculation.
+     * 
+     * @throws InvalidMoleculeException
+     */
+    public void drawSVDAxes() throws InvalidMoleculeException {
+        System.out.println("add SVD axes");
+        molViewer.deleteItems("delete", "svdaxes");
+        molViewer.addAxes(0, 0.3, "svdaxes " + getIndex(), "svd");
+    }
+    
+    /**
+     * Draws the rotated axes from an RDC calculation.
+     * 
+     * @throws InvalidMoleculeException
+     */
+    public void drawRDCAxes() throws InvalidMoleculeException {
+        System.out.println("add RDC axes");
+        molViewer.deleteItems("delete", "rdcaxes");
+        molViewer.addAxes(0, 0.3, "rdcaxes " + getIndex(), "rdc");
+    }
+    
+    public void rotateMoleculeRDC() throws InvalidMoleculeException {
+        System.out.println("rotate molecule to RDC axes");
+        molViewer.resetTransform();
+        molViewer.rotateSVDRDC("rdc");
+    }
+
+    public void rotateMoleculeSVD() throws InvalidMoleculeException {
+        System.out.println("rotate molecule to SVD axes");
+        molViewer.resetTransform();
+        molViewer.rotateSVDRDC("svd");
+    }
 
     public void removeAll() {
         molViewer.deleteItems("delete", "all");
