@@ -86,6 +86,8 @@ public class SpectrumMenu extends ChartMenu {
         baselineMenu.getItems().add(clearBaselineItem);
         baselineMenu.getItems().add(clearAllBaselineItem);
         Menu peakMenu = new Menu("Peaks");
+        Menu peakFitMenu = new Menu("Fit");
+        Menu peakClusterMenu = new Menu("Cluster");
 
         MenuItem inspectPeakItem = new MenuItem("Inspect Peak");
         inspectPeakItem.setOnAction((ActionEvent e) -> {
@@ -112,23 +114,50 @@ public class SpectrumMenu extends ChartMenu {
         });
         peakMenu.getItems().add(tweakListItem);
 
+        peakMenu.getItems().add(peakFitMenu);
+        peakMenu.getItems().add(peakClusterMenu);
+
         MenuItem fitItem = new MenuItem("Fit Selected");
         fitItem.setOnAction((ActionEvent e) -> {
             chart.fitPeaks(false);
         });
-        peakMenu.getItems().add(fitItem);
+        peakFitMenu.getItems().add(fitItem);
 
         MenuItem fitListItem = new MenuItem("Fit All Peaks");
         fitListItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists();
+            chart.fitPeakLists(-1);
         });
-        peakMenu.getItems().add(fitListItem);
+        peakFitMenu.getItems().add(fitListItem);
 
         MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
         fitLSItem.setOnAction((ActionEvent e) -> {
             PeakPicking.peakPickActive(chart.getController(), true);
         });
-        peakMenu.getItems().add(fitLSItem);
+        peakFitMenu.getItems().add(fitLSItem);
+
+        MenuItem fitColumnItem = new MenuItem("Fit Clustered Column");
+        fitColumnItem.setOnAction((ActionEvent e) -> {
+            chart.fitPeakLists(0);
+        });
+        peakFitMenu.getItems().add(fitColumnItem);
+
+        MenuItem fitRowItem = new MenuItem("Fit Clustered Row");
+        fitRowItem.setOnAction((ActionEvent e) -> {
+            chart.fitPeakLists(1);
+        });
+        peakFitMenu.getItems().add(fitRowItem);
+        
+        MenuItem clusterRowItem = new MenuItem("Cluster Row");
+        clusterRowItem.setOnAction((ActionEvent e) -> {
+            chart.clusterPeakLists(1);
+        });
+        peakClusterMenu.getItems().add(clusterRowItem);
+
+        MenuItem clusterColumnItem = new MenuItem("Cluster Column");
+        clusterColumnItem.setOnAction((ActionEvent e) -> {
+            chart.clusterPeakLists(0);
+        });
+        peakClusterMenu.getItems().add(clusterColumnItem);
 
         Menu refMenu = new Menu("Reference");
 

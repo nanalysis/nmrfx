@@ -1329,9 +1329,9 @@ public class DrawPeaks {
                         if ((shiftX > edge1) && (shiftX < edge2)) {
                             minX = Math.min(shiftX, minX);
                             maxX = Math.max(shiftX, maxX);
+                            sumY += shiftY;
+                            nY++;
                         }
-                        sumY += shiftY;
-                        nY++;
                     }
                 }
                 double posY = yAxis.getDisplayPosition(sumY / nY);
@@ -1368,9 +1368,9 @@ public class DrawPeaks {
                         if ((shiftY > edge1) && (shiftY < edge2)) {
                             minY = Math.min(shiftY, minY);
                             maxY = Math.max(shiftY, maxY);
+                            sumX += shiftX;
+                            nX++;
                         }
-                        sumX += shiftX;
-                        nX++;
                     }
                 }
                 double y1 = yAxis.getDisplayPosition(minY);
