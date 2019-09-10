@@ -345,8 +345,8 @@ public class AnalystApp extends MainApp {
         atomsMenuItem.setOnAction(e -> showAtoms(e));
 
         MenuItem molMenuItem = new MenuItem("Viewer");
-        molMenuItem.setOnAction(e -> showMols(e));
-        
+        molMenuItem.setOnAction(e -> showMols());
+
         MenuItem rdcMenuItem = new MenuItem("RDC Analysis...");
         rdcMenuItem.setOnAction(e -> showRDCGUI());
 
@@ -619,12 +619,13 @@ public class AnalystApp extends MainApp {
     }
 
     @FXML
-    private void showMols(ActionEvent event) {
+    private void showMols() {
         if (molController == null) {
             molController = MolSceneController.create();
         }
         if (molController != null) {
             molController.getStage().show();
+            molController.getStage().toFront();
         } else {
             System.out.println("Coudn't make molController");
         }
@@ -850,7 +851,7 @@ public class AnalystApp extends MainApp {
                         rdcGUI.setChoice.getItems().addAll(RDCConstraintSet.getNames());
                         rdcGUI.setChoice.setValue(rdcGUI.setChoice.getItems().get(0));
                     }
-                    
+
                 }
             } catch (ParseException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
@@ -907,6 +908,7 @@ public class AnalystApp extends MainApp {
                     default:
                         break;
                 }
+                showMols();
             } catch (MoleculeIOException ioE) {
                 ExceptionDialog dialog = new ExceptionDialog(ioE);
                 dialog.showAndWait();
@@ -917,7 +919,7 @@ public class AnalystApp extends MainApp {
             }
         }
     }
-        
+
     void showRDCGUI() {
         if (rdcGUI == null) {
             rdcGUI = new RDCGUI(this);
