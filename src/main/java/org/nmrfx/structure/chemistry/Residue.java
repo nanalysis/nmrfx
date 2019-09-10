@@ -584,7 +584,7 @@ public class Residue extends Compound {
             newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
         }
     }
-    
+
     public boolean watsonCrickPair(Residue residue) {
         boolean result = false;
         if (name.equals("A") && residue.getName().equals("U")) {
