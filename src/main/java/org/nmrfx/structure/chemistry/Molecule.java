@@ -41,6 +41,8 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -1881,11 +1883,19 @@ public class Molecule implements Serializable, ITree {
 
     public RealMatrix getSVDRotationMatrix() {
         Point3 pt;
+        double[] c = new double[3];
+        try {
+            c = getCenter(0);
+        } catch (MissingCoordinatesException ex) {
+        }
         List<double[]> molecCoords = new ArrayList<>();
         for (Atom atom : atoms) {
             pt = atom.getPoint();
             if (pt != null) {
                 double[] aCoords = pt.toArray();
+                for (int i=0;i<aCoords.length;i++) {
+                    aCoords[i] -= c[i];
+                }
                 molecCoords.add(aCoords);
             }
         }
@@ -1896,6 +1906,20 @@ public class Molecule implements Serializable, ITree {
         RealMatrix mCoordsR = new Array2DRowRealMatrix(mCoords1);
         SingularValueDecomposition svd = new SingularValueDecomposition(mCoordsR);
         RealMatrix rotMat = svd.getVT();
+        RealMatrix uMat = svd.getU();
+        RealMatrix sMat = svd.getS();
+        double[] s = svd.getSingularValues();
+        double maxX = 0.0;
+        for (int i=0;i<uMat.getRowDimension();i++) {
+            double x = Math.abs(uMat.getEntry(i, 0));
+            if (x > maxX) {
+                maxX = x;
+            }
+        }
+        for (int i=0;i<s.length;i++) {
+            sMat.setEntry(i, i, sMat.getEntry(i,i)*maxX);
+        }
+        rotMat = rotMat.preMultiply(sMat);
         return rotMat;
     }
 
