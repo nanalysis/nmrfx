@@ -30,7 +30,9 @@ import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
@@ -475,7 +477,7 @@ public class MolViewer extends Pane {
 
     /**
      * Adds a box around the molecule.
-     * 
+     *
      * @param iStructure int Structure number
      * @param radius double Radius of cylinder in plot
      * @param tag String Tag applied to every associated object
@@ -493,11 +495,11 @@ public class MolViewer extends Pane {
             double[][] begin = new double[factors.length][3];
             double[][] end = new double[factors.length][3];
             double[][] diffs = new double[factors.length][3];
-            for (int i=0; i<begin.length; i++) {
-                for (int j=0; j<3; j++) {
-                    begin[i][j] = corner[j]*factors[i][j];
+            for (int i = 0; i < begin.length; i++) {
+                for (int j = 0; j < 3; j++) {
+                    begin[i][j] = corner[j] * factors[i][j];
                     end[i][j] = begin[i][j];
-                    diffs[i][j] = 2*corner[j]*factors[i][j];
+                    diffs[i][j] = 2 * corner[j] * factors[i][j];
                 }
             }
             for (int i = 0; i < begin.length; i++) {
@@ -511,10 +513,11 @@ public class MolViewer extends Pane {
         } catch (MissingCoordinatesException ex) {
         }
     }
-    
+
     /**
-     * Adds molecular axes. Can be the original axes, or axes rotated based on SVD or RDC calculations.
-     * 
+     * Adds molecular axes. Can be the original axes, or axes rotated based on
+     * SVD or RDC calculations.
+     *
      * @param iStructure int Structure number
      * @param radius double Radius of cylinder in plot
      * @param tag String Tag applied to every associated object
@@ -527,40 +530,53 @@ public class MolViewer extends Pane {
             return;
         }
         try {
-            Vector3D corner = mol.getCorner(iStructure);
-            double[] begin = corner.toArray();//{0,0,0}
-            double[][] endPts = {{10,0,0}, {0,10,0}, {0,0,10}};
-            Color[] colors = {Color.CORAL, Color.LIGHTGREEN, Color.LIGHTBLUE};
+            double[] center = mol.getCenter(iStructure);
+            RealVector centerVec = new ArrayRealVector(center);
+            double[][] endPts = {{1.0, 0, 0}, {0, 1.0, 0}, {0, 0, 1.0}};
+            Color[] colors = new Color[3];
             RealMatrix axes = new Array2DRowRealMatrix(endPts);
+            RealMatrix svdAxes = mol.calcSVDAxes(endPts);
+            double scale = 10.0;
+
             if (type.equals("rdc")) {
                 System.out.println("add RDC axes");
                 axes = mol.getRDCAxes(endPts);
+                colors[0] = Color.CORAL;
+                colors[1] = Color.LIGHTGREEN;
+                colors[2] = Color.LIGHTBLUE;
+
             } else if (type.equals("svd")) {
                 System.out.println("add SVD axes");
+                axes = svdAxes;
+                scale = 2.0;
                 colors[0] = Color.MAGENTA;
                 colors[1] = Color.SEAGREEN;
                 colors[2] = Color.CYAN;
-                axes = mol.calcSVDAxes(endPts);
             } else {
                 System.out.println("add original axes");
                 colors[0] = Color.RED;
                 colors[1] = Color.GREEN;
                 colors[2] = Color.BLUE;
             }
-            double[][] end = axes.getData();//{center[0], center[1], center[2]};//new double[3];
-            double[][] endTrans = new double[3][3];
+
+            RealVector originVec = new ArrayRealVector(centerVec);
+
             for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    endTrans[i][j] = end[i][j] + corner.toArray()[j];
-                }
-                MolCylinder cyl = new MolCylinder(begin, endTrans[i], radius, colors[i], tag);
+                originVec = originVec.subtract(svdAxes.getRowVector(i));
+            }
+            for (int i = 0; i < 3; i++) {
+                RealVector endVector = new ArrayRealVector(originVec);
+                endVector = endVector.add(axes.getRowVector(i).mapMultiply(scale));
+                MolCylinder cyl = new MolCylinder(originVec.toArray(),
+                        endVector.toArray(), radius, colors[i], tag);
                 molGroup.getChildren().add(cyl);
             }
+
         } catch (MissingCoordinatesException ex) {
         }
     }
-    
-     public void rotateSVDRDC(String type) {
+
+    public void rotateSVDRDC(String type) {
         Molecule mol = Molecule.getActive();
         if (mol == null) {
             return;
@@ -583,7 +599,6 @@ public class MolViewer extends Pane {
         rotTransform.setToTransform(mxx, mxy, mxz, 0.0, myx, myy, myz, 0.0, mzx, mzy, mzz, 0.0);
         updateView();
     }
-
 
     public void addTube(int iStructure, double sphereRadius, String tag) throws InvalidMoleculeException {
         Molecule mol = Molecule.getActive();
@@ -679,7 +694,7 @@ public class MolViewer extends Pane {
 
     public void resetTransform() {
         rotTransform.setToIdentity();
-        rotTransform.appendRotation(180.0, 0.0,0.0,0.0, new Point3D(1.0, 0.0, 0.0));
+        rotTransform.appendRotation(180.0, 0.0, 0.0, 0.0, new Point3D(1.0, 0.0, 0.0));
         updateView();
         camera.setTranslateZ(-cameraDistance);
         updateView();
@@ -698,7 +713,7 @@ public class MolViewer extends Pane {
         rotTransform.prependRotation(delta, 0.0, 0.0, 0.0, dy, -dx, 0.0);
         updateView();
     }
-    
+
     void updateView() {
         Affine affine2 = new Affine();
         affine2.appendTranslation(center[0], center[1], center[2]);
