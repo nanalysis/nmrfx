@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.Observable;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -104,13 +106,15 @@ public class RDCGUI {
             }
 
             ToolBar toolBar = new ToolBar();
+            Button openButton = new Button("Read");
             Button rdcButton = new Button("Perform RDC Analysis");
             Button saveButton = new Button("Save Results to File");
             Button exportButton = new Button("Export Plot");
             Label pdbLabel = new Label("  PDB File: ");
             Label bmrbLabel = new Label("  BMRB File: ");
-            toolBar.getItems().addAll(rdcButton, saveButton, exportButton);//, bmrbLabel, bmrbFile, pdbLabel, pdbFile);
+            toolBar.getItems().addAll(openButton, rdcButton, saveButton, exportButton);//, bmrbLabel, bmrbFile, pdbLabel, pdbFile);
 
+            openButton.setOnAction(e -> loadRDCTextFile());
             rdcButton.setOnAction(e -> analyze());
             saveButton.setOnAction(e -> saveToFile());
             exportButton.setOnAction(e -> exportPlotSVGAction(e));
@@ -157,8 +161,8 @@ public class RDCGUI {
             activeChart.setShowLegend(false);
 
             if ((xElem != null)) {
-                xAxis.setLabel("BMRB RDC");
-                yAxis.setLabel("SVD RDC");
+                xAxis.setLabel("Experimental RDCs");
+                yAxis.setLabel("Calculated RDCs");
                 xAxis.setZeroIncluded(true);
                 yAxis.setZeroIncluded(true);
                 xAxis.setAutoRanging(true);
@@ -175,7 +179,7 @@ public class RDCGUI {
                         }
                         series0.getData().sort(Comparator.comparing(XYValue::getXValue));
                         long lb = Math.round(series0.getData().get(0).getXValue());
-                        long ub = Math.round(series0.getData().get(series0.getData().size()-1).getXValue());
+                        long ub = Math.round(series0.getData().get(series0.getData().size() - 1).getXValue());
                         series1.getData().add(new XYValue(lb, lb));
                         series1.getData().add(new XYValue(ub, ub));
                     }
@@ -198,7 +202,7 @@ public class RDCGUI {
     }
 
     @FXML
-    void analyze() {      
+    void analyze() {
         String name = setChoice.getValue();
         rdcSet = RDCConstraintSet.getSet(name);
         if (rdcSet != null) {
@@ -208,8 +212,15 @@ public class RDCGUI {
 //                alert.showAndWait();
 //                return;
 //            }
-                
+            System.out.println("nrdcs " + rdcSet.getSize());
+
             svdResults = OrderSVD.calcRDCs(rdcSet, true, false, null);
+            if (svdResults == null) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("SVD Analysis failed");
+                alert.showAndWait();
+                return;
+            }
             svdResults.setRDCset(rdcSet);
 
             double qRMS = svdResults.getQ();
@@ -233,7 +244,7 @@ public class RDCGUI {
         }
 
     }
-    
+
     void saveToFile() {
         try {
             FileChooser chooser = new FileChooser();
@@ -245,7 +256,7 @@ public class RDCGUI {
             dialog.showAndWait();
         }
     }
-        
+
     @FXML
     void exportPlotSVGAction(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
@@ -269,6 +280,28 @@ public class RDCGUI {
     protected void exportChart(SVGGraphicsContext svgGC) throws GraphicsIOException {
         svgGC.beginPath();
         activeChart.drawChart(svgGC);
+    }
+
+    void loadRDCTextFile() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Load RDC Text File");
+        File file = chooser.showOpenDialog(null);
+        if (file != null) {
+            String setName = file.getName();
+            setName = setName.substring(0, setName.indexOf("."));
+            rdcSet = RDCConstraintSet.addSet(setName);
+            try {
+                rdcSet.readInputFile(file);
+            } catch (IOException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Error: file read error: " + ex.getMessage());
+                alert.showAndWait();
+                return;
+            }
+            updateRDCPlotChoices();
+            setChoice.setValue(setName);
+        }
+
     }
 
 }
