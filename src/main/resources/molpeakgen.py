@@ -120,6 +120,7 @@ class MolPeakGen:
     widthC = 0.4
     residueInterMap = {}
     minInst = 10
+    maxDist = 5.0
     basePairsMap = {}
 
     def __init__(self, mol = None):
@@ -388,7 +389,7 @@ class MolPeakGen:
                         #    if atom1 > atom2:
                         #        atom1, atom2 = (atom2, atom1)
                         #print keyR, distance, nInst
-                        if nInst > cls.minInst:
+                        if distance < cls.maxDist and nInst > cls.minInst:
                             key = (interType, res1, res2)
                             if key not in cls.residueInterMap:
                                 cls.residueInterMap[key] = {(atom1, atom2) : distance}
