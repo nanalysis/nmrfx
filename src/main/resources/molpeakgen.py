@@ -74,9 +74,9 @@ def determineType(aResObj, bResObj, pairs={}):
         bothInHelix = (hasBP(rn1) and hasBP(rn2)) # both are in a helix
         loopAndHelix = (hasBP(rn1) and not hasBP(rn2)) or (hasBP(rn2) and not hasBP(rn1)) # one res in loop, other in helix
         prevExist = lambda rObj: (rObj.previous is not None)
-        nxtExist = lambda rObj: (rObj.next is not None)
+        #nxtExist = lambda rObj: (rObj.next is not None)
         prev = lambda rObj: (rObj.previous.getPropertyObject("resRNAInd") if prevExist(rObj) else None) 
-        nxt = lambda rObj: (rObj.next.getPropertyObject("resRNAInd") if nxtExist(rObj) else None)
+        #nxt = lambda rObj: (rObj.next.getPropertyObject("resRNAInd") if nxtExist(rObj) else None)
         loop = classR1 if (not sameRes and bothInLoop) else None
         inSameLoop = (bothInLoop and rn1 < rn2 and all([(True if pairs.get(key)==-1 else False) for key in pairs.keys() if key >= rn1 and key <= rn2]))
         loopHelixInter = lambda c: (classR1==c or classR2==c) if loopAndHelix else False
@@ -324,8 +324,8 @@ class MolPeakGen:
         if cls.residueInterMap: # not empty
             return cls.residueInterMap
         else:
-            csvFile = molio.loadResource("data/res_pair_table.csv")
-            fileList = csvFile.split("\n")
+            txtFile = molio.loadResource("data/res_pair_table.txt")
+            fileList = txtFile.split("\n")
             nFields = 0
             sums = {}
             nVals = {}
@@ -384,9 +384,9 @@ class MolPeakGen:
                         keyR = (interType,atom1,atom2,res1R,res2R)
                         distance = sums[keyR] / nVals[keyR]
                         nInst = nVals[keyR]
-                        if interType[0:2] == "SR":
-                            if atom1 > atom2:
-                                atom1, atom2 = (atom2, atom1)
+                        #if interType[0:2] == "SR":
+                        #    if atom1 > atom2:
+                        #        atom1, atom2 = (atom2, atom1)
                         #print keyR, distance, nInst
                         if nInst > cls.minInst:
                             key = (interType, res1, res2)
@@ -401,8 +401,6 @@ class MolPeakGen:
                             
                     else:
                         print("Evaluate the number of fields in line no. '{}'.".format(iRow+1))
-#            for key in cls.residueInterMap:
-#                print key, cls.residueInterMap[key]
             return cls.residueInterMap
 
     def stringifyAtomPairs(self, aResNum, bResNum, atomDistList=None):
