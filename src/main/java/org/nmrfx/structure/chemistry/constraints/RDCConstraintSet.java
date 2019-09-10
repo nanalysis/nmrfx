@@ -17,10 +17,16 @@
  */
 package org.nmrfx.structure.chemistry.constraints;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.LineNumberReader;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Point3;
 import java.util.*;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.nmrfx.structure.chemistry.Atom;
 
 /**
  *
@@ -211,5 +217,36 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
 
     public void resetWriting() {
         ID = 1;
+    }
+
+    public void readInputFile(File file) throws IOException {
+        constraints.clear();
+        BufferedReader bf = new BufferedReader(new FileReader(file));
+        LineNumberReader lineReader = new LineNumberReader(bf);
+        while (true) {
+            String line = lineReader.readLine();
+            if (line == null) {
+                break;
+            }
+            String sline = line.trim();
+            String[] sfields = sline.split("\t");
+            System.out.println("nfields " + sfields.length);
+            if (sfields.length == 4) {
+                Atom atom1 = Molecule.getAtomByName(sfields[0]);
+                Atom atom2 = Molecule.getAtomByName(sfields[1]);
+                double value = Double.parseDouble(sfields[2]);
+                double err = Double.parseDouble(sfields[3]);
+                RDC rdc = new RDC(this, atom1.getSpatialSet(), atom2.getSpatialSet(), value, err);
+                constraints.add(rdc);
+            } else if (sfields.length == 6) {
+                Atom atom1 = Molecule.getAtomByName(sfields[0] + "." + sfields[1]);
+                Atom atom2 = Molecule.getAtomByName(sfields[2] + "." + sfields[3]);
+                double value = Double.parseDouble(sfields[4]);
+                double err = Double.parseDouble(sfields[5]);
+                RDC rdc = new RDC(this, atom1.getSpatialSet(), atom2.getSpatialSet(), value, err);
+                constraints.add(rdc);
+                System.out.println("add con " + getSize() + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + value);
+            }
+        }
     }
 }
