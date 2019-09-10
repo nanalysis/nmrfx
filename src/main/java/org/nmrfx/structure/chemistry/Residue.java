@@ -37,6 +37,7 @@ public class Residue extends Compound {
     private final static String[] compliantNucleicAcid = {"C5'", "O5'", "P"};
     private String lastBackBoneAtomName = null;
     private String firstBackBoneAtomName = null;
+    public SecondaryStructure ss = null;
 
     static {
         String[] standardResidues = {

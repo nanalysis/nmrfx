@@ -5,6 +5,8 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import java.util.Arrays;
+
 /**
  *
  * @author bajlabuser
@@ -17,5 +19,15 @@ public class BasePair {
         this.res1 = res1;
         this.res2 = res2;
     }
-    
+     @Override
+    public String toString() {
+        return res1.getResNum() + ":" + res2.getResNum();
+    }
+    public boolean isCanonical() {
+        boolean canon = false;
+        if (res1.basePairType(res2) == 1) {
+            canon = true;
+        }
+        return canon;
+    }
 }
