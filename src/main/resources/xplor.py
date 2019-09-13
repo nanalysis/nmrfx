@@ -90,7 +90,7 @@ class XPLOR:
 	# the aforementioned information.
         self.regex = r"\(([^\(\)]*)\)|(or)|(-?[0-9\.]+\s+-?[0-9\.]+\s+-?[0-9\.]+)"
 
-    def addElements(self, captures, resNames):
+    def addElements(self, captures, resNames, ignore):
         ''' Takes in a list of lists. Each internal list has 4 items.
             capture[0] : full information enclosed within parentheses (segment id, residue id, atom name)
             capture[1] : "or"
@@ -131,20 +131,25 @@ class XPLOR:
 
                 try:
                     resName = resNames[resNum]
+                    atomName = AtomParser.xplorToIUPAC(resName, atomName)
+                    item = segId+resNum+"."+atomName
                 except KeyError:
-                    errMsg = "\nPlease review the XPLOR sequence information and/or constraint file [{}].".format(
-                        self.fileName)
-                    errMsg += "\nWe couldn't find residue number '{0}' for residue name '{1}'.".format(resNum,
-                                                                                                       capture[1])
-                    errMsg += "\n\nNote: Make sure the residue number exists in the sequence input file."
-                    raise LookupError(errMsg)
+                    if ignore:
+                        atomName = "dummy"
+                        item = segId+resNum+"."+atomName
+                    else:
+                        errMsg = "\nPlease review the XPLOR sequence information and/or constraint file [{}].".format(
+                            self.fileName)
+                        errMsg += "\nWe couldn't find residue number '{0}' for residue name '{1}'.".format(resNum,
+                                                                                                           capture[1])
+                        errMsg += "\n\nNote: Make sure the residue number exists in the sequence input file."
+                        raise LookupError(errMsg)
 
-                atomName = AtomParser.xplorToIUPAC(resName, atomName)
-                item = segId+resNum+"."+atomName
             else:
                 item = capture[1] if capture[1] else capture[2]
 
-            appending.append(item)
+            if "dummy" not in item:
+                appending.append(item)
         return appending
 
     def parseConstraints(self, constraints, type):
@@ -194,11 +199,13 @@ class XPLOR:
                         else:
                             if atom2 not in self.invalidDistAtomPairs:
                                 self.invalidDistAtomPairs.append(atom2)
-            else:
-                atomPairs = atoms
+                lower, upper = getBounds(constraintValues, type)
+                constraint = {'atomPairs': atomPairs, 'lower': lower, 'upper': upper}
+            elif type == 'rdc':
+                atomPairs = [' '.join([atoms[0], atoms[1]])]
                 constraintValues = constraint[-1]
-            lower, upper = getBounds(constraintValues, type)
-            constraint = {'atomPairs': atomPairs, 'lower': lower, 'upper': upper}
+                rdc, error = float(constraintValues.split()[0]), float(constraintValues.split()[1])
+                constraint = {'atomPairs': atomPairs, 'rdc': rdc, 'err': error}
             constraintDicts.append(constraint)
         return constraintDicts
 
@@ -255,7 +262,7 @@ class XPLOR:
 	else:
 	    return ""
 
-    def parseXPLORFile(self, resNames):
+    def parseXPLORFile(self, resNames, ignore):
         ''' parseXPLORFile parses the xplor file to produce constraint lists
             in the xplor.py internalized format: a series of atoms and "or"
             followed by a final element that stores the bounds in a string with
@@ -277,7 +284,7 @@ class XPLOR:
                     constraints.append(elements)
                 elements = []
             match = pat.findall(self.s)
-            elements += self.addElements(match, resNames)
+            elements += self.addElements(match, resNames, ignore)
         self.f.close()
         return constraints
 
@@ -285,8 +292,37 @@ class XPLOR:
         ''' readXPLORDistanceConstraitns parses an xplor distance file and
             returns a list of dictionaries containing the keys atomPairs, lower,
             and upper. This format is easy to parse in the refine.py code '''
-        constraintInfo = self.parseXPLORFile(resNames)
+        constraintInfo = self.parseXPLORFile(resNames, False)
         constraints = self.parseConstraints(constraintInfo, 'distance')
+	
+	if self.invalidDistAtomPairs:
+	    # XXX: Is this really the best way to write out the error message? Are we taking all possibilities into account
+	    errMsg = "\nPlease evaluate the following XPLOR distance constraints [{}]:\n".format(self.fileName)
+	    strAtom = ""
+	    for atom in self.invalidDistAtomPairs:
+		if len(atom) > 1:
+		    if atom[0] and atom[1]:
+			# case 1: both lists in atoms arent empty
+			strAtom = ', '.join(self._resStringConverter(atom))
+		    else:
+			# case 2: 1 of the 2 lists in atoms isnt empty
+			strAtom = ''.join(self._resStringConverter(atom))
+		else:
+		    # special case: only 1 list (product of ensuring there's no repetition)
+                    strAtom = ''.join(self._resStringConverter(atom))
+		errMsg += "\t- Check invalid atom(s): {}\n".format(strAtom)
+	    raise LookupError(errMsg)
+
+        return constraints
+
+    def readXPLORrdcConstraints(self, resNames):
+        ''' readXPLORRDCConstraitns parses an xplor RDC file and
+            returns a list of dictionaries containing the keys atomPairs, rdc,
+            and err. This format is easy to parse in the refine.py code '''
+        constraintInfo = self.parseXPLORFile(resNames, True)
+        #print constraintInfo
+        constraints = self.parseConstraints(constraintInfo, 'rdc')
+        #print constraints
 	
 	if self.invalidDistAtomPairs:
 	    # XXX: Is this really the best way to write out the error message? Are we taking all possibilities into account
