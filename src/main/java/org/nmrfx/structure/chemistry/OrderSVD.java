@@ -44,6 +44,8 @@ import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.structure.chemistry.constraints.RDC;
+import org.python.core.*;
+import org.python.util.PythonInterpreter;
 
 public class OrderSVD {
 
@@ -1039,60 +1041,48 @@ public class OrderSVD {
      * @throws ParseException
      */
     public static void readRDCs(File file, String type, String rdcSetName) throws IOException, ParseException {
-        ArrayList<String> res1 = new ArrayList<>();
         ArrayList<String> atom1 = new ArrayList<>();
-        ArrayList<String> res2 = new ArrayList<>();
         ArrayList<String> atom2 = new ArrayList<>();
         ArrayList<String> rdc = new ArrayList<>();
         ArrayList<String> err = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                line = line.trim();
-                if (line.length() == 0) {
-                    continue;
-                }
-                if (line.startsWith("#")) {
-                    continue;
-                }      
-                String[] fields = line.split("\\s+");
-                int nFields = fields.length;
-                if (type.equals("xplor") && nFields >= 33) {
-                    res1.add(fields[22]);
-                    rdc.add(fields[nFields-2]);
-                    err.add(fields[nFields-1]);
-                    if (nFields == 33) {
-                        atom1.add(fields[25].substring(0,fields[25].length()-1));
-                        res2.add(fields[27]);
-                        atom2.add(fields[30].substring(0,fields[30].length()-1));
-                    } else if (nFields == 35) {
-                        atom1.add(fields[25]);
-                        res2.add(fields[28]);
-                        atom2.add(fields[31]);
+        if (type.equals("xplor")) {
+            PythonInterpreter interpreter = new PythonInterpreter();
+            interpreter.exec("import refine");
+            interpreter.exec("ref = refine.refine()");
+            interpreter.exec(String.join("", "ref.addRDCFile(\"", file.getAbsolutePath(), "\", mode='xplor', keep=None)"));
+            interpreter.exec("ref.readRDCFiles()");
+        } else if (type.equals("cyana")) {
+            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    line = line.trim();
+                    if (line.length() == 0) {
+                        continue;
                     }
-                } else if (type.equals("cyana")) {
-                    res1.add(fields[0]);
-                    atom1.add(fields[2]);
-                    res2.add(fields[3]);
-                    atom2.add(fields[5]);
+                    if (line.startsWith("#")) {
+                        continue;
+                    }      
+                    String[] fields = line.split("\\s+");
+                    atom1.add(fields[0] + "." + fields[2]);
+                    atom2.add(fields[3] + "." + fields[5]);
                     rdc.add(fields[6]);
                     err.add(fields[7]);
                 }
+                updateRDCSet(atom1, atom2, rdc, err, rdcSetName);
             }
-            updateRDCSet(res1, atom1, rdc, err, rdcSetName);
         }
     } 
     
     /**
      * Updates the RDCSet object with RDCs read from XPLOR or CYANA files.
      * 
-     * @param res1 List of residues for the first atom in the RDC pair.
      * @param atom1 List of atoms for the first atom in the RDC pair.
+     * @param atom2 List of atoms for the second atom in the RDC pair.
      * @param rdc List of XPLOR or CYANA RDC values.
      * @param err List of XPLOR or CYANA RDC error values.
      * @param rdcSetName String of the name of the RDC set.
      */
-    public static void updateRDCSet(List res1, List atom1, List rdc, List err, String rdcSetName) {
+    public static void updateRDCSet(List<String> atom1, List<String> atom2, List<String> rdc, List<String> err, String rdcSetName) {
         RDCConstraintSet rdcSet = RDCConstraintSet.getSet(rdcSetName);
         String[][] setAtoms = new String[2][rdcSet.getSize()];
         for (int i=0; i<rdcSet.getSize(); i++) {
@@ -1101,17 +1091,27 @@ public class OrderSVD {
             setAtoms[0][i] = spSets[0].getFullName().split(":")[1];
             setAtoms[1][i] = spSets[1].getFullName().split(":")[1];
         }
-        for (int i = 0; i < res1.size(); i++) {
-            String newAtom1 = res1.get(i) + "." + atom1.get(i);
+        for (int i = 0; i < atom1.size(); i++) {
+            String newAtom1 = atom1.get(i);
+            String newAtom2 = atom2.get(i);
             int newAtom1Ind = Arrays.asList(setAtoms[0]).indexOf(newAtom1);
             if (newAtom1Ind == -1) {
                 newAtom1Ind = Arrays.asList(setAtoms[1]).indexOf(newAtom1);
             }
-            if (newAtom1Ind >= 0 && newAtom1Ind < rdcSet.getSize()) {
+            if (newAtom1Ind >= 0) {
                 SpatialSet[] spSets1 = rdcSet.get(newAtom1Ind).getSpSets();
-                RDC aCon = new RDC(rdcSet, spSets1[0], spSets1[1], Double.parseDouble(rdc.get(i).toString()), Double.parseDouble(err.get(i).toString()));
+                RDC aCon = new RDC(rdcSet, spSets1[0], spSets1[1], Double.parseDouble(rdc.get(i)), Double.parseDouble(err.get(i)));
                 rdcSet.remove(newAtom1Ind);
                 rdcSet.add(newAtom1Ind, aCon);
+            } else {
+                Atom a1 = Molecule.getAtomByName(newAtom1);
+                Atom a2 = Molecule.getAtomByName(newAtom2);
+                if (a1 != null & a2 != null) {
+                    SpatialSet spSet1 = a1.getSpatialSet();
+                    SpatialSet spSet2 = a2.getSpatialSet();
+                    RDC rdcObj = new RDC(rdcSet, spSet1, spSet2, Double.parseDouble(rdc.get(i)), Double.parseDouble(err.get(i)));
+                    rdcSet.add(rdcObj);
+                }
             }
         }
 //        for (int i=0; i<rdcSet.getSize(); i++) {
