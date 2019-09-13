@@ -37,6 +37,7 @@ public class Residue extends Compound {
     private final static String[] compliantNucleicAcid = {"C5'", "O5'", "P"};
     private String lastBackBoneAtomName = null;
     private String firstBackBoneAtomName = null;
+    public SecondaryStructure ss = null;
 
     static {
         String[] standardResidues = {
@@ -162,8 +163,7 @@ public class Residue extends Compound {
 
     @Override
     public int getIDNum() {
-        polymer.getResidues();
-        return entityID;
+        return iRes + 1;
     }
 
     public void addPseudoAtoms(String pseudoAtomName, ArrayList<String> atomGroup) {
@@ -585,20 +585,50 @@ public class Residue extends Compound {
             newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
         }
     }
-    
-    public boolean watsonCrickPair(Residue residue) {
-        boolean result = false;
-        if (name.equals("A") && residue.getName().equals("U")) {
-            // check atom atom pairs expected for AU
-            result = true;
-            Atom hydrogen1 = getAtom("H61");
-            Atom acceptor1 = residue.getAtom("O4");
-            boolean valid = HydrogenBond.validate(hydrogen1.getSpatialSet(), acceptor1.getSpatialSet(), 0);
-            if (!valid) {
-                result = false;
+
+    public int basePairType(Residue residue) {
+        int bpcount = 0;
+        boolean valid = false;
+        List<AllBasePairs> basePairs = AllBasePairs.basePairList();
+        for (AllBasePairs bp : basePairs) {
+            if (name.equals(bp.res1) && residue.getName().equals(bp.res2)) {
+                bpcount = 0;
+                for (int iPair = 0; iPair < bp.atomPairs.length; iPair++) {
+                    String[] atoms = bp.atomPairs[iPair].split(":");
+                    String[] atoms0 = atoms[0].split("/");
+                    String[] atoms1 = atoms[1].split("/");
+                    for (String atom0 : atoms0) {
+                        for (String atom1 : atoms1) {
+                            Atom atom11 = getAtom(atom0);
+                            Atom atom22 = residue.getAtom(atom1);
+
+                            if (atom0.contains("H")) {
+                                valid = HydrogenBond.validateRNA(atom11.getSpatialSet(), atom22.getSpatialSet(), 0);
+//                                if (!valid){
+//                                    System.out.print(atom11.getName() + "  "+ atom11.getResidueName() + atom22.getName() + "  "+ atom22.getResidueName());
+//                                }
+
+                            } else if (atom1.contains("H")) {
+                                valid = HydrogenBond.validateRNA(atom22.getSpatialSet(), atom11.getSpatialSet(), 0);
+
+                            }
+                            if (valid) {
+                                bpcount++;
+                            }
+
+                        }
+                    }
+                }
+                if (bpcount == bp.atomPairs.length) {
+                    /*residueB.pairedTo = this
+                      this.pairedTo = residueB*/
+                    return bp.type;
+                }
+
             }
 
         }
-        return result;
+        return 0;
+
     }
 }
