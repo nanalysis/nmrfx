@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import java.io.BufferedReader;
@@ -31,6 +30,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.geometry.euclidean.threed.NotARotationMatrixException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
@@ -46,15 +46,16 @@ import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.structure.chemistry.constraints.RDC;
 
 public class OrderSVD {
-    
+
     static double mu0 = 4.0e-7 * Math.PI;
     static double hbar = 1.054e-34;
-    static double preFactor = -(mu0*hbar)/(4*(Math.PI*Math.PI));
-    static HashMap<String, Double> maxRDCDict = new HashMap<>(); 
+    static double preFactor = -(mu0 * hbar) / (4 * (Math.PI * Math.PI));
+    static HashMap<String, Double> maxRDCDict = new HashMap<>();
     static HashMap<String, Double> gammaIDict = new HashMap();
     static HashMap<String, Double> gammaSDict = new HashMap();
-    
-    static {maxRDCDict.put("HN", 24350.0);
+
+    static {
+        maxRDCDict.put("HN", 24350.0);
         maxRDCDict.put("HC", -60400.0);
         maxRDCDict.put("HH", -240200.0);
         maxRDCDict.put("CN", 6125.0);
@@ -67,12 +68,13 @@ public class OrderSVD {
         gammaIDict.put("H", 2.68e8);
         gammaSDict.put("N", -2.71e7);
         gammaSDict.put("C", 6.73e7);
-        gammaSDict.put("H", 2.68e8);}
-    
+        gammaSDict.put("H", 2.68e8);
+    }
+
     static double gammaH = 2.68e8;
     static double gammaN = -2.71e7;
-    static double scaleHN = (gammaH*gammaN)/((1.0e-10)*(1.0e-10)*(1.0e-10));
-    
+    static double scaleHN = (gammaH * gammaN) / ((1.0e-10) * (1.0e-10) * (1.0e-10));
+
     RealMatrix AR;
     ArrayRealVector bVec;
     ArrayRealVector bVecUnNorm;
@@ -90,8 +92,9 @@ public class OrderSVD {
     RDCConstraintSet rdcSet;
 
     /**
-     * This function calculates residual dipolar couplings. Based on orderten_svd_dipole.c
-     * 
+     * This function calculates residual dipolar couplings. Based on
+     * orderten_svd_dipole.c
+     *
      * @param vectors List of bond vectors
      * @param dc List of unnormalized experimental dipolar couplings
      * @param maxRDC List of maximum static dipolar coupling values (r^(-3))
@@ -117,7 +120,7 @@ public class OrderSVD {
             A[iRow][4] = 2 * dcosY * dcosZ; //2 * ddcosY * ddcosZ;
             iRow++;
         }
-        
+
         AR = new Array2DRowRealMatrix(A);
 //        System.out.println("A = " + AR.toString());
         // perform SVD on the matrix A
@@ -125,8 +128,8 @@ public class OrderSVD {
         // construct the b vector, which contains the normalized dipolar couplings 
         double[] dcNorm = new double[dc.size()];
         double[] dcUnNorm = new double[dc.size()];
-        for (int i=0; i<dcNorm.length; i++) {
-            dcNorm[i] = dc.get(i)/maxRDC[i];
+        for (int i = 0; i < dcNorm.length; i++) {
+            dcNorm[i] = dc.get(i) / maxRDC[i];
             dcUnNorm[i] = dc.get(i);
         }
         bVec = new ArrayRealVector(dcNorm);
@@ -151,8 +154,8 @@ public class OrderSVD {
             S[2][1] = xVec.getEntry(4);
             S[2][2] = xVec.getEntry(1);
 
-            if ((S[0][0] >= -0.5 && S[0][0] <= 1.0) && (S[1][1] >= -0.5 && S[1][1] <= 1.0) && (S[2][2] >= -0.5 && S[2][2] <= 1.0) && 
-                (S[1][0] >= -0.75 && S[1][0] <= 0.75) && (S[2][0] >= -0.75 && S[2][0] <= 0.75) && (S[2][1] >= -0.75 && S[2][1] <= 0.75)) {
+            if ((S[0][0] >= -0.5 && S[0][0] <= 1.0) && (S[1][1] >= -0.5 && S[1][1] <= 1.0) && (S[2][2] >= -0.5 && S[2][2] <= 1.0)
+                    && (S[1][0] >= -0.75 && S[1][0] <= 0.75) && (S[2][0] >= -0.75 && S[2][0] <= 0.75) && (S[2][1] >= -0.75 && S[2][1] <= 0.75)) {
                 SR = new Array2DRowRealMatrix(S);
                 eig = new EigenDecomposition(SR);
                 System.out.println("eig decomp getV = " + eig.getV().toString());
@@ -167,24 +170,24 @@ public class OrderSVD {
                     System.out.println("S = " + SR.toString());
                     System.out.println("Seig = " + Sdiag.toString());
                     System.out.println("Sz'z' = " + Szz);
-                    System.out.println("eta = " + (Syy - Sxx)/Szz);
-                    double axial = 0.333*(Szz - (Sxx + Syy)/2);
-                    double rhombic = 0.333*(Sxx - Syy);
+                    System.out.println("eta = " + (Syy - Sxx) / Szz);
+                    double axial = 0.333 * (Szz - (Sxx + Syy) / 2);
+                    double rhombic = 0.333 * (Sxx - Syy);
                     System.out.println("alignment tensor axial component = " + axial);
                     System.out.println("alignment tensor rhombic component = " + rhombic);
-                    System.out.println("rhombicity = " + rhombic/axial);
+                    System.out.println("rhombicity = " + rhombic / axial);
                     break;
                 } else {
-                    for (int i=0; i<error.size(); i++) {
-                        rand[i] = random.nextGaussian()*error.get(i)+dcNorm[i];
+                    for (int i = 0; i < error.size(); i++) {
+                        rand[i] = random.nextGaussian() * error.get(i) + dcNorm[i];
                     }
                     ArrayRealVector randVec = new ArrayRealVector(rand);
                     bVec = randVec;
                     cycle++;
                 }
             } else {
-                for (int i=0; i<error.size(); i++) {
-                    rand[i] = random.nextGaussian()*error.get(i)+dcNorm[i];
+                for (int i = 0; i < error.size(); i++) {
+                    rand[i] = random.nextGaussian() * error.get(i) + dcNorm[i];
                 }
                 ArrayRealVector randVec = new ArrayRealVector(rand);
                 bVec = randVec;
@@ -192,12 +195,14 @@ public class OrderSVD {
             }
         }
     }
-    
+
     /**
-     * Reads input files that are formatted in the same way as example.inp. Example file located in orderten_svd_dipole.c
-     * 
+     * Reads input files that are formatted in the same way as example.inp.
+     * Example file located in orderten_svd_dipole.c
+     *
      * @param file String of the name of the file.
-     * @return List of Lists of vectors, unnormalized RDC values, maxRDC values, error values, atom names, and XYZ coordinates for both atoms. 
+     * @return List of Lists of vectors, unnormalized RDC values, maxRDC values,
+     * error values, atom names, and XYZ coordinates for both atoms.
      */
     public static List readInputFile(String file) {
         ArrayList<Vector3D> vectors = new ArrayList<>();
@@ -207,7 +212,7 @@ public class OrderSVD {
         ArrayList<String> atoms = new ArrayList<>();
         ArrayList<Double[]> a1Coords = new ArrayList<>();
         ArrayList<Double[]> a2Coords = new ArrayList<>();
-        
+
         try {
             BufferedReader bf = new BufferedReader(new FileReader(file));
             LineNumberReader lineReader = new LineNumberReader(bf);
@@ -243,7 +248,7 @@ public class OrderSVD {
             System.err.println(ioe.getMessage());
             ioe.printStackTrace();
         }
-        
+
         List info = new ArrayList<>();
         info.add(0, vectors);
         info.add(1, dc);
@@ -252,231 +257,248 @@ public class OrderSVD {
         info.add(4, atoms);
         info.add(5, a1Coords);
         info.add(6, a2Coords);
-        
+
         return info;
     }
-    
+
     /**
      * Returns the A matrix used in the SVD.
-     * 
-     * @return RealMatrix A matrix containing the direction cosines used the SVD: Ax = b.
+     *
+     * @return RealMatrix A matrix containing the direction cosines used the
+     * SVD: Ax = b.
      */
     public RealMatrix getAMatrix() {
         return AR;
     }
-    
+
     /**
      * Returns the b vector used in the SVD.
-     * 
-     * @return ArrayRealVector b vector containing the normalized experimental RDC values used to solve for x in the SVD: Ax = b.
+     *
+     * @return ArrayRealVector b vector containing the normalized experimental
+     * RDC values used to solve for x in the SVD: Ax = b.
      */
     public ArrayRealVector getBVector() {
         return bVec;
     }
-    
+
     /**
      * Returns the unnormalized experimental RDC value vector.
-     * 
-     * @return ArrayRealVector b vector containing the unnormalized experimental RDC values.
+     *
+     * @return ArrayRealVector b vector containing the unnormalized experimental
+     * RDC values.
      */
     public ArrayRealVector getBUnNormVector() {
         return bVecUnNorm;
     }
-    
+
     /**
      * Returns the x vector solved for in the SVD.
-     * 
-     * @return RealVector x solved for in the SVD using the direction cosine A matrix and the normalized experimental RDC b vector: Ax = b.
+     *
+     * @return RealVector x solved for in the SVD using the direction cosine A
+     * matrix and the normalized experimental RDC b vector: Ax = b.
      */
     public RealVector getXVector() {
         return xVec;
     }
-    
+
     /**
      * Returns the order matrix S.
-     * 
+     *
      * @return RealMatrix 3x3 order matrix S.
      */
     public RealMatrix getSMatrix() {
         return SR;
     }
-    
+
     /**
      * Returns the diagonalized order matrix S.
-     * 
+     *
      * @return RealMatrix Diagonalized 3x3 order matrix S.
      */
     public RealMatrix getSDiag() {
         return Sdiag;
     }
-    
+
     /**
      * Returns the Szz element of the diagonalized order matrix S.
-     * 
+     *
      * @return double Sz'z' element of the diagonalized order matrix S.
      */
     public double getSzz() {
         return Sdiag.getEntry(2, 2);
     }
-    
+
     /**
      * Returns the Syy element of the diagonalized order matrix S.
-     * 
+     *
      * @return double Sy'y' element of the diagonalized order matrix S.
      */
     public double getSyy() {
         return Sdiag.getEntry(1, 1);
     }
-    
+
     /**
      * Returns the Sxx element of the diagonalized order matrix S.
-     * 
+     *
      * @return double Sx'x' element of the diagonalized order matrix S.
      */
     public double getSxx() {
         return Sdiag.getEntry(0, 0);
     }
-    
+
     /**
      * Calculates the eta value.
-     * 
-     * @return double Asymmetry parameter: eta = (Sy'y' - Sx'x')/Sz'z'. S is the diagonalized order matrix.
+     *
+     * @return double Asymmetry parameter: eta = (Sy'y' - Sx'x')/Sz'z'. S is the
+     * diagonalized order matrix.
      */
     public double calcEta() {
-        return (getSyy() - getSxx())/getSzz();
+        return (getSyy() - getSxx()) / getSzz();
     }
-    
+
     /**
      * Calculates the axial component of the diagonalized order matrix S.
-     * 
+     *
      * @return double axial component = (1/3)*(Sz'z' - (Sx'x' + Sy'y')/2)
      */
     public double calcSAxial() {
 //        double axial = 0.333*(getSzz() - (getSxx() + getSyy())/2); //from J. Am. Chem. Soc., Vol. 121, No. 39, 1999
-        double axial = 0.5*(getSzz()); //from PALES article: NATURE PROTOCOLS|VOL.3 NO.4|2008
+        double axial = 0.5 * (getSzz()); //from PALES article: NATURE PROTOCOLS|VOL.3 NO.4|2008
         return axial;
     }
-    
+
     /**
      * Calculates the rhombic component of the diagonalized order matrix S.
-     * 
+     *
      * @return double rhombic component = (1/3)*(Sx'x' - Sy'y')
      */
     public double calcSRhombic() {
-        double rhombic = 0.333*(getSxx() - getSyy());
+        double rhombic = 0.333 * (getSxx() - getSyy());
         return rhombic;
     }
-    
+
     /**
      * Calculates the rhombicity of the diagonalized order matrix S.
-     * 
-     * @return double rhombicity = (rhombic component of S)/(axial component of S).
+     *
+     * @return double rhombicity = (rhombic component of S)/(axial component of
+     * S).
      */
     public double calcRhombicity() {
-        return calcSRhombic()/calcSAxial();
+        return calcSRhombic() / calcSAxial();
     }
-    
+
     /**
      * Calculates the magnitude of the diagonalized order matrix S.
-     * 
-     * @return double magnitude = (1/2)*maxRDCs[index of max(abs(maxRDCs))]*(axial component of S)
+     *
+     * @return double magnitude = (1/2)*maxRDCs[index of
+     * max(abs(maxRDCs))]*(axial component of S)
      */
     public double calcMagnitude() {
         double[] absMaxRDCs = new double[maxRDCs.length];
-        for (int i=0; i<absMaxRDCs.length; i++) {
+        for (int i = 0; i < absMaxRDCs.length; i++) {
             absMaxRDCs[i] = Math.abs(maxRDCs[i]);
         }
         double maxAbsRDC = Arrays.stream(absMaxRDCs).max().getAsDouble();
         int maxIndex = Arrays.stream(absMaxRDCs).boxed().collect(Collectors.toList()).indexOf(maxAbsRDC);
-        
-        return 0.5*maxRDCs[maxIndex]*calcSAxial();
+
+        return 0.5 * maxRDCs[maxIndex] * calcSAxial();
     }
-    
+
     /**
      * Returns the Q (rms) factor.
-     * 
+     *
      * @return double Q (rms) factor.
      */
     public double getQ() {
         return Q;
     }
-    
+
     /**
      * Sets the Q (rms) factor.
-     * 
+     *
      * @param q double Q (rms) factor.
      */
     public void setQ(double q) {
         Q = q;
     }
-    
+
     /**
      * Returns the Q (rhombicity) factor.
-     * 
+     *
      * @return double Q (rhombicity) factor.
      */
     public double getQrhomb() {
         return Qrhomb;
     }
-    
+
     /**
      * Sets the Q (rhombicity) factor.
-     * 
+     *
      * @param q double Q (rhombicity) factor.
      */
     public void setQrhomb(double q) {
         Qrhomb = q;
     }
-    
+
     /**
      * Returns the maximum RDC values associated with different atom types.
-     * 
+     *
      * @return HashMap of the maxRDC values for different atom types.
      */
     public HashMap getMaxRDCDict() {
         return maxRDCDict;
     }
-    
+
     /**
-     * Returns the maximum RDC values used for different pairs of atoms in the molecule.
-     * 
-     * @return double[] Array of the maxRDC values for the atom pairs in the molecule.
+     * Returns the maximum RDC values used for different pairs of atoms in the
+     * molecule.
+     *
+     * @return double[] Array of the maxRDC values for the atom pairs in the
+     * molecule.
      */
     public double[] getMaxRDCs() {
         return maxRDCs;
     }
-    
+
     /**
-     * Sets the maximum RDC values used for different pairs of atoms in the molecule.
-     * 
-     * @param maxRDC double[] Array of the maxRDC values for the atom pairs in the molecule.
+     * Sets the maximum RDC values used for different pairs of atoms in the
+     * molecule.
+     *
+     * @param maxRDC double[] Array of the maxRDC values for the atom pairs in
+     * the molecule.
      */
     public void setMaxRDCs(double[] maxRDC) {
         maxRDCs = maxRDC;
     }
-     
+
     /**
-     * Calculates the normalized RDC values using the A matrix and x vector from the SVD.
-     * 
-     * @return RealVector Normalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     * Calculates the normalized RDC values using the A matrix and x vector from
+     * the SVD.
+     *
+     * @return RealVector Normalized calculated RDC values b vector calculated
+     * using the solved x vector from the SVD: Ax = b.
      */
     public RealVector calcBVectorNorm() {
         return AR.operate(xVec);
     }
-    
+
     /**
-     * Sets the normalized RDC values calculated using the A matrix and x vector from the SVD.
-     * 
-     * @param calcBVecNorm RealVector Normalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     * Sets the normalized RDC values calculated using the A matrix and x vector
+     * from the SVD.
+     *
+     * @param calcBVecNorm RealVector Normalized calculated RDC values b vector
+     * calculated using the solved x vector from the SVD: Ax = b.
      */
     public void setCalcBVectorNorm(RealVector calcBVecNorm) {
         bCalcNorm = calcBVecNorm.toArray();
     }
-    
+
     /**
-     * Calculates the unnormalized RDC values using the A matrix and x vector from the SVD.
-     * 
-     * @return RealVector Unnormalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     * Calculates the unnormalized RDC values using the A matrix and x vector
+     * from the SVD.
+     *
+     * @return RealVector Unnormalized calculated RDC values b vector calculated
+     * using the solved x vector from the SVD: Ax = b.
      */
     public RealVector calcBVector() {
         RealVector calcBVecNorm = calcBVectorNorm();
@@ -484,112 +506,125 @@ public class OrderSVD {
         RealVector calcBVec = calcBVecNorm.ebeMultiply(tValsR);
         return calcBVec;
     }
-    
+
     /**
-     * Sets the unnormalized RDC values calculated using the A matrix and x vector from the SVD.
-     * 
-     * @param calcBVec RealVector Unnormalized calculated RDC values b vector calculated using the solved x vector from the SVD: Ax = b.
+     * Sets the unnormalized RDC values calculated using the A matrix and x
+     * vector from the SVD.
+     *
+     * @param calcBVec RealVector Unnormalized calculated RDC values b vector
+     * calculated using the solved x vector from the SVD: Ax = b.
      */
     public void setCalcBVector(RealVector calcBVec) {
         bCalc = calcBVec.toArray();
     }
-    
+
     /**
-     * Returns the differences between the unnormalized RDC values (calculated - experimental).
-     * 
-     * @return RealVector of the differences between the unnormalized RDC values (calculated b vector - experimental b vector).
+     * Returns the differences between the unnormalized RDC values (calculated -
+     * experimental).
+     *
+     * @return RealVector of the differences between the unnormalized RDC values
+     * (calculated b vector - experimental b vector).
      */
     public RealVector getRDCDiffs() {
-        return dcDiffs; 
+        return dcDiffs;
     }
-    
+
     /**
-     * Sets the differences between the unnormalized RDC values (calculated - experimental).
-     * 
-     * @param rdcDiffs RealVector of the differences between the unnormalized RDC values (calculated b vector - experimental b vector).
+     * Sets the differences between the unnormalized RDC values (calculated -
+     * experimental).
+     *
+     * @param rdcDiffs RealVector of the differences between the unnormalized
+     * RDC values (calculated b vector - experimental b vector).
      */
     public void setRDCDiffs(RealVector rdcDiffs) {
-        dcDiffs = rdcDiffs; 
+        dcDiffs = rdcDiffs;
     }
-    
+
     /**
-     * Returns the normalized RDC values calculated using the A matrix and x vector from the SVD.
-     * 
-     * @return double[] Normalized b (calculated RDC) values calculated using the solved x vector from the SVD: Ax = b.
+     * Returns the normalized RDC values calculated using the A matrix and x
+     * vector from the SVD.
+     *
+     * @return double[] Normalized b (calculated RDC) values calculated using
+     * the solved x vector from the SVD: Ax = b.
      */
     public double[] getCalcBVectorNorm() {
         return bCalcNorm;
     }
-    
+
     /**
-     * Returns the unnormalized RDC values calculated using the A matrix and x vector from the SVD.
-     * 
-     * @return double[] Unnormalized b (calculated RDC) values calculated using the solved x vector from the SVD: Ax = b.
+     * Returns the unnormalized RDC values calculated using the A matrix and x
+     * vector from the SVD.
+     *
+     * @return double[] Unnormalized b (calculated RDC) values calculated using
+     * the solved x vector from the SVD: Ax = b.
      */
     public double[] getCalcBVector() {
         return bCalc;
     }
-    
+
     /**
-     * Returns the Eigenvalue Decomposition used to diagonalize the order matrix S.
-     * 
+     * Returns the Eigenvalue Decomposition used to diagonalize the order matrix
+     * S.
+     *
      * @return
      */
     public EigenDecomposition getEig() {
         return eig;
-    }  
-    
+    }
+
     /**
      * Sets the Euler angles.
-     * 
+     *
      * @param eulerVals
      */
     public void setEulerAngles(double[][] eulerVals) {
         euler = eulerVals;
     }
-    
+
     /**
      * Returns the Euler angles.
-     * 
+     *
      * @return double[][] Arrays of Euler angles.
      */
     public double[][] getEulerAngles() {
         return euler;
     }
-    
+
     /**
      * Sets the RDC constraint set.
-     * 
+     *
      * @param set
      */
     public void setRDCset(RDCConstraintSet set) {
         rdcSet = set;
     }
-    
+
     /**
      * Returns the RDC constraint set.
-     * 
+     *
      * @return
      */
     public RDCConstraintSet getRDCset() {
         return rdcSet;
     }
-    
+
     /**
      * Sets the RDC SVD results of the Molecule object.
-     * 
+     *
      * @param results OrderSVD results object.
      */
     public void setSVDResults(OrderSVD results) {
         Molecule mol = Molecule.getActive();
         mol.setRDCResults(results);
     }
-    
+
     /**
      * Calculates the Euler angles for a rotation about z, y', z''.
-     * 
-     * @param R double[][] Rotation matrix for clockwise rotation about z, y', z''.
-     * @return double[][] Euler angles (alpha, beta, gamma) for the ZYZ rotation.
+     *
+     * @param R double[][] Rotation matrix for clockwise rotation about z, y',
+     * z''.
+     * @return double[][] Euler angles (alpha, beta, gamma) for the ZYZ
+     * rotation.
      */
     public double[][] calcEulerAngles(double[][] R) {
         double Rxz = R[0][2];
@@ -598,26 +633,28 @@ public class OrderSVD {
         double Rzx = R[2][0];
         double Rzy = R[2][1];
 
-        double alpha = Math.atan(Ryz/Rxz);
-        double alpha2 = Math.atan(Ryz/-Rxz);
+        double alpha = Math.atan(Ryz / Rxz);
+        double alpha2 = Math.atan(Ryz / -Rxz);
         double beta = Math.acos(Rzz);
         double beta2 = Math.acos(-Rzz);
-        double gamma = Math.atan(Rzy/-Rzx);
-        
+        double gamma = Math.atan(Rzy / -Rzx);
+
         double[][] euler = {{alpha, beta, gamma}, {alpha2, beta2, gamma}};
-        
+
         return euler;
     }
-    
+
     /**
      * Calculates the vector associated with two atoms in a Molecule object.
-     * 
+     *
      * @param atomName1 String of the name of the first atom of the vector.
      * @param atomName2 String of the name of the second atom of the vector.
-     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[atom1X, atom1Y, atom1Z], [atom2X, atom2Y, atomZ]]
-     * @return Vector3D object that represents the vector associated with the two atoms.
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of
+     * the two atoms: [[atom1X, atom1Y, atom1Z], [atom2X, atom2Y, atomZ]]
+     * @return Vector3D object that represents the vector associated with the
+     * two atoms.
      */
-    public static Vector3D calcVector(String atomName1, String atomName2, List<List<Double>> xyzCoords) {        
+    public static Vector3D calcVector(String atomName1, String atomName2, List<List<Double>> xyzCoords) {
         Point3 v1 = new Point3(0.0, 0.0, 0.0);
         Point3 v2 = new Point3(0.0, 0.0, 0.0);
         if (xyzCoords != null) {
@@ -631,62 +668,71 @@ public class OrderSVD {
                 v2 = atom2.getPoint();
             }
         }
- 
-        double r = Vector3D.distance(v1, v2)*1e-10;
+
+        double r = Vector3D.distance(v1, v2) * 1e-10;
         Vector3D vector = null;
         if (r != 0.0) {
             vector = v1.subtract(v2);
         }
         return vector;
     }
-    
+
     /**
-     * Calculates the maximum RDC value associated with two atoms in a Molecule object.
-     * 
-     * @param vector Vector3D object that represents the vector associated with the two atoms.
+     * Calculates the maximum RDC value associated with two atoms in a Molecule
+     * object.
+     *
+     * @param vector Vector3D object that represents the vector associated with
+     * the two atoms.
      * @param atomName1 String of the name of the first atom of the vector.
      * @param atomName2 String of the name of the second atom of the vector.
-     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
+     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based
+     * on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDC value with the
+     * scaling method used in CYANA.
      * @return double parameter that is the maxRDC value.
      */
     public static double calcMaxRDC(Vector3D vector, String atomName1, String atomName2, boolean calcMaxRDC, boolean scale) {
-        double r = vector.getNorm()*1e-10;
-        
-        String aType1 = atomName1.split("\\.")[1].substring(0,1);
-        String aType2 = atomName2.split("\\.")[1].substring(0,1);
+        double r = vector.getNorm() * 1e-10;
+
+        String aType1 = atomName1.split("\\.")[1].substring(0, 1);
+        String aType2 = atomName2.split("\\.")[1].substring(0, 1);
         double maxRDC = 1.0;
-        if (maxRDCDict.containsKey(aType1+aType2)) {
-            maxRDC = maxRDCDict.get(aType1+aType2);
-        } 
+        if (maxRDCDict.containsKey(aType1 + aType2)) {
+            maxRDC = maxRDCDict.get(aType1 + aType2);
+        }
         double gammaI = gammaIDict.get(aType1);
         double gammaS = gammaSDict.get(aType2);
         if (r != 0) {
             if (calcMaxRDC) {
-                maxRDC = preFactor*((gammaI*gammaS)/(r*r*r));
+                maxRDC = preFactor * ((gammaI * gammaS) / (r * r * r));
             } else if (scale) {
-                maxRDC = 24350.0*(gammaI*gammaS)/((r*r*r)*scaleHN);
+                maxRDC = 24350.0 * (gammaI * gammaS) / ((r * r * r) * scaleHN);
             }
         }
         return maxRDC;
     }
-    
+
     /**
      * Performs an Order SVD calculation to calculate molecular RDCs.
-     * 
-     * @param atomPairs List of List of Strings of atom name pairs: [[atom 1 name, atom 2 name], [atom 1 name, atom 2 name]...]
+     *
+     * @param atomPairs List of List of Strings of atom name pairs: [[atom 1
+     * name, atom 2 name], [atom 1 name, atom 2 name]...]
      * @param rdc List of the unnormalized experimental RDC values.
      * @param errors List of the errors in the experimental RDC values.
-     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
-     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2 Z]]...]
+     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based
+     * on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDC value with the
+     * scaling method used in CYANA.
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of
+     * the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2
+     * Z]]...]
      */
     public static void calcRDC(List<List<String>> atomPairs, List<Double> rdc, List<Double> errors, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
         List<Vector3D> vectors = new ArrayList<>();
         List<Double> maxRDCList = new ArrayList<>();
         List<Double> rdc1 = new ArrayList<>();
         List<Double> errors1 = new ArrayList<>();
-        for (int i=0; i<atomPairs.size(); i++) {
+        for (int i = 0; i < atomPairs.size(); i++) {
             Vector3D vec = null;
             double maxRDC = 1.0;
             String atom1 = atomPairs.get(i).get(0);
@@ -721,19 +767,24 @@ public class OrderSVD {
             maxRDCList.add(maxRDC);
             rdc1.add(rdc.get(i));
             errors1.add(errors.get(i));
-        } 
-     
+        }
+
         runOrderSVD(vectors, rdc1, maxRDCList, errors1);
     }
-    
+
     /**
      * Performs an Order SVD calculation to calculate molecular RDCs.
-     * 
-     * @param rdcSet RDCConstraintSet containing RDC information from the STAR file (e.g. atoms, rdc values, rdc error values).
-     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based on the vector distance.
-     * @param scale Boolean of whether to calculate the max RDC value with the scaling method used in CYANA.
-     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2 Z]]...]
-     * 
+     *
+     * @param rdcSet RDCConstraintSet containing RDC information from the STAR
+     * file (e.g. atoms, rdc values, rdc error values).
+     * @param calcMaxRDC Boolean of whether to calculate the max RDC value based
+     * on the vector distance.
+     * @param scale Boolean of whether to calculate the max RDC value with the
+     * scaling method used in CYANA.
+     * @param xyzCoords Optional List of Lists containing the XYZ coordinates of
+     * the two atoms: [[[atom1 X, atom1 Y, atom1 Z], [atom2 X, atom2 Y, atom2
+     * Z]]...]
+     *
      * @return OrderSVD object containing information from the SVD calculation.
      */
     public static OrderSVD calcRDCs(RDCConstraintSet rdcSet, boolean calcMaxRDC, boolean scale, List<List<List<Double>>> xyzCoords) {
@@ -741,10 +792,10 @@ public class OrderSVD {
         List<Double> maxRDCList = new ArrayList<>();
         List<Double> rdc1 = new ArrayList<>();
         List<Double> errors1 = new ArrayList<>();
-        for(int i=0; i<rdcSet.getSize(); i++) {
+        for (int i = 0; i < rdcSet.getSize(); i++) {
             String atom1 = rdcSet.get(i).getSpSets()[0].getFullName().split(":")[1];
             String atom2 = rdcSet.get(i).getSpSets()[1].getFullName().split(":")[1];
-  
+
             Vector3D vec = null;
             Point3 v1;
             Point3 v2;
@@ -757,7 +808,7 @@ public class OrderSVD {
                 v2 = rdcSet.get(i).getSpSets()[1].getPoint();
             }
             if (!v1.equals(v2)) {
-                double r = Vector3D.distance(v1, v2)*1e-10;
+                double r = Vector3D.distance(v1, v2) * 1e-10;
                 if (r != 0.0) {
                     vec = v1.subtract(v2);
                 }
@@ -774,11 +825,11 @@ public class OrderSVD {
             rdc1.add(rdcSet.get(i).getValue());
             errors1.add(rdcSet.get(i).getErr());
         }
-        
+
         return runOrderSVD(vectors, rdc1, maxRDCList, errors1);
-        
+
     }
-    
+
     /**
      * Runs an OrderSVD calculation.
      *
@@ -786,28 +837,28 @@ public class OrderSVD {
      * @param rdc1 List of unnormalized experimental dipolar couplings
      * @param maxRDC List of maximum static dipolar coupling values (r^(-3))
      * @param err List of error values
-     * 
+     *
      * @return OrderSVD object containing information from the SVD calculation.
      */
     public static OrderSVD runOrderSVD(List<Vector3D> vectors, List<Double> rdc1, List<Double> maxRDC, List<Double> err) {
-                       
+
         double[] maxRDCs = new double[maxRDC.size()];
-        for (int i=0; i<maxRDCs.length; i++) {
+        for (int i = 0; i < maxRDCs.length; i++) {
             maxRDCs[i] = maxRDC.get(i);
         }
-        
+
         double[] rdc1a = new double[rdc1.size()];
-        for (int i=0; i<rdc1a.length; i++) {
+        for (int i = 0; i < rdc1a.length; i++) {
             rdc1a[i] = rdc1.get(i);
         }
-        
+
         OrderSVD orderSVD = null;
         if (!vectors.isEmpty()) {
             orderSVD = new OrderSVD(vectors, rdc1, maxRDCs, err);
-        
+
             orderSVD.setMaxRDCs(maxRDCs);
             orderSVD.setSVDResults(orderSVD);
-            
+
             double[] b = orderSVD.getBVector().toArray();
             RealVector bCalcVecNorm = orderSVD.calcBVectorNorm();
             orderSVD.setCalcBVectorNorm(bCalcVecNorm);
@@ -820,55 +871,75 @@ public class OrderSVD {
             orderSVD.setRDCDiffs(dcDiff);
 
             RealVector dcDiffs1 = orderSVD.getRDCDiffs();
-            RealVector dcDiffSq = dcDiffs1.ebeMultiply(dcDiffs1); 
+            RealVector dcDiffSq = dcDiffs1.ebeMultiply(dcDiffs1);
             double dcDiffSqSum = 0;
-            for (int i=0; i<dcDiffSq.getDimension(); i++) {
+            for (int i = 0; i < dcDiffSq.getDimension(); i++) {
                 dcDiffSqSum += dcDiffSq.getEntry(i);
             }
             double dcSqSum = 0;
-            for (int i=0; i<dcSq.getDimension(); i++) {
+            for (int i = 0; i < dcSq.getDimension(); i++) {
                 dcSqSum += dcSq.getEntry(i);
             }
-            
+
             double[][] rotMat = orderSVD.getEig().getVT().getData();
-            Rotation rot = new Rotation(rotMat, 1e-6);
-            double[] euler = rot.getAngles(RotationOrder.ZYZ, RotationConvention.VECTOR_OPERATOR);
-            
-            double[][] eulerRot = new double[2][3];
-            double[][] eulerCalc = orderSVD.calcEulerAngles(rotMat);
-            for (int i=0; i<euler.length; i++) {
-                double angle = euler[i]*180.0/Math.PI;
-                double angle1 = eulerCalc[0][i]*180.0/Math.PI;
-                double angle2 = eulerCalc[1][i]*180.0/Math.PI;
-                if (i == 0) {
-                    angle += 90.;
-                    angle1 += 90.;
-                    angle2 += 90.;
-                } else if (i == 2) {
-                    angle += 180.;
+            Rotation rot = null;
+
+            try {
+                rot = new Rotation(rotMat, 1e-6);
+            } catch (NotARotationMatrixException nE) {
+                System.out.println("Can't create rot mat:" + nE.getMessage());
+                for (int i = 0; i < 3; i++) {
+                    rotMat[1][i] = -rotMat[1][i];
                 }
-                eulerRot[0][i] = angle;
-                eulerRot[1][i] = angle2;
-                eulerCalc[0][i] = angle1;
-                eulerCalc[1][i] = angle2;      
+                try {
+                    rot = new Rotation(rotMat, 1e-6);
+                } catch (NotARotationMatrixException nE2) {
+                    System.out.println("Can't create rot mat 2nd try:" + nE.getMessage());
+                    rot = null;
+
+                }
+
             }
-            
-            orderSVD.setEulerAngles(eulerCalc);
-                        
+            if (rot != null) {
+                double[] euler = rot.getAngles(RotationOrder.ZYZ, RotationConvention.VECTOR_OPERATOR);
+
+                double[][] eulerRot = new double[2][3];
+                double[][] eulerCalc = orderSVD.calcEulerAngles(rotMat);
+                for (int i = 0; i < euler.length; i++) {
+                    double angle = euler[i] * 180.0 / Math.PI;
+                    double angle1 = eulerCalc[0][i] * 180.0 / Math.PI;
+                    double angle2 = eulerCalc[1][i] * 180.0 / Math.PI;
+                    if (i == 0) {
+                        angle += 90.;
+                        angle1 += 90.;
+                        angle2 += 90.;
+                    } else if (i == 2) {
+                        angle += 180.;
+                    }
+                    eulerRot[0][i] = angle;
+                    eulerRot[1][i] = angle2;
+                    eulerCalc[0][i] = angle1;
+                    eulerCalc[1][i] = angle2;
+                }
+
+                orderSVD.setEulerAngles(eulerCalc);
+
+            }
+
             double axial = orderSVD.calcSAxial();
             double axialFactor = 21585.19; //from PALES article: NATURE PROTOCOLS|VOL.3 NO.4|2008
-            double axialNorm = axial*axialFactor;
+            double axialNorm = axial * axialFactor;
             double rhombicity = orderSVD.calcRhombicity();
-          
-            double qRMS = Math.sqrt(dcDiffSqSum/dcDiffs1.getDimension())/Math.sqrt(dcSqSum/rdc1.size());
-            double qRhomb = Math.sqrt(dcDiffSqSum/dcDiffs1.getDimension())/Math.sqrt(2.0*(axialNorm)*(axialNorm)*(4.0+3.0*rhombicity*rhombicity)/5.0);
+
+            double qRMS = Math.sqrt(dcDiffSqSum / dcDiffs1.getDimension()) / Math.sqrt(dcSqSum / rdc1.size());
+            double qRhomb = Math.sqrt(dcDiffSqSum / dcDiffs1.getDimension()) / Math.sqrt(2.0 * (axialNorm) * (axialNorm) * (4.0 + 3.0 * rhombicity * rhombicity) / 5.0);
             orderSVD.setQ(qRMS);
             orderSVD.setQrhomb(qRhomb);
             System.out.println("Magnitude = " + orderSVD.calcMagnitude());
             System.out.println("Q (rms) = " + String.valueOf(qRMS));
             System.out.println("Q (rhomb) = " + String.valueOf(qRhomb));
         }
-        
+
         return orderSVD;
     }
     
@@ -897,7 +968,7 @@ public class OrderSVD {
             String[] atom1 = new String[svdResults.getRDCset().getSize()];
             String[] atom2 = new String[svdResults.getRDCset().getSize()];
             if (svdResults.getRDCset() != null) {
-                for (int i=0; i<svdResults.getRDCset().getSize(); i++) {
+                for (int i = 0; i < svdResults.getRDCset().getSize(); i++) {
                     atom1[i] = svdResults.getRDCset().get(i).getSpSets()[0].getFullName().split(":")[1];
                     atom2[i] = svdResults.getRDCset().get(i).getSpSets()[1].getFullName().split(":")[1];
                 }
@@ -907,7 +978,7 @@ public class OrderSVD {
             double[] bmrbRDCNorm = svdResults.getBVector().toArray();
             double[] svdRDCNorm = svdResults.calcBVectorNorm().toArray();
             double[] rdcDiff = new double[svdRDC.length];
-            for (int i=0; i<rdcDiff.length; i++) {
+            for (int i = 0; i < rdcDiff.length; i++) {
                 rdcDiff[i] = svdRDC[i] - bmrbRDC[i];
             }
 
@@ -919,7 +990,7 @@ public class OrderSVD {
 
                 try (FileWriter writer = new FileWriter(resultsFile)) {
                     writer.write("Syy\tSzz\tSxy\tSxz\tSyz\n");
-                    for(double value : x) {
+                    for (double value : x) {
                         writer.write(String.format("%.3E\t", value));
                     }
                     writer.write("\n\nSx'x'\tSy'y'\tSz'z'\n");
@@ -934,22 +1005,22 @@ public class OrderSVD {
                     writer.write("Euler Angles for clockwise rotation about z, y', z''\n");
                     writer.write("Alpha\tBeta\tGamma\n");
                     writer.write(String.format("%.3f\t%.3f\t%.3f\n", eulerAngles[0][0], eulerAngles[0][1], eulerAngles[0][2]));
-                    writer.write(String.format("%.3f\t%.3f\t%.3f\n", eulerAngles[0][0]+180., eulerAngles[0][1], eulerAngles[0][2]));
-                    writer.write(String.format("%.3f\t%.3f\t%.3f\n", eulerAngles[1][0], eulerAngles[1][1], eulerAngles[1][2]+180.));
-                    writer.write(String.format("%.3f\t%.3f\t%.3f\n\n", eulerAngles[1][0]+180., eulerAngles[1][1], eulerAngles[1][2]+180.));
-                    
+                    writer.write(String.format("%.3f\t%.3f\t%.3f\n", eulerAngles[0][0] + 180., eulerAngles[0][1], eulerAngles[0][2]));
+                    writer.write(String.format("%.3f\t%.3f\t%.3f\n", eulerAngles[1][0], eulerAngles[1][1], eulerAngles[1][2] + 180.));
+                    writer.write(String.format("%.3f\t%.3f\t%.3f\n\n", eulerAngles[1][0] + 180., eulerAngles[1][1], eulerAngles[1][2] + 180.));
+
                     for (String header : headerFields) {
                         writer.write(String.format("%s\t", header));
                     }
                     writer.write("\n");
-                    
-                    for (int i=0; i<bmrbRDC.length; i++) {
+
+                    for (int i = 0; i < bmrbRDC.length; i++) {
                         StringBuilder valueBuilder = new StringBuilder();
                         for (String[] atom : atomFields) {
                             valueBuilder.append(String.format("%s\t", atom[i]));
                         }
                         for (double[] value : valueFields) {
-                            valueBuilder.append(String.format(formats[Arrays.asList(valueFields).indexOf(value)]+"\t", value[i]));
+                            valueBuilder.append(String.format(formats[Arrays.asList(valueFields).indexOf(value)] + "\t", value[i]));
                         }
                         writer.write(valueBuilder.toString() + "\n");
                     }

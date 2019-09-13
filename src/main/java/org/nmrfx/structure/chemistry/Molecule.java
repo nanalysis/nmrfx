@@ -27,6 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,9 +36,13 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.*;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -526,11 +531,11 @@ public class Molecule implements Serializable, ITree {
     public void setDotBracket(String value) {
         setProperty("vienna", value);
     }
-    
+
     public void setRDCResults(OrderSVD results) {
         rdcResults = results;
     }
-   
+
     public static Point3 avgCoords(MolFilter molFilter1) throws IllegalArgumentException, InvalidMoleculeException {
         List<SpatialSet> selected1 = matchAtoms(molFilter1);
         Point3 pt1 = Atom.avgAtom(selected1, molFilter1.getStructureNum());
@@ -1839,61 +1844,83 @@ public class Molecule implements Serializable, ITree {
         }
         return new Vector3D(corner[0], corner[1], corner[2]);
     }
-    
+
     /**
      * Rotates a given set of axes based on an SVD calculation.
-     * 
+     *
      * @param inputAxes double[][] coordinates of the orginal axes
-     * 
+     *
      * @return RealMatrix coordinates of the rotated axes
      */
     public RealMatrix calcSVDAxes(double[][] inputAxes) {
         RealMatrix rotMat = getSVDRotationMatrix();
         RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
         RealMatrix axes = rotMat.multiply(inputAxesM);
-        
+
         return axes;
     }
-    
+
     /**
      * Rotates a given set of axes based on a previously run RDC calculation.
-     * 
+     *
      * @param inputAxes double[][] coordinates of the orginal axes
-     * 
+     *
      * @return RealMatrix coordinates of the rotated axes
      */
     public RealMatrix getRDCAxes(double[][] inputAxes) {
         RealMatrix rotMat = getRDCRotationMatrix();
         RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
         RealMatrix axes = rotMat.multiply(inputAxesM);
- 
+
         return axes;
     }
-    
+
     public RealMatrix getRDCRotationMatrix() {
         EigenDecomposition rdcEig = rdcResults.getEig();
         RealMatrix rotMat = rdcEig.getVT();
-        return rotMat;        
+        return rotMat;
     }
-    
+
     public RealMatrix getSVDRotationMatrix() {
         Point3 pt;
+        double[] c = new double[3];
+        try {
+            c = getCenter(0);
+        } catch (MissingCoordinatesException ex) {
+        }
         List<double[]> molecCoords = new ArrayList<>();
         for (Atom atom : atoms) {
             pt = atom.getPoint();
             if (pt != null) {
                 double[] aCoords = pt.toArray();
+                for (int i=0;i<aCoords.length;i++) {
+                    aCoords[i] -= c[i];
+                }
                 molecCoords.add(aCoords);
-            } 
+            }
         }
         double[][] mCoords1 = new double[molecCoords.size()][3];
-        for (int i=0; i<mCoords1.length; i++) {
+        for (int i = 0; i < mCoords1.length; i++) {
             mCoords1[i] = molecCoords.get(i);
         }
         RealMatrix mCoordsR = new Array2DRowRealMatrix(mCoords1);
         SingularValueDecomposition svd = new SingularValueDecomposition(mCoordsR);
         RealMatrix rotMat = svd.getVT();
-        return rotMat;        
+        RealMatrix uMat = svd.getU();
+        RealMatrix sMat = svd.getS();
+        double[] s = svd.getSingularValues();
+        double maxX = 0.0;
+        for (int i=0;i<uMat.getRowDimension();i++) {
+            double x = Math.abs(uMat.getEntry(i, 0));
+            if (x > maxX) {
+                maxX = x;
+            }
+        }
+        for (int i=0;i<s.length;i++) {
+            sMat.setEntry(i, i, sMat.getEntry(i,i)*maxX);
+        }
+        rotMat = rotMat.preMultiply(sMat);
+        return rotMat;
     }
 
     public void center(int iStructure) {
@@ -2453,17 +2480,60 @@ public class Molecule implements Serializable, ITree {
         }
         return shiftMap;
     }
+    public List<BasePair> pairList() { //for RNA only
+        List<Polymer> polymers = getPolymers();
+        List<BasePair> bpList = new ArrayList();
+        List<Residue> RNAresidues = new ArrayList();
+        for (Polymer polymer : polymers) {
+            for (Residue res : polymer.getResidues()) {
+                if ("GCAU".indexOf(res.name) != -1) {
+                    RNAresidues.add(res);
+                }
+            }
+        }
+        for (Residue residueA : RNAresidues) {
+            for (Residue residueB : RNAresidues) {
+                if (residueA.getResNum() < residueB.getResNum()) {
+                    int type = residueA.basePairType(residueB);
+                    if (type == 1) {
+                        BasePair bp = new BasePair(residueA, residueB);
+                        bpList.add(bp);
 
+                    }
+                }
+            }
+        }
+        return bpList;
+    } 
+    
+    public int nOfStems() {
+        int stemNum = 1;
+        List<BasePair> bp = this.pairList();
+        for (int i = 1; i < bp.size(); i++) {
+            if ((bp.get(i).res1.iRes - bp.get(i - 1).res1.iRes) != 1) {
+                stemNum++;
+            }
+        }
+        return stemNum;
+    }
+    /* 
+    get vienna sequence from the pdb file by finding the number of residues (use .size() method))
+    polymer A and polymer B can be the same 
+    getResidues() returns a list of number of residues in the polymer
+    index through bp's
+    
+    
+     */
     public void checkRNAPairs() {
         for (Polymer polymerA : getPolymers()) {
             for (Polymer polymerB : getPolymers()) {
                 for (Residue residueA : polymerA.getResidues()) {
                     for (Residue residueB : polymerB.getResidues()) {
                         if (residueA != residueB) {
-                            boolean paired = residueA.watsonCrickPair(residueB);
-                            if (paired) {
-                                System.out.println(residueA.getName() + residueA.getNumber()
-                                        + " " + residueB.getName() + residueB.getNumber() + " " + paired);
+
+                            int paired = residueA.basePairType(residueB);
+                            if (paired != 0) {
+                                System.out.println(paired + " " + residueA.getName() + " " + residueB.getName());
                             }
                         }
 
@@ -2472,11 +2542,70 @@ public class Molecule implements Serializable, ITree {
             }
         }
     }
+/**/
+    public HashMap<Integer, List<BasePair>> loopNum() {
+        HashMap<Integer, List<BasePair>> loopNum = new HashMap<Integer, List<BasePair>>();
+        int nOfStem = nOfStems();
+        int stemInd = 0;
+        List<BasePair> bp = pairList();
+        ArrayList<BasePair> stem[] = new ArrayList[nOfStem];
+        for (int i = 0; i < nOfStem; i++) {
+            stem[i] = new ArrayList<>();
+        }
+        for (int i = 0; i < bp.size(); i++) {
+            if ((i + 1) == bp.size()) {
+                stem[stemInd].add(bp.get(i));
+            } else if ((bp.get(i + 1).res1.iRes - bp.get(i).res1.iRes) == 1) {
+                stem[stemInd].add(bp.get(i));
+            } else {
+                stem[stemInd].add(bp.get(i));
+                stemInd++;
+            }
+        }
+        for (int j = 0; j < nOfStem; j++) {
+            loopNum.put(j + 1, stem[j]); // +1 for index
+        }
+        return loopNum;
+    }
+
+
+    public char[] viennaSequence() {
+        char[] vienna = new char[0];
+        List<Polymer> polymers = new ArrayList();
+        polymers = getPolymers();
+        for (Polymer polymer : getPolymers()) {
+            List<Residue> residues = new ArrayList();
+            List<Residue> RNAresidues = new ArrayList();
+            residues = polymer.getResidues();
+            for (Residue res : residues) {
+                if ("GCAU".indexOf(res.name) != -1) {
+                    RNAresidues.add(res);
+                }
+            }
+            vienna = new char[RNAresidues.size()];
+            for (int j = 0; j < RNAresidues.size(); j++) {
+                vienna[j] = '.';
+            }
+            for (Residue residueA : RNAresidues) {
+                for (Residue residueB : RNAresidues) {
+                    if (residueA.getResNum() > residueB.getResNum()) {
+                        int type = residueA.basePairType(residueB);
+                        if (type == 1) {
+                            vienna[RNAresidues.indexOf(residueA)] = ')';
+                            vienna[RNAresidues.indexOf(residueB)] = '(';
+                        }
+
+                    }
+                }
+            }
+        }
+        return vienna;
+    }
 
     public void calcLCMB(final int iStruct) {
         calcLCMB(iStruct, true, false);
     }
-
+     
     // Biophysical Journal 96(8) 3074–3081
     public Map<String, Double> calcLCMB(final int iStruct, boolean scaleEnds, boolean useMap) {
         double r0 = 3.0;
