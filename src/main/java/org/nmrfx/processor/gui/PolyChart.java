@@ -2574,7 +2574,7 @@ public class PolyChart implements PeakListener {
                     }
                 }
 //                peakGC.restore();
-            } catch (GraphicsIOException ioE) {
+            } catch (Exception ioE) {
 
             }
         }
@@ -2757,7 +2757,7 @@ public class PolyChart implements PeakListener {
                     } catch (GraphicsIOException ex) {
                     }
                 });
-                if (false) {
+                if (peakListAttr.getDrawLinks()) {
                     peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
                         try {
                             drawPeaks.drawLinkLines(peakListAttr, gC, peak, dim, false);
@@ -2870,7 +2870,7 @@ public class PolyChart implements PeakListener {
                     anno.draw(gC, bounds, world);
                 });
 
-            } catch (GraphicsIOException gioE) {
+            } catch (Exception gioE) {
             } finally {
                 gC.restore();
             }

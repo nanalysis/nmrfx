@@ -952,6 +952,13 @@ public class SpecAttrWindowController implements Initializable {
         nPlanesCol.setContextMenu(nPlanesMenu);
         nPlanesMenu.getItems().addAll(unifyNPlanesMenu);
 
+        TableColumn<PeakListAttributes, Boolean> drawLinksCol = new TableColumn<>("lnk");
+        drawLinksCol.setCellValueFactory(new PropertyValueFactory("drawLinks"));
+        drawLinksCol.setCellFactory(tc -> new CheckBoxTableCell<>());
+        drawLinksCol.setPrefWidth(50);
+        drawLinksCol.setMaxWidth(50);
+        drawLinksCol.setResizable(false);
+
         TableColumn<PeakListAttributes, Boolean> simPeaksCol = new TableColumn<>("sim");
         simPeaksCol.setCellValueFactory(new PropertyValueFactory("simPeaks"));
         simPeaksCol.setCellFactory(tc -> new CheckBoxTableCell<>());
@@ -959,7 +966,7 @@ public class SpecAttrWindowController implements Initializable {
         simPeaksCol.setMaxWidth(50);
         simPeaksCol.setResizable(false);
 
-        peakListTableView.getColumns().setAll(peakListCol, drawPeaksCol, onColorCol, peakDisTypeCol, nPlanesCol, simPeaksCol, peakLabelTypeCol);
+        peakListTableView.getColumns().setAll(peakListCol, drawPeaksCol, onColorCol, peakDisTypeCol, nPlanesCol, drawLinksCol, simPeaksCol, peakLabelTypeCol);
     }
 
     private void xFullAction(ActionEvent event) {

@@ -155,6 +155,22 @@ public class PeakListAttributes implements PeakListener {
     public boolean getSimPeaks() {
         return simPeaksProperty().get();
     }
+    private BooleanProperty drawLinks;
+
+    public BooleanProperty drawLinksProperty() {
+        if (drawLinks == null) {
+            drawLinks = new SimpleBooleanProperty(this, "on", false);
+        }
+        return drawLinks;
+    }
+
+    public void setDrawLinks(boolean value) {
+        drawLinksProperty().set(value);
+    }
+
+    public boolean getDrawLinks() {
+        return drawLinksProperty().get();
+    }
 
     private ObjectProperty<PeakDisplayParameters.LabelTypes> peakLabelType;
 
