@@ -430,18 +430,18 @@ public class NMRStarReader {
         }
     }
 
-    public void buildEntity(Molecule molecule, Map tagMap) throws ParseException {
+    public void buildEntity(Molecule molecule, Map tagMap, int index) throws ParseException {
         String entityAssemblyIDString = STAR3.getTokenFromMap(tagMap, "ID");
         String entityIDString = STAR3.getTokenFromMap(tagMap, "Entity_ID");
         String entitySaveFrameLabel = STAR3.getTokenFromMap(tagMap, "Entity_label").substring(1);
         String entityAssemblyName = STAR3.getTokenFromMap(tagMap, "Entity_assembly_name");
         String asymLabel = STAR3.getTokenFromMap(tagMap, "Asym_ID", entityAssemblyName);
         if (asymLabel.equals(".")) {
-            asymLabel = "A";
+            asymLabel = String.valueOf((char) ('A'+index));
         }
         String pdbLabel = STAR3.getTokenFromMap(tagMap, "PDB_chain_ID", "A");
         if (pdbLabel.equals(".")) {
-            pdbLabel = asymLabel;       
+            pdbLabel = asymLabel;
         }
         int entityID = 1;
         int entityAssemblyID = 1;
@@ -567,7 +567,7 @@ public class NMRStarReader {
                 System.err.println("mol name " + molName + " nEntities " + nEntities);
                 for (int i = 0; i < nEntities; i++) {
                     Map map = saveframe.getLoopRowMap("_Entity_assembly", i);
-                    buildEntity(molecule, map);
+                    buildEntity(molecule, map, i);
                 }
                 molecule.updateSpatialSets();
                 molecule.genCoords(false);
