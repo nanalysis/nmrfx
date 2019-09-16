@@ -579,7 +579,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                             }
                             default: // fixme should throw Exception
                         }
-                    } catch (GraphicsIOException ex) {
+                    } catch (Exception ex) {
                         Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
                     }
 
@@ -626,7 +626,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                 try {
                     gC.setStroke(Color.BLACK);
                     gC.strokeText(label, x, y);
-                } catch (GraphicsIOException ex) {
+                } catch (Exception ex) {
                     Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
@@ -672,7 +672,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                                 vRadius * 2);
                         
                         break;
-                    } catch (GraphicsIOException ex) {
+                    } catch (Exception ex) {
                         Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
@@ -764,7 +764,7 @@ public class CanvasMolecule implements CanvasAnnotation {
                         molPrims.lineColors[(i * 6) + 5]);
                 gC.setStroke(color2);
                 gC.strokeLine(xm, ym, x2, y2);
-            } catch (GraphicsIOException ex) {
+            } catch (Exception ex) {
                 Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
