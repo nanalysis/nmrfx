@@ -219,6 +219,36 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     }
 
     @FXML
+    void ssFrom3D() throws InvalidMoleculeException {
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
+            alert.showAndWait();
+        } else {
+            char[] vienna = molecule.viennaSequence();
+            String newDotBracket = new String(vienna);
+            molecule.setDotBracket(newDotBracket);
+            
+            if (molecule.getDotBracket().equals("")) {
+                initWithAllDots();
+            }
+            String dotBracket = molecule.getDotBracket();
+            if (dotBracket.length() == 0) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "No RNA present", ButtonType.CLOSE);
+                alert.showAndWait();
+            } else {
+                updateDotBracket(dotBracket);
+                SSLayout ssLayout = SSLayout.createLayout(molecule);
+                ssLayout.interpVienna(molecule.getDotBracket());
+                ssLayout.fillPairsNew();
+
+                ssViewer.loadCoordinates(ssLayout);
+                ssViewer.drawSS();
+            }
+        }
+    }
+
+    @FXML
     void layoutSS() throws InvalidMoleculeException {
         Molecule molecule = Molecule.getActive();
         if (molecule == null) {
@@ -515,10 +545,10 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         molViewer.deleteItems("delete", "box");
         molViewer.addBox(0, 0.3, "box " + getIndex());
     }
-    
+
     /**
      * Draws the original axes.
-     * 
+     *
      * @throws InvalidMoleculeException
      */
     public void drawAxes() throws InvalidMoleculeException {
@@ -526,10 +556,10 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         molViewer.deleteItems("delete", "axes");
         molViewer.addAxes(0, 0.3, "axes " + getIndex(), "original");
     }
-    
+
     /**
      * Draws the rotated axes from an SVD calculation.
-     * 
+     *
      * @throws InvalidMoleculeException
      */
     public void drawSVDAxes() throws InvalidMoleculeException {
@@ -537,10 +567,10 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         molViewer.deleteItems("delete", "svdaxes");
         molViewer.addAxes(0, 0.3, "svdaxes " + getIndex(), "svd");
     }
-    
+
     /**
      * Draws the rotated axes from an RDC calculation.
-     * 
+     *
      * @throws InvalidMoleculeException
      */
     public void drawRDCAxes() throws InvalidMoleculeException {
@@ -548,7 +578,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         molViewer.deleteItems("delete", "rdcaxes");
         molViewer.addAxes(0, 0.3, "rdcaxes " + getIndex(), "rdc");
     }
-    
+
     public void rotateMoleculeRDC() throws InvalidMoleculeException {
         System.out.println("rotate molecule to RDC axes");
         molViewer.resetTransform();
