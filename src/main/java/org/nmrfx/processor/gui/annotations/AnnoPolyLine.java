@@ -74,7 +74,7 @@ public class AnnoPolyLine extends AnnoShape {
                 yCPoints[i] = yPosType.transform(yPoints[i], bounds[1], world[1]);
             }
             gC.strokePolyline(xCPoints, yCPoints, xCPoints.length);
-        } catch (GraphicsIOException ex) {
+        } catch (Exception ex) {
             Logger.getLogger(AnnoPolyLine.class.getName()).log(Level.SEVERE, null, ex);
         }
     }

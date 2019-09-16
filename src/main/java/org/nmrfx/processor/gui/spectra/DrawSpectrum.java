@@ -562,7 +562,7 @@ public class DrawSpectrum {
             gC.rect(r.getX(), r.getY(), r.getWidth(), r.getHeight());
             gC.clip();
             gC.beginPath();
-        } catch (GraphicsIOException ex) {
+        } catch (Exception ex) {
 
         }
 
@@ -581,7 +581,7 @@ public class DrawSpectrum {
         try {
             //  drawSpectrum.clip(g2);
             drawObject.contour.drawSquares(g2);
-        } catch (GraphicsIOException ex) {
+        } catch (Exception ex) {
             result = 0;
         } finally {
             //g2.restore();
