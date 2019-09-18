@@ -2422,14 +2422,26 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    int[] getFitRows(PeakListAttributes peakListAttr) {
+        DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
+        int[] dims = dataAttr.getDims();
+        int[] rows = new int[dims.length];
+        for (int iDim:dims) {
+            rows[iDim] = dataAttr.getPoint(iDim)[0];
+        }
+        
+        return rows;
+    }
+    
     public void fitPeaks(boolean lsFit) {
         peakListAttributesList.forEach((peakListAttr) -> {
+            int[] fitRows = getFitRows(peakListAttr);
             Set<Peak> peaks = peakListAttr.getSelectedPeaks();
             if (!peaks.isEmpty()) {
                 Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
                 if (dataset != null) {
                     try {
-                        peakListAttr.getPeakList().peakFit(dataset, peaks, lsFit, -1);
+                        peakListAttr.getPeakList().peakFit(dataset, fitRows, peaks, lsFit, -1);
                     } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                         Logger.getLogger(PolyChart.class
                                 .getName()).log(Level.SEVERE, null, ex);
@@ -2448,14 +2460,15 @@ public class PolyChart implements PeakListener {
 
     public void fitPeakLists(int syncDim) {
         peakListAttributesList.forEach((peakListAttr) -> {
+            int[] fitRows = getFitRows(peakListAttr);
             Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
             if (dataset != null) {
                 try {
                     Set<Peak> peaks = peakListAttr.getSelectedPeaks();
                     if (peaks.isEmpty()) {
-                        peakListAttr.getPeakList().peakFit(dataset, false, syncDim);
+                        peakListAttr.getPeakList().peakFit(dataset, fitRows, false, syncDim);
                     } else {
-                        peakListAttr.getPeakList().peakFit(dataset, peaks, false, syncDim);
+                        peakListAttr.getPeakList().peakFit(dataset, fitRows, peaks, false, syncDim);
                     }
                 } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                     Logger.getLogger(PolyChart.class
@@ -2752,9 +2765,12 @@ public class PolyChart implements PeakListener {
                     try {
                         drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, false);
                         for (int iDim : dim) {
-                            peak.peakDims[iDim].setLinkDrawn(false);
+                            if (iDim >= 0) {
+                                peak.peakDims[iDim].setLinkDrawn(false);
+                            }
                         }
                     } catch (GraphicsIOException ex) {
+                        System.out.println("draw peak exception " + ex.getMessage());
                     }
                 });
                 if (peakListAttr.getDrawLinks()) {
