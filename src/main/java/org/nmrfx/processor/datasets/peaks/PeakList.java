@@ -3218,7 +3218,6 @@ public class PeakList {
                     pdim[nextDim] = i;
                     p2[nextDim][0] = rows[i];
                     p2[nextDim][1] = rows[i];
-                    System.out.println("row " + i + " " + rows[i]);
                     nextDim++;
                 }
             }
@@ -3316,7 +3315,6 @@ public class PeakList {
             gValue = new GuessValue(gValue.value - offset, gValue.lower - offset, gValue.upper - offset, gValue.floating);
             guessList.set(centerRef.index, gValue);
         }
-        System.out.println(posArray.size() + " " + nPeakDim);
         int[][] positions = new int[posArray.size()][nPeakDim];
         int i = 0;
         for (int[] pValues : posArray) {
