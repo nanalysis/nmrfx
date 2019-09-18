@@ -2794,8 +2794,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @return List of points near peak centers
      */
     public ArrayList<int[]> getFilteredPositions(final int[][] p2, final int[][] cpt, final double[][] width, int[] pdim, double multiplier) {
-        int[] sizes = new int[p2.length];
-        for (int iDim = 0; iDim < p2.length; iDim++) {
+        int[] sizes = new int[pdim.length];
+        for (int iDim = 0; iDim < pdim.length; iDim++) {
             if (p2[iDim][1] >= p2[iDim][0]) {
                 sizes[iDim] = p2[iDim][1] - p2[iDim][0] + 1;
             } else {
@@ -2829,7 +2829,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                     int i = 0;
                     double delta2 = 0.0;
                     for (int value : aCounts) {
-                        delta2 += ((value - cpt[k][i]) * (value - cpt[k][i])) / (0.47 * width[k][i] * width[k][i]);
+                        if ((pdim[k] >= 0) && (width[k][i] != 0)) {
+                            delta2 += ((value - cpt[k][i]) * (value - cpt[k][i])) / (0.47 * width[k][i] * width[k][i]);
+                        }
                         i++;
                     }
                     if (delta2 < 1.0) {
@@ -5728,7 +5730,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             dataset.setTitle(title);
         });
     }
-    
+
     public LineShapeCatalog getLSCatalog() {
         return simVecs;
     }
