@@ -3010,14 +3010,14 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<Object> simPeakFit(Dataset theFile, List<Peak> peaks, boolean[] fitPeaks, boolean lsFit, int constrainDim)
+    public static List<Object> simPeakFit(Dataset theFile, int[] rows, List<Peak> peaks,
+            boolean[] fitPeaks, boolean lsFit, int constrainDim)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean doFit = true;
         int fitMode = FIT_ALL;
         boolean updatePeaks = true;
         double[] delays = null;
         double multiplier = 0.686;
-        int[] rows = new int[theFile.getNDim()];
         return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit, constrainDim);
     }
 
@@ -3028,9 +3028,9 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public void peakFit(Dataset theFile, boolean lsFit, int constrainDim)
+    public void peakFit(Dataset theFile, int[] rows, boolean lsFit, int constrainDim)
             throws IllegalArgumentException, IOException, PeakFitException {
-        peakFit(theFile, peaks, lsFit, constrainDim);
+        peakFit(theFile, rows, peaks, lsFit, constrainDim);
     }
 
     /**
@@ -3041,7 +3041,7 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public void peakFit(Dataset theFile, Collection<Peak> peaks, boolean lsFit, int constrainDim)
+    public void peakFit(Dataset theFile, int[] rows, Collection<Peak> peaks, boolean lsFit, int constrainDim)
             throws IllegalArgumentException, IOException, PeakFitException {
         Set<List<Set<Peak>>> oPeaks = null;
         if (constrainDim < 0) {
@@ -3070,7 +3070,7 @@ public class PeakList {
                     fitPeaks[i] = false;
                 }
 
-                simPeakFit(theFile, lPeaks, fitPeaks, lsFit, constrainDim);
+                simPeakFit(theFile,rows,lPeaks, fitPeaks, lsFit, constrainDim);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -3218,6 +3218,7 @@ public class PeakList {
                     pdim[nextDim] = i;
                     p2[nextDim][0] = rows[i];
                     p2[nextDim][1] = rows[i];
+                    System.out.println("row " + i + " " + rows[i]);
                     nextDim++;
                 }
             }
@@ -3315,6 +3316,7 @@ public class PeakList {
             gValue = new GuessValue(gValue.value - offset, gValue.lower - offset, gValue.upper - offset, gValue.floating);
             guessList.set(centerRef.index, gValue);
         }
+        System.out.println(posArray.size() + " " + nPeakDim);
         int[][] positions = new int[posArray.size()][nPeakDim];
         int i = 0;
         for (int[] pValues : posArray) {
