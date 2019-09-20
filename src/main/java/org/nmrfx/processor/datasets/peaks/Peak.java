@@ -434,6 +434,24 @@ public class Peak implements Comparable, PeakOrMulti {
         }
     }
 
+    /** Get the boundaries, center and widths of the region of a peak
+     * in a specified dataset.  The indices of the arrays containing this
+     * information are the dataset dimensions.  So p[0][0] and p[0][1] will
+     * contain borders of the peak along dimension 0 of the dataset, which
+     * may be a different dimension than dimension 0 of the peak.
+     *
+     * @param theFile The dataset to use for translating ppm to pts
+     * @param pdim An integer mapping of peak dimension to dataset dimension.
+     * For example, pdim[0] contains the dataset dimension that corresponds to
+     * peak dimension 0.
+     * @param p  Two-dimensional pre-allocated array of int that will contain
+     * the boundaries of the peak dimension. The boundaries are determined
+     * by the peak foot print (bounds).
+     * @param cpt Array of ints specifying the center of the peak region.
+     * @param width Array of doubles containing the widths of the peak
+     * in units of dataset points. The width is determined by the 
+     * peak linewidth
+     */
     public void getPeakRegion(Dataset theFile, int[] pdim, int[][] p,
             int[] cpt, double[] width) {
         double p1;
