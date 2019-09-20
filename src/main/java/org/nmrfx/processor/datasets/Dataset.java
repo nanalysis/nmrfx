@@ -2825,14 +2825,19 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             }
             if (inDataset) {
                 boolean ok = false;
-                for (int k = 0; k < cpt.length; k++) {
-                    int i = 0;
+                for (int iPeak = 0; iPeak < cpt.length; iPeak++) {
+                    int iDim = 0;
                     double delta2 = 0.0;
                     for (int value : aCounts) {
-                        if ((pdim[k] >= 0) && (width[k][i] != 0)) {
-                            delta2 += ((value - cpt[k][i]) * (value - cpt[k][i])) / (0.47 * width[k][i] * width[k][i]);
+                        if ((iDim >= pdim.length) || (iPeak > width.length)) {
+                            System.out.println(iPeak + " " + pdim.length + " " + width.length);
+                            posArray.clear();
+                            return posArray;
                         }
-                        i++;
+                        if ((pdim[iDim] >= 0) && (width[iPeak][iDim] != 0.0)) {
+                            delta2 += ((value - cpt[iPeak][iDim]) * (value - cpt[iPeak][iDim])) / (0.47 * width[iPeak][iDim] * width[iPeak][iDim]);
+                        }
+                        iDim++;
                     }
                     if (delta2 < 1.0) {
                         ok = true;
