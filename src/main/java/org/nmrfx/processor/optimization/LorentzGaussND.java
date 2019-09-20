@@ -207,11 +207,19 @@ public class LorentzGaussND implements MultivariateFunction {
     public double calculateOneSig(double[] a, int iSig, int[] x, int iDelay) {
         double y = 1.0;
         int iPar = sigStarts[iSig];
-        double amplitude = a[iPar++];
+        double amplitude;
         double base = 0.0;
         if (intensities.length > 1) {
-            amplitude *= FastMath.exp(-1.0 * delays[iDelay] / a[iPar++]);
-            base = a[iPar++];
+            if (delays != null) {
+                amplitude = a[iPar++];
+                amplitude *= FastMath.exp(-1.0 * delays[iDelay] / a[iPar++]);
+                base = a[iPar++];
+            } else {
+                amplitude = a[iPar + iDelay];
+                iPar += nDelays;
+            }
+        } else {
+            amplitude = a[iPar++];
         }
         for (int iDim = 0; iDim < nDim; iDim++) {
             double lw = a[iPar++];
@@ -267,7 +275,11 @@ public class LorentzGaussND implements MultivariateFunction {
     public void setOffsets(final double[] start, final double[] lower, final double[] upper, boolean[] floating, int[][] syncPars) {
         int nRelaxPar = 0;
         if (intensities.length > 1) {
-            nRelaxPar = 2;
+            if (delays != null) {
+                nRelaxPar = 2;
+            } else {
+                nRelaxPar = nDelays - 1;
+            }
         }
         nSignals = (start.length - 1) / (nDim * 2 + 1 + nRelaxPar);
         if (nSignals * (nDim * 2 + 1 + nRelaxPar) != start.length - 1) {
