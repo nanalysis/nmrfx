@@ -493,6 +493,15 @@ public class PropertyGenerator {
             valueMap.put("phiS", null);
             valueMap.put("chiS", null);
             valueMap.put("psiS", null);
+            String[] suffixes = {"_P", "_S"};
+            for (String suffix : suffixes) {
+                valueMap.put("HPHB" + suffix, null);
+                valueMap.put("BULK" + suffix, null);
+                valueMap.put("CHRG" + suffix, null);
+                valueMap.put("PRO" + suffix, null);
+                valueMap.put("ARO" + suffix, null);
+                valueMap.put("DIS" + suffix, null);
+            }
 
             if (prevResidue != null) {
                 if (prevResidue.previous != null) {
