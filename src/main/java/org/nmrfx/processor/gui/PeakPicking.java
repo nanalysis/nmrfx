@@ -83,7 +83,9 @@ public class PeakPicking {
                     peakPickPar.limit(jDim, chart.axes[iDim].getLowerBound(), chart.axes[iDim].getUpperBound());
                 }
             } else {
-                peakPickPar.limit(jDim, chart.axes[iDim].getLowerBound(), chart.axes[iDim].getUpperBound());
+                int p1 = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getLowerBound());
+                int p2 = chart.axModes[iDim].getIndex(dataAttr, iDim, chart.axes[iDim].getUpperBound());
+                peakPickPar.limit(jDim, p1, p2);
             }
         }
         PeakPicker picker = new PeakPicker(peakPickPar);
