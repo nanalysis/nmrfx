@@ -20,7 +20,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.processor.datasets.Dataset;
 import java.util.*;
 
-public class PeakPick {
+public class PeakPickParameters {
 
     public Dataset theFile;
     public String listName;
@@ -40,42 +40,42 @@ public class PeakPick {
     public int posNeg = 1;
     public double noiseLimit = 0.0;
 
-    public PeakPick(Dataset dataset, String listName) {
+    public PeakPickParameters(Dataset dataset, String listName) {
         this.theFile = dataset;
         this.listName = listName;
     }
 
-    public PeakPick mode(String mode) {
+    public PeakPickParameters mode(String mode) {
         this.mode = mode;
         return this;
     }
 
-    public PeakPick region(String region) {
+    public PeakPickParameters region(String region) {
         this.region = region;
         return this;
     }
 
-    public PeakPick fixed(boolean fixed) {
+    public PeakPickParameters fixed(boolean fixed) {
         this.fixedPick = fixed;
         return this;
     }
 
-    public PeakPick level(double level) {
+    public PeakPickParameters level(double level) {
         this.level = level;
         return this;
     }
 
-    public PeakPick noiseLimit(double noiseLimit) {
+    public PeakPickParameters noiseLimit(double noiseLimit) {
         this.noiseLimit = noiseLimit;
         return this;
     }
 
-    public PeakPick level(int thickness) {
+    public PeakPickParameters level(int thickness) {
         this.thickness = thickness;
         return this;
     }
 
-    public PeakPick pos(boolean value) {
+    public PeakPickParameters pos(boolean value) {
         if (value) {
             posNeg = posNeg | 1;
         } else {
@@ -84,7 +84,7 @@ public class PeakPick {
         return this;
     }
 
-    public PeakPick neg(boolean value) {
+    public PeakPickParameters neg(boolean value) {
         if (value) {
             posNeg = posNeg | 2;
         } else {
@@ -115,7 +115,7 @@ public class PeakPick {
         }
     }
 
-    public PeakPick limit(int iDim, double start, double last) {
+    public PeakPickParameters limit(int iDim, double start, double last) {
         int iLast = theFile.ppmToPoint(iDim, start);
         int iStart = theFile.ppmToPoint(iDim, last);
         pt[iDim][0] = iStart;
@@ -124,7 +124,7 @@ public class PeakPick {
         return this;
     }
 
-    public PeakPick limit(int iDim, int iStart, int iLast) {
+    public PeakPickParameters limit(int iDim, int iStart, int iLast) {
         pt[iDim][0] = iStart;
         pt[iDim][1] = iLast;
         cpt[iDim] = (pt[iDim][0] + pt[iDim][1]) / 2.0;
