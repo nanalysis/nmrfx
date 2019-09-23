@@ -15,7 +15,7 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.PeakPick;
+import org.nmrfx.processor.datasets.peaks.PeakPickParameters;
 import org.nmrfx.processor.datasets.peaks.PeakPicker;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -68,7 +68,7 @@ public class PeakPicking {
         if (nDim == 1) {
             level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
         }
-        PeakPick peakPickPar = (new PeakPick(dataset, listName)).level(level).mode("appendregion");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendregion");
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.calcRange();
         for (int iDim = 0; iDim < nDim; iDim++) {
@@ -119,7 +119,7 @@ public class PeakPicking {
         if (nDim == 1) {
             level = chart.crossHairPositions[0][PolyChart.HORIZONTAL];
         }
-        PeakPick peakPickPar = (new PeakPick(dataset, listName)).level(level).mode("appendif");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendif");
         peakPickPar.pos(dataAttr.getPos()).neg(dataAttr.getNeg());
         peakPickPar.region("point").fixed(fixed);
         peakPickPar.calcRange();
