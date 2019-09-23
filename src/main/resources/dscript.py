@@ -2,7 +2,7 @@ from itertools import izip
 import array
 from shutil import copyfile
 from org.nmrfx.processor.datasets import Dataset
-from org.nmrfx.processor.datasets.peaks import PeakPick
+from org.nmrfx.processor.datasets.peaks import PeakPickParameters
 from org.nmrfx.processor.datasets.peaks import PeakList
 from org.nmrfx.processor.datasets.peaks import PeakPicker
 from org.nmrfx.processor.datasets.vendor import NMRPipeData
@@ -105,7 +105,7 @@ class NMRFxDatasetScripting:
             dataset = self.get(dataset)
         if listName == None:
            listName = PeakList.getNameForDataset(dataset.getName()) 
-        peakPickPar = PeakPick(dataset, listName).mode(mode).region(region).pos(pos).neg(neg).level(level)
+        peakPickPar = PeakPickParameters(dataset, listName).mode(mode).region(region).pos(pos).neg(neg).level(level)
         peakPickPar.calcRange()
         for dim in kwargs:
             (lim1,lim2) = kwargs[dim]
