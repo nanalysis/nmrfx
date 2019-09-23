@@ -2794,18 +2794,20 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @return List of points near peak centers
      */
     public ArrayList<int[]> getFilteredPositions(final int[][] p2, final int[][] cpt, final double[][] width, int[] pdim, double multiplier) {
-        int[] sizes = new int[pdim.length];
-        for (int iDim = 0; iDim < pdim.length; iDim++) {
+        int[] sizes = new int[p2.length];
+        for (int iDim = 0; iDim < p2.length; iDim++) {
             if (p2[iDim][1] >= p2[iDim][0]) {
                 sizes[iDim] = p2[iDim][1] - p2[iDim][0] + 1;
             } else {
-                sizes[iDim] = size[pdim[iDim]] - p2[iDim][0] - p2[iDim][1] + 1;
+                sizes[iDim] = size[iDim] - p2[iDim][0] - p2[iDim][1] + 1;
             }
+//            System.out.println("size " + iDim + " " + p2[iDim][0] + " " + p2[iDim][1] + " " + sizes[iDim]);
         }
         int nPoints = 1;
         for (int dimSize : sizes) {
             nPoints *= dimSize;
         }
+//        System.out.println("np " + nPoints);
         ArrayList<int[]> posArray = new ArrayList<>();
         DimCounter counter = new DimCounter(sizes);
         DimCounter.Iterator iterator = counter.iterator();
@@ -2816,10 +2818,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             boolean inDataset = true;
             for (int value : counts) {
                 aCounts[j] = value + p2[j][0];
-                if (aCounts[j] >= size[pdim[j]]) {
-                    aCounts[j] -= size[pdim[j]];
+                if (aCounts[j] >= size[j]) {
+                    aCounts[j] -= size[j];
                 } else if (aCounts[j] < 0) {
-                    aCounts[j] += size[pdim[j]];
+                    aCounts[j] += size[j];
                 }
                 j++;
             }
@@ -2829,12 +2831,12 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                     int iDim = 0;
                     double delta2 = 0.0;
                     for (int value : aCounts) {
-                        if ((iDim >= pdim.length) || (iPeak > width.length)) {
-                            System.out.println(iPeak + " " + pdim.length + " " + width.length);
+                        if ((iDim >= sizes.length) || (iPeak > width.length)) {
+                            System.out.println(iPeak + " " + sizes.length + " " + width.length);
                             posArray.clear();
                             return posArray;
                         }
-                        if ((pdim[iDim] >= 0) && (width[iPeak][iDim] != 0.0)) {
+                        if (width[iPeak][iDim] != 0.0) {
                             delta2 += ((value - cpt[iPeak][iDim]) * (value - cpt[iPeak][iDim])) / (0.47 * width[iPeak][iDim] * width[iPeak][iDim]);
                         }
                         iDim++;
