@@ -467,6 +467,7 @@ public class Peak implements Comparable, PeakOrMulti {
 
             p2 = pc - Math.abs(peakDims[i].getBoundsValue()) / 2;
             p[pdim[i]][1] = theFile.ppmToFoldedPoint(pdim[i], p2);
+//            System.out.println(i + " " + pdim[i] + " " + p1 + " " + p[pdim[i]][0] + " " + p2 + " " + p[pdim[i]][1]);
             cpt[pdim[i]] = theFile.ppmToFoldedPoint(pdim[i], pc);
 
             p1 = peakDims[i].getChemShiftValue() + (Math.abs(peakDims[i].getLineWidthValue()) / 2.0);

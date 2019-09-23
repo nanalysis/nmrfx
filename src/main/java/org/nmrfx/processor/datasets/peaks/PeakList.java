@@ -2928,10 +2928,6 @@ public class PeakList {
         for (int iDim = 0; iDim < dataset.getNDim(); iDim++) {
             pValues = dataset.getValues(iDim);
             if ((pValues != null) && (pValues.length == nValues)) {
-                System.out.println("got values");
-                for (int i = 0; i < pValues.length; i++) {
-                    System.out.println(i + " " + pValues[i]);
-                }
                 break;
             }
         }
@@ -3162,8 +3158,9 @@ public class PeakList {
         PeakList peakList = peaks.get(0).getPeakList();
         int nPeakDim = peakList.getNDim();
         int dataDim = theFile.getNDim();
+        int rowDim = dataDim - 1;
 
-        int[] pdim = new int[dataDim];
+        int[] pdim = new int[nPeakDim];
         int[][] p1 = new int[dataDim][2];
         int[][] p2 = new int[dataDim][2];
         int nPeaks = peaks.size();
@@ -3180,7 +3177,7 @@ public class PeakList {
         }
 
         //int k=0;
-        for (int i = 0; i < dataDim; i++) {
+        for (int i = 0; i < nPeakDim; i++) {
             pdim[i] = -1;
         }
 
@@ -3196,7 +3193,7 @@ public class PeakList {
                 throw new IllegalArgumentException(
                         "Number of peak list dimensions greater than number of dataset dimensions");
             }
-            for (int j = 0; j < peak.peakList.nDim; j++) {
+            for (int j = 0; j < nPeakDim; j++) {
                 boolean ok = false;
                 for (int i = 0; i < dataDim; i++) {
                     if (peakList.getSpectralDim(j).getDimName().equals(
@@ -3212,24 +3209,33 @@ public class PeakList {
                             + peak.peakList.getSpectralDim(j).getDimName() + "\"");
                 }
             }
-            int nextDim = peakList.nDim;
-            for (int i = 0; i < dataDim; i++) {
+            int iRow = 0;
+            for (int dDim = 0; dDim < dataDim; dDim++) {
                 boolean gotThisDim = false;
-                for (int j = 0; j < pdim.length; j++) {
-                    if (pdim[j] == i) {
+                for (int pDim = 0; pDim < pdim.length; pDim++) {
+                    if (pdim[pDim] == dDim) {
                         gotThisDim = true;
                         break;
                     }
                 }
                 if (!gotThisDim) {
-                    pdim[nextDim] = i;
-                    p2[nextDim][0] = rows[i];
-                    p2[nextDim][1] = rows[i];
-                    nextDim++;
+                    p2[dDim][0] = rows[iRow];
+                    p2[dDim][1] = rows[iRow];
+                    rowDim = dDim;
+                    iRow++;
                 }
             }
 
             peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak]);
+//            for (int i = 0; i < p2.length; i++) {
+//                System.out.println(i + " p1 " + p1[i][0] + " " + p1[i][1]);
+//                System.out.println(i + " p2 " + p2[i][0] + " " + p2[i][1]);
+//            }
+//            for (int i = 0; i < width.length; i++) {
+//                for (int j = 0; j < width[i].length; j++) {
+//                    System.out.println(i + " " + j + " wid " + width[i][j] + " cpt " + cpt[i][j]);
+//                }
+//            }
 
             double intensity = (double) peak.getIntensity();
             GuessValue gValue;
@@ -3261,18 +3267,19 @@ public class PeakList {
             }
             // loop over dimensions and add guesses for width and position
 
-            for (int iDim = 0; iDim < peak.peakList.nDim; iDim++) {
+            for (int pkDim = 0; pkDim < peak.peakList.nDim; pkDim++) {
+                int dDim = pdim[pkDim];
                 // adding one to account for global max inserted at end
                 int parIndex = guessList.size() + 2;
                 // if fit amplitudes constrain width fixme
                 boolean fitThis = fitPeaks[iPeak];
                 if (syncPars != null) {
-                    if ((iPeak == 0) && (iDim == constrainDim)) {
+                    if ((iPeak == 0) && (dDim == constrainDim)) {
                         syncPars[0][0] = parIndex;
                         syncPars[0][1] = parIndex;
                         syncPars[1][0] = parIndex - 1;
                         syncPars[1][1] = parIndex - 1;
-                    } else if ((iPeak > 0) && (iDim == constrainDim)) {
+                    } else if ((iPeak > 0) && (dDim == constrainDim)) {
                         fitThis = false;
                         syncPars[iPeak * 2][0] = parIndex;
                         syncPars[iPeak * 2][1] = syncPars[0][0];
@@ -3281,33 +3288,33 @@ public class PeakList {
                     }
                 }
                 if (fitMode == FIT_AMPLITUDES) {
-                    gValue = new GuessValue(width[iPeak][iDim], width[iPeak][iDim] * 0.05, width[iPeak][iDim] * 1.05, false);
+                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.05, width[iPeak][dDim] * 1.05, false);
                 } else {
-                    gValue = new GuessValue(width[iPeak][iDim], width[iPeak][iDim] * 0.2, width[iPeak][iDim] * 2.0, fitThis);
+                    gValue = new GuessValue(width[iPeak][dDim], width[iPeak][dDim] * 0.2, width[iPeak][dDim] * 2.0, fitThis);
                 }
                 guessList.add(gValue);
-                centerList.add(new CenterRef(parIndex, iDim));
+                centerList.add(new CenterRef(parIndex, dDim));
                 // if fit amplitudes constrain cpt to near current value  fixme
                 // and set floating parameter of GuessValue to false
                 if (fitMode == FIT_AMPLITUDES) {
-                    gValue = new GuessValue(cpt[iPeak][iDim], cpt[iPeak][iDim] - width[iPeak][iDim] / 40, cpt[iPeak][iDim] + width[iPeak][iDim] / 40, false);
+                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 40, cpt[iPeak][dDim] + width[iPeak][dDim] / 40, false);
                 } else {
-                    gValue = new GuessValue(cpt[iPeak][iDim], cpt[iPeak][iDim] - width[iPeak][iDim] / 2, cpt[iPeak][iDim] + width[iPeak][iDim] / 2, fitThis);
+                    gValue = new GuessValue(cpt[iPeak][dDim], cpt[iPeak][dDim] - width[iPeak][dDim] / 2, cpt[iPeak][dDim] + width[iPeak][dDim] / 2, fitThis);
                 }
                 guessList.add(gValue);
 //System.out.println(iDim + " " + p1[iDim][0] + " " +  p1[iDim][1]);
 
                 // update p2 based on region of peak so it encompasses all peaks
                 if (firstPeak) {
-                    p2[iDim][0] = p1[iDim][0];
-                    p2[iDim][1] = p1[iDim][1];
+                    p2[dDim][0] = p1[dDim][0];
+                    p2[dDim][1] = p1[dDim][1];
                 } else {
-                    if (p1[iDim][0] < p2[iDim][0]) {
-                        p2[iDim][0] = p1[iDim][0];
+                    if (p1[dDim][0] < p2[dDim][0]) {
+                        p2[dDim][0] = p1[dDim][0];
                     }
 
-                    if (p1[iDim][1] > p2[iDim][1]) {
-                        p2[iDim][1] = p1[iDim][1];
+                    if (p1[dDim][1] > p2[dDim][1]) {
+                        p2[dDim][1] = p1[dDim][1];
                     }
                 }
             }
@@ -3350,8 +3357,9 @@ public class PeakList {
         int[][] positions = new int[posArray.size()][nPeakDim];
         int i = 0;
         for (int[] pValues : posArray) {
-            for (int j = 0; j < nPeakDim; j++) {
-                positions[i][j] = pValues[pdim[j]] - p2[j][0];
+            for (int pkDim = 0; pkDim < nPeakDim; pkDim++) {
+                int dDim = pdim[pkDim];
+                positions[i][pkDim] = pValues[dDim] - p2[dDim][0];
             }
             i++;
         }
@@ -3385,9 +3393,7 @@ public class PeakList {
             for (int iRate = 0; iRate < nRates; iRate++) {
                 ArrayList<int[]> pos2Array = new ArrayList<>();
                 for (int[] pos : posArray) {
-                    int index = pos.length - 1;
-                    pos[index] = rows[index] + iRate;
-                    pos[index] = iRate;
+                    pos[rowDim] = iRate;
                     pos2Array.add(pos);
                 }
                 intensities[iRate] = theFile.getIntensities(pos2Array);
@@ -3433,16 +3439,17 @@ public class PeakList {
                     peak.setMeasures(measures);
                 }
                 double lineWidthAll = 1.0;
-                for (int iDim = 0; iDim < peak.peakList.nDim; iDim++) {
-                    PeakDim peakDim = peak.getPeakDim(iDim);
-                    double lineWidth = theFile.ptWidthToPPM(iDim, values[index]);
+                for (int pkDim = 0; pkDim < nPeakDim; pkDim++) {
+                    int dDim = pdim[pkDim];
+                    PeakDim peakDim = peak.getPeakDim(pkDim);
+                    double lineWidth = theFile.ptWidthToPPM(dDim, values[index]);
                     //double lineWidthHz = theFile.ptWidthToHz(iDim, values[index++]);
                     double lineWidthHz = values[index++];
                     peakDim.setLineWidthValue((float) lineWidth);
                     //lineWidthAll *= lineWidthHz * (Math.PI / 2.0);
                     lineWidthAll *= lineWidthHz;
                     peakDim.setBoundsValue((float) (lineWidth * 1.5));
-                    peakDim.setChemShiftValueNoCheck((float) theFile.pointToPPM(iDim, values[index++]));
+                    peakDim.setChemShiftValueNoCheck((float) theFile.pointToPPM(dDim, values[index++]));
                 }
                 peak.setVolume1((float) (peak.getIntensity() * lineWidthAll));
             }
@@ -3468,7 +3475,6 @@ public class PeakList {
                 }
                 double lineWidthAll = 1.0;
                 for (int iDim = 0; iDim < peak.peakList.nDim; iDim++) {
-                    PeakDim peakDim = peak.getPeakDim(iDim);
                     //double lineWidthHz = theFile.ptWidthToHz(iDim, values[index++]);
                     double lineWidthHz = values[index++];
                     //lineWidthAll *= lineWidthHz * (Math.PI / 2.0);
