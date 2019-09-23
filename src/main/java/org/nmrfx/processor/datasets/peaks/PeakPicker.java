@@ -44,12 +44,12 @@ import org.nmrfx.processor.datasets.Nuclei;
 public class PeakPicker {
 
     private final Dataset dataset;
-    private final PeakPick peakPickPar;
+    private final PeakPickParameters peakPickPar;
     private final int nDim;
     static final private String MSG_PEAK_LIST = "Peak List ";
     Peak lastPeakPicked = null;
 
-    public PeakPicker(PeakPick peakPickPar) {
+    public PeakPicker(PeakPickParameters peakPickPar) {
         this.peakPickPar = peakPickPar;
         this.dataset = peakPickPar.theFile;
         nDim = dataset.getNDim();
