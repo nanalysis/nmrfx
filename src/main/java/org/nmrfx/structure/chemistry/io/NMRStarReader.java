@@ -66,6 +66,11 @@ public class NMRStarReader {
 //        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
+    public static void read(String starFileName) throws ParseException {
+         File file = new File(starFileName);
+         read(file);
+    }
+
     public static void read(File starFile) throws ParseException {
         FileReader fileReader;
         try {
