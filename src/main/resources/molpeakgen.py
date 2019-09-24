@@ -121,7 +121,7 @@ class MolPeakGen:
     widthC = 0.4
     residueInterMap = {}
     minInst = 10
-    maxDist = 5.0
+    maxDist = 5.25
     basePairsMap = {}
 
     def __init__(self, mol = None):
