@@ -90,7 +90,7 @@ public class PeakWriter {
         "_Assigned_peak_chem_shift.Resonance_ID",
         "_Assigned_peak_chem_shift.Spectral_peak_list_ID",};
 
-    public void writePeaksXPK2(String fileName, PeakList peakList) throws IOException, InvalidPeakException {
+    public static void writePeaksXPK2(String fileName, PeakList peakList) throws IOException, InvalidPeakException {
         try (FileWriter writer = new FileWriter(fileName)) {
             PeakWriter peakWriter = new PeakWriter();
             peakWriter.writePeaksXPK2(writer, peakList);
