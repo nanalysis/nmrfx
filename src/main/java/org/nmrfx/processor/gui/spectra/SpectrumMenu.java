@@ -146,7 +146,7 @@ public class SpectrumMenu extends ChartMenu {
             chart.fitPeakLists(1);
         });
         peakFitMenu.getItems().add(fitRowItem);
-        
+
         MenuItem clusterRowItem = new MenuItem("Cluster Row");
         clusterRowItem.setOnAction((ActionEvent e) -> {
             chart.clusterPeakLists(1);
