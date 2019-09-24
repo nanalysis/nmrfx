@@ -67,6 +67,8 @@ import javafx.util.converter.DefaultStringConverter;
 import javafx.collections.ListChangeListener;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Tooltip;
+import javafx.scene.shape.Polygon;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 
 /**
@@ -370,6 +372,17 @@ public class DatasetsController implements Initializable {
         TableColumn positiveColumn = new TableColumn("Positive");
         TableColumn negativeColumn = new TableColumn("Negative");
         dim1Column = new TableColumn("Dim1");
+
+        Polygon polygon = new Polygon();
+        polygon.getPoints().addAll(new Double[]{
+            2.0, 2.0,
+            12.0, 2.0,
+            7.0, 10.0});
+        polygon.setFill(Color.BLACK);
+        Tooltip tip = new Tooltip("Right click for dimension choice");
+        Tooltip.install(polygon, tip);
+
+        dim1Column.setGraphic(polygon);
         dim1Column.setPrefWidth(400);
         positiveColumn.getColumns().setAll(posDrawOnCol, posColorCol);
         negativeColumn.getColumns().setAll(negDrawOnCol, negColorCol);
