@@ -122,13 +122,13 @@ public class XYCanvasChart {
     }
 
     public void setShowLegend(boolean state) {
-        showLegend = state;        
+        showLegend = state;
     }
-    
+
     public boolean getShowLegend() {
-        return showLegend;        
+        return showLegend;
     }
-    
+
     public static XYCanvasChart buildChart(Canvas canvas) {
         Axis xAxis = new Axis(Orientation.HORIZONTAL, 0, 100, 400, 100.0);
         Axis yAxis = new Axis(Orientation.VERTICAL, 0, 100, 100, 400);
@@ -264,10 +264,7 @@ public class XYCanvasChart {
     public void drawChart() {
         GraphicsContext gCC = canvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
-        try {
-            gC.clearRect(xPos, yPos, getWidth(), getHeight());
-        } catch (GraphicsIOException ex) {
-        }
+        gC.clearRect(xPos, yPos, getWidth(), getHeight());
         drawChart(gC);
     }
 

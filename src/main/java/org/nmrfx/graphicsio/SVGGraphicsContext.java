@@ -134,21 +134,20 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
     }
 
-    public void create(boolean landScape, String fileName) throws GraphicsIOException {
+    public void create(boolean landScape, String fileName) {
         create(landScape, 1024, 1024, fileName);
     }
 
-    public void create(boolean landScape, double width, double height, String fileName) throws GraphicsIOException {
+    public void create(boolean landScape, double width, double height, String fileName) {
         try {
             OutputStream stream = new FileOutputStream(fileName);
             create(landScape, width, height, stream);
         } catch (FileNotFoundException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
 
     }
 
-    public void create(boolean landScape, double width, double height, OutputStream stream) throws GraphicsIOException {
+    public void create(boolean landScape, double width, double height, OutputStream stream) {
         try {
             this.pageWidth = width;
             this.pageHeight = height;
@@ -156,7 +155,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             try {
                 writer = factory.createXMLStreamWriter(stream);
             } catch (XMLStreamException ex) {
-                throw new GraphicsIOException(ex.getMessage());
             }
             writer.writeStartDocument();
             writer.writeCharacters("\n");
@@ -168,7 +166,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
 
     }
@@ -248,7 +245,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         return sBuilder.toString();
     }
 
-    public void saveFile() throws GraphicsIOException {
+    public void saveFile() {
         try {
             writer.writeEndDocument();
             writer.flush();
@@ -256,7 +253,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
 //            stream.flush();
 //            stream.close();
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
@@ -355,7 +351,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void beginPath() throws GraphicsIOException {
+    public void beginPath() {
         pathBuilder.setLength(0);
     }
 
@@ -432,7 +428,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void fill() throws GraphicsIOException {
+    public void fill() {
         try {
             writer.writeEmptyElement("path");
             writer.writeAttribute("d", pathBuilder.toString());
@@ -440,7 +436,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeCharacters("\n");
 
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
@@ -450,7 +445,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void fillOval(double x, double y, double w, double h) throws GraphicsIOException {
+    public void fillOval(double x, double y, double w, double h) {
         doOval(x, y, w, h, false, true);
     }
 
@@ -460,17 +455,17 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void fillRect(double x, double y, double w, double h) throws GraphicsIOException {
+    public void fillRect(double x, double y, double w, double h) {
         doRect(x, y, w, h, false, true);
     }
 
     @Override
-    public void fillRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) throws GraphicsIOException {
+    public void fillRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) {
         doRoundRect(x, y, w, h, arcWidth, arcHeight, false, true);
     }
 
     @Override
-    public void fillText(String text, double x, double y) throws GraphicsIOException {
+    public void fillText(String text, double x, double y) {
         try {
             writer.writeStartElement("text");
             if (!transforms.isEmpty()) {
@@ -486,12 +481,11 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeEndElement();
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
     @Override
-    public void fillText(String text, double x, double y, double maxWidth) throws GraphicsIOException {
+    public void fillText(String text, double x, double y, double maxWidth) {
         // fixme doesn't use maxWidth
         try {
             writer.writeStartElement("text");
@@ -505,7 +499,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeEndElement();
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
@@ -753,7 +746,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void stroke() throws GraphicsIOException {
+    public void stroke() {
         try {
             writer.writeEmptyElement("path");
             writer.writeAttribute("d", pathBuilder.toString());
@@ -761,7 +754,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeCharacters("\n");
 
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
@@ -771,7 +763,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokeLine(double x1, double y1, double x2, double y2) throws GraphicsIOException {
+    public void strokeLine(double x1, double y1, double x2, double y2) {
         try {
             writer.writeEmptyElement("line");
             writer.writeAttribute("x1", format(x1));
@@ -781,12 +773,11 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", getStyle(true, false));
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
     @Override
-    public void strokeOval(double x, double y, double w, double h) throws GraphicsIOException {
+    public void strokeOval(double x, double y, double w, double h) {
         doOval(x, y, w, h, true, false);
     }
 
@@ -796,7 +787,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokePolyline(double[] xPoints, double[] yPoints, int nPoints) throws GraphicsIOException {
+    public void strokePolyline(double[] xPoints, double[] yPoints, int nPoints) {
         StringBuilder pointBuilder = new StringBuilder();
         for (int i = 0; i < nPoints; i++) {
             pointBuilder.append(format(xPoints[i]));
@@ -810,16 +801,15 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", getStyle(true, false));
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
     @Override
-    public void strokeRect(double x, double y, double w, double h) throws GraphicsIOException {
+    public void strokeRect(double x, double y, double w, double h) {
         doRect(x, y, w, h, true, false);
     }
 
-    public void doRect(double x, double y, double w, double h, boolean strokeMode, boolean fillMode) throws GraphicsIOException {
+    public void doRect(double x, double y, double w, double h, boolean strokeMode, boolean fillMode) {
         String style = getStyle(strokeMode, fillMode);
         try {
             writer.writeEmptyElement("rect");
@@ -830,7 +820,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", style);
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
@@ -843,7 +832,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
         "/>
 
      */
-    public void doOval(double x, double y, double dW, double dH, boolean strokeMode, boolean fillMode) throws GraphicsIOException {
+    public void doOval(double x, double y, double dW, double dH, boolean strokeMode, boolean fillMode) {
         String style = getStyle(strokeMode, fillMode);
         double rW = dW / 2;
         double rH = dH / 2;
@@ -858,16 +847,16 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", style);
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
     @Override
-    public void strokeRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) throws GraphicsIOException {
+    public void strokeRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight)
+             {
         doRoundRect(x, y, w, h, arcWidth, arcHeight, true, false);
     }
 
-    public void doRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight, boolean strokeMode, boolean fillMode) throws GraphicsIOException {
+    public void doRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight, boolean strokeMode, boolean fillMode) {
         String style = getStyle(strokeMode, fillMode);
         try {
             writer.writeEmptyElement("rect");
@@ -880,12 +869,11 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeAttribute("style", style);
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
     @Override
-    public void strokeText(String text, double x, double y) throws GraphicsIOException {
+    public void strokeText(String text, double x, double y)  {
         try {
             writer.writeStartElement("text");
             writer.writeAttribute("style", getTextStyle(false));
@@ -895,12 +883,11 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeEndElement();
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 
     @Override
-    public void strokeText(String text, double x, double y, double maxWidth) throws GraphicsIOException {
+    public void strokeText(String text, double x, double y, double maxWidth)  {
         // fixme doesn't use maxWidth
         try {
             writer.writeStartElement("text");
@@ -911,7 +898,6 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
             writer.writeEndElement();
             writer.writeCharacters("\n");
         } catch (XMLStreamException ex) {
-            throw new GraphicsIOException(ex.getMessage());
         }
     }
 

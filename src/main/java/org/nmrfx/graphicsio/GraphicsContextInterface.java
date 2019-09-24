@@ -8,7 +8,7 @@
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY throws GraphicsIOException; without even the implied warranty of
+ * but WITHOUT ANY WARRANTY ; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
@@ -17,19 +17,19 @@
  */
 package org.nmrfx.graphicsio;
 
-import javafx.geometry.VPos ;
-import javafx.scene.effect.BlendMode ;
-import javafx.scene.effect.Effect ;
-import javafx.scene.image.Image ;
-import javafx.scene.paint.Paint ;
-import javafx.scene.shape.ArcType ;
-import javafx.scene.shape.FillRule ;
-import javafx.scene.shape.StrokeLineCap ;
-import javafx.scene.shape.StrokeLineJoin ;
-import javafx.scene.text.Font ;
-import javafx.scene.text.FontSmoothingType ;
-import javafx.scene.text.TextAlignment ;
-import javafx.scene.transform.Affine ;
+import javafx.geometry.VPos;
+import javafx.scene.effect.BlendMode;
+import javafx.scene.effect.Effect;
+import javafx.scene.image.Image;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.ArcType;
+import javafx.scene.shape.FillRule;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontSmoothingType;
+import javafx.scene.text.TextAlignment;
+import javafx.scene.transform.Affine;
 
 /**
  *
@@ -37,159 +37,159 @@ import javafx.scene.transform.Affine ;
  */
 public interface GraphicsContextInterface {
 
-    void appendSVGPath(String svgpath) throws GraphicsIOException;
+    void appendSVGPath(String svgpath);
 
-    void applyEffect(Effect e) throws GraphicsIOException;
+    void applyEffect(Effect e);
 
-    void arc(double centerX, double centerY, double radiusX, double radiusY, double startAngle, double length) throws GraphicsIOException;
+    void arc(double centerX, double centerY, double radiusX, double radiusY, double startAngle, double length);
 
-    void arcTo(double x1, double y1, double x2, double y2, double radius) throws GraphicsIOException;
+    void arcTo(double x1, double y1, double x2, double y2, double radius);
 
-    void beginPath() throws GraphicsIOException;
+    void beginPath();
 
-    void bezierCurveTo(double xc1, double yc1, double xc2, double yc2, double x1, double y1) throws GraphicsIOException;
+    void bezierCurveTo(double xc1, double yc1, double xc2, double yc2, double x1, double y1);
 
-    void clearRect(double x, double y, double w, double h) throws GraphicsIOException;
+    void clearRect(double x, double y, double w, double h);
 
-    void clip() throws GraphicsIOException;
+    void clip();
 
-    void closePath() throws GraphicsIOException;
+    void closePath();
 
-    void drawImage(Image img, double x, double y) throws GraphicsIOException;
+    void drawImage(Image img, double x, double y);
 
-    void drawImage(Image img, double x, double y, double w, double h) throws GraphicsIOException;
+    void drawImage(Image img, double x, double y, double w, double h);
 
-    void drawImage(Image img, double sx, double sy, double sw, double sh, double dx, double dy, double dw, double dh) throws GraphicsIOException;
+    void drawImage(Image img, double sx, double sy, double sw, double sh, double dx, double dy, double dw, double dh);
 
-    void fill() throws GraphicsIOException;
+    void fill();
 
-    void fillArc(double x, double y, double w, double h, double startAngle, double arcExtent, ArcType closure) throws GraphicsIOException;
+    void fillArc(double x, double y, double w, double h, double startAngle, double arcExtent, ArcType closure);
 
-    void fillOval(double x, double y, double w, double h) throws GraphicsIOException;
+    void fillOval(double x, double y, double w, double h);
 
-    void fillPolygon(double[] xPoints, double[] yPoints, int nPoints) throws GraphicsIOException;
+    void fillPolygon(double[] xPoints, double[] yPoints, int nPoints);
 
-    void fillRect(double x, double y, double w, double h) throws GraphicsIOException;
+    void fillRect(double x, double y, double w, double h);
 
-    void fillRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) throws GraphicsIOException;
+    void fillRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight);
 
-    void fillText(String text, double x, double y) throws GraphicsIOException;
+    void fillText(String text, double x, double y);
 
-    void fillText(String text, double x, double y, double maxWidth) throws GraphicsIOException;
+    void fillText(String text, double x, double y, double maxWidth);
 
-    Effect getEffect(Effect e) throws GraphicsIOException;
+    Effect getEffect(Effect e);
 
-    Paint getFill() throws GraphicsIOException;
+    Paint getFill();
 
-    FillRule getFillRule() throws GraphicsIOException;
+    FillRule getFillRule();
 
     Font getFont();
 
-    FontSmoothingType getFontSmoothingType() throws GraphicsIOException;
+    FontSmoothingType getFontSmoothingType();
 
-    double getGlobalAlpha() throws GraphicsIOException;
+    double getGlobalAlpha();
 
-    BlendMode getGlobalBlendMode() throws GraphicsIOException;
+    BlendMode getGlobalBlendMode();
 
-    StrokeLineCap getLineCap() throws GraphicsIOException;
+    StrokeLineCap getLineCap();
 
-    double[] getLineDashes() throws GraphicsIOException;
+    double[] getLineDashes();
 
-    double getLineDashOffset() throws GraphicsIOException;
+    double getLineDashOffset();
 
-    StrokeLineJoin getLineJoin() throws GraphicsIOException;
+    StrokeLineJoin getLineJoin();
 
-    double getLineWidth() throws GraphicsIOException;
+    double getLineWidth();
 
-    double getMiterLimit() throws GraphicsIOException;
+    double getMiterLimit();
 
-    Paint getStroke() throws GraphicsIOException;
+    Paint getStroke();
 
-    TextAlignment getTextAlign() throws GraphicsIOException;
+    TextAlignment getTextAlign();
 
-    VPos getTextBaseline() throws GraphicsIOException;
+    VPos getTextBaseline();
 
-    Affine getTransform() throws GraphicsIOException;
+    Affine getTransform();
 
-    Affine getTransform(Affine xform) throws GraphicsIOException;
+    Affine getTransform(Affine xform);
 
-    boolean isPointInPath(double x, double y) throws GraphicsIOException;
+    boolean isPointInPath(double x, double y);
 
-    void lineTo(double x1, double y1) throws GraphicsIOException;
+    void lineTo(double x1, double y1);
 
-    void moveTo(double x0, double y0) throws GraphicsIOException;
+    void moveTo(double x0, double y0);
 
-    void quadraticCurveTo(double xc, double yc, double x1, double y1) throws GraphicsIOException;
+    void quadraticCurveTo(double xc, double yc, double x1, double y1);
 
-    void rect(double x, double y, double w, double h) throws GraphicsIOException;
+    void rect(double x, double y, double w, double h);
 
     void restore();
 
-    void rotate(double degrees) throws GraphicsIOException;
+    void rotate(double degrees);
 
     void save();
 
-    void scale(double x, double y) throws GraphicsIOException;
+    void scale(double x, double y);
 
-    void setEffect(Effect e) throws GraphicsIOException;
+    void setEffect(Effect e);
 
-    void setFill(Paint p) throws GraphicsIOException;
+    void setFill(Paint p);
 
-    void setFillRule(FillRule fillRule) throws GraphicsIOException;
+    void setFillRule(FillRule fillRule);
 
-    void setFont(Font f) throws GraphicsIOException;
+    void setFont(Font f);
 
-    void setFontSmoothingType(FontSmoothingType fontsmoothing) throws GraphicsIOException;
+    void setFontSmoothingType(FontSmoothingType fontsmoothing);
 
-    void setGlobalAlpha(double alpha) throws GraphicsIOException;
+    void setGlobalAlpha(double alpha);
 
-    void setGlobalBlendMode(BlendMode op) throws GraphicsIOException;
+    void setGlobalBlendMode(BlendMode op);
 
-    void setLineCap(StrokeLineCap cap) throws GraphicsIOException;
+    void setLineCap(StrokeLineCap cap);
 
-    void setLineDashes(double... dashes) throws GraphicsIOException;
+    void setLineDashes(double... dashes);
 
-    void setLineDashOffset(double dashOffset) throws GraphicsIOException;
+    void setLineDashOffset(double dashOffset);
 
-    void setLineJoin(StrokeLineJoin join) throws GraphicsIOException;
+    void setLineJoin(StrokeLineJoin join);
 
-    void setLineWidth(double lw) throws GraphicsIOException;
+    void setLineWidth(double lw);
 
-    void setMiterLimit(double ml) throws GraphicsIOException;
+    void setMiterLimit(double ml);
 
-    void setStroke(Paint p) throws GraphicsIOException;
+    void setStroke(Paint p);
 
-    void setTextAlign(TextAlignment align) throws GraphicsIOException;
+    void setTextAlign(TextAlignment align);
 
-    void setTextBaseline(VPos baseline) throws GraphicsIOException;
+    void setTextBaseline(VPos baseline);
 
-    void setTransform(Affine xform) throws GraphicsIOException;
+    void setTransform(Affine xform);
 
-    void setTransform(double mxx, double myx, double mxy, double myy, double mxt, double myt) throws GraphicsIOException;
+    void setTransform(double mxx, double myx, double mxy, double myy, double mxt, double myt);
 
-    void stroke() throws GraphicsIOException;
+    void stroke();
 
-    void strokeArc(double x, double y, double w, double h, double startAngle, double arcExtent, ArcType closure) throws GraphicsIOException;
+    void strokeArc(double x, double y, double w, double h, double startAngle, double arcExtent, ArcType closure);
 
-    void strokeLine(double x1, double y1, double x2, double y2) throws GraphicsIOException;
+    void strokeLine(double x1, double y1, double x2, double y2);
 
-    void strokeOval(double x, double y, double w, double h) throws GraphicsIOException;
+    void strokeOval(double x, double y, double w, double h);
 
-    void strokePolygon(double[] xPoints, double[] yPoints, int nPoints) throws GraphicsIOException;
+    void strokePolygon(double[] xPoints, double[] yPoints, int nPoints);
 
-    void strokePolyline(double[] xPoints, double[] yPoints, int nPoints) throws GraphicsIOException;
+    void strokePolyline(double[] xPoints, double[] yPoints, int nPoints);
 
-    void strokeRect(double x, double y, double w, double h) throws GraphicsIOException;
+    void strokeRect(double x, double y, double w, double h);
 
-    void strokeRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) throws GraphicsIOException;
+    void strokeRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight);
 
-    void strokeText(String text, double x, double y) throws GraphicsIOException;
+    void strokeText(String text, double x, double y);
 
-    void strokeText(String text, double x, double y, double maxWidth) throws GraphicsIOException;
+    void strokeText(String text, double x, double y, double maxWidth);
 
-    void transform(Affine xform) throws GraphicsIOException;
+    void transform(Affine xform);
 
-    void transform(double mxx, double myx, double mxy, double myy, double mxt, double myt) throws GraphicsIOException;
+    void transform(double mxx, double myx, double mxy, double myy, double mxt, double myt);
 
-    void translate(double x, double y) throws GraphicsIOException;
+    void translate(double x, double y);
 }

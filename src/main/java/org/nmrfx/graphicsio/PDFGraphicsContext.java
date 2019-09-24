@@ -538,13 +538,12 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokeLine(double x1, double y1, double x2, double y2) throws GraphicsIOException {
+    public void strokeLine(double x1, double y1, double x2, double y2)  {
         try {
             contentStream.moveTo(tX(x1), tY(y1));
             contentStream.lineTo(tX(x2), tY(y2));
             contentStream.stroke();
         } catch (IOException ioE) {
-            throw new GraphicsIOException(ioE.getMessage());
         }
     }
 
@@ -559,7 +558,7 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokePolyline(double[] x, double[] y, int n) throws GraphicsIOException {
+    public void strokePolyline(double[] x, double[] y, int n) {
         try {
             contentStream.moveTo(tX(x[0]), tY(y[0]));
             for (int i = 1; i < n; i++) {
@@ -567,7 +566,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
             }
             contentStream.stroke();
         } catch (IOException ioE) {
-            throw new GraphicsIOException(ioE.getMessage());
         }
     }
 

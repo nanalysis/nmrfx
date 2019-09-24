@@ -43,10 +43,7 @@ public class XYCanvasBarChart extends XYCanvasChart {
         double height = getHeight();
         GraphicsContext gCC = canvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
-        try {
             gC.clearRect(xPos, yPos, width, height);
-        } catch (GraphicsIOException ex) {
-        }
         drawChart(gC);
     }
 
