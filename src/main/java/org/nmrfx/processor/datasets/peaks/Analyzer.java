@@ -148,7 +148,7 @@ public class Analyzer {
         String listName = PeakList.getNameForDataset(datasetName);
         double level = threshold;
         System.out.println("level " + level);
-        PeakPick peakPickPar = (new PeakPick(dataset, listName)).level(level).mode("replaceif");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("replaceif");
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
         PeakPicker picker = new PeakPicker(peakPickPar);
@@ -183,7 +183,7 @@ public class Analyzer {
         String datasetName = dataset.getName();
         String listName = PeakList.getNameForDataset(datasetName);
         double level = threshold;
-        PeakPick peakPickPar = (new PeakPick(dataset, listName)).level(level).mode("appendif");
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendif");
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
         peakPickPar.limit(0, ppm1, ppm2);
