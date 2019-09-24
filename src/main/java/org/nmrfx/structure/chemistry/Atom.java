@@ -365,6 +365,11 @@ public class Atom implements IAtom {
         setColorByType();
     }
 
+    @Override
+    public String toString() {
+        return getFullName();
+    }
+
     public String getName() {
         return name;
     }
