@@ -17,6 +17,12 @@ class NMRFxDatasetScripting:
         dataset = Dataset(fileName,"",writable)
         return dataset
 
+    def names(self):
+        return  Dataset.names()
+
+    def datasets(self):
+        return  Dataset.datasets()
+
     def get(self, datasetName):
         dataset = Dataset.getDataset(datasetName)
         return dataset
