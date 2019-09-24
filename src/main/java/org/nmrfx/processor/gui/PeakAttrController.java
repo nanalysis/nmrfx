@@ -219,10 +219,17 @@ public class PeakAttrController implements Initializable, PeakNavigable {
             selectSimDataset();
         });
 
-        simTypeChoice.getItems().add("HSQC");
+        simTypeChoice.getItems().add("HSQC-13C");
         simTypeChoice.getItems().add("RNA-NOESY 2nd Str");
         simTypeChoice.getItems().add("NOESY");
-        simTypeChoice.getItems().add("TOCSY");
+        simTypeChoice.getItems().add("hsqc");
+        simTypeChoice.getItems().add("hncaco");
+        simTypeChoice.getItems().add("hnco");
+        simTypeChoice.getItems().add("hncoca");
+        simTypeChoice.getItems().add("hncocacb");
+        simTypeChoice.getItems().add("hnca");
+        simTypeChoice.getItems().add("hncacb");
+
         simTypeChoice.setOnAction(e -> updateOptions());
 
         normChoice.getItems().addAll(PEAK_NORM.values());
@@ -1108,13 +1115,14 @@ public class PeakAttrController implements Initializable, PeakNavigable {
                     int limit = Integer.parseInt(transferLimitChoice.getValue().toString());
                     script = String.format("molGen.genTOCSYPeaks(\"%s\", listName=\"%s\", transfers=%d)", datasetName, listName, limit);
                     break;
-                case "HSQC":
+                case "HSQC-13C":
                     script = String.format("molGen.genHCPeaks(\"%s\", listName=\"%s\")", datasetName, listName);
                     break;
                 case "RNA-NOESY 2nd Str":
                     script = String.format("molGen.genRNASecStrPeaks(\"%s\", listName=\"%s\")", datasetName, listName);
                     break;
                 default:
+                    script = String.format("molGen.genProteinPeaks(\"%s\", \"%s\", listName=\"%s\")", mode, datasetName, listName);
                     break;
             }
             if (script != null) {
