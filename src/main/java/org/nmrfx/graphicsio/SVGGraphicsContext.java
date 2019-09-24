@@ -851,8 +851,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokeRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight)
-             {
+    public void strokeRoundRect(double x, double y, double w, double h, double arcWidth, double arcHeight) {
         doRoundRect(x, y, w, h, arcWidth, arcHeight, true, false);
     }
 
@@ -873,7 +872,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokeText(String text, double x, double y)  {
+    public void strokeText(String text, double x, double y) {
         try {
             writer.writeStartElement("text");
             writer.writeAttribute("style", getTextStyle(false));
@@ -887,7 +886,7 @@ public class SVGGraphicsContext implements GraphicsContextInterface {
     }
 
     @Override
-    public void strokeText(String text, double x, double y, double maxWidth)  {
+    public void strokeText(String text, double x, double y, double maxWidth) {
         // fixme doesn't use maxWidth
         try {
             writer.writeStartElement("text");
