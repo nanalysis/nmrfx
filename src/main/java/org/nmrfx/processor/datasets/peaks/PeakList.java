@@ -3031,7 +3031,7 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public void peakFit(Dataset theFile, int[] rows, double[] delays, boolean lsFit, int constrainDim,  ARRAYED_FIT_MODE arrayedFitMode)
+    public void peakFit(Dataset theFile, int[] rows, double[] delays, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
             throws IllegalArgumentException, IOException, PeakFitException {
         peakFit(theFile, rows, delays, peaks, lsFit, constrainDim, arrayedFitMode);
     }
@@ -3044,7 +3044,7 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public void peakFit(Dataset theFile, int[] rows, double[] delays, Collection<Peak> peaks, boolean lsFit, int constrainDim,  ARRAYED_FIT_MODE arrayedFitMode)
+    public void peakFit(Dataset theFile, int[] rows, double[] delays, Collection<Peak> peaks, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
             throws IllegalArgumentException, IOException, PeakFitException {
         Set<List<Set<Peak>>> oPeaks = null;
         if (constrainDim < 0) {
@@ -3159,6 +3159,7 @@ public class PeakList {
         if (peaks.isEmpty()) {
             return peaksResult;
         }
+        boolean fitC = false;
         PeakList peakList = peaks.get(0).getPeakList();
         int nPeakDim = peakList.getNDim();
         int dataDim = theFile.getNDim();
@@ -3262,8 +3263,10 @@ public class PeakList {
             if ((delays != null) && (delays.length > 0)) {
                 gValue = new GuessValue(maxDelay / 2.0, maxDelay * 5.0, maxDelay * 0.02, true);
                 guessList.add(gValue);
-                gValue = new GuessValue(0.0, -0.5 * FastMath.abs(intensity), 0.5 * FastMath.abs(intensity), true);
-                guessList.add(gValue);
+                if (fitC) {
+                    gValue = new GuessValue(0.0, -0.5 * FastMath.abs(intensity), 0.5 * FastMath.abs(intensity), true);
+                    guessList.add(gValue);
+                }
             } else if (nPlanes != 1) {
                 for (int iPlane = 1; iPlane < nPlanes; iPlane++) {
                     gValue = new GuessValue(intensity, 0.0, intensity * 3.5, true);
@@ -3404,7 +3407,7 @@ public class PeakList {
                 intensities[iRate] = theFile.getIntensities(pos2Array);
             }
         }
-        peakFit.setDelays(delays);
+        peakFit.setDelays(delays, fitC);
         peakFit.setIntensities(intensities);
         peakFit.setOffsets(guess, lower, upper, floating, syncPars);
         int nFloating = 0;
@@ -3433,7 +3436,11 @@ public class PeakList {
             for (Peak peak : peaks) {
                 peak.setIntensity((float) values[index++]);
                 if ((delays != null) && (delays.length > 0)) {
-                    peak.setComment(String.format("R %.3f %.3f", values[index++], values[index++]));
+                    if (fitC) {
+                        peak.setComment(String.format("T %.4f %.3f", values[index++], values[index++]));
+                    } else {
+                        peak.setComment(String.format("T %.4f", values[index++]));
+                    }
                 } else if (nPlanes > 1) {
                     double[] measures = new double[nPlanes];
                     index--;
@@ -3472,8 +3479,10 @@ public class PeakList {
                 if ((delays != null) && (delays.length > 0)) {
                     peakData.add("relax");
                     peakData.add(values[index++]);
-                    peakData.add("relaxbase");
-                    peakData.add(values[index++]);
+                    if (fitC) {
+                        peakData.add("relaxbase");
+                        peakData.add(values[index++]);
+                    }
                 } else if (nPlanes > 1) {
                     index += nPlanes - 1;
                 }
