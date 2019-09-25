@@ -61,6 +61,11 @@ import smile.clustering.linkage.CompleteLinkage;
  */
 public class PeakList {
 
+    public enum ARRAYED_FIT_MODE {
+        SINGLE,
+        PLANES,
+        EXP;
+    }
     /**
      *
      */
@@ -2997,7 +3002,7 @@ public class PeakList {
         List<Peak> peaks = Arrays.asList(peakArray);
         boolean[] fitPeaks = new boolean[peakArray.length];
         Arrays.fill(fitPeaks, true);
-        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1, false);
+        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1, ARRAYED_FIT_MODE.SINGLE);
     }
 
     /**
@@ -3009,15 +3014,14 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public static List<Object> simPeakFit(Dataset theFile, int[] rows, List<Peak> peaks,
-            boolean[] fitPeaks, boolean lsFit, int constrainDim, boolean fitPlanes)
+    public static List<Object> simPeakFit(Dataset theFile, int[] rows, double[] delays, List<Peak> peaks,
+            boolean[] fitPeaks, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean doFit = true;
         int fitMode = FIT_ALL;
         boolean updatePeaks = true;
-        double[] delays = null;
         double multiplier = 0.686;
-        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit, constrainDim, fitPlanes);
+        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit, constrainDim, arrayedFitMode);
     }
 
     /**
@@ -3027,9 +3031,9 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public void peakFit(Dataset theFile, int[] rows, boolean lsFit, int constrainDim, boolean fitPlanes)
+    public void peakFit(Dataset theFile, int[] rows, double[] delays, boolean lsFit, int constrainDim,  ARRAYED_FIT_MODE arrayedFitMode)
             throws IllegalArgumentException, IOException, PeakFitException {
-        peakFit(theFile, rows, peaks, lsFit, constrainDim, fitPlanes);
+        peakFit(theFile, rows, delays, peaks, lsFit, constrainDim, arrayedFitMode);
     }
 
     /**
@@ -3040,7 +3044,7 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public void peakFit(Dataset theFile, int[] rows, Collection<Peak> peaks, boolean lsFit, int constrainDim, boolean fitPlanes)
+    public void peakFit(Dataset theFile, int[] rows, double[] delays, Collection<Peak> peaks, boolean lsFit, int constrainDim,  ARRAYED_FIT_MODE arrayedFitMode)
             throws IllegalArgumentException, IOException, PeakFitException {
         Set<List<Set<Peak>>> oPeaks = null;
         if (constrainDim < 0) {
@@ -3069,7 +3073,7 @@ public class PeakList {
                     fitPeaks[i] = false;
                 }
 //                System.out.println("fit lpe " + lPeaks.size());
-                simPeakFit(theFile, rows, lPeaks, fitPeaks, lsFit, constrainDim, fitPlanes);
+                simPeakFit(theFile, rows, delays, lPeaks, fitPeaks, lsFit, constrainDim, arrayedFitMode);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -3110,7 +3114,7 @@ public class PeakList {
         boolean[] fitPeaks = new boolean[peaks.size()];
         Arrays.fill(fitPeaks, true);
 
-        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1, false);
+        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1, ARRAYED_FIT_MODE.SINGLE);
     }
 
     /**
@@ -3149,7 +3153,7 @@ public class PeakList {
     public static List<Object> peakFit(Dataset theFile, List<Peak> peaks,
             boolean[] fitPeaks,
             int[] rows, boolean doFit, int fitMode, final boolean updatePeaks,
-            double[] delays, double multiplier, boolean lsFit, int constrainDim, boolean fitPlanes)
+            double[] delays, double multiplier, boolean lsFit, int constrainDim, ARRAYED_FIT_MODE arrayedFitMode)
             throws IllegalArgumentException, IOException, PeakFitException {
         List<Object> peaksResult = new ArrayList<>();
         if (peaks.isEmpty()) {
@@ -3249,7 +3253,7 @@ public class PeakList {
                 globalMax = FastMath.abs(intensity);
             }
             if ((dataDim - nPeakDim) == 1) {
-                if (fitPlanes) {
+                if (arrayedFitMode != ARRAYED_FIT_MODE.SINGLE) {
                     nPlanes = theFile.getSize(dataDim - 1);
                 }
             }
@@ -3429,8 +3433,7 @@ public class PeakList {
             for (Peak peak : peaks) {
                 peak.setIntensity((float) values[index++]);
                 if ((delays != null) && (delays.length > 0)) {
-                    peak.setComment("R " + String.valueOf(values[index++]) + " " + String.valueOf(values[index++]));
-                    index++;
+                    peak.setComment(String.format("R %.3f %.3f", values[index++], values[index++]));
                 } else if (nPlanes > 1) {
                     double[] measures = new double[nPlanes];
                     index--;
