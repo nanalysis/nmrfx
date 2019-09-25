@@ -1542,7 +1542,7 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public List<Set<Peak>> getOverlapLayers(double scale) {
         List<Set<Peak>> result = new ArrayList<>();
-        Set<Peak> firstLayer = getOverlappingPeaks();
+        Set<Peak> firstLayer = getOverlappingPeaks(scale);
         Set<Peak> secondLayer = new HashSet<>();
         for (Peak peak : firstLayer) {
             Set<Peak> overlaps = peak.getOverlappingPeaks(scale);
@@ -1595,7 +1595,7 @@ public class Peak implements Comparable, PeakOrMulti {
             }
             boolean ok = true;
             for (int iDim = 0; iDim < nDim; iDim++) {
-                if (!overlaps(peak, iDim, scale)) {
+                if (!overlapsLineWidth(peak, iDim, scale)) {
                     ok = false;
                     break;
                 }
