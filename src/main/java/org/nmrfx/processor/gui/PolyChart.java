@@ -70,6 +70,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Alert;
 import javafx.scene.input.DragEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.LineTo;
@@ -90,6 +91,7 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.processor.datasets.peaks.PeakList.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
@@ -2429,29 +2431,74 @@ public class PolyChart implements PeakListener {
         int nRows = nDataDims - nPeakDims;
         int[] dims = dataAttr.getDims();
         int[] rows = new int[nRows];
-        for (int i=0;i<nRows;i++) {
-            int iDim = dims[nPeakDims+i];
+        for (int i = 0; i < nRows; i++) {
+            int iDim = dims[nPeakDims + i];
             rows[i] = dataAttr.getPoint(iDim)[0];
         }
         return rows;
     }
 
-    public void fitPeakLists(int syncDim, boolean fitAll, boolean lsFit, boolean fitPlanes) {
+    double[] getFitValues(PeakListAttributes peakListAttr) {
+        int nPeakDims = peakListAttr.getPeakList().getNDim();
+        DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
+        int nDataDims = dataAttr.getDataset().getNDim();
+        int nRows = nDataDims - nPeakDims;
+        int[] dims = dataAttr.getDims();
+        int[] rows = new int[nRows];
+        double[] values = null;
+        if (nRows == 1) {
+            values = dataAttr.getDataset().getValues(dims[nPeakDims]);
+            System.out.println("values " + values);
+        }
+        return values;
+    }
+
+    public void fitPeakLists(int syncDim) {
+        fitPeakLists(syncDim, true, false, ARRAYED_FIT_MODE.SINGLE);
+    }
+
+    public void fitPeakLists(int syncDim, boolean fitAll, boolean lsFit, ARRAYED_FIT_MODE arrayedFitMode) {
         peakListAttributesList.forEach((peakListAttr) -> {
-            int[] fitRows = getFitRows(peakListAttr);
             Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
-            if (dataset != null) {
-                try {
-                    Set<Peak> peaks = peakListAttr.getSelectedPeaks();
-                    if (fitAll && peaks.isEmpty()) {
-                        peakListAttr.getPeakList().peakFit(dataset, fitRows, lsFit, syncDim, fitPlanes);
-                    } else if (!peaks.isEmpty()) {
-                        peakListAttr.getPeakList().peakFit(dataset, fitRows, peaks, lsFit, syncDim, fitPlanes);
-                    }
-                } catch (IllegalArgumentException | IOException | PeakFitException ex) {
-                    Logger.getLogger(PolyChart.class
-                            .getName()).log(Level.SEVERE, null, ex);
+            if (dataset == null) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Peak  fit");
+                alert.setContentText("No dataset");
+                alert.showAndWait();
+                return;
+            }
+            int[] fitRows = getFitRows(peakListAttr);
+            if ((arrayedFitMode != ARRAYED_FIT_MODE.SINGLE) && (fitRows.length == 0)) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Peak array fit");
+                alert.setContentText("No arrayed rows or planes");
+                alert.showAndWait();
+                return;
+            }
+            double[] delays = null;
+            if (arrayedFitMode == ARRAYED_FIT_MODE.EXP) {
+                System.out.println("nrows " + fitRows[0]);
+                delays = getFitValues(peakListAttr);
+                if ((delays == null)) {
+
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Peak exp fit");
+                    alert.setContentText("No dataset values for delays");
+                    alert.showAndWait();
+                    return;
                 }
+                System.out.println("ndel " + delays.length);
+            }
+            try {
+                Set<Peak> peaks = peakListAttr.getSelectedPeaks();
+                if (fitAll && peaks.isEmpty()) {
+                    peakListAttr.getPeakList().peakFit(dataset, fitRows, delays, lsFit, syncDim, arrayedFitMode);
+                } else if (!peaks.isEmpty()) {
+                    peakListAttr.getPeakList().peakFit(dataset, fitRows, delays, peaks, lsFit, syncDim, arrayedFitMode);
+                }
+            } catch (IllegalArgumentException | IOException | PeakFitException ex) {
+                Logger.getLogger(PolyChart.class
+                        .getName()).log(Level.SEVERE, null, ex);
             }
         });
     }

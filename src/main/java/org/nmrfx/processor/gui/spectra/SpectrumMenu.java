@@ -21,6 +21,8 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.PeakList.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
 
@@ -120,27 +122,33 @@ public class SpectrumMenu extends ChartMenu {
 //     fitPeakLists(int syncDim, boolean fitAll, boolean lsFit, boolean fitPlanes) {
         MenuItem fitListItem = new MenuItem("Fit");
         fitListItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(-1, true, false, false);
+            chart.fitPeakLists(-1);
         });
         peakFitMenu.getItems().add(fitListItem);
 
         MenuItem fitColumnItem = new MenuItem("Fit Clustered Column");
         fitColumnItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(0, true, false, false);
+            chart.fitPeakLists(0);
         });
         peakFitMenu.getItems().add(fitColumnItem);
 
         MenuItem fitRowItem = new MenuItem("Fit Clustered Row");
         fitRowItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(1, true, false, false);
+            chart.fitPeakLists(1);
         });
         peakFitMenu.getItems().add(fitRowItem);
 
         MenuItem fitPlanesItem = new MenuItem("Fit Planes");
         fitPlanesItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(-1, true, false, true);
+            chart.fitPeakLists(-1, true, false, ARRAYED_FIT_MODE.PLANES);
         });
         peakFitMenu.getItems().add(fitPlanesItem);
+
+        MenuItem fitExpDecayItem = new MenuItem("Fit Planes (Exp)");
+        fitExpDecayItem.setOnAction((ActionEvent e) -> {
+            chart.fitPeakLists(-1, true, false, ARRAYED_FIT_MODE.EXP);
+        });
+        peakFitMenu.getItems().add(fitExpDecayItem);
 
         MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
         fitLSItem.setOnAction((ActionEvent e) -> {
