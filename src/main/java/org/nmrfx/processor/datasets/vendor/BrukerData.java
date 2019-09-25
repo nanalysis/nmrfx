@@ -1504,7 +1504,6 @@ public class BrukerData implements NMRData {
             if (fixByShift) {
                 dspPhase(dvec);
             } else {
-//                dvec.fixWithPhasedHFT(45.0);
                 dvec.fixWithPhasedHFT();
             }
         }
