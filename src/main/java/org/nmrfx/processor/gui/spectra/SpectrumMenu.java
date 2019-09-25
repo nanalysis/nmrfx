@@ -117,35 +117,36 @@ public class SpectrumMenu extends ChartMenu {
         peakMenu.getItems().add(peakFitMenu);
         peakMenu.getItems().add(peakClusterMenu);
 
-        MenuItem fitItem = new MenuItem("Fit Selected");
-        fitItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeaks(false);
-        });
-        peakFitMenu.getItems().add(fitItem);
-
-        MenuItem fitListItem = new MenuItem("Fit All Peaks");
+//     fitPeakLists(int syncDim, boolean fitAll, boolean lsFit, boolean fitPlanes) {
+        MenuItem fitListItem = new MenuItem("Fit");
         fitListItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(-1);
+            chart.fitPeakLists(-1, true, false, false);
         });
         peakFitMenu.getItems().add(fitListItem);
+
+        MenuItem fitColumnItem = new MenuItem("Fit Clustered Column");
+        fitColumnItem.setOnAction((ActionEvent e) -> {
+            chart.fitPeakLists(0, true, false, false);
+        });
+        peakFitMenu.getItems().add(fitColumnItem);
+
+        MenuItem fitRowItem = new MenuItem("Fit Clustered Row");
+        fitRowItem.setOnAction((ActionEvent e) -> {
+            chart.fitPeakLists(1, true, false, false);
+        });
+        peakFitMenu.getItems().add(fitRowItem);
+
+        MenuItem fitPlanesItem = new MenuItem("Fit Planes");
+        fitPlanesItem.setOnAction((ActionEvent e) -> {
+            chart.fitPeakLists(-1, true, false, true);
+        });
+        peakFitMenu.getItems().add(fitPlanesItem);
 
         MenuItem fitLSItem = new MenuItem("Lineshape pick/fit");
         fitLSItem.setOnAction((ActionEvent e) -> {
             PeakPicking.peakPickActive(chart.getController(), true);
         });
         peakFitMenu.getItems().add(fitLSItem);
-
-        MenuItem fitColumnItem = new MenuItem("Fit Clustered Column");
-        fitColumnItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(0);
-        });
-        peakFitMenu.getItems().add(fitColumnItem);
-
-        MenuItem fitRowItem = new MenuItem("Fit Clustered Row");
-        fitRowItem.setOnAction((ActionEvent e) -> {
-            chart.fitPeakLists(1);
-        });
-        peakFitMenu.getItems().add(fitRowItem);
 
         MenuItem clusterRowItem = new MenuItem("Cluster Row");
         clusterRowItem.setOnAction((ActionEvent e) -> {
