@@ -2088,6 +2088,22 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         }
     }
 
+    public double[] getNValues(int nValues) {
+        double[] pValues = null;
+        boolean ok = false;
+        for (int iDim = 0; iDim < getNDim(); iDim++) {
+            pValues = getValues(iDim);
+            if ((pValues != null) && (pValues.length == nValues)) {
+                ok = true;
+                break;
+            }
+        }
+        if (!ok) {
+            pValues = null;
+        }
+        return pValues;
+    }
+
     /**
      * Get the stored values for the specified dimension of this dataset
      *
