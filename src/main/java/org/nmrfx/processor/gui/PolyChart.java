@@ -2423,52 +2423,30 @@ public class PolyChart implements PeakListener {
     }
 
     int[] getFitRows(PeakListAttributes peakListAttr) {
+        int nPeakDims = peakListAttr.getPeakList().getNDim();
         DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
+        int nDataDims = dataAttr.getDataset().getNDim();
+        int nRows = nDataDims - nPeakDims;
         int[] dims = dataAttr.getDims();
-        int[] rows = new int[dims.length];
-        for (int iDim:dims) {
-            rows[iDim] = dataAttr.getPoint(iDim)[0];
+        int[] rows = new int[nRows];
+        for (int i=0;i<nRows;i++) {
+            int iDim = dims[nPeakDims+i];
+            rows[i] = dataAttr.getPoint(iDim)[0];
         }
-        
         return rows;
     }
-    
-    public void fitPeaks(boolean lsFit) {
-        peakListAttributesList.forEach((peakListAttr) -> {
-            int[] fitRows = getFitRows(peakListAttr);
-            Set<Peak> peaks = peakListAttr.getSelectedPeaks();
-            if (!peaks.isEmpty()) {
-                Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
-                if (dataset != null) {
-                    try {
-                        peakListAttr.getPeakList().peakFit(dataset, fitRows, peaks, lsFit, -1);
-                    } catch (IllegalArgumentException | IOException | PeakFitException ex) {
-                        Logger.getLogger(PolyChart.class
-                                .getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            }
-        });
-//        drawPeakLists(false);
-//        peakListAttributesList.forEach((peakListAttr) -> {
-//            List<Peak> peaks = peakListAttr.getSelectedPeaks();
-//            if (!peaks.isEmpty()) {
-//                drawSelectedPeaks(peakListAttr);
-//            }
-//        });
-    }
 
-    public void fitPeakLists(int syncDim) {
+    public void fitPeakLists(int syncDim, boolean fitAll, boolean lsFit, boolean fitPlanes) {
         peakListAttributesList.forEach((peakListAttr) -> {
             int[] fitRows = getFitRows(peakListAttr);
             Dataset dataset = peakListAttr.getDatasetAttributes().getDataset();
             if (dataset != null) {
                 try {
                     Set<Peak> peaks = peakListAttr.getSelectedPeaks();
-                    if (peaks.isEmpty()) {
-                        peakListAttr.getPeakList().peakFit(dataset, fitRows, false, syncDim);
-                    } else {
-                        peakListAttr.getPeakList().peakFit(dataset, fitRows, peaks, false, syncDim);
+                    if (fitAll && peaks.isEmpty()) {
+                        peakListAttr.getPeakList().peakFit(dataset, fitRows, lsFit, syncDim, fitPlanes);
+                    } else if (!peaks.isEmpty()) {
+                        peakListAttr.getPeakList().peakFit(dataset, fitRows, peaks, lsFit, syncDim, fitPlanes);
                     }
                 } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                     Logger.getLogger(PolyChart.class
