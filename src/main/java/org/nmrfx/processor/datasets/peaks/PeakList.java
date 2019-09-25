@@ -2997,7 +2997,7 @@ public class PeakList {
         List<Peak> peaks = Arrays.asList(peakArray);
         boolean[] fitPeaks = new boolean[peakArray.length];
         Arrays.fill(fitPeaks, true);
-        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1);
+        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1, false);
     }
 
     /**
@@ -3010,14 +3010,14 @@ public class PeakList {
      * @throws PeakFitException
      */
     public static List<Object> simPeakFit(Dataset theFile, int[] rows, List<Peak> peaks,
-            boolean[] fitPeaks, boolean lsFit, int constrainDim)
+            boolean[] fitPeaks, boolean lsFit, int constrainDim, boolean fitPlanes)
             throws IllegalArgumentException, IOException, PeakFitException {
         boolean doFit = true;
         int fitMode = FIT_ALL;
         boolean updatePeaks = true;
         double[] delays = null;
         double multiplier = 0.686;
-        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit, constrainDim);
+        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, lsFit, constrainDim, fitPlanes);
     }
 
     /**
@@ -3027,9 +3027,9 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public void peakFit(Dataset theFile, int[] rows, boolean lsFit, int constrainDim)
+    public void peakFit(Dataset theFile, int[] rows, boolean lsFit, int constrainDim, boolean fitPlanes)
             throws IllegalArgumentException, IOException, PeakFitException {
-        peakFit(theFile, rows, peaks, lsFit, constrainDim);
+        peakFit(theFile, rows, peaks, lsFit, constrainDim, fitPlanes);
     }
 
     /**
@@ -3040,7 +3040,7 @@ public class PeakList {
      * @throws IOException
      * @throws PeakFitException
      */
-    public void peakFit(Dataset theFile, int[] rows, Collection<Peak> peaks, boolean lsFit, int constrainDim)
+    public void peakFit(Dataset theFile, int[] rows, Collection<Peak> peaks, boolean lsFit, int constrainDim, boolean fitPlanes)
             throws IllegalArgumentException, IOException, PeakFitException {
         Set<List<Set<Peak>>> oPeaks = null;
         if (constrainDim < 0) {
@@ -3068,8 +3068,8 @@ public class PeakList {
                 for (int i = nFit; i < fitPeaks.length; i++) {
                     fitPeaks[i] = false;
                 }
-
-                simPeakFit(theFile, rows, lPeaks, fitPeaks, lsFit, constrainDim);
+//                System.out.println("fit lpe " + lPeaks.size());
+                simPeakFit(theFile, rows, lPeaks, fitPeaks, lsFit, constrainDim, fitPlanes);
             } catch (IllegalArgumentException | IOException | PeakFitException ex) {
                 Logger.getLogger(PeakList.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -3110,7 +3110,7 @@ public class PeakList {
         boolean[] fitPeaks = new boolean[peaks.size()];
         Arrays.fill(fitPeaks, true);
 
-        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1);
+        return peakFit(theFile, peaks, fitPeaks, rows, doFit, fitMode, updatePeaks, delays, multiplier, false, -1, false);
     }
 
     /**
@@ -3149,7 +3149,7 @@ public class PeakList {
     public static List<Object> peakFit(Dataset theFile, List<Peak> peaks,
             boolean[] fitPeaks,
             int[] rows, boolean doFit, int fitMode, final boolean updatePeaks,
-            double[] delays, double multiplier, boolean lsFit, int constrainDim)
+            double[] delays, double multiplier, boolean lsFit, int constrainDim, boolean fitPlanes)
             throws IllegalArgumentException, IOException, PeakFitException {
         List<Object> peaksResult = new ArrayList<>();
         if (peaks.isEmpty()) {
@@ -3209,8 +3209,7 @@ public class PeakList {
                             + peak.peakList.getSpectralDim(j).getDimName() + "\"");
                 }
             }
-            int iRow = 0;
-            for (int dDim = 0; dDim < dataDim; dDim++) {
+            for (int dDim = 0, iRow = 0; dDim < dataDim; dDim++) {
                 boolean gotThisDim = false;
                 for (int pDim = 0; pDim < pdim.length; pDim++) {
                     if (pdim[pDim] == dDim) {
@@ -3250,7 +3249,9 @@ public class PeakList {
                 globalMax = FastMath.abs(intensity);
             }
             if ((dataDim - nPeakDim) == 1) {
-                nPlanes = theFile.getSize(dataDim - 1);
+                if (fitPlanes) {
+                    nPlanes = theFile.getSize(dataDim - 1);
+                }
             }
             // if rate mode add guesses for relaxation time constant 1/rate and
             // intensity at infinite delay
