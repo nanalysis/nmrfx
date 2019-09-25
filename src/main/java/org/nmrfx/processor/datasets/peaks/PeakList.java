@@ -3231,6 +3231,7 @@ public class PeakList {
             }
 
             peak.getPeakRegion(theFile, pdim, p1, cpt[iPeak], width[iPeak]);
+//            System.out.println("fit " + peak);
 //            for (int i = 0; i < p2.length; i++) {
 //                System.out.println(i + " p1 " + p1[i][0] + " " + p1[i][1]);
 //                System.out.println(i + " p2 " + p2[i][0] + " " + p2[i][1]);
@@ -3544,10 +3545,10 @@ public class PeakList {
             if (used.contains(peak)) {
                 continue;
             }
-            List<Set<Peak>> overlaps = peak.getOverlapLayers(1.0);
+            List<Set<Peak>> overlaps = peak.getOverlapLayers(1.5);
             result.add(overlaps);
             Set<Peak> firstLayer = overlaps.get(1);
-            Set<Peak> secondLayer = overlaps.get(1);
+            Set<Peak> secondLayer = overlaps.get(2);
             if (secondLayer.isEmpty()) {
                 for (Peak checkPeak : firstLayer) {
                     used.add(checkPeak);
