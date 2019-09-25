@@ -42,6 +42,7 @@ public class LorentzGaussND implements MultivariateFunction {
     int[][] positions;
     double[][] intensities;
     double[] delays;
+    boolean fitC = false;
     double[] guesses;
     double[][] boundaries;
     double[] newStart;
@@ -93,7 +94,8 @@ public class LorentzGaussND implements MultivariateFunction {
         nDelays = intensities.length;
     }
 
-    public void setDelays(final double[] delays) {
+    public void setDelays(final double[] delays, boolean fitC) {
+        this.fitC = fitC;
         this.delays = delays;
     }
 
@@ -213,7 +215,9 @@ public class LorentzGaussND implements MultivariateFunction {
             if (delays != null) {
                 amplitude = a[iPar++];
                 amplitude *= FastMath.exp(-1.0 * delays[iDelay] / a[iPar++]);
-                base = a[iPar++];
+                if (fitC) {
+                    base = a[iPar++];
+                }
             } else {
                 amplitude = a[iPar + iDelay];
                 iPar += nDelays;
@@ -276,7 +280,11 @@ public class LorentzGaussND implements MultivariateFunction {
         int nRelaxPar = 0;
         if (intensities.length > 1) {
             if (delays != null) {
-                nRelaxPar = 2;
+                if (fitC) {
+                    nRelaxPar = 2;
+                } else {
+                    nRelaxPar = 1;
+                }
             } else {
                 nRelaxPar = nDelays - 1;
             }
