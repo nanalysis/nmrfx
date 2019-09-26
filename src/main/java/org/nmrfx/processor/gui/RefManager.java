@@ -125,9 +125,6 @@ public class RefManager {
         //System.out.println(nameWithDim + " value is " + value + " was " + updateItem.getValue().toString());
         boolean refresh = true;
         if (propName.equals("fixdsp")) {
-            Map<String, Boolean> flags = new HashMap<>();
-            flags.put("fixdsp", (Boolean) updateItem.getValue());
-            chartProcessor.setFlags(flags);
             chartProcessor.setFixDSP((Boolean) updateItem.getValue());
             refresh = true;
         } else if (propName.equals("EchoAntiecho")) {
@@ -182,6 +179,11 @@ public class RefManager {
         sBuilder.append(indent);
         sBuilder.append("acqarray(");
         sBuilder.append(chartProcessor.getArraySizes());
+        sBuilder.append(")");
+        sBuilder.append(System.lineSeparator());
+        sBuilder.append(indent);
+        sBuilder.append("fixdsp(");
+        sBuilder.append(chartProcessor.getFixDSP() ? "True" : "False");
         sBuilder.append(")");
         sBuilder.append(System.lineSeparator());
         for (String propName : propNames) {
@@ -401,6 +403,8 @@ public class RefManager {
                     chartProcessor.setAcqOrder(args);
                 } else if (propName.equals("acqarray")) {
                     chartProcessor.setArraySize(args);
+                } else if (propName.equals("fixdsp")) {
+                    chartProcessor.setFixDSP(args.equals("True"));
                 } else {
                     int dim = 0;
                     for (String parValue : parValues) {

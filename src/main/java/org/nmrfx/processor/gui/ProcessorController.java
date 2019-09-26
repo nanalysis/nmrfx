@@ -684,6 +684,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
         refOps.add("acqarray");
         refOps.add("acqsize");
         refOps.add("tdsize");
+        refOps.add("fixdsp");
         //textArea.setText(scriptString);
         textArea.replaceText(scriptString);
         String[] lines = scriptString.split("\n");
