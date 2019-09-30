@@ -48,6 +48,69 @@ public class Fitter {
 
     }
 
+    public static double getYAtMaxX(double[] x, double[] y) {
+        double maxVal = Double.NEGATIVE_INFINITY;
+        double yValue = 0;
+        for (int i = 0; i < x.length; i++) {
+            if (x[i] > maxVal) {
+                maxVal = x[i];
+                yValue = y[i];
+            }
+        }
+        return yValue;
+    }
+
+    public static double getYAtMinX(double[] x, double[] y) {
+        double minVal = Double.MAX_VALUE;
+        double yValue = 0;
+        for (int i = 0; i < x.length; i++) {
+            if (x[i] < minVal) {
+                minVal = x[i];
+                yValue = y[i];
+            }
+        }
+        return yValue;
+    }
+
+    public static double getMinValue(double[] v) {
+        double minVal = Double.MAX_VALUE;
+        for (int i = 0; i < v.length; i++) {
+            if (v[i] < minVal) {
+                minVal = v[i];
+            }
+        }
+        return minVal;
+    }
+
+    public static double getMaxValue(double[] v) {
+        double maxVal = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < v.length; i++) {
+            if (v[i] > maxVal) {
+                maxVal = v[i];
+            }
+        }
+        return maxVal;
+    }
+
+    public static double getMidY0(double[] x, double[] y) {
+        double hh = getMaxValue(y) / 2.0;
+        double deltaMin = Double.MAX_VALUE;
+        double iMid = 0;
+
+        for (int i = 0; i < x.length; i++) {
+            double dvar = y[i];
+            double ivar = x[i];
+            double ddvar = Math.abs(dvar - hh);
+
+            if (ddvar < deltaMin) {
+                deltaMin = ddvar;
+                iMid = ivar;
+            }
+        }
+
+        return iMid;
+    }
+
     public static Fitter getFitter(BiFunction<double[], double[], Double> function) {
         Fitter fitter = new Fitter();
         fitter.function = function;
@@ -130,6 +193,14 @@ public class Fitter {
         this.xValues = xValues;
         this.yValues = yValues;
         this.errValues = errValues;
+    }
+
+    public double[][] getX() {
+        return xValues;
+    }
+
+    public double[] getY() {
+        return yValues;
     }
 
     class Optimizer implements MultivariateFunction {
