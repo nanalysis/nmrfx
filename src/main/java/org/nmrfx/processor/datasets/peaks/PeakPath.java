@@ -61,6 +61,8 @@ public class PeakPath implements PeakListener {
         List<PeakDistance> peakDists = new ArrayList<>();
         double radius;
         boolean confirmed = false;
+        double[] pars = null;
+        double[] parErrs = null;
 
         Path(List<PeakDistance> path, double dis) {
             peakDists.addAll(path);
@@ -136,12 +138,78 @@ public class PeakPath implements PeakListener {
             return free;
         }
 
+        public int getNValid() {
+            int nValid = 0;
+            for (PeakDistance peakDis : peakDists) {
+                if (peakDis != null) {
+                    nValid++;
+                }
+            }
+            return nValid;
+        }
+
         public double check() {
             return checkPath(peakDists);
         }
 
         public Peak getFirstPeak() {
             return firstPeak;
+        }
+
+        public void setFitPars(double[] pars) {
+            this.pars = pars != null ? pars.clone() : null;
+        }
+
+        public void setFitErrs(double[] parErrs) {
+            this.parErrs = parErrs != null ? parErrs.clone() : null;
+        }
+
+        public int getPeak() {
+            return firstPeak.getIdNum();
+        }
+
+        public double[] getFitPars() {
+            return pars;
+        }
+
+        public double[] getFitErrs() {
+            return parErrs;
+        }
+
+        public Double getA() {
+            if (pars == null) {
+                return null;
+            } else {
+                if (pars.length == 3) {
+                    return pars[0];
+                } else {
+                    return 0.0;
+                }
+            }
+        }
+
+        public Double getK() {
+            if (pars == null) {
+                return null;
+            } else {
+                if (pars.length == 3) {
+                    return pars[1];
+                } else {
+                    return pars[0];
+                }
+            }
+        }
+
+        public Double getC() {
+            if (pars == null) {
+                return null;
+            } else {
+                if (pars.length == 3) {
+                    return pars[2];
+                } else {
+                    return pars[1];
+                }
+            }
         }
 
         public String toString() {
@@ -871,7 +939,9 @@ public class PeakPath implements PeakListener {
                 }
                 System.out.print(" nmiss " + nMissing + " " + pathOK);
                 if (pathOK && (nMissing < 4)) {
-                    path.add(endPeakDist);
+                    if (path.size() < concentrations.length) {
+                        path.add(endPeakDist);
+                    }
                     double rms = Math.sqrt(pathSum / (filteredLists.size() - 3));
                     //System.out.println(rms);
                     System.out.println(" " + rms);
@@ -1022,4 +1092,7 @@ public class PeakPath implements PeakListener {
         return paths.values();
     }
 
+    public double[] getConcentrations() {
+        return concentrations;
+    }
 }
