@@ -2918,6 +2918,16 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    public List<DatasetAttributes> getActiveDatasetAttributes() {
+        List<DatasetAttributes> activeData = new ArrayList<>();
+        for (DatasetAttributes dataAttr : datasetAttributesList) {
+            if (dataAttr.getPos()) {
+                activeData.add(dataAttr);
+            }
+        }
+        return activeData;
+    }
+
     public ObservableList<DatasetAttributes> getDatasetAttributes() {
         return datasetAttributesList;
     }

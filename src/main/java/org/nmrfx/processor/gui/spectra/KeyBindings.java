@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.scene.Cursor;
+import javafx.scene.control.Alert;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import org.nmrfx.processor.gui.KeyMonitor;
@@ -164,13 +165,22 @@ public class KeyBindings {
 
             case "aa":
             case "as":
-                DatasetAttributes datasetAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
-                double pickX = chart.getAxis(0).getValueForDisplay(chart.getMouseX()).doubleValue();
-                double pickY = chart.getAxis(1).getValueForDisplay(chart.getMouseY()).doubleValue();
-                PeakPicking.pickAtPosition(chart, datasetAttr, pickX, pickY, shortString.equals("as"), false);
-                chart.setPeakStatus(true);
-                keyMonitor.clear();
-                chart.drawPeakLists(true);
+                List<DatasetAttributes> activeData = chart.getActiveDatasetAttributes();
+                if (activeData.size() == 1) {
+                    DatasetAttributes datasetAttr = activeData.get(0);
+                    double pickX = chart.getAxis(0).getValueForDisplay(chart.getMouseX()).doubleValue();
+                    double pickY = chart.getAxis(1).getValueForDisplay(chart.getMouseY()).doubleValue();
+                    PeakPicking.pickAtPosition(chart, datasetAttr, pickX, pickY, shortString.equals("as"), false);
+                    chart.setPeakStatus(true);
+                    keyMonitor.clear();
+                    chart.drawPeakLists(true);
+                } else {
+                    keyMonitor.clear();
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setContentText("Must have one dataset displayed");
+                    alert.showAndWait();
+                    return;
+                }
                 break;
             case "c":
                 break;
