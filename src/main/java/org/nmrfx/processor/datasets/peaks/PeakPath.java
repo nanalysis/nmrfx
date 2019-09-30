@@ -57,6 +57,31 @@ public class PeakPath implements PeakListener {
 
     public class Path implements Comparable<Path> {
 
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 97 * hash + Objects.hashCode(this.firstPeak);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Path other = (Path) obj;
+            if (!Objects.equals(this.firstPeak, other.firstPeak)) {
+                return false;
+            }
+            return true;
+        }
+
         Peak firstPeak;
         List<PeakDistance> peakDists = new ArrayList<>();
         double radius;
@@ -188,6 +213,18 @@ public class PeakPath implements PeakListener {
             }
         }
 
+        public Double getADev() {
+            if (parErrs == null) {
+                return null;
+            } else {
+                if (parErrs.length == 3) {
+                    return parErrs[0];
+                } else {
+                    return 0.0;
+                }
+            }
+        }
+
         public Double getK() {
             if (pars == null) {
                 return null;
@@ -200,6 +237,18 @@ public class PeakPath implements PeakListener {
             }
         }
 
+        public Double getKDev() {
+            if (parErrs == null) {
+                return null;
+            } else {
+                if (parErrs.length == 3) {
+                    return parErrs[1];
+                } else {
+                    return parErrs[0];
+                }
+            }
+        }
+
         public Double getC() {
             if (pars == null) {
                 return null;
@@ -208,6 +257,18 @@ public class PeakPath implements PeakListener {
                     return pars[2];
                 } else {
                     return pars[1];
+                }
+            }
+        }
+
+        public Double getCDev() {
+            if (parErrs == null) {
+                return null;
+            } else {
+                if (parErrs.length == 3) {
+                    return parErrs[2];
+                } else {
+                    return parErrs[1];
                 }
             }
         }
