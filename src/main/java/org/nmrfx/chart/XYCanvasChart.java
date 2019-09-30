@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chart;
 
+import java.io.File;
 import java.util.List;
 import java.util.Optional;
 import javafx.beans.property.DoubleProperty;
@@ -28,9 +29,12 @@ import javafx.geometry.Orientation;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
+import org.nmrfx.graphicsio.SVGGraphicsContext;
 
 /**
  *
@@ -416,6 +420,41 @@ public class XYCanvasChart {
             }
         }
         return hitOpt;
+    }
+
+    public void addLines(double[] x, double[] y, boolean symbol) {
+        DataSeries series = new DataSeries();
+        for (int j = 0; j < x.length; j++) {
+            series.getData().add(new XYValue(x[j], y[j]));
+        }
+        series.drawLine(!symbol);
+        series.drawSymbol(symbol);
+        series.fillSymbol(symbol);
+        getData().add(series);
+    }
+
+    protected void exportChart(SVGGraphicsContext svgGC) throws GraphicsIOException {
+        svgGC.beginPath();
+        drawChart(svgGC);
+    }
+
+    public void exportSVG() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export to SVG");
+        //fileChooser.setInitialDirectory(pyController.getInitialDirectory());
+        File selectedFile = fileChooser.showSaveDialog(null);
+        if (selectedFile != null) {
+            SVGGraphicsContext svgGC = new SVGGraphicsContext();
+            try {
+                Canvas canvas = getCanvas();
+                svgGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                exportChart(svgGC);
+                svgGC.saveFile();
+            } catch (GraphicsIOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+            }
+        }
     }
 
 }
