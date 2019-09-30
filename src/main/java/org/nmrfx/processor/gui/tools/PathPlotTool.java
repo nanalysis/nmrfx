@@ -17,6 +17,11 @@
  */
 package org.nmrfx.processor.gui.tools;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.collections.ListChangeListener;
@@ -24,6 +29,8 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableCell;
@@ -31,7 +38,9 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.DataSeries;
@@ -49,8 +58,9 @@ public class PathPlotTool {
     Stage stage = null;
     XYCanvasChart activeChart = null;
     BorderPane borderPane = new BorderPane();
-    TableView tableView;
+    TableView<PeakPath.Path> tableView;
     Scene stageScene = new Scene(borderPane, 500, 500);
+    String[] colNames = {"Peak", "A", "ADev", "K", "KDev", "C", "CDev"};
 
     public PathPlotTool(PathTool pathTool) {
         this.pathTool = pathTool;
@@ -61,20 +71,27 @@ public class PathPlotTool {
         if (stage == null) {
             stage = new Stage();
             stage.setTitle("Plot Tool");
+            MenuButton fileMenu = new MenuButton("File");
             ToolBar toolBar = new ToolBar();
-            Button exportButton = new Button("Export");
+            MenuItem exportSVGButton = new MenuItem("Export SVG Plot");
+            MenuItem exportTableButton = new MenuItem("Export Table");
+            fileMenu.getItems().addAll(exportSVGButton, exportTableButton);
+
             Button fitButton = new Button("Fit ");
             Button fitGroupButton = new Button("Fit Group");
-            toolBar.getItems().addAll(exportButton, fitButton, fitGroupButton);
+            toolBar.getItems().addAll(fileMenu, fitButton, fitGroupButton);
 
             //Create the Scatter chart
             XYChartPane chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
-            exportButton.setOnAction(e -> activeChart.exportSVG());
+
+            exportSVGButton.setOnAction(e -> activeChart.exportSVG());
+            exportTableButton.setOnAction(e -> savePathTable());
             fitButton.setOnAction(e -> pathTool.fitPathsIndividual());
             fitGroupButton.setOnAction(e -> pathTool.fitPathsGrouped());
+
             borderPane.setTop(toolBar);
-            tableView = new TableView();
+            tableView = new TableView<PeakPath.Path>();
             SplitPane sPane = new SplitPane(chartPane, tableView);
             sPane.setOrientation(Orientation.VERTICAL);
             borderPane.setCenter(sPane);
@@ -125,28 +142,34 @@ public class PathPlotTool {
             selectionChanged();
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
-        TableColumn<PeakPath.Path, Integer> peakCol = new TableColumn<>("Peak");
-        peakCol.setCellValueFactory(new PropertyValueFactory<>("Peak"));
-        tableView.getColumns().add(peakCol);
-        String[] colNames = {"A", "K", "C"};
+
         for (String colName : colNames) {
             TableColumn<PeakPath.Path, Number> col = new TableColumn<>(colName);
             col.setCellValueFactory(new PropertyValueFactory<>(colName));
-            col.setCellFactory(c
-                    -> new TableCell<PeakPath.Path, Number>() {
-                @Override
-                public void updateItem(Number value, boolean empty) {
-                    super.updateItem(value, empty);
-                    if (empty || (value == null)) {
-                        setText(null);
-                    } else {
-                        setText(String.format("%.4f", value.doubleValue()));
+            if (!colName.equals("Peak")) {
+                col.setCellFactory(c
+                        -> new TableCell<PeakPath.Path, Number>() {
+                    @Override
+                    public void updateItem(Number value, boolean empty) {
+                        super.updateItem(value, empty);
+                        if (empty || (value == null)) {
+                            setText(null);
+                        } else {
+                            setText(String.format("%.4f", value.doubleValue()));
+                        }
                     }
-                }
-            });
-
+                });
+            }
             tableView.getColumns().add(col);
+
         }
+        tableView.setOnKeyPressed(e -> {
+            if ((e.getCode() == KeyCode.BACK_SPACE) || (e.getCode() == KeyCode.DELETE)) {
+                List<PeakPath.Path> selPaths = getSelected();
+                pathTool.removeActivePaths(selPaths);
+
+            }
+        });
     }
 
     List<PeakPath.Path> getSelected() {
@@ -167,4 +190,66 @@ public class PathPlotTool {
             pathTool.showXYPath(path);
         }
     }
+
+    public void savePathTable() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Table File");
+        File file = fileChooser.showSaveDialog(null);
+        if (file != null) {
+            savePathTable(file);
+        }
+    }
+
+    private void savePathTable(File file) {
+        Charset charset = Charset.forName("US-ASCII");
+        try (BufferedWriter writer = Files.newBufferedWriter(file.toPath(), charset)) {
+            boolean first = true;
+            for (TableColumn column : tableView.getColumns()) {
+                String header = column.getText();
+                if (!first) {
+                    writer.write('\t');
+                } else {
+                    first = false;
+                }
+                writer.write(header, 0, header.length());
+            }
+            for (PeakPath.Path item : tableView.getItems()) {
+                StringBuilder sBuilder = new StringBuilder();
+                sBuilder.append('\n');
+                for (String colName : colNames) {
+                    if (sBuilder.length() != 1) {
+                        sBuilder.append('\t');
+                    }
+                    switch (colName) {
+                        case "Peak":
+                            sBuilder.append(item.getPeak());
+                            break;
+                        case "A":
+                            sBuilder.append(String.format("%.4f", item.getA()));
+                            break;
+                        case "K":
+                            sBuilder.append(String.format("%.4f", item.getK()));
+                            break;
+                        case "C":
+                            sBuilder.append(String.format("%.4f", item.getC()));
+                            break;
+                        case "ADev":
+                            sBuilder.append(String.format("%.4f", item.getADev()));
+                            break;
+                        case "KDev":
+                            sBuilder.append(String.format("%.4f", item.getKDev()));
+                            break;
+                        case "CDev":
+                            sBuilder.append(String.format("%.4f", item.getCDev()));
+                            break;
+                    }
+
+                }
+                String s = sBuilder.toString();
+                writer.write(s, 0, s.length());
+            }
+        } catch (IOException x) {
+        }
+    }
+
 }

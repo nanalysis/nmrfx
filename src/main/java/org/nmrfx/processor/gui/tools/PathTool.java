@@ -705,4 +705,9 @@ checkLists(pp, 0.25, False)
     public void refreshPeakListView(PeakList peakList) {
         controller.refreshPeakListView(peakList);
     }
+
+    public void removeActivePaths(List<PeakPath.Path> selPaths) {
+        activePaths.removeAll(selPaths);
+        plotTool.updateTable(activePaths);
+    }
 }
