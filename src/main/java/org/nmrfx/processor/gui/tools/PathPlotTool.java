@@ -17,6 +17,7 @@
  */
 package org.nmrfx.processor.gui.tools;
 
+import java.util.ArrayList;
 import java.util.List;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -62,13 +63,16 @@ public class PathPlotTool {
             stage.setTitle("Plot Tool");
             ToolBar toolBar = new ToolBar();
             Button exportButton = new Button("Export");
-            Button fitButton = new Button("Fit");
-            toolBar.getItems().addAll(exportButton, fitButton);
+            Button fitButton = new Button("Fit ");
+            Button fitGroupButton = new Button("Fit Group");
+            toolBar.getItems().addAll(exportButton, fitButton, fitGroupButton);
 
             //Create the Scatter chart
             XYChartPane chartPane = new XYChartPane();
             activeChart = chartPane.getChart();
             exportButton.setOnAction(e -> activeChart.exportSVG());
+            fitButton.setOnAction(e -> pathTool.fitPathsIndividual());
+            fitGroupButton.setOnAction(e -> pathTool.fitPathsGrouped());
             borderPane.setTop(toolBar);
             tableView = new TableView();
             SplitPane sPane = new SplitPane(chartPane, tableView);
@@ -123,6 +127,7 @@ public class PathPlotTool {
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
         TableColumn<PeakPath.Path, Integer> peakCol = new TableColumn<>("Peak");
         peakCol.setCellValueFactory(new PropertyValueFactory<>("Peak"));
+        tableView.getColumns().add(peakCol);
         String[] colNames = {"A", "K", "C"};
         for (String colName : colNames) {
             TableColumn<PeakPath.Path, Number> col = new TableColumn<>(colName);
@@ -142,6 +147,16 @@ public class PathPlotTool {
 
             tableView.getColumns().add(col);
         }
+    }
+
+    List<PeakPath.Path> getSelected() {
+        List<PeakPath.Path> paths = new ArrayList<>();
+        List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
+        for (Integer index : selected) {
+            PeakPath.Path path = (PeakPath.Path) tableView.getItems().get(index);
+            paths.add(path);
+        }
+        return paths;
     }
 
     final protected void selectionChanged() {

@@ -325,14 +325,58 @@ public class PathTool implements PeakNavigable {
         }
     }
 
+    void fitPathsGrouped() {
+        PathFitter fitPath = new PathFitter();
+        List<PeakPath.Path> fitPaths = plotTool.getSelected();
+        if (fitPaths.isEmpty()) {
+            fitPaths.addAll(activePaths);
+
+        }
+        if (!fitPaths.isEmpty()) {
+            try {
+                fitPath.setup(peakPath, fitPaths);
+                Fitter fitter = fitPath.fit();
+                plotTool.tableView.refresh();
+                showXYPaths(fitPaths);
+            } catch (Exception ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+            }
+        }
+    }
+
+    void fitPathsIndividual() {
+        PathFitter fitPath = new PathFitter();
+        List<PeakPath.Path> fitPaths = plotTool.getSelected();
+        if (fitPaths.isEmpty()) {
+            fitPaths.addAll(activePaths);
+        }
+        if (!fitPaths.isEmpty()) {
+            try {
+                for (Path path : fitPaths) {
+                    fitPath.setup(peakPath, path);
+                    Fitter fitter = fitPath.fit();
+                }
+                plotTool.tableView.refresh();
+                showXYPaths(fitPaths);
+            } catch (Exception ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+            }
+        }
+    }
+
     void addPathToTable() {
         Peak peak = peakNavigator.getPeak();
         Path path = peakPath.getPath(peak);
         if (path != null) {
-            if (!activePaths.contains(path)) {
-                activePaths.add(path);
-                plotTool.updateTable(activePaths);
+            if (activePaths.contains(path)) {
+                activePaths.remove(path);
+
             }
+            activePaths.add(path);
+            plotTool.updateTable(activePaths);
+
         }
 
     }
