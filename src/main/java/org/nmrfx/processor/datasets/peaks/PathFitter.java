@@ -19,19 +19,23 @@ import org.nmrfx.processor.optimization.Fitter;
  */
 public class PathFitter {
 
-    Path path;
+    List<Path> currentPaths = new ArrayList<>();
     boolean fit0 = false;
+    boolean fitLog = false;
     double[] bestPars;
     double[] parErrs;
     double[][] xVar;
     double[] yVar;
     double[] errVar;
+    int[] indices;
+    int nPaths;
 
     class PathFunct implements BiFunction<double[], double[][], Double> {
 
         double yCalc(double a, double b, double c, double x, double p) {
             double dP = c - a;
-            double n1 = p + x + Math.pow(10.0, b);
+            double kD = fitLog ? Math.pow(10.0, b) : b;
+            double n1 = p + x + kD;
             double s1 = Math.sqrt(n1 * n1 - 4.0 * x * p);
             double yCalc = a + dP * (n1 - s1) / (2.0 * p);
             return yCalc;
@@ -42,10 +46,11 @@ public class PathFitter {
         public Double apply(double[] pars, double[][] values) {
             double a = fit0 ? pars[0] : 0.0;
             double b = fit0 ? pars[1] : pars[0];
-            double c = fit0 ? pars[2] : pars[1];
             double sum = 0.0;
             int n = values[0].length;
             for (int i = 0; i < n; i++) {
+                int iOff = indices[i];
+                double c = fit0 ? pars[2 + iOff] : pars[1 + iOff];
                 double x = values[0][i];
                 double p = values[1][i];
                 double y = values[2][i];
@@ -60,15 +65,17 @@ public class PathFitter {
         }
 
         public double[] getGuess(double[] x, double[] y) {
-            double yMax = Fitter.getMaxValue(y);
-            double yAtMinX = Fitter.getYAtMinX(x, y);
-            double xMid = Fitter.getMidY0(x, y);
-            double c = yMax;
-            double a = yAtMinX;
-            double b = Math.log10(xMid);
-            double[] resultabc = {a, b, c};
-            double[] resultbc = {b, c};
-            double[] result = fit0 ? resultabc : resultbc;
+            int nPars = 1 + nPaths;
+
+            double[] result = new double[nPars];
+            for (int iPath = 0; iPath < nPaths; iPath++) {
+                double yMax = Fitter.getMaxValue(y, indices, iPath);
+                double yAtMinX = Fitter.getYAtMinX(x, y, indices, iPath);
+                double xMid = Fitter.getMidY0(x, y, indices, iPath);
+                result[1 + iPath] = yMax;
+                result[0] += fitLog ? Math.log10(xMid) : xMid;
+            }
+            result[0] /= nPaths;
             return result;
         }
 
@@ -112,7 +119,8 @@ public class PathFitter {
     }
 
     public void setup(PeakPath peakPath, Path path) {
-        this.path = path;
+        currentPaths.clear();
+        currentPaths.add(path);
         double[] iVar0 = peakPath.concentrations;
         double[] iVar1 = peakPath.binderConcs;
         List<PeakDistance> peakDists = path.getPeakDistances();
@@ -131,14 +139,60 @@ public class PathFitter {
         xVar = new double[2][n];
         yVar = new double[n];
         errVar = new double[n];
+        indices = new int[n];
         i = 0;
         for (double[] v : values) {
             xVar[0][i] = v[0];
             xVar[1][i] = v[1];
             yVar[i] = v[2];
             errVar[i] = v[3];
+            indices[i] = 0;
             i++;
         }
+        nPaths = 1;
+    }
+
+    public void setup(PeakPath peakPath, List<Path> paths) {
+        currentPaths.clear();
+        currentPaths.addAll(paths);
+        double[] iVar0 = peakPath.concentrations;
+        double[] iVar1 = peakPath.binderConcs;
+        List<double[]> values = new ArrayList<>();
+        List<Integer> pathIndices = new ArrayList<>();
+        int iPath = 0;
+        for (Path path : paths) {
+            List<PeakDistance> peakDists = path.getPeakDistances();
+            int i = 0;
+            double errValue = 0.1;
+
+            for (PeakDistance peakDist : peakDists) {
+                if (peakDist != null) {
+                    double[] row = {iVar0[i], iVar1[i], peakDist.distance, errValue};
+                    System.out.printf("%2d %.3f %.3f %.3f %.3f\n", i, row[0], row[1], row[2], row[3]);
+                    values.add(row);
+                    pathIndices.add(iPath);
+                }
+                i++;
+            }
+            iPath++;
+        }
+        int n = values.size();
+        xVar = new double[2][n];
+        yVar = new double[n];
+        errVar = new double[n];
+        indices = new int[n];
+
+        int i = 0;
+        for (double[] v : values) {
+            xVar[0][i] = v[0];
+            xVar[1][i] = v[1];
+            yVar[i] = v[2];
+            errVar[i] = v[3];
+            indices[i] = pathIndices.get(i);
+            i++;
+        }
+        nPaths = paths.size();
+
     }
 
     public Fitter fit() throws Exception {
@@ -156,17 +210,25 @@ public class PathFitter {
         }
         lower[iG] = guess[iG] / 4.0;
         upper[iG] = guess[iG] * 3.0;
-        lower[iG + 1] = guess[iG + 1] / 2.0;
-        upper[iG + 1] = guess[iG + 1] * 2.0;
+        for (int iPath = 0; iPath < nPaths; iPath++) {
+            lower[iG + 1 + iPath] = guess[iG + 1 + iPath] / 2.0;
+            upper[iG + 1 + iPath] = guess[iG + 1 + iPath] * 2.0;
+        }
         for (int k = 0; k < guess.length; k++) {
             System.out.printf("%.3f %.3f %.3f\n", lower[k], guess[k], upper[k]);
         }
+
         PointValuePair result = fitter.fit(guess, lower, upper, 10.0);
         System.out.println(result.getValue());
         bestPars = result.getPoint();
         parErrs = fitter.bootstrap(result.getPoint(), 300);
-        path.setFitPars(bestPars);
-        path.setFitErrs(parErrs);
+        for (int iPath = 0; iPath < nPaths; iPath++) {
+            Path path = currentPaths.get(iPath);
+            double[] pars = {bestPars[0], bestPars[iPath + 1]};
+            double[] errs = {parErrs[0], parErrs[iPath + 1]};
+            path.setFitPars(pars);
+            path.setFitErrs(errs);
+        }
         return fitter;
     }
 }
