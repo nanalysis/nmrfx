@@ -451,7 +451,7 @@ public class PathTool implements PeakNavigable {
         }
         int i = 0;
         for (DatasetAttributes dataAttr : dataAttrs) {
-            boolean state = (i == active) || (i == 0);
+            boolean state = (i == active);
             dataAttr.setPos(state);
             i++;
         }
@@ -465,10 +465,8 @@ public class PathTool implements PeakNavigable {
         int active = 0;
         for (DatasetAttributes dataAttr : dataAttrs) {
             if (dataAttr.getPos()) {
-                if (i != 0) {
-                    active = i;
-                    break;
-                }
+                active = i;
+                break;
             }
             i++;
         }
