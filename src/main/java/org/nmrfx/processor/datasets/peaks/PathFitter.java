@@ -130,7 +130,7 @@ public class PathFitter {
         for (PeakDistance peakDist : peakDists) {
             if (peakDist != null) {
                 double[] row = {iVar0[i], iVar1[i], peakDist.distance, errValue};
-                System.out.printf("%2d %.3f %.3f %.3f %.3f\n", i, row[0], row[1], row[2], row[3]);
+//                System.out.printf("%2d %.3f %.3f %.3f %.3f\n", i, row[0], row[1], row[2], row[3]);
                 values.add(row);
             }
             i++;
@@ -168,7 +168,7 @@ public class PathFitter {
             for (PeakDistance peakDist : peakDists) {
                 if (peakDist != null) {
                     double[] row = {iVar0[i], iVar1[i], peakDist.distance, errValue};
-                    System.out.printf("%2d %.3f %.3f %.3f %.3f\n", i, row[0], row[1], row[2], row[3]);
+//                    System.out.printf("%2d %.3f %.3f %.3f %.3f\n", i, row[0], row[1], row[2], row[3]);
                     values.add(row);
                     pathIndices.add(iPath);
                 }
@@ -214,12 +214,11 @@ public class PathFitter {
             lower[iG + 1 + iPath] = guess[iG + 1 + iPath] / 2.0;
             upper[iG + 1 + iPath] = guess[iG + 1 + iPath] * 2.0;
         }
-        for (int k = 0; k < guess.length; k++) {
-            System.out.printf("%.3f %.3f %.3f\n", lower[k], guess[k], upper[k]);
-        }
+//        for (int k = 0; k < guess.length; k++) {
+//            System.out.printf("%.3f %.3f %.3f\n", lower[k], guess[k], upper[k]);
+//        }
 
         PointValuePair result = fitter.fit(guess, lower, upper, 10.0);
-        System.out.println(result.getValue());
         bestPars = result.getPoint();
         parErrs = fitter.bootstrap(result.getPoint(), 300);
         for (int iPath = 0; iPath < nPaths; iPath++) {
