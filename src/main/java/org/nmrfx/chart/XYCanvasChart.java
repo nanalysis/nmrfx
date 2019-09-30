@@ -42,6 +42,18 @@ import org.nmrfx.graphicsio.SVGGraphicsContext;
  */
 public class XYCanvasChart {
 
+    public static final Color[] colors = {
+        Color.web("#1b9e77"),
+        Color.web("#d95f02"),
+        Color.web("#7570b3"),
+        Color.web("#e7298a"),
+        Color.web("#66a61e"),
+        Color.web("#e6ab02"),
+        Color.web("#a6761d"),
+        Color.web("#666666"),
+        Color.web("#ff7f00"),
+        Color.web("#6a3d9a"),};
+
     public final Canvas canvas;
     String title = "";
     public Axis xAxis;
@@ -423,6 +435,10 @@ public class XYCanvasChart {
     }
 
     public void addLines(double[] x, double[] y, boolean symbol) {
+        addLines(x, y, symbol, null);
+    }
+
+    public void addLines(double[] x, double[] y, boolean symbol, Color color) {
         DataSeries series = new DataSeries();
         for (int j = 0; j < x.length; j++) {
             series.getData().add(new XYValue(x[j], y[j]));
@@ -430,6 +446,12 @@ public class XYCanvasChart {
         series.drawLine(!symbol);
         series.drawSymbol(symbol);
         series.fillSymbol(symbol);
+        int iSeries = getData().size();
+        if (color == null) {
+            color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
+        }
+        series.setFill(color);
+        series.setStroke(color);
         getData().add(series);
     }
 
