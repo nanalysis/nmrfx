@@ -14,12 +14,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
@@ -28,9 +29,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.PathFitter;
 import org.nmrfx.processor.datasets.peaks.FreezeListener;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
@@ -46,6 +50,7 @@ import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.processor.optimization.Fitter;
 
 /**
  *
@@ -53,7 +58,7 @@ import org.nmrfx.processor.gui.spectra.PeakListAttributes;
  */
 public class PathTool implements PeakNavigable {
 
-    ToolBar sliderToolBar;
+    VBox vBox;
     FXMLController controller;
     PolyChart chart;
     Consumer closeAction;
@@ -66,25 +71,34 @@ public class PathTool implements PeakNavigable {
     List<String> peakListNames = new ArrayList<>();
     PeakNavigator peakNavigator;
     TextField radiusField;
-
+    TextField[] fitFields;
+    Button fitButton;
+    Button addButton;
     PeakPath peakPath;
+    ObservableList<PeakPath.Path> activePaths = FXCollections.observableArrayList();
+
+    PathPlotTool plotTool;
 
     public PathTool(FXMLController controller, Consumer closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
         this.chart = controller.getActiveChart();
+        plotTool = new PathPlotTool(this);
     }
 
-    public ToolBar getToolBar() {
-        return sliderToolBar;
+    public VBox getToolBar() {
+        return vBox;
     }
 
     public void close(Object o) {
         closeAction.accept(this);
     }
 
-    public void initPathTool(ToolBar toolBar) {
-        this.sliderToolBar = toolBar;
+    public void initPathTool(VBox vBox) {
+        ToolBar toolBar = new ToolBar();
+        ToolBar fitBar = new ToolBar();
+        this.vBox = vBox;
+        vBox.getChildren().addAll(toolBar, fitBar);
         peakNavigator = PeakNavigator.create(this).onClose(this::close).initialize(toolBar);
         peakNavigator.setPeakList();
         controller.addScaleBox(peakNavigator, toolBar);
@@ -173,6 +187,25 @@ public class PathTool implements PeakNavigable {
         toolBar.getItems().add(filler5);
         radiusField = new TextField("0.5");
         toolBar.getItems().add(radiusField);
+
+        Pane fillerf1 = new Pane();
+        fillerf1.setMinWidth(50);
+
+        fitButton = new Button("Fit");
+        fitButton.setOnAction(e -> fitPath());
+        fitButton.setDisable(true);
+
+        addButton = new Button("Add");
+        addButton.setOnAction(e -> addPathToTable());
+        addButton.setDisable(true);
+
+        fitBar.getItems().addAll(fitButton, addButton);
+        fitFields = new TextField[3];
+        fitBar.getItems().add(fillerf1);
+        for (int i = 0; i < fitFields.length; i++) {
+            fitFields[i] = new TextField("");
+            fitBar.getItems().add(fitFields[i]);
+        }
 
 //        controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
     }
@@ -270,6 +303,38 @@ public class PathTool implements PeakNavigable {
                 alert.showAndWait();
             }
         }
+    }
+
+    boolean pathUsable(Path path) {
+        return path.getNValid() > 3;
+    }
+
+    void fitPath() {
+        Peak peak = peakNavigator.getPeak();
+        PathFitter fitPath = new PathFitter();
+        try {
+            Path path = peakPath.getPath(peak);
+            if (pathUsable(path)) {
+                fitPath.setup(peakPath, path);
+                Fitter fitter = fitPath.fit();
+                updatePathInfo(peak, fitPath);
+            }
+        } catch (Exception ex) {
+            ExceptionDialog eDialog = new ExceptionDialog(ex);
+            eDialog.showAndWait();
+        }
+    }
+
+    void addPathToTable() {
+        Peak peak = peakNavigator.getPeak();
+        Path path = peakPath.getPath(peak);
+        if (path != null) {
+            if (!activePaths.contains(path)) {
+                activePaths.add(path);
+                plotTool.updateTable(activePaths);
+            }
+        }
+
     }
 
     void clearPath() {
@@ -468,6 +533,7 @@ checkLists(pp, 0.25, False)
                 }
             }
             drawPath();
+            updatePathInfo(startPeak);
         }
     }
 
@@ -498,15 +564,93 @@ checkLists(pp, 0.25, False)
         chart.refresh();
     }
 
+    void updatePathInfo(Peak peak) {
+        updatePathInfo(peak, null);
+    }
+
+    void updatePathInfo(Peak peak, PathFitter fitPath) {
+        Path path = peakPath.getPath(peak);
+        for (TextField fitField : fitFields) {
+            fitField.setText("");
+        }
+        if (path != null) {
+            System.out.println(path.toString());
+            if (pathUsable(path)) {
+                fitButton.setDisable(false);
+                addButton.setDisable(false);
+
+                if (fitPath == null) {
+                    fitPath = new PathFitter();
+                    fitPath.setup(peakPath, path);
+                }
+
+                double[][] xValues = fitPath.getX();
+                double[] yValues = fitPath.getY();
+                plotTool.show("Concentration", "Shift Delta");
+                plotTool.clear();
+                plotTool.getChart().addLines(xValues[0], yValues, true);
+
+                double[] fitPars = path.getFitPars();
+                double[] fitErrs = path.getFitErrs();
+                if (fitPars != null) {
+                    for (int i = 0; i < fitPars.length; i++) {
+                        fitFields[i].setText(String.format("%.3f +/- %.3f", fitPars[i], fitErrs[i]));
+                    }
+                    double first = 0.0;
+                    double last = Fitter.getMaxValue(peakPath.getConcentrations());
+                    double[][] xy = fitPath.getSimValues(fitPars, first, last, 100, xValues[1][0]);
+                    plotTool.getChart().addLines(xy[0], xy[1], false);
+                }
+
+            } else {
+                fitButton.setDisable(true);
+                addButton.setDisable(true);
+                plotTool.clear();
+            }
+        }
+    }
+
+    public void clearXYPath() {
+        plotTool.clear();
+    }
+
+    public void showXYPaths(List<Path> paths) {
+        plotTool.show("Concentration", "Shift Delta");
+        plotTool.clear();
+        for (Path path : paths) {
+            showXYPath(path);
+        }
+    }
+
+    public void showXYPath(Path path) {
+        PathFitter fitPath = new PathFitter();
+        fitPath.setup(peakPath, path);
+
+        double[][] xValues = fitPath.getX();
+        double[] yValues = fitPath.getY();
+        plotTool.getChart().addLines(xValues[0], yValues, true);
+
+        double[] fitPars = path.getFitPars();
+        double[] fitErrs = path.getFitErrs();
+        if (fitPars != null) {
+            for (int i = 0; i < fitPars.length; i++) {
+                fitFields[i].setText(String.format("%.3f +/- %.3f", fitPars[i], fitErrs[i]));
+            }
+            double first = 0.0;
+            double last = Fitter.getMaxValue(peakPath.getConcentrations());
+            double[][] xy = fitPath.getSimValues(fitPars, first, last, 100, xValues[1][0]);
+            plotTool.getChart().addLines(xy[0], xy[1], false);
+        }
+
+    }
+
     @Override
     public void refreshPeakView(Peak peak) {
 
         controller.refreshPeakView(peak);
         if ((peak != null) && (peakPath != null)) {
             Path path = peakPath.getPath(peak);
-            if (path != null) {
-                System.out.println(path.toString());
-            }
+            updatePathInfo(peak);
         }
     }
 

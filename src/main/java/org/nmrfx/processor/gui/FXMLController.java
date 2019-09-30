@@ -1795,10 +1795,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void showPathTool() {
         if (pathTool == null) {
-            ToolBar navBar = new ToolBar();
-            bottomBox.getChildren().add(navBar);
+            VBox vBox = new VBox();
+            bottomBox.getChildren().add(vBox);
             pathTool = new PathTool(this, this::removePathTool);
-            pathTool.initPathTool(navBar);
+            pathTool.initPathTool(vBox);
         }
     }
 
