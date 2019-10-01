@@ -40,6 +40,7 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.nmrfx.chart.Axis;
@@ -185,9 +186,12 @@ public class PathPlotTool {
     final protected void selectionChanged() {
         pathTool.clearXYPath();
         List<Integer> selected = tableView.getSelectionModel().getSelectedIndices();
+        int iSeries = 0;
         for (Integer index : selected) {
             PeakPath.Path path = (PeakPath.Path) tableView.getItems().get(index);
-            pathTool.showXYPath(path);
+            Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
+            pathTool.showXYPath(path, color);
+            iSeries++;
         }
     }
 

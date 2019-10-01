@@ -34,6 +34,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.chart.XYCanvasChart;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PathFitter;
 import org.nmrfx.processor.datasets.peaks.FreezeListener;
@@ -260,6 +261,7 @@ public class PathTool implements PeakNavigable {
                         sepChar = "\t";
                     }
                     for (String line : lines) {
+                        System.out.println("line is " + line);
                         String[] fields = line.split(sepChar);
                         if ((fields.length > 1) && !fields[0].startsWith("#")) {
                             datasetNames.add(fields[0]);
@@ -272,6 +274,7 @@ public class PathTool implements PeakNavigable {
                 }
                 double[] x0 = new double[x0List.size()];
                 double[] x1 = new double[x0List.size()];
+                System.out.println("do data");
                 for (int i = 0; i < datasetNames.size(); i++) {
                     String datasetName = datasetNames.get(i);
                     Dataset dataset = Dataset.getDataset(datasetName);
@@ -302,9 +305,12 @@ public class PathTool implements PeakNavigable {
                     }
                 }
                 double[] weights = {1.0, 5.0};  // fixme  need to figure out from nuclei
+                System.out.println("do data1");
                 peakPath = new PeakPath(peakListNames, x0, x1, weights);
+                System.out.println("do data2");
                 peakPath.initPaths();
                 setupChart(datasetNames);
+                System.out.println("do data3");
 
             } catch (IOException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "Error reading file");
@@ -682,18 +688,21 @@ checkLists(pp, 0.25, False)
     public void showXYPaths(List<Path> paths) {
         plotTool.show("Concentration", "Shift Delta");
         plotTool.clear();
+        int iSeries = 0;
         for (Path path : paths) {
-            showXYPath(path);
+            Color color = XYCanvasChart.colors[iSeries % XYCanvasChart.colors.length];
+            showXYPath(path, color);
+            iSeries++;
         }
     }
 
-    public void showXYPath(Path path) {
+    public void showXYPath(Path path, Color color) {
         PathFitter fitPath = new PathFitter();
         fitPath.setup(peakPath, path);
 
         double[][] xValues = fitPath.getX();
         double[] yValues = fitPath.getY();
-        plotTool.getChart().addLines(xValues[0], yValues, true);
+        plotTool.getChart().addLines(xValues[0], yValues, true, color);
 
         double[] fitPars = path.getFitPars();
         double[] fitErrs = path.getFitErrs();
@@ -704,7 +713,7 @@ checkLists(pp, 0.25, False)
             double first = 0.0;
             double last = Fitter.getMaxValue(peakPath.getConcentrations());
             double[][] xy = fitPath.getSimValues(fitPars, first, last, 100, xValues[1][0]);
-            plotTool.getChart().addLines(xy[0], xy[1], false);
+            plotTool.getChart().addLines(xy[0], xy[1], false, color);
         }
 
     }
