@@ -21,6 +21,7 @@ import org.nmrfx.processor.optimization.VecID;
 import org.nmrfx.processor.optimization.equations.OptFunction;
 import org.nmrfx.processor.optimization.equations.Quadratic10;
 import java.util.*;
+import java.util.Map.Entry;
 import org.apache.commons.math3.optimization.PointVectorValuePair;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 import smile.interpolation.KrigingInterpolation;
@@ -116,6 +117,19 @@ public class PeakPath implements PeakListener {
                 }
             }
             radius = maxDis;
+        }
+
+        public void refresh() {
+            for (int i = 0; i < peakDists.size(); i++) {
+                PeakDistance peakDis = peakDists.get(i);
+                if (peakDis != null) {
+                    double[] deltas = calcDeltas(firstPeak, peakDis.peak);
+                    double distance = calcDistance(firstPeak, peakDis.peak);
+                    PeakDistance newPeakDis = new PeakDistance(peakDis.peak, distance, deltas);
+                    peakDists.set(i, newPeakDis);
+                }
+            }
+
         }
 
         public List<PeakDistance> getPeakDistances() {
@@ -690,28 +704,33 @@ public class PeakPath implements PeakListener {
         dumpPaths();
     }
 
-    public void extendPaths(double radius, double tol) {
-        PeakList firstList = peakLists.get(0);
-        for (Peak peak : firstList.peaks()) {
-            if (peak.getStatus() == 0) {
-                System.out.print(peak.getName() + " ");
-                ArrayList<ArrayList<PeakDistance>> filteredLists
-                        = getNearPeaks(peak, radius);
-                Path path = checkPath(filteredLists, tol);
-                if (!path.peakDists.isEmpty()) {
-                    paths.put(path.getFirstPeak(), path);
-                    System.out.println(path.toString());
+    public void extendPath(Peak peak, double radius, double tol) {
+        if (peak.getStatus() == 0) {
+            System.out.print(peak.getName() + " ");
+            ArrayList<ArrayList<PeakDistance>> filteredLists
+                    = getNearPeaks(peak, radius);
+            Path path = extendPath(filteredLists, tol);
+            if (!path.peakDists.isEmpty()) {
+                paths.put(path.getFirstPeak(), path);
+                System.out.println(path.toString());
 //                    for (PeakDistance pathPeak : path.peakDists) {
 //                        if (pathPeak != null) {
 //                            pathPeak.peak.setStatus(1);
 //                        }
 //                    }
-                    double delta = checkPath(path.peakDists);
-                    System.out.printf(" unam %.3f\n", delta);
-                } else {
-                    System.out.println("");
-                }
+                double delta = checkPath(path.peakDists);
+                System.out.printf(" unam %.3f\n", delta);
+            } else {
+                System.out.println("");
             }
+        }
+
+    }
+
+    public void extendPaths(double radius, double tol) {
+        PeakList firstList = peakLists.get(0);
+        for (Peak peak : firstList.peaks()) {
+            extendPath(peak, radius, tol);
         }
         dumpPaths();
     }
@@ -723,25 +742,26 @@ public class PeakPath implements PeakListener {
                 nElems++;
             }
         }
+        nElems--;  // account for skip entry
         double maxDelta = 0.0;
         for (int iSkip = 1; iSkip < path.size(); iSkip++) {
-            double deltaSum = 0.0;
-            for (int iDim : peakDims) {
-                double[] yValues = new double[nElems];
-                double[][] xValues = new double[nElems][1];
-                double[] weightValues = new double[yValues.length];
-                int j = 0;
-                int i = 0;
-                for (PeakDistance peakDist : path) {
-                    if ((i != iSkip) && (peakDist != null)) {
-                        yValues[j] = peakDist.deltas[iDim];
-                        xValues[j][0] = concentrations[i];
-                        weightValues[j] = tols[iDim];
-                        j++;
+            if (path.get(iSkip) != null) {
+                double deltaSum = 0.0;
+                for (int iDim : peakDims) {
+                    double[] yValues = new double[nElems];
+                    double[][] xValues = new double[nElems][1];
+                    double[] weightValues = new double[yValues.length];
+                    int j = 0;
+                    int i = 0;
+                    for (PeakDistance peakDist : path) {
+                        if ((i != iSkip) && (peakDist != null)) {
+                            yValues[j] = peakDist.deltas[iDim];
+                            xValues[j][0] = concentrations[i];
+                            weightValues[j] = tols[iDim];
+                            j++;
+                        }
+                        i++;
                     }
-                    i++;
-                }
-                if (path.get(iSkip) != null) {
                     Variogram vGram = new PowerVariogram(xValues, yValues);
                     KrigingInterpolation krig = new KrigingInterpolation(xValues,
                             yValues, vGram, weightValues);
@@ -750,10 +770,11 @@ public class PeakPath implements PeakListener {
                     double delta = (iValue - mValue) / tols[iDim];
                     deltaSum += delta * delta;
                 }
-            }
-            double delta = Math.sqrt(deltaSum);
-            if (delta > maxDelta) {
-                maxDelta = delta;
+
+                double delta = Math.sqrt(deltaSum);
+                if (delta > maxDelta) {
+                    maxDelta = delta;
+                }
             }
         }
         return maxDelta;
@@ -811,6 +832,87 @@ public class PeakPath implements PeakListener {
                     }
                     j++;
                 }
+            }
+        }
+        List<PeakDistance> path = new ArrayList<>();
+
+        for (int iLevel = 0; iLevel < filteredLists.size(); iLevel++) {
+            if (indices[iLevel] >= 0) {
+                PeakDistance peakDist = filteredLists.get(iLevel).get(indices[iLevel]);
+                path.add(peakDist);
+            } else {
+                path.add(null);
+
+            }
+        }
+        return new Path(path);
+    }
+
+    public Path extendPath(ArrayList<ArrayList<PeakDistance>> filteredLists, double tol) {
+        int[] indices = new int[concentrations.length];
+        int nUseLevel = 0;
+
+        for (int iLevel = 0; iLevel < indices.length; iLevel++) {
+            indices[iLevel] = -1;
+
+        }
+        for (int iLevel = 0; iLevel < 2; iLevel++) {
+            if ((filteredLists.get(iLevel).size() != 0)) {
+                nUseLevel++;
+                indices[iLevel] = 0;
+            } else {
+                indices[iLevel] = -1;
+            }
+        }
+        KrigingInterpolation krig[] = new KrigingInterpolation[peakDims.length];
+        for (int jLevel = 2; jLevel < indices.length; jLevel++) {
+            nUseLevel = 0;
+            for (int iLevel = 0; iLevel < jLevel; iLevel++) {
+                if (indices[iLevel] >= 0) {
+                    nUseLevel++;
+                }
+            }
+            System.out.println("level " + jLevel + " " + nUseLevel);
+            for (int iDim : peakDims) {
+                double[] yValues = new double[nUseLevel];
+                double[][] xValues = new double[nUseLevel][1];
+                double[] weightValues = new double[nUseLevel];
+                int j = 0;
+
+                for (int iLevel = 0; iLevel < jLevel; iLevel++) {
+                    if (indices[iLevel] >= 0) {
+                        PeakDistance peakDist = filteredLists.get(iLevel).get(indices[iLevel]);
+                        yValues[j] = peakDist.deltas[iDim];
+                        xValues[j][0] = concentrations[iLevel];
+                        weightValues[j] = tols[iDim];
+                        j++;
+                    }
+                }
+                Variogram vGram = new PowerVariogram(xValues, yValues);
+                krig[iDim] = new KrigingInterpolation(xValues,
+                        yValues, vGram, weightValues);
+            }
+            if (indices[jLevel] < 0) {
+                ArrayList<PeakDistance> peakDists = filteredLists.get(jLevel);
+                int j = 0;
+                double minDis = Double.MAX_VALUE;
+                for (PeakDistance peakDist : peakDists) {
+                    double[] deltas = peakDist.deltas;
+                    double sumSq = 0.0;
+                    for (int iDim : peakDims) {
+                        double iValue = krig[iDim].interpolate(concentrations[jLevel]);
+                        double deltaDelta = iValue - deltas[iDim];
+                        sumSq += deltaDelta * deltaDelta;
+                    }
+                    double delta = Math.sqrt(sumSq);
+                    System.out.println(jLevel + " " + peakDist.peak.getName() + " " + delta);
+                    if ((delta < tol) && (delta < minDis)) {
+                        minDis = delta;
+                        indices[jLevel] = j;
+                    }
+                    j++;
+                }
+                System.out.println("best " + indices[jLevel]);
             }
         }
         List<PeakDistance> path = new ArrayList<>();
@@ -1119,6 +1221,13 @@ public class PeakPath implements PeakListener {
         return bestPath;
     }
 
+    public void refreshPath(Peak startPeak) {
+        Path path = getPath(startPeak);
+        if (path != null) {
+            path.refresh();
+        }
+    }
+
     public void addPeak(Peak startPeak, Peak selPeak) {
         Path path = getPath(startPeak);
         System.out.println("add " + selPeak.getName() + " " + selPeak.getStatus());
@@ -1136,17 +1245,29 @@ public class PeakPath implements PeakListener {
 
     }
 
+    public Peak findPathPeak(Peak peak) {
+        for (Entry<Peak, Path> eSet : paths.entrySet()) {
+            for (PeakDistance peakDist : eSet.getValue().peakDists) {
+                if ((peakDist != null) && (peakDist.peak == peak)) {
+                    return eSet.getValue().firstPeak;
+                }
+            }
+
+        }
+        return null;
+    }
+
     public void removePeak(Peak startPeak, Peak selPeak) {
-        Path path = getPath(startPeak);
+        Peak pathPeak = findPathPeak(selPeak);
+        Path path = getPath(pathPeak);
         System.out.println("remove " + selPeak.getName() + " " + selPeak.getStatus());
-        if ((selPeak.getStatus() == 1) && (path != null)) {
+        if ((pathPeak != null) && (path != null)) {
             int index = peakLists.indexOf(selPeak.getPeakList());
             path.peakDists.set(index, null);
             selPeak.setStatus(0);
             path.confirm();
             System.out.println(path.toString());
         }
-
     }
 
     public Collection<Path> getPaths() {
