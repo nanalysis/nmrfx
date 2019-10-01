@@ -20,6 +20,7 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
@@ -71,6 +72,7 @@ public class PathTool implements PeakNavigable {
     List<String> peakListNames = new ArrayList<>();
     PeakNavigator peakNavigator;
     TextField radiusField;
+    TextField tolField;
     TextField[] fitFields;
     Button fitButton;
     Button addButton;
@@ -151,6 +153,10 @@ public class PathTool implements PeakNavigable {
         extendPathMenuItem.setOnAction(e -> extendPaths());
         actionMenu.getItems().add(extendPathMenuItem);
 
+        MenuItem extendAPathMenuItem = new MenuItem("Extend Path");
+        extendAPathMenuItem.setOnAction(e -> extendPath());
+        actionMenu.getItems().add(extendAPathMenuItem);
+
         MenuItem drawMenuItem = new MenuItem("Draw Paths");
         drawMenuItem.setOnAction(e -> drawPath());
         actionMenu.getItems().add(drawMenuItem);
@@ -187,6 +193,8 @@ public class PathTool implements PeakNavigable {
         toolBar.getItems().add(filler5);
         radiusField = new TextField("0.5");
         toolBar.getItems().add(radiusField);
+        tolField = new TextField("0.2");
+        toolBar.getItems().add(tolField);
 
         Pane fillerf1 = new Pane();
         fillerf1.setMinWidth(50);
@@ -409,6 +417,7 @@ public class PathTool implements PeakNavigable {
                 peakPath.removePeak(startPeak, selPeaks.get(0));
             }
         }
+        drawPath();
     }
 
     void setPeakStates() {
@@ -514,7 +523,12 @@ checkLists(pp, 0.25, False)
     }
 
     void clearPaths() {
-        peakPath.clearPaths();
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Clear all paths", ButtonType.CANCEL, ButtonType.YES);
+        alert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.YES) {
+                peakPath.clearPaths();
+            }
+        });
     }
 
     void findPaths() {
@@ -549,11 +563,20 @@ checkLists(pp, 0.25, False)
 //        peakPath.setStatus(0.5, 1.00);
     }
 
+    void extendPath() {
+        double radius = Double.parseDouble(radiusField.getText());
+        double lim = Double.parseDouble(tolField.getText());
+        Peak startPeak = peakNavigator.getPeak();
+        peakPath.extendPath(startPeak, radius, lim);
+        peakPath.setStatus(radius, 1.0);
+        drawPath();
+    }
+
     void extendPaths() {
         double radius = Double.parseDouble(radiusField.getText());
         double lim = 1.0;
         peakPath.extendPaths(radius, lim);
-        peakPath.setStatus(radius, lim);
+        peakPath.setStatus(radius, 1.0);
         drawPath();
     }
 
