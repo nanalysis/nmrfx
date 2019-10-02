@@ -1231,6 +1231,7 @@ public class PeakPath implements PeakListener {
     public void addPeak(Peak startPeak, Peak selPeak) {
         Path path = getPath(startPeak);
         System.out.println("add " + selPeak.getName() + " " + selPeak.getStatus());
+        removePeak(startPeak, selPeak);
         if ((selPeak.getStatus() == 0) && (path != null)) {
             double distance = calcDistance(startPeak, selPeak);
             double[] deltas = calcDeltas(startPeak, selPeak);
@@ -1239,7 +1240,7 @@ public class PeakPath implements PeakListener {
             path.peakDists.set(index, peakDist);
             startPeak.setStatus(1);
             selPeak.setStatus(1);
-            path.confirm();
+            //path.confirm();
             System.out.println(path.toString());
         }
 
@@ -1260,12 +1261,12 @@ public class PeakPath implements PeakListener {
     public void removePeak(Peak startPeak, Peak selPeak) {
         Peak pathPeak = findPathPeak(selPeak);
         Path path = getPath(pathPeak);
+        selPeak.setStatus(0);
         System.out.println("remove " + selPeak.getName() + " " + selPeak.getStatus());
         if ((pathPeak != null) && (path != null)) {
             int index = peakLists.indexOf(selPeak.getPeakList());
             path.peakDists.set(index, null);
-            selPeak.setStatus(0);
-            path.confirm();
+            //path.confirm();
             System.out.println(path.toString());
         }
     }
