@@ -34,17 +34,21 @@ import smile.regression.GaussianProcessRegression;
 
 public class PeakPath implements PeakListener {
 
+    public enum PATHMODE {
+        TITRATION,
+        PRESSURE;
+    }
     OptFunction optFunction = new Quadratic10();
     ArrayList<PeakList> peakLists = new ArrayList<>();
 //    ArrayList<ArrayList<PeakDistance>> filteredLists = new ArrayList<>();
     Map<Peak, Path> paths = new HashMap<>();
     final PeakList firstList;
-    final double[] concentrations;
-    final double[] binderConcs;
+    final double[][] indVars;
     int[] peakDims = {0, 1};
     final double[] weights;
     final double[] tols;
     final double dTol;
+    PATHMODE pathMode = PATHMODE.TITRATION;
 
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
@@ -307,7 +311,8 @@ public class PeakPath implements PeakListener {
         }
     }
 
-    public PeakPath(final List<String> peakListNames, double[] concentrations, final double[] binderConcs, final double[] weights) {
+    public PeakPath(final List<String> peakListNames, double[] concentrations, final double[] binderConcs, final double[] weights, PATHMODE pathMode) {
+        this.pathMode = pathMode;
         for (String peakListName : peakListNames) {
             PeakList peakList = PeakList.get(peakListName);
             if (peakList == null) {
@@ -329,9 +334,14 @@ public class PeakPath implements PeakListener {
         }
         dTol = Math.sqrt(tolSum);
 
-        this.concentrations = concentrations;
-        this.binderConcs = binderConcs;
+        this.indVars = new double[2][];
+        this.indVars[0] = concentrations;
+        this.indVars[1] = binderConcs;
         this.weights = weights;
+    }
+    
+    public PATHMODE getPathMode() {
+        return pathMode;
     }
 
     public void clearPaths() {
@@ -756,7 +766,7 @@ public class PeakPath implements PeakListener {
                     for (PeakDistance peakDist : path) {
                         if ((i != iSkip) && (peakDist != null)) {
                             yValues[j] = peakDist.deltas[iDim];
-                            xValues[j][0] = concentrations[i];
+                            xValues[j][0] = indVars[0][i];
                             weightValues[j] = tols[iDim];
                             j++;
                         }
@@ -765,7 +775,7 @@ public class PeakPath implements PeakListener {
                     Variogram vGram = new PowerVariogram(xValues, yValues);
                     KrigingInterpolation krig = new KrigingInterpolation(xValues,
                             yValues, vGram, weightValues);
-                    double iValue = krig.interpolate(concentrations[iSkip]);
+                    double iValue = krig.interpolate(indVars[0][iSkip]);
                     double mValue = path.get(iSkip).deltas[iDim];
                     double delta = (iValue - mValue) / tols[iDim];
                     deltaSum += delta * delta;
@@ -781,7 +791,7 @@ public class PeakPath implements PeakListener {
     }
 
     public Path checkPath(ArrayList<ArrayList<PeakDistance>> filteredLists, double tol) {
-        int[] indices = new int[concentrations.length];
+        int[] indices = new int[indVars[0].length];
         int nUseLevel = 0;
 
         for (int iLevel = 0; iLevel < filteredLists.size(); iLevel++) {
@@ -803,7 +813,7 @@ public class PeakPath implements PeakListener {
                 if (indices[iLevel] >= 0) {
                     PeakDistance peakDist = filteredLists.get(iLevel).get(indices[iLevel]);
                     yValues[j] = peakDist.deltas[iDim];
-                    xValues[j][0] = concentrations[iLevel];
+                    xValues[j][0] = indVars[0][iLevel];
                     weightValues[j] = tols[iDim];
                     j++;
                 }
@@ -821,7 +831,7 @@ public class PeakPath implements PeakListener {
                     double[] deltas = peakDist.deltas;
                     double sumSq = 0.0;
                     for (int iDim : peakDims) {
-                        double iValue = krig[iDim].interpolate(concentrations[iLevel]);
+                        double iValue = krig[iDim].interpolate(indVars[0][iLevel]);
                         double deltaDelta = iValue - deltas[iDim];
                         sumSq += deltaDelta * deltaDelta;
                     }
@@ -849,7 +859,7 @@ public class PeakPath implements PeakListener {
     }
 
     public Path extendPath(ArrayList<ArrayList<PeakDistance>> filteredLists, double tol) {
-        int[] indices = new int[concentrations.length];
+        int[] indices = new int[indVars[0].length];
         int nUseLevel = 0;
 
         for (int iLevel = 0; iLevel < indices.length; iLevel++) {
@@ -883,7 +893,7 @@ public class PeakPath implements PeakListener {
                     if (indices[iLevel] >= 0) {
                         PeakDistance peakDist = filteredLists.get(iLevel).get(indices[iLevel]);
                         yValues[j] = peakDist.deltas[iDim];
-                        xValues[j][0] = concentrations[iLevel];
+                        xValues[j][0] = indVars[0][iLevel];
                         weightValues[j] = tols[iDim];
                         j++;
                     }
@@ -900,7 +910,7 @@ public class PeakPath implements PeakListener {
                     double[] deltas = peakDist.deltas;
                     double sumSq = 0.0;
                     for (int iDim : peakDims) {
-                        double iValue = krig[iDim].interpolate(concentrations[jLevel]);
+                        double iValue = krig[iDim].interpolate(indVars[0][jLevel]);
                         double deltaDelta = iValue - deltas[iDim];
                         sumSq += deltaDelta * deltaDelta;
                     }
@@ -956,9 +966,9 @@ public class PeakPath implements PeakListener {
             midListIndex += 2;
             midPeaks = filteredLists.get(midListIndex);
         }
-        double firstConc = concentrations[0];
-        double midConc = concentrations[midListIndex];
-        double lastConc = concentrations[concentrations.length - 1];
+        double firstConc = indVars[0][0];
+        double midConc = indVars[0][midListIndex];
+        double lastConc = indVars[0][indVars[0].length - 1];
         ArrayList<PeakDistance> bestPath = new ArrayList<>();
         double sum = 0.0;
         for (int iDim : peakDims) {
@@ -1061,7 +1071,7 @@ public class PeakPath implements PeakListener {
                     } else {
                         testPeaks.addAll(filteredLists.get(iList));
                     }
-                    double testConc = concentrations[iList];
+                    double testConc = indVars[0][iList];
                     double minSum = Double.MAX_VALUE;
                     PeakDistance minPeakDist = null;
                     for (PeakDistance testPeakDist : testPeaks) {
@@ -1102,7 +1112,7 @@ public class PeakPath implements PeakListener {
                 }
                 System.out.print(" nmiss " + nMissing + " " + pathOK);
                 if (pathOK && (nMissing < 4)) {
-                    if (path.size() < concentrations.length) {
+                    if (path.size() < indVars[0].length) {
                         path.add(endPeakDist);
                     }
                     double rms = Math.sqrt(pathSum / (filteredLists.size() - 3));
@@ -1149,12 +1159,12 @@ public class PeakPath implements PeakListener {
             Collections.sort(peakDistances);
         }
         ArrayList<PeakDistance> midPeaks = filteredLists.get(midListIndex);
-        double firstConc = concentrations[0];
-        double midConc = concentrations[midListIndex];
-        double lastConc = concentrations[concentrations.length - 1];
-        double firstBConc = binderConcs[0];
-        double midBConc = binderConcs[midListIndex];
-        double lastBConc = binderConcs[binderConcs.length - 1];
+        double firstConc = indVars[0][0];
+        double midConc = indVars[0][midListIndex];
+        double lastConc = indVars[0][indVars[0].length - 1];
+        double firstBConc = indVars[1][0];
+        double midBConc = indVars[1][midListIndex];
+        double lastBConc = indVars[1][indVars[1].length - 1];
         ArrayList<Peak> bestPath = new ArrayList<>();
         double sum = 0.0;
 
@@ -1184,7 +1194,7 @@ public class PeakPath implements PeakListener {
             for (PeakDistance peakDist : peakDists) {
                 if (peakDist.distance < maxDis) {
                     bestPath.add(peakDist.peak);
-                    concList.add(concentrations[iList]);
+                    concList.add(indVars[0][iList]);
                     disList.add(peakDist.deltas);
                 } else {
                     bestPath.add(null);
@@ -1275,7 +1285,7 @@ public class PeakPath implements PeakListener {
         return paths.values();
     }
 
-    public double[] getConcentrations() {
-        return concentrations;
+    public double[][] getXValues() {
+        return indVars;
     }
 }
