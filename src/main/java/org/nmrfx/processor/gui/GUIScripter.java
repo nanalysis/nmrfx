@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
+import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.nmrfx.processor.datasets.Dataset;
@@ -680,6 +681,21 @@ public class GUIScripter {
     public static Color getColor(String colorString) {
         return Color.web(colorString);
 
+    }
+
+    public Cursor getCursor() throws InterruptedException, ExecutionException {
+        FutureTask<Cursor> future = new FutureTask(() -> {
+            return getActiveController().getActiveChart().getCursor();
+        });
+        ConsoleUtil.runOnFxThread(future);
+        return future.get();
+    }
+
+    public void setCursor(String name) {
+        Cursor cursor = Cursor.cursor(name);
+        ConsoleUtil.runOnFxThread(() -> {
+            getActiveController().getActiveChart().setCursor(cursor);
+        });
     }
 
     public static void showPeak(String peakSpecifier) {

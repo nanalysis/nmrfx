@@ -31,8 +31,10 @@ class NMRFxWindowScripting:
         return chart
 
     def getCursor(self):
-        chart = self.getActiveChart()
-        return chart.getCursor()
+        return self.cmd.getCursor()
+
+    def setCursor(self, name):
+        self.cmd.setCursor(name)
 
     def new(self):
         self.cmd.newStage()
