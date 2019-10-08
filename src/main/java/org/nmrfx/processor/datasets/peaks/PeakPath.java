@@ -55,7 +55,6 @@ public class PeakPath implements PeakListener {
         Object source = peakEvent.getSource();
         if (source instanceof PeakList) {
             PeakList peakList = (PeakList) source;
-            System.out.println("list changed " + peakList.getName());
             purgePaths();
         }
     }
@@ -140,7 +139,7 @@ public class PeakPath implements PeakListener {
             return peakDists;
         }
 
-        void confirm() {
+        public void confirm() {
             confirmed = true;
         }
 
@@ -339,7 +338,7 @@ public class PeakPath implements PeakListener {
         this.indVars[1] = binderConcs;
         this.weights = weights;
     }
-    
+
     public PATHMODE getPathMode() {
         return pathMode;
     }
@@ -411,6 +410,15 @@ public class PeakPath implements PeakListener {
                 entry.setValue(new Path(newDists));
             }
         }
+        for (Peak peak : firstList.peaks()) {
+            if (!peak.isDeleted()) {
+                if (!paths.containsKey(peak)) {
+                    initPath(peak);
+                }
+            }
+
+        }
+
     }
 
     public Path getPath(Peak peak) {
@@ -1231,6 +1239,12 @@ public class PeakPath implements PeakListener {
         return bestPath;
     }
 
+    public void refreshPaths() {
+        for (Peak peak: paths.keySet()) {
+            refreshPath(peak);
+        }
+    }
+    
     public void refreshPath(Peak startPeak) {
         Path path = getPath(startPeak);
         if (path != null) {
