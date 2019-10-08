@@ -24,6 +24,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
@@ -35,6 +37,7 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -43,6 +46,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import org.nmrfx.chart.Axis;
 import org.nmrfx.chart.DataSeries;
 import org.nmrfx.chart.XYCanvasChart;
@@ -61,10 +65,11 @@ public class PathPlotTool {
     BorderPane borderPane = new BorderPane();
     TableView<PeakPath.Path> tableView;
     Scene stageScene = new Scene(borderPane, 500, 500);
-    String[] colNames = {"Peak", "A", "ADev", "K", "KDev", "C", "CDev"};
+    List<String> colNames;
 
-    public PathPlotTool(PathTool pathTool) {
+    public PathPlotTool(PathTool pathTool, List<String> colNames) {
         this.pathTool = pathTool;
+        this.colNames = colNames;
     }
 
     public void show(String xAxisName, String yAxisName) {
@@ -143,11 +148,23 @@ public class PathPlotTool {
             selectionChanged();
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(selectionListener);
-
         for (String colName : colNames) {
             TableColumn<PeakPath.Path, Number> col = new TableColumn<>(colName);
-            col.setCellValueFactory(new PropertyValueFactory<>(colName));
-            if (!colName.equals("Peak")) {
+            if (colName.equals("Peak")) {
+                col.setCellValueFactory(new PropertyValueFactory<>(colName));
+            } else {
+                col.setCellValueFactory(new Callback<CellDataFeatures<PeakPath.Path, Number>, ObservableValue<Number>>() {
+                    public ObservableValue<Number> call(CellDataFeatures<PeakPath.Path, Number> p) {
+                        // p.getValue() returns the Path instance for a particular TableView row
+                        int iProp = colNames.indexOf(colName);
+                        iProp--;  // account for Peak column
+                        boolean isErr = iProp % 2 == 1;
+                        iProp /= 2;  // account for Dev columns
+                        double v = isErr ? p.getValue().getErr(iProp) : p.getValue().getPar(iProp);
+                        ObservableValue<Number> ov = new SimpleDoubleProperty(v);
+                        return ov;
+                    }
+                });
                 col.setCellFactory(c
                         -> new TableCell<PeakPath.Path, Number>() {
                     @Override
@@ -161,16 +178,20 @@ public class PathPlotTool {
                     }
                 });
             }
+
             tableView.getColumns().add(col);
 
         }
-        tableView.setOnKeyPressed(e -> {
+
+        tableView.setOnKeyPressed(e
+                -> {
             if ((e.getCode() == KeyCode.BACK_SPACE) || (e.getCode() == KeyCode.DELETE)) {
                 List<PeakPath.Path> selPaths = getSelected();
                 pathTool.removeActivePaths(selPaths);
 
             }
-        });
+        }
+        );
     }
 
     List<PeakPath.Path> getSelected() {
