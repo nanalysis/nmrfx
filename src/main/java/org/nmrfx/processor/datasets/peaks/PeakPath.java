@@ -210,6 +210,14 @@ public class PeakPath implements PeakListener {
             return firstPeak.getIdNum();
         }
 
+        public double getPar(int i) {
+            return pars[i];
+        }
+
+        public double getErr(int i) {
+            return parErrs[i];
+        }
+
         public double[] getFitPars() {
             return pars;
         }
@@ -1240,11 +1248,11 @@ public class PeakPath implements PeakListener {
     }
 
     public void refreshPaths() {
-        for (Peak peak: paths.keySet()) {
+        for (Peak peak : paths.keySet()) {
             refreshPath(peak);
         }
     }
-    
+
     public void refreshPath(Peak startPeak) {
         Path path = getPath(startPeak);
         if (path != null) {
