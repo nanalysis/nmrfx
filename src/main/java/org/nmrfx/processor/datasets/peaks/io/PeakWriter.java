@@ -289,8 +289,9 @@ public class PeakWriter {
         chan.write("_Spectral_peak_list.Sample_condition_list_ID     ");
         chan.write(".\n");
         chan.write("_Spectral_peak_list.Sample_condition_list_label  ");
-        if (peakList.getSampleConditionLabel().length() != 0) {
-            chan.write("$" + peakList.getSampleConditionLabel() + "\n");
+        String sCond = peakList.getSampleConditionLabel();
+        if ((sCond.length() != 0) && !sCond.equals(".")) {
+            chan.write("$" + sCond + "\n");
         } else {
             chan.write(".\n");
         }

@@ -34,6 +34,8 @@ import smile.regression.GaussianProcessRegression;
 
 public class PeakPath implements PeakListener {
 
+    static Map<String, PeakPath> peakPaths = new HashMap<>();
+
     public enum PATHMODE {
         TITRATION,
         PRESSURE;
@@ -41,6 +43,8 @@ public class PeakPath implements PeakListener {
     OptFunction optFunction = new Quadratic10();
     ArrayList<PeakList> peakLists = new ArrayList<>();
 //    ArrayList<ArrayList<PeakDistance>> filteredLists = new ArrayList<>();
+    String name = "path1";
+    String details = "";
     Map<Peak, Path> paths = new HashMap<>();
     final PeakList firstList;
     final double[][] indVars;
@@ -48,6 +52,7 @@ public class PeakPath implements PeakListener {
     final double[] weights;
     final double[] tols;
     final double dTol;
+    String[] units;
     PATHMODE pathMode = PATHMODE.TITRATION;
 
     @Override
@@ -100,6 +105,7 @@ public class PeakPath implements PeakListener {
         }
 
         Path(Peak peak) {
+            firstPeak = peak;
             double[] deltas = new double[tols.length];
             PeakDistance peakDist = new PeakDistance(peak, 0.0, deltas);
 
@@ -194,6 +200,10 @@ public class PeakPath implements PeakListener {
             return checkPath(peakDists);
         }
 
+        public int getId() {
+            return getFirstPeak().getIdNum();
+        }
+
         public Peak getFirstPeak() {
             return firstPeak;
         }
@@ -216,6 +226,10 @@ public class PeakPath implements PeakListener {
 
         public double getErr(int i) {
             return parErrs[i];
+        }
+
+        public boolean hasPars() {
+            return pars != null;
         }
 
         public double[] getFitPars() {
@@ -298,6 +312,37 @@ public class PeakPath implements PeakListener {
             }
         }
 
+        public String toSTAR3ParString(int id, int pathID, int dim) {
+            StringBuilder sBuilder = new StringBuilder();
+            int iConfirm = confirmed ? 1 : 0;
+            sBuilder.append(String.format("%4d %4d %d %d", id, pathID, dim + 1, iConfirm));
+            int nPars = 3;
+            int start = dim * nPars;
+            for (int i = 0; i < nPars; i++) {
+                sBuilder.append(" ");
+                if (pars == null) {
+                    sBuilder.append(String.format("%10s %10s", "?", "?"));
+                } else {
+                    sBuilder.append(String.format("%10.4f %10.4f", pars[i + start], parErrs[i + start]));
+                }
+            }
+            return sBuilder.toString();
+        }
+
+        public String toSTAR3String(int i) {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append(i);
+            for (PeakDistance peakDis : peakDists) {
+                sBuilder.append(" ");
+                if (peakDis == null) {
+                    sBuilder.append("?");
+                } else {
+                    sBuilder.append(peakDis.peak.getIdNum());
+                }
+            }
+            return sBuilder.toString();
+        }
+
         public String toString() {
             StringBuilder sBuilder = new StringBuilder();
             for (PeakDistance peakDis : peakDists) {
@@ -318,7 +363,8 @@ public class PeakPath implements PeakListener {
         }
     }
 
-    public PeakPath(final List<String> peakListNames, double[] concentrations, final double[] binderConcs, final double[] weights, PATHMODE pathMode) {
+    public PeakPath(String name, final List<String> peakListNames, double[] concentrations, final double[] binderConcs, final double[] weights, PATHMODE pathMode) {
+        this.name = name;
         this.pathMode = pathMode;
         for (String peakListName : peakListNames) {
             PeakList peakList = PeakList.get(peakListName);
@@ -345,6 +391,102 @@ public class PeakPath implements PeakListener {
         this.indVars[0] = concentrations;
         this.indVars[1] = binderConcs;
         this.weights = weights;
+    }
+
+    public void store() {
+        peakPaths.put(name, this);
+    }
+
+    public void store(String name) {
+        this.name = name;
+        peakPaths.put(name, this);
+    }
+
+    public static Collection<PeakPath> get() {
+        return peakPaths.values();
+    }
+
+    public static PeakPath get(String name) {
+        return peakPaths.get(name);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public List<PeakList> getPeakLists() {
+        return peakLists;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public List<String> getSTAR3PathLoopStrings() {
+        List<String> strings = new ArrayList<>();
+        strings.add("_Path.ID");
+        strings.add("_Path.Path_ID");
+        strings.add("_Path.Peaklist_ID");
+        strings.add("_Path.Peak_ID");
+        return strings;
+    }
+
+    public List<String> getSTAR3LoopStrings() {
+        List<String> strings = new ArrayList<>();
+        strings.add("_Peak_list.ID");
+        strings.add("_Peak_list.Name");
+        if (pathMode == PATHMODE.PRESSURE) {
+            strings.add("_Peak_list.Pressure");
+        } else {
+            strings.add("_Peak_list.Ligand_conc");
+            strings.add("_Peak_list.Macromolecule_conc");
+        }
+        return strings;
+    }
+
+    public List<String> getSTAR3ParLoopStrings() {
+        List<String> strings = new ArrayList<>();
+        strings.add("_Par.ID");
+        strings.add("_Par.Path_ID");
+        strings.add("_Par.Dim");
+        strings.add("_Par.Confirmed");
+        if (pathMode == PATHMODE.PRESSURE) {
+            strings.add("_Par.A");
+            strings.add("_Par.A_val_err");
+            strings.add("_Par.B");
+            strings.add("_Par.B_val_err");
+            strings.add("_Par.C");
+            strings.add("_Par.C_val_err");
+        } else {
+            strings.add("_Par.A");
+            strings.add("_Par.A_val_err");
+            strings.add("_Par.K");
+            strings.add("_Par.K_val_err");
+            strings.add("_Par.C");
+            strings.add("_Par.C_val_err");
+        }
+        return strings;
+    }
+
+    public String getSTAR3String(int i) {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append((i + 1)).append(" ").append(peakLists.get(i).getName());
+        int nVars = pathMode == PATHMODE.PRESSURE ? 1 : 2;
+        String format = pathMode == PATHMODE.PRESSURE ? "%.1f" : "%.3f";
+        for (int j = 0; j < nVars; j++) {
+            sBuilder.append(" ").append(String.format(format, indVars[j][i]));
+        }
+        return sBuilder.toString();
+
+    }
+
+    public String getSTAR3DimString(int i) {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append((i + 1));
+        sBuilder.append(" ").append(String.format("%.3f", weights[i]));
+        sBuilder.append(" ").append(String.format("%.3f", tols[i]));
+        return sBuilder.toString();
+
     }
 
     public PATHMODE getPathMode() {
