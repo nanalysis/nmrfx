@@ -174,7 +174,6 @@ class MolPeakGen:
         rnaLabels.parseSelGroups(self.mol, self.labelScheme)
 
     def addProtonPairPeak(self, peakList, aAtom, bAtom, intensity=None, d1Edited=None, d2Edited=None):
-        ppmAV = aAtom.getPPM(0)
         if intensity==None:
             intensity = self.intensity
             bounds = [width * 2.0 for width in self.widths]
@@ -189,8 +188,10 @@ class MolPeakGen:
                 widthScale = 0.50
             bounds = [width * widthScale for width in self.widths]
 
+        ppmAV = aAtom.getPPM(0)
         if self.refMode or (ppmAV == None) or not ppmAV.isValid():
             ppmAV = aAtom.getRefPPM(0)
+
         if (ppmAV != None) and aAtom.isActive() and ((d1Edited == None) or (d1Edited == aAtom.parent.isActive())):
             ppmBV = bAtom.getPPM(0)
             if self.refMode or (ppmBV == None) or not ppmBV.isValid():
