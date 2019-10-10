@@ -344,7 +344,12 @@ public class PathTool implements PeakNavigable {
                 }
                 double[] weights = {1.0, 5.0};  // fixme  need to figure out from nuclei
                 System.out.println("do data1");
-                peakPath = new PeakPath(peakListNames, x0, x1, weights, pathMode);
+                String peakPathName = file.getName();
+                if (peakPathName.indexOf(".") != -1) {
+                    peakPathName = peakPathName.substring(0,peakPathName.indexOf("."));
+                }
+                peakPath = new PeakPath(peakPathName, peakListNames, x0, x1, weights, pathMode);
+                peakPath.store();
                 System.out.println("do data2");
                 peakPath.initPaths();
                 setupChart(datasetNames);
