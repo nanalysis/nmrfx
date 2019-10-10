@@ -17,6 +17,9 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import org.nmrfx.processor.optimization.VecID;
 import org.nmrfx.processor.optimization.equations.OptFunction;
 import org.nmrfx.processor.optimization.equations.Quadratic10;
@@ -24,6 +27,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import org.apache.commons.math3.optimization.PointVectorValuePair;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
+import org.nmrfx.processor.datasets.Dataset;
 import smile.interpolation.KrigingInterpolation;
 import smile.interpolation.variogram.PowerVariogram;
 import smile.interpolation.variogram.Variogram;
@@ -33,6 +37,9 @@ import smile.regression.GaussianProcessRegression;
 //import smile.interpolation.KrigingInterpolation;
 
 public class PeakPath implements PeakListener {
+
+    static String[] PRESURE_NAMES = {"Ha", "Hb", "Hc", "Xa", "Xb", "Xc"};
+    static String[] TITRATION_NAMES = {"A", "K", "C"};
 
     static Map<String, PeakPath> peakPaths = new HashMap<>();
 
@@ -54,6 +61,8 @@ public class PeakPath implements PeakListener {
     final double dTol;
     String[] units;
     PATHMODE pathMode = PATHMODE.TITRATION;
+    String[] parNames;
+    List<String> datasetNames;
 
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
@@ -391,6 +400,82 @@ public class PeakPath implements PeakListener {
         this.indVars[0] = concentrations;
         this.indVars[1] = binderConcs;
         this.weights = weights;
+    }
+
+    public static PeakPath loadPathData(PATHMODE pathMode, File file) throws IOException, IllegalArgumentException {
+        List<String> datasetNames = new ArrayList<>();
+        List<String> peakListNames = new ArrayList<>();
+        PeakPath peakPath = null;
+        if (file != null) {
+            List<Double> x0List = new ArrayList<>();
+            List<Double> x1List = new ArrayList<>();
+            String sepChar = " +";
+            List<String> lines = Files.readAllLines(file.toPath());
+            if (lines.size() > 0) {
+                if (lines.get(0).contains("\t")) {
+                    sepChar = "\t";
+                }
+                for (String line : lines) {
+                    System.out.println("line is " + line);
+                    String[] fields = line.split(sepChar);
+                    if ((fields.length > 1) && !fields[0].startsWith("#")) {
+                        datasetNames.add(fields[0]);
+                        x0List.add(Double.parseDouble(fields[1]));
+                        if (fields.length > 2) {
+                            x1List.add(Double.parseDouble(fields[2]));
+                        }
+                    }
+                }
+            }
+            double[] x0 = new double[x0List.size()];
+            double[] x1 = new double[x0List.size()];
+            System.out.println("do data");
+            for (int i = 0; i < datasetNames.size(); i++) {
+                String datasetName = datasetNames.get(i);
+                Dataset dataset = Dataset.getDataset(datasetName);
+                if (dataset == null) {
+                    throw new IllegalArgumentException("\"Dataset \" + datasetName + \" doesn't exist\"");
+                }
+                String peakListName = "";
+                PeakList peakList = PeakList.getPeakListForDataset(datasetName);
+                if (peakList == null) {
+                    peakListName = PeakList.getNameForDataset(datasetName);
+                    peakList = PeakList.get(peakListName);
+                } else {
+                    peakListName = peakList.getName();
+                }
+                if (peakList == null) {
+                    throw new IllegalArgumentException("\"PeakList \" + peakList + \" doesn't exist\"");
+                }
+                peakListNames.add(peakListName);
+                x0[i] = x0List.get(i);
+                if (!x1List.isEmpty()) {
+                    x1[i] = x1List.get(i);
+                } else {
+                    x1[i] = 100.0;
+                }
+            }
+            double[] weights = {1.0, 5.0};  // fixme  need to figure out from nuclei
+            System.out.println("do data1");
+            String peakPathName = file.getName();
+            if (peakPathName.contains(".")) {
+                peakPathName = peakPathName.substring(0, peakPathName.indexOf("."));
+            }
+            peakPath = new PeakPath(peakPathName, peakListNames, x0, x1, weights, pathMode);
+            peakPath.parNames = pathMode == PATHMODE.PRESSURE ? PRESURE_NAMES : TITRATION_NAMES;
+            peakPath.store();
+            peakPath.initPaths();
+            peakPath.datasetNames = datasetNames;
+        }
+        return peakPath;
+    }
+
+    public List<String> getDatasetNames() {
+        return datasetNames;
+    }
+
+    public String[] getParNames() {
+        return parNames;
     }
 
     public void store() {
