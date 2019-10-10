@@ -66,10 +66,6 @@ import org.nmrfx.processor.optimization.Fitter;
  */
 public class PathTool implements PeakNavigable {
 
-    static String[] PRESURE_NAMES = {"Ha", "Hb", "Hc", "Xa", "Xb", "Xc"};
-    static String[] TITRATION_NAMES = {"A", "K", "C"};
-    String[] PAR_NAMES;
-
     VBox vBox;
     FXMLController controller;
     PolyChart chart;
@@ -81,8 +77,6 @@ public class PathTool implements PeakNavigable {
     Button tweakFreezeButton;
     List<Peak> selPeaks;
     List<FreezeListener> listeners = new ArrayList<>();
-    List<String> datasetNames = new ArrayList<>();
-    List<String> peakListNames = new ArrayList<>();
     PeakNavigator peakNavigator;
     TextField radiusField;
     TextField tolField;
@@ -285,89 +279,30 @@ public class PathTool implements PeakNavigable {
     void loadPathData(PATHMODE pathMode) {
         FileChooser fileChooser = new FileChooser();
         File file = fileChooser.showOpenDialog(null);
-        datasetNames.clear();
-        peakListNames.clear();
-        List<Double> x0List = new ArrayList<>();
-        List<Double> x1List = new ArrayList<>();
-        String sepChar = " +";
         if (file != null) {
-            PAR_NAMES = pathMode == PATHMODE.PRESSURE ? PRESURE_NAMES : TITRATION_NAMES;
             try {
-                List<String> lines = Files.readAllLines(file.toPath());
-                if (lines.size() > 0) {
-                    if (lines.get(0).contains("\t")) {
-                        sepChar = "\t";
-                    }
-                    for (String line : lines) {
-                        System.out.println("line is " + line);
-                        String[] fields = line.split(sepChar);
-                        if ((fields.length > 1) && !fields[0].startsWith("#")) {
-                            datasetNames.add(fields[0]);
-                            x0List.add(Double.parseDouble(fields[1]));
-                            if (fields.length > 2) {
-                                x1List.add(Double.parseDouble(fields[2]));
-                            }
-                        }
-                    }
-                }
-                double[] x0 = new double[x0List.size()];
-                double[] x1 = new double[x0List.size()];
-                System.out.println("do data");
-                for (int i = 0; i < datasetNames.size(); i++) {
-                    String datasetName = datasetNames.get(i);
-                    Dataset dataset = Dataset.getDataset(datasetName);
-                    if (dataset == null) {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "Dataset " + datasetName + " doesn't exist");
-                        alert.showAndWait();
-                        return;
-                    }
-                    String peakListName = "";
-                    PeakList peakList = PeakList.getPeakListForDataset(datasetName);
-                    if (peakList == null) {
-                        peakListName = PeakList.getNameForDataset(datasetName);
-                        peakList = PeakList.get(peakListName);
-                    } else {
-                        peakListName = peakList.getName();
-                    }
-                    if (peakList == null) {
-                        Alert alert = new Alert(Alert.AlertType.ERROR, "PeakList " + peakList + " doesn't exist");
-                        alert.showAndWait();
-                        return;
-                    }
-                    peakListNames.add(peakListName);
-                    x0[i] = x0List.get(i);
-                    if (!x1List.isEmpty()) {
-                        x1[i] = x1List.get(i);
-                    } else {
-                        x1[i] = 100.0;
-                    }
-                }
-                double[] weights = {1.0, 5.0};  // fixme  need to figure out from nuclei
-                System.out.println("do data1");
-                String peakPathName = file.getName();
-                if (peakPathName.indexOf(".") != -1) {
-                    peakPathName = peakPathName.substring(0,peakPathName.indexOf("."));
-                }
-                peakPath = new PeakPath(peakPathName, peakListNames, x0, x1, weights, pathMode);
-                peakPath.store();
-                System.out.println("do data2");
-                peakPath.initPaths();
-                setupChart(datasetNames);
-                System.out.println("do data3");
-                setupPlotTable();
-
+                peakPath = PeakPath.loadPathData(pathMode, file);
             } catch (IOException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Error reading file");
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Error reading file " + ex.getMessage());
                 alert.showAndWait();
+                return;
+            } catch (IllegalArgumentException iaE) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, iaE.getMessage());
+                alert.showAndWait();
+                return;
             }
+            setupChart(peakPath.getDatasetNames());
+            System.out.println("do data3");
+            setupPlotTable();
         }
     }
 
     void setupPlotTable() {
         List<String> colNames = new ArrayList<>();
         colNames.add("Peak");
+        String[] parNames = peakPath.getParNames();
         if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
-            for (String col : PAR_NAMES) {
+            for (String col : parNames) {
                 colNames.add(col);
                 colNames.add(col + "Dev");
             }
@@ -718,13 +653,14 @@ checkLists(pp, 0.25, False)
 
                 double[] fitPars = path.getFitPars();
                 double[] fitErrs = path.getFitErrs();
+                String[] parNames = peakPath.getParNames();
                 if (fitPars != null) {
                     initFitFields(fitPars.length);
                     for (int i = 0; i < fitPars.length; i++) {
-                        System.out.printf("%s= %.3f +/- %.3f\n", PAR_NAMES[i], fitPars[i], fitErrs[i]);
+                        System.out.printf("%s= %.3f +/- %.3f\n", parNames[i], fitPars[i], fitErrs[i]);
                     }
                     for (int i = 0; i < fitPars.length; i++) {
-                        fitFields[i].setText(String.format("%s= %.3f +/- %.3f", PAR_NAMES[i], fitPars[i], fitErrs[i]));
+                        fitFields[i].setText(String.format("%s= %.3f +/- %.3f", parNames[i], fitPars[i], fitErrs[i]));
                     }
                     double first = 0.0;
                     double last = Fitter.getMaxValue(peakPath.getXValues()[0]);
