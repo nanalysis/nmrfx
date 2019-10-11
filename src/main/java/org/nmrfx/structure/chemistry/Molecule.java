@@ -1806,13 +1806,14 @@ public class Molecule implements Serializable, ITree {
         }
 
         if (n == 0) {
-            throw new MissingCoordinatesException("couldn't calculate center: no coordinates");
+            return getCenter(iStructure);
+        } else {
+            double[] mCenter = new double[3];
+            mCenter[0] = x / n;
+            mCenter[1] = y / n;
+            mCenter[2] = z / n;
+            return mCenter;
         }
-        double[] mCenter = new double[3];
-        mCenter[0] = x / n;
-        mCenter[1] = y / n;
-        mCenter[2] = z / n;
-        return mCenter;
     }
 
     public Vector3D getCorner(int iStructure) throws MissingCoordinatesException {
@@ -1893,7 +1894,7 @@ public class Molecule implements Serializable, ITree {
             pt = atom.getPoint();
             if (pt != null) {
                 double[] aCoords = pt.toArray();
-                for (int i=0;i<aCoords.length;i++) {
+                for (int i = 0; i < aCoords.length; i++) {
                     aCoords[i] -= c[i];
                 }
                 molecCoords.add(aCoords);
@@ -1910,14 +1911,14 @@ public class Molecule implements Serializable, ITree {
         RealMatrix sMat = svd.getS();
         double[] s = svd.getSingularValues();
         double maxX = 0.0;
-        for (int i=0;i<uMat.getRowDimension();i++) {
+        for (int i = 0; i < uMat.getRowDimension(); i++) {
             double x = Math.abs(uMat.getEntry(i, 0));
             if (x > maxX) {
                 maxX = x;
             }
         }
-        for (int i=0;i<s.length;i++) {
-            sMat.setEntry(i, i, sMat.getEntry(i,i)*maxX);
+        for (int i = 0; i < s.length; i++) {
+            sMat.setEntry(i, i, sMat.getEntry(i, i) * maxX);
         }
         rotMat = rotMat.preMultiply(sMat);
         return rotMat;
@@ -2480,6 +2481,7 @@ public class Molecule implements Serializable, ITree {
         }
         return shiftMap;
     }
+
     public List<BasePair> pairList() { //for RNA only
         List<Polymer> polymers = getPolymers();
         List<BasePair> bpList = new ArrayList();
@@ -2504,8 +2506,8 @@ public class Molecule implements Serializable, ITree {
             }
         }
         return bpList;
-    } 
-    
+    }
+
     public int nOfStems() {
         int stemNum = 1;
         List<BasePair> bp = this.pairList();
@@ -2516,6 +2518,7 @@ public class Molecule implements Serializable, ITree {
         }
         return stemNum;
     }
+
     /* 
     get vienna sequence from the pdb file by finding the number of residues (use .size() method))
     polymer A and polymer B can be the same 
@@ -2542,7 +2545,8 @@ public class Molecule implements Serializable, ITree {
             }
         }
     }
-/**/
+
+    /**/
     public HashMap<Integer, List<BasePair>> loopNum() {
         HashMap<Integer, List<BasePair>> loopNum = new HashMap<Integer, List<BasePair>>();
         int nOfStem = nOfStems();
@@ -2567,7 +2571,6 @@ public class Molecule implements Serializable, ITree {
         }
         return loopNum;
     }
-
 
     public char[] viennaSequence() {
         char[] vienna = new char[0];
@@ -2605,7 +2608,7 @@ public class Molecule implements Serializable, ITree {
     public void calcLCMB(final int iStruct) {
         calcLCMB(iStruct, true, false);
     }
-     
+
     // Biophysical Journal 96(8) 3074–3081
     public Map<String, Double> calcLCMB(final int iStruct, boolean scaleEnds, boolean useMap) {
         double r0 = 3.0;
