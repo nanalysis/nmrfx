@@ -119,6 +119,7 @@ import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.tools.PathTool;
+import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
 import org.nmrfx.utilities.DictionarySort;
 import org.python.core.PyObject;
@@ -196,6 +197,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     PeakNavigator peakNavigator;
     PeakSlider peakSlider;
+    SpectrumComparator spectrumComparator;
     PathTool pathTool;
     ListView datasetListView = new ListView();
 
@@ -1809,6 +1811,22 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
     }
 
+    public void showSpectrumComparator() {
+        if (spectrumComparator == null) {
+            VBox vBox = new VBox();
+            bottomBox.getChildren().add(vBox);
+            spectrumComparator = new SpectrumComparator(this, this::removeSpectrumComparator);
+            spectrumComparator.initPathTool(vBox);
+        }
+    }
+
+    public void removeSpectrumComparator(Object o) {
+        if (spectrumComparator != null) {
+            bottomBox.getChildren().remove(spectrumComparator.getToolBar());
+            spectrumComparator = null;
+        }
+    }
+
     public SpectrumMeasureBar getSpectrumMeasureBar() {
         return measureBar;
     }
@@ -2086,7 +2104,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public void alignCenters() {
         DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
         // any peak lists created just for alignmnent should be deleted
-        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false,  false, "refList");
+        PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, false, "refList");
         if (refList == null) {
             return;
         }

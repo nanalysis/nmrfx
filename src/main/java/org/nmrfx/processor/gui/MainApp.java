@@ -300,9 +300,11 @@ public class MainApp extends Application implements DatasetListener {
         analyzeMenuItem.setOnAction(e -> showAnalyzer(e));
         MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
         measureMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumMeasureBar());
+        MenuItem compareMenuItem = new MenuItem("Show Comparator");
+        compareMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumComparator());
 
         spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem,
-                alignMenuItem, analyzeMenuItem, measureMenuItem, copyItem);
+                alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem, copyItem);
 
         // Format (items TBD)
 //        Menu formatMenu = new Menu("Format");
