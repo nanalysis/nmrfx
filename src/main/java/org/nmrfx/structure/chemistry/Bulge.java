@@ -11,25 +11,24 @@ import java.util.*;
  *
  * @author bajlabuser
  */
-public class Loop extends SecondaryStructure {
+public class Bulge extends SecondaryStructure {
 
     public static int localind = 0;
     public int li = 0;
     public String name;
 
-    public Loop(String id, List<Residue> Lpresidues) {
+    public Bulge(String id, List<Residue> Bresidues) {
         name = id;
         li = localind;
         gi = globalind;
-        secresidues = Lpresidues;
+        secresidues = Bresidues;
         globalind++;
         localind++;
-
     }
 
     @Override
     public String toString() {
-        return name + getGlobalInd() + ":" + getLocalInd();
+        return name + getGlobalInd() + ":" + getLocalInd() ;
     }
 
     public int getGlobalInd() {
@@ -46,7 +45,7 @@ public class Loop extends SecondaryStructure {
 
     public void getInvolvedRes() {
         for (Residue residue : secresidues) {
-            System.out.print(residue.getName() + residue.resNum + " ");
+            System.out.print(residue.getName() + residue.resNum + " lll");
         }
     }
 }

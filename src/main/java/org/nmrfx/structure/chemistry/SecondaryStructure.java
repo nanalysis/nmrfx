@@ -13,23 +13,13 @@ import java.util.*;
  */
 public abstract class SecondaryStructure {
 
-    public int globalind;
-    public int ind;
-    public List<Residue> residues = new ArrayList<>();
-
-    /*
-    List of Helix and Loop objects
-    */
-    
-    
-    public SecondaryStructure() {
-
-    }
-
-    public abstract List<Residue> residues(Molecule mol);
-    
-//    public String resType(Residue residue) {
-//        
-//    }
-
-}
+    public static int globalind = 0;
+    public int gi = 0;
+    public int li = 0;
+    public int size;
+    public List<Residue> secresidues = new ArrayList<>();
+    public abstract List<Residue> getResidues();
+    public abstract int getGlobalInd();
+    public abstract int getLocalInd();
+    public abstract void getInvolvedRes();
+}   

@@ -11,17 +11,17 @@ import java.util.*;
  *
  * @author bajlabuser
  */
-public class Loop extends SecondaryStructure {
+public class Junction extends SecondaryStructure {
 
     public static int localind = 0;
     public int li = 0;
     public String name;
 
-    public Loop(String id, List<Residue> Lpresidues) {
+    public Junction(String id, List<Residue> Jresidue) {
         name = id;
         li = localind;
         gi = globalind;
-        secresidues = Lpresidues;
+        secresidues = Jresidue;
         globalind++;
         localind++;
 
@@ -29,7 +29,7 @@ public class Loop extends SecondaryStructure {
 
     @Override
     public String toString() {
-        return name + getGlobalInd() + ":" + getLocalInd();
+        return name + getGlobalInd() + ":" + getLocalInd() ;
     }
 
     public int getGlobalInd() {
@@ -49,4 +49,5 @@ public class Loop extends SecondaryStructure {
             System.out.print(residue.getName() + residue.resNum + " ");
         }
     }
+
 }
