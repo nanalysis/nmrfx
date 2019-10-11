@@ -318,8 +318,12 @@ public class AnalystApp extends MainApp {
         analyzeMenuItem.setOnAction(e -> showAnalyzer(e));
         MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
         measureMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumMeasureBar());
+        MenuItem compareMenuItem = new MenuItem("Show Comparator");
+        compareMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumComparator());
+        MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
+        copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
 
-        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem, alignMenuItem, analyzeMenuItem, measureMenuItem);
+        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem, alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem, copyItem);
 
         // Format (items TBD)
 //        Menu formatMenu = new Menu("Format");
