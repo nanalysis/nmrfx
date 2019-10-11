@@ -412,8 +412,10 @@ public class MolViewer extends Pane {
         int iStructure = 0;
         try {
             center = molecule.getCenterOfSelected(iStructure);
-            center(-center[0], -center[1], -center[2]);
-            updateView();
+            if (center != null) {
+                center(-center[0], -center[1], -center[2]);
+                updateView();
+            }
         } catch (MissingCoordinatesException ex) {
             Logger.getLogger(MolViewer.class.getName()).log(Level.SEVERE, null, ex);
         }
