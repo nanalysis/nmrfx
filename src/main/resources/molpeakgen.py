@@ -176,7 +176,7 @@ class MolPeakGen:
     def addProtonPairPeak(self, peakList, aAtom, bAtom, intensity=None, d1Edited=None, d2Edited=None):
         if intensity==None:
             intensity = self.intensity
-            bounds = [width * 2.0 for width in self.widths]
+            widthScale = 2.0
         else: 
             if intensity > 10.0:
                 widthScale = 2.0
@@ -186,20 +186,45 @@ class MolPeakGen:
                 widthScale = 0.85
             else:
                 widthScale = 0.50
-            bounds = [width * widthScale for width in self.widths]
 
-        ppmAV = aAtom.getPPM(0)
-        if self.refMode or (ppmAV == None) or not ppmAV.isValid():
-            ppmAV = aAtom.getRefPPM(0)
+        nPeakDim = peakList.getNDim()
 
-        if (ppmAV != None) and aAtom.isActive() and ((d1Edited == None) or (d1Edited == aAtom.parent.isActive())):
-            ppmBV = bAtom.getPPM(0)
-            if self.refMode or (ppmBV == None) or not ppmBV.isValid():
-                ppmBV = bAtom.getRefPPM(0)
-            if (ppmBV != None) and bAtom.isActive() and ((d2Edited == None) or (d2Edited == bAtom.parent.isActive())):
-                ppms = [ppmAV.getValue(),ppmBV.getValue()]
-                names = [[aAtom.getShortName()],[bAtom.getShortName()]]
-                peak = peakgen.addPeak(peakList, ppms, self.widths, bounds, intensity, names)
+        if nPeakDim == 3:
+            atoms = [aAtom, aAtom.getParent(), bAtom]
+            dEdited = [d1Edited,None,d2Edited]
+        else:
+            atoms = [aAtom, bAtom]
+            dEdited = [d1Edited,d2Edited]
+
+        ok = True
+        ppms = []
+        names = []
+        widths = []
+        bounds = []
+        for atom,dEdit in zip(atoms, dEdited):
+            if not atom.isActive():
+                ok = False
+                break
+            ppmV = atom.getPPM(0)
+            if self.refMode or (ppmV == None) or not ppmV.isValid():
+                ppmV = atom.getRefPPM(0)
+            if ppmV == None:
+                ok = False
+                break
+            if atom.getAtomicNumber() == 1:
+                if dEdit != None and (dEdit != atom.parent.isActive()):
+                    ok = False
+                    break
+
+            atomElem = atom.getElementName()
+            width = self.elemWidths[atomElem]
+
+            ppms.append(ppmV.getValue())
+            names.append(atom.getShortName())
+            widths.append(width)
+            bounds.append(width * widthScale)
+        if ok:
+            peak = peakgen.addPeak(peakList, ppms, widths, bounds, intensity, names)
 
     def addPeaks(self, peakList, d1Edited, d2Edited, atomDistList=None):
         if (atomDistList is None) or (not atomDistList): # none or empty
