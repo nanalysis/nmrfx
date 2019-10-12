@@ -1418,14 +1418,18 @@ public class PolyChart implements PeakListener {
             // if didn't add one, then create new DatasetAttributes
             if (newList.size() == n) {
                 Dataset dataset = Dataset.getDataset(s);
-                int nDim = dataset.getNDim();
-                // fixme kluge as not all datasets that are freq domain have attribute set
-                for (int i = 0; (i < nDim) && (i < 2); i++) {
-                    dataset.setFreqDomain(i, true);
+                if (dataset != null) {
+                    int nDim = dataset.getNDim();
+                    // fixme kluge as not all datasets that are freq domain have attribute set
+                    for (int i = 0; (i < nDim) && (i < 2); i++) {
+                        dataset.setFreqDomain(i, true);
+                    }
+                    DatasetAttributes newAttr = new DatasetAttributes(dataset);
+                    newList.add(newAttr);
+                    updated = true;
+                } else {
+                    System.out.println("No dataset " + s);
                 }
-                DatasetAttributes newAttr = new DatasetAttributes(dataset);
-                newList.add(newAttr);
-                updated = true;
             }
             iTarget++;
         }
