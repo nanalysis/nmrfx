@@ -94,6 +94,8 @@ public class SpectrumComparator {
             sampleFields[i].setMaxWidth(200);
             Color color = i == 0 ? Color.BLACK : Color.BLUE;
             datasetColorPickers[i] = new ColorPicker(color);
+            datasetColorPickers[i].getStyleClass().add("button");
+            datasetColorPickers[i].valueProperty().addListener(c -> setDatasetState());
         }
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
