@@ -973,7 +973,7 @@ public class Vec extends PySequence implements MatrixType {
         if (isComplex) {
             c = getComplex(start);  // amp from 1st real point
             double ph = 0.0;
-            double  amp = c.abs();
+            double amp = c.abs();
 // only even points in sync with 1st real point, 1st half of precharge
 // average the phase for the preceding points (in charge-up)
             int n = 0;
@@ -5872,17 +5872,15 @@ public class Vec extends PySequence implements MatrixType {
         int halfWin = winSize / 2;
         for (int i = 0; i < halfWin; i++) {
             dStat.addValue(rvec[i]);
+            dStat.addValue(rvec[size - i - 1]);
         }
+        double regionAvg = dStat.getMean();
         for (int i = 0; i < size; i++) {
-            if ((i + halfWin) < size) {
-                dStat.addValue(rvec[i + halfWin]);
-            }
-            double regionAvg = dStat.getMean();
             if (Math.abs(rvec[i] - regionAvg) < threshold) {
                 lastWasBase = true;
             } else {
                 if (lastWasBase) {
-                    //System.out.println("base at "+i+" "+vec[i]);
+                   // System.out.println("end   base at " + i + " " + rvec[i] + " " + pointToPPM(i));
                     nPeakRegions++;
                 }
 
@@ -5903,17 +5901,8 @@ public class Vec extends PySequence implements MatrixType {
         int nPos = 0;
         int nNeg = 0;
         boolean addedRegion = false;
-        dStat.clear();
-        for (int i = 0; i < halfWin; i++) {
-            dStat.addValue(rvec[i]);
-        }
         for (int i = 0; i < size; i++) {
-            if ((i + halfWin) < size) {
-                dStat.addValue(rvec[i + halfWin]);
-            }
-            double regionAvg = dStat.getMean();
             if (Math.abs(rvec[i] - regionAvg) < threshold) { // baseline point
-
                 if (!lastWasBase) {
                     lastNarrow = addedRegion && ((i - begin) < regionWidth); //System.out.println("narrow at "+i);
                 }
