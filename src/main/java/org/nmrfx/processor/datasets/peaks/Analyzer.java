@@ -571,7 +571,7 @@ public class Analyzer {
         int region = (int) Math.round(1.0 * regionWidth / sw * size);
         int join = (int) Math.round(1.0 * joinWidth / sw * size);
         int extend = (int) Math.round(1.0 * regionExtend / sw * size);
-        System.out.println(region + " " + join + " " + extend);
+       // System.out.println(region + " " + join + " " + extend + " " + minThreshold + " " + regionRatio);
         /*
    puts "autoreg $winSize $noiseRatio $minWidth $joinSize $extendAmount"
         autoreg 20 26 0.9 0.9 9.1
@@ -586,6 +586,7 @@ public class Analyzer {
             min = dataset.pointToPPM(0, min);
             double max = rM.getEntry(iRow, 1);
             max = dataset.pointToPPM(0, max);
+          //  System.out.println(min + " " + max);
             DatasetRegion newRegion = new DatasetRegion(min, max);
             regions.add(newRegion);
         }
@@ -930,7 +931,7 @@ public class Analyzer {
 
     public void analyze() throws IOException {
         // clear
-        baselineCorrect();
+        //baselineCorrect();
         // autoReference
 
         // clearRegions
