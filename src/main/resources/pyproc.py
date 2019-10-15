@@ -2802,6 +2802,25 @@ def DPHASE(dim=0,firstOrder=False, winSize=2, ratio=25.0, ph1Limit=45.0, disable
         process.addOperation(op)
     return op
 
+
+def DEPT( disabled=False, dataset=None, process=None):
+    ''' DEPT : combine rows.
+    Parameters
+    ---------
+'''
+    if disabled:
+        return None
+
+    process = process or getCurrentProcess()
+
+    op = DEPT()
+
+    if (dataset != None):
+        op.eval(dataset)
+    else:
+        process.addOperation(op)
+    return op
+
 def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
