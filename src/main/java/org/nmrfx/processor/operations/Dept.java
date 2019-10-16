@@ -29,7 +29,7 @@ import org.nmrfx.processor.processing.ProcessingException;
  *
  * @author Bruce Johnson
  */
-public class DEPT extends DatasetOperation {
+public class Dept extends DatasetOperation {
 
     private static final double[][] COEFS = {
         {2.23, 0.23, 0, 0},
@@ -44,7 +44,7 @@ public class DEPT extends DatasetOperation {
         {1, 1, 0, 0, 0, 0, -1, -1},
         {0.23, 0.23, 0, 0, -0.77, -0.77, 1, 1}};
 
-    public DEPT() {
+    public Dept() {
     }
 
     @Override
@@ -83,7 +83,7 @@ public class DEPT extends DatasetOperation {
                 dataset.writeVector(outVecs[0], i, 0);
             }
         } catch (IOException ex) {
-            Logger.getLogger(DEPT.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Dept.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
