@@ -27,6 +27,7 @@ from org.nmrfx.processor.operations import CoAdd
 from org.nmrfx.processor.operations import Cwtd
 from org.nmrfx.processor.operations import Combine
 from org.nmrfx.processor.operations import Dc
+from org.nmrfx.processor.operations import Dept
 from org.nmrfx.processor.operations import Dcfid
 from org.nmrfx.processor.operations import Dx
 from org.nmrfx.processor.operations import Exp
