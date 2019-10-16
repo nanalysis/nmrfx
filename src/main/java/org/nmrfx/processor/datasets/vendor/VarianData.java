@@ -1380,7 +1380,7 @@ class VarianData implements NMRData {
                     } else {
                         acqOrder[i++] = "a" + String.valueOf(nDim + 1);
                         String arrayValue = getPar(arrayElems[j]);
-                        String[] arrayValueElems = arrayValue.split(",");
+                        String[] arrayValueElems = arrayValue.split("\n");
                         arraysize[i - 1] = arrayValueElems.length;
                         arrayValues.clear();
                         for (String val : arrayValueElems) {
@@ -1399,10 +1399,43 @@ class VarianData implements NMRData {
                     acqOrder[i++] = "d" + (j + 1);
                 }
             } else {
-                acqOrder = new String[nDim * 2];
-                for (int i = 0; i < nDim; i++) {
-                    acqOrder[i] = "p" + (i + 1);
-                    acqOrder[nDim + i] = "d" + (i + 1);
+                int i = 0;
+                for (int j = 0; j < arraysize.length; j++) {
+                    arraysize[j] = 0;
+                }
+                boolean hasArray = false;
+                for (int j = arrayElems.length - 1; j >= 0; j--) {
+                    String arrayValue = getPar(arrayElems[j]);
+                    String[] arrayValueElems = arrayValue.split("\n");
+                    int aSize = arrayValueElems.length;
+                    if (aSize > 0) {
+                        hasArray = true;
+                    }
+                    if (arraysize[nDim] == 0) {
+                        arraysize[nDim] = aSize;
+                    } else {
+                        arraysize[nDim] *= aSize;
+                    }
+                    arrayValues.clear();
+                    for (String val : arrayValueElems) {
+                        try {
+                            double dVal = Double.parseDouble(val);
+                            arrayValues.add(dVal);
+                        } catch (NumberFormatException nfE) {
+                            arrayValues.clear();
+                            break;
+                        }
+                    }
+                }
+                int acqOrderSize = (nDim + 1) * 2;
+                acqOrderSize = 0;
+                if (hasArray) {
+                    acqOrderSize++;
+                }
+                acqOrder = new String[acqOrderSize];
+                i = 0;
+                if (hasArray) {
+                    acqOrder[i++] = "a" + String.valueOf(nDim + 1);
                 }
             }
         }
@@ -1662,7 +1695,7 @@ class VarianData implements NMRData {
                             + " " + varian.getRef(2) + " " + varian.getRef(3));
                     System.out.println("");
                 } catch (IOException ex) {
-                    
+
                 }
             }
             return FileVisitResult.CONTINUE;
