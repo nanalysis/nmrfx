@@ -18,7 +18,6 @@
 package org.nmrfx.processor.processing;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.processing.processes.ProcessOps;
@@ -35,7 +34,6 @@ import org.nmrfx.processor.operations.Operation;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -515,7 +513,8 @@ public class Processor {
             totalVecGroups = vectorsToWrite / tmult.getGroupSize();
             vectorsMultiDataMin = nmrDataSets.size() * tmult.getGroupSize();
         } else {
-            totalVecGroups = 1;
+            totalVecGroups = nmrData.getNVectors();
+            vectorsToWrite = nmrData.getNVectors();
         }
         vectorsPerProcess = totalVecGroups / numProcessors;
         System.out.println("totalVecGroups " + totalVecGroups + " vectorsPerProcess " + vectorsPerProcess + " vecto " + vectorsToWrite);
@@ -1167,9 +1166,9 @@ public class Processor {
             }
         } else {
             int[] inVecs = {vecNum};
-            int[][][] outVecs = new int[1][1][2];
-            outVecs[0][0][0] = vecNum;
-            outVecs[0][0][1] = vecNum;
+            int[][][] outVecs = new int[1][2][2];
+            outVecs[0][1][0] = vecNum;
+            outVecs[0][1][1] = vecNum;
             return new VecIndex(inVecs, outVecs);
         }
     }
