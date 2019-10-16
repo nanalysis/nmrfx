@@ -107,6 +107,7 @@ public class OperationInfo {
         "MEASURE",
         "Cascade-Dataset",
         "DPHASE",
+        "DEPT",
         "Cascade-New",
         "SCRIPT",
         "CWTD",
