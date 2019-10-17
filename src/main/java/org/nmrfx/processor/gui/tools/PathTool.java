@@ -1,4 +1,3 @@
-
 package org.nmrfx.processor.gui.tools;
 
 import de.jensd.fx.glyphs.GlyphsDude;
@@ -312,12 +311,9 @@ public class PathTool implements PeakNavigable {
             List<String> colNames = new ArrayList<>();
             colNames.add("Peak");
             String[] parNames = peakPath.getParNames();
-            if (peakPath.getPathMode() == PATHMODE.PRESSURE) {
-                for (String col : parNames) {
-                    colNames.add(col);
-                    colNames.add(col + "Dev");
-                }
-
+            for (String col : parNames) {
+                colNames.add(col);
+                colNames.add(col + "Dev");
             }
             plotTool = new PathPlotTool(this, colNames);
         }
