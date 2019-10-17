@@ -82,6 +82,10 @@ public class Dept extends DatasetOperation {
                 VecCombine.comb2(coefs[i], vecs, false, outVecs);
                 dataset.writeVector(outVecs[0], i, 0);
             }
+            outVecs[0].zeros();
+            for (int i = nOut; i < size2; i++) {
+                dataset.writeVector(outVecs[0], i, 0);
+            }
         } catch (IOException ex) {
             Logger.getLogger(Dept.class.getName()).log(Level.SEVERE, null, ex);
         }
