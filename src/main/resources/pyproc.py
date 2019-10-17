@@ -2814,7 +2814,7 @@ def DEPT( disabled=False, dataset=None, process=None):
 
     process = process or getCurrentProcess()
 
-    op = DEPT()
+    op = Dept()
 
     if (dataset != None):
         op.eval(dataset)
