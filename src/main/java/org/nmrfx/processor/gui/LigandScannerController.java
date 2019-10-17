@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.function.Function;
+import javafx.beans.Observable;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -40,8 +41,10 @@ import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToolBar;
@@ -52,6 +55,11 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.chart.Axis;
+import org.nmrfx.chart.DataSeries;
+import org.nmrfx.chart.XYCanvasChart;
+import org.nmrfx.chart.XYChartPane;
+import org.nmrfx.chart.XYValue;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.controls.FileTableItem;
 import org.nmrfx.processor.tools.LigandScannerInfo;
@@ -78,7 +86,9 @@ public class LigandScannerController implements Initializable {
     private Stage stage;
 
     @FXML
+    SplitPane splitPane;
     TableView<LigandScannerInfo> ligandTableView;
+    XYChartPane chartPane;
     @FXML
     private ToolBar menuBar;
     PopOver popOver = new PopOver();
@@ -92,13 +102,33 @@ public class LigandScannerController implements Initializable {
     double mcsTol = 0.0;
     int refIndex = 0;
     PolyChart chart = PolyChart.getActiveChart();
-
+    XYCanvasChart activeChart = null;
+    ChoiceBox<String> xArrayChoice;
+    ChoiceBox<String> yArrayChoice;
     int nPCA = 5;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+        ligandTableView = new TableView();
+        chartPane = new XYChartPane();
+        splitPane.getItems().addAll(chartPane, ligandTableView);
+        activeChart = chartPane.getChart();
+
         initMenuBar();
         initTable();
+        try {
+            xArrayChoice.valueProperty().addListener((Observable x) -> {
+                updatePlot();
+            });
+            yArrayChoice.valueProperty().addListener((Observable y) -> {
+                updatePlot();
+            });
+        } catch (NullPointerException npEmc1) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Error: Fit must first be performed.");
+            alert.showAndWait();
+            return;
+        }
     }
 
     public Stage getStage() {
@@ -141,7 +171,12 @@ public class LigandScannerController implements Initializable {
         menuBar.getItems().add(pcaButton);
         Button mcsButton = new Button("MCS");
         mcsButton.setOnAction(e -> doMCS());
+
         menuBar.getItems().add(mcsButton);
+        xArrayChoice = new ChoiceBox<>();
+        yArrayChoice = new ChoiceBox<>();
+        menuBar.getItems().addAll(xArrayChoice, yArrayChoice);
+
     }
 
     private void initTable() {
@@ -165,12 +200,19 @@ public class LigandScannerController implements Initializable {
         ligandTableView.getColumns().addAll(datasetColumn, indexColumn, nPeaksColumn,
                 groupColumn, sampleColumn, concColumn, minShiftColumn,
                 pcaDistColumn);
+        xArrayChoice.getItems().add("Conc");
+        xArrayChoice.getItems().add("MinShift");
+        xArrayChoice.getItems().add("PCADist");
+        yArrayChoice.getItems().add("Conc");
+        yArrayChoice.getItems().add("MinShift");
+        yArrayChoice.getItems().add("PCADist");
         for (int i = 0; i < 5; i++) {
             final int pcaIndex = i;
             TableColumn<LigandScannerInfo, Number> pcaColumn = new TableColumn<>("PCA " + (pcaIndex + 1));
             ligandTableView.getColumns().add(pcaColumn);
             pcaColumn.setCellValueFactory((e) -> new SimpleDoubleProperty(e.getValue().getPCAValue(pcaIndex)));
-
+            xArrayChoice.getItems().add(pcaColumn.getText());
+            yArrayChoice.getItems().add(pcaColumn.getText());
         }
 
     }
@@ -495,6 +537,69 @@ public class LigandScannerController implements Initializable {
                 env.setVariableUnsafe("scntbl", dFrame);
             }
         }
+    }
+
+    double[] getTableValues(String columnName) {
+        double[] values = null;
+        List<LigandScannerInfo> scannerRows = matrixAnalyzer.getScannerRows();
+        int nItems = scannerRows.size();
+        if (nItems != 0) {
+            values = new double[nItems];
+            int i = 0;
+            int pcaIndex = 0;
+            if (columnName.startsWith("PCA ")) {
+                pcaIndex = Integer.parseInt(columnName.substring(4)) - 1;
+                columnName = "PCA";
+            }
+            for (LigandScannerInfo info : scannerRows) {
+                switch (columnName) {
+                    case "MinShift":
+                        values[i] = info.getMinShift();
+                        break;
+                    case "PCADist":
+                        values[i] = info.getPCADist();
+                        break;
+                    case "Conc":
+                        values[i] = info.getConc();
+                        break;
+                    case "PCA":
+                        values[i] = info.getPCAValue(pcaIndex);
+                        break;
+                }
+                i++;
+            }
+        }
+        return values;
+    }
+
+    void updatePlot() {
+        Axis xAxis = activeChart.getXAxis();
+        Axis yAxis = activeChart.getYAxis();
+        String xElem = xArrayChoice.getValue();
+        String yElem = yArrayChoice.getValue();
+        if ((xElem != null) && (yElem != null)) {
+            xAxis.setLabel(xElem);
+            yAxis.setLabel(yElem);
+            xAxis.setZeroIncluded(false);
+            yAxis.setZeroIncluded(false);
+            xAxis.setAutoRanging(true);
+            yAxis.setAutoRanging(true);
+            DataSeries series = new DataSeries();
+            activeChart.getData().clear();
+            //Prepare XYChart.Series objects by setting data
+            series.getData().clear();
+            double[] xValues = getTableValues(xElem);
+            double[] yValues = getTableValues(yElem);
+            if ((xValues != null) && (yValues != null)) {
+                for (int i = 0; i < xValues.length; i++) {
+                    series.getData().add(new XYValue(xValues[i], yValues[i]));
+                }
+            }
+            System.out.println("plot");
+            activeChart.getData().add(series);
+            activeChart.autoScale(true);
+        }
+
     }
 
 }

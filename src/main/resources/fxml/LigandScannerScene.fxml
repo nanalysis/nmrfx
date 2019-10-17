@@ -10,6 +10,7 @@
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -28,10 +29,11 @@
                 </HBox>
             </top>
             <center>
-                <TableView fx:id="ligandTableView">
-                    <columns>
-                    </columns>
-                </TableView>
+                <SplitPane orientation="vertical" fx:id="splitPane">
+                    <items>
+ 
+                    </items>
+                </SplitPane>
             </center>
         </BorderPane>
     </center>
