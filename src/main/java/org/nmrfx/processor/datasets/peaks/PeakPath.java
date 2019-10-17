@@ -33,13 +33,16 @@ import smile.interpolation.variogram.PowerVariogram;
 import smile.interpolation.variogram.Variogram;
 import smile.math.kernel.GaussianKernel;
 import smile.math.kernel.MercerKernel;
+import smile.math.matrix.DenseMatrix;
+import smile.math.matrix.JMatrix;
+import smile.math.matrix.SVD;
 import smile.regression.GaussianProcessRegression;
 //import smile.interpolation.KrigingInterpolation;
 
 public class PeakPath implements PeakListener {
 
     static String[] PRESURE_NAMES = {"Ha", "Hb", "Hc", "Xa", "Xb", "Xc"};
-    static String[] TITRATION_NAMES = {"A", "K", "C"};
+    static String[] TITRATION_NAMES = {"K", "C"};
 
     static Map<String, PeakPath> peakPaths = new HashMap<>();
 
@@ -834,6 +837,35 @@ public class PeakPath implements PeakListener {
 
     }
 
+    double[] fitPoly(double[] x, double[] y, int order) {
+        System.out.println(x.length + " " + y.length);
+        if (x.length == 1) {
+            double[] coef = new double[1];
+            coef[0] = y[0] / x[0];
+            return coef;
+        }
+        DenseMatrix mat = new JMatrix(x.length, order);
+        for (int i = 0; i < x.length; i++) {
+            for (int j = 0; j < order; j++) {
+                mat.set(i, j, Math.pow(x[i], order + 1));
+            }
+        }
+        SVD svd = mat.svd();
+        double[] coef = new double[order];
+        double[] s = svd.getSingularValues();
+        System.out.println(s.length + " " + svd.getV().nrows());
+        svd.solve(y, coef);
+        return coef;
+    }
+
+    double predictWithPoly(double[] coefs, double x) {
+        double y = 0.0;
+        for (int i = 0; i < coefs.length; i++) {
+            y += coefs[i] * Math.pow(x, i + 1);
+        }
+        return y;
+    }
+
     public double[] poly(double x2, double x3, double y2, double y3) {
         /*
          * A= (y3 -y2)/((x3 -x2)(x3 -x1)) - (y1 -y2)/((x1 -x2)(x3 -x1))
@@ -1118,6 +1150,7 @@ public class PeakPath implements PeakListener {
             }
         }
         KrigingInterpolation krig[] = new KrigingInterpolation[peakDims.length];
+        //    double[][] coefs = new double[peakDims.length][];
         for (int jLevel = 2; jLevel < indices.length; jLevel++) {
             nUseLevel = 0;
             for (int iLevel = 0; iLevel < jLevel; iLevel++) {
@@ -1129,6 +1162,7 @@ public class PeakPath implements PeakListener {
             for (int iDim : peakDims) {
                 double[] yValues = new double[nUseLevel];
                 double[][] xValues = new double[nUseLevel][1];
+                //     double[] xValues = new double[nUseLevel];
                 double[] weightValues = new double[nUseLevel];
                 int j = 0;
 
@@ -1136,11 +1170,13 @@ public class PeakPath implements PeakListener {
                     if (indices[iLevel] >= 0) {
                         PeakDistance peakDist = filteredLists.get(iLevel).get(indices[iLevel]);
                         yValues[j] = peakDist.deltas[iDim];
+                        // xValues[j] = indVars[0][iLevel];
                         xValues[j][0] = indVars[0][iLevel];
                         weightValues[j] = tols[iDim];
                         j++;
                     }
                 }
+                //    coefs[iDim] = fitPoly(xValues, yValues, 2);
                 Variogram vGram = new PowerVariogram(xValues, yValues);
                 krig[iDim] = new KrigingInterpolation(xValues,
                         yValues, vGram, weightValues);
@@ -1154,6 +1190,7 @@ public class PeakPath implements PeakListener {
                     double sumSq = 0.0;
                     for (int iDim : peakDims) {
                         double iValue = krig[iDim].interpolate(indVars[0][jLevel]);
+                        //          double iValue = predictWithPoly(coefs[iDim], indVars[0][jLevel]);
                         double deltaDelta = iValue - deltas[iDim];
                         sumSq += deltaDelta * deltaDelta;
                     }
