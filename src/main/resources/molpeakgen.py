@@ -202,7 +202,6 @@ class MolPeakGen:
         names = []
         widths = []
         bounds = []
-        print aAtom,bAtom
         for atom,dEdit in zip(atoms, dEdited):
             if not atom.isActive():
                 ok = False
@@ -512,7 +511,6 @@ class MolPeakGen:
             return None
         retList = []
         for atoms, dist in atomDistList:
-            print aResNum, bResNum,atoms,dist
             aAtomName, bAtomName = atoms
             aSelect = '.'.join([str(aResNum), aAtomName])
             aSelected = self.mol.getAtomByName(aSelect)
@@ -537,7 +535,6 @@ class MolPeakGen:
                 bResName = bRes.getName()
                 iType = determineType(aRes, bRes, self.basePairsMap)
                 key = (iType, aResName, bResName) 
-                print key
                 atomPairMap = residueInterTable.get(key) 
                 if atomPairMap is None: continue
                 atomDistList = atomPairMap.items() 
