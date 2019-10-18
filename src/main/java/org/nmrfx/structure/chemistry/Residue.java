@@ -161,6 +161,14 @@ public class Residue extends Compound {
         return polymer;
     }
 
+    public Residue getPrevious() {
+        return previous;
+    }
+
+    public Residue getNext() {
+        return next;
+    }
+
     @Override
     public int getIDNum() {
         return iRes + 1;
