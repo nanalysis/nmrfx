@@ -620,8 +620,6 @@ public class Residue extends Compound {
                     }
                 }
                 if (bpcount == bp.atomPairs.length) {
-                    /*residueB.pairedTo = this
-                      this.pairedTo = residueB*/
                     return bp.type;
                 }
 
