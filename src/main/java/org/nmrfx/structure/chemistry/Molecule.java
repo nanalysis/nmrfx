@@ -2507,25 +2507,6 @@ public class Molecule implements Serializable, ITree {
         return bpList;
     }
 
-//    public int nOfStems() {
-//        int stemNum = 1;
-//        List<BasePair> bp = this.pairList();
-//        for (int i = 1; i < bp.size(); i++) {
-//            if ((bp.get(i).res1.iRes - bp.get(i - 1).res1.iRes) != 1) {
-//                stemNum++;
-//            }
-//        }
-//        return stemNum;
-//    }
-
-    /* 
-    get vienna sequence from the pdb file by finding the number of residues (use .size() method))
-    polymer A and polymer B can be the same 
-    getResidues() returns a list of number of residues in the polymer
-    index through bp's
-    
-    
-     */
     public void checkRNAPairs() {
         for (Polymer polymerA : getPolymers()) {
             for (Polymer polymerB : getPolymers()) {
@@ -2545,31 +2526,6 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
-    /**/
-//    public HashMap<Integer, List<BasePair>> loopNum() {
-//        HashMap<Integer, List<BasePair>> loopNum = new HashMap<Integer, List<BasePair>>();
-//        int nOfStem = nOfStems();
-//        int stemInd = 0;
-//        List<BasePair> bp = pairList();
-//        ArrayList<BasePair> stem[] = new ArrayList[nOfStem];
-//        for (int i = 0; i < nOfStem; i++) {
-//            stem[i] = new ArrayList<>();
-//        }
-//        for (int i = 0; i < bp.size(); i++) {
-//            if ((i + 1) == bp.size()) {
-//                stem[stemInd].add(bp.get(i));
-//            } else if ((bp.get(i + 1).res1.iRes - bp.get(i).res1.iRes) == 1) {
-//                stem[stemInd].add(bp.get(i));
-//            } else {
-//                stem[stemInd].add(bp.get(i));
-//                stemInd++;
-//            }
-//        }
-//        for (int j = 0; j < nOfStem; j++) {
-//            loopNum.put(j + 1, stem[j]); // +1 for index
-//        }
-//        return loopNum;
-//    }
     public List<Residue> RNAresidues() { //list of only rna residues 
         List<Residue> RNAresidues = new ArrayList();
         for (Polymer polymer : getPolymers()) {
@@ -2582,52 +2538,26 @@ public class Molecule implements Serializable, ITree {
         return RNAresidues;
     }
 
-        public char[] viennaSequence() { //have list of rna residues loaded in from the begin....refined code
+    public char[] viennaSequence() { //have list of rna residues loaded in from the begin....refined code
         List<Residue> RNAresidues = RNAresidues();
         char[] vienna = new char[RNAresidues.size()];
-        for(int i = 0; i<vienna.length; i++){
+        for(int i = 0; i<vienna.length; i++) {
             vienna[i] = '.';
         }
-            for (Residue residueA : RNAresidues) {
-                for (Residue residueB : RNAresidues) {
-                    if (residueA.getResNum() > residueB.getResNum()) {
-                        int type = residueA.basePairType(residueB);
-                        if (type == 1) {
-                            vienna[RNAresidues.indexOf(residueA)] = ')';
-                            vienna[RNAresidues.indexOf(residueB)] = '(';
-                        }
-
+        for (Residue residueA : RNAresidues) {
+            for (Residue residueB : RNAresidues) {
+                if (residueA.getResNum() > residueB.getResNum()) {
+                    int type = residueA.basePairType(residueB);
+                    if (type == 1) {
+                        vienna[RNAresidues.indexOf(residueA)] = ')';
+                        vienna[RNAresidues.indexOf(residueB)] = '(';
                     }
+
                 }
             }
+        }
         return vienna;
     }
-//    public char[] viennaSequence() { //have list of rna residues loaded in from the begin....refined code
-//        List<Residue> pseudo;
-//        List<Residue> RNAresidues = RNAresidues();
-//        char[] vienna = new char[RNAresidues.size()];
-//        for (int i = 0; i < vienna.length; i++) {
-//            vienna[i] = '.';
-//        }
-//        for (Residue residueA : RNAresidues) {
-//            for (Residue residueB : RNAresidues) {
-//                if (residueA.getResNum() > residueB.getResNum()) {
-//                    int type = residueA.basePairType(residueB);
-//                    if (type == 1) {
-//                        vienna[RNAresidues.indexOf(residueA)] = ')';
-//                        vienna[RNAresidues.indexOf(residueB)] = '(';
-//                    }
-//
-//                }
-//            }
-//        }
-//        String viennaSeq = new String(vienna);
-//        SSLayout ssLay = new SSLayout(viennaSeq.length());
-//        ssLay.interpVienna(viennaSeq, RNAresidues);
-//        pseudo = inter
-//        
-//        return vienna;
-//    }
 
     public void calcLCMB(final int iStruct) {
         calcLCMB(iStruct, true, false);
