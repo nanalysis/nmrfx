@@ -326,6 +326,7 @@ public class SDFile {
 
     void readFreeForm(LineNumberReader lineReader) throws IOException {
         String string;
+        StringBuilder sBuilder = new StringBuilder();
         while ((string = lineReader.readLine()) != null) {
             String valueName;
             string = string.trim();
@@ -334,22 +335,37 @@ public class SDFile {
                     break;
                 } else if (string.startsWith(">")) {
                     Matcher matcher = pattern.matcher(string);
+                    sBuilder.setLength(0);
                     if (matcher.matches()) {
                         valueName = matcher.group(1);
-                        string = lineReader.readLine();
-                        String value = string.trim();
+                        while (true) {
+                            string = lineReader.readLine();
+                            if (string == null) {
+                                break;
+                            }
+                            String value = string.trim();
+                            if (value.length() == 0) {
+                                break;
+                            }
+                            if (sBuilder.length() > 0) {
+                                sBuilder.append("\n");
+                            }
+                            
+                            if (value.endsWith("\\")) {
+                                value = value.substring(0, value.length() - 1);
+                            }
+                            sBuilder.append(value);
+                        }
                         if (valueName.equals("MDLNUMBER")) {
-                            molecule.reName(molecule, compound, molName, value);
+                            molecule.reName(molecule, compound, molName, sBuilder.toString());
                             molName = molecule.name;
                         } else {
-                            molecule.setProperty(valueName, value);
+                            molecule.setProperty(valueName, sBuilder.toString());
                         }
 
                     }
 
                 }
-                StringTokenizer tokenizer = new StringTokenizer(string);
-
             }
         }
 

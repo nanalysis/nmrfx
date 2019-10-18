@@ -34,6 +34,9 @@ from org.nmrfx.structure.chemistry.energy import AngleTreeGenerator
 #from tcl.lang import Interp
 from java.lang import String, NullPointerException, IllegalArgumentException
 from java.util import ArrayList
+from org.nmrfx.structure.chemistry.constraints import RDC
+from org.nmrfx.structure.chemistry.constraints import RDCConstraintSet
+from org.nmrfx.structure.chemistry import SpatialSet
 
 #tclInterp = Interp()
 #tclInterp.eval("puts hello")
@@ -157,12 +160,23 @@ class Constraint:
         self.lower = distance if mode == 'lower' else None
         self.upper = distance if mode == 'upper' else None
         self.tester = 0 if not setting else -1 if setting == 'narrow' else 1
+        self.rdc = None
+        self.err = None
 
     def addBound(self, distance, mode):
         if not isinstance(distance,float):
             raise ValueError("Value " + distance + " not float")
         self.lower = distance if mode == 'lower' and (not self.lower or ((self.lower-distance)*self.tester >= 0 )) else self.lower
         self.upper = distance if mode == 'upper' and (not self.upper or ((distance - self.upper)*self.tester >= 0)) else self.upper
+        Constraint.lastViewed = self
+
+    def addRDC(self, rdc, err):
+        if not isinstance(rdc,float):
+            raise ValueError("Value " + rdc + " not float")
+        if not isinstance(err,float):
+            raise ValueError("Value " + err + " not float")
+        self.rdc = rdc
+        self.err = err
         Constraint.lastViewed = self
 
     def addPair(self, pair):
@@ -306,6 +320,8 @@ class refine:
         self.nvAngleFiles = []
 	self.cyanaDistanceFiles = {}
         self.xplorDistanceFiles = {}
+        self.cyanaRDCFiles = {}
+        self.xplorRDCFiles = {}
         self.suiteAngleFiles = []
         self.nmrfxDistanceFiles = {}
         self.nvDistanceFiles = {}
@@ -772,6 +788,26 @@ class refine:
                 self.constraints[firstAtomPair].addBound(lower, 'lower');
                 self.constraints[firstAtomPair].addBound(upper, 'upper');
 
+    def readXPLORrdcConstraints(self, fileName, keepSetting=None):
+        xplorFile = xplor.XPLOR(fileName)
+        resNames = self.getResNameLookUpDict()
+        constraints = xplorFile.readXPLORrdcConstraints(resNames)
+        for constraint in constraints:
+            rdc = constraint['rdc']
+            err = constraint['err']
+            atomPairs = constraint['atomPairs']
+            firstAtomPair = atomPairs[0]
+
+            if firstAtomPair not in self.constraints:
+                constraint = Constraint(firstAtomPair, 0.0, 'rdc', setting=keepSetting)
+                self.constraints[firstAtomPair] = constraint
+                if len(atomPairs) > 1:
+                    for atomPair in atomPairs[1:]:
+                        self.constraints[atomPair] = constraint
+                        constraint.addPair(atomPair)
+                self.constraints[firstAtomPair].addRDC(rdc, err);
+            else:
+                self.constraints[firstAtomPair].addRDC(rdc, err);
 
     def addDisCon(self, atomName1, atomName2, lower, upper):
         self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper)
@@ -1331,6 +1367,47 @@ class refine:
                                 Constraint.lastViewed.addPair(atomPair)
                                 self.constraints[atomPair] = Constraint.lastViewed
 
+    def readCYANARDCs(self, fileNames, molName, keepSetting=None):
+        for fileName in fileNames:
+            if os.path.exists(fileName):
+                with open(fileName,'r') as fIn:
+                    for lineNum, line in enumerate(fIn):
+                        line = line.strip()
+                        if len(line) == 0:
+                            continue
+                        if line[0] == '#':
+                            continue
+                        fields = line.split()
+                        nFields = len(fields)
+
+                        rdc, err, res1, atom1, res2, atom2 = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+                        if fields[0].isdigit():
+                            res1, _, atom1, res2, _, atom2, rdc, err = fields[:8]
+
+                        rdc = float(rdc)
+                        err = float(err)
+
+                        if rdc != 0.0:
+                            fullAtom1 = molName+':'+res1+'.'+atom1
+                            fullAtom2 = molName+':'+res2+'.'+atom2
+                            fullAtom1 = fullAtom1.replace('"',"''")
+                            fullAtom2 = fullAtom2.replace('"',"''")
+                            atomPair = ' '.join([fullAtom1,fullAtom2]) if fullAtom1 < fullAtom2 else ' '.join([fullAtom2, fullAtom1])
+                            if atomPair not in self.constraints:
+                                constraint = Constraint(atomPair, 0.0, 'rdc', setting=keepSetting)
+                                self.constraints[atomPair] = constraint
+                                if len(atomPairs) > 1:
+                                    for atomPair in atomPairs[1:]:
+                                        self.constraints[atomPair] = constraint
+                                        constraint.addPair(atomPair)
+                                self.constraints[firstAtomPair].addRDC(rdc, err);
+                            else:
+                                self.constraints[firstAtomPair].addRDC(rdc, err);
+
+    def readXplorRDCs(self, fileNames, keepSetting=None):
+        for fileName in fileNames:
+            if os.path.exists(fileName):
+                readXPLORrdcConstraints(fileName, keepSetting)
 
 #ZETA:  C3'(i-1)-O3'(i-1)-P-O5'   -73
 #ALPHA: O3'(i-1)-P-O5'-C5'        -62
@@ -1861,6 +1938,12 @@ class refine:
         else:
             self.nvDistanceFiles[file] = keep
 
+    def addRDCFile(self,file, mode='nv', keep=None):
+        if mode == 'cyana':
+            self.cyanaRDCFiles[file] = keep
+        elif mode == 'xplor':
+            self.xplorRDCFiles[file] = keep
+
     def readAngleFiles(self):
         for file in self.cyanaAngleFiles:
             self.readCYANAAngles(file,self.molName)
@@ -1888,6 +1971,17 @@ class refine:
 
         # FIXME : should return the name of the file in which an error is found!
         self.addDistanceConstraints()
+
+    def readRDCFiles(self):
+        for file in self.cyanaRDCFiles.keys():
+            fileName = file
+            self.readCYANARDCs(fileName, self.molName, keepSetting=self.cyanaRDCFiles[file])
+
+        for file in self.xplorRDCFiles.keys():
+            xplorConstraints = self.readXPLORrdcConstraints(file, keepSetting = self.xplorRDCFiles[file])
+
+        # FIXME : should return the name of the file in which an error is found!
+        self.addRDCConstraints()
         
 
     def addDistanceConstraints(self):
@@ -1924,6 +2018,43 @@ class refine:
                 errMsg = "Illegal Argument received." 
                 errMsg += "\nJava Error Msg : %s" % (IAE.getMessage())
                 raise ValueError(errMsg)
+
+    def addRDCConstraints(self):
+        alreadyAdded = []
+        if len(RDCConstraintSet.getNames()) > 0:
+            rdcSetName = RDCConstraintSet.getNames().get(0)
+        else:
+            rdcSetName = "test"
+            RDCConstraintSet.addSet(rdcSetName)
+        rdcSet = RDCConstraintSet.getSet(rdcSetName)
+        setAtoms = [[set.getSpSets()[0].getFullName().split(":")[1], set.getSpSets()[1].getFullName().split(":")[1]] for set in rdcSet]
+        for constraint in self.constraints.values():
+            if constraint in alreadyAdded:
+                continue
+            alreadyAdded.append(constraint)
+            rdc = constraint.rdc
+            err = constraint.err
+            atomName1, atomName2 = constraint.pairs[0].split()
+            newAtom1Ind = -1
+            if setAtoms != []:
+                newAtom1Ind = setAtoms[0].index(atomName1);
+                if newAtom1Ind == -1:
+                    newAtom1Ind = setAtoms[1].index(atomName1);
+            if newAtom1Ind >= 0:
+                spSets1 = rdcSet.get(newAtom1Ind).getSpSets()
+                rdcObj = RDC(rdcSet, spSets1[0], spSets1[1], rdc, err)
+                rdcSet.remove(newAtom1Ind);
+                rdcSet.add(newAtom1Ind, rdcObj);
+            else:
+                atom1 = Molecule.getAtomByName(atomName1)
+                atom2 = Molecule.getAtomByName(atomName2)
+                if atom1 != None and atom2 != None:
+                    spSet1 = atom1.getSpatialSet()
+                    spSet2 = atom2.getSpatialSet()
+                    rdcObj = RDC(rdcSet, spSet1, spSet2, rdc, err)
+                    rdcSet.add(rdcObj)
+        #for constraint in rdcSet.get():
+        #    print constraint.getSpSets()[0].getFullName(), constraint.getSpSets()[1].getFullName(), constraint.getValue(), constraint.getErr()
 
     def predictRNAShifts(self, typeRCDist="dist"):
         #XXX: Need to complete docstring
