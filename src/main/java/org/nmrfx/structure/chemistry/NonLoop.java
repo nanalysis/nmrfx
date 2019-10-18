@@ -5,23 +5,23 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import java.util.*;
+import java.util.List;
 
 /**
  *
  * @author bajlabuser
  */
-public class Bulge extends SecondaryStructure {
-
+public class NonLoop extends SecondaryStructure{
+    
     public static int localind = 0;
 
-    public Bulge(String id, List<Residue> Bresidues) {
+    public NonLoop(String id, List<Residue> NLpresidues) {
         name = id;
         li = localind;
         gi = globalind;
-        secresidues = Bresidues;
+        secresidues = NLpresidues;
         globalind++;
         localind++;
-    }
 
+    }
 }
