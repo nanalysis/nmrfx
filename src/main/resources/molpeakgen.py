@@ -101,7 +101,7 @@ def determineType(aResObj, bResObj, pairs={}):
             "T2" : (loop=="T" and inSameLoop and dist==2),
             "T3" : (loop=="T" and inSameLoop and dist==3),
             "TB" : ((not sameRes) and bothInLoop and classR1!=classR2 and classR1 in ["B","T"] and classR2 in ["B","T"]),
-            "HB" : ((not sameRes) and loopAndHelix and (classR1=="B" or classR2=="B")),
+            "HB" : ((not sameRes) and loopAndHelix and (classR1=="B" or classR2=="B") and (dist == 1)),
             "BB" : ((not sameRes) and bothInLoop and (classR1=="B" and classR2=="B")),
             "TH" : ((not sameRes) and loopHelixInter("T") and dist==1),
             "TA" : ((not sameRes) and inSamePolymer and dist==2 and bothInHelix)
@@ -198,9 +198,11 @@ class MolPeakGen:
 
         ok = True
         ppms = []
+        eppms = []
         names = []
         widths = []
         bounds = []
+        print aAtom,bAtom
         for atom,dEdit in zip(atoms, dEdited):
             if not atom.isActive():
                 ok = False
@@ -220,11 +222,12 @@ class MolPeakGen:
             width = self.elemWidths[atomElem]
 
             ppms.append(ppmV.getValue())
+            eppms.append(ppmV.getError())
             names.append(atom.getShortName())
             widths.append(width)
             bounds.append(width * widthScale)
         if ok:
-            peak = peakgen.addPeak(peakList, ppms, widths, bounds, intensity, names)
+            peak = peakgen.addPeak(peakList, ppms, eppms, widths, bounds, intensity, names)
 
     def addPeaks(self, peakList, d1Edited, d2Edited, atomDistList=None):
         if (atomDistList is None) or (not atomDistList): # none or empty
@@ -241,6 +244,7 @@ class MolPeakGen:
             intensity = self.intensity
         ok = True
         ppms = []
+        eppms = []
         names = []
         bounds = []
         widths = []
@@ -255,6 +259,7 @@ class MolPeakGen:
                 ok = False
                 break 
             ppms.append(ppmV.getValue())
+            eppms.append(ppmV.getError())
             names.append(atom.getShortName())
             sym = atom.getSymbol()
             width = self.elemWidths[sym]
@@ -262,7 +267,7 @@ class MolPeakGen:
             bound = 1.5 * width
             bounds.append(bound)
         if ok:
-            peakgen.addPeak(peakList, ppms, widths, bounds, intensity, names)
+            peakgen.addPeak(peakList, ppms, eppms, widths, bounds, intensity, names)
 
 
     def genDistancePeaks(self, dataset, listName="", condition="sim", scheme="", tol=5.0):
@@ -507,6 +512,7 @@ class MolPeakGen:
             return None
         retList = []
         for atoms, dist in atomDistList:
+            print aResNum, bResNum,atoms,dist
             aAtomName, bAtomName = atoms
             aSelect = '.'.join([str(aResNum), aAtomName])
             aSelected = self.mol.getAtomByName(aSelect)
@@ -531,6 +537,7 @@ class MolPeakGen:
                 bResName = bRes.getName()
                 iType = determineType(aRes, bRes, self.basePairsMap)
                 key = (iType, aResName, bResName) 
+                print key
                 atomPairMap = residueInterTable.get(key) 
                 if atomPairMap is None: continue
                 atomDistList = atomPairMap.items() 
