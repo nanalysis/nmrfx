@@ -203,7 +203,7 @@ public class KeyBindings {
             case "cs":
                 statusBar = chart.getController().getStatusBar();
                 if (statusBar != null) {
-                    statusBar.setCursor(Cursor.MOVE);
+                    statusBar.setCursor(SpectrumStatusBar.SEL_CURSOR);
                 }
                 keyMonitor.clear();
                 break;

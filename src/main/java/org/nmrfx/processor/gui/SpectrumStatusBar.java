@@ -66,6 +66,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
+import org.apache.commons.lang3.SystemUtils;
 import org.nmrfx.processor.gui.spectra.NMRAxis;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 
@@ -80,6 +81,7 @@ public class SpectrumStatusBar {
     static {
         formatter.setMaximumFractionDigits(2);
     }
+    public final static Cursor SEL_CURSOR = SystemUtils.IS_OS_LINUX ? Cursor.HAND : Cursor.MOVE;
     static final int maxSpinners = 4;
     CustomNumberTextField[][] crossText = new CustomNumberTextField[2][2];
     FXMLController controller;
@@ -237,9 +239,9 @@ public class SpectrumStatusBar {
         Text crosshairIcon = GlyphsDude.createIcon(FontAwesomeIcon.PLUS, "16");
         Text arrowIcon = GlyphsDude.createIcon(FontAwesomeIcon.MOUSE_POINTER, "16");
         cursorMap.put(Cursor.CROSSHAIR, crosshairIcon);
-        cursorMap.put(Cursor.MOVE, arrowIcon);
+        cursorMap.put(SEL_CURSOR, arrowIcon);
         cursorNameMap.put("CrossHair", Cursor.CROSSHAIR);
-        cursorNameMap.put("Selector", Cursor.MOVE);
+        cursorNameMap.put("Selector", SEL_CURSOR);
         String[] cursorModes = {"CrossHair", "Selector"};
         for (String cursorMode : cursorModes) {
             MenuItem cursorMenuItem = new MenuItem(cursorMode);
