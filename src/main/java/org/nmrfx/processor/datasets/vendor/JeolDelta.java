@@ -675,11 +675,9 @@ public class JeolDelta implements NMRData {
         axes = new JeolDeltaAxis[nDim];
         dimSizes = new int[nDim];
         int nV = 1;
-        System.out.println("jeol " + nDim + " nP " + nPoints);
         Number[] headerDimSizes = JeolPars.Data_Points.convert(header);
         for (int iDim = 0; iDim < nDim; iDim++) {
             int dimSize = headerDimSizes[iDim].intValue();
-            System.out.println(" i " + iDim + " " + dimSize);
             dimSizes[iDim] = dimSize;
             int dType = JeolPars.Data_Axis_Type.getInteger(header, iDim);
             axes[iDim] = new JeolDeltaAxis(iDim, dimSize, subMatrixPointCount, 0, 0, dType);
