@@ -645,10 +645,14 @@ public class SSViewer extends Pane {
                 if (!text.equals("")) {
                     boolean active = true;
                     if (showActiveProp.get()) {
+                        active = false;
                         String atomSpec = resName + ".H" + text;
                         Atom atom = Molecule.getAtomByName(atomSpec);
                         if (atom != null) {
-                            active = atom.isActive();
+                            Atom parent = atom.getParent();
+                            if (parent != null) {
+                                active = parent.isActive();
+                            }
                         }
                     }
 
