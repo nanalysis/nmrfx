@@ -91,7 +91,6 @@ public class AnalystApp extends MainApp {
 
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
-    Analyzer analyzer = null;
     RDCGUI rdcGUI = null;
 
     public static void closeAll() {
@@ -394,9 +393,7 @@ public class AnalystApp extends MainApp {
         MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
         pathToolMenuItem.setOnAction(e -> FXMLController.getActiveController().showPathTool());
 
-        MenuItem peakAnalyzerMenuItem = new MenuItem("Analyze 1D Multiplets");
-        peakAnalyzerMenuItem.setOnAction(e -> analyze1D());
-        MenuItem multipletMenuItem = new MenuItem("Multiplet Analyzer...");
+        MenuItem multipletMenuItem = new MenuItem("Show Multiplet Analyzer");
         multipletMenuItem.setOnAction(e -> showMultipletAnalyzer(e));
 
         MenuItem ligandScannerMenuItem = new MenuItem("Show Ligand Scanner");
@@ -419,7 +416,6 @@ public class AnalystApp extends MainApp {
 
         peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
                 linkPeakDimsMenuItem, peakSliderMenuItem, pathToolMenuItem,
-                peakAnalyzerMenuItem,
                 multipletMenuItem, ligandScannerMenuItem, assignCascade);
 
         // Window Menu
@@ -635,28 +631,6 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    private void analyze1D() {
-        PolyChart chart = PolyChart.getActiveChart();
-        Dataset dataset = chart.getDataset();
-        if ((dataset == null) || (dataset.getNDim() > 1)) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setContentText("Chart must have a 1D dataset");
-            alert.showAndWait();
-            return;
-        }
-        analyzer = new Analyzer(dataset);
-        try {
-            analyzer.analyze();
-            PeakList peakList = analyzer.getPeakList();
-            List<String> peakListNames = new ArrayList<>();
-            peakListNames.add(peakList.getName());
-            chart.chartProps.setRegions(false);
-            chart.chartProps.setIntegrals(true);
-            chart.updatePeakLists(peakListNames);
-        } catch (IOException ex) {
-            Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
 
     @FXML
     private void showLigandScanner(ActionEvent event) {
@@ -668,21 +642,6 @@ public class AnalystApp extends MainApp {
         } else {
             System.out.println("Coudn't make atom controller");
         }
-    }
-
-    public Analyzer getAnalyzer() {
-        if (analyzer == null) {
-            PolyChart chart = PolyChart.getActiveChart();
-            Dataset dataset = chart.getDataset();
-            if ((dataset == null) || (dataset.getNDim() > 1)) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Chart must have a 1D dataset");
-                alert.showAndWait();
-                return null;
-            }
-            analyzer = new Analyzer(dataset);
-        }
-        return analyzer;
     }
 
     public static Project getActive() {

@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableSet;
@@ -27,6 +29,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -37,6 +41,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.Analyzer;
 import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
 import org.nmrfx.processor.datasets.peaks.Coupling;
@@ -47,9 +52,12 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.Singlet;
+import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import static org.nmrfx.utils.GUIUtils.affirm;
+import static org.nmrfx.utils.GUIUtils.warn;
 
 /**
  *
@@ -60,6 +68,8 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
     Stage stage = null;
     HBox navigatorToolBar;
     TextField multipletIdField;
+    @FXML
+    HBox menuBar;
     @FXML
     HBox toolBar;
     @FXML
@@ -83,6 +93,7 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
     Optional<Multiplet> activeMultiplet = Optional.empty();
     boolean ignoreCouplingChanges = false;
     ChangeListener<String> patternListener;
+    Analyzer analyzer = null;
 
     public MultipletController() {
     }
@@ -120,6 +131,7 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             gridPane.add(couplingFields[iRow], 1, iRow + 1);
             gridPane.add(slopeFields[iRow], 2, iRow + 1);
         }
+        initMenus();
         initNavigator(toolBar);
         initTools();
         patternListener = new ChangeListener<String>() {
@@ -130,6 +142,24 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         };
         addPatternListener();
 
+    }
+
+    public void initMenus() {
+        MenuButton menu = new MenuButton("Actions");
+        menuBar.getChildren().add(menu);
+        MenuItem analyzeMenuItem = new MenuItem("Analyze");
+        analyzeMenuItem.setOnAction(e -> analyze1D());
+
+        MenuItem clearMenuItem = new MenuItem("Clear");
+        clearMenuItem.setOnAction(e -> clearAnalysis());
+
+        MenuItem thresholdMenuItem = new MenuItem("Set Threshold");
+        thresholdMenuItem.setOnAction(e -> setThreshold());
+
+        MenuItem clearThresholdMenuItem = new MenuItem("Clear Threshold");
+        clearThresholdMenuItem.setOnAction(e -> clearThreshold());
+
+        menu.getItems().addAll(analyzeMenuItem, clearMenuItem, thresholdMenuItem, clearThresholdMenuItem);
     }
 
     public void initNavigator(HBox toolBar) {
@@ -278,6 +308,71 @@ merge.png				region_adjust.png
 
 
          */
+    }
+
+    public Analyzer getAnalyzer() {
+        if (analyzer == null) {
+            chart = PolyChart.getActiveChart();
+            Dataset dataset = chart.getDataset();
+            if ((dataset == null) || (dataset.getNDim() > 1)) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setContentText("Chart must have a 1D dataset");
+                alert.showAndWait();
+                return null;
+            }
+            analyzer = new Analyzer(dataset);
+        }
+        return analyzer;
+    }
+
+    private void analyze1D() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            try {
+                analyzer.analyze();
+                PeakList peakList = analyzer.getPeakList();
+                List<String> peakListNames = new ArrayList<>();
+                peakListNames.add(peakList.getName());
+                chart.chartProps.setRegions(false);
+                chart.chartProps.setIntegrals(true);
+                chart.updatePeakLists(peakListNames);
+            } catch (IOException ex) {
+                Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    private void clearAnalysis() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            if (affirm("Clear Analysis")) {
+                PeakList peakList = analyzer.getPeakList();
+                PeakList.remove(peakList.getName());
+                chart.chartProps.setRegions(false);
+                chart.chartProps.setIntegrals(false);
+                chart.refresh();
+            }
+        }
+    }
+
+    private void clearThreshold() {
+        if (analyzer != null) {
+            analyzer.clearThreshold();
+        }
+    }
+
+    private void setThreshold() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            CrossHairs crossHairs = chart.getCrossHairs();
+            if (!crossHairs.hasCrosshairState("h0")) {
+                warn("Threshold", "Must have horizontal crosshair");
+                return;
+            }
+            Double[] pos = crossHairs.getCrossHairPositions(0);
+            System.out.println(pos[0] + " " + pos[1]);
+            analyzer.setThreshold(pos[1]);
+        }
     }
 
     void deleteMultiplet() {
@@ -489,7 +584,7 @@ merge.png				region_adjust.png
         if (!attrs.isEmpty()) {
             peakListOpt = Optional.of(attrs.get(0).getPeakList());
         } else {
-            Analyzer analyzer = AnalystApp.getAnalystApp().getAnalyzer();
+            Analyzer analyzer = getAnalyzer();
             PeakList peakList = analyzer.getPeakList();
             if (peakList != null) {
                 List<String> peakListNames = new ArrayList<>();
@@ -522,7 +617,7 @@ merge.png				region_adjust.png
     }
 
     public void fitSelected() {
-        Analyzer analyzer = AnalystApp.getAnalystApp().getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             analyzer.fitMultiplet(m);
             rms();
@@ -543,7 +638,7 @@ merge.png				region_adjust.png
 
     public void splitRegion() {
         double ppm = chart.getVerticalCrosshairPositions()[0];
-        Analyzer analyzer = AnalystApp.getAnalystApp().getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         try {
             activeMultiplet = analyzer.splitRegion(ppm);
             updateMultipletField(false);
@@ -553,7 +648,7 @@ merge.png				region_adjust.png
     }
 
     public void adjustRegion() {
-        Analyzer analyzer = AnalystApp.getAnalystApp().getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         double ppm0 = chart.getVerticalCrosshairPositions()[0];
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
         analyzer.removeRegion((ppm0 + ppm1) / 2);
@@ -567,7 +662,7 @@ merge.png				region_adjust.png
     }
 
     public void addRegion() {
-        Analyzer analyzer = AnalystApp.getAnalystApp().getAnalyzer();
+        Analyzer analyzer = getAnalyzer();
         double ppm0 = chart.getVerticalCrosshairPositions()[0];
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
         analyzer.addRegion(ppm0, ppm1);
@@ -593,7 +688,7 @@ merge.png				region_adjust.png
         activeMultiplet.ifPresent(m -> {
             int id = m.getIDNum();
             double ppm = m.measureCenter();
-            Analyzer analyzer = AnalystApp.getAnalystApp().getAnalyzer();
+            Analyzer analyzer = getAnalyzer();
             analyzer.removeRegion(ppm);
             gotoPrevious(id);
             chart.refresh();
@@ -735,7 +830,7 @@ merge.png				region_adjust.png
             String multOrig = m.getMultiplicity();
             System.out.println("convert " + multOrig + " " + multNew);
             if (!multNew.equals(multOrig)) {
-                Analyzer analyzer = AnalystApp.getAnalystApp().getAnalyzer();
+                Analyzer analyzer = getAnalyzer();
                 Multiplets.convertMultiplicity(m, multOrig, multNew);
                 analyzer.fitMultiplet(m);
                 refresh();

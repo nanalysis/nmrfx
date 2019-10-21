@@ -10,6 +10,7 @@
     <top>
         <VBox>
             <children>
+                <HBox fx:id="menuBar" />
                 <HBox fx:id="toolBar" />
                 <HBox  fx:id = "regionToolBar" />
                 <HBox  fx:id = "peakToolBar"/>
