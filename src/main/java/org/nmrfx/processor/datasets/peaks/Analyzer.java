@@ -41,7 +41,6 @@ public class Analyzer {
     double regionWidth = 1.0;
     double joinWidth = 1.0;
     double regionExtend = 9.0;
-    double minThreshold = -1.0;
 
     double artifactRatio = 50;
 //        public RealMatrix idIntegrals(int winSize, double ratio,
@@ -75,6 +74,10 @@ public class Analyzer {
 
     public void setRegionRatio(double value) {
         regionRatio = value;
+    }
+
+    public void clearThreshold() {
+        manThreshold = Optional.empty();
     }
 
     public void setThreshold(double value) {
@@ -571,7 +574,9 @@ public class Analyzer {
         int region = (int) Math.round(1.0 * regionWidth / sw * size);
         int join = (int) Math.round(1.0 * joinWidth / sw * size);
         int extend = (int) Math.round(1.0 * regionExtend / sw * size);
-       // System.out.println(region + " " + join + " " + extend + " " + minThreshold + " " + regionRatio);
+
+        double minThreshold = manThreshold.isPresent() ? manThreshold.get() : -1.0;
+        //System.out.println(region + " " + join + " " + extend + " " + minThreshold + " " + regionRatio);
         /*
    puts "autoreg $winSize $noiseRatio $minWidth $joinSize $extendAmount"
         autoreg 20 26 0.9 0.9 9.1
