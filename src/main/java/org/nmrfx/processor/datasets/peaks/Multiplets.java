@@ -526,6 +526,10 @@ public class Multiplets {
             expandCoupling(multiplet, 3);
         } else if (multOrig.equals("t") && multNew.equals("dd")) {
             expandCoupling(multiplet, 3);
+        } else if (multNew.equals("ddd")) {
+            expandCoupling(multiplet, 3);
+        } else if (multNew.equals("dddd")) {
+            expandCoupling(multiplet, 3);
             //guessMultiplicityFromGeneric(multiplet);
         } else if (multOrig.equals("dd") && multNew.equals("q")) {
             defineMultiplicity(multiplet, multNew);
@@ -1295,7 +1299,7 @@ public class Multiplets {
             return;
         }
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
-        Vec vec = new Vec(32);
+        Vec vec = new Vec(dataset.getSize(0));
         dataset.readVector(vec, 0, 0);
         System.out.println(dataset + " " + vec);
 
