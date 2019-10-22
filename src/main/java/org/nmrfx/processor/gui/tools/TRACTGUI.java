@@ -72,9 +72,11 @@ public class TRACTGUI {
     DataSeries series1 = new DataSeries();
     TextField resultsField;
     TextField scaleField;
+    PolyChart chart;
 
     public TRACTGUI(ScannerController scanController) {
         this.scanController = scanController;
+        chart = PolyChart.getActiveChart();
     }
 
     public void showMCplot() {
@@ -228,7 +230,8 @@ public class TRACTGUI {
 
     @FXML
     void analyze() {
-        TRACTSimFit tractFit = new TRACTSimFit();
+        double sf = 1.0e6 * chart.getDataset().getSf(0);
+        TRACTSimFit tractFit = new TRACTSimFit(sf, "H", "N");
         String xElem = xArrayChoice.getValue();
         String yElem = yArrayChoice.getValue();
 
@@ -260,9 +263,7 @@ public class TRACTGUI {
 //                i++;
 //            }
             tractFit.setXYE(xValues, yValues, errValues);
-            PolyChart chart = PolyChart.getActiveChart();
-            double sf = 1.0e6 * chart.getDataset().getSf(0);
-            PointValuePair result = tractFit.fit(sf); // fixme
+            PointValuePair result = tractFit.fit(); // fixme
             double[] errs = tractFit.getParErrs();
             double[] values = result.getPoint();
             StringBuilder sBuilder = new StringBuilder();
