@@ -73,10 +73,10 @@ public class TRACTFit {
             double tauC = pars[iRes + 2];
 
             double nab2 = relaxEquations[iSF].TRACTdeltaAlphaBeta(tauC * 1.0e-9, csa * 1.0e-6, theta);
-            double delta = nab2 - values[2][i];
-            sum += delta * delta;
+            double delta = (nab2 - values[2][i])/values[3][i];
+            sum += Math.abs(delta);
         }
-        return Math.sqrt(sum / n);
+        return sum / n;
     }
 
     public PointValuePair fitCSA(int nRes, int[] iresidues, int[] isfs, double[] nab2s, double[] errs) {
