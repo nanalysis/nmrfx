@@ -31,46 +31,29 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
     private final int[] sizes;
     private final long[] strides;
     private final long totalSize;
-    private final int[] blockSize;
-    private final int[] nBlocks;
-    private final int[] offsetBlocks;
-    private final int[] offsetPoints;
-    private final long blockElements;
-    private final long blockPoints;
     private final int dataType;
-    private final int headerSize;
-    private final int blockHeaderSize;
     final boolean writable;
-    private final int BYTES = 4;
     private final FloatBuffer floatBuffer;
-    boolean subMatrix = false;
 
     public MemoryFile(final Dataset dataset, final boolean writable) {
-        blockSize = dataset.getBlockSizes();
         dataType = dataset.getDataType();
-        offsetBlocks = dataset.getOffsetBlocks();
-        offsetPoints = dataset.getOffsetPoints();
-        nBlocks = dataset.getNBlocks();
-        blockElements = dataset.getBlockElements();
-        blockPoints = blockElements / BYTES;
-        headerSize = dataset.getFileHeaderSize();
-        blockHeaderSize = dataset.getBlockHeaderSize() / BYTES;
         sizes = new int[dataset.getNDim()];
         strides = new long[dataset.getNDim()];
         this.writable = writable;
-        long matSize = BYTES;
+        long size = 1;
         for (int i = 0; i < dataset.getNDim(); i++) {
-            matSize *= (blockSize[i] + blockHeaderSize) * nBlocks[i];
+            sizes[i] = dataset.getSize(i);
+            size *= sizes[i];
             if (i == 0) {
                 strides[i] = 1;
             } else {
-                strides[i] = strides[i - 1] * (blockSize[i - 1] + blockHeaderSize) * nBlocks[i - 1];
+                strides[i] = strides[i - 1] * sizes[i - 1];
             }
-            System.err.println(i + " " + blockSize[i] + " " + nBlocks[i] + " " + dataset.getSize(i) + " " + strides[i]);
+            System.err.println(i + " " + dataset.getSize(i) + " " + strides[i]);
         }
-        totalSize = matSize / BYTES;
         //System.out.println("size " + totalSize);
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) totalSize * BYTES);
+        totalSize = size;
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) totalSize * Float.BYTES);
         floatBuffer = byteBuffer.asFloatBuffer();
         try {
             zero();
@@ -87,22 +70,9 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
     @Override
     public long position(int... offsets) {
         long position;
-        if (subMatrix) {
-            long blockNum = 0;
-            long offsetInBlock = 0;
-            for (int iDim = 0; iDim < offsets.length; iDim++) {
-                blockNum += ((offsets[iDim] / blockSize[iDim]) * offsetBlocks[iDim]);
-                offsetInBlock += ((offsets[iDim] % blockSize[iDim]) * offsetPoints[iDim]);
-//System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock);
-            }
-            position = blockNum * (blockPoints + blockHeaderSize) + offsetInBlock + blockHeaderSize;
-//System.out.println(position);
-            return position;
-        } else {
-            position = offsets[0];
-            for (int iDim = 1; iDim < offsets.length; iDim++) {
-                position += offsets[iDim] * strides[iDim];
-            }
+        position = offsets[0];
+        for (int iDim = 1; iDim < offsets.length; iDim++) {
+            position += offsets[iDim] * strides[iDim];
         }
         return position;
     }
