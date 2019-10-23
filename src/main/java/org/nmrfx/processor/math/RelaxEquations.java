@@ -23,7 +23,7 @@ public class RelaxEquations {
 
     public final static double PLANCK = 1.054e-34;
     public final static double R_HN = 1.02e-10;
-    public final static double R_HC = 1.09e-10;
+    public final static double R_HC = 1.104e-10;
     public final static Map<String, Double> GAMMA_MAP = new HashMap<>();
     public final static Map<String, Double> R_MAP = new HashMap<>();
     public final static Map<String, Double> CSA_MAP = new HashMap<>();
@@ -48,7 +48,7 @@ public class RelaxEquations {
         CSA_MAP.put("H5'_C5'", 55.5);
         CSA_MAP.put("H5\"_C5'", 55.5);
         CSA_MAP.put("H2_C2", 150.0);
-        CSA_MAP.put("H5_C5", 170.0);
+        CSA_MAP.put("H5_C5", 144.0);
         CSA_MAP.put("H6_C6", 180.0);
         CSA_MAP.put("H8_C8", 140.0);
 
