@@ -68,7 +68,7 @@ public class Normalize {
         int[][] pt = indices.get(iRow);
         final int vecSize = dataset.getSize(iDim);
         Vec fixedVec = new Vec(vecSize);
-        dataset.readVecFromDatasetFile(pt, dim, fixedVec);
+        dataset.readVectorFromDatasetFile(pt, dim, fixedVec);
         int nPoints = p2 - p1 + 1;
         double[] values = new double[nPoints];
         fixedVec.getReal(values, p1);

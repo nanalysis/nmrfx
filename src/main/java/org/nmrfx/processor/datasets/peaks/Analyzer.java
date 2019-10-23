@@ -104,7 +104,7 @@ public class Analyzer {
         dim[0] = 0;
 
         try {
-            dataset.readVecFromDatasetFile(pt, dim, vec);
+            dataset.readVectorFromDatasetFile(pt, dim, vec);
         } catch (IOException ex) {
             Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
             return;
@@ -433,7 +433,7 @@ public class Analyzer {
         int[] dim = new int[dataDim];
         dim[0] = 0;
         try {
-            dataset.readVecFromDatasetFile(pt, dim, vec);
+            dataset.readVectorFromDatasetFile(pt, dim, vec);
             boolean[] isInSignalRegion = Util.getSignalRegionByCWTD(vec, winSize, minBase, ratio, IDBaseline2.ThreshMode.SDEV);
             vec.setSignalRegion(isInSignalRegion);
             vec.bcWhit(lambda, order, false);
@@ -565,7 +565,7 @@ public class Analyzer {
         dim[0] = 0;
 
         try {
-            dataset.readVecFromDatasetFile(pt, dim, vec);
+            dataset.readVectorFromDatasetFile(pt, dim, vec);
         } catch (IOException ex) {
             Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
             return;

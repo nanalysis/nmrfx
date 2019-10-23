@@ -92,7 +92,7 @@ public class Align {
         indices.stream().parallel().forEach(vi -> {
             Vec vec = new Vec(vecSize);
             try {
-                dataset.readVecFromDatasetFile(vi, dim, vec);
+                dataset.readVectorFromDatasetFile(vi, dim, vec);
                 double delta = deltas.get(vi[1][0]);
                 CShift cShift = new CShift((int) Math.round(delta), false);
                 cShift.eval(vec);
@@ -125,14 +125,14 @@ public class Align {
 
         final int vecSize = dataset.getSize(0);
         Vec fixedVec = new Vec(vecSize);
-        dataset.readVecFromDatasetFile(pt, dim, fixedVec);
+        dataset.readVectorFromDatasetFile(pt, dim, fixedVec);
         IndexValue indexValue = fixedVec.maxIndex(pt1, pt2);
         double refPt = fixedVec.polyMax(indexValue.getIndex());
         Double[] deltas = new Double[indices.size()];
         indices.stream().parallel().forEach(vi -> {
             Vec vec = new Vec(vecSize);
             try {
-                dataset.readVecFromDatasetFile(vi, dim, vec);
+                dataset.readVectorFromDatasetFile(vi, dim, vec);
                 double delta = alignByMax(vec, refPt, p1, p2);
                 dataset.writeVecToDatasetFile(vi, dim, vec);
                 deltas[vi[1][0]] = delta;
@@ -161,7 +161,7 @@ public class Align {
         startVecPos[0][1] = fixEnd;
         final int vecSize = dataset.getSize(0);
         Vec fixedVec = new Vec(fixEnd - fixStart + 1);
-        dataset.readVecFromDatasetFile(startVecPos, dim, fixedVec);
+        dataset.readVectorFromDatasetFile(startVecPos, dim, fixedVec);
 //        indices = indices.subList(0, 2);
 
         //[vecmat cowcorr $vec1 $vec2 -m $size -t 0 -p $pt1x -w 0
