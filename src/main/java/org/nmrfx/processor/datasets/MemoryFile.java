@@ -23,6 +23,8 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.math.Vec;
 
 public class MemoryFile implements MappedMatrixInterface, Closeable {
 
@@ -158,5 +160,48 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public void force() {
+    }
+
+    public void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+        int j = 0;
+        point[dim] = first;
+        int position = (int) position(point);
+        int stride = (int) strides[dim];
+        if (vector.isComplex()) {
+            for (int i = first; i <= last; i += 2) {
+                Complex c = vector.getComplex(j++);
+                floatBuffer.put(position, (float) (c.getReal() * scale));
+                position += stride;
+                floatBuffer.put(position, (float) (c.getImaginary() * scale));
+                position += stride;
+            }
+        } else {
+            for (int i = first; i <= last; i++) {
+                floatBuffer.put(position, (float) (vector.getReal(j++) * scale));
+                position += stride;
+            }
+        }
+    }
+
+    public void readVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+        int j = 0;
+        point[dim] = first;
+        int position = (int) position(point);
+        int stride = (int) strides[dim];
+        if (vector.isComplex()) {
+            for (int i = first; i <= last; i += 2) {
+                double real = floatBuffer.get(position) / scale;
+                position += stride;
+                double imag = floatBuffer.get(position) / scale;
+                position += stride;
+                vector.set(j++, new Complex(real, imag));
+            }
+        } else {
+            for (int i = first; i <= last; i++) {
+                double real = floatBuffer.get(position) / scale;
+                position += stride;
+                vector.set(j++, real);
+            }
+        }
     }
 }
