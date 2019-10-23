@@ -39,6 +39,7 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
     final boolean writable;
     private final int BYTES = 4;
     private final FloatBuffer floatBuffer;
+    boolean subMatrix = false;
 
     public MemoryFile(final Dataset dataset, final boolean writable) {
         blockSize = dataset.getBlockSizes();
@@ -73,7 +74,6 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
     @Override
     public long position(int... offsets) {
         long position;
-        boolean subMatrix = true;
         if (subMatrix) {
             long blockNum = 0;
             long offsetInBlock = 0;
