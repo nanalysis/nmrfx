@@ -21,6 +21,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class MemoryFile implements MappedMatrixInterface, Closeable {
 
@@ -56,14 +58,23 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
         this.writable = writable;
         long matSize = BYTES;
         for (int i = 0; i < dataset.getNDim(); i++) {
-            System.err.println(i + " " + blockSize[i] + " " + nBlocks[i] + " " + dataset.getSize(i));
             matSize *= (blockSize[i] + blockHeaderSize) * nBlocks[i];
-            strides[i] = (blockSize[i] + blockHeaderSize) * nBlocks[i];
+            if (i == 0) {
+                strides[i] = 1;
+            } else {
+                strides[i] = strides[i - 1] * (blockSize[i - 1] + blockHeaderSize) * nBlocks[i - 1];
+            }
+            System.err.println(i + " " + blockSize[i] + " " + nBlocks[i] + " " + dataset.getSize(i) + " " + strides[i]);
         }
         totalSize = matSize / BYTES;
         //System.out.println("size " + totalSize);
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) totalSize * BYTES);
         floatBuffer = byteBuffer.asFloatBuffer();
+        try {
+            zero();
+        } catch (IOException ex) {
+            Logger.getLogger(MemoryFile.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
