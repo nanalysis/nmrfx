@@ -5095,57 +5095,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Read data values into a Vec object from specified location in dataset
-     *
-     * @param pt indices of values to read
-     * @param dim Dataset dimensions used by indices
-     * @param rwVector the Vec object in which to put values
-     * @throws IOException if an I/O error occurs
-     */
-    public void readVecFromDatasetFile(int[][] pt, int[] dim, Vec rwVector) throws IOException {
-        //System.out.println("reading vector from dataset file");
-        int n = 0;
-
-        if (vecMat != null) {
-            throw new IllegalArgumentException("Don't call this method on a vector type dataset");
-        }
-        rwVector.resize(rwVector.getSize(), getComplex_r(dim[0]));
-        rwVector.centerFreq = getSf(dim[0]);
-        rwVector.dwellTime = 1.0 / getSw_r(dim[0]);
-        rwVector.setPh0(getPh0_r(dim[0]));
-        rwVector.setPh1(getPh1_r(dim[0]));
-        rwVector.setTDSize(getTDSize(dim[0]));
-
-        double delRef = ((getRefPt_r(dim[0]) - pt[0][0]) * getSw_r(dim[0])) / getSf(dim[0]) / size[dim[0]];
-        rwVector.refValue = getRefValue_r(dim[0]) + delRef;
-        rwVector.setFreqDomain(getFreqDomain_r(dim[0]));
-
-        //System.err.println("read sw "+dim[0]+" "+(1.0/rwVector.dwellTime)+" " +getRefValue_r(dim[0]) + " "  +(rwVector.refValue-delRef)+ " " + rwVector.refValue+" "+delRef+" "+refPt_r[dim[0]]+" "+rwVector.isComplex()+" " + size[dim[0]]+ " " + pt[0][0] + " " + (getSw_r(dim[0])/getSf(dim[0])));
-        int[] point = new int[nDim];
-        for (int i = 1; i < nDim; i++) {
-            point[dim[i]] = pt[i][0];
-        }
-        double dReal = 0.0;
-        int j = 0;
-        for (int i = pt[0][0]; i <= pt[0][1]; i++) {
-            point[dim[0]] = i;
-            if (rwVector.isComplex()) {
-                if ((i % 2) != 0) {
-                    double dImaginary = readPoint(point);
-                    rwVector.set(j, new Complex(dReal, dImaginary));
-                    j++;
-                } else {
-                    dReal = readPoint(point);
-                }
-            } else {
-                rwVector.set(j, readPoint(point));
-                j++;
-            }
-        }
-        //System.out.println("done reading vector from dataset file");
-    }
-
-    /**
      * Read vector from dataset
      *
      * @param vector Store dataset values in this vec
