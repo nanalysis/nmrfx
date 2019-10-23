@@ -432,7 +432,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             this.title = title;
             newHeader();
             fileHeaderSize = NV_HEADER_SIZE;
-            setBlockSize(4096);
+            setBlockSize();
             dimDataset();
             dataFile = new MemoryFile(this, true);
             dataFile.zero();
@@ -470,8 +470,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     public void writeParFile() {
-        DatasetParameterFile parFile = new DatasetParameterFile(this);
-        parFile.writeFile();
+        if (file != null) {
+            DatasetParameterFile parFile = new DatasetParameterFile(this);
+            parFile.writeFile();
+        }
     }
 
     /**
@@ -3578,6 +3580,17 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      *
      * @param blockPoints the size of the block
      */
+    public final synchronized void setBlockSize() {
+        for (int i = 0; i < nDim; i++) {
+            blockSize[i] = getSize(i);
+        }
+    }
+
+    /**
+     * Set the block sizes based on the specified size of a block.
+     *
+     * @param blockPoints the size of the block
+     */
     public final synchronized void setBlockSize(int blockPoints) {
         long npoints;
         int blksize;
@@ -3707,10 +3720,12 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * Flush the header values out to the dataset file.
      */
     public final synchronized void writeHeader() {
-        if (file.getPath().contains(".ucsf")) {
-            writeHeaderUCSF(raFile, true);
-        } else {
-            writeHeader(raFile);
+        if (file != null) {
+            if (file.getPath().contains(".ucsf")) {
+                writeHeaderUCSF(raFile, true);
+            } else {
+                writeHeader(raFile);
+            }
         }
     }
 
@@ -5325,23 +5340,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 setVSize(dim[i], (pt[i][1] - pt[i][0] + 1));
             }
         }
-
-        int j = 0;
-        for (int i = pt[0][0]; i <= pt[0][1]; i++) {
-            point[dim[0]] = i;
-            if (vector.isComplex()) {
-                if ((i % 2) != 0) {
-                    dataFile.setFloat((float) (vector.getImag(j) * scale), point);
-                    j++;
-                } else {
-                    dataFile.setFloat((float) (vector.getReal(j) * scale), point);
-                }
-            } else {
-                dataFile.setFloat((float) (vector.getReal(j) * scale), point);
-                j++;
-            }
-
-        }
+        dataFile.writeVector(pt[0][0], pt[0][1], point, dim[0], scale, vector);
 
         setSf(dim[0], vector.centerFreq);
         setSw(dim[0], 1.0 / vector.dwellTime);

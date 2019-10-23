@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets;
 
 import java.io.IOException;
+import org.nmrfx.processor.math.Vec;
 
 /**
  * Interface for memory-mapped matrix files.
@@ -34,7 +35,8 @@ public interface MappedMatrixInterface {
     public boolean isWritable();
 
     /**
-     * Return the index in file that corresponds to offsets specified for the various dimensions
+     * Return the index in file that corresponds to offsets specified for the
+     * various dimensions
      *
      * @param offsets the offsets for each dimension
      * @return the position in file
@@ -90,8 +92,8 @@ public interface MappedMatrixInterface {
     public double sum() throws IOException;
 
     /**
-     * Return the sum of data values in file. Used for testing. May use a faster method than sum, but skip error
-     * checking.
+     * Return the sum of data values in file. Used for testing. May use a faster
+     * method than sum, but skip error checking.
      *
      * @return sum of data values
      * @throws IOException if an I/O error occurs
@@ -109,4 +111,22 @@ public interface MappedMatrixInterface {
      * Call force on mapping buffer
      */
     public void force();
+
+    public default void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+        int j = 0;
+        for (int i = first; i <= last; i++) {
+            point[dim] = i;
+            if (vector.isComplex()) {
+                if ((i % 2) != 0) {
+                    setFloat((float) (vector.getImag(j) * scale), point);
+                    j++;
+                } else {
+                    setFloat((float) (vector.getReal(j) * scale), point);
+                }
+            } else {
+                setFloat((float) (vector.getReal(j) * scale), point);
+                j++;
+            }
+        }
+    }
 }
