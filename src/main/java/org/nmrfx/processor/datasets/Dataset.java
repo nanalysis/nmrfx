@@ -430,6 +430,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             }
 
             this.title = title;
+            this.fileName = title;
             newHeader();
             fileHeaderSize = NV_HEADER_SIZE;
             setBlockSize();
@@ -1941,6 +1942,15 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public boolean hasDataFile() {
         return dataFile != null;
+    }
+
+/**
+     * Return whether dataset is a memory file.
+     *
+     * @return true if this dataset has a data file associated with it.
+     */
+    public boolean isMemoryFile() {
+        return file == null;
     }
 
     /**
@@ -5417,6 +5427,12 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         targetDataset.setVSize_r(iDim, getVSize_r(iDim));
         targetDataset.setVSize(iDim, getVSize(iDim));
 
+    }
+    
+    public void saveMemoryFile() throws IOException, DatasetException {
+        if (isMemoryFile()) {
+            copyDataset(fileName);
+        }
     }
 
     /**
