@@ -1459,6 +1459,15 @@ public class Processor {
 
     public void closeDataset() {
         if (dataset != null) {
+            if (dataset.isMemoryFile()) {
+                try {
+                    dataset.saveMemoryFile();
+                } catch (IOException ex) {
+                    Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (DatasetException ex) {
+                    Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
             dataset.close();
             dataset = null;
         }
