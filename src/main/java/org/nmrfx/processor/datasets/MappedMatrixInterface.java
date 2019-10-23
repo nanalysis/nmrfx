@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets;
 
 import java.io.IOException;
+import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.math.Vec;
 
 /**
@@ -129,4 +130,26 @@ public interface MappedMatrixInterface {
             }
         }
     }
+
+    public default void readVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+
+        double dReal = 0.0;
+        int j = 0;
+        for (int i = first; i <= last; i++) {
+            point[dim] = i;
+            if (vector.isComplex()) {
+                if ((i % 2) != 0) {
+                    double dImaginary = getFloat(point) / scale;
+                    vector.set(j, new Complex(dReal, dImaginary));
+                    j++;
+                } else {
+                    dReal = getFloat(point) / scale;
+                }
+            } else {
+                vector.set(j, getFloat(point) / scale);
+                j++;
+            }
+        }
+    }
+
 }
