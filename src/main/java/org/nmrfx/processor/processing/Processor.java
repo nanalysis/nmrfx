@@ -1432,7 +1432,7 @@ public class Processor {
         }
         if (!keepDatasetOpen) {
             if (dataset.fFormat == Dataset.FFORMAT.UCSF) {
-                dataset.writeHeaderUCSF(false);
+                dataset.writeHeader(false);
             }
             dataset.setNFreqDims(nDimsProcessed);
             for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {

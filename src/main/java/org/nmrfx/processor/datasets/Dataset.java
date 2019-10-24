@@ -23,7 +23,6 @@ import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.operations.Util;
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.*;
@@ -55,6 +54,13 @@ import org.renjin.sexp.SEXP;
  */
 public class Dataset extends DoubleVector implements Comparable<Dataset> {
 
+    /**
+     * @return the size
+     */
+    public int[] getSize() {
+        return size;
+    }
+
 //    private static final Logger LOGGER = LogManager.getLogger();
 //    static {
 //        try {
@@ -63,21 +69,19 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 //        }
 //    }
     private static HashMap<String, Dataset> theFiles = new HashMap<>();
-    private final static int NV_HEADER_SIZE = 2048;
-    private final static int UCSF_HEADER_SIZE = 180;
-    private final static int LABEL_MAX_BYTES = 16;
-    private final static int SOLVENT_MAX_BYTES = 24;
+    public final static int NV_HEADER_SIZE = 2048;
+    public final static int UCSF_HEADER_SIZE = 180;
+    public final static int LABEL_MAX_BYTES = 16;
+    public final static int SOLVENT_MAX_BYTES = 24;
 
     MappedMatrixInterface dataFile = null;
+    DatasetLayout layout = null;
     String details = "";
     private Vec vecMat = null;
     private String fileName;
     private String canonicalName;
     private String title;
     private File file = null;
-    private int blockHeaderSize;
-    private int fileHeaderSize;
-    private int blockElements;
     private int nDim;
     private int[] size;
     private int[] strides;
@@ -89,11 +93,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     private int[] extFirst;
     private int[] extLast;
     private long fileSize;
-    private int magic;
-    private int[] blockSize;
-    private int[] offsetPoints;
-    private int[] offsetBlocks;
-    private int[] nBlocks;
     private double[] sf;
     private double[] sw;
     private double[] refPt;
@@ -152,7 +151,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     private void setDimAttributes() {
-        unsafeSetAttributes(AttributeMap.builder().addAllFrom(getAttributes()).setDim(new IntArrayVector(size)).build());
+        unsafeSetAttributes(AttributeMap.builder().addAllFrom(getAttributes()).setDim(new IntArrayVector(getSize())).build());
     }
 
     @Override
@@ -175,7 +174,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     @Override
     public int length() {
         int length = 1;
-        for (int sz : size) {
+        for (int sz : getSize()) {
             length *= sz;
         }
         return length;
@@ -260,16 +259,16 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         scale = 1.0;
         lvl = 0.1;
         posneg = 1;
-        int headerStatus;
+        DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
         if (fullName.contains(".ucsf")) {
-            headerStatus = readHeaderUCSF();
+            layout = headerIO.readHeaderUCSF(raFile);
         } else {
-            headerStatus = readHeader();
+            layout = headerIO.readHeader(raFile);
         }
-        DatasetParameterFile parFile = new DatasetParameterFile(this);
+        DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
-        if (headerStatus == 0) {
-            dataFile = new BigMappedMatrixFile(this, raFile, writable);
+        if (layout != null) {
+            dataFile = new BigMappedMatrixFile(this, layout, raFile, writable);
         }
         addFile(fileName);
         setDimAttributes();
@@ -287,6 +286,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         this.vecMat = vector;
         fileName = vector.getName();
         canonicalName = vector.getName();
+        dataFile = vector;
         title = fileName;
         nDim = 1;
         size = new int[1];
@@ -305,12 +305,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         tdSize[0] = vector.getTDSize();
         fileSize = size[0];
         newHeader();
-        fileHeaderSize = NV_HEADER_SIZE;
-        blockSize[0] = vector.getSize();
-        nBlocks[0] = 1;
-        offsetBlocks[0] = 1;
-        offsetPoints[0] = 1;
-        blockElements = blockSize[0] * 4;
+
         foldUp[0] = 0.0;
         foldDown[0] = 0.0;
         scale = 1.0;
@@ -372,21 +367,24 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 fileSize *= this.size[i];
                 nBytes *= dimSizes[i];
             }
+            layout = new DatasetLayout(nDim);
+            layout.setBlockSize(4096, nDim, size);
+            layout.dimDataset(nDim, size);
 
             this.title = title;
             newHeader();
+            int fileHeaderSize;
             if (fullName.contains(".ucsf")) {
                 fileHeaderSize = UCSF_HEADER_SIZE + 128 * nDim;
             } else {
                 fileHeaderSize = NV_HEADER_SIZE;
             }
-            setBlockSize(4096);
-            dimDataset();
+            layout.setFileHeaderSize(fileHeaderSize);
             writeHeader();
-            dataFile = new BigMappedMatrixFile(this, raFile, true);
+            dataFile = new BigMappedMatrixFile(this, layout, raFile, true);
             dataFile.zero();
             dataFile.close();
-            DatasetParameterFile parFile = new DatasetParameterFile(this);
+            DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
             parFile.remove();
         } catch (IOException ioe) {
             //LOGGER.error(ioe.getMessage());
@@ -408,33 +406,16 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             this.nDim = dimSizes.length;
 
             int i;
-            this.size = new int[this.nDim];
-            this.strides = new int[this.nDim];
-            this.fileDimSizes = new int[this.nDim];
-            this.vsize = new int[this.nDim];
-            this.vsize_r = new int[this.nDim];
-            this.tdSize = new int[this.nDim];
-            this.zfSize = new int[this.nDim];
-            this.extFirst = new int[this.nDim];
-            this.extLast = new int[this.nDim];
-            rmsd = new double[nDim][];
-            values = new double[nDim][];
-            int nBytes = 4;
-            fileSize = 1;
+            setNDim(nDim);
 
             for (i = 0; i < this.nDim; i++) {
                 this.size[i] = dimSizes[i];
                 fileDimSizes[i] = dimSizes[i];
-                fileSize *= this.size[i];
-                nBytes *= dimSizes[i];
             }
-
+            layout = DatasetLayout.createFullMatrix(size);
             this.title = title;
             this.fileName = title;
             newHeader();
-            fileHeaderSize = NV_HEADER_SIZE;
-            setBlockSize();
-            dimDataset();
             dataFile = new MemoryFile(this, true);
             dataFile.zero();
         } catch (IOException ioe) {
@@ -461,18 +442,18 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     public void readParFile() {
-        DatasetParameterFile parFile = new DatasetParameterFile(this);
+        DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
     }
 
     public void writeParFile(String fileName) {
-        DatasetParameterFile parFile = new DatasetParameterFile(this);
+        DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.writeFile(fileName);
     }
 
     public void writeParFile() {
         if (file != null) {
-            DatasetParameterFile parFile = new DatasetParameterFile(this);
+            DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
             parFile.writeFile();
         }
     }
@@ -574,38 +555,17 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 if (dataFile.isWritable()) {
                     dataFile.force();
                 }
-                dataFile = new BigMappedMatrixFile(this, raFile, writable);
+                dataFile = new BigMappedMatrixFile(this, layout, raFile, writable);
             }
         }
     }
 
-    /**
-     * Writes out 0 bytes into full dataset size, thereby taking up appropriate
-     * space in file system.
-     */
-    public void initialize() {
-        int nBytes = 4;
-
-        for (int i = 0; i < this.nDim; i++) {
-            nBytes *= this.getSize(i);
-        }
-
-        byte[] buffer = new byte[4096];
-
-        for (int i = 0; i < (nBytes / 4096); i++) {
-            DataUtilities.writeBytes(raFile, buffer, fileHeaderSize + (i * 4096), 4096);
-        }
-
-        initialized = true;
-        hasBeenWritten = true;
-    }
-
-    /**
+    /*
+      
      * Resize the file to the specified sizes
      *
      * @param dimSizes The new sizes
      * @throws IOException if an I/O error occurs
-     */
     public void resize(int[] dimSizes) throws IOException {
         if (nDim != dimSizes.length) {
             throw new IllegalArgumentException("Can't change dataset dimensions when resizing");
@@ -651,6 +611,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         hasBeenWritten = true;
     }
 
+     */
     /**
      * Get the Vec object. Null if the dataset stores data in a data file,
      * rather than Vec object.
@@ -689,31 +650,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the block size of the dataset along the specified dimension.
-     *
-     * @param iDim Dataset dimension index
-     * @return the size
-     */
-    public int getBlockSize(int iDim) {
-        final int value;
-        if (vecMat == null) {
-            value = blockSize[iDim];
-        } else {
-            value = size[iDim];
-        }
-        return value;
-    }
-
-    /**
-     * Get array containing size of block in each dimension
-     *
-     * @return array of block sizes
-     */
-    public int[] getBlockSizes() {
-        return blockSize.clone();
-    }
-
-    /**
      * Get the type of the data values. At present, only single precision float
      * values are used in the dataset. This is indicated with a return value of
      * 0.
@@ -722,78 +658,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public int getDataType() {
         return dataType;
-    }
-
-    /**
-     * Get the offsets for blocks in each dimension
-     *
-     * @return the offsets as an int array
-     */
-    public int[] getOffsetBlocks() {
-        return offsetBlocks.clone();
-    }
-
-    /**
-     * Get the offsets for points for each dimension within a block.
-     *
-     * @return the offsets as an int array
-     */
-    public int[] getOffsetPoints() {
-        return offsetPoints.clone();
-    }
-
-    /**
-     * Return the number of blocks along each dataset dimension
-     *
-     * @return an array containing the number of blocks
-     */
-    public int[] getNBlocks() {
-        return nBlocks.clone();
-    }
-
-    /**
-     * Return the number of elements in each block
-     *
-     * @return the number of elements
-     */
-    public int getBlockElements() {
-        return blockElements;
-    }
-
-    /**
-     * Return the file header size
-     *
-     * @return the size
-     */
-    public int getFileHeaderSize() {
-        return fileHeaderSize;
-    }
-
-    /**
-     * Set the file header size
-     *
-     * @param size the header size
-     */
-    public void setFileHeaderSize(int size) {
-        fileHeaderSize = size;
-    }
-
-    /**
-     * Set the block header size
-     *
-     * @param size the block header size
-     */
-    public void setBlockHeaderSize(int size) {
-        blockHeaderSize = size;
-    }
-
-    /**
-     * Return the block header size
-     *
-     * @return the size
-     */
-    public int getBlockHeaderSize() {
-        return blockHeaderSize;
     }
 
     /**
@@ -1235,13 +1099,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @return the size
      */
     public int getSize(int iDim) {
-        final int value;
-        if (vecMat == null) {
-            value = size[iDim];
-        } else {
-            value = vecMat.getSize();
-        }
-        return value;
+        return vecMat == null ? size[iDim] : vecMat.getSize();
     }
 
     /**
@@ -1255,6 +1113,16 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
+     * Set the size of the dataset along the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param size the size to set
+     */
+    public void setFileDimSize(final int iDim, final int size) {
+        this.fileDimSizes[iDim] = size;
+    }
+
+    /**
      * Get the size of the dataset along the specified dimension.
      *
      * @param iDim Dataset dimension index
@@ -1263,7 +1131,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     public int getFileDimSize(int iDim) {
         int value = fileDimSizes[iDim];
         if (value == 0) {
-            value = size[iDim];
+            value = getSize()[iDim];
         }
         return value;
     }
@@ -1379,7 +1247,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @return the size array
      */
     public int[] getSizes() {
-        int dims = size.length;
+        int dims = getSize().length;
         int[] sizes = new int[dims];
         for (int i = 0; i < dims; i++) {
             sizes[i] = getSize(i);
@@ -1664,6 +1532,34 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
+     * Set the folding up value for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param value the folding value to set
+     */
+    public void setFoldUp(final int iDim, final double value) {
+        foldUp[iDim] = value;
+    }
+
+    public double getFoldUp(int iDim) {
+        return foldUp[iDim];
+    }
+
+    public double getFoldDown(int iDim) {
+        return foldDown[iDim];
+    }
+
+    /**
+     * Set the folding down value for the specified dimension.
+     *
+     * @param iDim Dataset dimension index
+     * @param value the folding value to set
+     */
+    public void setFoldDown(final int iDim, final double value) {
+        foldDown[iDim] = value;
+    }
+
+    /**
      * Get the zero order phase parameter that was used in processing the
      * specified dimension
      *
@@ -1944,7 +1840,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         return dataFile != null;
     }
 
-/**
+    /**
      * Return whether dataset is a memory file.
      *
      * @return true if this dataset has a data file associated with it.
@@ -2139,8 +2035,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         if (values == null) {
             this.values[iDim] = null;
         } else {
-            if (values.length != size[iDim]) {
-                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + size[iDim] + ") for dim " + iDim);
+            if (values.length != getSize()[iDim]) {
+                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + getSize()[iDim] + ") for dim " + iDim);
             }
             this.values[iDim] = values.clone();
         }
@@ -2159,8 +2055,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         if ((values == null) || values.isEmpty()) {
             this.values[iDim] = null;
         } else {
-            if (values.size() != size[iDim]) {
-                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + size[iDim] + ") for dim " + iDim);
+            if (values.size() != getSize()[iDim]) {
+                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSize()[iDim] + ") for dim " + iDim);
             }
             this.values[iDim] = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
@@ -2302,9 +2198,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 
         if (vecMat != null) {
             setSize(0, vecMat.getSize());
-            blockSize[0] = vecMat.getSize();
-            blockElements = blockSize[0] * 4;
         }
+
         int[] counterSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             if (pt[i][1] >= pt[i][0]) {
@@ -2441,11 +2336,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         PSquarePercentile pSquarePos = new PSquarePercentile(p);
         PSquarePercentile pSquareNeg = new PSquarePercentile(p);
 
-        if (vecMat != null) {
-            setSize(0, vecMat.getSize());
-            blockSize[0] = vecMat.getSize();
-            blockElements = blockSize[0] * 4;
-        }
         int[] counterSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             if (pt[i][1] >= pt[i][0]) {
@@ -2480,11 +2370,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     synchronized public double measureSDev(int[][] pt, int[] dim, double sDevIn, double ratio)
             throws IOException {
 
-        if (vecMat != null) {
-            setSize(0, vecMat.getSize());
-            blockSize[0] = vecMat.getSize();
-            blockElements = blockSize[0] * 4;
-        }
         int[] counterSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             if (pt[i][1] >= pt[i][0]) {
@@ -2827,7 +2712,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             if (p2[iDim][1] >= p2[iDim][0]) {
                 sizes[iDim] = p2[iDim][1] - p2[iDim][0] + 1;
             } else {
-                sizes[iDim] = size[iDim] - p2[iDim][0] - p2[iDim][1] + 1;
+                sizes[iDim] = getSize()[iDim] - p2[iDim][0] - p2[iDim][1] + 1;
             }
 //            System.out.println("size " + iDim + " " + p2[iDim][0] + " " + p2[iDim][1] + " " + sizes[iDim]);
         }
@@ -2846,10 +2731,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             boolean inDataset = true;
             for (int value : counts) {
                 aCounts[j] = value + p2[j][0];
-                if (aCounts[j] >= size[j]) {
-                    aCounts[j] -= size[j];
+                if (aCounts[j] >= getSize()[j]) {
+                    aCounts[j] -= getSize()[j];
                 } else if (aCounts[j] < 0) {
-                    aCounts[j] += size[j];
+                    aCounts[j] += getSize()[j];
                 }
                 j++;
             }
@@ -2882,13 +2767,17 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         return posArray;
     }
 
+    public void setFreqDims(int n) {
+        rdims = n;
+    }
+
     /**
      * Set the number of dimensions for this dataset. Will reset all reference
      * information.
      *
      * @param nDim Number of dataset dimensions
      */
-    public void setNDim(int nDim) {
+    public final void setNDim(int nDim) {
         this.nDim = nDim;
         setNDim();
     }
@@ -2898,7 +2787,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * current dataset dimension.
      *
      */
-    public void setNDim() {
+    public final void setNDim() {
         size = new int[nDim];
         strides = new int[nDim];
         fileDimSizes = new int[nDim];
@@ -2908,12 +2797,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         zfSize = new int[this.nDim];
         extFirst = new int[this.nDim];
         extLast = new int[this.nDim];
-        blockSize = new int[nDim];
-        offsetPoints = new int[nDim];
-
-        offsetBlocks = new int[nDim];
-        nBlocks = new int[nDim];
-
         sf = new double[nDim];
         sw = new double[nDim];
         sw_r = new double[nDim];
@@ -2936,6 +2819,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         complex_r = new boolean[nDim];
         freqDomain = new boolean[nDim];
         freqDomain_r = new boolean[nDim];
+        rmsd = new double[nDim][];
+        values = new double[nDim][];
     }
 
     /**
@@ -2984,21 +2869,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Set size of file along specified dimension. Causes reset of various size
-     * related parameters.
-     *
-     * @param iDim Dataset dimension index
-     * @param newSize new size for dimension.
-     */
-    public void setNewSize(int iDim, int newSize) {
-        if ((iDim >= 0) && (iDim < nDim) && (newSize > 0)) {
-            setSize(iDim, newSize);
-        }
-
-        dimDataset();
-    }
-
-    /**
      * Set valid size for specified dimension. Normally used to track number of
      * rows, columns etc. that have had valid data written to.
      *
@@ -3022,320 +2892,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         if ((iDim >= 0) && (iDim < nDim) && (newSize >= 0)) {
             vsize_r[iDim] = newSize;
         }
-    }
-
-    /**
-     * Set the size of blocks along the specified dimension. Setting this will
-     * reset various size related parameters.
-     *
-     * @param iDim Dataset dimension index
-     * @param newSize New block size
-     */
-    public void setBlockSize(int iDim, int newSize) {
-        if ((iDim >= 0) && (iDim < nDim) && (newSize > 0)) {
-            blockSize[iDim] = newSize;
-        }
-
-        dimDataset();
-    }
-
-    /**
-     * Set the size of blocks along the specified dimension. Doesn't call
-     * dimDataset;
-     *
-     * @param iDim Dataset dimension index
-     * @param newSize New block size
-     */
-    public void setBlockSizeValue(int iDim, int newSize) {
-        if ((iDim >= 0) && (iDim < nDim) && (newSize > 0)) {
-            blockSize[iDim] = newSize;
-        }
-
-    }
-
-    /**
-     * Read the header of an NMRView format dataset file into the fields of this
-     * Dataset object.
-     *
-     * @return 0 if successful, 1 if there was an error
-     */
-    public final synchronized int readHeader() {
-        int i;
-        byte[] buffer;
-        buffer = new byte[NV_HEADER_SIZE];
-
-        boolean checkSwap;
-        DataUtilities.readBytes(raFile, buffer, 0, NV_HEADER_SIZE);
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(buffer);
-        DataInputStream dis;
-
-        try {
-            dis = new DataInputStream(bis);
-            checkSwap = false;
-            magic = DataUtilities.readSwapInt(dis, checkSwap);
-
-            if (magic != 874032077) {
-                bis = new ByteArrayInputStream(buffer);
-                dis = new DataInputStream(bis);
-                checkSwap = true;
-
-                magic = DataUtilities.readSwapInt(dis, checkSwap);
-
-                if (magic != 874032077) {
-                    System.err.println("couldn't read header");
-
-                    return 1;
-                }
-            }
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-
-            return 1;
-        }
-
-        littleEndian = checkSwap;
-        gotByteOrder = true;
-
-        try {
-            //read spare1
-            DataUtilities.readSwapInt(dis, checkSwap);
-            // read spare2
-            DataUtilities.readSwapInt(dis, checkSwap);
-            fileHeaderSize = DataUtilities.readSwapInt(dis, checkSwap);
-            blockHeaderSize = DataUtilities.readSwapInt(dis, checkSwap);
-            blockElements = DataUtilities.readSwapInt(dis, checkSwap) * 4;
-            nDim = DataUtilities.readSwapInt(dis, checkSwap);
-            setNDim();
-            rdims = DataUtilities.readSwapInt(dis, checkSwap);
-            if (rdims == 0) {
-                rdims = nDim;
-            }
-            temperature = DataUtilities.readSwapFloat(dis, checkSwap);
-            byte[] solventBytes = new byte[SOLVENT_MAX_BYTES];
-            dis.read(solventBytes);
-
-            StringBuilder solventBuffer = new StringBuilder();
-
-            for (int j = 0; (j < SOLVENT_MAX_BYTES) && (solventBytes[j] != '\0'); j++) {
-                solventBuffer.append((char) solventBytes[j]);
-            }
-
-            solvent = solventBuffer.toString();
-
-            dis.skip(992 - 4 - SOLVENT_MAX_BYTES);
-
-            byte[] labelBytes = new byte[LABEL_MAX_BYTES];
-            StringBuilder labelBuffer = new StringBuilder();
-            offsetPoints[0] = 1;
-
-            offsetBlocks[0] = 1;
-
-            for (i = 0; i < nDim; i++) {
-                setSize(i, DataUtilities.readSwapInt(dis, checkSwap));
-                fileDimSizes[i] = size[i];
-                blockSize[i] = DataUtilities.readSwapInt(dis, checkSwap);
-                nBlocks[i] = DataUtilities.readSwapInt(dis, checkSwap);
-                nBlocks[i] = getSize(i) / blockSize[i];
-
-                if ((blockSize[i] * nBlocks[i]) < getSize(i)) {
-                    nBlocks[i] += 1;
-                }
-
-                if (i > 0) {
-                    offsetPoints[i] = offsetPoints[i - 1] * blockSize[i - 1];
-                    offsetBlocks[i] = offsetBlocks[i - 1] * nBlocks[i - 1];
-                }
-
-                // read offblk
-                DataUtilities.readSwapInt(dis, checkSwap);
-                // read blkmask
-                DataUtilities.readSwapInt(dis, checkSwap);
-                // read offpt
-                DataUtilities.readSwapInt(dis, checkSwap);
-                setSf(i, DataUtilities.readSwapFloat(dis, checkSwap));
-                setSw(i, DataUtilities.readSwapFloat(dis, checkSwap));
-                setSw_r(i, getSw(i));
-                refPt[i] = DataUtilities.readSwapFloat(dis, checkSwap);
-                refPt_r[i] = refPt[i];
-                setRefValue(i, DataUtilities.readSwapFloat(dis, checkSwap));
-                setRefValue_r(i, getRefValue(i));
-                setRefUnits(i, DataUtilities.readSwapInt(dis, checkSwap));
-                foldUp[i] = DataUtilities.readSwapFloat(dis, checkSwap);
-                foldDown[i] = DataUtilities.readSwapFloat(dis, checkSwap);
-                dis.read(labelBytes);
-
-                int j;
-                labelBuffer.setLength(0);
-
-                for (j = 0; (j < LABEL_MAX_BYTES) && (labelBytes[j] != '\0'); j++) {
-                    labelBuffer.append((char) labelBytes[j]);
-                }
-
-                label[i] = labelBuffer.toString();
-                nucleus[i] = null;
-
-                setComplex(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
-                setComplex_r(i, getComplex(i));
-                setFreqDomain(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
-                setFreqDomain_r(i, getFreqDomain(i));
-                setPh0(i, DataUtilities.readSwapFloat(dis, checkSwap));
-                setPh0_r(i, getPh0(i));
-                setPh1(i, DataUtilities.readSwapFloat(dis, checkSwap));
-                setPh1_r(i, getPh1(i));
-                setVSize(i, DataUtilities.readSwapInt(dis, checkSwap));
-                setVSize_r(i, getVSize(i));
-                setTDSize(i, DataUtilities.readSwapInt(dis, checkSwap));
-                setZFSize(i, DataUtilities.readSwapInt(dis, checkSwap));
-                setExtFirst(i, DataUtilities.readSwapInt(dis, checkSwap));
-                setExtLast(i, DataUtilities.readSwapInt(dis, checkSwap));
-                dis.skip(6 * 4);
-            }
-
-            rmsd = new double[nDim][];
-            values = new double[nDim][];
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-
-            return 1;
-        }
-        setStrides();
-
-        return 0;
-    }
-
-    /**
-     * Read the header of an UCSF format dataset file into the fields of this
-     * Dataset object.
-     *
-     * @return 0 if successful, 1 if there was an error
-     */
-    public final synchronized int readHeaderUCSF() {
-        byte[] buffer;
-        buffer = new byte[UCSF_HEADER_SIZE];
-        fFormat = FFORMAT.UCSF;
-
-        DataUtilities.readBytes(raFile, buffer, 0, UCSF_HEADER_SIZE);
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(buffer);
-        DataInputStream dis;
-
-        try {
-            byte[] magicBytes = new byte[10];
-            dis = new DataInputStream(bis);
-            dis.read(magicBytes);
-
-            for (int j = 0; j < 8; j++) {
-                if (magicBytes[j] != (byte) "UCSF NMR".charAt(j)) {
-                    return 1;
-                }
-            }
-
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-
-            return 1;
-        }
-
-        try {
-            nDim = dis.readByte();
-            int nDataComp = dis.readByte();
-            dis.readByte();
-            int version = dis.readByte();
-            System.out.println(nDim + " " + nDataComp + " " + version);
-            if ((nDim < 1) || (nDim > 4)) {
-                return 1;
-            }
-            setNDim();
-
-            dis.skip(UCSF_HEADER_SIZE - 14);
-
-            byte[] labelBytes = new byte[8];
-            StringBuilder labelBuffer = new StringBuilder();
-            offsetPoints[0] = 1;
-
-            offsetBlocks[0] = 1;
-            boolean checkSwap = false;
-
-            for (int iDim = 0; iDim < nDim; iDim++) {
-                int i = nDim - iDim - 1;
-                buffer = new byte[128];
-
-                DataUtilities.readBytes(raFile, buffer, UCSF_HEADER_SIZE + i * 128, 128);
-                bis = new ByteArrayInputStream(buffer);
-                dis = new DataInputStream(bis);
-                labelBuffer.setLength(0);
-                dis.read(labelBytes);
-
-                for (int j = 0; (j < 8) && (labelBytes[j] != '\0'); j++) {
-                    labelBuffer.append((char) labelBytes[j]);
-                }
-
-                label[iDim] = labelBuffer.toString();
-
-                setSize(iDim, DataUtilities.readSwapInt(dis, checkSwap));
-                fileDimSizes[iDim] = size[iDim];
-                // skip empty entry
-                DataUtilities.readSwapInt(dis, checkSwap);
-                blockSize[iDim] = DataUtilities.readSwapInt(dis, checkSwap);
-                nBlocks[iDim] = getSize(iDim) / blockSize[iDim];
-
-                if ((blockSize[iDim] * nBlocks[iDim]) < getSize(iDim)) {
-                    nBlocks[iDim] += 1;
-                }
-                System.out.println(size[iDim] + " " + blockSize[iDim] + " " + nBlocks[iDim]);
-
-                if (iDim > 0) {
-                    offsetPoints[iDim] = offsetPoints[iDim - 1] * blockSize[iDim - 1];
-                    offsetBlocks[iDim] = offsetBlocks[iDim - 1] * nBlocks[iDim - 1];
-                }
-
-                setSf(iDim, DataUtilities.readSwapFloat(dis, checkSwap));
-                setSw(iDim, DataUtilities.readSwapFloat(dis, checkSwap));
-                setSw_r(iDim, getSw(iDim));
-                refPt[iDim] = size[iDim] / 2 + 1;
-                refPt_r[iDim] = refPt[iDim];
-                setRefValue(iDim, DataUtilities.readSwapFloat(dis, checkSwap));
-                setRefValue_r(iDim, getRefValue(iDim));
-
-                if (version == 87) {
-                    setComplex(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
-                    setComplex_r(i, getComplex(i));
-                    setFreqDomain(i, DataUtilities.readSwapInt(dis, checkSwap) == 1);
-                    setFreqDomain_r(i, getFreqDomain(i));
-                    setPh0(i, DataUtilities.readSwapFloat(dis, checkSwap));
-                    setPh0_r(i, getPh0(i));
-                    setPh1(i, DataUtilities.readSwapFloat(dis, checkSwap));
-                    setPh1_r(i, getPh1(i));
-                    setVSize(i, DataUtilities.readSwapInt(dis, checkSwap));
-                    setVSize_r(i, getVSize(i));
-                } else {
-                    complex[iDim] = false;
-                    setRefUnits(iDim, 3);
-                    setVSize_r(iDim, getSize(iDim));
-                    setVSize(iDim, getSize(iDim));
-                    setFreqDomain(iDim, true);
-                    setFreqDomain_r(iDim, true);
-                }
-            }
-        } catch (IOException e) {
-            //LOGGER.error("Can't read header ", e);
-            return 1;
-        }
-        blockElements = 4;
-        for (int iDim = 0; iDim < nDim; iDim++) {
-            blockElements = blockElements * blockSize[iDim];
-        }
-
-        fileHeaderSize = UCSF_HEADER_SIZE + 128 * nDim;
-        blockHeaderSize = 0;
-        rmsd = new double[nDim][];
-        values = new double[nDim][];
-        dataType = 0;
-        rdims = nDim;
-        setStrides();
-
-        return 0;
     }
 
     /**
@@ -3400,20 +2956,15 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         this.title = title;
     }
 
+    public DatasetLayout getLayout() {
+        return layout;
+    }
+
     /**
      * Initialize headers to default values based on currently set number of
      * dimensions
      */
     public final synchronized void newHeader() {
-        magic = 0x3418abcd;
-        fileHeaderSize = 0;
-        blockHeaderSize = 0;
-        blockSize = new int[nDim];
-        offsetPoints = new int[nDim];
-
-        offsetBlocks = new int[nDim];
-        nBlocks = new int[nDim];
-
         sf = new double[nDim];
         sw = new double[nDim];
         sw_r = new double[nDim];
@@ -3446,8 +2997,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             sw[i] = 7000.0;
             sw_r[i] = 7000.0;
             sf[i] = 600.0;
-            refPt[i] = size[i] / 2;
-            refPt_r[i] = size[i] / 2;
+            refPt[i] = getSize()[i] / 2;
+            refPt_r[i] = getSize()[i] / 2;
             refValue[i] = 4.73;
             refValue_r[i] = 4.73;
             complex[i] = true;
@@ -3481,14 +3032,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     synchronized private void reInitHeader() {
-        magic = 0x3418abcd;
-        fileHeaderSize = 0;
-        blockHeaderSize = 0;
-        blockSize = new int[nDim];
-        offsetPoints = new int[nDim];
-
-        offsetBlocks = new int[nDim];
-        nBlocks = new int[nDim];
 
         //sf = new double[nDim];
         //sw = new double[nDim];
@@ -3538,191 +3081,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         //dataType = 0;
     }
 
-    void setStrides() {
+    public void setStrides() {
         strides[0] = 1;
         for (int i = 1; i < nDim; i++) {
-            strides[i] = strides[i - 1] * size[i - 1];
-        }
-    }
-
-    final void dimDataset() {
-        int iDim;
-
-        blockElements = 4;
-
-        for (iDim = 0; iDim < nDim; iDim++) {
-            if ((getSize(iDim) == 0) || (blockSize[iDim] == 0)) {
-                return;
-            }
-        }
-
-        for (iDim = 0; iDim < nDim; iDim++) {
-            nBlocks[iDim] = size(iDim) / blockSize[iDim];
-
-            if ((blockSize[iDim] * nBlocks[iDim]) < size(
-                    iDim)) {
-                nBlocks[iDim] += 1;
-            }
-
-            if (iDim > 0) {
-                offsetBlocks[iDim] = nBlocks[iDim - 1] * offsetBlocks[iDim
-                        - 1];
-                offsetPoints[iDim] = blockSize[iDim - 1] * offsetPoints[iDim
-                        - 1];
-            } else {
-                offsetBlocks[iDim] = 1;
-                offsetPoints[iDim] = 1;
-            }
-
-            blockElements = blockElements * blockSize[iDim];
-
-            foldUp[iDim] = 0.0;
-            foldDown[iDim] = 0.0;
-        }
-        rmsd = new double[nDim][];
-        values = new double[nDim][];
-        setStrides();
-        setDimAttributes();
-    }
-
-    /**
-     * Set the block sizes based on the specified size of a block.
-     *
-     * @param blockPoints the size of the block
-     */
-    public final synchronized void setBlockSize() {
-        for (int i = 0; i < nDim; i++) {
-            blockSize[i] = getSize(i);
-        }
-    }
-
-    /**
-     * Set the block sizes based on the specified size of a block.
-     *
-     * @param blockPoints the size of the block
-     */
-    public final synchronized void setBlockSize(int blockPoints) {
-        long npoints;
-        int blksize;
-        int blkspdim;
-        int blog;
-        int[] tsize;
-        int[] nbdim;
-        int[] bsize;
-        int i;
-        int j;
-        int nblks;
-        int imin = 0;
-        int imax = 0;
-        int bmax;
-        int bmin;
-        npoints = 1;
-        tsize = new int[nDim];
-        bsize = new int[nDim];
-        nbdim = new int[nDim];
-
-        //Calculate total points in file
-        for (i = 0; i < nDim; i++) {
-            tsize[i] = getSize(i);
-            blog = (int) ((Math.log((double) tsize[i]) / Math.log(2.0)) + 0.5);
-            bsize[i] = (int) (Math.exp(blog * Math.log(2.0)) + 0.5);
-
-            if (bsize[i] < tsize[i]) {
-                bsize[i] *= 2;
-            }
-
-            npoints *= bsize[i];
-        }
-
-        /*
-         * Use blockPoints as number of points/block.
-         */
-        nblks = (int) (npoints / blockPoints);
-        if ((nblks * blockPoints) < npoints) {
-            nblks++;
-        }
-
-        /*
-         * printf("nblks %d\n",nblks);
-         */
- /*
-         * With small files block size is dim size
-         */
-        if (nblks < 2) {
-            for (i = 0; i < nDim; i++) {
-                blockSize[i] = getSize(i);
-            }
-
-            return;
-        }
-
-        /*
-         * Calculate trial blocks per dim based on total number of blocks and
-         * the number of dimensions.
-         */
-        blkspdim = (int) (Math.exp((1.0 / nDim) * Math.log(
-                (double) nblks)));
-        blog = (int) ((Math.log((double) blkspdim) / Math.log(2.0)) + 0.5);
-        blkspdim = (int) (Math.exp(blog * Math.log(2.0)) + 0.5);
-
-        for (i = 0; i < nDim; i++) {
-            nbdim[i] = blkspdim;
-
-            if (nbdim[i] > bsize[i]) {
-                nbdim[i] = bsize[i];
-            }
-        }
-
-        /*
-         * Adjust trial block sizes for each dimension so that the number of
-         * points per block is blockPoints. If too big, divide the dimension
-         * with largest block size in half. If too small, double the size of
-         * dimension with largest block size.
-         */
-        for (j = 0; j < 2; j++) {
-            blksize = 1;
-            bmax = 0;
-            bmin = 100000;
-
-            for (i = 0; i < nDim; i++) {
-                if ((bsize[i] / nbdim[i]) > 0) {
-                    blksize *= (bsize[i] / nbdim[i]);
-                }
-
-                if (bsize[i] == 1) {
-                    continue;
-                }
-
-                if (nbdim[i] > bmax) {
-                    bmax = nbdim[i];
-                    imax = i;
-                }
-
-                if (nbdim[i] < bmin) {
-                    bmin = nbdim[i];
-                    imin = i;
-                }
-            }
-
-            /*
-             * ConsoleWrite( "%d\n", blksize);
-             */
-            if (blksize > blockPoints) {
-                nbdim[imax] = nbdim[imax] * 2;
-            }
-
-            if (blksize < blockPoints) {
-                nbdim[imax] = nbdim[imax] / 2;
-            }
-
-            if (nbdim[imin] < 2) {
-                nbdim[imin] = 2;
-                nbdim[imax] = nbdim[imax] / 2;
-            }
-        }
-
-        for (i = 0; i < nDim; i++) {
-            blockSize[i] = bsize[i] / nbdim[i];
+            strides[i] = strides[i - 1] * getSize()[i - 1];
         }
     }
 
@@ -3730,357 +3092,21 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * Flush the header values out to the dataset file.
      */
     public final synchronized void writeHeader() {
+        writeHeader(true);
+
+    }
+
+    /**
+     * Flush the header values out to the dataset file.
+     */
+    public final synchronized void writeHeader(boolean nvExtra) {
         if (file != null) {
+            DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
             if (file.getPath().contains(".ucsf")) {
-                writeHeaderUCSF(raFile, true);
+                headerIO.writeHeaderUCSF(layout, raFile, nvExtra);
             } else {
-                writeHeader(raFile);
+                headerIO.writeHeader(layout, raFile);
             }
-        }
-    }
-
-    /**
-     * Flush the header values out to the specified file.
-     *
-     * @param outFile The file to write to.
-     */
-    synchronized private void writeHeader(RandomAccessFile outFile) {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(NV_HEADER_SIZE);
-        if (littleEndian) {
-            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        }
-
-        byte[] labelBytes = new byte[LABEL_MAX_BYTES];
-        byte[] solventBytes = new byte[SOLVENT_MAX_BYTES];
-        try {
-            magic = 0x3418abcd;
-            byteBuffer.putInt(magic);
-            byteBuffer.putInt(0);
-            byteBuffer.putInt(0);
-            byteBuffer.putInt(fileHeaderSize);
-            byteBuffer.putInt(blockHeaderSize);
-            byteBuffer.putInt(blockElements / 4);
-            byteBuffer.putInt(nDim);
-            byteBuffer.putInt(rdims);
-            byteBuffer.putFloat((float) temperature);
-            String solventString = getSolvent();
-            int nBytes = solventString.length();
-            for (int j = 0; j < SOLVENT_MAX_BYTES; j++) {
-                if (j < nBytes) {
-                    solventBytes[j] = (byte) solventString.charAt(j);
-                } else {
-                    solventBytes[j] = 0;
-                }
-            }
-            byteBuffer.put(solventBytes);
-
-            for (int i = 0; i < nDim; i++) {
-                byteBuffer.position(1024 + i * 128);
-                byteBuffer.putInt(getSize(i));
-                byteBuffer.putInt(blockSize[i]);
-                byteBuffer.putInt(nBlocks[i]);
-                byteBuffer.putInt(0);
-                byteBuffer.putInt(0);
-                byteBuffer.putInt(0);
-                byteBuffer.putFloat((float) getSf(i));
-                byteBuffer.putFloat((float) getSw(i));
-                byteBuffer.putFloat((float) getRefPt(i));
-                byteBuffer.putFloat((float) getRefValue(i));
-                byteBuffer.putInt(getRefUnits(i));
-                byteBuffer.putFloat((float) foldUp[i]);
-                byteBuffer.putFloat((float) foldDown[i]);
-
-                String labelString = label[i];
-                nBytes = labelString.length();
-                for (int j = 0; j < LABEL_MAX_BYTES; j++) {
-                    if (j < nBytes) {
-                        labelBytes[j] = (byte) labelString.charAt(j);
-                    } else {
-                        labelBytes[j] = 0;
-                    }
-                }
-
-                byteBuffer.put(labelBytes);
-
-                if (getComplex(i)) {
-                    byteBuffer.putInt(1);
-                } else {
-                    byteBuffer.putInt(0);
-                }
-
-                if (getFreqDomain(i)) {
-                    byteBuffer.putInt(1);
-                } else {
-                    byteBuffer.putInt(0);
-                }
-                byteBuffer.putFloat((float) getPh0(i));
-                byteBuffer.putFloat((float) getPh1(i));
-                byteBuffer.putInt(getVSize(i));
-                byteBuffer.putInt(getTDSize(i));
-                byteBuffer.putInt(getZFSize(i));
-                byteBuffer.putInt(getExtFirst(i));
-                byteBuffer.putInt(getExtLast(i));
-            }
-
-            if (outFile != null) {
-                DataUtilities.writeBytes(outFile, byteBuffer.array(), 0, NV_HEADER_SIZE);
-            }
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-        }
-    }
-
-    /**
-     * Get the header parameters as a string of text.
-     *
-     * @return the header as a string
-     */
-    synchronized public String getHeader() {
-        StringBuilder sBuilder = new StringBuilder();
-        String sepChar = " ";
-        sBuilder.append(littleEndian);
-        sBuilder.append(sepChar);
-
-        byte[] labelBytes = new byte[LABEL_MAX_BYTES];
-        magic = 0x3418abcd;
-        sBuilder.append("magic");
-        sBuilder.append(sepChar);
-        sBuilder.append(magic);
-        sBuilder.append(sepChar);
-        sBuilder.append("skip");
-        sBuilder.append(sepChar);
-        sBuilder.append(0);
-        sBuilder.append(sepChar);
-        sBuilder.append("skip");
-        sBuilder.append(sepChar);
-        sBuilder.append(0);
-        sBuilder.append(sepChar);
-        sBuilder.append("fileHeaderSize");
-        sBuilder.append(sepChar);
-        sBuilder.append(fileHeaderSize);
-        sBuilder.append(sepChar);
-        sBuilder.append("blockHeaderSize");
-        sBuilder.append(sepChar);
-        sBuilder.append(blockHeaderSize);
-        sBuilder.append(sepChar);
-        sBuilder.append("blockElements");
-        sBuilder.append(sepChar);
-        sBuilder.append(blockElements / 4);
-        sBuilder.append(sepChar);
-        sBuilder.append("nDim");
-        sBuilder.append(sepChar);
-        sBuilder.append(nDim);
-        sBuilder.append("\n");
-
-        for (int i = 0; i < nDim; i++) {
-            sBuilder.append("dim");
-            sBuilder.append(sepChar);
-            sBuilder.append(i);
-            sBuilder.append(sepChar);
-            sBuilder.append("offset");
-            sBuilder.append(sepChar);
-            sBuilder.append(1024 + i * 128);
-            sBuilder.append(sepChar);
-            sBuilder.append("size");
-            sBuilder.append(sepChar);
-            sBuilder.append(getSize(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("blocksize");
-            sBuilder.append(sepChar);
-            sBuilder.append(blockSize[i]);
-            sBuilder.append(sepChar);
-
-            sBuilder.append("offpoints");
-            sBuilder.append(sepChar);
-            sBuilder.append(offsetPoints[i]);
-            sBuilder.append(sepChar);
-
-            sBuilder.append("offblocks");
-            sBuilder.append(sepChar);
-            sBuilder.append(offsetBlocks[i]);
-            sBuilder.append(sepChar);
-
-            sBuilder.append("nBlocks");
-            sBuilder.append(sepChar);
-            sBuilder.append(nBlocks[i]);
-            sBuilder.append(sepChar);
-            sBuilder.append("skip");
-            sBuilder.append(sepChar);
-            sBuilder.append(0);
-            sBuilder.append(sepChar);
-            sBuilder.append("skip");
-            sBuilder.append(sepChar);
-            sBuilder.append(0);
-            sBuilder.append(sepChar);
-            sBuilder.append("skip");
-            sBuilder.append(sepChar);
-            sBuilder.append(0);
-            sBuilder.append(sepChar);
-            sBuilder.append("sf");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) getSf(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("sw");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) getSw(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("refpt");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) getRefPt(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("refval");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) getRefValue(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("refunits");
-            sBuilder.append(sepChar);
-            sBuilder.append(getRefUnits(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("foldup");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) foldUp[i]);
-            sBuilder.append(sepChar);
-            sBuilder.append("folddown");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) foldDown[i]);
-            sBuilder.append(sepChar);
-            sBuilder.append("label");
-            sBuilder.append(sepChar);
-
-            String labelString = label[i];
-            int nBytes = labelString.length();
-            for (int j = 0; j < LABEL_MAX_BYTES; j++) {
-                if (j < nBytes) {
-                    labelBytes[j] = (byte) labelString.charAt(j);
-                } else {
-                    labelBytes[j] = 0;
-                }
-            }
-
-            sBuilder.append(labelBytes);
-            sBuilder.append(sepChar);
-            sBuilder.append("complex");
-            sBuilder.append(sepChar);
-
-            if (getComplex(i)) {
-                sBuilder.append(1);
-            } else {
-                sBuilder.append(0);
-            }
-            sBuilder.append(sepChar);
-            sBuilder.append("freqdomain");
-            sBuilder.append(sepChar);
-
-            if (getFreqDomain(i)) {
-                sBuilder.append(1);
-            } else {
-                sBuilder.append(0);
-            }
-            sBuilder.append(sepChar);
-            sBuilder.append("ph0");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) getPh0(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("ph1");
-            sBuilder.append(sepChar);
-            sBuilder.append((float) getPh1(i));
-            sBuilder.append(sepChar);
-            sBuilder.append("vsize");
-            sBuilder.append(sepChar);
-            sBuilder.append(getVSize(i));
-            sBuilder.append("\n");
-        }
-        return sBuilder.toString();
-    }
-
-    /**
-     * Write out the header of file in UCSF format
-     *
-     * @param nvExtra include extra information in header needed for processing
-     */
-    public final synchronized void writeHeaderUCSF(boolean nvExtra) {
-        writeHeaderUCSF(raFile, nvExtra);
-    }
-
-//    The 180 byte header contains:
-//
-//position	bytes	contents	required value
-//0	10	file type	= UCSF NMR (8 character null terminated string)
-//10	1	dimension of spectrum
-//11	1	number of data components	= 1 for real data
-//13	1	format version number	= 2 for current format
-//The first byte in the file is position 0. A complex spectrum has two components. Sparky only reads real data and I will only describe below the layout for real data so set the number of components to 1. Use format version number 2.
-//
-//For each axis of the spectrum write a 128 byte header of the following form:
-//
-//position	bytes	contents
-//0	6	nucleus name (1H, 13C, 15N, 31P, ...) null terminated ASCII
-//8	4	integer number of data points along this axis
-//16	4	integer tile size along this axis
-//20	4	float spectrometer frequency for this nucleus (MHz)
-//24	4	float spectral width (Hz)
-//28	4	float center of data (ppm)
-    synchronized private void writeHeaderUCSF(RandomAccessFile outFile, boolean nvExtra) {
-        int ucsfFileHeaderSize = UCSF_HEADER_SIZE + nDim * 128;
-        ByteBuffer byteBuffer = ByteBuffer.allocate(ucsfFileHeaderSize);
-        if (littleEndian) {
-            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        }
-
-        int version = nvExtra ? 87 : 2;
-
-        try {
-            byte[] magicBytes = new byte[10];
-            for (int i = 0; i < 8; i++) {
-                magicBytes[i] = (byte) "UCSF NMR".charAt(i);
-            }
-
-            byteBuffer.put(magicBytes);
-            byteBuffer.put((byte) nDim);
-            byteBuffer.put((byte) 1);  // real data
-            byteBuffer.put((byte) 0);
-            byteBuffer.put((byte) version);  // version number
-
-            for (int i = 0; i < nDim; i++) {
-                int iDim = nDim - i - 1;
-                byteBuffer.position(UCSF_HEADER_SIZE + i * 128);
-                String nucName = getNucleus(iDim).getNumberName();
-                for (int j = 0; j < nucName.length(); j++) {
-                    byteBuffer.put((byte) nucName.charAt(j));
-                }
-                for (int j = nucName.length(); j < 8; j++) {
-                    byteBuffer.put((byte) 0);
-                }
-                byteBuffer.putInt(getSize(iDim));
-                byteBuffer.putInt(0);
-                byteBuffer.putInt(blockSize[iDim]);
-                byteBuffer.putFloat((float) getSf(iDim));
-                byteBuffer.putFloat((float) getSw(iDim));
-                byteBuffer.putFloat((float) getRefValue(iDim));
-
-                if (version == 87) {
-                    if (getComplex(i)) {
-                        byteBuffer.putInt(1);
-                    } else {
-                        byteBuffer.putInt(0);
-                    }
-
-                    if (getFreqDomain(i)) {
-                        byteBuffer.putInt(1);
-                    } else {
-                        byteBuffer.putInt(0);
-                    }
-                    byteBuffer.putFloat((float) getPh0(i));
-                    byteBuffer.putFloat((float) getPh1(i));
-                    byteBuffer.putInt(getVSize(i));
-                }
-            }
-
-            if (outFile != null) {
-                DataUtilities.writeBytes(outFile, byteBuffer.array(), 0, ucsfFileHeaderSize);
-            }
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
         }
     }
 
@@ -4321,8 +3347,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         File newFile = new File(fullName);
         try (RandomAccessFile outFile = new RandomAccessFile(newFile, "rw")) {
             byte[] buffer = vecMat.getBytes();
-            writeHeader(outFile);
-            DataUtilities.writeBytes(outFile, buffer, fileHeaderSize, buffer.length);
+            DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
+            headerIO.writeHeader(layout, outFile);
+            DataUtilities.writeBytes(outFile, buffer, layout.getFileHeaderSize(), buffer.length);
         }
     }
 
@@ -4719,7 +3746,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         long[] times = new long[7];
         times[0] = System.currentTimeMillis();
         System.out.println("xxx");
-        dataFile.sum();
+        dataFile.sumValues();
         times[1] = System.currentTimeMillis();
         System.out.println("xxx");
 
@@ -5326,15 +4353,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     /**
-     * Get the number of blocks along each dimension.
-     *
-     * @return array containing the number of blocks
-     */
-    public int[] getnBlocks() {
-        return nBlocks;
-    }
-
-    /**
      * Get the number of dimensions in this dataset.
      *
      * @return the number of dimensions
@@ -5428,7 +4446,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         targetDataset.setVSize(iDim, getVSize(iDim));
 
     }
-    
+
     public void saveMemoryFile() throws IOException, DatasetException {
         if (isMemoryFile()) {
             copyDataset(fileName);
@@ -5780,7 +4798,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     public double[] getBuffer(String bufferName) {
         double[] buffer = buffers.get(bufferName);
         int bufferSize = 1;
-        for (int sz : size) {
+        for (int sz : getSize()) {
             bufferSize *= sz;
         }
         if ((buffer == null) || (buffer.length != bufferSize)) {

@@ -49,7 +49,7 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
             } else {
                 strides[i] = strides[i - 1] * sizes[i - 1];
             }
-            System.err.println(i + " " + dataset.getSize(i) + " " + strides[i]);
+            System.err.println("mem file " + i + " " + dataset.getSize(i) + " " + strides[i]);
         }
         //System.out.println("size " + totalSize);
         totalSize = size;
@@ -104,7 +104,7 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
     }
 
     @Override
-    public double sum() throws IOException {
+    public double sumValues() throws IOException {
         double sum = 0.0;
         for (int i = 0; i < totalSize; i++) {
             sum += floatBuffer.get(i);

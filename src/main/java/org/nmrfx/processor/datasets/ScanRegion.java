@@ -51,9 +51,14 @@ public class ScanRegion {
         vecRange[1] = pt[0][1];
         this.dim = dim.clone();
         Dataset dataset = Dataset.getDataset(datasetName);
+        DatasetLayout layout = dataset.getLayout();
         nDim = dataset.getNDim();
-        this.blockSize = dataset.getBlockSizes();
-        this.nBlocks = dataset.getNBlocks();
+        this.blockSize = new int[nDim];
+        this.nBlocks = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            this.blockSize[i] = layout.getBlockSize(i);
+            this.nBlocks[i] = layout.getNBlocks(i);
+        }
         setup();
     }
 
@@ -67,8 +72,13 @@ public class ScanRegion {
         vecRange = new int[2];
         vecRange[0] = pt[0][0];
         vecRange[1] = pt[0][1];
-        this.blockSize = dataset.getBlockSizes();
-        this.nBlocks = dataset.getNBlocks();
+        DatasetLayout layout = dataset.getLayout();
+        this.blockSize = new int[nDim];
+        this.nBlocks = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            this.blockSize[i] = layout.getBlockSize(i);
+            this.nBlocks[i] = layout.getNBlocks(i);
+        }
         setup();
     }
 

@@ -90,7 +90,7 @@ public interface MappedMatrixInterface {
      * @return the sum of data values
      * @throws IOException if an I/O error occurs
      */
-    public double sum() throws IOException;
+    public double sumValues() throws IOException;
 
     /**
      * Return the sum of data values in file. Used for testing. May use a faster
@@ -113,6 +113,7 @@ public interface MappedMatrixInterface {
      */
     public void force();
 
+ 
     public default void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
         int j = 0;
         for (int i = first; i <= last; i++) {
