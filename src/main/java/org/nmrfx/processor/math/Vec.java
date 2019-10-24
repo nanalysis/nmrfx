@@ -58,6 +58,7 @@ import org.apache.commons.math3.transform.TransformType;
 import org.apache.commons.math3.util.ArithmeticUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.ResizableDoubleArray;
+import org.nmrfx.processor.datasets.MappedMatrixInterface;
 import org.python.core.Py;
 import org.python.core.PyComplex;
 import org.python.core.PyObject;
@@ -80,7 +81,7 @@ import org.renjin.sexp.AttributeMap;
  *
  * @author michael
  */
-public class Vec extends PySequence implements MatrixType {
+public class Vec extends PySequence implements MatrixType, MappedMatrixInterface {
 
     static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
 
@@ -357,6 +358,63 @@ public class Vec extends PySequence implements MatrixType {
             result.add(c);
         }
         return result;
+    }
+
+    @Override
+    public boolean isWritable() {
+        return true;
+    }
+
+    @Override
+    public long position(int... offsets) {
+        return offsets[0];
+    }
+
+    @Override
+    public int getSize(int dim) {
+        return size;
+    }
+
+    @Override
+    public long getTotalSize() {
+        return size;
+    }
+
+    @Override
+    public float getFloat(int... offsets) throws IOException {
+        return (float) getReal(offsets[0]);
+    }
+
+    @Override
+    public void setFloat(float value, int... offsets) throws IOException {
+        setReal(offsets[0], value);
+    }
+
+    @Override
+    public void close() throws IOException {
+    }
+
+    @Override
+    public double sumValues() throws IOException {
+        return sumFast();
+    }
+
+    @Override
+    public double sumFast() throws IOException {
+        double sum = 0.0;
+        for (int i = 0; i < size; i++) {
+            sum += getReal(i);
+        }
+        return sum;
+    }
+
+    @Override
+    public void zero() throws IOException {
+        zeros();
+    }
+
+    @Override
+    public void force() {
     }
 
     /**
@@ -5880,7 +5938,7 @@ public class Vec extends PySequence implements MatrixType {
                 lastWasBase = true;
             } else {
                 if (lastWasBase) {
-                   // System.out.println("end   base at " + i + " " + rvec[i] + " " + pointToPPM(i));
+                    // System.out.println("end   base at " + i + " " + rvec[i] + " " + pointToPPM(i));
                     nPeakRegions++;
                 }
 

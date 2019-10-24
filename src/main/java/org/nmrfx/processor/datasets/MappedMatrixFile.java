@@ -34,13 +34,13 @@ import org.nmrfx.processor.math.Vec;
 public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     private final RandomAccessFile raFile;
-    private final int headerSize;
     private final int[] sizes;
     private final long[] strides;
     private final long totalSize;
     private final int dataType;
     final boolean writable;
     private final MappedByteBuffer mappedBuffer;
+    DatasetLayout layout;
     FloatBuffer floatBuffer;
     private final long BYTES = 4;
 
@@ -53,10 +53,11 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
      * @param writable true if the mapping should be writable
      * @throws IOException if an I/O error occurs
      */
-    public MappedMatrixFile(final Dataset dataset, final RandomAccessFile raFile, final boolean writable) throws IOException {
+    public MappedMatrixFile(final Dataset dataset, final DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
         this.raFile = raFile;
+        this.layout = layout;
         dataType = dataset.getDataType();
-        headerSize = dataset.getFileHeaderSize();
+        int headerSize = layout.getFileHeaderSize();
         sizes = new int[dataset.getNDim()];
         strides = new long[dataset.getNDim()];
         this.writable = writable;
@@ -148,7 +149,7 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
     }
 
     @Override
-    public double sum() {
+    public double sumValues() {
         return sumFast();
     }
 
