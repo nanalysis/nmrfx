@@ -129,7 +129,17 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
     }
 
     @Override
-    public long position(int... offsets) {
+    public long bytePosition(int... offsets) {
+        long position;
+        position = offsets[0];
+        for (int iDim = 1; iDim < offsets.length; iDim++) {
+            position += offsets[iDim] * strides[iDim];
+        }
+        return position * BYTES;
+    }
+
+    @Override
+    public long pointPosition(int... offsets) {
         long position;
         position = offsets[0];
         for (int iDim = 1; iDim < offsets.length; iDim++) {
@@ -150,7 +160,7 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public float getFloat(int... offsets) {
-        int p = (int) (position(offsets) * BYTES);
+        int p = (int) bytePosition(offsets);
         if (dataType == 0) {
             return mappedBuffer.getFloat(p);
         } else {
@@ -160,7 +170,7 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public void setFloat(float d, int... offsets) {
-        int p = (int) (position(offsets) * BYTES);
+        int p = (int) bytePosition(offsets);
         try {
             if (dataType == 0) {
                 mappedBuffer.putFloat(p, d);
@@ -220,7 +230,7 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
     public void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
         int j = 0;
         point[dim] = first;
-        int position = (int) position(point);
+        int position = (int) pointPosition(point);
         int stride = (int) strides[dim];
         if (vector.isComplex()) {
             for (int i = first; i <= last; i += 2) {
@@ -241,7 +251,7 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
     public void readVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
         int j = 0;
         point[dim] = first;
-        int position = (int) position(point);
+        int position = (int) pointPosition(point);
         int stride = (int) strides[dim];
         if (vector.isComplex()) {
             for (int i = first; i <= last; i += 2) {

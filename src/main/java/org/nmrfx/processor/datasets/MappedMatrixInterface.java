@@ -32,7 +32,7 @@ public interface MappedMatrixInterface {
      * Flush the header values out to the dataset file.
      */
     public default void writeHeader(boolean nvExtra) {
-        
+
     }
 
     /**
@@ -50,13 +50,22 @@ public interface MappedMatrixInterface {
     public boolean isWritable();
 
     /**
-     * Return the index in file that corresponds to offsets specified for the
-     * various dimensions
+     * Return the byte index in file that corresponds to offsets specified for
+     * the various dimensions
      *
      * @param offsets the offsets for each dimension
      * @return the position in file
      */
-    public long position(int... offsets);
+    public long bytePosition(int... offsets);
+
+    /**
+     * Return the point index in file that corresponds to offsets specified for
+     * the various dimensions
+     *
+     * @param offsets the offsets for each dimension
+     * @return the position in file
+     */
+    public long pointPosition(int... offsets);
 
     /**
      * Return the size of the dimension

@@ -13,6 +13,7 @@ class DatasetLayout {
 
     int fileHeaderSize;
     int blockHeaderSize;
+    int totalBlocks;
     int nDim;
     int[] sizes;
     int[] blockSize;
@@ -48,6 +49,7 @@ class DatasetLayout {
         layout.setFileHeaderSize(0);
         layout.setBlockHeaderSize(0);
         layout.blockPoints = 1;
+        layout.totalBlocks = 1;
         for (int i = 0; i < sizes.length; i++) {
             layout.blockSize[i] = sizes[i];
             layout.nBlocks[i] = 1;
@@ -61,6 +63,10 @@ class DatasetLayout {
         return subMatrix;
     }
     
+    public long getTotalBlocks() {
+        return totalBlocks;
+    }
+
     public long getNPoints() {
         int nPoints = 1;
         for (int i = 0; i < sizes.length; i++) {
@@ -87,13 +93,6 @@ class DatasetLayout {
 
     public void setBlockSize(int i, int value) {
         blockSize[i] = value;
-    }
-
-    public void setNBlocks(int i, int value) {
-        nBlocks[i] = value;
-        if (value != 1) {
-            subMatrix = true;
-        }
     }
 
     public int getNBlocks(int i) {
@@ -161,7 +160,7 @@ class DatasetLayout {
                 return;
             }
         }
-
+        totalBlocks = 1;
         for (iDim = 0; iDim < nDim; iDim++) {
             nBlocks[iDim] = sizes[iDim] / blockSize[iDim];
             if (nBlocks[iDim] != 1) {
@@ -183,6 +182,7 @@ class DatasetLayout {
             }
 
             blockElements = blockElements * blockSize[iDim];
+            totalBlocks *= nBlocks[iDim];
         }
         blockPoints = blockElements / 4;
     }

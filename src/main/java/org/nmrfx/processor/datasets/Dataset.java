@@ -263,7 +263,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
             } else {
                 if (layout.isSubMatrix()) {
-                    dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
+//                    dataFile = new SubMatrixFile(this, file, layout, raFile, true);
+                     dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
                 } else {
                     dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
                 }
@@ -3760,7 +3761,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         DimCounter.Iterator cIter = counter.iterator();
         while (cIter.hasNext()) {
             int[] points = cIter.next();
-            dataFile.position(points);
+            dataFile.bytePosition(points);
         }
         times[4] = System.currentTimeMillis();
         System.out.println("xxx");
