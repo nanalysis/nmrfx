@@ -259,7 +259,11 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
         if (layout != null) {
-            dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
+            if (layout.getNDataBytes() > 512e6) {
+                dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
+            } else {
+                dataFile = new MappedMatrixFile(this, file, layout, raFile, writable);
+            }
         }
         setStrides();
         addFile(fileName);
@@ -368,7 +372,13 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 fileHeaderSize = NV_HEADER_SIZE;
             }
             layout.setFileHeaderSize(fileHeaderSize);
-            dataFile = new BigMappedMatrixFile(this, file, layout, raFile, true);
+            if (layout != null) {
+                if (layout.getNDataBytes() > 512e6) {
+                    dataFile = new BigMappedMatrixFile(this, file, layout, raFile, true);
+                } else {
+                    dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
+                }
+            }
             setStrides();
             writeHeader();
             dataFile.zero();
@@ -3067,7 +3077,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         //dataType = 0;
     }
 
-    public void setStrides() {
+    public final void setStrides() {
         strides[0] = 1;
         for (int i = 1; i < nDim; i++) {
             strides[i] = strides[i - 1] * getSize(i - 1);
