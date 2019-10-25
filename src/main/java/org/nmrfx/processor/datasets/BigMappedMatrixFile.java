@@ -149,7 +149,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
     }
 
     @Override
-    public long position(int... offsets) {
+    public long bytePosition(int... offsets) {
         long position;
         boolean subMatrix = true;
         if (subMatrix) {
@@ -160,7 +160,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
                 offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
 //                System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock + " " + layout.offsetPoints[iDim] + " " + layout.offsetBlocks[iDim]);
             }
-            position = blockNum * (layout.blockPoints + layout.blockHeaderSize) + offsetInBlock + layout.blockHeaderSize;
+            position = blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES;
 //            System.out.println(position + " " + layout.blockPoints);
             return position;
         } else {
@@ -168,7 +168,20 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
             for (int iDim = 1; iDim < offsets.length; iDim++) {
                 position += offsets[iDim] * strides[iDim];
             }
+            position *= BYTES;
         }
+        return position;
+    }
+
+    @Override
+    public long pointPosition(int... offsets) {
+        long blockNum = 0;
+        long offsetInBlock = 0;
+        for (int iDim = 0; iDim < offsets.length; iDim++) {
+            blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
+            offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
+        }
+        long position = blockNum * layout.blockPoints + offsetInBlock;
         return position;
     }
 
@@ -194,7 +207,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public float getFloat(int... offsets) throws IOException {
-        long p = position(offsets) * BYTES;
+        long p = bytePosition(offsets);
         int mapN = (int) (p / mapSize);
         int offN = (int) (p % mapSize);
         try {
@@ -217,7 +230,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public void setFloat(float d, int... offsets) throws IOException {
-        long p = position(offsets) * BYTES;
+        long p = bytePosition(offsets);
         int mapN = (int) (p / mapSize);
         int offN = (int) (p % mapSize);
 //        if (mapN > 0) {

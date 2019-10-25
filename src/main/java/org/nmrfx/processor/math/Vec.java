@@ -370,7 +370,12 @@ public class Vec extends PySequence implements MatrixType, MappedMatrixInterface
     }
 
     @Override
-    public long position(int... offsets) {
+    public long bytePosition(int... offsets) {
+        return offsets[0] * Double.BYTES;
+    }
+    
+    @Override
+    public long pointPosition(int... offsets) {
         return offsets[0];
     }
 

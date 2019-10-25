@@ -184,6 +184,7 @@ public class DatasetHeaderIO {
                 d.setExtLast(i, DataUtilities.readSwapInt(dis, checkSwap));
                 dis.skip(6 * 4);
             }
+            lay.dimDataset();
         } catch (IOException e) {
             System.err.println(e.getMessage());
 
@@ -310,12 +311,7 @@ public class DatasetHeaderIO {
                     d.setFreqDomain_r(iDim, true);
                 }
             }
-            lay.blockElements = 4;
-            for (int iDim = 0; iDim < nDim; iDim++) {
-                lay.blockElements = lay.getBlockElements() * lay.blockSize[iDim];
-            }
-            lay.blockPoints = lay.blockElements / 4;
-
+            lay.dimDataset();
             d.setDataType(0);
         } catch (IOException e) {
             //LOGGER.error("Can't read header ", e);

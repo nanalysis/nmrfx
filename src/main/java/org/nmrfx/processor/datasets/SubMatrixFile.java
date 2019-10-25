@@ -21,27 +21,28 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.FloatBuffer;
-import java.nio.MappedByteBuffer;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Create a memory-mapped interface to a Dataset file
  *
  * @author brucejohnson
  */
-public class MappedSubMatrixFile implements MappedMatrixInterface, Closeable {
+public class SubMatrixFile implements MappedMatrixInterface, Closeable {
 
     private RandomAccessFile raFile;
+    FileChannel fc;
     private final Dataset dataset;
     private final File file;
     private long totalSize;
     private final int dataType;
     final boolean writable;
-    private MappedByteBuffer mappedBuffer;
     DatasetLayout layout;
-    FloatBuffer floatBuffer;
     private final int BYTES = Float.BYTES;
+    ByteBuffer[] byteBuffers;
 
     /**
      * An object that represents a mapping of specified dataset with a memory
@@ -52,7 +53,7 @@ public class MappedSubMatrixFile implements MappedMatrixInterface, Closeable {
      * @param writable true if the mapping should be writable
      * @throws IOException if an I/O error occurs
      */
-    public MappedSubMatrixFile(final Dataset dataset, File file, final DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
+    public SubMatrixFile(final Dataset dataset, File file, final DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
         this.raFile = raFile;
         this.dataset = dataset;
         this.file = file;
@@ -63,28 +64,16 @@ public class MappedSubMatrixFile implements MappedMatrixInterface, Closeable {
     }
 
     void init() throws IOException {
+        fc = raFile.getChannel();
         int blockHeaderSize = layout.getBlockHeaderSize() / BYTES;
         long matSize = BYTES;
         System.err.println(dataset.getFileName());
         System.err.println("header size " + layout.getFileHeaderSize());
         for (int i = 0; i < dataset.getNDim(); i++) {
-            System.err.println("map sub " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSize(i));
+            System.err.println("sub cache " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSize(i));
             matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
         }
         totalSize = matSize / BYTES;
-        try {
-            long size2 = totalSize * Float.BYTES;
-            FileChannel.MapMode mapMode = FileChannel.MapMode.READ_ONLY;
-            if (writable) {
-                mapMode = FileChannel.MapMode.READ_WRITE;
-            }
-            mappedBuffer = this.raFile.getChannel().map(mapMode, layout.getFileHeaderSize(), size2);
-            mappedBuffer.order(dataset.getByteOrder());
-            floatBuffer = mappedBuffer.asFloatBuffer();
-        } catch (IOException e) {
-            this.raFile.close();
-            throw e;
-        }
     }
 
     @Override
@@ -130,7 +119,7 @@ public class MappedSubMatrixFile implements MappedMatrixInterface, Closeable {
             offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
 //                System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock + " " + layout.offsetPoints[iDim] + " " + layout.offsetBlocks[iDim]);
         }
-        long position = blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES;
+        long position = blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES + layout.fileHeaderSize;
 //            System.out.println(position + " " + layout.blockPoints);
         return position;
     }
@@ -142,9 +131,27 @@ public class MappedSubMatrixFile implements MappedMatrixInterface, Closeable {
         for (int iDim = 0; iDim < offsets.length; iDim++) {
             blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
             offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
+//                System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock + " " + layout.offsetPoints[iDim] + " " + layout.offsetBlocks[iDim]);
         }
         long position = blockNum * layout.blockPoints + offsetInBlock;
+//            System.out.println(position + " " + layout.blockPoints);
         return position;
+    }
+
+    long getBlockPosition(int... offsets) {
+        long blockNum = 0;
+        for (int iDim = 0; iDim < offsets.length; iDim++) {
+            blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
+        }
+        return blockNum;
+    }
+
+    public long getOffsetInBlock(int... offsets) {
+        long offsetInBlock = 0;
+        for (int iDim = 0; iDim < offsets.length; iDim++) {
+            offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
+        }
+        return offsetInBlock;
     }
 
     @Override
@@ -157,24 +164,41 @@ public class MappedSubMatrixFile implements MappedMatrixInterface, Closeable {
         return totalSize;
     }
 
+    ByteBuffer readBlock(int iBlock) throws IOException {
+        long blockPos = iBlock * (layout.blockPoints * BYTES + layout.blockHeaderSize) + layout.fileHeaderSize;
+        ByteBuffer buffer = ByteBuffer.allocate((int) (layout.blockPoints * BYTES));
+        buffer.order(dataset.getByteOrder());
+        fc.position(blockPos);
+        fc.read(buffer);
+        return buffer;
+    }
+
+    void writeBlock(int iBlock, ByteBuffer buffer) throws IOException {
+        long blockPos = iBlock * (layout.blockPoints * BYTES + layout.blockHeaderSize) + layout.fileHeaderSize;
+        fc.position(blockPos);
+        fc.write(buffer);
+    }
+
     @Override
-    public float getFloat(int... offsets) {
-        int p = (int) (bytePosition(offsets));
+    public float getFloat(int... offsets) throws IOException {
+        long p = bytePosition(offsets);
+        raFile.seek(p);
         if (dataType == 0) {
-            return mappedBuffer.getFloat(p);
+            return raFile.readFloat();
         } else {
-            return mappedBuffer.getInt(p);
+            return raFile.readInt();
         }
     }
 
     @Override
     public void setFloat(float d, int... offsets) {
-        int p = (int) (bytePosition(offsets));
+        long p = bytePosition(offsets);
         try {
+            raFile.seek(p);
             if (dataType == 0) {
-                mappedBuffer.putFloat(p, d);
+                raFile.writeFloat(d);
             } else {
-                mappedBuffer.putInt(p, (int) d);
+                raFile.writeInt((int) d);
             }
         } catch (Exception e) {
             System.out.println("map range error " + p + " " + totalSize);
@@ -184,7 +208,6 @@ public class MappedSubMatrixFile implements MappedMatrixInterface, Closeable {
     @Override
     public void close() throws IOException {
         if (raFile != null) {
-            clean(mappedBuffer);
             raFile.close();
         }
     }
@@ -197,32 +220,36 @@ public class MappedSubMatrixFile implements MappedMatrixInterface, Closeable {
     @Override
     public double sumFast() {
         double sum = 0.0;
-        for (int i = 0; i < totalSize; i++) {
-            sum += mappedBuffer.getFloat(i);
+        try {
+            for (int blockNum = 0; blockNum < layout.getTotalBlocks(); blockNum++) {
+                ByteBuffer buffer = readBlock(blockNum);
+                for (int j = 0; j < layout.blockPoints; j++) {
+                    sum += buffer.getFloat(j);
+                }
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(SubMatrixFile.class.getName()).log(Level.SEVERE, null, ex);
         }
+
         return sum;
     }
 
     @Override
     public void zero() {
-        for (int i = 0; i < totalSize; i++) {
-            if (dataType == 0) {
-                mappedBuffer.putFloat(i, 0.0f);
-            } else {
-                mappedBuffer.putInt(i, 0);
+        try {
+            for (int blockNum = 0; blockNum < layout.getTotalBlocks(); blockNum++) {
+                ByteBuffer buffer = readBlock(blockNum);
+                for (int j = 0; j < layout.blockPoints; j++) {
+                    buffer.putFloat(0, j);
+                }
             }
+        } catch (IOException ex) {
+            Logger.getLogger(SubMatrixFile.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     @Override
     public void force() {
-        mappedBuffer.force();
     }
 
-    private void clean(MappedByteBuffer mapping) {
-        if (mapping == null) {
-            return;
-        }
-        MapInfo.closeDirectBuffer(mapping);
-    }
 }
