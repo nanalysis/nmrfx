@@ -37,7 +37,6 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
     private RandomAccessFile raFile;
     private final Dataset dataset;
     private final File file;
-    private final int[] sizes;
     private final long[] strides;
     private long totalSize;
     private final int dataType;
@@ -62,7 +61,6 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
         this.file = file;
         this.layout = layout;
         dataType = dataset.getDataType();
-        sizes = new int[dataset.getNDim()];
         strides = new long[dataset.getNDim()];
         this.writable = writable;
         init();
@@ -70,15 +68,14 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     void init() throws IOException {
         long size = 1;
-        for (int i = 0; i < dataset.getNDim(); i++) {
-            sizes[i] = dataset.getSize(i);
-            size *= sizes[i];
+        for (int i = 0; i < layout.nDim; i++) {
+            size *= layout.sizes[i];
             if (i == 0) {
                 strides[i] = 1;
             } else {
-                strides[i] = strides[i - 1] * sizes[i - 1];
+                strides[i] = strides[i - 1] * layout.sizes[i - 1];
             }
-            System.err.println(i + " " + dataset.getSize(i) + " " + strides[i]);
+            System.err.println("mapped " + i + " " + dataset.getSize(i) + " " + strides[i]);
         }
         //System.out.println("size " + totalSize);
         totalSize = size;
@@ -143,7 +140,7 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public int getSize(final int dim) {
-        return sizes[dim];
+        return layout.sizes[dim];
     }
 
     @Override

@@ -28,7 +28,7 @@ class DatasetLayout {
 
     DatasetLayout(int[] sizes) {
         resize(sizes.length);
-        for (int i=0;i<sizes.length;i++) {
+        for (int i = 0; i < sizes.length; i++) {
             this.sizes[i] = sizes[i];
         }
     }
@@ -54,7 +54,19 @@ class DatasetLayout {
         }
         return layout;
     }
-    
+
+    public long getNPoints() {
+        int nPoints = 1;
+        for (int i = 0; i < sizes.length; i++) {
+            nPoints *= sizes[i];
+        }
+        return nPoints;
+    }
+
+    public long getNDataBytes() {
+        return getNPoints() * Float.BYTES;
+    }
+
     public int getSize(int i) {
         return sizes[i];
     }
@@ -62,7 +74,7 @@ class DatasetLayout {
     public void setSize(int i, int value) {
         sizes[i] = value;
     }
-    
+
     public int getBlockSize(int i) {
         return blockSize[i];
     }
@@ -130,7 +142,7 @@ class DatasetLayout {
     }
 
     final void dimDataset() {
-        
+
         int iDim;
 
         blockElements = 4;

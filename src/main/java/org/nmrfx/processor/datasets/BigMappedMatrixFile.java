@@ -39,7 +39,6 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
     Dataset dataset;
     private RandomAccessFile raFile;
     DatasetLayout layout;
-    private final int[] sizes;
     private final long[] strides;
     private long totalSize;
     private final int dataType;
@@ -63,7 +62,6 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
         this.file = file;
         this.layout = layout;
         dataType = dataset.getDataType();
-        sizes = new int[dataset.getNDim()];
         strides = new long[dataset.getNDim()];
         this.writable = writable;
         mapSize = MAPPING_SIZE;
@@ -79,10 +77,9 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
         for (int i = 0; i < dataset.getNDim(); i++) {
             System.err.println("big map " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSize(i));
             matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
-            sizes[i] = dataset.getSize(i);
             // strides only relevant if no block header and not submatrix
             if (i > 0) {
-                strides[i] = strides[i - 1] * sizes[i - 1];
+                strides[i] = strides[i - 1] * layout.sizes[i - 1];
             }
         }
         totalSize = matSize / BYTES;
@@ -177,7 +174,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public int getSize(final int dim) {
-        return sizes[dim];
+        return layout.sizes[dim];
     }
 
     @Override
@@ -211,7 +208,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
             for (int offset : offsets) {
                 sBuilder.append(offset).append(" ");
             }
-            for (int size : sizes) {
+            for (int size : layout.sizes) {
                 sBuilder.append(size).append(" ");
             }
             throw new IOException("getFloat map range error offsets " + sBuilder.toString() + "pos " + p + " " + mapN + " " + offN + " " + totalSize + " " + e.getMessage());
@@ -237,7 +234,7 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
             for (int offset : offsets) {
                 sBuilder.append(offset).append(" ");
             }
-            for (int size : sizes) {
+            for (int size : layout.sizes) {
                 sBuilder.append(size).append(" ");
             }
             throw new IOException("setFloat: map range error offsets " + sBuilder.toString() + "pos " + p + " " + mapN + " " + offN + " " + totalSize);
