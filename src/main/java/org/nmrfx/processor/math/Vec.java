@@ -361,6 +361,10 @@ public class Vec extends PySequence implements MatrixType, MappedMatrixInterface
     }
 
     @Override
+    public void setWritable(boolean state) {
+    }
+    
+    @Override
     public boolean isWritable() {
         return true;
     }

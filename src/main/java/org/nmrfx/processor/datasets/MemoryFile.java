@@ -63,6 +63,10 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
     }
 
     @Override
+    public void setWritable(boolean state) {
+    }
+
+    @Override
     public boolean isWritable() {
         return writable;
     }

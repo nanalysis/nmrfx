@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteOrder;
@@ -34,11 +35,13 @@ import java.util.List;
 public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     private static int MAPPING_SIZE = 1 << 30;
-    private final RandomAccessFile raFile;
+    private File file;
+    Dataset dataset;
+    private RandomAccessFile raFile;
     DatasetLayout layout;
     private final int[] sizes;
     private final long[] strides;
-    private final long totalSize;
+    private long totalSize;
     private final int dataType;
     final boolean writable;
     private final int mapSize;
@@ -54,15 +57,21 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
      * @param writable true if the mapping should be writable
      * @throws java.io.IOException
      */
-    public BigMappedMatrixFile(final Dataset dataset, DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
+    public BigMappedMatrixFile(final Dataset dataset, File file, DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
+        this.dataset = dataset;
         this.raFile = raFile;
+        this.file = file;
         this.layout = layout;
         dataType = dataset.getDataType();
-        int blockHeaderSize = layout.getBlockHeaderSize() / BYTES;
         sizes = new int[dataset.getNDim()];
         strides = new long[dataset.getNDim()];
         this.writable = writable;
         mapSize = MAPPING_SIZE;
+        init();
+    }
+
+    void init() throws IOException {
+        int blockHeaderSize = layout.getBlockHeaderSize() / BYTES;
         long matSize = BYTES;
         System.err.println(dataset.getFileName());
         System.err.println("header size " + layout.getFileHeaderSize());
@@ -106,6 +115,31 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
      */
     public static int getMapSize() {
         return MAPPING_SIZE / 1024 / 1024;
+    }
+
+    @Override
+    public final synchronized void writeHeader(boolean nvExtra) {
+        if (file != null) {
+            DatasetHeaderIO headerIO = new DatasetHeaderIO(dataset);
+            if (file.getPath().contains(".ucsf")) {
+                headerIO.writeHeaderUCSF(layout, raFile, nvExtra);
+            } else {
+                headerIO.writeHeader(layout, raFile);
+            }
+        }
+    }
+
+    @Override
+    public void setWritable(boolean state) throws IOException {
+        if (writable != state) {
+            if (state) {
+                raFile = new RandomAccessFile(file, "rw");
+            } else {
+                force();
+                raFile = new RandomAccessFile(file, "r");
+            }
+            init();
+        }
     }
 
     @Override
@@ -212,14 +246,17 @@ public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public void close() throws IOException {
-        try {
-            for (MapInfo mapInfo : mappings) {
-                mapInfo.clean();
+        if (raFile != null) {
+            try {
+                for (MapInfo mapInfo : mappings) {
+                    mapInfo.clean();
+                }
+            } catch (Exception e) {
+            } finally {
+                System.out.println("close rafile");
+                raFile.close();
+                raFile = null;
             }
-        } catch (Exception e) {
-        } finally {
-            System.out.println("close rafile");
-            raFile.close();
         }
     }
 
