@@ -262,7 +262,11 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             if (layout.getNDataBytes() > 512e6) {
                 dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
             } else {
-                dataFile = new MappedMatrixFile(this, file, layout, raFile, writable);
+                if (layout.isSubMatrix()) {
+                    dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
+                } else {
+                    dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
+                }
             }
         }
         setStrides();
@@ -376,7 +380,11 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 if (layout.getNDataBytes() > 512e6) {
                     dataFile = new BigMappedMatrixFile(this, file, layout, raFile, true);
                 } else {
-                    dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
+                    if (layout.isSubMatrix()) {
+                        dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
+                    } else {
+                        dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
+                    }
                 }
             }
             setStrides();
