@@ -18,6 +18,7 @@
 package org.nmrfx.processor.datasets;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.FloatBuffer;
@@ -33,13 +34,15 @@ import org.nmrfx.processor.math.Vec;
  */
 public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
 
-    private final RandomAccessFile raFile;
+    private RandomAccessFile raFile;
+    private final Dataset dataset;
+    private final File file;
     private final int[] sizes;
     private final long[] strides;
-    private final long totalSize;
+    private long totalSize;
     private final int dataType;
     final boolean writable;
-    private final MappedByteBuffer mappedBuffer;
+    private MappedByteBuffer mappedBuffer;
     DatasetLayout layout;
     FloatBuffer floatBuffer;
     private final long BYTES = 4;
@@ -53,14 +56,19 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
      * @param writable true if the mapping should be writable
      * @throws IOException if an I/O error occurs
      */
-    public MappedMatrixFile(final Dataset dataset, final DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
+    public MappedMatrixFile(final Dataset dataset, File file, final DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
         this.raFile = raFile;
+        this.dataset = dataset;
+        this.file = file;
         this.layout = layout;
         dataType = dataset.getDataType();
-        int headerSize = layout.getFileHeaderSize();
         sizes = new int[dataset.getNDim()];
         strides = new long[dataset.getNDim()];
         this.writable = writable;
+        init();
+    }
+
+    void init() throws IOException {
         long size = 1;
         for (int i = 0; i < dataset.getNDim(); i++) {
             sizes[i] = dataset.getSize(i);
@@ -80,12 +88,37 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
             if (writable) {
                 mapMode = FileChannel.MapMode.READ_WRITE;
             }
-            mappedBuffer = this.raFile.getChannel().map(mapMode, headerSize, size2);
+            mappedBuffer = this.raFile.getChannel().map(mapMode, layout.getFileHeaderSize(), size2);
             mappedBuffer.order(dataset.getByteOrder());
             floatBuffer = mappedBuffer.asFloatBuffer();
         } catch (IOException e) {
             this.raFile.close();
             throw e;
+        }
+    }
+
+    @Override
+    public final synchronized void writeHeader(boolean nvExtra) {
+        if (file != null) {
+            DatasetHeaderIO headerIO = new DatasetHeaderIO(dataset);
+            if (file.getPath().contains(".ucsf")) {
+                headerIO.writeHeaderUCSF(layout, raFile, nvExtra);
+            } else {
+                headerIO.writeHeader(layout, raFile);
+            }
+        }
+    }
+
+    @Override
+    public void setWritable(boolean state) throws IOException {
+        if (writable != state) {
+            if (state) {
+                raFile = new RandomAccessFile(file, "rw");
+            } else {
+                force();
+                raFile = new RandomAccessFile(file, "r");
+            }
+            init();
         }
     }
 
@@ -144,8 +177,10 @@ public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public void close() throws IOException {
-        clean(mappedBuffer);
-        raFile.close();
+        if (raFile != null) {
+            clean(mappedBuffer);
+            raFile.close();
+        }
     }
 
     @Override

@@ -137,7 +137,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     private Double noiseLevel = null;
     static private LRUMap vectorBuffer = new LRUMap(512);
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
-    private RandomAccessFile raFile = null;
     Set<DatasetRegion> regions;
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
@@ -242,7 +241,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             throw new IllegalArgumentException(
                     "File " + fullName + " doesn't exist");
         }
-
+        RandomAccessFile raFile;
         if (file.canWrite()) {
             raFile = new RandomAccessFile(file, "rw");
         } else {
@@ -268,7 +267,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
         if (layout != null) {
-            dataFile = new BigMappedMatrixFile(this, layout, raFile, writable);
+            dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
         }
         addFile(fileName);
         setDimAttributes();
@@ -338,7 +337,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             int[] dimSizes) throws DatasetException {
         //LOGGER.info("Make dataset {}", fullName);
         try {
-            raFile = new RandomAccessFile(fullName, "rw");
+            RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
             file = new File(fullName);
 
             canonicalName = file.getCanonicalPath();
@@ -380,8 +379,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 fileHeaderSize = NV_HEADER_SIZE;
             }
             layout.setFileHeaderSize(fileHeaderSize);
+            dataFile = new BigMappedMatrixFile(this, file, layout, raFile, true);
             writeHeader();
-            dataFile = new BigMappedMatrixFile(this, layout, raFile, true);
             dataFile.zero();
             dataFile.close();
             DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
@@ -555,7 +554,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 if (dataFile.isWritable()) {
                     dataFile.force();
                 }
-                dataFile = new BigMappedMatrixFile(this, layout, raFile, writable);
+                dataFile.setWritable(writable);
             }
         }
     }
@@ -787,7 +786,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
                 dataFile.close();
             }
             dataFile = null;
-            raFile = null;
         } catch (IOException e) {
             //LOGGER.warn(e.getMessage());
         }
@@ -3093,21 +3091,13 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public final synchronized void writeHeader() {
         writeHeader(true);
-
     }
 
     /**
      * Flush the header values out to the dataset file.
      */
     public final synchronized void writeHeader(boolean nvExtra) {
-        if (file != null) {
-            DatasetHeaderIO headerIO = new DatasetHeaderIO(this);
-            if (file.getPath().contains(".ucsf")) {
-                headerIO.writeHeaderUCSF(layout, raFile, nvExtra);
-            } else {
-                headerIO.writeHeader(layout, raFile);
-            }
-        }
+        dataFile.writeHeader(nvExtra);
     }
 
     /**

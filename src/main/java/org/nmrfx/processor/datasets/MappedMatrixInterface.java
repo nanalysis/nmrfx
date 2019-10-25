@@ -29,6 +29,20 @@ import org.nmrfx.processor.math.Vec;
 public interface MappedMatrixInterface {
 
     /**
+     * Flush the header values out to the dataset file.
+     */
+    public default void writeHeader(boolean nvExtra) {
+        
+    }
+
+    /**
+     * Change whether matrix can be written. Will depend on underlying file.
+     *
+     * @return true if matrix can be written
+     */
+    public void setWritable(boolean state) throws IOException;
+
+    /**
      * Return whether matrix can be written. Will depend on underlying file.
      *
      * @return true if matrix can be written
@@ -113,7 +127,6 @@ public interface MappedMatrixInterface {
      */
     public void force();
 
- 
     public default void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
         int j = 0;
         for (int i = first; i <= last; i++) {
