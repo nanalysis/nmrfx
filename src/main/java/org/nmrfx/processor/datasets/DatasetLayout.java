@@ -13,6 +13,8 @@ class DatasetLayout {
 
     int fileHeaderSize;
     int blockHeaderSize;
+    int nDim;
+    int[] sizes;
     int[] blockSize;
     int[] nBlocks;
     int[] offsetBlocks;
@@ -24,16 +26,24 @@ class DatasetLayout {
         resize(nDim);
     }
 
+    DatasetLayout(int[] sizes) {
+        resize(sizes.length);
+        for (int i=0;i<sizes.length;i++) {
+            this.sizes[i] = sizes[i];
+        }
+    }
+
     public final void resize(int nDim) {
+        this.nDim = nDim;
+        sizes = new int[nDim];
         blockSize = new int[nDim];
         nBlocks = new int[nDim];
         offsetBlocks = new int[nDim];
         offsetPoints = new int[nDim];
-
     }
 
     public static DatasetLayout createFullMatrix(int[] sizes) {
-        DatasetLayout layout = new DatasetLayout(sizes.length);
+        DatasetLayout layout = new DatasetLayout(sizes);
         layout.setFileHeaderSize(0);
         layout.setBlockHeaderSize(0);
         layout.blockPoints = 1;
@@ -44,7 +54,15 @@ class DatasetLayout {
         }
         return layout;
     }
+    
+    public int getSize(int i) {
+        return sizes[i];
+    }
 
+    public void setSize(int i, int value) {
+        sizes[i] = value;
+    }
+    
     public int getBlockSize(int i) {
         return blockSize[i];
     }
@@ -111,7 +129,8 @@ class DatasetLayout {
         return blockPoints;
     }
 
-    final void dimDataset(int nDim, int[] sizes) {
+    final void dimDataset() {
+        
         int iDim;
 
         blockElements = 4;
@@ -149,7 +168,7 @@ class DatasetLayout {
      *
      * @param blockPoints the size of the block
      */
-    public void setBlockSize(int blockPoints, int nDim, int[] sizes) {
+    public void setBlockSize(int blockPoints) {
         System.out.println("set block size " + blockPoints);
         this.blockPoints = blockPoints;
         long npoints;

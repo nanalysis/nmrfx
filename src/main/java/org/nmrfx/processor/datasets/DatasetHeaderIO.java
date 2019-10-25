@@ -120,13 +120,13 @@ public class DatasetHeaderIO {
             lay.offsetBlocks[0] = 1;
 
             for (i = 0; i < nDim; i++) {
-                d.setSize(i, DataUtilities.readSwapInt(dis, checkSwap));
-                d.setFileDimSize(i, d.getSize()[i]);
+                lay.setSize(i, DataUtilities.readSwapInt(dis, checkSwap));
+                d.setFileDimSize(i, lay.getSize(i));
                 lay.blockSize[i] = DataUtilities.readSwapInt(dis, checkSwap);
                 lay.nBlocks[i] = DataUtilities.readSwapInt(dis, checkSwap);
-                lay.nBlocks[i] = d.getSize(i) / lay.blockSize[i];
+                lay.nBlocks[i] = lay.getSize(i) / lay.blockSize[i];
 
-                if ((lay.blockSize[i] * lay.nBlocks[i]) < d.getSize(i)) {
+                if ((lay.blockSize[i] * lay.nBlocks[i]) < lay.getSize(i)) {
                     lay.nBlocks[i] += 1;
                 }
 
@@ -181,8 +181,6 @@ public class DatasetHeaderIO {
                 d.setExtLast(i, DataUtilities.readSwapInt(dis, checkSwap));
                 dis.skip(6 * 4);
             }
-            d.setStrides();
-
         } catch (IOException e) {
             System.err.println(e.getMessage());
 
@@ -265,14 +263,14 @@ public class DatasetHeaderIO {
 
                 d.setLabel(iDim, labelBuffer.toString());
 
-                d.setSize(iDim, DataUtilities.readSwapInt(dis, checkSwap));
-                d.setFileDimSize(iDim, d.getSize()[iDim]);
+                lay.setSize(iDim, DataUtilities.readSwapInt(dis, checkSwap));
+                d.setFileDimSize(iDim, lay.getSize(iDim));
                 // skip empty entry
                 DataUtilities.readSwapInt(dis, checkSwap);
                 lay.blockSize[iDim] = DataUtilities.readSwapInt(dis, checkSwap);
-                lay.nBlocks[iDim] = d.getSize(iDim) / lay.blockSize[iDim];
+                lay.nBlocks[iDim] = lay.getSize(iDim) / lay.blockSize[iDim];
 
-                if ((lay.blockSize[iDim] * lay.nBlocks[iDim]) < d.getSize(iDim)) {
+                if ((lay.blockSize[iDim] * lay.nBlocks[iDim]) < lay.getSize(iDim)) {
                     lay.nBlocks[iDim] += 1;
                 }
 
@@ -284,7 +282,7 @@ public class DatasetHeaderIO {
                 d.setSf(iDim, DataUtilities.readSwapFloat(dis, checkSwap));
                 d.setSw(iDim, DataUtilities.readSwapFloat(dis, checkSwap));
                 d.setSw_r(iDim, d.getSw(iDim));
-                d.setRefPt(iDim, d.getSize()[iDim] / 2 + 1);
+                d.setRefPt(iDim, lay.getSize(iDim) / 2 + 1);
                 d.setRefPt_r(iDim, d.getRefPt(iDim));
                 d.setRefValue(iDim, DataUtilities.readSwapFloat(dis, checkSwap));
                 d.setRefValue_r(iDim, d.getRefValue(iDim));
@@ -303,8 +301,8 @@ public class DatasetHeaderIO {
                 } else {
                     d.setComplex(iDim, false);
                     d.setRefUnits(iDim, 3);
-                    d.setVSize_r(iDim, d.getSize(iDim));
-                    d.setVSize(iDim, d.getSize(iDim));
+                    d.setVSize_r(iDim, lay.getSize(iDim));
+                    d.setVSize(iDim, lay.getSize(iDim));
                     d.setFreqDomain(iDim, true);
                     d.setFreqDomain_r(iDim, true);
                 }
@@ -316,7 +314,6 @@ public class DatasetHeaderIO {
             lay.blockPoints = lay.blockElements / 4;
 
             d.setDataType(0);
-            d.setStrides();
         } catch (IOException e) {
             //LOGGER.error("Can't read header ", e);
             return null;
@@ -362,7 +359,7 @@ public class DatasetHeaderIO {
             int nDim = d.getNDim();
             for (int i = 0; i < nDim; i++) {
                 byteBuffer.position(1024 + i * 128);
-                byteBuffer.putInt(d.getSize(i));
+                byteBuffer.putInt(lay.getSize(i));
                 byteBuffer.putInt(lay.getBlockSize(i));
                 byteBuffer.putInt(lay.getNBlocks(i));
                 byteBuffer.putInt(0);
@@ -466,7 +463,7 @@ public class DatasetHeaderIO {
                 for (int j = nucName.length(); j < 8; j++) {
                     byteBuffer.put((byte) 0);
                 }
-                byteBuffer.putInt(d.getSize(iDim));
+                byteBuffer.putInt(lay.getSize(iDim));
                 byteBuffer.putInt(0);
                 byteBuffer.putInt(lay.getBlockSize(iDim));
                 byteBuffer.putFloat((float) d.getSf(iDim));
@@ -553,7 +550,7 @@ public class DatasetHeaderIO {
             sBuilder.append(sepChar);
             sBuilder.append("size");
             sBuilder.append(sepChar);
-            sBuilder.append(d.getSize(i));
+            sBuilder.append(lay.getSize(i));
             sBuilder.append(sepChar);
             sBuilder.append("blocksize");
             sBuilder.append(sepChar);

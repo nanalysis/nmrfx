@@ -283,10 +283,10 @@ public class DatasetParameterFile {
                     for (int i = 0; i < nDim; i++) {
                         int size = Integer.parseInt(fields[2 + i]);
                         int blockSize = Integer.parseInt(fields[2 + i + nDim]);
-                        dataset.setSize(i, size);
+                        layout.setSize(i, size);
                         layout.setBlockSize(i, blockSize);
                     }
-                    layout.dimDataset(nDim, dataset.getSizes());
+                    layout.dimDataset();
                 }
                 break;
             }

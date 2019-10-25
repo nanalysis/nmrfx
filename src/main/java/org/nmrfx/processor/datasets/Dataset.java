@@ -54,13 +54,6 @@ import org.renjin.sexp.SEXP;
  */
 public class Dataset extends DoubleVector implements Comparable<Dataset> {
 
-    /**
-     * @return the size
-     */
-    public int[] getSize() {
-        return size;
-    }
-
 //    private static final Logger LOGGER = LogManager.getLogger();
 //    static {
 //        try {
@@ -83,7 +76,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     private String title;
     private File file = null;
     private int nDim;
-    private int[] size;
     private int[] strides;
     private int[] fileDimSizes;
     private int[] vsize;
@@ -150,7 +142,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     private void setDimAttributes() {
-        unsafeSetAttributes(AttributeMap.builder().addAllFrom(getAttributes()).setDim(new IntArrayVector(getSize())).build());
+        unsafeSetAttributes(AttributeMap.builder().addAllFrom(getAttributes()).setDim(new IntArrayVector(getSizes())).build());
     }
 
     @Override
@@ -173,8 +165,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     @Override
     public int length() {
         int length = 1;
-        for (int sz : getSize()) {
-            length *= sz;
+        for (int i = 0; i < nDim; i++) {
+            length *= layout.getSize(i);
         }
         return length;
     }
@@ -269,6 +261,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         if (layout != null) {
             dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
         }
+        setStrides();
         addFile(fileName);
         setDimAttributes();
         loadLSCatalog();
@@ -288,7 +281,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         dataFile = vector;
         title = fileName;
         nDim = 1;
-        size = new int[1];
         strides = new int[1];
         fileDimSizes = new int[1];
         vsize = new int[1];
@@ -297,12 +289,11 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         zfSize = new int[1];
         extFirst = new int[1];
         extLast = new int[1];
-        size[0] = vector.getSize();
         strides[0] = 1;
         vsize[0] = 0;
         vsize_r[0] = 0;
         tdSize[0] = vector.getTDSize();
-        fileSize = size[0];
+        fileSize = vector.getSize();
         newHeader();
 
         foldUp[0] = 0.0;
@@ -346,7 +337,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             this.nDim = dimSizes.length;
 
             int i;
-            this.size = new int[this.nDim];
             this.strides = new int[this.nDim];
             this.fileDimSizes = new int[this.nDim];
             this.vsize = new int[this.nDim];
@@ -361,14 +351,13 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             fileSize = 1;
 
             for (i = 0; i < this.nDim; i++) {
-                this.size[i] = dimSizes[i];
                 fileDimSizes[i] = dimSizes[i];
-                fileSize *= this.size[i];
+                fileSize *= dimSizes[i];
                 nBytes *= dimSizes[i];
             }
-            layout = new DatasetLayout(nDim);
-            layout.setBlockSize(4096, nDim, size);
-            layout.dimDataset(nDim, size);
+            layout = new DatasetLayout(dimSizes);
+            layout.setBlockSize(4096);
+            layout.dimDataset();
 
             this.title = title;
             newHeader();
@@ -380,6 +369,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             }
             layout.setFileHeaderSize(fileHeaderSize);
             dataFile = new BigMappedMatrixFile(this, file, layout, raFile, true);
+            setStrides();
             writeHeader();
             dataFile.zero();
             dataFile.close();
@@ -408,12 +398,12 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             setNDim(nDim);
 
             for (i = 0; i < this.nDim; i++) {
-                this.size[i] = dimSizes[i];
                 fileDimSizes[i] = dimSizes[i];
             }
-            layout = DatasetLayout.createFullMatrix(size);
+            layout = DatasetLayout.createFullMatrix(dimSizes);
             this.title = title;
             this.fileName = title;
+            setStrides();
             newHeader();
             dataFile = new MemoryFile(this, true);
             dataFile.zero();
@@ -1097,7 +1087,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @return the size
      */
     public int getSize(int iDim) {
-        return vecMat == null ? size[iDim] : vecMat.getSize();
+        return vecMat == null ? layout.getSize(iDim) : vecMat.getSize();
     }
 
     /**
@@ -1107,7 +1097,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param size the size to set
      */
     public void setSize(final int iDim, final int size) {
-        this.size[iDim] = size;
+        layout.setSize(iDim, size);
     }
 
     /**
@@ -1129,7 +1119,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     public int getFileDimSize(int iDim) {
         int value = fileDimSizes[iDim];
         if (value == 0) {
-            value = getSize()[iDim];
+            value = layout.getSize(iDim);
         }
         return value;
     }
@@ -1245,9 +1235,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @return the size array
      */
     public int[] getSizes() {
-        int dims = getSize().length;
-        int[] sizes = new int[dims];
-        for (int i = 0; i < dims; i++) {
+        int[] sizes = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
             sizes[i] = getSize(i);
         }
         return sizes;
@@ -2033,8 +2022,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         if (values == null) {
             this.values[iDim] = null;
         } else {
-            if (values.length != getSize()[iDim]) {
-                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + getSize()[iDim] + ") for dim " + iDim);
+            if (values.length != getSize(iDim)) {
+                throw new IllegalArgumentException("Number of values (" + values.length + ") must equal dimension size (" + getSize(iDim) + ") for dim " + iDim);
             }
             this.values[iDim] = values.clone();
         }
@@ -2053,8 +2042,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         if ((values == null) || values.isEmpty()) {
             this.values[iDim] = null;
         } else {
-            if (values.size() != getSize()[iDim]) {
-                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSize()[iDim] + ") for dim " + iDim);
+            if (values.size() != getSize(iDim)) {
+                throw new IllegalArgumentException("Number of values (" + values.size() + ") must equal dimension size (" + getSize(iDim) + ") for dim " + iDim);
             }
             this.values[iDim] = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
@@ -2710,7 +2699,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             if (p2[iDim][1] >= p2[iDim][0]) {
                 sizes[iDim] = p2[iDim][1] - p2[iDim][0] + 1;
             } else {
-                sizes[iDim] = getSize()[iDim] - p2[iDim][0] - p2[iDim][1] + 1;
+                sizes[iDim] = layout.getSize(iDim) - p2[iDim][0] - p2[iDim][1] + 1;
             }
 //            System.out.println("size " + iDim + " " + p2[iDim][0] + " " + p2[iDim][1] + " " + sizes[iDim]);
         }
@@ -2729,10 +2718,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             boolean inDataset = true;
             for (int value : counts) {
                 aCounts[j] = value + p2[j][0];
-                if (aCounts[j] >= getSize()[j]) {
-                    aCounts[j] -= getSize()[j];
+                if (aCounts[j] >= getSize(j)) {
+                    aCounts[j] -= getSize(j);
                 } else if (aCounts[j] < 0) {
-                    aCounts[j] += getSize()[j];
+                    aCounts[j] += getSize(j);
                 }
                 j++;
             }
@@ -2786,7 +2775,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      *
      */
     public final void setNDim() {
-        size = new int[nDim];
         strides = new int[nDim];
         fileDimSizes = new int[nDim];
         vsize = new int[nDim];
@@ -2995,8 +2983,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             sw[i] = 7000.0;
             sw_r[i] = 7000.0;
             sf[i] = 600.0;
-            refPt[i] = getSize()[i] / 2;
-            refPt_r[i] = getSize()[i] / 2;
+            refPt[i] = getSize(i) / 2;
+            refPt_r[i] = getSize(i) / 2;
             refValue[i] = 4.73;
             refValue_r[i] = 4.73;
             complex[i] = true;
@@ -3082,7 +3070,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     public void setStrides() {
         strides[0] = 1;
         for (int i = 1; i < nDim; i++) {
-            strides[i] = strides[i - 1] * getSize()[i - 1];
+            strides[i] = strides[i - 1] * getSize(i - 1);
         }
     }
 
@@ -4788,8 +4776,8 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     public double[] getBuffer(String bufferName) {
         double[] buffer = buffers.get(bufferName);
         int bufferSize = 1;
-        for (int sz : getSize()) {
-            bufferSize *= sz;
+        for (int i = 0; i < nDim; i++) {
+            bufferSize *= getSize(i);
         }
         if ((buffer == null) || (buffer.length != bufferSize)) {
             buffer = new double[bufferSize];
