@@ -129,6 +129,9 @@ public class DatasetHeaderIO {
                 if ((lay.blockSize[i] * lay.nBlocks[i]) < lay.getSize(i)) {
                     lay.nBlocks[i] += 1;
                 }
+                if (lay.nBlocks[i] != 1) {
+                    lay.subMatrix = true;
+                }
 
                 if (i > 0) {
                     lay.offsetPoints[i] = lay.offsetPoints[i - 1] * lay.blockSize[i - 1];

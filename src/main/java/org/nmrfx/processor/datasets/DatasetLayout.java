@@ -21,6 +21,7 @@ class DatasetLayout {
     int[] offsetPoints;
     long blockElements;
     long blockPoints;
+    boolean subMatrix = false;
 
     DatasetLayout(int nDim) {
         resize(nDim);
@@ -52,9 +53,14 @@ class DatasetLayout {
             layout.nBlocks[i] = 1;
             layout.blockPoints *= layout.blockSize[i];
         }
+        layout.subMatrix = false;
         return layout;
     }
 
+    public boolean isSubMatrix() {
+        return subMatrix;
+    }
+    
     public long getNPoints() {
         int nPoints = 1;
         for (int i = 0; i < sizes.length; i++) {
@@ -85,6 +91,9 @@ class DatasetLayout {
 
     public void setNBlocks(int i, int value) {
         nBlocks[i] = value;
+        if (value != 1) {
+            subMatrix = true;
+        }
     }
 
     public int getNBlocks(int i) {
@@ -155,6 +164,9 @@ class DatasetLayout {
 
         for (iDim = 0; iDim < nDim; iDim++) {
             nBlocks[iDim] = sizes[iDim] / blockSize[iDim];
+            if (nBlocks[iDim] != 1) {
+                subMatrix = true;
+            }
 
             if ((blockSize[iDim] * nBlocks[iDim]) < sizes[iDim]) {
                 nBlocks[iDim] += 1;
