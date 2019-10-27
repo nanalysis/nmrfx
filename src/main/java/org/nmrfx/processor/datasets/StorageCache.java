@@ -96,20 +96,6 @@ public class StorageCache {
         }
     }
 
-    public static ByteBuffer loadValues(DatasetKey key) throws IOException {
-        return key.file.readBlock(key.blockNum);
-
-    }
-
-    public static void saveValues(ByteBuffer buffer, DatasetKey key) {
-        try {
-            key.file.writeBlock(key.blockNum, buffer);
-        } catch (IOException ex) {
-            Logger.getLogger(StorageCache.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-    }
-
     public StorageCache() {
         TrackingLRUMap lruMap = new TrackingLRUMap(16000);
 
@@ -124,7 +110,7 @@ public class StorageCache {
 //                })
     public ByteBuffer getBuffer(DatasetKey key) {
         return buffers.get(key);
-    }
+                }
 
     public void flush(SubMatrixFile file) throws IOException {
         activeBuffer = null;
