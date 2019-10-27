@@ -30,7 +30,7 @@ import java.nio.channels.FileChannel;
  *
  * @author brucejohnson
  */
-public class MappedSubMatrixFile implements MappedMatrixInterface, Closeable {
+public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
 
     private RandomAccessFile raFile;
     private final Dataset dataset;

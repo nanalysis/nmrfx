@@ -67,7 +67,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     public final static int LABEL_MAX_BYTES = 16;
     public final static int SOLVENT_MAX_BYTES = 24;
 
-    MappedMatrixInterface dataFile = null;
+    DatasetStorageInterface dataFile = null;
     DatasetLayout layout = null;
     String details = "";
     private Vec vecMat = null;

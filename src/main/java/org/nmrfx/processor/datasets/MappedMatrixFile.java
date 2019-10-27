@@ -32,7 +32,7 @@ import org.nmrfx.processor.math.Vec;
  *
  * @author brucejohnson
  */
-public class MappedMatrixFile implements MappedMatrixInterface, Closeable {
+public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     private RandomAccessFile raFile;
     private final Dataset dataset;
