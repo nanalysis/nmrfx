@@ -210,9 +210,13 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param name The short name (and initial title) to be used for the
      * dataset.
      * @param writable true if the file should be opened in a writable mode.
+     * @param useCacheFile true if the file will use StorageCache rather than
+     * memory mapping file. You should not use StorageCache if the file is to be
+     * opened for drawing in NMRFx (as thread interrupts may cause it to be
+     * closed)
      * @throws IOException if an I/O error occurs
      */
-    public Dataset(String fullName, String name, boolean writable)
+    public Dataset(String fullName, String name, boolean writable, boolean useCacheFile)
             throws IOException {
         // fixme  FileUtil class needs to be public file = FileUtil.getFileObj(interp,fullName);
         file = new File(fullName);
@@ -258,18 +262,17 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         }
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
-        boolean useCacheFile = true;
         if (layout != null) {
             if (useCacheFile) {
-                dataFile = new SubMatrixFile(this, file, layout, raFile, true);
+                dataFile = new SubMatrixFile(this, file, layout, raFile, writable);
             } else {
                 if (layout.getNDataBytes() > 512e6) {
                     dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
                 } else {
                     if (layout.isSubMatrix()) {
-                        dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
+                        dataFile = new MappedSubMatrixFile(this, file, layout, raFile, writable);
                     } else {
-                        dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
+                        dataFile = new MappedMatrixFile(this, file, layout, raFile, writable);
                     }
                 }
             }
@@ -340,7 +343,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     private Dataset(String fullName, String title,
-            int[] dimSizes) throws DatasetException {
+            int[] dimSizes, boolean closeDataset) throws DatasetException {
         //LOGGER.info("Make dataset {}", fullName);
         try {
             RandomAccessFile raFile = new RandomAccessFile(fullName, "rw");
@@ -402,8 +405,12 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             }
             setStrides();
             writeHeader();
-            dataFile.zero();
-            dataFile.close();
+            if (closeDataset) {
+                dataFile.zero();
+                dataFile.close();
+            } else {
+                addFile(fileName);
+            }
             DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
             parFile.remove();
         } catch (IOException ioe) {
@@ -454,11 +461,16 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param fullName The full path to the new file
      * @param title The title to be used for the new dataset
      * @param dimSizes The sizes of the new dataset.
+     * @param closeDataset If true, close dataset after creating
      * @throws DatasetException if an I/O error occurred when writing out file
      */
-    public static void createDataset(String fullName, String title, int[] dimSizes) throws DatasetException {
-        Dataset dataset = new Dataset(fullName, title, dimSizes);
-        dataset.close();
+    public static Dataset createDataset(String fullName, String title, int[] dimSizes, boolean closeDataset) throws DatasetException {
+        Dataset dataset = new Dataset(fullName, title, dimSizes, closeDataset);
+        if (closeDataset) {
+            dataset.close();
+            dataset = null;
+        }
+        return dataset;
     }
 
     public void readParFile() {
@@ -4035,8 +4047,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         int nColumns = matrix.getColumnDimension();
         int[] dimSizes = {nRows, nColumns};
         int[] pt = new int[2];
-        createDataset(fullName, datasetName, dimSizes);
-        Dataset dataset = new Dataset(fullName, datasetName, true);
+        Dataset dataset = createDataset(fullName, datasetName, dimSizes, false);
         for (int i = 0; i < nRows; i++) {
             for (int j = 0; j < nColumns; j++) {
                 pt[0] = i;
@@ -4488,8 +4499,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         }
         int newSize = pt[0][1] - pt[0][0] + 1;
 
-        Dataset.createDataset(newFileName, newFileName, datasetSizes);
-        Dataset newDataset = new Dataset(newFileName, newFileName, true);
+        Dataset newDataset = Dataset.createDataset(newFileName, newFileName, datasetSizes, false);
 
         Vec scanVec = new Vec(newSize, false);
         ScanRegion scanRegion = new ScanRegion(pt, dim, this);
