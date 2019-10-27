@@ -32,7 +32,7 @@ import java.util.List;
  *
  * @author brucejohnson
  */
-public class BigMappedMatrixFile implements MappedMatrixInterface, Closeable {
+public class BigMappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     private static int MAPPING_SIZE = 1 << 30;
     private File file;

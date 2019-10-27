@@ -58,13 +58,13 @@ import org.apache.commons.math3.transform.TransformType;
 import org.apache.commons.math3.util.ArithmeticUtils;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.ResizableDoubleArray;
-import org.nmrfx.processor.datasets.MappedMatrixInterface;
 import org.python.core.Py;
 import org.python.core.PyComplex;
 import org.python.core.PyObject;
 import org.python.core.PySequence;
 import org.python.core.PyType;
 import org.renjin.sexp.AttributeMap;
+import org.nmrfx.processor.datasets.DatasetStorageInterface;
 
 /**
  * A class for representing vectors of data (typically for NMR). The data is
@@ -81,7 +81,7 @@ import org.renjin.sexp.AttributeMap;
  *
  * @author michael
  */
-public class Vec extends PySequence implements MatrixType, MappedMatrixInterface {
+public class Vec extends PySequence implements MatrixType, DatasetStorageInterface {
 
     static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
 

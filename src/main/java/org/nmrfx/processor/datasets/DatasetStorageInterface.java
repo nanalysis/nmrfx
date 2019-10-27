@@ -26,7 +26,7 @@ import org.nmrfx.processor.math.Vec;
  *
  * @author brucejohnson
  */
-public interface MappedMatrixInterface {
+public interface DatasetStorageInterface {
 
     /**
      * Flush the header values out to the dataset file.

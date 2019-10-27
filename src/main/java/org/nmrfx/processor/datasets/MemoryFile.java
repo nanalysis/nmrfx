@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.math.Vec;
 
-public class MemoryFile implements MappedMatrixInterface, Closeable {
+public class MemoryFile implements DatasetStorageInterface, Closeable {
 
     private final int[] sizes;
     private final long[] strides;
