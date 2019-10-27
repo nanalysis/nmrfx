@@ -382,7 +382,7 @@ public class Processor {
         String fileType = getFileType(fileName);
         if ("nv".equals(fileType)) {
             try {
-                dataset = new Dataset(fileName, fileName, writeable);
+                dataset = new Dataset(fileName, fileName, writeable, true);
             } catch (IOException ex) {
                 System.err.println("could not create dataset");
                 ex.printStackTrace();
@@ -799,13 +799,34 @@ public class Processor {
         return mapToFID[i];
     }
 
+    private boolean useMemoryMode(int[] datasetSizes) {
+        long size = 1;
+        for (int i = 0; i < datasetSizes.length; i++) {
+            size *= datasetSizes[i];
+        }
+        boolean memoryMode = size < 135e6;
+        return memoryMode;
+    }
+
+    public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes) {
+        boolean memoryMode = useMemoryMode(datasetSizes);
+        createNV(outputFile, datasetSizes, useSizes, memoryMode);
+        return true;
+    }
+
     public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes, Map flags) {
-        createNV(outputFile, datasetSizes, useSizes);
+        boolean memoryMode = useMemoryMode(datasetSizes);
+        createNV(outputFile, datasetSizes, useSizes, memoryMode);
         setFidFlags(flags);
         return true;
     }
 
-    public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes) {
+    public boolean createNVInMemory(String outputFile, int datasetSizes[], int[] useSizes) {
+        createNV(outputFile, datasetSizes, useSizes, true);
+        return true;
+    }
+
+    public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes, boolean inMemory) {
         if (progressUpdater != null) {
             progressUpdater.updateStatus("Create output dataset");
         }
@@ -817,19 +838,13 @@ public class Processor {
                 return false;
             }
         }
-
         try {
-            Dataset.createDataset(outputFile, outputFile, datasetSizes);
+            if (inMemory) {
+                this.dataset = new Dataset(outputFile, datasetSizes);
+            } else {
+                this.dataset = Dataset.createDataset(outputFile, outputFile, datasetSizes, false);
+            }
         } catch (DatasetException ex) {
-            ex.printStackTrace();
-            Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
-            return false;
-        }
-
-        try {
-            this.dataset = new Dataset(outputFile, outputFile, true);
-        } catch (IOException ex) {
-            ex.printStackTrace();
             Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
@@ -862,55 +877,6 @@ public class Processor {
             }
             dataset.setSolvent(nmrData.getSolvent());
             dataset.setTempK(nmrData.getTempK());
-        }
-        dataset.writeHeader();
-        return true;
-    }
-
-    public boolean createNVInMemory(String outputFile, int datasetSizes[], int[] useSizes) {
-        this.datasetSizes = datasetSizes;
-        this.useSizes = useSizes;
-        if (nDim > datasetSizes.length) {
-            if (useSizes == null) {
-                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, "specify useSizes if not using all dimensions");
-                return false;
-            }
-        }
-
-        try {
-            this.dataset = new Dataset(outputFile, datasetSizes);
-        } catch (DatasetException ex) {
-            ex.printStackTrace();
-            Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
-            return false;
-        }
-
-        dataset.setScale(1.0);
-
-        if (!nmrDataSets.isEmpty()) {
-            NMRData nmrData = nmrDataSets.get(0);
-            mapToFID = new int[dataset.getNDim()];
-            mapToDataset = new int[nmrData.getNDim()];
-            int j = 0;
-            for (int i = 0; i < mapToDataset.length; i++) {
-                mapToDataset[i] = -1;
-                if (useSizes[i] > 1) {
-                    mapToDataset[i] = j;
-                    mapToFID[j] = i;
-                    j++;
-                }
-            }
-            for (int i = 0; i < dataset.getNDim(); i++) {
-                dataset.setLabel(i, nmrData.getTN(mapToFID(i)));
-                dataset.setSf(i, nmrData.getSF(mapToFID(i)));
-                dataset.setSw(i, nmrData.getSW(mapToFID(i)));
-                dataset.setRefValue(i, nmrData.getRef(mapToFID(i)));
-                dataset.setRefPt(i, nmrData.getRefPoint(mapToFID(i)));
-                dataset.setTDSize(i, useSizes[mapToFID(i)]);
-                //dataset.setPh0(i, nmrData.getPH0(mapToFID(i)));
-                //dataset.setPh1(i, nmrData.getPH1(mapToFID(i)));
-            }
-            dataset.setSolvent(nmrData.getSolvent());
         }
         dataset.writeHeader();
         return true;
