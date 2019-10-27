@@ -34,7 +34,7 @@ import org.nmrfx.processor.datasets.StorageCache.DatasetKey;
  */
 public class SubMatrixFile implements DatasetStorageInterface, Closeable {
 
-    StorageCache cache = new StorageCache();
+    static StorageCache cache = new StorageCache();
     private RandomAccessFile raFile;
     FileChannel fc;
     private final Dataset dataset;
