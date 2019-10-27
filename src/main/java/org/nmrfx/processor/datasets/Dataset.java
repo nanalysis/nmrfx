@@ -258,18 +258,23 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         }
         DatasetParameterFile parFile = new DatasetParameterFile(this, layout);
         parFile.readFile();
+        boolean useCacheFile = true;
         if (layout != null) {
-            if (layout.getNDataBytes() > 512e6) {
-                dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
+            if (useCacheFile) {
+                dataFile = new SubMatrixFile(this, file, layout, raFile, true);
             } else {
-                if (layout.isSubMatrix()) {
-//                    dataFile = new SubMatrixFile(this, file, layout, raFile, true);
-                     dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
+                if (layout.getNDataBytes() > 512e6) {
+                    dataFile = new BigMappedMatrixFile(this, file, layout, raFile, writable);
                 } else {
-                    dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
+                    if (layout.isSubMatrix()) {
+                        dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
+                    } else {
+                        dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
+                    }
                 }
             }
         }
+
         setStrides();
         addFile(fileName);
         setDimAttributes();
@@ -376,15 +381,21 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             } else {
                 fileHeaderSize = NV_HEADER_SIZE;
             }
-            layout.setFileHeaderSize(fileHeaderSize);
             if (layout != null) {
-                if (layout.getNDataBytes() > 512e6) {
-                    dataFile = new BigMappedMatrixFile(this, file, layout, raFile, true);
+                layout.setFileHeaderSize(fileHeaderSize);
+                boolean useCacheFile = true;
+                if (useCacheFile) {
+                    dataFile = new SubMatrixFile(this, file, layout, raFile, true);
+                    raFile.setLength(layout.getTotalSize());
                 } else {
-                    if (layout.isSubMatrix()) {
-                        dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
+                    if (layout.getNDataBytes() > 512e6) {
+                        dataFile = new BigMappedMatrixFile(this, file, layout, raFile, true);
                     } else {
-                        dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
+                        if (layout.isSubMatrix()) {
+                            dataFile = new MappedSubMatrixFile(this, file, layout, raFile, true);
+                        } else {
+                            dataFile = new MappedMatrixFile(this, file, layout, raFile, true);
+                        }
                     }
                 }
             }

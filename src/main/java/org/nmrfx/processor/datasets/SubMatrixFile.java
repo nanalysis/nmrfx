@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.nmrfx.processor.datasets.StorageCache.DatasetKey;
 
 /**
  * Create a memory-mapped interface to a Dataset file
@@ -33,6 +34,7 @@ import java.util.logging.Logger;
  */
 public class SubMatrixFile implements MappedMatrixInterface, Closeable {
 
+    StorageCache cache = new StorageCache();
     private RandomAccessFile raFile;
     FileChannel fc;
     private final Dataset dataset;
@@ -44,6 +46,7 @@ public class SubMatrixFile implements MappedMatrixInterface, Closeable {
     private final int BYTES = Float.BYTES;
     ByteBuffer[] byteBuffers = new ByteBuffer[1];
     int currentBuffer = -1;
+    DatasetKey[] keys;
 
     /**
      * An object that represents a mapping of specified dataset with a memory
@@ -75,6 +78,11 @@ public class SubMatrixFile implements MappedMatrixInterface, Closeable {
             matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
         }
         totalSize = matSize / BYTES;
+        int nBlocks = layout.totalBlocks;
+        keys = new DatasetKey[nBlocks];
+        for (int i = 0; i < nBlocks; i++) {
+            keys[i] = new DatasetKey(this, i);
+        }
     }
 
     @Override
@@ -165,16 +173,21 @@ public class SubMatrixFile implements MappedMatrixInterface, Closeable {
         return totalSize;
     }
 
-    ByteBuffer readBlock(long iBlock) throws IOException {
+    synchronized ByteBuffer readBlock(long iBlock) throws IOException {
+//        System.out.println("read block " + iBlock);
         long blockPos = iBlock * (layout.blockPoints * BYTES + layout.blockHeaderSize) + layout.fileHeaderSize;
         ByteBuffer buffer = ByteBuffer.allocate((int) (layout.blockPoints * BYTES));
         buffer.order(dataset.getByteOrder());
 
         int nc = fc.read(buffer, blockPos);
+        if (nc != layout.blockPoints * BYTES) {
+            System.out.println("read failed " + nc);
+        }
         return buffer;
     }
 
-    void writeBlock(int iBlock, ByteBuffer buffer) throws IOException {
+    synchronized void writeBlock(int iBlock, ByteBuffer buffer) throws IOException {
+//        System.out.println("write block " + iBlock);
         long blockPos = iBlock * (layout.blockPoints * BYTES + layout.blockHeaderSize) + layout.fileHeaderSize;
         buffer.position(0);
         int nw = fc.write(buffer, blockPos);
@@ -184,60 +197,62 @@ public class SubMatrixFile implements MappedMatrixInterface, Closeable {
     public float getFloat(int... offsets) throws IOException {
         int blockPos = getBlockPosition(offsets);
         int offset = getOffsetInBlock(offsets);
-        if (blockPos != currentBuffer) {
-            if (currentBuffer != -1) {
-                writeBlock(currentBuffer, byteBuffers[0]);
-            }
-            byteBuffers[0] = readBlock(blockPos);
-            currentBuffer = blockPos;
-        }
-        if (dataType == 0) {
-            return byteBuffers[0].getFloat(offset * BYTES);
-        } else {
-            return byteBuffers[0].getInt(offset * BYTES);
 
-        }
-//        long p = bytePosition(offsets);
-//        raFile.seek(p);
+        //  if (blockPos != currentBuffer) {
+        DatasetKey key = keys[blockPos];
+
+        return cache.io(key, offset, 0.0f, 0);
+
+//        ByteBuffer buffer = cache.getBuffer(key);
+//        currentBuffer = blockPos;
+//        // }
 //        if (dataType == 0) {
-//            return raFile.readFloat();
+//            return buffer.getFloat(offset * BYTES);
 //        } else {
-//            return raFile.readInt();
+//            return buffer.getInt(offset * BYTES);
+//
 //        }
+////        long p = bytePosition(offsets);
+////        raFile.seek(p);
+////        if (dataType == 0) {
+////            return raFile.readFloat();
+////        } else {
+////            return raFile.readInt();
+////        }
     }
 
     @Override
     public void setFloat(float d, int... offsets) throws IOException {
         int blockPos = getBlockPosition(offsets);
         int offset = getOffsetInBlock(offsets);
-        if (blockPos != currentBuffer) {
-            if (currentBuffer != -1) {
-                writeBlock(currentBuffer, byteBuffers[0]);
-            }
-            byteBuffers[0] = readBlock(blockPos);
-            currentBuffer = blockPos;
-        }
-        if (dataType == 0) {
-            byteBuffers[0].putFloat(offset * BYTES, d);
-        } else {
-            byteBuffers[0].putInt(offset * BYTES, (int) d);
-        }
-//        long p = bytePosition(offsets);
-//        try {
-//            raFile.seek(p);
-//            if (dataType == 0) {
-//                raFile.writeFloat(d);
-//            } else {
-//                raFile.writeInt((int) d);
-//            }
-//        } catch (Exception e) {
-//            System.out.println("map range error " + p + " " + totalSize);
+//        if (blockPos != currentBuffer) {
+        DatasetKey key = keys[blockPos];
+        cache.io(key, offset, d, 1);
+//        ByteBuffer buffer = cache.getBuffer(key);
+//        currentBuffer = blockPos;
+////        }
+//        if (dataType == 0) {
+//            buffer.putFloat(offset * BYTES, d);
+//        } else {
+//            buffer.putInt(offset * BYTES, (int) d);
 //        }
+////        long p = bytePosition(offsets);
+////        try {
+////            raFile.seek(p);
+////            if (dataType == 0) {
+////                raFile.writeFloat(d);
+////            } else {
+////                raFile.writeInt((int) d);
+////            }
+////        } catch (Exception e) {
+////            System.out.println("map range error " + p + " " + totalSize);
+////        }
     }
 
     @Override
     public void close() throws IOException {
         if (raFile != null) {
+            force();
             raFile.close();
         }
     }
@@ -280,12 +295,10 @@ public class SubMatrixFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public void force() {
-        if (writable && currentBuffer != -1) {
-            try {
-                writeBlock(currentBuffer, byteBuffers[0]);
-            } catch (IOException ex) {
-                Logger.getLogger(SubMatrixFile.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        try {
+            cache.flush(this);
+        } catch (IOException ex) {
+            Logger.getLogger(SubMatrixFile.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
