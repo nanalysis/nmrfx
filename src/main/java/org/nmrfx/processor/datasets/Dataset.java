@@ -308,6 +308,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         vsize_r[0] = 0;
         tdSize[0] = vector.getTDSize();
         fileSize = vector.getSize();
+        layout = DatasetLayout.createFullMatrix(vsize);
         newHeader();
 
         foldUp[0] = 0.0;
