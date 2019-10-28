@@ -2481,32 +2481,6 @@ public class Molecule implements Serializable, ITree {
         return shiftMap;
     }
 
-    public List<BasePair> pairList() { //for RNA only
-        List<Polymer> polymers = getPolymers();
-        List<BasePair> bpList = new ArrayList();
-        List<Residue> RNAresidues = new ArrayList();
-        for (Polymer polymer : polymers) {
-            for (Residue res : polymer.getResidues()) {
-                if ("GCAU".indexOf(res.name) != -1) {
-                    RNAresidues.add(res);
-                }
-            }
-        }
-        for (Residue residueA : RNAresidues) {
-            for (Residue residueB : RNAresidues) {
-                if (residueA.getResNum() < residueB.getResNum()) {
-                    int type = residueA.basePairType(residueB);
-                    if (type == 1) {
-                        BasePair bp = new BasePair(residueA, residueB);
-                        bpList.add(bp);
-
-                    }
-                }
-            }
-        }
-        return bpList;
-    }
-
     public void checkRNAPairs() {
         for (Polymer polymerA : getPolymers()) {
             for (Polymer polymerB : getPolymers()) {
@@ -2538,10 +2512,61 @@ public class Molecule implements Serializable, ITree {
         return RNAresidues;
     }
 
-    public char[] viennaSequence() { //have list of rna residues loaded in from the begin....refined code
+    public List<BasePair> pairList() { //for RNA only
+        List<BasePair> bpList = new ArrayList();
+        List<Residue> RNAresidues = RNAresidues();
+        for (Residue residueA : RNAresidues) {
+            for (Residue residueB : RNAresidues) {
+                if (residueA.getResNum() < residueB.getResNum()) {
+                    int type = residueA.basePairType(residueB);
+                    if (type == 1) {
+                        BasePair bp = new BasePair(residueA, residueB);
+                        bpList.add(bp);
+
+                    }
+                }
+            }
+        }
+
+        return bpList;
+    }
+
+    public HashMap<Integer, List<BasePair>> bpMap() {
+        HashMap<Integer, List<BasePair>> bpMap = new HashMap<Integer, List<BasePair>>();
+        BasePair currentBp = null;
+        int i = 0;
+        List<BasePair> crossedPairs = new ArrayList();
+        List<BasePair> bpList = pairList();
+        for (BasePair bp1 : bpList) {
+            for (BasePair bp2 : bpList) {
+                if (bp1.res1.iRes < bp2.res1.iRes && bp1.res2.iRes < bp2.res2.iRes && bp1.res2.iRes > bp2.res1.iRes) {
+                    if (currentBp != bp2) {
+                        bpMap.put(i, crossedPairs);
+                        i++;
+                        crossedPairs.clear();
+                        crossedPairs.add(bp1);
+                        currentBp = bp2;
+                        break;
+
+                    } else {
+                        crossedPairs.add(bp1);
+                        currentBp = bp2;
+                        break;
+                    }
+                }
+            }
+        }
+        return bpMap;
+
+    }
+
+    public char[] viennaSequence() { //pseudoknots
+        HashMap<Integer, List<BasePair>> bpMap = bpMap();
         List<Residue> RNAresidues = RNAresidues();
         char[] vienna = new char[RNAresidues.size()];
-        for(int i = 0; i<vienna.length; i++) {
+        String leftBrackets = "[{";
+        String rightBrackets = "]}";
+        for (int i = 0; i < vienna.length; i++) {
             vienna[i] = '.';
         }
         for (Residue residueA : RNAresidues) {
@@ -2555,6 +2580,14 @@ public class Molecule implements Serializable, ITree {
 
                 }
             }
+        }
+        for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
+            for (BasePair bp : crossMap.getValue()) {
+                vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
+                vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
+
+            }
+
         }
         return vienna;
     }
