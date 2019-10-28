@@ -4481,20 +4481,17 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @throws DatasetException if an I/O error occured while creating dataset
      */
     public void copyDataset(String newFileName) throws IOException, DatasetException {
-        int iDim = 0;
         int[][] pt = new int[nDim][2];
         int[] dim = new int[nDim];
-        dim[0] = iDim;
+        dim[0] = 0;
         pt[0][0] = 0;
         pt[0][1] = 0;
 
-        int faceSize = 1;
         int[] datasetSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             dim[i] = i;
             pt[i][0] = 0;
             pt[i][1] = getSize(i) - 1;
-            faceSize *= getSize(i);
             datasetSizes[i] = getSize(i);
         }
         int newSize = pt[0][1] - pt[0][0] + 1;
@@ -4504,8 +4501,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         Vec scanVec = new Vec(newSize, false);
         ScanRegion scanRegion = new ScanRegion(pt, dim, this);
         int nEntries = scanRegion.buildIndex();
-        int winSize = getSize(iDim) / 32;
-        int nWin = 4;
         int origSize = pt[0][1];
         for (int iEntry = 0; iEntry < nEntries; iEntry++) {
             int[] iE = scanRegion.getIndexEntry(iEntry);
@@ -4529,11 +4524,16 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             newDataset.setLabel(i, getLabel(i));
             newDataset.setDlabel(i, getDlabel(i));
             newDataset.setNucleus(i, getNucleus(i));
+            newDataset.setValues(i, getValues(i));
+            newDataset.setComplex(i, getComplex(i));
+            newDataset.setFreqDomain(i, getFreqDomain(i));
         }
+        newDataset.setNFreqDims(getNFreqDims());
         newDataset.setSolvent(getSolvent());
         newDataset.setTitle(getTitle());
 
         newDataset.writeHeader();
+        newDataset.writeParFile();
         newDataset.close();
     }
 
