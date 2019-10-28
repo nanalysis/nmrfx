@@ -806,7 +806,8 @@ def CREATE(nvFileName, dSize=None, extra=0):
     global nmrFxMode
     try:
         if nmrFxMode:
-            nvFileName += ".tmp"
+            #nvFileName += ".tmp"
+            pass
     except:
         pass
     dataInfo.filename = nvFileName
