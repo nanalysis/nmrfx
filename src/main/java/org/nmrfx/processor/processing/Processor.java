@@ -1405,7 +1405,9 @@ public class Processor {
                 dataset.setFreqDomain(i, false);
                 dataset.setComplex(i, false);
             }
-            dataset.writeParFile();
+            if (!dataset.isMemoryFile()) {
+                dataset.writeParFile();
+            }
             closeDataset();
         }
         System.err.printf("Elapsed time %.2f\n", elapsedTime);
