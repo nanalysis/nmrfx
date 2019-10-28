@@ -788,12 +788,8 @@ public class ProcessorController implements Initializable, ProgressUpdater {
 
     void finishProcessing() {
         Platform.runLater(() -> {
-            try {
-                chartProcessor.renameDataset();
-                viewDatasetInApp();
-            } catch (IOException ioE) {
-                setProcessingStatus(ioE.getMessage(), false, ioE);
-            }
+            //chartProcessor.renameDataset();
+            viewDatasetInApp();
         });
     }
 
