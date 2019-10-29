@@ -17,8 +17,8 @@ public class Loop extends SecondaryStructure {
 
     public Loop(String id, List<Residue> Lpresidues) {
         name = id;
-        li = localind;
-        gi = globalind;
+        locali = localind;
+        globali = globalind;
         secresidues = Lpresidues;
         globalind++;
         localind++;

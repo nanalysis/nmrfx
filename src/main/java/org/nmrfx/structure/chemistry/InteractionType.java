@@ -19,57 +19,83 @@ public class InteractionType {
         return distance;
     }
 
-    public static char classifyLoop(SecondaryStructure loop) {
+    public static char classifyLoop(SecondaryStructure struct) {
         int loopSize;
         char classification = 0;
-        loopSize = loop.size;
-        if (loopSize < 4) {
-            classification = 'S';
-        } else if (loopSize == 4) {
-            classification = 'T';
-        } else if (loopSize > 4) {
-            classification = 'L';
+        if (struct instanceof Loop) {
+            loopSize = struct.size;
+            if (loopSize < 4) {
+                classification = 'S';
+            } else if (loopSize == 4) {
+                classification = 'T';
+            } else if (loopSize > 4) {
+                classification = 'L';
+            }
         }
         return classification;
     }
 
-    public static void determineType(Residue aResObj, Residue bResObj) {
-        HashMap<String, Boolean> typeMap = new HashMap<String, Boolean>();
+    public static String determineType(Residue aResObj, Residue bResObj) {
+        String interType = null;
+        LinkedHashMap<String, Boolean> typeMap = new LinkedHashMap<String, Boolean>();
+        int dis = distance(aResObj, bResObj);
+        char aResLoopType = classifyLoop(aResObj.secStruct);
+        char bResLoopType = classifyLoop(bResObj.secStruct);
         boolean sameRes = aResObj.equals(bResObj);
+        boolean sameSS = aResObj.secStruct.equals(bResObj.secStruct);
         boolean basePair = aResObj.pairedTo == bResObj;
         boolean bothInLoop = aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Loop;
         boolean bothInHelix = aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Helix;
+        boolean oneAwayBasePair = bothInHelix && (bResObj.iRes == aResObj.pairedTo.iRes + 1 || bResObj.iRes == aResObj.pairedTo.iRes - 1);
         boolean loopAndHelix = (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Loop) || (aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Helix);
-        boolean inSameLoop = (bothInLoop && aResObj.secStruct.locali == bResObj.secStruct.locali);
-        boolean bulgeAndHelix = ((aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Helix) || (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Bulge));
-        boolean bulgeAndLoop = ((aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Loop) || (aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Bulge));
-        boolean tetraAndHelix = ((aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Helix) || (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Loop));
-        boolean bothInBulge = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Bulge);
-        typeMap.put("ADJ", !sameRes && bothInHelix && distance(aResObj, bResObj) == 1);
+        boolean bulgeAndHelix = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Helix);
+            boolean helixAndBulge = (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Bulge);
+        boolean bothInSameBulge = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Bulge && sameSS);
+        boolean inTetraLoop = (bothInLoop && sameSS && aResLoopType == 'T');
+        boolean T12 = (inTetraLoop && (aResObj.secStruct.getResidues().get(0).equals(aResObj) && bResObj.secStruct.getResidues().get(1).equals(bResObj)));
+        boolean T13 = (inTetraLoop && (aResObj.secStruct.getResidues().get(0).equals(aResObj) && bResObj.secStruct.getResidues().get(2).equals(bResObj)));
+        boolean T14 = (inTetraLoop && (aResObj.secStruct.getResidues().get(0).equals(aResObj) && bResObj.secStruct.getResidues().get(3).equals(bResObj)));
+        boolean T23 = (inTetraLoop && (aResObj.secStruct.getResidues().get(1).equals(aResObj) && bResObj.secStruct.getResidues().get(2).equals(bResObj)));
+        boolean T24 = (inTetraLoop && (aResObj.secStruct.getResidues().get(1).equals(aResObj) && bResObj.secStruct.getResidues().get(3).equals(bResObj)));
+        boolean T34 = (inTetraLoop && (aResObj.secStruct.getResidues().get(2).equals(aResObj) && bResObj.secStruct.getResidues().get(3).equals(bResObj)));
+        typeMap.put("ADJ", bothInHelix && dis == 1);
         typeMap.put("BP", basePair);
-        typeMap.put("L1", bothInLoop && inSameLoop && classifyLoop(aResObj.secStruct) == 'L' && distance(aResObj, bResObj) == 1);
-        typeMap.put("L2", bothInLoop && inSameLoop && classifyLoop(aResObj.secStruct) == 'L' && distance(aResObj, bResObj) == 2);
-        typeMap.put("L3", bothInLoop && inSameLoop && classifyLoop(aResObj.secStruct) == 'L' && distance(aResObj, bResObj) == 3);
+        typeMap.put("OABP", oneAwayBasePair);
+        typeMap.put("L1", bothInLoop && sameSS && aResLoopType == 'L' && dis == 1);
+        typeMap.put("L2", bothInLoop && sameSS && aResLoopType == 'L' && dis == 2);
+        typeMap.put("L3", bothInLoop && sameSS && aResLoopType == 'L' && dis == 3);
         typeMap.put("SRH", sameRes && bothInHelix);
-        typeMap.put("SRL", sameRes && bothInLoop && classifyLoop(aResObj.secStruct) == 'L');
-        typeMap.put("SRT", sameRes && bothInLoop && classifyLoop(aResObj.secStruct) == 'T');
+        typeMap.put("SRL", sameRes && bothInLoop && aResLoopType == 'L');
+        typeMap.put("SRT", sameRes && bothInLoop && aResLoopType == 'T');
         typeMap.put("SRB", sameRes && aResObj.secStruct instanceof Bulge);
-        typeMap.put("S1", bothInLoop && classifyLoop(aResObj.secStruct) == 'S' && inSameLoop && distance(aResObj, bResObj) == 1);
-        typeMap.put("S2", bothInLoop && classifyLoop(aResObj.secStruct) == 'S' && inSameLoop && distance(aResObj, bResObj) == 2);
-        typeMap.put("SH", !sameRes && loopAndHelix && distance(aResObj, bResObj) == 1);
-        typeMap.put("T1", bothInLoop && classifyLoop(aResObj.secStruct) == 'T' && inSameLoop && distance(aResObj, bResObj) == 1);
-        typeMap.put("T2", bothInLoop && classifyLoop(aResObj.secStruct) == 'T' && inSameLoop && distance(aResObj, bResObj) == 2);
-        typeMap.put("T3", bothInLoop && classifyLoop(aResObj.secStruct) == 'T' && inSameLoop && distance(aResObj, bResObj) == 3);
-        typeMap.put("TB", bulgeAndLoop && (classifyLoop(aResObj.secStruct) == 'T' || classifyLoop(bResObj.secStruct) == 'T'));
-        typeMap.put("HB", !sameRes && bulgeAndHelix);
-        typeMap.put("BB", !sameRes && bothInBulge);
-        typeMap.put("TH", !sameRes && tetraAndHelix && (classifyLoop(aResObj.secStruct) == 'T' || classifyLoop(bResObj.secStruct) == 'T'));
+        typeMap.put("S1", sameSS && aResLoopType == 'S' && dis == 1);
+        typeMap.put("S2", sameSS && aResLoopType == 'S' && dis == 2);
+        typeMap.put("T12", T12);
+        typeMap.put("T13", T13);
+        typeMap.put("T14", T14);
+        typeMap.put("T23", T23);
+        typeMap.put("T24", T24);
+        typeMap.put("T34", T34);
+        typeMap.put("BH", bulgeAndHelix && dis == 1); //filter reverse cases
+        typeMap.put("HB", helixAndBulge && dis == 1);
+        typeMap.put("BB", !sameRes && bothInSameBulge);
+        typeMap.put("TH", loopAndHelix && aResLoopType == 'T' && dis == 1);
+        typeMap.put("HT", loopAndHelix && bResLoopType == 'T' && dis == 1);
+        typeMap.put("SH", loopAndHelix && aResLoopType == 'S' && dis == 1);
+        typeMap.put("HS", loopAndHelix && bResLoopType == 'S' && dis == 1);
+        typeMap.put("LH", loopAndHelix && aResLoopType == 'L' && dis == 1);
+        typeMap.put("HL", loopAndHelix && bResLoopType == 'L' && dis == 1);
+        typeMap.put("TA", bothInHelix && dis == 2);
+        
+        
 
         for (Map.Entry<String, Boolean> type : typeMap.entrySet()) {
             if (type.getValue()) {
-                System.out.println( type.getKey()+ "  "+ aResObj.iRes + "  "+ aResObj.secStruct+ " " +bResObj.iRes+ "  "+ bResObj.secStruct);
+                interType = type.getKey();
+                break;
             }
         }
+        return interType;
     }
 
 }

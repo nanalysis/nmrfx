@@ -924,8 +924,8 @@ public class SSLayout implements MultivariateFunction {
                         int end = i;
                         //System.err.println(start + " <> " + end);
                         addPair(start, end);
-                        res.get(start).pairedToRes = end;
-                        res.get(end).pairedToRes = start;
+                        res.get(start).pairedToResInd = end;
+                        res.get(end).pairedToResInd = start;
 
                     }
                 }

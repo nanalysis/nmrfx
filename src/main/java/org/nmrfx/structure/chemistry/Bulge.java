@@ -17,8 +17,8 @@ public class Bulge extends SecondaryStructure {
 
     public Bulge(String id, List<Residue> Bresidues) {
         name = id;
-        li = localind;
-        gi = globalind;
+        locali = localind;
+        globali = globalind;
         secresidues = Bresidues;
         globalind++;
         localind++;

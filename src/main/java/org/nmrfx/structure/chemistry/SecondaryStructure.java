@@ -14,8 +14,8 @@ import java.util.*;
 public abstract class SecondaryStructure {
 
     public static int globalind = 0;
-    public int gi = 0;
-    public int li = 0;
+    public int globali = 0;
+    public int locali = 0;
     public int size;
     public String name;
     public List<Residue> secresidues = new ArrayList<>();
@@ -30,11 +30,11 @@ public abstract class SecondaryStructure {
     }
 
     public int getGlobalInd() {
-        return gi;
+        return globali;
     }
 
     public int getLocalInd() {
-        return li;
+        return locali;
     }
 
     public void getInvolvedRes() {
