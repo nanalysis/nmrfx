@@ -17,8 +17,8 @@ public class InternalLoop extends SecondaryStructure {
 
     public InternalLoop(String id, List<Residue> ILresidue) {
         name = id;
-        li = localind;
-        gi = globalind;
+        locali = localind;
+        globali = globalind;
         secresidues = ILresidue;
         globalind++;
         localind++;

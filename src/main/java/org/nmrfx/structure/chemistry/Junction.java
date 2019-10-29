@@ -17,8 +17,8 @@ public class Junction extends SecondaryStructure {
 
     public Junction(String id, List<Residue> Jresidue) {
         name = id;
-        li = localind;
-        gi = globalind;
+        locali = localind;
+        globali = globalind;
         secresidues = Jresidue;
         globalind++;
         localind++;

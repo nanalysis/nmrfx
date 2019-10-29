@@ -39,7 +39,7 @@ public class SSGen {
         for (Polymer pol : molecule.getPolymers()) {
             for (Residue residue : pol.getResidues()) {
                 if (pol.isRNA()) {
-                    residue.pairedToRes = -1;
+                    residue.pairedToResInd = -1;
                     res.add(residue);
                 }
             }
@@ -50,6 +50,11 @@ public class SSGen {
     public void pairTo() {
         SSLayout ssLay = new SSLayout(viennaSeq.length());
         ssLay.interpVienna(viennaSeq, residues);
+        for (Residue res : residues) {
+            if (res.pairedToResInd >= 0) {
+                res.pairedTo = residues.get(res.pairedToResInd);
+            }
+        }
     }
 
     public static SecondaryStructure classifyRes(List<Residue> res) {
@@ -89,38 +94,38 @@ public class SSGen {
         List<Residue> type = new ArrayList<>();
         int index = 0;
         boolean add = false;
-        if (residues.get(tracker).pairedToRes < 0) {
+        if (residues.get(tracker).pairedToResInd < 0) {
             List<Residue> temp = new ArrayList<>();
-            while (tracker < residues.size() && residues.get(tracker).pairedToRes < 0) {
+            while (tracker < residues.size() && residues.get(tracker).pairedToResInd < 0) {
                 temp.add(residues.get(tracker));
                 tracker++;
             }
             if (!temp.get(0).equals(residues.get(0))) {
-                index = residues.get(temp.get(0).iRes - 1).pairedToRes - 1; //
+                index = residues.get(temp.get(0).iRes - 1).pairedToResInd - 1; //
             }
             if (temp.get(temp.size() - 1).iRes == residues.size() - 1 || temp.get(0).iRes == 0) { //last residue or first residue (string of non pairing all the way to end)
                 add = true;
                 identifier = "nonloop"; //instead of calling first residue, call last residue
-            } else if (temp.get(0).iRes - 1 == residues.get(temp.get(temp.size() - 1).iRes + 1).pairedToRes) { //loop
+            } else if (temp.get(0).iRes - 1 == residues.get(temp.get(temp.size() - 1).iRes + 1).pairedToResInd) { //loop
                 add = true;
                 identifier = "loop";
-            } else if (residues.get(temp.get(0).iRes - 1).pairedToRes < residues.get(temp.get(temp.size() - 1).iRes + 1).pairedToRes) { //junction
+            } else if (residues.get(temp.get(0).iRes - 1).pairedToResInd < residues.get(temp.get(temp.size() - 1).iRes + 1).pairedToResInd) { //junction
                 add = true;
                 identifier = "junction";
-            } else if (residues.get(index).pairedToRes == -1 && (residues.get(temp.get(0).iRes - 1).iRes < residues.get(temp.get(0).iRes - 1).pairedToRes)) { //second half of internal loop
+            } else if (residues.get(index).pairedToResInd == -1 && (residues.get(temp.get(0).iRes - 1).iRes < residues.get(temp.get(0).iRes - 1).pairedToResInd)) { //second half of internal loop
                 add = true;
                 identifier = "internalLoop";
-                while (residues.get(index).pairedToRes == -1) {  // residues.get(index) != null  
+                while (residues.get(index).pairedToResInd == -1) {  // residues.get(index) != null  
                     temp.add((residues.get(index)));
                     index--;
                 }
-            } else if (temp.get(0).iRes - 1 < residues.get(temp.get(0).iRes - 1).pairedToRes) { //left side
-                if (residues.get(residues.get(temp.get(0).iRes - 1).pairedToRes - 1).pairedToRes >= 0) {
+            } else if (temp.get(0).iRes - 1 < residues.get(temp.get(0).iRes - 1).pairedToResInd) { //left side
+                if (residues.get(residues.get(temp.get(0).iRes - 1).pairedToResInd - 1).pairedToResInd >= 0) {
                     add = true;
                     identifier = "bulge";
                 }
-            } else if (temp.get(0).iRes - 1 > residues.get(temp.get(0).iRes - 1).pairedToRes) { //right side
-                if (residues.get(residues.get(temp.get(temp.size() - 1).iRes + 1).pairedToRes + 1).pairedToRes >= 0) {
+            } else if (temp.get(0).iRes - 1 > residues.get(temp.get(0).iRes - 1).pairedToResInd) { //right side
+                if (residues.get(residues.get(temp.get(temp.size() - 1).iRes + 1).pairedToResInd + 1).pairedToResInd >= 0) {
                     add = true;
                     identifier = "bulge";
                 }
@@ -131,11 +136,11 @@ public class SSGen {
 
             return type;
 
-        } else if (residues.get(tracker).pairedToRes >= 0) {
-            while (tracker < residues.size() && residues.get(tracker).pairedToRes >= 0) {
-                if (residues.get(tracker).iRes < residues.get(residues.get(tracker).pairedToRes).iRes) {
+        } else if (residues.get(tracker).pairedToResInd >= 0) {
+            while (tracker < residues.size() && residues.get(tracker).pairedToResInd >= 0) {
+                if (residues.get(tracker).iRes < residues.get(residues.get(tracker).pairedToResInd).iRes) {
                     type.add(residues.get(tracker));
-                    type.add(residues.get(residues.get(tracker).pairedToRes));
+                    type.add(residues.get(residues.get(tracker).pairedToResInd));
                     tracker++;
                 } else {
                     tracker++;
@@ -152,6 +157,9 @@ public class SSGen {
         while (tracker < residues.size()) {
             SecondaryStructure ss = classifyRes(resList());
             if (ss != null) {
+                for (Residue res : ss.secresidues) {
+                    res.secStruct = ss;
+                }
                 ss.size = ss.secresidues.size();
                 structures.add(ss);
             }

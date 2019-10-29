@@ -17,8 +17,8 @@ public class NonLoop extends SecondaryStructure{
 
     public NonLoop(String id, List<Residue> NLpresidues) {
         name = id;
-        li = localind;
-        gi = globalind;
+        locali = localind;
+        globali = globalind;
         secresidues = NLpresidues;
         globalind++;
         localind++;
