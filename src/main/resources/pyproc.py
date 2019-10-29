@@ -429,6 +429,7 @@ def acqOrder(*order):
         fidInfo.acqOrder.append(par)
     fidInfo.fidObj.resetAcqOrder() 
     fidInfo.fidObj.setAcqOrder(order)
+    processor.setAcqOrder(fidInfo.fidObj.getAcqOrder())
 
 def setupScanTable(fileName):
     global scanTableName
@@ -550,19 +551,16 @@ def acqsize(*pars):
         newSizes = processor.getNewSizes()
         size = [s for s in newSizes]
 
-    tdSize = list(size)
-    fidInfo.size = list(tdSize)
-    fidInfo.useSize = list(fidInfo.size)
-    dataInfo.size = list(fidInfo.size)
-    dataInfo.useSize = list(fidInfo.size)
-    dataInfo.msize = [s * 2 for s in dataInfo.size]
+    fidInfo.size = list(size)
+    fidInfo.useSize = list(size)
+    dataInfo.size = list(size)
+    dataInfo.useSize = list(size)
     dataInfo.msize = []
     for i,sz in enumerate(dataInfo.size):
         nsz = sz
         if fidInfo.isComplex(i):
             nsz = sz * 2;
         dataInfo.msize.append(nsz)
-
             
 # set fid size limits 
 def tdsize(*size):
@@ -861,6 +859,7 @@ def createDataset(nvFileName=None, datasetSize=None):
     dataInfo.useSize = useSize
         
     dataInfo.createdSize = datasetSize
+    print 'cccccccccreate ',datasetSize, dataInfo.useSize
     if not processor.isDatasetOpen():
         try:
             os.remove(nvFileName)
