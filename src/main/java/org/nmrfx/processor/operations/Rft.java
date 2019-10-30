@@ -33,14 +33,16 @@ import org.nmrfx.processor.processing.ProcessingException;
 public class Rft extends Operation {
 
     private final boolean inverse;
+    private final boolean negatePairs;
 
-    public Rft(boolean inverse) {
+    public Rft(boolean inverse, boolean negatePairs) {
         this.inverse = inverse;
+        this.negatePairs = negatePairs;
     }
 
     @Override
     public Operation eval(Vec vector) throws ProcessingException {
-        vector.rft(inverse);
+        vector.rft(inverse, negatePairs);
         return this;
     }
 
