@@ -177,18 +177,18 @@ public class Processor {
     /**
      * The sizes of dataset to actually populate.
      */
-    public int[] useSizes = null;
+    public int[] acqSizesToUse = null;
     /**
      * The sizes of time domain data.
      */
-    public int[] tdSizes = null;
+    public int[] acquiredTDSizes = null;
     /**
      * The complex nature of time domain data.
      */
     boolean[] complex = null;
-    int[] newTDSizes;
+    int[] adjustedTDSizes;
     boolean[] newComplex;
-    String[] newAcqOrder;
+    String[] acqOrderToUse;
 
     /**
      * Acquisition order array.
@@ -418,55 +418,55 @@ public class Processor {
         }
 
         if (nArray > 0) {
-            newTDSizes = new int[nDim + nArray];
+            adjustedTDSizes = new int[nDim + nArray];
             newComplex = new boolean[nDim + nArray];
-            newTDSizes[0] = tdSizes[0];
+            adjustedTDSizes[0] = acquiredTDSizes[0];
             newComplex[0] = complex[0];
             int j = 1;
             for (int i = 1; i < nDim; i++) {
                 int arraySize = nmrData.getArraySize(i);
                 if (arraySize != 0) {
-                    newTDSizes[j] = tdSizes[i];
+                    adjustedTDSizes[j] = acquiredTDSizes[i];
                     if (nmrData instanceof BrukerData) {
-                        newTDSizes[j] /= arraySize;
+                        adjustedTDSizes[j] /= arraySize;
                     }
-                    newTDSizes[j + 1] = arraySize;
+                    adjustedTDSizes[j + 1] = arraySize;
                     newComplex[j] = complex[i];
                     newComplex[j + 1] = false;
                     j += 2;
                 } else {
-                    newTDSizes[j++] = tdSizes[i];
+                    adjustedTDSizes[j++] = acquiredTDSizes[i];
                     newComplex[j - 1] = complex[i];
                 }
             }
-            newAcqOrder = acqOrder;
-            useSizes = newTDSizes;
+            acqOrderToUse = acqOrder;
+            acqSizesToUse = adjustedTDSizes;
         } else {
-            newTDSizes = tdSizes;
+            adjustedTDSizes = acquiredTDSizes;
             newComplex = complex;
-            newAcqOrder = acqOrder;
+            acqOrderToUse = acqOrder;
         }
         if (showDebugInfo) {
             for (int i = 0; i < (nDim + nArray); i++) {
-                System.out.println("new td " + i + " " + newTDSizes[i] + " " + newComplex[i] + " ");
+                System.out.println("new td " + i + " " + adjustedTDSizes[i] + " " + newComplex[i] + " ");
             }
-            for (int i = 0; i < newAcqOrder.length; i++) {
-                System.out.print(newAcqOrder[i] + " ");
+            for (int i = 0; i < acqOrderToUse.length; i++) {
+                System.out.print(acqOrderToUse[i] + " ");
             }
             System.out.println("");
         }
 
-        tdSizes = new int[newTDSizes.length];
-        useSizes = new int[newTDSizes.length];
-        System.arraycopy(newTDSizes, 0, tdSizes, 0, tdSizes.length);
-        System.arraycopy(newTDSizes, 0, useSizes, 0, tdSizes.length);
+        // tdSizes = new int[adjAcqSizes.length];
+        acqSizesToUse = new int[adjustedTDSizes.length];
+        // System.arraycopy(adjAcqSizes, 0, tdSizes, 0, tdSizes.length);
+        System.arraycopy(adjustedTDSizes, 0, acqSizesToUse, 0, adjustedTDSizes.length);
     }
 
     public int[] getNewSizes() {
         NMRData nmrData = nmrDataSets.get(0);
         int nDim = nmrData.getNDim();
         int[] newSize = new int[nDim];
-        System.arraycopy(newTDSizes, 0, newSize, 0, newSize.length);
+        System.arraycopy(adjustedTDSizes, 0, newSize, 0, newSize.length);
         return newSize;
     }
 
@@ -477,36 +477,36 @@ public class Processor {
             acqOrder = nmrData.getAcqOrder();
         }
         if (nDim > 1) {
-            if (useSizes == null) {
-                tmult = new MultiVecCounter(newTDSizes, newComplex, newAcqOrder, dataset.getNDim());
-            } else if (newTDSizes == null) {
+            if (acqSizesToUse == null) {
+                System.out.println("use newTDSize without useSizes " + acqOrderToUse.length);
+                tmult = new MultiVecCounter(adjustedTDSizes, newComplex, acqOrderToUse, dataset.getNDim());
+            } else if (adjustedTDSizes == null) {
+                System.out.println("call adjustSizes " + acqSizesToUse.length + " new acqorder " + acqOrderToUse.length);
                 adjustSizes();
-                System.out.println("use newTDSize and useSizes " + useSizes.length + " new acqorder " + newAcqOrder.length);
 // fixme
-                tmult = new MultiVecCounter(newTDSizes, useSizes, newComplex, newAcqOrder, dataset.getNDim());
-            } else if (useSizes.length <= newTDSizes.length) {
-                System.out.println("use newTDSize and useSizes " + useSizes.length);
+                tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, acqOrderToUse, dataset.getNDim());
+            } else if (acqSizesToUse.length <= adjustedTDSizes.length) {
+                System.out.println("useSizes <= than newTDSizes " + acqSizesToUse.length);
 // fixme
-                tmult = new MultiVecCounter(newTDSizes, useSizes, newComplex, newAcqOrder, dataset.getNDim());
+                tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, acqOrderToUse, dataset.getNDim());
             } else {
                 // String[] acqOrder = {"d2", "p1", "d1", "p2"};
                 //String[] acqOrder = {"p2", "d2", "p1", "d1"};
-                System.out.println("use2 " + useSizes.length);
-                tmult = new MultiVecCounter(newTDSizes, newComplex, newAcqOrder, useSizes.length);
+                System.out.println("use newTDSize with useSize length " + acqSizesToUse.length);
+                tmult = new MultiVecCounter(adjustedTDSizes, newComplex, acqOrderToUse, acqSizesToUse.length);
             }
             if (isNUS()) {
                 sampleSchedule = nmrData.getSampleSchedule();
-                sampleSchedule.setOutMult(complex, newAcqOrder);
+                sampleSchedule.setOutMult(complex, acqOrderToUse);
             }
             vectorsToWrite = nmrData.getNVectors();
-            if (useSizes != null) {
+            if (acqSizesToUse != null) {
                 vectorsToWrite = 1;
-                for (int i = 1; i < useSizes.length; i++) {
-                    System.out.println("use " + i + " " + useSizes[i] + " " + newComplex.length);
+                for (int i = 1; i < acqSizesToUse.length; i++) {
                     if ((i < newComplex.length) && newComplex[i]) {
-                        vectorsToWrite *= useSizes[i] * 2;
+                        vectorsToWrite *= acqSizesToUse[i] * 2;
                     } else {
-                        vectorsToWrite *= useSizes[i];
+                        vectorsToWrite *= acqSizesToUse[i];
                     }
                 }
             }
@@ -744,6 +744,7 @@ public class Processor {
         System.err.println("nmr data sets " + nmrDataSets.size());
         resetVecReadCount();
         setFidDimensions(nmrData, tdSizes);
+        adjustSizes();
         return nmrData;
     }
 
@@ -751,6 +752,10 @@ public class Processor {
         for (NMRData nmrData : nmrDataSets) {
             setFidDimensions(nmrData, tdSizes);
         }
+    }
+    
+    public void setAcqOrder(String[] newOrder) {
+        acqOrder = newOrder.clone();
     }
 
     private void setFidDimensions(NMRData nmrData, int tdSizes[]) {
@@ -762,12 +767,11 @@ public class Processor {
         nvDataset = false;  // openfid() must first process FID vectors
 
         vectorSize = nmrData.getNPoints(); //complex
-        this.tdSizes = tdSizes;
+        this.acquiredTDSizes = tdSizes;
 
         // pt not needed here, not used
         pt = new int[nDim][2];
         complex = new boolean[nDim];
-        int[] mSizes = new int[nDim];
         for (int i = 0; i < nDim; ++i) {
             pt[i][0] = 0;
             pt[i][1] = tdSizes[i] - 1;
@@ -831,7 +835,7 @@ public class Processor {
             progressUpdater.updateStatus("Create output dataset");
         }
         this.datasetSizes = datasetSizes;
-        this.useSizes = useSizes;  // fixme
+        this.acqSizesToUse = useSizes;  // fixme
         if (nDim > datasetSizes.length) {
             if (useSizes == null) {
                 Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, "specify useSizes if not using all dimensions");
