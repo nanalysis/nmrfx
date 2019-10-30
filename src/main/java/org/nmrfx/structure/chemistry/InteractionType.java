@@ -42,14 +42,14 @@ public class InteractionType {
         char aResLoopType = classifyLoop(aResObj.secStruct);
         char bResLoopType = classifyLoop(bResObj.secStruct);
         boolean sameRes = aResObj.equals(bResObj);
-        boolean sameSS = aResObj.secStruct.equals(bResObj.secStruct);
+        boolean sameSS = (aResObj.secStruct == bResObj.secStruct);
         boolean basePair = aResObj.pairedTo == bResObj;
         boolean bothInLoop = aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Loop;
         boolean bothInHelix = aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Helix;
         boolean oneAwayBasePair = bothInHelix && (bResObj.iRes == aResObj.pairedTo.iRes + 1 || bResObj.iRes == aResObj.pairedTo.iRes - 1);
         boolean loopAndHelix = (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Loop) || (aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Helix);
         boolean bulgeAndHelix = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Helix);
-            boolean helixAndBulge = (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Bulge);
+        boolean helixAndBulge = (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Bulge);
         boolean bothInSameBulge = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Bulge && sameSS);
         boolean inTetraLoop = (bothInLoop && sameSS && aResLoopType == 'T');
         boolean T12 = (inTetraLoop && (aResObj.secStruct.getResidues().get(0).equals(aResObj) && bResObj.secStruct.getResidues().get(1).equals(bResObj)));
