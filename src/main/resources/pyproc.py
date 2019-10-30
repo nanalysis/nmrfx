@@ -57,6 +57,7 @@ from org.nmrfx.processor.operations import IstVec
 from org.nmrfx.processor.operations import Kaiser
 from org.nmrfx.processor.operations import Mag
 from org.nmrfx.processor.operations import Measure
+from org.nmrfx.processor.operations import Merge
 from org.nmrfx.processor.operations import Mult
 from org.nmrfx.processor.operations import NESTANMREx
 from org.nmrfx.processor.operations import NESTANMR
@@ -554,13 +555,7 @@ def acqsize(*pars):
     fidInfo.size = list(size)
     fidInfo.useSize = list(size)
     dataInfo.size = list(size)
-    dataInfo.useSize = list(size)
-    dataInfo.msize = []
-    for i,sz in enumerate(dataInfo.size):
-        nsz = sz
-        if fidInfo.isComplex(i):
-            nsz = sz * 2;
-        dataInfo.msize.append(nsz)
+    dataInfo.msize = initMSize(fidInfo, size)
             
 # set fid size limits 
 def tdsize(*size):
@@ -571,7 +566,6 @@ def tdsize(*size):
         a certain point.
     '''
     global fidInfo
-    global dataInfo
     fidInfo.useSize = []
     for i,par in enumerate(size):
         #  at present, can't change size of direct dimension
@@ -583,21 +577,6 @@ def tdsize(*size):
             fidInfo.useSize.append(fidInfo.size[i])
         else:
             fidInfo.useSize.append(par)
-    dataInfo.size = list(fidInfo.useSize)
-    dataInfo.useSize = list(fidInfo.useSize)
-    for i,size in enumerate(fidInfo.useSize):
-        if dataInfo.size[i] < 1:
-            dataInfo.size[i] = fidInfo.size[i]
-            dataInfo.useSize[i] = fidInfo.size[i]
-        elif dataInfo.size[i] > fidInfo.size[i]:
-            dataInfo.size[i] = fidInfo.size[i]
-            dataInfo.useSize[i] = fidInfo.size[i]
-    dataInfo.msize = []
-    for i,sz in enumerate(dataInfo.size):
-        nsz = sz
-        if fidInfo.isComplex(i):
-            nsz = sz * 2;
-        dataInfo.msize.append(nsz)
 
 def p(par):
     return fidInfo.getPar(par)
@@ -675,9 +654,10 @@ class DataInfo:
 
     def printInfo(self):
         print "     size", self.size
+        print "    msize", self.msize
         print "  useSize", self.useSize
-        nDim = self.dataset.getNDim()
-        print "     nDim", nDim
+        print "resizable", self.resizeable
+        print "    extra", self.extra
 
 
 
@@ -738,8 +718,6 @@ def FID(fidFileName, tdSize=None, nusFileName=None, **keywords):
     return fidInfo
 
 def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
-    global tdSizes
-    global vecSizes
     global fidInfo
     fidInfo = FIDInfo()
     if (not fidObj):
@@ -749,10 +727,9 @@ def makeFIDInfo(fidObj=None, tdSize=None, **keywords):
     if (not tdSize):
         tdSize = getTdSizes(fidObj)
     fidInfo.size = list(tdSize)
-    fidInfo.useSize = list(fidInfo.size)
+    fidInfo.useSize = list(tdSize)
+
     fidInfo.fidObj = fidObj 
-    tdSizes = fidInfo.size
-    vecSizes=tdSizes
 
     fidInfo.solvent = fidObj.getSolvent()
     fidInfo.nd = fidObj.getNDim()
@@ -809,18 +786,29 @@ def CREATE(nvFileName, dSize=None, extra=0):
     except:
         pass
     dataInfo.filename = nvFileName
-    dataInfo.useSize = fidInfo.useSize
     if (dSize == None):
-        dataInfo.size = list(fidInfo.size)
-        dataInfo.msize = [s * 2 for s in fidInfo.size]
+        dSize = fidInfo.size
+        dataInfo.size = list(dSize)
+        dataInfo.msize = initMSize(fidInfo, dSize)
     else:
         dataInfo.size = list(dSize)
-        dataInfo.msize = list(dSize)
+        dataInfo.msize = initMSize(fidInfo, dSize)
         createDataset()
+
     dataInfo.extra = extra
     if dataInfo.extra != 0:
         processor.keepDatasetOpen(True)
     DIM(1)  # default start dim
+
+def initMSize(fidInfo, size):
+    msize = []
+    for i,sz in enumerate(size):
+        nsz = sz
+        if fidInfo.isComplex(i):
+            nsz = sz * 2;
+        msize.append(nsz)
+    return msize
+
 
 def createDataset(nvFileName=None, datasetSize=None):
     global fidInfo
@@ -840,26 +828,17 @@ def createDataset(nvFileName=None, datasetSize=None):
     for i,datasetSize in enumerate(datasetSize):
         if (fidInfo.mapToDatasetList[i] >= 0) and (datasetSize > 1):
             newDatasetSize.append(datasetSize)
-            if dataInfo.useSize:
-                if dataInfo.useSize[i] < 1:
-                    useSize.append(fidInfo.size[i])
-                else:
-                    useSize.append(dataInfo.useSize[i])
-            else:
-                useSize.append(fidInfo.size[i])
+            useSize.append(fidInfo.useSize[i])
             j += 1
         else:
             useSize.append(1)
     if dataInfo.extra != 0:
         useSize.append(dataInfo.extra)
         newDatasetSize.append(dataInfo.extra)
-    print 'use',useSize
     #useSize = [956,1,32]
     datasetSize = list(newDatasetSize)
-    dataInfo.useSize = useSize
         
     dataInfo.createdSize = datasetSize
-    print 'cccccccccreate ',datasetSize, dataInfo.useSize
     if not processor.isDatasetOpen():
         try:
             os.remove(nvFileName)
@@ -872,12 +851,12 @@ def createDataset(nvFileName=None, datasetSize=None):
         except OSError:
             pass
         if dataInfo.inMemory:
-            processor.createNVInMemory(nvFileName, datasetSize, dataInfo.useSize)
+            processor.createNVInMemory(nvFileName, datasetSize, useSize)
         elif (fidInfo and fidInfo.flags):
-            processor.createNV(nvFileName, datasetSize, dataInfo.useSize, fidInfo.flags)
+            processor.createNV(nvFileName, datasetSize, useSize, fidInfo.flags)
             print 'exists',os.path.exists(nvFileName)
         else:
-            processor.createNV(nvFileName, datasetSize, dataInfo.useSize)
+            processor.createNV(nvFileName, datasetSize, useSize)
             print 'exists',os.path.exists(nvFileName)
 
     dataInfo.resizeable = False  # dataInfo.size is fixed, createNV has been run
@@ -989,7 +968,7 @@ def UNDODIM(iDim):
         raise Exception("DIM("+str(iDim)+"): should be between 1 and "+str(maxDim))
     dataInfo.curDim = iDim-1
     processor.addUndoDimProcess(dataInfo.curDim)
-    dataInfo.size[dataInfo.curDim] = dataInfo.useSize[dataInfo.curDim]
+    dataInfo.size[dataInfo.curDim] = dataInfo.fidInfo[dataInfo.curDim]
 
 def generic_operation(operation):
     '''decorator to make a basic operation function easier.  Code ends up looking like:
@@ -3025,6 +3004,18 @@ def RANGE(value=0 + 0j, first=0, last=-1,  max=False, min=False, disabled=False,
 
     op = Range(first, last, value.real, value.imag)
     return op
+
+def MERGE(disabled=False, process=None, vector=None):
+    '''Make the vector complex, by merging alternate values into a complex number'''
+    if disabled:
+        return None
+    process = process or getCurrentProcess()
+    op = Merge()
+    if (vector != None):
+        op.eval(vector)
+    else:
+        process.addOperation(op)
+    return op
     
 def REAL(disabled=False, process=None, vector=None):
     '''Make the vector real, discarding the imaginary part'''
@@ -3087,16 +3078,19 @@ def REVERSE(disabled=False, process=None, vector=None):
         process.addOperation(op)
     return op
 
-def RFT(inverse=False, disabled=False, process=None, vector=None):
+def RFT(inverse=False, negatePairs=False, disabled=False, process=None, vector=None):
     '''Real fourier transform
     Parameters
     ---------
     inverse : bool
-        True if inverse RFT, False if forward RFT.'''
+        True if inverse RFT, False if forward RFT.
+    negatePairs : bool
+        Negate alternate complex real/imaginary values before the FT
+'''
     if disabled:
         return None
     process = process or getCurrentProcess()
-    op = Rft(inverse)
+    op = Rft(inverse, negatePairs)
     if (vector != None):
         op.eval(vector)
     else:
