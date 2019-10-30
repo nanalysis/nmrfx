@@ -140,7 +140,7 @@ public class PDBFile {
                     return molecule;
                 }
 
-                if (string.startsWith("ATOM  ")) {
+                if (string.startsWith("ATOM  ") ||  string.startsWith("HETATM")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
 
                     if (!lastRes.equals(atomParse.resNum)) {
