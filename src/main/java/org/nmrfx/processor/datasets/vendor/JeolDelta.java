@@ -44,6 +44,7 @@ public class JeolDelta implements NMRData {
     private final File file;
     private final RandomAccessFile raFile;
     private final int dataStart;
+    private int nSections = 1;
     private Strip[] strips;
     private int subMatrixPointCount;
     private int sectionByteCount;
@@ -306,6 +307,10 @@ public class JeolDelta implements NMRData {
     public void readVector(int iVec, Vec dvec) {
         int section = 2 * (iVec % 2);
         int jVec = iVec / 2;
+        if (nSections == 2) {
+            section = 0;
+            jVec = iVec;
+        }
         double[] values = getVector(jVec, section);
         double[] ivalues = getVector(jVec, section + 1);
         dvec.resize(values.length, true);
@@ -725,7 +730,7 @@ public class JeolDelta implements NMRData {
     }
 
     private void setup() {
-        int nSections = 1;
+        nSections = 1;
         sectionByteCount = 8;
         subMatrixPointCount = 1;
         for (JeolDeltaAxis axe : axes) {
@@ -733,8 +738,9 @@ public class JeolDelta implements NMRData {
                 subMatrixPointCount *= axe.subMatrixEdge;
                 sectionByteCount *= axe.nPoints;
             }
-            nSections *= axe.type.getSectionCount();
+            nSections *= axe.getSectionCount();
         }
+
         strips = new Strip[nSections];
         for (int i = 0; i < nSections; i++) {
             strips[i] = new Strip();
@@ -749,6 +755,7 @@ public class JeolDelta implements NMRData {
         int parStart = JeolPars.Param_Start.getInteger(bytes);
         int parLength = JeolPars.Param_Length.getInteger(bytes);
         loadParams(parStart, parLength);
+        // dumpPars();
     }
 
     String getString(ByteBuffer byteBuffer, int valueStart, int nChars) {
