@@ -2503,8 +2503,8 @@ public class Molecule implements Serializable, ITree {
     public List<Residue> RNAresidues() { //list of only rna residues 
         List<Residue> RNAresidues = new ArrayList();
         for (Polymer polymer : getPolymers()) {
-            for (Residue res : polymer.getResidues()) {
-                if (polymer.isRNA()) {
+            if (polymer.isRNA()) {
+                for (Residue res : polymer.getResidues()) {
                     RNAresidues.add(res);
                 }
             }

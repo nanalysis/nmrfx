@@ -37,14 +37,14 @@ public class SSGen {
     public void genRNAResidues() {
         List<Residue> res = new ArrayList<>();
         for (Polymer pol : molecule.getPolymers()) {
-            for (Residue residue : pol.getResidues()) {
-                if (pol.isRNA()) {
+            if (pol.isRNA()) {
+                for (Residue residue : pol.getResidues()) {
                     residue.pairedToResInd = -1;
                     res.add(residue);
                 }
             }
+            residues = res;
         }
-        residues = res;
     }
 
     public void pairTo() {
