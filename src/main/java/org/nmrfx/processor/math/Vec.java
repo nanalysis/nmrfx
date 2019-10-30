@@ -363,7 +363,7 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
     @Override
     public void setWritable(boolean state) {
     }
-    
+
     @Override
     public boolean isWritable() {
         return true;
@@ -373,7 +373,7 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
     public long bytePosition(int... offsets) {
         return offsets[0] * Double.BYTES;
     }
-    
+
     @Override
     public long pointPosition(int... offsets) {
         return offsets[0];
@@ -1168,6 +1168,18 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
     }
 
     /**
+     * Perform a Fast Fourier Transform (FFT) of the specified real data.
+     *
+     * @param ftvec an array of Complex values to be transformed
+     * @return The original array with now containing the FFT
+     */
+    public static Complex[] apache_rfft(final double[] ftvec) {
+        FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
+        Complex[] ftResult = ffTrans.transform(ftvec, TransformType.FORWARD);
+        return ftResult;
+    }
+
+    /**
      * Perform a Fast Fourier Transform (FFT) of the vector using the Apache
      * Commons Math library.
      *
@@ -1938,8 +1950,8 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
                 }
             }
         } else {
-            for (int i = 0; i < size; ++i) {
-                rvec[i] = 1.0;
+            for (int i = 1; i < size; i += 2) {
+                rvec[i] = -rvec[i];
             }
         }
     }
@@ -2609,6 +2621,20 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
     }
 
     /**
+     * Perform Real Fast Fourier Transform (FFT) of this vector.
+     */
+    public void rft(boolean inverse) {
+        rft(inverse, false);
+    }
+
+    /**
+     * Perform Fast Fourier Transform (FFT) of this vector with various options.
+     *
+     * @param negatePairs negate alternate real/imaginary pairs
+     * @param fixGroupDelay modify vector to remove DSP charge-up at front of
+     * vector
+     */
+    /**
      * Real FT.
      *
      * Vec must be real. If a Vec is using cvec it will do a RFT of the real
@@ -2616,30 +2642,22 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
      * to rvec and ivec.
      *
      * @param inverse If true do the inverse FFT.
+     * @param negatePairs negate alternate real/imaginary pairs
      */
-    public void rft(boolean inverse) {
+    public void rft(boolean inverse, boolean negatePairs) {
         if (!isComplex) {
             checkPowerOf2();
             double[] ftvec = new double[size];
+            if (negatePairs) {
+                negatePairs();
+            }
+            System.arraycopy(rvec, 0, ftvec, 0, size);
 
-            if (!useApache) {
-                System.arraycopy(rvec, 0, ftvec, 0, size);
-            } else {
-                for (int i = 0; i < size; ++i) {
-                    ftvec[i] = cvec[i].getReal();
-                }
-            }
-            FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
-            Complex[] ftResult;
-            if (!inverse) {
-                ftResult = ffTrans.transform(ftvec, TransformType.FORWARD);
-            } else {
-                ftResult = ffTrans.transform(ftvec, TransformType.INVERSE);
-            }
+            Complex[] ftResult = apache_rfft(ftvec);
 
             makeComplex();
 
-            int newSize = size / 2;
+            int newSize = ftResult.length / 2;
             resize(newSize, true);
             if (useApache) {
                 System.arraycopy(ftResult, 0, cvec, 0, newSize);
