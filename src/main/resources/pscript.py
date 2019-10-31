@@ -12,9 +12,12 @@ class NMRFxPeakScripting:
     def get(self, specifier):
         return self.cmd.get(specifier)
 
-    def read(self, fileName):
+    def read(self, fileName, doLinks=False):
         pRead = PeakReader()
-        return pRead.readPeakList(fileName)
+        peakList = pRead.readPeakList(fileName)
+        if doLinks:
+            pRead.linkResonances()
+        return peakList
 
     def write(self, peakList, fileName):
         PeakWriter.writePeaksXPK2(fileName, peakList)
