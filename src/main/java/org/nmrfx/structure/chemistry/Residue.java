@@ -37,7 +37,7 @@ public class Residue extends Compound {
     private final static String[] compliantNucleicAcid = {"C5'", "O5'", "P"};
     private String lastBackBoneAtomName = null;
     private String firstBackBoneAtomName = null;
-    public SecondaryStructure ss = null;
+    public int pairedToRes;
 
     static {
         String[] standardResidues = {
@@ -628,8 +628,6 @@ public class Residue extends Compound {
                     }
                 }
                 if (bpcount == bp.atomPairs.length) {
-                    /*residueB.pairedTo = this
-                      this.pairedTo = residueB*/
                     return bp.type;
                 }
 
