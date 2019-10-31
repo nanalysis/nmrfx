@@ -11,9 +11,11 @@ class NMRFxPeakScripting:
     def get(self, specifier):
         return self.cmd.get(specifier)
 
-    def read(self, fileName):
-        pRead = PeakReader()
-        return pRead.readPeakList(fileName)
+    def read(self, fileName, doLinks=False):
+        pRead = PeakReader(doLinks)
+        peakList = pRead.readPeakList(fileName)
+        if doLinks: pRead.linkResonances()
+        return peakList
 
 npk = NMRFxPeakScripting()
 
