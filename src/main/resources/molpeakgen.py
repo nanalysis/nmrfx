@@ -14,6 +14,10 @@ from org.nmrfx.processor.datasets.peaks import AtomResonanceFactory
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import RNALabels
 from org.nmrfx.structure.chemistry import CouplingList
+from org.nmrfx.structure.chemistry import InteractionType
+from org.nmrfx.structure.chemistry import SecondaryStructure
+from org.nmrfx.structure.chemistry import SSGen
+
 from java.io import FileWriter
 import pdb as debugger
 
@@ -519,13 +523,11 @@ class MolPeakGen:
             retList.append((aSelected, bSelected, dist))
         return retList
 
-    def addRNASecStrPeaks(self, peakList, editScheme, pairs):
+    def addRNASecStrPeaks(self, peakList, editScheme):
         (d1Edited, d2Edited) = editingModes[editScheme]
         residueInterTable = self.getResidueInterMap()
         rnaResidues = [residue for polymer in self.mol.getPolymers() if polymer.isRNA()
                        for residue in polymer.getResidues()]
-        setUpInfo = lambda (i,r): (r.setPropertyObject("resRNAInd",i), self.basePairsMap.__setitem__(i, pairs[i]))
-        map(setUpInfo, enumerate(rnaResidues))
         for iRes, aRes in enumerate(rnaResidues):
             aResNum = aRes.getNumber()
             aResName = aRes.getName()
@@ -533,7 +535,7 @@ class MolPeakGen:
                 bRes = rnaResidues[jRes]
                 bResNum = bRes.getNumber()
                 bResName = bRes.getName()
-                iType = determineType(aRes, bRes, self.basePairsMap)
+                iType = InteractionType.determineType(aRes, bRes)
                 key = (iType, aResName, bResName) 
                 atomPairMap = residueInterTable.get(key) 
                 if atomPairMap is None: continue
@@ -554,9 +556,13 @@ class MolPeakGen:
             scheme = "aa"
              
 	#print(self.vienna)
-        pairs = rnapred.getPairs(self.vienna)
+        ss = SSGen(self.mol, self.vienna)
+        ss.genRNAResidues()
+        ss.pairTo()
+        ss.secondaryStructGen()
+
         peakList = peakgen.makePeakListFromDataset(listName, dataset)
         peakList.setSampleConditionLabel(condition)
-        self.addRNASecStrPeaks(peakList, scheme, pairs)
+        self.addRNASecStrPeaks(peakList, scheme)
         return peakList
 
