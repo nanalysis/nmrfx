@@ -880,10 +880,13 @@ public class MatrixND implements MatrixType {
         return sStats;
     }
 
-    public double[] measure(boolean isComplex) {
-        double[] measures = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY};
+    public double[] measure(boolean isComplex, double mean, double sdev) {
+        double[] measures = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY, 0.0, 0.0};
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        double sum = 0.0;
+        double sum2 = 0.0;
+        int n = 0;
         for (int i = 0; iterator.hasNext(); i++) {
             iterator.next();
             int[] counts = iterator.getCounts();
@@ -903,8 +906,18 @@ public class MatrixND implements MatrixType {
                 if (data[i] > measures[1]) {
                     measures[1] = data[i];
                 }
+                double delta = data[i] - mean;
+                if (Math.abs(delta) < 3.0 * sdev) {
+                    sum += data[i];
+                    sum2 += data[i] * data[i];
+                    n++;
+                }
             }
         }
+        sdev = Math.sqrt(n * sum2 - sum * sum) / n;
+        mean = sum / n;
+        measures[2] = mean;
+        measures[3] = sdev;
         return measures;
     }
 
@@ -957,14 +970,20 @@ public class MatrixND implements MatrixType {
                         pts[kDim][1] = counts[jDim];
                         indices[kDim][1] = i;
                         intensities[kDim][1] = ptValue * sign;
+                        int nBelowThresh = 0;
                         if (counts[jDim] > 0) {
                             int index = i - strides[jDim] * step; // 2 assumes complex                       
                             double testValue = sign * data[index];
-                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
+//                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
+                            if ((ptValue < testValue)) {
 //                                System.out.println(jDim + " < " + i + " " +index + " " + ptValue + " " + testValue + " " + noiseThreshold);
                                 ok = false;
                                 break;
                             }
+                            if (testValue < noiseThreshold) {
+                                nBelowThresh++;
+                            }
+
                             pts[kDim][0] = counts[jDim] - 1;
                             indices[kDim][0] = index;
                             intensities[kDim][0] = testValue * sign;
@@ -972,14 +991,22 @@ public class MatrixND implements MatrixType {
                         if (ok && counts[jDim] < (sizes[jDim] - 1)) {
                             int index = i + strides[jDim] * step; // 2 assumes complex                       
                             double testValue = sign * data[index];
-                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
+//                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
+                            if (ptValue < testValue) {
 //                                System.out.println(jDim + " > " + i + " " +index + " " + ptValue + " " + testValue + " " + noiseThreshold);
                                 ok = false;
                                 break;
                             }
+                            if (testValue < noiseThreshold) {
+                                nBelowThresh++;
+                            }
                             pts[kDim][2] = counts[jDim] + 1;
                             indices[kDim][2] = index;
                             intensities[kDim][2] = testValue * sign;
+                        }
+                        if (nBelowThresh == 2) {
+                            //ok = false;
+                            //break;
                         }
                     }
 
@@ -989,7 +1016,7 @@ public class MatrixND implements MatrixType {
                 }
             }
         }
-//        System.out.println("max value " + maxValue + " " + threshold + " " + peaks.size() + " " + nPossible);
+//        System.out.println("max value " + maxValue + " th " + threshold + " gt " + globalThreshold + " nt " + noiseThreshold + " " + peaks.size() + " " + nPossible);
         return peaks;
     }
 }
