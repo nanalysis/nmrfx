@@ -963,12 +963,13 @@ def DIM(*args):
 def UNDODIM(iDim):
     ''' Adds a process which undoes the operations in the last instance of the specified dimension number.'''
     global dataInfo
+    global fidInfo
     maxDim = len(dataInfo.size)
     if (iDim < 1 or iDim > maxDim):
         raise Exception("DIM("+str(iDim)+"): should be between 1 and "+str(maxDim))
     dataInfo.curDim = iDim-1
     processor.addUndoDimProcess(dataInfo.curDim)
-    dataInfo.size[dataInfo.curDim] = dataInfo.fidInfo[dataInfo.curDim]
+    dataInfo.size[dataInfo.curDim] = fidInfo.size[dataInfo.curDim]
 
 def generic_operation(operation):
     '''decorator to make a basic operation function easier.  Code ends up looking like:
