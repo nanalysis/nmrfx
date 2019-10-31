@@ -49,7 +49,8 @@ public class GRINSOp extends MatrixOperation {
      */
     private final boolean synthetic;
     /**
-     * Sample schedule used for non-uniform sampling. Specifies array elements where data is present.
+     * Sample schedule used for non-uniform sampling. Specifies array elements
+     * where data is present.
      *
      * @see #ist
      * @see #zero_samples
