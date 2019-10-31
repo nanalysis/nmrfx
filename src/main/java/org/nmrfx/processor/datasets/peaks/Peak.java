@@ -434,6 +434,24 @@ public class Peak implements Comparable, PeakOrMulti {
         }
     }
 
+    /** Get the boundaries, center and widths of the region of a peak
+     * in a specified dataset.  The indices of the arrays containing this
+     * information are the dataset dimensions.  So p[0][0] and p[0][1] will
+     * contain borders of the peak along dimension 0 of the dataset, which
+     * may be a different dimension than dimension 0 of the peak.
+     *
+     * @param theFile The dataset to use for translating ppm to pts
+     * @param pdim An integer mapping of peak dimension to dataset dimension.
+     * For example, pdim[0] contains the dataset dimension that corresponds to
+     * peak dimension 0.
+     * @param p  Two-dimensional pre-allocated array of int that will contain
+     * the boundaries of the peak dimension. The boundaries are determined
+     * by the peak foot print (bounds).
+     * @param cpt Array of ints specifying the center of the peak region.
+     * @param width Array of doubles containing the widths of the peak
+     * in units of dataset points. The width is determined by the 
+     * peak linewidth
+     */
     public void getPeakRegion(Dataset theFile, int[] pdim, int[][] p,
             int[] cpt, double[] width) {
         double p1;
@@ -449,6 +467,7 @@ public class Peak implements Comparable, PeakOrMulti {
 
             p2 = pc - Math.abs(peakDims[i].getBoundsValue()) / 2;
             p[pdim[i]][1] = theFile.ppmToFoldedPoint(pdim[i], p2);
+//            System.out.println(i + " " + pdim[i] + " " + p1 + " " + p[pdim[i]][0] + " " + p2 + " " + p[pdim[i]][1]);
             cpt[pdim[i]] = theFile.ppmToFoldedPoint(pdim[i], pc);
 
             p1 = peakDims[i].getChemShiftValue() + (Math.abs(peakDims[i].getLineWidthValue()) / 2.0);
@@ -1523,7 +1542,7 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public List<Set<Peak>> getOverlapLayers(double scale) {
         List<Set<Peak>> result = new ArrayList<>();
-        Set<Peak> firstLayer = getOverlappingPeaks();
+        Set<Peak> firstLayer = getOverlappingPeaks(scale);
         Set<Peak> secondLayer = new HashSet<>();
         for (Peak peak : firstLayer) {
             Set<Peak> overlaps = peak.getOverlappingPeaks(scale);
@@ -1576,7 +1595,7 @@ public class Peak implements Comparable, PeakOrMulti {
             }
             boolean ok = true;
             for (int iDim = 0; iDim < nDim; iDim++) {
-                if (!overlaps(peak, iDim, scale)) {
+                if (!overlapsLineWidth(peak, iDim, scale)) {
                     ok = false;
                     break;
                 }
