@@ -2,6 +2,7 @@ import array
 from org.nmrfx.processor.datasets.peaks import PeakList
 from org.nmrfx.processor.datasets.peaks import Peak
 from org.nmrfx.processor.datasets.peaks.io import PeakReader
+from org.nmrfx.processor.datasets.peaks.io import PeakWriter
 
 class NMRFxPeakScripting:
 
@@ -16,6 +17,9 @@ class NMRFxPeakScripting:
         peakList = pRead.readPeakList(fileName)
         if doLinks: pRead.linkResonances()
         return peakList
+
+    def write(self, peakList, fileName):
+        PeakWriter.writePeaksXPK2(fileName, peakList)
 
 npk = NMRFxPeakScripting()
 
