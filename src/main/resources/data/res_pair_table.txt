@@ -1,4 +1,3 @@
-Number of PDB files used : 170
 Type 	Res1	Res2	Atom1	Atom2	Min.	Max.	Avg.	# Inst.
 BB   	G   	C   	H8   	H6   	3.67	5.65	4.66	    2
 BB   	A   	A   	H5'' 	H3'  	5.73	5.73	5.73	    1
