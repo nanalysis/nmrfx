@@ -52,6 +52,7 @@ public class OperationInfo {
         "TDSS",
         "Cascade-Sampling",
         "SCHEDULE",
+        "GRINS",
         "IST",
         "ISTMATRIX",
         "NESTA_L1_EXT",
