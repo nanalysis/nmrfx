@@ -14,12 +14,32 @@ import java.util.*;
 public abstract class SecondaryStructure {
 
     public static int globalind = 0;
-    public int gi = 0;
-    public int li = 0;
+    public int globali = 0;
+    public int locali = 0;
     public int size;
+    public String name;
     public List<Residue> secresidues = new ArrayList<>();
-    public abstract List<Residue> getResidues();
-    public abstract int getGlobalInd();
-    public abstract int getLocalInd();
-    public abstract void getInvolvedRes();
-}   
+
+    @Override
+    public String toString() {
+        return name + getGlobalInd() + ":" + getLocalInd();
+    }
+
+    public List<Residue> getResidues() {
+        return secresidues;
+    }
+
+    public int getGlobalInd() {
+        return globali;
+    }
+
+    public int getLocalInd() {
+        return locali;
+    }
+
+    public void getInvolvedRes() {
+        for (Residue residue : secresidues) {
+            System.out.print(residue.getName() + residue.resNum);
+        }
+    }
+}

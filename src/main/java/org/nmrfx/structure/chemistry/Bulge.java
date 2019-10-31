@@ -14,38 +14,14 @@ import java.util.*;
 public class Bulge extends SecondaryStructure {
 
     public static int localind = 0;
-    public int li = 0;
-    public String name;
 
     public Bulge(String id, List<Residue> Bresidues) {
         name = id;
-        li = localind;
-        gi = globalind;
+        locali = localind;
+        globali = globalind;
         secresidues = Bresidues;
         globalind++;
         localind++;
     }
 
-    @Override
-    public String toString() {
-        return name + getGlobalInd() + ":" + getLocalInd() ;
-    }
-
-    public int getGlobalInd() {
-        return gi;
-    }
-
-    public int getLocalInd() {
-        return li;
-    }
-
-    public List<Residue> getResidues() {
-        return secresidues;
-    }
-
-    public void getInvolvedRes() {
-        for (Residue residue : secresidues) {
-            System.out.print(residue.getName() + residue.resNum + " lll");
-        }
-    }
 }
