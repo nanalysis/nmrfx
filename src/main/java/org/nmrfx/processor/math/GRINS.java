@@ -111,7 +111,7 @@ public class GRINS {
                 }
                 ArrayList<MatrixPeak> peaks = matrix.peakPick(globalThreshold, noiseThreshold, true, false, scale);
 //            System.out.println("sort " + peaks.size());
-                Collections.sort(peaks, (a, b) -> Double.compare(b.height, a.height));
+                Collections.sort(peaks, (a, b) -> Double.compare(Math.abs(b.height), Math.abs(a.height)));
                 if (peaks.size() > 1) {
                     peaks = filterPeaks(peaks);
                 }
@@ -242,7 +242,7 @@ public class GRINS {
         double[] positions = new double[nDim];
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(matrix.sizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
-        double maxInt = Double.NEGATIVE_INFINITY;
+        double maxInt = 0.0;
         double ySub = 0.0;
         int maxIndex = 0;
         for (int index = 0; iterator.hasNext(); index++) {
@@ -258,7 +258,7 @@ public class GRINS {
                 y += calculateOneSig(positions, peak.height, freqs, widths);
             }
             double value = matrix.data[index];
-            if (value > maxInt) {
+            if (Math.abs(value) > Math.abs(maxInt)) {
                 maxInt = value;
                 ySub = y;
                 maxIndex = index;
