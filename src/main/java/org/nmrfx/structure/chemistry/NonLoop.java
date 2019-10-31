@@ -5,24 +5,23 @@
  */
 package org.nmrfx.structure.chemistry;
 
-import java.util.*;
+import java.util.List;
 
 /**
  *
  * @author bajlabuser
  */
-public class Loop extends SecondaryStructure {
-
+public class NonLoop extends SecondaryStructure{
+    
     public static int localind = 0;
 
-    public Loop(String id, List<Residue> Lpresidues) {
+    public NonLoop(String id, List<Residue> NLpresidues) {
         name = id;
         locali = localind;
         globali = globalind;
-        secresidues = Lpresidues;
+        secresidues = NLpresidues;
         globalind++;
         localind++;
 
     }
-
 }

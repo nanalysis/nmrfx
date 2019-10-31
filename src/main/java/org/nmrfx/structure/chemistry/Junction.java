@@ -11,15 +11,15 @@ import java.util.*;
  *
  * @author bajlabuser
  */
-public class Loop extends SecondaryStructure {
+public class Junction extends SecondaryStructure {
 
     public static int localind = 0;
 
-    public Loop(String id, List<Residue> Lpresidues) {
+    public Junction(String id, List<Residue> Jresidue) {
         name = id;
         locali = localind;
         globali = globalind;
-        secresidues = Lpresidues;
+        secresidues = Jresidue;
         globalind++;
         localind++;
 

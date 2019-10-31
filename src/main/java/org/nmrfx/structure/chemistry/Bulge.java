@@ -11,18 +11,17 @@ import java.util.*;
  *
  * @author bajlabuser
  */
-public class Loop extends SecondaryStructure {
+public class Bulge extends SecondaryStructure {
 
     public static int localind = 0;
 
-    public Loop(String id, List<Residue> Lpresidues) {
+    public Bulge(String id, List<Residue> Bresidues) {
         name = id;
         locali = localind;
         globali = globalind;
-        secresidues = Lpresidues;
+        secresidues = Bresidues;
         globalind++;
         localind++;
-
     }
 
 }

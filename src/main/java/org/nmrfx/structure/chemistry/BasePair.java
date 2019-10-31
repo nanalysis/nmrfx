@@ -21,9 +21,9 @@ public class BasePair {
     }
      @Override
     public String toString() {
-        return res1.getResNum() + ":" + res2.getResNum();
+        return res1.iRes + ":" + res2.iRes;
     }
-    public boolean isCanonical() {
+    public static boolean isCanonical(Residue res1, Residue res2) {
         boolean canon = false;
         if (res1.basePairType(res2) == 1) {
             canon = true;
