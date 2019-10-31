@@ -889,17 +889,52 @@ public class SSLayout implements MultivariateFunction {
                         levels[leftIndex]++;
                     } else if (rightIndex != -1) {
                         levels[rightIndex]--;
-                        int start = levelMap[levels[rightIndex]][rightIndex];
+                        int start = levelMap[levels[rightIndex]][rightIndex];                        
                         int end = i;
                         //System.err.println(start + " <> " + end);
                         addPair(start, end);
+
                     }
                 }
             } catch (ArrayIndexOutOfBoundsException aiE) {
                 aiE.printStackTrace();
                 return;
             }
+        } 
+    }
+    
+        public List<Residue> interpVienna(String vienna, List<Residue> res) {
+        String leftBrackets = "({[";
+        String rightBrackets = ")}]";
+        int[][] levelMap = new int[vienna.length()][leftBrackets.length()];
+        int[] levels = new int[leftBrackets.length()];
+        for (int i = 0; i < vienna.length(); i++) {
+            char curChar = vienna.charAt(i);
+            try {
+                boolean dot = (curChar == '.') || (Character.isLetter(curChar));
+                if (!dot) {
+                    int leftIndex = leftBrackets.indexOf(curChar);
+                    int rightIndex = rightBrackets.indexOf(curChar);
+                    if (leftIndex != -1) {
+                        levelMap[levels[leftIndex]][leftIndex] = i;
+                        levels[leftIndex]++;
+                    } else if (rightIndex != -1) {
+                        levels[rightIndex]--;
+                        int start = levelMap[levels[rightIndex]][rightIndex];                        
+                        int end = i;
+                        //System.err.println(start + " <> " + end);
+                        addPair(start, end);
+                        res.get(start).pairedToResInd = end;
+                        res.get(end).pairedToResInd = start;
+
+                    }
+                }
+            } catch (ArrayIndexOutOfBoundsException aiE) {
+                aiE.printStackTrace();
+                break;
+            }
         }
+        return res;
     }
 
     public double[] getValues() {

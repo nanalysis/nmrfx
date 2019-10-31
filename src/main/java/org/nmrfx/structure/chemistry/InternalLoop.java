@@ -11,15 +11,15 @@ import java.util.*;
  *
  * @author bajlabuser
  */
-public class Loop extends SecondaryStructure {
+public class InternalLoop extends SecondaryStructure {
 
     public static int localind = 0;
 
-    public Loop(String id, List<Residue> Lpresidues) {
+    public InternalLoop(String id, List<Residue> ILresidue) {
         name = id;
         locali = localind;
         globali = globalind;
-        secresidues = Lpresidues;
+        secresidues = ILresidue;
         globalind++;
         localind++;
 

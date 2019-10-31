@@ -13,38 +13,42 @@ import java.util.*;
  */
 public class Helix extends SecondaryStructure {
 
-    public int globalind;
-    public int ind;
+    public static int localind = 0;
+    public List<BasePair> basePairs = new ArrayList<BasePair>();
 
-    public Helix(int globali, int i) {
+    public Helix(String id, List<Residue> HXresidue) {
+        name = id;
+        locali = localind;
+        globali = globalind;
+        secresidues = HXresidue;
+        globalind++;
+        localind++;
+        setBasePairs();
 
-        globalind = globali;
-        ind = i;
     }
 
-    public int getStrand() {
-        return globalind;
-    }
-
-    public int getStrandInd() {
-        return ind;
-    }
-
-    public List<Residue> residues(Molecule mol) {
-        for (Polymer pol : mol.getPolymers()) {
-            
-            for (Residue residueA : residues) {
-                for (Residue residueB : residues) {
-
-                    int type = residueA.basePairType(residueB);
-                    if (type == 1) {
-                        residues.add(residueA);
-                    }
-                }
-            }
+//    public boolean isPaired(Residue resA, Residue resB) {
+//        
+//    }
+    @Override
+    public void getInvolvedRes() {
+        int i = 0;
+        while (i < secresidues.size()) {
+            Residue res1 = secresidues.get(i);
+            Residue res2 = secresidues.get(i + 1);
+            System.out.print(res1.getName() + res1.resNum + ":" + res2.getName() + res2.resNum + " ");
+            i += 2;
         }
-
-        return residues;
     }
 
+    public void setBasePairs() {
+        int i = 0;
+        while (i < secresidues.size()) {
+            Residue res1 = secresidues.get(i);
+            Residue res2 = secresidues.get(i + 1);
+            BasePair bp = new BasePair(res1, res2);
+            basePairs.add(bp);
+            i += 2;
+        }
+    }
 }
