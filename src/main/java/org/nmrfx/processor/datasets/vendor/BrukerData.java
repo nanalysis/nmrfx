@@ -1062,6 +1062,16 @@ public class BrukerData implements NMRData {
         negatePairs = false;
     }
 
+    @Override
+    public void setFixDSP(boolean value) {
+        fixDSP = value;
+    }
+    
+    @Override
+    public boolean getFixDSP() {
+        return fixDSP;
+    }
+    
     private void setFixDSPOn() {
         fixDSP = true;
     }
@@ -1504,7 +1514,6 @@ public class BrukerData implements NMRData {
             if (fixByShift) {
                 dspPhase(dvec);
             } else {
-//                dvec.fixWithPhasedHFT(45.0);
                 dvec.fixWithPhasedHFT();
             }
         }

@@ -44,12 +44,12 @@ import org.nmrfx.processor.datasets.Nuclei;
 public class PeakPicker {
 
     private final Dataset dataset;
-    private final PeakPick peakPickPar;
+    private final PeakPickParameters peakPickPar;
     private final int nDim;
     static final private String MSG_PEAK_LIST = "Peak List ";
     Peak lastPeakPicked = null;
 
-    public PeakPicker(PeakPick peakPickPar) {
+    public PeakPicker(PeakPickParameters peakPickPar) {
         this.peakPickPar = peakPickPar;
         this.dataset = peakPickPar.theFile;
         nDim = dataset.getNDim();
@@ -446,6 +446,7 @@ public class PeakPicker {
             return null;
         }
         dataset.toBuffer("prepick");
+        int[] rows = new int[dataset.getNDim()];  // only works if datset dims = peak list dims
         int nTries = 2;
         PeakList peakList = PeakList.get(peakPickPar.listName);
         if (peakList != null) {
@@ -453,7 +454,7 @@ public class PeakPicker {
                 try {
                     dataset.fromBuffer("prepick");
                     List<Peak> peaks = getPeaksInRegion();
-                    peakList.peakFit(dataset, peaks, true, -1);
+                    peakList.peakFit(dataset, rows, null, peaks, true, -1, PeakList.ARRAYED_FIT_MODE.SINGLE);
                     dataset.addPeakList(peakList, -1.0);
                     // split
                     // combine
@@ -462,7 +463,7 @@ public class PeakPicker {
                     purgeNarrowPeaks(peaks);
 
                     dataset.fromBuffer("prepick");
-                    peakList.peakFit(dataset, getPeaksInRegion(), true, -1);
+                    peakList.peakFit(dataset, rows, null, getPeaksInRegion(), true, -1, PeakList.ARRAYED_FIT_MODE.SINGLE);
                     dataset.addPeakList(peakList, -1.0);
                     if (i != (nTries - 1)) {
                         peakPickPar.mode = "append";
@@ -751,15 +752,24 @@ public class PeakPicker {
         PeakList peakList = PeakList.get(peakPickPar.listName);
         if ((peakList != null) && (peakList.peaks() != null)) {
             double[][] limits = new double[nDim][2];
+            int[] dimMap = new int[nDim];
             for (int i = 0; i < nDim; i++) {
+                dimMap[i] = -1;
                 int j = peakPickPar.dim[i];
+                int[] pDims = peakList.getDimsForDataset(dataset);
+                for (int k = 0; k < pDims.length; k++) {
+                    if (pDims[k] == j) {
+                        dimMap[i] = k;
+                        break;
+                    }
+                }
                 limits[i][1] = peakPickPar.theFile.pointToPPM(j, peakPickPar.pt[i][0]);
                 limits[i][0] = peakPickPar.theFile.pointToPPM(j, peakPickPar.pt[i][1]);
             }
             Optional<Peak> firstPeak = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, null, peakPickPar.dim)).findFirst();
+                    .filter(peak -> peak.inRegion(limits, null, dimMap)).findFirst();
             foundAny = firstPeak.isPresent();
         }
         return foundAny;

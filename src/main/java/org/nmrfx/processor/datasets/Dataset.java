@@ -2088,6 +2088,22 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         }
     }
 
+    public double[] getNValues(int nValues) {
+        double[] pValues = null;
+        boolean ok = false;
+        for (int iDim = 0; iDim < getNDim(); iDim++) {
+            pValues = getValues(iDim);
+            if ((pValues != null) && (pValues.length == nValues)) {
+                ok = true;
+                break;
+            }
+        }
+        if (!ok) {
+            pValues = null;
+        }
+        return pValues;
+    }
+
     /**
      * Get the stored values for the specified dimension of this dataset
      *
@@ -2799,13 +2815,15 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             if (p2[iDim][1] >= p2[iDim][0]) {
                 sizes[iDim] = p2[iDim][1] - p2[iDim][0] + 1;
             } else {
-                sizes[iDim] = size[pdim[iDim]] - p2[iDim][0] - p2[iDim][1] + 1;
+                sizes[iDim] = size[iDim] - p2[iDim][0] - p2[iDim][1] + 1;
             }
+//            System.out.println("size " + iDim + " " + p2[iDim][0] + " " + p2[iDim][1] + " " + sizes[iDim]);
         }
         int nPoints = 1;
         for (int dimSize : sizes) {
             nPoints *= dimSize;
         }
+//        System.out.println("np " + nPoints);
         ArrayList<int[]> posArray = new ArrayList<>();
         DimCounter counter = new DimCounter(sizes);
         DimCounter.Iterator iterator = counter.iterator();
@@ -2816,21 +2834,28 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             boolean inDataset = true;
             for (int value : counts) {
                 aCounts[j] = value + p2[j][0];
-                if (aCounts[j] >= size[pdim[j]]) {
-                    aCounts[j] -= size[pdim[j]];
+                if (aCounts[j] >= size[j]) {
+                    aCounts[j] -= size[j];
                 } else if (aCounts[j] < 0) {
-                    aCounts[j] += size[pdim[j]];
+                    aCounts[j] += size[j];
                 }
                 j++;
             }
             if (inDataset) {
                 boolean ok = false;
-                for (int k = 0; k < cpt.length; k++) {
-                    int i = 0;
+                for (int iPeak = 0; iPeak < cpt.length; iPeak++) {
+                    int iDim = 0;
                     double delta2 = 0.0;
                     for (int value : aCounts) {
-                        delta2 += ((value - cpt[k][i]) * (value - cpt[k][i])) / (0.47 * width[k][i] * width[k][i]);
-                        i++;
+                        if ((iDim >= sizes.length) || (iPeak > width.length)) {
+                            System.out.println(iPeak + " " + sizes.length + " " + width.length);
+                            posArray.clear();
+                            return posArray;
+                        }
+                        if (width[iPeak][iDim] != 0.0) {
+                            delta2 += ((value - cpt[iPeak][iDim]) * (value - cpt[iPeak][iDim])) / (0.47 * width[iPeak][iDim] * width[iPeak][iDim]);
+                        }
+                        iDim++;
                     }
                     if (delta2 < 1.0) {
                         ok = true;
@@ -5728,7 +5753,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             dataset.setTitle(title);
         });
     }
-    
+
     public LineShapeCatalog getLSCatalog() {
         return simVecs;
     }

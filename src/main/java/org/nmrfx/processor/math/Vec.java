@@ -889,7 +889,6 @@ public class Vec extends PySequence implements MatrixType {
             Complex initPt = findBrukerInitialPoint(start);
             double p1 = initPt.getArgument() * 180 / Math.PI;
             phase += p1;
-//            System.out.println("fix phase=" + phase);
             int currentSize = size;
             checkPowerOf2();
             resize(size * 2);
@@ -973,11 +972,10 @@ public class Vec extends PySequence implements MatrixType {
         Complex c = Complex.I;
         if (isComplex) {
             c = getComplex(start);  // amp from 1st real point
-            double ph, amp = c.abs();
-//            c = getComplex(start-2);  // start-2 within Bruker precharge
-//            ph = c.getArgument();
-            ph = 0;
+            double ph = 0.0;
+            double  amp = c.abs();
 // only even points in sync with 1st real point, 1st half of precharge
+// average the phase for the preceding points (in charge-up)
             int n = 0;
             for (int i = start - 2; i > start / 2; i -= 2) {
                 c = getComplex(i);
@@ -986,8 +984,12 @@ public class Vec extends PySequence implements MatrixType {
                     n++;
                 }
             }
-            ph /= n;
-            c = ComplexUtils.polar2Complex(amp, ph);
+            if (n > 0) {
+                ph /= n;
+                c = ComplexUtils.polar2Complex(amp, ph);
+            } else {
+                c = Complex.I;
+            }
         }
         return c;
     }

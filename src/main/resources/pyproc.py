@@ -199,6 +199,9 @@ class FIDInfo:
     def setFlags(self,flags):
         NMRDataUtil.setFlags(self.fidObj,flags)
 
+    def setFixDSP(self,value):
+        self.fidObj.setFixDSP(value)
+        
     def setSW(self,pars):
         self.checkParDim(pars)
         for i,par in enumerate(pars):
@@ -349,6 +352,11 @@ def printInfo():
 def printDataInfo():
     '''Print out reference info. Useful to see what values the automatic parameter extraction found.'''
     dataInfo.printInfo()
+
+def fixdsp(value):
+    ''' Set whether to fix dsp charge-up when reading FID.  Only used for Bruker data.
+    '''
+    fidInfo.setFixDSP(value)
  
 def sw(*pars):
     ''' Sweep width values to set for each dimension.<br>
