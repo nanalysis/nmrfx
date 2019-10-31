@@ -2549,9 +2549,9 @@ public class PeakList {
      * @param iDim
      * @return
      */
-    public static List getLinks(final Peak peak, final int iDim) {
+    public static List<Peak> getLinks(final Peak peak, final int iDim) {
         final List<PeakDim> peakDims = getLinkedPeakDims(peak, iDim);
-        final ArrayList peaks = new ArrayList(peakDims.size());
+        final List<Peak> peaks = new ArrayList<>(peakDims.size());
         for (int i = 0; i < peakDims.size(); i++) {
             PeakDim peakDim = (PeakDim) peakDims.get(i);
             peaks.add(peakDim.myPeak);
@@ -3829,6 +3829,15 @@ public class PeakList {
     public DescriptiveStatistics widthDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
         peaks.stream().filter(p -> p.getStatus() >= 0).mapToDouble(p -> p.peakDims[iDim].getLineWidthHz()).forEach(v -> stats.addValue(v));
+        return stats;
+    }
+
+    public DescriptiveStatistics intensityDStats(int iDim) {
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        peaks.stream().filter(p -> p.getStatus() >= 0)
+                .mapToDouble(p -> p.getPeakDim(iDim)
+                .myPeak.getIntensity())
+                .forEach(v -> stats.addValue(v));
         return stats;
     }
 
