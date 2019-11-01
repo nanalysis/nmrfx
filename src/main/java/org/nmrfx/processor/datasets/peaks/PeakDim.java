@@ -22,6 +22,7 @@ import org.nmrfx.processor.utilities.ConvUtil;
 import org.nmrfx.processor.utilities.Format;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PeakDim {
 
@@ -129,6 +130,11 @@ public class PeakDim {
         } else {
             return resonance.getPeakDims();
         }
+    }
+    
+    public double getAverageShift() {
+        double shift = getLinkedPeakDims().stream().mapToDouble(p -> p.getChemShiftValue()).average().getAsDouble();
+        return shift;
     }
 
     public String getSummary() {
