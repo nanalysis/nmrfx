@@ -928,6 +928,14 @@ public class MatrixND implements MatrixType {
         int[][] pts = new int[nDim + 1][3];
         int[][] indices = new int[nDim + 1][3];
         double[][] intensities = new double[nDim + 1][3];
+        int[] widthLim = new int[nDim + 1];
+        widthLim[0] = 2;
+        for (int i = 0; i < sizes.length; i++) {
+            widthLim[i + 1] = sizes[i] / 32;
+            if (widthLim[i + 1] < 3) {
+                widthLim[i + 1] = 3;
+            }
+        }
         double threshold = FastMath.max(globalThreshold, noiseThreshold);
         int step = isComplex ? 2 : 1;
         double maxValue = Double.NEGATIVE_INFINITY;
@@ -1011,7 +1019,7 @@ public class MatrixND implements MatrixType {
                     }
 
                     if (ok) {
-                        peaks.add(new MatrixPeak(intensities, indices, pts, scale));
+                        peaks.add(new MatrixPeak(intensities, indices, pts, scale, widthLim));
                     }
                 }
             }
