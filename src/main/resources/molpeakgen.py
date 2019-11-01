@@ -1,9 +1,10 @@
 import os
 import os.path
-import itertools
 import rnapred
 import peakgen
 import molio
+import itertools as itools
+
 from refine import *
 
 from org.nmrfx.processor.datasets import Dataset
@@ -510,15 +511,15 @@ class MolPeakGen:
                         print("Evaluate the number of fields in line no. '{}'.".format(iRow+1))
             return cls.residueInterMap
 
-    def stringifyAtomPairs(self, aResNum, bResNum, atomDistList=None):
+    def stringifyAtomPairs(self, aPolyName, aResNum, bPolyName, bResNum, atomDistList=None):
         if (atomDistList is None) or (not atomDistList): # None or empty
             return None
         retList = []
         for atoms, dist in atomDistList:
             aAtomName, bAtomName = atoms
-            aSelect = '.'.join([str(aResNum), aAtomName])
+            aSelect = aPolyName+":"+str(aResNum)+"."+aAtomName
+            bSelect = bPolyName+":"+str(bResNum)+"."+bAtomName
             aSelected = self.mol.getAtomByName(aSelect)
-            bSelect = '.'.join([str(bResNum), bAtomName])
             bSelected = self.mol.getAtomByName(bSelect)
             retList.append((aSelected, bSelected, dist))
         return retList
@@ -528,20 +529,21 @@ class MolPeakGen:
         residueInterTable = self.getResidueInterMap()
         rnaResidues = [residue for polymer in self.mol.getPolymers() if polymer.isRNA()
                        for residue in polymer.getResidues()]
-        for iRes, aRes in enumerate(rnaResidues):
+        for resCombination in itools.combinations_with_replacement(rnaResidues, 2):
+            aRes, bRes = resCombination
             aResNum = aRes.getNumber()
             aResName = aRes.getName()
-            for jRes in range(iRes, len(rnaResidues)):
-                bRes = rnaResidues[jRes]
-                bResNum = bRes.getNumber()
-                bResName = bRes.getName()
-                iType = InteractionType.determineType(aRes, bRes)
-                key = (iType, aResName, bResName) 
-                atomPairMap = residueInterTable.get(key) 
-                if atomPairMap is None: continue
-                atomDistList = atomPairMap.items() 
-                stringified = self.stringifyAtomPairs(aResNum,bResNum,atomDistList)
-                self.addPeaks(peakList, d1Edited, d2Edited, stringified)
+            aPolyName = aRes.getPolymer().getName()
+            bResNum = bRes.getNumber()
+            bResName = bRes.getName()
+            bPolyName = bRes.getPolymer().getName()
+            iType = InteractionType.determineType(aRes, bRes)
+            key = (iType, aResName, bResName) 
+            atomPairMap = residueInterTable.get(key) 
+            if atomPairMap is None: continue
+            atomDistList = atomPairMap.items() 
+            stringified = self.stringifyAtomPairs(aPolyName,aResNum,bPolyName,bResNum,atomDistList)
+            self.addPeaks(peakList, d1Edited, d2Edited, stringified)
 
     def genRNASecStrPeaks(self, dataset, listName="", condition="sim", scheme=""):
         self.setWidths([self.widthH, self.widthH])
