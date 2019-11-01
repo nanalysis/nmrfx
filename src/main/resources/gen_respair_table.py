@@ -135,6 +135,7 @@ def mainFunc():
         ss.pairTo()
         ss.secondaryStructGen()
  	rnaResidues = [residue for polymer in mol.getPolymers() if polymer.isRNA() for residue in polymer.getResidues()]
+        
         for resCombination in itools.combinations_with_replacement(rnaResidues, 2):
             res1, res2 = resCombination
             res1Atoms, res2Atoms = res1.getAtoms("H*"), res2.getAtoms("H*")
