@@ -2836,13 +2836,13 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
         process.addOperation(op)
     return op
 
-def GRINS(noise=5, scale=1.0, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noise=0.0, scale=0.5, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
     noise : real
         amin : 0.0
-        min : 1.0
+        min : 0.0
         max : 100.0
         Noise estimate
     scale : real
