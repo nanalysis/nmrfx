@@ -3424,8 +3424,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         int[] point = new int[nDim];
         point[dim[nDim - 1]] = pt[nDim - 1][0];
         int[] mPoint = new int[nDim - 1];
+        int[] matVSizes = matrix.getVSizes();
         for (int i = 0; i < nDim - 1; i++) {
             mPoint[i] = pt[i][1] + 1;
+            setVSize(dim[i], matVSizes[i]);
         }
 
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
