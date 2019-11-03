@@ -1270,7 +1270,7 @@ public class Processor {
         }
         try {
             if (matrix != null) {
-//                printDimPt(dim, matrix.getPt());  // for debug
+//                printDimPt("write ", dim, matrix.getPt());  // for debug
                 dataset.writeMatrixToDatasetFile(dim, matrix);
             }
         } catch (IOException ex) {
