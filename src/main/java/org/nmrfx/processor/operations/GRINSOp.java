@@ -95,8 +95,8 @@ public class GRINSOp extends MatrixOperation {
             int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
             int[] srcTargetMap = genSrcTargetMap(schedule, matrixND);
 
-            GRINS smile = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, logFile);
-            smile.exec();
+            GRINS grins = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, logFile);
+            grins.exec();
             for (int i = 0; i < vector.getSize(); i++) {
                 double real = matrixND.getValue(i * 2);
                 double imag = matrixND.getValue(i * 2 + 1);
@@ -114,6 +114,9 @@ public class GRINSOp extends MatrixOperation {
     public Operation evalMatrix(MatrixType matrix) {
         try {
             MatrixND matrixND = (MatrixND) matrix;
+            for (int i=0;i<matrixND.getNDim();i++) {
+                matrixND.setVSizes(matrixND.getSizes());
+            }
             int[] zeroList = IstMatrix.genZeroList(sampleSchedule, matrixND);
             int[] srcTargetMap = genSrcTargetMap(sampleSchedule, matrixND);
             String logFile = null;
@@ -121,8 +124,11 @@ public class GRINSOp extends MatrixOperation {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
             }
 //            if (matrixND.getIndex() == 381) {
-            GRINS smile = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, logFile);
-            smile.exec();
+            GRINS grins = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, logFile);
+            grins.exec();
+//            }
+//            if (matrixND.getIndex() == 94) {
+//                matrixND.dump("junk.txt");
 //            }
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());
