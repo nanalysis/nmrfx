@@ -640,10 +640,14 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    public void zeroFill() {
+    public void zeroFill(int factor) {
+        if (factor < 1) {
+            return;
+        }
+        int mult = (int) Math.round(Math.pow(2, factor));
         int[] newSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
-            newSizes[i] = sizes[i] * 2;
+            newSizes[i] = sizes[i] * mult;
         }
         MatrixND zfMatrix = new MatrixND(newSizes);
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
