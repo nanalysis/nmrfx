@@ -70,6 +70,7 @@ public class GRINS {
             double preValue = 0.0;
             double postValue = 0.0;
             double deltaToOrig = 0.0;
+            boolean calcNoise = noise < 1.0e-6;
             double noiseValue = noise;
 
             // could just copy the actually sample values to vector
@@ -81,20 +82,20 @@ public class GRINS {
             for (iteration = 0; iteration < iterations; iteration++) {
                 matrix.doFTtoReal();
                 if (iteration == 0) {
-                    if (noiseValue < 1.0e-6) {
-                        double[] measure = matrix.measure(false, 0.0, Double.MAX_VALUE);
-                        measure = matrix.measure(false, measure[2], measure[3]);
-                        measure = matrix.measure(false, measure[2], measure[3]);
-                        measure = matrix.measure(false, measure[2], measure[3]);
-                        measure = matrix.measure(false, measure[2], measure[3]);
-                        measure = matrix.measure(false, measure[2], measure[3]);
-                        noiseValue = measure[3];
-                    }
 //                    System.out.println("noise " + noiseValue);
 
                     if (calcStats) {
                         preValue = matrix.calcSumAbs();
                     }
+                }
+                if (calcNoise) {
+                    double[] measure = matrix.measure(false, 0.0, Double.MAX_VALUE);
+                    measure = matrix.measure(false, measure[2], measure[3]);
+                    measure = matrix.measure(false, measure[2], measure[3]);
+                    measure = matrix.measure(false, measure[2], measure[3]);
+                    measure = matrix.measure(false, measure[2], measure[3]);
+                    measure = matrix.measure(false, measure[2], measure[3]);
+                    noiseValue = measure[3];
                 }
 
                 double[] measure = matrix.measure(false, 0.0, Double.MAX_VALUE);
@@ -185,7 +186,7 @@ public class GRINS {
         int nDim = matrix.nDim;
         double[][] vecs = new double[nDim][];
         for (int i = 0; i < nDim; i++) {
-            vecs[i] = new double[matrix.sizes[i]];
+            vecs[i] = new double[matrix.getSize(i)];
         }
         for (MatrixPeak peak : peaks) {
 //            System.out.println(matrix.getIndex() + " " + peak.toString());
@@ -240,7 +241,7 @@ public class GRINS {
     public void subtractSignals(MatrixND matrix, ArrayList<MatrixPeak> peaks, double[] buffer, FileWriter fileWriter) {
         int nDim = matrix.getNDim();
         double[] positions = new double[nDim];
-        MultidimensionalCounter mdCounter = new MultidimensionalCounter(matrix.sizes);
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(matrix.getSizes());
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
         double maxInt = 0.0;
         double ySub = 0.0;
@@ -257,14 +258,14 @@ public class GRINS {
                 double[] widths = peak.widths;
                 y += calculateOneSig(positions, peak.height, freqs, widths);
             }
-            double value = matrix.data[index];
+            double value = matrix.getValueAtIndex(index);
             if (Math.abs(value) > Math.abs(maxInt)) {
                 maxInt = value;
                 ySub = y;
                 maxIndex = index;
             }
             buffer[index] += y;
-            matrix.data[index] -= y;
+            matrix.setValueAtIndex(index, value - y);
         }
         if (fileWriter != null) {
             String outLine = String.format("maxInt %10.3f ySub %10.3f %5d\n", maxInt, ySub, maxIndex);
