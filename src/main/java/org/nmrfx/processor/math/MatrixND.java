@@ -218,7 +218,7 @@ public class MatrixND implements MatrixType {
     public int[] getSizes() {
         return sizes.clone();
     }
-    
+
     public int getSize(int iDim) {
         return sizes[iDim];
     }
@@ -640,7 +640,7 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    public MatrixND zeroFill() {
+    public void zeroFill() {
         int[] newSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
             newSizes[i] = sizes[i] * 2;
@@ -654,7 +654,13 @@ public class MatrixND implements MatrixType {
             zfMatrix.setValue(getValue(counts), counts);
 
         }
-        return zfMatrix;
+        data = zfMatrix.data;
+        sizes = zfMatrix.sizes;
+        strides = zfMatrix.strides;
+        nElems = zfMatrix.nElems;
+        for (int i = 0; i < nDim; i++) {
+            pt[i][1] = sizes[i] - 1;
+        }
     }
 
     boolean checkShapes(MatrixND matrixND) {
@@ -769,8 +775,8 @@ public class MatrixND implements MatrixType {
     public static void copyData(double[] source, double[] target) {
         System.arraycopy(source, 0, target, 0, target.length);
     }
-    
-    public void copyDataTo( double[] target) {
+
+    public void copyDataTo(double[] target) {
         System.arraycopy(data, 0, target, 0, data.length);
     }
 
@@ -809,13 +815,13 @@ public class MatrixND implements MatrixType {
         int offset = getOffset(indices);
         return data[offset];
     }
-    
+
     public double getValueAtIndex(int index) {
         return data[index];
     }
 
     public void setValueAtIndex(int index, double value) {
-         data[index] = value;
+        data[index] = value;
     }
 
     int[] genOffsets(int nDim) {
