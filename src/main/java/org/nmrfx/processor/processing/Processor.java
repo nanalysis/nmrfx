@@ -753,7 +753,7 @@ public class Processor {
             setFidDimensions(nmrData, tdSizes);
         }
     }
-    
+
     public void setAcqOrder(String[] newOrder) {
         acqOrder = newOrder.clone();
     }
