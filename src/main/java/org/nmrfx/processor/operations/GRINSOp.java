@@ -38,6 +38,7 @@ public class GRINSOp extends MatrixOperation {
      */
     private final double noise;
     private final double scale;
+    private final int zfFactor;
     /**
      * Preserve the residual noise
      *
@@ -60,10 +61,11 @@ public class GRINSOp extends MatrixOperation {
 
     private final File logHome;
 
-    public GRINSOp(double noise, double scale, boolean preserve, boolean synthetic, SampleSchedule schedule, String logHomeName) throws ProcessingException {
+    public GRINSOp(double noise, double scale, int zfFactor, boolean preserve, boolean synthetic, SampleSchedule schedule, String logHomeName) throws ProcessingException {
         this.noise = noise;
         this.scale = scale;
         this.preserve = preserve;
+        this.zfFactor = zfFactor;
         this.synthetic = synthetic;
         this.sampleSchedule = schedule;
         if (logHomeName == null) {
@@ -114,7 +116,10 @@ public class GRINSOp extends MatrixOperation {
     public Operation evalMatrix(MatrixType matrix) {
         try {
             MatrixND matrixND = (MatrixND) matrix;
-            for (int i=0;i<matrixND.getNDim();i++) {
+            if (zfFactor > 0) {
+                matrixND.zeroFill(zfFactor);
+            }
+            for (int i = 0; i < matrixND.getNDim(); i++) {
                 matrixND.setVSizes(matrixND.getSizes());
             }
             int[] zeroList = IstMatrix.genZeroList(sampleSchedule, matrixND);
