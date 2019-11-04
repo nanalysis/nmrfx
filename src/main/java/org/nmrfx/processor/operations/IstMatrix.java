@@ -48,7 +48,8 @@ public class IstMatrix extends MatrixOperation {
     private int loops = 100;
 
     /**
-     * Sample schedule used for non-uniform sampling. Specifies array elements where data is present.
+     * Sample schedule used for non-uniform sampling. Specifies array elements
+     * where data is present.
      *
      * @see #ist
      * @see #zero_samples
@@ -62,7 +63,8 @@ public class IstMatrix extends MatrixOperation {
     private HashMap sampleHash = null;
 
     /**
-     * Specifies one of several cutoff algorithms. Supported algorithms are: <i>abs</i> <i>phased</i> <i>phasedpos</i>
+     * Specifies one of several cutoff algorithms. Supported algorithms are:
+     * <i>abs</i> <i>phased</i> <i>phasedpos</i>
      *
      * @see IstVec
      * @see #cutAboveThreshold
@@ -70,7 +72,8 @@ public class IstMatrix extends MatrixOperation {
     private String alg = "abs";
 
     /**
-     * Optional flag used with algorithm to return inverse-FT'ed data, instead of FT'ed data.
+     * Optional flag used with algorithm to return inverse-FT'ed data, instead
+     * of FT'ed data.
      */
     private boolean final_ift = true;
 
@@ -123,13 +126,15 @@ public class IstMatrix extends MatrixOperation {
 
     @Override
     public Operation evalMatrix(MatrixType matrix) {
-        if (alg.equals("std")) {
-            if (matrix instanceof MatrixND) {
-                istMatrixNDWithHFT((MatrixND) matrix);
-            } else {
-                istMatrixWithHFT((Matrix) matrix);
-
+        if (matrix instanceof MatrixND) {
+            MatrixND matrixND = (MatrixND) matrix;
+            for (int i = 0; i < matrixND.getNDim(); i++) {
+                matrixND.setVSizes(matrixND.getSizes());
             }
+        }
+
+        if (alg.equals("std")) {
+            istMatrixNDWithHFT((MatrixND) matrix);
         } else {
             istMatrix((Matrix) matrix);
         }
@@ -416,8 +421,9 @@ public class IstMatrix extends MatrixOperation {
     /**
      * Perform cutoff algorithm. In general, a threshold is determined for an
      * <i>inbuf</i> input buffer. Points above the threshold are summed into the
-     * <i>addbuf</i> buffer, with the remainder of <i>inbuf</i> set equal to the threshold. The method chooses between
-     * different algorithms using the <i>alg</i> parameter.
+     * <i>addbuf</i> buffer, with the remainder of <i>inbuf</i> set equal to the
+     * threshold. The method chooses between different algorithms using the
+     * <i>alg</i> parameter.
      *
      * Current implementations for hyper-complex data only.
      *

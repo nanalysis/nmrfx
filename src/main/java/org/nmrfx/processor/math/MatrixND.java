@@ -38,12 +38,12 @@ import org.apache.commons.math3.util.FastMath;
 
 public class MatrixND implements MatrixType {
 
-    final double[] data;
-    final int[] sizes;
+    private double[] data;
+    private int[] sizes;
     int[] vSizes;
-    final int[] strides;
+    private int[] strides;
     final int nDim;
-    final int nElems;
+    private int nElems;
     /**
      * Output point to write matrix.
      */
@@ -217,6 +217,10 @@ public class MatrixND implements MatrixType {
 
     public int[] getSizes() {
         return sizes.clone();
+    }
+    
+    public int getSize(int iDim) {
+        return sizes[iDim];
     }
 
     public int getNDim() {
@@ -765,6 +769,10 @@ public class MatrixND implements MatrixType {
     public static void copyData(double[] source, double[] target) {
         System.arraycopy(source, 0, target, 0, target.length);
     }
+    
+    public void copyDataTo( double[] target) {
+        System.arraycopy(data, 0, target, 0, data.length);
+    }
 
     public void copyDataFrom(double[] values) {
         System.arraycopy(values, 0, data, 0, data.length);
@@ -800,6 +808,14 @@ public class MatrixND implements MatrixType {
     public double getValue(int... indices) {
         int offset = getOffset(indices);
         return data[offset];
+    }
+    
+    public double getValueAtIndex(int index) {
+        return data[index];
+    }
+
+    public void setValueAtIndex(int index, double value) {
+         data[index] = value;
     }
 
     int[] genOffsets(int nDim) {

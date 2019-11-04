@@ -51,7 +51,8 @@ public class NESTANMR extends MatrixOperation {
      */
     private final int innerIterations;
     /**
-     * Sample schedule used for non-uniform sampling. Specifies array elements where data is present.
+     * Sample schedule used for non-uniform sampling. Specifies array elements
+     * where data is present.
      *
      * @see #ist
      * @see #zero_samples
@@ -140,6 +141,9 @@ public class NESTANMR extends MatrixOperation {
     public Operation evalMatrix(MatrixType matrix) {
         try {
             MatrixND matrixND = (MatrixND) matrix;
+            for (int i = 0; i < matrixND.getNDim(); i++) {
+                matrixND.setVSizes(matrixND.getSizes());
+            }
             int[] zeroList = IstMatrix.genZeroList(sampleSchedule, matrixND);
             String logFile = null;
             if (logHome != null) {
