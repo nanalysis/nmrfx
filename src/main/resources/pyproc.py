@@ -2836,7 +2836,7 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
         process.addOperation(op)
     return op
 
-def GRINS(noise=0.0, scale=0.5, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noise=0.0, scale=0.5, zf=0, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
@@ -2851,6 +2851,12 @@ def GRINS(noise=0.0, scale=0.5, preserve=False, synthetic=False, logToFile=False
         max : 2.0
         amax : 10.0
         Parabola to Lorentzian scale 
+    zf : int
+        amin : 0
+        min : 0
+        max : 2
+        amax : 2
+        Zero fill factor 
     preserve : bool
         Add fitted signals to the residual signal (rather than replacing it)
     synthetic : bool
@@ -2878,7 +2884,7 @@ def GRINS(noise=0.0, scale=0.5, preserve=False, synthetic=False, logToFile=False
 
     process = process or getCurrentProcess()
 
-    op = GRINSOp(noise, scale, preserve, synthetic, schedule, logFileName)
+    op = GRINSOp(noise, scale, zf, preserve, synthetic, schedule, logFileName)
 
     if (dataset != None):
         op.eval(dataset)
