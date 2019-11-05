@@ -34,6 +34,7 @@ import org.nmrfx.processor.operations.Operation;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,6 +43,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.nmrfx.processor.datasets.DatasetWriter;
 
 /**
  * The Processor contains all processes. It also contains the "current
@@ -211,6 +213,8 @@ public class Processor {
     boolean modeND = true;
     private double elapsedTime = 0.0;
 
+    DatasetWriter datasetWriter;
+
     LineShapeCatalog simVecProcessor = null;
 
     private void addVecReadCount() {
@@ -268,8 +272,7 @@ public class Processor {
 
         //force NvLiteShell to be created
         if (useIOController) {
-            unprocessedVectorQueue = new LinkedBlockingQueue<>();
-            processedVectorQueue = new LinkedBlockingQueue<>();
+            datasetWriter = new DatasetWriter(this);
         }
         numProcessors = Runtime.getRuntime().availableProcessors() / 2;
         if (numProcessors < 1) {
@@ -1238,7 +1241,13 @@ public class Processor {
             }
         }
         try {
-            dataset.writeVector(vector);
+            if (useIOController) {
+                List<Vec> writeVectors = new ArrayList<>();
+                writeVectors.add(vector);
+                datasetWriter.addVectorsToWriteList(writeVectors);
+            } else {
+                dataset.writeVector(vector);
+            }
         } catch (IOException ex) {
             throw new ProcessingException(ex.getMessage());
         } catch (NullPointerException npe) {
