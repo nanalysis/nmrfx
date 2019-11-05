@@ -25,6 +25,8 @@ import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -39,6 +41,7 @@ public class GRINSOp extends MatrixOperation {
     private final double noise;
     private final double scale;
     private final int zfFactor;
+    private final double[] phase;  // init zero values
     /**
      * Preserve the residual noise
      *
@@ -61,7 +64,10 @@ public class GRINSOp extends MatrixOperation {
 
     private final File logHome;
 
-    public GRINSOp(double noise, double scale, int zfFactor, boolean preserve, boolean synthetic, SampleSchedule schedule, String logHomeName) throws ProcessingException {
+    public GRINSOp(double noise, double scale, int zfFactor,
+            List<Double> phaseList, boolean preserve, boolean synthetic,
+            SampleSchedule schedule, String logHomeName)
+            throws ProcessingException {
         this.noise = noise;
         this.scale = scale;
         this.preserve = preserve;
@@ -72,6 +78,14 @@ public class GRINSOp extends MatrixOperation {
             this.logHome = null;
         } else {
             this.logHome = new File(logHomeName);
+        }
+        if (!phaseList.isEmpty()) {
+            this.phase = new double[phaseList.size()];
+            for (int i = 0; i < phaseList.size(); i++) {
+                this.phase[i] = (Double) phaseList.get(i);
+            }
+        } else {
+            phase = null;
         }
     }
 
@@ -97,7 +111,7 @@ public class GRINSOp extends MatrixOperation {
             int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
             int[] srcTargetMap = genSrcTargetMap(schedule, matrixND);
 
-            GRINS grins = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, logFile);
+            GRINS grins = new GRINS(matrixND, noise, scale, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
             grins.exec();
             for (int i = 0; i < vector.getSize(); i++) {
                 double real = matrixND.getValue(i * 2);
@@ -129,7 +143,7 @@ public class GRINSOp extends MatrixOperation {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
             }
 //            if (matrixND.getIndex() == 381) {
-            GRINS grins = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, logFile);
+            GRINS grins = new GRINS(matrixND, noise, scale, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
             grins.exec();
 //            }
 //            if (matrixND.getIndex() == 94) {
