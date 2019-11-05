@@ -40,6 +40,7 @@ public class GRINS {
     final int[] zeroList;
     final int[] srcTargetMap;
     final double scale;
+    final double[] phase;
     final String logFileName;
 
     public static double thresholdScale = 0.8;
@@ -52,10 +53,11 @@ public class GRINS {
      */
     boolean calcStats = true;
 
-    public GRINS(MatrixND matrix, double noise, double scale, boolean preserve, boolean synthetic, int[] zeroList, int[] srcTargetMap, String logFileName) {
+    public GRINS(MatrixND matrix, double noise, double scale, double[] phase, boolean preserve, boolean synthetic, int[] zeroList, int[] srcTargetMap, String logFileName) {
         this.matrix = matrix;
         this.noise = noise;
         this.scale = scale;
+        this.phase = phase;
         this.preserve = preserve;
         this.synthetic = synthetic;
         this.zeroList = zeroList;
@@ -72,6 +74,18 @@ public class GRINS {
             double deltaToOrig = 0.0;
             boolean calcNoise = noise < 1.0e-6;
             double noiseValue = noise;
+            boolean doPhase = false;
+            if (phase != null) {
+                for (double phaseVal : phase) {
+                    if (Math.abs(phaseVal) > 1.0e-6) {
+                        doPhase = true;
+                        break;
+                    }
+                }
+            }
+            if (doPhase) {
+                matrix.phase(phase);
+            }
 
             // could just copy the actually sample values to vector
             MatrixND matrixCopy = new MatrixND(matrix);
