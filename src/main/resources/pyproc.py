@@ -2836,7 +2836,7 @@ def DGRINS(noise=5, logToFile=False, disabled=False, dataset=None, process=None)
         process.addOperation(op)
     return op
 
-def GRINS(noise=0.0, scale=0.5, zf=0, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
+def GRINS(noise=0.0, scale=0.5, zf=0, phase=None, preserve=False, synthetic=False, logToFile=False, disabled=False, dataset=None, process=None):
     ''' Experimental GRINS.
     Parameters
     ---------
@@ -2857,6 +2857,8 @@ def GRINS(noise=0.0, scale=0.5, zf=0, preserve=False, synthetic=False, logToFile
         max : 2
         amax : 2
         Zero fill factor 
+    phase : []
+        Array of phase values, 2 per indirect dimension.
     preserve : bool
         Add fitted signals to the residual signal (rather than replacing it)
     synthetic : bool
@@ -2868,6 +2870,13 @@ def GRINS(noise=0.0, scale=0.5, zf=0, preserve=False, synthetic=False, logToFile
         return None
 
     global fidInfo
+
+    phaseList = ArrayList()
+    if phase == None:
+        pass
+    else:
+        for value in phase:
+            phaseList.add(float(value))
 
     logFileName = None
 
@@ -2884,7 +2893,7 @@ def GRINS(noise=0.0, scale=0.5, zf=0, preserve=False, synthetic=False, logToFile
 
     process = process or getCurrentProcess()
 
-    op = GRINSOp(noise, scale, zf, preserve, synthetic, schedule, logFileName)
+    op = GRINSOp(noise, scale, zf, phaseList, preserve, synthetic, schedule, logFileName)
 
     if (dataset != None):
         op.eval(dataset)
