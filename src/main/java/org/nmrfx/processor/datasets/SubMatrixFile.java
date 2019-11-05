@@ -25,7 +25,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.math3.complex.Complex;
 import org.nmrfx.processor.datasets.StorageCache.DatasetKey;
+import org.nmrfx.processor.math.Vec;
 
 /**
  * Create a memory-mapped interface to a Dataset file
@@ -197,56 +199,65 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
     public float getFloat(int... offsets) throws IOException {
         int blockPos = getBlockPosition(offsets);
         int offset = getOffsetInBlock(offsets);
-
-        //  if (blockPos != currentBuffer) {
         DatasetKey key = keys[blockPos];
-
         return cache.io(key, offset, 0.0f, 0);
-
-//        ByteBuffer buffer = cache.getBuffer(key);
-//        currentBuffer = blockPos;
-//        // }
-//        if (dataType == 0) {
-//            return buffer.getFloat(offset * BYTES);
-//        } else {
-//            return buffer.getInt(offset * BYTES);
-//
-//        }
-////        long p = bytePosition(offsets);
-////        raFile.seek(p);
-////        if (dataType == 0) {
-////            return raFile.readFloat();
-////        } else {
-////            return raFile.readInt();
-////        }
     }
 
     @Override
     public void setFloat(float d, int... offsets) throws IOException {
         int blockPos = getBlockPosition(offsets);
         int offset = getOffsetInBlock(offsets);
-//        if (blockPos != currentBuffer) {
         DatasetKey key = keys[blockPos];
         cache.io(key, offset, d, 1);
-//        ByteBuffer buffer = cache.getBuffer(key);
-//        currentBuffer = blockPos;
-////        }
-//        if (dataType == 0) {
-//            buffer.putFloat(offset * BYTES, d);
-//        } else {
-//            buffer.putInt(offset * BYTES, (int) d);
-//        }
-////        long p = bytePosition(offsets);
-////        try {
-////            raFile.seek(p);
-////            if (dataType == 0) {
-////                raFile.writeFloat(d);
-////            } else {
-////                raFile.writeInt((int) d);
-////            }
-////        } catch (Exception e) {
-////            System.out.println("map range error " + p + " " + totalSize);
-////        }
+    }
+
+    public synchronized void vectorIO(int first, int last, int[] point, int dim, double scale, Vec vector, int mode) throws IOException {
+        if (mode == 0) {
+            int j = 0;
+            for (int i = first; i <= last; i++) {
+                point[dim] = i;
+                if (vector.isComplex()) {
+                    if ((i % 2) != 0) {
+                        setFloat((float) (vector.getImag(j) * scale), point);
+                        j++;
+                    } else {
+                        setFloat((float) (vector.getReal(j) * scale), point);
+                    }
+                } else {
+                    setFloat((float) (vector.getReal(j) * scale), point);
+                    j++;
+                }
+            }
+        } else {
+            double dReal = 0.0;
+            int j = 0;
+            for (int i = first; i <= last; i++) {
+                point[dim] = i;
+                if (vector.isComplex()) {
+                    if ((i % 2) != 0) {
+                        double dImaginary = getFloat(point) / scale;
+                        vector.set(j, new Complex(dReal, dImaginary));
+                        j++;
+                    } else {
+                        dReal = getFloat(point) / scale;
+                    }
+                } else {
+                    vector.set(j, getFloat(point) / scale);
+                    j++;
+                }
+            }
+
+        }
+    }
+
+    @Override
+    public void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+        vectorIO(first, last, point, dim, scale, vector, 0);
+    }
+
+    @Override
+    public void readVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+        vectorIO(first, last, point, dim, scale, vector, 1);
     }
 
     @Override
