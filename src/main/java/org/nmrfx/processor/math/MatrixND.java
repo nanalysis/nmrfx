@@ -906,7 +906,39 @@ public class MatrixND implements MatrixType {
         return sStats;
     }
 
+    public double[] measureReal(double mean, double sdev) {
+        double[] measures = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY, 0.0, 0.0};
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        double sum = 0.0;
+        double sum2 = 0.0;
+        int n = 0;
+        for (int i = 0; i < data.length; i++) {
+            if (data[i] < measures[0]) {
+                measures[0] = data[i];
+            }
+            if (data[i] > measures[1]) {
+                measures[1] = data[i];
+            }
+            double delta = data[i] - mean;
+            if (Math.abs(delta) < 3.0 * sdev) {
+                sum += data[i];
+                sum2 += data[i] * data[i];
+                n++;
+            }
+        }
+        sdev = Math.sqrt(n * sum2 - sum * sum) / n;
+        mean = sum / n;
+        measures[2] = mean;
+        measures[3] = sdev;
+        return measures;
+
+    }
+
     public double[] measure(boolean isComplex, double mean, double sdev) {
+        if (!isComplex) {
+            return measureReal(mean, sdev);
+        }
         double[] measures = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY, 0.0, 0.0};
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
