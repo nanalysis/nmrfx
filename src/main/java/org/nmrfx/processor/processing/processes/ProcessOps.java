@@ -51,7 +51,7 @@ import org.nmrfx.processor.operations.Zf;
 public class ProcessOps implements Callable<Object> {
 
     private ArrayList<Operation> operations = null;
-    private ArrayList<Vec> vectors = null;
+    private List<Vec> vectors = null;
     private boolean hasStarted = false;
     private boolean hasFinished = false;
     private String name;
@@ -229,7 +229,7 @@ public class ProcessOps implements Callable<Object> {
                 return this;
             }
             try {
-                vectors = processor.getVectorsFromFile();
+                vectors = processor.getNextVectors();
             } catch (Exception e) {
                 if (!processor.setProcessorError()) {
                     processor.setProcessorErrorMessage(e.getMessage());
@@ -276,9 +276,6 @@ public class ProcessOps implements Callable<Object> {
             vectorsProcessed += vectors.size();
             vectors.clear();
 
-            if (processor.getEndOfFile()) {
-                break;
-            }
         }
 
         completionMessage = "Process " + name + " has processed " + vectorsProcessed + " vectors.";
@@ -536,7 +533,7 @@ public class ProcessOps implements Callable<Object> {
         return vectors.size();
     }
 
-    public ArrayList<Vec> getVectors() {
+    public List<Vec> getVectors() {
         return vectors;
     }
 

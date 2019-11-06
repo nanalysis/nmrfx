@@ -34,13 +34,16 @@ import org.nmrfx.processor.operations.Operation;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.nmrfx.processor.datasets.DatasetWriter;
@@ -83,11 +86,12 @@ public class Processor {
     /**
      * The number of vector groups which have been read.
      */
-    private int vecGroupsRead = 0;
+    private AtomicInteger vecGroupsRead = new AtomicInteger(0);
     /**
      * The number of vectors or matrices which have been written
      */
-    private int mathObjectsWritten = 0;
+    private AtomicInteger mathObjectsWritten = new AtomicInteger(0);
+
     /**
      * The number of vectors which need to be written
      */
@@ -103,11 +107,11 @@ public class Processor {
     /**
      * The total number of matrices that will be read from file.
      */
-    private int totalMatrices = 0;
+    private AtomicInteger totalMatrices = new AtomicInteger(0);
     /**
      * The number of matrices that have been read.
      */
-    private int matricesRead = 0;
+    private AtomicInteger matricesRead = new AtomicInteger(0);
     /**
      * The number of processes to create.
      */
@@ -120,7 +124,7 @@ public class Processor {
      * True if the file has been completely read so that loading vectors will
      * stop.
      */
-    private boolean endOfFile;
+    private AtomicBoolean endOfFile = new AtomicBoolean(false);
     /**
      * If True then processes will stop querying for unprocessed vectors to
      * process.
@@ -145,23 +149,14 @@ public class Processor {
      * automatically be added to.
      */
     private static ProcessOps defaultProcess;
-    /**
-     * Each LinkedList<Vec> will hold one set of arraylists for a process. The
-     * outer List is synchronized but the inner List is not synchronized.
-     */
-    private LinkedBlockingQueue<ArrayList<Vec>> unprocessedVectorQueue;
-    /**
-     * Each LinkedList<Vec> will be written to a file.
-     */
-    private LinkedBlockingQueue<ArrayList<Vec>> processedVectorQueue;
 
     /**
      * This flag is to test IOController / non-IOController IO for debugging.
      */
-    public boolean useIOController = false;
+    public boolean useIOController = true;
 
-    private boolean processorError = false;
-    private String errorMessage = "";
+    private AtomicBoolean processorError = new AtomicBoolean(false);
+    private AtomicReference<String> errorMessage = new AtomicReference("");
 
     private ArrayList<NMRData> nmrDataSets = new ArrayList<>();
     private boolean nvDataset = false;
@@ -205,7 +200,11 @@ public class Processor {
      */
     private Boolean isRunning = false;
 
+    private AtomicBoolean doneWriting = new AtomicBoolean(false);
+
     private static int vecReadCount = 0;
+
+    AtomicInteger vectorsRead = new AtomicInteger(0);
 
     private MultiVecCounter tmult;
 
@@ -271,9 +270,6 @@ public class Processor {
         defaultProcess = null;
 
         //force NvLiteShell to be created
-        if (useIOController) {
-            datasetWriter = new DatasetWriter(this);
-        }
         numProcessors = Runtime.getRuntime().availableProcessors() / 2;
         if (numProcessors < 1) {
             numProcessors = 1;
@@ -641,7 +637,7 @@ public class Processor {
 //        for (int i=0; i<dataset.getNDim(); i++) {
 //            System.out.println(i + " vsize " + dataset.getVSize(dim[i]) +  " vsize_r " + dataset.getVSize_r(dim[i]) + " size " + dataset.getSize(dim[i]));
 //        }
-        totalMatrices = pt[pt.length - 1][1];  // pt[2][1];
+        totalMatrices.set(pt[pt.length - 1][1]);  // pt[2][1];
 /*
         System.out.print("matrix");
         for (int i=0;i< pt.length-1;i++) {
@@ -660,7 +656,7 @@ public class Processor {
             nvComplex = false;
         }
 
-        matricesRead = 0;
+        matricesRead.set(0);
         return true;
     }
 
@@ -974,7 +970,7 @@ public class Processor {
         if (!nvDataset) {
             throw new ProcessingException("Cannot get matrix, not indirect dimension.");
         }
-        if (endOfFile) {
+        if (endOfFile.get()) {
             return matrix;
         }
         int matrixCount = incrementMatricesRead();  // increment matrix count
@@ -1005,7 +1001,7 @@ public class Processor {
         if (!nvDataset) {
             throw new ProcessingException("Cannot get matrix, not indirect dimension.");
         }
-        if (endOfFile) {
+        if (endOfFile.get()) {
             return matrix;
         }
         int matrixCount = incrementMatricesRead();  // increment matrix count
@@ -1042,13 +1038,33 @@ public class Processor {
         return matrix;
     }
 
+    public List<Vec> getNextVectors() {
+        if (useIOController) {
+            while (true) {
+                if (datasetWriter.finished()) {
+                    return Collections.EMPTY_LIST;
+                } else {
+                    List<Vec> vecs = datasetWriter.getVectorsFromUnprocessedList(100);
+                    if (vecs != null) {
+                        int nRead = vectorsRead.addAndGet(vecs.size());
+//                        System.out.println("load more vecs " + vecs.size() + " read " + nRead + " " + totalVecGroups + " " + vectorsToWrite);
+                        return vecs;
+                    } else {
+                    }
+                }
+            }
+        } else {
+            return getVectorsFromFile();
+        }
+    }
+
     /**
      * Gets the next 'vectorsPerProcess' Vecs from the data file and returns
      * them to the calling ProcessOps.
      *
      * @return ArrayList of Vecs from the dataset.
      */
-    public synchronized ArrayList<Vec> getVectorsFromFile() {
+    public synchronized List<Vec> getVectorsFromFile() {
         Vec temp;
         ArrayList<Vec> vectors = new ArrayList<>();
 
@@ -1057,13 +1073,13 @@ public class Processor {
 // pt[1][0] to pt[1][1] is start/end coords for orthogonal row
         if (nvDataset) {  // indirect dimensions
             int[][] pt;
-            if (endOfFile) {
+            if (endOfFile.get()) {
                 return vectors;
             }
             for (int i = 0; i < vectorsPerProcess; ++i) {
                 pt = scanregion.nextPoint2();
                 if (pt.length == 0) {
-                    endOfFile = true;
+                    endOfFile.set(true);
                     break;
                 }
                 try {
@@ -1146,90 +1162,11 @@ public class Processor {
         }
     }
 
-    /**
-     * Adds vectors to the unprocessed vector queue.
-     */
-    public synchronized boolean addNewVectors() {
-        ArrayList<Vec> vectors = getVectorsFromFile();
-        if (!endOfFile) {
-            unprocessedVectorQueue.add(vectors);
-            return true;
-        }
-        return false;
-    }
-
-    public void addVectorsToWriteList(ArrayList<Vec> vectors) {
-        processedVectorQueue.add(vectors);
-    }
-
-    public ArrayList<Vec> getVectorsFromWriteList() {
-        try {
-            return processedVectorQueue.take();
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
-
-    public void addVectorsToUnprocessedList(ArrayList<Vec> vectors) {
-        unprocessedVectorQueue.add(vectors);
-    }
-
-    public ArrayList<Vec> getVectorsFromUnprocessedList() {
-        try {
-            return unprocessedVectorQueue.take();
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
-            return new ArrayList<>();
-        }
-    }
-
-    /**
-     * Writes all of the vectors from the processedVectorQueue to file.
-     */
-    public void writeVectors() {
-        ArrayList<Vec> temp;
-        if (processedVectorQueue.size() != 0) {
-            while (true) {
-                temp = processedVectorQueue.poll();
-                for (Vec vector : temp) {
-                    try {
-                        dataset.writeVector(vector);
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                        Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                if (processedVectorQueue.isEmpty()) {
-                    break;
-                }
-            }
-        }
-    }
-
-    public void writeNVectors(int n) {
-        if (processedVectorQueue.size() != 0) {
-            for (int i = 0; i < n; ++i) {
-                for (Vec vector : processedVectorQueue.poll()) {
-                    try {
-                        dataset.writeVector(vector);
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                        Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                if (processedVectorQueue.isEmpty()) {
-                    break;
-                }
-            }
-        }
-    }
-
-    public synchronized void writeVector(Vec vector) {
-        mathObjectsWritten++;
+    public void writeVector(Vec vector) {
+        int nObj = mathObjectsWritten.incrementAndGet();
         if (progressUpdater != null) {
-            if ((mathObjectsWritten == vectorsToWrite) || ((mathObjectsWritten % 16) == 0)) {
-                double f = (1.0 * mathObjectsWritten) / vectorsToWrite;
+            if ((nObj == vectorsToWrite) || ((nObj % 16) == 0)) {
+                double f = (1.0 * nObj) / vectorsToWrite;
                 progressUpdater.updateProgress(f);
             }
         }
@@ -1270,10 +1207,10 @@ public class Processor {
     }
 
     public synchronized void writeMatrix(Matrix matrix) {  // called by WRITE op
-        mathObjectsWritten++;
+        int nObj = mathObjectsWritten.incrementAndGet();
         if (progressUpdater != null) {
-            if ((mathObjectsWritten == totalMatrices) || ((mathObjectsWritten % 16) == 0)) {
-                double f = (1.0 * matricesRead) / totalMatrices;
+            if ((nObj == totalMatrices.get()) || ((nObj % 16) == 0)) {
+                double f = (1.0 * nObj) / totalMatrices.get();
                 progressUpdater.updateProgress(f);
             }
         }
@@ -1290,10 +1227,10 @@ public class Processor {
     }
 
     public synchronized void writeMatrixND(MatrixND matrix) {  // called by WRITE op
-        mathObjectsWritten++;
+        int nObj = mathObjectsWritten.incrementAndGet();
         if (progressUpdater != null) {
-            if ((mathObjectsWritten == totalMatrices) || ((mathObjectsWritten % 16) == 0)) {
-                double f = (1.0 * matricesRead) / totalMatrices;
+            if ((nObj == totalMatrices.get()) || ((nObj % 16) == 0)) {
+                double f = (1.0 * nObj) / totalMatrices.get();
                 progressUpdater.updateProgress(f);
             }
         }
@@ -1378,7 +1315,7 @@ public class Processor {
                 continue;
             }
             if (p.hasOperations()) {
-                mathObjectsWritten = 0;
+                mathObjectsWritten.set(0);
                 if (progressUpdater != null) {
                     int[] dims = p.getDims();
                     String dimString = "dim ";
@@ -1463,6 +1400,10 @@ public class Processor {
         return elapsedTime;
     }
 
+    public boolean doneWriting() {
+        return doneWriting.get();
+    }
+
     /**
      * Allows a user to create a process and then run it explicitly. This allows
      * multiple processes to be created and then run sequentially.
@@ -1474,15 +1415,21 @@ public class Processor {
             return;
         }
         synchronized (isRunning) {
+            doneWriting.set(false);
+
             isRunning = true;
 
 //            System.out.println("Num Processes: " + numProcessors);
 //            defaultProcess = p;
             setupPool(p);
-            vecGroupsRead = 0;
-            endOfFile = false;
+            vecGroupsRead.set(0);
+            vectorsRead.set(0);
+            endOfFile.set(false);
 
             ArrayList<Future> completedProcesses = new ArrayList<>();
+            if (useIOController && !p.isDataset() && !p.isMatrix()) {
+                datasetWriter = new DatasetWriter(this);
+            }
 
             for (Runnable process : processes) {
                 completedProcesses.add(pool.submit(process));
@@ -1495,6 +1442,10 @@ public class Processor {
                     ex.printStackTrace();
                     throw new ProcessingException(ex.getMessage());
                 }
+            }
+            doneWriting.set(true);
+            if (useIOController && !p.isDataset() && !p.isMatrix()) {
+                boolean doneFlushed = datasetWriter.isDone(10000);
             }
             if (!getProcessorError()) {
                 if (p.isMatrix()) {
@@ -1516,13 +1467,16 @@ public class Processor {
             }
             printVecReadCount();
             pool.shutdown();
+            if (useIOController && !p.isDataset() && !p.isMatrix()) {
+                datasetWriter.shutdown();
+            }
             processes.clear();
             ProcessOps.resetNumProcessesCreated();
             p.getOperations().clear();
             isRunning = false;
             if (getProcessorError()) {
                 closeDataset();
-                throw new ProcessingException(errorMessage);
+                throw new ProcessingException(errorMessage.get());
             }
         }
     }
@@ -1564,20 +1518,12 @@ public class Processor {
         return processes;
     }
 
-    public synchronized boolean getEndOfFile() {
-        return endOfFile;
+    public boolean getEndOfFile() {
+        return endOfFile.get();
     }
 
-    public int getUnprocessedVectorQueueSize() {
-        return unprocessedVectorQueue.size();
-    }
-
-    public int getProcessedVectorQueueSize() {
-        return processedVectorQueue.size();
-    }
-
-    public synchronized void setEndOfFile() {
-        endOfFile = true;
+    public void setEndOfFile() {
+        endOfFile.set(true);
     }
 
     /**
@@ -1613,28 +1559,24 @@ public class Processor {
         return nvDataset;
     }
 
-    public synchronized int getTotalVecGroups() {
+    public int getTotalVecGroups() {
         return totalVecGroups;
     }
 
-    public synchronized int getVecGroupsRead() {
-        return vecGroupsRead;
+    public int getVecGroupsRead() {
+        return vecGroupsRead.get();
     }
 
-    public synchronized int incrementVecGroupsRead() {
-        int temp = vecGroupsRead;
-        vecGroupsRead++;
-        return temp;
+    public int incrementVecGroupsRead() {
+        return vecGroupsRead.getAndIncrement();
     }
 
-    public synchronized int getTotalMatrices() {
-        return totalMatrices;
+    public int getTotalMatrices() {
+        return totalMatrices.get();
     }
 
-    public synchronized int incrementMatricesRead() {
-        int temp = matricesRead;
-        matricesRead++;
-        return temp;
+    public int incrementMatricesRead() {
+        return matricesRead.getAndIncrement();
     }
 
     public void setNumProcessors(int n) {
@@ -1674,23 +1616,21 @@ public class Processor {
         }
     }
 
-    public synchronized void clearProcessorError() {
-        processorError = false;
-        errorMessage = "";
+    public void clearProcessorError() {
+        processorError.set(false);
+        setProcessorErrorMessage("");
     }
 
-    public synchronized void setProcessorErrorMessage(String message) {
-        errorMessage = message;
+    public void setProcessorErrorMessage(String message) {
+        errorMessage.set(message);
     }
 
-    public synchronized boolean setProcessorError() {
-        boolean temp = processorError;
-        processorError = true;
-        return temp;
+    public boolean setProcessorError() {
+        return processorError.getAndSet(true);
     }
 
-    public synchronized boolean getProcessorError() {
-        return processorError;
+    public boolean getProcessorError() {
+        return processorError.get();
     }
 
     public void keepDatasetOpen(boolean state) {
