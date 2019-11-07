@@ -1,7 +1,19 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * NMRFx Processor : A Program for Processing NMR Data 
+ * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.nmrfx.processor.datasets;
 
@@ -19,15 +31,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.processing.Processor;
 
 /**
  *
  * @author brucejohnson
  */
-public class DatasetWriter {
+public class MatrixTypeService {
 
+    /* Each LinkedList<MatrixType> will hold one set of arraylists for a process. The
+     * outer List is synchronized but the inner List is not synchronized.
+     */
+    private final LinkedBlockingQueue<List<MatrixType>> unprocessedItemQueue;
+    /**
+     * Each LinkedList<MatrixType> will be written to a file.
+     */
+    private final LinkedBlockingQueue<List<MatrixType>> processedItemQueue;
     AtomicBoolean endOfFile = new AtomicBoolean(false);
     AtomicInteger nWritten = new AtomicInteger(0);
 
@@ -41,30 +61,20 @@ public class DatasetWriter {
 
     Processor processor;
 
-    public DatasetWriter(Processor processor) {
+    public MatrixTypeService(Processor processor) {
         this.processor = processor;
-        unprocessedVectorQueue = new LinkedBlockingQueue<>();
-        processedVectorQueue = new LinkedBlockingQueue<>();
-        futureTask = new FutureTask(() -> readWriteVectors());
+        unprocessedItemQueue = new LinkedBlockingQueue<>();
+        processedItemQueue = new LinkedBlockingQueue<>();
+        futureTask = new FutureTask(() -> readWriteItems());
         executor.execute(futureTask);
-
     }
-
-    /* Each LinkedList<Vec> will hold one set of arraylists for a process. The
-     * outer List is synchronized but the inner List is not synchronized.
-     */
-    private LinkedBlockingQueue<List<Vec>> unprocessedVectorQueue;
-    /**
-     * Each LinkedList<Vec> will be written to a file.
-     */
-    private LinkedBlockingQueue<List<Vec>> processedVectorQueue;
 
     public void shutdown() {
         executor.shutdown();
     }
 
     public boolean finished() {
-        return endOfFile.get() && unprocessedVectorQueue.isEmpty();
+        return endOfFile.get() && unprocessedItemQueue.isEmpty();
     }
 
     public boolean isDone(int timeOut) {
@@ -79,12 +89,12 @@ public class DatasetWriter {
         }
     }
 
-    /* Adds vectors to the unprocessed vector queue.
+    /* Adds items to the unprocessed item queue.
      */
-    public boolean addNewVectors() {
+    public boolean addNewItems() {
         if (!processor.getEndOfFile()) {
-            List<Vec> vectors = processor.getVectorsFromFile();
-            unprocessedVectorQueue.add(vectors);
+            List<MatrixType> vectors = processor.getMatrixTypesFromFile();
+            unprocessedItemQueue.add(vectors);
             if (processor.getEndOfFile()) {
                 endOfFile.set(true);
             }
@@ -95,17 +105,17 @@ public class DatasetWriter {
         return false;
     }
 
-    public void addVectorsToWriteList(List<Vec> vectors) {
-        processedVectorQueue.add(vectors);
+    public void addItemsToWriteList(List<MatrixType> vectors) {
+        processedItemQueue.add(vectors);
     }
 
-    public List<Vec> getVectorsFromUnprocessedList(int timeOut) {
-        List<Vec> vecs;
+    public List<MatrixType> getItemsFromUnprocessedList(int timeOut) {
+        List<MatrixType> vecs;
         try {
             if (finished()) {
                 vecs = null;
             } else {
-                vecs = unprocessedVectorQueue.poll(timeOut, TimeUnit.MILLISECONDS);
+                vecs = unprocessedItemQueue.poll(timeOut, TimeUnit.MILLISECONDS);
             }
             return vecs;
         } catch (InterruptedException ex) {
@@ -114,11 +124,11 @@ public class DatasetWriter {
         }
     }
 
-    private void writeVectors(List<Vec> temp) {
-        for (Vec vector : temp) {
+    private void writeItems(List<MatrixType> temp) {
+        for (MatrixType vector : temp) {
             try {
                 //vector.printLocation();
-                processor.getDataset().writeVector(vector);
+                processor.getDataset().writeMatrixType(vector);
                 nWritten.incrementAndGet();
             } catch (IOException ex) {
                 ex.printStackTrace();
@@ -128,33 +138,32 @@ public class DatasetWriter {
     }
 
     /**
-     * Writes all of the vectors from the processedVectorQueue to file.
+     * Writes all of the items from the processedItemQueue to file.
      */
-    public final boolean readWriteVectors() {
-        List<Vec> temp = null;
+    public final boolean readWriteItems() {
+        List<MatrixType> temp = null;
         while (true) {
             try {
-                if (!processor.getEndOfFile() && (unprocessedVectorQueue.size() < 4) && (processedVectorQueue.size() < 128)) {
+                if (!processor.getEndOfFile() && (unprocessedItemQueue.size() < 4) && (processedItemQueue.size() < 128)) {
                     for (int i = 0; i < 4; i++) {
-                        if (!addNewVectors()) {
+                        if (!addNewItems()) {
                             break;
                         }
                     }
                 }
 
-                temp = processedVectorQueue.poll(100, TimeUnit.MILLISECONDS);
+                temp = processedItemQueue.poll(100, TimeUnit.MILLISECONDS);
                 if (temp != null) {
-                    writeVectors(temp);
+                    writeItems(temp);
                 } else {
                     if (processor.doneWriting()) {
                         return true;
                     }
                 }
             } catch (InterruptedException ex) {
-                Logger.getLogger(DatasetWriter.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(MatrixTypeService.class.getName()).log(Level.SEVERE, null, ex);
                 return false;
             }
         }
     }
-
 }

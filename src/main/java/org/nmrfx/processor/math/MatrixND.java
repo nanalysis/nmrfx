@@ -48,6 +48,8 @@ public class MatrixND implements MatrixType {
      * Output point to write matrix.
      */
     private int[][] pt = null;
+    
+    private int[] dim = null;
 
     public MatrixND(int... sizes) {
         this.sizes = sizes.clone();
@@ -65,6 +67,12 @@ public class MatrixND implements MatrixType {
     public MatrixND(int[][] pt, int... sizes) {
         this(sizes);
         this.pt = pt;
+    }
+    
+    public MatrixND(int[][] pt, int[] dim, int... sizes) {
+        this(sizes);
+        this.pt = pt;
+        this.dim = dim;
     }
 
     public MatrixND(MatrixND source) {
@@ -209,6 +217,10 @@ public class MatrixND implements MatrixType {
 
     public int[][] getPt() {
         return pt;
+    }
+
+    public int[] getDim() {
+        return dim;
     }
 
     public int getNElems() {
