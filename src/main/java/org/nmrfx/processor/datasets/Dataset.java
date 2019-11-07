@@ -37,6 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.processing.LineShapeCatalog;
 import org.renjin.sexp.AttributeMap;
 import org.renjin.sexp.DoubleVector;
@@ -556,6 +557,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             newName = rootName + "_" + index + ext;
         } while (theFiles.get(newName) != null);
         return newName;
+    }
+
+    public boolean isCacheFile() {
+        return dataFile instanceof SubMatrixFile;
     }
 
     /**
@@ -4288,6 +4293,15 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         }
         vector.setPt(pt, dim);
         writeVector(vector);
+    }
+
+    public void writeMatrixType(MatrixType matrixType) throws IOException {
+        if (matrixType instanceof Vec) {
+            writeVector((Vec) matrixType);
+        } else {
+            MatrixND matrix = (MatrixND) matrixType;
+            writeMatrixNDToDatasetFile(matrix.getDim(), matrix);
+        }
     }
 
     /**

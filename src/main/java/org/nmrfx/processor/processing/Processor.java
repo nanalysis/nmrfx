@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.nmrfx.processor.datasets.DatasetWriter;
+import org.nmrfx.processor.datasets.MatrixTypeService;
 
 /**
  * The Processor contains all processes. It also contains the "current
@@ -157,6 +157,7 @@ public class Processor {
 
     private AtomicBoolean processorError = new AtomicBoolean(false);
     private AtomicReference<String> errorMessage = new AtomicReference("");
+    private AtomicBoolean matrixMode = new AtomicBoolean(false);
 
     private ArrayList<NMRData> nmrDataSets = new ArrayList<>();
     private boolean nvDataset = false;
@@ -212,7 +213,7 @@ public class Processor {
     boolean modeND = true;
     private double elapsedTime = 0.0;
 
-    DatasetWriter datasetWriter;
+    MatrixTypeService datasetWriter;
 
     LineShapeCatalog simVecProcessor = null;
 
@@ -1026,7 +1027,7 @@ public class Processor {
             writePt[pt.length - 1][0] = matrixCount;
             pt[pt.length - 1][0] = matrixCount;
             try {
-                matrix = new MatrixND(writePt, matrixSizes);
+                matrix = new MatrixND(writePt, dim, matrixSizes);
                 matrix.setVSizes(vSizes);
 //                printDimPt("getMatrix", dim, matrix.getPt());  // for debug
                 dataset.readMatrixND(pt, dim, matrix);
@@ -1044,9 +1045,13 @@ public class Processor {
                 if (datasetWriter.finished()) {
                     return Collections.EMPTY_LIST;
                 } else {
-                    List<Vec> vecs = datasetWriter.getVectorsFromUnprocessedList(100);
-                    if (vecs != null) {
-                        int nRead = vectorsRead.addAndGet(vecs.size());
+                    List<MatrixType> matrixTypes = datasetWriter.getItemsFromUnprocessedList(100);
+                    if (matrixTypes != null) {
+                        int nRead = vectorsRead.addAndGet(matrixTypes.size());
+                        List<Vec> vecs = new ArrayList<>();
+                        for (MatrixType mat : matrixTypes) {
+                            vecs.add((Vec) mat);
+                        }
 //                        System.out.println("load more vecs " + vecs.size() + " read " + nRead + " " + totalVecGroups + " " + vectorsToWrite);
                         return vecs;
                     } else {
@@ -1056,6 +1061,19 @@ public class Processor {
         } else {
             return getVectorsFromFile();
         }
+    }
+
+    public List<MatrixType> getMatrixTypesFromFile() {
+        List<MatrixType> mats = new ArrayList<>();
+        if (matrixMode.get()) {
+            mats.add(getMatrixNDFromFile());
+        } else {
+            List<Vec> vecs = getVectorsFromFile();
+            for (Vec vec : vecs) {
+                mats.add(vec);
+            }
+        }
+        return mats;
     }
 
     /**
@@ -1179,9 +1197,9 @@ public class Processor {
         }
         try {
             if (useIOController) {
-                List<Vec> writeVectors = new ArrayList<>();
+                List<MatrixType> writeVectors = new ArrayList<>();
                 writeVectors.add(vector);
-                datasetWriter.addVectorsToWriteList(writeVectors);
+                datasetWriter.addItemsToWriteList(writeVectors);
             } else {
                 dataset.writeVector(vector);
             }
@@ -1197,10 +1215,16 @@ public class Processor {
     }
 
     public synchronized void writeMatrix(MatrixType matrix) {
-        if (matrix instanceof Matrix) {
-            writeMatrix((Matrix) matrix);
+        if (useIOController) {
+            List<MatrixType> mats = new ArrayList<>();
+            mats.add(matrix);
+            datasetWriter.addItemsToWriteList(mats);
         } else {
-            writeMatrixND((MatrixND) matrix);
+            if (matrix instanceof Matrix) {
+                writeMatrix((Matrix) matrix);
+            } else {
+                writeMatrixND((MatrixND) matrix);
+            }
 
         }
 
@@ -1415,7 +1439,9 @@ public class Processor {
             return;
         }
         synchronized (isRunning) {
+            useIOController = dataset.isCacheFile();
             doneWriting.set(false);
+            matrixMode.set(p.isMatrix());
 
             isRunning = true;
 
@@ -1428,7 +1454,7 @@ public class Processor {
 
             ArrayList<Future> completedProcesses = new ArrayList<>();
             if (useIOController && !p.isDataset() && !p.isMatrix()) {
-                datasetWriter = new DatasetWriter(this);
+                datasetWriter = new MatrixTypeService(this);
             }
 
             for (Runnable process : processes) {
