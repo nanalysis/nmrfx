@@ -39,8 +39,10 @@ import java.io.*;
 import java.util.*;
 
 /**
- * An engine for finding the maximum-weight matching in a complete bipartite graph. Suppose we have two sets <i>S</i>
- * and <i>T</i>, both of size <i>n</i>. For each <i>i</i> in <i>S</i> and <i>j</i>
+ * An engine for finding the maximum-weight matching in a complete bipartite
+ * graph. Suppose we have two sets <i>S</i>
+ * and <i>T</i>, both of size <i>n</i>. For each <i>i</i> in <i>S</i> and
+ * <i>j</i>
  * in <i>T</i>, we have a weight <i>w<sub>ij</sub></i>. A perfect matching
  * <i>X</i> is a subset of <i>S</i> x <i>T</i> such that each
  * <i>i</i> in <i>S</i> occurs in exactly one element of <i>X</i>, and each
@@ -49,31 +51,37 @@ import java.util.*;
  * <i>S</i> to <i>T</i>. The weight of <i>X</i> is the sum, over (<i>i</i>,
  * <i>j</i>) in <i>X</i>, of
  * <i>w<sub>ij</sub></i>. A BipartiteMatcher takes the number
- * <i>n</i> and the weights <i>w<sub>ij</sub></i>, and finds a perfect matching of maximum weight.
+ * <i>n</i> and the weights <i>w<sub>ij</sub></i>, and finds a perfect matching
+ * of maximum weight.
  *
- * It uses the Hungarian algorithm of Kuhn (1955), as improved and presented by E. L. Lawler in his book
- * <cite>Combinatorial Optimization: Networks and Matroids</cite> (Holt, Rinehart and Winston, 1976, p. 205-206). The
- * running time is O(<i>n</i><sup>3</sup>). The weights can be any finite real numbers; Lawler's algorithm assumes
- * positive weights, so if necessary we add a constant <i>c</i> to all the weights before running the algorithm. This
- * increases the weight of every perfect matching by <i>nc</i>, which doesn't change which perfect matchings have
- * maximum weight.
+ * It uses the Hungarian algorithm of Kuhn (1955), as improved and presented by
+ * E. L. Lawler in his book
+ * <cite>Combinatorial Optimization: Networks and Matroids</cite> (Holt,
+ * Rinehart and Winston, 1976, p. 205-206). The running time is
+ * O(<i>n</i><sup>3</sup>). The weights can be any finite real numbers; Lawler's
+ * algorithm assumes positive weights, so if necessary we add a constant
+ * <i>c</i> to all the weights before running the algorithm. This increases the
+ * weight of every perfect matching by <i>nc</i>, which doesn't change which
+ * perfect matchings have maximum weight.
  *
- * If a weight is set to Double.NEGATIVE_INFINITY, then the algorithm will behave as if that edge were not in the graph.
- * If all the edges incident on a given node have weight Double.NEGATIVE_INFINITY, then the final result will not be a
- * perfect matching, and an exception will be thrown.
+ * If a weight is set to Double.NEGATIVE_INFINITY, then the algorithm will
+ * behave as if that edge were not in the graph. If all the edges incident on a
+ * given node have weight Double.NEGATIVE_INFINITY, then the final result will
+ * not be a perfect matching, and an exception will be thrown.
  */
 public class BipartiteMatcher {
 
     /**
-     * Creates a BipartiteMatcher without specifying the graph size. Calling any other method before calling reset will
-     * yield an IllegalStateException.
+     * Creates a BipartiteMatcher without specifying the graph size. Calling any
+     * other method before calling reset will yield an IllegalStateException.
      */
     public BipartiteMatcher() {
         n = -1;
     }
 
     /**
-     * Creates a BipartiteMatcher and prepares it to run on an n x n graph. All the weights are initially set to 1.
+     * Creates a BipartiteMatcher and prepares it to run on an n x n graph. All
+     * the weights are initially set to 1.
      *
      * @param n size of graph
      */
@@ -86,7 +94,8 @@ public class BipartiteMatcher {
     }
 
     /**
-     * Resets the BipartiteMatcher to run on an n x n graph. The weights are all reset to 1.
+     * Resets the BipartiteMatcher to run on an n x n graph. The weights are all
+     * reset to 1.
      *
      * @param n Size of graph
      * @param useHashMap Use HashMap for internal storage
@@ -175,9 +184,27 @@ public class BipartiteMatcher {
 
     }
 
+    public static double getMaxWtSum(BipartiteMatcher matcher) {
+        double wMin = matcher.minWeight;
+        boolean wtsChanged = wMin <= 0;
+        int[] matches = matcher.getMatching();
+        double maxSum = 0.0;
+        for (int i = 0; i < matches.length; i++) {
+            int j = matches[i];
+            if (j == -1) {
+                continue;
+            }
+            
+            double weight = matcher.getWeight(i, j);
+            maxSum += wtsChanged ? (weight + wMin - 1) : weight;
+        }
+        return maxSum;
+    }
+
     /**
-     * Returns a maximum-weight perfect matching relative to the weights specified with setWeight. The matching is
-     * represented as an array arr of length n, where arr[i] = j if (i,j) is in the matching.
+     * Returns a maximum-weight perfect matching relative to the weights
+     * specified with setWeight. The matching is represented as an array arr of
+     * length n, where arr[i] = j if (i,j) is in the matching.
      *
      * @return matching
      */
@@ -270,9 +297,10 @@ public class BipartiteMatcher {
     }
 
     /**
-     * Tries to find an augmenting path containing only edges (i,j) for which u[i] + v[j] = weights[i][j]. If it
-     * succeeds, returns the index of the last node in the path. Otherwise, returns -1. In any case, updates the labels
-     * and pi values.
+     * Tries to find an augmenting path containing only edges (i,j) for which
+     * u[i] + v[j] = weights[i][j]. If it succeeds, returns the index of the
+     * last node in the path. Otherwise, returns -1. In any case, updates the
+     * labels and pi values.
      */
     int findAugmentingPath() {
         while ((!eligibleS.isEmpty()) || (!eligibleT.isEmpty())) {
@@ -315,8 +343,9 @@ public class BipartiteMatcher {
     }
 
     /**
-     * Given an augmenting path ending at lastNode, "flips" the path. This means that an edge on the path is in the
-     * matching after the flip if and only if it was not in the matching before the flip. An augmenting path connects
+     * Given an augmenting path ending at lastNode, "flips" the path. This means
+     * that an edge on the path is in the matching after the flip if and only if
+     * it was not in the matching before the flip. An augmenting path connects
      * two unmatched nodes, so the result is still a matching.
      */
     void flipPath(int lastNode) {
@@ -357,7 +386,8 @@ public class BipartiteMatcher {
     }
 
     /**
-     * Ensures that all weights are either Double.NEGATIVE_INFINITY, or strictly greater than zero.
+     * Ensures that all weights are either Double.NEGATIVE_INFINITY, or strictly
+     * greater than zero.
      */
     private void ensurePositiveWeights() {
         // minWeight is the minimum non-infinite weight
@@ -385,8 +415,9 @@ public class BipartiteMatcher {
         }
     }
     /**
-     * Tolerance for comparisons to zero, to account for floating-point imprecision. We consider a positive number to be
-     * essentially zero if it is strictly less than TOL.
+     * Tolerance for comparisons to zero, to account for floating-point
+     * imprecision. We consider a positive number to be essentially zero if it
+     * is strictly less than TOL.
      */
     private static final double TOL = 1e-10;
     int n;
