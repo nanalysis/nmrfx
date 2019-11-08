@@ -27,7 +27,6 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -48,10 +47,11 @@ public class MatrixTypeService {
      * Each LinkedList<MatrixType> will be written to a file.
      */
     private final LinkedBlockingQueue<List<MatrixType>> processedItemQueue;
-    AtomicBoolean endOfFile = new AtomicBoolean(false);
     AtomicInteger nWritten = new AtomicInteger(0);
+    AtomicInteger nRead = new AtomicInteger(0);
     AtomicInteger processedQueueLimit;
     int itemsToWrite;
+    int itemsToRead;
 
     FutureTask<Boolean> futureTask;
 
@@ -63,9 +63,10 @@ public class MatrixTypeService {
 
     Processor processor;
 
-    public MatrixTypeService(Processor processor, int processedQueueLimit, int itemsToWrite) {
+    public MatrixTypeService(Processor processor, int processedQueueLimit, int itemsToRead, int itemsToWrite) {
         this.processor = processor;
         this.itemsToWrite = itemsToWrite;
+        this.itemsToRead = itemsToRead;
         this.processedQueueLimit = new AtomicInteger(processedQueueLimit);
         unprocessedItemQueue = new LinkedBlockingQueue<>();
         processedItemQueue = new LinkedBlockingQueue<>();
@@ -83,18 +84,26 @@ public class MatrixTypeService {
     }
 
     public boolean finished() {
-        return endOfFile.get() && unprocessedItemQueue.isEmpty();
+        if ((nRead.get() >= itemsToRead) && !unprocessedItemQueue.isEmpty()) {
+//            System.out.println("still " + unprocessedItemQueue.size());
+            return false;
+        } else {
+            return (nRead.get() >= itemsToRead) && unprocessedItemQueue.isEmpty();
+        }
     }
 
     public boolean isDone(int timeOut) {
         try {
             return futureTask.get(timeOut, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ex) {
+            ex.printStackTrace();
             return false;
         } catch (ExecutionException ex) {
             ex.printStackTrace();
             return false;
         } catch (TimeoutException ex) {
+            System.out.println("time out " + nWritten.get() + " " + itemsToWrite + " " + nRead.get() + " " + itemsToRead);
+            ex.printStackTrace();
             return false;
         }
     }
@@ -105,12 +114,15 @@ public class MatrixTypeService {
         if (!processor.getEndOfFile()) {
             List<MatrixType> vectors = processor.getMatrixTypesFromFile();
             unprocessedItemQueue.add(vectors);
-            if (processor.getEndOfFile()) {
-                endOfFile.set(true);
+            if (vectors != null) {
+                int nVec = vectors.size();
+                if ((nVec == 1) && vectors.get(0) == null) {
+                    nVec = 0;
+                }
+                nRead.addAndGet(nVec);
             }
+//            System.out.println("n read " + nRead.get() + " of " + itemsToRead);
             return true;
-        } else {
-            endOfFile.set(true);
         }
         return false;
     }
@@ -140,6 +152,7 @@ public class MatrixTypeService {
                 //vector.printLocation();
                 processor.getDataset().writeMatrixType(vector);
                 nWritten.incrementAndGet();
+//                System.out.println("n written " + nWritten.get() + " of " + itemsToWrite);
             } catch (IOException ex) {
                 ex.printStackTrace();
                 Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
@@ -155,12 +168,16 @@ public class MatrixTypeService {
         while (true) {
             try {
 //                System.out.println(unprocessedItemQueue.size() + " " + processedItemQueue.size() + " " + nWritten.get() + " " +itemsToWrite + " " + this);
-                if (!processor.getEndOfFile() && (unprocessedItemQueue.size() < 4) && (processedItemQueue.size() < processedQueueLimit.get())) {
-                    for (int i = 0; i < 4; i++) {
-                        if (!addNewItems()) {
-                            break;
+                if (nRead.get() < itemsToRead) {
+                    if ((unprocessedItemQueue.size() < 4) && (processedItemQueue.size() < processedQueueLimit.get())) {
+                        for (int i = 0; i < 4; i++) {
+                            if (!addNewItems()) {
+                                break;
+                            }
                         }
                     }
+                } else {
+//                    System.out.println("finished reading");
                 }
 
                 temp = processedItemQueue.poll(100, TimeUnit.MILLISECONDS);
@@ -168,7 +185,7 @@ public class MatrixTypeService {
                     writeItems(temp);
                 } else {
                     if (nWritten.get() >= itemsToWrite) {
-                        endOfFile.set(true);
+                        System.out.println("finished writing");
                         return true;
                     }
                 }
