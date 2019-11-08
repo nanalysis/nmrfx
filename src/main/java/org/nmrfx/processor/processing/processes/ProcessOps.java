@@ -300,7 +300,7 @@ public class ProcessOps implements Callable<Object> {
                 return this;
             }
             try {
-                matrix = processor.getMatrixFromFile();
+                matrix = processor.getNextMatrix();
             } catch (Exception e) {
                 if (!processor.setProcessorError()) {
                     processor.setProcessorErrorMessage(e.getMessage());
@@ -348,10 +348,6 @@ public class ProcessOps implements Callable<Object> {
 
             if (matrix != null) {
                 vectorsProcessed++;
-            }
-
-            if (processor.getEndOfFile()) {
-                break;
             }
         }
 
