@@ -291,7 +291,7 @@ public class MatrixAnalyzer {
                     datasetName = datasetFile.getName();
                     Dataset dataset = Dataset.getDataset(datasetName);
                     if (dataset == null) {
-                        dataset = new Dataset(datasetFile.toString(), datasetName, false);
+                        dataset = new Dataset(datasetFile.toString(), datasetName, false, false);
                     }
                     Integer index = getIntegerValue(data, headerMap, "index", null);
                     if (index == null) {

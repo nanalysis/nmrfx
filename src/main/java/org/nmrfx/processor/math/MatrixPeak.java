@@ -32,14 +32,16 @@ public class MatrixPeak implements Comparator<MatrixPeak> {
     double[] centers;
     double[] widths;
     double height;
+    int[] widthLim;
 
-    MatrixPeak(double[][] intensities, int[][] offsets, int[][] pts, double scale) {
+    MatrixPeak(double[][] intensities, int[][] offsets, int[][] pts, double scale, int[] widthLim) {
         int nDim = intensities.length;
         this.intensities = new double[nDim][3];
         this.offsets = new int[nDim][3];
         this.centers = new double[nDim];
         this.widths = new double[nDim];
         this.pts = new int[nDim][3];
+        this.widthLim = widthLim;
         for (int i = 0; i < nDim; i++) {
             System.arraycopy(intensities[i], 0, this.intensities[i], 0, 3);
             System.arraycopy(offsets[i], 0, this.offsets[i], 0, 3);
@@ -83,6 +85,12 @@ public class MatrixPeak implements Comparator<MatrixPeak> {
             double yOff = -(b * b - 4.0 * a * c) / (4.0 * a);
             widths[i] = 2.0 * FastMath.sqrt(FastMath.abs(0.5 * yOff / a));
             widths[i] *= scale;  // fixme scale from polynomial to Lorenztian.  What should value be?
+            if (widths[i] < 0.5) {
+                widths[i] = 0.5;
+                xOff = 0.0;
+            } else if (widths[i] > widthLim[i]) {
+                widths[i] = widthLim[i];
+            }
             centers[i] = pts[i][1] + xOff;
 
 //            System.out.printf("%12.3f %12.3f %12.3f %7.4f %7.4f %7.4f %7.4f\n", v0, v1, v2, yOff, xOff, xOff1, widths[i]);

@@ -64,6 +64,7 @@ import org.python.core.PyObject;
 import org.python.core.PySequence;
 import org.python.core.PyType;
 import org.renjin.sexp.AttributeMap;
+import org.nmrfx.processor.datasets.DatasetStorageInterface;
 
 /**
  * A class for representing vectors of data (typically for NMR). The data is
@@ -80,7 +81,7 @@ import org.renjin.sexp.AttributeMap;
  *
  * @author michael
  */
-public class Vec extends PySequence implements MatrixType {
+public class Vec extends PySequence implements MatrixType, DatasetStorageInterface {
 
     static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
 
@@ -357,6 +358,72 @@ public class Vec extends PySequence implements MatrixType {
             result.add(c);
         }
         return result;
+    }
+
+    @Override
+    public void setWritable(boolean state) {
+    }
+
+    @Override
+    public boolean isWritable() {
+        return true;
+    }
+
+    @Override
+    public long bytePosition(int... offsets) {
+        return offsets[0] * Double.BYTES;
+    }
+
+    @Override
+    public long pointPosition(int... offsets) {
+        return offsets[0];
+    }
+
+    @Override
+    public int getSize(int dim) {
+        return size;
+    }
+
+    @Override
+    public long getTotalSize() {
+        return size;
+    }
+
+    @Override
+    public float getFloat(int... offsets) throws IOException {
+        return (float) getReal(offsets[0]);
+    }
+
+    @Override
+    public void setFloat(float value, int... offsets) throws IOException {
+        setReal(offsets[0], value);
+    }
+
+    @Override
+    public void close() throws IOException {
+    }
+
+    @Override
+    public double sumValues() throws IOException {
+        return sumFast();
+    }
+
+    @Override
+    public double sumFast() throws IOException {
+        double sum = 0.0;
+        for (int i = 0; i < size; i++) {
+            sum += getReal(i);
+        }
+        return sum;
+    }
+
+    @Override
+    public void zero() throws IOException {
+        zeros();
+    }
+
+    @Override
+    public void force() {
     }
 
     /**
@@ -973,7 +1040,7 @@ public class Vec extends PySequence implements MatrixType {
         if (isComplex) {
             c = getComplex(start);  // amp from 1st real point
             double ph = 0.0;
-            double  amp = c.abs();
+            double amp = c.abs();
 // only even points in sync with 1st real point, 1st half of precharge
 // average the phase for the preceding points (in charge-up)
             int n = 0;
@@ -1098,6 +1165,18 @@ public class Vec extends PySequence implements MatrixType {
             this.zeros(size, newsize - 1);
         }
         this.size = newsize;
+    }
+
+    /**
+     * Perform a Fast Fourier Transform (FFT) of the specified real data.
+     *
+     * @param ftvec an array of Complex values to be transformed
+     * @return The original array with now containing the FFT
+     */
+    public static Complex[] apache_rfft(final double[] ftvec) {
+        FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
+        Complex[] ftResult = ffTrans.transform(ftvec, TransformType.FORWARD);
+        return ftResult;
     }
 
     /**
@@ -1871,8 +1950,8 @@ public class Vec extends PySequence implements MatrixType {
                 }
             }
         } else {
-            for (int i = 0; i < size; ++i) {
-                rvec[i] = 1.0;
+            for (int i = 1; i < size; i += 2) {
+                rvec[i] = -rvec[i];
             }
         }
     }
@@ -2542,6 +2621,20 @@ public class Vec extends PySequence implements MatrixType {
     }
 
     /**
+     * Perform Real Fast Fourier Transform (FFT) of this vector.
+     */
+    public void rft(boolean inverse) {
+        rft(inverse, false);
+    }
+
+    /**
+     * Perform Fast Fourier Transform (FFT) of this vector with various options.
+     *
+     * @param negatePairs negate alternate real/imaginary pairs
+     * @param fixGroupDelay modify vector to remove DSP charge-up at front of
+     * vector
+     */
+    /**
      * Real FT.
      *
      * Vec must be real. If a Vec is using cvec it will do a RFT of the real
@@ -2549,30 +2642,22 @@ public class Vec extends PySequence implements MatrixType {
      * to rvec and ivec.
      *
      * @param inverse If true do the inverse FFT.
+     * @param negatePairs negate alternate real/imaginary pairs
      */
-    public void rft(boolean inverse) {
+    public void rft(boolean inverse, boolean negatePairs) {
         if (!isComplex) {
             checkPowerOf2();
             double[] ftvec = new double[size];
+            if (negatePairs) {
+                negatePairs();
+            }
+            System.arraycopy(rvec, 0, ftvec, 0, size);
 
-            if (!useApache) {
-                System.arraycopy(rvec, 0, ftvec, 0, size);
-            } else {
-                for (int i = 0; i < size; ++i) {
-                    ftvec[i] = cvec[i].getReal();
-                }
-            }
-            FastFourierTransformer ffTrans = new FastFourierTransformer(DftNormalization.STANDARD);
-            Complex[] ftResult;
-            if (!inverse) {
-                ftResult = ffTrans.transform(ftvec, TransformType.FORWARD);
-            } else {
-                ftResult = ffTrans.transform(ftvec, TransformType.INVERSE);
-            }
+            Complex[] ftResult = apache_rfft(ftvec);
 
             makeComplex();
 
-            int newSize = size / 2;
+            int newSize = ftResult.length / 2;
             resize(newSize, true);
             if (useApache) {
                 System.arraycopy(ftResult, 0, cvec, 0, newSize);
@@ -5872,17 +5957,15 @@ public class Vec extends PySequence implements MatrixType {
         int halfWin = winSize / 2;
         for (int i = 0; i < halfWin; i++) {
             dStat.addValue(rvec[i]);
+            dStat.addValue(rvec[size - i - 1]);
         }
+        double regionAvg = dStat.getMean();
         for (int i = 0; i < size; i++) {
-            if ((i + halfWin) < size) {
-                dStat.addValue(rvec[i + halfWin]);
-            }
-            double regionAvg = dStat.getMean();
             if (Math.abs(rvec[i] - regionAvg) < threshold) {
                 lastWasBase = true;
             } else {
                 if (lastWasBase) {
-                    //System.out.println("base at "+i+" "+vec[i]);
+                    // System.out.println("end   base at " + i + " " + rvec[i] + " " + pointToPPM(i));
                     nPeakRegions++;
                 }
 
@@ -5903,17 +5986,8 @@ public class Vec extends PySequence implements MatrixType {
         int nPos = 0;
         int nNeg = 0;
         boolean addedRegion = false;
-        dStat.clear();
-        for (int i = 0; i < halfWin; i++) {
-            dStat.addValue(rvec[i]);
-        }
         for (int i = 0; i < size; i++) {
-            if ((i + halfWin) < size) {
-                dStat.addValue(rvec[i + halfWin]);
-            }
-            double regionAvg = dStat.getMean();
             if (Math.abs(rvec[i] - regionAvg) < threshold) { // baseline point
-
                 if (!lastWasBase) {
                     lastNarrow = addedRegion && ((i - begin) < regionWidth); //System.out.println("narrow at "+i);
                 }

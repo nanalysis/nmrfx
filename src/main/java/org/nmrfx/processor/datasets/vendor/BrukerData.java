@@ -740,10 +740,10 @@ public class BrukerData implements NMRData {
                                 if (iPar > 1) {
                                     acqdim++;
                                 } else {
-                                    break;
+                                    acqdim++;
                                 }
                             } else {
-                                break;
+                                acqdim++;
                             }
                         }
                     }
@@ -1066,12 +1066,12 @@ public class BrukerData implements NMRData {
     public void setFixDSP(boolean value) {
         fixDSP = value;
     }
-    
+
     @Override
     public boolean getFixDSP() {
         return fixDSP;
     }
-    
+
     private void setFixDSPOn() {
         fixDSP = true;
     }
@@ -1700,7 +1700,8 @@ public class BrukerData implements NMRData {
                     dpath += File.separator + "ser";
                 } else if ((new File(dpath + File.separator + "fid")).exists()) {
                     dpath += File.separator + "fid";
-                }   DataInputStream in = new DataInputStream(new FileInputStream(dpath));
+                }
+                DataInputStream in = new DataInputStream(new FileInputStream(dpath));
                 bw.write("rawfile header");
                 bw.newLine();
                 int px;

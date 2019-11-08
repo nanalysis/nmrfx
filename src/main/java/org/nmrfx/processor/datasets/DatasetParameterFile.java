@@ -39,9 +39,11 @@ import java.util.Map.Entry;
 public class DatasetParameterFile {
 
     final Dataset dataset;
+    final DatasetLayout layout;
 
-    public DatasetParameterFile(Dataset dataset) {
+    public DatasetParameterFile(Dataset dataset, DatasetLayout layout) {
         this.dataset = dataset;
+        this.layout = layout;
     }
 
     public String getParameterFileName() {
@@ -89,9 +91,8 @@ public class DatasetParameterFile {
             for (int i = 0; i < nDim; i++) {
                 pStream.printf(" %d", dataset.getSize(i));
             }
-            int[] blockSizes = dataset.getBlockSizes();
             for (int i = 0; i < nDim; i++) {
-                pStream.printf(" %d", blockSizes[i]);
+                pStream.printf(" %d", layout.getBlockSize(i));
             }
             pStream.print("\n");
             for (int i = 0; i < nDim; i++) {
@@ -264,7 +265,7 @@ public class DatasetParameterFile {
                     for (int i = 0; i < nDim; i++) {
                         int size = Integer.parseInt(fields[2 + i]);
                         int blockSize = Integer.parseInt(fields[2 + i + nDim]);
-                        if ((size != dataset.getSize(i)) || (blockSize != dataset.getBlockSize(i))) {
+                        if ((size != dataset.getSize(i)) || (blockSize != layout.getBlockSize(i))) {
                             sameSize = false;
                             break;
                         }
@@ -272,19 +273,20 @@ public class DatasetParameterFile {
                 }
                 if (!sameSize) {
                     dataset.setNDim(nDim);
-                    int fSize = dataset.getFileHeaderSize();
-                    int bSize = dataset.getBlockHeaderSize();
+                    layout.resize(nDim);
+                    int fSize = layout.getFileHeaderSize();
+                    int bSize = layout.getBlockHeaderSize();
                     dataset.newHeader();
-                    dataset.setFileHeaderSize(fSize);
-                    dataset.setBlockHeaderSize(bSize);
+                    layout.setFileHeaderSize(fSize);
+                    layout.setBlockHeaderSize(bSize);
 
                     for (int i = 0; i < nDim; i++) {
                         int size = Integer.parseInt(fields[2 + i]);
                         int blockSize = Integer.parseInt(fields[2 + i + nDim]);
-                        dataset.setSize(i, size);
-                        dataset.setBlockSizeValue(i, blockSize);
+                        layout.setSize(i, size);
+                        layout.setBlockSize(i, blockSize);
                     }
-                    dataset.dimDataset();
+                    layout.dimDataset();
                 }
                 break;
             }

@@ -21,48 +21,50 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.processor.math.Vec;
 
-public class MemoryFile implements MappedMatrixInterface, Closeable {
+public class MemoryFile implements DatasetStorageInterface, Closeable {
 
     private final int[] sizes;
     private final long[] strides;
     private final long totalSize;
-    private final int[] blockSize;
-    private final int[] nBlocks;
-    private final int[] offsetBlocks;
-    private final int[] offsetPoints;
-    private final long blockElements;
-    private final long blockPoints;
     private final int dataType;
-    private final int headerSize;
-    private final int blockHeaderSize;
     final boolean writable;
-    private final int BYTES = 4;
     private final FloatBuffer floatBuffer;
+    int BYTES = Float.BYTES;
 
     public MemoryFile(final Dataset dataset, final boolean writable) {
-        blockSize = dataset.getBlockSizes();
         dataType = dataset.getDataType();
-        offsetBlocks = dataset.getOffsetBlocks();
-        offsetPoints = dataset.getOffsetPoints();
-        nBlocks = dataset.getNBlocks();
-        blockElements = dataset.getBlockElements();
-        blockPoints = blockElements / BYTES;
-        headerSize = dataset.getFileHeaderSize();
-        blockHeaderSize = dataset.getBlockHeaderSize() / BYTES;
         sizes = new int[dataset.getNDim()];
         strides = new long[dataset.getNDim()];
         this.writable = writable;
-        long matSize = BYTES;
+        long size = 1;
         for (int i = 0; i < dataset.getNDim(); i++) {
-            System.err.println(i + " " + blockSize[i] + " " + nBlocks[i] + " " + dataset.getSize(i));
-            matSize *= (blockSize[i] + blockHeaderSize) * nBlocks[i];
-            strides[i] = (blockSize[i] + blockHeaderSize) * nBlocks[i];
+            sizes[i] = dataset.getSize(i);
+            size *= sizes[i];
+            if (i == 0) {
+                strides[i] = 1;
+            } else {
+                strides[i] = strides[i - 1] * sizes[i - 1];
+            }
+            System.err.println("mem file " + i + " " + dataset.getSize(i) + " " + strides[i]);
         }
-        totalSize = matSize / BYTES;
         //System.out.println("size " + totalSize);
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) totalSize * BYTES);
+        totalSize = size;
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) totalSize * Float.BYTES);
         floatBuffer = byteBuffer.asFloatBuffer();
+        try {
+            zero();
+        } catch (IOException ex) {
+            Logger.getLogger(MemoryFile.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public void setWritable(boolean state) {
     }
 
     @Override
@@ -71,25 +73,21 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
     }
 
     @Override
-    public long position(int... offsets) {
+    public long bytePosition(int... offsets) {
         long position;
-        boolean subMatrix = true;
-        if (subMatrix) {
-            long blockNum = 0;
-            long offsetInBlock = 0;
-            for (int iDim = 0; iDim < offsets.length; iDim++) {
-                blockNum += ((offsets[iDim] / blockSize[iDim]) * offsetBlocks[iDim]);
-                offsetInBlock += ((offsets[iDim] % blockSize[iDim]) * offsetPoints[iDim]);
-//System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock);
-            }
-            position = blockNum * (blockPoints + blockHeaderSize) + offsetInBlock + blockHeaderSize;
-//System.out.println(position);
-            return position;
-        } else {
-            position = offsets[0];
-            for (int iDim = 1; iDim < offsets.length; iDim++) {
-                position += offsets[iDim] * strides[iDim];
-            }
+        position = offsets[0];
+        for (int iDim = 1; iDim < offsets.length; iDim++) {
+            position += offsets[iDim] * strides[iDim];
+        }
+        return position * BYTES;
+    }
+
+    @Override
+    public long pointPosition(int... offsets) {
+        long position;
+        position = offsets[0];
+        for (int iDim = 1; iDim < offsets.length; iDim++) {
+            position += offsets[iDim] * strides[iDim];
         }
         return position;
     }
@@ -106,13 +104,13 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public float getFloat(int... offsets) throws IOException {
-        int p = (int) position(offsets);
+        int p = (int) pointPosition(offsets);
         return floatBuffer.get(p);
     }
 
     @Override
     public void setFloat(float d, int... offsets) throws IOException {
-        int p = (int) position(offsets);
+        int p = (int) pointPosition(offsets);
         floatBuffer.put(p, d);
     }
 
@@ -121,7 +119,7 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
     }
 
     @Override
-    public double sum() throws IOException {
+    public double sumValues() throws IOException {
         double sum = 0.0;
         for (int i = 0; i < totalSize; i++) {
             sum += floatBuffer.get(i);
@@ -147,5 +145,48 @@ public class MemoryFile implements MappedMatrixInterface, Closeable {
 
     @Override
     public void force() {
+    }
+
+    public void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+        int j = 0;
+        point[dim] = first;
+        int position = (int) pointPosition(point);
+        int stride = (int) strides[dim];
+        if (vector.isComplex()) {
+            for (int i = first; i <= last; i += 2) {
+                Complex c = vector.getComplex(j++);
+                floatBuffer.put(position, (float) (c.getReal() * scale));
+                position += stride;
+                floatBuffer.put(position, (float) (c.getImaginary() * scale));
+                position += stride;
+            }
+        } else {
+            for (int i = first; i <= last; i++) {
+                floatBuffer.put(position, (float) (vector.getReal(j++) * scale));
+                position += stride;
+            }
+        }
+    }
+
+    public void readVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
+        int j = 0;
+        point[dim] = first;
+        int position = (int) pointPosition(point);
+        int stride = (int) strides[dim];
+        if (vector.isComplex()) {
+            for (int i = first; i <= last; i += 2) {
+                double real = floatBuffer.get(position) / scale;
+                position += stride;
+                double imag = floatBuffer.get(position) / scale;
+                position += stride;
+                vector.set(j++, new Complex(real, imag));
+            }
+        } else {
+            for (int i = first; i <= last; i++) {
+                double real = floatBuffer.get(position) / scale;
+                position += stride;
+                vector.set(j++, real);
+            }
+        }
     }
 }

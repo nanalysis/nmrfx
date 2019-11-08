@@ -38,16 +38,18 @@ import org.apache.commons.math3.util.FastMath;
 
 public class MatrixND implements MatrixType {
 
-    final double[] data;
-    final int[] sizes;
+    private double[] data;
+    private int[] sizes;
     int[] vSizes;
-    final int[] strides;
+    private int[] strides;
     final int nDim;
-    final int nElems;
+    private int nElems;
     /**
      * Output point to write matrix.
      */
     private int[][] pt = null;
+    
+    private int[] dim = null;
 
     public MatrixND(int... sizes) {
         this.sizes = sizes.clone();
@@ -65,6 +67,12 @@ public class MatrixND implements MatrixType {
     public MatrixND(int[][] pt, int... sizes) {
         this(sizes);
         this.pt = pt;
+    }
+    
+    public MatrixND(int[][] pt, int[] dim, int... sizes) {
+        this(sizes);
+        this.pt = pt;
+        this.dim = dim;
     }
 
     public MatrixND(MatrixND source) {
@@ -211,12 +219,20 @@ public class MatrixND implements MatrixType {
         return pt;
     }
 
+    public int[] getDim() {
+        return dim;
+    }
+
     public int getNElems() {
         return nElems;
     }
 
     public int[] getSizes() {
         return sizes.clone();
+    }
+
+    public int getSize(int iDim) {
+        return sizes[iDim];
     }
 
     public int getNDim() {
@@ -636,10 +652,14 @@ public class MatrixND implements MatrixType {
         }
     }
 
-    public MatrixND zeroFill() {
+    public void zeroFill(int factor) {
+        if (factor < 1) {
+            return;
+        }
+        int mult = (int) Math.round(Math.pow(2, factor));
         int[] newSizes = new int[nDim];
         for (int i = 0; i < nDim; i++) {
-            newSizes[i] = sizes[i] * 2;
+            newSizes[i] = sizes[i] * mult;
         }
         MatrixND zfMatrix = new MatrixND(newSizes);
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
@@ -650,7 +670,13 @@ public class MatrixND implements MatrixType {
             zfMatrix.setValue(getValue(counts), counts);
 
         }
-        return zfMatrix;
+        data = zfMatrix.data;
+        sizes = zfMatrix.sizes;
+        strides = zfMatrix.strides;
+        nElems = zfMatrix.nElems;
+        for (int i = 0; i < nDim; i++) {
+            pt[i][1] = sizes[i] - 1;
+        }
     }
 
     boolean checkShapes(MatrixND matrixND) {
@@ -766,6 +792,10 @@ public class MatrixND implements MatrixType {
         System.arraycopy(source, 0, target, 0, target.length);
     }
 
+    public void copyDataTo(double[] target) {
+        System.arraycopy(data, 0, target, 0, data.length);
+    }
+
     public void copyDataFrom(double[] values) {
         System.arraycopy(values, 0, data, 0, data.length);
     }
@@ -800,6 +830,14 @@ public class MatrixND implements MatrixType {
     public double getValue(int... indices) {
         int offset = getOffset(indices);
         return data[offset];
+    }
+
+    public double getValueAtIndex(int index) {
+        return data[index];
+    }
+
+    public void setValueAtIndex(int index, double value) {
+        data[index] = value;
     }
 
     int[] genOffsets(int nDim) {
@@ -880,10 +918,45 @@ public class MatrixND implements MatrixType {
         return sStats;
     }
 
-    public double[] measure(boolean isComplex) {
-        double[] measures = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY};
+    public double[] measureReal(double mean, double sdev) {
+        double[] measures = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY, 0.0, 0.0};
         MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
         MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        double sum = 0.0;
+        double sum2 = 0.0;
+        int n = 0;
+        for (int i = 0; i < data.length; i++) {
+            if (data[i] < measures[0]) {
+                measures[0] = data[i];
+            }
+            if (data[i] > measures[1]) {
+                measures[1] = data[i];
+            }
+            double delta = data[i] - mean;
+            if (Math.abs(delta) < 3.0 * sdev) {
+                sum += data[i];
+                sum2 += data[i] * data[i];
+                n++;
+            }
+        }
+        sdev = Math.sqrt(n * sum2 - sum * sum) / n;
+        mean = sum / n;
+        measures[2] = mean;
+        measures[3] = sdev;
+        return measures;
+
+    }
+
+    public double[] measure(boolean isComplex, double mean, double sdev) {
+        if (!isComplex) {
+            return measureReal(mean, sdev);
+        }
+        double[] measures = {Double.MAX_VALUE, Double.NEGATIVE_INFINITY, 0.0, 0.0};
+        MultidimensionalCounter mdCounter = new MultidimensionalCounter(sizes);
+        MultidimensionalCounter.Iterator iterator = mdCounter.iterator();
+        double sum = 0.0;
+        double sum2 = 0.0;
+        int n = 0;
         for (int i = 0; iterator.hasNext(); i++) {
             iterator.next();
             int[] counts = iterator.getCounts();
@@ -903,8 +976,18 @@ public class MatrixND implements MatrixType {
                 if (data[i] > measures[1]) {
                     measures[1] = data[i];
                 }
+                double delta = data[i] - mean;
+                if (Math.abs(delta) < 3.0 * sdev) {
+                    sum += data[i];
+                    sum2 += data[i] * data[i];
+                    n++;
+                }
             }
         }
+        sdev = Math.sqrt(n * sum2 - sum * sum) / n;
+        mean = sum / n;
+        measures[2] = mean;
+        measures[3] = sdev;
         return measures;
     }
 
@@ -915,6 +998,14 @@ public class MatrixND implements MatrixType {
         int[][] pts = new int[nDim + 1][3];
         int[][] indices = new int[nDim + 1][3];
         double[][] intensities = new double[nDim + 1][3];
+        int[] widthLim = new int[nDim + 1];
+        widthLim[0] = 2;
+        for (int i = 0; i < sizes.length; i++) {
+            widthLim[i + 1] = sizes[i] / 32;
+            if (widthLim[i + 1] < 3) {
+                widthLim[i + 1] = 3;
+            }
+        }
         double threshold = FastMath.max(globalThreshold, noiseThreshold);
         int step = isComplex ? 2 : 1;
         double maxValue = Double.NEGATIVE_INFINITY;
@@ -957,14 +1048,20 @@ public class MatrixND implements MatrixType {
                         pts[kDim][1] = counts[jDim];
                         indices[kDim][1] = i;
                         intensities[kDim][1] = ptValue * sign;
+                        int nBelowThresh = 0;
                         if (counts[jDim] > 0) {
                             int index = i - strides[jDim] * step; // 2 assumes complex                       
                             double testValue = sign * data[index];
-                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
+//                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
+                            if ((ptValue < testValue)) {
 //                                System.out.println(jDim + " < " + i + " " +index + " " + ptValue + " " + testValue + " " + noiseThreshold);
                                 ok = false;
                                 break;
                             }
+                            if (testValue < noiseThreshold) {
+                                nBelowThresh++;
+                            }
+
                             pts[kDim][0] = counts[jDim] - 1;
                             indices[kDim][0] = index;
                             intensities[kDim][0] = testValue * sign;
@@ -972,24 +1069,32 @@ public class MatrixND implements MatrixType {
                         if (ok && counts[jDim] < (sizes[jDim] - 1)) {
                             int index = i + strides[jDim] * step; // 2 assumes complex                       
                             double testValue = sign * data[index];
-                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
+//                            if ((ptValue < testValue) || (testValue < noiseThreshold)) {
+                            if (ptValue < testValue) {
 //                                System.out.println(jDim + " > " + i + " " +index + " " + ptValue + " " + testValue + " " + noiseThreshold);
                                 ok = false;
                                 break;
+                            }
+                            if (testValue < noiseThreshold) {
+                                nBelowThresh++;
                             }
                             pts[kDim][2] = counts[jDim] + 1;
                             indices[kDim][2] = index;
                             intensities[kDim][2] = testValue * sign;
                         }
+                        if (nBelowThresh == 2) {
+                            //ok = false;
+                            //break;
+                        }
                     }
 
                     if (ok) {
-                        peaks.add(new MatrixPeak(intensities, indices, pts, scale));
+                        peaks.add(new MatrixPeak(intensities, indices, pts, scale, widthLim));
                     }
                 }
             }
         }
-//        System.out.println("max value " + maxValue + " " + threshold + " " + peaks.size() + " " + nPossible);
+//        System.out.println("max value " + maxValue + " th " + threshold + " gt " + globalThreshold + " nt " + noiseThreshold + " " + peaks.size() + " " + nPossible);
         return peaks;
     }
 }

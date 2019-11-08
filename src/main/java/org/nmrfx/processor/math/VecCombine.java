@@ -24,7 +24,7 @@ package org.nmrfx.processor.math;
 // redundant with Combine.java,  kept for use from VecCmd
 public class VecCombine {
 
-    static void comb2(double[] coef, Vec[] inVec,
+    public static void comb2(double[] coef, Vec[] inVec,
             boolean inComplex, Vec[] outVec) throws IllegalArgumentException {
         int nIn = inVec.length;
         int nOut = outVec.length;

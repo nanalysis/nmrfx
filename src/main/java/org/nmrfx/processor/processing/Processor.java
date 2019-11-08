@@ -18,7 +18,6 @@
 package org.nmrfx.processor.processing;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetException;
 import org.nmrfx.processor.processing.processes.ProcessOps;
@@ -35,15 +34,19 @@ import org.nmrfx.processor.operations.Operation;
 import org.nmrfx.processor.processing.processes.IncompleteProcessException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.nmrfx.processor.datasets.MatrixTypeService;
 
 /**
  * The Processor contains all processes. It also contains the "current
@@ -83,15 +86,21 @@ public class Processor {
     /**
      * The number of vector groups which have been read.
      */
-    private int vecGroupsRead = 0;
+    private AtomicInteger vecGroupsRead = new AtomicInteger(0);
     /**
      * The number of vectors or matrices which have been written
      */
-    private int mathObjectsWritten = 0;
+    private AtomicInteger mathObjectsWritten = new AtomicInteger(0);
+
     /**
      * The number of vectors which need to be written
      */
-    private int vectorsToWrite = 0;
+    private int itemsToWrite = 0;
+
+    /**
+     * The number of vectors which need to be read
+     */
+    private int itemsToRead = 0;
     /**
      * The maximum amount of vectors which will be given to each process.
      */
@@ -103,11 +112,11 @@ public class Processor {
     /**
      * The total number of matrices that will be read from file.
      */
-    private int totalMatrices = 0;
+    private AtomicInteger totalMatrices = new AtomicInteger(0);
     /**
      * The number of matrices that have been read.
      */
-    private int matricesRead = 0;
+    private AtomicInteger matricesRead = new AtomicInteger(0);
     /**
      * The number of processes to create.
      */
@@ -120,7 +129,7 @@ public class Processor {
      * True if the file has been completely read so that loading vectors will
      * stop.
      */
-    private boolean endOfFile;
+    private AtomicBoolean endOfFile = new AtomicBoolean(false);
     /**
      * If True then processes will stop querying for unprocessed vectors to
      * process.
@@ -145,23 +154,15 @@ public class Processor {
      * automatically be added to.
      */
     private static ProcessOps defaultProcess;
-    /**
-     * Each LinkedList<Vec> will hold one set of arraylists for a process. The
-     * outer List is synchronized but the inner List is not synchronized.
-     */
-    private LinkedBlockingQueue<ArrayList<Vec>> unprocessedVectorQueue;
-    /**
-     * Each LinkedList<Vec> will be written to a file.
-     */
-    private LinkedBlockingQueue<ArrayList<Vec>> processedVectorQueue;
 
     /**
      * This flag is to test IOController / non-IOController IO for debugging.
      */
-    public boolean useIOController = false;
+    public boolean useIOController = true;
 
-    private boolean processorError = false;
-    private String errorMessage = "";
+    private AtomicBoolean processorError = new AtomicBoolean(false);
+    private AtomicReference<String> errorMessage = new AtomicReference("");
+    private AtomicBoolean matrixMode = new AtomicBoolean(false);
 
     private ArrayList<NMRData> nmrDataSets = new ArrayList<>();
     private boolean nvDataset = false;
@@ -179,18 +180,18 @@ public class Processor {
     /**
      * The sizes of dataset to actually populate.
      */
-    public int[] useSizes = null;
+    public int[] acqSizesToUse = null;
     /**
      * The sizes of time domain data.
      */
-    public int[] tdSizes = null;
+    public int[] acquiredTDSizes = null;
     /**
      * The complex nature of time domain data.
      */
     boolean[] complex = null;
-    int[] newTDSizes;
+    int[] adjustedTDSizes;
     boolean[] newComplex;
-    String[] newAcqOrder;
+    String[] acqOrderToUse;
 
     /**
      * Acquisition order array.
@@ -205,7 +206,11 @@ public class Processor {
      */
     private Boolean isRunning = false;
 
-    private static int vecReadCount = 0;
+    private AtomicBoolean doneWriting = new AtomicBoolean(false);
+
+    private AtomicInteger vecReadCount = new AtomicInteger(0);
+
+    AtomicInteger vectorsRead = new AtomicInteger(0);
 
     private MultiVecCounter tmult;
 
@@ -213,19 +218,17 @@ public class Processor {
     boolean modeND = true;
     private double elapsedTime = 0.0;
 
+    MatrixTypeService datasetWriter;
+
     LineShapeCatalog simVecProcessor = null;
 
-    private void addVecReadCount() {
-        vecReadCount++;
-    }
-
     private void resetVecReadCount() {
-        vecReadCount = 0;
+        vecReadCount.set(0);
     }
 
     private void printVecReadCount() {
         if (dim[0] < 1) {
-            System.err.println("read FID vector count: " + vecReadCount);
+            System.err.println("read FID vector count: " + vecReadCount.get());
         }
     }
 
@@ -269,10 +272,6 @@ public class Processor {
         defaultProcess = null;
 
         //force NvLiteShell to be created
-        if (useIOController) {
-            unprocessedVectorQueue = new LinkedBlockingQueue<>();
-            processedVectorQueue = new LinkedBlockingQueue<>();
-        }
         numProcessors = Runtime.getRuntime().availableProcessors() / 2;
         if (numProcessors < 1) {
             numProcessors = 1;
@@ -384,7 +383,7 @@ public class Processor {
         String fileType = getFileType(fileName);
         if ("nv".equals(fileType)) {
             try {
-                dataset = new Dataset(fileName, fileName, writeable);
+                dataset = new Dataset(fileName, fileName, writeable, true);
             } catch (IOException ex) {
                 System.err.println("could not create dataset");
                 ex.printStackTrace();
@@ -420,55 +419,55 @@ public class Processor {
         }
 
         if (nArray > 0) {
-            newTDSizes = new int[nDim + nArray];
+            adjustedTDSizes = new int[nDim + nArray];
             newComplex = new boolean[nDim + nArray];
-            newTDSizes[0] = tdSizes[0];
+            adjustedTDSizes[0] = acquiredTDSizes[0];
             newComplex[0] = complex[0];
             int j = 1;
             for (int i = 1; i < nDim; i++) {
                 int arraySize = nmrData.getArraySize(i);
                 if (arraySize != 0) {
-                    newTDSizes[j] = tdSizes[i];
+                    adjustedTDSizes[j] = acquiredTDSizes[i];
                     if (nmrData instanceof BrukerData) {
-                        newTDSizes[j] /= arraySize;
+                        adjustedTDSizes[j] /= arraySize;
                     }
-                    newTDSizes[j + 1] = arraySize;
+                    adjustedTDSizes[j + 1] = arraySize;
                     newComplex[j] = complex[i];
                     newComplex[j + 1] = false;
                     j += 2;
                 } else {
-                    newTDSizes[j++] = tdSizes[i];
+                    adjustedTDSizes[j++] = acquiredTDSizes[i];
                     newComplex[j - 1] = complex[i];
                 }
             }
-            newAcqOrder = acqOrder;
-            useSizes = newTDSizes;
+            acqOrderToUse = acqOrder;
+            acqSizesToUse = adjustedTDSizes;
         } else {
-            newTDSizes = tdSizes;
+            adjustedTDSizes = acquiredTDSizes;
             newComplex = complex;
-            newAcqOrder = acqOrder;
+            acqOrderToUse = acqOrder;
         }
         if (showDebugInfo) {
             for (int i = 0; i < (nDim + nArray); i++) {
-                System.out.println("new td " + i + " " + newTDSizes[i] + " " + newComplex[i] + " ");
+                System.out.println("new td " + i + " " + adjustedTDSizes[i] + " " + newComplex[i] + " ");
             }
-            for (int i = 0; i < newAcqOrder.length; i++) {
-                System.out.print(newAcqOrder[i] + " ");
+            for (int i = 0; i < acqOrderToUse.length; i++) {
+                System.out.print(acqOrderToUse[i] + " ");
             }
             System.out.println("");
         }
 
-        tdSizes = new int[newTDSizes.length];
-        useSizes = new int[newTDSizes.length];
-        System.arraycopy(newTDSizes, 0, tdSizes, 0, tdSizes.length);
-        System.arraycopy(newTDSizes, 0, useSizes, 0, tdSizes.length);
+        // tdSizes = new int[adjAcqSizes.length];
+        acqSizesToUse = new int[adjustedTDSizes.length];
+        // System.arraycopy(adjAcqSizes, 0, tdSizes, 0, tdSizes.length);
+        System.arraycopy(adjustedTDSizes, 0, acqSizesToUse, 0, adjustedTDSizes.length);
     }
 
     public int[] getNewSizes() {
         NMRData nmrData = nmrDataSets.get(0);
         int nDim = nmrData.getNDim();
         int[] newSize = new int[nDim];
-        System.arraycopy(newTDSizes, 0, newSize, 0, newSize.length);
+        System.arraycopy(adjustedTDSizes, 0, newSize, 0, newSize.length);
         return newSize;
     }
 
@@ -479,46 +478,61 @@ public class Processor {
             acqOrder = nmrData.getAcqOrder();
         }
         if (nDim > 1) {
-            if (useSizes == null) {
-                tmult = new MultiVecCounter(newTDSizes, newComplex, newAcqOrder, dataset.getNDim());
-            } else if (newTDSizes == null) {
+            if (acqSizesToUse == null) {
+                System.out.println("use newTDSize without useSizes " + acqOrderToUse.length);
+                tmult = new MultiVecCounter(adjustedTDSizes, newComplex, acqOrderToUse, dataset.getNDim());
+            } else if (adjustedTDSizes == null) {
+                System.out.println("call adjustSizes " + acqSizesToUse.length + " new acqorder " + acqOrderToUse.length);
                 adjustSizes();
-                System.out.println("use newTDSize and useSizes " + useSizes.length + " new acqorder " + newAcqOrder.length);
 // fixme
-                tmult = new MultiVecCounter(newTDSizes, useSizes, newComplex, newAcqOrder, dataset.getNDim());
-            } else if (useSizes.length <= newTDSizes.length) {
-                System.out.println("use newTDSize and useSizes " + useSizes.length);
+                tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, acqOrderToUse, dataset.getNDim());
+            } else if (acqSizesToUse.length <= adjustedTDSizes.length) {
+                System.out.println("useSizes <= than newTDSizes " + acqSizesToUse.length);
 // fixme
-                tmult = new MultiVecCounter(newTDSizes, useSizes, newComplex, newAcqOrder, dataset.getNDim());
+                tmult = new MultiVecCounter(adjustedTDSizes, acqSizesToUse, newComplex, acqOrderToUse, dataset.getNDim());
             } else {
                 // String[] acqOrder = {"d2", "p1", "d1", "p2"};
                 //String[] acqOrder = {"p2", "d2", "p1", "d1"};
-                System.out.println("use2 " + useSizes.length);
-                tmult = new MultiVecCounter(newTDSizes, newComplex, newAcqOrder, useSizes.length);
+                System.out.println("use newTDSize with useSize length " + acqSizesToUse.length);
+                tmult = new MultiVecCounter(adjustedTDSizes, newComplex, acqOrderToUse, acqSizesToUse.length);
             }
-            if (isNUS()) {
-                sampleSchedule = nmrData.getSampleSchedule();
-                sampleSchedule.setOutMult(complex, newAcqOrder);
-            }
-            vectorsToWrite = nmrData.getNVectors();
-            if (useSizes != null) {
-                vectorsToWrite = 1;
-                for (int i = 1; i < useSizes.length; i++) {
-                    System.out.println("use " + i + " " + useSizes[i] + " " + newComplex.length);
+            int totalVecs = nmrData.getNVectors();
+            if (acqSizesToUse != null) {
+                totalVecs = 1;
+                itemsToWrite = 1;
+                for (int i = 1; i < acqSizesToUse.length; i++) {
+                    if ((i >= mapToDataset.length) || (mapToDataset[i] != -1)) {
+                        if ((i < newComplex.length) && newComplex[i]) {
+                            itemsToWrite *= acqSizesToUse[i] * 2;
+                        } else {
+                            itemsToWrite *= acqSizesToUse[i];
+                        }
+                    }
                     if ((i < newComplex.length) && newComplex[i]) {
-                        vectorsToWrite *= useSizes[i] * 2;
+                        totalVecs *= acqSizesToUse[i] * 2;
                     } else {
-                        vectorsToWrite *= useSizes[i];
+                        totalVecs *= acqSizesToUse[i];
                     }
                 }
+                itemsToRead = totalVecs;
             }
-            totalVecGroups = vectorsToWrite / tmult.getGroupSize();
+            System.out.println(" total vecs " + totalVecs + " " + tmult.getGroupSize());
+            if (isNUS()) {
+                sampleSchedule = nmrData.getSampleSchedule();
+                sampleSchedule.setOutMult(complex, acqOrderToUse);
+                itemsToWrite = sampleSchedule.getTotalSamples() * tmult.getGroupSize();
+                itemsToRead = itemsToWrite;
+            }
+
+            totalVecGroups = totalVecs / tmult.getGroupSize();
             vectorsMultiDataMin = nmrDataSets.size() * tmult.getGroupSize();
         } else {
-            totalVecGroups = 1;
+            totalVecGroups = nmrData.getNVectors();
+            itemsToWrite = nmrData.getNVectors();
+            itemsToRead = itemsToWrite;
         }
         vectorsPerProcess = totalVecGroups / numProcessors;
-        System.out.println("totalVecGroups " + totalVecGroups + " vectorsPerProcess " + vectorsPerProcess + " vecto " + vectorsToWrite);
+        System.out.println("totalVecGroups " + totalVecGroups + " vectorsPerProcess " + vectorsPerProcess + " vectin " + itemsToRead + " vectout " + itemsToWrite);
         if (vectorsPerProcess > maxVectorsPerProcess) {
             vectorsPerProcess = maxVectorsPerProcess;
         }
@@ -598,6 +612,8 @@ public class Processor {
             totalVecGroups *= (this.pt[i][1] - this.pt[i][0] + 1);
         }
         System.out.println("complex " + nvComplex + " vecSize " + this.vectorSize + " nVectors " + totalVecGroups);
+        itemsToWrite = totalVecGroups;
+        itemsToRead = itemsToWrite;
         scanregion = new ScanRegion(this.pt, this.dim, dataset);
 
         vectorsPerProcess = totalVecGroups / numProcessors;
@@ -639,8 +655,10 @@ public class Processor {
 //        for (int i=0; i<dataset.getNDim(); i++) {
 //            System.out.println(i + " vsize " + dataset.getVSize(dim[i]) +  " vsize_r " + dataset.getVSize_r(dim[i]) + " size " + dataset.getSize(dim[i]));
 //        }
-        totalMatrices = pt[pt.length - 1][1];  // pt[2][1];
-/*
+        totalMatrices.set(pt[pt.length - 1][1] + 1);  // pt[2][1];
+        itemsToWrite = totalMatrices.get();
+        itemsToRead = itemsToWrite;
+        /*
         System.out.print("matrix");
         for (int i=0;i< pt.length-1;i++) {
             int sz = 1 + pt[i][1];
@@ -658,7 +676,7 @@ public class Processor {
             nvComplex = false;
         }
 
-        matricesRead = 0;
+        matricesRead.set(0);
         return true;
     }
 
@@ -745,6 +763,7 @@ public class Processor {
         System.err.println("nmr data sets " + nmrDataSets.size());
         resetVecReadCount();
         setFidDimensions(nmrData, tdSizes);
+        adjustSizes();
         return nmrData;
     }
 
@@ -752,6 +771,10 @@ public class Processor {
         for (NMRData nmrData : nmrDataSets) {
             setFidDimensions(nmrData, tdSizes);
         }
+    }
+
+    public void setAcqOrder(String[] newOrder) {
+        acqOrder = newOrder.clone();
     }
 
     private void setFidDimensions(NMRData nmrData, int tdSizes[]) {
@@ -763,12 +786,11 @@ public class Processor {
         nvDataset = false;  // openfid() must first process FID vectors
 
         vectorSize = nmrData.getNPoints(); //complex
-        this.tdSizes = tdSizes;
+        this.acquiredTDSizes = tdSizes;
 
         // pt not needed here, not used
         pt = new int[nDim][2];
         complex = new boolean[nDim];
-        int[] mSizes = new int[nDim];
         for (int i = 0; i < nDim; ++i) {
             pt[i][0] = 0;
             pt[i][1] = tdSizes[i] - 1;
@@ -800,37 +822,52 @@ public class Processor {
         return mapToFID[i];
     }
 
+    private boolean useMemoryMode(int[] datasetSizes) {
+        long size = 1;
+        for (int i = 0; i < datasetSizes.length; i++) {
+            size *= datasetSizes[i];
+        }
+        boolean memoryMode = size < 135e6;
+        return memoryMode;
+    }
+
+    public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes) {
+        boolean memoryMode = useMemoryMode(datasetSizes);
+        createNV(outputFile, datasetSizes, useSizes, memoryMode);
+        return true;
+    }
+
     public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes, Map flags) {
-        createNV(outputFile, datasetSizes, useSizes);
+        boolean memoryMode = useMemoryMode(datasetSizes);
+        createNV(outputFile, datasetSizes, useSizes, memoryMode);
         setFidFlags(flags);
         return true;
     }
 
-    public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes) {
+    public boolean createNVInMemory(String outputFile, int datasetSizes[], int[] useSizes) {
+        createNV(outputFile, datasetSizes, useSizes, true);
+        return true;
+    }
+
+    public boolean createNV(String outputFile, int datasetSizes[], int[] useSizes, boolean inMemory) {
         if (progressUpdater != null) {
             progressUpdater.updateStatus("Create output dataset");
         }
         this.datasetSizes = datasetSizes;
-        this.useSizes = useSizes;  // fixme
+        this.acqSizesToUse = useSizes;  // fixme
         if (nDim > datasetSizes.length) {
             if (useSizes == null) {
                 Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, "specify useSizes if not using all dimensions");
                 return false;
             }
         }
-
         try {
-            Dataset.createDataset(outputFile, outputFile, datasetSizes);
+            if (inMemory) {
+                this.dataset = new Dataset(outputFile, datasetSizes);
+            } else {
+                this.dataset = Dataset.createDataset(outputFile, outputFile, datasetSizes, false);
+            }
         } catch (DatasetException ex) {
-            ex.printStackTrace();
-            Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
-            return false;
-        }
-
-        try {
-            this.dataset = new Dataset(outputFile, outputFile, true);
-        } catch (IOException ex) {
-            ex.printStackTrace();
             Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
@@ -863,55 +900,6 @@ public class Processor {
             }
             dataset.setSolvent(nmrData.getSolvent());
             dataset.setTempK(nmrData.getTempK());
-        }
-        dataset.writeHeader();
-        return true;
-    }
-
-    public boolean createNVInMemory(String outputFile, int datasetSizes[], int[] useSizes) {
-        this.datasetSizes = datasetSizes;
-        this.useSizes = useSizes;
-        if (nDim > datasetSizes.length) {
-            if (useSizes == null) {
-                Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, "specify useSizes if not using all dimensions");
-                return false;
-            }
-        }
-
-        try {
-            this.dataset = new Dataset(outputFile, datasetSizes);
-        } catch (DatasetException ex) {
-            ex.printStackTrace();
-            Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
-            return false;
-        }
-
-        dataset.setScale(1.0);
-
-        if (!nmrDataSets.isEmpty()) {
-            NMRData nmrData = nmrDataSets.get(0);
-            mapToFID = new int[dataset.getNDim()];
-            mapToDataset = new int[nmrData.getNDim()];
-            int j = 0;
-            for (int i = 0; i < mapToDataset.length; i++) {
-                mapToDataset[i] = -1;
-                if (useSizes[i] > 1) {
-                    mapToDataset[i] = j;
-                    mapToFID[j] = i;
-                    j++;
-                }
-            }
-            for (int i = 0; i < dataset.getNDim(); i++) {
-                dataset.setLabel(i, nmrData.getTN(mapToFID(i)));
-                dataset.setSf(i, nmrData.getSF(mapToFID(i)));
-                dataset.setSw(i, nmrData.getSW(mapToFID(i)));
-                dataset.setRefValue(i, nmrData.getRef(mapToFID(i)));
-                dataset.setRefPt(i, nmrData.getRefPoint(mapToFID(i)));
-                dataset.setTDSize(i, useSizes[mapToFID(i)]);
-                //dataset.setPh0(i, nmrData.getPH0(mapToFID(i)));
-                //dataset.setPh1(i, nmrData.getPH1(mapToFID(i)));
-            }
-            dataset.setSolvent(nmrData.getSolvent());
         }
         dataset.writeHeader();
         return true;
@@ -1002,11 +990,11 @@ public class Processor {
         if (!nvDataset) {
             throw new ProcessingException("Cannot get matrix, not indirect dimension.");
         }
-        if (endOfFile) {
+        if (endOfFile.get()) {
             return matrix;
         }
         int matrixCount = incrementMatricesRead();  // increment matrix count
-        if (matrixCount > getTotalMatrices()) {
+        if (matrixCount >= getTotalMatrices()) {
             setEndOfFile();  // matrix is null
         } else {
             // zerofill matrix size for processing and writing
@@ -1033,11 +1021,11 @@ public class Processor {
         if (!nvDataset) {
             throw new ProcessingException("Cannot get matrix, not indirect dimension.");
         }
-        if (endOfFile) {
+        if (endOfFile.get()) {
             return matrix;
         }
         int matrixCount = incrementMatricesRead();  // increment matrix count
-        if (matrixCount > getTotalMatrices()) {
+        if (matrixCount >= getTotalMatrices()) {
             setEndOfFile();  // matrix is null
         } else {
             // zerofill matrix size for processing and writing
@@ -1058,7 +1046,7 @@ public class Processor {
             writePt[pt.length - 1][0] = matrixCount;
             pt[pt.length - 1][0] = matrixCount;
             try {
-                matrix = new MatrixND(writePt, matrixSizes);
+                matrix = new MatrixND(writePt, dim, matrixSizes);
                 matrix.setVSizes(vSizes);
 //                printDimPt("getMatrix", dim, matrix.getPt());  // for debug
                 dataset.readMatrixND(pt, dim, matrix);
@@ -1070,13 +1058,73 @@ public class Processor {
         return matrix;
     }
 
+    public List<Vec> getNextVectors() {
+        if (useIOController) {
+            while (true) {
+                if (datasetWriter.finished()) {
+                    return Collections.EMPTY_LIST;
+                } else {
+                    List<MatrixType> matrixTypes = datasetWriter.getItemsFromUnprocessedList(100);
+                    if (matrixTypes != null) {
+                        int nRead = vectorsRead.addAndGet(matrixTypes.size());
+                        List<Vec> vecs = new ArrayList<>();
+                        for (MatrixType mat : matrixTypes) {
+                            vecs.add((Vec) mat);
+                        }
+//                        System.out.println("load more vecs " + vecs.size() + " read " + nRead + " " + totalVecGroups + " " + vectorsToWrite);
+                        return vecs;
+                    } else {
+                    }
+                }
+            }
+        } else {
+            return getVectorsFromFile();
+        }
+    }
+
+    public MatrixType getNextMatrix() {
+        if (useIOController) {
+            while (true) {
+                if (datasetWriter.finished()) {
+                    return null;
+                } else {
+                    List<MatrixType> matrixTypes = datasetWriter.getItemsFromUnprocessedList(100);
+//                    System.out.println("get next matrix " + matrixTypes);
+                    if (matrixTypes != null) {
+                        int nRead = vectorsRead.addAndGet(matrixTypes.size());
+//                        System.out.println("load more vecs " + matrixTypes.size() + " read " + nRead + " " + totalVecGroups + " " + itemsToWrite);
+                        return matrixTypes.get(0);
+                    } else {
+//                        System.out.println("no mat " + datasetWriter.finished());
+                    }
+                }
+            }
+        } else {
+            return getMatrixFromFile();
+        }
+    }
+
+    public List<MatrixType> getMatrixTypesFromFile() {
+        List<MatrixType> mats = new ArrayList<>();
+        if (matrixMode.get()) {
+            mats.add(getMatrixNDFromFile());
+        } else {
+            
+            List<Vec> vecs = getVectorsFromFile();
+            for (Vec vec : vecs) {
+                mats.add(vec);
+            }
+        }
+        return mats;
+    }
+
     /**
      * Gets the next 'vectorsPerProcess' Vecs from the data file and returns
      * them to the calling ProcessOps.
      *
      * @return ArrayList of Vecs from the dataset.
      */
-    public synchronized ArrayList<Vec> getVectorsFromFile() {
+    public synchronized List<Vec> getVectorsFromFile() {
         Vec temp;
         ArrayList<Vec> vectors = new ArrayList<>();
 
@@ -1085,13 +1133,13 @@ public class Processor {
 // pt[1][0] to pt[1][1] is start/end coords for orthogonal row
         if (nvDataset) {  // indirect dimensions
             int[][] pt;
-            if (endOfFile) {
+            if (endOfFile.get()) {
                 return vectors;
             }
             for (int i = 0; i < vectorsPerProcess; ++i) {
                 pt = scanregion.nextPoint2();
                 if (pt.length == 0) {
-                    endOfFile = true;
+                    endOfFile.set(true);
                     break;
                 }
                 try {
@@ -1106,7 +1154,6 @@ public class Processor {
                 } catch (Exception e) {
                     throw new ProcessingException(e.getMessage());
                 }
-                vectorsToWrite = totalVecGroups;
             }
         } else {  // direct dimension, read FIDs
             if (tmult == null) {
@@ -1140,7 +1187,7 @@ public class Processor {
                         } catch (Exception e) {
                             throw new ProcessingException(e.getMessage());
                         }
-                        addVecReadCount();
+                        vecReadCount.incrementAndGet();
                     }
                 }
             }
@@ -1167,97 +1214,18 @@ public class Processor {
             }
         } else {
             int[] inVecs = {vecNum};
-            int[][][] outVecs = new int[1][1][2];
-            outVecs[0][0][0] = vecNum;
-            outVecs[0][0][1] = vecNum;
+            int[][][] outVecs = new int[1][2][2];
+            outVecs[0][1][0] = vecNum;
+            outVecs[0][1][1] = vecNum;
             return new VecIndex(inVecs, outVecs);
         }
     }
 
-    /**
-     * Adds vectors to the unprocessed vector queue.
-     */
-    public synchronized boolean addNewVectors() {
-        ArrayList<Vec> vectors = getVectorsFromFile();
-        if (!endOfFile) {
-            unprocessedVectorQueue.add(vectors);
-            return true;
-        }
-        return false;
-    }
-
-    public void addVectorsToWriteList(ArrayList<Vec> vectors) {
-        processedVectorQueue.add(vectors);
-    }
-
-    public ArrayList<Vec> getVectorsFromWriteList() {
-        try {
-            return processedVectorQueue.take();
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
-
-    public void addVectorsToUnprocessedList(ArrayList<Vec> vectors) {
-        unprocessedVectorQueue.add(vectors);
-    }
-
-    public ArrayList<Vec> getVectorsFromUnprocessedList() {
-        try {
-            return unprocessedVectorQueue.take();
-        } catch (InterruptedException ex) {
-            ex.printStackTrace();
-            return new ArrayList<>();
-        }
-    }
-
-    /**
-     * Writes all of the vectors from the processedVectorQueue to file.
-     */
-    public void writeVectors() {
-        ArrayList<Vec> temp;
-        if (processedVectorQueue.size() != 0) {
-            while (true) {
-                temp = processedVectorQueue.poll();
-                for (Vec vector : temp) {
-                    try {
-                        dataset.writeVector(vector);
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                        Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                if (processedVectorQueue.isEmpty()) {
-                    break;
-                }
-            }
-        }
-    }
-
-    public void writeNVectors(int n) {
-        if (processedVectorQueue.size() != 0) {
-            for (int i = 0; i < n; ++i) {
-                for (Vec vector : processedVectorQueue.poll()) {
-                    try {
-                        dataset.writeVector(vector);
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                        Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                if (processedVectorQueue.isEmpty()) {
-                    break;
-                }
-            }
-        }
-    }
-
-    public synchronized void writeVector(Vec vector) {
-        mathObjectsWritten++;
+    public void writeVector(Vec vector) {
+        int nObj = mathObjectsWritten.incrementAndGet();
         if (progressUpdater != null) {
-            if ((mathObjectsWritten == vectorsToWrite) || ((mathObjectsWritten % 16) == 0)) {
-                double f = (1.0 * mathObjectsWritten) / vectorsToWrite;
+            if ((nObj == itemsToWrite) || ((nObj % 16) == 0)) {
+                double f = (1.0 * nObj) / itemsToWrite;
                 progressUpdater.updateProgress(f);
             }
         }
@@ -1269,7 +1237,13 @@ public class Processor {
             }
         }
         try {
-            dataset.writeVector(vector);
+            if (useIOController) {
+                List<MatrixType> writeVectors = new ArrayList<>();
+                writeVectors.add(vector);
+                datasetWriter.addItemsToWriteList(writeVectors);
+            } else {
+                dataset.writeVector(vector);
+            }
         } catch (IOException ex) {
             throw new ProcessingException(ex.getMessage());
         } catch (NullPointerException npe) {
@@ -1282,26 +1256,32 @@ public class Processor {
     }
 
     public synchronized void writeMatrix(MatrixType matrix) {
-        if (matrix instanceof Matrix) {
-            writeMatrix((Matrix) matrix);
+        if (useIOController) {
+            List<MatrixType> mats = new ArrayList<>();
+            mats.add(matrix);
+            datasetWriter.addItemsToWriteList(mats);
         } else {
-            writeMatrixND((MatrixND) matrix);
+            if (matrix instanceof Matrix) {
+                writeMatrix((Matrix) matrix);
+            } else {
+                writeMatrixND((MatrixND) matrix);
+            }
 
         }
 
     }
 
     public synchronized void writeMatrix(Matrix matrix) {  // called by WRITE op
-        mathObjectsWritten++;
+        int nObj = mathObjectsWritten.incrementAndGet();
         if (progressUpdater != null) {
-            if ((mathObjectsWritten == totalMatrices) || ((mathObjectsWritten % 16) == 0)) {
-                double f = (1.0 * matricesRead) / totalMatrices;
+            if ((nObj == totalMatrices.get()) || ((nObj % 16) == 0)) {
+                double f = (1.0 * nObj) / totalMatrices.get();
                 progressUpdater.updateProgress(f);
             }
         }
         try {
             if (matrix != null) {
-//                printDimPt(dim, matrix.getPt());  // for debug
+//                printDimPt("write ", dim, matrix.getPt());  // for debug
                 dataset.writeMatrixToDatasetFile(dim, matrix);
             }
         } catch (IOException ex) {
@@ -1312,10 +1292,10 @@ public class Processor {
     }
 
     public synchronized void writeMatrixND(MatrixND matrix) {  // called by WRITE op
-        mathObjectsWritten++;
+        int nObj = mathObjectsWritten.incrementAndGet();
         if (progressUpdater != null) {
-            if ((mathObjectsWritten == totalMatrices) || ((mathObjectsWritten % 16) == 0)) {
-                double f = (1.0 * matricesRead) / totalMatrices;
+            if ((nObj == totalMatrices.get()) || ((nObj % 16) == 0)) {
+                double f = (1.0 * nObj) / totalMatrices.get();
                 progressUpdater.updateProgress(f);
             }
         }
@@ -1400,7 +1380,7 @@ public class Processor {
                 continue;
             }
             if (p.hasOperations()) {
-                mathObjectsWritten = 0;
+                mathObjectsWritten.set(0);
                 if (progressUpdater != null) {
                     int[] dims = p.getDims();
                     String dimString = "dim ";
@@ -1433,14 +1413,16 @@ public class Processor {
         }
         if (!keepDatasetOpen) {
             if (dataset.fFormat == Dataset.FFORMAT.UCSF) {
-                dataset.writeHeaderUCSF(false);
+                dataset.writeHeader(false);
             }
             dataset.setNFreqDims(nDimsProcessed);
             for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
                 dataset.setFreqDomain(i, false);
                 dataset.setComplex(i, false);
             }
-            dataset.writeParFile();
+            if (!dataset.isMemoryFile()) {
+                dataset.writeParFile();
+            }
             closeDataset();
         }
         System.err.printf("Elapsed time %.2f\n", elapsedTime);
@@ -1460,6 +1442,15 @@ public class Processor {
 
     public void closeDataset() {
         if (dataset != null) {
+            if (dataset.isMemoryFile()) {
+                try {
+                    dataset.saveMemoryFile();
+                } catch (IOException ex) {
+                    Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (DatasetException ex) {
+                    Logger.getLogger(Processor.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
             dataset.close();
             dataset = null;
         }
@@ -1474,6 +1465,10 @@ public class Processor {
         return elapsedTime;
     }
 
+    public boolean doneWriting() {
+        return doneWriting.get();
+    }
+
     /**
      * Allows a user to create a process and then run it explicitly. This allows
      * multiple processes to be created and then run sequentially.
@@ -1485,15 +1480,27 @@ public class Processor {
             return;
         }
         synchronized (isRunning) {
+            useIOController = dataset.isCacheFile();
+            doneWriting.set(false);
+            matrixMode.set(p.isMatrix());
+
             isRunning = true;
 
 //            System.out.println("Num Processes: " + numProcessors);
 //            defaultProcess = p;
             setupPool(p);
-            vecGroupsRead = 0;
-            endOfFile = false;
+            vecGroupsRead.set(0);
+            vectorsRead.set(0);
+            endOfFile.set(false);
 
             ArrayList<Future> completedProcesses = new ArrayList<>();
+            if (useIOController && !p.isDataset()) {
+                int queueLimit = p.isMatrix() ? 4 : 128;
+                if (datasetWriter != null) {
+                    datasetWriter.shutdown();
+                }
+                datasetWriter = new MatrixTypeService(this, queueLimit, itemsToRead, itemsToWrite);
+            }
 
             for (Runnable process : processes) {
                 completedProcesses.add(pool.submit(process));
@@ -1506,6 +1513,11 @@ public class Processor {
                     ex.printStackTrace();
                     throw new ProcessingException(ex.getMessage());
                 }
+            }
+            doneWriting.set(true);
+            if (useIOController && !p.isDataset()) {
+                boolean doneFlushed = datasetWriter.isDone(10000);
+                System.out.println("done flushed " + doneFlushed);
             }
             if (!getProcessorError()) {
                 if (p.isMatrix()) {
@@ -1527,13 +1539,18 @@ public class Processor {
             }
             printVecReadCount();
             pool.shutdown();
+            if (useIOController && !p.isDataset()) {
+                System.out.println("shutdown now");
+                datasetWriter.shutdown();
+                datasetWriter = null;
+            }
             processes.clear();
             ProcessOps.resetNumProcessesCreated();
             p.getOperations().clear();
             isRunning = false;
             if (getProcessorError()) {
                 closeDataset();
-                throw new ProcessingException(errorMessage);
+                throw new ProcessingException(errorMessage.get());
             }
         }
     }
@@ -1575,20 +1592,12 @@ public class Processor {
         return processes;
     }
 
-    public synchronized boolean getEndOfFile() {
-        return endOfFile;
+    public boolean getEndOfFile() {
+        return endOfFile.get();
     }
 
-    public int getUnprocessedVectorQueueSize() {
-        return unprocessedVectorQueue.size();
-    }
-
-    public int getProcessedVectorQueueSize() {
-        return processedVectorQueue.size();
-    }
-
-    public synchronized void setEndOfFile() {
-        endOfFile = true;
+    public void setEndOfFile() {
+        endOfFile.set(true);
     }
 
     /**
@@ -1624,28 +1633,24 @@ public class Processor {
         return nvDataset;
     }
 
-    public synchronized int getTotalVecGroups() {
+    public int getTotalVecGroups() {
         return totalVecGroups;
     }
 
-    public synchronized int getVecGroupsRead() {
-        return vecGroupsRead;
+    public int getVecGroupsRead() {
+        return vecGroupsRead.get();
     }
 
-    public synchronized int incrementVecGroupsRead() {
-        int temp = vecGroupsRead;
-        vecGroupsRead++;
-        return temp;
+    public int incrementVecGroupsRead() {
+        return vecGroupsRead.getAndIncrement();
     }
 
-    public synchronized int getTotalMatrices() {
-        return totalMatrices;
+    public int getTotalMatrices() {
+        return totalMatrices.get();
     }
 
-    public synchronized int incrementMatricesRead() {
-        int temp = matricesRead;
-        matricesRead++;
-        return temp;
+    public int incrementMatricesRead() {
+        return matricesRead.getAndIncrement();
     }
 
     public void setNumProcessors(int n) {
@@ -1685,23 +1690,21 @@ public class Processor {
         }
     }
 
-    public synchronized void clearProcessorError() {
-        processorError = false;
-        errorMessage = "";
+    public void clearProcessorError() {
+        processorError.set(false);
+        setProcessorErrorMessage("");
     }
 
-    public synchronized void setProcessorErrorMessage(String message) {
-        errorMessage = message;
+    public void setProcessorErrorMessage(String message) {
+        errorMessage.set(message);
     }
 
-    public synchronized boolean setProcessorError() {
-        boolean temp = processorError;
-        processorError = true;
-        return temp;
+    public boolean setProcessorError() {
+        return processorError.getAndSet(true);
     }
 
-    public synchronized boolean getProcessorError() {
-        return processorError;
+    public boolean getProcessorError() {
+        return processorError.get();
     }
 
     public void keepDatasetOpen(boolean state) {

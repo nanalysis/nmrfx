@@ -30,7 +30,6 @@ public class PathFitter {
     double[][] xValues;
     double[][] yValues;
     double[] errValues;
-    int[] indices;
     int nPaths;
     int nDims = 2;
     double pScale = 0.001;
@@ -54,11 +53,11 @@ public class PathFitter {
             double sum = 0.0;
             int n = values[0].length;
             for (int i = 0; i < n; i++) {
-                int iOff = indices[i];
+                int iOff = (int) Math.round(values[2][i]);
                 double c = fit0 ? pars[2 + iOff] : pars[1 + iOff];
                 double x = values[0][i];
                 double p = values[1][i];
-                double y = values[2][i];
+                double y = values[3][i];
                 double yCalc = yCalc(a, b, c, x, p);
 
                 double delta = yCalc - y;
@@ -69,7 +68,7 @@ public class PathFitter {
             return value;
         }
 
-        public double[] getGuess(double[] x, double[] y) {
+        public double[] getGuess(double[] x, double[] y, int[] indices) {
             int nPars = 1 + nPaths;
 
             double[] result = new double[nPars];
@@ -261,7 +260,7 @@ public class PathFitter {
         List<PeakDistance> peakDists = path.getPeakDistances();
         int i = 0;
         double errValue = 0.1;
-        int nX = pathMode == PATHMODE.PRESSURE ? 1 : 2;
+        int nX = pathMode == PATHMODE.PRESSURE ? 1 : 3;
         List<double[]> values = new ArrayList<>();
         for (PeakDistance peakDist : peakDists) {
             if (peakDist != null) {
@@ -285,12 +284,12 @@ public class PathFitter {
             yValues = new double[2][n];
         }
         errValues = new double[n];
-        indices = new int[n];
         i = 0;
         for (double[] v : values) {
             if (pathMode == PATHMODE.TITRATION) {
                 xValues[0][i] = v[0];
                 xValues[1][i] = v[1];
+                xValues[2][i] = 0.0;
                 yValues[0][i] = v[2];
             } else {
                 xValues[0][i] = v[0];
@@ -298,7 +297,6 @@ public class PathFitter {
                 yValues[1][i] = v[2];
             }
             errValues[i] = v[3];
-            indices[i] = 0;
             i++;
         }
         nPaths = 1;
@@ -312,7 +310,7 @@ public class PathFitter {
         List<double[]> values = new ArrayList<>();
         List<Integer> pathIndices = new ArrayList<>();
         int iPath = 0;
-        int nX = pathMode == PATHMODE.PRESSURE ? 1 : 2;
+        int nX = pathMode == PATHMODE.PRESSURE ? 1 : 3;
         for (Path path : paths) {
             List<PeakDistance> peakDists = path.getPeakDistances();
             int i = 0;
@@ -343,13 +341,13 @@ public class PathFitter {
             yValues = new double[2][n];
         }
         errValues = new double[n];
-        indices = new int[n];
 
         int i = 0;
         for (double[] v : values) {
             if (pathMode == PATHMODE.TITRATION) {
                 xValues[0][i] = v[0];
                 xValues[1][i] = v[1];
+                xValues[2][i] = pathIndices.get(i);
                 yValues[0][i] = v[2];
             } else {
                 xValues[0][i] = v[0];
@@ -357,7 +355,6 @@ public class PathFitter {
                 yValues[1][i] = v[2];
             }
             errValues[i] = v[3];
-            indices[i] = pathIndices.get(i);
             i++;
         }
         nPaths = paths.size();
@@ -377,7 +374,12 @@ public class PathFitter {
         PathFunction fun = new PathFunction();
         Fitter fitter = Fitter.getArrayFitter(fun::apply);
         fitter.setXYE(xValues, yValues[0], errValues);
-        double[] guess = fun.getGuess(xValues[0], yValues[0]);
+        int[] indices = new int[yValues[0].length];
+        for (int i = 0; i < indices.length; i++) {
+            indices[i] = (int) Math.round(xValues[2][i]);
+        }
+
+        double[] guess = fun.getGuess(xValues[0], yValues[0], indices);
         double[] lower = new double[guess.length];
         double[] upper = new double[guess.length];
         int iG = 0;
