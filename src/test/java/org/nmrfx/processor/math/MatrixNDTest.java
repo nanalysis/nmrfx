@@ -15,15 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.processor.math;
 
-import org.nmrfx.processor.processing.ProcessingException;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
-import org.apache.commons.math3.transform.DftNormalization;
-import org.apache.commons.math3.transform.FastFourierTransformer;
-import org.apache.commons.math3.transform.TransformType;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -68,7 +61,7 @@ public class MatrixNDTest {
         Assert.assertEquals(md.getNElems(), 12);
         Assert.assertEquals(md.getValue(2, 1), 8.0, tol);
         for (int i = 0; i < md.getNElems(); i++) {
-            Assert.assertEquals(md.data[i], i + 1.0, tol);
+            Assert.assertEquals(md.getValueAtIndex(i), i + 1.0, tol);
         }
     }
 
@@ -105,12 +98,12 @@ public class MatrixNDTest {
         md.doFTtoReal(1);
         int nElems = md.getNElems();
         for (int i = 0; i < nElems; i++) {
-            Assert.assertEquals(md.data[i], 1.0, tol);
+            Assert.assertEquals(md.getValueAtIndex(i), 1.0, tol);
         }
         md = new MatrixND(testSquare2DRow1);
         md.doFTtoReal(0);
         for (int i = 0; i < nElems; i++) {
-            Assert.assertEquals(md.data[i], 1.0, tol);
+            Assert.assertEquals(md.getValueAtIndex(i), 1.0, tol);
         }
     }
 
@@ -121,9 +114,9 @@ public class MatrixNDTest {
         md.doFTtoReal();
         md.doHIFT(0.5);
         int nElems = md.getNElems();
-        Assert.assertEquals(md.data[0], 1.0, tol);
+        Assert.assertEquals(md.getValueAtIndex(0), 1.0, tol);
         for (int i = 1; i < nElems; i++) {
-            Assert.assertEquals(md.data[i], 0.0, tol);
+            Assert.assertEquals(md.getValueAtIndex(i), 0.0, tol);
         }
     }
 

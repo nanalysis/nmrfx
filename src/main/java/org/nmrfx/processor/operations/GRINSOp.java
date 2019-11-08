@@ -25,6 +25,8 @@ import static org.nmrfx.processor.operations.IstMatrix.genSrcTargetMap;
 import org.nmrfx.processor.processing.ProcessingException;
 import org.nmrfx.processor.processing.SampleSchedule;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -38,6 +40,8 @@ public class GRINSOp extends MatrixOperation {
      */
     private final double noise;
     private final double scale;
+    private final int zfFactor;
+    private final double[] phase;  // init zero values
     /**
      * Preserve the residual noise
      *
@@ -49,7 +53,8 @@ public class GRINSOp extends MatrixOperation {
      */
     private final boolean synthetic;
     /**
-     * Sample schedule used for non-uniform sampling. Specifies array elements where data is present.
+     * Sample schedule used for non-uniform sampling. Specifies array elements
+     * where data is present.
      *
      * @see #ist
      * @see #zero_samples
@@ -59,16 +64,28 @@ public class GRINSOp extends MatrixOperation {
 
     private final File logHome;
 
-    public GRINSOp(double noise, double scale, boolean preserve, boolean synthetic, SampleSchedule schedule, String logHomeName) throws ProcessingException {
+    public GRINSOp(double noise, double scale, int zfFactor,
+            List<Double> phaseList, boolean preserve, boolean synthetic,
+            SampleSchedule schedule, String logHomeName)
+            throws ProcessingException {
         this.noise = noise;
         this.scale = scale;
         this.preserve = preserve;
+        this.zfFactor = zfFactor;
         this.synthetic = synthetic;
         this.sampleSchedule = schedule;
         if (logHomeName == null) {
             this.logHome = null;
         } else {
             this.logHome = new File(logHomeName);
+        }
+        if (!phaseList.isEmpty()) {
+            this.phase = new double[phaseList.size()];
+            for (int i = 0; i < phaseList.size(); i++) {
+                this.phase[i] = (Double) phaseList.get(i);
+            }
+        } else {
+            phase = null;
         }
     }
 
@@ -94,8 +111,8 @@ public class GRINSOp extends MatrixOperation {
             int[] zeroList = IstMatrix.genZeroList(schedule, matrixND);
             int[] srcTargetMap = genSrcTargetMap(schedule, matrixND);
 
-            GRINS smile = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, logFile);
-            smile.exec();
+            GRINS grins = new GRINS(matrixND, noise, scale, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
+            grins.exec();
             for (int i = 0; i < vector.getSize(); i++) {
                 double real = matrixND.getValue(i * 2);
                 double imag = matrixND.getValue(i * 2 + 1);
@@ -113,6 +130,12 @@ public class GRINSOp extends MatrixOperation {
     public Operation evalMatrix(MatrixType matrix) {
         try {
             MatrixND matrixND = (MatrixND) matrix;
+            if (zfFactor > 0) {
+                matrixND.zeroFill(zfFactor);
+            }
+            for (int i = 0; i < matrixND.getNDim(); i++) {
+                matrixND.setVSizes(matrixND.getSizes());
+            }
             int[] zeroList = IstMatrix.genZeroList(sampleSchedule, matrixND);
             int[] srcTargetMap = genSrcTargetMap(sampleSchedule, matrixND);
             String logFile = null;
@@ -120,8 +143,11 @@ public class GRINSOp extends MatrixOperation {
                 logFile = logHome.toString() + matrixND.getIndex() + ".log";
             }
 //            if (matrixND.getIndex() == 381) {
-            GRINS smile = new GRINS(matrixND, noise, scale, preserve, synthetic, zeroList, srcTargetMap, logFile);
-            smile.exec();
+            GRINS grins = new GRINS(matrixND, noise, scale, phase, preserve, synthetic, zeroList, srcTargetMap, logFile);
+            grins.exec();
+//            }
+//            if (matrixND.getIndex() == 94) {
+//                matrixND.dump("junk.txt");
 //            }
         } catch (Exception e) {
             throw new ProcessingException(e.getLocalizedMessage());

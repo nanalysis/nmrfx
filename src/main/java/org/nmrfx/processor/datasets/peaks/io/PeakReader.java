@@ -286,6 +286,11 @@ public class PeakReader {
                     String value = null;
                     try {
                         value = data[dataIndex];
+                        int flagNum = 0;
+                        if (field.startsWith("flag") && (field.length() > 4) && Character.isDigit(field.charAt(4))) {
+                            flagNum = Integer.parseInt(field.substring(4));
+                            field = "flag";
+                        }
                         switch (field) {
                             case "id":
                                 peak.setIdNum(Integer.valueOf(value));
@@ -301,6 +306,9 @@ public class PeakReader {
                             case "status":
                                 peak.setStatus(Integer.valueOf(value));
                                 break;
+                            case "stat":
+                                peak.setStatus(Integer.valueOf(value));
+                                break;
                             case "type":
                                 peak.setType(Integer.valueOf(value));
                                 break;
@@ -309,6 +317,9 @@ public class PeakReader {
                                 break;
                             case "flags":
                                 peak.setFlag2(value);
+                                break;
+                            case "flag":
+                                peak.setFlag2(flagNum, value);
                                 break;
                             case "color":
                                 peak.setColor(value);

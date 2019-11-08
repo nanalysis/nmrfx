@@ -15,35 +15,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
- /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.nmrfx.processor.operations;
 
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
 /**
+ * I don't think this should be a function, also accidentally implemented in Vec as well as here.
  *
  * @author johnsonb
  */
-public class Rft extends Operation {
+public class Merge extends Operation {
 
-    private final boolean inverse;
-    private final boolean negatePairs;
-
-    public Rft(boolean inverse, boolean negatePairs) {
-        this.inverse = inverse;
-        this.negatePairs = negatePairs;
+    public Merge() {
     }
+
 
     @Override
-    public Operation eval(Vec vector) throws ProcessingException {
-        vector.rft(inverse, negatePairs);
+    public Merge eval(Vec vector) throws ProcessingException {
+        vector.merge();
         return this;
     }
-
 }

@@ -24,27 +24,24 @@ import java.io.RandomAccessFile;
 import java.nio.FloatBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import org.apache.commons.math3.complex.Complex;
-import org.nmrfx.processor.math.Vec;
 
 /**
  * Create a memory-mapped interface to a Dataset file
  *
  * @author brucejohnson
  */
-public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
+public class MappedSubMatrixFile implements DatasetStorageInterface, Closeable {
 
     private RandomAccessFile raFile;
     private final Dataset dataset;
     private final File file;
-    private final long[] strides;
     private long totalSize;
     private final int dataType;
     final boolean writable;
     private MappedByteBuffer mappedBuffer;
     DatasetLayout layout;
     FloatBuffer floatBuffer;
-    private final long BYTES = 4;
+    private final int BYTES = Float.BYTES;
 
     /**
      * An object that represents a mapping of specified dataset with a memory
@@ -55,30 +52,26 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
      * @param writable true if the mapping should be writable
      * @throws IOException if an I/O error occurs
      */
-    public MappedMatrixFile(final Dataset dataset, File file, final DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
+    public MappedSubMatrixFile(final Dataset dataset, File file, final DatasetLayout layout, final RandomAccessFile raFile, final boolean writable) throws IOException {
         this.raFile = raFile;
         this.dataset = dataset;
         this.file = file;
         this.layout = layout;
         dataType = dataset.getDataType();
-        strides = new long[dataset.getNDim()];
         this.writable = writable;
         init();
     }
 
     void init() throws IOException {
-        long size = 1;
-        for (int i = 0; i < layout.nDim; i++) {
-            size *= layout.sizes[i];
-            if (i == 0) {
-                strides[i] = 1;
-            } else {
-                strides[i] = strides[i - 1] * layout.sizes[i - 1];
-            }
-            System.err.println("mapped " + i + " " + dataset.getSize(i) + " " + strides[i]);
+        int blockHeaderSize = layout.getBlockHeaderSize() / BYTES;
+        long matSize = BYTES;
+        System.err.println(dataset.getFileName());
+        System.err.println("header size " + layout.getFileHeaderSize());
+        for (int i = 0; i < dataset.getNDim(); i++) {
+            System.err.println("map sub " + i + " " + layout.blockSize[i] + " " + layout.nBlocks[i] + " " + dataset.getSize(i));
+            matSize *= (layout.blockSize[i] + blockHeaderSize) * layout.nBlocks[i];
         }
-        //System.out.println("size " + totalSize);
-        totalSize = size;
+        totalSize = matSize / BYTES;
         try {
             long size2 = totalSize * Float.BYTES;
             FileChannel.MapMode mapMode = FileChannel.MapMode.READ_ONLY;
@@ -130,21 +123,27 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     @Override
     public long bytePosition(int... offsets) {
-        long position;
-        position = offsets[0];
-        for (int iDim = 1; iDim < offsets.length; iDim++) {
-            position += offsets[iDim] * strides[iDim];
+        long blockNum = 0;
+        long offsetInBlock = 0;
+        for (int iDim = 0; iDim < offsets.length; iDim++) {
+            blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
+            offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
+//                System.out.println(iDim + " " + offsets[iDim] + " " + blockNum + " " + offsetInBlock + " " + layout.offsetPoints[iDim] + " " + layout.offsetBlocks[iDim]);
         }
-        return position * BYTES;
+        long position = blockNum * (layout.blockPoints * BYTES + layout.blockHeaderSize) + offsetInBlock * BYTES;
+//            System.out.println(position + " " + layout.blockPoints);
+        return position;
     }
 
     @Override
     public long pointPosition(int... offsets) {
-        long position;
-        position = offsets[0];
-        for (int iDim = 1; iDim < offsets.length; iDim++) {
-            position += offsets[iDim] * strides[iDim];
+        long blockNum = 0;
+        long offsetInBlock = 0;
+        for (int iDim = 0; iDim < offsets.length; iDim++) {
+            blockNum += ((offsets[iDim] / layout.blockSize[iDim]) * layout.offsetBlocks[iDim]);
+            offsetInBlock += ((offsets[iDim] % layout.blockSize[iDim]) * layout.offsetPoints[iDim]);
         }
+        long position = blockNum * layout.blockPoints + offsetInBlock;
         return position;
     }
 
@@ -160,7 +159,7 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     @Override
     public float getFloat(int... offsets) {
-        int p = (int) bytePosition(offsets);
+        int p = (int) (bytePosition(offsets));
         if (dataType == 0) {
             return mappedBuffer.getFloat(p);
         } else {
@@ -170,7 +169,7 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
 
     @Override
     public void setFloat(float d, int... offsets) {
-        int p = (int) bytePosition(offsets);
+        int p = (int) (bytePosition(offsets));
         try {
             if (dataType == 0) {
                 mappedBuffer.putFloat(p, d);
@@ -225,48 +224,5 @@ public class MappedMatrixFile implements DatasetStorageInterface, Closeable {
             return;
         }
         MapInfo.closeDirectBuffer(mapping);
-    }
-
-    public void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
-        int j = 0;
-        point[dim] = first;
-        int position = (int) pointPosition(point);
-        int stride = (int) strides[dim];
-        if (vector.isComplex()) {
-            for (int i = first; i <= last; i += 2) {
-                Complex c = vector.getComplex(j++);
-                floatBuffer.put(position, (float) (c.getReal() * scale));
-                position += stride;
-                floatBuffer.put(position, (float) (c.getImaginary() * scale));
-                position += stride;
-            }
-        } else {
-            for (int i = first; i <= last; i++) {
-                floatBuffer.put(position, (float) (vector.getReal(j++) * scale));
-                position += stride;
-            }
-        }
-    }
-
-    public void readVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
-        int j = 0;
-        point[dim] = first;
-        int position = (int) pointPosition(point);
-        int stride = (int) strides[dim];
-        if (vector.isComplex()) {
-            for (int i = first; i <= last; i += 2) {
-                double real = floatBuffer.get(position) / scale;
-                position += stride;
-                double imag = floatBuffer.get(position) / scale;
-                position += stride;
-                vector.set(j++, new Complex(real, imag));
-            }
-        } else {
-            for (int i = first; i <= last; i++) {
-                double real = floatBuffer.get(position) / scale;
-                position += stride;
-                vector.set(j++, real);
-            }
-        }
     }
 }

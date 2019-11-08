@@ -595,7 +595,7 @@ public class NMRViewData implements NMRData {
             System.out.println("already open");
             dataset = Dataset.getDataset(existingFiles.get(0));
         } else {
-            dataset = new Dataset(datapath, datapath, true);
+            dataset = new Dataset(datapath, datapath, true, false);
         }
     }
 

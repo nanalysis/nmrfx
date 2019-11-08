@@ -121,7 +121,7 @@ public class NESTAMath {
         totalIterations = 0;
         double mu = muStart;
         double tol = tolStart;
-        System.arraycopy(matrix.data, 0, xPlug, 0, n);
+        matrix.copyDataTo(xPlug);
 
         // Outer iterations are the so-called Continuation Steps of the NESTA paper
         for (int oIter = 0; oIter < outerIterations; oIter++) {
@@ -174,15 +174,17 @@ public class NESTAMath {
                 // Effectively then the Langrangian multiplier (lambda) is 0.0 and all we need is the value for q
                 // fixme could just use zeroList here
                 for (int i = 0; i < n; i++) {
-                    yValues[i] = matrix.data[i] - mu * gradMatrix.data[i]; // compare to q of eq 3.7
-                    wValues[i] += alpha * gradMatrix.data[i];
+                    double mValue = matrix.getValueAtIndex(i);
+                    double gValue = gradMatrix.getValueAtIndex(i);
+                    yValues[i] = mValue - mu * gValue; // compare to q of eq 3.7
+                    wValues[i] += alpha * gValue;
                     zValues[i] = xPlug[i] - mu * wValues[i];  // compare to q of eq 3.12
                 }
                 for (int i : zeroList) {
-                    matrix.data[i] = tau * zValues[i] + (1.0 - tau) * yValues[i];
+                    matrix.setValueAtIndex(i, tau * zValues[i] + (1.0 - tau) * yValues[i]);
                 }
             }
-            System.arraycopy(matrix.data, 0, xPlug, 0, n);
+            matrix.copyDataTo(xPlug);
         }
         if (fileWriter != null) {
             fileWriter.write(String.format("iNorm %10.5f fNorm %10.5f nIter %d\n", initialL1Norm, finalL1Norm, totalIterations));

@@ -36,9 +36,9 @@ public class TractTest {
             xValues[1][i] = i % 2;
             errValues[i] = 1.0;
         }
-        TRACTSimFit tractSimFit = new TRACTSimFit();
+        TRACTSimFit tractSimFit = new TRACTSimFit(600.0e6, "H", "N");
         tractSimFit.setXYE(xValues, yValues, errValues);
-        PointValuePair result = tractSimFit.fit(600.0e6);
+        PointValuePair result = tractSimFit.fit();
         double[] point = result.getPoint();
         double tauC = point[3];
         Assert.assertEquals(tauC, 3.3, 0.1);
