@@ -14,7 +14,7 @@ class NMRFxDatasetScripting:
         self.cmd = Dataset
 
     def open(self, fileName,writable=False):
-        dataset = Dataset(fileName,"",writable)
+        dataset = Dataset(fileName,"",writable, False)
         return dataset
 
     def names(self):
@@ -28,7 +28,7 @@ class NMRFxDatasetScripting:
         return dataset
 
     def create(self, fileName, sizes, srcDataset=None, title=""):
-        Dataset.createDataset(fileName, "", sizes) 
+        Dataset.createDataset(fileName, "", sizes, True) 
         dataset = self.open(fileName, True)
         if srcDataset:
             nDim = len(sizes)
@@ -49,7 +49,7 @@ class NMRFxDatasetScripting:
         for iDim in range(nDim):
             sizes.append(srcDataset.getSize(iDim))
 
-        Dataset.createDataset(fileName, "", sizes) 
+        Dataset.createDataset(fileName, "", sizes, True) 
         dataset = self.open(fileName, True)
         for iDim in range(nDim):
             srcDataset.copyHeader(dataset, iDim)

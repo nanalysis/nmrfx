@@ -13,9 +13,10 @@ class NMRFxPeakScripting:
         return self.cmd.get(specifier)
 
     def read(self, fileName, doLinks=False):
-        pRead = PeakReader(doLinks)
+        pRead = PeakReader()
         peakList = pRead.readPeakList(fileName)
-        if doLinks: pRead.linkResonances()
+        if doLinks:
+            pRead.linkResonances()
         return peakList
 
     def write(self, peakList, fileName):

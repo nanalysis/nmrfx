@@ -25,11 +25,12 @@ def makePeakList(listName,labels,sfs,sws):
     peakList.setDatasetName("peaks")
     return peakList
 
-def addPeak(peakList,ppms,widths,bounds,intensity,names):
+def addPeak(peakList,ppms,eppms, widths,bounds,intensity,names):
     peak = peakList.getNewPeak()
-    for i,(ppm,width,bound,name) in enumerate(zip(ppms,widths,bounds,names)):
+    for i,(ppm,eppm,width,bound,name) in enumerate(zip(ppms,eppms,widths,bounds,names)):
         peakDim = peak.getPeakDim(i)
         peakDim.setChemShiftValue(ppm)
+        peakDim.setChemShiftErrorValue(eppm)
         peakDim.setLabel(name)
         peakDim.setLineWidthValue(width)
         peakDim.setBoundsValue(bound)
