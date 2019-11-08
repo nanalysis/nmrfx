@@ -50,6 +50,8 @@ public class MatrixTypeService {
     private final LinkedBlockingQueue<List<MatrixType>> processedItemQueue;
     AtomicBoolean endOfFile = new AtomicBoolean(false);
     AtomicInteger nWritten = new AtomicInteger(0);
+    AtomicInteger processedQueueLimit;
+    int itemsToWrite;
 
     FutureTask<Boolean> futureTask;
 
@@ -61,8 +63,10 @@ public class MatrixTypeService {
 
     Processor processor;
 
-    public MatrixTypeService(Processor processor) {
+    public MatrixTypeService(Processor processor, int processedQueueLimit, int itemsToWrite) {
         this.processor = processor;
+        this.itemsToWrite = itemsToWrite;
+        this.processedQueueLimit = new AtomicInteger(processedQueueLimit);
         unprocessedItemQueue = new LinkedBlockingQueue<>();
         processedItemQueue = new LinkedBlockingQueue<>();
         futureTask = new FutureTask(() -> readWriteItems());
@@ -71,6 +75,11 @@ public class MatrixTypeService {
 
     public void shutdown() {
         executor.shutdown();
+        try {
+            executor.awaitTermination(4, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
     }
 
     public boolean finished() {
@@ -83,6 +92,7 @@ public class MatrixTypeService {
         } catch (InterruptedException ex) {
             return false;
         } catch (ExecutionException ex) {
+            ex.printStackTrace();
             return false;
         } catch (TimeoutException ex) {
             return false;
@@ -144,7 +154,8 @@ public class MatrixTypeService {
         List<MatrixType> temp = null;
         while (true) {
             try {
-                if (!processor.getEndOfFile() && (unprocessedItemQueue.size() < 4) && (processedItemQueue.size() < 128)) {
+//                System.out.println(unprocessedItemQueue.size() + " " + processedItemQueue.size() + " " + nWritten.get() + " " +itemsToWrite + " " + this);
+                if (!processor.getEndOfFile() && (unprocessedItemQueue.size() < 4) && (processedItemQueue.size() < processedQueueLimit.get())) {
                     for (int i = 0; i < 4; i++) {
                         if (!addNewItems()) {
                             break;
@@ -156,7 +167,8 @@ public class MatrixTypeService {
                 if (temp != null) {
                     writeItems(temp);
                 } else {
-                    if (processor.doneWriting()) {
+                    if (nWritten.get() >= itemsToWrite) {
+                        endOfFile.set(true);
                         return true;
                     }
                 }
