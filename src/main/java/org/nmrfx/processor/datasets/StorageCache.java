@@ -97,7 +97,7 @@ public class StorageCache {
     }
 
     public StorageCache() {
-        TrackingLRUMap lruMap = new TrackingLRUMap(16000);
+        TrackingLRUMap lruMap = new TrackingLRUMap(1024);
 
         buffers = Collections.synchronizedMap(lruMap);
 
@@ -108,9 +108,9 @@ public class StorageCache {
 //                    System.out.println("remove " + key.blockNum);
 //                    saveValues(buffer, key);
 //                })
-    public ByteBuffer getBuffer(DatasetKey key) {
+    public ByteBuffer getBuffer(DatasetKey key) throws IOException {
         return buffers.get(key);
-                }
+    }
 
     public void flush(SubMatrixFile file) throws IOException {
         activeBuffer = null;
@@ -125,6 +125,37 @@ public class StorageCache {
                 iter.remove();
             }
         }
+    }
+
+    public synchronized void io(DatasetKey[] vecKeys, int[] offsets, double[] vec, int mode) throws IOException {
+        DatasetKey lastKey = null;
+        ByteBuffer buffer = null;
+        for (int i = 0; i < vec.length; i++) {
+            if ((i == 0) || (vecKeys[i] != vecKeys[i - 1])) {
+                buffer = getABuffer(vecKeys[i]);
+            }
+            if (mode == 1) {
+                vec[i] = buffer.getFloat(offsets[i] * Float.BYTES);
+            } else {
+                buffer.putFloat(offsets[i] * Float.BYTES, (float) vec[i]);
+            }
+        }
+    }
+
+    ByteBuffer getABuffer(DatasetKey key) throws IOException {
+        ByteBuffer buffer;
+        if (key == activeKey) {
+            buffer = activeBuffer;
+        } else {
+            buffer = buffers.get(key);
+        }
+        if (buffer == null) {
+            buffer = key.file.readBlock(key.blockNum);
+            buffers.put(key, buffer);
+        }
+        activeBuffer = buffer;
+        activeKey = key;
+        return buffer;
     }
 
     public synchronized float io(DatasetKey key, int offset, float v, int mode) throws IOException {
