@@ -183,7 +183,7 @@ public class Project {
                         String fileName = path.getFileName().toString();
 
                         try {
-                            Dataset dataset = new Dataset(pathName, fileName, true, false);
+                            Dataset dataset = new Dataset(pathName, fileName, false, false);
                         } catch (IOException ex) {
                             Logger.getLogger(Project.class.getName()).log(Level.SEVERE, null, ex);
                         }
