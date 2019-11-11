@@ -67,6 +67,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     public final static int UCSF_HEADER_SIZE = 180;
     public final static int LABEL_MAX_BYTES = 16;
     public final static int SOLVENT_MAX_BYTES = 24;
+    static boolean useCacheFile = false;
 
     DatasetStorageInterface dataFile = null;
     DatasetLayout layout = null;
@@ -388,7 +389,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             }
             if (layout != null) {
                 layout.setFileHeaderSize(fileHeaderSize);
-                boolean useCacheFile = true;
                 if (useCacheFile) {
                     dataFile = new SubMatrixFile(this, file, layout, raFile, true);
                     raFile.setLength(layout.getTotalSize());
@@ -500,6 +500,17 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public void setDataType(int value) {
         dataType = value;
+    }
+
+    /**
+     * Set cacheFile mode. If true data will be written to a Random access file
+     * buffered through the Storage Cache. If false, data will be written to a
+     * Random Access File using memory mapping.
+     *
+     * @param value the cacheFile mode
+     */
+    public static void useCacheFile(boolean value) {
+        useCacheFile = value;
     }
 
     /**
