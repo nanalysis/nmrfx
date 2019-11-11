@@ -211,6 +211,57 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
         cache.io(key, offset, d, 1);
     }
 
+    public synchronized void blockVectorIO(int first, int last, int[] point, int dim, double scale, Vec vector, int mode) throws IOException {
+        int n = last - first + 1;
+        double[] vec = new double[n];
+        int[] offsets = new int[n];
+        DatasetKey[] vecKeys = new DatasetKey[n];
+        for (int i = first, k = 0; i <= last; i++) {
+            point[dim] = i;
+            int block = getBlockPosition(point);
+            vecKeys[k] = keys[block];
+            offsets[k] = getOffsetInBlock(point);
+            k++;
+        }
+
+        if (mode == 0) {
+            for (int i = first, j = 0, k = 0; i <= last; i++) {
+                if (vector.isComplex()) {
+                    if ((i % 2) != 0) {
+                        vec[k] = vector.getImag(j) * scale;
+                        j++;
+                    } else {
+                        vec[k] = vector.getReal(j) * scale;
+                    }
+                } else {
+                    vec[k] = vector.getReal(j) * scale;
+                    j++;
+                }
+                k++;
+            }
+            cache.io(vecKeys, offsets, vec, 0);
+        } else {
+            cache.io(vecKeys, offsets, vec, 1);
+            double dReal = 0.0;
+            for (int i = first, j = 0, k = 0; i <= last; i++) {
+                if (vector.isComplex()) {
+                    if ((i % 2) != 0) {
+                        double dImaginary = vec[k] / scale;
+                        vector.set(j, new Complex(dReal, dImaginary));
+                        j++;
+                    } else {
+                        dReal = vec[k] / scale;
+                    }
+                } else {
+                    vector.set(j, vec[k]);
+                    j++;
+                }
+                k++;
+            }
+
+        }
+    }
+
     public synchronized void vectorIO(int first, int last, int[] point, int dim, double scale, Vec vector, int mode) throws IOException {
         if (mode == 0) {
             int j = 0;
@@ -252,12 +303,12 @@ public class SubMatrixFile implements DatasetStorageInterface, Closeable {
 
     @Override
     public void writeVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
-        vectorIO(first, last, point, dim, scale, vector, 0);
+        blockVectorIO(first, last, point, dim, scale, vector, 0);
     }
 
     @Override
     public void readVector(int first, int last, int[] point, int dim, double scale, Vec vector) throws IOException {
-        vectorIO(first, last, point, dim, scale, vector, 1);
+        blockVectorIO(first, last, point, dim, scale, vector, 1);
     }
 
     @Override
