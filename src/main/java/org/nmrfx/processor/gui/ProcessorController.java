@@ -77,12 +77,14 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
+import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.PopOver;
 import org.controlsfx.control.PropertySheet;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.python.util.PythonInterpreter;
 import org.fxmisc.richtext.CodeArea;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRData;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
@@ -812,6 +814,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     }
 
     private void processDataset() {
+        if (SystemUtils.IS_OS_WINDOWS) {
+            Dataset.useCacheFile(true);
+        } else {
+            Dataset.useCacheFile(false);
+        }
         setProcessingOn();
         processable = false;
         statusBar.setProgress(0.0);
