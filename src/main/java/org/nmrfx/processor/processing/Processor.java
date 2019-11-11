@@ -1109,7 +1109,7 @@ public class Processor {
         if (matrixMode.get()) {
             mats.add(getMatrixNDFromFile());
         } else {
-            
+
             List<Vec> vecs = getVectorsFromFile();
             for (Vec vec : vecs) {
                 mats.add(vec);
@@ -1257,6 +1257,13 @@ public class Processor {
 
     public synchronized void writeMatrix(MatrixType matrix) {
         if (useIOController) {
+            int nObj = mathObjectsWritten.incrementAndGet();
+            if (progressUpdater != null) {
+                if ((nObj == totalMatrices.get()) || ((nObj % 16) == 0)) {
+                    double f = (1.0 * nObj) / totalMatrices.get();
+                    progressUpdater.updateProgress(f);
+                }
+            }
             List<MatrixType> mats = new ArrayList<>();
             mats.add(matrix);
             datasetWriter.addItemsToWriteList(mats);
