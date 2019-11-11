@@ -159,7 +159,7 @@ public class MatrixTypeService {
             }
         }
     }
-
+    
     /**
      * Writes all of the items from the processedItemQueue to file.
      */
@@ -169,7 +169,7 @@ public class MatrixTypeService {
             try {
 //                System.out.println(unprocessedItemQueue.size() + " " + processedItemQueue.size() + " " + nWritten.get() + " " +itemsToWrite + " " + this);
                 if (nRead.get() < itemsToRead) {
-                    if ((unprocessedItemQueue.size() < 4) && (processedItemQueue.size() < processedQueueLimit.get())) {
+                    if ((unprocessedItemQueue.size() < processedQueueLimit.get()) && (processedItemQueue.size() < processedQueueLimit.get())) {
                         for (int i = 0; i < 4; i++) {
                             if (!addNewItems()) {
                                 break;
