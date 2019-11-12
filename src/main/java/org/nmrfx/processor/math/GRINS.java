@@ -278,11 +278,28 @@ public class GRINS {
                 ySub = y;
                 maxIndex = index;
             }
+            double newValue = value - y;
             buffer[index] += y;
-            matrix.setValueAtIndex(index, value - y);
+            matrix.setValueAtIndex(index, newValue);
         }
         if (fileWriter != null) {
-            String outLine = String.format("maxInt %10.3f ySub %10.3f %5d\n", maxInt, ySub, maxIndex);
+            int nElems = matrix.getNElems();
+            double afterMax = 0.0;
+            double afterMin = 0.0;
+            int afterMaxIndex = 0;
+            int afterMinIndex = 0;
+            for (int i = 0; i < nElems; i++) {
+                double value = matrix.getValueAtIndex(i);
+                if (value > afterMax) {
+                    afterMax = value;
+                    afterMaxIndex = i;
+                }
+                if (value < afterMin) {
+                    afterMin = value;
+                    afterMinIndex = i;
+                }
+            }
+            String outLine = String.format("maxInt %10.3f ySub %10.3f %5d %10.3f %5d %10.3f %5d\n", maxInt, ySub, maxIndex, afterMin, afterMinIndex, afterMax, afterMaxIndex);
             try {
                 fileWriter.write(outLine);
             } catch (IOException ex) {

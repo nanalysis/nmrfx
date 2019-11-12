@@ -121,9 +121,11 @@ public class MatrixPeak implements Comparator<MatrixPeak> {
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
         for (int i = 0; i < intensities.length; i++) {
-            sBuilder.append(String.format(" dim %d: %5d %5d %7.2f %7.2f", i, offsets[i][1], pts[i][1], centers[i], widths[i]));
+            sBuilder.append(String.format(" dim %d: %5d %5d %7.2f %7.2f %7.2f %7.2f %7.2f" , i,
+                    offsets[i][1], pts[i][1], centers[i], widths[i],
+                    intensities[i][0],intensities[i][1],intensities[i][2]));
         }
-        sBuilder.append(" ").append(height);
+        sBuilder.append(" ").append(String.format("%7.2f",height));
         return sBuilder.toString();
     }
 
