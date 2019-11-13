@@ -41,7 +41,7 @@ public class GestureBindings {
             chart.setPh0(chart.getPh0() + angle);
             double sliderPH0 = chart.getPh0() + chart.getDataPH0();
             double sliderPH1 = chart.getPh1() + chart.getDataPH1();
-            chart.getController().setPhaseLabels(sliderPH0, sliderPH1);
+            chart.getController().getPhaser().setPhaseLabels(sliderPH0, sliderPH1);
             chart.refresh();
         }
     }
@@ -50,11 +50,11 @@ public class GestureBindings {
         if (chart.hasData() && chart.getController().isPhaseSliderVisible()) {
             double angle = rEvent.getAngle();
             chart.setPh0(chart.getPh0() + angle);
-            chart.getController().setPhaseLabels(chart.getPh0(), chart.getPh1());
+            chart.getController().getPhaser().setPhaseLabels(chart.getPh0(), chart.getPh1());
             // use properties??
             if (rEvent.getEventType() == RotateEvent.ROTATION_FINISHED) {
                 double sliderPH0 = chart.getPh0() + chart.getDataPH0();
-                chart.getController().handlePh0Reset(sliderPH0);
+                chart.getController().getPhaser().handlePh0Reset(sliderPH0);
             }
             chart.refresh();
         }

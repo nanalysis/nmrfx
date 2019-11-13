@@ -1201,8 +1201,8 @@ public class PolyChart implements PeakListener {
         sliderPH0 = getPh0() + vec.getPH0();
         double sliderPH1 = getPh1();
         sliderPH1 = getPh1() + vec.getPH1();
-        controller.handlePh1Reset(sliderPH1);
-        controller.handlePh0Reset(sliderPH0);
+        controller.getPhaser().handlePh1Reset(sliderPH1);
+        controller.getPhaser().handlePh0Reset(sliderPH0);
         layoutPlotChildren();
     }
 
@@ -1220,8 +1220,8 @@ public class PolyChart implements PeakListener {
         if (vec != null) {
             sliderPH1 = getPh1() + vec.getPH1();
         }
-        controller.handlePh1Reset(sliderPH1);
-        controller.handlePh0Reset(sliderPH0);
+        controller.getPhaser().handlePh1Reset(sliderPH1);
+        controller.getPhaser().handlePh0Reset(sliderPH0);
 
         layoutPlotChildren();
     }

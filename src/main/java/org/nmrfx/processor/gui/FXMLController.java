@@ -144,15 +144,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     @FXML
     private BorderPane borderPane;
-    @FXML
-    private Label ph0Label;
-    @FXML
-    private Label ph1Label;
-    @FXML
-    private Slider ph0Slider;
-    @FXML
-    private Slider ph1Slider;
-    @FXML
+     @FXML
     private Label rowLabel;
     @FXML
     private Slider vecNum1;
@@ -175,7 +167,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     ProcessorController processorController = null;
     SimpleObjectProperty<ScannerController> scannerController = new SimpleObjectProperty(null);
     Stage stage = null;
-    String delImagString = "False";
     boolean isFID = true;
 
     static FXMLController activeController = null;
@@ -210,6 +201,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     Pane plotContent = new Pane();
     boolean[][] crossHairStates = new boolean[2][2];
     private BooleanProperty minBorders;
+    Phaser phaser;
 
     public BooleanProperty minBordersProperty() {
         if (minBorders == null) {
@@ -300,7 +292,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public void updatePhaser(boolean state) {
         if (state) {
             rightBox.add(phaserBox, 0, 0);
-            getPhaseOp();
+            phaser.getPhaseOp();
         } else {
             rightBox.getChildren().remove(phaserBox);
 
@@ -645,7 +637,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
         }
 
-        getPhaseOp();
+        phaser.getPhaseOp();
         if (!reload) {
             if (!datasetAttributes.getHasLevel()) {
                 getActiveChart().full();
@@ -819,121 +811,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     @FXML
-    private void handlePh0(Event event) {
-        double sliderPH0 = ((Slider) event.getSource()).getValue();
-        sliderPH0 = Math.round(sliderPH0 * 10) / 10.0;
-        ph0Label.setText(String.format("%.1f", sliderPH0));
-        double deltaPH0 = 0.0;
-        if (getActiveChart().hasData()) {
-            deltaPH0 = sliderPH0 - getActiveChart().getDataPH0();
-        }
-        if (getActiveChart().is1D()) {
-            getActiveChart().setPh0(deltaPH0);
-            getActiveChart().layoutPlotChildren();
-        } else {
-            //chart.setPh0(sliderPH0);
-            getActiveChart().setPh0(deltaPH0);
-            getActiveChart().getCrossHairs().refreshCrossHairs();
-        }
-    }
-
-    @FXML
-    private void handlePh1(Event event) {
-        PolyChart chart = getActiveChart();
-        double sliderPH0 = ph0Slider.getValue();
-        double sliderPH1 = ph1Slider.getValue();
-        double deltaPH1 = 0.0;
-        if (chart.hasData()) {
-            deltaPH1 = sliderPH1 - (chart.getDataPH1() + chart.getPh1());
-        }
-        double pivotFraction = chart.getPivotFraction();
-        sliderPH0 = sliderPH0 - deltaPH1 * pivotFraction;
-//System.out.printf("ph0 %.3f ph1 %.3f delta %.3f pivotfr %.3f delta0 %.3f\n",sliderPH0, sliderPH1, deltaPH1, pivotFraction,(deltaPH1*pivotFraction));
-
-        sliderPH0 = Math.round(sliderPH0 * 10) / 10.0;
-        sliderPH1 = Math.round(sliderPH1 * 10) / 10.0;
-
-        setPH0Slider(sliderPH0);
-        double deltaPH0 = 0.0;
-        deltaPH1 = 0.0;
-        if (chart.hasData()) {
-            deltaPH0 = sliderPH0 - chart.getDataPH0();
-            deltaPH1 = sliderPH1 - chart.getDataPH1();
-        }
-
-        ph0Label.setText(String.format("%.1f", sliderPH0));
-        ph1Label.setText(String.format("%.1f", sliderPH1));
-
-        if (chart.is1D()) {
-            chart.setPh0(deltaPH0);
-            chart.setPh1(deltaPH1);
-            chart.layoutPlotChildren();
-        } else {
-            //chart.setPh0(sliderPH0);
-            //chart.setPh1(sliderPH1);
-            chart.setPh0(deltaPH0);
-            chart.setPh1(deltaPH1);
-            chart.getCrossHairs().refreshCrossHairs();
-        }
-    }
-
-    @FXML
-    private void handlePh0Reset(Event event) {
-        double ph0 = ph0Slider.getValue();
-        handlePh0Reset(ph0);
-    }
-
-    public void handlePh0Reset(double ph0) {
-        handlePh0Reset(ph0, true);
-    }
-
-    public void handlePh0Reset(double ph0, boolean updateOp) {
-        ph0 = Math.round(ph0 * 10) / 10.0;
-        double halfRange = 22.5;
-        double start = halfRange * Math.round(ph0 / halfRange) - 2.0 * halfRange;
-        double end = start + 4 * halfRange;
-        ph0Slider.setMin(start);
-        ph0Slider.setMax(end);
-        ph0Slider.setBlockIncrement(0.1);
-        ph0Slider.setValue(ph0);
-        ph0Label.setText(String.format("%.1f", ph0));
-        if (updateOp) {
-            setPhaseOp();
-        }
-    }
-
-    @FXML
-    public void setPhaseLabels(double ph0, double ph1) {
-        ph0 = Math.round(ph0 * 10) / 10.0;
-        ph1 = Math.round(ph1 * 10) / 10.0;
-        ph0Label.setText(String.format("%.1f", ph0));
-        ph1Label.setText(String.format("%.1f", ph1));
-    }
-
-    @FXML
-    private void handlePh1Reset(Event event) {
-        double ph1 = ph1Slider.getValue();
-        handlePh1Reset(ph1);
-    }
-
-    void handlePh1Reset(double ph1) {
-        handlePh1Reset(ph1, true);
-    }
-
-    void handlePh1Reset(double ph1, boolean updateOp) {
-        ph1 = Math.round(ph1 * 10) / 10.0;
-        double start = 90.0 * Math.round(ph1 / 90.0) - 180.0;
-        double end = start + 360.0;
-        ph1Slider.setMin(start);
-        ph1Slider.setMax(end);
-        ph1Slider.setValue(ph1);
-        ph1Label.setText(String.format("%.1f", ph1));
-        if (updateOp) {
-            setPhaseOp();
-        }
-    }
-
-    @FXML
     private void handleVecNum(Event event) {
         Slider slider = (Slider) event.getSource();
         int iRow = (int) slider.getValue();
@@ -1071,204 +948,19 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     protected void updatePhaseDim(Observable observable) {
         ReadOnlyIntegerProperty prop = (ReadOnlyIntegerProperty) observable;
-        setPhaseDim(prop.getValue());
+        phaser.setPhaseDim(prop.getValue());
     }
 
     protected void setPhaseDimChoice(int phaseDim) {
-        setPhaseDim(phaseDim);
-    }
-
-    protected void setPhaseDim(int phaseDim) {
-        PolyChart chart = getActiveChart();
-        if (phaseDim >= 0) {
-            chart.setPhaseDim(phaseDim);
-            getPhaseOp();
-            //handlePh1Reset(chart.getPh1());
-            //handlePh0Reset(chart.getPh0());
-        } else {
-            chart.phaseDim = 0;
-            handlePh1Reset(0.0);
-            handlePh0Reset(0.0);
-        }
-    }
-
-    protected void setPH0Slider(double value) {
-        value = Math.round(value * 10) / 10.0;
-        double halfRange = 22.5;
-        double start = halfRange * Math.round(value / halfRange) - 2.0 * halfRange;
-        double end = start + 4 * halfRange;
-        ph0Slider.setMin(start);
-        ph0Slider.setMax(end);
-        ph0Slider.setValue(value);
-    }
-
-    protected void setPH1Slider(double value) {
-        value = Math.round(value * 10) / 10.0;
-        double start = 90.0 * Math.round(value / 90.0) - 180.0;
-        double end = start + 360.0;
-        ph1Slider.setMin(start);
-        ph1Slider.setMax(end);
-        ph1Slider.setValue(value);
+        phaser.setPhaseDim(phaseDim);
     }
 
     protected void setRowLabel(int row, int size) {
         rowLabel.setText("Row: " + row + " / " + size);
     }
 
-    @FXML
-    private void setPhasePivot(ActionEvent event) {
-        getActiveChart().setPhasePivot();
-    }
 
-    @FXML
-    private void autoPhaseFlat0(ActionEvent event) {
-        getActiveChart().autoPhaseFlat(false);
-    }
-
-    @FXML
-    private void autoPhaseFlat01(ActionEvent event) {
-        getActiveChart().autoPhaseFlat(true);
-    }
-
-    @FXML
-    private void autoPhaseMax(ActionEvent event) {
-        getActiveChart().autoPhaseMax();
-    }
-
-    @FXML
-    private void setPhase_minus90_180(ActionEvent event) {
-        PolyChart chart = getActiveChart();
-        String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", -90.0, 180.0, delImagString);
-        setPhaseOp(opString);
-        setPH1Slider(180.0);
-        setPH0Slider(-90.0);
-        chart.setPh0(0.0);
-        chart.setPh1(0.0);
-        chart.layoutPlotChildren();
-    }
-
-    @FXML
-    private void setPhase_0_0(ActionEvent event) {
-        PolyChart chart = getActiveChart();
-        String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", 0.0, 0.0, delImagString);
-        setPhaseOp(opString);
-        setPH1Slider(0.0);
-        setPH0Slider(0.0);
-        chart.setPh0(0.0);
-        chart.setPh1(0.0);
-        chart.layoutPlotChildren();
-    }
-
-    @FXML
-    private void setPhase_180_0(ActionEvent event) {
-        PolyChart chart = getActiveChart();
-        String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", 180.0, 0.0, delImagString);
-        setPhaseOp(opString);
-        setPH1Slider(0.0);
-        setPH0Slider(180.0);
-        chart.setPh0(0.0);
-        chart.setPh1(0.0);
-        chart.layoutPlotChildren();
-    }
-
-    @FXML
-    private void setPhaseOp(ActionEvent event) {
-        setPhaseOp();
-    }
-
-    private void setPhaseOp(String opString) {
-        PolyChart chart = getActiveChart();
-        int opIndex = chart.processorController.propertyManager.setOp(opString);
-        chart.processorController.propertyManager.setPropSheet(opIndex, opString);
-    }
-
-    private void setPhaseOp() {
-        PolyChart chart = getActiveChart();
-        double ph0 = ph0Slider.getValue();
-        double ph1 = ph1Slider.getValue();
-        String phaseDim = String.valueOf(chart.phaseDim + 1);
-        if (chart.hasData() && (chartProcessor != null)) {
-            if (chart.is1D()) {
-                String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", ph0, ph1, delImagString);
-                if (chart.processorController != null) {
-                    setPhaseOp(opString);
-                }
-                chart.setPh0(0.0);
-                chart.setPh1(0.0);
-                chart.layoutPlotChildren();
-            } else if (phaseDim.equals(chartProcessor.getVecDimName().substring(1))) {
-                //double newph0 = ph0 + chart.getDataPH0();
-                //double newph1 = ph1 + chart.getDataPH1();
-                double newph0 = ph0;
-                double newph1 = ph1;
-                double deltaPH0 = ph0 - chart.getDataPH0();
-                double deltaPH1 = ph1 - chart.getDataPH1();
-
-                String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", newph0, newph1, delImagString);
-                if (chart.processorController != null) {
-                    setPhaseOp(opString);
-                }
-                //chart.setPh0(ph0);
-                //chart.setPh1(ph1);
-                chart.setPh0(deltaPH0);
-                chart.setPh1(deltaPH1);
-                chart.getCrossHairs().refreshCrossHairs();
-            }
-        }
-    }
-
-    @FXML
-    private void getPhaseOp(ActionEvent event) {
-        getPhaseOp();
-    }
-
-    protected void getPhaseOp() {
-        PolyChart chart = getActiveChart();
-        double ph0 = 0.0;
-        double ph1 = 0.0;
-        if (!chart.hasData()) {
-            return;
-        }
-        String phaseDim = "D" + String.valueOf(chart.phaseDim + 1);
-        if (chartProcessor != null) {
-            List<String> listItems = chartProcessor.getOperations(phaseDim);
-            if (listItems != null) {
-                Map<String, String> values = null;
-                for (String s : listItems) {
-                    if (s.contains("PHASE")) {
-                        values = PropertyManager.parseOpString(s);
-                    }
-                }
-                if (values != null) {
-                    try {
-                        if (values.containsKey("ph0")) {
-                            String value = values.get("ph0");
-                            ph0 = Double.parseDouble(value);
-                        } else {
-                            ph0 = 0.0;
-                        }
-                        if (values.containsKey("ph1")) {
-                            String value = values.get("ph1");
-                            ph1 = Double.parseDouble(value);
-                        } else {
-                            ph1 = 0.0;
-                        }
-                        if (values.containsKey("dimag")) {
-                            String value = values.get("dimag");
-                            delImagString = value;
-                        } else {
-                            delImagString = "False";
-                        }
-                    } catch (NumberFormatException nfE) {
-                    }
-                }
-            }
-        }
-        setPH1Slider(ph1);
-        setPH0Slider(ph0);
-        chart.setPh0(0.0);
-        chart.setPh1(0.0);
-    }
+ 
 
     protected int[] getExtractRegion(String vecDimName, int size) {
         int start = 0;
@@ -1519,6 +1211,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                 crossHairStates[iCross][jOrient] = true;
             }
         }
+        phaser = new Phaser(this, phaserBox);
+    }
+    
+    public Phaser getPhaser() {
+        return phaser;
     }
 
     public boolean getCrossHairState(int iCross, int jOrient) {

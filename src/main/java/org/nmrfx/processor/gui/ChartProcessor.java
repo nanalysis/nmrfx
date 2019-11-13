@@ -52,7 +52,8 @@ import org.nmrfx.processor.processing.processes.ProcessOps;
  * and open the template in the editor.
  */
 /**
- * A ChartProcessor manages the processing of data assigned to a particular PolyChart
+ * A ChartProcessor manages the processing of data assigned to a particular
+ * PolyChart
  *
  * @author brucejohnson
  */
@@ -86,16 +87,19 @@ public class ChartProcessor {
      */
     private int vecDim = 0;
     /**
-     * The name of the dimension of datasetFile that is in use for interactive processing. Is a string because it could
-     * refer to multiple dimensions (for IST matrix processing, for example).
+     * The name of the dimension of datasetFile that is in use for interactive
+     * processing. Is a string because it could refer to multiple dimensions
+     * (for IST matrix processing, for example).
      */
     private String vecDimName = "D1";
     /**
-     * The name of the datasetFile that will be created when whole data file is processed.
+     * The name of the datasetFile that will be created when whole data file is
+     * processed.
      */
     private String datasetName = "dataset";
     /**
-     * The name of the datasetFile that will be created when whole data file is processed.
+     * The name of the datasetFile that will be created when whole data file is
+     * processed.
      */
     private String extension = ".nv";
 
@@ -105,18 +109,21 @@ public class ChartProcessor {
     List<String> headerList = new ArrayList<>();
 
     /**
-     * Map of lists of operations with key being the dimension the operations apply to
+     * Map of lists of operations with key being the dimension the operations
+     * apply to
      */
     Map<String, List<String>> mapOpLists = new TreeMap<>(new DimComparator());
 
     /**
-     * List of Vec objects that contain data used in interactive processing. The number of Vec objects correspond to the
-     * number of vectors in the raw data that have the same indirect acquisition times
+     * List of Vec objects that contain data used in interactive processing. The
+     * number of Vec objects correspond to the number of vectors in the raw data
+     * that have the same indirect acquisition times
      */
     ArrayList<Vec> vectors = new ArrayList<>();
     /**
-     * List of Vec objects that save copy of data used in interactive processing. Used to restore vectors when an error
-     * happens during processing
+     * List of Vec objects that save copy of data used in interactive
+     * processing. Used to restore vectors when an error happens during
+     * processing
      */
     ArrayList<Vec> saveVectors = new ArrayList<>();
     /**
@@ -125,14 +132,16 @@ public class ChartProcessor {
 
     int iVec = 0;
     /**
-     * Array of strings representing the acquisition modes (like hypercomplex or echo-antiecho) that were used in
-     * acquiring each indirect dimension. Currently, only used in reading vectors from raw data file for interactive
-     * processing.
+     * Array of strings representing the acquisition modes (like hypercomplex or
+     * echo-antiecho) that were used in acquiring each indirect dimension.
+     * Currently, only used in reading vectors from raw data file for
+     * interactive processing.
      */
 
     String[] acqMode = null;
     /**
-     * Should Bruker FIDs be corrected when loading them for the DSP artifact at beginning of FID.
+     * Should Bruker FIDs be corrected when loading them for the DSP artifact at
+     * beginning of FID.
      */
     boolean fixDSP = true;
     /**
@@ -140,8 +149,8 @@ public class ChartProcessor {
      */
     private MultiVecCounter multiVecCounter;
     /**
-     * How many vectors are present in data file for each unique combination of indirect acquisition times. Typically 2
-     * for 2D, 4 for 3D etc.
+     * How many vectors are present in data file for each unique combination of
+     * indirect acquisition times. Typically 2 for 2D, 4 for 3D etc.
      */
     int vectorsPerGroup = 2;
     /**
@@ -620,7 +629,7 @@ public class ChartProcessor {
             processorController.processIfIdle();
         } else {
             execScriptList(false);
-            }
+        }
 
     }
 
@@ -1091,7 +1100,7 @@ public class ChartProcessor {
         if (!clearOps) {
             setScripts(saveHeaderList, listOfScripts);
         }
-            NMRDataUtil.setCurrentData(data);
+        NMRDataUtil.setCurrentData(data);
         addFIDToPython();
     }
 
@@ -1138,8 +1147,8 @@ public class ChartProcessor {
         chart.full();
         chart.autoScale();
 
-        fxmlController.setPH0Slider(chart.getPh0());
-        fxmlController.setPH1Slider(chart.getPh1());
+        fxmlController.getPhaser().setPH0Slider(chart.getPh0());
+        fxmlController.getPhaser().setPH1Slider(chart.getPh1());
         processorController.clearOperationList();
         chart.layoutPlotChildren();
     }
@@ -1263,7 +1272,7 @@ public class ChartProcessor {
     public String getGenScript(boolean arrayed) {
         addFIDToPython();
         String arrayVal = arrayed ? "True" : "False";
-        PyObject pyDocObject = interpreter.eval("genScript(arrayed="+arrayVal+")");
+        PyObject pyDocObject = interpreter.eval("genScript(arrayed=" + arrayVal + ")");
         String scriptString = (String) pyDocObject.__tojava__(String.class);
         return scriptString;
     }
