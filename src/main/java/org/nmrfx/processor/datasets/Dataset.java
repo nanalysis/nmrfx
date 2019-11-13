@@ -3444,6 +3444,11 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         for (int i = 0; i < nDim - 1; i++) {
             mPoint[i] = pt[i][1] + 1;
             setVSize(dim[i], matVSizes[i]);
+            setPh0(dim[i], matrix.getPh0(i));
+            setPh1(dim[i], matrix.getPh1(i));
+            setPh0_r(dim[i], matrix.getPh0(i));
+            setPh1_r(dim[i], matrix.getPh1(i));
+//            System.out.println("write ph " +i + " " + dim[i] + " " +  matrix.getPh0(i) + " " + matrix.getPh1(i));
         }
 
         MultidimensionalCounter counter = new MultidimensionalCounter(mPoint);
@@ -4554,6 +4559,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             newDataset.setValues(i, getValues(i));
             newDataset.setComplex(i, getComplex(i));
             newDataset.setFreqDomain(i, getFreqDomain(i));
+            newDataset.setPh0(i, getPh0(i));
+            newDataset.setPh1(i, getPh1(i));
+            newDataset.setPh0_r(i, getPh0_r(i));
+            newDataset.setPh1_r(i, getPh1_r(i));
         }
         newDataset.setNFreqDims(getNFreqDims());
         newDataset.setSolvent(getSolvent());
