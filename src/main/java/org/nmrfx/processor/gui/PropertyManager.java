@@ -31,6 +31,7 @@ import org.nmrfx.utils.properties.BooleanOperationItem;
 import org.nmrfx.utils.properties.FileOperationItem;
 import org.nmrfx.utils.properties.OperationItem;
 import org.nmrfx.utils.properties.DoubleRangeOperationItem;
+import org.nmrfx.utils.properties.DoubleOperationItem;
 import org.nmrfx.utils.properties.TextWaitingOperationItem;
 import org.nmrfx.utils.properties.ListOperationItemTypeSelector;
 import org.nmrfx.utils.properties.ComplexOperationItem;
@@ -94,7 +95,7 @@ public class PropertyManager {
                 if (item.getCategory().equals("PHASE")) {
                    // System.out.println(item.getName());
                     if (item.getName().equals("ph0") || item.getName().equals("ph1")) {
-                        updatePhases(item, number, number2);
+                        //updatePhases(item, number, number2);
                     }
                 }
                 updateOp((PropertySheet.Item) observableValue);
@@ -618,6 +619,15 @@ public class PropertyManager {
                         case "real":
                         case "double":
                         case "position":
+                            boolean useSlider = true;
+                            if (parMap.containsKey("slider")) {
+                                Object sliderObj = parMap.get("slider");
+                                if (sliderObj instanceof Boolean) {
+                                    useSlider = ((Boolean) sliderObj).booleanValue();
+                                } else {
+                                    useSlider = sliderObj.toString().equals("1");
+                                }
+                            }
                             double minDouble = -100000.0;
                             double maxDouble = 100000.0;
                             if (parMap.containsKey("min")) {
@@ -712,10 +722,17 @@ public class PropertyManager {
                                 propItems.add(drItem);
 
                             } else {
-                                DoubleRangeOperationItem drItem = new DoubleRangeOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
-                                        aminDouble, amaxDouble, op, name, parDesc);
-                                drItem.setLastChar(lastChar);
-                                propItems.add(drItem);
+                                if (useSlider) {
+                                    DoubleRangeOperationItem drItem = new DoubleRangeOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
+                                            aminDouble, amaxDouble, op, name, parDesc);
+                                    drItem.setLastChar(lastChar);
+                                    propItems.add(drItem);
+                                } else {
+                                    DoubleOperationItem drItem = new DoubleOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
+                                            op, name, parDesc);
+                                    drItem.setLastChar(lastChar);
+                                    propItems.add(drItem);
+                                }
                             }
 
                             break;
