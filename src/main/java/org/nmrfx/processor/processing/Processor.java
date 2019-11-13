@@ -823,7 +823,7 @@ public class Processor {
     }
 
     private boolean useMemoryMode(int[] datasetSizes) {
-        long size = 1;
+        long size = Float.BYTES;
         for (int i = 0; i < datasetSizes.length; i++) {
             size *= datasetSizes[i];
         }
