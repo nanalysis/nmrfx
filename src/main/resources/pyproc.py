@@ -2909,10 +2909,12 @@ def PHASE(ph0=0.0, ph1=0.0, dimag=False, disabled=False, vector=None, process=No
     ph0 : real
         min : -90.0
         max : 90.0
+        slider : 0
         Zero order phase value
     ph1 : real
         min : -180.0
         max : 180.0
+        slider : 0
         First order phase value
     dimag : bool
         Discard imaginary values
