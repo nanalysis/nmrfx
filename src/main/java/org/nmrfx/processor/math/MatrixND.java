@@ -42,13 +42,15 @@ public class MatrixND implements MatrixType {
     private int[] sizes;
     int[] vSizes;
     private int[] strides;
+    private double[] phases0;
+    private double[] phases1;
     final int nDim;
     private int nElems;
     /**
      * Output point to write matrix.
      */
     private int[][] pt = null;
-    
+
     private int[] dim = null;
 
     public MatrixND(int... sizes) {
@@ -62,13 +64,15 @@ public class MatrixND implements MatrixType {
         nElems = n;
         data = new double[n];
         vSizes = sizes.clone();
+        phases0 = new double[nDim];
+        phases1 = new double[nDim];
     }
 
     public MatrixND(int[][] pt, int... sizes) {
         this(sizes);
         this.pt = pt;
     }
-    
+
     public MatrixND(int[][] pt, int[] dim, int... sizes) {
         this(sizes);
         this.pt = pt;
@@ -239,6 +243,14 @@ public class MatrixND implements MatrixType {
         return nDim;
     }
 
+    public double getPh0(int i) {
+        return phases0[i];
+    }
+    
+    public double getPh1(int i) {
+        return phases1[i];
+    }
+    
     private static int[] calcStrides(int[] shape) {
         int[] strides = new int[shape.length];
         int stride = 1;
@@ -544,6 +556,8 @@ public class MatrixND implements MatrixType {
                 ph1 = phaseValues[i * 2 + 1];
             }
             doPhaseTD(i, ph0, ph1);
+            phases0[i] = ph0;
+            phases1[i] = ph1;
         }
     }
 
@@ -595,6 +609,7 @@ public class MatrixND implements MatrixType {
     }
 
     public void doPhaseTD(int axis, double ph0, double ph1) {
+
         int[] subSizes = getSubSizes(axis);
         double[][] riVec = new double[2][sizes[axis]];
         double tol = 0.0001;
