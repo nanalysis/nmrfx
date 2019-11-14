@@ -65,6 +65,7 @@ public class PropertyManager {
     private static String patternString = "(\\w+)=((\\[[^\\[]*\\])|(\"[^\"]*\")|('[^']*')|([^,]+))";
 
     ChangeListener<Number> doubleListener;
+    ChangeListener<Number> doubleSliderListener;
     ChangeListener<Number> intListener;
     ChangeListener<String> stringListener;
     ChangeListener<Boolean> boolListener;
@@ -88,7 +89,7 @@ public class PropertyManager {
         this.opTextField = opTextField;
         this.propertySheet = propertySheet;
         this.popOver = popOver;
-        doubleListener = new ChangeListener<Number>() {
+        doubleSliderListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 PropertySheet.Item item = (PropertySheet.Item) observableValue;
@@ -98,6 +99,12 @@ public class PropertyManager {
                         //updatePhases(item, number, number2);
                     }
                 }
+                updateOp((PropertySheet.Item) observableValue);
+            }
+        };
+        doubleListener = new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 updateOp((PropertySheet.Item) observableValue);
             }
         };
@@ -498,7 +505,7 @@ public class PropertyManager {
 
                 if (types.size() == 1) {
                     String type = (String) types.get(0);
-                    switch (type) {
+                  switch (type) {
                         case "string": {
                             String defaultString;
                             Object defObj = parMap.get("default");
@@ -716,22 +723,22 @@ public class PropertyManager {
                                 defaultDouble = Double.parseDouble(defStr);
                             }
                             if (type.equals("position")) {
-                                DoubleUnitsRangeOperationItem drItem = new DoubleUnitsRangeOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
+                                DoubleUnitsRangeOperationItem drItem = new DoubleUnitsRangeOperationItem(doubleSliderListener, defaultDouble, minDouble, maxDouble,
                                         aminDouble, amaxDouble, op, name, parDesc);
                                 drItem.setLastChar(lastChar);
                                 propItems.add(drItem);
 
                             } else {
                                 if (useSlider) {
-                                    DoubleRangeOperationItem drItem = new DoubleRangeOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
+                                    DoubleRangeOperationItem drItem = new DoubleRangeOperationItem(doubleSliderListener, defaultDouble, minDouble, maxDouble,
                                             aminDouble, amaxDouble, op, name, parDesc);
                                     drItem.setLastChar(lastChar);
                                     propItems.add(drItem);
                                 } else {
-                                    DoubleOperationItem drItem = new DoubleOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
+                                    DoubleOperationItem dItem = new DoubleOperationItem(doubleListener, defaultDouble, minDouble, maxDouble,
                                             op, name, parDesc);
-                                    drItem.setLastChar(lastChar);
-                                    propItems.add(drItem);
+                                    dItem.setLastChar(lastChar);
+                                    propItems.add(dItem);
                                 }
                             }
 
