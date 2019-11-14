@@ -100,7 +100,7 @@ public class DoubleOperationItem extends OperationItem implements ObservableDoub
 
     @Override
     public Class<?> getType() {
-        return Double.class;
+        return DoubleOperationItem.class;
     }
 
     @Override
