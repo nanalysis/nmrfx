@@ -104,7 +104,6 @@ public class Phaser {
     }
 
     void handlePhReset(int iPh) {
-        System.out.println("Hanle reset " + iPh);
         if (iPh == 0) {
             handlePh0Reset();
         } else {
@@ -114,7 +113,6 @@ public class Phaser {
     }
 
     private void handlePh(int iPh) {
-        System.out.println("handle change " + iPh);
         if (iPh == 0) {
             handlePh0();
         } else {
@@ -181,8 +179,7 @@ public class Phaser {
     }
 
     private void handlePh0Reset() {
-     double ph0 = sliders[0].getValue();
-           System.out.println("Handle reset0 " + ph0);
+        double ph0 = sliders[0].getValue();
         handlePh0Reset(ph0);
     }
 
@@ -191,8 +188,7 @@ public class Phaser {
     }
 
     public void handlePh0Reset(double ph0, boolean updateOp) {
-               System.out.println("Handle reset0 " + ph0 + " " + updateOp);
-    ph0 = Math.round(ph0 * 10) / 10.0;
+        ph0 = Math.round(ph0 * 10) / 10.0;
         double halfRange = 22.5;
         double start = halfRange * Math.round(ph0 / halfRange) - 2.0 * halfRange;
         double end = start + 4 * halfRange;
@@ -269,14 +265,12 @@ public class Phaser {
     }
 
     public void setPhaseOp(String opString) {
-        System.out.println("do it now " + opString);
         PolyChart chart = controller.getActiveChart();
         int opIndex = chart.processorController.propertyManager.setOp(opString);
         chart.processorController.propertyManager.setPropSheet(opIndex, opString);
     }
 
     public void setPhaseOp() {
-        System.out.println("set phase op");
         PolyChart chart = controller.getActiveChart();
         double ph0 = sliders[0].getValue();
         double ph1 = sliders[1].getValue();
@@ -299,7 +293,6 @@ public class Phaser {
                 double deltaPH1 = ph1 - chart.getDataPH1();
 
                 String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", newph0, newph1, delImagString);
-                System.out.println(opString);
                 if (chart.processorController != null) {
                     setPhaseOp(opString);
                 }
