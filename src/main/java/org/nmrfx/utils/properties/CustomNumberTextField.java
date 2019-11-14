@@ -24,7 +24,6 @@ import java.util.function.DoubleFunction;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
-import javafx.scene.input.KeyCode;
 import org.controlsfx.control.textfield.CustomTextField;
 
 public class CustomNumberTextField extends CustomTextField {
@@ -78,13 +77,6 @@ public class CustomNumberTextField extends CustomTextField {
         numberProperty().addListener((ObservableValue<? extends Number> observable, Number oldValue, Number newValue) -> {
             setText(nf.format(newValue));
         });
-        
-//        setOnKeyReleased(kE -> {
-//            if (kE.getCode() == KeyCode.ENTER) {
-//                updateFromText();
-//
-//            }
-//        });
     }
 
     public void setMin(double min) {
