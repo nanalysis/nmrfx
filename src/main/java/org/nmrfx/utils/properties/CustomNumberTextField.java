@@ -19,10 +19,12 @@ package org.nmrfx.utils.properties;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.Optional;
 import java.util.function.DoubleFunction;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
+import javafx.scene.input.KeyCode;
 import org.controlsfx.control.textfield.CustomTextField;
 
 public class CustomNumberTextField extends CustomTextField {
@@ -31,7 +33,7 @@ public class CustomNumberTextField extends CustomTextField {
     double min = Double.NEGATIVE_INFINITY;
     double max = Double.MAX_VALUE;
     private final SimpleDoubleProperty number = new SimpleDoubleProperty();
-    DoubleFunction callbackFunction;
+    Optional<DoubleFunction> callbackFunction = Optional.empty();
 
     public final Double getNumber() {
         return number.get();
@@ -76,6 +78,13 @@ public class CustomNumberTextField extends CustomTextField {
         numberProperty().addListener((ObservableValue<? extends Number> observable, Number oldValue, Number newValue) -> {
             setText(nf.format(newValue));
         });
+        
+//        setOnKeyReleased(kE -> {
+//            if (kE.getCode() == KeyCode.ENTER) {
+//                updateFromText();
+//
+//            }
+//        });
     }
 
     public void setMin(double min) {
@@ -106,7 +115,7 @@ public class CustomNumberTextField extends CustomTextField {
                 setText(nf.format(newValue));
             }
             setNumber(newValue);
-            callbackFunction.apply(number.getValue());
+            callbackFunction.ifPresent(cb -> cb.apply(number.getValue()));
             selectAll();
         } catch (ParseException ex) {
             setText(nf.format(number.get()));
@@ -114,6 +123,6 @@ public class CustomNumberTextField extends CustomTextField {
     }
 
     public void setFunction(DoubleFunction function) {
-        this.callbackFunction = function;
+        callbackFunction = Optional.of(function);
     }
 }
