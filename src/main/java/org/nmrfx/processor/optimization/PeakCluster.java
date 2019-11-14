@@ -15,6 +15,10 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 
 /**
+ * Coupling information about a given cluster to facilitate Bipartite Match.
+ *
+ *
+ * @see PeakClusterMatcher
  *
  * @author tedcolon
  */
@@ -28,6 +32,8 @@ public class PeakCluster {
     public final int size;
     public final int iDim;
     public double refScale = 1;
+    private PeakCluster pairedTo = null;
+    
 
     public PeakCluster(List<Peak> linkedPeaks, int iDim) {
         this.linkedPeaks = linkedPeaks;
@@ -50,7 +56,7 @@ public class PeakCluster {
     }
 
     public static Collection<List<Peak>> getCluster(PeakList peakList, int iDim) {
-        
+        // TODO: Should rename this static method
         Collection<List<Peak>> linkHashSet = new LinkedHashSet<>();
 
         peakList.peaks().stream()
@@ -107,18 +113,18 @@ public class PeakCluster {
 //        System.out.println(String.format(outQ, x, Erf.erf(Math.abs(x) / Math.sqrt(2)), q, QPred));
         return QPred;
     }
-    
+
     /*
        CAVEAT: needs reference scale value for intensity to ensure intensities
        are in the same order of magnitude.
-    */
+     */
     public static double calcWeight(Peak peak1, Peak peak2, double refScale) {
         if (peak1 == null || peak2 == null) {
             throw new IllegalArgumentException("Null arguments are invalid.");
         }
         // inits
         // FIXME: update sigma values and reference deviation value.
-        
+
         double intSigma = 3.0;
         double ppmSigma = 0.1;
         double refDev = 1.5;
@@ -127,16 +133,15 @@ public class PeakCluster {
         double expInt = peak1.getIntensity();
         double predInt = peak2.getIntensity() * refScale;
         double Qval;
-        
+
         // Print name of peaks
 //        System.out.println(String.format("E_Peak: %s, P_Peak: %s", peak1.getName(), peak2.getName()));
         // Print intensity information
 //        System.out.println(String.format("E_Intenisty: %f (log-> %f), P_Intensity: %f (log-> %f)", expInt, Math.log(expInt), predInt, Math.log(predInt)));
-
         expInt = Math.log(expInt);
         predInt = Math.log(predInt);
         double sumOfQs = getQPred(expInt, predInt, intSigma, refDev);
-        
+
         for (int dim = 0; dim < peak1.getPeakDims().length; dim++) {
             expPPMShift = peak1.getPeakDim(dim).getChemShift();
             predPPMShift = peak2.getPeakDim(dim).getChemShift();
@@ -162,6 +167,20 @@ public class PeakCluster {
         return linkedPeaks.stream().anyMatch((p) -> (p.equals(peak)));
     }
 
+    @Override
+    public String toString() {
+        String name = rootPeak == null ? "" : String.format("Root Peak: %s", rootPeak.toString());
+        return name;
+    }
+    
+    public void setPairedTo(PeakCluster pair) {
+        pairedTo = pair;
+    }
+    
+    public PeakCluster getPairedTo() {
+        return pairedTo;
+    }
+
     public BipartiteMatcher compareTo(PeakCluster other) {
         BipartiteMatcher matcher = new BipartiteMatcher();
         int N = size + other.size;
@@ -169,12 +188,12 @@ public class PeakCluster {
         double weight;
         Peak expPeak, predPeak;
         // init
-        for (int i=0; i < N; i++) {
-            for (int j=0; j < N; j++) {
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
                 matcher.setWeight(i, j, 0.0);
             }
         }
-        
+
         for (int iE = 0; iE < size; iE++) {
             for (int jP = 0; jP < other.size; jP++) {
                 expPeak = linkedPeaks.get(iE);
@@ -184,6 +203,28 @@ public class PeakCluster {
             }
         }
         return matcher;
+    }
+
+    public List<List<Peak>> getPeakMatches(PeakCluster other) {
+        List<List<Peak>> matches = new ArrayList<>();
+        BipartiteMatcher peakMatcher = this.compareTo(other);
+        int[] matching = peakMatcher.getMatching();
+        for (int i = 0; i < matching.length; i++) {
+            int j = matching[i];
+            if (j < 0) continue;
+            List<Peak> matchedPeaks = new ArrayList<>();
+            Peak iPeak = null;
+            Peak jPeak = null;
+            if (i < size)
+                iPeak = linkedPeaks.get(i);
+            if (j < other.size)
+                jPeak = other.linkedPeaks.get(j);
+            
+            matchedPeaks.add(iPeak);
+            matchedPeaks.add(jPeak);
+            matches.add(matchedPeaks);
+        }
+        return matches;
     }
 
     public List<PeakCluster> getTolClusters() {
