@@ -94,7 +94,7 @@ public class PropertyManager {
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
                 PropertySheet.Item item = (PropertySheet.Item) observableValue;
                 if (item.getCategory().equals("PHASE")) {
-                   // System.out.println(item.getName());
+                    // System.out.println(item.getName());
                     if (item.getName().equals("ph0") || item.getName().equals("ph1")) {
                         //updatePhases(item, number, number2);
                     }
@@ -105,6 +105,13 @@ public class PropertyManager {
         doubleListener = new ChangeListener<Number>() {
             @Override
             public void changed(ObservableValue<? extends Number> observableValue, Number number, Number number2) {
+                PropertySheet.Item item = (PropertySheet.Item) observableValue;
+                if (item.getCategory().equals("PHASE")) {
+                    // System.out.println(item.getName());
+                    if (item.getName().equals("ph0") || item.getName().equals("ph1")) {
+                        updatePhases(item, number, number2);
+                    }
+                }
                 updateOp((PropertySheet.Item) observableValue);
             }
         };
@@ -257,16 +264,15 @@ public class PropertyManager {
             if (item.getName().equals("ph1")) {
                 adjustPhasePivot(propertySheet.getItems(), oldValue, newValue);
             } else if (item.getName().equals("ph0")) {
-//                if (chart.getController().isPhaseSliderVisible()) {
-//                    chart.getController().handlePh0Reset(newValue.doubleValue(), false);
-//
-//                }
+                if (chart.getController().isPhaseSliderVisible()) {
+                    chart.getController().getPhaser().handlePh0Reset(newValue.doubleValue(), false);
+                }
             }
         }
     }
 
     void adjustPhasePivot(List<PropertySheet.Item> items, Number oldValue, Number newValue) {
-        DoubleRangeOperationItem ph0Item = (DoubleRangeOperationItem) items.stream().
+        DoubleOperationItem ph0Item = (DoubleOperationItem) items.stream().
                 filter(e -> e.getName().equals("ph0")).findFirst().get();
         double deltaPH1 = newValue.doubleValue() - oldValue.doubleValue();
         double oldPH0 = ph0Item.doubleValue();
@@ -276,12 +282,10 @@ public class PropertyManager {
             if (pivotFraction != 0.0) {
                 Double newPH0 = oldPH0 - deltaPH1 * pivotFraction;
                 ph0Item.setValue(newPH0);
-                NvFxPropertyEditorFactory.updatePH0Slider(newPH0);
-//                if (chart.getController().isPhaseSliderVisible()) {
-//                    System.out.println("ph pivot " + oldPH0 + " " + newPH0);
-//                    chart.getController().handlePh0Reset(newPH0, false);
-//                    chart.getController().handlePh1Reset(newValue.doubleValue(), false);
-//                }
+                if (chart.getController().isPhaseSliderVisible()) {
+                    chart.getController().getPhaser().handlePh0Reset(newPH0, false);
+                    chart.getController().getPhaser().handlePh1Reset(newValue.doubleValue(), false);
+                }
             }
         }
 
@@ -505,7 +509,7 @@ public class PropertyManager {
 
                 if (types.size() == 1) {
                     String type = (String) types.get(0);
-                  switch (type) {
+                    switch (type) {
                         case "string": {
                             String defaultString;
                             Object defObj = parMap.get("default");
