@@ -77,7 +77,6 @@ import org.nmrfx.utils.properties.TextWaitingOperationItem;
 public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
 
     ProcessorController processorController = null;
-    static ZoomSlider ph0Slider = null;
 
     public NvFxPropertyEditorFactory() {
         super();
@@ -86,12 +85,6 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
     public NvFxPropertyEditorFactory(ProcessorController processorController) {
         super();
         this.processorController = processorController;
-    }
-
-    public static void updatePH0Slider(double value) {
-        if (ph0Slider != null) {
-            ph0Slider.getSlider().setValue(value);
-        }
     }
 
     public void sliderIconUpdated(ZoomSlider zoomSlider, DoubleUnitsRangeOperationItem item) {
@@ -158,9 +151,6 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
             slider.setMajorTickUnit((dItem.getMax() - dItem.getMin()) / 4);
             ZoomSlider zoomSlider = new ZoomSlider(slider, dItem.getAmin(), dItem.getAmax());
             zoomSlider.updateFormat();
-            if (dItem.getCategory().equals("PHASE") && dItem.getName().equals("ph0")) {
-                ph0Slider = zoomSlider;
-            }
             return new PropertySliderEditor(dItem, zoomSlider);
         } else if (type == DoubleOperationItem.class) {
             DoubleOperationItem iItem = (DoubleOperationItem) item;
