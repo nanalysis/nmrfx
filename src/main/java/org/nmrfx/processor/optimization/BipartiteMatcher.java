@@ -184,18 +184,16 @@ public class BipartiteMatcher {
 
     }
 
-    public static double getMaxWtSum(BipartiteMatcher matcher) {
-        double wMin = matcher.minWeight;
+    public double getMaxWtSum(int[] matches, double wMin) {
         boolean wtsChanged = wMin <= 0;
-        int[] matches = matcher.getMatching();
         double maxSum = 0.0;
         for (int i = 0; i < matches.length; i++) {
             int j = matches[i];
             if (j == -1) {
                 continue;
             }
-            
-            double weight = matcher.getWeight(i, j);
+
+            double weight = getWeight(i, j);
             maxSum += wtsChanged ? (weight + wMin - 1) : weight;
         }
         return maxSum;
