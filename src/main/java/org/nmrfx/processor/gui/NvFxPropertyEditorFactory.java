@@ -55,6 +55,7 @@ import org.nmrfx.utils.properties.BooleanOperationItem;
 import org.nmrfx.utils.properties.ChoiceOperationItem;
 import org.nmrfx.utils.properties.ComplexOperationItem;
 import org.nmrfx.utils.properties.DirectoryOperationItem;
+import org.nmrfx.utils.properties.DoubleOperationItem;
 import org.nmrfx.utils.properties.DoubleRangeOperationItem;
 import org.nmrfx.utils.properties.DoubleUnitsRangeOperationItem;
 import org.nmrfx.utils.properties.EditableChoiceOperationItem;
@@ -161,6 +162,13 @@ public class NvFxPropertyEditorFactory extends DefaultPropertyEditorFactory {
                 ph0Slider = zoomSlider;
             }
             return new PropertySliderEditor(dItem, zoomSlider);
+        } else if (type == DoubleOperationItem.class) {
+            DoubleOperationItem iItem = (DoubleOperationItem) item;
+            PropertyEditor propEditor = createNumericEditor(item);
+            CustomNumberTextField textField = (CustomNumberTextField) propEditor.getEditor();
+            textField.setMin(iItem.getMin());
+            textField.setMax(iItem.getMax());
+            return propEditor;
         } else if (type == IntOperationItem.class) {
             IntOperationItem iItem = (IntOperationItem) item;
             PropertyEditor propEditor = createIntegerEditor(item);
