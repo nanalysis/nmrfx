@@ -1303,6 +1303,39 @@ public class DrawPeaks {
         }
     }
 
+    public void drawPeakConnection(Peak p1, Peak p2, GraphicsContextInterface g2, int[] dim) {
+        if (g2 == null) {
+            return;
+        }
+        /** FIXME:
+         *  Lines are drawn outside the chart bounds when connecting peaks are not
+         *  within the visible chart size.
+         * 
+         */
+        if (p1 != null && p2 != null && dim.length == 2) {
+            g2.save();
+            PeakDim p1x = p1.peakDims[dim[0]];
+            PeakDim p1y = p1.peakDims[dim[1]];
+            PeakDim p2x = p2.peakDims[dim[0]];
+            PeakDim p2y = p2.peakDims[dim[1]];
+            double x1 = p1x.getChemShift();
+            double y1 = p1y.getChemShift();
+            double x2 = p2x.getChemShift();
+            double y2 = p2y.getChemShift();
+            x1 = xAxis.getDisplayPosition(x1);
+            x2 = xAxis.getDisplayPosition(x2);
+            y1 = yAxis.getDisplayPosition(y1);
+            y2 = yAxis.getDisplayPosition(y2);
+
+            g2.setStroke(Color.GREEN);
+            g2.beginPath();
+//            System.out.println(String.format("p1 = (%f, %f), p2 = (%f, %f)", x1, y1, x2, y2));
+            g2.moveTo(x1, y1);
+            g2.lineTo(x2, y2);
+            g2.stroke();
+        }
+    }
+
     public void drawLinkLines(PeakListAttributes peakAttr, GraphicsContextInterface g2, Peak peak, int[] dim, boolean ignoreLinkDrawn) throws GraphicsIOException {
         if (g2 == null) {
             return;
@@ -1322,7 +1355,7 @@ public class DrawPeaks {
                 int nY = 0;
                 for (PeakDim peakDim : linkedPeakDims) {
                     Peak peak0 = peakDim.getPeak();
-                    if (peak0.getPeakList() == peakList) {
+                    if (peak0.getPeakList() == peakList) { // FIXME: use equal method for comparison
                         peakDim.setLinkDrawn(true);
                         double shiftX = peak0.peakDims[0].getChemShift();
                         double shiftY = peak0.peakDims[1].getChemShift();

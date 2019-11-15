@@ -202,6 +202,7 @@ public class PolyChart implements PeakListener {
     int phaseAxis = 0;
     double phaseFraction = 0.0;
     boolean useImmediateMode = true;
+    final List<List<Peak>> peakPaths = new ArrayList<>();
 
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
@@ -1891,6 +1892,9 @@ public class PolyChart implements PeakListener {
             if (!datasetAttributesList.isEmpty()) {
                 drawPeakLists(true);
             }
+            if (!peakPaths.isEmpty()) {
+                drawPeakPaths();
+            }
             drawAnnotations(gCPeaks);
             crossHairs.refreshCrossHairs();
             gC.restore();
@@ -2857,6 +2861,39 @@ public class PolyChart implements PeakListener {
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         drawSelectedPeaks(peakListAttr, gC);
 
+    }
+
+    void clearPeakPaths() {
+        peakPaths.clear();
+    }
+    
+    void setPeakPaths(List<List<Peak>> peaks) {
+        clearPeakPaths();
+        peakPaths.addAll(peaks);
+    }
+
+    void drawPeakPaths() {
+        GraphicsContext gCC = peakCanvas.getGraphicsContext2D();
+        GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
+        peakPaths.stream().forEach((lPeaks) -> {
+            drawPeakPaths(lPeaks, gC);
+        });
+    }
+
+    void drawPeakPaths(List<Peak> peaks, GraphicsContextInterface gC) {
+        int[] dim = {0, 1}; // FIXME: Need to generalize this
+        for (int i = 0; i < peaks.size(); i++) {
+            int j = i + 1;
+            if (j < peaks.size()) {
+                Peak iPeak = peaks.get(i);
+                Peak jPeak = peaks.get(j);
+                
+                if (iPeak != null && jPeak != null) {
+                    drawPeaks.drawPeakConnection(iPeak, jPeak, gC, dim);
+//                    System.out.println("PolyChart.drawPeakPaths('" + iPeak.toString() + "', '" + jPeak.toString() + "')");
+                }
+            }
+        }
     }
 
     void drawSelectedPeaks(PeakListAttributes peakListAttr, GraphicsContextInterface gC) {
