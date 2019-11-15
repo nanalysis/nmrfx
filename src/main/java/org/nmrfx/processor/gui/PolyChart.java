@@ -198,7 +198,7 @@ public class PolyChart implements PeakListener {
 // fixme 15 should be set automatically and correctly
     double[][] chartPhases = new double[2][15];
     double[] chartPivots = new double[15];
-    int phaseDim = 0;
+    int datasetPhaseDim = 0;
     int phaseAxis = 0;
     double phaseFraction = 0.0;
     boolean useImmediateMode = true;
@@ -1164,8 +1164,14 @@ public class PolyChart implements PeakListener {
     }
 
     protected void setPhaseDim(int phaseDim) {
-        String vecDimName = controller.chartProcessor.getVecDimName();
-        this.phaseDim = phaseDim;
+        String vecDimName = "";
+        if (controller.chartProcessor != null) {
+            vecDimName = controller.chartProcessor.getVecDimName();
+            datasetPhaseDim = controller.chartProcessor.mapToDataset(phaseDim);
+        } else {
+            datasetPhaseDim = phaseDim;
+        }
+
         phaseAxis = 0;
         if (is1D() || vecDimName.equals("D1")) {
             phaseAxis = 0;
@@ -2940,13 +2946,19 @@ public class PolyChart implements PeakListener {
         return peakListAttributesList;
     }
 
+    public void resetChartPhases() {
+        for (int i = 0; i < chartPhases[0].length; i++) {
+            chartPhases[0][i] = 0.0;
+            chartPhases[1][i] = 0.0;
+        }
+    }
+
     public double getDataPH0() {
         Dataset dataset = getDataset();
         double value = 0.0;
-        if ((dataset != null) && (controller.chartProcessor != null)) {
-            int mapDim = controller.chartProcessor.mapToDataset(phaseDim);
-            if (mapDim != -1) {
-                value = dataset.getPh0(mapDim);
+        if (dataset != null) {
+            if (datasetPhaseDim != -1) {
+                value = dataset.getPh0(datasetPhaseDim);
             }
         }
         return value;
@@ -2955,55 +2967,38 @@ public class PolyChart implements PeakListener {
     public double getDataPH1() {
         Dataset dataset = getDataset();
         double value = 0.0;
-        if ((dataset != null) && (controller.chartProcessor != null)) {
-            int mapDim = controller.chartProcessor.mapToDataset(phaseDim);
-            if (mapDim != -1) {
-                value = dataset.getPh1(mapDim);
+        if (dataset != null) {
+            if (datasetPhaseDim != -1) {
+                value = dataset.getPh1(datasetPhaseDim);
             }
         }
         return value;
     }
 
     public void setPh0(double ph0) {
-        if (controller.chartProcessor == null) {
-            return;
-        }
-        int mapDim = controller.chartProcessor.mapToDataset(phaseDim);
-        if (mapDim != -1) {
-            chartPhases[0][mapDim] = ph0;
+        if (datasetPhaseDim != -1) {
+            chartPhases[0][datasetPhaseDim] = ph0;
         }
     }
 
     public void setPh1(double ph1) {
-        if (controller.chartProcessor == null) {
-            return;
-        }
-        int mapDim = controller.chartProcessor.mapToDataset(phaseDim);
-        if (mapDim != -1) {
-            chartPhases[1][mapDim] = ph1;
+        if (datasetPhaseDim != -1) {
+            chartPhases[1][datasetPhaseDim] = ph1;
         }
     }
 
     public double getPh0() {
         double value = 0.0;
-        if (controller.chartProcessor == null) {
-            return 0.0;
-        }
-        int mapDim = controller.chartProcessor.mapToDataset(phaseDim);
-        if (mapDim != -1) {
-            value = chartPhases[0][mapDim];
+        if (datasetPhaseDim != -1) {
+            value = chartPhases[0][datasetPhaseDim];
         }
         return value;
     }
 
     public double getPh1() {
         double value = 0.0;
-        if (controller.chartProcessor == null) {
-            return 0.0;
-        }
-        int mapDim = controller.chartProcessor.mapToDataset(phaseDim);
-        if (mapDim != -1) {
-            value = chartPhases[1][mapDim];
+        if (datasetPhaseDim != -1) {
+            value = chartPhases[1][datasetPhaseDim];
         }
         return value;
     }
@@ -3035,12 +3030,8 @@ public class PolyChart implements PeakListener {
     }
 
     public double getPivot() {
-        if (controller.chartProcessor == null) {
-            return 0.0;
-        }
-        int mapDim = controller.chartProcessor.mapToDataset(phaseDim);
-        if (mapDim != -1) {
-            return chartPivots[mapDim];
+        if (datasetPhaseDim != -1) {
+            return chartPivots[datasetPhaseDim];
         } else {
             return 0.0;
         }
@@ -3054,7 +3045,6 @@ public class PolyChart implements PeakListener {
             return;
         }
         Dataset dataset = getDataset();
-        int mapDim = controller.chartProcessor.mapToDataset(phaseDim);
         String vecDimName = controller.chartProcessor.getVecDimName();
         DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
 
@@ -3063,7 +3053,7 @@ public class PolyChart implements PeakListener {
             int position = axModes[0].getIndex(datasetAttributes, 0, pivot);
             int size = dataset.getSize(datasetDim);
             phaseFraction = position / (size - 1.0);
-        } else if (mapDim > 0) {
+        } else if (datasetPhaseDim > 0) {
             int datasetDim = datasetAttributes.dim[phaseAxis];
             int position = axModes[phaseAxis].getIndex(datasetAttributes, phaseAxis, pivot);
             int size = dataset.getSize(datasetDim);
@@ -3141,7 +3131,6 @@ public class PolyChart implements PeakListener {
             }
         }
         GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
-
         if ((nDim > 1) && controller.sliceStatus.get() && sliceStatus.get()) {
             if (((iOrient == HORIZONTAL) && xOn) || ((iOrient == VERTICAL) && yOn)) {
                 for (DatasetAttributes datasetAttributes : datasetAttributesList) {

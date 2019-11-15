@@ -144,7 +144,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     @FXML
     private BorderPane borderPane;
-     @FXML
+    @FXML
     private Label rowLabel;
     @FXML
     private Slider vecNum1;
@@ -202,6 +202,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     boolean[][] crossHairStates = new boolean[2][2];
     private BooleanProperty minBorders;
     Phaser phaser;
+
+    SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
 
     public BooleanProperty minBordersProperty() {
         if (minBorders == null) {
@@ -293,6 +295,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (state) {
             rightBox.add(phaserBox, 0, 0);
             phaser.getPhaseOp();
+            if (chartProcessor == null) {
+                phaser.setPH1Slider(activeChart.getDataPH1());
+                phaser.setPH0Slider(activeChart.getDataPH0());
+            }
         } else {
             rightBox.getChildren().remove(phaserBox);
 
@@ -414,7 +420,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         fileChooser.setInitialDirectory(getInitialDirectory());
         fileChooser.setTitle("Open NMR FID");
         fileChooser.getExtensionFilters().addAll(
-                new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx","*.jdf"),
+                new ExtensionFilter("NMR Fid", "fid", "ser", "*.nv", "*.dx", "*.jdx", "*.jdf"),
                 new ExtensionFilter("Any File", "*.*")
         );
         File selectedFile = fileChooser.showOpenDialog(null);
@@ -568,8 +574,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public ProcessorController getProcessorController(boolean createIfNull) {
         if ((processorController == null) && createIfNull) {
             processorController = ProcessorController.create(this, stage, getActiveChart());
+            processControllerVisible.set(true);
         }
         return processorController;
+    }
+
+    public void processorCreated(Stage stage) {
+        processControllerVisible.bind(stage.showingProperty());
     }
 
     public ChartProcessor getChartProcessor() {
@@ -959,9 +970,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         rowLabel.setText("Row: " + row + " / " + size);
     }
 
-
- 
-
     protected int[] getExtractRegion(String vecDimName, int size) {
         int start = 0;
         int end = size - 1;
@@ -1213,7 +1221,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         }
         phaser = new Phaser(this, phaserBox);
     }
-    
+
     public Phaser getPhaser() {
         return phaser;
     }

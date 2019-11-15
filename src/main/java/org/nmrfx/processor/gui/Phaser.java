@@ -17,16 +17,25 @@
  */
 package org.nmrfx.processor.gui;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Orientation;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import org.controlsfx.dialog.ExceptionDialog;
+import org.nmrfx.processor.datasets.Dataset;
 
 /**
  *
@@ -39,6 +48,11 @@ public class Phaser {
     Slider[] sliders = new Slider[2];
     Label[] phLabels = new Label[2];
     double[] scales = {1, 8};
+    SimpleStringProperty phaseChoice = new SimpleStringProperty("X");
+    ChoiceBox xyPhaseChoice;
+    List<MenuItem> processorMenuItems = new ArrayList<>();
+    List<MenuItem> datasetMenuItems = new ArrayList<>();
+    MenuButton phaseMenuButton = null;
 
     public Phaser(FXMLController controller, VBox vbox) {
         this.controller = controller;
@@ -64,10 +78,19 @@ public class Phaser {
             VBox.setVgrow(slider, Priority.ALWAYS);
             Separator sep = new Separator();
             phLabels[iPh] = new Label();
-            vbox.getChildren().addAll(label, slider, phLabels[iPh], sep);
+            vbox.getChildren().addAll(label, slider, phLabels[iPh]);
+            if (iPh == 0) {
+                Pane filler = new Pane();
+                filler.setMinHeight(20);
+                vbox.getChildren().add(filler);
+            }
         }
+        xyPhaseChoice = new ChoiceBox();
+        xyPhaseChoice.getItems().addAll("X", "Y");
+        vbox.getChildren().add(xyPhaseChoice);
+        xyPhaseChoice.valueProperty().bindBidirectional(phaseChoice);
 
-        MenuButton phaseMenuButton = new MenuButton("Phase");
+        phaseMenuButton = new MenuButton("Phase");
 
         MenuItem setPhaseItem = new MenuItem("Put Phases");
         setPhaseItem.setOnAction(e -> setPhaseOp());
@@ -96,11 +119,40 @@ public class Phaser {
         MenuItem autoPhaseMaxItem = new MenuItem("AutoPhase MaxMode");
         autoPhaseMaxItem.setOnAction(e -> autoPhaseMax());
 
-        phaseMenuButton.getItems().addAll(setPhaseItem, getPhaseItem, setPivotItem,
+        MenuItem applyPhaseItem = new MenuItem("Apply Phase");
+        applyPhaseItem.setOnAction(e -> applyPhase());
+
+        MenuItem resetPhaseItem = new MenuItem("Reset Phases");
+        resetPhaseItem.setOnAction(e -> resetPhases());
+
+        Collections.addAll(processorMenuItems, setPhaseItem, getPhaseItem, setPivotItem,
                 setPhase0_0Item, setPhase180_0Item, setPhase90_180Item,
                 autoPhaseFlat0Item, autoPhaseFlat01Item, autoPhaseMaxItem);
 
+        Collections.addAll(datasetMenuItems, applyPhaseItem, resetPhaseItem);
+
+        phaseMenuButton.getItems().addAll(datasetMenuItems);
+
         vbox.getChildren().add(phaseMenuButton);
+        phaseChoice.addListener(e -> setChartPhaseDim());
+        controller.processControllerVisible.addListener(e -> resetMenus(controller.processControllerVisible));
+    }
+
+    void resetMenus(SimpleBooleanProperty procVis) {
+        if (procVis.get()) {
+            phaseMenuButton.getItems().setAll(processorMenuItems);
+        } else {
+            phaseMenuButton.getItems().setAll(datasetMenuItems);
+        }
+    }
+
+    void setChartPhaseDim() {
+        PolyChart chart = controller.getActiveChart();
+        chart.setPhaseDim(phaseChoice.get().equals("X") ? 0 : 1);
+        if (controller.chartProcessor == null) {
+            setPH1Slider(chart.getDataPH1());
+            setPH0Slider(chart.getDataPH0());
+        }
     }
 
     void handlePhReset(int iPh) {
@@ -258,10 +310,11 @@ public class Phaser {
             //handlePh1Reset(chart.getPh1());
             //handlePh0Reset(chart.getPh0());
         } else {
-            chart.phaseDim = 0;
+            chart.datasetPhaseDim = 0;
             handlePh1Reset(0.0);
             handlePh0Reset(0.0);
         }
+        phaseChoice.set(chart.phaseAxis == 0 ? "X" : "Y");
     }
 
     public void setPhaseOp(String opString) {
@@ -274,7 +327,7 @@ public class Phaser {
         PolyChart chart = controller.getActiveChart();
         double ph0 = sliders[0].getValue();
         double ph1 = sliders[1].getValue();
-        String phaseDim = String.valueOf(chart.phaseDim + 1);
+        String phaseDim = String.valueOf(chart.datasetPhaseDim + 1);
         if (chart.hasData() && (controller.chartProcessor != null)) {
             if (chart.is1D()) {
                 String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", ph0, ph1, delImagString);
@@ -312,7 +365,7 @@ public class Phaser {
         if (!chart.hasData()) {
             return;
         }
-        String phaseDim = "D" + String.valueOf(chart.phaseDim + 1);
+        String phaseDim = "D" + String.valueOf(chart.datasetPhaseDim + 1);
         if (controller.chartProcessor != null) {
             List<String> listItems = controller.chartProcessor.getOperations(phaseDim);
             if (listItems != null) {
@@ -367,6 +420,37 @@ public class Phaser {
 
     private void autoPhaseMax() {
         controller.getActiveChart().autoPhaseMax();
+    }
+
+    private void applyPhase() {
+        PolyChart chart = controller.getActiveChart();
+        Dataset dataset = chart.getDataset();
+        try {
+            int iDim = chart.datasetPhaseDim;
+            double ph0 = chart.getPh0();
+            double ph1 = chart.getPh1();
+            dataset.phaseDim(iDim, ph0, ph1);
+            chart.setPh0(0.0);
+            chart.setPh1(0.0);
+            chart.refresh();
+        } catch (IOException ex) {
+            ExceptionDialog d = new ExceptionDialog(ex);
+            d.showAndWait();
+        }
+    }
+
+    private void resetPhases() {
+        PolyChart chart = controller.getActiveChart();
+        Dataset dataset = chart.getDataset();
+        for (int i = 0; i < dataset.getNDim(); i++) {
+            dataset.setPh0(i, 0.0);
+            dataset.setPh0_r(i, 0.0);
+            dataset.setPh1(i, 0.0);
+            dataset.setPh1_r(i, 0.0);
+        }
+        setPH1Slider(0.0);
+        setPH0Slider(0.0);
+        chart.resetChartPhases();
     }
 
     private void setPhase_minus90_180() {

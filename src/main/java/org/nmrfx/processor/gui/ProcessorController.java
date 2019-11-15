@@ -173,6 +173,7 @@ public class ProcessorController implements Initializable, ProgressUpdater {
             chart.setProcessorController(controller);
             controller.chartProcessor.setChart(chart);
             controller.chartProcessor.fxmlController = fxmlController;
+            fxmlController.processorCreated(stage);
             stage.show();
         } catch (IOException ioE) {
             ioE.printStackTrace();
