@@ -9,8 +9,10 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import javafx.event.ActionEvent;
@@ -20,6 +22,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.MouseEvent;
@@ -34,6 +37,9 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.processor.optimization.PeakClusterMatcher;
+import org.nmrfx.processor.optimization.PeakCluster;
+import javafx.collections.ObservableList;
 
 /**
  *
@@ -57,6 +63,7 @@ public class PeakSlider {
     Label intensityLabel;
     List<Peak> selPeaks;
     List<FreezeListener> listeners = new ArrayList<>();
+    Map<PolyChart, PeakClusterMatcher> chartToMatchMap = new HashMap<>();
 
     public PeakSlider(FXMLController controller, Consumer closeAction) {
         this.controller = controller;
@@ -126,7 +133,24 @@ public class PeakSlider {
         restoreAllItem.setOnAction(e -> restoreAllPeaks());
         MenuItem restoreItem = new MenuItem("Restore Peaks");
         restoreItem.setOnAction(e -> restorePeaks());
-        actionMenu.getItems().addAll(thawAllItem, restoreItem, restoreAllItem);
+        Menu matchingMenu = new Menu("Perform Match");
+        /** FIXME: 
+         *  Currently, Match Row doesn't work properly when Match Column runs first.
+         *  Results of the Match Row won't show up because chart was placed inside
+         *  of the mapToMatch HashMap. Need to correct:
+         * 
+         *  Potential Solution:
+         *  chartToMatchMap<PolyChart, dimensionMatch> ==> dimensionMatch<Dim, PeakClusterMatcher>
+         */
+        MenuItem matchAllRowItem = new MenuItem("Match Row");
+        MenuItem matchAllColItem = new MenuItem("Match Column");
+        matchAllRowItem.setOnAction(e -> matchClusters(true, 1));
+        matchAllColItem.setOnAction(e -> matchClusters(true, 0));
+        MenuItem clearMatchItem = new MenuItem("Clear Matches");
+        clearMatchItem.setOnAction(e -> clearMatches());
+        matchingMenu.getItems().addAll(matchAllRowItem, matchAllColItem, clearMatchItem);
+
+        actionMenu.getItems().addAll(thawAllItem, restoreItem, restoreAllItem, matchingMenu);
 
         Pane filler1 = new Pane();
         HBox.setHgrow(filler1, Priority.ALWAYS);
@@ -437,8 +461,99 @@ public class PeakSlider {
             if (peaks.size() == 1) {
                 unlinkButton.setDisable(false);
             }
-
         }
+//        System.out.println(Arrays.toString(peaks.stream().map(p -> p.toString()).toArray()));
+
+        if ((peaks != null) && !peaks.isEmpty()) {
+            controller.charts.stream()
+                    .forEach(chart -> {
+                        PeakClusterMatcher matcher = getMatcher(chart);
+                        if (matcher != null) {
+                            List<List<Peak>> peakPairs = matcher.getPeakPairs(peaks.get(0));
+                            chart.setPeakPaths(peakPairs);
+                            chart.refresh();
+                        }
+                    });
+        }
+    }
+
+    // Event handler to perform match of clusters
+    public void matchClusters(boolean drawAll, int iDim) {
+        // storing peak list attributes which contain information about the peak lists
+        // in each chart.
+
+        controller.charts.stream()
+                .filter(chart -> chart.getPeakListAttributes().size() == 2)
+                .forEach(chart -> {
+                    ObservableList<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
+                    PeakListAttributes peakAttr1 = peakListAttrs.get(0);
+                    PeakListAttributes peakAttr2 = peakListAttrs.get(1);
+                    PeakList pl1 = peakAttr1.getPeakList();
+                    PeakList pl2 = peakAttr2.getPeakList();
+                    // FIXME: Should change the way we check if simulated peak list exists
+                    boolean pl1ContainsSim = pl1.getSampleConditionLabel().endsWith("sim");
+                    boolean pl2ContainsSim = pl2.getSampleConditionLabel().endsWith("sim");
+                    boolean oneIsSim = (pl1ContainsSim || pl2ContainsSim);
+                    PeakList exp = (!pl1ContainsSim) ? pl1 : (oneIsSim) ? pl2 : null;
+                    PeakList pred = (pl2ContainsSim) ? pl2 : (oneIsSim) ? pl1 : null;
+                    if (exp != null && pred != null) {
+                        // TODO: generalizing for nDim
+                        chart.clearPeakPaths();
+                        setUpMatcher(chart, exp, pred, iDim);
+                        if (drawAll) {
+                            PeakClusterMatcher matcher = getMatcher(chart);
+                            if (matcher != null) {
+                                if (matcher.getMatch() == null) {
+                                    matcher.runMatch();
+                                }
+                                List<PeakCluster[]> clusterMatches = matcher.getMatch();
+                                // TODO: need to save the cluster matches made for the two peaks somewhere so that we dont have to run the matching algorithm again...
+                                if (clusterMatches != null) {
+                                    clusterMatches.stream()
+                                            .map((clusMatch) -> {
+                                                PeakCluster expCluster = clusMatch[0];
+                                                PeakCluster predCluster = clusMatch[1];
+                                                List<List<Peak>> matchingPeaks = expCluster.getPeakMatches(predCluster);
+
+                                                return matchingPeaks;
+                                            })
+                                            .forEachOrdered((matchingPeaks) -> {
+                                                matchingPeaks.forEach(pairedPeaks -> {
+                                                    chart.peakPaths.add(pairedPeaks);
+                                                });
+                                            });
+                                    chart.refresh();
+                                }
+                            }
+                        }
+                    }
+                });
+    }
+
+    private void setUpMatcher(PolyChart chart, PeakList expPeakList, PeakList predPeakList, int iDim) {
+        if (chartToMatchMap.containsKey(chart)) {
+            return;
+        }
+        PeakClusterMatcher matcher = new PeakClusterMatcher(expPeakList, predPeakList, iDim);
+
+        chartToMatchMap.put(chart, matcher);
+    }
+
+    private PeakClusterMatcher getMatcher(PolyChart chart) {
+        if (chartToMatchMap.containsKey(chart)) {
+            return chartToMatchMap.get(chart);
+        }
+        return null;
+    }
+
+    public void clearMatches() {
+
+        controller.charts.stream()
+                .forEach(chart -> {
+                    chart.clearPeakPaths();
+                    chart.refresh();
+                    System.out.println("Matches cleared");
+                });
     }
 
 }
