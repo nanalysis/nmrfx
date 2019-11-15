@@ -4888,4 +4888,27 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
             throw new IllegalArgumentException("No buffer named " + bufferName);
         }
     }
+
+    public void phaseDim(int iDim, double ph0, double ph1) throws IOException {
+        Iterator<Vec> vecIter = vectors(iDim);
+        if (!isWritable()) {
+            changeWriteMode(true);
+        }
+        while (vecIter.hasNext()) {
+            Vec vec = vecIter.next();
+            if (vec.isReal()) {
+                vec.hft();
+            }
+            vec.phase(ph0, ph1, false, true);
+            writeVector(vec);
+        }
+        double dph0 = Util.phaseMin(getPh0(iDim) + ph0);
+        double dph1 = Util.phaseMin(getPh1(iDim) + ph1);
+        setPh0(iDim, dph0);
+        setPh0_r(iDim, dph0);
+        setPh1(iDim, dph1);
+        setPh1_r(iDim, dph1);
+        writeHeader();
+        dataFile.force();
+    }
 }
