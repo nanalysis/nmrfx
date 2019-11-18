@@ -111,7 +111,11 @@ public class PeakClusterMatcher {
             }
 
         }
-        return (cluster == null) ? null : cluster.getPeakMatches(cluster.getPairedTo());
+        List<List<Peak>> result = new ArrayList<>();
+        if (cluster != null) {
+            result.addAll(cluster.getPeakMatches(cluster.getPairedTo()));
+        }
+        return result;
     }
 
     private void runBPClusterMatches() throws IllegalArgumentException {
