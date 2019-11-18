@@ -33,7 +33,6 @@ public class PeakCluster {
     public final int iDim;
     public double refScale = 1;
     private PeakCluster pairedTo = null;
-    
 
     public PeakCluster(List<Peak> linkedPeaks, int iDim) {
         this.linkedPeaks = linkedPeaks;
@@ -55,17 +54,29 @@ public class PeakCluster {
         return peakClusters;
     }
 
+    public static void prepareList(PeakList peakList, double[][] limits) {
+        peakList.peaks().stream().
+                filter(p -> !p.isDeleted()).
+                filter(p -> {
+                    double xShift = p.getPeakDim(0).getChemShiftValue();
+                    double yShift = p.getPeakDim(1).getChemShiftValue();
+                    boolean ok = (xShift > limits[0][0]) && (xShift < limits[0][1])
+                            && (yShift > limits[1][0]) && (yShift < limits[1][1]);
+                    return ok;
+                }).
+                forEach(p -> p.setStatus(1));
+
+    }
+
     public static Collection<List<Peak>> getCluster(PeakList peakList, int iDim) {
         // TODO: Should rename this static method
         Collection<List<Peak>> linkHashSet = new LinkedHashSet<>();
 
-        peakList.peaks().stream()
-                .filter(p -> !p.isDeleted()).
-                forEach(p -> p.setStatus(1));
         // CAVEAT: need to make sure peaks are linked
         // FIXME: place check to ensure peaks are linked
         peakList.peaks()
                 .forEach(p -> {
+
                     if (p.getStatus() == 1) {
                         List<Peak> links = PeakList.getLinks(p, iDim).stream()
                                 .filter(p2 -> p2.getIntensity() > 0.0)
@@ -82,12 +93,10 @@ public class PeakCluster {
         Peak maxPeak = null;
         if (peaks.size() > 0) {
             maxPeak = peaks.get(0);
-            double maxValue = maxPeak.getPeakDim(shiftDim).getAverageShift();
-            Peak currPeak;
-            double curValue;
+            double maxValue = maxPeak.getPeakDim(shiftDim).getChemShiftValue();
             for (int i = 1; i < peaks.size(); i++) {
-                currPeak = peaks.get(i);
-                curValue = currPeak.getPeakDim(shiftDim).getAverageShift();
+                Peak currPeak = peaks.get(i);
+                double curValue = currPeak.getPeakDim(shiftDim).getChemShiftValue();
                 if (curValue > maxValue) {
                     maxValue = curValue;
                     maxPeak = currPeak;
@@ -169,14 +178,24 @@ public class PeakCluster {
 
     @Override
     public String toString() {
-        String name = rootPeak == null ? "" : String.format("Root Peak: %s", rootPeak.toString());
+        String name = rootPeak == null ? "" : String.format("Root Peak: %s %7.2f", rootPeak.toString(), ppm);
         return name;
     }
-    
+
+    public String dump() {
+        linkedPeaks.sort((p1, p2) -> p1.peakDims[iDim].getChemShift().compareTo(p2.peakDims[iDim].getChemShift()));
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append(toString()).append(" :");
+        for (Peak peak : linkedPeaks) {
+            sBuilder.append(" ").append(peak.getName());
+        }
+        return sBuilder.toString();
+    }
+
     public void setPairedTo(PeakCluster pair) {
         pairedTo = pair;
     }
-    
+
     public PeakCluster getPairedTo() {
         return pairedTo;
     }
@@ -211,15 +230,19 @@ public class PeakCluster {
         int[] matching = peakMatcher.getMatching();
         for (int i = 0; i < matching.length; i++) {
             int j = matching[i];
-            if (j < 0) continue;
+            if (j < 0) {
+                continue;
+            }
             List<Peak> matchedPeaks = new ArrayList<>();
             Peak iPeak = null;
             Peak jPeak = null;
-            if (i < size)
+            if (i < size) {
                 iPeak = linkedPeaks.get(i);
-            if (j < other.size)
+            }
+            if (j < other.size) {
                 jPeak = other.linkedPeaks.get(j);
-            
+            }
+
             matchedPeaks.add(iPeak);
             matchedPeaks.add(jPeak);
             matches.add(matchedPeaks);
@@ -243,6 +266,10 @@ public class PeakCluster {
             return output;
         }
         return null;
+    }
+
+    public double clusterDistance(PeakCluster other) {
+        return Math.abs(ppm - other.ppm);
     }
 
     public boolean isInTol(PeakCluster other) {
