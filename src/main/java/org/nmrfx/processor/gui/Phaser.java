@@ -36,6 +36,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetPhaser;
+import org.nmrfx.processor.operations.IDBaseline2;
 
 /**
  *
@@ -122,6 +124,12 @@ public class Phaser {
         MenuItem applyPhaseItem = new MenuItem("Apply Phase");
         applyPhaseItem.setOnAction(e -> applyPhase());
 
+        MenuItem autoPhase0Item = new MenuItem("Auto Phase 0");
+        autoPhase0Item.setOnAction(e -> autoPhase0());
+
+        MenuItem autoPhase1Item = new MenuItem("Auto Phase 0/1");
+        autoPhase1Item.setOnAction(e -> autoPhase01());
+
         MenuItem resetPhaseItem = new MenuItem("Reset Phases");
         resetPhaseItem.setOnAction(e -> resetPhases());
 
@@ -129,7 +137,8 @@ public class Phaser {
                 setPhase0_0Item, setPhase180_0Item, setPhase90_180Item,
                 autoPhaseFlat0Item, autoPhaseFlat01Item, autoPhaseMaxItem);
 
-        Collections.addAll(datasetMenuItems, applyPhaseItem, resetPhaseItem);
+        Collections.addAll(datasetMenuItems, setPivotItem, applyPhaseItem,
+                autoPhase0Item, autoPhase1Item, resetPhaseItem);
 
         phaseMenuButton.getItems().addAll(datasetMenuItems);
 
@@ -435,6 +444,38 @@ public class Phaser {
             chart.refresh();
         } catch (IOException ex) {
             ExceptionDialog d = new ExceptionDialog(ex);
+            d.showAndWait();
+        }
+    }
+
+    private void autoPhase0() {
+        autoPhase(false);
+    }
+
+    private void autoPhase01() {
+        autoPhase(true);
+    }
+
+    private void autoPhase(boolean firstOrder) {
+        PolyChart chart = controller.getActiveChart();
+        Dataset dataset = chart.getDataset();
+        double ratio = 25.0;
+        IDBaseline2.ThreshMode threshMode = IDBaseline2.ThreshMode.SDEV;
+//        if (dataset.getNDim() > 1) {
+//            ratio = chart.getDatasetAttributes().get(0).getLvl();
+//            threshMode = IDBaseline2.ThreshMode.ABS;
+//        }
+
+        int iDim = chart.datasetPhaseDim;
+        int winSize = 2;
+        double ph1Limit = 45.0;
+        try {
+            double[] phases = dataset.autoPhase(iDim, firstOrder, winSize, ratio, ph1Limit, threshMode);
+            chart.setPh0(0.0);
+            chart.setPh1(0.0);
+            chart.refresh();
+        } catch (IOException ioE) {
+            ExceptionDialog d = new ExceptionDialog(ioE);
             d.showAndWait();
         }
     }

@@ -1313,7 +1313,7 @@ public class DrawPeaks {
          * 
          */
         if (p1 != null && p2 != null && dim.length == 2) {
-            g2.save();
+            //g2.save();
             PeakDim p1x = p1.peakDims[dim[0]];
             PeakDim p1y = p1.peakDims[dim[1]];
             PeakDim p2x = p2.peakDims[dim[0]];
@@ -1326,8 +1326,9 @@ public class DrawPeaks {
             x2 = xAxis.getDisplayPosition(x2);
             y1 = yAxis.getDisplayPosition(y1);
             y2 = yAxis.getDisplayPosition(y2);
-
-            g2.setStroke(Color.GREEN);
+            
+            g2.setStroke(Color.ORANGE);
+            g2.setLineWidth(3.0);
             g2.beginPath();
 //            System.out.println(String.format("p1 = (%f, %f), p2 = (%f, %f)", x1, y1, x2, y2));
             g2.moveTo(x1, y1);

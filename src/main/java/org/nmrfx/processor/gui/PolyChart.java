@@ -1898,9 +1898,6 @@ public class PolyChart implements PeakListener {
             if (!datasetAttributesList.isEmpty()) {
                 drawPeakLists(true);
             }
-            if (!peakPaths.isEmpty()) {
-                drawPeakPaths();
-            }
             drawAnnotations(gCPeaks);
             crossHairs.refreshCrossHairs();
             gC.restore();
@@ -2625,6 +2622,10 @@ public class PolyChart implements PeakListener {
 //                drawSelectedPeaks(peakListAttr);
                     }
                 }
+                if (!peakPaths.isEmpty()) {
+                    drawPeakPaths();
+                }
+
 //                peakGC.restore();
             } catch (Exception ioE) {
 
@@ -2872,18 +2873,26 @@ public class PolyChart implements PeakListener {
     void clearPeakPaths() {
         peakPaths.clear();
     }
-    
+
     void setPeakPaths(List<List<Peak>> peaks) {
         clearPeakPaths();
         peakPaths.addAll(peaks);
     }
 
+    void addPeakPaths(List<List<Peak>> peaks) {
+        peakPaths.addAll(peaks);
+    }
+
     void drawPeakPaths() {
-        GraphicsContext gCC = peakCanvas.getGraphicsContext2D();
-        GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
-        peakPaths.stream().forEach((lPeaks) -> {
-            drawPeakPaths(lPeaks, gC);
-        });
+        if (!peakPaths.isEmpty()) {
+            GraphicsContext gCC = peakCanvas.getGraphicsContext2D();
+            GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
+            gC.save();
+            peakPaths.stream().forEach((lPeaks) -> {
+                drawPeakPaths(lPeaks, gC);
+            });
+            gC.restore();
+        }
     }
 
     void drawPeakPaths(List<Peak> peaks, GraphicsContextInterface gC) {
@@ -2893,7 +2902,7 @@ public class PolyChart implements PeakListener {
             if (j < peaks.size()) {
                 Peak iPeak = peaks.get(i);
                 Peak jPeak = peaks.get(j);
-                
+
                 if (iPeak != null && jPeak != null) {
                     drawPeaks.drawPeakConnection(iPeak, jPeak, gC, dim);
 //                    System.out.println("PolyChart.drawPeakPaths('" + iPeak.toString() + "', '" + jPeak.toString() + "')");
