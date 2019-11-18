@@ -31,7 +31,6 @@ public class PeakCluster {
     private final double ppm;
     public final int size;
     public final int iDim;
-    public double refScale = 1;
     private PeakCluster pairedTo = null;
 
     public PeakCluster(List<Peak> linkedPeaks, int iDim) {
@@ -68,23 +67,25 @@ public class PeakCluster {
 
     }
 
-    public static Collection<List<Peak>> getCluster(PeakList peakList, int iDim) {
+    public static Collection<List<Peak>> getCluster(List<PeakList> peakLists, int iDim) {
         // TODO: Should rename this static method
         Collection<List<Peak>> linkHashSet = new LinkedHashSet<>();
 
         // CAVEAT: need to make sure peaks are linked
         // FIXME: place check to ensure peaks are linked
-        peakList.peaks()
-                .forEach(p -> {
-                    if (p.getStatus() == 1) {
-                        List<Peak> links = PeakList.getLinks(p, iDim).stream()
-                                .filter(p2 -> p2.getIntensity() > 0.0)
-                                .filter((p2 -> p2.getStatus() == 1))
-                                .collect(Collectors.toList());
-                        linkHashSet.add(links);
-                        links.forEach(lp -> lp.setStatus(0));
-                    }
-                });
+        for (PeakList peakList : peakLists) {
+            peakList.peaks()
+                    .forEach(p -> {
+                        if (p.getStatus() == 1) {
+                            List<Peak> links = PeakList.getLinks(p, iDim).stream()
+                                    .filter(p2 -> p2.getIntensity() > 0.0)
+                                    .filter((p2 -> p2.getStatus() == 1))
+                                    .collect(Collectors.toList());
+                            linkHashSet.add(links);
+                            links.forEach(lp -> lp.setStatus(0));
+                        }
+                    });
+        }
         return linkHashSet;
     }
 
@@ -216,7 +217,7 @@ public class PeakCluster {
             for (int jP = 0; jP < other.size; jP++) {
                 expPeak = linkedPeaks.get(iE);
                 predPeak = other.linkedPeaks.get(jP);
-                weight = calcWeight(expPeak, predPeak, other.refScale);
+                weight = calcWeight(expPeak, predPeak, predPeak.getPeakList().scale);
                 matcher.setWeight(iE, jP, weight);
             }
         }

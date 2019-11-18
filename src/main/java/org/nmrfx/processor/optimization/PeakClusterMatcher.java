@@ -22,24 +22,28 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
  */
 public class PeakClusterMatcher {
 
-    private final PeakList expPeakList;
-    private final PeakList predPeakList;
+    private final List<PeakList> expPeakLists;
+    private final List<PeakList> predPeakLists;
     private PeakCluster[] expPeakClusters = null;
     private PeakCluster[] predPeakClusters = null;
     private int[] match = null;
     private List<PeakCluster[]> matchedClusters = null;
     private final int iDim;
-    public final double REF_SCALE;
 
-    public PeakClusterMatcher(PeakList expPeakList, PeakList predPeakList, int iDim) {
-        this.expPeakList = expPeakList;
-        this.predPeakList = predPeakList;
+    public PeakClusterMatcher(List<PeakList> expPeakLists, List<PeakList> predPeakLists, int iDim) {
+        this.expPeakLists = expPeakLists;
+        this.predPeakLists = predPeakLists;
         this.iDim = iDim;
-        DescriptiveStatistics eDStats = expPeakList.intensityDStats(iDim);
-        DescriptiveStatistics pDStats = predPeakList.intensityDStats(iDim);
-        double eIntMedian = eDStats.getPercentile(50);
-        double pIntMedian = pDStats.getPercentile(50);
-        REF_SCALE = eIntMedian / pIntMedian;
+        for (int i = 0; i < expPeakLists.size(); i++) {
+            PeakList expPeakList = expPeakLists.get(i);
+            PeakList predPeakList = predPeakLists.get(i);
+            DescriptiveStatistics eDStats = expPeakList.intensityDStats(iDim);
+            DescriptiveStatistics pDStats = predPeakList.intensityDStats(iDim);
+            double eIntMedian = eDStats.getPercentile(50);
+            double pIntMedian = pDStats.getPercentile(50);
+            double scale = eIntMedian / pIntMedian;
+            predPeakList.scale = scale;
+        }
     }
 
     public PeakCluster[] getExpPeakClus() {
@@ -83,8 +87,8 @@ public class PeakClusterMatcher {
     public void runMatch() throws IllegalArgumentException {
         if (match == null) {
             System.out.println("Running match method");
-            Collection<List<Peak>> expLinks = PeakCluster.getCluster(expPeakList, iDim);
-            Collection<List<Peak>> predLinks = PeakCluster.getCluster(predPeakList, iDim);
+            Collection<List<Peak>> expLinks = PeakCluster.getCluster(expPeakLists, iDim);
+            Collection<List<Peak>> predLinks = PeakCluster.getCluster(predPeakLists, iDim);
             expPeakClusters = PeakCluster.makePeakCluster(expLinks, iDim);
             predPeakClusters = PeakCluster.makePeakCluster(predLinks, iDim);
             runBPClusterMatches();
@@ -131,7 +135,6 @@ public class PeakClusterMatcher {
             for (int j = 0; j < predPeakClusters.length; j++) {
                 jPredClus = predPeakClusters[j];
                 if (iExpClus.isInTol(jPredClus)) {
-                    jPredClus.refScale = REF_SCALE;
                     BipartiteMatcher peakMatcher = iExpClus.compareTo(jPredClus);
                     double wMin = peakMatcher.minWeight;
                     int[] peakMatching = peakMatcher.getMatching();
