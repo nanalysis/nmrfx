@@ -30,6 +30,7 @@ import org.nmrfx.processor.operations.Util;
 import java.io.IOException;
 import java.util.Iterator;
 import org.apache.commons.math3.util.FastMath;
+import org.nmrfx.processor.operations.IDBaseline2;
 
 /**
  *
@@ -81,7 +82,7 @@ public class DatasetPhaser {
      * @param phaseRatio ratio of signal to noise to use in finding baseline
      * @throws java.io.IOException if an I/O error occurs
      */
-    public void setup(int iDim, int phaseWinSize, double phaseRatio) throws IOException {
+    public void setup(int iDim, int phaseWinSize, double phaseRatio, IDBaseline2.ThreshMode threshMode) throws IOException {
         int[][] pt = new int[nDim][2];
         int[] dim = new int[nDim];
         int[] dimSize = new int[nDim];
@@ -160,7 +161,7 @@ public class DatasetPhaser {
         for (int i = 0; i < nTotal; i++) {
             if (regionMax[i] != null) {
                 dataset.readVectorFromDatasetFile(regionMax[i].pt, dim, phaseVec);
-                testBase.addVector(phaseVec, false, phaseRatio);
+                testBase.addVector(phaseVec, false, phaseRatio, threshMode);
 //                System.out.println(i + " " + regionMax[i].toString() + " " + testBase.getRegionCount());
             }
 

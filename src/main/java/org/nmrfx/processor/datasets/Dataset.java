@@ -38,6 +38,7 @@ import org.apache.commons.math3.stat.descriptive.rank.PSquarePercentile;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.math.MatrixType;
+import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.processing.LineShapeCatalog;
 import org.renjin.sexp.AttributeMap;
 import org.renjin.sexp.DoubleVector;
@@ -4911,4 +4912,32 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         writeHeader();
         dataFile.force();
     }
+
+    public double[] autoPhase(int iDim, boolean firstOrder, int winSize, double ratio, double ph1Limit, IDBaseline2.ThreshMode threshMode) throws IOException {
+        if (!isWritable()) {
+            changeWriteMode(true);
+        }
+        DatasetPhaser phaser = new DatasetPhaser(this);
+        phaser.setup(iDim, winSize, ratio, threshMode);
+        double dph0 = 0.0;
+        double dph1 = 0.0;
+        if (firstOrder) {
+            double[] phases = phaser.getPhase(ph1Limit);
+            phaser.applyPhases2(iDim, phases[0], phases[1]);
+            dph0 = phases[0];
+            dph1 = phases[1];
+        } else {
+            dph0 = phaser.getPhaseZero();
+            phaser.applyPhases2(iDim, dph0, 0.0);
+        }
+        setPh0(iDim, dph0);
+        setPh0_r(iDim, dph0);
+        setPh1(iDim, dph1);
+        setPh1_r(iDim, dph1);
+        writeHeader();
+        dataFile.force();
+        double[] result = {dph0, dph1};
+        return result;
+    }
+
 }

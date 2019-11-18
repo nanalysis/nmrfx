@@ -243,6 +243,10 @@ public class TestBasePoints implements MultivariateFunction {
     }
 
     public final void addVector(Vec vector, final boolean maxMode, double ratio) {
+        addVector(vector, maxMode, ratio, IDBaseline2.ThreshMode.SDEV);
+    }
+
+    public final void addVector(Vec vector, final boolean maxMode, double ratio, IDBaseline2.ThreshMode threshMode) {
         this.vector = vector;
         testVec = new Vec(vector.getSize());
         Vec phaseVec = new Vec(vector.getSize());
@@ -268,7 +272,7 @@ public class TestBasePoints implements MultivariateFunction {
 
         int[] limits = new int[2];
         int edgeSize = 5;
-        IDBaseline2 idbase = new IDBaseline2(edgeSize, limits, ratio, IDBaseline2.ThreshMode.SDEV);
+        IDBaseline2 idbase = new IDBaseline2(edgeSize, limits, ratio, threshMode);
         idbase.eval(dVec);
         hasSignal = idbase.getResult();
 

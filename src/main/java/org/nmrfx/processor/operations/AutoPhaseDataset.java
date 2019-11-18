@@ -64,7 +64,7 @@ public class AutoPhaseDataset extends DatasetOperation {
     void phaseDim(Dataset dataset, int phaseDim) throws ProcessingException {
         DatasetPhaser phaser = new DatasetPhaser(dataset);
         try {
-            phaser.setup(phaseDim, winSize, ratio);
+            phaser.setup(phaseDim, winSize, ratio, IDBaseline2.ThreshMode.SDEV);
             if (firstOrder) {
                 double[] phases = phaser.getPhase(ph1Limit);
                 phaser.applyPhases2(phaseDim, phases[0], phases[1]);
