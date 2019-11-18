@@ -76,7 +76,6 @@ public class PeakCluster {
         // FIXME: place check to ensure peaks are linked
         peakList.peaks()
                 .forEach(p -> {
-
                     if (p.getStatus() == 1) {
                         List<Peak> links = PeakList.getLinks(p, iDim).stream()
                                 .filter(p2 -> p2.getIntensity() > 0.0)
