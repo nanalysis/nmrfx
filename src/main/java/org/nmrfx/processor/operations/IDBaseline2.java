@@ -29,7 +29,8 @@ public class IDBaseline2 extends Operation {
     public enum ThreshMode {
         SDEV,
         AUTO,
-        FRACTION;
+        FRACTION,
+        ABS;
     }
     private final int minSize;
     private final int[] limits;
@@ -103,6 +104,9 @@ public class IDBaseline2 extends Operation {
                 break;
             case FRACTION:
                 threshold = fractionThreshold;
+                break;
+            case ABS:
+                threshold = ratio;
                 break;
             default:
                 threshold = sdevThreshold;
