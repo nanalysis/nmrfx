@@ -64,6 +64,7 @@ public class PeakSlider {
     List<Peak> selPeaks;
     List<FreezeListener> listeners = new ArrayList<>();
     Map<PolyChart, PeakClusterMatcher> chartToMatchMap = new HashMap<>();
+    PeakClusterMatcher[] matchers = new PeakClusterMatcher[2];
 
     public PeakSlider(FXMLController controller, Consumer closeAction) {
         this.controller = controller;
@@ -134,13 +135,13 @@ public class PeakSlider {
         MenuItem restoreItem = new MenuItem("Restore Peaks");
         restoreItem.setOnAction(e -> restorePeaks());
         Menu matchingMenu = new Menu("Perform Match");
-        /** FIXME: 
-         *  Currently, Match Row doesn't work properly when Match Column runs first.
-         *  Results of the Match Row won't show up because chart was placed inside
-         *  of the mapToMatch HashMap. Need to correct:
-         * 
-         *  Potential Solution:
-         *  chartToMatchMap<PolyChart, dimensionMatch> ==> dimensionMatch<Dim, PeakClusterMatcher>
+        /**
+         * FIXME: Currently, Match Row doesn't work properly when Match Column
+         * runs first. Results of the Match Row won't show up because chart was
+         * placed inside of the mapToMatch HashMap. Need to correct:
+         *
+         * Potential Solution: chartToMatchMap<PolyChart, dimensionMatch> ==>
+         * dimensionMatch<Dim, PeakClusterMatcher>
          */
         MenuItem matchAllRowItem = new MenuItem("Match Row");
         MenuItem matchAllColItem = new MenuItem("Match Column");
@@ -467,11 +468,13 @@ public class PeakSlider {
         if ((peaks != null) && !peaks.isEmpty()) {
             controller.charts.stream()
                     .forEach(chart -> {
-                        PeakClusterMatcher matcher = getMatcher(chart);
-                        if (matcher != null) {
-                            List<List<Peak>> peakPairs = matcher.getPeakPairs(peaks.get(0));
-                            chart.setPeakPaths(peakPairs);
-                            chart.refresh();
+                        chart.clearPeakPaths();
+                        for (int i = 0; i < 2; i++) {
+                            if (matchers[i] != null) {
+                                List<List<Peak>> peakPairs = matchers[i].getPeakPairs(peaks.get(0));
+                                chart.addPeakPaths(peakPairs);
+                                chart.drawPeakLists(true);
+                            }
                         }
                     });
         }
@@ -481,10 +484,16 @@ public class PeakSlider {
     public void matchClusters(boolean drawAll, int iDim) {
         // storing peak list attributes which contain information about the peak lists
         // in each chart.
-
+        List<PeakList> predLists = new ArrayList<>();
+        List<PeakList> expLists = new ArrayList<>();
         controller.charts.stream()
                 .filter(chart -> chart.getPeakListAttributes().size() == 2)
                 .forEach(chart -> {
+                    double xMin = chart.getXAxis().getLowerBound();
+                    double xMax = chart.getXAxis().getUpperBound();
+                    double yMin = chart.getYAxis().getLowerBound();
+                    double yMax = chart.getYAxis().getUpperBound();
+                    double[][] limits = {{xMin, xMax}, {yMin, yMax}};
                     ObservableList<PeakListAttributes> peakListAttrs = chart.getPeakListAttributes();
                     PeakListAttributes peakAttr1 = peakListAttrs.get(0);
                     PeakListAttributes peakAttr2 = peakListAttrs.get(1);
@@ -496,35 +505,45 @@ public class PeakSlider {
                     boolean oneIsSim = (pl1ContainsSim || pl2ContainsSim);
                     PeakList exp = (!pl1ContainsSim) ? pl1 : (oneIsSim) ? pl2 : null;
                     PeakList pred = (pl2ContainsSim) ? pl2 : (oneIsSim) ? pl1 : null;
-                    if (exp != null && pred != null) {
-                        // TODO: generalizing for nDim
-                        chart.clearPeakPaths();
-                        setUpMatcher(chart, exp, pred, iDim);
-                        if (drawAll) {
-                            PeakClusterMatcher matcher = getMatcher(chart);
-                            if (matcher != null) {
-                                if (matcher.getMatch() == null) {
-                                    matcher.runMatch();
-                                }
-                                List<PeakCluster[]> clusterMatches = matcher.getMatch();
-                                // TODO: need to save the cluster matches made for the two peaks somewhere so that we dont have to run the matching algorithm again...
-                                if (clusterMatches != null) {
-                                    clusterMatches.stream()
-                                            .map((clusMatch) -> {
-                                                PeakCluster expCluster = clusMatch[0];
-                                                PeakCluster predCluster = clusMatch[1];
-                                                List<List<Peak>> matchingPeaks = expCluster.getPeakMatches(predCluster);
 
-                                                return matchingPeaks;
-                                            })
-                                            .forEachOrdered((matchingPeaks) -> {
-                                                matchingPeaks.forEach(pairedPeaks -> {
-                                                    chart.peakPaths.add(pairedPeaks);
-                                                });
-                                            });
-                                    chart.refresh();
-                                }
-                            }
+                    if (exp != null && pred != null) {
+                        expLists.add(exp);
+                        predLists.add(pred);
+                        PeakCluster.prepareList(exp, limits);
+                        PeakCluster.prepareList(pred, limits);
+                    }
+                });
+        matchers[iDim] = new PeakClusterMatcher(expLists.get(0), predLists.get(0), iDim);
+        matchers[iDim].runMatch();
+        drawMatches();
+    }
+
+    void drawMatches() {
+        controller.charts.stream()
+                .filter(chart -> chart.getPeakListAttributes().size() == 2)
+                .forEach(chart -> {
+                    for (int i = 0; i < 2; i++) {
+                        PeakClusterMatcher matcher = matchers[i];
+                        if (matcher == null) {
+                            continue;
+                        }
+                        List<PeakCluster[]> clusterMatches = matcher.getMatch();
+                        // TODO: need to save the cluster matches made for the two peaks somewhere so that we dont have to run the matching algorithm again...
+                        if (clusterMatches != null) {
+                            clusterMatches.stream()
+                                    .map((clusMatch) -> {
+                                        PeakCluster expCluster = clusMatch[0];
+                                        PeakCluster predCluster = clusMatch[1];
+                                        List<List<Peak>> matchingPeaks = expCluster.getPeakMatches(predCluster);
+
+                                        return matchingPeaks;
+                                    })
+                                    .forEachOrdered((matchingPeaks) -> {
+                                        matchingPeaks.forEach(pairedPeaks -> {
+                                            chart.peakPaths.add(pairedPeaks);
+                                        });
+                                    });
+                            chart.refresh();
                         }
                     }
                 });
@@ -547,13 +566,8 @@ public class PeakSlider {
     }
 
     public void clearMatches() {
-
-        controller.charts.stream()
-                .forEach(chart -> {
-                    chart.clearPeakPaths();
-                    chart.refresh();
-                    System.out.println("Matches cleared");
-                });
+        matchers[0] = null;
+        matchers[1] = null;
     }
 
 }
