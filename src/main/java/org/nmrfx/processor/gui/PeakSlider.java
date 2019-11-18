@@ -513,7 +513,7 @@ public class PeakSlider {
                         PeakCluster.prepareList(pred, limits);
                     }
                 });
-        matchers[iDim] = new PeakClusterMatcher(expLists.get(0), predLists.get(0), iDim);
+        matchers[iDim] = new PeakClusterMatcher(expLists, predLists, iDim);
         matchers[iDim].runMatch();
         drawMatches();
     }
@@ -547,22 +547,6 @@ public class PeakSlider {
                         }
                     }
                 });
-    }
-
-    private void setUpMatcher(PolyChart chart, PeakList expPeakList, PeakList predPeakList, int iDim) {
-        if (chartToMatchMap.containsKey(chart)) {
-            return;
-        }
-        PeakClusterMatcher matcher = new PeakClusterMatcher(expPeakList, predPeakList, iDim);
-
-        chartToMatchMap.put(chart, matcher);
-    }
-
-    private PeakClusterMatcher getMatcher(PolyChart chart) {
-        if (chartToMatchMap.containsKey(chart)) {
-            return chartToMatchMap.get(chart);
-        }
-        return null;
     }
 
     public void clearMatches() {
