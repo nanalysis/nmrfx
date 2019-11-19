@@ -1806,13 +1806,14 @@ public class Molecule implements Serializable, ITree {
         }
 
         if (n == 0) {
-            throw new MissingCoordinatesException("couldn't calculate center: no coordinates");
+            return getCenter(iStructure);
+        } else {
+            double[] mCenter = new double[3];
+            mCenter[0] = x / n;
+            mCenter[1] = y / n;
+            mCenter[2] = z / n;
+            return mCenter;
         }
-        double[] mCenter = new double[3];
-        mCenter[0] = x / n;
-        mCenter[1] = y / n;
-        mCenter[2] = z / n;
-        return mCenter;
     }
 
     public Vector3D getCorner(int iStructure) throws MissingCoordinatesException {

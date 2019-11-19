@@ -396,7 +396,7 @@ public class NMRStarReader {
             if (!file.exists()) {
                 file = FileSystems.getDefault().getPath(starFile.getParentFile().getParent(), "datasets", file.getName()).toFile();
             }
-            Dataset dataset = new Dataset(file.getAbsolutePath(), datasetName, false);
+            Dataset dataset = new Dataset(file.getAbsolutePath(), datasetName, false, false);
         } catch (IOException | IllegalArgumentException tclE) {
             System.err.println(tclE.getMessage());
         }
