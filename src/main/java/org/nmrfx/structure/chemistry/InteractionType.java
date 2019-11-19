@@ -15,7 +15,7 @@ public class InteractionType {
 
     public static int distance(Residue aResObj, Residue bResObj) {
         int distance;
-        distance = Math.abs(aResObj.iRes - bResObj.iRes);
+        distance = bResObj.iRes - aResObj.iRes;
         return distance;
     }
 
@@ -46,7 +46,7 @@ public class InteractionType {
         boolean basePair = aResObj.pairedTo == bResObj;
         boolean bothInLoop = aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Loop;
         boolean bothInHelix = aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Helix;
-        boolean oneAwayBasePair = bothInHelix && (bResObj.iRes == aResObj.pairedTo.iRes + 1 || bResObj.iRes == aResObj.pairedTo.iRes - 1);
+        boolean oneAwayBasePair = sameSS && bothInHelix && (aResObj.previous != null) && (bResObj == aResObj.previous.pairedTo);
         boolean loopAndHelix = (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Loop) || (aResObj.secStruct instanceof Loop && bResObj.secStruct instanceof Helix);
         boolean bulgeAndHelix = (aResObj.secStruct instanceof Bulge && bResObj.secStruct instanceof Helix);
         boolean helixAndBulge = (aResObj.secStruct instanceof Helix && bResObj.secStruct instanceof Bulge);
@@ -58,8 +58,9 @@ public class InteractionType {
         boolean T23 = (inTetraLoop && (aResObj.secStruct.getResidues().get(1).equals(aResObj) && bResObj.secStruct.getResidues().get(2).equals(bResObj)));
         boolean T24 = (inTetraLoop && (aResObj.secStruct.getResidues().get(1).equals(aResObj) && bResObj.secStruct.getResidues().get(3).equals(bResObj)));
         boolean T34 = (inTetraLoop && (aResObj.secStruct.getResidues().get(2).equals(aResObj) && bResObj.secStruct.getResidues().get(3).equals(bResObj)));
-        typeMap.put("ADJ", bothInHelix && dis == 1);
-        typeMap.put("BP", basePair);
+        typeMap.put("ADJ", sameSS && bothInHelix && dis == 1);
+        typeMap.put("BP", sameSS && basePair);
+        typeMap.put("BPD", !sameSS && basePair);
         typeMap.put("OABP", oneAwayBasePair);
         typeMap.put("L1", bothInLoop && sameSS && aResLoopType == 'L' && dis == 1);
         typeMap.put("L2", bothInLoop && sameSS && aResLoopType == 'L' && dis == 2);
@@ -76,8 +77,8 @@ public class InteractionType {
         typeMap.put("T23", T23);
         typeMap.put("T24", T24);
         typeMap.put("T34", T34);
-        typeMap.put("BH", bulgeAndHelix && dis == 1); //filter reverse cases
-        typeMap.put("HB", helixAndBulge && dis == 1);
+        typeMap.put("BH", sameSS && bulgeAndHelix && dis == 1); //filter reverse cases
+        typeMap.put("HB", sameSS && helixAndBulge && dis == 1);
         typeMap.put("BB", !sameRes && bothInSameBulge);
         typeMap.put("TH", loopAndHelix && aResLoopType == 'T' && dis == 1);
         typeMap.put("HT", loopAndHelix && bResLoopType == 'T' && dis == 1);
@@ -87,8 +88,6 @@ public class InteractionType {
         typeMap.put("HL", loopAndHelix && bResLoopType == 'L' && dis == 1);
         typeMap.put("TA", bothInHelix && dis == 2);
         
-        
-
         for (Map.Entry<String, Boolean> type : typeMap.entrySet()) {
             if (type.getValue()) {
                 interType = type.getKey();

@@ -1,9 +1,10 @@
 import os
 import os.path
-import itertools
 import rnapred
 import peakgen
 import molio
+import itertools as itools
+
 from refine import *
 
 from org.nmrfx.processor.datasets import Dataset
@@ -14,6 +15,10 @@ from org.nmrfx.processor.datasets.peaks import AtomResonanceFactory
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import RNALabels
 from org.nmrfx.structure.chemistry import CouplingList
+from org.nmrfx.structure.chemistry import InteractionType
+from org.nmrfx.structure.chemistry import SecondaryStructure
+from org.nmrfx.structure.chemistry import SSGen
+
 from java.io import FileWriter
 import pdb as debugger
 
@@ -101,7 +106,7 @@ def determineType(aResObj, bResObj, pairs={}):
             "T2" : (loop=="T" and inSameLoop and dist==2),
             "T3" : (loop=="T" and inSameLoop and dist==3),
             "TB" : ((not sameRes) and bothInLoop and classR1!=classR2 and classR1 in ["B","T"] and classR2 in ["B","T"]),
-            "HB" : ((not sameRes) and loopAndHelix and (classR1=="B" or classR2=="B")),
+            "HB" : ((not sameRes) and loopAndHelix and (classR1=="B" or classR2=="B") and (dist == 1)),
             "BB" : ((not sameRes) and bothInLoop and (classR1=="B" and classR2=="B")),
             "TH" : ((not sameRes) and loopHelixInter("T") and dist==1),
             "TA" : ((not sameRes) and inSamePolymer and dist==2 and bothInHelix)
@@ -174,10 +179,9 @@ class MolPeakGen:
         rnaLabels.parseSelGroups(self.mol, self.labelScheme)
 
     def addProtonPairPeak(self, peakList, aAtom, bAtom, intensity=None, d1Edited=None, d2Edited=None):
-        ppmAV = aAtom.getPPM(0)
         if intensity==None:
             intensity = self.intensity
-            bounds = [width * 2.0 for width in self.widths]
+            widthScale = 2.0
         else: 
             if intensity > 10.0:
                 widthScale = 2.0
@@ -187,18 +191,47 @@ class MolPeakGen:
                 widthScale = 0.85
             else:
                 widthScale = 0.50
-            bounds = [width * widthScale for width in self.widths]
 
-        if self.refMode or (ppmAV == None) or not ppmAV.isValid():
-            ppmAV = aAtom.getRefPPM(0)
-        if (ppmAV != None) and aAtom.isActive() and ((d1Edited == None) or (d1Edited == aAtom.parent.isActive())):
-            ppmBV = bAtom.getPPM(0)
-            if self.refMode or (ppmBV == None) or not ppmBV.isValid():
-                ppmBV = bAtom.getRefPPM(0)
-            if (ppmBV != None) and bAtom.isActive() and ((d2Edited == None) or (d2Edited == bAtom.parent.isActive())):
-                ppms = [ppmAV.getValue(),ppmBV.getValue()]
-                names = [[aAtom.getShortName()],[bAtom.getShortName()]]
-                peak = peakgen.addPeak(peakList, ppms, self.widths, bounds, intensity, names)
+        nPeakDim = peakList.getNDim()
+
+        if nPeakDim == 3:
+            atoms = [aAtom, aAtom.getParent(), bAtom]
+            dEdited = [d1Edited,None,d2Edited]
+        else:
+            atoms = [aAtom, bAtom]
+            dEdited = [d1Edited,d2Edited]
+
+        ok = True
+        ppms = []
+        eppms = []
+        names = []
+        widths = []
+        bounds = []
+        for atom,dEdit in zip(atoms, dEdited):
+            if not atom.isActive():
+                ok = False
+                break
+            ppmV = atom.getPPM(0)
+            if self.refMode or (ppmV == None) or not ppmV.isValid():
+                ppmV = atom.getRefPPM(0)
+            if ppmV == None:
+                ok = False
+                break
+            if atom.getAtomicNumber() == 1:
+                if dEdit != None and (dEdit != atom.parent.isActive()):
+                    ok = False
+                    break
+
+            atomElem = atom.getElementName()
+            width = self.elemWidths[atomElem]
+
+            ppms.append(ppmV.getValue())
+            eppms.append(ppmV.getError())
+            names.append(atom.getShortName())
+            widths.append(width)
+            bounds.append(width * widthScale)
+        if ok:
+            peak = peakgen.addPeak(peakList, ppms, eppms, widths, bounds, intensity, names)
 
     def addPeaks(self, peakList, d1Edited, d2Edited, atomDistList=None):
         if (atomDistList is None) or (not atomDistList): # none or empty
@@ -215,6 +248,7 @@ class MolPeakGen:
             intensity = self.intensity
         ok = True
         ppms = []
+        eppms = []
         names = []
         bounds = []
         widths = []
@@ -229,6 +263,7 @@ class MolPeakGen:
                 ok = False
                 break 
             ppms.append(ppmV.getValue())
+            eppms.append(ppmV.getError())
             names.append(atom.getShortName())
             sym = atom.getSymbol()
             width = self.elemWidths[sym]
@@ -236,7 +271,7 @@ class MolPeakGen:
             bound = 1.5 * width
             bounds.append(bound)
         if ok:
-            peakgen.addPeak(peakList, ppms, widths, bounds, intensity, names)
+            peakgen.addPeak(peakList, ppms, eppms, widths, bounds, intensity, names)
 
 
     def genDistancePeaks(self, dataset, listName="", condition="sim", scheme="", tol=5.0):
@@ -476,40 +511,39 @@ class MolPeakGen:
                         print("Evaluate the number of fields in line no. '{}'.".format(iRow+1))
             return cls.residueInterMap
 
-    def stringifyAtomPairs(self, aResNum, bResNum, atomDistList=None):
+    def stringifyAtomPairs(self, aPolyName, aResNum, bPolyName, bResNum, atomDistList=None):
         if (atomDistList is None) or (not atomDistList): # None or empty
             return None
         retList = []
         for atoms, dist in atomDistList:
             aAtomName, bAtomName = atoms
-            aSelect = '.'.join([str(aResNum), aAtomName])
+            aSelect = aPolyName+":"+str(aResNum)+"."+aAtomName
+            bSelect = bPolyName+":"+str(bResNum)+"."+bAtomName
             aSelected = self.mol.getAtomByName(aSelect)
-            bSelect = '.'.join([str(bResNum), bAtomName])
             bSelected = self.mol.getAtomByName(bSelect)
             retList.append((aSelected, bSelected, dist))
         return retList
 
-    def addRNASecStrPeaks(self, peakList, editScheme, pairs):
+    def addRNASecStrPeaks(self, peakList, editScheme):
         (d1Edited, d2Edited) = editingModes[editScheme]
         residueInterTable = self.getResidueInterMap()
         rnaResidues = [residue for polymer in self.mol.getPolymers() if polymer.isRNA()
                        for residue in polymer.getResidues()]
-        setUpInfo = lambda (i,r): (r.setPropertyObject("resRNAInd",i), self.basePairsMap.__setitem__(i, pairs[i]))
-        map(setUpInfo, enumerate(rnaResidues))
-        for iRes, aRes in enumerate(rnaResidues):
+        for resCombination in itools.combinations_with_replacement(rnaResidues, 2):
+            aRes, bRes = resCombination
             aResNum = aRes.getNumber()
             aResName = aRes.getName()
-            for jRes in range(iRes, len(rnaResidues)):
-                bRes = rnaResidues[jRes]
-                bResNum = bRes.getNumber()
-                bResName = bRes.getName()
-                iType = determineType(aRes, bRes, self.basePairsMap)
-                key = (iType, aResName, bResName) 
-                atomPairMap = residueInterTable.get(key) 
-                if atomPairMap is None: continue
-                atomDistList = atomPairMap.items() 
-                stringified = self.stringifyAtomPairs(aResNum,bResNum,atomDistList)
-                self.addPeaks(peakList, d1Edited, d2Edited, stringified)
+            aPolyName = aRes.getPolymer().getName()
+            bResNum = bRes.getNumber()
+            bResName = bRes.getName()
+            bPolyName = bRes.getPolymer().getName()
+            iType = InteractionType.determineType(aRes, bRes)
+            key = (iType, aResName, bResName) 
+            atomPairMap = residueInterTable.get(key) 
+            if atomPairMap is None: continue
+            atomDistList = atomPairMap.items() 
+            stringified = self.stringifyAtomPairs(aPolyName,aResNum,bPolyName,bResNum,atomDistList)
+            self.addPeaks(peakList, d1Edited, d2Edited, stringified)
 
     def genRNASecStrPeaks(self, dataset, listName="", condition="sim", scheme=""):
         self.setWidths([self.widthH, self.widthH])
@@ -524,9 +558,13 @@ class MolPeakGen:
             scheme = "aa"
              
 	#print(self.vienna)
-        pairs = rnapred.getPairs(self.vienna)
+        ss = SSGen(self.mol, self.vienna)
+        ss.genRNAResidues()
+        ss.pairTo()
+        ss.secondaryStructGen()
+
         peakList = peakgen.makePeakListFromDataset(listName, dataset)
         peakList.setSampleConditionLabel(condition)
-        self.addRNASecStrPeaks(peakList, scheme, pairs)
+        self.addRNASecStrPeaks(peakList, scheme)
         return peakList
 

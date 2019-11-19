@@ -51,8 +51,9 @@ public class PPMFiles {
                         name = fullName;
                     }
                     double ppm = ppmV.getValue();
+                    double errValue = ppmV.getError();
                     if (refMode) {
-                        result = String.format("%s\t%.4f\n", name, ppm);
+                        result = String.format("%s\t%.4f\t%.4f\n", name, ppm, errValue);
                     } else {
                         int stereo = ppmV.getAmbigCode();
                         atom.getBMRBAmbiguity();
@@ -98,6 +99,11 @@ public class PPMFiles {
                         double ppm = Double.parseDouble(sfields[1]);
                         if (refMode) {
                             atom.setRefPPM(ppmSet, ppm);
+                            double errValue = 0.0;
+                            if (sfields.length > 2) {
+                                errValue = Double.parseDouble(sfields[2]);
+                                atom.setRefError(errValue);
+                            }
                         } else {
                             atom.setPPM(ppmSet, ppm);
 
