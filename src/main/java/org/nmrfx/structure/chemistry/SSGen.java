@@ -50,14 +50,14 @@ public class SSGen {
     }
 
     public void genRNAResidues() {
-        List<Residue> res = new ArrayList<>();
+        List<Residue> resList = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isRNA()) {
                 for (Residue residue : polymer.getResidues()) {
-                    res.add(residue);
+                    resList.add(residue);
                 }
             }
-            residues = res;
+            residues = resList;
         }
     }
 
@@ -66,29 +66,29 @@ public class SSGen {
         ssLay.interpVienna(viennaSeq, residues);
     }
 
-    public static SecondaryStructure classifyRes(List<Residue> res) {
-        if (res != null && !(res.isEmpty())) {
+    public static SecondaryStructure classifyRes(List<Residue> residues) {
+        if (residues != null && !(residues.isEmpty())) {
             if (null != type) {
                 switch (type) {
                     case "junction":
-                        SecondaryStructure J = new Junction(res);
+                        SecondaryStructure J = new Junction(residues);
                         return J;
                     case "nonloop": {
-                        SecondaryStructure L = new NonLoop(res);
+                        SecondaryStructure L = new NonLoop(residues);
                         return L;
                     }
                     case "bulge":
-                        SecondaryStructure B = new Bulge(res);
+                        SecondaryStructure B = new Bulge(residues);
                         return B;
                     case "internalLoop":
-                        SecondaryStructure IL = new InternalLoop(res);
+                        SecondaryStructure IL = new InternalLoop(residues);
                         return IL;
                     case "loop": {
-                        SecondaryStructure L = new Loop(res);
+                        SecondaryStructure L = new Loop(residues);
                         return L;
                     }
                     case "helix": {
-                        SecondaryStructure H = new Helix(res);
+                        SecondaryStructure H = new Helix(residues);
                         return H;
                     }
                     default:
@@ -170,8 +170,8 @@ public class SSGen {
         while (tracker < residues.size()) {
             SecondaryStructure ss = classifyRes(resList());
             if (ss != null) {
-                for (Residue res : ss.secResidues) {
-                    res.secStruct = ss;
+                for (Residue residues : ss.secResidues) {
+                    residues.secStruct = ss;
                 }
                 ss.size = ss.secResidues.size();
                 structures.add(ss);
