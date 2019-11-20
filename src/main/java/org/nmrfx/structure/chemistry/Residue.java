@@ -596,11 +596,11 @@ public class Residue extends Compound {
     }
 
     public int basePairType(Residue residue) {
-        int bpcount = 0;
+        int bpCount = 0;
         boolean valid = false;
         List<AllBasePairs> basePairs = AllBasePairs.basePairList();
         for (AllBasePairs bp : basePairs) {
-            bpcount = 0;
+            bpCount = 0;
             for (int iPair = 0; iPair < bp.atomPairs.length; iPair++) {
                 String[] atoms = bp.atomPairs[iPair].split(":");
                 String[] atoms0 = atoms[0].split("/");
@@ -626,13 +626,13 @@ public class Residue extends Compound {
                                 valid = HydrogenBond.validateRNA(atom2.getSpatialSet(), atom1.getSpatialSet(), 0);
                             }
                             if (valid) {
-                                bpcount++;
+                                bpCount++;
                             }
                         }
                     }
                 }
             }
-            if (bpcount == bp.atomPairs.length) {
+            if (bpCount == bp.atomPairs.length) {
                 return bp.type;
             }
         }
