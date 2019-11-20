@@ -4155,22 +4155,16 @@ public class Molecule implements Serializable, ITree {
                     }
                 }
             }
-            for (Atom atom : atomList) {
-                if (atomBranches.containsKey(atom)) {
-                    //  System.out.print(atom.getShortName());
-                    ArrayList<Atom> branch = atomBranches.get(atom);
-                    Collections.sort(branch, (a, b) -> Integer.compare(a.getIndex(), b.getIndex()));
-                    //                    for (Atom branchAtom : branch) {
-                    //                        System.out.print(" " + branchAtom.getShortName());
-                    //
-                    //                    }
-                    atom.branchAtoms = new Atom[branch.size()];
-                    branch.toArray(atom.branchAtoms);
-                    //                    System.out.println("");
-
-                } else {
-                    atom.branchAtoms = new Atom[0];
-                }
+        }
+        for (Atom atom : atomList) {
+            if (atomBranches.containsKey(atom)) {
+                //  System.out.print(atom.getShortName());
+                ArrayList<Atom> branch = atomBranches.get(atom);
+                Collections.sort(branch, (a, b) -> Integer.compare(a.getIndex(), b.getIndex()));
+                atom.branchAtoms = new Atom[branch.size()];
+                branch.toArray(atom.branchAtoms);
+            } else {
+                atom.branchAtoms = new Atom[0];
             }
         }
 
