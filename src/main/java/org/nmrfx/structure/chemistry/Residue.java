@@ -522,7 +522,6 @@ public class Residue extends Compound {
                 if (!isIUPACMode()) {
                     newRoot = "HT";
                 }
-                System.out.println("cap " + newRoot);
                 thirdAtom.valanceAngle = (float) (180.0 * Math.PI / 180.0);
                 thirdAtom.dihedralAngle = (float) (0.0 * Math.PI / 180.0);
                 Atom newAtom = firstAtom.add(newRoot + "3", "H", Order.SINGLE);
