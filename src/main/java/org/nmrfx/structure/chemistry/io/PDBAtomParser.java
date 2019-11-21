@@ -53,6 +53,7 @@ public class PDBAtomParser extends AtomParser {
 // 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
     public PDBAtomParser(String string, boolean swapToIUPAC) {
         resNum = string.substring(22, 26).trim();
+        insertCode = string.substring(26, 27);
 // resName should only be in columns 17-19, but cyana uses four characters for rna/dna
         resName = string.substring(17, 21).trim();
         atomName = string.substring(12, 17);  // CYANA sticks ' char for atoms like HO2' in pos 16
