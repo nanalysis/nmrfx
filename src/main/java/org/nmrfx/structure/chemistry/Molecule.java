@@ -2528,7 +2528,6 @@ public class Molecule implements Serializable, ITree {
                 }
             }
         }
-
         return bpList;
     }
 
@@ -2558,10 +2557,35 @@ public class Molecule implements Serializable, ITree {
             }
         }
         return bpMap;
-
     }
 
     public char[] viennaSequence() { //pseudoknots
+        HashMap<Integer, List<BasePair>> bpMap = bpMap();
+        List<BasePair> bps = pairList();
+        List<Residue> RNAresidues = RNAresidues();
+        char[] vienna = new char[RNAresidues.size()];
+        String leftBrackets = "[{";
+        String rightBrackets = "]}";
+        for (int i = 0; i < vienna.length; i++) {
+            vienna[i] = '.';
+        }
+        for (BasePair bp : bps) {
+            vienna[bp.res1.iRes] = '(';
+            vienna[bp.res2.iRes] = ')';
+        }
+        if (!bpMap.isEmpty()) {
+            for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
+                for (BasePair bp : crossMap.getValue()) {
+                    vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
+                    vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
+                }
+
+            }
+        }
+        return vienna;
+    }
+
+    public char[] testViennaSequence() { //for testing
         HashMap<Integer, List<BasePair>> bpMap = bpMap();
         List<Residue> RNAresidues = RNAresidues();
         char[] vienna = new char[RNAresidues.size()];
@@ -2571,24 +2595,16 @@ public class Molecule implements Serializable, ITree {
             vienna[i] = '.';
         }
         for (Residue residueA : RNAresidues) {
-            for (Residue residueB : RNAresidues) {
-                if (residueA.getResNum() > residueB.getResNum()) {
-                    int type = residueA.basePairType(residueB);
-                    if (type == 1) {
-                        vienna[RNAresidues.indexOf(residueA)] = ')';
-                        vienna[RNAresidues.indexOf(residueB)] = '(';
-                    }
-
-                }
+            if (residueA.pairedTo != null && residueA.iRes < residueA.pairedTo.iRes) {
+                vienna[residueA.iRes] = '(';
+                vienna[residueA.pairedTo.iRes] = ')';
             }
         }
         for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
             for (BasePair bp : crossMap.getValue()) {
                 vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
                 vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
-
             }
-
         }
         return vienna;
     }
