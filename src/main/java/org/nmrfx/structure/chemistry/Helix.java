@@ -1,7 +1,19 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * NMRFx Structure : A Program for Calculating Structures 
+ * Copyright (C) 2004-2017 One Moon Scientific, Inc., Westfield, N.J., USA
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package org.nmrfx.structure.chemistry;
 
@@ -13,29 +25,24 @@ import java.util.*;
  */
 public class Helix extends SecondaryStructure {
 
-    public static int localind = 0;
+    public static int localCounter = 0;
+    static String name = "Helix";
     public List<BasePair> basePairs = new ArrayList<BasePair>();
 
-    public Helix(String id, List<Residue> HXresidue) {
-        name = id;
-        locali = localind;
-        globali = globalind;
-        secresidues = HXresidue;
-        globalind++;
-        localind++;
+    public Helix(List<Residue> residues) {
+        localIndex = localCounter++;
+        globalIndex = globalCounter++;
+        secResidues = residues;
         setBasePairs();
 
     }
 
-//    public boolean isPaired(Residue resA, Residue resB) {
-//        
-//    }
     @Override
     public void getInvolvedRes() {
         int i = 0;
-        while (i < secresidues.size()) {
-            Residue res1 = secresidues.get(i);
-            Residue res2 = secresidues.get(i + 1);
+        while (i < secResidues.size()) {
+            Residue res1 = secResidues.get(i);
+            Residue res2 = secResidues.get(i + 1);
             System.out.print(res1.getName() + res1.resNum + ":" + res2.getName() + res2.resNum + " ");
             i += 2;
         }
@@ -43,9 +50,9 @@ public class Helix extends SecondaryStructure {
 
     public void setBasePairs() {
         int i = 0;
-        while (i < secresidues.size()) {
-            Residue res1 = secresidues.get(i);
-            Residue res2 = secresidues.get(i + 1);
+        while (i < secResidues.size()) {
+            Residue res1 = secResidues.get(i);
+            Residue res2 = secResidues.get(i + 1);
             BasePair bp = new BasePair(res1, res2);
             basePairs.add(bp);
             i += 2;
