@@ -58,4 +58,9 @@ public class Helix extends SecondaryStructure {
             i += 2;
         }
     }
+
+    @Override
+    public String getName() {
+        return name;
+    }
 }

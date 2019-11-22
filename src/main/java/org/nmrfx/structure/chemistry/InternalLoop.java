@@ -35,4 +35,8 @@ public class InternalLoop extends SecondaryStructure {
 
     }
 
+    @Override
+    public String getName() {
+        return name;
+    }
 }
