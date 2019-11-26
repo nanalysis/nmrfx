@@ -33,5 +33,8 @@ public class Junction extends SecondaryStructure {
         globalIndex = globalCounter++;
         secResidues = residues;
     }
-
+    @Override
+    public String getName(){
+        return name;
+    }
 }
