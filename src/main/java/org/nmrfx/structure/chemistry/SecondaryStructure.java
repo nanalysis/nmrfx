@@ -31,7 +31,7 @@ public abstract class SecondaryStructure {
     public int localIndex = 0;
     public int size;
     public List<Residue> secResidues = new ArrayList<>();
-
+    
     @Override
     public String toString() {
         return name + getGlobalInd() + ":" + getLocalInd();
