@@ -399,6 +399,7 @@ public class SDFile {
             throw new MoleculeIOException("error reading at line " + iLine);
         }
         System.out.println("read mol " + nAtoms);
+        molecule.getAtomTypes();
         return molecule;
     }
 
