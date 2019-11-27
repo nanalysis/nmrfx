@@ -336,7 +336,7 @@ class MolPeakGen:
         for entity in entities:
             print 'entity',entity
             cList = CouplingList()
-            cList.generateCouplings(entity,transfers,2)
+            cList.generateCouplings(entity,3,2, transfers)
             tLinks = cList.getTocsyLinks()
             for link in tLinks:
                 a0 = link.getAtom(0)
@@ -359,6 +359,8 @@ class MolPeakGen:
         for atom in atoms:
             sym = atom.getElementName()
             if sym == "H":
+                if atom.isMethyl() and not atom.isFirstInMethyl():
+                    continue
                 parent = atom.getParent()
                 if parent != None:
                     pSym = parent.getElementName()
