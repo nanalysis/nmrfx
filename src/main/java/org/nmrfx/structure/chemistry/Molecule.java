@@ -2963,6 +2963,11 @@ public class Molecule implements Serializable, ITree {
         return (selected);
     }
 
+    public ArrayList<Atom> getAtoms(String selection) {
+        MolFilter molFilter = new MolFilter(selection);
+        return getMatchedAtoms(molFilter, this);
+    }
+
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, Molecule molecule) {
         ArrayList<Atom> selected = new ArrayList<Atom>(32);
         if (molecule == null) {
@@ -3831,7 +3836,7 @@ public class Molecule implements Serializable, ITree {
                 Integer iNodeEnd = hash.get(bond.end);
 
                 if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                    mTree.addEdge(iNodeBegin.intValue(), iNodeEnd.intValue());
+                    mTree.addEdge(iNodeBegin, iNodeEnd);
 
                 }
             }
@@ -3840,13 +3845,34 @@ public class Molecule implements Serializable, ITree {
         class TreeGroup {
 
             int iAtom = 0;
-            List<MNode> pathNodes = null;
-            ArrayList treeValues = null;
+            List<MNode> pathNodes = new ArrayList<>();
+            List<Integer> treeValues = new ArrayList<>();
+            List<Integer> shells = new ArrayList<>();
 
-            TreeGroup(int iAtom, List<MNode> pathNodes, ArrayList treeValues) {
+            TreeGroup(int iAtom, List<MNode> pathNodes, List<Integer> treeValues, List<Integer> shells) {
                 this.iAtom = iAtom;
-                this.pathNodes = pathNodes;
-                this.treeValues = treeValues;
+                this.pathNodes.addAll(pathNodes);
+                this.treeValues.addAll(treeValues);
+                this.shells.addAll(shells);
+            }
+
+            public String toString() {
+                StringBuilder sBuilder = new StringBuilder();
+                sBuilder.append(iAtom).append("\n");
+                for (MNode node : pathNodes) {
+                    sBuilder.append(" ").append(node.getAtom().getName());
+                }
+                sBuilder.append("\n");
+                for (Integer treeValue : treeValues) {
+                    sBuilder.append(" ").append(treeValue);
+
+                }
+                sBuilder.append("\n");
+                for (Integer shell : shells) {
+                    sBuilder.append(" ").append(shell);
+
+                }
+                return sBuilder.toString();
             }
         }
 
@@ -3859,28 +3885,34 @@ public class Molecule implements Serializable, ITree {
             int numNodes = pathNodes.size();
             int value;
             int shell;
-            ArrayList treeValues = new ArrayList(numNodes);
+            List<Integer> treeValues = new ArrayList<>(numNodes);
+            List<Integer> shells = new ArrayList<>(numNodes);
 
             for (int k = 0; k < numNodes; k++) {
                 MNode cNode = pathNodes.get(k);
+                if (cNode.isRingClosure()) {
+                    continue;
+                }
                 Atom atom = cNode.getAtom();
                 shell = cNode.getShell();
                 value = (shell * 4096) + (16 * atom.aNum) + ((4 * atom.nPiBonds) / 2);
-                treeValues.add(Integer.valueOf(value));
+                treeValues.add(value);
+                shells.add(shell);
             }
             Collections.sort(treeValues);
-            treeGroups.add(new TreeGroup(j, pathNodes, treeValues));
+            treeGroups.add(new TreeGroup(j, pathNodes, treeValues, shells));
         }
 
         ArrayList equivAtoms = new ArrayList();
-        Map groupHash = new TreeMap();
-        Map uniqueMap = new TreeMap();
+        Map<String, AtomEquivalency> groupHash = new TreeMap<>();
+        Map<String, Integer> uniqueMap = new TreeMap<>();
         int nGroups = 0;
 
         for (int j = 0; j < treeGroups.size(); j++) {
             equivAtoms.clear();
 
             TreeGroup jGroup = (TreeGroup) treeGroups.get(j);
+//            System.out.println(eAtomList.get(j).getName() + " " + jGroup.toString());
 
             for (int k = 0; k < treeGroups.size(); k++) {
                 if (j == k) {
@@ -3895,8 +3927,8 @@ public class Molecule implements Serializable, ITree {
                     ok = true;
 
                     for (int kj = 0; kj < jGroup.treeValues.size(); kj++) {
-                        int kVal = ((Integer) kGroup.treeValues.get(kj)).intValue();
-                        int jVal = ((Integer) jGroup.treeValues.get(kj)).intValue();
+                        int kVal = (kGroup.treeValues.get(kj));
+                        int jVal = (jGroup.treeValues.get(kj));
 
                         if (kVal != jVal) {
                             ok = false;
@@ -3909,54 +3941,59 @@ public class Molecule implements Serializable, ITree {
                 if (ok) {
                     Atom jAtom = jGroup.pathNodes.get(0).getAtom();
                     Atom kAtom = kGroup.pathNodes.get(0).getAtom();
+//                    System.out.println(jAtom.getName() + " eq " + kAtom.getName());
                     int shell = -1;
 
                     for (int jj = 0; jj < kGroup.pathNodes.size(); jj++) {
                         MNode nodeTest = kGroup.pathNodes.get(jj);
                         Atom atomTest = nodeTest.getAtom();
+//                        System.out.println(jj + " " + kGroup.shells.get(jj) + " " + (atomTest == null ? "" : atomTest.getName()));
 
                         if (atomTest != null && atomTest.getName().equals(jAtom.getName())) {
-                            shell = nodeTest.getShell();
+                            shell = kGroup.shells.get(jj);
+                            break;
                         }
                     }
 
                     String groupName = shell + "_" + jAtom.getName();
+//                    System.out.println(groupName);
                     String jUniq = shell + "_" + jAtom.getName();
                     String kUniq = shell + "_" + kAtom.getName();
 
                     if (!uniqueMap.containsKey(jUniq) && !uniqueMap.containsKey(kUniq)) {
                         nGroups++;
-                        uniqueMap.put(jUniq, Integer.valueOf(nGroups));
-                        uniqueMap.put(kUniq, Integer.valueOf(nGroups));
+                        uniqueMap.put(jUniq, nGroups);
+                        uniqueMap.put(kUniq, nGroups);
                     } else if (!uniqueMap.containsKey(jUniq)) {
                         uniqueMap.put(jUniq, uniqueMap.get(kUniq));
                     } else if (!uniqueMap.containsKey(kUniq)) {
                         uniqueMap.put(kUniq, uniqueMap.get(jUniq));
                     }
 
-                    AtomEquivalency atomEquiv = (AtomEquivalency) groupHash.get(groupName);
+                    AtomEquivalency atomEquiv = groupHash.get(groupName);
 
                     if (atomEquiv == null) {
                         atomEquiv = new AtomEquivalency();
                         atomEquiv.setShell(shell);
-                        atomEquiv.setIndex(((Integer) uniqueMap.get(jUniq)).intValue());
-                        atomEquiv.setAtoms(new ArrayList<Atom>());
+                        atomEquiv.setIndex((uniqueMap.get(jUniq)));
+                        atomEquiv.setAtoms(new ArrayList<>());
                         atomEquiv.getAtoms().add(jAtom);
                         groupHash.put(groupName, atomEquiv);
                     }
 
+//                    System.out.println("addatom " + groupName + " " + kAtom.getName());
                     atomEquiv.getAtoms().add(kAtom);
                 }
             }
         }
 
-        Iterator iter = groupHash.entrySet().iterator();
+        for (Map.Entry<String, AtomEquivalency> entry : groupHash.entrySet()) {
 
-        while (iter.hasNext()) {
             nGroups++;
-
-            AtomEquivalency atomEquiv = (AtomEquivalency) ((Map.Entry) iter.next()).getValue();
+            String key = entry.getKey();
+            AtomEquivalency atomEquiv = entry.getValue();
             Atom eAtom = atomEquiv.getAtoms().get(0);
+//            System.out.println("add eq " + key + " " + eAtom.getName() + " " + atomEquiv.getAtoms().size());
 
             if (eAtom.equivAtoms == null) {
                 eAtom.equivAtoms = new ArrayList(2);
@@ -3991,7 +4028,7 @@ public class Molecule implements Serializable, ITree {
                 eAtomList.add(atom);
 
                 MNode mNode = mTree.addNode();
-                atom.equivAtoms = null;
+                //atom.equivAtoms = null;
                 mNode.setAtom(atom);
 
                 //mNode.atom = atom;
@@ -4076,8 +4113,10 @@ public class Molecule implements Serializable, ITree {
                     Integer iNodeEnd = hashJ.get(atomEnd);
 
                     if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                        if (iNodeBegin != iNodeEnd.intValue()) {
-                            mTreeJ.addEdge(iNodeBegin, iNodeEnd);
+                        if (iNodeBegin.intValue() != iNodeEnd.intValue()) {
+                            if (iNodeBegin < iNodeEnd) {
+                                mTreeJ.addEdge(iNodeBegin, iNodeEnd);
+                            }
                         }
                     }
                 }
@@ -4098,6 +4137,9 @@ public class Molecule implements Serializable, ITree {
 
             for (int k = 1; k < numNodes; k++) {
                 MNode cNode = pathNodes.get(k);
+                if (cNode.isRingClosure()) {
+                    continue;
+                }
                 Atom atomEnd = cNode.getAtom();
                 shell = cNode.getShell();
                 if ((shell > 0) && (shell < 6)) {
