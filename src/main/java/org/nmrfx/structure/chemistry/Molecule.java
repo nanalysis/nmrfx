@@ -4006,7 +4006,7 @@ public class Molecule implements Serializable, ITree {
     }
 
     public static void getCouplings(final Entity entity, final ArrayList<JCoupling> jCouplings,
-            final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks, int nShells, int minShells) {
+            final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks, int nShells, int minShells, int tocsyShells) {
         Molecule molecule = entity.molecule;
         molecule.getAtomTypes();
 
@@ -4142,7 +4142,7 @@ public class Molecule implements Serializable, ITree {
                 }
                 Atom atomEnd = cNode.getAtom();
                 shell = cNode.getShell();
-                if ((shell > 0) && (shell < 6)) {
+                if ((shell > 0) && (shell <= tocsyShells)) {
                     atoms[0] = atomStart;
                     atoms[1] = atomEnd;
                     JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, 2, shell);
