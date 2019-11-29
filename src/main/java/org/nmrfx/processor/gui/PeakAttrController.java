@@ -43,6 +43,10 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.converter.DoubleStringConverter;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -54,10 +58,12 @@ import javafx.scene.chart.ScatterChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
@@ -73,6 +79,7 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
@@ -80,6 +87,7 @@ import javafx.util.converter.FloatStringConverter;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.Nuclei;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
@@ -138,10 +146,23 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     private ComboBox simDatasetNameField;
 
     @FXML
-    private ChoiceBox simTypeChoice;
+    private MenuButton simTypeMenu;
+
+    @FXML
+    private Label typeLabel;
+
+    @FXML
+    private Label subTypeLabel;
+
+    @FXML
+    private GridPane peakListParsPane;
+    TextField[][] peakListParFields;
 
     @FXML
     private HBox optionBox;
+
+    @FXML
+    Button generateButton;
 
     @FXML
     private ChoiceBox<PEAK_NORM> normChoice;
@@ -158,6 +179,10 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     ToggleButton deleteButton;
     ComboTableCell comboTableCell = new ComboTableCell();
     ObservableList<String> relationChoiceItems = FXCollections.observableArrayList("", "D1", "D2", "D3", "D4");
+
+    String type = "";
+    String subType = "";
+    double sfH = 700.0;
 
     enum PEAK_NORM {
         NO_NORM() {
@@ -219,18 +244,26 @@ public class PeakAttrController implements Initializable, PeakNavigable {
             selectSimDataset();
         });
 
-        simTypeChoice.getItems().add("HSQC-13C");
-        simTypeChoice.getItems().add("RNA-NOESY 2nd Str");
-        simTypeChoice.getItems().add("NOESY");
-        simTypeChoice.getItems().add("hsqc");
-        simTypeChoice.getItems().add("hncaco");
-        simTypeChoice.getItems().add("hnco");
-        simTypeChoice.getItems().add("hncoca");
-        simTypeChoice.getItems().add("hncocacb");
-        simTypeChoice.getItems().add("hnca");
-        simTypeChoice.getItems().add("hncacb");
+        String[] basicTypes = {"HSQC-13C", "HSQC-15N", "HMBC", "TOCSY", "NOESY"};
+        String[] rnaTypes = {"RNA-NOESY-2nd-str"};
+        String[] proteinTypes = {"HSQC", "HNCO", "HNCOCA", "HNCOCACB", "HNCACO", "HNCA", "HNCACB"};
+        String[] types = {"Basic", "Protein", "RNA"};
+        Map<String, String[]> subTypeMap = new HashMap<>();
+        subTypeMap.put("Basic", basicTypes);
+        subTypeMap.put("RNA", rnaTypes);
+        subTypeMap.put("Protein", proteinTypes);
+        for (String type : types) {
+            Menu menu = new Menu(type);
+            simTypeMenu.getItems().add(menu);
+            String[] subTypes = subTypeMap.get(type);
+            for (String subType : subTypes) {
+                MenuItem item = new MenuItem(subType);
+                item.setOnAction(e -> setType(type, subType));
+                menu.getItems().add(item);
+            }
+        }
 
-        simTypeChoice.setOnAction(e -> updateOptions());
+        generateButton.setDisable(true);
 
         normChoice.getItems().addAll(PEAK_NORM.values());
         normChoice.setValue(PEAK_NORM.NO_NORM);
@@ -388,6 +421,8 @@ public class PeakAttrController implements Initializable, PeakNavigable {
 
     public void updateSimDatasetNames() {
         simDatasetNameField.getItems().clear();
+        simDatasetNameField.getItems().add("Sim");
+
         Dataset.datasets().stream().sorted().forEach(d -> {
             simDatasetNameField.getItems().add(d.getName());
         });
@@ -461,10 +496,10 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         saveXPK2.setOnAction(e -> saveList());
 
         MenuItem saveXPK = new MenuItem("Save XPK...");
-        saveXPK.setOnAction(e -> savePeaks("xpk","xpk"));
+        saveXPK.setOnAction(e -> savePeaks("xpk", "xpk"));
 
         MenuItem saveSparky = new MenuItem("Save Sparky...");
-        saveSparky.setOnAction(e -> savePeaks("sparky","txt"));
+        saveSparky.setOnAction(e -> savePeaks("sparky", "txt"));
 
         fileMenu.getItems().addAll(saveXPK2, saveSparky);
 
@@ -1015,11 +1050,31 @@ public class PeakAttrController implements Initializable, PeakNavigable {
     void selectSimDataset() {
         String name = (String) simDatasetNameField.getValue();
         if (name != null) {
-            int dotIndex = name.indexOf(".");
-            if (dotIndex != -1) {
-                name = name.substring(0, dotIndex);
+            if (!name.equals("Sim")) {
+                Dataset dataset = Dataset.getDataset(name);
+                if (dataset != null) {
+                    int nDim = dataset.getNDim();
+                    for (int i = 0; i < nDim; i++) {
+                        peakListParFields[i][0].setText(String.valueOf(dataset.getSw(i)));
+                        peakListParFields[i][1].setText(String.valueOf(dataset.getSf(i)));
+                        peakListParFields[i][2].setText(dataset.getLabel(i));
+                        for (int j = 0; j < peakListParFields[i].length; j++) {
+                            peakListParFields[i][j].setDisable(true);
+                        }
+                    }
+
+                }
+                int dotIndex = name.indexOf(".");
+                if (dotIndex != -1) {
+                    name = name.substring(0, dotIndex);
+                }
+                simPeakListNameField.setText(name + "_sim");
+                generateButton.setDisable(false);
+
+            } else {
+                simPeakListNameField.setText(subType + "_sim");
+                generateButton.setDisable(false);
             }
-            simPeakListNameField.setText(name + "_sim");
         }
     }
 
@@ -1038,19 +1093,112 @@ public class PeakAttrController implements Initializable, PeakNavigable {
 
     }
 
+    void setType(String type, String subType) {
+        this.type = type;
+        this.subType = subType;
+        typeLabel.setText(type);
+        subTypeLabel.setText(subType);
+        generateButton.setDisable(true);
+        simDatasetNameField.setValue(null);
+        updateOptions();
+    }
+
     void updateOptions() {
         optionBox.getChildren().clear();
-        String mode = (String) simTypeChoice.getValue();
-        if (mode != null) {
-            if (mode.equals("TOCSY")) {
+        List<String> labels = new ArrayList<>();
+        double swP = 10.0;
+        double[] ratios = {1, 1, 1};
+
+        if (subType != null) {
+            if (subType.equals("TOCSY")) {
                 Label label = new Label("Transfers");
                 optionBox.getChildren().add(label);
                 optionBox.getChildren().add(transferLimitChoice);
-            } else if (mode.equals("NOESY")) {
+                labels.add("H");
+                labels.add("H2");
+            } else if (subType.equals("NOESY")) {
                 Label label = new Label("Distance");
                 optionBox.getChildren().add(label);
                 optionBox.getChildren().add(distanceSlider);
+                labels.add("H");
+                labels.add("H2");
+            } else if (subType.equals("HSQC-15N")) {
+                labels.add("H");
+                labels.add("N");
+                ratios[1] = 2.0;
+            } else if (subType.equals("HSQC-13C")) {
+                labels.add("H");
+                labels.add("C");
+                ratios[1] = 10.0;
+            } else if (subType.equals("HMBC")) {
+                Label label = new Label("Transfers");
+                optionBox.getChildren().add(label);
+                optionBox.getChildren().add(transferLimitChoice);
+                labels.add("H");
+                labels.add("C");
+                ratios[1] = 10.0;
+            } else if (subType.startsWith("RNA")) {
+                labels.add("H");
+                labels.add("H2");
+            } else if (subType.equals("HSQC")) {
+                labels.add("H");
+                labels.add("N");
+                ratios[1] = 2.0;
+            } else {
+                labels.add("H");
+                labels.add("N");
+                ratios[1] = 2.0;
+                if (type.endsWith("CO")) {
+                    labels.add("C");
+                    ratios[2] = 2.0;
+                } else {
+                    labels.add("CA");
+                    ratios[2] = 5.0;
+                }
             }
+            peakListParsPane.getChildren().clear();
+            int nDim = labels.size();
+            String[] headers = {"Dim", "SW", "SF", "Label"};
+            int col = 0;
+            for (String header : headers) {
+                peakListParsPane.add(new Label(header), col++, 0);
+            }
+            peakListParFields = new TextField[nDim][3];
+            for (int iDim = 0; iDim < nDim; iDim++) {
+                Label dimLabel = new Label(String.valueOf(iDim + 1));
+                dimLabel.setMinWidth(50);
+                peakListParsPane.add(dimLabel, 0, iDim + 1);
+                for (int i = 0; i < 3; i++) {
+                    peakListParFields[iDim][i] = new TextField();
+                    peakListParsPane.add(peakListParFields[iDim][i], 1 + i, iDim + 1);
+                    double sf = sfH * Nuclei.findNuclei(labels.get(iDim).substring(0, 1)).getFreqRatio();
+                    switch (i) {
+                        case 0:
+                            double sw = swP * ratios[i] * sf;
+                            peakListParFields[iDim][i].setText(String.valueOf(sw));
+                            break;
+                        case 1:
+                            peakListParFields[iDim][i].setText(String.valueOf(sf));
+                            break;
+                        case 2:
+                            peakListParFields[iDim][i].setText(labels.get(iDim));
+                            break;
+                        default:
+                            break;
+                    }
+                    peakListParFields[iDim][i].setDisable(false);
+                }
+            }
+            peakListParFields[0][1].setOnKeyPressed(k -> {
+                if (k.getCode() == KeyCode.ENTER) {
+                    try {
+                        sfH = Double.parseDouble(peakListParFields[0][1].getText());
+                    } catch (NumberFormatException nfE) {
+
+                    }
+                    updateOptions();
+                }
+            });
         }
     }
 
@@ -1094,36 +1242,89 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         }
     }
 
+    PeakList makePeakListFromPars() {
+        String listName = simPeakListNameField.getText();
+        int nDim = peakListParFields.length;
+        PeakList newPeakList = new PeakList(listName, nDim);
+        try {
+            for (int iDim = 0; iDim < nDim; iDim++) {
+                newPeakList.getSpectralDim(iDim).setSw(Double.parseDouble(peakListParFields[iDim][0].getText()));
+                newPeakList.getSpectralDim(iDim).setSf(Double.parseDouble(peakListParFields[iDim][1].getText()));
+                newPeakList.getSpectralDim(iDim).setDimName(peakListParFields[iDim][2].getText());
+            }
+            newPeakList.setSampleConditionLabel("sim");
+        } catch (NumberFormatException nfE) {
+            System.out.println(nfE.getMessage());
+            PeakList.remove(listName);
+            newPeakList = null;
+        }
+        return newPeakList;
+    }
+
+    PeakList makePeakListFromDataset(Dataset dataset) {
+        String listName = simPeakListNameField.getText();
+        int nDim = dataset.getNDim();
+        PeakList newPeakList = new PeakList(listName, nDim);
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            newPeakList.getSpectralDim(iDim).setSw(dataset.getSw(iDim));
+            newPeakList.getSpectralDim(iDim).setSf(dataset.getSf(iDim));
+            newPeakList.getSpectralDim(iDim).setDimName(dataset.getLabel(iDim));
+        }
+        newPeakList.setSampleConditionLabel("sim");
+        return newPeakList;
+    }
+
     @FXML
     public void genPeaksAction(ActionEvent e) {
-        String mode = (String) simTypeChoice.getValue();
-        if (mode != null) {
-            Dataset dataset = Dataset.getDataset(simDatasetNameField.getValue().toString());
-            if (dataset == null) {
-                // warning
-                return;
+        String mode = subType;
+
+        if ((mode != null) && !mode.equals("")) {
+            String listName;
+            PeakList newPeakList;
+            Dataset dataset;
+            String datasetName = "";
+            if ((simDatasetNameField.getValue() == null) || simDatasetNameField.getValue().equals("Sim")) {
+                newPeakList = makePeakListFromPars();
+                if (newPeakList == null) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setContentText("Could not make peakList");
+                    alert.showAndWait();
+                    return;
+                }
+            } else {
+                datasetName = simDatasetNameField.getValue().toString();
+                dataset = Dataset.getDataset(datasetName);
+                newPeakList = makePeakListFromDataset(dataset);
             }
-            String datasetName = dataset.getName();
-            String listName = simPeakListNameField.getText();
+            listName = newPeakList.getName();
             String script = null;
-            switch (mode) {
-                case "NOESY":
-                    double range = distanceSlider.getValue();
-                    script = String.format("molGen.genDistancePeaks(\"%s\", listName=\"%s\", tol=%f)", datasetName, listName, range);
-                    break;
-                case "TOCSY":
-                    int limit = Integer.parseInt(transferLimitChoice.getValue().toString());
-                    script = String.format("molGen.genTOCSYPeaks(\"%s\", listName=\"%s\", transfers=%d)", datasetName, listName, limit);
-                    break;
-                case "HSQC-13C":
-                    script = String.format("molGen.genHCPeaks(\"%s\", listName=\"%s\")", datasetName, listName);
-                    break;
-                case "RNA-NOESY 2nd Str":
-                    script = String.format("molGen.genRNASecStrPeaks(\"%s\", listName=\"%s\")", datasetName, listName);
-                    break;
-                default:
-                    script = String.format("molGen.genProteinPeaks(\"%s\", \"%s\", listName=\"%s\")", mode, datasetName, listName);
-                    break;
+            if (type.equals("Protein")) {
+                script = String.format("molGen.genProteinPeaks(\"%s\", \"%s\", listName=\"%s\")", mode, datasetName, listName);
+            } else {
+                switch (mode) {
+                    case "NOESY":
+                        double range = distanceSlider.getValue();
+                        script = String.format("molGen.genDistancePeaks(\"%s\", listName=\"%s\", tol=%f)", datasetName, listName, range);
+                        break;
+                    case "TOCSY":
+                        int limit = Integer.parseInt(transferLimitChoice.getValue().toString());
+                        script = String.format("molGen.genTOCSYPeaks(\"%s\", listName=\"%s\", transfers=%d)", datasetName, listName, limit);
+                        break;
+                    case "HMBC":
+                        int hmbcLimit = Integer.parseInt(transferLimitChoice.getValue().toString());
+                        script = String.format("molGen.genHMBCPeaks(\"%s\", listName=\"%s\", transfers=%d)", datasetName, listName, hmbcLimit);
+                        break;
+                    case "HSQC-13C":
+                        script = String.format("molGen.genHSQCPeaks(\"%s\", \"%s\", listName=\"%s\")", "C", datasetName, listName);
+                        break;
+                    case "HSQC-15N":
+                        script = String.format("molGen.genHSQCPeaks(\"%s\", \"%s\", listName=\"%s\")", "N", datasetName, listName);
+                        break;
+                    case "RNA-NOESY-2nd-str":
+                        script = String.format("molGen.genRNASecStrPeaks(\"%s\", listName=\"%s\")", datasetName, listName);
+                        break;
+                    default:
+                }
             }
             if (script != null) {
                 PythonInterpreter interp = MainApp.getInterpreter();
