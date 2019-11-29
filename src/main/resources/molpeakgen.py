@@ -336,7 +336,7 @@ class MolPeakGen:
         for entity in entities:
             print 'entity',entity
             cList = CouplingList()
-            cList.generateCouplings(entity,3,2, transfers)
+            cList.generateCouplings(entity,3,2, transfers, 2)
             tLinks = cList.getTocsyLinks()
             for link in tLinks:
                 a0 = link.getAtom(0)
@@ -344,6 +344,32 @@ class MolPeakGen:
                 shell = link.getShell()
                 self.addPeak(peakList, [a0, a1])
         return peakList
+
+    def genHMBCPeaks(self, dataset, listName="", condition="sim", transfers=2):
+        self.setWidths([self.widthH, self.widthH])
+        if dataset != None and dataset != "":
+            if not isinstance(dataset,Dataset):
+                dataset = Dataset.getDataset(dataset)
+            labelScheme = dataset.getProperty("labelScheme")
+            self.setLabelScheme(labelScheme)
+        peakList = self.getPeakList(dataset, listName)
+        peakList.setSampleConditionLabel(condition)
+
+        entities = self.getResiduesAndCompounds(self.mol)
+        print 'entities', entities
+        for entity in entities:
+            print 'entity',entity
+            cList = CouplingList()
+            cList.generateCouplings(entity, 3, 2, 2, transfers)
+            tLinks = cList.getHMBCLinks()
+            for link in tLinks:
+                nAtoms = link.getNAtoms()
+                a0 = link.getAtom(0)
+                a1 = link.getAtom(nAtoms-1)
+                shell = link.getShell()
+                self.addPeak(peakList, [a0, a1])
+        return peakList
+
 
     def genHSQCPeaks(self, pType, dataset, listName="", condition="sim"):
         self.setWidths([self.widthH*2, self.widthC])
