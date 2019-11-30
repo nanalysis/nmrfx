@@ -1054,6 +1054,9 @@ public class PeakAttrController implements Initializable, PeakNavigable {
                 Dataset dataset = Dataset.getDataset(name);
                 if (dataset != null) {
                     int nDim = dataset.getNDim();
+                    if (peakListParFields.length < nDim) {
+                        initPeakListParFields(nDim);
+                    }
                     for (int i = 0; i < nDim; i++) {
                         peakListParFields[i][0].setText(String.valueOf(dataset.getSw(i)));
                         peakListParFields[i][1].setText(String.valueOf(dataset.getSf(i)));
@@ -1101,6 +1104,27 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         generateButton.setDisable(true);
         simDatasetNameField.setValue(null);
         updateOptions();
+    }
+
+    void initPeakListParFields(int nDim) {
+        peakListParsPane.getChildren().clear();
+        String[] headers = {"Dim", "SW", "SF", "Label"};
+        int col = 0;
+        for (String header : headers) {
+            peakListParsPane.add(new Label(header), col++, 0);
+        }
+        peakListParFields = new TextField[nDim][3];
+        peakListParFields = new TextField[nDim][3];
+        for (int iDim = 0; iDim < nDim; iDim++) {
+            Label dimLabel = new Label(String.valueOf(iDim + 1));
+            dimLabel.setMinWidth(50);
+            peakListParsPane.add(dimLabel, 0, iDim + 1);
+            for (int i = 0; i < 3; i++) {
+                peakListParFields[iDim][i] = new TextField();
+                peakListParsPane.add(peakListParFields[iDim][i], 1 + i, iDim + 1);
+
+            }
+        }
     }
 
     void updateOptions() {
@@ -1156,21 +1180,10 @@ public class PeakAttrController implements Initializable, PeakNavigable {
                     ratios[2] = 5.0;
                 }
             }
-            peakListParsPane.getChildren().clear();
             int nDim = labels.size();
-            String[] headers = {"Dim", "SW", "SF", "Label"};
-            int col = 0;
-            for (String header : headers) {
-                peakListParsPane.add(new Label(header), col++, 0);
-            }
-            peakListParFields = new TextField[nDim][3];
+            initPeakListParFields(nDim);
             for (int iDim = 0; iDim < nDim; iDim++) {
-                Label dimLabel = new Label(String.valueOf(iDim + 1));
-                dimLabel.setMinWidth(50);
-                peakListParsPane.add(dimLabel, 0, iDim + 1);
                 for (int i = 0; i < 3; i++) {
-                    peakListParFields[iDim][i] = new TextField();
-                    peakListParsPane.add(peakListParFields[iDim][i], 1 + i, iDim + 1);
                     double sf = sfH * Nuclei.findNuclei(labels.get(iDim).substring(0, 1)).getFreqRatio();
                     switch (i) {
                         case 0:
