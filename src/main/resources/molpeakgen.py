@@ -305,19 +305,15 @@ class MolPeakGen:
 
     def getResiduesAndCompounds(self, mol):
         polymers = mol.getPolymers()
-        print 'poly', polymers
         compounds = mol.getLigands()
-        print 'cmpds', compounds
         entities = []
         for polymer in polymers:
             residues = polymer.getResidues()
             for residue in residues:
-                entities.append(residues)
+                entities.append(residue)
 
         for compound in compounds:
-            print 'cmp', compound
             entities.append(compound)
-        print 'enty', entities
         return entities
    
 
@@ -332,9 +328,7 @@ class MolPeakGen:
         peakList.setSampleConditionLabel(condition)
   
         entities = self.getResiduesAndCompounds(self.mol)
-        print 'entities', entities
         for entity in entities:
-            print 'entity',entity
             cList = CouplingList()
             cList.generateCouplings(entity,3,2, transfers, 2)
             tLinks = cList.getTocsyLinks()
@@ -356,9 +350,7 @@ class MolPeakGen:
         peakList.setSampleConditionLabel(condition)
 
         entities = self.getResiduesAndCompounds(self.mol)
-        print 'entities', entities
         for entity in entities:
-            print 'entity',entity
             cList = CouplingList()
             cList.generateCouplings(entity, 3, 2, 2, transfers)
             tLinks = cList.getHMBCLinks()
@@ -373,7 +365,6 @@ class MolPeakGen:
 
     def genHSQCPeaks(self, pType, dataset, listName="", condition="sim"):
         self.setWidths([self.widthH*2, self.widthC])
-        print 'pt',pType,'dataset',dataset,'list',listName
         if dataset != None and dataset != "":
             if not isinstance(dataset,Dataset):
                 dataset = Dataset.getDataset(dataset)
