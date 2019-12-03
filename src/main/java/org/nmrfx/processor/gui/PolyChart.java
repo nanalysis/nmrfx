@@ -39,7 +39,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Line;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -51,10 +50,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.MapChangeListener;
@@ -79,7 +76,6 @@ import javafx.scene.shape.PathElement;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
@@ -93,7 +89,6 @@ import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.datasets.peaks.PeakList.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
-import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DragBindings;
@@ -1803,7 +1798,6 @@ public class PolyChart implements PeakListener {
         if (disabled) {
             return;
         }
-
         if (!useImmediateMode) {
             long lastPlotTime = drawSpectrum.getLastPlotTime();
             if ((lastPlotTime != 0) && (lastPlotTime < 1000)) {
@@ -2584,6 +2578,7 @@ public class PolyChart implements PeakListener {
     }
 
     public void drawPeakLists(boolean clear) {
+
         if (peakCanvas != null) {
             GraphicsContextInterface peakGC = new GraphicsContextProxy(peakCanvas.getGraphicsContext2D());
             drawPeakLists(clear, peakGC);
