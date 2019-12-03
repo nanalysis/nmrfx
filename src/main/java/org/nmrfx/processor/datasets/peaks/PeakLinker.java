@@ -23,20 +23,23 @@ public class PeakLinker {
     public void linkPeakListsByLabel(List<PeakList> peakLists) {
         Map<String, List<PeakDim>> peakDimMap = new HashMap<>();
         peakLists.forEach((peakList) -> {
-            peakList.peaks().forEach((peak) -> {
-                for (PeakDim peakDim : peak.getPeakDims()) {
-                    String label = peakDim.getLabel().trim();
-                    if (!label.equals("")) {
-                        List<PeakDim> dimList = peakDimMap.get(label);
-                        if (dimList == null) {
-                            dimList = new ArrayList<>();
-                            peakDimMap.put(label, dimList);
+            if (peakList.valid()) {
+                peakList.peaks().forEach((peak) -> {
+                    for (PeakDim peakDim : peak.getPeakDims()) {
+                        String label = peakDim.getLabel().trim();
+                        if (!label.equals("")) {
+                            List<PeakDim> dimList = peakDimMap.get(label);
+                            if (dimList == null) {
+                                dimList = new ArrayList<>();
+                                peakDimMap.put(label, dimList);
+                            }
+                            dimList.add(peakDim);
+                            System.out.println("add " + label + " " + dimList.size() + " " + peakDim);
                         }
-                        dimList.add(peakDim);
-                        System.out.println("add " + label + " " + dimList.size() + " " + peakDim);
                     }
-                }
-            });
+
+                });
+            }
         });
         peakDimMap.entrySet().stream().forEach(eSet -> {
             List<PeakDim> dimList = eSet.getValue();
