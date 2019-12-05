@@ -868,6 +868,15 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
     }
 
     /**
+     * Set the reference value
+     *
+     * @param value the new reference value.
+     */
+    public void setRef(double value) {
+        refValue = value;
+    }
+
+    /**
      * Get start of "valid" data in vectors that have DSP "charge-up" at
      * beginning. This value is calculated based on the vectors stored
      * groupDelay parameter.
@@ -1633,6 +1642,16 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
         }
 
         return (this);
+    }
+
+    public void decay(double lb, double gb, double fLorentzian) {
+        for (int i = 0; i < size; i++) {
+            double expDecay = Math.exp(-i * lb * Math.PI * dwellTime);
+            double g = i * gb * dwellTime;
+            double gaussDecay = Math.exp(-(g * g));
+            double v = fLorentzian * expDecay + (1.0 - fLorentzian) * gaussDecay;
+            multiply(i, v, v);
+        }
     }
 
     /**
