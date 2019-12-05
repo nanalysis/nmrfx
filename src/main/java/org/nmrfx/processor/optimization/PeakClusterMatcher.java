@@ -24,9 +24,11 @@ public class PeakClusterMatcher {
 
     private final List<PeakList> expPeakLists;
     private final List<PeakList> predPeakLists;
+    // FIXME: Should probably consider having a list of PeakCluster[]
+    // to compliment the list of PeakList for the exp and pred clusters.
     private PeakCluster[] expPeakClusters = null;
     private PeakCluster[] predPeakClusters = null;
-    private int[] match = null;
+    private int[] clusterMatch = null;
     private List<PeakCluster[]> matchedClusters = null;
     private final int iDim;
 
@@ -46,6 +48,10 @@ public class PeakClusterMatcher {
         }
     }
 
+    public int getMatchDim() {
+        return iDim;
+    }
+
     public PeakCluster[] getExpPeakClus() {
         return expPeakClusters;
     }
@@ -54,72 +60,74 @@ public class PeakClusterMatcher {
         return predPeakClusters;
     }
 
-    public List<PeakCluster[]> getMatch() {
-        if (match == null) {
+    public List<PeakCluster[]> getClusterMatch() {
+        if (clusterMatch == null || matchedClusters == null) {
             return null;
-        }
-        if (expPeakClusters != null && predPeakClusters != null && matchedClusters == null) {
-            matchedClusters = new ArrayList<>();
-            // find matches
-            for (int i = 0; i < match.length; i++) {
-                int j = match[i];
-                if (j < 0) {
-                    continue;
-                }
-                PeakCluster[] ijMatched = new PeakCluster[2];
-                System.out.println(String.format("E(%s) -> P(%s)", expPeakClusters[i].toString(), predPeakClusters[j].toString()));
-                // TODO: change from array to List?
-                PeakCluster expCluster = expPeakClusters[i];
-                PeakCluster predCluster = predPeakClusters[j];
-                ijMatched[0] = expCluster;
-                ijMatched[1] = predCluster;
-                matchedClusters.add(ijMatched);
-                if (expCluster.getPairedTo() == null && predCluster.getPairedTo() == null) {
-                    expCluster.setPairedTo(predCluster);
-                    predCluster.setPairedTo(expCluster);
-                }
-            }
         }
         return matchedClusters;
     }
 
     // main method to call
     public void runMatch() throws IllegalArgumentException {
-        if (match == null) {
+        if (clusterMatch == null) {
             System.out.println("Running match method");
-            Collection<List<Peak>> expLinks = PeakCluster.getCluster(expPeakLists, iDim);
-            Collection<List<Peak>> predLinks = PeakCluster.getCluster(predPeakLists, iDim);
+            Collection<List<Peak>> expLinks = PeakCluster.getFilteredClusters(expPeakLists, iDim);
+            Collection<List<Peak>> predLinks = PeakCluster.getFilteredClusters(predPeakLists, iDim);
             expPeakClusters = PeakCluster.makePeakCluster(expLinks, iDim);
             predPeakClusters = PeakCluster.makePeakCluster(predLinks, iDim);
             runBPClusterMatches();
         }
     }
 
-    public List<List<Peak>> getPeakPairs(Peak peak) {
+    public Peak getMatchingPeak(Peak peak) {
+        if (peak == null || matchedClusters == null) {
+            return null;
+        }
+        Peak matchingPeak = null;
+        int indexOfPeak = -1;
+        List<Peak> peakMatchList = null;
+        PeakCluster cluster = getCluster(peak);
+        if (cluster != null) {
+            PeakCluster pairedCluster = cluster.getPairedTo();
+            List<List<Peak>> peakMatches = cluster.getPeakMatches(pairedCluster);
+            for (List<Peak> peakMatch : peakMatches) {
+                if (peakMatch.contains(peak)) {
+                    indexOfPeak = peakMatch.indexOf(peak);
+                    peakMatchList = peakMatch;
+                    break;
+                }
+            }
+            if (peakMatchList != null) {
+                matchingPeak = (peakMatchList.size() > 1 && indexOfPeak == 0)
+                        ? peakMatchList.get(1) : (indexOfPeak != 0) ? peakMatchList.get(0) : null;
+            }
+        }
+        return matchingPeak;
+    }
+
+    public List<List<Peak>> getMatchedClusterPairs(Peak peak) {
+        List<List<Peak>> result = new ArrayList<>();
+        PeakCluster cluster = getCluster(peak);
+        if (cluster != null) {
+            result.addAll(cluster.getPeakMatches(cluster.getPairedTo()));
+        }
+        return result;
+    }
+
+    public PeakCluster getCluster(Peak peak) {
+        if (peak == null || predPeakClusters == null || expPeakClusters == null) {
+            return null;
+        }
         PeakCluster cluster = null;
-        // check if peak is in any of the pred clusters
-        for (PeakCluster pc : predPeakClusters) {
+        PeakCluster[] clusters = (peak.getPeakList().isSimulated())
+                ? predPeakClusters : expPeakClusters;
+        for (PeakCluster pc : clusters) {
             if (pc.contains(peak) && pc.getPairedTo() != null) {
                 cluster = pc;
                 break;
             }
         }
-        // if its not, then cluster will still be null
-        // check if the peak is in any of the exp cluster
-        if (cluster == null) {
-            for (PeakCluster pc : expPeakClusters) {
-                if (pc.contains(peak) && pc.getPairedTo() != null) {
-                    cluster = pc;
-                    break;
-                }
-            }
-
-        }
-        List<List<Peak>> result = new ArrayList<>();
-        if (cluster != null) {
-            result.addAll(cluster.getPeakMatches(cluster.getPairedTo()));
-        }
-        return result;
+        return cluster;
     }
 
     private void runBPClusterMatches() throws IllegalArgumentException {
@@ -143,6 +151,42 @@ public class PeakClusterMatcher {
                 }
             }
         }
-        match = clusterMatcher.getMatching();
+        clusterMatch = clusterMatcher.getMatching();
+        setupMatchedClusters();
+    }
+
+    private void setupMatchedClusters() {
+        if (expPeakClusters != null && predPeakClusters != null && matchedClusters == null) {
+            matchedClusters = new ArrayList<>();
+            // find matches
+            for (int i = 0; i < clusterMatch.length; i++) {
+                int j = clusterMatch[i];
+                if (j < 0) {
+                    continue;
+                }
+                PeakCluster[] ijMatched = new PeakCluster[2];
+                System.out.println(String.format("E(%s) -> P(%s)", expPeakClusters[i].toString(), predPeakClusters[j].toString()));
+                // TODO: change from array to List?
+                PeakCluster expCluster = expPeakClusters[i];
+                PeakCluster predCluster = predPeakClusters[j];
+                ijMatched[0] = expCluster;
+                ijMatched[1] = predCluster;
+                matchedClusters.add(ijMatched);
+                if (expCluster.getPairedTo() == null && predCluster.getPairedTo() == null) {
+                    expCluster.setPairedTo(predCluster);
+                    predCluster.setPairedTo(expCluster);
+                    setupMatchedPeaks(expCluster, predCluster);
+                }
+            }
+        }
+    }
+
+    private void setupMatchedPeaks(PeakCluster expCluster, PeakCluster predCluster) {
+        if (expCluster != null && predCluster != null) {
+            BipartiteMatcher peakMatcher = expCluster.compareTo(predCluster);
+            int[] peakMatches = peakMatcher.getMatching();
+            expCluster.setPeakMatches(peakMatches);
+            predCluster.setPeakMatches(peakMatches);
+        }
     }
 }
