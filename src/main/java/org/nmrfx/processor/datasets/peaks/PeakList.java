@@ -411,6 +411,11 @@ public class PeakList {
     public String getDetails() {
         return details;
     }
+    
+    
+    public boolean isSimulated() {
+        return sampleConditionLabel.contains("sim");
+    }
 
     static void scanListsForUpdates() {
         boolean anyUpdated = false;
