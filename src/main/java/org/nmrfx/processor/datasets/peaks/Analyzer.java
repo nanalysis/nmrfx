@@ -137,7 +137,7 @@ public class Analyzer {
         }
     }
 
-    public void peakPick(boolean saveFile) {
+    public void peakPick() {
         Nuclei nuc = dataset.getNucleus(0);
         if (nuc == Nuclei.H1) {
 
@@ -155,21 +155,14 @@ public class Analyzer {
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
         PeakPicker picker = new PeakPicker(peakPickPar);
-        String canonFileName = dataset.getCanonicalFile();
-        String listFileName = canonFileName.substring(0, canonFileName.lastIndexOf(".")) + ".xpk2";
         peakList = null;
         try {
             peakList = picker.peakPick();
             removePeaksFromNonRegions();
-            if (saveFile) {
-                try (FileWriter writer = new FileWriter(listFileName)) {
-                    PeakWriter peakWriter = new PeakWriter();
-                    peakWriter.writePeaksXPK2(writer, peakList);
-                    writer.close();
-                }
-            }
-        } catch (IOException | InvalidPeakException ioE) {
-            System.out.println(ioE.getMessage());
+        } catch (IOException ex) {
+            Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -591,7 +584,7 @@ public class Analyzer {
             min = dataset.pointToPPM(0, min);
             double max = rM.getEntry(iRow, 1);
             max = dataset.pointToPPM(0, max);
-          //  System.out.println(min + " " + max);
+            //  System.out.println(min + " " + max);
             DatasetRegion newRegion = new DatasetRegion(min, max);
             regions.add(newRegion);
         }
@@ -945,7 +938,7 @@ public class Analyzer {
         double thresh = getThreshold();
         autoSetRegions();
         integrate();
-        peakPick(true);
+        peakPick();
         purgeNonPeakRegions();
         groupPeaks();
         setVolumesFromIntegrals();
