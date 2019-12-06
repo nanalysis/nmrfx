@@ -87,6 +87,16 @@
                             </children>
                         </VBox>
                     </Tab>
+                    <Tab text="Vendor-Pars" closable="false" onSelectionChanged="#loadScriptTab" >
+                        <BorderPane>
+                            <top>
+                                <ToolBar fx:id="fidParToolBar"/>
+                            </top>
+                             <center>
+                                <TableView fx:id="fidParTableView"/>
+                            </center>
+                       </BorderPane>
+                    </Tab>
                 </TabPane>
             </children>
         </VBox>
