@@ -23,6 +23,7 @@ import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,6 +73,23 @@ public class JeolDelta implements NMRData {
     @Override
     public String getFilePath() {
         return file.getAbsolutePath();
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (Map.Entry<String, JeolPar> par : parMap.entrySet()) {
+            vendorPars.add(new VendorPar(par.getKey(), par.getValue().getString()));
+        }
+        for (int i = 0; i < nDim; i++) {
+            VendorPar axPar = new VendorPar("dtype," + (i + 1), axes[i].type.toString());
+            vendorPars.add(axPar);
+            VendorPar sPar = new VendorPar("sections," + (i + 1), String.valueOf(axes[i].getSectionCount()));
+            vendorPars.add(sPar);
+            VendorPar sizePar = new VendorPar("size," + (i + 1), String.valueOf(axes[i].nPoints));
+            vendorPars.add(sizePar);
+        }
+        return vendorPars;
     }
 
     @Override
@@ -324,9 +342,9 @@ public class JeolDelta implements NMRData {
             double imag = ivalues == null ? 0.0 : ivalues[i];
             dvec.set(i, values[i], imag);
         }
-       if (nSections > 1) {
-           dspPhase(dvec);
-       }
+        if (nSections > 1) {
+            dspPhase(dvec);
+        }
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
         double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
