@@ -310,14 +310,23 @@ public class JeolDelta implements NMRData {
         if (nSections == 2) {
             section = 0;
             jVec = iVec;
+        } else if (nSections == 1) {
+            section = 0;
+            jVec = iVec;
         }
         double[] values = getVector(jVec, section);
-        double[] ivalues = getVector(jVec, section + 1);
+        double[] ivalues = null;
+        if (nSections > 1) {
+            ivalues = getVector(jVec, section + 1);
+        }
         dvec.resize(values.length, true);
         for (int i = 0; i < values.length; i++) {
-            dvec.set(i, values[i], ivalues[i]);
+            double imag = ivalues == null ? 0.0 : ivalues[i];
+            dvec.set(i, values[i], imag);
         }
-        dspPhase(dvec);
+       if (nSections > 1) {
+           dspPhase(dvec);
+       }
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
         double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;
