@@ -39,6 +39,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -264,6 +265,15 @@ public class NMRPipeData implements NMRData {
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (FIELDS field : FIELDS.values()) {
+            vendorPars.add(new VendorPar(field.name(), field.getString(fileHeader)));
+        }
+        return vendorPars;
     }
 
     @Override

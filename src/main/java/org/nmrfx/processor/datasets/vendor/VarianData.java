@@ -55,6 +55,7 @@ import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.math3.complex.Complex;
 
 /**
@@ -179,6 +180,15 @@ class VarianData implements NMRData {
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (Map.Entry<String, String> par : parMap.entrySet()) {
+            vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
+        }
+        return vendorPars;
     }
 
     @Override

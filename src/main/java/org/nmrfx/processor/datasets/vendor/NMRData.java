@@ -98,6 +98,8 @@ public interface NMRData {
      * @return the parameter value
      */
     public Integer getParInt(String parname);
+    
+    public List<VendorPar> getPars();
 
     /**
      * Return the number of vectors in the direct dimension.
