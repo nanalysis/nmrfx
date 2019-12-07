@@ -31,7 +31,7 @@ public class Analyzer {
     PeakList peakList;
 
     double trimRatio = 2.0;
-    boolean scaleToLargest = false;
+    boolean scaleToLargest = true;
     int nWin = 32;
     double maxRatio = 20.0;
     double sdRatio = 30.0;
@@ -106,6 +106,7 @@ public class Analyzer {
         try {
             dataset.readVectorFromDatasetFile(pt, dim, vec);
         } catch (IOException ex) {
+            System.out.println("failed to get dataset vector");
             Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
@@ -137,7 +138,7 @@ public class Analyzer {
         }
     }
 
-    public void peakPick() {
+    public PeakList peakPick() {
         Nuclei nuc = dataset.getNucleus(0);
         if (nuc == Nuclei.H1) {
 
@@ -164,6 +165,7 @@ public class Analyzer {
         } catch (IllegalArgumentException ex) {
             Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return peakList;
     }
 
     public void peakPickRegion(double ppm1, double ppm2) {
@@ -938,7 +940,7 @@ public class Analyzer {
         double thresh = getThreshold();
         autoSetRegions();
         integrate();
-        peakPick();
+        PeakList pList = peakPick();
         purgeNonPeakRegions();
         groupPeaks();
         setVolumesFromIntegrals();
