@@ -98,7 +98,7 @@ public class PeakFitting {
             List<PeakDim> peakDims = new ArrayList<>();
             peakDims.add(peak.peakDims[0]);
             double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, peak.peakDims[0].getChemShift());
-            System.out.println(peak.peakDims[0].getChemShift() + " " + Arrays.toString(bounds));
+            //System.out.println(peak.peakDims[0].getChemShift() + " " + Arrays.toString(bounds));
             value = fitPeakDims(peakDims, mode, bounds, fitMode);
         } catch (PeakFitException | IOException | IllegalArgumentException e) {
             System.out.println(e.getMessage());
