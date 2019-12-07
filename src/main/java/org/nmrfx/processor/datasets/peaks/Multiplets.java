@@ -691,17 +691,16 @@ public class Multiplets {
     public static void analyzeMultiplet(Peak peak) {
         CouplingData couplingData = determineMultiplicity(peak, true);
         List<PeakDim> peakSet = peak.peakDims[0].getCoupledPeakDims();
-        System.out.println(peak.getName() + " " + couplingData.toString() + " " + peakSet.size());
-        dumpPeakDims(peakSet);
+        // System.out.println(peak.getName() + " " + couplingData.toString() + " " + peakSet.size());
+        // dumpPeakDims(peakSet);
         Multiplet multiplet = peak.peakDims[0].getMultiplet();
-        dumpPeakDims(peakSet);
+        // dumpPeakDims(peakSet);
         if (peakSet.size() == 1) {
             multiplet.setSinglet();
         }
         multiplet.setCenter(couplingData.centerPPM);
-        dumpPeakDims(peakSet);
+        //dumpPeakDims(peakSet);
         double[] values = new double[couplingData.couplingItems.size()];
-        System.out.println("val " + values.length);
         if (values.length > 0) {
             int[] nValues = new int[couplingData.couplingItems.size()];
             int i = 0;
@@ -714,7 +713,7 @@ public class Multiplets {
             multiplet.setCouplingValues(values, nValues, 1.0, sin2thetas);
         }
         peakSet = peak.peakDims[0].getCoupledPeakDims();
-        dumpPeakDims(peakSet);
+        //dumpPeakDims(peakSet);
 
     }
 
@@ -1126,47 +1125,64 @@ public class Multiplets {
         return peaks;
     }
 
-    public static void splitRegionsByPeakSep(Set<DatasetRegion> regions, PeakList peakList, Vec vec) {
+    static DatasetRegion splitRegion(PeakList peakList, Dataset dataset, Vec vec, double sf, int[] dim, DatasetRegion region) {
         double maxSplitting = 18.0;
+        double[][] limits = new double[1][2];
+
+        limits[0][0] = region.getRegionStart(0);
+        limits[0][1] = region.getRegionEnd(0);
+        DatasetRegion newRegion = null;
+        List<Peak> peaks = locatePeaks(peakList, limits, dim);
+        System.out.println("split " + limits[0][0] + " " + limits[0][1] + " " + peaks.size() + " " + sf);
+        if (peaks.size() > 1) {
+            List<PeakDim> peakDims = new ArrayList<>();
+            for (Peak peak : peaks) {
+                peakDims.add(peak.peakDims[0]);
+            }
+            peakDims.sort(comparing(PeakDim::getChemShiftValue));
+            for (int i = 0; i < peakDims.size() - 1; i++) {
+                double ppm0 = peakDims.get(i).getChemShift();
+                double ppm1 = peakDims.get(i + 1).getChemShift();
+                double delta = Math.abs(ppm1 - ppm0) * sf;
+                if (delta > maxSplitting) {
+                    int pt0 = dataset.ppmToPoint(0, ppm0);
+                    int pt1 = dataset.ppmToPoint(0, ppm1);
+
+                    IndexValue indexValue = vec.minIndex(Math.min(pt0, pt1), Math.max(pt0, pt1));
+                    int minPt = indexValue.getIndex();
+                    double minPPM0 = dataset.pointToPPM(0, minPt - 1);
+                    double minPPM1 = dataset.pointToPPM(0, minPt + 1);
+                    System.out.println("split " + minPPM0 + " " + minPPM1 + " " + delta);
+                    newRegion = region.split(minPPM0, minPPM1);
+                    break;
+                }
+            }
+        }
+        return newRegion;
+    }
+
+    public static void splitRegionsByPeakSep(Set<DatasetRegion> regions, PeakList peakList, Vec vec) {
         int[] dim = new int[peakList.nDim];
         for (int i = 0; i < dim.length; i++) {
             dim[i] = i;
         }
         double sf = peakList.getSpectralDim(0).getSf();
         Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
-        double[][] limits = new double[1][2];
         Set<DatasetRegion> newRegions = new TreeSet<>();
-        regions.stream().forEach(region -> {
-            limits[0][0] = region.getRegionStart(0);
-            limits[0][1] = region.getRegionEnd(0);
-            DatasetRegion newRegion = null;
-            List<Peak> peaks = locatePeaks(peakList, limits, dim);
-            if (peaks.size() > 1) {
-                List<PeakDim> peakDims = new ArrayList<>();
-                for (Peak peak : peaks) {
-                    peakDims.add(peak.peakDims[0]);
+        for (DatasetRegion region : regions) {
+            DatasetRegion testRegion = region;
+            while (true) {
+                DatasetRegion newRegion = splitRegion(peakList, dataset, vec, sf, dim, testRegion);
+                if (newRegion == null) {
+                    break;
+                } else {
+                    newRegions.add(newRegion);
+                    testRegion = newRegion;
                 }
-                peakDims.sort(comparing(PeakDim::getChemShiftValue));
-                for (int i = 0; i < peakDims.size() - 1; i += 2) {
-                    double ppm0 = peakDims.get(i).getChemShift();
-                    double ppm1 = peakDims.get(i + 1).getChemShift();
-                    double delta = Math.abs(ppm1 - ppm0) * sf;
-                    if (delta > maxSplitting) {
-                        int pt0 = dataset.ppmToPoint(0, ppm0);
-                        int pt1 = dataset.ppmToPoint(0, ppm1);
+            }
 
-                        IndexValue indexValue = vec.minIndex(Math.min(pt0, pt1), Math.max(pt0, pt1));
-                        int minPt = indexValue.getIndex();
-                        double minPPM0 = dataset.pointToPPM(0, minPt - 1);
-                        double minPPM1 = dataset.pointToPPM(0, minPt + 1);
-                        newRegion = region.split(minPPM0, minPPM1);
-                    }
-                }
-            }
-            if (newRegion != null) {
-                newRegions.add(newRegion);
-            }
-        });
+        }
+
         if (!newRegions.isEmpty()) {
             regions.addAll(newRegions);
         }
