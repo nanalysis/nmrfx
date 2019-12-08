@@ -5969,7 +5969,7 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
         boolean lastWasBase = false;
         threshold = rmsd * ratio;
         //System.out.println(rmsd+" "+ratio+" "+threshold); 
-        if ((minThreshold > 0.0) && (threshold > minThreshold)) {
+        if ((minThreshold > 0.0) && (threshold < minThreshold)) {
             threshold = minThreshold;
         }
         DescriptiveStatistics dStat = new DescriptiveStatistics(winSize + 1);
