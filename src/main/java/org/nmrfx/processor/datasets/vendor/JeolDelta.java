@@ -204,7 +204,7 @@ public class JeolDelta implements NMRData {
         } else {
             ref = parMap.get(axisNames[dim] + "_OFFSET").getDouble();
             //System.out.println("update ref " + ref + " " + (sw[dim] / sf[dim] / 2.0));
-            ref = ref + sw[dim] / sf[dim] / 2.0;
+            // ref = ref + sw[dim] / sf[dim] / 2.0;
             refValue[dim] = ref;
 
         }
@@ -223,7 +223,8 @@ public class JeolDelta implements NMRData {
 
     @Override
     public double getRefPoint(int dim) {
-        return 1.0;
+        double refpt = getSize(dim) / 2;
+        return refpt;
     }
 
     @Override
