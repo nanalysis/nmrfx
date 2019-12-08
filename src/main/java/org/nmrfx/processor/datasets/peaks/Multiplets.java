@@ -1133,7 +1133,6 @@ public class Multiplets {
         limits[0][1] = region.getRegionEnd(0);
         DatasetRegion newRegion = null;
         List<Peak> peaks = locatePeaks(peakList, limits, dim);
-        System.out.println("split " + limits[0][0] + " " + limits[0][1] + " " + peaks.size() + " " + sf);
         if (peaks.size() > 1) {
             List<PeakDim> peakDims = new ArrayList<>();
             for (Peak peak : peaks) {
@@ -1152,7 +1151,6 @@ public class Multiplets {
                     int minPt = indexValue.getIndex();
                     double minPPM0 = dataset.pointToPPM(0, minPt - 1);
                     double minPPM1 = dataset.pointToPPM(0, minPt + 1);
-                    System.out.println("split " + minPPM0 + " " + minPPM1 + " " + delta);
                     newRegion = region.split(minPPM0, minPPM1);
                     break;
                 }
