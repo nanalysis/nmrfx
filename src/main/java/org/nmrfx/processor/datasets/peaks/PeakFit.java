@@ -24,15 +24,31 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.NotPositiveException;
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.optim.InitialGuess;
+import org.apache.commons.math3.optim.MaxEval;
+import org.apache.commons.math3.optim.SimpleBounds;
+import org.apache.commons.math3.optim.SimpleValueChecker;
+import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
 import org.apache.commons.math3.optimization.GoalType;
 import org.apache.commons.math3.optimization.PointValuePair;
 import org.apache.commons.math3.optimization.direct.BOBYQAOptimizer;
+import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.random.SynchronizedRandomGenerator;
+import org.apache.commons.math3.random.Well19937c;
+import org.apache.commons.math3.util.FastMath;
 
 public class PeakFit implements MultivariateFunction {
+
+    static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
 
     double[][] freqs = null;
     double[] cfreqs = null;
@@ -55,6 +71,26 @@ public class PeakFit implements MultivariateFunction {
     double[] unscaledPars;
     double[] scaledPars;
     double[][] uniformBoundaries = new double[2][];
+    boolean reportFitness = false;
+    int reportAt = 10;
+
+    public class Checker extends SimpleValueChecker {
+
+        public Checker(double relativeThreshold, double absoluteThreshold, int maxIter) {
+            super(relativeThreshold, absoluteThreshold, maxIter);
+        }
+
+        @Override
+        public boolean converged(final int iteration, final org.apache.commons.math3.optim.PointValuePair previous, final org.apache.commons.math3.optim.PointValuePair current) {
+            boolean converged = super.converged(iteration, previous, current);
+            if (reportFitness) {
+                if (converged) {
+                    System.out.println(previous.getValue() + " " + current.getValue());
+                }
+            }
+            return converged;
+        }
+    }
 
     public void initTest(final int n) {
         xv = new double[n];
@@ -66,6 +102,36 @@ public class PeakFit implements MultivariateFunction {
 
     public void initRandom(long seed) {
         generator = new java.util.Random(seed);
+    }
+
+    public double optimizeCMAES(int nSteps) throws Exception {
+        double stopFitness = 0.0;
+        double lambdaMul = 3.0;
+        double tol = 1.0e-5;
+        int diagOnly = 0;
+        random.setSeed(1);
+        double inputSigma = 10.0;
+        int lambda = (int) (lambdaMul * FastMath.round(4 + 3 * FastMath.log(newStart.length)));
+
+        CMAESOptimizer cmaesOptimizer = new CMAESOptimizer(nSteps, stopFitness, true, diagOnly, 0,
+                random, true,
+                new Checker(tol, tol, nSteps));
+        org.apache.commons.math3.optim.PointValuePair result = null;
+        double[] sigma = new double[newStart.length];
+        Arrays.fill(sigma, inputSigma);
+
+        try {
+            result = cmaesOptimizer.optimize(
+                    new CMAESOptimizer.PopulationSize(lambda),
+                    new CMAESOptimizer.Sigma(sigma),
+                    new MaxEval(2000000),
+                    new ObjectiveFunction(this), org.apache.commons.math3.optim.nonlinear.scalar.GoalType.MINIMIZE,
+                    new SimpleBounds(uniformBoundaries[0], uniformBoundaries[1]),
+                    new InitialGuess(newStart));
+        } catch (DimensionMismatchException | NotPositiveException | NotStrictlyPositiveException | TooManyEvaluationsException e) {
+            throw new Exception("failure to fit data " + e.getMessage());
+        }
+        return result.getValue();
     }
 
     public double optimizeBOBYQA(final int nSteps, final int nInterpolationPoints) {
