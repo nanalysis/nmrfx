@@ -145,12 +145,20 @@ public class PeakFitting {
         }
 
         try {
-            List<PeakDim> peakDims = new ArrayList<>();
-            peakDims.add(peak.peakDims[0]);
             double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, regionShift);
             if ((bounds == null) && (multiplet != null)) {
                 bounds = Multiplets.getBoundsOfPeakDims(multiplet.getPeakDims(), 1.5, regionShift);
             }
+            int[] dims = {0};
+            double[][] limits = new double[1][2];
+            limits[0][0] = bounds[0];
+            limits[0][1] = bounds[1];
+            List<Peak> peaks = peak.peakList.locatePeaks(limits, dims);
+            List<PeakDim> peakDims = new ArrayList<>();
+            for (Peak peakA : peaks) {
+                peakDims.add(peakA.getPeakDim(0));
+            }
+
             value = fitPeakDims(peakDims, mode, bounds, fitMode);
         } catch (PeakFitException | IOException | IllegalArgumentException e) {
             System.out.println(e.getMessage());
