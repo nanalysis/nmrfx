@@ -94,6 +94,7 @@ import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.datasets.peaks.PeakList.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
+import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DragBindings;
@@ -202,7 +203,7 @@ public class PolyChart implements PeakListener {
     int phaseAxis = 0;
     double phaseFraction = 0.0;
     boolean useImmediateMode = true;
-    final List<List<Peak>> peakPaths = new ArrayList<>();
+    private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
 
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
@@ -2874,13 +2875,16 @@ public class PolyChart implements PeakListener {
         peakPaths.clear();
     }
 
-    void setPeakPaths(List<List<Peak>> peaks) {
-        clearPeakPaths();
+    void addPeakPaths(List<ConnectPeakAttributes> peaks) {
         peakPaths.addAll(peaks);
     }
 
-    void addPeakPaths(List<List<Peak>> peaks) {
-        peakPaths.addAll(peaks);
+    void addPeakPath(ConnectPeakAttributes peaks) {
+        peakPaths.add(peaks);
+    }
+
+    public List<ConnectPeakAttributes> getPeakPaths() {
+        return peakPaths;
     }
 
     void drawPeakPaths() {
@@ -2895,20 +2899,9 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    void drawPeakPaths(List<Peak> peaks, GraphicsContextInterface gC) {
+    void drawPeakPaths(ConnectPeakAttributes connPeakAttrs, GraphicsContextInterface gC) {
         int[] dim = {0, 1}; // FIXME: Need to generalize this
-        for (int i = 0; i < peaks.size(); i++) {
-            int j = i + 1;
-            if (j < peaks.size()) {
-                Peak iPeak = peaks.get(i);
-                Peak jPeak = peaks.get(j);
-
-                if (iPeak != null && jPeak != null) {
-                    drawPeaks.drawPeakConnection(iPeak, jPeak, gC, dim);
-//                    System.out.println("PolyChart.drawPeakPaths('" + iPeak.toString() + "', '" + jPeak.toString() + "')");
-                }
-            }
-        }
+        drawPeaks.drawPeakConnection(connPeakAttrs, gC, dim);
     }
 
     void drawSelectedPeaks(PeakListAttributes peakListAttr, GraphicsContextInterface gC) {
