@@ -60,6 +60,7 @@ public class ComplexCoupling extends Coupling {
             peakDim.getPeak().setIntensity((float) intensities[i]);
             i++;
         }
+        sortByFreq();
     }
 
     @Override
@@ -84,6 +85,7 @@ public class ComplexCoupling extends Coupling {
         double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
         fiValues = new FreqIntensities(nFreqs);
         double centerPPM = multiplet.getCenter();
+        sortByFreq();
 
         int iFreq = 0;
         for (PeakDim peakDim : multiplet.getPeakDims()) {
@@ -105,4 +107,9 @@ public class ComplexCoupling extends Coupling {
         });
         return lines;
     }
+
+    final void sortByFreq() {
+        multiplet.peakDims.sort((a, b) -> Float.compare(b.getChemShiftValue(), a.getChemShiftValue()));
+    }
+
 }
