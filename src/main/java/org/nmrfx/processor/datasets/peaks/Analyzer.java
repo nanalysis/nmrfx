@@ -633,14 +633,18 @@ public class Analyzer {
             for (DatasetRegion newRegion : newRegions) {
                 Multiplets.unlinkPeaksInRegion(peakList, newRegion);
                 PeakDim rootPeak = Multiplets.linkPeaksInRegion(peakList, newRegion);
-                peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
-                Multiplets.analyzeMultiplet(rootPeak.myPeak);
-                fitMultiplet(rootPeak.getMultiplet());
-                result = Optional.of(rootPeak.getMultiplet());
+                if (rootPeak != null) {
+                    peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
+                    Multiplets.analyzeMultiplet(rootPeak.myPeak);
+                    fitMultiplet(rootPeak.getMultiplet());
+                    result = Optional.of(rootPeak.getMultiplet());
+                }
             }
-            PeakList peakList = result.get().getPeakDim().getPeak().getPeakList();
-            peakList.getMultiplets();
-            peakList.refreshMultiplets();
+            if (result.isPresent()) {
+                PeakList peakList = result.get().getPeakDim().getPeak().getPeakList();
+                peakList.getMultiplets();
+                peakList.refreshMultiplets();
+            }
         }
         return result;
     }
