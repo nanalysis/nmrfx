@@ -24,6 +24,7 @@ package org.nmrfx.processor.datasets.peaks;
 
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -73,13 +74,17 @@ public class Singlet extends Coupling {
     }
 
     @Override
-    FreqIntensities getFreqIntensitiesFromSplittings() {
-        FreqIntensities fiValues;
+    List<MultipletComponent> getAbsComponentList() {
+        return getRelComponentList();
+    }
 
-        fiValues = new FreqIntensities(1);
-        fiValues.freqs[0] = 0;
-        fiValues.intensities[0] = multiplet.getPeakDim().getPeak().getIntensity();
-        return fiValues;
+    @Override
+    List<MultipletComponent> getRelComponentList() {
+        List<MultipletComponent> comps = new ArrayList<>();
+        PeakDim peakDim = multiplet.getPeakDim();
+        MultipletComponent comp = new MultipletComponent(0.0, peakDim.getPeak().getIntensity(), peakDim.getLineWidthValue());
+        comps.add(comp);
+        return comps;
     }
 
     @Override
@@ -88,4 +93,5 @@ public class Singlet extends Coupling {
         lines.add(new Line2D.Double(0.0, 0.0, 0.0, 0.0));
         return lines;
     }
+
 }

@@ -100,7 +100,7 @@ public class PeakFitter {
         }
 
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
-              if (dataDim < peaks[iPeak].peakList.nDim) {
+            if (dataDim < peaks[iPeak].peakList.nDim) {
                 throw new IllegalArgumentException("Number of peak list dimensions greater than number of dataset dimensions");
             }
 
@@ -183,9 +183,10 @@ public class PeakFitter {
                     guessList.remove(guessList.size() - 1);  // remove last added value which was the peak center
                     // since were going to add individual centers
 
-                    FreqIntensities freqInt = cCoup.getFreqIntensitiesFromSplittings();
-                    for (int iFreq = 0; iFreq < freqInt.freqs.length; iFreq++) {
-                        double dw = theFile.hzWidthToPoints(0, freqInt.freqs[iFreq]);
+                    List<MultipletComponent> multipletComps = cCoup.getRelComponentList();
+
+                    for (MultipletComponent comp : multipletComps) {
+                        double dw = theFile.hzWidthToPoints(0, comp.getOffset());
                         int cw0 = (int) ((c + dw) - Math.abs(width[0]) - 1);
                         int cw1 = (int) (c + dw + Math.abs(width[0]) + 1);
 
@@ -516,7 +517,7 @@ public class PeakFitter {
                     }
 
                     double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
-                    multiplet.set(centerPPM, freqs, amplitudes);
+                    multiplet.set(centerPPM, freqs, amplitudes, lineWidth);
 
                 } else {
                     CouplingItem[] cplItems2 = peakFit.getCouplings(iPeak);
@@ -532,7 +533,6 @@ public class PeakFitter {
                     double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
                     multiplet.set(centerPPM, couplings, amps[0], sin2Thetas);
                 }
-                peaks[iPeak].peakDims[0].getMultiplet().setMultipletComponentValues();
                 //System.out.println(peakFit.getCFreq(iPeak) + " " + p2[0][0]);
                 for (int jPeak = 0; jPeak < linkedPeaks.size(); jPeak++) {
                     Peak lPeak = (Peak) linkedPeaks.get(jPeak);

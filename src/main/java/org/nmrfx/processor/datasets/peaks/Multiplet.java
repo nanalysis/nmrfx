@@ -25,9 +25,7 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.processor.utilities.Format;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -35,44 +33,21 @@ import java.util.stream.Collectors;
  */
 public class Multiplet implements PeakOrMulti, Comparable {
 
-    private double center = 0.0;
     private double intensity = 0.0;
     private double volume;
     private int idNum;
     private Coupling coupling = new Singlet(this);
-    List<PeakDim> peakDims = new ArrayList<>();
     PeakDim myPeakDim;
 
     @Override
     public int compareTo(Object o) {
-//       int result = 1;
-//       if (o instanceof Multiplet) {
-//           Multiplet multiplet2 = (Multiplet) o;
-//           PeakDim peakDim1 = getPeakDim();
-//           PeakDim peakDim2 = multiplet2.getPeakDim();
-//           Peak peak1 = peakDim1.getPeak();
-//           Peak peak2 = peakDim2.getPeak();
-//           result = peak1.peakList.getName().compareTo(peak2.peakList.getName());
-//           if (result == 0) {
-//               int idNum = peak1.getIdNum();
-//
-//               if (idNum > peak2.getIdNum()) {
-//                    result = 1;
-//               } else if (idNum < peak2.getIdNum()) {
-//                    result = -1;
-//               } else {
-//                    result = 0;
-//               }
-//           }
-//       }
         int result = 1;
-        updateCenter();
+        double center = getCenter();
         if (o instanceof Multiplet) {
             Multiplet multiplet2 = (Multiplet) o;
-            multiplet2.updateCenter();
-            if (center < multiplet2.center) {
+            if (center < multiplet2.getCenter()) {
                 result = 1;
-            } else if (center > multiplet2.center) {
+            } else if (center > multiplet2.getCenter()) {
                 result = -1;
             } else {
                 result = 0;
@@ -82,7 +57,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public Multiplet(PeakDim peakDim) {
-        peakDims.add(peakDim);
         myPeakDim = peakDim;
     }
 
@@ -123,23 +97,14 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public double getCenter() {
-        if (peakDims.size() == 1) {
-            return myPeakDim.getChemShiftValue();
-        }
-        return center;
+        return myPeakDim.getChemShiftValue();
     }
 
-    public double getCenter(int iDim) {
-        if (peakDims.size() == 1) {
-            return myPeakDim.getChemShiftValue();
-        }
-        return center;
-    }
+    public void set(double centerPPM, double[] freqs, double[] amplitudes, double lineWidth) {
 
-    public void set(double centerPPM, double[] freqs, double[] amplitudes) {
         if (coupling instanceof ComplexCoupling) {
-            this.center = centerPPM;
-            coupling = new ComplexCoupling(this, center, freqs, amplitudes);
+            myPeakDim.setChemShiftValue((float) centerPPM);
+            coupling = new ComplexCoupling(this, freqs, amplitudes, lineWidth);
         }
     }
 
@@ -152,9 +117,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
         setCenter(centerPPM);
     }
 
-//    public TclObject getCouplingsAsTclObject(Interp interp) throws TclException {
-//        return coupling.getCouplingsAsTclObject(interp);
-//    }
     public String getCouplingsAsString() {
         return coupling.getCouplingsAsString();
     }
@@ -164,12 +126,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public void setCenter(final double value) {
-        center = value;
-        if (peakDims.size() == 1) {
-            myPeakDim.setChemShiftValue((float) center);
-        } else {
-            setMultipletComponentValues();
-        }
+        myPeakDim.setChemShiftValue((float) value);
     }
 
     public double getIntensity() {
@@ -190,10 +147,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
         return myPeakDim;
     }
 
-    public List<PeakDim> getPeakDims() {
-        return peakDims;
-    }
-
     public double getVolume() {
         if (coupling instanceof Singlet) {
             volume = myPeakDim.getPeak().getVolume1();
@@ -206,55 +159,45 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public void addPeakDim(PeakDim peakDim) {
-        peakDims.add(peakDim);
-        myPeakDim = peakDim;
+        double ppm = peakDim.getChemShiftValue();
+        double compIntensity = peakDim.getPeak().getIntensity();
+        double lw = peakDim.getLineWidthValue();
+        List<MultipletComponent> comps = getAbsComponentList();
+        MultipletComponent comp = new MultipletComponent(ppm, compIntensity, lw);
+        comps.add(comp);
+        updateCoupling(comps);
+        peakDim.getPeak().setStatus(-1);
+    }
+
+    public void updateCoupling(List<MultipletComponent> comps) {
+        coupling = new ComplexCoupling(this, comps);
     }
 
     public static void merge(PeakDim peakDimA, PeakDim peakDimB) {
         Multiplet mA = peakDimA.getMultiplet();
         Multiplet mB = peakDimB.getMultiplet();
-        if (mA.peakDims.size() >= mB.peakDims.size()) {
-            peakDimB.setMultiplet(mA);
-            mA.addPeakDim(peakDimB);
-            mA.updateCenter();
-            mA.setGenericMultiplet();
+        merge(mA, mB);
+    }
+
+    public static void merge(Multiplet mA, Multiplet mB) {
+        List<MultipletComponent> compsA = mA.getAbsComponentList();
+        List<MultipletComponent> compsB = mB.getAbsComponentList();
+
+        if (compsA.size() >= compsB.size()) {
+            compsA.addAll(compsB);
+            mA.updateCoupling(compsA);
+            mB.getPeakDim().getPeak().setStatus(-1);
         } else {
-            peakDimA.setMultiplet(mB);
-            mB.addPeakDim(peakDimA);
-            mB.updateCenter();
-            mB.setGenericMultiplet();
+            compsB.addAll(compsA);
+            mB.updateCoupling(compsB);
+            mA.getPeakDim().getPeak().setStatus(-1);
         }
     }
 
-    public void removePeakDim(PeakDim peakDim) {
-        peakDims.remove(peakDim);
-        if (peakDims.isEmpty()) {
-            peakDim.getPeak().peakList.removeMultiplet(this);
-            this.myPeakDim = null;
-        } else if (peakDim == myPeakDim) {
-            for (PeakDim pD : peakDims) {
-                myPeakDim = pD;
-                break;
-            }
-            if (peakDims.size() == 1) {
-                makeSinglet();
-            }
-        }
-    }
-
-    public double[] getIntensities() {
-        if (peakDims.isEmpty()) {
-            return new double[0];
-        } else {
-            double[] intensities = new double[peakDims.size()];
-            int j = 0;
-            for (PeakDim peakDim : peakDims) {
-                Peak peak = peakDim.myPeak;
-                intensities[j++] = peak.getIntensity();
-
-            }
-            return intensities;
-        }
+    public void removePeakComponent(int index) {
+        List<MultipletComponent> comps = getAbsComponentList();
+        comps.remove(index);
+        updateCoupling(comps);
     }
 
     public String getMultiplicity() {
@@ -289,9 +232,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public void setGenericMultiplet() {
-        double[] fOValues = getFrequencyOffsets();
-        double[] intensities = getIntensities();
-        coupling = new ComplexCoupling(this, center, fOValues, intensities);
+        coupling = new ComplexCoupling(this, getAbsComponentList());
         myPeakDim.peakDimUpdated();
     }
 
@@ -302,14 +243,8 @@ public class Multiplet implements PeakOrMulti, Comparable {
     public boolean isGenericMultiplet() {
         boolean result = false;
 
-        if (!isCoupled() && myPeakDim.isLinked()) {
-            coupling = getCoupling();
-
-            if (coupling == null) {
-                setGenericMultiplet();
-            }
-
-            result = true;
+        if (coupling == null) {
+            result = coupling instanceof ComplexCoupling;
         }
 
         return result;
@@ -325,62 +260,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     public void setCouplingValues(double[] values, int[] n, double intensity, double[] sin2Thetas) {
         coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
-        FreqIntensities fiValues = getFreqIntensitiesFromSplittings();
-        Arrays.sort(fiValues.freqs);
-        int nFreqs = getFrequencyOffsets().length;
-        int nExtra = nFreqs - fiValues.freqs.length;
-        if (nExtra > 0) {
-            removeExtraLinkedPeaks(nExtra);
-            coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
-            setMultipletComponentValues();
-        } else if (nExtra < 0) {
-            nExtra = -nExtra;
-            addExtraLinkedPeaks(nExtra);
-            coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
-            setMultipletComponentValues();
-        } else {
-            coupling = new CouplingPattern(this, values, n, intensity, sin2Thetas);
-            setMultipletComponentValues();
-        }
-
         myPeakDim.peakDimUpdated();
-    }
-
-    public void removeExtraLinkedPeaks(int nExtra) {
-        List<PeakDim> links = new ArrayList<>();
-        links.addAll(myPeakDim.getLinkedPeakDims());
-        int nRemoved = 0;
-        int nPeaks = links.size();
-        for (int i = 0; i < nPeaks; i++) {
-            PeakDim peakDim = links.get(i);
-            if (peakDim != myPeakDim) {
-                PeakList.unLinkPeak(peakDim.myPeak);
-                peakDim.myPeak.setStatus(-1);
-                nRemoved++;
-                if (nRemoved >= nExtra) {
-                    System.out.println("got " + nRemoved + " " + nExtra);
-                    break;
-                }
-            }
-        }
-        myPeakDim.myPeak.peakList.compress();
-        List<PeakDim> links2 = myPeakDim.getLinkedPeakDims();
-        peakDims.clear();
-        for (PeakDim pD : links2) {
-            peakDims.add(pD);
-        }
-    }
-
-    public void addExtraLinkedPeaks(int nExtra) {
-        Peak lPeak = myPeakDim.myPeak;
-        double holdCenter = center;
-        for (int i = 0; i < nExtra; i++) {
-            Peak peak = lPeak.copy(lPeak.peakList);
-            lPeak.peakList.addPeak(peak);
-            PeakList.couplePeakDims(myPeakDim, peak.getPeakDim(0));
-        }
-        center = holdCenter;
-        setMultipletComponentValues();
     }
 
     public void setCoupling(Coupling coupling) {
@@ -392,64 +272,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         return coupling;
     }
 
-    public void updateCenter() {
-        center = measureCenter();
-    }
-
-    public double measureCenter() {
-        double value = peakDims.stream().collect(Collectors.averagingDouble(PeakDim::getChemShift));
-        return value;
-    }
-
-    public double[] getFrequencyOffsets() {
-        double[] offsets = new double[peakDims.size()];
-        int i = 0;
-        for (PeakDim peakDim : peakDims) {
-            offsets[i++] = (center - peakDim.getChemShiftValue()) * myPeakDim.myPeak.peakList.getSpectralDim(0).getSf();
-        }
-
-        return offsets;
-    }
-
-    // Adjust peak component positons and intensities to correspond to values calculated from
-    //    couplings (centered on current multiplet center)
-    public void setMultipletComponentValues() {
-        if ((coupling != null) && !(coupling instanceof ComplexCoupling)) {
-            FreqIntensities fiValues = getFreqIntensitiesFromSplittings();
-            int nFreqs = fiValues.freqs.length;
-            if (nFreqs != fiValues.intensities.length) {
-                fiValues = new FreqIntensities(fiValues.freqs, getIntensities());
-            }
-            int nExtra = fiValues.freqs.length - peakDims.size();
-
-            if (nExtra > 0) {
-                double[] amplitudeJunk = new double[fiValues.freqs.length];
-                PeakList.trimFreqs(fiValues.freqs, amplitudeJunk, nExtra);
-            }
-
-            //System.out.println("setMultipletComponentValues "+nFreqs+" "+nExtra+" "+" "+fiValues.intensities.length);
-            //  fixme freqs length can be inconistent
-            if (peakDims.size() == fiValues.intensities.length) {
-
-                int j = 0;
-                for (PeakDim lPeakDim : peakDims) {
-                    lPeakDim.setChemShiftValueNoCheck((float) (center - fiValues.freqs[j]));
-
-                    //fixme lPeakDim.setLineWidthValue(getLineWidthValue());
-                    lPeakDim.myPeak.setIntensity((float) fiValues.intensities[j]);
-                    //lPeakDim.myPeak.setFlag(4, true);
-                    // XXX 1.05 is a fudge factor to make the volume calculated here closer to those from
-                    // summing data points across peak, not unreasonable because you have to sum out to infinity
-                    // to get the whole integral
-                    lPeakDim.myPeak.setVolume1((float) (lPeakDim.myPeak.getIntensity() * Math.abs(lPeakDim.myPeak.peakDims[0].getLineWidthValue()) * Math.PI / 2.0 / 1.05));
-                    j++;
-
-                }
-            }
-        }
-        updateVolumes();
-    }
-
+    /*
     public void updateVolumes() {
         intensity = 0.0;
         double sumV = 0.0;
@@ -465,16 +288,17 @@ public class Multiplet implements PeakOrMulti, Comparable {
         intensity = getMultipletMax();
         myPeakDim.peakDimUpdated();
     }
-
+     */
     public double getMultipletMax() {
+        List<MultipletComponent> comps = getRelComponentList();
         double maxIntensity = 0.0;
-        for (PeakDim peakDim : peakDims) {
+        for (MultipletComponent comp : comps) {
             double hSum = 0.0;
-            double ctr = peakDim.getChemShift();
-            for (PeakDim peakDim2 : peakDims) {
-                double ctr2 = peakDim2.getChemShiftValue();
-                double lw2 = peakDim2.getLineWidthValue();
-                double h2 = peakDim2.myPeak.getIntensity();
+            double ctr = comp.getOffset();
+            for (MultipletComponent comp2 : comps) {
+                double ctr2 = comp2.getOffset();
+                double lw2 = comp2.getLineWidth();
+                double h2 = comp2.getIntensity();
                 double contrib = h2 * lw2 * lw2 / (lw2 * lw2 + (ctr2 - ctr) * (ctr2 - ctr) * 4.0);
                 hSum += contrib;
                 // System.out.println(ctr+" "+ctr2+" "+lw2+" "+h2+" "+contrib+" "+hSum);
@@ -487,8 +311,12 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     }
 
-    private FreqIntensities getFreqIntensitiesFromSplittings() {
-        return coupling.getFreqIntensitiesFromSplittings();
+    List<MultipletComponent> getAbsComponentList() {
+        return coupling.getAbsComponentList();
+    }
+
+    List<MultipletComponent> getRelComponentList() {
+        return coupling.getRelComponentList();
     }
 
     public ArrayList<Line2D> getSplittingGraph() {

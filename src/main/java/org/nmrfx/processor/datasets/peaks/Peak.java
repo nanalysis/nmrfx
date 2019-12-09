@@ -385,9 +385,6 @@ public class Peak implements Comparable, PeakOrMulti {
         valid = false;
 
         for (PeakDim peakDim : peakDims) {
-            if (peakDim.hasMultiplet()) {
-                peakDim.getMultiplet().removePeakDim(peakDim);
-            }
             peakDim.remove();
         }
 
