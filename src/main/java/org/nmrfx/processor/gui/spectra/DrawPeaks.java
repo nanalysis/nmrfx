@@ -1303,37 +1303,48 @@ public class DrawPeaks {
         }
     }
 
-    public void drawPeakConnection(Peak p1, Peak p2, GraphicsContextInterface g2, int[] dim) {
+    public void drawPeakConnection(ConnectPeakAttributes connPeaks, GraphicsContextInterface g2, int[] dim) {
         if (g2 == null) {
             return;
         }
-        /** FIXME:
-         *  Lines are drawn outside the chart bounds when connecting peaks are not
-         *  within the visible chart size.
-         * 
+        if (dim.length != 2) {
+            System.out.println("Dim size is not valid inside 'DrawPeaks.drawPeakConnection(..)'");
+            return;
+        }
+        /**
+         * FIXME: Lines are drawn outside the chart bounds when connecting peaks
+         * are not within the visible chart size.
+         *
          */
-        if (p1 != null && p2 != null && dim.length == 2) {
-            //g2.save();
-            PeakDim p1x = p1.peakDims[dim[0]];
-            PeakDim p1y = p1.peakDims[dim[1]];
-            PeakDim p2x = p2.peakDims[dim[0]];
-            PeakDim p2y = p2.peakDims[dim[1]];
-            double x1 = p1x.getChemShift();
-            double y1 = p1y.getChemShift();
-            double x2 = p2x.getChemShift();
-            double y2 = p2y.getChemShift();
-            x1 = xAxis.getDisplayPosition(x1);
-            x2 = xAxis.getDisplayPosition(x2);
-            y1 = yAxis.getDisplayPosition(y1);
-            y2 = yAxis.getDisplayPosition(y2);
-            
-            g2.setStroke(Color.ORANGE);
-            g2.setLineWidth(3.0);
-            g2.beginPath();
-//            System.out.println(String.format("p1 = (%f, %f), p2 = (%f, %f)", x1, y1, x2, y2));
-            g2.moveTo(x1, y1);
-            g2.lineTo(x2, y2);
-            g2.stroke();
+
+        for (int i = 0, limit = connPeaks.getPeaks().size(); i < limit; i++) {
+            int j = i + 1;
+            if (j < limit) {
+                Peak p1 = connPeaks.getPeaks().get(i);
+                Peak p2 = connPeaks.getPeaks().get(j);
+                if (p1 != null && p2 != null) {
+                    //g2.save();
+                    PeakDim p1x = p1.peakDims[dim[0]];
+                    PeakDim p1y = p1.peakDims[dim[1]];
+                    PeakDim p2x = p2.peakDims[dim[0]];
+                    PeakDim p2y = p2.peakDims[dim[1]];
+                    double x1 = p1x.getChemShift();
+                    double y1 = p1y.getChemShift();
+                    double x2 = p2x.getChemShift();
+                    double y2 = p2y.getChemShift();
+                    x1 = xAxis.getDisplayPosition(x1);
+                    x2 = xAxis.getDisplayPosition(x2);
+                    y1 = yAxis.getDisplayPosition(y1);
+                    y2 = yAxis.getDisplayPosition(y2);
+                    
+                    g2.setStroke(connPeaks.getColor());
+                    g2.setLineWidth(connPeaks.getWidth());
+                    g2.beginPath();
+                    g2.moveTo(x1, y1);
+                    g2.lineTo(x2, y2);
+                    g2.stroke();
+                }
+            }
         }
     }
 
