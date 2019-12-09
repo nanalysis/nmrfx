@@ -9,10 +9,8 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import javafx.event.ActionEvent;
@@ -29,6 +27,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.paint.Color;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.FreezeListener;
 import org.nmrfx.processor.datasets.peaks.Peak;
@@ -40,6 +39,7 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.processor.optimization.PeakClusterMatcher;
 import org.nmrfx.processor.optimization.PeakCluster;
 import javafx.collections.ObservableList;
+import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
 
 /**
  *
@@ -50,6 +50,7 @@ public class PeakSlider {
     ToolBar sliderToolBar;
     FXMLController controller;
     Consumer closeAction;
+    Button shiftFreezeButton;
     Button freezeButton;
     Button thawButton;
     Button tweakFreezeButton;
@@ -63,7 +64,6 @@ public class PeakSlider {
     Label intensityLabel;
     List<Peak> selPeaks;
     List<FreezeListener> listeners = new ArrayList<>();
-    Map<PolyChart, PeakClusterMatcher> chartToMatchMap = new HashMap<>();
     PeakClusterMatcher[] matchers = new PeakClusterMatcher[2];
 
     public PeakSlider(FXMLController controller, Consumer closeAction) {
@@ -90,6 +90,10 @@ public class PeakSlider {
         Button bButton;
         Button closeButton = GlyphsDude.createIconButton(FontAwesomeIcon.MINUS_CIRCLE, "Close", iconSize, fontSize, ContentDisplay.TOP);
         closeButton.setOnAction(e -> close());
+
+        shiftFreezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.CODE_FORK, "Shift+Freeze", iconSize, fontSize, ContentDisplay.TOP);
+        shiftFreezeButton.setOnMouseClicked(e -> evalMatchCriteria(selPeaks));
+        buttons.add(shiftFreezeButton);
 
         freezeButton = GlyphsDude.createIconButton(FontAwesomeIcon.LOCK, "Freeze", iconSize, fontSize, ContentDisplay.TOP);
         freezeButton.setOnAction(e -> freezePeaks(e));
@@ -135,18 +139,10 @@ public class PeakSlider {
         MenuItem restoreItem = new MenuItem("Restore Peaks");
         restoreItem.setOnAction(e -> restorePeaks());
         Menu matchingMenu = new Menu("Perform Match");
-        /**
-         * FIXME: Currently, Match Row doesn't work properly when Match Column
-         * runs first. Results of the Match Row won't show up because chart was
-         * placed inside of the mapToMatch HashMap. Need to correct:
-         *
-         * Potential Solution: chartToMatchMap<PolyChart, dimensionMatch> ==>
-         * dimensionMatch<Dim, PeakClusterMatcher>
-         */
         MenuItem matchAllRowItem = new MenuItem("Match Row");
         MenuItem matchAllColItem = new MenuItem("Match Column");
-        matchAllRowItem.setOnAction(e -> matchClusters(true, 1));
-        matchAllColItem.setOnAction(e -> matchClusters(true, 0));
+        matchAllRowItem.setOnAction(e -> matchClusters(1));
+        matchAllColItem.setOnAction(e -> matchClusters(0));
         MenuItem clearMatchItem = new MenuItem("Clear Matches");
         clearMatchItem.setOnAction(e -> clearMatches());
         matchingMenu.getItems().addAll(matchAllRowItem, matchAllColItem, clearMatchItem);
@@ -435,6 +431,7 @@ public class PeakSlider {
     }
 
     public void setActivePeaks(List<Peak> peaks) {
+        System.out.println("setActivePeaks(" + peaks + ")");
         selPeaks = peaks;
         if ((peaks == null) || peaks.isEmpty()) {
             atomXLabel.setText("");
@@ -463,16 +460,23 @@ public class PeakSlider {
                 unlinkButton.setDisable(false);
             }
         }
-//        System.out.println(Arrays.toString(peaks.stream().map(p -> p.toString()).toArray()));
 
         if ((peaks != null) && !peaks.isEmpty()) {
             controller.charts.stream()
                     .forEach(chart -> {
                         chart.clearPeakPaths();
-                        for (int i = 0; i < 2; i++) {
-                            if (matchers[i] != null) {
-                                List<List<Peak>> peakPairs = matchers[i].getPeakPairs(peaks.get(0));
-                                chart.addPeakPaths(peakPairs);
+
+                        for (PeakClusterMatcher matcher : matchers) {
+                            if (matcher != null) {
+                                List<List<Peak>> matchingPeaks = matcher.getMatchedClusterPairs(peaks.get(0));
+                                matchingPeaks.forEach(pairedPeaks -> {
+                                    boolean isColumn = matcher.getMatchDim() == 0;
+                                    ConnectPeakAttributes connPeakAttrs = setPeakPairAttrs(isColumn, pairedPeaks);
+                                    if (connPeakAttrs != null) {
+                                        chart.addPeakPath(connPeakAttrs);
+                                    }
+                                });
+
                                 chart.drawPeakLists(true);
                             }
                         }
@@ -480,8 +484,112 @@ public class PeakSlider {
         }
     }
 
-    // Event handler to perform match of clusters
-    public void matchClusters(boolean drawAll, int iDim) {
+    public void evalMatchCriteria(List<Peak> peaks) {
+        System.out.println("overlapMatches(" + peaks + ")");
+        if (peaks != null && !peaks.isEmpty()) {
+            Peak peak = peaks.get(0);
+
+            boolean criteria1Met = satisfyCriteria1(peak);
+            boolean criteria2Met = satisfyCriteria2(peak, criteria1Met);
+            if (criteria1Met && criteria2Met) {
+                List<Peak> peaksToFreeze = new ArrayList<>();
+                peaksToFreeze.add(peak);
+                for (PeakClusterMatcher matcher : matchers) {
+                    PeakCluster clus = matcher.getCluster(peak);
+                    clus.getLinkedPeaks().forEach((p) -> {
+                        if (!p.equals(peak)) {
+                            boolean c1 = satisfyCriteria1(p);
+                            boolean c2 = satisfyCriteria2(p, c1);
+                            if (c1 && c2) {
+                                peaksToFreeze.add(p);
+                            }
+                        }
+                    });
+                }
+                System.out.println("Peaks to freeze: " + peaksToFreeze);
+            }
+            System.out.println("Criteria 1 Met : " + criteria1Met);
+            System.out.println("Criteria 2 Met : " + criteria2Met);
+        }
+    }
+
+    /**
+     * Criteria #1: Given a selected peak 1) Peak must be a simulated peak 2)
+     * Both row and column matchers must've been instantiated 3) Both the row
+     * and column peak matches for the given peak must be the same, e.g:
+     * simulated peak must match the same experimental peak in both row and
+     * column peak matches
+     *
+     */
+    boolean satisfyCriteria1(Peak peak) {
+        boolean criteria1Met = false;
+        if (peak.getPeakList().isSimulated() && matchers.length == 2) {
+            Peak tempMatchingPeak = null;
+            for (PeakClusterMatcher matcher : matchers) {
+                if (matcher == null) {
+                    System.out.println("Column and row matchers shouldn't be null");
+                    break;
+                }
+                Peak currentMatchingPeak = matcher.getMatchingPeak(peak);
+                if (currentMatchingPeak != null) {
+                    if (tempMatchingPeak == null) {
+                        tempMatchingPeak = currentMatchingPeak;
+                        continue;
+                    }
+                    if (currentMatchingPeak.equals(tempMatchingPeak)) {
+                        criteria1Met = true;
+                    }
+                }
+            }
+        }
+        return criteria1Met;
+    }
+
+    /**
+     * Criteria #2: Given a selected peak 1) Peak must have passed criteria #1
+     * 2) Experimental (exp) peak matched to given simulated (sim) peak doesn't
+     * have other exp peaks within a 0.10 ppm tolerance 3) If #2 is false, then
+     * calculate the weights b/t sim peak and the exp peaks within tol and
+     * display them
+     */
+    boolean satisfyCriteria2(Peak peak, boolean criteria1Met) {
+        boolean criteria2Met = false;
+        if (criteria1Met) {
+            for (PeakClusterMatcher matcher : matchers) {
+                double tolerance = 0.10;
+                int matchDim = matcher.getMatchDim();
+                int dim = (matchDim == 0) ? 1 : 0;
+                System.out.println("\tMatcher Dim : " + matchDim);
+                Peak matchingPeak = matcher.getMatchingPeak(peak);
+                System.out.println("\tMatching Peak of " + peak + " is " + matchingPeak);
+                if (matchingPeak != null) {
+                    List<Peak> peaksInClus = matcher.getCluster(matchingPeak).getLinkedPeaks();
+                    List<Peak> peaksWithinTol = new ArrayList<>();
+                    double matchPeakShift = matchingPeak.getPeakDim(dim).getChemShift();
+                    peaksInClus.forEach((p) -> {
+                        double peakShift = p.getPeakDim(dim).getChemShift();
+                        double shiftDiff = Math.abs(peakShift - matchPeakShift);
+                        System.out.println("\tShift difference between " + matchingPeak + " and " + p + " is " + shiftDiff);
+                        if (shiftDiff != 0.0 && shiftDiff < tolerance) {
+                            peaksWithinTol.add(p);
+                        }
+                    });
+                    if (peaksWithinTol.isEmpty()) {
+                        criteria2Met = true;
+                    } else {
+                        peaksWithinTol.forEach(peakInTol -> {
+                            double w = PeakCluster.calcWeight(peak, peakInTol, peak.getPeakList().scale);
+                            System.out.println(String.format("\t(pred peak) %s --> (exp peak) %s : (weight) %f", peak, peakInTol, w));
+                        });
+                    }
+                }
+            }
+        }
+        return criteria2Met;
+    }
+
+    public void matchClusters(int iDim) {
+        System.out.println("matchClusters(" + iDim + ")");
         // storing peak list attributes which contain information about the peak lists
         // in each chart.
         List<PeakList> predLists = new ArrayList<>();
@@ -500,8 +608,8 @@ public class PeakSlider {
                     PeakList pl1 = peakAttr1.getPeakList();
                     PeakList pl2 = peakAttr2.getPeakList();
                     // FIXME: Should change the way we check if simulated peak list exists
-                    boolean pl1ContainsSim = pl1.getSampleConditionLabel().endsWith("sim");
-                    boolean pl2ContainsSim = pl2.getSampleConditionLabel().endsWith("sim");
+                    boolean pl1ContainsSim = pl1.isSimulated();
+                    boolean pl2ContainsSim = pl2.isSimulated();
                     boolean oneIsSim = (pl1ContainsSim || pl2ContainsSim);
                     PeakList exp = (!pl1ContainsSim) ? pl1 : (oneIsSim) ? pl2 : null;
                     PeakList pred = (pl2ContainsSim) ? pl2 : (oneIsSim) ? pl1 : null;
@@ -522,26 +630,28 @@ public class PeakSlider {
         controller.charts.stream()
                 .filter(chart -> chart.getPeakListAttributes().size() == 2)
                 .forEach(chart -> {
-                    for (int i = 0; i < 2; i++) {
-                        PeakClusterMatcher matcher = matchers[i];
+                    for (PeakClusterMatcher matcher : matchers) {
                         if (matcher == null) {
                             continue;
                         }
-                        List<PeakCluster[]> clusterMatches = matcher.getMatch();
-                        // TODO: need to save the cluster matches made for the two peaks somewhere so that we dont have to run the matching algorithm again...
+                        List<PeakCluster[]> clusterMatches = matcher.getClusterMatch(); // list of matched clusters
                         if (clusterMatches != null) {
                             clusterMatches.stream()
                                     .map((clusMatch) -> {
                                         PeakCluster expCluster = clusMatch[0];
                                         PeakCluster predCluster = clusMatch[1];
                                         List<List<Peak>> matchingPeaks = expCluster.getPeakMatches(predCluster);
-
                                         return matchingPeaks;
                                     })
                                     .forEachOrdered((matchingPeaks) -> {
                                         matchingPeaks.forEach(pairedPeaks -> {
-                                            chart.peakPaths.add(pairedPeaks);
-                                        });
+                                            boolean isColumn = matcher.getMatchDim() == 0;
+                                            ConnectPeakAttributes connPeakAttrs = setPeakPairAttrs(isColumn, pairedPeaks);
+                                            if (connPeakAttrs != null) {
+                                                chart.addPeakPath(connPeakAttrs);
+                                            }
+                                        }
+                                        );
                                     });
                             chart.refresh();
                         }
@@ -549,9 +659,28 @@ public class PeakSlider {
                 });
     }
 
+    ConnectPeakAttributes setPeakPairAttrs(boolean isColumn, List<Peak> pairedPeaks) {
+        if (pairedPeaks.isEmpty()) {
+            return null;
+        }
+        Color color = (isColumn) ? Color.ORANGE : Color.BLUE;
+        double opacity = (isColumn) ? 0.7 : 0.4;
+        double width = (isColumn) ? 3.0 : 4.0;
+        ConnectPeakAttributes connPeakAttrs = new ConnectPeakAttributes(pairedPeaks);
+        connPeakAttrs.setWidth(width);
+        connPeakAttrs.setColor(color.toString(), opacity);
+        return connPeakAttrs;
+    }
+
     public void clearMatches() {
-        matchers[0] = null;
-        matchers[1] = null;
+        for (int i = 0; i < matchers.length; i++) {
+            matchers[i] = null;
+        }
+
+        controller.charts.stream().forEach(chart -> {
+            chart.clearPeakPaths();
+            chart.refresh();
+        });
     }
 
 }
