@@ -29,6 +29,8 @@ import org.nmrfx.processor.optimization.SineSignal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 
 /**
@@ -98,7 +100,7 @@ public class PeakFitter {
         }
 
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
-            if (dataDim < peaks[iPeak].peakList.nDim) {
+              if (dataDim < peaks[iPeak].peakList.nDim) {
                 throw new IllegalArgumentException("Number of peak list dimensions greater than number of dataset dimensions");
             }
 
@@ -150,16 +152,16 @@ public class PeakFitter {
             //   double c = theFile.ppmToDPoint(0, peaks[iPeak].peakDim[0].getChemShiftValue());
             double c1 = theFile.ppmToDPoint(0, peaks[iPeak].peakDims[0].getMultiplet().getCenter() + peaks[iPeak].peakDims[0].getLineWidthValue());
             //System.out.println("lw "+c+" "+c1+" "+(c1-c));
-            guessList.add(Math.abs(c1 - c));
-            guessList.add(c);
+            guessList.add(Math.abs(c1 - c));  // linewidth in points
+            guessList.add(c);   // peak center in points
 
             int pEdge0 = (int) (c - width[0] - 1);
             int pEdge1 = (int) (c + width[0] + 1);
             splitCount[iPeak] = new int[0];
 
-            if (rootedPeaks) {
+            if (rootedPeaks) {  // coupled peaks linked to  a root peak
                 Coupling coupling = peaks[iPeak].peakDims[0].getMultiplet().getCoupling();
-                if (coupling instanceof CouplingPattern) {
+                if (coupling instanceof CouplingPattern) {  // multiplet with couplings
                     CouplingPattern cPat = (CouplingPattern) coupling;
                     int nCouplings = cPat.getNCouplingValues();
                     splitCount[iPeak] = cPat.getNValues();
@@ -170,16 +172,16 @@ public class PeakFitter {
                         splitCount[iPeak][iCoup] = nVal;
                         pEdge0 -= (int) ((nVal * theFile.hzWidthToPoints(0, cVal)) / 2);
                         pEdge1 += (int) ((nVal * theFile.hzWidthToPoints(0, cVal)) / 2);
-                        guessList.add(theFile.hzWidthToPoints(0, cVal));
-                        guessList.add(theFile.hzWidthToPoints(0, 0.0));
+                        guessList.add(theFile.hzWidthToPoints(0, cVal));  // coupling in hz
+                        guessList.add(theFile.hzWidthToPoints(0, 0.0));   // slope 
                     }
-                } else if (coupling instanceof ComplexCoupling) {
+                } else if (coupling instanceof ComplexCoupling) {  // generic multiplet (list of freqs)
                     ComplexCoupling cCoup = (ComplexCoupling) coupling;
-                    Multiplet multiplet = peaks[iPeak].peakDims[0].getMultiplet();
                     int nFreqs = cCoup.getFrequencyCount();
                     splitCount[iPeak] = new int[1];
                     splitCount[iPeak][0] = -nFreqs;
-                    guessList.remove(guessList.size() - 1);
+                    guessList.remove(guessList.size() - 1);  // remove last added value which was the peak center
+                    // since were going to add individual centers
 
                     FreqIntensities freqInt = cCoup.getFreqIntensitiesFromSplittings();
                     for (int iFreq = 0; iFreq < freqInt.freqs.length; iFreq++) {
@@ -195,10 +197,10 @@ public class PeakFitter {
                             pEdge1 = cw1;
                         }
 
-                        guessList.add(c + dw);
+                        guessList.add(c + dw);  // multiplet center plus individual peak offset
                     }
                 }
-            } else {
+            } else {  // arbitrary list of peaks
                 List<Peak> linkedPeaks = PeakList.getLinks(peaks[iPeak], true);
 
                 if (linkedPeaks.size() > 1) {
@@ -220,7 +222,7 @@ public class PeakFitter {
                             pEdge1 = cw1;
                         }
 
-                        guessList.add(c);
+                        guessList.add(c);  // center of each individual peak
                     }
                 }
             }
@@ -271,21 +273,35 @@ public class PeakFitter {
         //double[] a =     {2,   15, 10,30, 2, 59, 10, 5000};
 
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
-            double lineWidth = ((Double) guessList.get(iGuess));
-            guesses[iGuess] = lineWidth;
-            lower[iGuess] = guesses[iGuess] * 0.5;
+            double lineWidth = Math.abs(((Double) guessList.get(iGuess)));
+            guesses[iGuess] = lineWidth;  // guess for linewidth
+            lower[iGuess] = guesses[iGuess] * 0.5;  // constraints on linewidth
             upper[iGuess] = guesses[iGuess] * 2.0;
             iGuess++;
 
             if ((splitCount[iPeak].length == 1) && (splitCount[iPeak][0] < 0)) { // generic multiplet
-
                 int nFreq = -splitCount[iPeak][0];
+                int jGuess = iGuess;
                 for (int iFreq = 0; iFreq < nFreq; iFreq++) {
-                    guesses[iGuess] = ((Double) guessList.get(iGuess))
-                            - p2[0][0];
-                    lower[iGuess] = guesses[iGuess] - lineWidth;
-                    upper[iGuess] = guesses[iGuess] + lineWidth;
+                    guesses[iGuess] = ((Double) guessList.get(iGuess)) - p2[0][0];
                     iGuess++;
+                }
+                // set lower and upper bounds so component can't cross over
+                // previous or following component
+                for (int iFreq = 0; iFreq < nFreq; iFreq++) {
+                    if (iFreq == 0) {
+                        lower[jGuess] = guesses[jGuess] - lineWidth;
+                    } else {
+                        //lower[jGuess] = (guesses[jGuess] + guesses[jGuess - 1]) / 2;
+                        lower[jGuess] = guesses[jGuess] - lineWidth;
+                    }
+                    if (iFreq == (nFreq - 1)) {
+                        upper[jGuess] = guesses[jGuess] + lineWidth;
+                    } else {
+                        // upper[jGuess] = (guesses[jGuess] + guesses[jGuess + 1]) / 2;
+                        upper[jGuess] = guesses[jGuess] + lineWidth;
+                    }
+                    jGuess++;
                 }
             } else {
                 guesses[iGuess] = ((Double) guessList.get(iGuess))
@@ -298,9 +314,9 @@ public class PeakFitter {
                 int[] couplingIndices = new int[nCouplings];
                 for (int iCoupling = 0; iCoupling < nCouplings; iCoupling++) {
                     couplingIndices[iCoupling] = iGuess;
-                    guesses[iGuess] = ((Double) guessList.get(iGuess));
+                    guesses[iGuess] = ((Double) guessList.get(iGuess));  // coupling
                     iGuess++;
-                    guesses[iGuess] = ((Double) guessList.get(iGuess));
+                    guesses[iGuess] = ((Double) guessList.get(iGuess)); // slope
                     lower[iGuess] = -0.8;
                     upper[iGuess] = 0.8;
                     if ((lower[iGuess] > guesses[iGuess]) || (upper[iGuess] < guesses[iGuess])) {
@@ -412,8 +428,10 @@ public class PeakFitter {
                 }   //System.out.println(guesses.length + " " + nInterpolationPoints + " " + nSteps);
                 long startTime = System.currentTimeMillis();
                 try {
-                    peakFit.optimizeBOBYQA(nSteps, nInterpolationPoints);
+                    peakFit.optimizeCMAES(nSteps);
                 } catch (TooManyEvaluationsException tmE) {
+                } catch (Exception ex) {
+                    Logger.getLogger(PeakFitter.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 long duration = System.currentTimeMillis() - startTime;
                 rms = peakFit.getBestValue();
