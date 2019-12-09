@@ -147,16 +147,6 @@ public class PeakDim {
         return Format.format3(getChemShiftValue()) + " " + Format.format2(normVal);
     }
 
-    public List<PeakDim> getCoupledPeakDims() {
-        if (multiplet == null) {
-            List<PeakDim> peakDims = new ArrayList<>();
-            peakDims.add(this);
-            return peakDims;
-        } else {
-            return multiplet.getPeakDims();
-        }
-    }
-
     public boolean hasMultiplet() {
         return multiplet != null;
     }
@@ -180,23 +170,11 @@ public class PeakDim {
         return aMultiplet;
     }
 
-    public void setMultiplet(Multiplet newMultiplet) {
-        if (multiplet == newMultiplet) {
-            return;
-        }
-        if (multiplet != null) {
-            multiplet.removePeakDim(this);
-        }
-        this.multiplet = newMultiplet;
-    }
-
-    public void unLink() {
+     public void unLink() {
         resonance.remove(this);
         initResonance();
         if (multiplet != null) {
-            multiplet.removePeakDim(this);
             multiplet = new Multiplet(this);
-            getPeak().peakList.addMultiplet(multiplet);
         }
 
         peakDimUpdated();
@@ -661,7 +639,7 @@ public class PeakDim {
         if (multiplet == null) {
             return false;
         } else {
-            return (getCoupledPeakDims().size() > 1);
+            return (multiplet.isCoupled());
         }
     }
 

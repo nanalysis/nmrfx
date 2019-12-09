@@ -24,12 +24,15 @@ package org.nmrfx.processor.datasets.peaks;
 
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
  * @author brucejohnson
  */
 public class ComplexCoupling extends Coupling {
+
+    List<MultipletComponent> components = new ArrayList<>();
 
     @Override
     public String getMultiplicity() {
@@ -41,7 +44,21 @@ public class ComplexCoupling extends Coupling {
         return true;
     }
 
-    ComplexCoupling(final Multiplet multiplet, double center, final double[] frequencyOffsets, final double[] intensities) {
+    ComplexCoupling(final Multiplet multiplet, List<MultipletComponent> absComponents) {
+        this.multiplet = multiplet;
+        double sum = 0.0;
+        for (MultipletComponent comp : absComponents) {
+            sum += comp.getOffset();
+        }
+        double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
+        double center = sum / absComponents.size();
+        for (MultipletComponent comp : absComponents) {
+            components.add(comp.toRelative(center, sf));
+        }
+        multiplet.getPeakDim().setChemShiftValue((float) (sum / absComponents.size()));
+    }
+
+    ComplexCoupling(final Multiplet multiplet, final double[] frequencyOffsets, final double[] intensities, final double lineWidth) {
         this.multiplet = multiplet;
         double max = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < intensities.length; i++) {
@@ -50,15 +67,12 @@ public class ComplexCoupling extends Coupling {
             }
         }
         double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
-        multiplet.setIntensity(multiplet.getMultipletMax());
-        int i = 0;
-        //System.out.println("setup cmplex center " + center);
-        for (PeakDim peakDim : multiplet.getPeakDims()) {
-            double shift = center - frequencyOffsets[i] / sf;
-            //System.out.println("peakshift " + shift + " hz " + frequencyOffsets[i] + " int " + intensities[i]);
-            peakDim.setChemShiftValueNoCheck((float) shift);
-            peakDim.getPeak().setIntensity((float) intensities[i]);
-            i++;
+        multiplet.setIntensity(max);
+        double centerPPM = multiplet.getCenter();
+        for (int i = 0; i < intensities.length; i++) {
+            double offset = (centerPPM - frequencyOffsets[i]) / sf;
+            MultipletComponent comp = new MultipletComponent(offset, intensities[i], lineWidth);
+            components.add(comp);
         }
         sortByFreq();
     }
@@ -74,42 +88,40 @@ public class ComplexCoupling extends Coupling {
     }
 
     public int getFrequencyCount() {
-        return multiplet.getPeakDims().size();
-    }
-
-    @Override
-    FreqIntensities getFreqIntensitiesFromSplittings() {
-        FreqIntensities fiValues;
-        int nFreqs = multiplet.getPeakDims().size();
-        PeakDim peakDimRef = multiplet.getPeakDim();
-        double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
-        fiValues = new FreqIntensities(nFreqs);
-        double centerPPM = multiplet.getCenter();
-        sortByFreq();
-
-        int iFreq = 0;
-        for (PeakDim peakDim : multiplet.getPeakDims()) {
-            fiValues.freqs[iFreq] = (peakDim.getChemShift() - centerPPM) * sf;
-            fiValues.intensities[iFreq] = peakDim.getPeak().getIntensity();
-            iFreq++;
-        }
-
-        return fiValues;
+        return components.size();
     }
 
     @Override
     public ArrayList<Line2D> getSplittingGraph() {
         ArrayList<Line2D> lines = new ArrayList<>();
-        double centerPPM = multiplet.getCenter();
+        PeakDim peakDimRef = multiplet.getPeakDim();
+        double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
 
-        multiplet.getPeakDims().stream().map((peakDim) -> (centerPPM - peakDim.getChemShift())).forEachOrdered((deltaPPM) -> {
+        components.stream().map((comp) -> (comp.getOffset() * sf)).forEachOrdered((deltaPPM) -> {
             lines.add(new Line2D.Double(0.0, 0.0, deltaPPM, 0.0));
         });
         return lines;
     }
 
     final void sortByFreq() {
-        multiplet.peakDims.sort((a, b) -> Float.compare(b.getChemShiftValue(), a.getChemShiftValue()));
+        components.sort((a, b) -> Double.compare(b.getOffset(), a.getOffset()));
+    }
+
+    @Override
+    List<MultipletComponent> getAbsComponentList() {
+        PeakDim peakDimRef = multiplet.getPeakDim();
+        double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
+        double centerPPM = peakDimRef.getChemShiftValue();
+        List<MultipletComponent> absComps = new ArrayList<>();
+        for (MultipletComponent comp : components) {
+            absComps.add(comp.toAbsolute(centerPPM, sf));
+        }
+        return absComps;
+    }
+
+    @Override
+    List<MultipletComponent> getRelComponentList() {
+        return components;
     }
 
 }

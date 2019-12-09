@@ -822,9 +822,6 @@ public class PeakList {
                     peakDim.remove();
                     if (peakDim.hasMultiplet()) {
                         Multiplet multiplet = peakDim.getMultiplet();
-                        if (multiplet != null) {
-                            multiplet.removePeakDim(peakDim);
-                        }
                     }
                 }
                 peak.markDeleted();

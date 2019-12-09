@@ -26,6 +26,7 @@ import org.nmrfx.processor.utilities.Format;
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  *
@@ -178,7 +179,6 @@ public class CouplingPattern extends Coupling {
 
     public void adjustCouplings(final int iCoupling, double newValue) {
         double minValue = 0.1;
-        final CouplingPattern newCoupling;
         if ((iCoupling >= 0) && (couplingItems.length > iCoupling)) {
             if (newValue < minValue) {
                 newValue = minValue;
@@ -196,12 +196,12 @@ public class CouplingPattern extends Coupling {
             CouplingItem oldItem = couplingItems[iCoupling];
             CouplingItem newItem = new CouplingItem(newValue, oldItem.getSin2Theta(), oldItem.getNSplits());
             couplingItems[iCoupling] = newItem;
-            multiplet.setMultipletComponentValues();
         }
     }
 
     @Override
-    FreqIntensities getFreqIntensitiesFromSplittings() {
+    List<MultipletComponent> getAbsComponentList() {
+        List<MultipletComponent> comps = new ArrayList<>();
         int nFreqs = 1;
         for (CouplingItem couplingItem : couplingItems) {
             nFreqs *= couplingItem.getNSplits();
@@ -210,13 +210,34 @@ public class CouplingPattern extends Coupling {
         double[] jAmps = new double[nFreqs];
         jSplittings(couplingItems, freqs, jAmps);
         PeakDim peakDim = multiplet.getPeakDim();
+        double centerPPM = peakDim.getChemShiftValue();
         double sf = peakDim.getPeak().peakList.getSpectralDim(peakDim.getSpectralDim()).getSf();
         for (int i = 0; i < nFreqs; i++) {
             freqs[i] *= 1.0 / sf;
             jAmps[i] *= intensity;
+            MultipletComponent comp = new MultipletComponent(freqs[i] + centerPPM, jAmps[i], multiplet.getPeakDim().getLineWidth());
+            comps.add(comp);
         }
-        FreqIntensities fiValues = new FreqIntensities(freqs, jAmps);
-        return fiValues;
+        return comps;
+    }
+
+    @Override
+    List<MultipletComponent> getRelComponentList() {
+        List<MultipletComponent> comps = new ArrayList<>();
+        int nFreqs = 1;
+        for (CouplingItem couplingItem : couplingItems) {
+            nFreqs *= couplingItem.getNSplits();
+        }
+        double[] freqs = new double[nFreqs];
+        double[] jAmps = new double[nFreqs];
+        jSplittings(couplingItems, freqs, jAmps);
+        PeakDim peakDim = multiplet.getPeakDim();
+        for (int i = 0; i < nFreqs; i++) {
+            jAmps[i] *= intensity;
+            MultipletComponent comp = new MultipletComponent(freqs[i], jAmps[i], multiplet.getPeakDim().getLineWidth());
+            comps.add(comp);
+        }
+        return comps;
     }
 
     public void jSplittings(double[] freqs, double[] jAmps) {
