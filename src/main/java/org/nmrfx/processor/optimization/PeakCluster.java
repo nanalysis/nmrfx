@@ -26,12 +26,14 @@ public class PeakCluster {
 
     private final List<Peak> linkedPeaks; // all peaks in the cluster
     public final Peak rootPeak;
+
     private final double tol = 0.25; // tolerance value (in ppm)
     private final List<PeakCluster> clustersWithinTol = new ArrayList<>();
     private final double ppm;
     public final int size;
     public final int iDim;
     private PeakCluster pairedTo = null;
+    private int[] peakMatches = null;
 
     public PeakCluster(List<Peak> linkedPeaks, int iDim) {
         this.linkedPeaks = linkedPeaks;
@@ -67,7 +69,7 @@ public class PeakCluster {
 
     }
 
-    public static Collection<List<Peak>> getCluster(List<PeakList> peakLists, int iDim) {
+    public static Collection<List<Peak>> getFilteredClusters(List<PeakList> peakLists, int iDim) {
         // TODO: Should rename this static method
         Collection<List<Peak>> linkHashSet = new LinkedHashSet<>();
 
@@ -192,8 +194,9 @@ public class PeakCluster {
         return sBuilder.toString();
     }
 
-    public void setPairedTo(PeakCluster pair) {
-        pairedTo = pair;
+    public void setPairedTo(PeakCluster otherCluster) {
+        this.pairedTo = otherCluster;
+        //otherCluster.setPairedTo(this);
     }
 
     public PeakCluster getPairedTo() {
@@ -224,28 +227,42 @@ public class PeakCluster {
         return matcher;
     }
 
+    public void setPeakMatches(int[] peakMatches) {
+        this.peakMatches = peakMatches;
+    }
+
+    public int[] getPeakMatches() {
+        return peakMatches;
+    }
+
     public List<List<Peak>> getPeakMatches(PeakCluster other) {
         List<List<Peak>> matches = new ArrayList<>();
-        BipartiteMatcher peakMatcher = this.compareTo(other);
-        int[] matching = peakMatcher.getMatching();
-        for (int i = 0; i < matching.length; i++) {
-            int j = matching[i];
-            if (j < 0) {
-                continue;
-            }
-            List<Peak> matchedPeaks = new ArrayList<>();
-            Peak iPeak = null;
-            Peak jPeak = null;
-            if (i < size) {
-                iPeak = linkedPeaks.get(i);
-            }
-            if (j < other.size) {
-                jPeak = other.linkedPeaks.get(j);
-            }
 
-            matchedPeaks.add(iPeak);
-            matchedPeaks.add(jPeak);
-            matches.add(matchedPeaks);
+        // reason for this:
+        // Provides option to calculate possible peak matches if one doesn't already exist.
+        int[] matching = (getPairedTo().equals(other))
+                ? getPeakMatches() : this.compareTo(other).getMatching();
+        if (matching != null) {
+            for (int i = 0; i < matching.length; i++) {
+                int j = matching[i];
+                if (j < 0) {
+                    continue;
+                }
+                List<Peak> matchedPeaks = new ArrayList<>();
+
+                // ensures that iPeak is always the experimental peak
+                // and jPeak is always the predicted peak
+                boolean rootIsSim = rootPeak.getPeakList().isSimulated();
+                Peak iPeak = (rootIsSim) && (i < other.size)
+                        ? other.linkedPeaks.get(i) : (!rootIsSim) && (i < size)
+                        ? linkedPeaks.get(i) : null;
+                Peak jPeak = (rootIsSim) && (j < size)
+                        ? linkedPeaks.get(j) : (!rootIsSim) && (j < other.size)
+                        ? other.linkedPeaks.get(j) : null;
+                matchedPeaks.add(iPeak);
+                matchedPeaks.add(jPeak);
+                matches.add(matchedPeaks);
+            }
         }
         return matches;
     }
