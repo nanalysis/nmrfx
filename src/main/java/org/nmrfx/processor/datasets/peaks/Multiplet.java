@@ -100,11 +100,11 @@ public class Multiplet implements PeakOrMulti, Comparable {
         return myPeakDim.getChemShiftValue();
     }
 
-    public void set(double centerPPM, double[] freqs, double[] amplitudes, double lineWidth) {
+    public void set(double centerPPM, double[] freqs, double[] amplitudes, double[] volumes, double lineWidth) {
 
         if (coupling instanceof ComplexCoupling) {
             myPeakDim.setChemShiftValue((float) centerPPM);
-            coupling = new ComplexCoupling(this, freqs, amplitudes, lineWidth);
+            coupling = new ComplexCoupling(this, freqs, amplitudes, volumes, lineWidth);
         }
     }
 
@@ -161,15 +161,17 @@ public class Multiplet implements PeakOrMulti, Comparable {
     public void addPeakDim(PeakDim peakDim) {
         double ppm = peakDim.getChemShiftValue();
         double compIntensity = peakDim.getPeak().getIntensity();
+        double volume = peakDim.getPeak().getVolume1();
         double lw = peakDim.getLineWidthValue();
-        List<MultipletComponent> comps = getAbsComponentList();
-        MultipletComponent comp = new MultipletComponent(ppm, compIntensity, lw);
+        List<AbsMultipletComponent> comps = getAbsComponentList();
+        AbsMultipletComponent comp = new AbsMultipletComponent(this, ppm,
+                volume, compIntensity, lw);
         comps.add(comp);
         updateCoupling(comps);
         peakDim.getPeak().setStatus(-1);
     }
 
-    public void updateCoupling(List<MultipletComponent> comps) {
+    public void updateCoupling(List<AbsMultipletComponent> comps) {
         coupling = new ComplexCoupling(this, comps);
     }
 
@@ -180,8 +182,8 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public static void merge(Multiplet mA, Multiplet mB) {
-        List<MultipletComponent> compsA = mA.getAbsComponentList();
-        List<MultipletComponent> compsB = mB.getAbsComponentList();
+        List<AbsMultipletComponent> compsA = mA.getAbsComponentList();
+        List<AbsMultipletComponent> compsB = mB.getAbsComponentList();
 
         if (compsA.size() >= compsB.size()) {
             compsA.addAll(compsB);
@@ -194,9 +196,33 @@ public class Multiplet implements PeakOrMulti, Comparable {
         }
     }
 
+    public void moveCouplings(List<RelMultipletComponent> relComps) {
+        List<AbsMultipletComponent> newComps = new ArrayList<>();
+
+        double sum = 0.0;
+        for (RelMultipletComponent comp : relComps) {
+            sum += comp.toAbsolute().getOffset();
+        }
+        double newCenter = sum / relComps.size();
+        double sf = myPeakDim.getSpectralDimObj().getSf();
+        for (RelMultipletComponent comp : relComps) {
+            newComps.add(comp.toAbsolute(newCenter, sf));
+        }
+        updateCoupling(newComps);
+
+    }
+
     public void removePeakComponent(int index) {
-        List<MultipletComponent> comps = getAbsComponentList();
+        List<AbsMultipletComponent> comps = getAbsComponentList();
         comps.remove(index);
+        updateCoupling(comps);
+    }
+
+    public void removePeakComponents(List<RelMultipletComponent> removeComps) {
+        List<AbsMultipletComponent> comps = getAbsComponentList();
+        for (MultipletComponent removeComp : removeComps) {
+            comps.remove(removeComp);
+        }
         updateCoupling(comps);
     }
 
@@ -290,7 +316,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
      */
     public double getMultipletMax() {
-        List<MultipletComponent> comps = getRelComponentList();
+        List<RelMultipletComponent> comps = getRelComponentList();
         double maxIntensity = 0.0;
         for (MultipletComponent comp : comps) {
             double hSum = 0.0;
@@ -311,11 +337,11 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     }
 
-    List<MultipletComponent> getAbsComponentList() {
+    List<AbsMultipletComponent> getAbsComponentList() {
         return coupling.getAbsComponentList();
     }
 
-    List<MultipletComponent> getRelComponentList() {
+    List<RelMultipletComponent> getRelComponentList() {
         return coupling.getRelComponentList();
     }
 
@@ -447,5 +473,13 @@ public class Multiplet implements PeakOrMulti, Comparable {
             }
             setCouplingValues(newValues, newN, cPattern.getIntensity(), newSin2thetas);
         }
+    }
+
+    public static List<AbsMultipletComponent> getAllComps(List<PeakDim> peakDims) {
+        List<AbsMultipletComponent> allComps = new ArrayList<>();
+        for (PeakDim peakDim : peakDims) {
+            allComps.addAll(peakDim.getMultiplet().getAbsComponentList());
+        }
+        return allComps;
     }
 }

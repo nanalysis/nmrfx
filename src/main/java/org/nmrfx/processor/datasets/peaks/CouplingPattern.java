@@ -200,8 +200,8 @@ public class CouplingPattern extends Coupling {
     }
 
     @Override
-    List<MultipletComponent> getAbsComponentList() {
-        List<MultipletComponent> comps = new ArrayList<>();
+    List<AbsMultipletComponent> getAbsComponentList() {
+        List<AbsMultipletComponent> comps = new ArrayList<>();
         int nFreqs = 1;
         for (CouplingItem couplingItem : couplingItems) {
             nFreqs *= couplingItem.getNSplits();
@@ -215,15 +215,18 @@ public class CouplingPattern extends Coupling {
         for (int i = 0; i < nFreqs; i++) {
             freqs[i] *= 1.0 / sf;
             jAmps[i] *= intensity;
-            MultipletComponent comp = new MultipletComponent(freqs[i] + centerPPM, jAmps[i], multiplet.getPeakDim().getLineWidth());
+            double lineWidth = multiplet.getPeakDim().getLineWidth();
+            double volume = (jAmps[i] * lineWidth * (Math.PI / 2.0) / 1.05);
+            AbsMultipletComponent comp = new AbsMultipletComponent(multiplet,
+                    freqs[i] + centerPPM, jAmps[i], volume, lineWidth);
             comps.add(comp);
         }
         return comps;
     }
 
     @Override
-    List<MultipletComponent> getRelComponentList() {
-        List<MultipletComponent> comps = new ArrayList<>();
+    List<RelMultipletComponent> getRelComponentList() {
+        List<RelMultipletComponent> comps = new ArrayList<>();
         int nFreqs = 1;
         for (CouplingItem couplingItem : couplingItems) {
             nFreqs *= couplingItem.getNSplits();
@@ -234,7 +237,10 @@ public class CouplingPattern extends Coupling {
         PeakDim peakDim = multiplet.getPeakDim();
         for (int i = 0; i < nFreqs; i++) {
             jAmps[i] *= intensity;
-            MultipletComponent comp = new MultipletComponent(freqs[i], jAmps[i], multiplet.getPeakDim().getLineWidth());
+            double lineWidth = multiplet.getPeakDim().getLineWidth();
+            double volume = (jAmps[i] * lineWidth * (Math.PI / 2.0) / 1.05);
+
+            RelMultipletComponent comp = new RelMultipletComponent(multiplet, freqs[i], jAmps[i], volume, lineWidth);
             comps.add(comp);
         }
         return comps;

@@ -9,20 +9,28 @@ package org.nmrfx.processor.datasets.peaks;
  *
  * @author brucejohnson
  */
-public class MultipletComponent {
+public abstract class MultipletComponent {
 
+    Multiplet multiplet;
     double offset;
     double lineWidth;
     double intensity;
+    double volume;
 
-    public MultipletComponent(double offset, double intensity, double lw) {
+    public MultipletComponent(Multiplet multiplet, double offset, double intensity, double volume, double lw) {
+        this.multiplet = multiplet;
         this.offset = offset;
         this.intensity = intensity;
         this.lineWidth = lw;
+        this.volume = volume;
     }
 
     public double getOffset() {
         return offset;
+    }
+
+    public Multiplet getMultiplet() {
+        return multiplet;
     }
 
     public double getIntensity() {
@@ -32,15 +40,15 @@ public class MultipletComponent {
     public double getLineWidth() {
         return lineWidth;
     }
-
-    public MultipletComponent toRelative(double center, double sf) {
-        double relOffset = (offset - center) / sf;
-        return new MultipletComponent(relOffset, intensity, lineWidth);
+    public void setLineWidth(double volume) {
+        this.lineWidth = volume;
     }
 
-    public MultipletComponent toAbsolute(double center, double sf) {
-        double ppm = center + offset / sf;
-        return new MultipletComponent(ppm, intensity, lineWidth);
+    public double getVolume() {
+        return lineWidth;
     }
 
+    public void setVolume(double volume) {
+        this.volume = volume;
+    }
 }

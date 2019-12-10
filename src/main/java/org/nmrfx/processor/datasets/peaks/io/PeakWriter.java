@@ -99,7 +99,6 @@ public class PeakWriter {
     }
 
     public void writePeaksXPK2(FileWriter chan, PeakList peakList) throws IOException, InvalidPeakException {
-        peakList.getMultiplets();  // call this to ensure that mulitplets are sorted with number starting at 0
 
         Map<String, String> properties = peakList.getProperties();
         chan.write("peaklist\tdataset\tndim\tcondition\tscale");
