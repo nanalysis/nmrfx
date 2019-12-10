@@ -27,9 +27,9 @@ public abstract class Coupling {
     
     abstract String getMultiplicity();
 
-    abstract List<MultipletComponent> getAbsComponentList();
+    abstract List<AbsMultipletComponent> getAbsComponentList();
 
-    abstract List<MultipletComponent> getRelComponentList();
+    abstract List<RelMultipletComponent> getRelComponentList();
 
     abstract ArrayList<Line2D> getSplittingGraph();
 

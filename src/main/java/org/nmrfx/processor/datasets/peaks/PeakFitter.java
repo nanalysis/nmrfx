@@ -183,7 +183,7 @@ public class PeakFitter {
                     guessList.remove(guessList.size() - 1);  // remove last added value which was the peak center
                     // since were going to add individual centers
 
-                    List<MultipletComponent> multipletComps = cCoup.getRelComponentList();
+                    List<RelMultipletComponent> multipletComps = cCoup.getRelComponentList();
 
                     for (MultipletComponent comp : multipletComps) {
                         double dw = theFile.hzWidthToPoints(0, comp.getOffset());
@@ -510,14 +510,15 @@ public class PeakFitter {
                 Multiplet multiplet = peaks[iPeak].peakDims[0].getMultiplet();
                 if ((splitCount[iPeak].length == 1)
                         && (splitCount[iPeak][0] < 0)) { // generic multiplet
-
+                    double[] volumes = new double[freqs.length];
                     for (int iFreq = 0; iFreq < freqs.length; iFreq++) {
                         double delta = freqs[iFreq] - peakFit.getCFreq(iPeak);
                         freqs[iFreq] = theFile.ptWidthToHz(0, delta);
+                        volumes[iFreq] = amplitudes[iFreq] * lineWidth * (Math.PI / 2.0) / 1.05;
                     }
 
                     double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
-                    multiplet.set(centerPPM, freqs, amplitudes, lineWidth);
+                    multiplet.set(centerPPM, freqs, amplitudes, volumes, lineWidth);
 
                 } else {
                     CouplingItem[] cplItems2 = peakFit.getCouplings(iPeak);

@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class ComplexCoupling extends Coupling {
 
-    List<MultipletComponent> components = new ArrayList<>();
+    List<RelMultipletComponent> components = new ArrayList<>();
 
     @Override
     public String getMultiplicity() {
@@ -44,7 +44,7 @@ public class ComplexCoupling extends Coupling {
         return true;
     }
 
-    ComplexCoupling(final Multiplet multiplet, List<MultipletComponent> absComponents) {
+    ComplexCoupling(final Multiplet multiplet, List<AbsMultipletComponent> absComponents) {
         this.multiplet = multiplet;
         double sum = 0.0;
         for (MultipletComponent comp : absComponents) {
@@ -52,13 +52,14 @@ public class ComplexCoupling extends Coupling {
         }
         double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
         double center = sum / absComponents.size();
-        for (MultipletComponent comp : absComponents) {
+        for (AbsMultipletComponent comp : absComponents) {
             components.add(comp.toRelative(center, sf));
         }
         multiplet.getPeakDim().setChemShiftValue((float) (sum / absComponents.size()));
     }
 
-    ComplexCoupling(final Multiplet multiplet, final double[] frequencyOffsets, final double[] intensities, final double lineWidth) {
+    ComplexCoupling(final Multiplet multiplet, final double[] frequencyOffsets,
+            final double[] intensities, final double[] volumes, final double lineWidth) {
         this.multiplet = multiplet;
         double max = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < intensities.length; i++) {
@@ -71,7 +72,7 @@ public class ComplexCoupling extends Coupling {
         double centerPPM = multiplet.getCenter();
         for (int i = 0; i < intensities.length; i++) {
             double offset = (centerPPM - frequencyOffsets[i]) / sf;
-            MultipletComponent comp = new MultipletComponent(offset, intensities[i], lineWidth);
+            RelMultipletComponent comp = new RelMultipletComponent(multiplet, offset, intensities[i], volumes[i], lineWidth);
             components.add(comp);
         }
         sortByFreq();
@@ -108,19 +109,19 @@ public class ComplexCoupling extends Coupling {
     }
 
     @Override
-    List<MultipletComponent> getAbsComponentList() {
+    List<AbsMultipletComponent> getAbsComponentList() {
         PeakDim peakDimRef = multiplet.getPeakDim();
         double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
         double centerPPM = peakDimRef.getChemShiftValue();
-        List<MultipletComponent> absComps = new ArrayList<>();
-        for (MultipletComponent comp : components) {
+        List<AbsMultipletComponent> absComps = new ArrayList<>();
+        for (RelMultipletComponent comp : components) {
             absComps.add(comp.toAbsolute(centerPPM, sf));
         }
         return absComps;
     }
 
     @Override
-    List<MultipletComponent> getRelComponentList() {
+    List<RelMultipletComponent> getRelComponentList() {
         return components;
     }
 

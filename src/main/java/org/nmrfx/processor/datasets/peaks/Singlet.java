@@ -74,15 +74,21 @@ public class Singlet extends Coupling {
     }
 
     @Override
-    List<MultipletComponent> getAbsComponentList() {
-        return getRelComponentList();
+    List<AbsMultipletComponent> getAbsComponentList() {
+        List<AbsMultipletComponent> comps = new ArrayList<>();
+        PeakDim peakDim = multiplet.getPeakDim();
+        AbsMultipletComponent comp = new AbsMultipletComponent(multiplet, 0.0,
+                peakDim.getPeak().getIntensity(), peakDim.getPeak().getVolume1(), peakDim.getLineWidthValue());
+        comps.add(comp);
+        return comps;
     }
 
     @Override
-    List<MultipletComponent> getRelComponentList() {
-        List<MultipletComponent> comps = new ArrayList<>();
+    List<RelMultipletComponent> getRelComponentList() {
+        List<RelMultipletComponent> comps = new ArrayList<>();
         PeakDim peakDim = multiplet.getPeakDim();
-        MultipletComponent comp = new MultipletComponent(0.0, peakDim.getPeak().getIntensity(), peakDim.getLineWidthValue());
+        RelMultipletComponent comp = new RelMultipletComponent(multiplet, 0.0,
+                peakDim.getPeak().getIntensity(), peakDim.getPeak().getVolume1(), peakDim.getLineWidthValue());
         comps.add(comp);
         return comps;
     }
