@@ -143,10 +143,7 @@ public class PeakClusterMatcher {
             for (int j = 0; j < predPeakClusters.length; j++) {
                 jPredClus = predPeakClusters[j];
                 if (iExpClus.isInTol(jPredClus)) {
-                    BipartiteMatcher peakMatcher = iExpClus.compareTo(jPredClus);
-                    double wMin = peakMatcher.minWeight;
-                    int[] peakMatching = peakMatcher.getMatching();
-                    double peakMaxSum = peakMatcher.getMaxWtSum(peakMatching, wMin);
+                    double peakMaxSum = iExpClus.comparisonScore(jPredClus);
                     clusterMatcher.setWeight(i, j, peakMaxSum);
                 }
             }

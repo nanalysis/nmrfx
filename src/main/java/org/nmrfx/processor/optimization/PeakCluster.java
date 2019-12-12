@@ -226,6 +226,14 @@ public class PeakCluster {
         }
         return matcher;
     }
+    
+    public double comparisonScore(PeakCluster other) {
+        BipartiteMatcher matcher = this.compareTo(other);
+        double minWeight = matcher.minWeight;
+        int[] matchings = matcher.getMatching();
+        double score = matcher.getMaxWtSum(matchings, minWeight);
+        return score;
+    }
 
     public void setPeakMatches(int[] peakMatches) {
         this.peakMatches = peakMatches;
