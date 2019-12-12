@@ -9,6 +9,7 @@ import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -465,23 +466,68 @@ public class PeakSlider {
             controller.charts.stream()
                     .forEach(chart -> {
                         chart.clearPeakPaths();
-
                         for (PeakClusterMatcher matcher : matchers) {
                             if (matcher != null) {
-                                List<List<Peak>> matchingPeaks = matcher.getMatchedClusterPairs(peaks.get(0));
-                                matchingPeaks.forEach(pairedPeaks -> {
-                                    boolean isColumn = matcher.getMatchDim() == 0;
-                                    ConnectPeakAttributes connPeakAttrs = setPeakPairAttrs(isColumn, pairedPeaks);
-                                    if (connPeakAttrs != null) {
-                                        chart.addPeakPath(connPeakAttrs);
-                                    }
-                                });
-
+                                // new implementation
+                                Peak p0 = peaks.get(0);
+                                PeakCluster clus = matcher.getCluster(p0);
+                                List<ConnectPeakAttributes> matchingPeaks = getPeakMatchingAttrs(clus);
+                                if (matchingPeaks != null) {
+                                    matchingPeaks.forEach(pairedPeaksAttrs -> {
+                                        if (pairedPeaksAttrs != null) {
+                                            chart.addPeakPath(pairedPeaksAttrs);
+                                        }
+                                    });
+                                }
+                                // old implementation
+//                                List<List<Peak>> matchingPeaks = matcher.getMatchedClusterPairs(peaks.get(0));
+//                                matchingPeaks.forEach(pairedPeaks -> {
+//                                    boolean isColumn = matcher.getMatchDim() == 0;
+//                                    ConnectPeakAttributes connPeakAttrs = setPeakPairAttrs(isColumn, pairedPeaks);
+//                                    if (connPeakAttrs != null) {
+//                                        chart.addPeakPath(connPeakAttrs);
+//                                    }
+//                                });
                                 chart.drawPeakLists(true);
                             }
                         }
                     });
         }
+    }
+
+    List<ConnectPeakAttributes> getPeakMatchingAttrs(PeakCluster clus) {
+        if (clus == null) {
+            return null;
+        }
+        List<ConnectPeakAttributes> matchingPeaks = new ArrayList<>();
+        PeakCluster pairedClus = clus.getPairedTo();
+        if (pairedClus != null) {
+            clus.getLinkedPeaks().forEach((pInClus) -> {
+                for (PeakClusterMatcher matcher : matchers) {
+                    if (matcher != null) {
+                        Peak mPeak = matcher.getMatchingPeak(pInClus);
+                        List<Peak> pair = new ArrayList<>(Arrays.asList(pInClus, mPeak));
+                        boolean isColumn = matcher.getMatchDim() == 0;
+                        ConnectPeakAttributes connPair = setPeakPairAttrs(isColumn, pair);
+                        matchingPeaks.add(connPair);
+                    }
+                }
+            });
+        }
+        return matchingPeaks;
+    }
+
+    ConnectPeakAttributes setPeakPairAttrs(boolean isColumn, List<Peak> pairedPeaks) {
+        if (pairedPeaks.isEmpty()) {
+            return null;
+        }
+        Color color = (isColumn) ? Color.ORANGE : Color.BLUE;
+        double opacity = (isColumn) ? 0.7 : 0.4;
+        double width = (isColumn) ? 3.0 : 4.0;
+        ConnectPeakAttributes connPeakAttrs = new ConnectPeakAttributes(pairedPeaks);
+        connPeakAttrs.setWidth(width);
+        connPeakAttrs.setColor(color.toString(), opacity);
+        return connPeakAttrs;
     }
 
     public void evalMatchCriteria(List<Peak> peaks) {
@@ -491,6 +537,7 @@ public class PeakSlider {
 
             boolean criteria1Met = satisfyCriteria1(peak);
             boolean criteria2Met = satisfyCriteria2(peak, criteria1Met);
+            System.out.println(String.format("\tClicked peak '%s' meets criteria 1 (%s) and 2 (%s)", peak, criteria1Met, criteria2Met));
             if (criteria1Met && criteria2Met) {
                 List<Peak> peaksToFreeze = new ArrayList<>();
                 peaksToFreeze.add(peak);
@@ -500,16 +547,17 @@ public class PeakSlider {
                         if (!p.equals(peak)) {
                             boolean c1 = satisfyCriteria1(p);
                             boolean c2 = satisfyCriteria2(p, c1);
+                            System.out.println(String.format("\tPeak '%s' linked to the clicked peak in dimension '%d' satisfies criteria 1 (%s) and 2 (%s)", p, matcher.getMatchDim(), c1, c2));
                             if (c1 && c2) {
                                 peaksToFreeze.add(p);
                             }
                         }
                     });
                 }
-                System.out.println("Peaks to freeze: " + peaksToFreeze);
+                System.out.println("All peaks to freeze: " + peaksToFreeze);
+                printRowClusterScore(peak);
+                printColClusterScore(peak);
             }
-            System.out.println("Criteria 1 Met : " + criteria1Met);
-            System.out.println("Criteria 2 Met : " + criteria2Met);
         }
     }
 
@@ -522,6 +570,7 @@ public class PeakSlider {
      *
      */
     boolean satisfyCriteria1(Peak peak) {
+        System.out.println("\tsatisfyCriteria1('" + peak + "')");
         boolean criteria1Met = false;
         if (peak.getPeakList().isSimulated() && matchers.length == 2) {
             Peak tempMatchingPeak = null;
@@ -545,6 +594,87 @@ public class PeakSlider {
         return criteria1Met;
     }
 
+    void printColClusterScore(Peak predP0) {
+        PeakClusterMatcher colMatcher = matchers[0];
+        PeakClusterMatcher rowMatcher = matchers[1];
+        if (rowMatcher != null && colMatcher != null) {
+            System.out.println();
+            System.out.println();
+            System.out.println("Column calculations");
+            PeakCluster predColClus = colMatcher.getCluster(predP0);
+            Peak expP1 = colMatcher.getMatchingPeak(predP0);
+            List<Peak> peaksPairedToP1 = rowMatcher.getCluster(expP1).getLinkedPeaks();
+            peaksPairedToP1.stream().map((p) -> {
+                PeakCluster expColClus = colMatcher.getCluster(p);
+                System.out.println(String.format("Weights b/t predicted row cluster of '%s' and experimental cluster containing '%s'", predP0, p));
+                predColClus.getLinkedPeaks().forEach((predP) -> {
+                    expColClus.getLinkedPeaks().forEach((expPeak) -> {
+                        double w = PeakCluster.calcWeight(predP, expPeak, predP.getPeakList().scale);
+                        System.out.println(String.format("\tPred Peak ('%s') and Exp Peak ('%s'), weight : '%f'", predP, expPeak, w));
+                    });
+                });
+                return expColClus;
+            }).map((expRowClus) -> predColClus.comparisonScore(expRowClus)).forEachOrdered((clusScore) -> {
+                System.out.println("Cluster score: " + clusScore);
+            });
+        }
+        List<Double> s = calcClusterScores(predP0, false);
+        System.out.println("Column list of cluster scores : " + s.toString());
+    }
+
+    void printRowClusterScore(Peak predP0) {
+        PeakClusterMatcher colMatcher = matchers[0];
+        PeakClusterMatcher rowMatcher = matchers[1];
+        if (rowMatcher != null && colMatcher != null) {
+            System.out.println();
+            System.out.println();
+            System.out.println("Row calculations");
+            PeakCluster predRowClus = rowMatcher.getCluster(predP0);
+            Peak expP1 = rowMatcher.getMatchingPeak(predP0);
+            List<Peak> peaksPairedToP1 = colMatcher.getCluster(expP1).getLinkedPeaks();
+            peaksPairedToP1.stream().map((p) -> {
+                PeakCluster expRowClus = rowMatcher.getCluster(p);
+                System.out.println(String.format("Weights b/t predicted row cluster of '%s' and experimental cluster containing '%s'", predP0, p));
+                predRowClus.getLinkedPeaks().forEach((predP) -> {
+                    expRowClus.getLinkedPeaks().forEach((expPeak) -> {
+                        double w = PeakCluster.calcWeight(predP, expPeak, predP.getPeakList().scale);
+                        System.out.println(String.format("\tPred Peak ('%s') and Exp Peak ('%s'), weight : '%f'", predP, expPeak, w));
+                    });
+                });
+                return expRowClus;
+            }).map((expRowClus) -> predRowClus.comparisonScore(expRowClus)).forEachOrdered((clusScore) -> {
+                System.out.println("Cluster score: " + clusScore);
+            });
+        }
+        List<Double> s = calcClusterScores(predP0, true);
+        System.out.println("Row list of cluster scores : " + s.toString());
+    }
+
+    List<Double> calcClusterScores(Peak peak, boolean doRow) {
+        PeakClusterMatcher colMatcher = matchers[0];
+        PeakClusterMatcher rowMatcher = matchers[1];
+        List<Double> clusScores = new ArrayList<>();
+        if (colMatcher != null && rowMatcher != null) {
+            PeakCluster p1Clus = (doRow)
+                    ? rowMatcher.getCluster(peak) : colMatcher.getCluster(peak);
+            Peak p1MatchPeak = (doRow)
+                    ? rowMatcher.getMatchingPeak(peak) : colMatcher.getMatchingPeak(peak);
+            if (p1Clus != null && p1MatchPeak != null) {
+                PeakCluster matchPeakClus = (doRow)
+                        ? colMatcher.getCluster(p1MatchPeak) : rowMatcher.getCluster(p1MatchPeak);
+                List<Peak> matchPeakLinkedList = (matchPeakClus != null)
+                        ? matchPeakClus.getLinkedPeaks() : (new ArrayList<>());
+                matchPeakLinkedList.forEach((p) -> {
+                    PeakCluster pClus = (doRow)
+                            ? rowMatcher.getCluster(p) : colMatcher.getCluster(p);
+                    double score = p1Clus.comparisonScore(pClus);
+                    clusScores.add(score);
+                });
+            }
+        }
+        return clusScores;
+    }
+
     /**
      * Criteria #2: Given a selected peak 1) Peak must have passed criteria #1
      * 2) Experimental (exp) peak matched to given simulated (sim) peak doesn't
@@ -552,16 +682,16 @@ public class PeakSlider {
      * calculate the weights b/t sim peak and the exp peaks within tol and
      * display them
      */
-    boolean satisfyCriteria2(Peak peak, boolean criteria1Met) {
+    boolean satisfyCriteria2(Peak peak, boolean criteria1Met
+    ) {
+        System.out.println("\tsatisfyCriteria2('" + peak + "', '" + criteria1Met + "')");
         boolean criteria2Met = false;
         if (criteria1Met) {
             for (PeakClusterMatcher matcher : matchers) {
                 double tolerance = 0.10;
                 int matchDim = matcher.getMatchDim();
                 int dim = (matchDim == 0) ? 1 : 0;
-                System.out.println("\tMatcher Dim : " + matchDim);
-                Peak matchingPeak = matcher.getMatchingPeak(peak);
-                System.out.println("\tMatching Peak of " + peak + " is " + matchingPeak);
+                Peak matchingPeak = matcher.getMatchingPeak(peak); // experimental peak
                 if (matchingPeak != null) {
                     List<Peak> peaksInClus = matcher.getCluster(matchingPeak).getLinkedPeaks();
                     List<Peak> peaksWithinTol = new ArrayList<>();
@@ -569,7 +699,7 @@ public class PeakSlider {
                     peaksInClus.forEach((p) -> {
                         double peakShift = p.getPeakDim(dim).getChemShift();
                         double shiftDiff = Math.abs(peakShift - matchPeakShift);
-                        System.out.println("\tShift difference between " + matchingPeak + " and " + p + " is " + shiftDiff);
+                        System.out.println(String.format("\t\tIn dimension '%d', shift difference b/t experimental peak '%s' compared to peak '%s' is '%f'.", matchDim, matchingPeak, p, shiftDiff));
                         if (shiftDiff != 0.0 && shiftDiff < tolerance) {
                             peaksWithinTol.add(p);
                         }
@@ -579,7 +709,7 @@ public class PeakSlider {
                     } else {
                         peaksWithinTol.forEach(peakInTol -> {
                             double w = PeakCluster.calcWeight(peak, peakInTol, peak.getPeakList().scale);
-                            System.out.println(String.format("\t(pred peak) %s --> (exp peak) %s : (weight) %f", peak, peakInTol, w));
+                            System.out.println(String.format("\t\t* Predicted peak '%s' has experimental peak '%s' within a '%f' ppm tolerance. The weight b/t the 2 peaks is '%f'.", peak, peakInTol, tolerance, w));
                         });
                     }
                 }
@@ -657,19 +787,6 @@ public class PeakSlider {
                         }
                     }
                 });
-    }
-
-    ConnectPeakAttributes setPeakPairAttrs(boolean isColumn, List<Peak> pairedPeaks) {
-        if (pairedPeaks.isEmpty()) {
-            return null;
-        }
-        Color color = (isColumn) ? Color.ORANGE : Color.BLUE;
-        double opacity = (isColumn) ? 0.7 : 0.4;
-        double width = (isColumn) ? 3.0 : 4.0;
-        ConnectPeakAttributes connPeakAttrs = new ConnectPeakAttributes(pairedPeaks);
-        connPeakAttrs.setWidth(width);
-        connPeakAttrs.setColor(color.toString(), opacity);
-        return connPeakAttrs;
     }
 
     public void clearMatches() {
