@@ -87,8 +87,9 @@ public class Singlet extends Coupling {
     List<RelMultipletComponent> getRelComponentList() {
         List<RelMultipletComponent> comps = new ArrayList<>();
         PeakDim peakDim = multiplet.getPeakDim();
+        double sf = peakDim.getSpectralDimObj().getSf();
         RelMultipletComponent comp = new RelMultipletComponent(multiplet, 0.0,
-                peakDim.getPeak().getIntensity(), peakDim.getPeak().getVolume1(), peakDim.getLineWidthValue());
+                peakDim.getPeak().getIntensity(), peakDim.getPeak().getVolume1(), peakDim.getLineWidthValue() * sf);
         comps.add(comp);
         return comps;
     }

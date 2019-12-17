@@ -37,9 +37,14 @@ public abstract class MultipletComponent {
         return intensity;
     }
 
+    public void setIntensity(double intensity) {
+        this.intensity = intensity;
+    }
+
     public double getLineWidth() {
         return lineWidth;
     }
+
     public void setLineWidth(double volume) {
         this.lineWidth = volume;
     }

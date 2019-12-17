@@ -218,7 +218,7 @@ public class CouplingPattern extends Coupling {
             double lineWidth = multiplet.getPeakDim().getLineWidth();
             double volume = (jAmps[i] * lineWidth * (Math.PI / 2.0) / 1.05);
             AbsMultipletComponent comp = new AbsMultipletComponent(multiplet,
-                    freqs[i] + centerPPM, jAmps[i], volume, lineWidth);
+                    centerPPM - freqs[i], jAmps[i], volume, lineWidth);
             comps.add(comp);
         }
         return comps;
