@@ -410,8 +410,7 @@ public class PeakList {
     public String getDetails() {
         return details;
     }
-    
-    
+
     public boolean isSimulated() {
         return sampleConditionLabel.contains("sim");
     }
@@ -993,9 +992,7 @@ public class PeakList {
         if (ascending) {
             peaks.sort((Peak a, Peak b) -> compare(a.peakDims[iDim].getChemShift(), b.peakDims[iDim].getChemShift()));
         } else {
-            // fixme
-            peaks.sort((Peak a, Peak b) -> compare(a.peakDims[iDim].getChemShift(), b.peakDims[iDim].getChemShift()));
-
+            peaks.sort((Peak a, Peak b) -> compare(b.peakDims[iDim].getChemShift(), a.peakDims[iDim].getChemShift()));
         }
     }
 
@@ -1348,7 +1345,6 @@ public class PeakList {
         return peakList.getPeakByID(idNum);
     }
 
- 
     /**
      *
      * @param peakSpecifier
