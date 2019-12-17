@@ -343,12 +343,18 @@ public class Analyzer {
                 double min = Double.MAX_VALUE;
                 double max = Double.NEGATIVE_INFINITY;
                 for (Peak peak : peaks) {
-                    double ppm = peak.peakDims[iDim].getChemShift();
-                    double width = Math.abs(peak.peakDims[iDim].getLineWidth());
-                    double tppm = ppm + trimRatio * width;
-                    max = Math.max(tppm, max);
-                    tppm = ppm - trimRatio * width;
-                    min = Math.min(tppm, min);
+                    PeakDim peakDim = peak.getPeakDim(0);
+                    Multiplet multiplet = peakDim.getMultiplet();
+                    List<AbsMultipletComponent> absComps = multiplet.getAbsComponentList();
+
+                    for (AbsMultipletComponent absComp : absComps) {
+                        double ppm = absComp.getOffset();
+                        double width = Math.abs(absComp.getLineWidth());
+                        double tppm = ppm + trimRatio * width;
+                        max = Math.max(tppm, max);
+                        tppm = ppm - trimRatio * width;
+                        min = Math.min(tppm, min);
+                    }
                 }
                 double rStart = region.getRegionStart(iDim);
                 double rEnd = region.getRegionEnd(iDim);
@@ -604,10 +610,10 @@ public class Analyzer {
         peakPickRegion(min, max);
     }
 
-    public Optional<Multiplet> splitRegion(double ppm) throws IOException {
+    public List<Multiplet> splitRegion(double ppm) throws IOException {
         Set<DatasetRegion> regions = getRegions();
         Optional<DatasetRegion> found = getRegion(regions, 0, ppm);
-        Optional<Multiplet> result = Optional.empty();
+        List<Multiplet> result = new ArrayList<>();
         if (found.isPresent()) {
             DatasetRegion region = found.get();
             double start = region.getRegionStart(0);
@@ -621,30 +627,34 @@ public class Analyzer {
                 ppm1 = ppm2;
                 ppm2 = hold;
             }
+            double[][] limits = new double[1][2];
+            limits[0][0] = region.getRegionStart(0);
+            limits[0][1] = region.getRegionEnd(0);
+            int[] dim = {0};
+
             System.out.println(start + " " + ppm1 + " " + ppm2 + " " + end);
             DatasetRegion newRegion1 = new DatasetRegion(start, ppm1);
             DatasetRegion newRegion2 = new DatasetRegion(ppm2, end);
             regions.add(newRegion1);
             regions.add(newRegion2);
             integrate();
-            setVolumesFromIntegrals();
-            DatasetRegion[] newRegions = {newRegion1, newRegion2};
-            PeakFitting peakFitting = new PeakFitting(dataset);
-            for (DatasetRegion newRegion : newRegions) {
-                Multiplets.unlinkPeaksInRegion(peakList, newRegion);
-                PeakDim rootPeak = Multiplets.linkPeaksInRegion(peakList, newRegion);
-                if (rootPeak != null) {
-                    peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
-                    Multiplets.analyzeMultiplet(rootPeak.myPeak);
-                    fitMultiplet(rootPeak.getMultiplet());
-                    result = Optional.of(rootPeak.getMultiplet());
-                }
+            List<Peak> peaks = locatePeaks(peakList, limits, dim);
+            for (Peak peak : peaks) {
+                peak.setFlag(4, false);
             }
-            if (result.isPresent()) {
-                PeakList peakList = result.get().getPeakDim().getPeak().getPeakList();
-                peakList.getMultiplets();
-                peakList.refreshMultiplets();
+            if (!peaks.isEmpty()) {
+                Multiplet multiplet = peaks.get(0).getPeakDim(0).getMultiplet();
+                Multiplet newMultiplet = multiplet.split(ppm);
+                setVolumesFromIntegrals();
+                PeakFitting peakFitting = new PeakFitting(dataset);
+                System.out.println("fit " + multiplet.getOrigin().getName());
+
+                peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
+                System.out.println("fit " + newMultiplet.getOrigin().getName());
+                peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), true);
+                System.out.println("fffffffffff");
             }
+            renumber();
         }
         return result;
     }
@@ -660,17 +670,10 @@ public class Analyzer {
             integrate();
             setVolumesFromIntegrals();
             Multiplets.unlinkPeaksInRegion(peakList, region);
-            PeakDim rootPeak = Multiplets.linkPeaksInRegion(peakList, region);
-            if (rootPeak != null) {
-                peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
-                Multiplets.analyzeMultiplet(rootPeak.myPeak);
-                rootPeak.getPeak().getPeakList().getMultiplets();
-                rootPeak.getPeak().getPeakList().refreshMultiplets();
-                // do this to sort multiplets after analyzing new
-                Multiplet multiplet = rootPeak.getMultiplet();
-                fitMultiplet(multiplet);
-                result = Optional.of(multiplet);
-            }
+            Multiplet multiplet = Multiplets.linkPeaksInRegion(peakList, region);
+            result = Optional.of(multiplet);
+            peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
+            renumber();
         }
         return result;
     }
@@ -678,11 +681,6 @@ public class Analyzer {
     public void fitLinkedPeaks() {
         PeakFitting peakFitting = new PeakFitting(dataset);
         peakFitting.fitLinkedPeaks(peakList, true);
-    }
-
-    public void fitMultiplet(String mSpec) {
-        Multiplet multiplet = Multiplets.getMultiplet(mSpec);
-        fitMultiplet(multiplet);
     }
 
     public void fitMultiplet(Multiplet multiplet) {
@@ -704,8 +702,11 @@ public class Analyzer {
     }
 
     public void dumpMultiplets() {
-        ArrayList<Multiplet> multiplets = peakList.getMultiplets();
-        for (Multiplet multiplet : multiplets) {
+        for (Peak peak : peakList.peaks()) {
+            if (peak.isDeleted()) {
+                continue;
+            }
+            Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
             System.out.println(multiplet.myPeakDim.myPeak.getName() + " "
                     + multiplet.myPeakDim.getChemShift() + " " + multiplet.getCouplingsAsString() + " " + Multiplets.getCouplingPattern(multiplet) + " " + multiplet.getVolume() / peakList.scale);
 
@@ -713,11 +714,14 @@ public class Analyzer {
     }
 
     public void normalizeMultiplets() {
-        ArrayList<Multiplet> multiplets = peakList.getMultiplets();
         List<Double> aromaticValues = new ArrayList<>();
         List<Double> aliphaticValues = new ArrayList<>();
-        for (Multiplet multiplet : multiplets) {
-            if (multiplet.myPeakDim.getPeak().getType() == Peak.COMPOUND) {
+        for (Peak peak : peakList.peaks()) {
+            if (peak.isDeleted()) {
+                continue;
+            }
+            Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
+            if (peak.getType() == Peak.COMPOUND) {
                 double shift = multiplet.getCenter();
                 double volume = multiplet.getVolume();
                 if (shift > 5.5) {
@@ -946,9 +950,12 @@ public class Analyzer {
         integrate();
         PeakList pList = peakPick();
         purgeNonPeakRegions();
+        renumber();
         groupPeaks();
+        renumber();
         setVolumesFromIntegrals();
         fitLinkedPeaks();
+        renumber();
         purgeSmallPeaks();
         purgeNonPeakRegions();
         analyzeMultiplets();
