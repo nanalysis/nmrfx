@@ -49,6 +49,7 @@ import javafx.scene.transform.Affine;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
+import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
 import org.nmrfx.processor.datasets.peaks.Peak.Corner;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 
@@ -1336,7 +1337,7 @@ public class DrawPeaks {
                     x2 = xAxis.getDisplayPosition(x2);
                     y1 = yAxis.getDisplayPosition(y1);
                     y2 = yAxis.getDisplayPosition(y2);
-                    
+
                     g2.setStroke(connPeaks.getColor());
                     g2.setLineWidth(connPeaks.getWidth());
                     g2.beginPath();
@@ -1702,18 +1703,43 @@ public class DrawPeaks {
 //
 
         void renderSimulated(GraphicsContextInterface g2, boolean eraseFirst) throws GraphicsIOException {
-            double w = peak.peakDims[dim].getLineWidthValue();
-            if (w < widthLimit) {
-                w = widthLimit;
+            Multiplet multiplet = peak.peakDims[dim].getMultiplet();
+            if (multiplet.isCoupled()) {
+                renderSimulatedMultiplet(g2, eraseFirst);
+            } else {
+                double w = peak.peakDims[dim].getLineWidthValue();
+                if (w < widthLimit) {
+                    w = widthLimit;
+                }
+
+                double intensity = peak.getIntensity();
+                g2.setStroke(peakAttr.getOnColor());
+                g2.setLineWidth(peak1DStroke);
+
+                g2.beginPath();
+                BezierPath.makeBezierCurve(bpCoords, 1, g2, 1.0, x, 0.0, w, intensity, xAxis, yAxis);
+                g2.stroke();
             }
 
-            double intensity = peak.getIntensity();
+        }
+
+        void renderSimulatedMultiplet(GraphicsContextInterface g2, boolean eraseFirst) throws GraphicsIOException {
             g2.setStroke(peakAttr.getOnColor());
             g2.setLineWidth(peak1DStroke);
+            List<AbsMultipletComponent> comps = peak.peakDims[dim].getMultiplet().getAbsComponentList();
+            for (AbsMultipletComponent comp : comps) {
+                double w = comp.getLineWidth();
+                if (w < widthLimit) {
+                    w = widthLimit;
+                }
 
-            g2.beginPath();
-            BezierPath.makeBezierCurve(bpCoords, 1, g2, 1.0, x, 0.0, w, intensity, xAxis, yAxis);
-            g2.stroke();
+                double intensity = comp.getIntensity();
+                double pos = comp.getOffset();
+
+                g2.beginPath();
+                BezierPath.makeBezierCurve(bpCoords, 1, g2, 1.0, pos, 0.0, w, intensity, xAxis, yAxis);
+                g2.stroke();
+            }
 
         }
 //
