@@ -83,6 +83,7 @@ public class PeakFitter {
         int[][] p1 = new int[dataDim][2];
         int[] cpt = new int[dataDim];
         double[] width = new double[dataDim];
+        rootedPeaks = true;
 
         ArrayList guessList = new ArrayList();
 
@@ -98,8 +99,10 @@ public class PeakFitter {
         for (int i = 0; i < dataDim; i++) {
             pdim[i] = -1;
         }
-
+        //System.out.println(" jfit " + peaks.length);
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
+            PeakDim peakDim = peaks[iPeak].getPeakDim(0);
+            //System.out.println("jfit " + peaks[iPeak].getName());
             if (dataDim < peaks[iPeak].peakList.nDim) {
                 throw new IllegalArgumentException("Number of peak list dimensions greater than number of dataset dimensions");
             }
@@ -137,20 +140,11 @@ public class PeakFitter {
                     p2[nextDim][1] = rows[i];
                 }
             }
+            Multiplet multiplet = peakDim.getMultiplet();
+            multiplet.getMultipletRegion(theFile, pdim, p1, cpt, width);
+            double c = theFile.ppmToDPoint(0, multiplet.getCenter());
 
-            rootedPeaks = true;
-
-            List<Peak> linkedPeaks2 = PeakList.getLinks(peaks[iPeak], true);
-
-            if (rootedPeaks && (linkedPeaks2.size() < 1)) {
-                continue;
-            }
-
-            peaks[iPeak].getPeakRegion(theFile, pdim, p1, cpt, width);
-            double c = theFile.ppmToDPoint(0, peaks[iPeak].peakDims[0].getMultiplet().getCenter());
-
-            //   double c = theFile.ppmToDPoint(0, peaks[iPeak].peakDim[0].getChemShiftValue());
-            double c1 = theFile.ppmToDPoint(0, peaks[iPeak].peakDims[0].getMultiplet().getCenter() + peaks[iPeak].peakDims[0].getLineWidthValue());
+            double c1 = theFile.ppmToDPoint(0, multiplet.getCenter() + peakDim.getLineWidthValue());
             //System.out.println("lw "+c+" "+c1+" "+(c1-c));
             guessList.add(Math.abs(c1 - c));  // linewidth in points
             guessList.add(c);   // peak center in points
@@ -159,72 +153,45 @@ public class PeakFitter {
             int pEdge1 = (int) (c + width[0] + 1);
             splitCount[iPeak] = new int[0];
 
-            if (rootedPeaks) {  // coupled peaks linked to  a root peak
-                Coupling coupling = peaks[iPeak].peakDims[0].getMultiplet().getCoupling();
-                if (coupling instanceof CouplingPattern) {  // multiplet with couplings
-                    CouplingPattern cPat = (CouplingPattern) coupling;
-                    int nCouplings = cPat.getNCouplingValues();
-                    splitCount[iPeak] = cPat.getNValues();
+            Coupling coupling = peaks[iPeak].peakDims[0].getMultiplet().getCoupling();
+            if (coupling instanceof CouplingPattern) {  // multiplet with couplings
+                CouplingPattern cPat = (CouplingPattern) coupling;
+                int nCouplings = cPat.getNCouplingValues();
+                splitCount[iPeak] = cPat.getNValues();
 
-                    for (int iCoup = 0; iCoup < nCouplings; iCoup++) {
-                        double cVal = cPat.getValueAt(iCoup);
-                        int nVal = cPat.getNValue(iCoup);
-                        splitCount[iPeak][iCoup] = nVal;
-                        pEdge0 -= (int) ((nVal * theFile.hzWidthToPoints(0, cVal)) / 2);
-                        pEdge1 += (int) ((nVal * theFile.hzWidthToPoints(0, cVal)) / 2);
-                        guessList.add(theFile.hzWidthToPoints(0, cVal));  // coupling in hz
-                        guessList.add(theFile.hzWidthToPoints(0, 0.0));   // slope 
-                    }
-                } else if (coupling instanceof ComplexCoupling) {  // generic multiplet (list of freqs)
-                    ComplexCoupling cCoup = (ComplexCoupling) coupling;
-                    int nFreqs = cCoup.getFrequencyCount();
-                    splitCount[iPeak] = new int[1];
-                    splitCount[iPeak][0] = -nFreqs;
-                    guessList.remove(guessList.size() - 1);  // remove last added value which was the peak center
-                    // since were going to add individual centers
-
-                    List<RelMultipletComponent> multipletComps = cCoup.getRelComponentList();
-
-                    for (MultipletComponent comp : multipletComps) {
-                        double dw = theFile.hzWidthToPoints(0, comp.getOffset());
-                        int cw0 = (int) ((c + dw) - Math.abs(width[0]) - 1);
-                        int cw1 = (int) (c + dw + Math.abs(width[0]) + 1);
-
-                        if (cw0 < pEdge0) {
-                            pEdge0 = cw0;
-                        }
-
-                        if (cw1 > pEdge1) {
-                            pEdge1 = cw1;
-                        }
-
-                        guessList.add(c + dw);  // multiplet center plus individual peak offset
-                    }
+                for (int iCoup = 0; iCoup < nCouplings; iCoup++) {
+                    double cVal = cPat.getValueAt(iCoup);
+                    int nVal = cPat.getNValue(iCoup);
+                    splitCount[iPeak][iCoup] = nVal;
+                    pEdge0 -= (int) ((nVal * theFile.hzWidthToPoints(0, cVal)) / 2);
+                    pEdge1 += (int) ((nVal * theFile.hzWidthToPoints(0, cVal)) / 2);
+                    guessList.add(theFile.hzWidthToPoints(0, cVal));  // coupling in hz
+                    guessList.add(theFile.hzWidthToPoints(0, 0.0));   // slope 
                 }
-            } else {  // arbitrary list of peaks
-                List<Peak> linkedPeaks = PeakList.getLinks(peaks[iPeak], true);
+            } else if (coupling instanceof ComplexCoupling) {  // generic multiplet (list of freqs)
+                ComplexCoupling cCoup = (ComplexCoupling) coupling;
+                int nFreqs = cCoup.getFrequencyCount();
+                splitCount[iPeak] = new int[1];
+                splitCount[iPeak][0] = -nFreqs;
+                guessList.remove(guessList.size() - 1);  // remove last added value which was the peak center
+                // since were going to add individual centers
 
-                if (linkedPeaks.size() > 1) {
-                    splitCount[iPeak] = new int[1];
-                    splitCount[iPeak][0] = -linkedPeaks.size();
+                List<RelMultipletComponent> multipletComps = cCoup.getRelComponentList();
 
-                    for (int iLink = 1; iLink < linkedPeaks.size(); iLink++) {
-                        Peak lPeak = (Peak) linkedPeaks.get(iLink);
-                        c = theFile.ppmToDPoint(0, lPeak.peakDims[0].getChemShiftValue());
+                for (MultipletComponent comp : multipletComps) {
+                    double dw = theFile.hzWidthToPoints(0, comp.getOffset());
+                    int cw0 = (int) ((c + dw) - Math.abs(width[0]) - 1);
+                    int cw1 = (int) (c + dw + Math.abs(width[0]) + 1);
 
-                        int cw0 = (int) (c - Math.abs(width[0]) - 1);
-                        int cw1 = (int) (c + Math.abs(width[0]) + 1);
-
-                        if (cw0 < pEdge0) {
-                            pEdge0 = cw0;
-                        }
-
-                        if (cw1 > pEdge1) {
-                            pEdge1 = cw1;
-                        }
-
-                        guessList.add(c);  // center of each individual peak
+                    if (cw0 < pEdge0) {
+                        pEdge0 = cw0;
                     }
+
+                    if (cw1 > pEdge1) {
+                        pEdge1 = cw1;
+                    }
+
+                    guessList.add(c + dw);  // multiplet center plus individual peak offset
                 }
             }
 
@@ -312,6 +279,7 @@ public class PeakFitter {
                 iGuess++;
 
                 int nCouplings = splitCount[iPeak].length;
+                //System.out.println("pattern " + nCouplings);
                 int[] couplingIndices = new int[nCouplings];
                 for (int iCoupling = 0; iCoupling < nCouplings; iCoupling++) {
                     couplingIndices[iCoupling] = iGuess;
@@ -356,7 +324,9 @@ public class PeakFitter {
                 }
             }
         }
-        int i = 0;
+        //for (int i = 0; i < guesses.length; i++) {
+            //System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
+        //}
 
         double result = fitNow(guesses, lower, upper);
         return result;
@@ -436,11 +406,12 @@ public class PeakFitter {
                 }
                 long duration = System.currentTimeMillis() - startTime;
                 rms = peakFit.getBestValue();
-                //System.out.println(peakFit.getBestValue());
-//            for (double pValue : point) {
-//               System.out.print(pValue + " ");
-//          }
-//            System.out.println(duration);
+//                System.out.print(peakFit.getBestValue() + " ");
+//                double[] point = peakFit.getBestPoint();
+//                for (double pValue : point) {
+//                    System.out.printf("%9.3f ", pValue);
+//                }
+//                System.out.println(duration);
                 break;
         }
 
@@ -462,28 +433,14 @@ public class PeakFitter {
 
             ArrayList signals = (ArrayList) signalGroups.get(iPeak);
             double w = ((SineSignal) signals.get(0)).getWidth();
-            double lineWidth = theFile.ptWidthToPPM(0, w);
-            //System.out.println(w + " " + lineWidth);
-            //System.out.println(theFile.getName());
-            //System.out.println(iPeak+" "+w+" "+lineWidth+" "+signals.size());
-            peaks[iPeak].peakDims[0].setLineWidthValue((float) lineWidth);
-            peaks[iPeak].peakDims[0].setBoundsValue((float) lineWidth * 3);
+            double lineWidthPPM = theFile.ptWidthToPPM(0, w);
+//            System.out.println(w + " " + lineWidthPPM);
+//            System.out.println(theFile.getName());
+//            System.out.println(iPeak + " " + w + " " + lineWidthPPM + " " + signals.size());
+            peaks[iPeak].peakDims[0].setLineWidthValue((float) lineWidthPPM);
+            peaks[iPeak].peakDims[0].setBoundsValue((float) lineWidthPPM * 3);
 
             int nFreqs = signals.size();
-
-            if (rootedPeaks) {
-                int nExtra = nFreqs - (linkedPeaks.size());
-
-                if (nExtra < 0) {
-                    throw new IllegalArgumentException("negative nExtra in jfit nFreqs: " + nFreqs + "nPeaks: " + linkedPeaks.size());
-                }
-
-                if (nExtra > 0) {
-                    PeakList.trimFreqs(signals, nExtra);
-                }
-
-                nFreqs -= nExtra;
-            }
 
             double[] amplitudes = new double[nFreqs];
             double[] freqs = new double[nFreqs];
@@ -511,24 +468,29 @@ public class PeakFitter {
                 if ((splitCount[iPeak].length == 1)
                         && (splitCount[iPeak][0] < 0)) { // generic multiplet
                     double[] volumes = new double[freqs.length];
+                    double[] deltaPPMs = new double[freqs.length];
                     for (int iFreq = 0; iFreq < freqs.length; iFreq++) {
                         double delta = freqs[iFreq] - peakFit.getCFreq(iPeak);
-                        freqs[iFreq] = theFile.ptWidthToHz(0, delta);
-                        volumes[iFreq] = amplitudes[iFreq] * lineWidth * (Math.PI / 2.0) / 1.05;
+                        deltaPPMs[iFreq] = theFile.ptWidthToPPM(0, delta);
+                        volumes[iFreq] = amplitudes[iFreq] * lineWidthPPM * (Math.PI / 2.0) / 1.05;
                     }
 
                     double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
-                    multiplet.set(centerPPM, freqs, amplitudes, volumes, lineWidth);
+                    multiplet.set(centerPPM, deltaPPMs, amplitudes, volumes, lineWidthPPM);
 
                 } else {
                     CouplingItem[] cplItems2 = peakFit.getCouplings(iPeak);
                     double[] couplings = new double[cplItems2.length];
                     double[] sin2Thetas = new double[cplItems2.length];
                     double[] amps = peakFit.getBestAmps();
+//                    System.out.println("couplings " + cplItems2.length + " " + amps.length);
+//                    for (int ii = 0; ii < amps.length; ii++) {
+//                        System.out.println("ii amp " + amps[ii]);
+//                    }
                     for (int iCoup = 0; iCoup < couplings.length; iCoup++) {
                         couplings[iCoup] = theFile.ptWidthToHz(0, cplItems2[iCoup].getCoupling());
                         sin2Thetas[iCoup] = cplItems2[iCoup].getSin2Theta();
-                        //System.out.println(cplItems2[iCoup].getCoupling() + " " + couplings[iCoup] + " " + amps[iCoup] + " " + sin2Thetas[iCoup]);
+//                        System.out.println(cplItems2[iCoup].getCoupling() + " " + couplings[iCoup] + " " + sin2Thetas[iCoup]);
                     }
 
                     double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
@@ -537,8 +499,8 @@ public class PeakFitter {
                 //System.out.println(peakFit.getCFreq(iPeak) + " " + p2[0][0]);
                 for (int jPeak = 0; jPeak < linkedPeaks.size(); jPeak++) {
                     Peak lPeak = (Peak) linkedPeaks.get(jPeak);
-                    lPeak.peakDims[0].setLineWidthValue((float) lineWidth);
-                    lPeak.peakDims[0].setBoundsValue((float) lineWidth * 3);
+                    lPeak.peakDims[0].setLineWidthValue((float) lineWidthPPM);
+                    lPeak.peakDims[0].setBoundsValue((float) lineWidthPPM * 3);
                     lPeak.setFlag(4, true);
                 }
 
@@ -549,10 +511,10 @@ public class PeakFitter {
                     SineSignal signal = (SineSignal) signals.get(iFreq);
                     lPeak.peakDims[0].setChemShiftValueNoCheck((float) theFile.pointToPPM(
                             0, signal.getFreq() + p2[0][0]));
-                    lPeak.peakDims[0].setLineWidthValue((float) lineWidth);
-                    lPeak.peakDims[0].setBoundsValue((float) lineWidth * 3);
+                    lPeak.peakDims[0].setLineWidthValue((float) lineWidthPPM);
+                    lPeak.peakDims[0].setBoundsValue((float) lineWidthPPM * 3);
                     lPeak.setIntensity((float) signal.getAmplitude());
-                    lPeak.setVolume1((float) (lPeak.getIntensity() * lineWidth * (Math.PI / 2.0) / 1.05));
+                    lPeak.setVolume1((float) (lPeak.getIntensity() * lineWidthPPM * (Math.PI / 2.0) / 1.05));
                     lPeak.setFlag(4, true);
                 }
             }
@@ -571,26 +533,22 @@ public class PeakFitter {
 
         //double guesses[] = new double[3*nPeaks];
         int nPeaks = peaks.length;
-        double[] guesses = new double[(2 * nPeaks) + 1];
 
         if (i0 > i1) {
             int hold = i0;
             i0 = i1;
             i1 = hold;
         }
-
         //int k=0;
-        int k = 1;
         int[] fitDim = new int[dataDim];
-        double lwSum = 0.0;
-
+        List<AbsMultipletComponent> absComps = new ArrayList<>();
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
-            if (dataDim < peaks[iPeak].peakList.nDim) {
-                throw new IllegalArgumentException(
-                        "Number of peak list dimensions greater than number of dataset dimensions");
-            }
-
+            Peak peak = peaks[iPeak];
             for (int j = 0; j < peaks[iPeak].peakList.nDim; j++) {
+                if (dataDim < peaks[iPeak].peakList.nDim) {
+                    throw new IllegalArgumentException(
+                            "Number of peak list dimensions greater than number of dataset dimensions");
+                }
                 boolean ok = false;
 
                 for (int i = 0; i < dataDim; i++) {
@@ -609,23 +567,32 @@ public class PeakFitter {
                             + peaks[iPeak].peakList.getSpectralDim(j).getDimName() + "\"");
                 }
             }
-            int nextDim = peaks[iPeak].peakList.nDim;
-            for (int i = 0; i < dataDim; i++) {
-                boolean gotThisDim = false;
-                for (int j = 0; j < fitDim.length; j++) {
-                    if (fitDim[j] == i) {
-                        gotThisDim = true;
-                        break;
-                    }
-                }
-                if (!gotThisDim) {
-                    fitDim[nextDim] = i;
-                    pt[nextDim][0] = rows[i];
-                    pt[nextDim][1] = rows[i];
+            absComps.addAll(peak.getPeakDim(0).getMultiplet().getAbsComponentList());
+        }
+        double[] guesses = new double[(2 * absComps.size()) + 1];
+        int nextDim = peaks[0].peakList.nDim;
+        for (int i = 0; i < dataDim; i++) {
+            boolean gotThisDim = false;
+            for (int j = 0; j < fitDim.length; j++) {
+                if (fitDim[j] == i) {
+                    gotThisDim = true;
+                    break;
                 }
             }
-
-            peaks[iPeak].getPeakRegion(theFile, fitDim, p1, cpt, width);
+            if (!gotThisDim) {
+                fitDim[nextDim] = i;
+                pt[nextDim][0] = rows[i];
+                pt[nextDim][1] = rows[i];
+            }
+        }
+        double sf = peaks[0].getPeakDim(0).getSpectralDimObj().getSf();
+        boolean firstComp = true;
+        int k = 1;
+        int nComps = absComps.size();
+        double lwSum = 0.0;
+//        System.out.println(" do fit " + nPeaks + " " + nComps + " " + doFit + " " + linearFit + " " + peaks[0].getName() + " " + absComps.size());
+        for (AbsMultipletComponent mulComp : absComps) {
+            mulComp.getRegion(theFile, fitDim, p1, cpt, width);
             int cw0 = (int) (cpt[0] - Math.abs(width[0]) - 1);
             int cw1 = (int) (cpt[0] + Math.abs(width[0]) + 1);
 
@@ -637,9 +604,10 @@ public class PeakFitter {
                 cw1 = theFile.getSize(fitDim[0]) - 1;
             }
 
-            if (iPeak == 0) {
+            if (firstComp) {
                 pt[0][0] = cw0;
                 pt[0][1] = cw1;
+                firstComp = false;
             } else {
                 if (cw0 < pt[0][0]) {
                     pt[0][0] = cw0;
@@ -650,11 +618,10 @@ public class PeakFitter {
                 }
             }
 
-            double c = theFile.ppmToDPoint(0, peaks[iPeak].peakDims[0].getChemShiftValue());
-            double c1 = theFile.ppmToDPoint(0,
-                    peaks[iPeak].peakDims[0].getChemShiftValue()
-                    + peaks[iPeak].peakDims[0].getLineWidthValue());
-            guesses[k++] = peaks[iPeak].getIntensity();
+            double c = theFile.ppmToDPoint(0, mulComp.getOffset());
+            double c1 = theFile.ppmToDPoint(0, mulComp.getOffset()
+                    + mulComp.getLineWidth());
+            guesses[k++] = mulComp.getIntensity();
             guesses[k++] = c;
             lwSum += Math.abs(c1 - c);
         }
@@ -667,17 +634,20 @@ public class PeakFitter {
             pt[0][1] = i1;
         }
 
-        guesses[0] = lwSum / nPeaks;
+        guesses[0] = lwSum / absComps.size();
 
         //k = 1;
         k = 2;
-
-        for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
+        for (int iPeak = 0; iPeak < nComps; iPeak++) {
             guesses[k] = guesses[k] - pt[0][0];
 
             //k += 3;
             k += 2;
         }
+        //for (int i = 0; i < guesses.length; i++) {
+            //System.out.printf("%10.4f ", guesses[i]);
+        //}
+        //System.out.println("");
 
         int size = pt[0][1] - pt[0][0] + 1;
         Vec fitVec = new Vec(size);
@@ -716,10 +686,10 @@ public class PeakFitter {
             double rms = lmdifTest.rms();
             result = rms;
         } else {
-            int[] map = new int[nPeaks + 1];
+            int[] map = new int[nComps + 1];
             map[0] = 0;
 
-            for (int j = 0; j < nPeaks; j++) {
+            for (int j = 0; j < nComps; j++) {
                 map[j + 1] = (2 * j) + 2;
             }
 
@@ -735,49 +705,51 @@ public class PeakFitter {
             result = rms;
 
             double[] pars = lmdifTest.getPars();
+            //for (int i = 1; i < pars.length; i++) {
+                //System.out.printf("%10.4f ", pars[i]);
+
+            //}
+            //System.out.println(" rms " + rms);
 
             //k=1;
             k = 2;
 //            System.out.println("lin fit peaks " + nPeaks);
-            for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
+            for (int iPeak = 0; iPeak < nComps; iPeak++) {
                 k++;
 
                 double newC = pars[k++];
 
                 if ((newC < 0.0) || (newC > size)) {
-                    throw new PeakFitException("fit failed for peak "
-                            + peaks[iPeak].getName() + " " + iPeak + " "
+                    throw new PeakFitException("fit failed for comp "
+                            + absComps.get(iPeak).getMultiplet().getPeakDim().getPeak().getName() + " " + iPeak + " "
                             + newC);
                 }
             }
 
             k = 2;
+            double w = Math.abs(pars[1]);
 
             for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
-                peaks[iPeak].setIntensity((float) pars[k++]);
-
-                double newC = pars[k++];
-                // double w = pars[k++];
-                double w = Math.abs(pars[1]);
-
-                if ((newC < 0.0) || (newC > size)) {
-                    continue;
+                List<AbsMultipletComponent> comps = peaks[iPeak].getPeakDim(0).getMultiplet().getAbsComponentList();
+                int nComp = comps.size();
+                for (AbsMultipletComponent comp : comps) {
+                    double intensity = pars[k++];
+                    double newC = pars[k++];
+                    double c = newC + pt[0][0];
+                    double c1 = w + c;
+                    double newPPM = theFile.pointToPPM(0, c);
+                    double lineWidth = Math.abs(theFile.pointToPPM(0, c) - theFile.pointToPPM(0, c1));
+                    double volume = intensity * lineWidth * Math.PI / 2 / 1.05;
+                    //System.out.println(intensity + " " + volume);
+                    comp.setOffset(newPPM);
+                    comp.setLineWidth(lineWidth);
+                    comp.setIntensity(intensity);
+                    comp.setVolume(volume);
                 }
-
-                double c = newC + pt[0][0];
-                double c1 = w + c;
-                peaks[iPeak].peakDims[0].setChemShiftValueNoCheck((float) theFile.pointToPPM(
-                        0, c));
-//                System.out.printf("%d %10.6f\n", iPeak, peaks[iPeak].peakDim[0].getChemShift());
-                peaks[iPeak].peakDims[0].setLineWidthValue((float) Math.abs(theFile.pointToPPM(
-                        0, c1) - peaks[iPeak].peakDims[0].getChemShiftValue()));
-                float lineWidth = peaks[iPeak].peakDims[0].getLineWidthValue();
-                peaks[iPeak].peakDims[0].setBoundsValue((float) lineWidth * 3);
-                peaks[iPeak].setVolume1((float) (peaks[iPeak].getIntensity() * peaks[iPeak].peakDims[0].getLineWidthValue() * Math.PI / 2 / 1.05));
-
-                //peaks[iPeak].flag[4] = true;
+                peaks[iPeak].getPeakDim(0).getMultiplet().updateCoupling(comps);
             }
         }
         return result;
+
     }
 }
