@@ -46,20 +46,27 @@ public class ComplexCoupling extends Coupling {
 
     ComplexCoupling(final Multiplet multiplet, List<AbsMultipletComponent> absComponents) {
         this.multiplet = multiplet;
-        double sum = 0.0;
+        double sumpPPM = 0.0;
+        double sumVolume = 0.0;
+        double maxIntensity = 0.0;
         for (MultipletComponent comp : absComponents) {
-            sum += comp.getOffset();
+            sumpPPM += comp.getOffset();
+            sumVolume += comp.getVolume();
+            maxIntensity = Math.max(maxIntensity, comp.getIntensity());
         }
         double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
-        double center = sum / absComponents.size();
+        double center = sumpPPM / absComponents.size();
         for (AbsMultipletComponent comp : absComponents) {
             components.add(comp.toRelative(center, sf));
         }
-        multiplet.getPeakDim().setChemShiftValue((float) (sum / absComponents.size()));
+        multiplet.getPeakDim().setChemShiftValue((float) center);
+        multiplet.getPeakDim().setLineWidthValue((float) absComponents.get(0).getLineWidth());
+        multiplet.getPeakDim().getPeak().setVolume1((float) sumVolume);
+        multiplet.getPeakDim().getPeak().setIntensity((float) maxIntensity);
     }
 
-    ComplexCoupling(final Multiplet multiplet, final double[] frequencyOffsets,
-            final double[] intensities, final double[] volumes, final double lineWidth) {
+    ComplexCoupling(final Multiplet multiplet, final double[] deltaPPMs,
+            final double[] intensities, final double[] volumes, final double lineWidthPPM) {
         this.multiplet = multiplet;
         double max = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < intensities.length; i++) {
@@ -70,9 +77,10 @@ public class ComplexCoupling extends Coupling {
         double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
         multiplet.setIntensity(max);
         double centerPPM = multiplet.getCenter();
+        double lineWidthHz = lineWidthPPM * sf;
         for (int i = 0; i < intensities.length; i++) {
-            double offset = (centerPPM - frequencyOffsets[i]) / sf;
-            RelMultipletComponent comp = new RelMultipletComponent(multiplet, offset, intensities[i], volumes[i], lineWidth);
+            double offset = deltaPPMs[i] * sf;
+            RelMultipletComponent comp = new RelMultipletComponent(multiplet, offset, intensities[i], volumes[i], lineWidthHz);
             components.add(comp);
         }
         sortByFreq();
@@ -97,8 +105,7 @@ public class ComplexCoupling extends Coupling {
         ArrayList<Line2D> lines = new ArrayList<>();
         PeakDim peakDimRef = multiplet.getPeakDim();
         double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
-
-        components.stream().map((comp) -> (comp.getOffset() * sf)).forEachOrdered((deltaPPM) -> {
+        components.stream().map((comp) -> (-comp.getOffset() / sf)).forEachOrdered((deltaPPM) -> {
             lines.add(new Line2D.Double(0.0, 0.0, deltaPPM, 0.0));
         });
         return lines;
