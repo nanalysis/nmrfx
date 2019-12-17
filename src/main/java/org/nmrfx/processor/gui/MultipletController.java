@@ -49,7 +49,6 @@ import org.nmrfx.processor.datasets.peaks.CouplingPattern;
 import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Multiplets;
 import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.Singlet;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
@@ -381,9 +380,9 @@ merge.png				region_adjust.png
 
     public void initMultiplet() {
         if (!gotoSelectedMultiplet()) {
-            List<Multiplet> multiplets = getMultiplets();
-            if (!multiplets.isEmpty()) {
-                Multiplet m = multiplets.get(0);
+            List<Peak> peaks = getPeaks();
+            if (!peaks.isEmpty()) {
+                Multiplet m = peaks.get(0).getPeakDim(0).getMultiplet();
                 activeMultiplet = Optional.of(m);
                 updateMultipletField(false);
             }
@@ -402,16 +401,14 @@ merge.png				region_adjust.png
         return result;
     }
 
-    List<Multiplet> getMultiplets() {
-        List<Multiplet> multiplets = Collections.EMPTY_LIST;
+    List<Peak> getPeaks() {
+        List<Peak> peaks = Collections.EMPTY_LIST;
         Optional<PeakList> peakListOpt = getPeakList();
         if (peakListOpt.isPresent()) {
             PeakList peakList = peakListOpt.get();
-            if ((peakList.getMultiplets() != null)) {
-                multiplets = peakList.getMultiplets();
-            }
+            peaks = peakList.peaks();
         }
-        return multiplets;
+        return peaks;
     }
 
     void updateMultipletField() {
@@ -481,10 +478,15 @@ merge.png				region_adjust.png
         addPatternListener();
     }
 
+    int getCurrentIndex() {
+        int id = activeMultiplet.get().getPeakDim().getPeak().getIndex();
+        return id;
+    }
+
     void firstMultiplet(ActionEvent e) {
-        List<Multiplet> multiplets = getMultiplets();
-        if (!multiplets.isEmpty()) {
-            activeMultiplet = Optional.of(multiplets.get(0));
+        List<Peak> peaks = getPeaks();
+        if (!peaks.isEmpty()) {
+            activeMultiplet = Optional.of(peaks.get(0).getPeakDim(0).getMultiplet());
         } else {
             activeMultiplet = Optional.empty();
         }
@@ -493,13 +495,13 @@ merge.png				region_adjust.png
 
     void previousMultiplet(ActionEvent e) {
         if (activeMultiplet.isPresent()) {
-            int id = activeMultiplet.get().getIDNum();
+            int id = getCurrentIndex();
             id--;
             if (id < 0) {
                 id = 0;
             }
-            List<Multiplet> multiplets = getMultiplets();
-            activeMultiplet = Optional.of(multiplets.get(id));
+            List<Peak> peaks = getPeaks();
+            activeMultiplet = Optional.of(peaks.get(id).getPeakDim(0).getMultiplet());
             updateMultipletField();
         } else {
             firstMultiplet(e);
@@ -512,22 +514,22 @@ merge.png				region_adjust.png
         if (id < 0) {
             id = 0;
         }
-        List<Multiplet> multiplets = getMultiplets();
-        activeMultiplet = Optional.of(multiplets.get(id));
+        List<Peak> peaks = getPeaks();
+        activeMultiplet = Optional.of(peaks.get(id).getPeakDim(0).getMultiplet());
         updateMultipletField(false);
 
     }
 
     void nextMultiplet(ActionEvent e) {
         if (activeMultiplet.isPresent()) {
-            List<Multiplet> multiplets = getMultiplets();
-            int id = activeMultiplet.get().getIDNum();
-            int last = multiplets.size() - 1;
+            List<Peak> peaks = getPeaks();
+            int id = getCurrentIndex();
+            int last = peaks.size() - 1;
             id++;
             if (id > last) {
                 id = last;
             }
-            activeMultiplet = Optional.of(multiplets.get(id));
+            activeMultiplet = Optional.of(peaks.get(id).getPeakDim(0).getMultiplet());
             updateMultipletField();
         } else {
             firstMultiplet(e);
@@ -535,9 +537,9 @@ merge.png				region_adjust.png
     }
 
     void lastMultiplet(ActionEvent e) {
-        List<Multiplet> multiplets = getMultiplets();
-        if (!multiplets.isEmpty()) {
-            activeMultiplet = Optional.of(multiplets.get(multiplets.size() - 1));
+        List<Peak> peaks = getPeaks();
+        if (!peaks.isEmpty()) {
+            activeMultiplet = Optional.of(peaks.get(peaks.size() - 1).getPeakDim(0).getMultiplet());
         }
         updateMultipletField();
     }
@@ -640,7 +642,12 @@ merge.png				region_adjust.png
         double ppm = chart.getVerticalCrosshairPositions()[0];
         Analyzer analyzer = getAnalyzer();
         try {
-            activeMultiplet = analyzer.splitRegion(ppm);
+            List<Multiplet> multiplets = analyzer.splitRegion(ppm);
+            if (!multiplets.isEmpty()) {
+                activeMultiplet = Optional.of(multiplets.get(0));
+            } else {
+                activeMultiplet = Optional.empty();
+            }
             updateMultipletField(false);
         } catch (IOException ex) {
         }
@@ -672,7 +679,7 @@ merge.png				region_adjust.png
             Optional<PeakList> peakListOpt = getPeakList();
             if (peakListOpt.isPresent()) {
                 PeakList peakList = peakListOpt.get();
-                if (peakList.getMultiplets().size() == 1) {
+                if (peakList.peaks().size() == 1) {
                     double volume = activeMultiplet.get().getVolume();
                     peakList.scale = volume;
                 }
@@ -687,7 +694,7 @@ merge.png				region_adjust.png
     public void removeRegion() {
         activeMultiplet.ifPresent(m -> {
             int id = m.getIDNum();
-            double ppm = m.measureCenter();
+            double ppm = m.getCenter();
             Analyzer analyzer = getAnalyzer();
             analyzer.removeRegion(ppm);
             gotoPrevious(id);
@@ -764,19 +771,20 @@ merge.png				region_adjust.png
     }
 
     public void extractMultiplet() {
-        List<Peak> peaks = chart.getSelectedPeaks();
-        if (peaks.size() > 0) {
-            Peak peak0 = peaks.get(0);
-            List<PeakDim> peakDims = peak0.getPeakDim(0).getCoupledPeakDims();
-            if (peaks.size() == peakDims.size()) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Can't extract all peaks in multiplet");
-                alert.showAndWait();
-                return;
-            }
-            activeMultiplet = Multiplets.extractMultiplet(peaks);
-            refresh();
-        }
+        // fixme
+//        List<Peak> peaks = chart.getSelectedPeaks();
+//        if (peaks.size() > 0) {
+//            Peak peak0 = peaks.get(0);
+//            List<PeakDim> peakDims = peak0.getPeakDim(0).getCoupledPeakDims();
+//            if (peaks.size() == peakDims.size()) {
+//                Alert alert = new Alert(Alert.AlertType.ERROR);
+//                alert.setContentText("Can't extract all peaks in multiplet");
+//                alert.showAndWait();
+//                return;
+//            }
+//            activeMultiplet = Multiplets.extractMultiplet(peaks);
+//            refresh();
+//        }
     }
 
     public void transferPeaks() {
@@ -792,7 +800,7 @@ merge.png				region_adjust.png
     public void mergePeaks() {
         List<Peak> peaks = chart.getSelectedPeaks();
         if (peaks.size() > 0) {
-            activeMultiplet = Multiplets.mergePeaks(peaks);
+            // fixme  activeMultiplet = Multiplets.mergePeaks(peaks);
             refresh();
         }
     }
@@ -801,7 +809,7 @@ merge.png				region_adjust.png
         boolean resize = false;
         if (multiplet != null) {
             double bounds = multiplet.getBoundsValue();
-            double center = multiplet.measureCenter();
+            double center = multiplet.getCenter();
             double widthScale = 2.5;
             if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
