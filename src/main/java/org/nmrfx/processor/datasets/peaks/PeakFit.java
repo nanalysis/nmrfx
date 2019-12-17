@@ -334,7 +334,6 @@ public class PeakFit implements MultivariateFunction {
                 start += (cplItems[i].length * 2 + 1);
                 nFit += (cplItems[i].length * 2 + 1);
             }
-
             amplitudes[i] = new double[nFreqs];
             freqs[i] = new double[nFreqs];
         }
