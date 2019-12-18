@@ -204,6 +204,9 @@ public class PeakCluster {
     }
 
     public BipartiteMatcher compareTo(PeakCluster other) {
+        if (other == null) {
+            return null;
+        }
         BipartiteMatcher matcher = new BipartiteMatcher();
         int N = size + other.size;
         matcher.reset(N, true);
@@ -226,12 +229,15 @@ public class PeakCluster {
         }
         return matcher;
     }
-    
+
     public double comparisonScore(PeakCluster other) {
         BipartiteMatcher matcher = this.compareTo(other);
-        double minWeight = matcher.minWeight;
-        int[] matchings = matcher.getMatching();
-        double score = matcher.getMaxWtSum(matchings, minWeight);
+        double score = Double.NEGATIVE_INFINITY;
+        if (matcher != null) {
+            double minWeight = matcher.minWeight;
+            int[] matchings = matcher.getMatching();
+            score = matcher.getMaxWtSum(matchings, minWeight);
+        }
         return score;
     }
 
