@@ -10,7 +10,7 @@ package org.nmrfx.structure.chemistry.energy;
  * @author brucejohnson
  */
 public class ViolationStats {
-    
+
     int mode;
     String aName1;
     String aName2;
@@ -37,6 +37,11 @@ public class ViolationStats {
             if (dis < rLow) {
                 dif = dis - rLow;
             }
+        } else if (mode == 2) {
+            constraintDis = rLow;
+            if (dis < rLow) {
+                dif = dis - rLow;
+            }
         } else {
             if (dis < rLow) {
                 constraintDis = rLow;
@@ -56,9 +61,11 @@ public class ViolationStats {
         String modeType = "Dis";
         if (mode == 1) {
             modeType = "Rep";
+        } else if (mode == 2) {
+            modeType = "cFF";
         }
         String result = String.format("%s: %10s %10s %5.2f %5.2f %5.2f %7.3f\n", modeType, aName1, aName2, constraintDis, dis, dif, energy);
         return result;
     }
-    
+
 }

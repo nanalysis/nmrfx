@@ -804,6 +804,7 @@ public class Molecule implements Serializable, ITree {
         makeAtomList();
         setupGenCoords();
         energyLists.makeAtomListFast();
+        eCoords.setComplexFFMode(energyLists.getForceWeight().getRobson() > 0.0);
         updateVecCoords();
     }
 

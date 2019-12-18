@@ -224,6 +224,7 @@ public class EnergyLists {
 
     public void setForceWeight(final ForceWeight forceWeight) {
         this.forceWeight = forceWeight;
+        molecule.getEnergyCoords().setComplexFFMode(forceWeight.getRobson() > 0.0);
     }
 
     public ForceWeight getForceWeight() {
@@ -645,16 +646,14 @@ public class EnergyLists {
             }
 
             if (forceWeight.getRobson() > 0.0) {
-                for (AtomPair atomPair : atomList) {
-                    AtomEnergy energy = AtomMath.calcRobson(atomPair.spSet1.getPoint(), atomPair.spSet2.getPoint(), atomPair,
-                            forceWeight, false);
-                    robsonEnergy += energy.getEnergy();
-                    nRobson++;
-                    final double p = Vector3D.distance(atomPair.spSet1.getPoint(), atomPair.spSet2.getPoint());
-                    double delta = (atomPair.ePair.r * 0.75 - p);
-                    if (delta > limitVal) {
-                        writer.format("Rob: %10s %10s %5.2f %7.3f %5.2f %5.2f\n", atomPair.spSet1.getFullName(),
-                                atomPair.spSet2.getFullName(), atomPair.ePair.r, energy.getEnergy(), p, delta);
+                EnergyCoords eCoords = molecule.getEnergyCoords();
+                robsonEnergy = eCoords.calcRepel(false, forceWeight.getRobson());
+                nRobson = eCoords.getNContacts();
+                for (int i = 0; i < nRepel; i++) {
+                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getRobson());
+                    if (stat != null) {
+                        String errMsg = stat.toString();
+                        writer.print(errMsg);
                     }
                 }
             } else {
@@ -818,7 +817,7 @@ public class EnergyLists {
 
     public double calcRepelFast(boolean calcDeriv) {
         EnergyCoords eCoords = molecule.getEnergyCoords();
-        double weight = forceWeight.getRepel();
+        double weight = forceWeight.getRobson() > 0.0 ? forceWeight.getRobson() : forceWeight.getRepel();
         double energy = eCoords.calcRepel(calcDeriv, weight);
         if (calcDeriv) {
             eCoords.addRepelDerivs(branches);
@@ -1116,7 +1115,7 @@ public class EnergyLists {
         try {
             //two ways to calculate whether atoms are bumping into one another - 1) calc repel, 2)calc robsen
             if (forceWeight.getRobson() > 0.0) {
-                energyTotal += calcRobsen(calcDeriv);
+                energyTotal += calcRepelFast(calcDeriv);
             } else if (forceWeight.getRepel() > 0.0) {
                 energyTotal += calcRepelFast(calcDeriv);
             }
@@ -1509,9 +1508,10 @@ public class EnergyLists {
             }
             updateFixed(molecule.getDihedrals());
         }
-        eCoords.setCells(eCoords.ePairs, deltaEnd, distanceLimit, hardSphere, includeH, shrinkValue, shrinkHValue);
+        eCoords.setCells(eCoords.eDistancePairs, deltaEnd, distanceLimit, hardSphere,
+                includeH, shrinkValue, shrinkHValue, forceWeight.getRobson() > 0.0);
         if (forceWeight.getShift() > 0.0) {
-           // eCoords.setCells(eCoords.eShiftPairs, deltaEnd, distanceLimit, 0, true, 0, 0);
+            // eCoords.setCells(eCoords.eShiftPairs, deltaEnd, distanceLimit, 0, true, 0, 0);
         }
     }
 
