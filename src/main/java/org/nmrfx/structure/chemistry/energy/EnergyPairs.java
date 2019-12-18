@@ -49,6 +49,10 @@ public class EnergyPairs {
         addPair(i, j, iUnit, jUnit);
     }
 
+    public void addPair(int i, int j, int iUnit, int jUnit, double r0, double a, double b, double charge) {
+        addPair(i, j, iUnit, jUnit);
+    }
+
     int[] resize(int[] v, int size) {
         int[] newV = new int[size];
         if (v != null) {
