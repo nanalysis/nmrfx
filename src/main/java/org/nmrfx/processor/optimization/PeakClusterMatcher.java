@@ -181,9 +181,11 @@ public class PeakClusterMatcher {
     private void setupMatchedPeaks(PeakCluster expCluster, PeakCluster predCluster) {
         if (expCluster != null && predCluster != null) {
             BipartiteMatcher peakMatcher = expCluster.compareTo(predCluster);
-            int[] peakMatches = peakMatcher.getMatching();
-            expCluster.setPeakMatches(peakMatches);
-            predCluster.setPeakMatches(peakMatches);
+            if (peakMatcher != null) {
+                int[] peakMatches = peakMatcher.getMatching();
+                expCluster.setPeakMatches(peakMatches);
+                predCluster.setPeakMatches(peakMatches);
+            }
         }
     }
 }
