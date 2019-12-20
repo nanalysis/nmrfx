@@ -34,4 +34,8 @@ public class Bulge extends SecondaryStructure {
         secResidues = residues;
     }
 
+    @Override
+    public String getName() {
+        return name;
+    }
 }

@@ -36,6 +36,9 @@ public class SSGen {
     public SSGen(Molecule mol, String vienna) {
         molecule = mol;
         viennaSeq = vienna;
+        genRNAResidues();
+        pairTo();
+        secondaryStructGen();
 
     }
 

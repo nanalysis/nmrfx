@@ -31,10 +31,10 @@ public abstract class SecondaryStructure {
     public int localIndex = 0;
     public int size;
     public List<Residue> secResidues = new ArrayList<>();
-    
+    public abstract String getName();
     @Override
     public String toString() {
-        return name + getGlobalInd() + ":" + getLocalInd();
+        return getName() + getGlobalInd() + ":" + getLocalInd();
     }
 
     public List<Residue> getResidues() {
