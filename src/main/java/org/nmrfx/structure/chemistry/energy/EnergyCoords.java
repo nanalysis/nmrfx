@@ -434,9 +434,9 @@ public class EnergyCoords {
                                             if (useFF) {
                                                 double a = Math.sqrt(aValues[iAtom] * aValues[jAtom]);
                                                 double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
-                                                double c = Math.sqrt(cValues[iAtom] * cValues[jAtom]);
+                                                double c = cValues[iAtom] * cValues[jAtom];
                                                 ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH,
-                                                        a, b, 0.0);  // fixme turn off charge for now
+                                                        a, b, c);  
                                             } else {
                                                 ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
                                             }
