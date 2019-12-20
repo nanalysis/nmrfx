@@ -34,4 +34,8 @@ public class Loop extends SecondaryStructure {
         secResidues = residues;
     }
 
+    @Override
+    public String getName() {
+        return name;
+    }
 }

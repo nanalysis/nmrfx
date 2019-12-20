@@ -34,4 +34,9 @@ public class NonLoop extends SecondaryStructure {
         secResidues = residues;
 
     }
+    
+    @Override
+    public String getName(){
+        return name;
+    }
 }
