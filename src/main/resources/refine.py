@@ -477,7 +477,7 @@ class refine:
             self.energyLists.dump(limit,shiftLim,fileName)
 
     def getEnergyDump(self,limit):
-        return self.energyLists.dump(limit)
+        return self.energyLists.dump(limit,-1.0,"")
 
     def rinertia(self):
         self.rDyn = self.dihedral.getRotationalDyamics()
