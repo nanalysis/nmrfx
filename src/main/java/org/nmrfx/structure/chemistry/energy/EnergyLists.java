@@ -43,7 +43,7 @@ import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import org.nmrfx.structure.chemistry.energy.ViolationStats;
+import static org.nmrfx.structure.chemistry.energy.AtomMath.IrpParameters;
 import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 
@@ -801,6 +801,45 @@ public class EnergyLists {
 
     }
 
+    public double calcIRPFast(double[] gradient) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
+        double energyTotal = 0.0;
+        int i = 0;
+        Atom[] atoms = new Atom[4];
+        double weight = forceWeight.getIrp();
+        for (Atom atom : angleAtoms) {
+            atoms[3] = atom.daughterAtom;
+            if (atoms[3] != null) {
+                atoms[2] = atom;
+                atoms[1] = atom.parent;
+                if (atoms[1] != null) {
+                    atoms[0] = atoms[1].parent;
+                }
+            }
+            if (atoms[0] != null) {
+                int irpIndex = atom.irpIndex;
+                double angle = eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
+                angle = Dihedral.reduceAngle(angle);
+                double[][] irpValues = new double[1][3];
+                for (double[] irpVal : irpValues) {
+                    double v = irpVal[0];
+                    double n = irpVal[1];
+                    double phi = irpVal[2];
+                    double energy = weight * v * (1.0 + Math.cos(n * angle - phi));
+                    energyTotal += energy;
+                    double deriv = 0.0;
+                    if (gradient != null) {
+                        deriv = -weight * v * n * Math.sin(n * angle - phi);
+                        gradient[i] += deriv;
+                    }
+                }
+            }
+            i++;
+        }
+        return energyTotal;
+
+    }
+
     public double calcRobsen(boolean calcDeriv) {
         double totalEnergy = 0;
         for (AtomPair atomPair : atomList) {
@@ -1139,16 +1178,22 @@ public class EnergyLists {
                 energyTotal += calcDihedralEnergyFast(gradient);
             }
             if (forceWeight.getIrp() > 0.0) {
-                int i = 0;
-                for (Atom atom : angleAtoms) {
-                    AtomEnergy energy = AtomMath.calcIrpEnergy(atom.daughterAtom, forceWeight, calcDeriv);
-                    energyTotal += energy.getEnergy();
-                    if (calcDeriv) {
-                        gradient[i++] += energy.getDeriv();
+                if (false) {  // placeholder for new fast mode
+                    if (forceWeight.getIrp() > 0.0) {
+                        energyTotal += calcIRPFast(gradient);
+                    }
+                } else {
+
+                    int i = 0;
+                    for (Atom atom : angleAtoms) {
+                        AtomEnergy energy = AtomMath.calcIrpEnergy(atom.daughterAtom, forceWeight, calcDeriv);
+                        energyTotal += energy.getEnergy();
+                        if (calcDeriv) {
+                            gradient[i++] += energy.getDeriv();
+                        }
                     }
                 }
             }
-
             if (calcDeriv) {
                 for (int i = 0; i < branches.length; i++) {
                     if (REPORTBAD && (Math.abs(gradient[i]) > 100000.0)) {
@@ -1160,6 +1205,7 @@ public class EnergyLists {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+
         return new EnergyDeriv(energyTotal, gradient);
     }
 
