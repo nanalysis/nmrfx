@@ -40,7 +40,7 @@ public class EnergyCoords {
     };
 
     FastVector3D[] vecCoords = null;
-    EnergyDistancePairs ePairs;
+    EnergyDistancePairs eDistancePairs;
     EnergyConstraintPairs eConstraintPairs;
     EnergyShiftPairs eShiftPairs;
     int[] resNums = null;
@@ -53,6 +53,9 @@ public class EnergyCoords {
     boolean[] swapped = null;
     int[] hBondable = null;
     double[] contactRadii = null;
+    double[] aValues = null;
+    double[] bValues = null;
+    double[] cValues = null;
     int[] cellIndex = null;
     int nAtoms = 0;
     boolean[][] fixed;
@@ -62,7 +65,7 @@ public class EnergyCoords {
     private static double hbondDelta = 0.60;
 
     public EnergyCoords() {
-        ePairs = new EnergyDistancePairs(this);
+        eDistancePairs = new EnergyDistancePairs(this);
         eConstraintPairs = new EnergyConstraintPairs(this);
         eShiftPairs = new EnergyShiftPairs(this);
     }
@@ -75,6 +78,9 @@ public class EnergyCoords {
             mAtoms = new int[size];
             swapped = new boolean[size];
             contactRadii = new double[size];
+            aValues = new double[size];
+            bValues = new double[size];
+            cValues = new double[size];
             hBondable = new int[size];
             cellIndex = new int[size];
             shiftClass = new int[size];
@@ -89,6 +95,14 @@ public class EnergyCoords {
         nAtoms = size;
 
         return vecCoords;
+    }
+
+    public void setComplexFFMode(boolean complexFFMode) {
+        if (complexFFMode && !(eDistancePairs instanceof EnergyFFPairs)) {
+            eDistancePairs = new EnergyFFPairs(this);
+        } else if (!complexFFMode && (eDistancePairs instanceof EnergyFFPairs)) {
+            eDistancePairs = new EnergyDistancePairs(this);
+        }
     }
 
     public FastVector3D[] getVecCoords() {
@@ -111,11 +125,11 @@ public class EnergyCoords {
     }
 
     public int getNContacts() {
-        return ePairs.nPairs;
+        return eDistancePairs.nPairs;
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double r0) {
-        ePairs.addPair(i, j, iUnit, jUnit, r0);
+        eDistancePairs.addPair(i, j, iUnit, jUnit, r0);
     }
 
     public void addPair(int i, int j, int iUnit, int jUnit, double rLow, double rUp, boolean isBond, int group, double weight) {
@@ -139,7 +153,7 @@ public class EnergyCoords {
     }
 
     public double calcRepel(boolean calcDeriv, double weight) {
-        return ePairs.calcRepel(calcDeriv, weight);
+        return eDistancePairs.calcEnergy(calcDeriv, weight);
     }
 
     public double calcDistShifts(boolean calcDeriv, double rMax, double intraScale, double weight) {
@@ -147,7 +161,7 @@ public class EnergyCoords {
     }
 
     public ViolationStats getRepelError(int i, double limitVal, double weight) {
-        return ePairs.getError(i, limitVal, weight);
+        return eDistancePairs.getError(i, limitVal, weight);
     }
 
     public ViolationStats getNOEError(int i, double limitVal, double weight) {
@@ -184,7 +198,7 @@ public class EnergyCoords {
     }
 
     public void addRepelDerivs(AtomBranch[] branches) {
-        ePairs.addDerivs(branches);
+        eDistancePairs.addDerivs(branches);
     }
 
     public void addNOEDerivs(AtomBranch[] branches) {
@@ -260,11 +274,18 @@ public class EnergyCoords {
                     }
                 }
                 contactRadii[i] = rh1;
+                double rMin = iProp.getR();
+                double eMin = Math.abs(iProp.getE());
+                aValues[i] = 2.0 * eMin * Math.pow(rMin, 9);
+                bValues[i] = 3.0 * eMin * Math.pow(rMin, 6);
+                cValues[i] = iProp.getC();
             }
         }
     }
 
-    public void setCells(EnergyPairs ePairs, int deltaEnd, double limit, double hardSphere, boolean includeH, double shrinkValue, double shrinkHValue) {
+    public void setCells(EnergyPairs ePairs, int deltaEnd, double limit,
+            double hardSphere, boolean includeH, double shrinkValue,
+            double shrinkHValue, boolean useFF) {
         double limit2 = limit * limit;
         double[][] bounds = getBoundaries();
         int[] nCells = new int[3];
@@ -386,7 +407,7 @@ public class EnergyCoords {
                                         boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
                                         // fixme  this is fast, but could miss interactions for atoms that are not bonded
                                         // as it doesn't test for an explicit bond between the pairs
-                                       // boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
+                                        // boolean notConstrained = !hasBondConstraint[iAtom] || !hasBondConstraint[jAtom];
 //                                        System.out.println("        " + notFixed + " " + (fixed[iAtom][jAtom - iAtom - 1]) + " " + deltaRes + " "
 //                                                + interactable1 + " " + notConstrained);
                                         if (notFixed && interactable1) {
@@ -410,7 +431,15 @@ public class EnergyCoords {
                                             }
                                             rH -= adjustClose;
 
-                                            ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
+                                            if (useFF) {
+                                                double a = Math.sqrt(aValues[iAtom] * aValues[jAtom]);
+                                                double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
+                                                double c = cValues[iAtom] * cValues[jAtom];
+                                                ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH,
+                                                        a, b, c);  
+                                            } else {
+                                                ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
+                                            }
 
                                         }
                                     }

@@ -29,6 +29,7 @@ public class AtomParser {
     public String chainID = "";
     public String segment = "";
     public String loc = "";
+    public String insertCode = "";
     public double x;
     public double y;
     public double z;

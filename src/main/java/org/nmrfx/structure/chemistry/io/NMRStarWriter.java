@@ -31,7 +31,9 @@ import org.nmrfx.processor.datasets.peaks.AtomResonanceFactory;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.PeakPath;
 import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
+import org.nmrfx.processor.datasets.peaks.io.PeakPathWriter;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.processor.star.STAR3;
@@ -513,17 +515,17 @@ public class NMRStarWriter {
         chan.write("    #  Molecular system (assembly) description  #\n");
         chan.write("    #############################################\n");
         chan.write("\n\n");
-        chan.write("save_" + name + "_assembly\n");
+        chan.write("save_" + "assembly\n");
         chan.write("_Assembly.Sf_category                 ");
         chan.write("assembly\n");
         chan.write("_Assembly.Sf_framecode                 ");
-        chan.write(name + "_assembly\n");
+        chan.write("assembly\n");
         chan.write("_Assembly.Entry_ID                    ");
         chan.write(".\n");
         chan.write("_Assembly.ID                          ");
         chan.write(assemblyID + "\n");
         chan.write("_Assembly.Name               ");
-        chan.write(name + "\n");
+        chan.write(STAR3.quote(name) + "\n");
         chan.write("_Assembly.Number_of_components                   ");
         int nEntities = molecule.entities.size();
         chan.write(nEntities + "\n");
@@ -813,6 +815,7 @@ public class NMRStarWriter {
             PeakList peakList = (PeakList) iter.next();
             peakWriter.writePeaksSTAR3(chan, peakList);
         }
+       
         AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory;
 
         resFactory.writeResonancesSTAR3(chan);
@@ -832,6 +835,11 @@ public class NMRStarWriter {
             if (cSet.getSize() > 0) {
                 ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet, setNum++);
             }
+        }
+        PeakPathWriter pathWriter = new PeakPathWriter();
+        int iPath = 0;
+        for (PeakPath peakPath: PeakPath.get()) {
+            pathWriter.writeToSTAR3(chan, peakPath, iPath);            
         }
     }
 

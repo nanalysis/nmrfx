@@ -1,9 +1,10 @@
-import pdb as debugger
 from mscript import *;
 import molio;
 import os
-from rnapred import getPairs
-from molpeakgen import determineType
+from org.nmrfx.structure.chemistry import InteractionType
+from org.nmrfx.structure.chemistry import SecondaryStructure
+from org.nmrfx.structure.chemistry import SSGen
+#from molpeakgen import determineType
 from collections import OrderedDict
 import itertools as itools
 
@@ -18,7 +19,7 @@ def getPdbFiles(fileName):
             pdbName, viennaSeq = splitLine if len(splitLine) == 2 else ("","")
             if pdbName.startswith("#"):
                 continue
-            yield ("./pdbfiles/" + pdbName +  ".pdb", viennaSeq) # ex: ('2KOC.pdb', '((((....))))'
+            yield ("./pdb/" + pdbName +  ".pdb", viennaSeq) # ex: ('2KOC.pdb', '((((....))))'
 
 def getStats(dis):
     stats= [] #get average of distances for the lists
@@ -79,13 +80,14 @@ def fetchPDBFile(pdbPath):
            response = urllib2.urlopen('http://www.rcsb.org/pdb/files/'+pdbID+'.pdb')
            pdbFileInfo = response.read()
        except:
-           raise AssertionError("Failed to get pdb file")
+           raise AssertionError("Failed to get pdb file. Check file path -> '{}'".format(pdbID))
        with open(pdbPath, 'w') as saveFile:
            saveFile.write(pdbFileInfo)
        return pdbPath
 
 # Main executor
 def mainFunc():
+
     allTypes = {
                    "SRH": {},
                    "SRB": {},
@@ -93,53 +95,54 @@ def mainFunc():
                    "SRL": {},
                    "ADJ": {},
                    "BP": {},
-                   "HB": {},
-                   "BB": {},
                    "OABP": {},
                    "TA": {},
-                   "T1": {},
-                   "T2": {},
-                   "T3": {},
-                   "TB": {},
+                   "T12": {},
+		   "T13": {},
+		   "T14": {},
+                   "T23": {},
+		   "T24": {},
+                   "T34": {},
                    "TH": {},
+		   "HT": {},
+		   "BH": {},
+		   "HB": {},
+		   "BB": {},
+		   "SH": {},
+		   "HS": {},
+		   "LH": {},
+		   "HL": {},
                    "L1": {},
                    "L2": {},
                    "L3": {},
-                   "LH": {},
                    "S1": {},
                    "S2": {},
-                   "S3": {},
-                   "SH": {}
+
                }
-    sameAtom= 0
-    interactionThres= 6
+
+    distanceThres= 6
     used = 0
     actuallyRead = 0
-    fUnclassified = open("unclassified_types.txt", "w")
     seenPDBs = set()
     seenCases = set()
-    for pdbFilePath, viennaSeq in getPdbFiles('pdb_vienna2.txt'):
-        print(pdbFilePath)
+    for pdbFilePath, viennaSeq in getPdbFiles('trainfiles2.txt'):
         actuallyRead += 1
+        print "PDB file path: ", pdbFilePath
         pdbFile = fetchPDBFile(pdbFilePath)
         mol = molio.readPDB(pdbFile)
-        vPairs = getPairs(viennaSeq)
-        rnaResidues = [residue for polymer in mol.getPolymers() if polymer.isRNA() for residue in polymer.getResidues()]
-        sameSize = len(vPairs)==len(rnaResidues)
-        basePairMap = {}
-        resInd = OrderedDict()
-        for iRes, residue in enumerate(rnaResidues):
-            residue.setPropertyObject("resRNAInd", iRes)
-            basePairMap[iRes] = vPairs[iRes]
-            resInd[int(residue.getNumber())] = iRes
-        tetraLabels = tetraloopLabel(resInd, basePairMap)
-        if not sameSize:
-            #print("PDB file: '{}', Vienna Seq: '{}' ({}/{})".format(pdbFile, viennaSeq, len(viennaSeq), len(rnaResidues)))
-            continue
+        ss = SSGen(mol, viennaSeq)
+        ss.genRNAResidues()
+        ss.pairTo()
+        ss.secondaryStructGen()
+ 	rnaResidues = [residue for polymer in mol.getPolymers() if polymer.isRNA() for residue in polymer.getResidues()]
+        
         for resCombination in itools.combinations_with_replacement(rnaResidues, 2):
             res1, res2 = resCombination
             res1Atoms, res2Atoms = res1.getAtoms("H*"), res2.getAtoms("H*")
-            seenAtoms = set() if res1.equals(res2) else None
+            seenAtoms = set() if res1.equals(res2) else None # ensure atom comparison in the same residue is unidirectional
+            iType = InteractionType.determineType(res1, res2)
+            if iType is None: # skipping
+                continue
             for atomCombination in itools.product(res1Atoms, res2Atoms):
                 atom1, atom2 = atomCombination
                 if seenAtoms is not None:
@@ -150,30 +153,14 @@ def mainFunc():
                 pt1 = atom1.getPoint()
                 pt2 = atom2.getPoint()
                 dis = Atom.calcDistance(pt1, pt2)
-                if (dis <= interactionThres and dis != sameAtom): # create a variable for the numbers
-                    numNucleotide1= res1.getResNum()
-                    numNucleotide2= res2.getResNum()
+                if (dis <= distanceThres and dis != 0): # create a variable for the numbers
                     atomName1= str(atom1.getName())
                     atomName2= str(atom2.getName())
                     if ( ("O" not in atomName1) and ("O" not in atomName2)):
 			nuc1 = str(res1.getName())
                         nuc2 = str(res2.getName())
-                        iType = determineType(res1, res2, basePairMap) # sameResHelix
-                        if iType is None:
-                            pdb = pdbFile.split("/")[-1].split('.')[0] if pdbFile not in seenPDBs else "_____"
-                            seenInst = (nuc1,nuc2,atomName1,atomName2, viennaSeq)
-                            if seenInst in seenCases:
-                                continue
-                            seenCases.add(seenInst)
-                            fUnclassified.write("%-5s %-3s %-3s %-9s %-9s %s\n" % (pdb, nuc1, nuc2, '.'.join([str(numNucleotide1),atomName1]), '.'.join([str(numNucleotide2),atomName2]), viennaSeq))
-                            if (not pdb.startswith("_")): seenPDBs.add(pdbFile) 
-                            continue
-			classifier1 = tetraLabels[resInd[numNucleotide1]] if iType.__contains__("Tetra") else "" 
-                        classifier2 = tetraLabels[resInd[numNucleotide2]] if iType.__contains__("Tetra") else ""
-                        nucOneLetterName1 = nuc1+str(classifier1)
-                        nucOneLetterName2 = nuc2+str(classifier2)
-                        inst = (iType, nucOneLetterName1, nucOneLetterName2, atomName1, atomName2)
-                        if iType in allTypes:
+                        inst = (iType, nuc1, nuc2, atomName1, atomName2)
+			if iType in allTypes:
                             typeDict = allTypes[iType]
                             if inst in typeDict:
                                 typeDict[inst].append(dis)
@@ -182,7 +169,6 @@ def mainFunc():
                         else:
                             raise KeyError("Key '{}' is not recognized in '{}'.".format(iType, allTypes.keys()))
         used += 1
-    fUnclassified.close()
     with open("output_table.txt", "wb") as wTable:
         wTable.write("Number of PDB files used : {}\n".format(str(used)))
         wTable.write("{:5s}\t{:4s}\t{:4s}\t{:5s}\t{:5s}\t{:4s}\t{:4s}\t{:4s}\t{:5s}\n".format("Type","Res1","Res2","Atom1","Atom2","Min.","Max.","Avg.","# Inst."))
@@ -192,8 +178,5 @@ def mainFunc():
                 tableContent = key + tuple(stats)
                 output = "{:5s}\t{:4s}\t{:4s}\t{:5s}\t{:5s}\t{:4.2f}\t{:4.2f}\t{:4.2f}\t{:5d}\n".format(*tableContent)
                 wTable.write(output)
-    print(used, actuallyRead)
-import time
-now = time.time()
+
 mainFunc()
-print("Time taken: {}".format(round(time.time() - now, 3)))

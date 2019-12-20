@@ -43,7 +43,7 @@ import java.util.List;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import org.nmrfx.structure.chemistry.energy.ViolationStats;
+import static org.nmrfx.structure.chemistry.energy.AtomMath.IrpParameters;
 import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 
@@ -224,6 +224,7 @@ public class EnergyLists {
 
     public void setForceWeight(final ForceWeight forceWeight) {
         this.forceWeight = forceWeight;
+        molecule.getEnergyCoords().setComplexFFMode(forceWeight.getRobson() > 0.0);
     }
 
     public ForceWeight getForceWeight() {
@@ -645,16 +646,14 @@ public class EnergyLists {
             }
 
             if (forceWeight.getRobson() > 0.0) {
-                for (AtomPair atomPair : atomList) {
-                    AtomEnergy energy = AtomMath.calcRobson(atomPair.spSet1.getPoint(), atomPair.spSet2.getPoint(), atomPair,
-                            forceWeight, false);
-                    robsonEnergy += energy.getEnergy();
-                    nRobson++;
-                    final double p = Vector3D.distance(atomPair.spSet1.getPoint(), atomPair.spSet2.getPoint());
-                    double delta = (atomPair.ePair.r * 0.75 - p);
-                    if (delta > limitVal) {
-                        writer.format("Rob: %10s %10s %5.2f %7.3f %5.2f %5.2f\n", atomPair.spSet1.getFullName(),
-                                atomPair.spSet2.getFullName(), atomPair.ePair.r, energy.getEnergy(), p, delta);
+                EnergyCoords eCoords = molecule.getEnergyCoords();
+                robsonEnergy = eCoords.calcRepel(false, forceWeight.getRobson());
+                nRobson = eCoords.getNContacts();
+                for (int i = 0; i < nRepel; i++) {
+                    ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getRobson());
+                    if (stat != null) {
+                        String errMsg = stat.toString();
+                        writer.print(errMsg);
                     }
                 }
             } else {
@@ -802,6 +801,45 @@ public class EnergyLists {
 
     }
 
+    public double calcIRPFast(double[] gradient) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
+        double energyTotal = 0.0;
+        int i = 0;
+        Atom[] atoms = new Atom[4];
+        double weight = forceWeight.getIrp();
+        for (Atom atom : angleAtoms) {
+            atoms[3] = atom.daughterAtom;
+            if (atoms[3] != null) {
+                atoms[2] = atom;
+                atoms[1] = atom.parent;
+                if (atoms[1] != null) {
+                    atoms[0] = atoms[1].parent;
+                }
+            }
+            if (atoms[0] != null) {
+                int irpIndex = atom.irpIndex;
+                double angle = eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
+                angle = Dihedral.reduceAngle(angle);
+                double[][] irpValues = new double[1][3];
+                for (double[] irpVal : irpValues) {
+                    double v = irpVal[0];
+                    double n = irpVal[1];
+                    double phi = irpVal[2];
+                    double energy = weight * v * (1.0 + Math.cos(n * angle - phi));
+                    energyTotal += energy;
+                    double deriv = 0.0;
+                    if (gradient != null) {
+                        deriv = -weight * v * n * Math.sin(n * angle - phi);
+                        gradient[i] += deriv;
+                    }
+                }
+            }
+            i++;
+        }
+        return energyTotal;
+
+    }
+
     public double calcRobsen(boolean calcDeriv) {
         double totalEnergy = 0;
         for (AtomPair atomPair : atomList) {
@@ -818,7 +856,7 @@ public class EnergyLists {
 
     public double calcRepelFast(boolean calcDeriv) {
         EnergyCoords eCoords = molecule.getEnergyCoords();
-        double weight = forceWeight.getRepel();
+        double weight = forceWeight.getRobson() > 0.0 ? forceWeight.getRobson() : forceWeight.getRepel();
         double energy = eCoords.calcRepel(calcDeriv, weight);
         if (calcDeriv) {
             eCoords.addRepelDerivs(branches);
@@ -1116,7 +1154,7 @@ public class EnergyLists {
         try {
             //two ways to calculate whether atoms are bumping into one another - 1) calc repel, 2)calc robsen
             if (forceWeight.getRobson() > 0.0) {
-                energyTotal += calcRobsen(calcDeriv);
+                energyTotal += calcRepelFast(calcDeriv);
             } else if (forceWeight.getRepel() > 0.0) {
                 energyTotal += calcRepelFast(calcDeriv);
             }
@@ -1140,16 +1178,22 @@ public class EnergyLists {
                 energyTotal += calcDihedralEnergyFast(gradient);
             }
             if (forceWeight.getIrp() > 0.0) {
-                int i = 0;
-                for (Atom atom : angleAtoms) {
-                    AtomEnergy energy = AtomMath.calcIrpEnergy(atom.daughterAtom, forceWeight, calcDeriv);
-                    energyTotal += energy.getEnergy();
-                    if (calcDeriv) {
-                        gradient[i++] += energy.getDeriv();
+                if (false) {  // placeholder for new fast mode
+                    if (forceWeight.getIrp() > 0.0) {
+                        energyTotal += calcIRPFast(gradient);
+                    }
+                } else {
+
+                    int i = 0;
+                    for (Atom atom : angleAtoms) {
+                        AtomEnergy energy = AtomMath.calcIrpEnergy(atom.daughterAtom, forceWeight, calcDeriv);
+                        energyTotal += energy.getEnergy();
+                        if (calcDeriv) {
+                            gradient[i++] += energy.getDeriv();
+                        }
                     }
                 }
             }
-
             if (calcDeriv) {
                 for (int i = 0; i < branches.length; i++) {
                     if (REPORTBAD && (Math.abs(gradient[i]) > 100000.0)) {
@@ -1161,6 +1205,7 @@ public class EnergyLists {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+
         return new EnergyDeriv(energyTotal, gradient);
     }
 
@@ -1509,9 +1554,10 @@ public class EnergyLists {
             }
             updateFixed(molecule.getDihedrals());
         }
-        eCoords.setCells(eCoords.ePairs, deltaEnd, distanceLimit, hardSphere, includeH, shrinkValue, shrinkHValue);
+        eCoords.setCells(eCoords.eDistancePairs, deltaEnd, distanceLimit, hardSphere,
+                includeH, shrinkValue, shrinkHValue, forceWeight.getRobson() > 0.0);
         if (forceWeight.getShift() > 0.0) {
-           // eCoords.setCells(eCoords.eShiftPairs, deltaEnd, distanceLimit, 0, true, 0, 0);
+            // eCoords.setCells(eCoords.eShiftPairs, deltaEnd, distanceLimit, 0, true, 0, 0);
         }
     }
 

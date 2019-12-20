@@ -37,7 +37,8 @@ public class Residue extends Compound {
     private final static String[] compliantNucleicAcid = {"C5'", "O5'", "P"};
     private String lastBackBoneAtomName = null;
     private String firstBackBoneAtomName = null;
-    public SecondaryStructure ss = null;
+    public Residue pairedTo = null;
+    public SecondaryStructure secStruct = null;
 
     static {
         String[] standardResidues = {
@@ -159,6 +160,14 @@ public class Residue extends Compound {
 
     public Polymer getPolymer() {
         return polymer;
+    }
+
+    public Residue getPrevious() {
+        return previous;
+    }
+
+    public Residue getNext() {
+        return next;
     }
 
     @Override
@@ -512,7 +521,6 @@ public class Residue extends Compound {
                 if (!isIUPACMode()) {
                     newRoot = "HT";
                 }
-                System.out.println("cap " + newRoot);
                 thirdAtom.valanceAngle = (float) (180.0 * Math.PI / 180.0);
                 thirdAtom.dihedralAngle = (float) (0.0 * Math.PI / 180.0);
                 Atom newAtom = firstAtom.add(newRoot + "3", "H", Order.SINGLE);
@@ -587,48 +595,47 @@ public class Residue extends Compound {
     }
 
     public int basePairType(Residue residue) {
-        int bpcount = 0;
+        int bpCount = 0;
         boolean valid = false;
         List<AllBasePairs> basePairs = AllBasePairs.basePairList();
         for (AllBasePairs bp : basePairs) {
-            if (name.equals(bp.res1) && residue.getName().equals(bp.res2)) {
-                bpcount = 0;
-                for (int iPair = 0; iPair < bp.atomPairs.length; iPair++) {
-                    String[] atoms = bp.atomPairs[iPair].split(":");
-                    String[] atoms0 = atoms[0].split("/");
-                    String[] atoms1 = atoms[1].split("/");
-                    for (String atom0 : atoms0) {
-                        for (String atom1 : atoms1) {
-                            Atom atom11 = getAtom(atom0);
-                            Atom atom22 = residue.getAtom(atom1);
-
-                            if (atom0.contains("H")) {
-                                valid = HydrogenBond.validateRNA(atom11.getSpatialSet(), atom22.getSpatialSet(), 0);
-//                                if (!valid){
-//                                    System.out.print(atom11.getName() + "  "+ atom11.getResidueName() + atom22.getName() + "  "+ atom22.getResidueName());
-//                                }
-
-                            } else if (atom1.contains("H")) {
-                                valid = HydrogenBond.validateRNA(atom22.getSpatialSet(), atom11.getSpatialSet(), 0);
-
+            bpCount = 0;
+            for (int iPair = 0; iPair < bp.atomPairs.length; iPair++) {
+                String[] atoms = bp.atomPairs[iPair].split(":");
+                String[] atoms0 = atoms[0].split("/");
+                String[] atoms1 = atoms[1].split("/");
+                for (String atom1Str : atoms0) {
+                    for (String atom2Str : atoms1) {
+                        if (!name.matches("[GCAU]")) {
+                            if (atom1Str.contains("H")) {
+                                atom1Str = atom1Str.replace("H", "HN");
+                            }
+                        }
+                        if (!residue.name.matches("[GCAU]")) {
+                            if (atom2Str.contains("H")) {
+                                atom2Str = atom2Str.replace("H", "HN");
+                            }
+                        }
+                        Atom atom1 = getAtom(atom1Str);
+                        Atom atom2 = residue.getAtom(atom2Str);
+                        if (atom1 != null && atom2 != null) {
+                            if (atom1Str.contains("H")) {
+                                valid = HydrogenBond.validateRNA(atom1.getSpatialSet(), atom2.getSpatialSet(), 0);
+                            } else if (atom2Str.contains("H")) {
+                                valid = HydrogenBond.validateRNA(atom2.getSpatialSet(), atom1.getSpatialSet(), 0);
                             }
                             if (valid) {
-                                bpcount++;
+                                bpCount++;
                             }
-
                         }
                     }
                 }
-                if (bpcount == bp.atomPairs.length) {
-                    /*residueB.pairedTo = this
-                      this.pairedTo = residueB*/
-                    return bp.type;
-                }
-
             }
-
+            if (bpCount == bp.atomPairs.length) {
+                return bp.type;
+            }
         }
         return 0;
-
     }
+
 }
