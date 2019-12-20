@@ -804,6 +804,7 @@ public class Molecule implements Serializable, ITree {
         makeAtomList();
         setupGenCoords();
         energyLists.makeAtomListFast();
+        eCoords.setComplexFFMode(energyLists.getForceWeight().getRobson() > 0.0);
         updateVecCoords();
     }
 
@@ -1806,13 +1807,14 @@ public class Molecule implements Serializable, ITree {
         }
 
         if (n == 0) {
-            throw new MissingCoordinatesException("couldn't calculate center: no coordinates");
+            return getCenter(iStructure);
+        } else {
+            double[] mCenter = new double[3];
+            mCenter[0] = x / n;
+            mCenter[1] = y / n;
+            mCenter[2] = z / n;
+            return mCenter;
         }
-        double[] mCenter = new double[3];
-        mCenter[0] = x / n;
-        mCenter[1] = y / n;
-        mCenter[2] = z / n;
-        return mCenter;
     }
 
     public Vector3D getCorner(int iStructure) throws MissingCoordinatesException {
@@ -1893,7 +1895,7 @@ public class Molecule implements Serializable, ITree {
             pt = atom.getPoint();
             if (pt != null) {
                 double[] aCoords = pt.toArray();
-                for (int i=0;i<aCoords.length;i++) {
+                for (int i = 0; i < aCoords.length; i++) {
                     aCoords[i] -= c[i];
                 }
                 molecCoords.add(aCoords);
@@ -1910,14 +1912,14 @@ public class Molecule implements Serializable, ITree {
         RealMatrix sMat = svd.getS();
         double[] s = svd.getSingularValues();
         double maxX = 0.0;
-        for (int i=0;i<uMat.getRowDimension();i++) {
+        for (int i = 0; i < uMat.getRowDimension(); i++) {
             double x = Math.abs(uMat.getEntry(i, 0));
             if (x > maxX) {
                 maxX = x;
             }
         }
-        for (int i=0;i<s.length;i++) {
-            sMat.setEntry(i, i, sMat.getEntry(i,i)*maxX);
+        for (int i = 0; i < s.length; i++) {
+            sMat.setEntry(i, i, sMat.getEntry(i, i) * maxX);
         }
         rotMat = rotMat.preMultiply(sMat);
         return rotMat;
@@ -2480,50 +2482,7 @@ public class Molecule implements Serializable, ITree {
         }
         return shiftMap;
     }
-    public List<BasePair> pairList() { //for RNA only
-        List<Polymer> polymers = getPolymers();
-        List<BasePair> bpList = new ArrayList();
-        List<Residue> RNAresidues = new ArrayList();
-        for (Polymer polymer : polymers) {
-            for (Residue res : polymer.getResidues()) {
-                if ("GCAU".indexOf(res.name) != -1) {
-                    RNAresidues.add(res);
-                }
-            }
-        }
-        for (Residue residueA : RNAresidues) {
-            for (Residue residueB : RNAresidues) {
-                if (residueA.getResNum() < residueB.getResNum()) {
-                    int type = residueA.basePairType(residueB);
-                    if (type == 1) {
-                        BasePair bp = new BasePair(residueA, residueB);
-                        bpList.add(bp);
 
-                    }
-                }
-            }
-        }
-        return bpList;
-    } 
-    
-    public int nOfStems() {
-        int stemNum = 1;
-        List<BasePair> bp = this.pairList();
-        for (int i = 1; i < bp.size(); i++) {
-            if ((bp.get(i).res1.iRes - bp.get(i - 1).res1.iRes) != 1) {
-                stemNum++;
-            }
-        }
-        return stemNum;
-    }
-    /* 
-    get vienna sequence from the pdb file by finding the number of residues (use .size() method))
-    polymer A and polymer B can be the same 
-    getResidues() returns a list of number of residues in the polymer
-    index through bp's
-    
-    
-     */
     public void checkRNAPairs() {
         for (Polymer polymerA : getPolymers()) {
             for (Polymer polymerB : getPolymers()) {
@@ -2542,61 +2501,110 @@ public class Molecule implements Serializable, ITree {
             }
         }
     }
-/**/
-    public HashMap<Integer, List<BasePair>> loopNum() {
-        HashMap<Integer, List<BasePair>> loopNum = new HashMap<Integer, List<BasePair>>();
-        int nOfStem = nOfStems();
-        int stemInd = 0;
-        List<BasePair> bp = pairList();
-        ArrayList<BasePair> stem[] = new ArrayList[nOfStem];
-        for (int i = 0; i < nOfStem; i++) {
-            stem[i] = new ArrayList<>();
-        }
-        for (int i = 0; i < bp.size(); i++) {
-            if ((i + 1) == bp.size()) {
-                stem[stemInd].add(bp.get(i));
-            } else if ((bp.get(i + 1).res1.iRes - bp.get(i).res1.iRes) == 1) {
-                stem[stemInd].add(bp.get(i));
-            } else {
-                stem[stemInd].add(bp.get(i));
-                stemInd++;
-            }
-        }
-        for (int j = 0; j < nOfStem; j++) {
-            loopNum.put(j + 1, stem[j]); // +1 for index
-        }
-        return loopNum;
-    }
 
-
-    public char[] viennaSequence() {
-        char[] vienna = new char[0];
-        List<Polymer> polymers = new ArrayList();
-        polymers = getPolymers();
+    public List<Residue> RNAresidues() { //list of only rna residues 
+        List<Residue> RNAresidues = new ArrayList();
         for (Polymer polymer : getPolymers()) {
-            List<Residue> residues = new ArrayList();
-            List<Residue> RNAresidues = new ArrayList();
-            residues = polymer.getResidues();
-            for (Residue res : residues) {
-                if ("GCAU".indexOf(res.name) != -1) {
+            if (polymer.isRNA()) {
+                for (Residue res : polymer.getResidues()) {
                     RNAresidues.add(res);
                 }
             }
-            vienna = new char[RNAresidues.size()];
-            for (int j = 0; j < RNAresidues.size(); j++) {
-                vienna[j] = '.';
-            }
-            for (Residue residueA : RNAresidues) {
-                for (Residue residueB : RNAresidues) {
-                    if (residueA.getResNum() > residueB.getResNum()) {
-                        int type = residueA.basePairType(residueB);
-                        if (type == 1) {
-                            vienna[RNAresidues.indexOf(residueA)] = ')';
-                            vienna[RNAresidues.indexOf(residueB)] = '(';
-                        }
+        }
+        return RNAresidues;
+    }
+
+    public List<BasePair> pairList() { //for RNA only
+        List<BasePair> bpList = new ArrayList();
+        List<Residue> RNAresidues = RNAresidues();
+        for (Residue residueA : RNAresidues) {
+            for (Residue residueB : RNAresidues) {
+                if (residueA.getResNum() < residueB.getResNum()) {
+                    int type = residueA.basePairType(residueB);
+                    if (type == 1) {
+                        BasePair bp = new BasePair(residueA, residueB);
+                        bpList.add(bp);
 
                     }
                 }
+            }
+        }
+        return bpList;
+    }
+
+    public HashMap<Integer, List<BasePair>> bpMap() {
+        HashMap<Integer, List<BasePair>> bpMap = new HashMap<Integer, List<BasePair>>();
+        BasePair currentBp = null;
+        int i = 0;
+        List<BasePair> crossedPairs = new ArrayList();
+        List<BasePair> bpList = pairList();
+        for (BasePair bp1 : bpList) {
+            for (BasePair bp2 : bpList) {
+                if (bp1.res1.iRes < bp2.res1.iRes && bp1.res2.iRes < bp2.res2.iRes && bp1.res2.iRes > bp2.res1.iRes) {
+                    if (currentBp != bp2) {
+                        bpMap.put(i, crossedPairs);
+                        i++;
+                        crossedPairs.clear();
+                        crossedPairs.add(bp1);
+                        currentBp = bp2;
+                        break;
+
+                    } else {
+                        crossedPairs.add(bp1);
+                        currentBp = bp2;
+                        break;
+                    }
+                }
+            }
+        }
+        return bpMap;
+    }
+
+    public char[] viennaSequence() { //pseudoknots
+        HashMap<Integer, List<BasePair>> bpMap = bpMap();
+        List<BasePair> bps = pairList();
+        List<Residue> RNAresidues = RNAresidues();
+        char[] vienna = new char[RNAresidues.size()];
+        String leftBrackets = "[{";
+        String rightBrackets = "]}";
+        for (int i = 0; i < vienna.length; i++) {
+            vienna[i] = '.';
+        }
+        for (BasePair bp : bps) {
+            vienna[bp.res1.iRes] = '(';
+            vienna[bp.res2.iRes] = ')';
+        }
+        if (!bpMap.isEmpty()) {
+            for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
+                for (BasePair bp : crossMap.getValue()) {
+                    vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
+                    vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
+                }
+
+            }
+        }
+        return vienna;
+    }
+
+    public char[] testViennaSequence() { //for testing
+        HashMap<Integer, List<BasePair>> bpMap = bpMap();
+        List<Residue> RNAresidues = RNAresidues();
+        char[] vienna = new char[RNAresidues.size()];
+        String leftBrackets = "[{";
+        String rightBrackets = "]}";
+        for (int i = 0; i < vienna.length; i++) {
+            vienna[i] = '.';
+        }
+        for (Residue residueA : RNAresidues) {
+            if (residueA.pairedTo != null && residueA.iRes < residueA.pairedTo.iRes) {
+                vienna[residueA.iRes] = '(';
+                vienna[residueA.pairedTo.iRes] = ')';
+            }
+        }
+        for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
+            for (BasePair bp : crossMap.getValue()) {
+                vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
+                vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
             }
         }
         return vienna;
@@ -2605,7 +2613,7 @@ public class Molecule implements Serializable, ITree {
     public void calcLCMB(final int iStruct) {
         calcLCMB(iStruct, true, false);
     }
-     
+
     // Biophysical Journal 96(8) 3074–3081
     public Map<String, Double> calcLCMB(final int iStruct, boolean scaleEnds, boolean useMap) {
         double r0 = 3.0;
@@ -2954,6 +2962,11 @@ public class Molecule implements Serializable, ITree {
         }
 
         return (selected);
+    }
+
+    public ArrayList<Atom> getAtoms(String selection) {
+        MolFilter molFilter = new MolFilter(selection);
+        return getMatchedAtoms(molFilter, this);
     }
 
     public static ArrayList<Atom> getMatchedAtoms(MolFilter molFilter, Molecule molecule) {
@@ -3824,7 +3837,7 @@ public class Molecule implements Serializable, ITree {
                 Integer iNodeEnd = hash.get(bond.end);
 
                 if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                    mTree.addEdge(iNodeBegin.intValue(), iNodeEnd.intValue());
+                    mTree.addEdge(iNodeBegin, iNodeEnd);
 
                 }
             }
@@ -3833,13 +3846,34 @@ public class Molecule implements Serializable, ITree {
         class TreeGroup {
 
             int iAtom = 0;
-            List<MNode> pathNodes = null;
-            ArrayList treeValues = null;
+            List<MNode> pathNodes = new ArrayList<>();
+            List<Integer> treeValues = new ArrayList<>();
+            List<Integer> shells = new ArrayList<>();
 
-            TreeGroup(int iAtom, List<MNode> pathNodes, ArrayList treeValues) {
+            TreeGroup(int iAtom, List<MNode> pathNodes, List<Integer> treeValues, List<Integer> shells) {
                 this.iAtom = iAtom;
-                this.pathNodes = pathNodes;
-                this.treeValues = treeValues;
+                this.pathNodes.addAll(pathNodes);
+                this.treeValues.addAll(treeValues);
+                this.shells.addAll(shells);
+            }
+
+            public String toString() {
+                StringBuilder sBuilder = new StringBuilder();
+                sBuilder.append(iAtom).append("\n");
+                for (MNode node : pathNodes) {
+                    sBuilder.append(" ").append(node.getAtom().getName());
+                }
+                sBuilder.append("\n");
+                for (Integer treeValue : treeValues) {
+                    sBuilder.append(" ").append(treeValue);
+
+                }
+                sBuilder.append("\n");
+                for (Integer shell : shells) {
+                    sBuilder.append(" ").append(shell);
+
+                }
+                return sBuilder.toString();
             }
         }
 
@@ -3852,28 +3886,34 @@ public class Molecule implements Serializable, ITree {
             int numNodes = pathNodes.size();
             int value;
             int shell;
-            ArrayList treeValues = new ArrayList(numNodes);
+            List<Integer> treeValues = new ArrayList<>(numNodes);
+            List<Integer> shells = new ArrayList<>(numNodes);
 
             for (int k = 0; k < numNodes; k++) {
                 MNode cNode = pathNodes.get(k);
+                if (cNode.isRingClosure()) {
+                    continue;
+                }
                 Atom atom = cNode.getAtom();
                 shell = cNode.getShell();
                 value = (shell * 4096) + (16 * atom.aNum) + ((4 * atom.nPiBonds) / 2);
-                treeValues.add(Integer.valueOf(value));
+                treeValues.add(value);
+                shells.add(shell);
             }
             Collections.sort(treeValues);
-            treeGroups.add(new TreeGroup(j, pathNodes, treeValues));
+            treeGroups.add(new TreeGroup(j, pathNodes, treeValues, shells));
         }
 
         ArrayList equivAtoms = new ArrayList();
-        Map groupHash = new TreeMap();
-        Map uniqueMap = new TreeMap();
+        Map<String, AtomEquivalency> groupHash = new TreeMap<>();
+        Map<String, Integer> uniqueMap = new TreeMap<>();
         int nGroups = 0;
 
         for (int j = 0; j < treeGroups.size(); j++) {
             equivAtoms.clear();
 
             TreeGroup jGroup = (TreeGroup) treeGroups.get(j);
+//            System.out.println(eAtomList.get(j).getName() + " " + jGroup.toString());
 
             for (int k = 0; k < treeGroups.size(); k++) {
                 if (j == k) {
@@ -3888,8 +3928,8 @@ public class Molecule implements Serializable, ITree {
                     ok = true;
 
                     for (int kj = 0; kj < jGroup.treeValues.size(); kj++) {
-                        int kVal = ((Integer) kGroup.treeValues.get(kj)).intValue();
-                        int jVal = ((Integer) jGroup.treeValues.get(kj)).intValue();
+                        int kVal = (kGroup.treeValues.get(kj));
+                        int jVal = (jGroup.treeValues.get(kj));
 
                         if (kVal != jVal) {
                             ok = false;
@@ -3902,54 +3942,59 @@ public class Molecule implements Serializable, ITree {
                 if (ok) {
                     Atom jAtom = jGroup.pathNodes.get(0).getAtom();
                     Atom kAtom = kGroup.pathNodes.get(0).getAtom();
+//                    System.out.println(jAtom.getName() + " eq " + kAtom.getName());
                     int shell = -1;
 
                     for (int jj = 0; jj < kGroup.pathNodes.size(); jj++) {
                         MNode nodeTest = kGroup.pathNodes.get(jj);
                         Atom atomTest = nodeTest.getAtom();
+//                        System.out.println(jj + " " + kGroup.shells.get(jj) + " " + (atomTest == null ? "" : atomTest.getName()));
 
                         if (atomTest != null && atomTest.getName().equals(jAtom.getName())) {
-                            shell = nodeTest.getShell();
+                            shell = kGroup.shells.get(jj);
+                            break;
                         }
                     }
 
                     String groupName = shell + "_" + jAtom.getName();
+//                    System.out.println(groupName);
                     String jUniq = shell + "_" + jAtom.getName();
                     String kUniq = shell + "_" + kAtom.getName();
 
                     if (!uniqueMap.containsKey(jUniq) && !uniqueMap.containsKey(kUniq)) {
                         nGroups++;
-                        uniqueMap.put(jUniq, Integer.valueOf(nGroups));
-                        uniqueMap.put(kUniq, Integer.valueOf(nGroups));
+                        uniqueMap.put(jUniq, nGroups);
+                        uniqueMap.put(kUniq, nGroups);
                     } else if (!uniqueMap.containsKey(jUniq)) {
                         uniqueMap.put(jUniq, uniqueMap.get(kUniq));
                     } else if (!uniqueMap.containsKey(kUniq)) {
                         uniqueMap.put(kUniq, uniqueMap.get(jUniq));
                     }
 
-                    AtomEquivalency atomEquiv = (AtomEquivalency) groupHash.get(groupName);
+                    AtomEquivalency atomEquiv = groupHash.get(groupName);
 
                     if (atomEquiv == null) {
                         atomEquiv = new AtomEquivalency();
                         atomEquiv.setShell(shell);
-                        atomEquiv.setIndex(((Integer) uniqueMap.get(jUniq)).intValue());
-                        atomEquiv.setAtoms(new ArrayList<Atom>());
+                        atomEquiv.setIndex((uniqueMap.get(jUniq)));
+                        atomEquiv.setAtoms(new ArrayList<>());
                         atomEquiv.getAtoms().add(jAtom);
                         groupHash.put(groupName, atomEquiv);
                     }
 
+//                    System.out.println("addatom " + groupName + " " + kAtom.getName());
                     atomEquiv.getAtoms().add(kAtom);
                 }
             }
         }
 
-        Iterator iter = groupHash.entrySet().iterator();
+        for (Map.Entry<String, AtomEquivalency> entry : groupHash.entrySet()) {
 
-        while (iter.hasNext()) {
             nGroups++;
-
-            AtomEquivalency atomEquiv = (AtomEquivalency) ((Map.Entry) iter.next()).getValue();
+            String key = entry.getKey();
+            AtomEquivalency atomEquiv = entry.getValue();
             Atom eAtom = atomEquiv.getAtoms().get(0);
+//            System.out.println("add eq " + key + " " + eAtom.getName() + " " + atomEquiv.getAtoms().size());
 
             if (eAtom.equivAtoms == null) {
                 eAtom.equivAtoms = new ArrayList(2);
@@ -3962,7 +4007,8 @@ public class Molecule implements Serializable, ITree {
     }
 
     public static void getCouplings(final Entity entity, final ArrayList<JCoupling> jCouplings,
-            final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks, int nShells, int minShells) {
+            final ArrayList<JCoupling> tocsyLinks, final ArrayList<JCoupling> hmbcLinks,
+            int nShells, int minShells, int tocsyShells, int hmbcShells) {
         Molecule molecule = entity.molecule;
         molecule.getAtomTypes();
 
@@ -3984,7 +4030,7 @@ public class Molecule implements Serializable, ITree {
                 eAtomList.add(atom);
 
                 MNode mNode = mTree.addNode();
-                atom.equivAtoms = null;
+                //atom.equivAtoms = null;
                 mNode.setAtom(atom);
 
                 //mNode.atom = atom;
@@ -4046,9 +4092,11 @@ public class Molecule implements Serializable, ITree {
                     gotJ = true;
                     JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
                     jCouplings.add(jCoupling);
-                } else if (atoms[shell].aNum == 6) {
-                    JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
-                    hmbcLinks.add(jCoupling);
+                } else if ((shell > 1) && (atoms[shell].aNum == 6)) {
+                    if (shell <= hmbcShells) {
+                        JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
+                        hmbcLinks.add(jCoupling);
+                    }
                 }
                 if (gotJ) {
                     if (!hashJ.containsKey(atomStart)) {
@@ -4069,8 +4117,10 @@ public class Molecule implements Serializable, ITree {
                     Integer iNodeEnd = hashJ.get(atomEnd);
 
                     if ((iNodeBegin != null) && (iNodeEnd != null)) {
-                        if (iNodeBegin != iNodeEnd.intValue()) {
-                            mTreeJ.addEdge(iNodeBegin, iNodeEnd);
+                        if (iNodeBegin.intValue() != iNodeEnd.intValue()) {
+                            if (iNodeBegin < iNodeEnd) {
+                                mTreeJ.addEdge(iNodeBegin, iNodeEnd);
+                            }
                         }
                     }
                 }
@@ -4091,9 +4141,12 @@ public class Molecule implements Serializable, ITree {
 
             for (int k = 1; k < numNodes; k++) {
                 MNode cNode = pathNodes.get(k);
+                if (cNode.isRingClosure()) {
+                    continue;
+                }
                 Atom atomEnd = cNode.getAtom();
                 shell = cNode.getShell();
-                if ((shell > 0) && (shell < 6)) {
+                if ((shell > 0) && (shell <= tocsyShells)) {
                     atoms[0] = atomStart;
                     atoms[1] = atomEnd;
                     JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, 2, shell);
@@ -4164,22 +4217,16 @@ public class Molecule implements Serializable, ITree {
                     }
                 }
             }
-            for (Atom atom : atomList) {
-                if (atomBranches.containsKey(atom)) {
-                    //  System.out.print(atom.getShortName());
-                    ArrayList<Atom> branch = atomBranches.get(atom);
-                    Collections.sort(branch, (a, b) -> Integer.compare(a.getIndex(), b.getIndex()));
-                    //                    for (Atom branchAtom : branch) {
-                    //                        System.out.print(" " + branchAtom.getShortName());
-                    //
-                    //                    }
-                    atom.branchAtoms = new Atom[branch.size()];
-                    branch.toArray(atom.branchAtoms);
-                    //                    System.out.println("");
-
-                } else {
-                    atom.branchAtoms = new Atom[0];
-                }
+        }
+        for (Atom atom : atomList) {
+            if (atomBranches.containsKey(atom)) {
+                //  System.out.print(atom.getShortName());
+                ArrayList<Atom> branch = atomBranches.get(atom);
+                Collections.sort(branch, (a, b) -> Integer.compare(a.getIndex(), b.getIndex()));
+                atom.branchAtoms = new Atom[branch.size()];
+                branch.toArray(atom.branchAtoms);
+            } else {
+                atom.branchAtoms = new Atom[0];
             }
         }
 

@@ -140,7 +140,7 @@ public class PDBFile {
                     return molecule;
                 }
 
-                if (string.startsWith("ATOM  ")) {
+                if (string.startsWith("ATOM  ") ||  string.startsWith("HETATM")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string);
 
                     if (!lastRes.equals(atomParse.resNum)) {
@@ -532,6 +532,10 @@ public class PDBFile {
                 if (string.startsWith("ATOM  ") || string.startsWith("HETATM")) {
                     PDBAtomParser atomParse = new PDBAtomParser(string, swap);
                     Entity compoundEntity = (Entity) molecule.getEntity(atomParse.resName);
+                    // fixme not propertly supporting insertCode
+                    if (!atomParse.insertCode.equals(" ")) {
+                        continue;
+                    }
                     // PDB standard says all non-standard residue atoms should be HETATM
                     //   but some software makes everything an atom
                     //   so check to see if we've made an entity with residue name
@@ -587,6 +591,7 @@ public class PDBFile {
                             String msg = "Residue " + polymerName + ":" + residue.getName() + " at " + atomParse.resNum + " is not same as in file " + atomParse.resName;
                             if (allowSequenceDiff) {
                                 System.err.println(msg);
+                                System.err.println(string);
                                 continue;
                             } else {
                                 throw new MoleculeIOException(msg);

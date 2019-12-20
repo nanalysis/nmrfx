@@ -18,8 +18,6 @@
 
 package org.nmrfx.structure.chemistry;
 
-import org.biojava.nbio.alignment.Alignments;
-import org.biojava.nbio.alignment.Alignments.PairwiseSequenceAlignerType;
 import org.biojava.nbio.alignment.SimpleGapPenalty;
 import org.biojava.nbio.alignment.SimpleSubstitutionMatrix;
 import org.biojava.nbio.alignment.SmithWaterman;
@@ -60,7 +58,7 @@ public class SmithWatermanBioJava {
         return indexB;
     }
 
-    void doAlignment() throws IllegalArgumentException {
+    public SequencePair doAlignment() throws IllegalArgumentException {
         ProteinSequence sequence1;
         ProteinSequence sequence2;
         try {
@@ -97,6 +95,7 @@ public class SmithWatermanBioJava {
                 indexB.add(iq);
             }
         }
+        return pair;
     }
 
     public static void main(String args[]) {

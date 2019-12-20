@@ -440,27 +440,27 @@ public class PropertyGenerator {
         properties = loadPropertyFile(propFile);
     }
 
-    public void init(Molecule molecule, String atomName) throws InvalidMoleculeException, IOException {
+    public void init(Molecule molecule) throws InvalidMoleculeException, IOException {
         //NvShell nvShell = new NvShell(interp);
         HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data = new HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>>();
         offsetTable = loadCorrTable("corrtable.txt");
 
         contactMap = molecule.calcContactSum(0, true);
-
-        if (atomName.equals("N") || atomName.equals("H") || atomName.startsWith("HA")) {
+        hBondMap = new HashMap<>();
+        eShiftMap = new HashMap<>();
+        String[] hbondAtomNames = {"H", "HA"};
+        for (String atomName : hbondAtomNames) {
             MolFilter hydrogenFilter = new MolFilter("*." + atomName);
             MolFilter acceptorFilter = new MolFilter("*.O*");
             if (atomName.startsWith("HA")) {
                 hydrogenFilter = new MolFilter("*." + atomName + "*");
             }
-            if (atomName.equals("N")) {
-                hydrogenFilter = new MolFilter("*.H");
-            }
-            hBondMap = molecule.hydrogenBondMap(hydrogenFilter, acceptorFilter, 0);
-            MolFilter sourceFilter = new MolFilter("*.O*,N,H");
-            eShiftMap = molecule.electroStaticShiftMap(hydrogenFilter, sourceFilter, 0);
+            Map<String, HydrogenBond> hBondMapForAtom = molecule.hydrogenBondMap(hydrogenFilter, acceptorFilter, 0);
+            hBondMap.putAll(hBondMapForAtom);
+            MolFilter sourceFilter = new MolFilter("*.O*,N,H");  // fixme ?  why is H here (for NH?)
+            Map<String, Double> eShiftMapForAtom = molecule.electroStaticShiftMap(hydrogenFilter, sourceFilter, 0);
+            eShiftMap.putAll(eShiftMapForAtom);
         }
-
     }
 //Molecule molecule = Molecule.get(Molecule.defaultMol);
 
@@ -493,6 +493,15 @@ public class PropertyGenerator {
             valueMap.put("phiS", null);
             valueMap.put("chiS", null);
             valueMap.put("psiS", null);
+            String[] suffixes = {"_P", "_S"};
+            for (String suffix : suffixes) {
+                valueMap.put("HPHB" + suffix, null);
+                valueMap.put("BULK" + suffix, null);
+                valueMap.put("CHRG" + suffix, null);
+                valueMap.put("PRO" + suffix, null);
+                valueMap.put("ARO" + suffix, null);
+                valueMap.put("DIS" + suffix, null);
+            }
 
             if (prevResidue != null) {
                 if (prevResidue.previous != null) {
@@ -620,7 +629,6 @@ public class PropertyGenerator {
             valueMap.put("randoff", 1.0);
             double cs, acs;
             cs = getPPM(atomSpec);
-            System.out.println("csssssssssss " + cs + " " + atomSpec);
             acs = getOccupancy(atomSpec);
             valueMap.put("cs", cs);
             valueMap.put("acs", acs);

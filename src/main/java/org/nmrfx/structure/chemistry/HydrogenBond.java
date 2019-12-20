@@ -25,7 +25,7 @@ public class HydrogenBond {
 
     static final double toleranceHN = 3.5;
     static final double toleranceHA = 2.77;
-    static final double toleranceRNA = 3.0;
+    static final double toleranceRNA = 2.9;
 
     final SpatialSet hydrogen;
     final SpatialSet acceptor;
@@ -62,7 +62,7 @@ public class HydrogenBond {
                         double distance = Atom.calcDistance(hydrogenPt, acceptorPt);
                         if (distance < toleranceRNA) {
                             double angle = getRNAAngle(hydrogen, acceptor, structureNum);
-                            if (angle > 1.65) {
+                            if (angle > 1.85) {
 //                                System.out.println(angle + "  " +distance + "  " + hydrogen.atom.getResidueName()+ hydrogen.atom.getResidueNumber()+ " " +hydrogen.atom.getName() + "   " +  acceptor.atom.getResidueName()+acceptor.atom.getResidueNumber()+ " " +acceptor.atom.getName());
                                 valid = true;
 
