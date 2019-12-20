@@ -881,9 +881,12 @@ public class BrukerData implements NMRData {
                         for (String sValue : sList) {
                             try {
                                 double scale = 1.0;
-                                if (sValue.endsWith("m)")) {
+                                if (sValue.endsWith("m")) {
                                     sValue = sValue.substring(0, sValue.length() - 1);
                                     scale = 1.0e-3;
+                                } else if (sValue.endsWith("u")) {
+                                    sValue = sValue.substring(0, sValue.length() - 1);
+                                    scale = 1.0e-6;
                                 } else if (sValue.endsWith("s")) {
                                     sValue = sValue.substring(0, sValue.length() - 1);
                                     scale = 1.0;
