@@ -149,6 +149,8 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             }
         };
         addPatternListener();
+        FXMLController controller = FXMLController.getActiveController();
+        controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
 
     }
 
@@ -920,6 +922,14 @@ merge.png				region_adjust.png
                     break;
                 }
             }
+        }
+    }
+
+    public void setActivePeaks(List<Peak> peaks) {
+        if ((peaks != null) && !peaks.isEmpty()) {
+            Peak peak = peaks.get(0);
+            activeMultiplet = Optional.of(peak.getPeakDim(0).getMultiplet());
+            updateMultipletField(false);
         }
     }
 }
