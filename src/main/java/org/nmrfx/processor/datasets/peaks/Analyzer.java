@@ -43,14 +43,6 @@ public class Analyzer {
     double regionExtend = 9.0;
 
     double artifactRatio = 50;
-//        public RealMatrix idIntegrals(int winSize, double ratio,
-//            int regionWidth, int joinWidth, int extend, double minThreshold)
-
-//        set regionWindow    $::dcs::analysis::prefs(regions,windowSize,value)
-//    set noiseRatio $::dcs::analysis::prefs(regions,noiseRatio,value)
-//    set minWidth   $::dcs::analysis::prefs(regions,minimumWidth,value)
-//    set joinSize   $::dcs::analysis::prefs(regions,joinSize,value)
-//    set extendAmount  $::dcs::analysis::prefs(regions,extendAmount,value)
     double sDev = 0.0;
     double threshold = 0.0;
     double filter = 0.0;
@@ -59,7 +51,6 @@ public class Analyzer {
 
     public Analyzer(Dataset dataset) {
         this.dataset = dataset;
-//        PeakDim.setResonanceFactory(new ResonanceFactory());
         solvents = new Solvents();
         solvents.loadYaml();
     }
@@ -193,49 +184,6 @@ public class Analyzer {
         }
     }
 
-
-    /*
-    
-
-
-    if {$dim == "1D" && $::dcs::peaks::pars(_threshold_) == ""} {
-        if {$::dcs::peaks::pars(_manThreshold_) != ""} {
-            set ::dcs::peaks::pars(_threshold_) $::dcs::peaks::pars(_manThreshold_)
-            set pkvar(sdevn) 0.0
-            set pkvar(width) 0.0
-        } else {
-            foreach "threshold filter sdev" [::dcs::regions::calculateThreshold $dataset] {}
-            set setWidthEtc 1
-            if {$::dcs::regions::pars(_regionsContinue_)} {
-                set regionMin [dcs::regions::getRegionsMin]
-                set regionThreshold [expr {$regionMin*0.5}]
-                if {$regionThreshold < (5.0*$sdev)} {
-                    set regionThreshold [expr {5.0*$sdev}]
-                }
-                if {$regionThreshold < $threshold} {
-                    set threshold $regionThreshold
-                    set pkvar(sdevn) 0.0
-                    set pkvar(width) 0.0
-                    set setWidthEtc 0
-                }
-            }
-            set sdRatio $::dcs::analysis::prefs(peaks,noiseRatio,value)
-            if {$setWidthEtc} {
-                if {[string equal $nucType "X"]} {
-                    set pkvar(width) 0.05
-                    set pkvar(sdevn) [expr $sdRatio/5.0*$sdev]
-                    set pkvar(sign) 3
-                } else {
-                    set pkvar(width) 0.0
-                    set pkvar(sdevn) [expr $sdRatio*$sdev]
-                    set pkvar(sign) 1
-                }
-            }
-            set ::dcs::peaks::pars(_threshold_) [format %1.1e $threshold]
-            nv_win cross1y $threshold
-        }
-
-     */
     public void findSolventPeaks() {
         int iDim = 0;
         String solventName = dataset.getSolvent();
@@ -322,6 +270,9 @@ public class Analyzer {
         }
         peakList.compress();
         peakList.reNumber();
+        for (Peak peak : peakList.peaks()) {
+            peak.setStatus(0);
+        }
 
     }
 
@@ -495,7 +446,6 @@ public class Analyzer {
             dim[i] = i;
         }
         double[][] limits = new double[1][2];
-        Set<DatasetRegion> newRegions = new TreeSet<>();
         Set<DatasetRegion> regions = getRegions();
 
         regions.stream().forEach(region -> {
@@ -577,11 +527,6 @@ public class Analyzer {
         int extend = (int) Math.round(1.0 * regionExtend / sw * size);
 
         double minThreshold = manThreshold.isPresent() ? manThreshold.get() : -1.0;
-        //System.out.println(region + " " + join + " " + extend + " " + minThreshold + " " + regionRatio);
-        /*
-   puts "autoreg $winSize $noiseRatio $minWidth $joinSize $extendAmount"
-        autoreg 20 26 0.9 0.9 9.1
-         */
 
         RealMatrix rM = vec.idIntegrals(regionWindow, regionRatio, region, join, extend, minThreshold);
         Set<DatasetRegion> regions = getRegions();
@@ -776,97 +721,6 @@ public class Analyzer {
         return bestNorm;
     }
 
-    /*
-        foreach peak $peaks {
-        set type [nv_peak elem type $peak]
-        if {![string equal compound $type]} {
-            continue
-        }
-        set ppm [nv_peak elem $label.P $peak]
-        if {$ppm < 5.5} {
-            continue
-        }
-        if {$useMultiplets} {
-            set vol [nv_peak elem 1.mv $peak]
-        } else {
-            set vol [nv_peak elem vol $peak]
-        }
-        if {$vol != 0.0} {
-            lappend Aromatics "$vol $peak"
-        }
-    }
-
-     */
-
- /*
-    proc ::dcs::regions::autoSetRegions {} {
-    variable pars
-    #fixmegui
-    global ExpTable
-
-    set ::dcs::regions::pars(_regionsSet_) 1
-    if {![info exists ::dcs::regions::pars(_manualNormalized_)] || !$::dcs::regions::pars(_manualNormalized_)} {
-        set ::dcs::regions::pars(_normalized_) 0
-    }
-    set minThreshold [::nv::util::getIfExists ::dcs::peaks::pars(_manThreshold_) -1.0]
-    if {![string is double -strict $minThreshold]} {
-        set minThreshold -1.0
-    }
-    set regionWindow    $::dcs::analysis::prefs(regions,windowSize,value)
-    set noiseRatio $::dcs::analysis::prefs(regions,noiseRatio,value)
-    set minWidth   $::dcs::analysis::prefs(regions,minimumWidth,value)
-    set joinSize   $::dcs::analysis::prefs(regions,joinSize,value)
-    set extendAmount  $::dcs::analysis::prefs(regions,extendAmount,value)
-    ::nv::spectrum::regions::setRegions $winSize $noiseRatio $minWidth $joinSize $extendAmount $minThreshold
-    
-    
-        set dataset [lindex [nv_win dataset] 0]
-    vecmat resize pwork [nv_dataset size $dataset 1]
-    set complex [nv_dataset complex $dataset 1]
-    if {$complex} {
-        vecmat complex pwork
-    } else {
-        vecmat real pwork
-    }
-    vecmat real pwork
-    set nDim [nv_dataset ndim $dataset]
-    if {$nDim == 1} {
-        nv_dataset get $dataset -obj pwork
-    } else {
-        nv_dataset get $dataset -d2 1 1 -obj pwork
-    }
-    if {$complex} {
-        vecmat real pwork
-    }
-    set size [vecmat size pwork]
-    set sw [vecmat sw pwork]
-    # convert from Hz to pts
-    set regionWindow [expr {round(1.0*$winSize/$sw*$size)}]
-    if {$winSize < 8} {
-        set regionWindow 8
-    }
-    set regionWidth [expr {round(1.0*$regionWidth/$sw*$size)}]
-    set joinWidth [expr {round(1.0*$joinWidth/$sw*$size)}]
-    set regionExtend [expr {round(1.0*$extend/$sw*$size)}]
-    set regions [vecmat idintegrals pwork $winSize $ratio $regionWidth $joinWidth $extend $minThreshold]
-
-    
-    
-    
-    
-    
-    set ignoreRegions [::nv::util::getIfExists pars(ignoreRegions) [list]]
-    foreach "x1 x2" $ignoreRegions {
-        nv_win region clear $x1 $x2
-    }
-    ::dcs::regions::purgeBadRegions
-    set manualRegions [::nv::util::getIfExists pars(manualRegions) [list]]
-    foreach "x1 x2" $manualRegions {
-        nv_win region add $x1 $x2
-    }
-}
-
-     */
     double getSmallPeakThreshold() {
         List<Double> intensities = new ArrayList<>();
         Set<DatasetRegion> regions = getRegions();
@@ -970,21 +824,5 @@ public class Analyzer {
         renumber();
         normalizeMultiplets();
         normalizeIntegrals();
-
-//        ::dcs::regions::restorePurgedRegions
-//        ::dcs::peaks::gui::clearPeaks
-//        ::dcs::peaks::gui::pickPeaks All nodraw
-// purgeNonPeakRegions
-// groupPeaks
-// setVolumesFromIntegrals
-// fitLinkedPeaks
-// purgeSmallPeaks
-// purgeNonPeakRegions
-// analyzeMultiplets
-// jfitLinkedPeaks
-// purgeSolventPeaks
-// trimRegionsToPeaks
-// normalizeIntensities
-// report
     }
 }
