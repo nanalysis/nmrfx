@@ -29,6 +29,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
@@ -80,11 +81,15 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
     @FXML
     HBox fittingToolBar;
     @FXML
+    HBox typeToolBar;
+    @FXML
     GridPane gridPane;
     @FXML
     Button splitButton;
     @FXML
     Button splitRegionButton;
+    @FXML
+    ChoiceBox<String> peakTypeChoice;
     ChoiceBox<String>[] patternChoices;
     TextField[] couplingFields;
     TextField[] slopeFields;
@@ -299,6 +304,12 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             button1.getStyleClass().add("toolButton");
             fittingToolBar.getChildren().add(button1);
         }
+        Label peakTypeLabel = new Label("Type: ");
+        peakTypeChoice = new ChoiceBox();
+        typeToolBar.getChildren().addAll(peakTypeLabel, peakTypeChoice);
+        peakTypeChoice.getItems().addAll(Peak.getPeakTypes());
+        peakTypeChoice.valueProperty().addListener(e -> setPeakType());
+        HBox.setHgrow(peakTypeChoice, Priority.ALWAYS);
 
         /*
 extract.png				region_add.png		wizard
@@ -425,6 +436,8 @@ merge.png				region_adjust.png
             String mult = multiplet.getMultiplicity();
             Coupling coup = multiplet.getCoupling();
             updateCouplingChoices(coup);
+            String peakType = Peak.typeToString(multiplet.getOrigin().getType());
+            peakTypeChoice.setValue(peakType);
 //            if (multiplet.isGenericMultiplet()) {
 //                splitButton.setDisable(true);
 //            } else {
@@ -433,6 +446,14 @@ merge.png				region_adjust.png
         } else {
             multipletIdField.setText("");
         }
+    }
+
+    void setPeakType() {
+        activeMultiplet.ifPresent(m -> {
+            String peakType = peakTypeChoice.getValue();
+            m.getOrigin().setType(Peak.getType(peakType));
+        });
+
     }
 
     void clearPatternListener() {
@@ -562,7 +583,7 @@ merge.png				region_adjust.png
             stage.setTitle("Multiplets");
             stage.setScene(scene);
             stage.setMinWidth(200);
-            stage.setMinHeight(400);
+            stage.setMinHeight(450);
             stage.show();
             stage.toFront();
             controller.chart = controller.getChart();
