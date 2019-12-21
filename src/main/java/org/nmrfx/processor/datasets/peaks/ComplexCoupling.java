@@ -69,12 +69,15 @@ public class ComplexCoupling extends Coupling {
             final double[] intensities, final double[] volumes, final double lineWidthPPM) {
         this.multiplet = multiplet;
         double max = Double.NEGATIVE_INFINITY;
+        double sum = 0.0;
         for (int i = 0; i < intensities.length; i++) {
             if (intensities[i] > max) {
                 max = intensities[i];
             }
+            sum += volumes[i];
         }
         double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
+        multiplet.getOrigin().setVolume1((float) sum);
         multiplet.setIntensity(max);
         double centerPPM = multiplet.getCenter();
         double lineWidthHz = lineWidthPPM * sf;

@@ -35,7 +35,6 @@ import org.nmrfx.processor.datasets.Dataset;
 public class Multiplet implements PeakOrMulti, Comparable {
 
     private double intensity = 0.0;
-    private double volume;
     private Coupling coupling = new Singlet(this);
     PeakDim myPeakDim;
 
@@ -145,14 +144,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public double getVolume() {
-        if (coupling instanceof Singlet) {
-            volume = myPeakDim.getPeak().getVolume1();
-        }
-        return volume;
-    }
-
-    public void setVolume(final double value) {
-        volume = value;
+        return myPeakDim.getPeak().getVolume1();
     }
 
     public static Multiplet groupPeakDims(List<PeakDim> peakDims) {
@@ -251,7 +243,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     public void removePeakComponents(List<RelMultipletComponent> removeComps) {
         List<RelMultipletComponent> currentComps = getRelComponentList();
-        List<AbsMultipletComponent> newComps =new ArrayList<>();
+        List<AbsMultipletComponent> newComps = new ArrayList<>();
         for (RelMultipletComponent currentComp : currentComps) {
             if (!removeComps.contains(currentComp)) {
                 newComps.add(currentComp.toAbsolute());
