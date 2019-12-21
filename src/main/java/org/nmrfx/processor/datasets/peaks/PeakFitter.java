@@ -325,7 +325,7 @@ public class PeakFitter {
             }
         }
         //for (int i = 0; i < guesses.length; i++) {
-            //System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
+        //System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
         //}
 
         double result = fitNow(guesses, lower, upper);
@@ -487,12 +487,15 @@ public class PeakFitter {
 //                    for (int ii = 0; ii < amps.length; ii++) {
 //                        System.out.println("ii amp " + amps[ii]);
 //                    }
+                    int nComp = 1;
                     for (int iCoup = 0; iCoup < couplings.length; iCoup++) {
                         couplings[iCoup] = theFile.ptWidthToHz(0, cplItems2[iCoup].getCoupling());
                         sin2Thetas[iCoup] = cplItems2[iCoup].getSin2Theta();
 //                        System.out.println(cplItems2[iCoup].getCoupling() + " " + couplings[iCoup] + " " + sin2Thetas[iCoup]);
+                        nComp *= cplItems2[iCoup].getNSplits();
                     }
-
+                    double volume = nComp * amps[0] * lineWidthPPM * (Math.PI / 2.0) / 1.05;
+                    multiplet.getOrigin().setVolume1((float) volume);
                     double centerPPM = theFile.pointToPPM(0, peakFit.getCFreq(iPeak) + p2[0][0]);
                     multiplet.set(centerPPM, couplings, amps[0], sin2Thetas);
                 }
@@ -645,7 +648,7 @@ public class PeakFitter {
             k += 2;
         }
         //for (int i = 0; i < guesses.length; i++) {
-            //System.out.printf("%10.4f ", guesses[i]);
+        //System.out.printf("%10.4f ", guesses[i]);
         //}
         //System.out.println("");
 
@@ -706,11 +709,10 @@ public class PeakFitter {
 
             double[] pars = lmdifTest.getPars();
             //for (int i = 1; i < pars.length; i++) {
-                //System.out.printf("%10.4f ", pars[i]);
+            //System.out.printf("%10.4f ", pars[i]);
 
             //}
             //System.out.println(" rms " + rms);
-
             //k=1;
             k = 2;
 //            System.out.println("lin fit peaks " + nPeaks);
