@@ -28,6 +28,9 @@
             <center>
                 <GridPane fx:id="gridPane"/>
             </center>
+            <bottom>
+                <HBox  fx:id = "integralToolBar"/>
+            </bottom>
         </BorderPane>
     </center>
     <bottom>

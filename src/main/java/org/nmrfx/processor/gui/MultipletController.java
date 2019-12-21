@@ -35,6 +35,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -81,6 +82,8 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
     @FXML
     HBox fittingToolBar;
     @FXML
+    HBox integralToolBar;
+    @FXML
     HBox typeToolBar;
     @FXML
     GridPane gridPane;
@@ -91,6 +94,7 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
     @FXML
     ChoiceBox<String> peakTypeChoice;
     ChoiceBox<String>[] patternChoices;
+    TextField integralField;
     TextField[] couplingFields;
     TextField[] slopeFields;
     private PolyChart chart;
@@ -304,12 +308,36 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             button1.getStyleClass().add("toolButton");
             fittingToolBar.getChildren().add(button1);
         }
+        Label integralLabel = new Label("N:");
+        integralLabel.setPrefWidth(80);
+        integralField = new TextField();
+        integralField.setPrefWidth(120);
+        integralToolBar.getChildren().addAll(integralLabel, integralField);
+
+        integralField.setOnKeyReleased(k -> {
+            if (k.getCode() == KeyCode.ENTER) {
+                try {
+                    double value = Double.parseDouble(integralField.getText().trim());
+                    activeMultiplet.ifPresent(m -> {
+                        double volume = m.getVolume();
+                        PeakList peakList = m.getOrigin().getPeakList();
+                        peakList.scale = volume / value;
+                        refresh();
+                    });
+                } catch (NumberFormatException nfE) {
+
+                }
+
+            }
+        });
+
         Label peakTypeLabel = new Label("Type: ");
+        peakTypeLabel.setPrefWidth(80);
         peakTypeChoice = new ChoiceBox();
         typeToolBar.getChildren().addAll(peakTypeLabel, peakTypeChoice);
         peakTypeChoice.getItems().addAll(Peak.getPeakTypes());
         peakTypeChoice.valueProperty().addListener(e -> setPeakType());
-        HBox.setHgrow(peakTypeChoice, Priority.ALWAYS);
+        peakTypeChoice.setPrefWidth(120);
 
         /*
 extract.png				region_add.png		wizard
@@ -438,6 +466,9 @@ merge.png				region_adjust.png
             updateCouplingChoices(coup);
             String peakType = Peak.typeToString(multiplet.getOrigin().getType());
             peakTypeChoice.setValue(peakType);
+            double scale = multiplet.getOrigin().getPeakList().scale;
+            double value = multiplet.getVolume() / scale;
+            integralField.setText(String.format("%.2f", value));
 //            if (multiplet.isGenericMultiplet()) {
 //                splitButton.setDisable(true);
 //            } else {
@@ -583,7 +614,7 @@ merge.png				region_adjust.png
             stage.setTitle("Multiplets");
             stage.setScene(scene);
             stage.setMinWidth(200);
-            stage.setMinHeight(450);
+            stage.setMinHeight(475);
             stage.show();
             stage.toFront();
             controller.chart = controller.getChart();
