@@ -77,7 +77,7 @@ public class Singlet extends Coupling {
     List<AbsMultipletComponent> getAbsComponentList() {
         List<AbsMultipletComponent> comps = new ArrayList<>();
         PeakDim peakDim = multiplet.getPeakDim();
-        AbsMultipletComponent comp = new AbsMultipletComponent(multiplet, 0.0,
+        AbsMultipletComponent comp = new AbsMultipletComponent(multiplet, peakDim.getChemShiftValue(),
                 peakDim.getPeak().getIntensity(), peakDim.getPeak().getVolume1(), peakDim.getLineWidthValue());
         comps.add(comp);
         return comps;

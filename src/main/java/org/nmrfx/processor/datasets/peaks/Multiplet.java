@@ -180,7 +180,12 @@ public class Multiplet implements PeakOrMulti, Comparable {
     }
 
     public void updateCoupling(List<AbsMultipletComponent> comps) {
-        coupling = new ComplexCoupling(this, comps);
+        if (comps.size() == 1) {
+            coupling = new Singlet(this);
+            getOrigin().setVolume1((float) comps.get(0).getVolume());
+        } else {
+            coupling = new ComplexCoupling(this, comps);
+        }
     }
 
     public static void merge(PeakDim peakDimA, PeakDim peakDimB) {
