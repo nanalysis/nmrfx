@@ -35,6 +35,7 @@ import org.nmrfx.processor.datasets.Dataset;
 public class Multiplet implements PeakOrMulti, Comparable {
 
     private double intensity = 0.0;
+    private double max = 0.0;
     private Coupling coupling = new Singlet(this);
     PeakDim myPeakDim;
 
@@ -57,6 +58,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     public Multiplet(PeakDim peakDim) {
         myPeakDim = peakDim;
+        max = peakDim.getPeak().getIntensity();
     }
 
     @Override
@@ -101,6 +103,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
             myPeakDim.setChemShiftValue((float) centerPPM);
             coupling = new ComplexCoupling(this, deltaPPMs, amplitudes, volumes, lineWidthPPM);
         }
+        max = getMultipletMax();
     }
 
     public void set(double centerPPM, double[] couplingValues, double amplitude, double[] sin2thetas) {
@@ -111,6 +114,8 @@ public class Multiplet implements PeakOrMulti, Comparable {
             intensity = amplitude;
         }
         setCenter(centerPPM);
+        max = getMultipletMax();
+
     }
 
     public String getCouplingsAsString() {
@@ -186,6 +191,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
         } else {
             coupling = new ComplexCoupling(this, comps);
         }
+        max = getMultipletMax();
     }
 
     public static void merge(PeakDim peakDimA, PeakDim peakDimB) {
@@ -346,6 +352,11 @@ public class Multiplet implements PeakOrMulti, Comparable {
         myPeakDim.peakDimUpdated();
     }
      */
+    
+    public double getMax() {
+        return max;
+    }
+    
     public double getMultipletMax() {
         List<RelMultipletComponent> comps = getRelComponentList();
         double maxIntensity = 0.0;
