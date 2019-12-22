@@ -592,12 +592,10 @@ public class Analyzer {
                 Multiplet newMultiplet = multiplet.split(ppm);
                 setVolumesFromIntegrals();
                 PeakFitting peakFitting = new PeakFitting(dataset);
-                System.out.println("fit " + multiplet.getOrigin().getName());
-
                 peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
-                System.out.println("fit " + newMultiplet.getOrigin().getName());
+                peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
                 peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), true);
-                System.out.println("fffffffffff");
+                peakFitting.jfitLinkedPeak(newMultiplet.getOrigin(), "all");
             }
             renumber();
         }
@@ -619,6 +617,8 @@ public class Analyzer {
             result = Optional.of(multiplet);
             peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
             renumber();
+            Multiplets.analyzeMultiplet(multiplet.getOrigin());
+            peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
         }
         return result;
     }
