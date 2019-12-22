@@ -45,12 +45,12 @@ public abstract class MultipletComponent {
         return lineWidth;
     }
 
-    public void setLineWidth(double volume) {
-        this.lineWidth = volume;
+    public void setLineWidth(double lineWidth) {
+        this.lineWidth = lineWidth;
     }
 
     public double getVolume() {
-        return lineWidth;
+        return volume;
     }
 
     public void setVolume(double volume) {
