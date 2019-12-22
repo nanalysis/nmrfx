@@ -899,7 +899,7 @@ public class DrawPeaks {
             label = getMultipletLabel(multiplet);
         }
         float xM = (float) multiplet.getCenter();
-        float yM = (float) multiplet.getIntensity();
+        float yM = (float) multiplet.getMax();
         ArrayList<Line2D> lines = multiplet.getSplittingGraph();
         double max = 0.0;
         treeOn = true;
@@ -986,7 +986,7 @@ public class DrawPeaks {
         }
 
         float xM = (float) multiplet.getCenter();
-        float yM = (float) multiplet.getIntensity();
+        float yM = (float) multiplet.getMax();
         ArrayList<Line2D> lines = multiplet.getSplittingGraph();
         double max = 0.0;
         treeOn = true;
