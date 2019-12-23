@@ -1704,7 +1704,7 @@ public class DrawPeaks {
 
         void renderSimulated(GraphicsContextInterface g2, boolean eraseFirst) throws GraphicsIOException {
             Multiplet multiplet = peak.peakDims[dim].getMultiplet();
-            if (multiplet.isCoupled()) {
+            if (multiplet.isCoupled() || multiplet.isGenericMultiplet()) {
                 renderSimulatedMultiplet(g2, eraseFirst);
             } else {
                 double w = peak.peakDims[dim].getLineWidthValue();
