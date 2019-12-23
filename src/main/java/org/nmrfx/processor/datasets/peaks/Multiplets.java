@@ -93,16 +93,19 @@ public class Multiplets {
 //        updateAfterMultipletConversion(getMultiplet(mSpec));
 //    }
     public static void removeWeakPeaksInMultiplet(Multiplet multiplet, int nRemove) {
-        List<RelMultipletComponent> comps = multiplet.getRelComponentList();
-        comps.sort(comparing((p) -> p.getIntensity()));
-        if (nRemove < 0) {
-            nRemove = comps.size() + nRemove;
-        }
-        comps.subList(0, nRemove).clear();
+        List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
+        if (comps.size() > 1) {
+            comps.sort(comparing((p) -> p.getIntensity()));
+            if (nRemove < 0) {
+                nRemove = comps.size() + nRemove;
+            }
+            comps.subList(0, nRemove).clear();
+            multiplet.updateCoupling(comps);
+            fitComponents(multiplet);
 
-        updateAfterMultipletConversion(multiplet);
-        // fixme  analyzeMultiplet(multiplet.getOrigin());
-        updateAfterMultipletConversion(multiplet);
+            // updateAfterMultipletConversion(multiplet);
+            //analyzeMultiplet(multiplet.getOrigin());
+        }
     }
 
     public static List<Peak> getPeaks(List<PeakDim> peakDims) {
@@ -198,24 +201,23 @@ public class Multiplets {
         int iDim = 0;
         PeakDim peakDim = getMultipletRoot(multiplet);
         PeakList refList = peakDim.myPeak.peakList;
-        int type = peakDim.myPeak.getType();
         double intensity = peakDim.myPeak.getIntensity();
         double volume = peakDim.myPeak.getVolume1();
         float width = peakDim.getLineWidth();
         float bounds = width * 3.0f;
+
+        List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
+        volume = volume / comps.size();
+        intensity /= 4;
+
         for (double ppm : ppms) {
-            Peak peak = refList.getNewPeak();
-            peak.setIntensity((float) intensity / 2.0f);
-            peak.setVolume1((float) volume / 2.0f);
-            peak.peakDims[iDim].setLineWidthValue((float) width);
-            peak.peakDims[iDim].setBoundsValue((float) bounds);
-            peak.peakDims[iDim].setChemShiftValue((float) ppm);
-            peak.setType(type);
-            PeakList.couplePeakDims(peakDim, peak.peakDims[iDim]);
+            AbsMultipletComponent comp = new AbsMultipletComponent(multiplet, ppm, intensity, volume, width);
+            comps.add(comp);
         }
-        updateAfterMultipletConversion(multiplet);
-        // fixme  analyzeMultiplet(multiplet.getPeakDim());
-        updateAfterMultipletConversion(multiplet);
+        multiplet.updateCoupling(comps);
+        fitComponents(multiplet);
+      //  analyzeMultiplet(multiplet.getOrigin());
+       // updateAfterMultipletConversion(multiplet);
     }
 
 //    public static void addOuterCoupling(int addNumber, String mSpec) {
@@ -471,12 +473,21 @@ public class Multiplets {
             PeakFitting peakFitting = new PeakFitting(dataset);
             try {
                 double rms = peakFitting.fitPeakDims(peakDims, "jfit", bounds, mode);
+                System.out.println("Measure " + mode + " " + rms);
                 result = Optional.of(rms);
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {
                 System.out.println("error in fit " + ex.getMessage());
             }
         }
         return result;
+    }
+
+    public static void fitComponents(Multiplet multiplet) {
+
+        PeakList peakList = multiplet.getOrigin().peakList;
+        Dataset dataset = Dataset.getDataset(peakList.getDatasetName());
+        PeakFitting peakFitting = new PeakFitting(dataset);
+        peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
     }
 
     public static Optional<Double> updateAfterMultipletConversion(Multiplet multiplet) {
