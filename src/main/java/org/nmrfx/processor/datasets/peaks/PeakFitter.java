@@ -471,7 +471,7 @@ public class PeakFitter {
                     double[] deltaPPMs = new double[freqs.length];
                     for (int iFreq = 0; iFreq < freqs.length; iFreq++) {
                         double delta = freqs[iFreq] - peakFit.getCFreq(iPeak);
-                        deltaPPMs[iFreq] = theFile.ptWidthToPPM(0, delta);
+                        deltaPPMs[iFreq] = -theFile.ptWidthToPPM(0, delta);
                         volumes[iFreq] = amplitudes[iFreq] * lineWidthPPM * (Math.PI / 2.0) / 1.05;
                     }
 
