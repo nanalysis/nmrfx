@@ -99,15 +99,16 @@ public class Multiplet implements PeakOrMulti, Comparable {
 
     public void set(double centerPPM, double[] deltaPPMs, double[] amplitudes, double[] volumes, double lineWidthPPM) {
 
-        if (coupling instanceof ComplexCoupling) {
-            myPeakDim.setChemShiftValue((float) centerPPM);
-            coupling = new ComplexCoupling(this, deltaPPMs, amplitudes, volumes, lineWidthPPM);
-        }
+        myPeakDim.setChemShiftValue((float) centerPPM);
+        coupling = new ComplexCoupling(this, deltaPPMs, amplitudes, volumes, lineWidthPPM);
+
         max = getMultipletMax();
     }
 
     public void set(double centerPPM, double[] couplingValues, double amplitude, double[] sin2thetas) {
-        if (coupling instanceof CouplingPattern) {
+        if (coupling instanceof Singlet) {
+            getOrigin().setIntensity((float) amplitude);
+        } else {
             CouplingPattern cPat = (CouplingPattern) coupling;
             int[] nValues = cPat.getNValues();
             coupling = new CouplingPattern(this, couplingValues, nValues, amplitude, sin2thetas);
@@ -115,7 +116,6 @@ public class Multiplet implements PeakOrMulti, Comparable {
         }
         setCenter(centerPPM);
         max = getMultipletMax();
-
     }
 
     public String getCouplingsAsString() {
@@ -306,7 +306,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
     public boolean isGenericMultiplet() {
         boolean result = false;
 
-        if (coupling == null) {
+        if (coupling != null) {
             result = coupling instanceof ComplexCoupling;
         }
 
@@ -352,11 +352,10 @@ public class Multiplet implements PeakOrMulti, Comparable {
         myPeakDim.peakDimUpdated();
     }
      */
-    
     public double getMax() {
         return max;
     }
-    
+
     public double getMultipletMax() {
         List<RelMultipletComponent> comps = getRelComponentList();
         double maxIntensity = 0.0;
@@ -367,7 +366,7 @@ public class Multiplet implements PeakOrMulti, Comparable {
                 double ctr2 = comp2.getOffset();
                 double lw2 = comp2.getLineWidth();
                 double h2 = comp2.getIntensity();
-                double contrib = h2 * lw2 * lw2 / (lw2 * lw2 + (ctr2 - ctr) * (ctr2 - ctr) * 4.0);
+                double contrib = h2 * lw2 * lw2 / (lw2 * lw2 + (ctr2 - ctr) * (ctr2 - ctr));
                 hSum += contrib;
                 // System.out.println(ctr+" "+ctr2+" "+lw2+" "+h2+" "+contrib+" "+hSum);
             }
