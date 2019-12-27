@@ -473,7 +473,6 @@ public class Multiplets {
             PeakFitting peakFitting = new PeakFitting(dataset);
             try {
                 double rms = peakFitting.fitPeakDims(peakDims, "jfit", bounds, mode);
-                System.out.println("Measure " + mode + " " + rms);
                 result = Optional.of(rms);
             } catch (IllegalArgumentException | PeakFitException | IOException ex) {
                 System.out.println("error in fit " + ex.getMessage());
