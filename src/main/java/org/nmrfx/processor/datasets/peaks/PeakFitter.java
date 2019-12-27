@@ -77,69 +77,85 @@ public class PeakFitter {
         }
     }
 
-    public double doJFit(int i0, int i1, int[] rows, boolean doFit)
-            throws IllegalArgumentException {
+    void getDims(Peak peak, int[] rows) {
+        int dataDim = theFile.getNDim();
+        PeakDim peakDim = peak.getPeakDim(0);
+        //System.out.println("jfit " + peaks[iPeak].getName());
+        if (dataDim < peak.peakList.nDim) {
+            throw new IllegalArgumentException("Number of peak list dimensions greater than number of dataset dimensions");
+        }
+
+        for (int j = 0; j < peak.peakList.nDim; j++) {
+            boolean ok = false;
+
+            for (int i = 0; i < dataDim; i++) {
+                if (peak.peakList.getSpectralDim(j).getDimName().equals(
+                        theFile.getLabel(i))) {
+                    pdim[j] = i;
+                    ok = true;
+
+                    break;
+                }
+            }
+
+            if (!ok) {
+                throw new IllegalArgumentException("Can't find match for peak dimension \""
+                        + peak.peakList.getSpectralDim(j).getDimName() + "\"");
+            }
+        }
+        int nextDim = peak.peakList.nDim;
+        for (int i = 0; i < dataDim; i++) {
+            boolean gotThisDim = false;
+            for (int j = 0; j < pdim.length; j++) {
+                if (pdim[j] == i) {
+                    gotThisDim = true;
+                    break;
+                }
+            }
+            if (!gotThisDim) {
+                pdim[nextDim] = i;
+                p2[nextDim][0] = rows[i];
+                p2[nextDim][1] = rows[i];
+            }
+        }
+
+    }
+
+    void updateEdge(int iPeak, int pEdge0, int pEdge1, int i0, int i1) {
+        if (pEdge0 < i0) {
+            pEdge0 = i0;
+        }
+
+        if (pEdge1 > i1) {
+            pEdge1 = i1;
+        }
+
+        if (iPeak == 0) {
+            p2[0][0] = pEdge0;
+            p2[0][1] = pEdge1;
+        } else {
+            if (pEdge0 < p2[0][0]) {
+                p2[0][0] = pEdge0;
+            }
+
+            if (pEdge1 > p2[0][1]) {
+                p2[0][1] = pEdge1;
+            }
+        }
+
+    }
+
+    List getGuesses(int i0, int i1) {
         int dataDim = theFile.getNDim();
         int[][] p1 = new int[dataDim][2];
         int[] cpt = new int[dataDim];
         double[] width = new double[dataDim];
-        rootedPeaks = true;
-
-        ArrayList guessList = new ArrayList();
-
-        //int k=0;
-        if (i0 > i1) {
-            int hold = i0;
-            i0 = i1;
-            i1 = hold;
-        }
         int nPeaks = peaks.length;
 
         splitCount = new int[nPeaks][];
-        for (int i = 0; i < dataDim; i++) {
-            pdim[i] = -1;
-        }
-        //System.out.println(" jfit " + peaks.length);
+        List guessList = new ArrayList();
         for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
             PeakDim peakDim = peaks[iPeak].getPeakDim(0);
-            //System.out.println("jfit " + peaks[iPeak].getName());
-            if (dataDim < peaks[iPeak].peakList.nDim) {
-                throw new IllegalArgumentException("Number of peak list dimensions greater than number of dataset dimensions");
-            }
-
-            for (int j = 0; j < peaks[iPeak].peakList.nDim; j++) {
-                boolean ok = false;
-
-                for (int i = 0; i < dataDim; i++) {
-                    if (peaks[iPeak].peakList.getSpectralDim(j).getDimName().equals(
-                            theFile.getLabel(i))) {
-                        pdim[j] = i;
-                        ok = true;
-
-                        break;
-                    }
-                }
-
-                if (!ok) {
-                    throw new IllegalArgumentException("Can't find match for peak dimension \""
-                            + peaks[iPeak].peakList.getSpectralDim(j).getDimName() + "\"");
-                }
-            }
-            int nextDim = peaks[iPeak].peakList.nDim;
-            for (int i = 0; i < dataDim; i++) {
-                boolean gotThisDim = false;
-                for (int j = 0; j < pdim.length; j++) {
-                    if (pdim[j] == i) {
-                        gotThisDim = true;
-                        break;
-                    }
-                }
-                if (!gotThisDim) {
-                    pdim[nextDim] = i;
-                    p2[nextDim][0] = rows[i];
-                    p2[nextDim][1] = rows[i];
-                }
-            }
             Multiplet multiplet = peakDim.getMultiplet();
             multiplet.getMultipletRegion(theFile, pdim, p1, cpt, width);
             double c = theFile.ppmToDPoint(0, multiplet.getCenter());
@@ -194,28 +210,28 @@ public class PeakFitter {
                     guessList.add(c + dw);  // multiplet center plus individual peak offset
                 }
             }
-
-            if (pEdge0 < i0) {
-                pEdge0 = i0;
-            }
-
-            if (pEdge1 > i1) {
-                pEdge1 = i1;
-            }
-
-            if (iPeak == 0) {
-                p2[0][0] = pEdge0;
-                p2[0][1] = pEdge1;
-            } else {
-                if (pEdge0 < p2[0][0]) {
-                    p2[0][0] = pEdge0;
-                }
-
-                if (pEdge1 > p2[0][1]) {
-                    p2[0][1] = pEdge1;
-                }
-            }
+            updateEdge(iPeak, pEdge0, pEdge1, i0, i1);
         }
+        return guessList;
+    }
+
+    public double doJFit(int i0, int i1, int[] rows, boolean doFit)
+            throws IllegalArgumentException {
+        int nPeaks = peaks.length;
+        int dataDim = theFile.getNDim();
+        rootedPeaks = true;
+
+        //int k=0;
+        if (i0 > i1) {
+            int hold = i0;
+            i0 = i1;
+            i1 = hold;
+        }
+        for (int i = 0; i < dataDim; i++) {
+            pdim[i] = -1;
+        }
+        //System.out.println(" jfit " + peaks.length);
+        getDims(peaks[0], rows);
         if (fitMode == PeakList.FIT_MAX_DEV) {
             if (p2[0][0] > i0) {
                 p2[0][0] = i0;
@@ -232,7 +248,7 @@ public class PeakFitter {
         if (p2[0][1] >= theFile.getSize(pdim[0])) {
             p2[0][1] = theFile.getSize(pdim[0]) - 1;
         }
-
+        List guessList = getGuesses(i0, i1);
         int iGuess = 0;
         double[] guesses = new double[guessList.size()];
         double[] lower = new double[guesses.length];
@@ -258,16 +274,23 @@ public class PeakFitter {
                 // previous or following component
                 for (int iFreq = 0; iFreq < nFreq; iFreq++) {
                     if (iFreq == 0) {
-                        lower[jGuess] = guesses[jGuess] - lineWidth;
+                        lower[jGuess] = guesses[jGuess] - lineWidth / 2.0;
                     } else {
-                        //lower[jGuess] = (guesses[jGuess] + guesses[jGuess - 1]) / 2;
-                        lower[jGuess] = guesses[jGuess] - lineWidth;
+                        if (guesses[jGuess] < guesses[jGuess - 1]) {
+                            lower[jGuess] = guesses[jGuess] - lineWidth / 2.0;
+                        } else {
+                            lower[jGuess] = (guesses[jGuess] + guesses[jGuess - 1]) / 2;
+                        }
                     }
                     if (iFreq == (nFreq - 1)) {
-                        upper[jGuess] = guesses[jGuess] + lineWidth;
+                        upper[jGuess] = guesses[jGuess] + lineWidth / 2.0;
                     } else {
-                        // upper[jGuess] = (guesses[jGuess] + guesses[jGuess + 1]) / 2;
-                        upper[jGuess] = guesses[jGuess] + lineWidth;
+                        if (guesses[jGuess] > guesses[jGuess + 1]) {
+                            upper[jGuess] = guesses[jGuess] + lineWidth / 2.0;
+
+                        } else {
+                            upper[jGuess] = (guesses[jGuess] + guesses[jGuess + 1]) / 2;
+                        }
                     }
                     jGuess++;
                 }
