@@ -24,6 +24,7 @@ package org.nmrfx.processor.datasets.peaks;
 
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
+import static java.util.Comparator.comparing;
 import java.util.List;
 
 /**
@@ -59,6 +60,8 @@ public class ComplexCoupling extends Coupling {
         for (AbsMultipletComponent comp : absComponents) {
             components.add(comp.toRelative(center, sf));
         }
+        sortByFreq();
+
         multiplet.getPeakDim().setChemShiftValue((float) center);
         multiplet.getPeakDim().setLineWidthValue((float) absComponents.get(0).getLineWidth());
         multiplet.getPeakDim().getPeak().setVolume1((float) sumVolume);
@@ -79,7 +82,6 @@ public class ComplexCoupling extends Coupling {
         double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
         multiplet.getOrigin().setVolume1((float) sum);
         multiplet.setIntensity(max);
-        double centerPPM = multiplet.getCenter();
         double lineWidthHz = lineWidthPPM * sf;
         for (int i = 0; i < intensities.length; i++) {
             double offset = deltaPPMs[i] * sf;
@@ -115,7 +117,7 @@ public class ComplexCoupling extends Coupling {
     }
 
     final void sortByFreq() {
-        components.sort((a, b) -> Double.compare(b.getOffset(), a.getOffset()));
+        components.sort(comparing((p) -> p.getOffset()));
     }
 
     @Override
