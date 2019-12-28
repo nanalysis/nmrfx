@@ -66,6 +66,7 @@ public class ComplexCoupling extends Coupling {
         multiplet.getPeakDim().setLineWidthValue((float) absComponents.get(0).getLineWidth());
         multiplet.getPeakDim().getPeak().setVolume1((float) sumVolume);
         multiplet.getPeakDim().getPeak().setIntensity((float) maxIntensity);
+        multiplet.setIntensity(maxIntensity);
     }
 
     ComplexCoupling(final Multiplet multiplet, final double[] deltaPPMs,
