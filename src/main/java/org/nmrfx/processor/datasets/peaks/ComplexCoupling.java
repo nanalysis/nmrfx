@@ -85,7 +85,7 @@ public class ComplexCoupling extends Coupling {
         multiplet.setIntensity(max);
         double lineWidthHz = lineWidthPPM * sf;
         for (int i = 0; i < intensities.length; i++) {
-            double offset = deltaPPMs[i] * sf;
+            double offset = -deltaPPMs[i] * sf;
             RelMultipletComponent comp = new RelMultipletComponent(multiplet, offset, intensities[i], volumes[i], lineWidthHz);
             components.add(comp);
         }

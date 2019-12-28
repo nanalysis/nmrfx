@@ -21,7 +21,7 @@ public class AbsMultipletComponent extends MultipletComponent {
     }
 
     public RelMultipletComponent toRelative(Multiplet newMultiplet, double center, double sf) {
-        double relOffset = (offset - center) * sf;
+        double relOffset = (center - offset) * sf;
         return new RelMultipletComponent(newMultiplet, relOffset, intensity, volume, lineWidth * sf);
     }
 
