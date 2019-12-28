@@ -922,8 +922,8 @@ public class DrawPeaks {
                 max = -1.0;
             }
             for (Line2D line : lines) {
-                double xC = xM + line.getX1();
-                double xE = xM - line.getX2();
+                double xC = xM - line.getX1();
+                double xE = xM + line.getX2();
                 int index = generic ? i : (int) Math.round(line.getY1());
 
                 boolean selMode = selected && (index == iLine);
