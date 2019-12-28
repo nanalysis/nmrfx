@@ -216,8 +216,8 @@ public class Multiplets {
         }
         multiplet.updateCoupling(comps);
         fitComponents(multiplet);
-      //  analyzeMultiplet(multiplet.getOrigin());
-       // updateAfterMultipletConversion(multiplet);
+        //  analyzeMultiplet(multiplet.getOrigin());
+        // updateAfterMultipletConversion(multiplet);
     }
 
 //    public static void addOuterCoupling(int addNumber, String mSpec) {
@@ -589,7 +589,7 @@ public class Multiplets {
                 i++;
             }
             double[] sin2thetas = new double[values.length];
-            multiplet.setCouplingValues(values, nValues, 1.0, sin2thetas);
+            multiplet.setCouplingValues(values, nValues, multiplet.getIntensity(), sin2thetas);
         }
         //peakSet = peak.peakDims[0].getCoupledPeakDims();
         //dumpPeakDims(peakSet);
