@@ -63,6 +63,7 @@ public class CouplingPattern extends Coupling {
             couplingItems[i] = new CouplingItem(values[i], sin2theta, n[i]);
         }
         this.intensity = intensity;
+        multiplet.setIntensity(intensity);
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
 
