@@ -1497,7 +1497,7 @@ public class DrawPeaks {
         int dim = 0;
         String label = "";
         Peak peak = null;
-        ArrayList peaks = null;
+        List<Peak> peaks = null;
         int colorMode = 0;
         Path gDerived1DPath = null;
         PeakListAttributes peakAttr;
@@ -1514,7 +1514,7 @@ public class DrawPeaks {
             this.peakAttr = peakAttr;
         }
 
-        Peak1DRep(GraphicsContextInterface g2, int dim, ArrayList peaks) throws GraphicsIOException {
+        Peak1DRep(GraphicsContextInterface g2, int dim, List<Peak> peaks) throws GraphicsIOException {
             this.peaks = peaks;
             this.dim = dim;
             generateDerivedPath(g2);
@@ -1525,13 +1525,15 @@ public class DrawPeaks {
             double max = Double.NEGATIVE_INFINITY;
             double minWid = Double.MAX_VALUE;
             int maxSize = 1000;
-            int nPeaks = 0;
-            for (int k = 0, nRootPeaks = peaks.size(); k < nRootPeaks; k++) {
-                Peak kPeak = (Peak) peaks.get(k);
-                List<Peak> lPeaks = PeakList.getLinks(kPeak, true);
-
-                for (Peak lPeak : lPeaks) {
-                    double wid = Math.abs(lPeak.peakDims[0].getLineWidthValue());
+            if (peaks.isEmpty()) {
+                return;
+            }
+            for (Peak peak : peaks) {
+                PeakDim peakDim = peak.peakDims[0];
+                Multiplet multiplet = peakDim.getMultiplet();
+                List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
+                for (AbsMultipletComponent comp : comps) {
+                    double wid = comp.getLineWidth();
                     if (wid < widthLimit) {
                         wid = widthLimit;
                     }
@@ -1540,23 +1542,19 @@ public class DrawPeaks {
                         minWid = wid;
                     }
 
-                    double v = lPeak.peakDims[0].getChemShiftValue() - (3 * Math.abs(lPeak.peakDims[0].getLineWidthValue()));
+                    double v = comp.getOffset() - (3 * Math.abs(wid));
 
                     if (v < min) {
                         min = v;
                     }
 
-                    v = lPeak.peakDims[0].getChemShiftValue() + (3 * Math.abs(lPeak.peakDims[0].getLineWidthValue()));
+                    v = comp.getOffset() + (3 * Math.abs(wid));
 
                     if (v > max) {
                         max = v;
                     }
 
-                    nPeaks++;
                 }
-            }
-            if (nPeaks == 0) {
-                return;
             }
             double delta = minWid / 11;
             min -= delta;
@@ -1575,21 +1573,20 @@ public class DrawPeaks {
 
             for (int i = 0; i < m; i++) {
                 bpCoords[iCoord] = f;
-                for (int k = 0, nRootPeaks = peaks.size(); k < nRootPeaks; k++) {
-                    Peak kPeak = (Peak) peaks.get(k);
-                    List<Peak> lPeaks = PeakList.getLinks(kPeak, true);
-
-                    for (Peak lPeak : lPeaks) {
-                        double c = lPeak.peakDims[0].getChemShiftValue();
-                        double w = Math.abs(lPeak.peakDims[0].getLineWidthValue());
+                for (Peak peak : peaks) {
+                    PeakDim peakDim = peak.peakDims[0];
+                    Multiplet multiplet = peakDim.getMultiplet();
+                    List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
+                    for (AbsMultipletComponent comp : comps) {
+                        double c = comp.getOffset();
+                        double w = comp.getLineWidth();
                         if (w < widthLimit) {
                             w = widthLimit;
                         }
-                        double a = lPeak.getIntensity();
+                        double a = comp.getIntensity();
                         bpCoords[iCoord + 1] += ((a * ((w * w) / 4)) / (((w * w) / 4)
                                 + ((f - c) * (f - c))));
                     }
-
                 }
                 iCoord += 2;
                 f += delta;

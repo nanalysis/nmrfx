@@ -2819,25 +2819,17 @@ public class PolyChart implements PeakListener {
                     });
                 }
                 if (dim.length == 1) { // only draw multiples for 1D 
+                    List<Peak> roots = new ArrayList<>();
                     peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
                         try {
                             drawPeaks.drawMultiplet(peakListAttr, gC, peak.getPeakDim(0).getMultiplet(), dim, offsets, false, 0);
+                            roots.add(peak);
                         } catch (GraphicsIOException ex) {
                             System.out.println("draw peak exception " + ex.getMessage());
                         }
                     });
-//                    List<Multiplet> multiplets = peakListAttr.getMultipletsInRegion();
-                    List<Peak> roots = new ArrayList<>();
-//                    multiplets.stream().filter(m -> m.getPeakDim() != null).forEach((multiplet) -> {
-//                        try {
-//                            drawPeaks.drawMultiplet(peakListAttr, gC, multiplet, dim, offsets, false, 0);
-//                        } catch (GraphicsIOException ex) {
-//                            System.out.println(ex.getMessage());
-//                        }
-//                        roots.add(multiplet.getPeakDim().getPeak());
-//                    });
 
-                    if (true) {
+                    if (peakListAttr.getSimPeaks()) {
                         PeakList.sortPeaks(roots, 0, true);
                         ArrayList overlappedPeaks = new ArrayList();
                         for (int iPeak = 0, n = roots.size(); iPeak < n; iPeak++) {
