@@ -24,6 +24,7 @@ public class PeakFitting {
     boolean success = false;
     double rmsValue = 0.0;
     boolean anyFit = false;
+    double bicValue = 0.0;
 
     public PeakFitting(Dataset dataset) {
         this.dataset = dataset;
@@ -31,6 +32,10 @@ public class PeakFitting {
 
     public double getRMS() {
         return rmsValue;
+    }
+
+    public double getBIC() {
+        return bicValue;
     }
 
     public boolean anyFit() {
@@ -165,7 +170,7 @@ public class PeakFitting {
     }
 
     public double fitPeakDims(List<PeakDim> peakDims, String mode, double[] winRegions, String fitModeString) throws IllegalArgumentException, PeakFitException, IOException {
-       if (peakDims.isEmpty()) {
+        if (peakDims.isEmpty()) {
             success = false;
             return 0.0;
         }
@@ -214,10 +219,12 @@ public class PeakFitting {
             mode = "lfit";
         }
         double value = 0.0;
+        bicValue = 0.0;
         if ((fitMode == FIT_RMS) || (fitMode == FIT_MAX_DEV)) {
             if (mode.equals("jfit")) {
                 peakFitter.setup(allPeaks);
                 value = peakFitter.doJFit(i1, i2, rows, true);
+                bicValue = peakFitter.getBIC();
 
             } else {
                 peakFitter.setup(allPeaks);
@@ -261,6 +268,7 @@ public class PeakFitting {
                             previous = value;
 
                         }
+                        bicValue = peakFitter.getBIC();
                     } catch (IllegalArgumentException iaE) {
                         success = false;
                     }
