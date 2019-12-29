@@ -286,6 +286,10 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         button.setOnAction(e -> fitSelected());
         fitButtons.add(button);
 
+        button = new Button("BICFit", getIcon("reload"));
+        button.setOnAction(e -> objectiveDeconvolution());
+        fitButtons.add(button);
+
         for (Button button1 : regionButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
             button1.setFont(font);
@@ -765,12 +769,20 @@ merge.png				region_adjust.png
         });
     }
 
+    public void objectiveDeconvolution() {
+        activeMultiplet.ifPresent(m -> {
+            analyzer.objectiveDeconvolution(m);
+            chart.refresh();
+            refresh();
+        });
+    }
+
     public void addAuto() {
         activeMultiplet.ifPresent(m -> {
             Optional<Double> result = Multiplets.deviation(m);
             if (result.isPresent()) {
                 System.out.println("dev pos " + result.get());
-                Multiplets.addPeaksToMutliplet(m, result.get());
+                Multiplets.addPeaksToMultiplet(m, result.get());
                 chart.refresh();
                 refresh();
 
@@ -793,9 +805,9 @@ merge.png				region_adjust.png
             double ppm1 = chart.getVerticalCrosshairPositions()[0];
             double ppm2 = chart.getVerticalCrosshairPositions()[1];
             if (both) {
-                Multiplets.addPeaksToMutliplet(m, ppm1, ppm2);
+                Multiplets.addPeaksToMultiplet(m, ppm1, ppm2);
             } else {
-                Multiplets.addPeaksToMutliplet(m, ppm1);
+                Multiplets.addPeaksToMultiplet(m, ppm1);
 
             }
             chart.refresh();
