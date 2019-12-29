@@ -197,7 +197,7 @@ public class Multiplets {
         return result;
     }
 
-    public static void addPeaksToMutliplet(Multiplet multiplet, double... ppms) {
+    public static void addPeaksToMultiplet(Multiplet multiplet, double... ppms) {
         int iDim = 0;
         PeakDim peakDim = getMultipletRoot(multiplet);
         PeakList refList = peakDim.myPeak.peakList;
