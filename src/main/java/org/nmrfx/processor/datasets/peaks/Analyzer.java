@@ -642,6 +642,69 @@ public class Analyzer {
         peakFitting.jfitLinkedPeaks(peakList);
     }
 
+    public void objectiveDeconvolution(Multiplet multiplet) {
+        PeakFitting peakFitting = new PeakFitting(dataset);
+        int nComps = multiplet.getRelComponentList().size();
+        int nAdd = 0;
+        if (nComps < 2) {
+            nAdd = 3;
+        } else {
+            nAdd = nComps;
+        }
+        List<AbsMultipletComponent> minList = null;
+        multiplet.getOrigin().setFlag(4, false);
+        double rms = peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+        double minBIC = peakFitting.getBIC();
+        for (int i = 0; i < nAdd; i++) {
+            Optional<Double> result = Multiplets.deviation(multiplet);
+            if (result.isPresent()) {
+                Multiplets.addPeaksToMultiplet(multiplet, result.get());
+                multiplet.getOrigin().setFlag(4, false);
+                rms = peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+                double BIC = peakFitting.getBIC();
+                if (BIC < minBIC) {
+                    minBIC = BIC;
+                    minList = multiplet.getAbsComponentList();
+                }
+            }
+        }
+        List<AbsMultipletComponent> minSkipList = null;
+        double limit = 15.0;
+        if (minList != null) {
+            multiplet.updateCoupling(minList);
+            while (true) {
+                double minSkipBIC = Double.MAX_VALUE;
+                int minSkip = -1;
+                int n = minList.size();
+                for (int i = 0; i < n; i++) {
+                    List<AbsMultipletComponent> newList = AbsMultipletComponent.copyList(minList, i);
+                    multiplet.updateCoupling(newList);
+                    multiplet.getOrigin().setFlag(4, false);
+                    peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+                    double BIC = peakFitting.getBIC();
+                    if (BIC < minSkipBIC) {
+                        minSkip = i;
+                        minSkipBIC = BIC;
+                        minSkipList = multiplet.getAbsComponentList();
+                    }
+                }
+                //fixme save components after fitting System
+                //.out.println("min skip " + minSkip + " " + minSkipBIC);
+                if (minSkipBIC < (minBIC + limit)) {
+                    multiplet.updateCoupling(minSkipList);
+                    minList = AbsMultipletComponent.copyList(minSkipList);
+                    if (minSkipBIC < minBIC) {
+                        minBIC = minSkipBIC;
+                    }
+                } else {
+                    multiplet.updateCoupling(minList);
+                    break;
+                }
+            }
+
+        }
+    }
+
     public void analyzeMultiplets() {
         Multiplets.analyzeMultiplets(peakList);
     }
