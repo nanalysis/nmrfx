@@ -111,6 +111,14 @@ public class CouplingPattern extends Coupling {
         return values;
     }
 
+    double getSin2Theta(int i) {
+        double value = 0.0;
+        if (i < couplingItems.length) {
+            value = couplingItems[i].getSin2Theta();
+        }
+        return value;
+    }
+
     public double[] getSin2Thetas() {
         double[] values = new double[couplingItems.length];
         int i = 0;
