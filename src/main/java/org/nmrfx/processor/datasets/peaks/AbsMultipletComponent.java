@@ -1,5 +1,7 @@
 package org.nmrfx.processor.datasets.peaks;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.nmrfx.processor.datasets.Dataset;
 
 /**
@@ -40,6 +42,25 @@ public class AbsMultipletComponent extends MultipletComponent {
 
         width[0] = Math.abs(p[0][0] - p[0][1]);
 
+    }
+
+    public static List<AbsMultipletComponent> copyList(List<AbsMultipletComponent> comps) {
+        return copyList(comps, -1);
+    }
+
+    public static List<AbsMultipletComponent> copyList(List<AbsMultipletComponent> comps, int skip) {
+        List<AbsMultipletComponent> newList = new ArrayList<>();
+        for (int i = 0; i < comps.size(); i++) {
+            if (i != skip) {
+                AbsMultipletComponent oldComp = comps.get(i);
+                AbsMultipletComponent newComp = new AbsMultipletComponent(
+                        oldComp.multiplet, oldComp.offset, oldComp.intensity,
+                        oldComp.volume, oldComp.lineWidth);
+                newList.add(newComp);
+            }
+        }
+
+        return newList;
     }
 
 }
