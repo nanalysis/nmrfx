@@ -1000,7 +1000,7 @@ public class DrawPeaks {
             int i = 0;
             for (Line2D line : lines) {
                 double xC = xM + line.getX1();
-                double xE = xM - line.getX2();
+                double xE = xM + line.getX2();
                 if (hitMultipletLine(xE, yM, max, line.getY1(), hitX, hitY)) {
                     int index = generic ? i : (int) Math.round(line.getY1());
                     MultipletSelection mSel = new MultipletSelection(multiplet, xC, xE, index);
