@@ -465,7 +465,6 @@ public class PeakFit implements MultivariateFunction {
             V = new ArrayRealVector(xv.length);
         }
         V.set(0.0);
-        int iCol = 0;
         for (int iSig = 0; iSig < nSignals; iSig++) {
             int start = sigStarts[iSig];
             double sigLw = a[start++];
@@ -481,10 +480,11 @@ public class PeakFit implements MultivariateFunction {
                     }
                     V.addToEntry(i, y);
                 }
-                iCol += freqs[iSig].length;
             } else {
                 double thisAmp = a[start++];
                 freqs[iSig][0] = a[start++];
+                amplitudes[iSig][0] = 1.0;
+
                 for (int i = 0; i < cplItems[iSig].length; i++) {
                     cplItems[iSig][i] = new CouplingItem(a[start++], a[start++], freqs[iSig][0], cplItems[iSig][i].getNSplits());
                 }
@@ -501,7 +501,6 @@ public class PeakFit implements MultivariateFunction {
                     V.addToEntry(i, y);
 
                 }
-                iCol++;
             }
         }
 
@@ -567,6 +566,14 @@ public class PeakFit implements MultivariateFunction {
         return A;
     }
 
+    public double lShape(double x, double b, double freq, double fR, double fI) {
+        double denom = ((b * b) + ((x - freq) * (x - freq)));
+        double yR = (b * b) / denom;
+        double yI = -b * (x - freq) / denom;
+        double y = fR * yR + fI * yI;
+        return y;
+    }
+
     public double lShape(double x, double b, double freq) {
         double y;
         boolean LORENTZIAN = true;
@@ -577,6 +584,14 @@ public class PeakFit implements MultivariateFunction {
             double dX = (x - freq);
             y = Math.exp(-dX * dX / b);
         }
+
+        return y;
+    }
+
+    public double lShapeImag(double x, double b, double freq) {
+        double y;
+        b *= 0.5;
+        y = -b * (x - freq) / ((b * b) + ((x - freq) * (x - freq)));
 
         return y;
     }

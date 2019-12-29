@@ -48,6 +48,7 @@ public class PeakFitter {
     boolean fixWeakDoublet = true;
     boolean fitAmps = true;
     final int[] pdim;
+    double BIC;
 
     public PeakFitter(final Dataset theFile, boolean rootedPeaks, int fitMode) {
         this.theFile = theFile;
@@ -56,6 +57,10 @@ public class PeakFitter {
         int dataDim = theFile.getNDim();
         p2 = new int[dataDim][2];
         pdim = new int[dataDim];
+    }
+
+    public double getBIC() {
+        return BIC;
     }
 
     public void setup(String[] argv) {
@@ -181,12 +186,13 @@ public class PeakFitter {
 
                 for (int iCoup = 0; iCoup < nCouplings; iCoup++) {
                     double cVal = cPat.getValueAt(iCoup);
+                    double slope = cPat.getSin2Theta(iCoup);
                     int nVal = cPat.getNValue(iCoup);
                     splitCount[iPeak][iCoup] = nVal;
                     pEdge0 -= (int) ((nVal * theFile.hzWidthToPoints(0, cVal)) / 2);
                     pEdge1 += (int) ((nVal * theFile.hzWidthToPoints(0, cVal)) / 2);
                     guessList.add(theFile.hzWidthToPoints(0, cVal));  // coupling in hz
-                    guessList.add(theFile.hzWidthToPoints(0, 0.0));   // slope 
+                    guessList.add(slope);   // slope 
                 }
             } else if (coupling instanceof ComplexCoupling) {  // generic multiplet (list of freqs)
                 guessList.add(Math.abs(c1 - c));  // linewidth in points
@@ -197,11 +203,10 @@ public class PeakFitter {
 
                 List<RelMultipletComponent> multipletComps = cCoup.getRelComponentList();
 
-                double sumInt = 0.0;
+                double maxInt = Double.NEGATIVE_INFINITY;
                 for (MultipletComponent comp : multipletComps) {
-                    sumInt += comp.getIntensity();
+                    maxInt = Math.max(maxInt, comp.getIntensity());
                 }
-                double avgInt = sumInt / multipletComps.size();
                 for (MultipletComponent comp : multipletComps) {
                     double dw = theFile.hzWidthToPoints(0, comp.getOffset());
                     int cw0 = (int) ((c + dw) - Math.abs(width[0]) - 1);
@@ -216,8 +221,8 @@ public class PeakFitter {
                     }
                     if (fitAmps) {
                         double intensity = comp.getIntensity();
-                        if (intensity < avgInt) {
-                            intensity = avgInt / 2.0;
+                        if (intensity < maxInt / 10.0) {
+                            intensity = maxInt / 10.0;  // fixme bad for doing rms
                         }
                         guessList.add(intensity);
                     }     // amplitude
@@ -269,9 +274,10 @@ public class PeakFitter {
             p2[0][1] = theFile.getSize(pdim[0]) - 1;
         }
         List<Double> guessList = getGuesses(i0, i1);
-        for (double guess : guessList) {
-            System.out.println(guess);
-        }
+//        for (double guess : guessList) {
+//            System.out.println(guess);
+//        }
+        int size = p2[0][1] - p2[0][0] + 1;
         int iGuess = 0;
         double[] guesses = new double[guessList.size()];
         double[] lower = new double[guesses.length];
@@ -316,10 +322,20 @@ public class PeakFitter {
                     } else {
                         lower[jGuess] = (guesses[jGuess] + guesses[jGuess - guessOffset]) / 2;
                     }
+                    if (lower[jGuess] < 1) {
+                        lower[jGuess] = 1;
+
+                    }
                     if (iFreq == (nFreq - 1)) {
                         upper[jGuess] = guesses[jGuess] + lineWidth / 2.0;
                     } else {
                         upper[jGuess] = (guesses[jGuess] + guesses[jGuess + guessOffset]) / 2;
+                    }
+                    if (upper[jGuess] > size - 2) {
+                        upper[jGuess] = size - 2;
+                    }
+                    if ((guesses[jGuess] <= lower[jGuess]) || (guesses[jGuess] >= upper[jGuess])) {
+                        guesses[jGuess] = (lower[jGuess] + upper[jGuess]) / 2;
                     }
                     jGuess++;
                 }
@@ -387,13 +403,18 @@ public class PeakFitter {
                 }
             }
         }
-        System.out.println(peaks[0].getName());
-        for (int i = 0; i < guesses.length; i++) {
-            System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
-        }
-
+//        System.out.println(peaks[0].getName());
+//        for (int i = 0; i < guesses.length; i++) {
+//            System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
+//        }
+//
         double result = fitNow(guesses, lower, upper);
         return result;
+    }
+
+    void updateBIC(double rms, int size, int nDim) {
+        double meanSq = rms * rms;
+        BIC = size * Math.log(meanSq) + nDim * Math.log(size);
     }
 
     double fitNow(final double[] guesses, final double[] lower, final double[] upper) throws IllegalArgumentException {
@@ -441,9 +462,12 @@ public class PeakFitter {
         peakFit.setOffsets(guesses, lower, upper);
         double rms;
         double result;
+        int nDim = guesses.length;
+        BIC = 0.0;
         switch (fitMode) {
             case PeakList.FIT_RMS:
                 rms = peakFit.rms(guesses);
+                updateBIC(rms, size, nDim);
                 result = rms;
                 return result;
             case PeakList.FIT_AMPLITUDES:
@@ -455,7 +479,6 @@ public class PeakFitter {
                 result = maxDevFreq;
                 return result;
             default:
-                int nDim = guesses.length;
                 int nInterpolationPoints = 2 * nDim + 1;
                 int nSteps = nInterpolationPoints * 10;
                 if (nSteps > 400) {
@@ -470,12 +493,14 @@ public class PeakFitter {
                 }
                 long duration = System.currentTimeMillis() - startTime;
                 rms = peakFit.getBestValue();
-                System.out.print(peakFit.getBestValue() + " ");
-                double[] point = peakFit.getBestPoint();
-                for (double pValue : point) {
-                    System.out.printf("%9.3f ", pValue);
-                }
-                System.out.println(duration);
+                updateBIC(rms, size, nDim);
+
+//                System.out.print(peakFit.getBestValue() + " " + BIC + " ");
+//                double[] point = peakFit.getBestPoint();
+//                for (double pValue : point) {
+//                    System.out.printf("%9.3f ", pValue);
+//                }
+//                System.out.println(duration);
                 break;
         }
 
