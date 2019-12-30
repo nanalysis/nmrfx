@@ -2913,6 +2913,10 @@ public class PolyChart implements PeakListener {
             GraphicsContext gCC = peakCanvas.getGraphicsContext2D();
             GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
             gC.save();
+            gC.beginPath();
+            gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+            gC.clip();
+            gC.beginPath();
             peakPaths.stream().forEach((lPeaks) -> {
                 drawPeakPaths(lPeaks, gC);
             });
