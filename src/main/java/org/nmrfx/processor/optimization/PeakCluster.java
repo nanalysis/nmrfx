@@ -34,6 +34,7 @@ public class PeakCluster {
     public final int iDim;
     private PeakCluster pairedTo = null;
     private int[] peakMatches = null;
+    private boolean isFrozen = false;
 
     public PeakCluster(List<Peak> linkedPeaks, int iDim) {
         this.linkedPeaks = linkedPeaks;
@@ -68,6 +69,18 @@ public class PeakCluster {
                 forEach(p -> p.setStatus(1));
 
     }
+    
+    public static PeakCluster[] getNonFrozenClusters(PeakCluster[] clusters) {
+        Collection<PeakCluster> clusterBuffer = new ArrayList<>();
+        for (PeakCluster cluster : clusters) {
+            if (cluster.isFrozen()) {
+                continue;
+            }
+            clusterBuffer.add(cluster);
+        }
+        PeakCluster[] nonFrozenClusters = new PeakCluster[clusterBuffer.size()];
+        return clusterBuffer.toArray(nonFrozenClusters);
+    }
 
     public static Collection<List<Peak>> getFilteredClusters(List<PeakList> peakLists, int iDim) {
         // TODO: Should rename this static method
@@ -82,6 +95,7 @@ public class PeakCluster {
                             List<Peak> links = PeakList.getLinks(p, iDim).stream()
                                     .filter(p2 -> p2.getIntensity() > 0.0)
                                     .filter((p2 -> p2.getStatus() == 1))
+                                    .filter(p2 -> !p2.getPeakDim(iDim).isFrozen())
                                     .collect(Collectors.toList());
                             linkHashSet.add(links);
                             links.forEach(lp -> lp.setStatus(0));
@@ -165,7 +179,15 @@ public class PeakCluster {
 //        System.out.println(String.format("Sum(Qs) -> %f", sumOfQs));
         return sumOfQs;
     }
-
+    
+    public boolean isFrozen() {
+        return isFrozen;
+    }
+    
+    public void setFreeze(boolean freeze) {
+        this.isFrozen = freeze;
+    }
+    
     public List<Peak> getLinkedPeaks() {
         return linkedPeaks;
     }
