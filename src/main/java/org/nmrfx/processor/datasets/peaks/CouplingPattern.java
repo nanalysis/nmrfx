@@ -244,10 +244,12 @@ public class CouplingPattern extends Coupling {
         double[] jAmps = new double[nFreqs];
         jSplittings(couplingItems, freqs, jAmps);
         PeakDim peakDim = multiplet.getPeakDim();
+        double sf = multiplet.getPeakDim().getSpectralDimObj().getSf();
         for (int i = 0; i < nFreqs; i++) {
             jAmps[i] *= intensity;
             double lineWidth = multiplet.getPeakDim().getLineWidth();
             double volume = (jAmps[i] * lineWidth * (Math.PI / 2.0) / 1.05);
+            lineWidth *= sf;
 
             RelMultipletComponent comp = new RelMultipletComponent(multiplet, freqs[i], jAmps[i], volume, lineWidth);
             comps.add(comp);
