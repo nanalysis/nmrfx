@@ -182,9 +182,11 @@ public class PeakList {
     }
 
     synchronized void startTimer() {
-        if (needToFireEvent || (futureUpdate == null) || futureUpdate.isDone()) {
-            UpdateTask updateTask = new UpdateTask();
-            futureUpdate = schedExecutor.schedule(updateTask, 200, TimeUnit.MILLISECONDS);
+        if (valid() && (schedExecutor != null)) {
+            if (needToFireEvent || (futureUpdate == null) || futureUpdate.isDone()) {
+                UpdateTask updateTask = new UpdateTask();
+                futureUpdate = schedExecutor.schedule(updateTask, 50, TimeUnit.MILLISECONDS);
+            }
         }
 
     }
@@ -773,7 +775,7 @@ public class PeakList {
      * @return
      */
     public boolean valid() {
-        return get(listName) != null;
+        return (peaks != null) && (get(listName) != null);
     }
 
     /**
@@ -3905,8 +3907,7 @@ public class PeakList {
     public DescriptiveStatistics intensityDStats(int iDim) {
         DescriptiveStatistics stats = new DescriptiveStatistics();
         peaks.stream().filter(p -> p.getStatus() >= 0)
-                .mapToDouble(p -> p.getPeakDim(iDim)
-                .myPeak.getIntensity())
+                .mapToDouble(p -> p.getPeakDim(iDim).myPeak.getIntensity())
                 .forEach(v -> stats.addValue(v));
         return stats;
     }

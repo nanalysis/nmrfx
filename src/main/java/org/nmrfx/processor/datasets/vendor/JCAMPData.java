@@ -35,6 +35,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -164,6 +165,15 @@ class JCAMPData implements NMRData {
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (Map.Entry<String, String> par : parMap.entrySet()) {
+            vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
+        }
+        return vendorPars;
     }
 
     @Override
