@@ -142,8 +142,8 @@ public class PeakSlider {
         Menu matchingMenu = new Menu("Perform Match");
         MenuItem matchAllRowItem = new MenuItem("Match Row");
         MenuItem matchAllColItem = new MenuItem("Match Column");
-        matchAllRowItem.setOnAction(e -> matchClusters(1));
-        matchAllColItem.setOnAction(e -> matchClusters(0));
+        matchAllRowItem.setOnAction(e -> matchClusters(1, true));
+        matchAllColItem.setOnAction(e -> matchClusters(0, true));
         MenuItem clearMatchItem = new MenuItem("Clear Matches");
         clearMatchItem.setOnAction(e -> clearMatches());
         matchingMenu.getItems().addAll(matchAllRowItem, matchAllColItem, clearMatchItem);
@@ -533,12 +533,14 @@ public class PeakSlider {
             System.out.println(String.format("\tClicked peak '%s' meets criteria 1 (%s) and 2 (%s)", clickedPeak, c1ClickedPeak, c2ClickedPeak));
 
             if (c1ClickedPeak && c2ClickedPeak) {
+                // TODO: debugging list, need to delete 
                 List<Peak> peaksToFreeze = new ArrayList<>();
                 peaksToFreeze.add(clickedPeak);
                 shiftAndFreezePeak(clickedPeak);
 
                 for (PeakClusterMatcher matcher : matchers) {
                     PeakCluster simClus = matcher.getCluster(clickedPeak);
+                    freezeClusters(clickedPeak, matcher);
 
                     simClus.getLinkedPeaks().forEach((p) -> { // sim peak
                         if (!p.equals(clickedPeak)) {
@@ -567,8 +569,24 @@ public class PeakSlider {
                 System.out.println("All peaks to freeze: " + peaksToFreeze);
                 printClusterScore(clickedPeak, 0);
                 printClusterScore(clickedPeak, 1);
+                updateMatchers(true);
             }
         }
+    }
+
+    void freezeClusters(Peak clickedPredPeak, PeakClusterMatcher matcher) {
+        PeakCluster simClus = matcher.getCluster(clickedPredPeak);
+        PeakCluster expClus = simClus.getPairedTo();
+        if (expClus != null) {
+            simClus.setFreeze(true);
+            expClus.setFreeze(true);
+        }
+    }
+
+    void updateMatchers(boolean drawMatches) {
+        clearPeakConnections();
+        matchClusters(0, drawMatches);
+        matchClusters(1, drawMatches);
     }
 
     void freezeMatchPeakDim(Peak peakToFreeze, Peak assocPeak, int iDim) {
@@ -616,7 +634,7 @@ public class PeakSlider {
         }
         PeakClusterMatcher colMatcher = matchers[0];
         Peak p0MatchPeak = colMatcher.getMatchingPeak(p0);
-        // shift and freeze the selected peak
+        // shift and setFreeze the selected peak
         for (int i = 0; i < p0.peakDims.length; i++) {
             freezeMatchPeakDim(p0, p0MatchPeak, i);
         }
@@ -774,10 +792,24 @@ public class PeakSlider {
         return ((bestScore >= 0) ? bestPairedPeakClus : null);
     }
 
-    public void matchClusters(int iDim) {
+    public void matchClusters(int iDim, boolean drawMatches) {
         System.out.println("matchClusters(" + iDim + ")");
+
         // storing peak list attributes which contain information about the peak lists
         // in each chart.
+        PeakClusterMatcher matcher = matchers[iDim];
+        if (matcher == null) {
+            createNewMatcher(iDim);
+        } else {
+            matcher.runMatch();
+        }
+
+        if (drawMatches) {
+            drawAllMatches(iDim);
+        }
+    }
+
+    void createNewMatcher(int iDim) {
         List<PeakList> predLists = new ArrayList<>();
         List<PeakList> expLists = new ArrayList<>();
         controller.charts.stream()
@@ -809,17 +841,14 @@ public class PeakSlider {
                 });
         matchers[iDim] = new PeakClusterMatcher(expLists, predLists, iDim);
         matchers[iDim].runMatch();
-        drawMatches();
     }
 
-    void drawMatches() {
+    void drawAllMatches(int iDim) {
         controller.charts.stream()
                 .filter(chart -> chart.getPeakListAttributes().size() == 2)
                 .forEach(chart -> {
-                    for (PeakClusterMatcher matcher : matchers) {
-                        if (matcher == null) {
-                            continue;
-                        }
+                    PeakClusterMatcher matcher = matchers[iDim];
+                    if (matcher != null) {
                         List<PeakCluster[]> clusterMatches = matcher.getClusterMatch(); // list of matched clusters
                         if (clusterMatches != null) {
                             clusterMatches.stream()
@@ -839,10 +868,11 @@ public class PeakSlider {
                                         }
                                         );
                                     });
-                            chart.refresh();
+                            chart.drawPeakLists(true);
                         }
                     }
                 });
+
     }
 
     public void clearMatches() {
@@ -850,6 +880,10 @@ public class PeakSlider {
             matchers[i] = null;
         }
 
+        clearPeakConnections();
+    }
+
+    public void clearPeakConnections() {
         controller.charts.stream().forEach(chart -> {
             chart.clearPeakPaths();
             chart.refresh();
