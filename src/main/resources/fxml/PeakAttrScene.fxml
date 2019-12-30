@@ -107,8 +107,7 @@
                             <top>
                                 <HBox>
                                     <children>
-                                        <Label text="Mode"/>
-                                        <ChoiceBox fx:id="simTypeChoice"/>
+                                        <MenuButton fx:id="simTypeMenu" text="Experiment Type"/>
                                         <Pane minWidth="50"/>
                                         <Label text="Dataset" alignment="center_left"/>
                                         <ComboBox fx:id="simDatasetNameField" editable="false" HBox.hgrow="ALWAYS" minWidth="200"/>
@@ -116,9 +115,18 @@
                                 </HBox>
                             </top>
                             <center>
-                                <HBox fx:id="optionBox">
+                                <VBox>
+                                    <HBox>
+                                        <Label fx:id="typeLabel" minWidth="150"/>
+                                        <Label fx:id="subTypeLabel" minWidth="150"/>
+                                    </HBox>
+                                    <GridPane fx:id="peakListParsPane">
                                     
-                                </HBox>
+                                    </GridPane>
+                                    <HBox fx:id="optionBox">
+                                    
+                                    </HBox>
+                                </VBox>
                                 
                             </center>
                             
@@ -128,7 +136,7 @@
                                         <Label text="List Name"/>
                                         <TextField fx:id="simPeakListNameField" HBox.hgrow="ALWAYS"/>
                                         <Pane HBox.hgrow="ALWAYS"/>
-                                        <Button text="Generate" onAction="#genPeaksAction" />
+                                        <Button fx:id="generateButton" text="Generate" onAction="#genPeaksAction" />
                                     </children>
                                 </HBox>
                             </bottom>

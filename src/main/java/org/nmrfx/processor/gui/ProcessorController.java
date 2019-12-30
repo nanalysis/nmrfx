@@ -60,8 +60,12 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.ToolBar;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -86,6 +90,7 @@ import org.python.util.PythonInterpreter;
 import org.fxmisc.richtext.CodeArea;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.vendor.NMRData;
+import org.nmrfx.processor.datasets.vendor.VendorPar;
 
 public class ProcessorController implements Initializable, ProgressUpdater {
 
@@ -130,6 +135,11 @@ public class ProcessorController implements Initializable, ProgressUpdater {
     CodeArea textArea;
     @FXML
     CheckBox autoProcess;
+
+    @FXML
+    ToolBar fidParToolBar;
+    @FXML
+    TableView<VendorPar> fidParTableView;
 
     CheckBox genLSCatalog;
     TextField nLSCatFracField;
@@ -1046,7 +1056,29 @@ public class ProcessorController implements Initializable, ProgressUpdater {
                 dialog.showAndWait();
             }
         });
+        initTable();
 
+    }
+
+    void initTable() {
+        TableColumn<VendorPar, String> nameCol = new TableColumn<>("Name");
+        nameCol.setCellValueFactory(new PropertyValueFactory("Name"));
+        nameCol.setEditable(false);
+        nameCol.setPrefWidth(125);
+
+        TableColumn<VendorPar, String> valueCol = new TableColumn<>("Value");
+        valueCol.setCellValueFactory(new PropertyValueFactory("Value"));
+        valueCol.setEditable(false);
+        valueCol.setPrefWidth(260);
+        fidParTableView.getColumns().setAll(nameCol, valueCol);
+
+    }
+
+    public void updateParTable(NMRData data) {
+        List<VendorPar> vPars = data.getPars();
+        vPars.sort((o1, o2) -> o1.getName().compareTo(o2.getName()));
+        ObservableList<VendorPar> pars = FXCollections.observableArrayList(vPars);
+        fidParTableView.setItems(pars);
     }
 
     public PolyChart getChart() {

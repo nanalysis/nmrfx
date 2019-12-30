@@ -1097,6 +1097,7 @@ public class ChartProcessor {
         reloadData();
         processorController.refManager.resetData();
         processorController.refManager.setupItems(0);
+        processorController.updateParTable(data);
         if (!clearOps) {
             setScripts(saveHeaderList, listOfScripts);
         }
