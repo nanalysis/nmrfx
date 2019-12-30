@@ -679,8 +679,7 @@ merge.png				region_adjust.png
     public void fitSelected() {
         Analyzer analyzer = getAnalyzer();
         activeMultiplet.ifPresent(m -> {
-            analyzer.fitMultiplet(m);
-            rms();
+            Optional<Double> result = analyzer.fitMultiplet(m);
         });
         refresh();
     }
