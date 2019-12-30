@@ -23,6 +23,7 @@ import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,6 +73,23 @@ public class JeolDelta implements NMRData {
     @Override
     public String getFilePath() {
         return file.getAbsolutePath();
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (Map.Entry<String, JeolPar> par : parMap.entrySet()) {
+            vendorPars.add(new VendorPar(par.getKey(), par.getValue().getString()));
+        }
+        for (int i = 0; i < nDim; i++) {
+            VendorPar axPar = new VendorPar("dtype," + (i + 1), axes[i].type.toString());
+            vendorPars.add(axPar);
+            VendorPar sPar = new VendorPar("sections," + (i + 1), String.valueOf(axes[i].getSectionCount()));
+            vendorPars.add(sPar);
+            VendorPar sizePar = new VendorPar("size," + (i + 1), String.valueOf(axes[i].nPoints));
+            vendorPars.add(sizePar);
+        }
+        return vendorPars;
     }
 
     @Override
@@ -186,7 +204,7 @@ public class JeolDelta implements NMRData {
         } else {
             ref = parMap.get(axisNames[dim] + "_OFFSET").getDouble();
             //System.out.println("update ref " + ref + " " + (sw[dim] / sf[dim] / 2.0));
-            ref = ref + sw[dim] / sf[dim] / 2.0;
+            // ref = ref + sw[dim] / sf[dim] / 2.0;
             refValue[dim] = ref;
 
         }
@@ -205,7 +223,8 @@ public class JeolDelta implements NMRData {
 
     @Override
     public double getRefPoint(int dim) {
-        return 1.0;
+        double refpt = getSize(dim) / 2;
+        return refpt;
     }
 
     @Override
@@ -310,14 +329,23 @@ public class JeolDelta implements NMRData {
         if (nSections == 2) {
             section = 0;
             jVec = iVec;
+        } else if (nSections == 1) {
+            section = 0;
+            jVec = iVec;
         }
         double[] values = getVector(jVec, section);
-        double[] ivalues = getVector(jVec, section + 1);
+        double[] ivalues = null;
+        if (nSections > 1) {
+            ivalues = getVector(jVec, section + 1);
+        }
         dvec.resize(values.length, true);
         for (int i = 0; i < values.length; i++) {
-            dvec.set(i, values[i], ivalues[i]);
+            double imag = ivalues == null ? 0.0 : ivalues[i];
+            dvec.set(i, values[i], imag);
         }
-        dspPhase(dvec);
+        if (nSections > 1) {
+            dspPhase(dvec);
+        }
         dvec.dwellTime = 1.0 / getSW(0);
         dvec.centerFreq = getSF(0);
         double delRef = ((1.0 / dvec.dwellTime) / dvec.centerFreq) / 2.0;

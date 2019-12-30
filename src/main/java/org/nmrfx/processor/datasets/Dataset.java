@@ -3886,21 +3886,34 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 //        for (int i = 0; i < nDim; i++) {
 //            System.out.printf("rv i %4d dim %4d pt0 %4d pt1 %4d size %4d vsize %4d fsize %4d\n",i,dim[i],pt[i][0],pt[i][1],size[dim[i]],vsize[dim[i]],fileDimSizes[dim[i]]);
 //        }
-        double dReal = 0.0;
-        int j = 0;
-        for (int i = pt[0][0]; i <= pt[0][1]; i++) {
-            point[dim[0]] = i;
-            if (rwVector.isComplex()) {
-                if ((i % 2) != 0) {
-                    double dImaginary = readPoint(point);
-                    rwVector.set(j, new Complex(dReal, dImaginary));
-                    j++;
+        if (vecMat != null) {
+            int j = 0;
+            for (int i = pt[0][0]; i <= pt[0][1]; i++) {
+                if (rwVector.isComplex()) {
+                    rwVector.set(j, vecMat.getComplex(i));
                 } else {
-                    dReal = readPoint(point);
+                    rwVector.setReal(j, vecMat.getReal(i));
                 }
-            } else {
-                rwVector.set(j, readPoint(point));
                 j++;
+            }
+
+        } else {
+            double dReal = 0.0;
+            int j = 0;
+            for (int i = pt[0][0]; i <= pt[0][1]; i++) {
+                point[dim[0]] = i;
+                if (rwVector.isComplex()) {
+                    if ((i % 2) != 0) {
+                        double dImaginary = readPoint(point);
+                        rwVector.set(j, new Complex(dReal, dImaginary));
+                        j++;
+                    } else {
+                        dReal = readPoint(point);
+                    }
+                } else {
+                    rwVector.set(j, readPoint(point));
+                    j++;
+                }
             }
         }
         //System.out.println("done reading vector from dataset file");

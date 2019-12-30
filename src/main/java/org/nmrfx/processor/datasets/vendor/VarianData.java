@@ -55,6 +55,7 @@ import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.math3.complex.Complex;
 
 /**
@@ -179,6 +180,15 @@ class VarianData implements NMRData {
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (Map.Entry<String, String> par : parMap.entrySet()) {
+            vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
+        }
+        return vendorPars;
     }
 
     @Override
@@ -1358,15 +1368,19 @@ class VarianData implements NMRData {
         if (acqOrder == null) {
             int nDim = getNDim() - 1;
             // p1,p2,d1,d2 or p2,p1,d1,d2
-            String arrayPar = getPar("array");
-            String[] arrayElems = arrayPar.split(",");
             boolean hasPhase = false;
+            String arrayPar = getPar("array");
+            String[] arrayElems = new String[0];
+            if (!arrayPar.trim().equals("")) {
+                arrayElems = arrayPar.split(",");
+            }
             for (int j = arrayElems.length - 1; j >= 0; j--) {
                 if (arrayElems[j].startsWith("phase")) {
                     hasPhase = true;
                     break;
                 }
             }
+
             if (hasPhase) {
                 int i = 0;
                 acqOrder = new String[nDim + arrayElems.length];
@@ -1427,8 +1441,7 @@ class VarianData implements NMRData {
                         }
                     }
                 }
-                int acqOrderSize = (nDim + 1) * 2;
-                acqOrderSize = 0;
+                int acqOrderSize = nDim * 2;
                 if (hasArray) {
                     acqOrderSize++;
                 }
@@ -1436,6 +1449,10 @@ class VarianData implements NMRData {
                 i = 0;
                 if (hasArray) {
                     acqOrder[i++] = "a" + String.valueOf(nDim + 1);
+                }
+                for (int k = 0; k < nDim; k++) {
+                    acqOrder[k + i] = "p" + (k + 1);
+                    acqOrder[nDim + k + i] = "d" + (k + 1);
                 }
             }
         }

@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
 
@@ -105,6 +106,17 @@ public class NMRViewData implements NMRData {
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        if (parMap != null) {
+            for (Map.Entry<String, String> par : parMap.entrySet()) {
+                vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
+            }
+        }
+        return vendorPars;
     }
 
     @Override
@@ -526,12 +538,12 @@ public class NMRViewData implements NMRData {
     }
 
     public List<Double> getValues(int dim) {
-        double[] values =  dataset.getValues(dim);
+        double[] values = dataset.getValues(dim);
         if (values == null) {
             return Collections.EMPTY_LIST;
         } else {
             List<Double> valueList = new ArrayList<>();
-            for (int i=0; i<values.length; i++){
+            for (int i = 0; i < values.length; i++) {
                 valueList.add(values[i]);
             }
             return valueList;

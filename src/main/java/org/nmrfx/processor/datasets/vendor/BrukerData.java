@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
@@ -293,6 +294,15 @@ public class BrukerData implements NMRData {
     @Override
     public String getFilePath() {
         return fpath;
+    }
+
+    @Override
+    public List<VendorPar> getPars() {
+        List<VendorPar> vendorPars = new ArrayList<>();
+        for (Entry<String, String> par : parMap.entrySet()) {
+            vendorPars.add(new VendorPar(par.getKey(), par.getValue()));
+        }
+        return vendorPars;
     }
 
     @Override
@@ -870,7 +880,18 @@ public class BrukerData implements NMRData {
 
                         for (String sValue : sList) {
                             try {
-                                result.add(Double.parseDouble(sValue));
+                                double scale = 1.0;
+                                if (sValue.endsWith("m")) {
+                                    sValue = sValue.substring(0, sValue.length() - 1);
+                                    scale = 1.0e-3;
+                                } else if (sValue.endsWith("u")) {
+                                    sValue = sValue.substring(0, sValue.length() - 1);
+                                    scale = 1.0e-6;
+                                } else if (sValue.endsWith("s")) {
+                                    sValue = sValue.substring(0, sValue.length() - 1);
+                                    scale = 1.0;
+                                }
+                                result.add(Double.parseDouble(sValue) * scale);
                             } catch (NumberFormatException nFE) {
                                 System.out.println("bad double " + sValue);
                                 result = null;
@@ -881,7 +902,9 @@ public class BrukerData implements NMRData {
                     }
                 }
             }
-            result = fixArraySize(result, smallDim);
+            if (result != null) {
+                result = fixArraySize(result, smallDim);
+            }
         }
         return result;
     }
