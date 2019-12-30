@@ -364,11 +364,12 @@ public class Multiplet implements PeakOrMulti, Comparable {
             double ctr = comp.getOffset();
             for (MultipletComponent comp2 : comps) {
                 double ctr2 = comp2.getOffset();
-                double lw2 = comp2.getLineWidth();
+                double halfWid2 = comp2.getLineWidth() / 2.0;
+
                 double h2 = comp2.getIntensity();
-                double contrib = h2 * lw2 * lw2 / (lw2 * lw2 + (ctr2 - ctr) * (ctr2 - ctr));
+                double contrib = h2 * halfWid2 * halfWid2 / (halfWid2 * halfWid2 + (ctr2 - ctr) * (ctr2 - ctr));
                 hSum += contrib;
-                // System.out.println(ctr+" "+ctr2+" "+lw2+" "+h2+" "+contrib+" "+hSum);
+//                System.out.println(ctr+" "+ctr2+" "+halfWid2+" "+h2+" "+contrib+" "+hSum);
             }
             if (hSum > maxIntensity) {
                 maxIntensity = hSum;
