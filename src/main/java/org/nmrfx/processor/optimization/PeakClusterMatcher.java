@@ -75,7 +75,11 @@ public class PeakClusterMatcher {
             Collection<List<Peak>> predLinks = PeakCluster.getFilteredClusters(predPeakLists, iDim);
             expPeakClusters = PeakCluster.makePeakCluster(expLinks, iDim);
             predPeakClusters = PeakCluster.makePeakCluster(predLinks, iDim);
-            runBPClusterMatches();
+            runBPClusterMatches(expPeakClusters, predPeakClusters);
+        } else {
+            PeakCluster[] nonFrozenExpClusters = PeakCluster.getNonFrozenClusters(expPeakClusters);
+            PeakCluster[] nonFrozenPredClusters = PeakCluster.getNonFrozenClusters(predPeakClusters);
+            runBPClusterMatches(nonFrozenExpClusters, nonFrozenPredClusters);
         }
     }
 
@@ -130,18 +134,18 @@ public class PeakClusterMatcher {
         return cluster;
     }
 
-    private void runBPClusterMatches() throws IllegalArgumentException {
+    private void runBPClusterMatches(PeakCluster[] expClusArr, PeakCluster[] predClusArr) throws IllegalArgumentException {
         // initializations
         PeakCluster iExpClus, jPredClus;
         BipartiteMatcher clusterMatcher = new BipartiteMatcher();
-        int nClusters = expPeakClusters.length + predPeakClusters.length;
+        int nClusters = expClusArr.length + predClusArr.length;
         clusterMatcher.reset(nClusters, true);
 
         // main loop
-        for (int i = 0; i < expPeakClusters.length; i++) {
-            iExpClus = expPeakClusters[i];
-            for (int j = 0; j < predPeakClusters.length; j++) {
-                jPredClus = predPeakClusters[j];
+        for (int i = 0; i < expClusArr.length; i++) {
+            iExpClus = expClusArr[i];
+            for (int j = 0; j < predClusArr.length; j++) {
+                jPredClus = predClusArr[j];
                 if (iExpClus.isInTol(jPredClus)) {
                     double peakMaxSum = iExpClus.comparisonScore(jPredClus);
                     clusterMatcher.setWeight(i, j, peakMaxSum);
@@ -149,12 +153,13 @@ public class PeakClusterMatcher {
             }
         }
         clusterMatch = clusterMatcher.getMatching();
-        setupMatchedClusters();
+        setupMatchedClusters(expClusArr, predClusArr);
     }
 
-    private void setupMatchedClusters() {
-        if (expPeakClusters != null && predPeakClusters != null && matchedClusters == null) {
+    private void setupMatchedClusters(PeakCluster[] expClusArr, PeakCluster[] predClusArr) {
+        if (expClusArr != null && predClusArr != null) {
             matchedClusters = new ArrayList<>();
+            int counter = 0;
             // find matches
             for (int i = 0; i < clusterMatch.length; i++) {
                 int j = clusterMatch[i];
@@ -162,18 +167,17 @@ public class PeakClusterMatcher {
                     continue;
                 }
                 PeakCluster[] ijMatched = new PeakCluster[2];
-                System.out.println(String.format("E(%s) -> P(%s)", expPeakClusters[i].toString(), predPeakClusters[j].toString()));
+                counter++;
+                System.out.println(String.format("%d. E(%s) -> P(%s)", counter, expClusArr[i].toString(), predClusArr[j].toString()));
                 // TODO: change from array to List?
-                PeakCluster expCluster = expPeakClusters[i];
-                PeakCluster predCluster = predPeakClusters[j];
+                PeakCluster expCluster = expClusArr[i];
+                PeakCluster predCluster = predClusArr[j];
                 ijMatched[0] = expCluster;
                 ijMatched[1] = predCluster;
                 matchedClusters.add(ijMatched);
-                if (expCluster.getPairedTo() == null && predCluster.getPairedTo() == null) {
-                    expCluster.setPairedTo(predCluster);
-                    predCluster.setPairedTo(expCluster);
-                    setupMatchedPeaks(expCluster, predCluster);
-                }
+                expCluster.setPairedTo(predCluster);
+                predCluster.setPairedTo(expCluster);
+                setupMatchedPeaks(expCluster, predCluster);
             }
         }
     }
