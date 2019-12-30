@@ -628,13 +628,16 @@ public class Analyzer {
         peakFitting.fitLinkedPeaks(peakList, true);
     }
 
-    public void fitMultiplet(Multiplet multiplet) {
+    public Optional<Double> fitMultiplet(Multiplet multiplet) {
+        Optional<Double> result = Optional.empty();
         if (multiplet != null) {
             PeakFitting peakFitting = new PeakFitting(dataset);
             Peak peak = multiplet.getPeakDim().getPeak();
             peak.setFlag(4, false);
-            peakFitting.jfitLinkedPeak(peak, "all");
+            double rms = peakFitting.jfitLinkedPeak(peak, "all");
+            result = Optional.of(rms);
         }
+        return result;
     }
 
     public void jfitLinkedPeaks() {
