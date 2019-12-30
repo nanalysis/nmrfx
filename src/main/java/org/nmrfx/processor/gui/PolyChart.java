@@ -137,6 +137,8 @@ public class PolyChart implements PeakListener {
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
     public static final int CROSSHAIR_TOL = 25;
+    double minMove = 50;
+
     public static final ObservableList<PolyChart> CHARTS = FXCollections.observableArrayList();
     static PolyChart activeChart = null;
 
@@ -508,10 +510,31 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    public void dragBox(double[] dragStart, double x, double y) {
+    public void dragBox(boolean selectMode, double[] dragStart, double x, double y) {
         int dragTol = 4;
         if ((Math.abs(x - dragStart[0]) > dragTol) || (Math.abs(y - dragStart[1]) > dragTol)) {
-
+            GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
+            double annoWidth = annoCanvas.getWidth();
+            double annoHeight = annoCanvas.getHeight();
+            annoGC.clearRect(0, 0, annoWidth, annoHeight);
+            double dX = Math.abs(x - dragStart[0]);
+            double dY = Math.abs(y - dragStart[1]);
+            double startX = x > dragStart[0] ? dragStart[0] : x;
+            double startY = y > dragStart[1] ? dragStart[1] : y;
+            annoGC.setLineDashes(null);
+            if (!selectMode) {
+                if ((dX < minMove) || (!is1D() && (dY < minMove))) {
+                    annoGC.setLineDashes(5);
+                }
+            }
+            Color color = selectMode ? Color.DARKORANGE : Color.DARKBLUE;
+            annoGC.setStroke(color);
+            if (is1D()) {
+                annoGC.strokeLine(x, topBorder, x, annoHeight - topBorder - bottomBorder);
+                annoGC.strokeLine(dragStart[0], topBorder, dragStart[0], annoHeight - topBorder - bottomBorder);
+            } else {
+                annoGC.strokeRect(startX, startY, dX, dY);
+            }
         }
     }
 
@@ -536,7 +559,7 @@ public class PolyChart implements PeakListener {
         }
         double dX = Math.abs(x - dragStart[0]);
         double dY = Math.abs(y - dragStart[1]);
-        System.out.println(dX + " " + dY);
+        System.out.println(dX + " " + dY + " " + selectMode);
         limits[0][0] = xAxis.getValueForDisplay(dragStart[0]).doubleValue();
         limits[0][1] = xAxis.getValueForDisplay(x).doubleValue();
         swapDouble(limits[0]);
@@ -547,16 +570,18 @@ public class PolyChart implements PeakListener {
         }
 
         if (!selectMode) {
-            double minMove = 100;
             if (dX > minMove) {
                 if (is1D() || (dY > minMove)) {
+
                     ChartUndoLimits undo = new ChartUndoLimits(this);
                     setAxis(0, limits[0][0], limits[0][1]);
                     if (!is1D()) {
                         setAxis(1, limits[1][0], limits[1][1]);
                     }
+                    System.out.println("expand");
                     ChartUndoLimits redo = new ChartUndoLimits(this);
                     controller.undoManager.add("expand", undo, redo);
+                    refresh();
                 }
             }
         } else {

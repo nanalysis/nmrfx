@@ -95,10 +95,10 @@ public class MouseBindings {
                             chart.handleCrossHair(mouseEvent, false);
                             break;
                         case DRAG_EXPAND:
-                            chart.dragBox(dragStart, x, y);
+                            chart.dragBox(false, dragStart, x, y);
                             break;
                         case DRAG_SELECTION:
-                            chart.dragBox(dragStart, x, y);
+                            chart.dragBox(true, dragStart, x, y);
                             break;
                         case DRAG_PEAK:
                             if (moved) {
@@ -182,6 +182,8 @@ public class MouseBindings {
                             }
                             if (hitRegion) {
                                 mouseAction = MOUSE_ACTION.DRAG_REGION;
+                            } else {
+                                mouseAction = MOUSE_ACTION.DRAG_EXPAND;
                             }
                         }
                         if (hit.isPresent() || hitPeak) {
