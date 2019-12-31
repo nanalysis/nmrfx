@@ -69,7 +69,7 @@ public class PeakCluster {
                 forEach(p -> p.setStatus(1));
 
     }
-    
+
     public static PeakCluster[] getNonFrozenClusters(PeakCluster[] clusters) {
         Collection<PeakCluster> clusterBuffer = new ArrayList<>();
         for (PeakCluster cluster : clusters) {
@@ -170,24 +170,29 @@ public class PeakCluster {
         for (int dim = 0; dim < peak1.getPeakDims().length; dim++) {
             expPPMShift = peak1.getPeakDim(dim).getChemShift();
             predPPMShift = peak2.getPeakDim(dim).getChemShift();
-            // Print chemical shift information
+            double delta = Math.abs(expPPMShift - predPPMShift);
+            if (peak2.getPeakDim(dim).isFrozen() && delta > 0.01) {// fixme need valid tol
+                Qval = -1000; // fixme  need appropriate value
+            } else {
+                // Print chemical shift information
 //            System.out.println(String.format("E_PPM%d : %f, P_PPM%d: %f", dim, expPPMShift, dim, predPPMShift));
-            Qval = getQPred(expPPMShift, predPPMShift, ppmSigma, refDev);
+                Qval = getQPred(expPPMShift, predPPMShift, ppmSigma, refDev);
+            }
             sumOfQs += Qval;
         }
         // Print final sum of Qs
 //        System.out.println(String.format("Sum(Qs) -> %f", sumOfQs));
         return sumOfQs;
     }
-    
+
     public boolean isFrozen() {
         return isFrozen;
     }
-    
+
     public void setFreeze(boolean freeze) {
         this.isFrozen = freeze;
     }
-    
+
     public List<Peak> getLinkedPeaks() {
         return linkedPeaks;
     }
