@@ -160,25 +160,33 @@ public class Analyzer {
     }
 
     public void peakPickRegions() {
-        Set<DatasetRegion> regions = getRegions();
-        for (DatasetRegion region : regions) {
-            peakPickRegion(region.getRegionStart(0), region.getRegionEnd(0));
-        }
-    }
-
-    public void peakPickRegion(double ppm1, double ppm2) {
-        Nuclei nuc = dataset.getNucleus(0);
-        if (nuc == Nuclei.H1) {
-
-        }
         if (manThreshold.isPresent()) {
             threshold = manThreshold.get();
         } else {
             calculateThreshold();
         }
+        Set<DatasetRegion> regions = getRegions();
+        for (DatasetRegion region : regions) {
+            peakPickRegion(region.getRegionStart(0), region.getRegionEnd(0), threshold);
+        }
+    }
+
+    public void peakPickRegion(double ppm1, double ppm2) {
+        if (manThreshold.isPresent()) {
+            threshold = manThreshold.get();
+        } else {
+            calculateThreshold();
+        }
+        peakPickRegion(ppm1, ppm2, threshold);
+    }
+
+    public void peakPickRegion(double ppm1, double ppm2, double level) {
+        Nuclei nuc = dataset.getNucleus(0);
+        if (nuc == Nuclei.H1) {
+
+        }
         String datasetName = dataset.getName();
         String listName = PeakList.getNameForDataset(datasetName);
-        double level = threshold;
         PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(level).mode("appendif");
         peakPickPar.pos(true).neg(false);
         peakPickPar.calcRange();
