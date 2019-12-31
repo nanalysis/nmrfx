@@ -29,11 +29,13 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -49,7 +51,6 @@ import org.nmrfx.processor.datasets.peaks.CouplingPattern;
 import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Multiplets;
 import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.Singlet;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
@@ -81,12 +82,19 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
     @FXML
     HBox fittingToolBar;
     @FXML
+    HBox integralToolBar;
+    @FXML
+    HBox typeToolBar;
+    @FXML
     GridPane gridPane;
     @FXML
     Button splitButton;
     @FXML
     Button splitRegionButton;
+    @FXML
+    ChoiceBox<String> peakTypeChoice;
     ChoiceBox<String>[] patternChoices;
+    TextField integralField;
     TextField[] couplingFields;
     TextField[] slopeFields;
     private PolyChart chart;
@@ -141,6 +149,8 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             }
         };
         addPatternListener();
+        FXMLController controller = FXMLController.getActiveController();
+        controller.selPeaks.addListener(e -> setActivePeaks(controller.selPeaks.get()));
 
     }
 
@@ -276,6 +286,10 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         button.setOnAction(e -> fitSelected());
         fitButtons.add(button);
 
+        button = new Button("BICFit", getIcon("reload"));
+        button.setOnAction(e -> objectiveDeconvolution());
+        fitButtons.add(button);
+
         for (Button button1 : regionButtons) {
             button1.setContentDisplay(ContentDisplay.TOP);
             button1.setFont(font);
@@ -300,6 +314,36 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
             button1.getStyleClass().add("toolButton");
             fittingToolBar.getChildren().add(button1);
         }
+        Label integralLabel = new Label("N:");
+        integralLabel.setPrefWidth(80);
+        integralField = new TextField();
+        integralField.setPrefWidth(120);
+        integralToolBar.getChildren().addAll(integralLabel, integralField);
+
+        integralField.setOnKeyReleased(k -> {
+            if (k.getCode() == KeyCode.ENTER) {
+                try {
+                    double value = Double.parseDouble(integralField.getText().trim());
+                    activeMultiplet.ifPresent(m -> {
+                        double volume = m.getVolume();
+                        PeakList peakList = m.getOrigin().getPeakList();
+                        peakList.scale = volume / value;
+                        refresh();
+                    });
+                } catch (NumberFormatException nfE) {
+
+                }
+
+            }
+        });
+
+        Label peakTypeLabel = new Label("Type: ");
+        peakTypeLabel.setPrefWidth(80);
+        peakTypeChoice = new ChoiceBox();
+        typeToolBar.getChildren().addAll(peakTypeLabel, peakTypeChoice);
+        peakTypeChoice.getItems().addAll(Peak.getPeakTypes());
+        peakTypeChoice.valueProperty().addListener(e -> setPeakType());
+        peakTypeChoice.setPrefWidth(120);
 
         /*
 extract.png				region_add.png		wizard
@@ -381,9 +425,9 @@ merge.png				region_adjust.png
 
     public void initMultiplet() {
         if (!gotoSelectedMultiplet()) {
-            List<Multiplet> multiplets = getMultiplets();
-            if (!multiplets.isEmpty()) {
-                Multiplet m = multiplets.get(0);
+            List<Peak> peaks = getPeaks();
+            if (!peaks.isEmpty()) {
+                Multiplet m = peaks.get(0).getPeakDim(0).getMultiplet();
                 activeMultiplet = Optional.of(m);
                 updateMultipletField(false);
             }
@@ -402,16 +446,14 @@ merge.png				region_adjust.png
         return result;
     }
 
-    List<Multiplet> getMultiplets() {
-        List<Multiplet> multiplets = Collections.EMPTY_LIST;
+    List<Peak> getPeaks() {
+        List<Peak> peaks = Collections.EMPTY_LIST;
         Optional<PeakList> peakListOpt = getPeakList();
         if (peakListOpt.isPresent()) {
             PeakList peakList = peakListOpt.get();
-            if ((peakList.getMultiplets() != null)) {
-                multiplets = peakList.getMultiplets();
-            }
+            peaks = peakList.peaks();
         }
-        return multiplets;
+        return peaks;
     }
 
     void updateMultipletField() {
@@ -428,6 +470,11 @@ merge.png				region_adjust.png
             String mult = multiplet.getMultiplicity();
             Coupling coup = multiplet.getCoupling();
             updateCouplingChoices(coup);
+            String peakType = Peak.typeToString(multiplet.getOrigin().getType());
+            peakTypeChoice.setValue(peakType);
+            double scale = multiplet.getOrigin().getPeakList().scale;
+            double value = multiplet.getVolume() / scale;
+            integralField.setText(String.format("%.2f", value));
 //            if (multiplet.isGenericMultiplet()) {
 //                splitButton.setDisable(true);
 //            } else {
@@ -436,6 +483,14 @@ merge.png				region_adjust.png
         } else {
             multipletIdField.setText("");
         }
+    }
+
+    void setPeakType() {
+        activeMultiplet.ifPresent(m -> {
+            String peakType = peakTypeChoice.getValue();
+            m.getOrigin().setType(Peak.getType(peakType));
+        });
+
     }
 
     void clearPatternListener() {
@@ -481,10 +536,15 @@ merge.png				region_adjust.png
         addPatternListener();
     }
 
+    int getCurrentIndex() {
+        int id = activeMultiplet.get().getPeakDim().getPeak().getIndex();
+        return id;
+    }
+
     void firstMultiplet(ActionEvent e) {
-        List<Multiplet> multiplets = getMultiplets();
-        if (!multiplets.isEmpty()) {
-            activeMultiplet = Optional.of(multiplets.get(0));
+        List<Peak> peaks = getPeaks();
+        if (!peaks.isEmpty()) {
+            activeMultiplet = Optional.of(peaks.get(0).getPeakDim(0).getMultiplet());
         } else {
             activeMultiplet = Optional.empty();
         }
@@ -493,13 +553,13 @@ merge.png				region_adjust.png
 
     void previousMultiplet(ActionEvent e) {
         if (activeMultiplet.isPresent()) {
-            int id = activeMultiplet.get().getIDNum();
+            int id = getCurrentIndex();
             id--;
             if (id < 0) {
                 id = 0;
             }
-            List<Multiplet> multiplets = getMultiplets();
-            activeMultiplet = Optional.of(multiplets.get(id));
+            List<Peak> peaks = getPeaks();
+            activeMultiplet = Optional.of(peaks.get(id).getPeakDim(0).getMultiplet());
             updateMultipletField();
         } else {
             firstMultiplet(e);
@@ -512,22 +572,22 @@ merge.png				region_adjust.png
         if (id < 0) {
             id = 0;
         }
-        List<Multiplet> multiplets = getMultiplets();
-        activeMultiplet = Optional.of(multiplets.get(id));
+        List<Peak> peaks = getPeaks();
+        activeMultiplet = Optional.of(peaks.get(id).getPeakDim(0).getMultiplet());
         updateMultipletField(false);
 
     }
 
     void nextMultiplet(ActionEvent e) {
         if (activeMultiplet.isPresent()) {
-            List<Multiplet> multiplets = getMultiplets();
-            int id = activeMultiplet.get().getIDNum();
-            int last = multiplets.size() - 1;
+            List<Peak> peaks = getPeaks();
+            int id = getCurrentIndex();
+            int last = peaks.size() - 1;
             id++;
             if (id > last) {
                 id = last;
             }
-            activeMultiplet = Optional.of(multiplets.get(id));
+            activeMultiplet = Optional.of(peaks.get(id).getPeakDim(0).getMultiplet());
             updateMultipletField();
         } else {
             firstMultiplet(e);
@@ -535,9 +595,9 @@ merge.png				region_adjust.png
     }
 
     void lastMultiplet(ActionEvent e) {
-        List<Multiplet> multiplets = getMultiplets();
-        if (!multiplets.isEmpty()) {
-            activeMultiplet = Optional.of(multiplets.get(multiplets.size() - 1));
+        List<Peak> peaks = getPeaks();
+        if (!peaks.isEmpty()) {
+            activeMultiplet = Optional.of(peaks.get(peaks.size() - 1).getPeakDim(0).getMultiplet());
         }
         updateMultipletField();
     }
@@ -560,7 +620,7 @@ merge.png				region_adjust.png
             stage.setTitle("Multiplets");
             stage.setScene(scene);
             stage.setMinWidth(200);
-            stage.setMinHeight(400);
+            stage.setMinHeight(475);
             stage.show();
             stage.toFront();
             controller.chart = controller.getChart();
@@ -619,8 +679,7 @@ merge.png				region_adjust.png
     public void fitSelected() {
         Analyzer analyzer = getAnalyzer();
         activeMultiplet.ifPresent(m -> {
-            analyzer.fitMultiplet(m);
-            rms();
+            Optional<Double> result = analyzer.fitMultiplet(m);
         });
         refresh();
     }
@@ -640,7 +699,12 @@ merge.png				region_adjust.png
         double ppm = chart.getVerticalCrosshairPositions()[0];
         Analyzer analyzer = getAnalyzer();
         try {
-            activeMultiplet = analyzer.splitRegion(ppm);
+            List<Multiplet> multiplets = analyzer.splitRegion(ppm);
+            if (!multiplets.isEmpty()) {
+                activeMultiplet = Optional.of(multiplets.get(0));
+            } else {
+                activeMultiplet = Optional.empty();
+            }
             updateMultipletField(false);
         } catch (IOException ex) {
         }
@@ -672,7 +736,7 @@ merge.png				region_adjust.png
             Optional<PeakList> peakListOpt = getPeakList();
             if (peakListOpt.isPresent()) {
                 PeakList peakList = peakListOpt.get();
-                if (peakList.getMultiplets().size() == 1) {
+                if (peakList.peaks().size() == 1) {
                     double volume = activeMultiplet.get().getVolume();
                     peakList.scale = volume;
                 }
@@ -687,7 +751,7 @@ merge.png				region_adjust.png
     public void removeRegion() {
         activeMultiplet.ifPresent(m -> {
             int id = m.getIDNum();
-            double ppm = m.measureCenter();
+            double ppm = m.getCenter();
             Analyzer analyzer = getAnalyzer();
             analyzer.removeRegion(ppm);
             gotoPrevious(id);
@@ -704,12 +768,20 @@ merge.png				region_adjust.png
         });
     }
 
+    public void objectiveDeconvolution() {
+        activeMultiplet.ifPresent(m -> {
+            analyzer.objectiveDeconvolution(m);
+            chart.refresh();
+            refresh();
+        });
+    }
+
     public void addAuto() {
         activeMultiplet.ifPresent(m -> {
             Optional<Double> result = Multiplets.deviation(m);
             if (result.isPresent()) {
                 System.out.println("dev pos " + result.get());
-                Multiplets.addPeaksToMutliplet(m, result.get());
+                Multiplets.addPeaksToMultiplet(m, result.get());
                 chart.refresh();
                 refresh();
 
@@ -732,9 +804,9 @@ merge.png				region_adjust.png
             double ppm1 = chart.getVerticalCrosshairPositions()[0];
             double ppm2 = chart.getVerticalCrosshairPositions()[1];
             if (both) {
-                Multiplets.addPeaksToMutliplet(m, ppm1, ppm2);
+                Multiplets.addPeaksToMultiplet(m, ppm1, ppm2);
             } else {
-                Multiplets.addPeaksToMutliplet(m, ppm1);
+                Multiplets.addPeaksToMultiplet(m, ppm1);
 
             }
             chart.refresh();
@@ -764,19 +836,20 @@ merge.png				region_adjust.png
     }
 
     public void extractMultiplet() {
-        List<Peak> peaks = chart.getSelectedPeaks();
-        if (peaks.size() > 0) {
-            Peak peak0 = peaks.get(0);
-            List<PeakDim> peakDims = peak0.getPeakDim(0).getCoupledPeakDims();
-            if (peaks.size() == peakDims.size()) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setContentText("Can't extract all peaks in multiplet");
-                alert.showAndWait();
-                return;
-            }
-            activeMultiplet = Multiplets.extractMultiplet(peaks);
-            refresh();
-        }
+        // fixme
+//        List<Peak> peaks = chart.getSelectedPeaks();
+//        if (peaks.size() > 0) {
+//            Peak peak0 = peaks.get(0);
+//            List<PeakDim> peakDims = peak0.getPeakDim(0).getCoupledPeakDims();
+//            if (peaks.size() == peakDims.size()) {
+//                Alert alert = new Alert(Alert.AlertType.ERROR);
+//                alert.setContentText("Can't extract all peaks in multiplet");
+//                alert.showAndWait();
+//                return;
+//            }
+//            activeMultiplet = Multiplets.extractMultiplet(peaks);
+//            refresh();
+//        }
     }
 
     public void transferPeaks() {
@@ -792,7 +865,7 @@ merge.png				region_adjust.png
     public void mergePeaks() {
         List<Peak> peaks = chart.getSelectedPeaks();
         if (peaks.size() > 0) {
-            activeMultiplet = Multiplets.mergePeaks(peaks);
+            // fixme  activeMultiplet = Multiplets.mergePeaks(peaks);
             refresh();
         }
     }
@@ -801,7 +874,7 @@ merge.png				region_adjust.png
         boolean resize = false;
         if (multiplet != null) {
             double bounds = multiplet.getBoundsValue();
-            double center = multiplet.measureCenter();
+            double center = multiplet.getCenter();
             double widthScale = 2.5;
             if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
@@ -860,6 +933,14 @@ merge.png				region_adjust.png
                     break;
                 }
             }
+        }
+    }
+
+    public void setActivePeaks(List<Peak> peaks) {
+        if ((peaks != null) && !peaks.isEmpty()) {
+            Peak peak = peaks.get(0);
+            activeMultiplet = Optional.of(peak.getPeakDim(0).getMultiplet());
+            updateMultipletField(false);
         }
     }
 }
