@@ -18,9 +18,6 @@
 
 package org.nmrfx.processor.math;
 
-import org.nmrfx.processor.processing.ProcessingException;
-import org.apache.commons.math3.util.MultidimensionalCounter;
-import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;

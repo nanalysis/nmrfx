@@ -134,8 +134,6 @@ public class PeakList {
     private String details = "";
     private String sampleLabel = "";
     private String sampleConditionLabel = "";
-    private HashSet<Multiplet> multiplets = new HashSet<>();
-    private ArrayList<Multiplet> sortedMultiplets = new ArrayList<>();
     static List<PeakListener> globalListeners = new ArrayList<>();
     List<PeakListener> listeners = new ArrayList<>();
     static List<FreezeListener> freezeListeners = new ArrayList<>();
@@ -143,7 +141,6 @@ public class PeakList {
     boolean changed = false;
     static boolean aListUpdated = false;
     static boolean needToFireEvent = false;
-    boolean multipletsSorted = false;
     ScheduledThreadPoolExecutor schedExecutor = new ScheduledThreadPoolExecutor(2);
     ScheduledFuture futureUpdate = null;
     boolean slideable = false;
@@ -413,8 +410,7 @@ public class PeakList {
     public String getDetails() {
         return details;
     }
-    
-    
+
     public boolean isSimulated() {
         return sampleConditionLabel.contains("sim");
     }
@@ -621,29 +617,6 @@ public class PeakList {
         return properties;
     }
 
-    private void sortMultiplets() {
-        sortedMultiplets = new ArrayList<>();
-        sortedMultiplets.addAll(multiplets);
-        Collections.sort(sortedMultiplets);
-        int i = 0;
-        for (Multiplet multiplet : sortedMultiplets) {
-            multiplet.setIDNum(i);
-            i++;
-        }
-    }
-
-    /**
-     *
-     * @return
-     */
-    public synchronized ArrayList<Multiplet> getMultiplets() {
-        if (((sortedMultiplets.isEmpty()) && (multiplets.size() > 0)) || !multipletsSorted) {
-            sortMultiplets();
-            multipletsSorted = true;
-        }
-        return sortedMultiplets;
-    }
-
     /**
      *
      * @return
@@ -827,15 +800,10 @@ public class PeakList {
                     peakDim.remove();
                     if (peakDim.hasMultiplet()) {
                         Multiplet multiplet = peakDim.getMultiplet();
-                        if (multiplet != null) {
-                            multiplet.removePeakDim(peakDim);
-                        }
                     }
                 }
                 peak.markDeleted();
             }
-            peakList.multiplets.clear();
-            peakList.multiplets = null;
             peakList.peaks.clear();
             peakList.peaks = null;
             peakList.schedExecutor.shutdown();
@@ -852,47 +820,6 @@ public class PeakList {
             limits[0] = limits[1];
             limits[1] = hold;
         }
-    }
-
-    /**
-     *
-     * @return
-     */
-    public int countMultiplets() {
-        return multiplets.size();
-    }
-
-    /**
-     *
-     * @param multiplet
-     */
-    public void addMultiplet(Multiplet multiplet) {
-        multiplets.add(multiplet);
-        multipletsSorted = false;
-    }
-
-    /**
-     *
-     * @param multiplet
-     */
-    public void removeMultiplet(Multiplet multiplet) {
-        multiplets.remove(multiplet);
-        multipletsSorted = false;
-    }
-
-    /**
-     *
-     */
-    public void refreshMultiplets() {
-        int iDim = 0;
-        multiplets.clear();
-        for (Peak peak : peaks) {
-            Multiplet m = peak.getPeakDim(iDim).getMultiplet();
-            if (m != null) {
-                multiplets.add(m);
-            }
-        }
-        multipletsSorted = false;
     }
 
     /**
@@ -1065,9 +992,7 @@ public class PeakList {
         if (ascending) {
             peaks.sort((Peak a, Peak b) -> compare(a.peakDims[iDim].getChemShift(), b.peakDims[iDim].getChemShift()));
         } else {
-            // fixme
-            peaks.sort((Peak a, Peak b) -> compare(a.peakDims[iDim].getChemShift(), b.peakDims[iDim].getChemShift()));
-
+            peaks.sort((Peak a, Peak b) -> compare(b.peakDims[iDim].getChemShift(), a.peakDims[iDim].getChemShift()));
         }
     }
 
@@ -1418,43 +1343,6 @@ public class PeakList {
         }
 
         return peakList.getPeakByID(idNum);
-    }
-
-    /**
-     *
-     * @param peakSpecifier
-     * @return
-     * @throws IllegalArgumentException
-     */
-    public static Multiplet getAMultiplet(String peakSpecifier) throws IllegalArgumentException {
-        int dot = peakSpecifier.indexOf('.');
-
-        if (dot == -1) {
-            return null;
-        }
-
-        PeakList peakList = (PeakList) peakListTable.get(peakSpecifier.substring(
-                0, dot));
-
-        if (peakList == null) {
-            return null;
-        }
-
-        int idNum;
-
-        try {
-
-            idNum = Integer.parseInt(peakSpecifier.substring(dot + 1, peakSpecifier.length() - 1));
-
-        } catch (NumberFormatException numE) {
-            throw new IllegalArgumentException(
-                    "error parsing peak " + peakSpecifier + ": " + numE.toString());
-        }
-        ArrayList<Multiplet> sMulti = peakList.getMultiplets();
-        if (idNum >= sMulti.size()) {
-            throw new IllegalArgumentException("Idnum to large for multiplets size");
-        }
-        return sMulti.get(idNum);
     }
 
     /**
