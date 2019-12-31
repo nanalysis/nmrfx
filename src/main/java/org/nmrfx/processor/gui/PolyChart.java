@@ -530,12 +530,18 @@ public class PolyChart implements PeakListener {
                 }
             }
             Color color;
-            if (mouseAction == MOUSE_ACTION.DRAG_EXPAND) {
-                color = Color.DARKBLUE;
-            } else if (mouseAction == MOUSE_ACTION.DRAG_ADDREGION) {
-                color = Color.GREEN;
-            } else {
+            if (null == mouseAction) {
                 color = Color.DARKORANGE;
+            } else switch (mouseAction) {
+                case DRAG_EXPAND:
+                    color = Color.DARKBLUE;
+                    break;
+                case DRAG_ADDREGION:
+                    color = Color.GREEN;
+                    break;
+                default:
+                    color = Color.DARKORANGE;
+                    break;
             }
             annoGC.setStroke(color);
             if (is1D()) {
@@ -582,7 +588,6 @@ public class PolyChart implements PeakListener {
         }
         double dX = Math.abs(x - dragStart[0]);
         double dY = Math.abs(y - dragStart[1]);
-        System.out.println(dX + " " + dY + " " + mouseAction);
         limits[0][0] = xAxis.getValueForDisplay(dragStart[0]).doubleValue();
         limits[0][1] = xAxis.getValueForDisplay(x).doubleValue();
         swapDouble(limits[0]);
@@ -601,7 +606,6 @@ public class PolyChart implements PeakListener {
                     if (!is1D()) {
                         setAxis(1, limits[1][0], limits[1][1]);
                     }
-                    System.out.println("expand");
                     ChartUndoLimits redo = new ChartUndoLimits(this);
                     controller.undoManager.add("expand", undo, redo);
                     refresh();
