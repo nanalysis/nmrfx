@@ -77,6 +77,12 @@ public class PeakClusterMatcher {
             predPeakClusters = PeakCluster.makePeakCluster(predLinks, iDim);
             runBPClusterMatches(expPeakClusters, predPeakClusters);
         } else {
+            for (PeakCluster peakCluster : expPeakClusters) {
+                peakCluster.setPeakMatches(null);
+            }
+            for (PeakCluster peakCluster : predPeakClusters) {
+                peakCluster.setPeakMatches(null);
+            }
             PeakCluster[] nonFrozenExpClusters = PeakCluster.getNonFrozenClusters(expPeakClusters);
             PeakCluster[] nonFrozenPredClusters = PeakCluster.getNonFrozenClusters(predPeakClusters);
             runBPClusterMatches(nonFrozenExpClusters, nonFrozenPredClusters);
