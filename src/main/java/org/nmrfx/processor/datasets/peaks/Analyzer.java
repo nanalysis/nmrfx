@@ -43,14 +43,6 @@ public class Analyzer {
     double regionExtend = 9.0;
 
     double artifactRatio = 50;
-//        public RealMatrix idIntegrals(int winSize, double ratio,
-//            int regionWidth, int joinWidth, int extend, double minThreshold)
-
-//        set regionWindow    $::dcs::analysis::prefs(regions,windowSize,value)
-//    set noiseRatio $::dcs::analysis::prefs(regions,noiseRatio,value)
-//    set minWidth   $::dcs::analysis::prefs(regions,minimumWidth,value)
-//    set joinSize   $::dcs::analysis::prefs(regions,joinSize,value)
-//    set extendAmount  $::dcs::analysis::prefs(regions,extendAmount,value)
     double sDev = 0.0;
     double threshold = 0.0;
     double filter = 0.0;
@@ -59,7 +51,6 @@ public class Analyzer {
 
     public Analyzer(Dataset dataset) {
         this.dataset = dataset;
-//        PeakDim.setResonanceFactory(new ResonanceFactory());
         solvents = new Solvents();
         solvents.loadYaml();
     }
@@ -193,49 +184,6 @@ public class Analyzer {
         }
     }
 
-
-    /*
-    
-
-
-    if {$dim == "1D" && $::dcs::peaks::pars(_threshold_) == ""} {
-        if {$::dcs::peaks::pars(_manThreshold_) != ""} {
-            set ::dcs::peaks::pars(_threshold_) $::dcs::peaks::pars(_manThreshold_)
-            set pkvar(sdevn) 0.0
-            set pkvar(width) 0.0
-        } else {
-            foreach "threshold filter sdev" [::dcs::regions::calculateThreshold $dataset] {}
-            set setWidthEtc 1
-            if {$::dcs::regions::pars(_regionsContinue_)} {
-                set regionMin [dcs::regions::getRegionsMin]
-                set regionThreshold [expr {$regionMin*0.5}]
-                if {$regionThreshold < (5.0*$sdev)} {
-                    set regionThreshold [expr {5.0*$sdev}]
-                }
-                if {$regionThreshold < $threshold} {
-                    set threshold $regionThreshold
-                    set pkvar(sdevn) 0.0
-                    set pkvar(width) 0.0
-                    set setWidthEtc 0
-                }
-            }
-            set sdRatio $::dcs::analysis::prefs(peaks,noiseRatio,value)
-            if {$setWidthEtc} {
-                if {[string equal $nucType "X"]} {
-                    set pkvar(width) 0.05
-                    set pkvar(sdevn) [expr $sdRatio/5.0*$sdev]
-                    set pkvar(sign) 3
-                } else {
-                    set pkvar(width) 0.0
-                    set pkvar(sdevn) [expr $sdRatio*$sdev]
-                    set pkvar(sign) 1
-                }
-            }
-            set ::dcs::peaks::pars(_threshold_) [format %1.1e $threshold]
-            nv_win cross1y $threshold
-        }
-
-     */
     public void findSolventPeaks() {
         int iDim = 0;
         String solventName = dataset.getSolvent();
@@ -322,6 +270,9 @@ public class Analyzer {
         }
         peakList.compress();
         peakList.reNumber();
+        for (Peak peak : peakList.peaks()) {
+            peak.setStatus(0);
+        }
 
     }
 
@@ -343,12 +294,18 @@ public class Analyzer {
                 double min = Double.MAX_VALUE;
                 double max = Double.NEGATIVE_INFINITY;
                 for (Peak peak : peaks) {
-                    double ppm = peak.peakDims[iDim].getChemShift();
-                    double width = Math.abs(peak.peakDims[iDim].getLineWidth());
-                    double tppm = ppm + trimRatio * width;
-                    max = Math.max(tppm, max);
-                    tppm = ppm - trimRatio * width;
-                    min = Math.min(tppm, min);
+                    PeakDim peakDim = peak.getPeakDim(0);
+                    Multiplet multiplet = peakDim.getMultiplet();
+                    List<AbsMultipletComponent> absComps = multiplet.getAbsComponentList();
+
+                    for (AbsMultipletComponent absComp : absComps) {
+                        double ppm = absComp.getOffset();
+                        double width = Math.abs(absComp.getLineWidth());
+                        double tppm = ppm + trimRatio * width;
+                        max = Math.max(tppm, max);
+                        tppm = ppm - trimRatio * width;
+                        min = Math.min(tppm, min);
+                    }
                 }
                 double rStart = region.getRegionStart(iDim);
                 double rEnd = region.getRegionEnd(iDim);
@@ -489,7 +446,6 @@ public class Analyzer {
             dim[i] = i;
         }
         double[][] limits = new double[1][2];
-        Set<DatasetRegion> newRegions = new TreeSet<>();
         Set<DatasetRegion> regions = getRegions();
 
         regions.stream().forEach(region -> {
@@ -571,11 +527,6 @@ public class Analyzer {
         int extend = (int) Math.round(1.0 * regionExtend / sw * size);
 
         double minThreshold = manThreshold.isPresent() ? manThreshold.get() : -1.0;
-        //System.out.println(region + " " + join + " " + extend + " " + minThreshold + " " + regionRatio);
-        /*
-   puts "autoreg $winSize $noiseRatio $minWidth $joinSize $extendAmount"
-        autoreg 20 26 0.9 0.9 9.1
-         */
 
         RealMatrix rM = vec.idIntegrals(regionWindow, regionRatio, region, join, extend, minThreshold);
         Set<DatasetRegion> regions = getRegions();
@@ -604,10 +555,10 @@ public class Analyzer {
         peakPickRegion(min, max);
     }
 
-    public Optional<Multiplet> splitRegion(double ppm) throws IOException {
+    public List<Multiplet> splitRegion(double ppm) throws IOException {
         Set<DatasetRegion> regions = getRegions();
         Optional<DatasetRegion> found = getRegion(regions, 0, ppm);
-        Optional<Multiplet> result = Optional.empty();
+        List<Multiplet> result = new ArrayList<>();
         if (found.isPresent()) {
             DatasetRegion region = found.get();
             double start = region.getRegionStart(0);
@@ -621,30 +572,32 @@ public class Analyzer {
                 ppm1 = ppm2;
                 ppm2 = hold;
             }
+            double[][] limits = new double[1][2];
+            limits[0][0] = region.getRegionStart(0);
+            limits[0][1] = region.getRegionEnd(0);
+            int[] dim = {0};
+
             System.out.println(start + " " + ppm1 + " " + ppm2 + " " + end);
             DatasetRegion newRegion1 = new DatasetRegion(start, ppm1);
             DatasetRegion newRegion2 = new DatasetRegion(ppm2, end);
             regions.add(newRegion1);
             regions.add(newRegion2);
             integrate();
-            setVolumesFromIntegrals();
-            DatasetRegion[] newRegions = {newRegion1, newRegion2};
-            PeakFitting peakFitting = new PeakFitting(dataset);
-            for (DatasetRegion newRegion : newRegions) {
-                Multiplets.unlinkPeaksInRegion(peakList, newRegion);
-                PeakDim rootPeak = Multiplets.linkPeaksInRegion(peakList, newRegion);
-                if (rootPeak != null) {
-                    peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
-                    Multiplets.analyzeMultiplet(rootPeak.myPeak);
-                    fitMultiplet(rootPeak.getMultiplet());
-                    result = Optional.of(rootPeak.getMultiplet());
-                }
+            List<Peak> peaks = locatePeaks(peakList, limits, dim);
+            for (Peak peak : peaks) {
+                peak.setFlag(4, false);
             }
-            if (result.isPresent()) {
-                PeakList peakList = result.get().getPeakDim().getPeak().getPeakList();
-                peakList.getMultiplets();
-                peakList.refreshMultiplets();
+            if (!peaks.isEmpty()) {
+                Multiplet multiplet = peaks.get(0).getPeakDim(0).getMultiplet();
+                Multiplet newMultiplet = multiplet.split(ppm);
+                setVolumesFromIntegrals();
+                PeakFitting peakFitting = new PeakFitting(dataset);
+                peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
+                peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+                peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), true);
+                peakFitting.jfitLinkedPeak(newMultiplet.getOrigin(), "all");
             }
+            renumber();
         }
         return result;
     }
@@ -660,17 +613,12 @@ public class Analyzer {
             integrate();
             setVolumesFromIntegrals();
             Multiplets.unlinkPeaksInRegion(peakList, region);
-            PeakDim rootPeak = Multiplets.linkPeaksInRegion(peakList, region);
-            if (rootPeak != null) {
-                peakFitting.fitLinkedPeak(rootPeak.myPeak, true);
-                Multiplets.analyzeMultiplet(rootPeak.myPeak);
-                rootPeak.getPeak().getPeakList().getMultiplets();
-                rootPeak.getPeak().getPeakList().refreshMultiplets();
-                // do this to sort multiplets after analyzing new
-                Multiplet multiplet = rootPeak.getMultiplet();
-                fitMultiplet(multiplet);
-                result = Optional.of(multiplet);
-            }
+            Multiplet multiplet = Multiplets.linkPeaksInRegion(peakList, region);
+            result = Optional.of(multiplet);
+            peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
+            renumber();
+            Multiplets.analyzeMultiplet(multiplet.getOrigin());
+            peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
         }
         return result;
     }
@@ -680,18 +628,16 @@ public class Analyzer {
         peakFitting.fitLinkedPeaks(peakList, true);
     }
 
-    public void fitMultiplet(String mSpec) {
-        Multiplet multiplet = Multiplets.getMultiplet(mSpec);
-        fitMultiplet(multiplet);
-    }
-
-    public void fitMultiplet(Multiplet multiplet) {
+    public Optional<Double> fitMultiplet(Multiplet multiplet) {
+        Optional<Double> result = Optional.empty();
         if (multiplet != null) {
             PeakFitting peakFitting = new PeakFitting(dataset);
             Peak peak = multiplet.getPeakDim().getPeak();
             peak.setFlag(4, false);
-            peakFitting.jfitLinkedPeak(peak, "all");
+            double rms = peakFitting.jfitLinkedPeak(peak, "all");
+            result = Optional.of(rms);
         }
+        return result;
     }
 
     public void jfitLinkedPeaks() {
@@ -699,13 +645,79 @@ public class Analyzer {
         peakFitting.jfitLinkedPeaks(peakList);
     }
 
+    public void objectiveDeconvolution(Multiplet multiplet) {
+        PeakFitting peakFitting = new PeakFitting(dataset);
+        int nComps = multiplet.getRelComponentList().size();
+        int nAdd = 0;
+        if (nComps < 2) {
+            nAdd = 3;
+        } else {
+            nAdd = nComps;
+        }
+        List<AbsMultipletComponent> minList = null;
+        multiplet.getOrigin().setFlag(4, false);
+        double rms = peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+        double minBIC = peakFitting.getBIC();
+        for (int i = 0; i < nAdd; i++) {
+            Optional<Double> result = Multiplets.deviation(multiplet);
+            if (result.isPresent()) {
+                Multiplets.addPeaksToMultiplet(multiplet, result.get());
+                multiplet.getOrigin().setFlag(4, false);
+                rms = peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+                double BIC = peakFitting.getBIC();
+                if (BIC < minBIC) {
+                    minBIC = BIC;
+                    minList = multiplet.getAbsComponentList();
+                }
+            }
+        }
+        List<AbsMultipletComponent> minSkipList = null;
+        double limit = 15.0;
+        if (minList != null) {
+            multiplet.updateCoupling(minList);
+            while (true) {
+                double minSkipBIC = Double.MAX_VALUE;
+                int minSkip = -1;
+                int n = minList.size();
+                for (int i = 0; i < n; i++) {
+                    List<AbsMultipletComponent> newList = AbsMultipletComponent.copyList(minList, i);
+                    multiplet.updateCoupling(newList);
+                    multiplet.getOrigin().setFlag(4, false);
+                    peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
+                    double BIC = peakFitting.getBIC();
+                    if (BIC < minSkipBIC) {
+                        minSkip = i;
+                        minSkipBIC = BIC;
+                        minSkipList = multiplet.getAbsComponentList();
+                    }
+                }
+                //fixme save components after fitting System
+                //.out.println("min skip " + minSkip + " " + minSkipBIC);
+                if (minSkipBIC < (minBIC + limit)) {
+                    multiplet.updateCoupling(minSkipList);
+                    minList = AbsMultipletComponent.copyList(minSkipList);
+                    if (minSkipBIC < minBIC) {
+                        minBIC = minSkipBIC;
+                    }
+                } else {
+                    multiplet.updateCoupling(minList);
+                    break;
+                }
+            }
+
+        }
+    }
+
     public void analyzeMultiplets() {
         Multiplets.analyzeMultiplets(peakList);
     }
 
     public void dumpMultiplets() {
-        ArrayList<Multiplet> multiplets = peakList.getMultiplets();
-        for (Multiplet multiplet : multiplets) {
+        for (Peak peak : peakList.peaks()) {
+            if (peak.isDeleted()) {
+                continue;
+            }
+            Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
             System.out.println(multiplet.myPeakDim.myPeak.getName() + " "
                     + multiplet.myPeakDim.getChemShift() + " " + multiplet.getCouplingsAsString() + " " + Multiplets.getCouplingPattern(multiplet) + " " + multiplet.getVolume() / peakList.scale);
 
@@ -713,11 +725,14 @@ public class Analyzer {
     }
 
     public void normalizeMultiplets() {
-        ArrayList<Multiplet> multiplets = peakList.getMultiplets();
         List<Double> aromaticValues = new ArrayList<>();
         List<Double> aliphaticValues = new ArrayList<>();
-        for (Multiplet multiplet : multiplets) {
-            if (multiplet.myPeakDim.getPeak().getType() == Peak.COMPOUND) {
+        for (Peak peak : peakList.peaks()) {
+            if (peak.isDeleted()) {
+                continue;
+            }
+            Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
+            if (peak.getType() == Peak.COMPOUND) {
                 double shift = multiplet.getCenter();
                 double volume = multiplet.getVolume();
                 if (shift > 5.5) {
@@ -772,97 +787,6 @@ public class Analyzer {
         return bestNorm;
     }
 
-    /*
-        foreach peak $peaks {
-        set type [nv_peak elem type $peak]
-        if {![string equal compound $type]} {
-            continue
-        }
-        set ppm [nv_peak elem $label.P $peak]
-        if {$ppm < 5.5} {
-            continue
-        }
-        if {$useMultiplets} {
-            set vol [nv_peak elem 1.mv $peak]
-        } else {
-            set vol [nv_peak elem vol $peak]
-        }
-        if {$vol != 0.0} {
-            lappend Aromatics "$vol $peak"
-        }
-    }
-
-     */
-
- /*
-    proc ::dcs::regions::autoSetRegions {} {
-    variable pars
-    #fixmegui
-    global ExpTable
-
-    set ::dcs::regions::pars(_regionsSet_) 1
-    if {![info exists ::dcs::regions::pars(_manualNormalized_)] || !$::dcs::regions::pars(_manualNormalized_)} {
-        set ::dcs::regions::pars(_normalized_) 0
-    }
-    set minThreshold [::nv::util::getIfExists ::dcs::peaks::pars(_manThreshold_) -1.0]
-    if {![string is double -strict $minThreshold]} {
-        set minThreshold -1.0
-    }
-    set regionWindow    $::dcs::analysis::prefs(regions,windowSize,value)
-    set noiseRatio $::dcs::analysis::prefs(regions,noiseRatio,value)
-    set minWidth   $::dcs::analysis::prefs(regions,minimumWidth,value)
-    set joinSize   $::dcs::analysis::prefs(regions,joinSize,value)
-    set extendAmount  $::dcs::analysis::prefs(regions,extendAmount,value)
-    ::nv::spectrum::regions::setRegions $winSize $noiseRatio $minWidth $joinSize $extendAmount $minThreshold
-    
-    
-        set dataset [lindex [nv_win dataset] 0]
-    vecmat resize pwork [nv_dataset size $dataset 1]
-    set complex [nv_dataset complex $dataset 1]
-    if {$complex} {
-        vecmat complex pwork
-    } else {
-        vecmat real pwork
-    }
-    vecmat real pwork
-    set nDim [nv_dataset ndim $dataset]
-    if {$nDim == 1} {
-        nv_dataset get $dataset -obj pwork
-    } else {
-        nv_dataset get $dataset -d2 1 1 -obj pwork
-    }
-    if {$complex} {
-        vecmat real pwork
-    }
-    set size [vecmat size pwork]
-    set sw [vecmat sw pwork]
-    # convert from Hz to pts
-    set regionWindow [expr {round(1.0*$winSize/$sw*$size)}]
-    if {$winSize < 8} {
-        set regionWindow 8
-    }
-    set regionWidth [expr {round(1.0*$regionWidth/$sw*$size)}]
-    set joinWidth [expr {round(1.0*$joinWidth/$sw*$size)}]
-    set regionExtend [expr {round(1.0*$extend/$sw*$size)}]
-    set regions [vecmat idintegrals pwork $winSize $ratio $regionWidth $joinWidth $extend $minThreshold]
-
-    
-    
-    
-    
-    
-    set ignoreRegions [::nv::util::getIfExists pars(ignoreRegions) [list]]
-    foreach "x1 x2" $ignoreRegions {
-        nv_win region clear $x1 $x2
-    }
-    ::dcs::regions::purgeBadRegions
-    set manualRegions [::nv::util::getIfExists pars(manualRegions) [list]]
-    foreach "x1 x2" $manualRegions {
-        nv_win region add $x1 $x2
-    }
-}
-
-     */
     double getSmallPeakThreshold() {
         List<Double> intensities = new ArrayList<>();
         Set<DatasetRegion> regions = getRegions();
@@ -946,9 +870,12 @@ public class Analyzer {
         integrate();
         PeakList pList = peakPick();
         purgeNonPeakRegions();
+        renumber();
         groupPeaks();
+        renumber();
         setVolumesFromIntegrals();
         fitLinkedPeaks();
+        renumber();
         purgeSmallPeaks();
         purgeNonPeakRegions();
         analyzeMultiplets();
@@ -963,21 +890,5 @@ public class Analyzer {
         renumber();
         normalizeMultiplets();
         normalizeIntegrals();
-
-//        ::dcs::regions::restorePurgedRegions
-//        ::dcs::peaks::gui::clearPeaks
-//        ::dcs::peaks::gui::pickPeaks All nodraw
-// purgeNonPeakRegions
-// groupPeaks
-// setVolumesFromIntegrals
-// fitLinkedPeaks
-// purgeSmallPeaks
-// purgeNonPeakRegions
-// analyzeMultiplets
-// jfitLinkedPeaks
-// purgeSolventPeaks
-// trimRegionsToPeaks
-// normalizeIntensities
-// report
     }
 }

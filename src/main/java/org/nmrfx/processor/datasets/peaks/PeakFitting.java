@@ -24,6 +24,7 @@ public class PeakFitting {
     boolean success = false;
     double rmsValue = 0.0;
     boolean anyFit = false;
+    double bicValue = 0.0;
 
     public PeakFitting(Dataset dataset) {
         this.dataset = dataset;
@@ -31,6 +32,10 @@ public class PeakFitting {
 
     public double getRMS() {
         return rmsValue;
+    }
+
+    public double getBIC() {
+        return bicValue;
     }
 
     public boolean anyFit() {
@@ -69,7 +74,7 @@ public class PeakFitting {
     public List<PeakDim> getLinkedSelectedPeakDims(List<PeakDim> peakDims) {
         Set<PeakDim> linkedDims = new HashSet<>();
         peakDims.forEach((peakDim) -> {
-            linkedDims.addAll(peakDim.getCoupledPeakDims());
+            // fixme linkedDims.addAll(peakDim.getCoupledPeakDims());
         });
         List<PeakDim> linkedPeakDims = new ArrayList<>();
         linkedPeakDims.addAll(linkedDims);
@@ -81,7 +86,7 @@ public class PeakFitting {
         try {
             List<PeakDim> peakDims = new ArrayList<>();
             peakDims.add(peak.peakDims[0]);
-            double[] peakBounds = Multiplets.getBoundsOfPeakDims(peakDims, 2.0, 16.0);
+            double[] peakBounds = Multiplets.getBoundsOfPeakDims(peak.getPeakDim(0).getMultiplet().getAbsComponentList(), 2.0, 16.0);
             value = fitPeakDims(peakDims, mode, peakBounds, fitMode);
         } catch (PeakFitException | IOException | IllegalArgumentException e) {
             System.out.println(e.getMessage());
@@ -98,7 +103,6 @@ public class PeakFitting {
             List<PeakDim> peakDims = new ArrayList<>();
             peakDims.add(peak.peakDims[0]);
             double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, peak.peakDims[0].getChemShift());
-            //System.out.println(peak.peakDims[0].getChemShift() + " " + Arrays.toString(bounds));
             value = fitPeakDims(peakDims, mode, bounds, fitMode);
         } catch (PeakFitException | IOException | IllegalArgumentException e) {
             System.out.println(e.getMessage());
@@ -108,8 +112,7 @@ public class PeakFitting {
 
     public List<Peak> fitLinkedPeaks(PeakList peakList, boolean doFit) {
         List<Peak> fitRoots = new ArrayList<>();
-
-        List<Peak> peaks = Multiplets.getLinkRoots(peakList);
+        List<Peak> peaks = peakList.peaks();
         for (Peak peak : peaks) {
             fitLinkedPeak(peak, doFit);
             if (anyFit) {
@@ -125,7 +128,7 @@ public class PeakFitting {
 
     public List<Peak> jfitLinkedPeaks(PeakList peakList, String fitMode) {
         List<Peak> fitRoots = new ArrayList<>();
-        List<Peak> peaks = Multiplets.getLinkRoots(peakList);
+        List<Peak> peaks = peakList.peaks();
         for (Peak peak : peaks) {
             jfitLinkedPeak(peak, fitMode);
             if (anyFit) {
@@ -141,13 +144,13 @@ public class PeakFitting {
         Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
         double regionShift = peak.peakDims[0].getChemShift();
         if (multiplet != null) {
-            regionShift = multiplet.measureCenter();
+            regionShift = multiplet.getCenter();
         }
 
         try {
             double[] bounds = Analyzer.getRegionBounds(dataset.getRegions(), 0, regionShift);
             if ((bounds == null) && (multiplet != null)) {
-                bounds = Multiplets.getBoundsOfPeakDims(multiplet.getPeakDims(), 1.5, regionShift);
+                bounds = Multiplets.getBoundsOfPeakDims(multiplet.getAbsComponentList(), 1.5, regionShift);
             }
             int[] dims = {0};
             double[][] limits = new double[1][2];
@@ -174,36 +177,15 @@ public class PeakFitting {
         success = true;
         anyFit = false;
         int fitMode = getFitMode(fitModeString);
-        PeakDim firstPeak = peakDims.get(0);
-        PeakList firstList = firstPeak.myPeak.peakList;
-        List<PeakDim> linkedPeakDims = getLinkedSelectedPeakDims(peakDims);
-        double[] peakBounds = Multiplets.getBoundsOfPeakDims(linkedPeakDims, 2.0, 16.0);
-        Set<Long> resonances = new HashSet<>();
+        double[] peakBounds = Multiplets.getBoundsOfPeakDims(Multiplet.getAllComps(peakDims), 2.0, 16.0);
         List<Peak> allPeaks = new ArrayList<>();
+        List<Double> ppmRegions = new ArrayList<>();
         boolean allFit = true;
-        for (PeakDim peakDim : linkedPeakDims) {
+        for (PeakDim peakDim : peakDims) {
             if (!peakDim.myPeak.getFlag(4)) {
                 allFit = false;
             }
             allPeaks.add(peakDim.myPeak);
-            Resonance resonance = peakDim.getResonance();
-            resonances.add(resonance.getID());
-        }
-        List<PeakDim> rootDims = new ArrayList<>();
-        ResonanceFactory resFactory = PeakDim.resFactory;
-        for (Long resID : resonances) {
-            SimpleResonance atomResonance = (SimpleResonance) resFactory.get(resID);
-            List<PeakDim> peakDims2 = atomResonance.getPeakDims();
-            for (PeakDim peakDim : peakDims2) {
-                if (peakDim.myPeak.peakList == firstList) {
-                    rootDims.add(peakDim);
-                    break;
-                }
-            }
-        }
-        List<Double> ppmRegions = new ArrayList<>();
-        List<Peak> complexPeaks = new ArrayList<>();
-        rootDims.forEach((peakDim) -> {
             double[] bound;
             if (winRegions != null) {
                 bound = getBounds(winRegions, peakDim.getChemShift());
@@ -214,8 +196,7 @@ public class PeakFitting {
                 ppmRegions.add(bound[0]);
                 ppmRegions.add(bound[1]);
             }
-            complexPeaks.add(peakDim.myPeak);
-        });
+        }
         int i1 = 0;
         int i2 = dataset.getSize(0) - 1;
         if (!ppmRegions.isEmpty()) {
@@ -234,14 +215,16 @@ public class PeakFitting {
 
         PeakFitter peakFitter = new PeakFitter(dataset, false, fitMode);
         int[] rows = new int[dataset.getNDim()];
-        if (complexPeaks.size() > 32) {
+        if (allPeaks.size() > 32) {
             mode = "lfit";
         }
         double value = 0.0;
+        bicValue = 0.0;
         if ((fitMode == FIT_RMS) || (fitMode == FIT_MAX_DEV)) {
             if (mode.equals("jfit")) {
-                peakFitter.setup(complexPeaks);
+                peakFitter.setup(allPeaks);
                 value = peakFitter.doJFit(i1, i2, rows, true);
+                bicValue = peakFitter.getBIC();
 
             } else {
                 peakFitter.setup(allPeaks);
@@ -251,10 +234,14 @@ public class PeakFitting {
             if (!allFit) {
                 anyFit = true;
                 peakFitter.setup(allPeaks);
-                value = peakFitter.doFit(i1, i2, rows, true, true);
-                if (!mode.equals("lfit")) {
+                if (mode.equals("lfit")) {
+                    value = peakFitter.doFit(i1, i2, rows, true, true);
+                } else {
                     if (mode.equals("jfit")) {
-                        peakFitter.setup(complexPeaks);
+                        peakFitter.setup(allPeaks);
+                        value = peakFitter.doJFit(i1, i2, rows, true);
+                    } else {
+                        value = peakFitter.doFit(i1, i2, rows, true, true);
                     }
 
                     try {
@@ -281,6 +268,7 @@ public class PeakFitting {
                             previous = value;
 
                         }
+                        bicValue = peakFitter.getBIC();
                     } catch (IllegalArgumentException iaE) {
                         success = false;
                     }
@@ -288,7 +276,6 @@ public class PeakFitting {
             }
         }
         rmsValue = value;
-//        System.out.println("fit to " + value);
         return value;
     }
 }
