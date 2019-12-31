@@ -30,7 +30,7 @@ import org.nmrfx.processor.gui.spectra.IntegralHit;
  */
 public class MouseBindings {
 
-    private static enum MOUSE_ACTION {
+    public static enum MOUSE_ACTION {
         NOTHING,
         DRAG_SELECTION,
         DRAG_VIEW,
@@ -38,6 +38,7 @@ public class MouseBindings {
         DRAG_PEAK,
         DRAG_PEAK_WIDTH,
         DRAG_REGION,
+        DRAG_ADDREGION,
         CROSSHAIR
     }
 
@@ -95,10 +96,13 @@ public class MouseBindings {
                             chart.handleCrossHair(mouseEvent, false);
                             break;
                         case DRAG_EXPAND:
-                            chart.dragBox(false, dragStart, x, y);
+                            chart.dragBox(mouseAction, dragStart, x, y);
+                            break;
+                        case DRAG_ADDREGION:
+                            chart.dragBox(mouseAction, dragStart, x, y);
                             break;
                         case DRAG_SELECTION:
-                            chart.dragBox(true, dragStart, x, y);
+                            chart.dragBox(mouseAction, dragStart, x, y);
                             break;
                         case DRAG_PEAK:
                             if (moved) {
@@ -167,7 +171,7 @@ public class MouseBindings {
                         if (hit.isPresent()) {
                             mouseAction = MOUSE_ACTION.DRAG_PEAK_WIDTH;
                         } else {
-                            mouseAction = MOUSE_ACTION.DRAG_EXPAND;
+                            mouseAction = MOUSE_ACTION.DRAG_ADDREGION;
                         }
                     } else {
                         boolean hitPeak = chart.selectPeaks(x, y, false);
@@ -211,10 +215,13 @@ public class MouseBindings {
                 double y = mouseEvent.getY();
                 switch (mouseAction) {
                     case DRAG_EXPAND:
-                        chart.finishBox(false, dragStart, x, y);
+                        chart.finishBox(mouseAction, dragStart, x, y);
+                        break;
+                    case DRAG_ADDREGION:
+                        chart.finishBox(mouseAction, dragStart, x, y);
                         break;
                     case DRAG_SELECTION:
-                        chart.finishBox(true, dragStart, x, y);
+                        chart.finishBox(mouseAction, dragStart, x, y);
                         break;
                     case DRAG_PEAK:
                         dragStart[0] = x;

@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.DoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -99,6 +100,7 @@ import org.nmrfx.processor.gui.spectra.GestureBindings;
 import org.nmrfx.processor.gui.spectra.IntegralMenu;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.MouseBindings;
+import org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakMenu;
 import org.nmrfx.processor.gui.spectra.RegionMenu;
@@ -510,7 +512,7 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    public void dragBox(boolean selectMode, double[] dragStart, double x, double y) {
+    public void dragBox(MOUSE_ACTION mouseAction, double[] dragStart, double x, double y) {
         int dragTol = 4;
         if ((Math.abs(x - dragStart[0]) > dragTol) || (Math.abs(y - dragStart[1]) > dragTol)) {
             GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
@@ -522,12 +524,19 @@ public class PolyChart implements PeakListener {
             double startX = x > dragStart[0] ? dragStart[0] : x;
             double startY = y > dragStart[1] ? dragStart[1] : y;
             annoGC.setLineDashes(null);
-            if (!selectMode) {
+            if (mouseAction == MOUSE_ACTION.DRAG_EXPAND || mouseAction == MOUSE_ACTION.DRAG_ADDREGION) {
                 if ((dX < minMove) || (!is1D() && (dY < minMove))) {
                     annoGC.setLineDashes(5);
                 }
             }
-            Color color = selectMode ? Color.DARKORANGE : Color.DARKBLUE;
+            Color color;
+            if (mouseAction == MOUSE_ACTION.DRAG_EXPAND) {
+                color = Color.DARKBLUE;
+            } else if (mouseAction == MOUSE_ACTION.DRAG_ADDREGION) {
+                color = Color.GREEN;
+            } else {
+                color = Color.DARKORANGE;
+            }
             annoGC.setStroke(color);
             if (is1D()) {
                 annoGC.strokeLine(x, topBorder, x, annoHeight - topBorder - bottomBorder);
@@ -546,7 +555,21 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    public void finishBox(boolean selectMode, double[] dragStart, double x, double y) {
+    public void addRegion(double min, double max) {
+        Dataset dataset = getDataset();
+        if (dataset != null) {
+            DatasetRegion newRegion = dataset.addRegion(min, max);
+            try {
+                newRegion.measure(dataset);
+            } catch (IOException ex) {
+                Logger.getLogger(PolyChart.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            chartProps.setRegions(false);
+            chartProps.setIntegrals(true);
+        }
+    }
+
+    public void finishBox(MOUSE_ACTION mouseAction, double[] dragStart, double x, double y) {
         GraphicsContext annoGC = annoCanvas.getGraphicsContext2D();
         double annoWidth = annoCanvas.getWidth();
         double annoHeight = annoCanvas.getHeight();
@@ -559,7 +582,7 @@ public class PolyChart implements PeakListener {
         }
         double dX = Math.abs(x - dragStart[0]);
         double dY = Math.abs(y - dragStart[1]);
-        System.out.println(dX + " " + dY + " " + selectMode);
+        System.out.println(dX + " " + dY + " " + mouseAction);
         limits[0][0] = xAxis.getValueForDisplay(dragStart[0]).doubleValue();
         limits[0][1] = xAxis.getValueForDisplay(x).doubleValue();
         swapDouble(limits[0]);
@@ -569,7 +592,7 @@ public class PolyChart implements PeakListener {
             swapDouble(limits[1]);
         }
 
-        if (!selectMode) {
+        if (mouseAction == MOUSE_ACTION.DRAG_EXPAND) {
             if (dX > minMove) {
                 if (is1D() || (dY > minMove)) {
 
@@ -583,6 +606,11 @@ public class PolyChart implements PeakListener {
                     controller.undoManager.add("expand", undo, redo);
                     refresh();
                 }
+            }
+        } else if (mouseAction == MOUSE_ACTION.DRAG_ADDREGION) {
+            if (is1D()) {
+                addRegion(limits[0][0], limits[0][1]);
+                refresh();
             }
         } else {
             drawPeakLists(false);
@@ -2106,7 +2134,12 @@ public class PolyChart implements PeakListener {
         double xMax = xAxis.getUpperBound();
         double chartHeight = yAxis.getHeight();
         double integralOffset = chartHeight * 0.75;
+        integralOffset = 0.0;
         double norm = datasetAttr.getDataset().getNorm() / datasetAttr.getDataset().getScale();
+        double integralMax = 0.0;
+        for (DatasetRegion region : regions) {
+            integralMax = Math.max(integralMax, region.getIntegral());
+        }
         for (DatasetRegion region : regions) {
             double ppm1 = region.getRegionStart(0);
             double ppm2 = region.getRegionEnd(0);
@@ -2115,12 +2148,11 @@ public class PolyChart implements PeakListener {
             offsets[1] = region.getRegionEndIntensity(0);
 
             if ((ppm2 > xMin) && (ppm1 < xMax)) {
-                Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppm1, ppm2, offsets);
+                Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppm1, ppm2, offsets, integralMax);
                 if (result.isPresent()) {
                     double[][] xy = drawSpectrum.getXY();
                     int nPoints = drawSpectrum.getNPoints();
                     int rowIndex = drawSpectrum.getRowIndex();
-                    gC.translate(0, -integralOffset);
                     gC.setTextAlign(TextAlignment.CENTER);
                     gC.setTextBaseline(VPos.BASELINE);
                     drawSpecLine(datasetAttr, gC, 0, rowIndex, nPoints, xy);
@@ -2128,7 +2160,6 @@ public class PolyChart implements PeakListener {
                     double xCenter = (xy[0][0] + xy[0][nPoints - 1]) / 2.0;
                     double yCenter = (xy[1][0] + xy[1][nPoints - 1]) / 2.0;
                     gC.fillText(text, xCenter, yCenter);
-                    gC.translate(0, integralOffset);
                 }
             }
         }
@@ -2157,9 +2188,11 @@ public class PolyChart implements PeakListener {
         if (regions != null) {
             double xMin = xAxis.getLowerBound();
             double xMax = xAxis.getUpperBound();
-            double chartHeight = yAxis.getHeight();
-            double integralOffset = chartHeight * 0.75;
             int hitRange = 10;
+            double integralMax = 0.0;
+            for (DatasetRegion region : regions) {
+                integralMax = Math.max(integralMax, region.getIntegral());
+            }
             for (DatasetRegion region : regions) {
                 double ppm1 = region.getRegionStart(0);
                 double ppm2 = region.getRegionEnd(0);
@@ -2168,13 +2201,13 @@ public class PolyChart implements PeakListener {
                 offsets[1] = region.getRegionEndIntensity(0);
 
                 if ((ppm2 > xMin) && (ppm1 < xMax)) {
-                    Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppm1, ppm2, offsets);
+                    Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppm1, ppm2, offsets, integralMax);
                     if (result.isPresent()) {
                         double[][] xy = drawSpectrum.getXY();
                         int nPoints = drawSpectrum.getNPoints();
                         for (int i = 0; i < nPoints; i++) {
                             double x = xy[0][i];
-                            double y = xy[1][i] - integralOffset;
+                            double y = xy[1][i];
                             if ((Math.abs(pickX - x) < hitRange) && (Math.abs(pickY - y) < hitRange)) {
                                 hit = Optional.of(new IntegralHit(datasetAttr, region, 0));
                                 break;
