@@ -159,6 +159,13 @@ public class Analyzer {
         return peakList;
     }
 
+    public void peakPickRegions() {
+        Set<DatasetRegion> regions = getRegions();
+        for (DatasetRegion region : regions) {
+            peakPickRegion(region.getRegionStart(0), region.getRegionEnd(0));
+        }
+    }
+
     public void peakPickRegion(double ppm1, double ppm2) {
         Nuclei nuc = dataset.getNucleus(0);
         if (nuc == Nuclei.H1) {
