@@ -942,7 +942,6 @@ public class DrawSpectrum {
         double integralScale = integralMax / range * 2.0;
         double bottom = axes[1].getLowerBound();
         double height = axes[1].getHeight();
-        System.out.println(scale + " " + range + " " + integralMax + " " + integralScale);
         drawSubVector(specVec, orientation, 0, axMode,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
                 (index, intensity) -> 0.05 * height + 0.2 * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
