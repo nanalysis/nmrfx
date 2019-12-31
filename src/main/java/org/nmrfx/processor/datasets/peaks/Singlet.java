@@ -24,6 +24,7 @@ package org.nmrfx.processor.datasets.peaks;
 
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -73,13 +74,24 @@ public class Singlet extends Coupling {
     }
 
     @Override
-    FreqIntensities getFreqIntensitiesFromSplittings() {
-        FreqIntensities fiValues;
+    List<AbsMultipletComponent> getAbsComponentList() {
+        List<AbsMultipletComponent> comps = new ArrayList<>();
+        PeakDim peakDim = multiplet.getPeakDim();
+        AbsMultipletComponent comp = new AbsMultipletComponent(multiplet, peakDim.getChemShiftValue(),
+                peakDim.getPeak().getIntensity(), peakDim.getPeak().getVolume1(), peakDim.getLineWidthValue());
+        comps.add(comp);
+        return comps;
+    }
 
-        fiValues = new FreqIntensities(1);
-        fiValues.freqs[0] = 0;
-        fiValues.intensities[0] = multiplet.getPeakDim().getPeak().getIntensity();
-        return fiValues;
+    @Override
+    List<RelMultipletComponent> getRelComponentList() {
+        List<RelMultipletComponent> comps = new ArrayList<>();
+        PeakDim peakDim = multiplet.getPeakDim();
+        double sf = peakDim.getSpectralDimObj().getSf();
+        RelMultipletComponent comp = new RelMultipletComponent(multiplet, 0.0,
+                peakDim.getPeak().getIntensity(), peakDim.getPeak().getVolume1(), peakDim.getLineWidthValue() * sf);
+        comps.add(comp);
+        return comps;
     }
 
     @Override
@@ -88,4 +100,5 @@ public class Singlet extends Coupling {
         lines.add(new Line2D.Double(0.0, 0.0, 0.0, 0.0));
         return lines;
     }
+
 }

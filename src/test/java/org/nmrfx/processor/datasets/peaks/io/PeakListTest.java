@@ -212,14 +212,6 @@ public class PeakListTest {
         Assert.assertEquals(valid, peakList.valid());
     }
     
-    @Test
-    public void testCountMultiplets() {
-        PeakList peakList = getPeakList(peakListName2);
-        Assert.assertNotNull(peakList);
-        
-        int size = 0;
-        Assert.assertEquals(size, peakList.countMultiplets(), 1.0e-5);
-    }
     
     @Test
     public void testGetPeakByID() {

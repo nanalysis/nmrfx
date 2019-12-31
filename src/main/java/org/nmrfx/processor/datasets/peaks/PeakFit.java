@@ -19,6 +19,7 @@ package org.nmrfx.processor.datasets.peaks;
 
 import org.nmrfx.processor.optimization.NNLSMat;
 import org.nmrfx.processor.optimization.SineSignal;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,11 +52,11 @@ public class PeakFit implements MultivariateFunction {
     static RandomGenerator random = new SynchronizedRandomGenerator(new Well19937c());
 
     double[][] freqs = null;
-    double[] cfreqs = null;
     double[][] amplitudes = null;
     double[] sigAmps = null;
     double[] lw = null;
     RealMatrix A = null;
+    RealVector V = null;
     int[] sigStarts = null;
     int[] nSigAmps = null;
     int nSignals = 0;
@@ -73,6 +74,7 @@ public class PeakFit implements MultivariateFunction {
     double[][] uniformBoundaries = new double[2][];
     boolean reportFitness = false;
     int reportAt = 10;
+    boolean fitAmps = false;
 
     public class Checker extends SimpleValueChecker {
 
@@ -90,6 +92,10 @@ public class PeakFit implements MultivariateFunction {
             }
             return converged;
         }
+    }
+
+    public PeakFit(boolean fitAmps) {
+        this.fitAmps = fitAmps;
     }
 
     public void initTest(final int n) {
@@ -138,14 +144,6 @@ public class PeakFit implements MultivariateFunction {
         BOBYQAOptimizer optimizer = new BOBYQAOptimizer(nInterpolationPoints);
         PointValuePair result = optimizer.optimize(nSteps, this, GoalType.MINIMIZE, newStart, uniformBoundaries[0], uniformBoundaries[1]);
         double[] point = result.getPoint();
-//        System.out.println("done");
-//        for (int i = 0; i < point.length; i++) {
-//            System.out.print(point[i] + " ");
-//        }
-        RealVector amps = getAmps(point);
-//        System.out.println(amps);
-//        System.out.println(result.getValue());
-
         return result.getValue();
     }
 
@@ -164,8 +162,13 @@ public class PeakFit implements MultivariateFunction {
     }
 
     public void simulate(final double[] parameters, final RealVector ampVector, final double sdev) {
-        fillMatrix(parameters);
-        RealVector yCalc = A.operate(ampVector);
+        RealVector yCalc;
+        if (fitAmps) {
+            yCalc = calcVec(parameters);
+        } else {
+            fillMatrix(parameters);
+            yCalc = A.operate(ampVector);
+        }
         if (generator == null) {
             initRandom(0);
         }
@@ -174,21 +177,23 @@ public class PeakFit implements MultivariateFunction {
         }
     }
 
-    public RealVector getAmps(final double[] unscaledPars) {
-        fillMatrix(unscaledPars);
-        RealVector ampVector = fitSignalAmplitudesNN(A.copy());
-        return ampVector;
-    }
-
     @Override
     public double value(final double[] parameters) {
         return valueWithUnScaled(unscalePar(parameters));
     }
 
     public double valueWithUnScaled(final double[] parameters) {
-        fillMatrix(parameters);
-        RealVector ampVector = fitSignalAmplitudesNN(A.copy());
-        RealVector yCalc = A.operate(ampVector);
+        RealVector yCalc;
+        RealVector ampVector = null;
+
+        if (fitAmps) {
+            yCalc = calcVec(parameters);
+        } else {
+            fillMatrix(parameters);
+            ampVector = fitSignalAmplitudesNN(A.copy());
+            yCalc = A.operate(ampVector);
+        }
+
         double sum = 0.0;
         for (int i = 0; i < xv.length; i++) {
             double delta = yv[i] - yCalc.getEntry(i);
@@ -201,33 +206,51 @@ public class PeakFit implements MultivariateFunction {
 //        System.out.println(result);
         if ((best == null) || (best.getValue() > result)) {
             best = new PointValuePair(unscaledPars, result);
-            sigAmps = ampVector.toArray();
+            if (ampVector != null) {
+                sigAmps = ampVector.toArray();
+            } else {
+                sigAmps = null;
+            }
         }
         return result;
     }
 
-    public double valueDump(final double[] point) {
+    public double valueDump(final double[] parameters) {
         double sum = 0.0;
-        fillMatrix(point);
-        RealVector ampVector = fitSignalAmplitudesNN(A.copy());
-        RealVector yCalc = A.operate(ampVector);
+        RealVector yCalc;
+        RealVector ampVector = null;
+
+        if (fitAmps) {
+            yCalc = calcVec(parameters);
+        } else {
+            fillMatrix(parameters);
+            ampVector = fitSignalAmplitudesNN(A.copy());
+            yCalc = A.operate(ampVector);
+        }
         for (int i = 0; i < xv.length; i++) {
             double delta = yv[i] - yCalc.getEntry(i);
             System.out.println(i + " " + xv[i] + " " + yv[i] + " " + yCalc.getEntry(i) + " " + delta);
             sum += delta * delta;
         }
         double result = Math.sqrt(sum / yv.length);
-        for (int i = 0; i < point.length; i++) {
-            System.out.print(point[i] + " ");
+        for (int i = 0; i < parameters.length; i++) {
+            System.out.print(parameters[i] + " ");
         }
         System.out.println(result);
         return result;
     }
 
-    public int maxPosDev(final double[] point, int halfSize) {
-        fillMatrix(point);
-        RealVector ampVector = fitSignalAmplitudesNN(A.copy());
-        RealVector yCalc = A.operate(ampVector);
+    public int maxPosDev(final double[] parameters, int halfSize) {
+        RealVector yCalc;
+        RealVector ampVector = null;
+
+        if (fitAmps) {
+            yCalc = calcVec(parameters);
+        } else {
+            fillMatrix(parameters);
+            ampVector = fitSignalAmplitudesNN(A.copy());
+            yCalc = A.operate(ampVector);
+        }
         double maxPosDev = Double.NEGATIVE_INFINITY;
         int devLoc = 0;
 
@@ -300,7 +323,6 @@ public class PeakFit implements MultivariateFunction {
         lw = new double[nSignals];
         amplitudes = new double[nSignals][];
         freqs = new double[nSignals][];
-        cfreqs = new double[nSignals];
         this.cplItems = cplItems;
         sigStarts = new int[nSignals];
         nSigAmps = new int[nSignals];
@@ -308,53 +330,52 @@ public class PeakFit implements MultivariateFunction {
         int start = 0;
         nSigAmpsTotal = 0;
         nFit = 0;
-        int ampStart = 0;
         for (int i = 0; i < nSignals; i++) {
             Arrays.sort(cplItems[i]);
             sigStarts[i] = start;
             start++; // allow for linewidth par
             nFit++;
-
             int nFreqs = 1;
 
             if ((cplItems[i].length == 1) && (cplItems[i][0].getNSplits() < 0)) { // generic multiplet
                 nFreqs = -cplItems[i][0].getNSplits();
                 start += nFreqs;
                 nFit += nFreqs;
+                if (fitAmps) {
+                    start += nFreqs;
+                    nFit += nFreqs;
+                }
                 nSigAmpsTotal += nFreqs;
-                ampStart += nFreqs;
                 nSigAmps[i] = nFreqs;
             } else {
                 for (CouplingItem cplItem : cplItems[i]) {
                     nFreqs = nFreqs * cplItem.getNSplits();
                 }
-                ampStart++;
                 nSigAmpsTotal++;
                 nSigAmps[i] = 1;
                 start += (cplItems[i].length * 2 + 1);
                 nFit += (cplItems[i].length * 2 + 1);
+                if (fitAmps) {
+                    start++;
+                    nFit++;
+                }
             }
-
             amplitudes[i] = new double[nFreqs];
             freqs[i] = new double[nFreqs];
         }
         sigAmps = new double[nSigAmpsTotal];
     }
 
-    public double getCFreq(int iSig) {
-        return cfreqs[iSig];
-    }
-
     public CouplingItem[] getCouplings(int iSig) {
         return cplItems[iSig];
     }
 
-    public ArrayList getSignals() {
-        ArrayList signalGroups = new ArrayList(nSignals);
+    public List<List<SineSignal>> getSignals() {
+        List<List<SineSignal>> signalGroups = new ArrayList<>(nSignals);
         double[] aCalc = best.getPoint();
         int iSigAmp = 0;
         for (int iSig = 0; iSig < nSignals; iSig++) {
-            ArrayList signals = new ArrayList();
+            List<SineSignal> signals = new ArrayList<>();
             signalGroups.add(signals);
 
             int start = sigStarts[iSig];
@@ -363,39 +384,36 @@ public class PeakFit implements MultivariateFunction {
             if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].getNSplits() < 0)) { // generic multiplet
 
                 int nFreqs = -cplItems[iSig][0].getNSplits();
-                double sum = 0.0;
 
-                for (int i = 0; i < nFreqs; i++) {
-                    freqs[iSig][i] = aCalc[start++];
-                    sum += freqs[iSig][i];
+                for (int iLine = 0; iLine < nFreqs; iLine++) {
+                    double amp = 0.0;
+                    if (fitAmps) {
+                        amp = aCalc[start++];
+                    } else {
+                        amp = sigAmps[iSigAmp++];
+                    }
+                    double freq = aCalc[start++];
+
+                    SineSignal signal = new SineSignal(freq, lw[iSig], amp);
+                    signals.add(signal);
                 }
-
-                cfreqs[iSig] = sum / nFreqs;
             } else {
-                freqs[iSig][0] = cfreqs[iSig] = aCalc[start++];
+                double amp = 0.0;
+                if (fitAmps) {
+                    amp = aCalc[start++];
+                } else {
+                    amp = sigAmps[iSigAmp++];
+                }
+                double freq = aCalc[start++];
 
                 for (int i = 0; i < cplItems[iSig].length; i++) {
-                    cplItems[iSig][i] = new CouplingItem(aCalc[start++], aCalc[start++], cfreqs[iSig], cplItems[iSig][i].getNSplits());
+                    cplItems[iSig][i] = new CouplingItem(aCalc[start++], aCalc[start++], freq, cplItems[iSig][i].getNSplits());
                 }
 
-                CouplingPattern.jSplittings(cplItems[iSig], freqs[iSig], amplitudes[iSig]);
-            }
-            if (nSigAmps[iSig] == 1) {
-                for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-                    amplitudes[iSig][iLine] = sigAmps[iSigAmp];
-                }
-                iSigAmp++;
-            } else {
-                for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-                    amplitudes[iSig][iLine] = sigAmps[iSigAmp++];
-                }
-            }
-            for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
-                SineSignal signal = new SineSignal(freqs[iSig][iLine],
-                        lw[iSig], amplitudes[iSig][iLine]);
+                SineSignal signal = new SineSignal(freq,
+                        lw[iSig], amp);
                 signals.add(signal);
             }
-
             Collections.sort(signals);
         }
 
@@ -440,6 +458,53 @@ public class PeakFit implements MultivariateFunction {
         }
 
         return y;
+    }
+
+    public RealVector calcVec(double[] a) {
+        if (V == null) {
+            V = new ArrayRealVector(xv.length);
+        }
+        V.set(0.0);
+        for (int iSig = 0; iSig < nSignals; iSig++) {
+            int start = sigStarts[iSig];
+            double sigLw = a[start++];
+            if ((cplItems[iSig].length == 1) && (cplItems[iSig][0].getNSplits() < 0)) { // generic multiplet
+                for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
+                    amplitudes[iSig][iLine] = a[start++];
+                    freqs[iSig][iLine] = a[start++];
+                }
+                for (int i = 0; i < xv.length; i++) {
+                    double y = 0.0;
+                    for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
+                        y += amplitudes[iSig][iLine] * lShape(xv[i], sigLw, freqs[iSig][iLine]);
+                    }
+                    V.addToEntry(i, y);
+                }
+            } else {
+                double thisAmp = a[start++];
+                freqs[iSig][0] = a[start++];
+                amplitudes[iSig][0] = 1.0;
+
+                for (int i = 0; i < cplItems[iSig].length; i++) {
+                    cplItems[iSig][i] = new CouplingItem(a[start++], a[start++], freqs[iSig][0], cplItems[iSig][i].getNSplits());
+                }
+
+                CouplingPattern.jSplittings(cplItems[iSig], freqs[iSig], amplitudes[iSig]);
+                for (int i = 0; i < amplitudes[iSig].length; i++) {
+                    amplitudes[iSig][i] *= thisAmp;
+                }
+                for (int i = 0; i < xv.length; i++) {
+                    double y = 0.0;
+                    for (int iLine = 0; iLine < freqs[iSig].length; iLine++) {
+                        y += amplitudes[iSig][iLine] * lShape(xv[i], sigLw, freqs[iSig][iLine]);
+                    }
+                    V.addToEntry(i, y);
+
+                }
+            }
+        }
+
+        return V;
     }
 
     public RealMatrix fillMatrix(double[] a) {
@@ -501,6 +566,14 @@ public class PeakFit implements MultivariateFunction {
         return A;
     }
 
+    public double lShape(double x, double b, double freq, double fR, double fI) {
+        double denom = ((b * b) + ((x - freq) * (x - freq)));
+        double yR = (b * b) / denom;
+        double yI = -b * (x - freq) / denom;
+        double y = fR * yR + fI * yI;
+        return y;
+    }
+
     public double lShape(double x, double b, double freq) {
         double y;
         boolean LORENTZIAN = true;
@@ -511,6 +584,14 @@ public class PeakFit implements MultivariateFunction {
             double dX = (x - freq);
             y = Math.exp(-dX * dX / b);
         }
+
+        return y;
+    }
+
+    public double lShapeImag(double x, double b, double freq) {
+        double y;
+        b *= 0.5;
+        y = -b * (x - freq) / ((b * b) + ((x - freq) * (x - freq)));
 
         return y;
     }
@@ -578,7 +659,7 @@ public class PeakFit implements MultivariateFunction {
     }
 
     public static void main(String[] args) {
-        PeakFit peakFit = new PeakFit();
+        PeakFit peakFit = new PeakFit(true);
         int n = 100;
 //        CouplingItem[][] cplItems = new CouplingItem[2][2];
 //        cplItems[0][0] = new CouplingItem(0, 2);
@@ -603,7 +684,7 @@ public class PeakFit implements MultivariateFunction {
         double[] lower = {1, 10, 8, 10, 1, 50, 8, 3000};
         double[] upper = {3, 19, 15, 120, 3, 70, 13, 7000};
 
-        double[] amps = {1, 2};
+        double[] amps = {1};
 
         RealVector ampVector = new ArrayRealVector(amps);
         peakFit.simulate(a, ampVector, 0.001);

@@ -19,132 +19,23 @@ package org.nmrfx.processor.datasets.peaks;
 
 import java.awt.geom.Line2D;
 import java.util.ArrayList;
+import java.util.List;
 
 public abstract class Coupling {
 
     Multiplet multiplet;
-
+    
     abstract String getMultiplicity();
 
-    abstract FreqIntensities getFreqIntensitiesFromSplittings();
+    abstract List<AbsMultipletComponent> getAbsComponentList();
+
+    abstract List<RelMultipletComponent> getRelComponentList();
 
     abstract ArrayList<Line2D> getSplittingGraph();
 
-//    abstract TclObject getCouplingsAsTclObject(Interp interp) throws TclException;
     abstract String getCouplingsAsString();
 
     abstract String getCouplingsAsSimpleString();
 
-    abstract boolean isCoupled();
-
-    /*
-     void setValue(double[] newValues, int[] newN) {
-     frequencyOffsets = new double[0];
-     values = (double[]) newValues.clone();
-
-     int[] order = NvUtil.arraySorter(values, false);
-     n = new int[values.length];
-     for (int i=0;i<n.length;i++) {
-     n[i] = newN[order[i]];
-     }
-
-     }
-
-
-     void setIntensities(double[] intensities) {
-     this.intensities = (double[]) intensities.clone();
-     }
-
-     void setFrequencyOffsets(double[] freqs) {
-     values = new double[0];
-     this.frequencyOffsets = (double[]) freqs.clone();
-     }
-
-     public boolean isCoupled() {
-     boolean result = false;
-     if ((values.length > 0) && (values[0] > 0.02)) {
-     result = true;
-     }
-
-     return result;
-     }
-
-     void setSinglet() {
-     values = new double[0];
-     frequencyOffsets = new double[0];
-     n = new int[0];
-     }
-
-     public boolean isSinglet() {
-     boolean result = false;
-     if (isGenericMultiplet()) {
-     result = (frequencyOffsets.length < 2);
-     } else if (values.length == 0) {
-     result = true;
-     } else if ((values.length == 1) && (Math.abs(values[0]) < 0.02)) {
-     result = true;
-     } else {
-     result = false;
-     }
-
-     return result;
-     }
-
-     public boolean isGenericMultiplet() {
-     return (frequencyOffsets.length > 0);
-     }
-
-     double getValue() {
-     return values[0];
-     }
-     double getValueAt(int i) {
-     double value = 0.0;
-     if (i < values.length) {
-     value = values[i];
-     }
-     return value;
-     }
-     public int getNValue(int i) {
-     int nValue=0;
-     if (i < values.length) {
-     nValue = n[i];
-     }
-     return nValue;
-     }
-     public double[] getValues() {
-     return values;
-     }
-
-     public double[] getIntensities() {
-     return intensities.clone();
-     }
-     public double getIntensity(int i) {
-     double value = 0.0;
-     if (i < intensities.length) {
-     value = intensities[i];
-     }
-     return value;
-     }
-     public double getFrequencyOffset(int i) {
-     return frequencyOffsets[i];
-     }
-     private double[] getFrequencyOffsets() {
-     return frequencyOffsets.clone();
-     }
-     public int getFrequencyCount() {
-     return frequencyOffsets.length;
-     }
-
-     int[] getNs() {
-     return (int[]) n.clone();
-     }
-
-     int getNValues() {
-     if (values == null) {
-     return 0;
-     } else {
-     return values.length;
-     }
-     }
-     * */
+    abstract boolean isCoupled();    
 }
