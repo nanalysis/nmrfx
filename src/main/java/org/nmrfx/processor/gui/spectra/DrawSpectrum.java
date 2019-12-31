@@ -922,7 +922,8 @@ public class DrawSpectrum {
     }
 
     public Optional<Double> draw1DIntegrals(DatasetAttributes dataAttributes, int orientation,
-            AXMODE axMode, double ppm1, double ppm2, double[] offsets, double integralMax) {
+            AXMODE axMode, double ppm1, double ppm2, double[] offsets,
+            double integralMax, double low, double high) {
         Vec specVec = new Vec(32);
         Optional<Double> result = Optional.empty();
         boolean drawReal = dataAttributes.getDrawReal();
@@ -938,13 +939,10 @@ public class DrawSpectrum {
         Double integralValue = specVec.getReal(specVec.getSize() - 1);
         result = Optional.of(integralValue);
         double scale = dataAttributes.getIntegralScale();
-        double range = axes[1].getRange();
-        double integralScale = integralMax / range * 2.0;
-        double bottom = axes[1].getLowerBound();
         double height = axes[1].getHeight();
         drawSubVector(specVec, orientation, 0, axMode,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> 0.05 * height + 0.2 * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
+                (index, intensity) -> (1.0-high) * height + (high-low) * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
 
         return result;
     }

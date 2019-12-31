@@ -55,6 +55,8 @@ public class ChartProperties {
     private BooleanProperty grid;
     private BooleanProperty regions;
     private BooleanProperty integrals;
+    private DoubleProperty integralLowPos;
+    private DoubleProperty integralHighPos;
 
     public ChartProperties(PolyChart chart) {
         this.polyChart = chart;
@@ -66,17 +68,18 @@ public class ChartProperties {
         destProps.setRightBorderSize(getRightBorderSize());
         destProps.setTopBorderSize(getTopBorderSize());
         destProps.setBottomBorderSize(getBottomBorderSize());
-        
+
         destProps.setLabelFontSize(getLabelFontSize());
         destProps.setTicFontSize(getTicFontSize());
-        
+
         destProps.setCross0Color(getCross0Color());
         destProps.setCross1Color(getCross1Color());
         destProps.setBgColor(getBgColor());
         destProps.setAxesColor(getAxesColor());
-        
+
         destProps.setGrid(getGrid());
     }
+
     public int getLeftBorderSize() {
         return leftBorderSizeProperty().get();
     }
@@ -270,6 +273,36 @@ public class ChartProperties {
 
     public boolean getIntegrals() {
         return integralsProperty().get();
+    }
+
+    public double getIntegralLowPos() {
+        return integralLowPosProperty().get();
+    }
+
+    public void setIntegralLowPos(double value) {
+        integralLowPosProperty().set(value);
+    }
+
+    public DoubleProperty integralLowPosProperty() {
+        if (integralLowPos == null) {
+            integralLowPos = new SimpleDoubleProperty(polyChart, "integralLowPos", 0.8);
+        }
+        return integralLowPos;
+    }
+
+    public double getIntegralHighPos() {
+        return integralHighPosProperty().get();
+    }
+
+    public void setIntegralHighPos(double value) {
+        integralHighPosProperty().set(value);
+    }
+
+    public DoubleProperty integralHighPosProperty() {
+        if (integralHighPos == null) {
+            integralHighPos = new SimpleDoubleProperty(polyChart, "integralHighPos", 0.95);
+        }
+        return integralHighPos;
     }
 
     public void config(String name, Object value) {

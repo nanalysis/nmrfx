@@ -17,6 +17,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
+<?import org.controlsfx.control.RangeSlider?>
 <?import java.net.URL?>
 
 
@@ -65,8 +66,20 @@
                                         </ComboBox>
                                     </items>
                                 </ToolBar>
-                                <GridPane fx:id="viewGrid" layoutX="110.0" layoutY="70.0" prefHeight="272.0" prefWidth="537.0">
-                                </GridPane>
+                                <HBox>
+                                    <children>
+                                        <GridPane fx:id="viewGrid" layoutX="110.0" layoutY="70.0" prefHeight="272.0" prefWidth="537.0">
+                                        </GridPane>
+                                        <VBox>
+                                            <children>
+                                                <RangeSlider fx:id="integralPosSlider" prefWidth="250.0">
+                                                    
+                                                </RangeSlider>
+                                            </children>
+                                        </VBox>
+                                        
+                                    </children>
+                                </HBox>
                             </children>
                         </VBox>
                     </content>
@@ -78,9 +91,9 @@
                                 <HBox>
                                     <children>
                                         <GridPane BorderPane.alignment="CENTER">
-                                    <padding>
-                                        <Insets left="20.0" right="20.0"/>
-                                    </padding>
+                                            <padding>
+                                                <Insets left="20.0" right="20.0"/>
+                                            </padding>
                                             <rowConstraints>
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" />
                                                 <RowConstraints minHeight="10.0" prefHeight="30.0" />
@@ -94,32 +107,32 @@
                                                 <ColorPicker fx:id="bgColorPicker" onAction="#updateBGColor" promptText="Slice 2 Color"
                                                              GridPane.columnIndex="2" GridPane.rowIndex="1"  /> 
                                                 <CheckBox fx:id="bgColorCheckBox" mnemonicParsing="false" onAction="#updateBGColor" text="" selected="true"
-                                                                  GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+                                                          GridPane.columnIndex="3" GridPane.rowIndex="1"/>
 
                                                 <Label text="Axis" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                                 <ColorPicker fx:id="axisColorPicker" onAction="#updateProps" promptText="Slice 1 Color"
                                                              GridPane.columnIndex="2" GridPane.rowIndex="2" /> 
                                                 <CheckBox fx:id="axisColorCheckBox" mnemonicParsing="false" onAction="#updateProps" text="" selected="true"
-                                                                  GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+                                                          GridPane.columnIndex="3" GridPane.rowIndex="2"/>
 
                                                 <Label text="Cross 0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                                 <ColorPicker fx:id="cross0ColorPicker" onAction="#updateProps" promptText="Slice 2 Color"
                                                              GridPane.columnIndex="2" GridPane.rowIndex="3"  /> 
                                                 <CheckBox fx:id="cross0ColorCheckBox" mnemonicParsing="false" onAction="#updateProps" text="" selected="true"
-                                                                  GridPane.columnIndex="3" GridPane.rowIndex="3"/>
+                                                          GridPane.columnIndex="3" GridPane.rowIndex="3"/>
 
                                                 <Label text="Cross 1" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                                                 <ColorPicker fx:id="cross1ColorPicker" onAction="#updateProps" promptText="Slice 2 Color"
                                                              GridPane.columnIndex="2" GridPane.rowIndex="4"  /> 
                                                 <CheckBox fx:id="cross1ColorCheckBox" mnemonicParsing="false" onAction="#updateProps" text="" selected="true"
-                                                                  GridPane.columnIndex="3" GridPane.rowIndex="4"/>
+                                                          GridPane.columnIndex="3" GridPane.rowIndex="4"/>
 
                                             </children>
                                         </GridPane>
                                         <VBox>
-                                    <padding>
-                                        <Insets left="20.0" right="20.0"/>
-                                    </padding>
+                                            <padding>
+                                                <Insets left="20.0" right="20.0"/>
+                                            </padding>
                                             <children>
                                                 <GridPane BorderPane.alignment="CENTER">
                                                     <rowConstraints>

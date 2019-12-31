@@ -2152,7 +2152,10 @@ public class PolyChart implements PeakListener {
             offsets[1] = region.getRegionEndIntensity(0);
 
             if ((ppm2 > xMin) && (ppm1 < xMax)) {
-                Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppm1, ppm2, offsets, integralMax);
+                Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr,
+                        HORIZONTAL, axModes[0], ppm1, ppm2, offsets,
+                        integralMax, chartProps.getIntegralLowPos(),
+                        chartProps.getIntegralHighPos());
                 if (result.isPresent()) {
                     double[][] xy = drawSpectrum.getXY();
                     int nPoints = drawSpectrum.getNPoints();
@@ -2205,7 +2208,10 @@ public class PolyChart implements PeakListener {
                 offsets[1] = region.getRegionEndIntensity(0);
 
                 if ((ppm2 > xMin) && (ppm1 < xMax)) {
-                    Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr, HORIZONTAL, axModes[0], ppm1, ppm2, offsets, integralMax);
+                Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr,
+                        HORIZONTAL, axModes[0], ppm1, ppm2, offsets,
+                        integralMax, chartProps.getIntegralLowPos(),
+                        chartProps.getIntegralHighPos());
                     if (result.isPresent()) {
                         double[][] xy = drawSpectrum.getXY();
                         int nPoints = drawSpectrum.getNPoints();

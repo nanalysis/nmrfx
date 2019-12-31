@@ -92,6 +92,7 @@ import javafx.scene.shape.Polygon;
 import javafx.util.converter.IntegerStringConverter;
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.PopOver;
+import org.controlsfx.control.RangeSlider;
 import org.controlsfx.control.SegmentedButton;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.PolyChart.DISDIM;
@@ -127,6 +128,8 @@ public class SpecAttrWindowController implements Initializable {
     private GridPane viewGrid;
     @FXML
     private ComboBox<DISDIM> disDimCombo;
+    @FXML
+    private RangeSlider integralPosSlider;
     @FXML
     private TabPane tabPane;
     @FXML
@@ -263,6 +266,21 @@ public class SpecAttrWindowController implements Initializable {
         axisColorPicker.disableProperty().bind(axisColorCheckBox.selectedProperty().not());
         cross0ColorPicker.disableProperty().bind(cross0ColorCheckBox.selectedProperty().not());
         cross1ColorPicker.disableProperty().bind(cross1ColorCheckBox.selectedProperty().not());
+
+        integralPosSlider.setMin(0.0);
+        integralPosSlider.setMax(1.0);
+        integralPosSlider.setLowValue(0.8);
+        integralPosSlider.setHighValue(0.95);
+        integralPosSlider.lowValueProperty().addListener(e -> adjustIntegralPosSlider());
+        integralPosSlider.highValueProperty().addListener(e -> adjustIntegralPosSlider());
+    }
+
+    void adjustIntegralPosSlider() {
+        double lowValue = integralPosSlider.getLowValue();
+        double highValue = integralPosSlider.getHighValue();
+        chart.chartProps.setIntegralLowPos(lowValue);
+        chart.chartProps.setIntegralHighPos(highValue);
+        chart.refresh();
     }
 
     public boolean isShowing() {
@@ -1200,6 +1218,8 @@ public class SpecAttrWindowController implements Initializable {
         topBorderSizeComboBox.setValue(polyChart.chartProps.getTopBorderSize());
         bottomBorderSizeComboBox.setValue(polyChart.chartProps.getBottomBorderSize());
         gridCheckBox.setSelected(polyChart.chartProps.getGrid());
+        integralPosSlider.setLowValue(polyChart.chartProps.getIntegralLowPos());
+        integralPosSlider.setHighValue(polyChart.chartProps.getIntegralHighPos());
 
         polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
