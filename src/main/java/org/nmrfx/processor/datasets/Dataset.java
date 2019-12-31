@@ -26,6 +26,8 @@ import java.io.*;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.math3.complex.Complex;
@@ -4786,6 +4788,24 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 
     public Set<DatasetRegion> getRegions() {
         return regions;
+    }
+
+    public DatasetRegion addRegion(double min, double max) {
+        Set<DatasetRegion> regions = getRegions();
+        if (regions == null) {
+            regions = new TreeSet<>();
+            setRegions(regions);
+        }
+
+        DatasetRegion newRegion = new DatasetRegion(min, max);
+        newRegion.removeOverlapping((TreeSet) regions);
+        regions.add(newRegion);
+        try {
+            newRegion.measure(this);
+        } catch (IOException ex) {
+            Logger.getLogger(Dataset.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return newRegion;
     }
 
     public static void setMinimumTitles() {
