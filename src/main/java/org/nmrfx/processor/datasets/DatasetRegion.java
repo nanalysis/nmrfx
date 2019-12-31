@@ -219,13 +219,12 @@ public class DatasetRegion implements Comparator, Comparable {
         return result;
     }
 
-    public boolean removeOverlapping(SortedSet set) {
-        Iterator iter = set.iterator();
+    public boolean removeOverlapping(SortedSet<DatasetRegion> set) {
+        Iterator<DatasetRegion> iter = set.iterator();
         boolean result = false;
 
         while (iter.hasNext()) {
-            DatasetRegion tRegion = (DatasetRegion) iter.next();
-
+            DatasetRegion tRegion = iter.next();
             if (overlaps(tRegion)) {
                 result = true;
                 iter.remove();
@@ -233,7 +232,6 @@ public class DatasetRegion implements Comparator, Comparable {
                 break;
             }
         }
-
         return result;
     }
 
