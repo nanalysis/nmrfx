@@ -330,13 +330,6 @@ public class PeakListAttributes implements PeakListener {
         return peaksInRegion.get();
     }
 
-    public List<Multiplet> getMultipletsInRegion() {
-        if (!multipletsInRegion.isPresent()) {
-            findMultipletsInRegion();
-        }
-        return multipletsInRegion.get();
-    }
-
     public boolean clearSelectedPeaks() {
         boolean hadPeaks = !selectedPeaks.isEmpty() || !selectedMultiplets.isEmpty();
         selectedPeaks.clear();
@@ -407,18 +400,6 @@ public class PeakListAttributes implements PeakListener {
         return new ArrayList<Peak>();
     }
 
-    public void findMultipletsInRegion() {
-        double[][] limits = getRegionLimits(dataAttr);
-        int[] peakDim = getPeakDim();
-        List<Multiplet> multiplets = peakList.getMultiplets()
-                .stream()
-                .parallel()
-                .filter(m -> m.getPeakDim() != null)
-                .filter(multiplet -> multiplet.inRegion(limits, null, peakDim))
-                .collect(Collectors.toList());
-        multipletsInRegion = Optional.of(multiplets);
-    }
-
     public Optional<Peak> hitPeak(DrawPeaks drawPeaks, double pickX, double pickY) {
         Optional<Peak> hit = Optional.empty();
         if (peaksInRegion.isPresent()) {
@@ -471,8 +452,9 @@ public class PeakListAttributes implements PeakListener {
                         selectedPeaks.clear();
                     }
                 }
-                if (multipletsInRegion.isPresent()) {
-                    for (Multiplet multiplet : multipletsInRegion.get()) {
+                if (true) {  // fixme only if multiplet display on
+                    for (Peak peak : peaksInRegion.get()) {
+                        Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
                         Optional<MultipletSelection> lineHit = drawPeaks.pick1DMultiplet(this, peakDim, multiplet, pickX, pickY);
                         if (lineHit.isPresent()) {
                             MultipletSelection mSel = lineHit.get();
@@ -526,17 +508,6 @@ public class PeakListAttributes implements PeakListener {
         for (int i = 0; i < nDim; i++) {
             PeakDim peakDim = peak.peakDims[peakDims[i]];
             if (!peakDim.isFrozen()) {
-                // check if this is peakDim is coupled in pattern.  If so don't move it
-                //   you have to move the multiplet tree items to change coupling values
-                if (peakDim.hasMultiplet()) {
-                    Multiplet multiplet = peakDim.getMultiplet();
-                    if (multiplet.isCoupled()) {
-                        Coupling coupling = multiplet.getCoupling();
-                        if (coupling instanceof CouplingPattern) {
-                            continue;
-                        }
-                    }
-                }
                 double oldAxisValue = getAxisValue(i, oldValue[i]);
                 double newAxisValue = getAxisValue(i, newValue[i]);
                 double delta = newAxisValue - oldAxisValue;
@@ -586,15 +557,14 @@ public class PeakListAttributes implements PeakListener {
 
                 values[mLine] += deltaHz;
                 cPat.adjustCouplings(mLine, values[mLine]);
-                multiplet.setMultipletComponentValues();
             }
         } else if (multiplet.isGenericMultiplet()) {
             Coupling coupling = multiplet.getCoupling();
             ComplexCoupling cPat = (ComplexCoupling) coupling;
-            PeakDim peakDim = multiplet.getPeakDims().get(mLine);
-            double shift = peakDim.getChemShiftValue();
-            peakDim.setChemShiftValue((float) (shift + delta));
-            multiplet.updateCenter();
+//            PeakDim peakDim = multiplet.getPeakDims().get(mLine);
+//            double shift = peakDim.getChemShiftValue();
+//            peakDim.setChemShiftValue((float) (shift + delta));
+//            multiplet.updateCenter();
         } else {
             PeakDim peakDim = multiplet.getPeakDim();
             double shift = peakDim.getChemShiftValue();
