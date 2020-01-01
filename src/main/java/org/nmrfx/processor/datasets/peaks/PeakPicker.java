@@ -48,6 +48,7 @@ public class PeakPicker {
     private final int nDim;
     static final private String MSG_PEAK_LIST = "Peak List ";
     Peak lastPeakPicked = null;
+    int nPeaks;
 
     public PeakPicker(PeakPickParameters peakPickPar) {
         this.peakPickPar = peakPickPar;
@@ -76,6 +77,10 @@ public class PeakPicker {
         return dataset.getSize(i);
     }
 
+    public int getNPeaks() {
+        return nPeaks;
+    }
+    
     public boolean checkForPeak(double centerValue, int[] pt,
             int[] dim, boolean findMax, boolean fixedPick, double regionSizeHz, int nPeakDim, int sign) {
         int[] checkPoint = new int[nDim];
@@ -547,7 +552,7 @@ public class PeakPicker {
         int[] pdim = new int[nDim];
         int[] checkPoint = new int[nDim];
         int[] lastPoint = new int[nDim];
-        int nPeaks = 0;
+        nPeaks = 0;
         int nMatch;
         double checkValue;
         dim = peakPickPar.dim;
