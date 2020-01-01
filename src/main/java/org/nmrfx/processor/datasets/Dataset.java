@@ -134,7 +134,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     private Double noiseLevel = null;
     static private LRUMap vectorBuffer = new LRUMap(512);
     private boolean dirty = false;  // flag set if a vector has been written to dataset, should purge bufferVectors
-    Set<DatasetRegion> regions;
+    TreeSet<DatasetRegion> regions;
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
 
@@ -4782,16 +4782,16 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         return indices;
     }
 
-    public void setRegions(Set<DatasetRegion> regions) {
+    public void setRegions(TreeSet<DatasetRegion> regions) {
         this.regions = regions;
     }
 
-    public Set<DatasetRegion> getRegions() {
+    public TreeSet<DatasetRegion> getRegions() {
         return regions;
     }
 
     public DatasetRegion addRegion(double min, double max) {
-        Set<DatasetRegion> regions = getRegions();
+        TreeSet<DatasetRegion> regions = getRegions();
         if (regions == null) {
             regions = new TreeSet<>();
             setRegions(regions);
