@@ -245,7 +245,7 @@ public class PeakFitter {
         int nPeaks = peaks.length;
         int dataDim = theFile.getNDim();
         rootedPeaks = true;
-        System.out.println(i0 + " i " + i1);
+
         //int k=0;
         if (i0 > i1) {
             int hold = i0;
@@ -277,7 +277,6 @@ public class PeakFitter {
 //        for (double guess : guessList) {
 //            System.out.println(guess);
 //        }
-        System.out.println(p2[0][0] + " p2 " + p2[0][1] + " " + fitMode + " " + PeakList.FIT_MAX_DEV);
         int size = p2[0][1] - p2[0][0] + 1;
         int iGuess = 0;
         double[] guesses = new double[guessList.size()];
