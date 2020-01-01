@@ -27,7 +27,7 @@ public class PeakPickParameters {
     public String mode = "new";
     public String region = "box";
     public boolean fixedPick = false;
-    public int[][] pt;
+    public int[][] pt = null;
     public int[][] ptMax;
     public double[] cpt;
     public int[] dim;
@@ -116,6 +116,9 @@ public class PeakPickParameters {
     }
 
     public PeakPickParameters limit(int iDim, double start, double last) {
+        if (pt == null) {
+            calcRange();
+        }
         int iLast = theFile.ppmToPoint(iDim, start);
         int iStart = theFile.ppmToPoint(iDim, last);
         pt[iDim][0] = iStart;
@@ -125,6 +128,9 @@ public class PeakPickParameters {
     }
 
     public PeakPickParameters limit(int iDim, int iStart, int iLast) {
+        if (pt == null) {
+            calcRange();
+        }
         pt[iDim][0] = iStart;
         pt[iDim][1] = iLast;
         cpt[iDim] = (pt[iDim][0] + pt[iDim][1]) / 2.0;
