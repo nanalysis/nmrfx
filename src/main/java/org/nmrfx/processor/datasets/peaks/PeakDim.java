@@ -95,6 +95,21 @@ public class PeakDim {
         return newPeakDim;
     }
 
+    public void restore(PeakDim peakDim) {
+        chemShift = peakDim.chemShift;
+        chemShiftError = peakDim.chemShiftError;
+        lineWidth = peakDim.lineWidth;
+        lineWidthError = peakDim.lineWidthError;
+        bounds = peakDim.bounds;
+        boundsError = peakDim.boundsError;
+        phase = peakDim.phase;
+        phaseError = peakDim.phaseError;
+        decayRate = peakDim.decayRate;
+        decayRateError = peakDim.decayRateError;
+        error = peakDim.error.clone();
+        user = peakDim.user;
+    }
+
     public Multiplet getMultiplet() {
         if (multiplet == null) {
             multiplet = new Multiplet(this);
