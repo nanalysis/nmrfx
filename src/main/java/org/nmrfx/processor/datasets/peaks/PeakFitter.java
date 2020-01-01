@@ -245,7 +245,7 @@ public class PeakFitter {
         int nPeaks = peaks.length;
         int dataDim = theFile.getNDim();
         rootedPeaks = true;
-
+        System.out.println(i0 + " i " + i1);
         //int k=0;
         if (i0 > i1) {
             int hold = i0;
@@ -257,26 +257,27 @@ public class PeakFitter {
         }
         //System.out.println(" jfit " + peaks.length);
         getDims(peaks[0], rows);
-        if (fitMode == PeakList.FIT_MAX_DEV) {
-            if (p2[0][0] > i0) {
-                p2[0][0] = i0;
-            }
-            if (p2[0][1] < i1) {
-                p2[0][1] = i1;
-            }
-
-            if (p2[0][0] < 0) {
-                p2[0][0] = 0;
-            }
+        List<Double> guessList = getGuesses(i0, i1);
+//        if (fitMode == PeakList.FIT_MAX_DEV) {
+        if (p2[0][0] > i0) {
+            p2[0][0] = i0;
         }
+        if (p2[0][1] < i1) {
+            p2[0][1] = i1;
+        }
+
+        if (p2[0][0] < 0) {
+            p2[0][0] = 0;
+        }
+//        }
 
         if (p2[0][1] >= theFile.getSize(pdim[0])) {
             p2[0][1] = theFile.getSize(pdim[0]) - 1;
         }
-        List<Double> guessList = getGuesses(i0, i1);
 //        for (double guess : guessList) {
 //            System.out.println(guess);
 //        }
+        System.out.println(p2[0][0] + " p2 " + p2[0][1] + " " + fitMode + " " + PeakList.FIT_MAX_DEV);
         int size = p2[0][1] - p2[0][0] + 1;
         int iGuess = 0;
         double[] guesses = new double[guessList.size()];
@@ -290,6 +291,12 @@ public class PeakFitter {
             guesses[iGuess] = lineWidth;  // guess for linewidth
             lower[iGuess] = guesses[iGuess] * 0.5;  // constraints on linewidth
             upper[iGuess] = guesses[iGuess] * 2.0;
+            if (lower[iGuess] < 5) {
+                lower[iGuess] = 5;
+                if (guesses[iGuess] < lower[iGuess]) {
+                    guesses[iGuess] = lower[iGuess] + 1;
+                }
+            }
             iGuess++;
 
             if ((splitCount[iPeak].length == 1) && (splitCount[iPeak][0] < 0)) { // generic multiplet
@@ -300,10 +307,10 @@ public class PeakFitter {
                         guesses[iGuess] = guessList.get(iGuess);
                         if (guesses[iGuess] < 0.0) {
                             upper[iGuess] = 0.0;
-                            lower[iGuess] = 2.0 * guesses[iGuess];
+                            lower[iGuess] = 5.0 * guesses[iGuess];
                         } else {
                             lower[iGuess] = 0.0;
-                            upper[iGuess] = 2.0 * guesses[iGuess];
+                            upper[iGuess] = 5.0 * guesses[iGuess];
                         }
                         iGuess++;
                     }
@@ -344,10 +351,10 @@ public class PeakFitter {
                     guesses[iGuess] = guessList.get(iGuess);
                     if (guesses[iGuess] < 0.0) {
                         upper[iGuess] = 0.0;
-                        lower[iGuess] = 2.0 * guesses[iGuess];
+                        lower[iGuess] = 5.0 * guesses[iGuess];
                     } else {
                         lower[iGuess] = 0.0;
-                        upper[iGuess] = 2.0 * guesses[iGuess];
+                        upper[iGuess] = 5.0 * guesses[iGuess];
                     }
                     iGuess++;
                 }
