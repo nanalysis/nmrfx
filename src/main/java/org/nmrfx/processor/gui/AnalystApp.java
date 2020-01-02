@@ -83,6 +83,7 @@ public class AnalystApp extends MainApp {
     static AnalystApp analystApp = null;
 
     public static MultipletController multipletController;
+    public static RegionController regionController;
     public static AtomController atomController;
     public static LigandScannerController scannerController;
     public static MolSceneController molController;
@@ -321,8 +322,13 @@ public class AnalystApp extends MainApp {
         compareMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumComparator());
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
+        MenuItem regionsMenuItem = new MenuItem("Show Regions Analyzer");
+        regionsMenuItem.setOnAction(e -> showRegionAnalyzer(e));
 
-        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem, alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem, copyItem);
+
+        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem,
+                alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem,
+                regionsMenuItem, copyItem);
 
         // Format (items TBD)
 //        Menu formatMenu = new Menu("Format");
@@ -631,7 +637,6 @@ public class AnalystApp extends MainApp {
         }
     }
 
-
     @FXML
     private void showLigandScanner(ActionEvent event) {
         if (scannerController == null) {
@@ -793,6 +798,17 @@ public class AnalystApp extends MainApp {
         }
         multipletController.getStage().show();
         multipletController.getStage().toFront();
+    }
+
+    @FXML
+    private void showRegionAnalyzer(ActionEvent event) {
+        if (regionController == null) {
+            regionController = regionController.create();
+        } else {
+            regionController.initMultiplet();
+        }
+        regionController.getStage().show();
+        regionController.getStage().toFront();
     }
 
     void closeProject() {
