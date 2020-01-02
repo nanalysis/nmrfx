@@ -1242,7 +1242,7 @@ public class NMRStarReader {
             rdcSet.add(aCon);
         }
     }
-
+    
     public void processGenDistConstraints(Saveframe saveframe) throws ParseException {
         Loop loop = saveframe.getLoop("_Gen_dist_constraint");
         if (loop == null) {
