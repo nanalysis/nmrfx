@@ -28,10 +28,15 @@ import org.nmrfx.processor.optimization.Lmder_f77;
 import org.nmrfx.processor.optimization.SineSignal;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import static java.util.Comparator.comparing;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import org.apache.commons.math3.optim.PointValuePair;
+import org.nmrfx.processor.optimization.Fitter;
+import org.renjin.nmath.pt;
 
 /**
  *
@@ -409,6 +414,7 @@ public class PeakFitter {
                 }
             }
         }
+
 //        System.out.println(peaks[0].getName());
 //        for (int i = 0; i < guesses.length; i++) {
 //            System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
@@ -575,6 +581,170 @@ public class PeakFitter {
 
         }
         return result;
+    }
+
+    public double simpleFit(int i0, int i1, int[] rows, boolean doFit)
+            throws IllegalArgumentException, Exception {
+        int nPeaks = peaks.length;
+        int dataDim = theFile.getNDim();
+        Arrays.sort(peaks, comparing((p) -> -p.getPeakDim(0).getChemShiftValue()));
+
+        //int k=0;
+        if (i0 > i1) {
+            int hold = i0;
+            i0 = i1;
+            i1 = hold;
+        }
+        for (int i = 0; i < dataDim; i++) {
+            pdim[i] = -1;
+        }
+        //System.out.println(" jfit " + peaks.length);
+        getDims(peaks[0], rows);
+//        if (fitMode == PeakList.FIT_MAX_DEV) {
+        p2[0][0] = i0;
+        p2[0][1] = i1;
+        if (p2[0][0] > i0) {
+            p2[0][0] = i0;
+        }
+        if (p2[0][1] < i1) {
+            p2[0][1] = i1;
+        }
+
+        if (p2[0][0] < 0) {
+            p2[0][0] = 0;
+        }
+//        }
+
+        if (p2[0][1] >= theFile.getSize(pdim[0])) {
+            p2[0][1] = theFile.getSize(pdim[0]) - 1;
+        }
+//        for (double guess : guessList) {
+//            System.out.println(guess);
+//        }
+        int extra = 5;
+        int size = p2[0][1] - p2[0][0] + 1;
+        int nFitPoints = (size + (2 * extra));
+        double[][] xv = new double[1][nFitPoints];
+        double[] yv = new double[nFitPoints];
+        double[] ev = new double[nFitPoints];
+        double[] guesses = new double[nPeaks * 3];
+        double[] lower = new double[guesses.length];
+        double[] upper = new double[guesses.length];
+        Vec fitVec = new Vec(size);
+        try {
+            theFile.readVectorFromDatasetFile(p2, pdim, fitVec);
+        } catch (IOException ioE) {
+            throw new IllegalArgumentException(ioE.getMessage());
+        }
+        for (int j = 0; j < (size + (2 * extra)); j++) {
+            xv[0][j] = j - extra;
+        }
+
+        for (int j = 0; j < (size + (2 * extra)); j++) {
+            yv[j] = 0.0;
+            ev[j] = 1.0;
+        }
+
+        for (int j = 0; j < size; j++) {
+            yv[j + extra] = fitVec.getReal(j);
+            //  System.out.println(j + " " + xv[j + extra] + " " + yv[j + extra]);
+        }
+        //            lw  f   j  d         lw  f  j d
+        //double[] a =     {2,   15, 10,30, 2, 59, 10, 5000};
+
+        for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
+            PeakDim peakDim = peaks[iPeak].getPeakDim(0);
+            double intensity = peaks[iPeak].getIntensity();
+            double centerPPM = peakDim.getChemShiftValue();
+            double lineWidthPPM = peakDim.getLineWidthValue();
+            double c = theFile.ppmToDPoint(0, centerPPM);
+            double c1 = theFile.ppmToDPoint(0, centerPPM + lineWidthPPM);
+            double lineWithPts = Math.abs(c1 - c);
+
+            guesses[iPeak * 3] = intensity;
+            guesses[iPeak * 3 + 1] = c - p2[0][0];
+            guesses[iPeak * 3 + 2] = lineWithPts;
+
+            int cPos = (int) Math.round(c - p2[0][0]);
+            if (intensity > 0.0) {
+                lower[iPeak * 3] = 0.0;
+                upper[iPeak * 3] = yv[cPos + extra] * 1.2;
+            } else {
+                lower[iPeak * 3] = yv[cPos + extra] * 1.2;
+                upper[iPeak * 3] = 0.0;
+            }
+            lower[iPeak * 3 + 2] = 2;
+            upper[iPeak * 3 + 2] = lineWithPts * 3;
+        }
+        for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
+            double lineWidthPts = guesses[iPeak * 3 + 2];
+            if (iPeak == 0) {
+                lower[iPeak * 3 + 1] = guesses[iPeak * 3 + 1] - lineWidthPts;
+            } else {
+                lower[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak - 1) * 3 + 1]) / 2;
+            }
+            if (iPeak == nPeaks - 1) {
+                upper[iPeak * 3 + 1] = guesses[iPeak * 3 + 1] + lineWidthPts;
+            } else {
+                upper[iPeak * 3 + 1] = (guesses[iPeak * 3 + 1] + guesses[(iPeak + 1) * 3 + 1]) / 2;
+            }
+        }
+//        System.out.println(peaks[0].getName());
+//        for (int i = 0; i < guesses.length; i++) {
+//            System.out.printf("%10.4f %10.4f %10.4f\n", guesses[i], lower[i], upper[i]);
+//        }
+
+        PeakFit peakFit = new PeakFit(true);
+        Fitter fitter = Fitter.getArrayFitter(peakFit::value);
+        fitter.setXYE(xv, yv, ev);
+        int nPars = guesses.length;
+        double[] bestPars;
+        double rms;
+        if (fitMode == PeakList.FIT_RMS) {
+            rms = fitter.rms(guesses);
+            updateBIC(rms, size, nPars);
+            return rms;
+        } else if (fitMode == PeakList.FIT_MAX_DEV) {
+            double[] yCalc = peakFit.sim(guesses, xv);
+            int maxPos = fitter.maxDevLoc(yCalc, 3);
+            double centerPt = maxPos + p2[0][0];
+            double centerPPM = theFile.pointToPPM(0, centerPt);
+            return centerPPM;
+        }
+
+        try {
+            PointValuePair result = fitter.fit(guesses, lower, upper, 10.0);
+            bestPars = result.getPoint();
+//            for (int i = 0; i < bestPars.length; i++) {
+//                System.out.println(i + " " + bestPars[i]);
+//            }
+            rms = result.getValue();
+            updateBIC(rms, size, nPars);
+//            System.out.println("rms " + rms + " " + BIC);
+        } catch (Exception ex) {
+
+            System.out.println(ex.getMessage());
+            ex.printStackTrace();
+            return 0.0;
+        }
+        for (int iPeak = 0; iPeak < nPeaks; iPeak++) {
+            Peak peak = peaks[iPeak];
+            PeakDim peakDim = peak.getPeakDim(0);
+
+            double intensity = bestPars[iPeak * 3];
+            double centerPt = bestPars[iPeak * 3 + 1] + p2[0][0];
+            double lineWithPts = bestPars[iPeak * 3 + 2];
+            double lineWidthPPM = theFile.ptWidthToPPM(0, lineWithPts);
+            double centerPPM = theFile.pointToPPM(0, centerPt);
+            double volume = intensity * lineWidthPPM * Math.PI / 2 / 1.05;
+
+            peak.setIntensity((float) intensity);
+            peak.setVolume1((float) volume);
+            peakDim.setLineWidthValue((float) lineWidthPPM);
+            peakDim.setChemShiftValue((float) centerPPM);
+
+        }
+        return rms;
     }
 
     public double doFit(int i0, int i1, int[] rows, boolean doFit, boolean linearFit)
