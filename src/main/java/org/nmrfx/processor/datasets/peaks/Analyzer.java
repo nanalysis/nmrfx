@@ -11,7 +11,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import static java.util.Comparator.comparing;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -55,6 +59,10 @@ public class Analyzer {
         solvents.loadYaml();
     }
 
+    public Dataset getDataset() {
+        return dataset;
+    }
+
     public void setPeakList(PeakList peakList) {
         this.peakList = peakList;
     }
@@ -81,6 +89,15 @@ public class Analyzer {
         } else {
             return threshold;
         }
+    }
+
+    void updateThreshold() {
+        if (manThreshold.isPresent()) {
+            threshold = manThreshold.get();
+        } else {
+            calculateThreshold();
+        }
+
     }
 
     public void calculateThreshold() {
@@ -160,23 +177,23 @@ public class Analyzer {
     }
 
     public void peakPickRegions() {
-        if (manThreshold.isPresent()) {
-            threshold = manThreshold.get();
-        } else {
-            calculateThreshold();
-        }
+        updateThreshold();
         Set<DatasetRegion> regions = getRegions();
         for (DatasetRegion region : regions) {
-            peakPickRegion(region.getRegionStart(0), region.getRegionEnd(0), threshold);
+
+            List<PeakDim> peakDims = Collections.EMPTY_LIST;
+            if (peakList != null) {
+                peakDims = Multiplets.findPeaksInRegion(peakList, region);
+            }
+            if (peakDims.isEmpty()) {
+                peakPickRegion(region.getRegionStart(0), region.getRegionEnd(0), threshold);
+            }
         }
+        setVolumesFromIntegrals();
     }
 
     public void peakPickRegion(double ppm1, double ppm2) {
-        if (manThreshold.isPresent()) {
-            threshold = manThreshold.get();
-        } else {
-            calculateThreshold();
-        }
+        updateThreshold();
         peakPickRegion(ppm1, ppm2, threshold);
     }
 
@@ -197,6 +214,60 @@ public class Analyzer {
             peakList = picker.peakPick();
         } catch (IOException | IllegalArgumentException ex) {
         }
+    }
+
+    public Optional<Double> measureRegion(DatasetRegion region, String mode) throws Exception {
+        List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
+        double[] bounds = {region.getRegionStart(0), region.getRegionEnd(0)};
+        PeakFitting peakFitting = new PeakFitting(dataset);
+        Optional<Double> result = Optional.empty();
+        try {
+            double value = peakFitting.jfitRegion(region, peakDims, mode);
+            result = Optional.of(value);
+        } catch (IllegalArgumentException | PeakFitException | IOException ex) {
+            System.out.println("error in fit " + ex.getMessage());
+        }
+        return result;
+    }
+
+    public void removeWeakPeaksInRegion(DatasetRegion region, int nRemove) throws Exception {
+        List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
+        System.out.println("remove peaks " + nRemove + " " + peakDims.size());
+        if (peakDims.size() > 1) {
+            peakDims.sort(comparing((p) -> p.getPeak().getIntensity()));
+            if (nRemove < 0) {
+                nRemove = peakDims.size() + nRemove;
+            }
+            for (int i = 0; i < nRemove; i++) {
+                peakDims.get(i).getPeak().setStatus(-1);
+            }
+            renumber();
+            fitRegion(region);
+        }
+    }
+
+    public void addPeaksToRegion(DatasetRegion region, double... ppms) throws Exception {
+        updateThreshold();
+        String datasetName = dataset.getName();
+        String listName;
+        if (peakList != null) {
+            listName = peakList.getName();
+        } else {
+            listName = PeakList.getNameForDataset(datasetName);
+        }
+        PeakPickParameters peakPickPar = (new PeakPickParameters(dataset, listName)).level(threshold).mode("appendif");
+        peakPickPar.region("point").fixed(true);
+        for (double ppm : ppms) {
+            peakPickPar.limit(0, ppm, ppm);
+            PeakPicker picker = new PeakPicker(peakPickPar);
+            try {
+                peakList = picker.peakPick();
+            } catch (IOException | IllegalArgumentException ex) {
+                Logger.getLogger(Analyzer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        renumber();
+        fitRegion(region);
     }
 
     public void findSolventPeaks() {
@@ -419,6 +490,10 @@ public class Analyzer {
         }
     }
 
+    public Optional<DatasetRegion> getRegion(double shift) {
+        return getRegion(getRegions(), 0, shift);
+    }
+
     public static Optional<DatasetRegion> getRegion(Set<DatasetRegion> dRegions, int rDim, double shift) {
         Optional<DatasetRegion> found = Optional.empty();
         for (DatasetRegion region : dRegions) {
@@ -484,6 +559,21 @@ public class Analyzer {
         });
     }
 
+    public void normalizePeaks(DatasetRegion region, double value) {
+        List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
+        double sum = 0.0;
+        for (PeakDim peakDim : peakDims) {
+            double vol = peakDim.getPeak().getVolume1();
+            sum += vol;
+        }
+        double scale = sum / value;
+        if (scale < 1.0e-6) {
+            scale = 1.0;
+        }
+        peakList.scale = scale;
+
+    }
+
     public void normalizeIntegrals() {
         int[] dim = new int[peakList.nDim];
         for (int i = 0; i < dim.length; i++) {
@@ -510,7 +600,7 @@ public class Analyzer {
     }
 
     public Set<DatasetRegion> getRegions() {
-        Set<DatasetRegion> regions = dataset.getRegions();
+        TreeSet<DatasetRegion> regions = dataset.getRegions();
 
         if (regions == null) {
             regions = new TreeSet<>();
@@ -655,9 +745,139 @@ public class Analyzer {
         return result;
     }
 
+    public Optional<Double> fitRegion(DatasetRegion region) throws Exception {
+        Optional<Double> result = Optional.empty();
+        if (region != null) {
+            PeakFitting peakFitting = new PeakFitting(dataset);
+            List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
+            for (PeakDim peakDim : peakDims) {
+                peakDim.getPeak().setFlag(4, false);
+            }
+            double rms = peakFitting.jfitRegion(region, peakDims, "all");
+            result = Optional.of(rms);
+        }
+        return result;
+    }
+
     public void jfitLinkedPeaks() {
         PeakFitting peakFitting = new PeakFitting(dataset);
         peakFitting.jfitLinkedPeaks(peakList);
+    }
+
+    private List<Peak> getPeaks(List<PeakDim> peakDims) {
+        List<Peak> peaks = new ArrayList<>();
+        for (PeakDim peakDim : peakDims) {
+            peaks.add(peakDim.getPeak());
+        }
+        return peaks;
+    }
+
+    private Map<Peak, Peak> savePeaks(List<Peak> peaks) {
+        Map<Peak, Peak> map = new HashMap<>();
+        for (Peak peak : peaks) {
+            if (!peak.isDeleted()) {
+                map.put(peak, peak.copy());
+            }
+        }
+        return map;
+    }
+
+    private void restorePeaks(Map<Peak, Peak> map) {
+        for (Entry<Peak, Peak> entry : map.entrySet()) {
+            entry.getValue().copyTo(entry.getKey());
+        }
+    }
+
+    public void objectiveDeconvolution(DatasetRegion region) throws Exception {
+        List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
+        PeakFitting peakFitting = new PeakFitting(dataset);
+        int nComps = peakDims.size();
+        int nAdd = 0;
+        if (nComps < 2) {
+            nAdd = 3;
+        } else {
+            nAdd = nComps;
+        }
+        Map<Peak, Peak> minList = savePeaks(getPeaks(peakDims));
+        for (PeakDim peakDim : peakDims) {
+            peakDim.getPeak().setFlag(4, false);
+        }
+        double rms = peakFitting.jfitRegion(region, peakDims, "all");
+        double minBIC = peakFitting.getBIC();
+        System.out.println("start " + rms + " " + minBIC);
+        for (int i = 0; i < nAdd; i++) {
+            Optional<Double> result = measureRegion(region, "maxdev");
+            if (result.isPresent()) {
+                addPeaksToRegion(region, result.get());
+                peakDims = Multiplets.findPeaksInRegion(peakList, region);
+                rms = peakFitting.jfitRegion(region, peakDims, "all");
+                double BIC = peakFitting.getBIC();
+                System.out.println(result.get() + " " + rms + " " + BIC);
+                if (BIC < minBIC) {
+                    minBIC = BIC;
+                    minList = savePeaks(getPeaks(Multiplets.findPeaksInRegion(peakList, region)));
+                }
+            }
+        }
+        peakDims = Multiplets.findPeaksInRegion(peakList, region);
+        for (PeakDim peakDim : peakDims) {
+            peakDim.getPeak().setStatus(-1);
+        }
+        restorePeaks(minList);
+        renumber();
+        peakDims = Multiplets.findPeaksInRegion(peakList, region);
+        System.out.println("MinList size " + minList.size() + " " + minBIC);
+        double limit = 15.0;
+        if (peakDims.size() > nComps) {
+            int n = peakDims.size();
+            for (int j = 0; j < n - 1; j++) {
+
+                // fixme need to restore peaks to original position
+                double minSkipBIC = Double.MAX_VALUE;
+                int minSkip = -1;
+                Map<Peak, Peak> tempList = savePeaks(getPeaks(peakDims));
+                Map<Peak, Peak> bestList = null;
+                for (int i = 0; i < n; i++) {
+                    restorePeaks(tempList);
+                    if (!peakDims.get(i).getPeak().isDeleted()) {
+                        peakDims.get(i).getPeak().setStatus(-1);
+                        rms = peakFitting.jfitRegion(region, peakDims, "all");
+                        double BIC = peakFitting.getBIC();
+                        System.out.println(i + " " + rms + " " + BIC);
+                        peakDims.get(i).getPeak().setStatus(0);
+                        if (BIC < minSkipBIC) {
+                            minSkip = i;
+                            minSkipBIC = BIC;
+                            bestList = savePeaks(getPeaks(peakDims));
+                        }
+                    }
+                }
+                if (minSkipBIC < (minBIC + limit)) {
+                    if (bestList != null) {
+                        System.out.println("better " + minSkipBIC);
+                        restorePeaks(bestList);
+                        System.out.println("rest " + measureRegion(region, "rms").get());
+                        peakDims.get(minSkip).getPeak().setStatus(-1);
+                        if (minSkipBIC < minBIC) {
+                            minBIC = minSkipBIC;
+                        }
+                    }
+                } else {
+                    System.out.println("done " + minSkipBIC);
+                    restorePeaks(tempList);
+                    System.out.println("rest2 " + measureRegion(region, "rms").get());
+                    break;
+                }
+            }
+        }
+        Optional<Double> rmsOpt = measureRegion(region, "rms");
+        System.out.println("restored rms " + rmsOpt.get());
+        renumber();
+        peakDims = Multiplets.findPeaksInRegion(peakList, region);
+        rms = peakFitting.jfitRegion(region, peakDims, "all");
+        double BIC = peakFitting.getBIC();
+        System.out.println("finish " + rms + " " + BIC + " " + peakDims.size());
+
     }
 
     public void objectiveDeconvolution(Multiplet multiplet) {
@@ -719,7 +939,6 @@ public class Analyzer {
                     break;
                 }
             }
-
         }
     }
 

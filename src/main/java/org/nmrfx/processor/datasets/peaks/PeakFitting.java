@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.nmrfx.processor.datasets.DatasetRegion;
 import static org.nmrfx.processor.datasets.peaks.PeakList.FIT_ALL;
 import static org.nmrfx.processor.datasets.peaks.PeakList.FIT_AMPLITUDES;
 import static org.nmrfx.processor.datasets.peaks.PeakList.FIT_LW_AMPLITUDES;
@@ -169,6 +170,32 @@ public class PeakFitting {
         return value;
     }
 
+    public double jfitRegion(DatasetRegion region, List<PeakDim> peakDims, String fitModeString) throws Exception {
+        double value = 0.0;
+        int fitMode = getFitMode(fitModeString);
+        List<Peak> peaks = new ArrayList<>();
+        for (PeakDim peakDim : peakDims) {
+            Peak peak = peakDim.getPeak();
+            if (!peak.isDeleted()) {
+                peak.setFlag(4, false);
+                peaks.add(peak);
+            }
+        }
+
+        int i1 = dataset.ppmToPoint(0, region.getRegionStart(0));
+        int i2 = dataset.ppmToPoint(0, region.getRegionEnd(0));
+        PeakFitter peakFitter = new PeakFitter(dataset, false, fitMode);
+        int[] rows = new int[dataset.getNDim()];
+        peakFitter.setup(peaks);
+        int nTries = 1;
+        for (int i = 0; i < nTries; i++) {
+            value = peakFitter.simpleFit(i1, i2, rows, true);
+        }
+        bicValue = peakFitter.getBIC();
+
+        return value;
+    }
+
     public double fitPeakDims(List<PeakDim> peakDims, String mode, double[] winRegions, String fitModeString) throws IllegalArgumentException, PeakFitException, IOException {
         if (peakDims.isEmpty()) {
             success = false;
@@ -177,11 +204,15 @@ public class PeakFitting {
         success = true;
         anyFit = false;
         int fitMode = getFitMode(fitModeString);
+        System.out.println(fitModeString + " " + fitMode);
         double[] peakBounds = Multiplets.getBoundsOfPeakDims(Multiplet.getAllComps(peakDims), 2.0, 16.0);
         List<Peak> allPeaks = new ArrayList<>();
         List<Double> ppmRegions = new ArrayList<>();
         boolean allFit = true;
         for (PeakDim peakDim : peakDims) {
+            if (peakDim.getPeak().isDeleted()) {
+                continue;
+            }
             if (!peakDim.myPeak.getFlag(4)) {
                 allFit = false;
             }
