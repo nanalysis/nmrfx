@@ -72,8 +72,8 @@
                                         </GridPane>
                                         <VBox>
                                             <children>
+                                                <CheckBox fx:id="integralCheckBox" text="Integrals"/>
                                                 <RangeSlider fx:id="integralPosSlider" prefWidth="250.0">
-                                                    
                                                 </RangeSlider>
                                             </children>
                                         </VBox>

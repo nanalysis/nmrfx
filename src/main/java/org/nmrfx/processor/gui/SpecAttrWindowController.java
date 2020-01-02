@@ -129,6 +129,8 @@ public class SpecAttrWindowController implements Initializable {
     @FXML
     private ComboBox<DISDIM> disDimCombo;
     @FXML
+    private CheckBox integralCheckBox;
+    @FXML
     private RangeSlider integralPosSlider;
     @FXML
     private TabPane tabPane;
@@ -271,11 +273,14 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.setMax(1.0);
         integralPosSlider.setLowValue(0.8);
         integralPosSlider.setHighValue(0.95);
-        integralPosSlider.lowValueProperty().addListener(e -> adjustIntegralPosSlider());
-        integralPosSlider.highValueProperty().addListener(e -> adjustIntegralPosSlider());
+
+        integralPosSlider.lowValueProperty().addListener(e -> updateIntegralState());
+        integralPosSlider.highValueProperty().addListener(e -> updateIntegralState());
+        integralCheckBox.selectedProperty().addListener(e -> updateIntegralState());
     }
 
-    void adjustIntegralPosSlider() {
+    void updateIntegralState() {
+        chart.chartProps.setIntegrals(integralCheckBox.isSelected());
         double lowValue = integralPosSlider.getLowValue();
         double highValue = integralPosSlider.getHighValue();
         chart.chartProps.setIntegralLowPos(lowValue);
@@ -1220,6 +1225,7 @@ public class SpecAttrWindowController implements Initializable {
         gridCheckBox.setSelected(polyChart.chartProps.getGrid());
         integralPosSlider.setLowValue(polyChart.chartProps.getIntegralLowPos());
         integralPosSlider.setHighValue(polyChart.chartProps.getIntegralHighPos());
+        integralCheckBox.setSelected(chart.chartProps.getIntegrals());
 
         polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }

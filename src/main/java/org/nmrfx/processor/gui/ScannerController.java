@@ -512,7 +512,7 @@ public class ScannerController implements Initializable {
     void showRegions() {
         Dataset dataset = chart.getDataset();
         List<String> headers = scanTable.getHeaders();
-        Set<DatasetRegion> regions = new TreeSet<>();
+        TreeSet<DatasetRegion> regions = new TreeSet<>();
 
         for (String header : headers) {
             Optional<Measure> measureOpt = matchHeader(header);
@@ -531,7 +531,7 @@ public class ScannerController implements Initializable {
     @FXML
     void clearRegions() {
         Dataset dataset = chart.getDataset();
-        Set<DatasetRegion> regions = new TreeSet<>();
+        TreeSet<DatasetRegion> regions = new TreeSet<>();
 
         dataset.setRegions(regions);
         chart.chartProps.setRegions(false);

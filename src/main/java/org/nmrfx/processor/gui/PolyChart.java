@@ -277,7 +277,7 @@ public class PolyChart implements PeakListener {
     Map<String, Integer> syncGroups = new HashMap<>();
     static int nSyncGroups = 0;
 
-    public static double overlapScale = 1.0;
+    public static double overlapScale = 2.0;
 
     public PolyChart(FXMLController controller, Pane plotContent, Canvas canvas, Canvas peakCanvas, Canvas annoCanvas) {
         this(controller, plotContent, canvas, peakCanvas, annoCanvas,
@@ -532,16 +532,18 @@ public class PolyChart implements PeakListener {
             Color color;
             if (null == mouseAction) {
                 color = Color.DARKORANGE;
-            } else switch (mouseAction) {
-                case DRAG_EXPAND:
-                    color = Color.DARKBLUE;
-                    break;
-                case DRAG_ADDREGION:
-                    color = Color.GREEN;
-                    break;
-                default:
-                    color = Color.DARKORANGE;
-                    break;
+            } else {
+                switch (mouseAction) {
+                    case DRAG_EXPAND:
+                        color = Color.DARKBLUE;
+                        break;
+                    case DRAG_ADDREGION:
+                        color = Color.GREEN;
+                        break;
+                    default:
+                        color = Color.DARKORANGE;
+                        break;
+                }
             }
             annoGC.setStroke(color);
             if (is1D()) {
@@ -2208,10 +2210,10 @@ public class PolyChart implements PeakListener {
                 offsets[1] = region.getRegionEndIntensity(0);
 
                 if ((ppm2 > xMin) && (ppm1 < xMax)) {
-                Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr,
-                        HORIZONTAL, axModes[0], ppm1, ppm2, offsets,
-                        integralMax, chartProps.getIntegralLowPos(),
-                        chartProps.getIntegralHighPos());
+                    Optional<Double> result = drawSpectrum.draw1DIntegrals(datasetAttr,
+                            HORIZONTAL, axModes[0], ppm1, ppm2, offsets,
+                            integralMax, chartProps.getIntegralLowPos(),
+                            chartProps.getIntegralHighPos());
                     if (result.isPresent()) {
                         double[][] xy = drawSpectrum.getXY();
                         int nPoints = drawSpectrum.getNPoints();
@@ -2901,12 +2903,13 @@ public class PolyChart implements PeakListener {
                         PeakList.sortPeaks(roots, 0, true);
                         ArrayList overlappedPeaks = new ArrayList();
                         for (int iPeak = 0, n = roots.size(); iPeak < n; iPeak++) {
-                            Peak aPeak = (Peak) roots.get(iPeak);
+                            Peak aPeak = roots.get(iPeak);
                             overlappedPeaks.add(aPeak);
                             for (int jPeak = (iPeak + 1); jPeak < n; jPeak++) {
-                                Peak bPeak = (Peak) roots.get(jPeak);
+                                Peak bPeak = roots.get(jPeak);
                                 if (aPeak.overlaps(bPeak, 0, overlapScale)) {
                                     overlappedPeaks.add(bPeak);
+                                    aPeak = roots.get(jPeak);
                                     iPeak++;
                                 } else {
                                     break;
