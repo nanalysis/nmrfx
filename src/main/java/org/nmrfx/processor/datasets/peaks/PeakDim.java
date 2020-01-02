@@ -95,7 +95,22 @@ public class PeakDim {
         return newPeakDim;
     }
 
-    public void restore(PeakDim peakDim) {
+    public void copyTo(PeakDim targetPeakDim) {
+        targetPeakDim.chemShift = chemShift;
+        targetPeakDim.chemShiftError = chemShiftError;
+        targetPeakDim.lineWidth = lineWidth;
+        targetPeakDim.lineWidthError = lineWidthError;
+        targetPeakDim.bounds = bounds;
+        targetPeakDim.boundsError = boundsError;
+        targetPeakDim.phase = phase;
+        targetPeakDim.phaseError = phaseError;
+        targetPeakDim.decayRate = decayRate;
+        targetPeakDim.decayRateError = decayRateError;
+        targetPeakDim.error = error.clone();
+        targetPeakDim.user = user;
+    }
+
+    public void restoreFrom(PeakDim peakDim) {
         chemShift = peakDim.chemShift;
         chemShiftError = peakDim.chemShiftError;
         lineWidth = peakDim.lineWidth;
