@@ -278,7 +278,7 @@ public class EnergyCoords {
                 double eMin = Math.abs(iProp.getE());
                 aValues[i] = 2.0 * eMin * Math.pow(rMin, 9);
                 bValues[i] = 3.0 * eMin * Math.pow(rMin, 6);
-                cValues[i] = iProp.getC();
+                cValues[i] = atom1.getCharge();
             }
         }
     }
