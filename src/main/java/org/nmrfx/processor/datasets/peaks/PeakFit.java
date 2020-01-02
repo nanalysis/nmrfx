@@ -596,6 +596,48 @@ public class PeakFit implements MultivariateFunction {
         return y;
     }
 
+    public double value(double[] pars, double[][] values) {
+        int nSig = pars.length / 3;
+        int n = values[0].length;
+        double sum = 0.0;
+        for (int i = 0; i < n; i++) {
+            double x = values[0][i];
+            double y = values[1][i];
+            double yCalc = 0.0;
+            for (int j = 0; j < nSig; j++) {
+                double amp = pars[j * 3];
+                double f = pars[j * 3 + 1];
+                double lw = pars[j * 3 + 2];
+                yCalc += amp * lShape(x, lw, f);
+            }
+            double delta = yCalc - y;
+            sum += delta * delta;
+        }
+        return Math.sqrt(sum / n);
+
+    }
+
+    public double[] sim(double[] pars, double[][] values) {
+        int nSig = pars.length / 3;
+        int n = values[0].length;
+        double sum = 0.0;
+        double[] ySim = new double[n];
+
+        for (int i = 0; i < n; i++) {
+            double x = values[0][i];
+            double yCalc = 0.0;
+            for (int j = 0; j < nSig; j++) {
+                double amp = pars[j * 3];
+                double f = pars[j * 3 + 1];
+                double lw = pars[j * 3 + 2];
+                yCalc += amp * lShape(x, lw, f);
+            }
+            ySim[i] = yCalc;
+        }
+        return ySim;
+
+    }
+
     public RealVector fitSignalAmplitudesNN(RealMatrix AR) {
         int nRows = xv.length;
 
