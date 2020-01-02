@@ -105,23 +105,24 @@ public class Peak implements Comparable, PeakOrMulti {
     private Corner corner = new Corner("ne");
     public PeakList peakList;
 
-    public Peak(PeakList peakList, int nDim) {
+    public Peak(int nDim) {
         peakDims = new PeakDim[nDim];
         flag = new boolean[NFLAGS];
         setComment("");
-        this.peakList = peakList;
-        idNum = peakList.idLast + 1;
-        peakList.idLast += 1;
-
         for (int i = 0; i < NFLAGS; i++) {
             setFlag(i, false);
         }
-
         for (int i = 0; i < nDim; i++) {
             peakDims[i] = new PeakDim(this, i);
         }
-
         setStatus(0);
+    }
+
+    public Peak(PeakList peakList, int nDim) {
+        this(nDim);
+        this.peakList = peakList;
+        idNum = peakList.idLast + 1;
+        peakList.idLast += 1;
     }
 
     @Override
@@ -304,6 +305,41 @@ public class Peak implements Comparable, PeakOrMulti {
             }
             return anchor;
         }
+    }
+
+    public Peak copy() {
+        Peak newPeak = new Peak(peakDims.length);
+        newPeak.figureOfMerit = figureOfMerit;
+        newPeak.valid = valid;
+        newPeak.volume1 = volume1;
+        newPeak.intensity = intensity;
+        newPeak.volume2 = volume2;
+        newPeak.type = type;
+        newPeak.status = status;
+        newPeak.comment = comment;
+        newPeak.flag = flag.clone();
+        newPeak.corner = new Corner(corner.cornerChars);
+        for (int i = 0; i < peakDims.length; i++) {
+            peakDims[i].copyTo(newPeak.peakDims[i]);
+        }
+        return newPeak;
+    }
+
+    public Peak copyTo(Peak targetPeak) {
+        targetPeak.figureOfMerit = figureOfMerit;
+        targetPeak.valid = valid;
+        targetPeak.volume1 = volume1;
+        targetPeak.intensity = intensity;
+        targetPeak.volume2 = volume2;
+        targetPeak.type = type;
+        targetPeak.status = status;
+        targetPeak.comment = comment;
+        targetPeak.flag = flag.clone();
+        targetPeak.corner = new Corner(corner.cornerChars);
+        for (int i = 0; i < peakDims.length; i++) {
+            peakDims[i].copyTo(targetPeak.peakDims[i]);
+        }
+        return targetPeak;
     }
 
     public Peak copy(PeakList peakList) {
