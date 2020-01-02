@@ -1,13 +1,13 @@
 LNAME Glycine
 SNAME gly
 RCHAR G
-ATOM   N      N'   1.32  114.00  -120.0
-ATOM   H      H'   1.00  123.00     0.0
-ATOM   CA     C2   1.47  123.00   180.0
-ATOM   HA2    H    1.08  109.47  -120.0
-ATOM   HA3    H    1.08  109.47  -120.0
-ATOM   C      C'   1.53  109.47   120.0
-ATOM   O      O'   1.24  121.00   180.0
+ATOM   N      N     1.32  114.00  -120.0  -0.41570
+ATOM   H      H     1.00  123.00  0.0     0.27190
+ATOM   CA     CX    1.47  123.00  180.0   -0.02520
+ATOM   HA2    H1    1.08  109.47  -120.0  0.06980
+ATOM   HA3    H1    1.08  109.47  -120.0  0.06980
+ATOM   C      C     1.53  109.47  120.0   0.59730
+ATOM   O      O     1.24  121.00  180.0   -0.56790
 FAMILY   -      N      H      CA     
 FAMILY   N      CA     C      HA3    HA2    
 FAMILY   CA     C      +      =O      
