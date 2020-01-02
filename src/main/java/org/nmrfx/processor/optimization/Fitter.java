@@ -262,6 +262,32 @@ public class Fitter {
         return result;
     }
 
+    public double rms(double[] pars) throws Exception {
+        Optimizer opt = new Optimizer();
+        opt.setXYE(xValues, yValues, errValues);
+        return opt.valueWithDenormalized(pars);
+    }
+
+    public int maxDevLoc(double[] yCalc, int halfSize) {
+        double maxPosDev = Double.NEGATIVE_INFINITY;
+        int devLoc = 0;
+
+        for (int i = halfSize; i < (yValues.length - halfSize); i++) {
+            double sumDelta = 0.0;
+            for (int j = -halfSize; j <= halfSize; j++) {
+                int k = i + j;
+                if (yValues[k] > yCalc[k]) {
+                    sumDelta += yValues[k] - yCalc[k];
+                }
+            }
+            if (sumDelta > maxPosDev) {
+                maxPosDev = sumDelta;
+                devLoc = (int) xValues[0][i];
+            }
+        }
+        return devLoc;
+    }
+
     public void setXYE(double[][] xValues, double[] yValues, double[] errValues) {
         this.xValues = xValues;
         this.yValues = yValues;
@@ -316,8 +342,11 @@ public class Fitter {
 
         @Override
         public double value(double[] normPar) {
-
             double[] par = deNormalize(normPar);
+            return valueWithDenormalized(par);
+        }
+
+        public double valueWithDenormalized(double[] par) {
             if (valuesFunction != null) {
                 return valuesFunction.apply(par, values);
             }
