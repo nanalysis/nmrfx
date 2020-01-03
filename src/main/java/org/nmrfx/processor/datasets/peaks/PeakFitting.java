@@ -204,7 +204,6 @@ public class PeakFitting {
         success = true;
         anyFit = false;
         int fitMode = getFitMode(fitModeString);
-        System.out.println(fitModeString + " " + fitMode);
         double[] peakBounds = Multiplets.getBoundsOfPeakDims(Multiplet.getAllComps(peakDims), 2.0, 16.0);
         List<Peak> allPeaks = new ArrayList<>();
         List<Double> ppmRegions = new ArrayList<>();
