@@ -805,10 +805,6 @@ public class PolyChart implements PeakListener {
             min = center - range / 2.0;
             max = center + range / 2.0;
             double f = (0.0 - min) / (max - min);
-            datasetAttributesList.stream().forEach(dataAttr -> {
-                dataAttr.setOffset(f);
-            });
-
             setYAxis(min, max);
         } else {
             center -= y / scale;
@@ -1194,8 +1190,6 @@ public class PolyChart implements PeakListener {
             min -= range / 20.0;
             double delta = max - min;
             dataAttr.setLvl(delta / 10.0);
-            double offset = (0.0 - min) / delta;
-            dataAttr.setOffset(offset);
             setYAxis(min, max);
         } else {
             Dataset dataset = dataAttr.getDataset();

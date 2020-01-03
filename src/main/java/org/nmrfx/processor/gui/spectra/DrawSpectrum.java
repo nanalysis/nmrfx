@@ -880,7 +880,9 @@ public class DrawSpectrum {
         }
         double height = axes[1].getHeight();
         double scale = axes[1].getScale();
-        double offset = height * dataAttributes.getMapOffset(rowIndex);
+        double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
+        double dataOffset = height * dataAttributes.getOffset();
+        double offset = dataOffset + mapOffset;
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
                 (index, intensity) -> axes[1].getDisplayPosition(intensity) - offset, offsetMode, false);
@@ -942,7 +944,7 @@ public class DrawSpectrum {
         double height = axes[1].getHeight();
         drawSubVector(specVec, orientation, 0, axMode,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> (1.0-high) * height + (high-low) * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
+                (index, intensity) -> (1.0 - high) * height + (high - low) * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
 
         return result;
     }
