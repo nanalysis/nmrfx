@@ -325,7 +325,6 @@ public class AnalystApp extends MainApp {
         MenuItem regionsMenuItem = new MenuItem("Show Regions Analyzer");
         regionsMenuItem.setOnAction(e -> showRegionAnalyzer(e));
 
-
         spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem,
                 alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem,
                 regionsMenuItem, copyItem);
@@ -418,7 +417,11 @@ public class AnalystApp extends MainApp {
         MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
         runAboutMenuItem.setOnAction(e -> showRunAbout());
 
-        assignCascade.getItems().addAll(peakAssignerItem, assignOnPick, atomBrowserMenuItem, runAboutMenuItem);
+        MenuItem molSimMenuItem = new MenuItem("Show Molecule Sim");
+        molSimMenuItem.setOnAction(e -> showMolSim());
+
+        assignCascade.getItems().addAll(peakAssignerItem, assignOnPick,
+                atomBrowserMenuItem, runAboutMenuItem, molSimMenuItem);
 
         peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
                 linkPeakDimsMenuItem, peakSliderMenuItem, pathToolMenuItem,
@@ -905,4 +908,21 @@ public class AnalystApp extends MainApp {
         }
         rdcGUI.showRDCplot();
     }
+
+    public void showMolSim() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(SimMolController.class)) {
+            ToolBar navBar = new ToolBar();
+            controller.getBottomBox().getChildren().add(navBar);
+            SimMolController simMol = new SimMolController(controller, this::removeMolSim);
+            simMol.initialize(navBar);
+            controller.addTool(simMol);
+        }
+    }
+
+    public void removeMolSim(Object o) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(SimMolController.class);
+    }
+
 }
