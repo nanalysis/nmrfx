@@ -1,4 +1,3 @@
-
 package org.nmrfx.processor.dataops;
 
 import java.util.ArrayList;
@@ -148,7 +147,9 @@ public class SimShifts {
             double intensity = intensities.get(i);
             int pt = vec.refToPt(ppm);
             //System.out.println(ppm + " " + pt);
-            vec.add(pt, intensity);
+            if ((pt >= 0) && (pt < vec.getSize())) {
+                vec.add(pt, intensity);
+            }
         }
     }
 

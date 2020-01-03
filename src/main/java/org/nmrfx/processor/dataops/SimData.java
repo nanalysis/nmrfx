@@ -33,6 +33,10 @@ public class SimData {
         jPairs = new short[nBlocks][];
     }
 
+    public static boolean loaded() {
+        return !simDataMap.isEmpty();
+    }
+
     void setPPMs(int iBlock, List<Double> values) {
         ppms[iBlock] = new short[values.size()];
         for (int i = 0; i < ppms[iBlock].length; i++) {
@@ -80,10 +84,35 @@ public class SimData {
         return values;
     }
 
+    public static boolean contains(String name) {
+        return simDataMap.containsKey(name.toLowerCase());
+    }
+
     public static List<String> getNames() {
         List<String> names = new ArrayList<>();
         for (String name : simDataMap.keySet()) {
             names.add(name);
+        }
+        return names;
+    }
+
+    public static List<String> getNames(String pattern) {
+        pattern = pattern.trim().toLowerCase();
+        List<String> names = new ArrayList<>();
+        boolean contains = true;
+        if (pattern.length() > 0) {
+            if (pattern.charAt(0) == '^') {
+                contains = false;
+                pattern = pattern.substring(1);
+            }
+            if (pattern.length() > 0) {
+                for (String name : simDataMap.keySet()) {
+                    boolean match = contains ? name.contains(pattern) : name.startsWith(pattern);
+                    if (match) {
+                        names.add(name);
+                    }
+                }
+            }
         }
         return names;
     }
@@ -132,7 +161,6 @@ public class SimData {
             Map<String, Object> dataMap = (HashMap<String, Object>) data;
             String name = ((String) dataMap.get("name")).trim();
             String id = (String) dataMap.get("id");
-            System.out.println("name " + name + " id " + id);
             List blocks = (List) dataMap.get("blocks");
             SimData simData = new SimData(name, id, blocks.size());
             int iBlock = 0;
@@ -146,7 +174,7 @@ public class SimData {
                 simData.setJPairs(iBlock, jPairs);
                 iBlock++;
             }
-            simDataMap.put(name, simData);
+            simDataMap.put(name.toLowerCase(), simData);
         }
     }
 
