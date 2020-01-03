@@ -302,6 +302,8 @@ public class DatasetHeaderIO {
                     d.setPh1_r(i, d.getPh1(i));
                     d.setVSize(i, DataUtilities.readSwapInt(dis, checkSwap));
                     d.setVSize_r(i, d.getVSize(i));
+                    d.setRefUnits(iDim, 3);
+
                 } else {
                     d.setComplex(iDim, false);
                     d.setRefUnits(iDim, 3);
