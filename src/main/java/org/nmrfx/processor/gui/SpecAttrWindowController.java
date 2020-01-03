@@ -757,7 +757,10 @@ public class SpecAttrWindowController implements Initializable {
 
                 protected void updateItem(Color item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (item != null) {
+                    setText(null);
+                    if (empty || (item == null)) {
+                        setGraphic(null);
+                    } else {
                         final ColorPicker cp = new ColorPicker();
                         cp.setValue(item);
                         setGraphic(cp);
@@ -823,7 +826,10 @@ public class SpecAttrWindowController implements Initializable {
                 @Override
                 protected void updateItem(Color item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (item != null) {
+                    setText(null);
+                    if (empty || (item == null)) {
+                        setGraphic(null);
+                    } else {
                         final ColorPicker cp = new ColorPicker();
                         cp.setValue(item);
                         setGraphic(cp);
@@ -891,7 +897,10 @@ public class SpecAttrWindowController implements Initializable {
 
                 protected void updateItem(Color item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (item != null) {
+                    setText(null);
+                    if (empty || (item == null)) {
+                        setGraphic(null);
+                    } else {
                         final ColorPicker cp = new ColorPicker();
                         cp.setValue(item);
                         setGraphic(cp);
@@ -924,6 +933,7 @@ public class SpecAttrWindowController implements Initializable {
                 @Override
                 protected void updateItem(PeakDisplayParameters.DisplayTypes reason, boolean empty) {
                     super.updateItem(reason, empty);
+                    setText(null);
                     if (empty) {
                         setGraphic(null);
                     } else {
@@ -949,6 +959,7 @@ public class SpecAttrWindowController implements Initializable {
                 @Override
                 protected void updateItem(PeakDisplayParameters.LabelTypes reason, boolean empty) {
                     super.updateItem(reason, empty);
+                    setText(null);
                     if (empty) {
                         setGraphic(null);
                     } else {
