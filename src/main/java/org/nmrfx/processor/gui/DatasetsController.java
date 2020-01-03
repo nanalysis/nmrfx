@@ -249,7 +249,10 @@ public class DatasetsController implements Initializable {
             @Override
             protected void updateItem(Color item, boolean empty) {
                 super.updateItem(item, empty);
-                if (item != null) {
+                setText(null);
+                if (empty || (item == null)) {
+                    setGraphic(null);
+                } else {
                     final ColorPicker cp = new ColorPicker();
                     cp.setValue(item);
                     setGraphic(cp);
@@ -283,7 +286,10 @@ public class DatasetsController implements Initializable {
             @Override
             protected void updateItem(Color item, boolean empty) {
                 super.updateItem(item, empty);
-                if (item != null) {
+                setText(null);
+                if (empty || (item == null)) {
+                    setGraphic(null);
+                } else {
                     final ColorPicker cp = new ColorPicker();
                     cp.setValue(item);
                     setGraphic(cp);
