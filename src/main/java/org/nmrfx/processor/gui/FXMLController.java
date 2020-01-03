@@ -202,6 +202,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     boolean[][] crossHairStates = new boolean[2][2];
     private BooleanProperty minBorders;
     Phaser phaser;
+    Set<ControllerTool> tools = new HashSet<>();
 
     SimpleBooleanProperty processControllerVisible = new SimpleBooleanProperty(false);
 
@@ -1927,6 +1928,44 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public VBox getBottomBox() {
         return bottomBox;
+    }
+
+    public void addTool(ControllerTool tool) {
+        tools.add(tool);
+    }
+
+    public boolean containsTool(Class classType) {
+        boolean result = false;
+        for (ControllerTool tool : tools) {
+            if (tool.getClass() == classType) {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public ControllerTool getTool(Class classType) {
+        ControllerTool result = null;
+        for (ControllerTool tool : tools) {
+            if (tool.getClass() == classType) {
+                result = tool;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public boolean removeTool(Class classType) {
+        boolean result = false;
+        for (ControllerTool tool : tools) {
+            if (tool.getClass() == classType) {
+                tool.close();
+                result = true;
+                break;
+            }
+        }
+        return result;
     }
 
     public void toggleCrossHairState(int iCross, int jOrient) {
