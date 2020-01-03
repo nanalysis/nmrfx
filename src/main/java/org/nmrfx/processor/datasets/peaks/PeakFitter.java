@@ -295,10 +295,13 @@ public class PeakFitter {
             guesses[iGuess] = lineWidth;  // guess for linewidth
             lower[iGuess] = guesses[iGuess] * 0.5;  // constraints on linewidth
             upper[iGuess] = guesses[iGuess] * 2.0;
-            if (lower[iGuess] < 5) {
-                lower[iGuess] = 5;
+            if (lower[iGuess] < 0.5) {
+                lower[iGuess] = 0.5;
                 if (guesses[iGuess] < lower[iGuess]) {
                     guesses[iGuess] = lower[iGuess] + 1;
+                    if (guesses[iGuess] >= upper[iGuess]) {
+                        upper[iGuess] = guesses[iGuess] + 1.0;
+                    }
                 }
             }
             iGuess++;
