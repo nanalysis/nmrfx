@@ -26,6 +26,7 @@ import javafx.util.Callback;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import org.nmrfx.processor.dataops.SimData;
+import org.nmrfx.processor.datasets.Dataset;
 
 public class SimMolController implements ControllerTool {
 
@@ -122,11 +123,19 @@ public class SimMolController implements ControllerTool {
         String name = molNameField.getText().toLowerCase();
         System.out.println("Mol Name: " + name);
         if (SimData.contains(name)) {
-            String datasetName = SimData.genDataset(name, 32768, 600.0, 10000.0, 4.73);
+            PolyChart chart = controller.getActiveChart();
+            Dataset currData = chart.getDataset();
+            double sf = currData != null ? currData.getSf(0) : 600.0;
+            double sw = currData != null ? currData.getSw(0) : 10000.0;
+            int size = currData != null ? currData.getSize(0) : 32768;
+            double ref = currData != null ? currData.pointToPPM(0, size / 2) : 4.73;
+
+            String datasetName = SimData.genDataset(name, size, sf, sw, ref);
             List<String> names = new ArrayList<>();
             names.add(datasetName);
-            controller.getActiveChart().updateDatasets(names);
-            controller.getActiveChart().refresh();
+            chart.setDataset(Dataset.getDataset(name), true);
+            //chart.updateDatasets(names);
+            chart.refresh();
         }
 
     }
