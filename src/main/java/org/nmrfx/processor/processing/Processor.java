@@ -1418,10 +1418,10 @@ public class Processor {
             progressUpdater.updateProgress(1.0);
             progressUpdater.updateStatus("Done in " + String.format("%.1f", elapsedTime) + "s");
         }
+        if (dataset.fFormat == Dataset.FFORMAT.UCSF) {
+            dataset.writeHeader(false);
+        }
         if (!keepDatasetOpen) {
-            if (dataset.fFormat == Dataset.FFORMAT.UCSF) {
-                dataset.writeHeader(false);
-            }
             dataset.setNFreqDims(nDimsProcessed);
             for (int i = nDimsProcessed; i < dataset.getNDim(); i++) {
                 dataset.setFreqDomain(i, false);
