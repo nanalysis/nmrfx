@@ -194,6 +194,8 @@ public class SpecAttrWindowController implements Initializable {
     private ComboBox<Integer> topBorderSizeComboBox;
     @FXML
     private ComboBox<Integer> bottomBorderSizeComboBox;
+    @FXML
+    private CheckBox titlesCheckBox;
 
     SegmentedButton groupButton;
     ChoiceBox<String> showOnlyCompatibleBox = new ChoiceBox();
@@ -1119,6 +1121,7 @@ public class SpecAttrWindowController implements Initializable {
         chart.chartProps.setTopBorderSize(topBorderSizeComboBox.getValue());
         chart.chartProps.setBottomBorderSize(bottomBorderSizeComboBox.getValue());
         chart.chartProps.setGrid(gridCheckBox.isSelected());
+        chart.chartProps.setTitles(titlesCheckBox.isSelected());
 
     }
 
@@ -1237,6 +1240,7 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.setLowValue(polyChart.chartProps.getIntegralLowPos());
         integralPosSlider.setHighValue(polyChart.chartProps.getIntegralHighPos());
         integralCheckBox.setSelected(chart.chartProps.getIntegrals());
+        titlesCheckBox.setSelected(polyChart.chartProps.getTitles());
 
         polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }

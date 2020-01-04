@@ -2010,9 +2010,10 @@ public class PolyChart implements PeakListener {
     }
 
     boolean drawDatasets(GraphicsContextInterface gC) throws GraphicsIOException {
+        double maxTextOffset = -1.0;
         ArrayList<DatasetAttributes> draw2DList = new ArrayList<>();
         updateDatasetAttributeBounds();
-        datasetAttributesList.stream().forEach(datasetAttributes -> {
+        for (DatasetAttributes datasetAttributes : datasetAttributesList) {
             try {
                 DatasetAttributes firstAttr = datasetAttributesList.get(0);
                 Dataset dataset = datasetAttributes.getDataset();
@@ -2067,6 +2068,22 @@ public class PolyChart implements PeakListener {
                                         draw1DIntegral(datasetAttributes, gC);
                                     }
                                     drawBaseLine(gC, bcPath);
+                                    if (chartProps.getTitles()) {
+                                        double offset = drawSpectrum.getOffset(datasetAttributes);
+                                        if ((maxTextOffset >= 0) && (offset <= maxTextOffset)) {
+                                            offset = maxTextOffset + 20;
+                                        }
+                                        if (offset > maxTextOffset) {
+                                            maxTextOffset = offset;
+                                        }
+                                        gC.setFill(datasetAttributes.getPosColor(rowIndex));
+                                        double zeroPos = axes[1].getDisplayPosition(0.0) - offset;
+                                        gC.setTextAlign(TextAlignment.LEFT);
+                                        gC.fillText(datasetAttributes.getDataset().getTitle(),
+                                                xPos + leftBorder + 10,
+                                                zeroPos - 20);
+                                    }
+
                                 } while (ok);
                             }
                             drawSpectrum.drawVecAnno(datasetAttributes, HORIZONTAL, axModes[0]);
@@ -2085,7 +2102,7 @@ public class PolyChart implements PeakListener {
             } catch (GraphicsIOException gIO) {
 
             }
-        });
+        }
         boolean finished = true;
         if (!draw2DList.isEmpty()) {
             if (gC instanceof GraphicsContextProxy) {

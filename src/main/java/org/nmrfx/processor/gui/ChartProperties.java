@@ -57,6 +57,7 @@ public class ChartProperties {
     private BooleanProperty integrals;
     private DoubleProperty integralLowPos;
     private DoubleProperty integralHighPos;
+    private BooleanProperty titles;
 
     public ChartProperties(PolyChart chart) {
         this.polyChart = chart;
@@ -262,7 +263,7 @@ public class ChartProperties {
 
     public BooleanProperty integralsProperty() {
         if (integrals == null) {
-            integrals = new SimpleBooleanProperty(polyChart, "-on", false);
+            integrals = new SimpleBooleanProperty(polyChart, "integrals", false);
         }
         return integrals;
     }
@@ -305,6 +306,21 @@ public class ChartProperties {
         return integralHighPos;
     }
 
+    public BooleanProperty titlesProperty() {
+        if (titles == null) {
+            titles = new SimpleBooleanProperty(polyChart, "titles", false);
+        }
+        return titles;
+    }
+
+    public void setTitles(boolean value) {
+        titlesProperty().set(value);
+    }
+
+    public boolean getTitles() {
+        return titlesProperty().get();
+    }
+
     public void config(String name, Object value) {
         if (Platform.isFxApplicationThread()) {
             try {
@@ -329,7 +345,8 @@ public class ChartProperties {
         String[] beanNames = {"ticFontSize", "labelFontSize", "bgColor",
             "axesColor", "cross0Color", "cross1Color", "grid",
             "leftBorderSize", "rightBorderSize",
-            "topBorderSize", "bottomBorderSize"};
+            "topBorderSize", "bottomBorderSize", "integrals",
+            "integralLowPos", "integralHighPos", "titles"};
         for (String beanName : beanNames) {
             try {
                 if (beanName.contains("Color")) {

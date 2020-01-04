@@ -878,11 +878,7 @@ public class DrawSpectrum {
                 return false;
             }
         }
-        double height = axes[1].getHeight();
-        double scale = axes[1].getScale();
-        double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
-        double dataOffset = height * dataAttributes.getOffset();
-        double offset = dataOffset + mapOffset;
+        double offset = getOffset(dataAttributes);
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
                 (index, intensity) -> axes[1].getDisplayPosition(intensity) - offset, offsetMode, false);
@@ -892,6 +888,14 @@ public class DrawSpectrum {
         }
         return true;
 
+    }
+
+    public double getOffset(DatasetAttributes dataAttributes) {
+        double height = axes[1].getHeight();
+        double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
+        double dataOffset = height * dataAttributes.getOffset();
+        double offset = dataOffset + mapOffset;
+        return offset;
     }
 
     public double[] getRegionAsArray(Dataset dataset) {
