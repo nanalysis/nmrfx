@@ -79,6 +79,11 @@ public class ChartProperties {
         destProps.setAxesColor(getAxesColor());
 
         destProps.setGrid(getGrid());
+        destProps.setRegions(getRegions());
+        destProps.setIntegralLowPos(getIntegralLowPos());
+        destProps.setIntegralHighPos(getIntegralHighPos());
+        destProps.setIntegrals(getIntegrals());
+        destProps.setTitles(getTitles());
     }
 
     public int getLeftBorderSize() {
@@ -248,7 +253,7 @@ public class ChartProperties {
 
     public BooleanProperty regionsProperty() {
         if (regions == null) {
-            regions = new SimpleBooleanProperty(polyChart, "-on", false);
+            regions = new SimpleBooleanProperty(polyChart, "regions", false);
         }
         return regions;
     }
@@ -345,7 +350,7 @@ public class ChartProperties {
         String[] beanNames = {"ticFontSize", "labelFontSize", "bgColor",
             "axesColor", "cross0Color", "cross1Color", "grid",
             "leftBorderSize", "rightBorderSize",
-            "topBorderSize", "bottomBorderSize", "integrals",
+            "topBorderSize", "bottomBorderSize", "regions", "integrals",
             "integralLowPos", "integralHighPos", "titles"};
         for (String beanName : beanNames) {
             try {
