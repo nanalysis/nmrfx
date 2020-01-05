@@ -24,11 +24,8 @@ import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.application.Platform;
@@ -51,7 +48,6 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ToolBar;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import org.nmrfx.processor.datasets.peaks.Analyzer;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
@@ -358,7 +354,10 @@ public class AnalystApp extends MainApp {
         MenuItem rdcMenuItem = new MenuItem("RDC Analysis...");
         rdcMenuItem.setOnAction(e -> showRDCGUI());
 
-        molMenu.getItems().addAll(molFileMenu, atomsMenuItem, molMenuItem, rdcMenuItem);
+        MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
+        spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
+
+        molMenu.getItems().addAll(molFileMenu, atomsMenuItem, molMenuItem, rdcMenuItem, spectrumLibraryMenuItem);
 
         Menu viewMenu = new Menu("View");
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
@@ -417,11 +416,8 @@ public class AnalystApp extends MainApp {
         MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
         runAboutMenuItem.setOnAction(e -> showRunAbout());
 
-        MenuItem molSimMenuItem = new MenuItem("Show Molecule Sim");
-        molSimMenuItem.setOnAction(e -> showMolSim());
-
         assignCascade.getItems().addAll(peakAssignerItem, assignOnPick,
-                atomBrowserMenuItem, runAboutMenuItem, molSimMenuItem);
+                atomBrowserMenuItem, runAboutMenuItem);
 
         peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
                 linkPeakDimsMenuItem, peakSliderMenuItem, pathToolMenuItem,
@@ -909,7 +905,7 @@ public class AnalystApp extends MainApp {
         rdcGUI.showRDCplot();
     }
 
-    public void showMolSim() {
+    public void showSpectrumLibrary() {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(SimMolController.class)) {
             ToolBar navBar = new ToolBar();
