@@ -1129,6 +1129,7 @@ public class SpecAttrWindowController implements Initializable {
         updateChartDatasets();
         updateChartPeakLists();
         updateProps();
+        chart.disDimProp.set(disDimCombo.getValue());
 
         try {
             chart.xAxis.lowerBoundProperty().setValue(formatter.parse(limitFields[0][0].get()));
@@ -1229,7 +1230,6 @@ public class SpecAttrWindowController implements Initializable {
         } else {
             cross1ColorPicker.setValue(polyChart.chartProps.cross1ColorProperty().get());
         }
-        disDimCombo.setValue((DISDIM) polyChart.disDimProp.get());
         ticFontSizeComboBox.setValue(polyChart.chartProps.getTicFontSize());
         labelFontSizeComboBox.setValue(polyChart.chartProps.getLabelFontSize());
         leftBorderSizeComboBox.setValue(polyChart.chartProps.getLeftBorderSize());
@@ -1241,8 +1241,9 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.setHighValue(polyChart.chartProps.getIntegralHighPos());
         integralCheckBox.setSelected(chart.chartProps.getIntegrals());
         titlesCheckBox.setSelected(polyChart.chartProps.getTitles());
-
-        polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
+        DISDIM curDisDim = polyChart.disDimProp.get();
+        disDimCombo.setValue(curDisDim);
+        // polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
 
     void unifyWidth(boolean pos) {
