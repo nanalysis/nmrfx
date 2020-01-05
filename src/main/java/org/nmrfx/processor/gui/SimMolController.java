@@ -5,7 +5,6 @@ package org.nmrfx.processor.gui;
  */
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -27,7 +26,6 @@ import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import org.nmrfx.processor.dataops.SimData;
 import org.nmrfx.processor.datasets.Dataset;
-import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
 public class SimMolController implements ControllerTool {
 
