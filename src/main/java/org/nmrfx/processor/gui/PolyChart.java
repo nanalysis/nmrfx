@@ -1517,7 +1517,7 @@ public class PolyChart implements PeakListener {
         DatasetAttributes datasetAttributes = null;
         if (dataset != null) {
             if ((dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1)) {
-                disDimProp.set(DISDIM.OneDX);
+              disDimProp.set(DISDIM.OneDX);
                 //statusBar.sliceStatus.setSelected(false);
                 setSliceStatus(false);
             } else {
@@ -2105,6 +2105,26 @@ public class PolyChart implements PeakListener {
         }
         boolean finished = true;
         if (!draw2DList.isEmpty()) {
+            if (chartProps.getTitles()) {
+                double fontSize = chartProps.getTicFontSize();
+                gC.setFont(Font.font(fontSize));
+                gC.setTextAlign(TextAlignment.LEFT);
+                double textX = xPos + leftBorder + 10.0;
+                double textY;
+                if (fontSize > (topBorder - 2)) {
+                    gC.setTextBaseline(VPos.TOP);
+                    textY = yPos + topBorder + 2;
+                } else {
+                    gC.setTextBaseline(VPos.BOTTOM);
+                    textY = yPos + topBorder - 2;
+                }
+                for (DatasetAttributes datasetAttributes : draw2DList) {
+                    gC.setFill(datasetAttributes.getPosColor());
+                    String title = datasetAttributes.getDataset().getTitle();
+                    gC.fillText(title, textX, textY);
+                    textX += title.length() * fontSize * 0.8;  // fixme  need to calculate correct length
+                }
+            }
             if (gC instanceof GraphicsContextProxy) {
                 if (useImmediateMode) {
                     finished = drawSpectrum.drawSpectrumImmediate(gC, draw2DList, axModes);
