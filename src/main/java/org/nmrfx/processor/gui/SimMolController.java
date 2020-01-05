@@ -27,6 +27,7 @@ import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import org.nmrfx.processor.dataops.SimData;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 
 public class SimMolController implements ControllerTool {
 
@@ -123,17 +124,26 @@ public class SimMolController implements ControllerTool {
         String name = molNameField.getText().toLowerCase();
         System.out.println("Mol Name: " + name);
         if (SimData.contains(name)) {
+            Dataset newDataset = Dataset.getDataset(name);
             PolyChart chart = controller.getActiveChart();
-            Dataset currData = chart.getDataset();
-            double sf = currData != null ? currData.getSf(0) : 600.0;
-            double sw = currData != null ? currData.getSw(0) : 10000.0;
-            int size = currData != null ? currData.getSize(0) : 32768;
-            double ref = currData != null ? currData.pointToPPM(0, size / 2) : 4.73;
+            if (newDataset == null) {
+                Dataset currData = null;
+                for (PolyChart pChart : controller.getCharts()) {
+                    currData = pChart.getDataset();
+                    if (currData != null) {
+                        break;
+                    }
+                }
+                String label = currData != null ? currData.getLabel(0) : "1H";
+                double sf = currData != null ? currData.getSf(0) : 600.0;
+                double sw = currData != null ? currData.getSw(0) : 10000.0;
+                int size = currData != null ? currData.getSize(0) : 32768;
+                double ref = currData != null ? currData.pointToPPM(0, size / 2) : 4.73;
+                newDataset = SimData.genDataset(name, size, sf, sw, ref);
+                newDataset.setLabel(0, label);
+            }
 
-            String datasetName = SimData.genDataset(name, size, sf, sw, ref);
-            List<String> names = new ArrayList<>();
-            names.add(datasetName);
-            chart.setDataset(Dataset.getDataset(name), true);
+            chart.setDataset(newDataset, true);
             //chart.updateDatasets(names);
             chart.refresh();
         }
