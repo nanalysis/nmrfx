@@ -97,27 +97,27 @@ public class SimData {
     }
 
     public static List<String> getNames(String pattern) {
-        pattern = pattern.trim().toLowerCase();
+        pattern = pattern.trim();
         List<String> names = new ArrayList<>();
-        boolean contains = true;
+        boolean startsWith = false;
         if (pattern.length() > 0) {
-            if (pattern.charAt(0) == '^') {
-                contains = false;
-                pattern = pattern.substring(1);
+            if (Character.isUpperCase(pattern.charAt(0))
+                    || Character.isDigit(pattern.charAt(0))) {
+                startsWith = true;
             }
-            if (pattern.length() > 0) {
-                for (String name : simDataMap.keySet()) {
-                    boolean match = contains ? name.contains(pattern) : name.startsWith(pattern);
-                    if (match) {
-                        names.add(name);
-                    }
+            pattern = pattern.toLowerCase();
+            for (String name : simDataMap.keySet()) {
+                boolean match = startsWith ? name.startsWith(pattern) : name.contains(pattern);
+                if (match) {
+                    names.add(name);
                 }
             }
+
         }
         return names;
     }
 
-    public static String genDataset(String name, int n, double sf, double sw, double centerPPM) {
+    public static Dataset genDataset(String name, int n, double sf, double sw, double centerPPM) {
         Vec vec = new Vec(n);
         vec.setSF(sf);
         vec.setSW(sw);
@@ -126,7 +126,8 @@ public class SimData {
         genVec(name, vec);
         vec.setName(name);
         Dataset dataset = new Dataset(vec);
-        return dataset.getName();
+        dataset.setLabel(0, "1H");
+        return dataset;
     }
 
     public static void genVec(String name, Vec vec) throws IllegalArgumentException {
