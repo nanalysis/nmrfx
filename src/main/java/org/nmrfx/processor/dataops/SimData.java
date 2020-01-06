@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
 import org.yaml.snakeyaml.Yaml;
@@ -15,7 +16,7 @@ import org.yaml.snakeyaml.Yaml;
  */
 public class SimData {
 
-    static Map<String, SimData> simDataMap = new HashMap<>();
+    static Map<String, SimData> simDataMap = new TreeMap<>();
 
     double ppmScale = 20.0;
     double jScale = 250.0;
@@ -117,20 +118,20 @@ public class SimData {
         return names;
     }
 
-    public static Dataset genDataset(String name, int n, double sf, double sw, double centerPPM) {
+    public static Dataset genDataset(String name, int n, double sf, double sw, double centerPPM, double lb, String label) {
         Vec vec = new Vec(n);
         vec.setSF(sf);
         vec.setSW(sw);
         double ref = sw / sf / 2 + centerPPM;
         vec.setRef(ref);
-        genVec(name, vec);
+        genVec(name, vec, lb);
         vec.setName(name);
         Dataset dataset = new Dataset(vec);
-        dataset.setLabel(0, "1H");
+        dataset.setLabel(0, label);
         return dataset;
     }
 
-    public static void genVec(String name, Vec vec) throws IllegalArgumentException {
+    public static void genVec(String name, Vec vec, double lb) throws IllegalArgumentException {
         SimData data = simDataMap.get(name);
         if (data == null) {
             throw new IllegalArgumentException("Can't find data for \"" + name + "\"");
@@ -147,7 +148,7 @@ public class SimData {
         }
         vec.hft();
         vec.ift();
-        vec.decay(1.0, 0.0, 1.0);
+        vec.decay(lb, 0.0, 1.0);
         vec.fft();
         vec.phase(45.0, 0.0);
 
@@ -175,7 +176,7 @@ public class SimData {
                 simData.setJPairs(iBlock, jPairs);
                 iBlock++;
             }
-            simDataMap.put(name.toLowerCase(), simData);
+            simDataMap.put(name.toLowerCase().replace(' ', '-'), simData);
         }
     }
 
