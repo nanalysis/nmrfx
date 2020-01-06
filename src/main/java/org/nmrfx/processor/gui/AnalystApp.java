@@ -67,6 +67,9 @@ import org.nmrfx.structure.chemistry.io.SDFile;
 import org.nmrfx.structure.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 import static javafx.application.Application.launch;
+import javafx.beans.property.IntegerProperty;
+import org.controlsfx.control.PropertySheet;
+import org.nmrfx.utils.properties.IntRangeOperationItem;
 
 public class AnalystApp extends MainApp {
 
@@ -175,6 +178,10 @@ public class AnalystApp extends MainApp {
 
     public static AnalystApp getAnalystApp() {
         return analystApp;
+    }
+
+    public static PreferencesController getPreferencesController() {
+        return preferencesController;
     }
 
     public void quit() {
@@ -531,6 +538,7 @@ public class AnalystApp extends MainApp {
     private void showPreferences(ActionEvent event) {
         if (preferencesController == null) {
             preferencesController = PreferencesController.create(stages.get(0));
+            addPrefs();
         }
         if (preferencesController != null) {
             preferencesController.getStage().show();
@@ -916,9 +924,13 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    public void removeMolSim(Object o) {
+    public void removeMolSim(SimMolController simMolController) {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(SimMolController.class);
+        controller.getBottomBox().getChildren().remove(simMolController.getToolBar());
     }
-
+    
+    void addPrefs() {
+        AnalystPrefs.addPrefs();
+    }
 }

@@ -26,12 +26,14 @@ import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import org.nmrfx.processor.dataops.SimData;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.utils.ColorSchemes;
 
 public class SimMolController implements ControllerTool {
 
     ToolBar browserToolBar;
     FXMLController controller;
-    Consumer closeAction;
+    Consumer<SimMolController> closeAction;
     Label atomFieldLabel;
     TextField molNameField;
     int centerDim = 0;
@@ -43,7 +45,7 @@ public class SimMolController implements ControllerTool {
     Background defaultBackground = null;
     Background errorBackground = new Background(new BackgroundFill(Color.YELLOW, null, null));
 
-    public SimMolController(FXMLController controller, Consumer closeAction) {
+    public SimMolController(FXMLController controller, Consumer<SimMolController> closeAction) {
         this.controller = controller;
         this.closeAction = closeAction;
     }
@@ -70,7 +72,7 @@ public class SimMolController implements ControllerTool {
     }
 
     public void close() {
-        controller.getBottomBox().getChildren().remove(browserToolBar);
+        closeAction.accept(this);
     }
 
     void initialize(ToolBar toolBar) {
@@ -133,16 +135,37 @@ public class SimMolController implements ControllerTool {
                     }
                 }
                 String label = currData != null ? currData.getLabel(0) : "1H";
-                double sf = currData != null ? currData.getSf(0) : 600.0;
-                double sw = currData != null ? currData.getSw(0) : 10000.0;
-                int size = currData != null ? currData.getSize(0) : 32768;
-                double ref = currData != null ? currData.pointToPPM(0, size / 2) : 4.73;
-                newDataset = SimData.genDataset(name, size, sf, sw, ref);
-                newDataset.setLabel(0, label);
+                double sf = currData != null
+                        ? currData.getSf(0) : AnalystPrefs.getLibraryVectorSF();
+                double lb = AnalystPrefs.getLibraryVectorLB();
+                double sw = currData != null
+                        ? currData.getSw(0) : AnalystPrefs.getLibraryVectorSW();
+                int size = currData != null
+                        ? currData.getSize(0)
+                        : (int) Math.pow(2, AnalystPrefs.getLibraryVectorSize());
+                double ref = currData != null
+                        ? currData.pointToPPM(0, size / 2) : AnalystPrefs.getLibraryVectorREF();
+                newDataset = SimData.genDataset(name, size, sf, sw, ref, lb, label);
+                newDataset.addProperty("SIM", name);
             }
-
+            controller.getStatusBar().setMode(1);
             chart.setDataset(newDataset, true);
+
+            if (chart.getDatasetAttributes().size() > 1) {
+                chart.chartProps.setTitles(true);
+                int nData = chart.getDatasetAttributes().size() - 1;
+                String colScheme = (nData <= 10) ? "category10" : "category20";
+                List<Color> colors = ColorSchemes.getColors(colScheme, nData);
+                int i = 0;
+                for (DatasetAttributes dataAttr : chart.getActiveDatasetAttributes()) {
+                    if (i > 0) {
+                        dataAttr.setPosColor(colors.get(i - 1));
+                    }
+                    i++;
+                }
+            }
             //chart.updateDatasets(names);
+            molNameField.setText("");
             chart.refresh();
         }
 
