@@ -23,6 +23,9 @@ import javafx.scene.input.MouseEvent;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.gui.PolyChart;
 import org.nmrfx.processor.gui.spectra.IntegralHit;
+import static org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION.DRAG_VIEW;
+import static org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION.DRAG_VIEWX;
+import static org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION.DRAG_VIEWY;
 
 /**
  *
@@ -34,6 +37,8 @@ public class MouseBindings {
         NOTHING,
         DRAG_SELECTION,
         DRAG_VIEW,
+        DRAG_VIEWX,
+        DRAG_VIEWY,
         DRAG_EXPAND,
         DRAG_PEAK,
         DRAG_PEAK_WIDTH,
@@ -118,11 +123,19 @@ public class MouseBindings {
                             chart.dragRegion(dragStart, x, y, true);
                             break;
                         case DRAG_VIEW:
+                        case DRAG_VIEWX:
+                        case DRAG_VIEWY:
                             double dx = x - dragStart[0];
                             double dy = y - dragStart[1];
                             if ((Math.abs(dx) >= 1.0) || (Math.abs(dy) >= 1.0)) {
                                 dragStart[0] = x;
                                 dragStart[1] = y;
+                                if (mouseAction == DRAG_VIEWX) {
+                                    dy = 0.0;
+                                } else if (mouseAction == DRAG_VIEWY) {
+                                    dx = 0.0;
+                                }
+
                                 chart.scroll(dx, dy);
                             }
                             break;
@@ -157,41 +170,48 @@ public class MouseBindings {
                 mouseAction = MOUSE_ACTION.CROSSHAIR;
             } else {
                 if (mouseEvent.isPrimaryButtonDown()) {
-                    Optional<Peak> hit = chart.hitPeak(x, y);
-                    if (!hit.isPresent()) {
-                        Optional<IntegralHit> hitR = chart.hitRegion(x, y);
-                        if (!hitR.isPresent()) {
-                            hitR = chart.hitIntegral(x, y);
-                        }
-                    }
-                    if (mouseEvent.isShiftDown()) {
-                        mouseAction = MOUSE_ACTION.DRAG_SELECTION;
-                        chart.selectPeaks(x, y, true);
-                    } else if (mouseEvent.isAltDown()) {
-                        if (hit.isPresent()) {
-                            mouseAction = MOUSE_ACTION.DRAG_PEAK_WIDTH;
-                        } else {
-                            mouseAction = MOUSE_ACTION.DRAG_ADDREGION;
-                        }
+                    int border = chart.hitBorder(x, y);
+                    if (border != 0) {
+                        mouseAction = border == 1 ? MOUSE_ACTION.DRAG_VIEWY : MOUSE_ACTION.DRAG_VIEWX;
+                    } else if (mouseEvent.isShiftDown() && mouseEvent.isAltDown()) {
+                        mouseAction = DRAG_VIEW;
                     } else {
-                        boolean hitPeak = chart.selectPeaks(x, y, false);
-                        if (!hitPeak) {
-                            boolean hadRegion = chart.hasActiveRegion();
-                            boolean hitRegion = chart.selectRegion(x, y);
-                            if (!hitRegion) {
-                                hitRegion = chart.selectIntegral(x, y);
-                            }
-                            if ((hadRegion && !hitRegion) || (!hadRegion && hitRegion)) {
-                                chart.refresh();
-                            }
-                            if (hitRegion) {
-                                mouseAction = MOUSE_ACTION.DRAG_REGION;
-                            } else {
-                                mouseAction = MOUSE_ACTION.DRAG_EXPAND;
+                        Optional<Peak> hit = chart.hitPeak(x, y);
+                        if (!hit.isPresent()) {
+                            Optional<IntegralHit> hitR = chart.hitRegion(x, y);
+                            if (!hitR.isPresent()) {
+                                hitR = chart.hitIntegral(x, y);
                             }
                         }
-                        if (hit.isPresent() || hitPeak) {
-                            mouseAction = MOUSE_ACTION.DRAG_PEAK;
+                        if (mouseEvent.isShiftDown()) {
+                            mouseAction = MOUSE_ACTION.DRAG_SELECTION;
+                            chart.selectPeaks(x, y, true);
+                        } else if (mouseEvent.isAltDown()) {
+                            if (hit.isPresent()) {
+                                mouseAction = MOUSE_ACTION.DRAG_PEAK_WIDTH;
+                            } else {
+                                mouseAction = MOUSE_ACTION.DRAG_ADDREGION;
+                            }
+                        } else {
+                            boolean hitPeak = chart.selectPeaks(x, y, false);
+                            if (!hitPeak) {
+                                boolean hadRegion = chart.hasActiveRegion();
+                                boolean hitRegion = chart.selectRegion(x, y);
+                                if (!hitRegion) {
+                                    hitRegion = chart.selectIntegral(x, y);
+                                }
+                                if ((hadRegion && !hitRegion) || (!hadRegion && hitRegion)) {
+                                    chart.refresh();
+                                }
+                                if (hitRegion) {
+                                    mouseAction = MOUSE_ACTION.DRAG_REGION;
+                                } else {
+                                    mouseAction = MOUSE_ACTION.DRAG_EXPAND;
+                                }
+                            }
+                            if (hit.isPresent() || hitPeak) {
+                                mouseAction = MOUSE_ACTION.DRAG_PEAK;
+                            }
                         }
                     }
                 } else if (mouseEvent.isMiddleButtonDown()) {

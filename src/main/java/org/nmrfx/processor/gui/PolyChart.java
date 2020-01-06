@@ -2144,6 +2144,22 @@ public class PolyChart implements PeakListener {
 
     }
 
+    public int hitBorder(double x, double y) {
+        int border = 0;
+        boolean leftX = (x > xPos) && (x < xPos + leftBorder);
+        boolean centerX = (x > (leftBorder + xPos) && (x < xPos + width - rightBorder));
+        boolean rightX = (x > xPos + width - rightBorder) && (x < xPos + width);
+        boolean topY = (y > yPos) && (y < yPos + topBorder);
+        boolean centerY = (y > yPos + topBorder) && (y < yPos + height - bottomBorder);
+        boolean bottomY = (y > yPos + height - bottomBorder) && (y < yPos + height);
+        if (leftX && centerY) {
+            border = 1;
+        } else if (bottomY && centerX) {
+            border = 2;
+        }
+        return border;
+    }
+
     void drawRegions(DatasetAttributes datasetAttr, GraphicsContextInterface gC) throws GraphicsIOException {
         Set<DatasetRegion> regions = datasetAttr.getDataset().getRegions();
         if (regions == null) {
