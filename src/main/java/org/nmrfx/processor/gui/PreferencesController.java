@@ -34,7 +34,9 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.prefs.Preferences;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -159,6 +161,10 @@ public class PreferencesController implements Initializable {
     @FXML
     private void closeAction(ActionEvent event) {
         stage.close();
+    }
+
+    public PropertySheet getPrefSheet() {
+        return prefSheet;
     }
 
     /**
@@ -445,6 +451,19 @@ public class PreferencesController implements Initializable {
                 prop = new SimpleIntegerProperty(Integer.parseInt(value));
             } else {
                 prop = new SimpleIntegerProperty(defValue);
+            }
+        }
+        return prop;
+    }
+
+    public static DoubleProperty getDouble(DoubleProperty prop, String name, double defValue) {
+        if (prop == null) {
+            Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+            String value = prefs.get(name, null);
+            if (value != null) {
+                prop = new SimpleDoubleProperty(Double.parseDouble(value));
+            } else {
+                prop = new SimpleDoubleProperty(defValue);
             }
         }
         return prop;
