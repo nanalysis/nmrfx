@@ -91,8 +91,12 @@ public class MouseBindings {
         if ((deltaX > tol) || (deltaY > tol)) {
             moved = true;
         }
+        boolean draggingView = mouseAction == MOUSE_ACTION.DRAG_VIEW
+                || mouseAction == MOUSE_ACTION.DRAG_VIEWX
+                || mouseAction == MOUSE_ACTION.DRAG_VIEWY;
+        boolean altShift = mouseEvent.isShiftDown() && mouseEvent.isAltDown();
         if (!mouseEvent.isControlDown()) {
-            if (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR")) {
+            if (!draggingView && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
                 chart.handleCrossHair(mouseEvent, false);
             } else {
                 if (mouseEvent.isPrimaryButtonDown()) {
@@ -161,8 +165,10 @@ public class MouseBindings {
         dragStart[1] = y;
         moved = false;
         mouseAction = MOUSE_ACTION.NOTHING;
+        boolean altShift = mouseEvent.isShiftDown() && mouseEvent.isAltDown();
+        int border = chart.hitBorder(x, y);
         if (!mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
-            if (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR")) {
+            if (!(altShift || (border != 0)) && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
                 if (!chart.getCursor().toString().equals("CROSSHAIR")) {
                     chart.getCrossHairs().setCrossHairState(true);
                 }
@@ -170,10 +176,9 @@ public class MouseBindings {
                 mouseAction = MOUSE_ACTION.CROSSHAIR;
             } else {
                 if (mouseEvent.isPrimaryButtonDown()) {
-                    int border = chart.hitBorder(x, y);
                     if (border != 0) {
                         mouseAction = border == 1 ? MOUSE_ACTION.DRAG_VIEWY : MOUSE_ACTION.DRAG_VIEWX;
-                    } else if (mouseEvent.isShiftDown() && mouseEvent.isAltDown()) {
+                    } else if (altShift) {
                         mouseAction = DRAG_VIEW;
                     } else {
                         Optional<Peak> hit = chart.hitPeak(x, y);
@@ -224,8 +229,12 @@ public class MouseBindings {
     public void mouseReleased(Event event) {
         mouseDown = false;
         MouseEvent mouseEvent = (MouseEvent) event;
+        boolean altShift = mouseEvent.isShiftDown() && mouseEvent.isAltDown();
+        boolean draggingView = mouseAction == MOUSE_ACTION.DRAG_VIEW
+                || mouseAction == MOUSE_ACTION.DRAG_VIEWX
+                || mouseAction == MOUSE_ACTION.DRAG_VIEWY;
         if (!mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
-            if (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR")) {
+            if (!draggingView && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
                 chart.handleCrossHair(mouseEvent, false);
                 if (!chart.getCursor().toString().equals("CROSSHAIR")) {
                     chart.getCrossHairs().setCrossHairState(false);
