@@ -1960,8 +1960,8 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         boolean result = false;
         for (ControllerTool tool : tools) {
             if (tool.getClass() == classType) {
-                tool.close();
                 result = true;
+                tools.remove(tool);
                 break;
             }
         }
