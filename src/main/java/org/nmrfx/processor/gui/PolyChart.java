@@ -139,7 +139,7 @@ public class PolyChart implements PeakListener {
     public static final int HORIZONTAL = 0;
     public static final int VERTICAL = 1;
     public static final int CROSSHAIR_TOL = 25;
-    double minMove = 50;
+    double minMove = 20;
 
     public static final ObservableList<PolyChart> CHARTS = FXCollections.observableArrayList();
     static PolyChart activeChart = null;
@@ -614,9 +614,11 @@ public class PolyChart implements PeakListener {
                 }
             }
         } else if (mouseAction == MOUSE_ACTION.DRAG_ADDREGION) {
-            if (is1D()) {
-                addRegion(limits[0][0], limits[0][1]);
-                refresh();
+            if (dX > minMove) {
+                if (is1D()) {
+                    addRegion(limits[0][0], limits[0][1]);
+                    refresh();
+                }
             }
         } else {
             drawPeakLists(false);
@@ -1517,7 +1519,7 @@ public class PolyChart implements PeakListener {
         DatasetAttributes datasetAttributes = null;
         if (dataset != null) {
             if ((dataset.getNDim() == 1) || (dataset.getNFreqDims() == 1)) {
-              disDimProp.set(DISDIM.OneDX);
+                disDimProp.set(DISDIM.OneDX);
                 //statusBar.sliceStatus.setSelected(false);
                 setSliceStatus(false);
             } else {
@@ -2069,9 +2071,11 @@ public class PolyChart implements PeakListener {
                                     }
                                     drawBaseLine(gC, bcPath);
                                     if (chartProps.getTitles()) {
+                                        double fontSize = chartProps.getTicFontSize();
+                                        gC.setFont(Font.font(fontSize));
                                         double offset = drawSpectrum.getOffset(datasetAttributes);
                                         if ((maxTextOffset >= 0) && (offset <= maxTextOffset)) {
-                                            offset = maxTextOffset + 20;
+                                            offset = maxTextOffset + fontSize + 3;
                                         }
                                         if (offset > maxTextOffset) {
                                             maxTextOffset = offset;
