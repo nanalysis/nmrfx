@@ -104,6 +104,82 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         return sum;
     }
 
+    double poly(double r, double last) {
+        double a = 2;
+        double b = -3;
+        double c = 0;
+        double d = 1;
+
+        double x = r / last;
+
+        double p = a * x;
+        p = (p + b) * x;
+        p = (p + c) * x;
+        p = p + d;
+
+        return p;
+    }
+
+    public double calcLKEnergy(boolean calcDeriv, double weight) {
+        FastVector3D[] vecCoords = eCoords.getVecCoords();
+        double sum = 0.0;
+        double cutoffScale = -1.0;
+        for (int i = 0; i < nPairs; i++) {
+            int iAtom = iAtoms[i];
+            int jAtom = jAtoms[i];
+            double a = aValues[i];
+            double b = bValues[i];
+            double c = charge[i]; // fixme
+
+            double lambda = 1;  // fixme
+            double sigma = rLow[i]; // fixme
+            double alpha = 1.0;
+
+            FastVector3D iV = vecCoords[iAtom];
+            FastVector3D jV = vecCoords[jAtom];
+            double r2 = iV.disSq(jV);
+            disSq[i] = r2;
+            derivs[i] = 0.0;
+            viol[i] = 0.0;
+            if (!calcDeriv) {
+                double r = Math.sqrt(r2);
+                double x = (r - sigma) / lambda;
+                double eVal = (alpha / r2) * Math.exp(-x * x);
+                double e = eVal;
+
+                viol[i] = e;
+                sum += e;
+            } else {
+                // energy = (r^-2)*exp(-((r-s)/l)^2)
+                //denergy/dr = - (2*exp(-(r - s)^2/l^2))/r^3 - (exp(-(r - s)^2/l^2)*(2*r - 2*s))/(l^2*r^2)
+                final double u = 2.0 + 0.5 * r2;
+                final double v = 1.0 + (0.0625 * r2 + 1.5) * r2;
+                final double s = u / v;
+                final double s2 = s * s;
+                final double s3 = s2 * s;
+                final double s5 = s2 * s3;
+                final double s6 = s3 * s3;
+                final double deds = (9.0 * a * s3 - 6.0 * b) * s5 + c;
+                final double dsdp = (0.5 - (u / v) * (1.5 + 0.125 * r2)) / v;
+                double e = weight * ((a * s3 - b) * s6 + c * s);
+                /*
+                 * what is needed is actually the derivitive/r, therefore the r that
+                 * would be in following drops out
+                 */
+                double deriv = deds * dsdp * 2.0 * weight;
+                if (cutoffScale >= 0.0) {
+                    e *= cutoffScale;
+                    deriv *= cutoffScale;
+                }
+                viol[i] = e;
+                derivs[i] = deriv;
+                sum += e;
+            }
+
+        }
+        return sum;
+    }
+
     double getEnergy(int i, double r2, double weight) {
         int iAtom = iAtoms[i];
         int jAtom = jAtoms[i];

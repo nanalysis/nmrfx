@@ -34,6 +34,8 @@ import org.nmrfx.structure.chemistry.predict.RNAAttributes;
  */
 public class EnergyCoords {
 
+    static final double PI32 = Math.PI * Math.sqrt(Math.PI);
+
     private static final int[][] offsets = {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0}, {-1, 1, 0}, {0, 0, 1},
     {1, 0, 1}, {1, 1, 1}, {0, 1, 1}, {-1, 1, 1}, {-1, 0, 1},
     {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}
@@ -279,6 +281,9 @@ public class EnergyCoords {
                 aValues[i] = 2.0 * eMin * Math.pow(rMin, 9);
                 bValues[i] = 3.0 * eMin * Math.pow(rMin, 6);
                 cValues[i] = atom1.getCharge();
+                double lambda = 3.5; // fixme should use 6.0 for ionic side chains
+                double sigma2 = rMin; // fixme use sigma
+                //  double alpha2 = iProp.getVol() * iProp.getDeltaGFree() / (2 * PI32 * lambda );
             }
         }
     }
@@ -436,7 +441,7 @@ public class EnergyCoords {
                                                 double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
                                                 double c = cValues[iAtom] * cValues[jAtom];
                                                 ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH,
-                                                        a, b, c);  
+                                                        a, b, c);
                                             } else {
                                                 ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
                                             }
