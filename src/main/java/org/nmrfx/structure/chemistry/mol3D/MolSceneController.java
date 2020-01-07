@@ -16,8 +16,13 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.collections.MapChangeListener;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
+import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -41,10 +46,14 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.apache.commons.lang3.SystemUtils;
+import org.controlsfx.control.StatusBar;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.FreezeListener;
 import org.nmrfx.processor.datasets.peaks.Peak;
@@ -61,6 +70,7 @@ import org.nmrfx.structure.chemistry.RNALabels;
 import org.nmrfx.structure.chemistry.SSLayout;
 import org.nmrfx.structure.chemistry.SSViewer;
 import org.nmrfx.structure.chemistry.SpatialSet;
+import org.python.util.PythonInterpreter;
 
 /**
  * FXML Controller class
@@ -103,6 +113,11 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     CheckMenuItem activeCheckBox = new CheckMenuItem("Active");
     CheckMenuItem numbersCheckBox = new CheckMenuItem("Numbers");
 
+    @FXML
+    private StatusBar statusBar;
+    private Circle statusCircle = new Circle(10.0, Color.GREEN);
+    Throwable processingThrowable;
+
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
     StackPane stackPane = new StackPane();
@@ -110,6 +125,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     Pane ligandCanvasPane;
     PeakList peakList = null;
     int itemIndex = 0;
+    private StructureCalculator calcStructure = new StructureCalculator();
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -163,6 +179,15 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                     selectField.clear();
                 } catch (InvalidMoleculeException ex) {
                 }
+            }
+        });
+        statusBar.setProgress(0.0);
+
+        statusBar.getLeftItems().add(statusCircle);
+        statusCircle.setOnMousePressed((Event d) -> {
+            if (processingThrowable != null) {
+                ExceptionDialog dialog = new ExceptionDialog(processingThrowable);
+                dialog.showAndWait();
             }
         });
 
@@ -228,7 +253,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             char[] vienna = molecule.viennaSequence();
             String newDotBracket = new String(vienna);
             molecule.setDotBracket(newDotBracket);
-            
+
             if (molecule.getDotBracket().equals("")) {
                 initWithAllDots();
             }
@@ -733,4 +758,159 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             updatePeaks();
         }
     }
+
+    @FXML
+    private void calcStructureAction() {
+        calcStructure();
+    }
+
+    private void calcStructure() {
+        setProcessingOn();
+        statusBar.setProgress(0.0);
+        ((Service) calcStructure.worker).restart();
+    }
+
+    String getScript() {
+        StringBuilder scriptB = new StringBuilder();
+        scriptB.append("homeDir = os.getcwd()\n");
+        scriptB.append("print('hello1')\n");
+        scriptB.append("print yamlString\n");
+        scriptB.append("data=readYamlString(yamlString)\n");
+        scriptB.append("global refiner\n");
+        scriptB.append("dataDir=homeDir+'./'\n");
+        scriptB.append("refiner=refine()\n");
+        scriptB.append("osfiles.setOutFiles(refiner,dataDir,0)\n");
+        scriptB.append("refiner.rootName = 'temp'\n");
+        scriptB.append("refiner.loadFromYaml(data,0)\n");
+        scriptB.append("print('hello')\n");
+        scriptB.append("refiner.anneal(refiner.dOpt)\n");
+        scriptB.append("refiner.output()\n");
+//        scriptB.append("refiner.loadFromYaml(data,seed)");
+//        scriptB.append("refiner.anneal(refiner.dOpt\n");
+//        scriptB.append("refiner.output()");
+
+        return scriptB.toString();
+    }
+
+    String genYaml() {
+        StringBuilder scriptB = new StringBuilder();
+        scriptB.append("rna:\n"
+                + "    ribose : Constrain\n"
+                + "    vienna : (((((((((....)))))))))\n"
+                + "\n");
+        scriptB.append("anneal:\n"
+                + "    dynOptions :\n"
+                + "        steps : 15000\n"
+                + "        highTemp : 5000.0\n"
+                + "        dfreeSteps : 0\n"
+                + "    force :\n"
+                + "        tors : 0.1\n"
+                + "        irp : 0.0\n"
+                + "    stage4.1 :\n"
+                + "        nStepVal : 5000\n"
+                + "        tempVal : [100.0]\n"
+                + "        force :\n"
+                + "            robson : 1\n"
+                + "            repel : -1");
+
+        return scriptB.toString();
+
+    }
+
+    private class StructureCalculator {
+
+        String script;
+        public Worker<Integer> worker;
+
+        private StructureCalculator() {
+            worker = new Service<Integer>() {
+
+                protected Task createTask() {
+                    return new Task() {
+                        protected Object call() {
+                            script = getScript();
+                            System.out.println("script " + script);
+                            PythonInterpreter processInterp = new PythonInterpreter();
+                            System.out.println("a");
+                            updateStatus("Start calculating");
+                            System.out.println("b");
+                            updateTitle("Start calculating");
+                            System.out.println("c");
+                            processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
+                            System.out.println("d");
+                            processInterp.set("yamlString", genYaml());
+                            System.out.println("e");
+                            processInterp.exec(script);
+                            System.out.println("f");
+                            return 0;
+                        }
+                    };
+                }
+            };
+
+            ((Service<Integer>) worker).setOnSucceeded(event -> {
+                finishProcessing();
+            });
+            ((Service<Integer>) worker).setOnCancelled(event -> {
+                setProcessingOff();
+                setProcessingStatus("cancelled", false);
+            });
+            ((Service<Integer>) worker).setOnFailed(event -> {
+                setProcessingOff();
+                final Throwable exception = worker.getException();
+                setProcessingStatus(exception.getMessage(), false, exception);
+
+            });
+
+        }
+    }
+
+    public void updateStatus(String s) {
+        if (Platform.isFxApplicationThread()) {
+            setProcessingStatus(s, true);
+        } else {
+            Platform.runLater(() -> {
+                setProcessingStatus(s, true);
+            });
+        }
+    }
+
+    void finishProcessing() {
+
+    }
+
+    void setProcessingOff() {
+
+    }
+
+    void setProcessingOn() {
+
+    }
+
+    public void setProcessingStatus(String s, boolean ok) {
+        setProcessingStatus(s, ok, null);
+    }
+
+    public void setProcessingStatus(String s, boolean ok, Throwable throwable) {
+        if (s == null) {
+            statusBar.setText("");
+        } else {
+            statusBar.setText(s);
+        }
+        if (ok) {
+            statusCircle.setFill(Color.GREEN);
+            processingThrowable = null;
+        } else {
+            statusCircle.setFill(Color.RED);
+            System.out.println("error: " + s);
+            processingThrowable = throwable;
+        }
+        statusBar.setProgress(0.0);
+    }
+
+    public void clearProcessingTextLabel() {
+        statusBar.setText("");
+        statusCircle.setFill(Color.GREEN);
+    }
+
 }
