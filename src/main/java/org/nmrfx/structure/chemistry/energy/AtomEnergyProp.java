@@ -15,12 +15,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.util.Arrays;
 import org.nmrfx.structure.chemistry.Atom;
@@ -29,6 +31,8 @@ import java.util.List;
 import org.apache.commons.math3.util.FastMath;
 
 public class AtomEnergyProp {
+
+    private static boolean FILE_LOADED = false;
 
     final String name;
     //leonard-jones a parameter
@@ -52,7 +56,6 @@ public class AtomEnergyProp {
     private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
     private static double hbondDelta = 0.30;
 
-
     public AtomEnergyProp(final String name, final double a, final double b, final double r, final double rh, final double e, final double c, final double mass, final int hbondMode) {
         this.name = name;
         this.a = FastMath.sqrt(a);
@@ -64,18 +67,30 @@ public class AtomEnergyProp {
         this.mass = mass;
         this.hbondMode = hbondMode;
     }
-    
-    public static void readPropFile(String fileName) throws IOException {
+
+    public static void readPropFile() throws FileNotFoundException, IOException {
+        if (!FILE_LOADED) {
+            readPropFile("reslib_iu/params.txt");
+        }
+    }
+
+    public static void readPropFile(String fileName) throws FileNotFoundException, IOException {
         String string;
         LineNumberReader lineReader;
-
-        try {
-            BufferedReader bf = new BufferedReader(new FileReader(fileName));
-            lineReader = new LineNumberReader(bf);
-        } catch (IOException ioe) {
-            throw new IOException(ioe.getMessage());
+        FILE_LOADED = true;
+        BufferedReader bf;
+        if (fileName.startsWith("reslib_iu")) {
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+            InputStream istream = cl.getResourceAsStream(fileName);
+            bf = new BufferedReader(new InputStreamReader(istream));
+        } else {
+            bf = new BufferedReader(new FileReader(fileName));
         }
+
+        lineReader = new LineNumberReader(bf);
         List<String> headerS = Arrays.asList();
+        //AtomType        HardRadius      RMin    E       Mass    HBondType
+
         while (true) {
             string = lineReader.readLine();
             if (string != null) {
@@ -84,14 +99,17 @@ public class AtomEnergyProp {
                     headerS = stringS;
                 } else {
                     String aType = stringS.get(headerS.indexOf("AtomType"));
-                    double a = Double.parseDouble(stringS.get(headerS.indexOf("RobsonA")));
-                    double b = Double.parseDouble(stringS.get(headerS.indexOf("RobsonB")));
-                    double r = Double.parseDouble(stringS.get(headerS.indexOf("RobsonRmin")));
+                    double r = Double.parseDouble(stringS.get(headerS.indexOf("RMin")));
                     double rh = Double.parseDouble(stringS.get(headerS.indexOf("HardRadius")));
-                    double e = Double.parseDouble(stringS.get(headerS.indexOf("RobsonE")));
-                    double c = Double.parseDouble(stringS.get(headerS.indexOf("RobsonCharge")));
+                    double e = Double.parseDouble(stringS.get(headerS.indexOf("E")));
                     double m = Double.parseDouble(stringS.get(headerS.indexOf("Mass")));
                     int hType = (int) Double.parseDouble(stringS.get(headerS.indexOf("HBondType")));
+                    
+                    e = -e;
+                    r = r * 2.0;
+                    double a = 1.0;
+                    double b = 1.0;
+                    double c = 0.0;
                     AtomEnergyProp prop = new AtomEnergyProp(aType, a, b, r, rh, e, c, m, hType);
                     AtomEnergyProp.add(aType, prop);
                 }
@@ -148,7 +166,7 @@ public class AtomEnergyProp {
     public double getMass() {
         return mass;
     }
-    
+
     public int getHBondMode() {
         return hbondMode;
     }
@@ -156,15 +174,18 @@ public class AtomEnergyProp {
     /**
      * computes interaction between two molecules based on table values
      * <p>
-     * This method calculates the interation between 2 molecules. It retrieves the ideal energy values from the table
-     * for both atoms It then calculates the radius or distance between both atoms. The rh value is calculating by
-     * simply adding both the radius. Hydrogen may be removed and substited by a certain number of Angstrom's indicated
-     * by AtomEnergyProp
+     * This method calculates the interation between 2 molecules. It retrieves
+     * the ideal energy values from the table for both atoms It then calculates
+     * the radius or distance between both atoms. The rh value is calculating by
+     * simply adding both the radius. Hydrogen may be removed and substited by a
+     * certain number of Angstrom's indicated by AtomEnergyProp
      *
      * @param AtomEnergy iProp Properties of atom 1
      * @param AtomEnergy jProp properties of atom 2
-     * @param boolean hardSphere determines if you want to calculate rh w/out hydrogen
-     * @param double hardSphere determines the value you want to add in substitution for hydrogen
+     * @param boolean hardSphere determines if you want to calculate rh w/out
+     * hydrogen
+     * @param double hardSphere determines the value you want to add in
+     * substitution for hydrogen
      */
     public static EnergyPair getInteraction(final Atom atom1, final Atom atom2, double hardSphere,
             boolean usehardSphere, double shrinkValue, double shrinkHValue) {

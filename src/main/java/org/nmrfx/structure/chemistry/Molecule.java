@@ -49,6 +49,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.energy.AngleTreeGenerator;
+import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.nmrfx.structure.chemistry.predict.RNAAttributes;
 import org.nmrfx.structure.chemistry.search.MNode;
@@ -799,6 +800,12 @@ public class Molecule implements Serializable, ITree {
     }
 
     public void setupEnergy(EnergyLists energyLists) {
+        try {
+            AtomEnergyProp.readPropFile();
+        } catch (FileNotFoundException ex) {
+        } catch (IOException ex) {
+            Logger.getLogger(Molecule.class.getName()).log(Level.SEVERE, null, ex);
+        }
         invalidateAtomArray();
         updateAtomArray();
         makeAtomList();

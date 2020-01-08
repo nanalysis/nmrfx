@@ -17,11 +17,14 @@
  */
 package org.nmrfx.structure.chemistry.energy;
 
+import java.io.IOException;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.nmrfx.structure.chemistry.Point3;
 import org.nmrfx.structure.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.Residue;
@@ -252,7 +255,13 @@ public class EnergyCoords {
         return bounds;
     }
 
-    public void setRadii(double hardSphere, boolean includeH, double shrinkValue, double shrinkHValue) {
+    public void setRadii(double hardSphere, boolean includeH,
+            double shrinkValue, double shrinkHValue, boolean useFF) {
+        try {
+            AtomEnergyProp.readPropFile();
+        } catch (IOException ex) {
+            Logger.getLogger(EnergyCoords.class.getName()).log(Level.SEVERE, null, ex);
+        }
         for (int i = 0; i < nAtoms; i++) {
             Atom atom1 = atoms[i];
             AtomEnergyProp iProp = (AtomEnergyProp) atom1.atomEnergyProp;
@@ -275,9 +284,9 @@ public class EnergyCoords {
                         rh1 += hardSphere;
                     }
                 }
-                contactRadii[i] = rh1;
                 double rMin = iProp.getR();
                 double eMin = Math.abs(iProp.getE());
+                contactRadii[i] = useFF ? Math.pow(2.0, -1.0 / 6) * rMin / 2.0 : rh1;
                 aValues[i] = 2.0 * eMin * Math.pow(rMin, 9);
                 bValues[i] = 3.0 * eMin * Math.pow(rMin, 6);
                 cValues[i] = atom1.getCharge();
@@ -294,7 +303,8 @@ public class EnergyCoords {
         double limit2 = limit * limit;
         double[][] bounds = getBoundaries();
         int[] nCells = new int[3];
-        setRadii(hardSphere, includeH, shrinkValue, shrinkHValue);
+
+        setRadii(hardSphere, includeH, shrinkValue, shrinkHValue, useFF);
 //        System.out.println("set cells");
 
         ePairs.clear();
@@ -431,18 +441,23 @@ public class EnergyCoords {
 
                                             //double rH = ePair.getRh();
                                             double rH = contactRadii[iAtom] + contactRadii[jAtom];
-                                            if (hBondable[iAtom] * hBondable[jAtom] < 0) {
-                                                rH -= hbondDelta;
-                                            }
-                                            rH -= adjustClose;
 
                                             if (useFF) {
                                                 double a = Math.sqrt(aValues[iAtom] * aValues[jAtom]);
                                                 double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
                                                 double c = cValues[iAtom] * cValues[jAtom];
+                                                c *= 322.0 / 6.0;
+                                                if (adjustClose > 0.01) {
+                                                    a *= 0.5;
+                                                    b *= 0.5;
+                                                }
                                                 ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH,
                                                         a, b, c);
                                             } else {
+                                                if (hBondable[iAtom] * hBondable[jAtom] < 0) {
+                                                    rH -= hbondDelta;
+                                                }
+                                                rH -= adjustClose;
                                                 ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
                                             }
 
