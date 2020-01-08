@@ -60,7 +60,6 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.AtomController;
 import org.nmrfx.processor.gui.molecule.MoleculeCanvas;
-import org.nmrfx.project.GUIProject;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
 import org.nmrfx.structure.chemistry.Compound;
@@ -774,14 +773,16 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     String getScript() {
         StringBuilder scriptB = new StringBuilder();
         scriptB.append("homeDir = os.getcwd()\n");
+        scriptB.append("print('hello1')\n");
         scriptB.append("print yamlString\n");
         scriptB.append("data=readYamlString(yamlString)\n");
         scriptB.append("global refiner\n");
-        scriptB.append("dataDir=homeDir+'/'\n");
+        scriptB.append("dataDir=homeDir+'./'\n");
         scriptB.append("refiner=refine()\n");
         scriptB.append("osfiles.setOutFiles(refiner,dataDir,0)\n");
         scriptB.append("refiner.rootName = 'temp'\n");
         scriptB.append("refiner.loadFromYaml(data,0)\n");
+        scriptB.append("print('hello')\n");
         scriptB.append("refiner.anneal(refiner.dOpt)\n");
         scriptB.append("refiner.output()\n");
 //        scriptB.append("refiner.loadFromYaml(data,seed)");
@@ -792,18 +793,11 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     }
 
     String genYaml() {
-        Molecule molecule = Molecule.getActive();
-        boolean isRNA = molecule.getPolymers().get(0).isRNA();
         StringBuilder scriptB = new StringBuilder();
-        if (isRNA) {
-            scriptB.append("rna:\n");
-            scriptB.append("    ribose : Constrain\n");
-            String dotBracket = molecule.getDotBracket();
-            if (dotBracket.length() > 0) {
-                scriptB.append("    vienna : ");
-                scriptB.append("'" + dotBracket + "'\n");
-            }
-        }
+        scriptB.append("rna:\n"
+                + "    ribose : Constrain\n"
+                + "    vienna : (((((((((....)))))))))\n"
+                + "\n");
         scriptB.append("anneal:\n"
                 + "    dynOptions :\n"
                 + "        steps : 15000\n"
@@ -811,7 +805,13 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                 + "        dfreeSteps : 0\n"
                 + "    force :\n"
                 + "        tors : 0.1\n"
-                + "        irp : 0.0\n");
+                + "        irp : 0.0\n"
+                + "    stage4.1 :\n"
+                + "        nStepVal : 5000\n"
+                + "        tempVal : [100.0]\n"
+                + "        force :\n"
+                + "            robson : 1\n"
+                + "            repel : -1");
 
         return scriptB.toString();
 
@@ -831,11 +831,17 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                             script = getScript();
                             System.out.println("script " + script);
                             PythonInterpreter processInterp = new PythonInterpreter();
+                            System.out.println("a");
                             updateStatus("Start calculating");
+                            System.out.println("b");
                             updateTitle("Start calculating");
+                            System.out.println("c");
                             processInterp.exec("import os\nfrom refine import *\nfrom molio import readYamlString\nimport osfiles");
+                            System.out.println("d");
                             processInterp.set("yamlString", genYaml());
+                            System.out.println("e");
                             processInterp.exec(script);
+                            System.out.println("f");
                             return 0;
                         }
                     };
@@ -870,12 +876,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     }
 
     void finishProcessing() {
-        removeAll();
-        try {
-            drawTubes();
-        } catch (InvalidMoleculeException ex) {
-            Logger.getLogger(MolSceneController.class.getName()).log(Level.SEVERE, null, ex);
-        }
+
     }
 
     void setProcessingOff() {

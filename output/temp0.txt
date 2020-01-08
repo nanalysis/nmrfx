@@ -1,1 +1,0 @@
-Irp     0    0.000 Dih     0    0.000 Robson     0    0.000 Repel     0    0.000 Distance     0    0.000    0.000 Shift     0    0.000 ProbT     0    0.000 Total    0.000
