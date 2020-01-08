@@ -190,8 +190,11 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         final double s = 2.0 * q / (q * q + r2);
         final double s3 = s * s * s;
         final double s6 = s3 * s3;
-        double e = weight * ((a * s3 - b) * s6 + c * s);
-        return e;
+        double eV = weight * ((a * s3 - b) * s6);
+        double eE = weight * (c * s);
+//        Atom[] atoms = eCoords.atoms;
+//        System.out.println(atoms[iAtom].getFullName() + " " + atoms[jAtom].getFullName() + " " + eV + " " + eE + " " + (1.0/s));
+        return eV + eE;
 
     }
 
@@ -210,8 +213,8 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         }
         String result = "";
         ViolationStats stat = null;
+        double energy = getEnergy(i, r2, weights[i] * weight);
         if (Math.abs(dif) > limitVal) {
-            double energy = getEnergy(i, r2, weights[i] * weight);
             stat = new ViolationStats(2, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rLow[i], 0.0, energy, eCoords);
         }
 

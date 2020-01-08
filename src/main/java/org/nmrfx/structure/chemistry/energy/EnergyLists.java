@@ -40,6 +40,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
@@ -447,6 +449,11 @@ public class EnergyLists {
 
     //calculates distance between center of the residues. If center is far away, no need to check atoms of residue
     public void makeCompoundList(Molecule molecule) {
+        try {
+            AtomEnergyProp.readPropFile();
+        } catch (IOException ex) {
+            Logger.getLogger(EnergyLists.class.getName()).log(Level.SEVERE, null, ex);
+        }
         this.molecule = molecule;
         // initialize energy types for atoms
         List<Atom> atoms = molecule.getAtomArray();
@@ -649,7 +656,7 @@ public class EnergyLists {
                 EnergyCoords eCoords = molecule.getEnergyCoords();
                 robsonEnergy = eCoords.calcRepel(false, forceWeight.getRobson());
                 nRobson = eCoords.getNContacts();
-                for (int i = 0; i < nRepel; i++) {
+                for (int i = 0; i < nRobson; i++) {
                     ViolationStats stat = eCoords.getRepelError(i, limitVal, forceWeight.getRobson());
                     if (stat != null) {
                         String errMsg = stat.toString();
