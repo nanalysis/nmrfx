@@ -140,13 +140,11 @@ public class PeakSlider {
         MenuItem restoreItem = new MenuItem("Restore Peaks");
         restoreItem.setOnAction(e -> restorePeaks());
         Menu matchingMenu = new Menu("Perform Match");
-        MenuItem matchAllRowItem = new MenuItem("Match Row");
-        MenuItem matchAllColItem = new MenuItem("Match Column");
-        matchAllRowItem.setOnAction(e -> matchClusters(1, true));
-        matchAllColItem.setOnAction(e -> matchClusters(0, true));
+        MenuItem matchItem = new MenuItem("Do Match");
+        matchItem.setOnAction(e -> matchClusters(true));
         MenuItem clearMatchItem = new MenuItem("Clear Matches");
         clearMatchItem.setOnAction(e -> clearMatches());
-        matchingMenu.getItems().addAll(matchAllRowItem, matchAllColItem, clearMatchItem);
+        matchingMenu.getItems().addAll(matchItem, clearMatchItem);
 
         actionMenu.getItems().addAll(thawAllItem, restoreItem, restoreAllItem, matchingMenu);
 
@@ -792,6 +790,10 @@ public class PeakSlider {
         return ((bestScore >= 0) ? bestPairedPeakClus : null);
     }
 
+    public void matchClusters(boolean drawMatches) {
+        matchClusters(0, drawMatches);
+        matchClusters(1, drawMatches);
+    }
     public void matchClusters(int iDim, boolean drawMatches) {
         System.out.println("matchClusters(" + iDim + ")");
 
