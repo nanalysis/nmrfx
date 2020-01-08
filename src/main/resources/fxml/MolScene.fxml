@@ -70,6 +70,12 @@
                                             <items>
                                             </items>
                                         </MenuButton>
+                                        <MenuButton  mnemonicParsing="false" text="Calculate">
+                                            <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#calcStructureAction" text="Calc Structure" />
+                                            </items>
+                                        </MenuButton>
+
                                     </children>
                                 </HBox>
                             </top>
