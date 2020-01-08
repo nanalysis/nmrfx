@@ -783,10 +783,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         scriptB.append("refiner.rootName = 'temp'\n");
         scriptB.append("refiner.loadFromYaml(data,0)\n");
         scriptB.append("refiner.anneal(refiner.dOpt)\n");
-        scriptB.append("refiner.output()\n");
-//        scriptB.append("refiner.loadFromYaml(data,seed)");
-//        scriptB.append("refiner.anneal(refiner.dOpt\n");
-//        scriptB.append("refiner.output()");
+//        scriptB.append("refiner.output()\n");
 
         return scriptB.toString();
     }
@@ -879,6 +876,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     }
 
     void finishProcessing() {
+        updateStatus("Done calculating");
         removeAll();
         try {
             drawTubes();
