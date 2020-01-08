@@ -815,9 +815,12 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
                 + "    stage4.1 :\n"
                 + "        nStepVal : 5000\n"
                 + "        tempVal : [100.0]\n"
+                + "        param:\n"
+                + "            dislim : 6.0\n"
                 + "        force :\n"
                 + "            robson : 1\n"
-                + "            repel : -1");
+                + "            repel : -1\n"
+        );
 
         return scriptB.toString();
 
