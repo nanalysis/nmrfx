@@ -135,7 +135,7 @@ class MolPeakGen:
         self.mol = mol
         self.widths = [self.widthH, self.widthH]
         self.intensity = 100.0
-        self.refMode = True
+        self.refMode = False
         #self.labelScheme = "All: A.C2',C8,Hn,Hr G.C1',Cn,Hn,Hr U.C2',C6,Hn,Hr C.C1',C6,Hn,Hr"
         self.labelScheme = ""
         self.editSchemes = ["ef","fe","ee","ff","aa"]
