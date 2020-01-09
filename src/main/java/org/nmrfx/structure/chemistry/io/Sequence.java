@@ -606,7 +606,12 @@ public class Sequence {
         return molecule;
     }
 
-    public Molecule read(String polymerName, List<String> inputStrings, String parentDir)
+    public Molecule read(String polymerName, List<String> inputStrings, String parentDir) throws MoleculeIOException {
+        return read(polymerName, inputStrings, parentDir, "");
+
+    }
+
+    public Molecule read(String polymerName, List<String> inputStrings, String parentDir, String molName)
             throws MoleculeIOException {
         LineNumberReader lineReader = null;
         Polymer polymer = null;
@@ -615,7 +620,6 @@ public class Sequence {
         String iRes = "1";
         String[] stringArg = new String[3];
         Pattern pattern = Pattern.compile("[-/\\w/\\.]+");
-        String molName = "";
         String coordSetName = molName;
         ArrayList<String> coordSetNames = new ArrayList<>();
         ArrayList<Polymer> polymers = new ArrayList<>();
@@ -701,7 +705,6 @@ public class Sequence {
             } else {
                 resName = stringArg[0];
                 isResidue = true;
-
                 if (stringArg[1] != null) {
                     try {
                         iRes = stringArg[1];
