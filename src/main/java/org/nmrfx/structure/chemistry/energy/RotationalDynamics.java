@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.math3.util.FastMath;
 import java.util.Random;
+import org.nmrfx.processor.processing.ProgressUpdater;
 import org.python.core.PyFloat;
 import org.python.core.PyFunction;
 import org.python.core.PyObject;
@@ -68,6 +69,7 @@ public class RotationalDynamics {
     Random rand = null;
     public static boolean firstRun = true;
     public TrajectoryWriter trajectoryWriter = null;
+    private static ProgressUpdater progressUpdater = null;
     PyObject tempFunction;
     PyObject econFunction;
 
@@ -87,6 +89,10 @@ public class RotationalDynamics {
         this.rand = rand;
         getBranchAtoms();
         // makeInertias now
+    }
+
+    public static void setUpdater(ProgressUpdater updater) {
+        progressUpdater = updater;
     }
 
     public void setTrajectoryWriter(TrajectoryWriter trajWriter) {
@@ -625,9 +631,15 @@ public class RotationalDynamics {
             timeStep = currentTimeStep;
             //if ((((iStep + 1) % reportAt) == 0) || (deltaEnergy > 0.01)) {
             if (((iStep + 1) % reportAt) == 0) {
-                if (trajectoryWriter != null) {
+                if ((progressUpdater != null) || (trajectoryWriter != null)) {
                     molecule.updateFromVecCoords();
-                    trajectoryWriter.writeStructure();
+
+                    if (trajectoryWriter != null) {
+                        trajectoryWriter.writeStructure();
+                    }
+                    if (progressUpdater != null) {
+                        progressUpdater.updateStatus(String.format("Step: %6d Energy: %7.1f", currentStep, lastTotalEnergy));
+                    }
                 }
                 double rms = 180.0 * (sumDeltaSq / lastSteps) / Math.PI;
                 double maxDelta = 180.0 * (sumMaxDelta / lastSteps) / Math.PI;
