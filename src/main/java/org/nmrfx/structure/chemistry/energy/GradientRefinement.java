@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
 //import org.apache.commons.math3.optimization.direct.CMAESOptimizer;
@@ -31,6 +30,7 @@ import org.apache.commons.math3.optim.InitialGuess;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunctionGradient;
+import org.nmrfx.processor.processing.ProgressUpdater;
 
 /**
  *
@@ -40,6 +40,7 @@ public class GradientRefinement extends Refinement {
 
     private boolean useNumericDerivatives = false;
     public TrajectoryWriter trajectoryWriter = null;
+    private static ProgressUpdater progressUpdater = null;
 
     public class Checker extends SimpleValueChecker {
 
@@ -54,10 +55,18 @@ public class GradientRefinement extends Refinement {
                 long deltaTime = time - startTime;
                 report(iteration, nEvaluations, deltaTime, dihedrals.energyList.atomList.size(), current.getValue());
                 if (trajectoryWriter != null) {
-                    try {
-                        trajectoryWriter.writeStructure();
-                    } catch (MissingCoordinatesException ex) {
-                        Logger.getLogger(GradientRefinement.class.getName()).log(Level.SEVERE, null, ex);
+                    if ((progressUpdater != null) || (trajectoryWriter != null)) {
+                        molecule.updateFromVecCoords();
+
+                        if (trajectoryWriter != null) {
+                            try {
+                                trajectoryWriter.writeStructure();
+                            } catch (MissingCoordinatesException ex) {
+                            }
+                        }
+                        if (progressUpdater != null) {
+                            progressUpdater.updateStatus(String.format("Step: %6d Energy: %7.1f", iteration, current.getValue()));
+                        }
                     }
                 }
             }
@@ -73,6 +82,10 @@ public class GradientRefinement extends Refinement {
 
     public void setTrajectoryWriter(TrajectoryWriter trajectoryWriter) {
         this.trajectoryWriter = trajectoryWriter;
+    }
+
+    public static void setUpdater(ProgressUpdater updater) {
+        progressUpdater = updater;
     }
 
     public void gradMinimize(int nSteps, double tolerance) {
