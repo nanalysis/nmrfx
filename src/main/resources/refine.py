@@ -1027,7 +1027,7 @@ class refine:
             resStrings = getSequenceArray(index, seqString, linkers, polyType)
             chain = molDict.get('chain')
             if chain == None:
-                chain = 'p'
+                chain = 'A'
             molio.readSequenceString(chain, resStrings)
         else:
             file = molDict['file']
