@@ -60,6 +60,7 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.AtomController;
 import org.nmrfx.processor.gui.molecule.MoleculeCanvas;
+import org.nmrfx.processor.processing.ProgressUpdater;
 import org.nmrfx.project.GUIProject;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
@@ -71,6 +72,8 @@ import org.nmrfx.structure.chemistry.RNALabels;
 import org.nmrfx.structure.chemistry.SSLayout;
 import org.nmrfx.structure.chemistry.SSViewer;
 import org.nmrfx.structure.chemistry.SpatialSet;
+import org.nmrfx.structure.chemistry.energy.GradientRefinement;
+import org.nmrfx.structure.chemistry.energy.RotationalDynamics;
 import org.python.util.PythonInterpreter;
 
 /**
@@ -78,7 +81,7 @@ import org.python.util.PythonInterpreter;
  *
  * @author Bruce Johnson
  */
-public class MolSceneController implements Initializable, MolSelectionListener, FreezeListener {
+public class MolSceneController implements Initializable, MolSelectionListener, FreezeListener, ProgressUpdater {
 
     private Stage stage;
     SSViewer ssViewer;
@@ -766,6 +769,8 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     }
 
     private void calcStructure() {
+        RotationalDynamics.setUpdater(this);
+        GradientRefinement.setUpdater(this);
         setProcessingOn();
         statusBar.setProgress(0.0);
         ((Service) calcStructure.worker).restart();
@@ -865,18 +870,24 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         }
     }
 
+    @Override
+    public void updateProgress(double f) {
+    }
+
+    @Override
     public void updateStatus(String s) {
         if (Platform.isFxApplicationThread()) {
             setProcessingStatus(s, true);
+            updateView();
         } else {
             Platform.runLater(() -> {
                 setProcessingStatus(s, true);
+                updateView();
             });
         }
     }
 
-    void finishProcessing() {
-        updateStatus("Done calculating");
+    void updateView() {
         removeAll();
         try {
             drawTubes();
@@ -884,6 +895,11 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
         } catch (InvalidMoleculeException ex) {
             Logger.getLogger(MolSceneController.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+    }
+
+    void finishProcessing() {
+        updateStatus("Done calculating");
     }
 
     void setProcessingOff() {

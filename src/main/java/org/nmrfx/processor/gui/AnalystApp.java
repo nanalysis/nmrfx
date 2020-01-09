@@ -351,6 +351,8 @@ public class AnalystApp extends MainApp {
         MenuItem readMolItem = new MenuItem("Read Mol...");
         readMolItem.setOnAction(e -> readMolecule("mol"));
         molFileMenu.getItems().add(readMolItem);
+        MenuItem seqGUIMenuItem = new MenuItem("Sequence GUI");
+        seqGUIMenuItem.setOnAction(e -> SequenceGUI.showGUI(this));
 
         MenuItem atomsMenuItem = new MenuItem("Atoms");
         atomsMenuItem.setOnAction(e -> showAtoms(e));
@@ -364,7 +366,7 @@ public class AnalystApp extends MainApp {
         MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
         spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
 
-        molMenu.getItems().addAll(molFileMenu, atomsMenuItem, molMenuItem, rdcMenuItem, spectrumLibraryMenuItem);
+        molMenu.getItems().addAll(molFileMenu, seqGUIMenuItem, atomsMenuItem, molMenuItem, rdcMenuItem, spectrumLibraryMenuItem);
 
         Menu viewMenu = new Menu("View");
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
@@ -929,7 +931,7 @@ public class AnalystApp extends MainApp {
         controller.removeTool(SimMolController.class);
         controller.getBottomBox().getChildren().remove(simMolController.getToolBar());
     }
-    
+
     void addPrefs() {
         AnalystPrefs.addPrefs();
     }
