@@ -706,6 +706,12 @@ public class EnergyLists {
                 for (Polymer polymer : polymers) {
                     if (polymer.isRNA()) {
                         for (int i = 1; i < polymer.size(); i++) {
+                            Residue residue = polymer.getResidue(i);
+                            if (!residue.isStandard()) {
+                                i++;
+                                continue;
+                            }
+
                             nRotamers++;
                             RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
                             double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
@@ -944,6 +950,11 @@ public class EnergyLists {
         for (Polymer polymer : polymers) {
             if (polymer.isRNA()) {
                 for (int i = 1; i < polymer.size(); i++) {
+                    Residue residue = polymer.getResidue(i);
+                    if (!residue.isStandard()) {
+                        i++;
+                        continue;
+                    }
                     RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
                     double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
                     //System.out.printf("%5.3g  ", rotamerEnergy);
