@@ -294,36 +294,62 @@ public class CrossHairs {
         return result;
     }
 
-    public int getCrossHairNum(double x, double y, int iOrient) {
-        int crossHairNum = 0;
-        if (crossHairStates[1][iOrient] && crossHairLines[1][iOrient].isVisible()) {
-            if (iOrient == HORIZONTAL) {
-                double delta0 = Math.abs(crossHairLines[0][iOrient].getStartY() - y);
-                double delta1 = Math.abs(crossHairLines[1][iOrient].getStartY() - y);
-                if (delta1 < delta0) {
-                    crossHairNum = 1;
-                }
-            } else {
-                double delta0 = Math.abs(crossHairLines[0][iOrient].getStartX() - x);
-                double delta1 = Math.abs(crossHairLines[1][iOrient].getStartX() - x);
-                if (delta1 < delta0) {
-                    crossHairNum = 1;
-                }
-            }
-        } else if (!crossHairLines[0][iOrient].isVisible()) {
-            crossHairNum = 0;
-        } else if (iOrient == HORIZONTAL) {
-            double delta0 = Math.abs(crossHairLines[0][iOrient].getStartY() - y);
-            if (delta0 > CROSSHAIR_TOL) {
-                crossHairNum = 1;
-            }
+    public int[] getCrossHairNum(double x, double y, boolean hasMiddleMouseButton, boolean middleButton) {
+        int[] srch0 = {0};
+        int[] srch1 = {1};
+        int[] srch01 = {0, 1};
+        int[] searchCrosshairs;
+        int[] orients = {HORIZONTAL, VERTICAL};
+        if (hasMiddleMouseButton) {
+            searchCrosshairs = middleButton ? srch1 : srch0;
         } else {
-            double delta0 = Math.abs(crossHairLines[0][iOrient].getStartX() - x);
-            if (delta0 > CROSSHAIR_TOL) {
-                crossHairNum = 1;
+            searchCrosshairs = srch01;
+        }
+        double inf = Double.POSITIVE_INFINITY;
+
+        double[][] deltas = {{inf, inf}, {inf, inf}};
+        int[] result = {-1, -1};
+        int[] closest = {-1, -1};
+
+        for (int orient : orients) {
+            for (int i : searchCrosshairs) {
+                Line line = crossHairLines[i][orient];
+                double value = orient == HORIZONTAL ? line.getStartY() : line.getStartX();
+                double ref = orient == HORIZONTAL ? y : x;
+                if (crossHairStates[i][orient] && crossHairLines[i][orient].isVisible()) {
+                    deltas[i][orient] = Math.abs(value - ref);
+                }
+            }
+            if (Double.isFinite(deltas[0][orient]) && (deltas[0][orient] < deltas[1][orient])) {
+                closest[orient] = 0;
+                if (deltas[0][orient] < CROSSHAIR_TOL) {
+                    result[orient] = 0;
+                }
+
+            } else if (Double.isFinite(deltas[1][orient])) {
+                closest[orient] = 1;
+                if (deltas[1][orient] < CROSSHAIR_TOL) {
+                    result[orient] = 1;
+                }
             }
         }
-        return crossHairNum;
+        if ((result[0] == -1) && (result[1] == -1)) {
+            if (!crossHairLines[0][HORIZONTAL].isVisible()) {
+                result[HORIZONTAL] = 0;
+            } else if (!crossHairLines[1][HORIZONTAL].isVisible()) {
+                result[HORIZONTAL] = 1;
+            } else if (closest[0] != -1) {
+                result[HORIZONTAL] = closest[0];
+            }
+            if (!crossHairLines[0][VERTICAL].isVisible()) {
+                result[VERTICAL] = 0;
+            } else if (!crossHairLines[1][VERTICAL].isVisible()) {
+                result[VERTICAL] = 1;
+            } else if (closest[1] != -1) {
+                result[VERTICAL] = closest[1];
+            }
+        }
+        return result;
     }
 
     public void setSliceStatus(boolean state) {

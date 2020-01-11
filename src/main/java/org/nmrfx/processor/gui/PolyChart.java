@@ -493,22 +493,21 @@ public class PolyChart implements PeakListener {
     }
 
     public void handleCrossHair(MouseEvent mEvent, boolean selectCrossNum) {
-        if (mEvent.isPrimaryButtonDown()) {
-            if (selectCrossNum) {
-                if (!hasMiddleMouseButton) {
-                    crossHairNumH = crossHairs.getCrossHairNum(mEvent.getX(), mEvent.getY(), HORIZONTAL);
-                    crossHairNumV = crossHairs.getCrossHairNum(mEvent.getX(), mEvent.getY(), VERTICAL);
-                } else {
-                    crossHairNumH = 0;
-                    crossHairNumV = 0;
-                }
+        if (selectCrossNum) {
+            if (mEvent.isMiddleButtonDown()) {
+                hasMiddleMouseButton = true;
             }
+
+            int[] crossNums = crossHairs.getCrossHairNum(mEvent.getX(),
+                    mEvent.getY(), hasMiddleMouseButton, mEvent.isMiddleButtonDown());
+            crossHairNumH = crossNums[0];
+            crossHairNumV = crossNums[1];
+        }
+        if (crossHairNumH >= 0) {
             crossHairs.moveCrosshair(crossHairNumH, HORIZONTAL, mEvent.getY());
+        }
+        if (crossHairNumV >= 0) {
             crossHairs.moveCrosshair(crossHairNumV, VERTICAL, mEvent.getX());
-        } else if (mEvent.isMiddleButtonDown()) {
-            hasMiddleMouseButton = true;
-            crossHairs.moveCrosshair(1, HORIZONTAL, mEvent.getY());
-            crossHairs.moveCrosshair(1, VERTICAL, mEvent.getX());
         }
     }
 
