@@ -133,6 +133,12 @@ public class SpecAttrWindowController implements Initializable {
     @FXML
     private RangeSlider integralPosSlider;
     @FXML
+    private Label integralLowValue;
+    @FXML
+    private Label integralHighValue;
+    @FXML
+    private CheckBox regionCheckBox;
+    @FXML
     private TabPane tabPane;
     @FXML
     private Tab datasetTab;
@@ -275,18 +281,24 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.setMax(1.0);
         integralPosSlider.setLowValue(0.8);
         integralPosSlider.setHighValue(0.95);
+        
 
         integralPosSlider.lowValueProperty().addListener(e -> updateIntegralState());
         integralPosSlider.highValueProperty().addListener(e -> updateIntegralState());
         integralCheckBox.selectedProperty().addListener(e -> updateIntegralState());
+        regionCheckBox.selectedProperty().addListener(e -> updateIntegralState());
+        
     }
 
     void updateIntegralState() {
+        chart.chartProps.setRegions(regionCheckBox.isSelected());
         chart.chartProps.setIntegrals(integralCheckBox.isSelected());
         double lowValue = integralPosSlider.getLowValue();
         double highValue = integralPosSlider.getHighValue();
         chart.chartProps.setIntegralLowPos(lowValue);
         chart.chartProps.setIntegralHighPos(highValue);
+        integralLowValue.setText(String.format("%.2f",lowValue));
+        integralHighValue.setText(String.format("%.2f",highValue));
         chart.refresh();
     }
 
@@ -924,6 +936,42 @@ public class SpecAttrWindowController implements Initializable {
                         getRow())).setOnColor(t.getNewValue());
             }
         });
+        TableColumn<PeakListAttributes, Color> offColorCol = new TableColumn<>("offcolor");
+        offColorCol.setPrefWidth(50);
+        offColorCol.setCellValueFactory(new PropertyValueFactory("offColor"));
+        offColorCol.setCellValueFactory(cellData -> cellData.getValue().offColorProperty());
+        offColorCol.setCellFactory(column -> {
+            return new TableCell<PeakListAttributes, Color>() {
+                @Override
+
+                protected void updateItem(Color item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(null);
+                    if (empty || (item == null)) {
+                        setGraphic(null);
+                    } else {
+                        final ColorPicker cp = new ColorPicker();
+                        cp.setValue(item);
+                        setGraphic(cp);
+                        cp.setOnAction(new EventHandler<javafx.event.ActionEvent>() {
+                            public void
+                                    handle(javafx.event.ActionEvent t) {
+                                getTableView().edit(getTableRow().getIndex(), column);
+                                commitEdit(cp.getValue());
+                            }
+                        });
+                    }
+                }
+            };
+        });
+        offColorCol.setOnEditCommit(new EventHandler<CellEditEvent<PeakListAttributes, Color>>() {
+            @Override
+            public void handle(CellEditEvent<PeakListAttributes, Color> t) {
+                ((PeakListAttributes) t.getTableView().getItems().get(t.getTablePosition().
+                        getRow())).setOffColor(t.getNewValue());
+            }
+        });
+
 
         TableColumn<PeakListAttributes, PeakDisplayParameters.DisplayTypes> peakDisTypeCol = new TableColumn<>("Type");
         peakDisTypeCol.setCellValueFactory(cellData -> cellData.getValue().displayTypeProperty());
@@ -1002,7 +1050,9 @@ public class SpecAttrWindowController implements Initializable {
         simPeaksCol.setMaxWidth(50);
         simPeaksCol.setResizable(false);
 
-        peakListTableView.getColumns().setAll(peakListCol, drawPeaksCol, onColorCol, peakDisTypeCol, nPlanesCol, drawLinksCol, simPeaksCol, peakLabelTypeCol);
+        peakListTableView.getColumns().setAll(peakListCol, drawPeaksCol,
+                onColorCol, offColorCol, peakDisTypeCol, nPlanesCol,
+                drawLinksCol, simPeaksCol, peakLabelTypeCol);
     }
 
     private void xFullAction(ActionEvent event) {
@@ -1240,6 +1290,7 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.setLowValue(polyChart.chartProps.getIntegralLowPos());
         integralPosSlider.setHighValue(polyChart.chartProps.getIntegralHighPos());
         integralCheckBox.setSelected(chart.chartProps.getIntegrals());
+        regionCheckBox.setSelected(chart.chartProps.getRegions());
         titlesCheckBox.setSelected(polyChart.chartProps.getTitles());
         DISDIM curDisDim = polyChart.disDimProp.get();
         disDimCombo.setValue(curDisDim);

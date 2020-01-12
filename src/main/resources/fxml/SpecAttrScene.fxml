@@ -5,6 +5,7 @@
 <?import javafx.scene.control.ColorPicker?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
@@ -68,13 +69,23 @@
                                 </ToolBar>
                                 <HBox>
                                     <children>
-                                        <GridPane fx:id="viewGrid" layoutX="110.0" layoutY="70.0" prefHeight="272.0" prefWidth="537.0">
+                                        <GridPane fx:id="viewGrid" layoutX="110.0" layoutY="70.0" prefHeight="272.0" prefWidth="400.0">
                                         </GridPane>
+                                        <HBox minWidth="30"></HBox>
                                         <VBox>
                                             <children>
                                                 <CheckBox fx:id="integralCheckBox" text="Integrals"/>
-                                                <RangeSlider fx:id="integralPosSlider" prefWidth="250.0">
-                                                </RangeSlider>
+                                                <HBox>
+                                                    <children>
+                                                        <HBox minWidth="30"/>
+                                                        <Label text="Pos:" minWidth="35"/>
+                                                        <Label fx:id="integralLowValue" minWidth="35" maxWidth="35"/>
+                                                        <RangeSlider fx:id="integralPosSlider" prefWidth="150.0"/>
+                                                        <Label fx:id="integralHighValue" minWidth="35" maxWidth="35"/>
+                                                    </children>
+
+                                                </HBox>
+                                                <CheckBox fx:id="regionCheckBox" text="Regions"/>
                                             </children>
                                         </VBox>
                                         
