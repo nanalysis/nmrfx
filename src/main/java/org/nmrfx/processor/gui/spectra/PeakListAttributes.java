@@ -271,8 +271,8 @@ public class PeakListAttributes implements PeakListener {
                 double lb = axis.getLowerBound();
                 double ub = axis.getUpperBound();
                 if (Math.abs(lb - ub) < 0.5) {
-                    lb = lb - 1.4;
-                    ub = ub + 1.4;
+                    lb = lb - ((double) getNplanes()) - 0.5;
+                    ub = ub + ((double) getNplanes()) + 0.5;
                 }
                 limits[i][1] = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, i, lb);
                 limits[i][0] = DatasetAttributes.AXMODE.PPM.indexToValue(dataAttr, i, ub);

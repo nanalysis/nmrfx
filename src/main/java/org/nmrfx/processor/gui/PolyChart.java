@@ -2914,12 +2914,26 @@ public class PolyChart implements PeakListener {
                 gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
                 gC.clip();
                 gC.beginPath();
-
+                DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
                 List<Peak> peaks = peakListAttr.getPeaksInRegion();
                 int[] dim = peakListAttr.getPeakDim();
                 double[] offsets = new double[dim.length];
+                int[][] limits = new int[dim.length][2];
+                for (int iDim = 2; iDim < dim.length; iDim++) {
+                    limits[iDim] = getPlotLimits(dataAttr, iDim);
+                }
+
                 peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
                     try {
+                        for (int iDim = 2; iDim < dim.length; iDim++) {
+                            offsets[iDim] = 0.0;
+                            if (limits[iDim][0] == limits[iDim][1]) {
+                                double ppm = peak.getPeakDim(dim[iDim]).getChemShiftValue();
+                                double pt = dataAttr.getDataset().ppmToDPoint(dataAttr.dim[iDim], ppm);
+                                double deltaPt = Math.abs(limits[iDim][0] - pt);
+                                offsets[iDim] = deltaPt;
+                            }
+                        }
                         drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, false);
                         for (int iDim : dim) {
                             if (iDim >= 0) {
