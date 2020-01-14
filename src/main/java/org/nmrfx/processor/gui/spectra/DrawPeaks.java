@@ -107,7 +107,6 @@ public class DrawPeaks {
     int peakLabelType = 0;
     int multipletLabelType = PeakDisplayParameters.MULTIPLET_LABEL_SUMMARY;
     boolean treeOn = false;
-    int peakColorType = 0;
     boolean peakDisOn = true;
     boolean peakDisOff = true;
     static double peak2DStroke = 1.0;
@@ -590,8 +589,8 @@ public class DrawPeaks {
         Color color = peakAttr.getOnColor();
 
         // g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-        switch (peakColorType) {
-            case PeakDisplayParameters.COLOR_BY_PLANE:
+        switch (peakAttr.getColorType()) {
+            case Plane:
 
                 for (int i = 2; i < offset.length; i++) {
                     if (Math.abs(offset[i]) > 0.5) {
@@ -603,7 +602,7 @@ public class DrawPeaks {
 
                 break;
 
-            case PeakDisplayParameters.COLOR_BY_ASSIGNED:
+            case Assigned:
 
                 boolean iAsg = true;
 
@@ -622,7 +621,7 @@ public class DrawPeaks {
 
                 break;
 
-            case PeakDisplayParameters.COLOR_BY_ERROR:
+            case Error:
 
                 boolean isOK = true;
 
@@ -641,7 +640,7 @@ public class DrawPeaks {
 
                 break;
 
-            case PeakDisplayParameters.COLOR_BY_STATUS:
+            case Status:
 
                 if (peak.getStatus() != 0) {
                     colorMode = 1;
@@ -649,7 +648,7 @@ public class DrawPeaks {
 
                 break;
 
-            case PeakDisplayParameters.COLOR_BY_INTENSITY:
+            case Intensity:
 
                 if (peak.getIntensity() < 0) {
                     colorMode = 1;

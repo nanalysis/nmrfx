@@ -55,6 +55,7 @@ import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.gui.controls.ConsoleUtil;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters.ColorTypes;
 
 /**
  *
@@ -212,6 +213,27 @@ public class PeakListAttributes implements PeakListener {
 
     public final void setDisplayType(final String type) {
         this.displayTypeProperty().set(PeakDisplayParameters.DisplayTypes.valueOf(type));
+    }
+
+    private ObjectProperty<PeakDisplayParameters.ColorTypes> colorType;
+
+    public final ObjectProperty<PeakDisplayParameters.ColorTypes> colorTypeProperty() {
+        if (colorType == null) {
+            colorType = new SimpleObjectProperty<PeakDisplayParameters.ColorTypes>(ColorTypes.Plane);
+        }
+        return this.colorType;
+    }
+
+    public final PeakDisplayParameters.ColorTypes getColorType() {
+        return this.colorTypeProperty().get();
+    }
+
+    public final void setColorType(final PeakDisplayParameters.ColorTypes colorType) {
+        this.colorTypeProperty().set(colorType);
+    }
+
+    public final void setColorType(final String type) {
+        this.colorTypeProperty().set(PeakDisplayParameters.ColorTypes.valueOf(type));
     }
 
     public PeakListAttributes(PolyChart chart, DatasetAttributes dataAttr, PeakList peakList) {

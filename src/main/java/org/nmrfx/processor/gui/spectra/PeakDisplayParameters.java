@@ -423,6 +423,14 @@ public class PeakDisplayParameters {
         None();
     }
 
+    public enum ColorTypes {
+        Plane(),
+        Assigned(),
+        Error(),
+        Status(),
+        Intensity();
+    }
+
     static final String[] labelTypes = {
         "Number", "Label", "Residue", "1Residue", "Atom", "Cluster", "User", "Comment",
         "Summary", "PPM", "None"
