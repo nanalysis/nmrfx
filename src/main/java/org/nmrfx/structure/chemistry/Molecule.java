@@ -27,7 +27,6 @@ import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,8 +35,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.*;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -291,6 +288,10 @@ public class Molecule implements Serializable, ITree {
         return activeMol;
     }
 
+    public void setActive() {
+        activeMol = this;
+    }
+    
     public void reName(Molecule molecule, Compound compound, String name1, String name2) {
         molecule.name = name2;
         StructureProject.getActive().removeMolecule(name1);
@@ -488,7 +489,9 @@ public class Molecule implements Serializable, ITree {
         ArrayList<Compound> compounds = new ArrayList<>();
         for (Entity entity : entities.values()) {
             if (entity instanceof Compound) {
-                compounds.add((Compound) entity);
+                if (!entity.getName().equals("HOH")) {
+                    compounds.add((Compound) entity);
+                }
             }
         }
         return compounds;
@@ -3348,10 +3351,21 @@ public class Molecule implements Serializable, ITree {
     }
 
     public static Atom getAtomByName(String name) throws IllegalArgumentException {
+        Molecule molecule = Molecule.getActive();
+
+        if (molecule == null) {
+            throw new IllegalArgumentException("No active molecule");
+        }
+
+        return molecule.findAtom(name);
+
+    }
+
+    public Atom findAtom(String name) {
         MolFilter molFilter = null;
         molFilter = new MolFilter(name);
         Atom atom = null;
-        SpatialSet spSet = getSpatialSet(molFilter);
+        SpatialSet spSet = findSpatialSet(molFilter);
         if (spSet != null) {
             atom = spSet.atom;
         }
@@ -3371,17 +3385,21 @@ public class Molecule implements Serializable, ITree {
     }
 
     public static SpatialSet getSpatialSet(MolFilter molFilter) throws IllegalArgumentException {
-        Residue firstResidue = null;
-        Compound compound;
-        CoordSet coordSet;
-
         Molecule molecule = Molecule.getActive();
 
         if (molecule == null) {
             throw new IllegalArgumentException("No active molecule");
         }
+        return molecule.findSpatialSet(molFilter);
 
-        Iterator e = molecule.coordSets.values().iterator();
+    }
+
+    public SpatialSet findSpatialSet(MolFilter molFilter) throws IllegalArgumentException {
+        Residue firstResidue = null;
+        Compound compound;
+        CoordSet coordSet;
+
+        Iterator e = coordSets.values().iterator();
 
         while (e.hasNext()) {
             coordSet = (CoordSet) e.next();
@@ -3869,7 +3887,7 @@ public class Molecule implements Serializable, ITree {
                 sBuilder.append(iAtom).append("\n");
                 for (MNode node : pathNodes) {
                     sBuilder.append(" ").append(node.getAtom().getName());
-                }
+        }
                 sBuilder.append("\n");
                 for (Integer treeValue : treeValues) {
                     sBuilder.append(" ").append(treeValue);
@@ -4101,9 +4119,9 @@ public class Molecule implements Serializable, ITree {
                     jCouplings.add(jCoupling);
                 } else if ((shell > 1) && (atoms[shell].aNum == 6)) {
                     if (shell <= hmbcShells) {
-                        JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
-                        hmbcLinks.add(jCoupling);
-                    }
+                    JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
+                    hmbcLinks.add(jCoupling);
+                }
                 }
                 if (gotJ) {
                     if (!hashJ.containsKey(atomStart)) {
@@ -4126,10 +4144,10 @@ public class Molecule implements Serializable, ITree {
                     if ((iNodeBegin != null) && (iNodeEnd != null)) {
                         if (iNodeBegin.intValue() != iNodeEnd.intValue()) {
                             if (iNodeBegin < iNodeEnd) {
-                                mTreeJ.addEdge(iNodeBegin, iNodeEnd);
-                            }
+                            mTreeJ.addEdge(iNodeBegin, iNodeEnd);
                         }
                     }
+                }
                 }
 
             }
