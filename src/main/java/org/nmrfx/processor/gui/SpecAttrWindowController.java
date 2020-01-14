@@ -281,13 +281,12 @@ public class SpecAttrWindowController implements Initializable {
         integralPosSlider.setMax(1.0);
         integralPosSlider.setLowValue(0.8);
         integralPosSlider.setHighValue(0.95);
-        
 
         integralPosSlider.lowValueProperty().addListener(e -> updateIntegralState());
         integralPosSlider.highValueProperty().addListener(e -> updateIntegralState());
         integralCheckBox.selectedProperty().addListener(e -> updateIntegralState());
         regionCheckBox.selectedProperty().addListener(e -> updateIntegralState());
-        
+
     }
 
     void updateIntegralState() {
@@ -297,8 +296,8 @@ public class SpecAttrWindowController implements Initializable {
         double highValue = integralPosSlider.getHighValue();
         chart.chartProps.setIntegralLowPos(lowValue);
         chart.chartProps.setIntegralHighPos(highValue);
-        integralLowValue.setText(String.format("%.2f",lowValue));
-        integralHighValue.setText(String.format("%.2f",highValue));
+        integralLowValue.setText(String.format("%.2f", lowValue));
+        integralHighValue.setText(String.format("%.2f", highValue));
         chart.refresh();
     }
 
@@ -972,6 +971,31 @@ public class SpecAttrWindowController implements Initializable {
             }
         });
 
+        TableColumn<PeakListAttributes, PeakDisplayParameters.ColorTypes> peakColorTypeCol = new TableColumn<>("ColorBy");
+        peakColorTypeCol.setCellValueFactory(cellData -> cellData.getValue().colorTypeProperty());
+
+        peakColorTypeCol.setCellFactory(tc -> {
+            ComboBox<PeakDisplayParameters.ColorTypes> combo = new ComboBox<>();
+            combo.getItems().addAll(PeakDisplayParameters.ColorTypes.values());
+            TableCell<PeakListAttributes, PeakDisplayParameters.ColorTypes> cell = new TableCell<PeakListAttributes, PeakDisplayParameters.ColorTypes>() {
+                @Override
+                protected void updateItem(PeakDisplayParameters.ColorTypes reason, boolean empty) {
+                    super.updateItem(reason, empty);
+                    setText(null);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        combo.setValue(reason);
+                        setGraphic(combo);
+                    }
+                }
+            };
+            combo.setOnAction(e
+                    -> peakListTableView.getItems().get(cell.getIndex()).setColorType(combo.getValue()));
+            return cell;
+        });
+        peakColorTypeCol.setPrefWidth(75);
+        peakColorTypeCol.setMaxWidth(150);
 
         TableColumn<PeakListAttributes, PeakDisplayParameters.DisplayTypes> peakDisTypeCol = new TableColumn<>("Type");
         peakDisTypeCol.setCellValueFactory(cellData -> cellData.getValue().displayTypeProperty());
@@ -996,7 +1020,7 @@ public class SpecAttrWindowController implements Initializable {
                     -> peakListTableView.getItems().get(cell.getIndex()).setDisplayType(combo.getValue()));
             return cell;
         });
-        peakDisTypeCol.setPrefWidth(100);
+        peakDisTypeCol.setPrefWidth(75);
         peakDisTypeCol.setMaxWidth(150);
 
         TableColumn<PeakListAttributes, PeakDisplayParameters.LabelTypes> peakLabelTypeCol = new TableColumn<>("Label");
@@ -1022,13 +1046,14 @@ public class SpecAttrWindowController implements Initializable {
                     -> peakListTableView.getItems().get(cell.getIndex()).setLabelType(combo.getValue()));
             return cell;
         });
-        peakLabelTypeCol.setPrefWidth(100);
+        peakLabelTypeCol.setPrefWidth(75);
         peakLabelTypeCol.setMaxWidth(150);
 
         TableColumn<PeakListAttributes, String> nPlanesCol = new TableColumn<>("npl");
         nPlanesCol.setCellValueFactory(new PropertyValueFactory("nplanes"));
         nPlanesCol.setCellFactory(tc -> new TextFieldTableCell(isConverter));
         nPlanesCol.setPrefWidth(35);
+        nPlanesCol.setMaxWidth(50);
 
         ContextMenu nPlanesMenu = new ContextMenu();
         MenuItem unifyNPlanesMenu = new MenuItem("unify");
@@ -1039,19 +1064,19 @@ public class SpecAttrWindowController implements Initializable {
         TableColumn<PeakListAttributes, Boolean> drawLinksCol = new TableColumn<>("lnk");
         drawLinksCol.setCellValueFactory(new PropertyValueFactory("drawLinks"));
         drawLinksCol.setCellFactory(tc -> new CheckBoxTableCell<>());
-        drawLinksCol.setPrefWidth(50);
+        drawLinksCol.setPrefWidth(35);
         drawLinksCol.setMaxWidth(50);
         drawLinksCol.setResizable(false);
 
         TableColumn<PeakListAttributes, Boolean> simPeaksCol = new TableColumn<>("sim");
         simPeaksCol.setCellValueFactory(new PropertyValueFactory("simPeaks"));
         simPeaksCol.setCellFactory(tc -> new CheckBoxTableCell<>());
-        simPeaksCol.setPrefWidth(50);
+        simPeaksCol.setPrefWidth(35);
         simPeaksCol.setMaxWidth(50);
         simPeaksCol.setResizable(false);
 
         peakListTableView.getColumns().setAll(peakListCol, drawPeaksCol,
-                onColorCol, offColorCol, peakDisTypeCol, nPlanesCol,
+                onColorCol, offColorCol, peakColorTypeCol, peakDisTypeCol, nPlanesCol,
                 drawLinksCol, simPeaksCol, peakLabelTypeCol);
     }
 
