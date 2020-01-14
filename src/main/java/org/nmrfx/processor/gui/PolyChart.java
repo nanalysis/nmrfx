@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.DoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,7 +89,6 @@ import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.datasets.peaks.PeakList.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
-import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
 import org.nmrfx.processor.gui.undo.ChartUndoLimits;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
@@ -2065,6 +2063,7 @@ public class PolyChart implements PeakListener {
                                     int nPoints = drawSpectrum.getNPoints();
                                     int rowIndex = drawSpectrum.getRowIndex();
                                     drawSpecLine(datasetAttributes, gC, iMode, rowIndex, nPoints, xy);
+                                    gC.setFill(datasetAttributes.getPosColor(rowIndex));
                                     if (chartProps.getIntegrals()) {
                                         draw1DIntegral(datasetAttributes, gC);
                                     }
@@ -2079,7 +2078,6 @@ public class PolyChart implements PeakListener {
                                         if (offset > maxTextOffset) {
                                             maxTextOffset = offset;
                                         }
-                                        gC.setFill(datasetAttributes.getPosColor(rowIndex));
                                         double zeroPos = axes[1].getDisplayPosition(0.0) - offset;
                                         gC.setTextAlign(TextAlignment.LEFT);
                                         gC.fillText(datasetAttributes.getDataset().getTitle(),
@@ -2176,7 +2174,7 @@ public class PolyChart implements PeakListener {
                 x2 = hold;
             }
             gC.setFill(Color.LIGHTYELLOW);
-            gC.fillRect(x1, 0.0, x2 - x1, chartHeight);
+            gC.fillRect(x1, yPos + topBorder + 1, x2 - x1, chartHeight - 2);
 
         }
     }
