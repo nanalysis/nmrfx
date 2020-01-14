@@ -108,7 +108,12 @@ def getSequenceArray(indexing,seqString,linkers,polyType):
     except ValueError:
         resNums = []
         for section in indexing.split():
-            startIndex, endIndex = [int(i) for i in section.split(':')]
+            indices = section.split(':')
+            if len(indices) == 1:
+               startIndex = int(indices[0])
+               endIndex = startIndex
+            else: 
+                startIndex, endIndex = [int(i) for i in indices]
             resNums += range(startIndex, endIndex+1)
 
     if len(resNums) != len(resNames):
