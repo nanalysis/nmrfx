@@ -39,6 +39,7 @@ public class PropertyGenerator {
     Map<String, Double> eShiftMap = null;
     Map<String, Double> contactMap = null;
     Map<String, Double> valueMap = new HashMap<>();
+    private Molecule molecule;
 
     static {
         formatter.setMinimumFractionDigits(4);
@@ -57,7 +58,10 @@ public class PropertyGenerator {
     public double calcRingShift(String aname1) {
         MolFilter mf1 = new MolFilter(aname1);
         SpatialSet spSet = Molecule.getSpatialSet(mf1);
-        Molecule molecule = Molecule.getActive();
+        if (spSet == null) {
+            System.out.println("no atom " + aname1);
+            return 0.0;
+        }
         RingCurrentShift ringShifts = new RingCurrentShift();
         ringShifts.makeRingList(molecule);
         int iStruct = 0;
@@ -66,7 +70,6 @@ public class PropertyGenerator {
     }
 
     public HydrogenBond calcHBond(String hydrogenAtom) throws InvalidMoleculeException {
-        Molecule molecule = Molecule.getActive();
         int[] structures = {0};
         MolFilter hydrogenFilter = new MolFilter(hydrogenAtom);
         MolFilter acceptorFilter = new MolFilter("*.O,O*");
@@ -109,7 +112,7 @@ public class PropertyGenerator {
     }
 
     public double calcHBondShift(Map<String, HydrogenBond> hBondMap, String hydrogenAtom, double power) {
-        Atom atom = Molecule.getAtomByName(hydrogenAtom);
+        Atom atom = molecule.findAtom(hydrogenAtom);
         double shift = 0.0;
         if ((hBondMap != null) && (atom != null)) {
             HydrogenBond hBond = hBondMap.get(atom.getFullName());
@@ -121,7 +124,7 @@ public class PropertyGenerator {
     }
 
     public double calcHBondDistance(Map<String, HydrogenBond> hBondMap, String hydrogenAtom) {
-        Atom atom = Molecule.getAtomByName(hydrogenAtom);
+        Atom atom = molecule.findAtom(hydrogenAtom);
         double dis = 0.0;
         if ((hBondMap != null) && (atom != null)) {
             HydrogenBond hBond = hBondMap.get(atom.getFullName());
@@ -137,7 +140,7 @@ public class PropertyGenerator {
     }
 
     public double calcEInteractionShift(Map<String, Double> eShiftMap, String hydrogenAtom) {
-        Atom atom = Molecule.getAtomByName(hydrogenAtom);
+        Atom atom = molecule.findAtom(hydrogenAtom);
         //System.out.println(hydrogenAtom + " " + atom + " " + eShiftMap);
         double shift = 0.0;
         if ((atom != null) && (eShiftMap != null)) {
@@ -257,7 +260,6 @@ public class PropertyGenerator {
     }
 
     public int getFirstRes() {
-        Molecule molecule = Molecule.getActive();
         Entity entity = molecule.getEntity(molecule.getName());
         Polymer polymer = (Polymer) entity;
         Residue residue = polymer.getFirstResidue();
@@ -265,7 +267,6 @@ public class PropertyGenerator {
     }
 
     public int getLastRes() {
-        Molecule molecule = Molecule.getActive();
         Entity entity = molecule.getEntity(molecule.getName());
         Polymer polymer = (Polymer) entity;
         Residue residue = polymer.getLastResidue();
@@ -293,7 +294,7 @@ public class PropertyGenerator {
     }
 
     public boolean doesAtomExist(String polyName, int res, String atomName) {
-        Atom atom = Molecule.getAtomByName(Integer.toString(res) + ".N");
+        Atom atom = molecule.findAtom(Integer.toString(res) + ".N");
         if (atom == null) {
             System.out.println(res + ".N doesn't exist");
             return false;
@@ -308,7 +309,7 @@ public class PropertyGenerator {
     }
 
     public double calculateChi(String polyName, int res) {
-        String resName = Molecule.getAtomByName(Integer.toString(res) + ".N").getEntity().name;
+        String resName = molecule.findAtom(Integer.toString(res) + ".N").getEntity().name;
         if (resName.equals("ALA") || resName.equals("GLY")) {
             return Double.NaN;
         } else {
@@ -383,7 +384,7 @@ public class PropertyGenerator {
     }
 
     public double calculateChi2(String polyName, int res) {
-        String resName = Molecule.getAtomByName(Integer.toString(res) + ".N").getEntity().name;
+        String resName = molecule.findAtom(Integer.toString(res) + ".N").getEntity().name;
         String rs = Integer.toString(res);
         final MolFilter mf1;
         final MolFilter mf2;
@@ -444,7 +445,7 @@ public class PropertyGenerator {
         //NvShell nvShell = new NvShell(interp);
         HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data = new HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>>();
         offsetTable = loadCorrTable("corrtable.txt");
-
+        this.molecule = molecule;
         contactMap = molecule.calcContactSum(0, true);
         hBondMap = new HashMap<>();
         eShiftMap = new HashMap<>();
@@ -571,7 +572,7 @@ public class PropertyGenerator {
             String polyName = polymer.getName();
             String atomSpec = polyName + ":" + Integer.toString(res) + "." + atomName;
             String hAtomSpec = polyName + ":" + Integer.toString(res) + "." + "H";
-            Atom atom = Molecule.getAtomByName(atomSpec);
+            Atom atom = molecule.findAtom(atomSpec);
             double contactSum = getContactSum(atomSpec);
             valueMap.put("contacts", contactSum);
             valueMap.put("fRandom", getFRandom(atomName, contactSum));
@@ -651,15 +652,15 @@ public class PropertyGenerator {
 
     public void analyzeResidue(Polymer polymer, String polyName, int res, String csString) {
 
-        Atom atom = Molecule.getAtomByName(polyName + ":" + Integer.toString(res) + ".N");
+        Atom atom = molecule.findAtom(polyName + ":" + Integer.toString(res) + ".N");
         if (atom == null) {
             return;
         }
-        Atom atomP = Molecule.getAtomByName(polyName + ":" + Integer.toString(res - 1) + ".N");
+        Atom atomP = molecule.findAtom(polyName + ":" + Integer.toString(res - 1) + ".N");
         if (atomP == null) {
             return;
         }
-        Atom atomS = Molecule.getAtomByName(polyName + ":" + Integer.toString(res + 1) + ".N");
+        Atom atomS = molecule.findAtom(polyName + ":" + Integer.toString(res + 1) + ".N");
         if (atomS == null) {
             return;
         }
@@ -857,7 +858,6 @@ public class PropertyGenerator {
             if (resName.equals("CYS")) {
                 Atom sgAtom = residue.getAtom("SG");
                 if (sgAtom != null) {
-                    Molecule molecule = Molecule.getActive();
                     if (molecule.isDisulfide(sgAtom, 0)) {
                         value = 1.0;
                     }
