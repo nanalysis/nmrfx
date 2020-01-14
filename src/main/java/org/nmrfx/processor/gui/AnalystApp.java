@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javafx.application.Platform;
@@ -70,6 +71,7 @@ import static javafx.application.Application.launch;
 import javafx.beans.property.IntegerProperty;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.utils.properties.IntRangeOperationItem;
+import org.python.util.PythonInterpreter;
 
 public class AnalystApp extends MainApp {
 
@@ -277,6 +279,9 @@ public class AnalystApp extends MainApp {
         MenuItem saveSTARMenuItem = new MenuItem("Save STAR3...");
         saveSTARMenuItem.setOnAction(e -> writeSTAR());
 
+        MenuItem openSparkyMenuItem = new MenuItem("Open Sparky Project...");
+        openSparkyMenuItem.setOnAction(e -> readSparkyProject());
+
         List<Path> recentProjects = PreferencesController.getRecentProjects();
         for (Path path : recentProjects) {
             int count = path.getNameCount();
@@ -289,7 +294,9 @@ public class AnalystApp extends MainApp {
             recentProjectMenuItem.getItems().add(projectMenuItem);
         }
 
-        projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem, projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem, openSTARMenuItem, saveSTARMenuItem);
+        projectMenu.getItems().addAll(projectOpenMenuItem, recentProjectMenuItem,
+                projectSaveMenuItem, projectSaveAsMenuItem, closeProjectMenuItem,
+                openSTARMenuItem, saveSTARMenuItem, openSparkyMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
                 recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
@@ -905,6 +912,22 @@ public class AnalystApp extends MainApp {
             if (atomController != null) {
                 atomController.setFilterString("");
             }
+        }
+    }
+
+    void readSparkyProject() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Read Sparky Project");
+        File sparkyFile = chooser.showOpenDialog(null);
+        Map<String, Object> pMap = null;
+        if (sparkyFile != null) {
+            PythonInterpreter interpreter = new PythonInterpreter();
+            interpreter.exec("import sparky");
+            String rdString;
+            interpreter.set("pMap", pMap);
+            interpreter.exec("sparky.pMap=pMap");
+            rdString = String.format("sparky.loadProjectFile('%s')", sparkyFile.toString());
+            interpreter.exec(rdString);
         }
     }
 
