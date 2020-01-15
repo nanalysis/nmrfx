@@ -83,6 +83,7 @@ public class GUIStructureProject extends StructureProject {
 
     public void close() {
         clearAllMolecules();
+        clearAllPeakLists();
         AnalystApp.closeAll();
 
     }
