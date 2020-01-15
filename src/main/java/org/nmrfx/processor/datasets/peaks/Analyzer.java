@@ -745,16 +745,24 @@ public class Analyzer {
         return result;
     }
 
+    public void fitRegions() throws Exception {
+        for (DatasetRegion region : getRegions()) {
+            fitRegion(region);
+        }
+    }
+
     public Optional<Double> fitRegion(DatasetRegion region) throws Exception {
         Optional<Double> result = Optional.empty();
         if (region != null) {
-            PeakFitting peakFitting = new PeakFitting(dataset);
             List<PeakDim> peakDims = Multiplets.findPeaksInRegion(peakList, region);
-            for (PeakDim peakDim : peakDims) {
-                peakDim.getPeak().setFlag(4, false);
+            if (!peakDims.isEmpty()) {
+                PeakFitting peakFitting = new PeakFitting(dataset);
+                for (PeakDim peakDim : peakDims) {
+                    peakDim.getPeak().setFlag(4, false);
+                }
+                double rms = peakFitting.jfitRegion(region, peakDims, "all");
+                result = Optional.of(rms);
             }
-            double rms = peakFitting.jfitRegion(region, peakDims, "all");
-            result = Optional.of(rms);
         }
         return result;
     }
