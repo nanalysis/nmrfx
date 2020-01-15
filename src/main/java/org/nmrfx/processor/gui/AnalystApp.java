@@ -70,6 +70,7 @@ import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 import static javafx.application.Application.launch;
 import javafx.beans.property.IntegerProperty;
 import org.controlsfx.control.PropertySheet;
+import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.IntRangeOperationItem;
 import org.python.util.PythonInterpreter;
 
@@ -828,7 +829,9 @@ public class AnalystApp extends MainApp {
     }
 
     void closeProject() {
-        ((GUIStructureProject) getActive()).close();
+        if (GUIUtils.affirm("Close all project information")) {
+            ((GUIStructureProject) getActive()).close();
+        }
     }
 
     @FXML
