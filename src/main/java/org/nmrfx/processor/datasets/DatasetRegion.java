@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 // fixme add document "Note: this comparator imposes orderings that are inconsistent with equals."
 public class DatasetRegion implements Comparator, Comparable {
@@ -176,6 +177,17 @@ public class DatasetRegion implements Comparator, Comparable {
         return (compare(this, o2) == 0);
     }
 
+    public boolean overlapOnDim(double ppm, int iDim) {
+        boolean result = true;
+
+        if (ppm < getRegionStart(iDim)) {
+            result = false;
+        } else if (ppm > getRegionEnd(iDim)) {
+            result = false;
+        }
+        return result;
+    }
+
     public boolean overlapOnDim(Object o2, int iDim) {
         boolean result = true;
         DatasetRegion r2 = (DatasetRegion) o2;
@@ -301,5 +313,27 @@ public class DatasetRegion implements Comparator, Comparable {
             sum += value;
         }
         setIntegral(sum);
+    }
+
+    public static DatasetRegion findOverlap(TreeSet<DatasetRegion> regions, double ppm, int dim) {
+        for (DatasetRegion region : regions) {
+            if (region.overlapOnDim(ppm, dim)) {
+                return region;
+            }
+        }
+        return null;
+    }
+
+    public static DatasetRegion findClosest(TreeSet<DatasetRegion> regions, double ppm, int dim) {
+        DatasetRegion closest = null;
+        double minDis = Double.MAX_VALUE;
+        for (DatasetRegion region : regions) {
+            double delta = Math.abs(ppm - (region.getRegionStart(dim) + region.getRegionEnd(dim)) / 2);
+            if (delta < minDis) {
+                closest = region;
+                minDis = delta;
+            }
+        }
+        return closest;
     }
 }
