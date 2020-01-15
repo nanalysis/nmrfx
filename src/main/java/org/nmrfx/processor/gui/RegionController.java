@@ -18,8 +18,6 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
-import javafx.collections.SetChangeListener;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -44,8 +42,6 @@ import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetRegion;
 import org.nmrfx.processor.datasets.peaks.Analyzer;
-import org.nmrfx.processor.datasets.peaks.Multiplet;
-import org.nmrfx.processor.datasets.peaks.Multiplets;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
@@ -112,8 +108,17 @@ public class RegionController implements Initializable {
         MenuButton menu = new MenuButton("Actions");
         menuBar.getChildren().add(menu);
 
+        MenuItem findRegionsMenuItem = new MenuItem("Find Regions");
+        findRegionsMenuItem.setOnAction(e -> findRegions());
+
         MenuItem pickRegionsMenuItem = new MenuItem("Pick Regions");
         pickRegionsMenuItem.setOnAction(e -> pickRegions());
+
+        MenuItem fitRegionsMenuItem = new MenuItem("Fit Regions");
+        fitRegionsMenuItem.setOnAction(e -> fitRegions());
+
+        MenuItem adjustPeakIntegralsMenuItem = new MenuItem("Adjust Peak Integrals");
+        adjustPeakIntegralsMenuItem.setOnAction(e -> adjustPeakIntegrals());
 
         MenuItem clearMenuItem = new MenuItem("Clear");
         clearMenuItem.setOnAction(e -> clearAnalysis());
@@ -124,15 +129,17 @@ public class RegionController implements Initializable {
         MenuItem clearThresholdMenuItem = new MenuItem("Clear Threshold");
         clearThresholdMenuItem.setOnAction(e -> clearThreshold());
 
-        menu.getItems().addAll(pickRegionsMenuItem, clearMenuItem, thresholdMenuItem, clearThresholdMenuItem);
+        menu.getItems().addAll(findRegionsMenuItem, pickRegionsMenuItem,
+                fitRegionsMenuItem, adjustPeakIntegralsMenuItem,
+                clearMenuItem, thresholdMenuItem, clearThresholdMenuItem);
     }
 
     public void initNavigator(HBox toolBar) {
         this.navigatorToolBar = toolBar;
         multipletIdField = new TextField();
-        multipletIdField.setMinWidth(35);
-        multipletIdField.setMaxWidth(35);
-        multipletIdField.setPrefWidth(35);
+        multipletIdField.setMinWidth(75);
+        multipletIdField.setMaxWidth(75);
+        multipletIdField.setPrefWidth(75);
 
         String iconSize = "12px";
         String fontSize = "7pt";
@@ -140,16 +147,16 @@ public class RegionController implements Initializable {
         Button bButton;
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> firstRegion(e));
+        bButton.setOnAction(e -> lastRegion());
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.BACKWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> previousRegion(e));
+        bButton.setOnAction(e -> nextRegion());
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> nextRegion(e));
+        bButton.setOnAction(e -> previousRegion());
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
-        bButton.setOnAction(e -> lastRegion(e));
+        bButton.setOnAction(e -> firstRegion());
         buttons.add(bButton);
         Button deleteButton = GlyphsDude.createIconButton(FontAwesomeIcon.BAN, "", fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
 
@@ -169,7 +176,7 @@ public class RegionController implements Initializable {
             if (null != kE.getCode()) {
                 switch (kE.getCode()) {
                     case ENTER:
-                        gotoPeakId(multipletIdField);
+                        gotoClosestRegion(multipletIdField);
                         break;
                     default:
                         break;
@@ -280,6 +287,18 @@ public class RegionController implements Initializable {
 
     }
 
+    void adjustPeakIntegrals() {
+        activeRegion.ifPresent(region -> {
+            chart = PolyChart.getActiveChart();
+            Dataset dataset = chart.getDataset();
+            double norm = dataset.getNorm() / dataset.getScale();
+            double integral = region.getIntegral();
+            double value = integral / norm;
+            analyzer.normalizePeaks(region, value);
+            refresh();
+        });
+    }
+
     public Analyzer getAnalyzer() {
         if (analyzer == null) {
             chart = PolyChart.getActiveChart();
@@ -309,6 +328,40 @@ public class RegionController implements Initializable {
             } catch (IOException ex) {
                 Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+    }
+
+    private void findRegions() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            analyzer.calculateThreshold();
+            analyzer.getThreshold();
+            analyzer.autoSetRegions();
+            try {
+                analyzer.integrate();
+            } catch (IOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+                return;
+            }
+            chart.chartProps.setRegions(false);
+            chart.chartProps.setIntegrals(true);
+            chart.refresh();
+            lastRegion();
+        }
+    }
+
+    private void fitRegions() {
+        Analyzer analyzer = getAnalyzer();
+        if (analyzer != null) {
+            try {
+                analyzer.fitRegions();
+            } catch (Exception ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+                return;
+            }
+            refresh();
         }
     }
 
@@ -369,7 +422,7 @@ public class RegionController implements Initializable {
             DatasetRegion m = regions.first();
             if (m != null) {
                 activeRegion = Optional.of(m);
-                updateMultipletField(false);
+                RegionController.this.updateRegion(false);
             }
         }
     }
@@ -384,14 +437,15 @@ public class RegionController implements Initializable {
         return peaks;
     }
 
-    void updateMultipletField() {
-        updateMultipletField(true);
+    void updateRegion() {
+        RegionController.this.updateRegion(true);
     }
 
-    void updateMultipletField(boolean resetView) {
+    void updateRegion(boolean resetView) {
         if (activeRegion.isPresent()) {
             DatasetRegion region = activeRegion.get();
-            // multipletIdField.setText(String.valueOf(region.getIDNum()));
+            double center = (region.getRegionStart(0) + region.getRegionEnd(0)) / 2;
+            multipletIdField.setText(String.format("%.3f", center));
             if (resetView) {
                 refreshPeakView(region);
             }
@@ -408,17 +462,17 @@ public class RegionController implements Initializable {
         }
     }
 
-    void firstRegion(ActionEvent e) {
+    void firstRegion() {
         TreeSet<DatasetRegion> regions = getRegions();
         if (!regions.isEmpty()) {
             activeRegion = Optional.of(regions.first());
         } else {
             activeRegion = Optional.empty();
         }
-        updateMultipletField();
+        updateRegion();
     }
 
-    void previousRegion(ActionEvent e) {
+    void previousRegion() {
         if (activeRegion.isPresent()) {
             TreeSet<DatasetRegion> regions = getRegions();
             DatasetRegion region = regions.lower(activeRegion.get());
@@ -426,13 +480,13 @@ public class RegionController implements Initializable {
                 region = regions.first();
             }
             activeRegion = Optional.of(region);
-            updateMultipletField();
+            updateRegion();
         } else {
-            firstRegion(e);
+            lastRegion();
         }
     }
 
-    void nextRegion(ActionEvent e) {
+    void nextRegion() {
         if (activeRegion.isPresent()) {
             TreeSet<DatasetRegion> regions = getRegions();
             DatasetRegion region = regions.higher(activeRegion.get());
@@ -440,23 +494,34 @@ public class RegionController implements Initializable {
                 region = regions.first();
             }
             activeRegion = Optional.of(region);
-            updateMultipletField();
+            updateRegion();
         } else {
-            firstRegion(e);
+            lastRegion();
         }
     }
 
-    void lastRegion(ActionEvent e) {
+    void lastRegion() {
         TreeSet<DatasetRegion> regions = getRegions();
         if (!regions.isEmpty()) {
             activeRegion = Optional.of(regions.last());
         } else {
             activeRegion = Optional.empty();
         }
-        updateMultipletField();
+        updateRegion();
     }
 
-    void gotoPeakId(TextField textField) {
+    void gotoClosestRegion(TextField textField) {
+        try {
+            double center = Double.valueOf(textField.getText());
+            DatasetRegion region = DatasetRegion.findClosest(getRegions(), center, 0);
+            if (region != null) {
+                activeRegion = Optional.of(region);
+                updateRegion();
+            }
+
+        } catch (NumberFormatException nfe) {
+
+        }
 
     }
 
@@ -474,7 +539,7 @@ public class RegionController implements Initializable {
             stage.setTitle("Regions");
             stage.setScene(scene);
             stage.setMinWidth(200);
-            stage.setMinHeight(475);
+            stage.setMinHeight(250);
             stage.show();
             stage.toFront();
             controller.chart = controller.getChart();
@@ -543,7 +608,7 @@ public class RegionController implements Initializable {
 
     void refresh() {
         chart.refresh();
-        updateMultipletField(false);
+        RegionController.this.updateRegion(false);
 
     }
 
@@ -578,7 +643,7 @@ public class RegionController implements Initializable {
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
         analyzer.removeRegion((ppm0 + ppm1) / 2);
         analyzer.addRegion(ppm0, ppm1);
-        updateMultipletField(false);
+        RegionController.this.updateRegion(false);
         chart.refresh();
     }
 
@@ -587,7 +652,7 @@ public class RegionController implements Initializable {
         double ppm0 = chart.getVerticalCrosshairPositions()[0];
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
         analyzer.addRegion(ppm0, ppm1);
-        updateMultipletField(false);
+        RegionController.this.updateRegion(false);
         chart.refresh();
 
     }
