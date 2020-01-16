@@ -525,6 +525,9 @@ public class Sequence {
             if (compound != null) {
                 result = true;
                 addNonStandardResidue(residue);
+            } else {
+                result = true;
+                System.out.print("cant read  " + fileName);
             }
             // FIXME : What happens if first residue is an unnatural residue
             if (this.connectAtom != null) {
@@ -545,7 +548,6 @@ public class Sequence {
         exitAtomName = null;
         String localFile = localResLibDir + "/" + fileShortName.split(".prf")[0];
         String[] exts = {".pdb", ".sdf"};
-        Polymer polymer = (Polymer) molecule.getEntity(coordSetName);
         Compound compound = null;
         for (String ext : exts) {
             file = new File(localFile + ext);
