@@ -62,7 +62,7 @@ public class EnergyShiftPairs extends EnergyPairs {
 
     public double calcDistShifts(boolean calcDeriv, double rLim, double intraScale, double weight) {
         //setupAtomPairs(rLim);
-        eCoords.setCells(this, 1000, rLim, 0.0, true, 0.0, 0.0);
+        eCoords.setCells(this, 1000, rLim, 0.0, true, 0.0, 0.0, false);
         double[] baseShifts = eCoords.baseShifts;
         double[] refShifts = eCoords.refShifts;
         int[] shiftClass = eCoords.shiftClass;

@@ -1,20 +1,20 @@
 LNAME Asparagine
 SNAME asn
 RCHAR N
-ATOM   N      N'   1.32  114.00  -120.0
-ATOM   H      H'   1.00  123.00     0.0
-ATOM   CA     C1   1.47  123.00   180.0
-ATOM   HA     H    1.08  109.47  -120.0
-ATOM   CB     C2   1.53  109.47  -121.5
-ATOM   HB2    H    1.08  109.47  -120.0
-ATOM   HB3    H    1.08  109.47  -120.0
-ATOM   CG     C'   1.53  109.47     0.0
-ATOM   OD1    O'   1.24  121.00     0.0
-ATOM   ND2    N'   1.32  114.00   180.0
-ATOM   HD21   H'   1.00  120.00     0.0
-ATOM   HD22   H'   1.00  120.00   180.0
-ATOM   C      C'   1.53  109.47   120.0
-ATOM   O      O'   1.24  120.00   180.0
+ATOM   N      N     1.32  114.00  -120.0  -0.41570
+ATOM   H      H     1.00  123.00  0.0     0.27190
+ATOM   CA     CX    1.47  123.00  180.0   0.01430
+ATOM   HA     H1    1.08  109.47  -120.0  0.10480
+ATOM   CB     2C    1.53  109.47  -121.5  -0.20410
+ATOM   HB2    HC    1.08  109.47  -120.0  0.07970
+ATOM   HB3    HC    1.08  109.47  -120.0  0.07970
+ATOM   CG     C     1.53  109.47  0.0     0.71300
+ATOM   OD1    O     1.24  121.00  0.0     -0.59310
+ATOM   ND2    N     1.32  114.00  180.0   -0.91910
+ATOM   HD21   H     1.00  120.00  0.0     0.41960
+ATOM   HD22   H     1.00  120.00  180.0   0.41960
+ATOM   C      C     1.53  109.47  120.0   0.59730
+ATOM   O      O     1.24  120.00  180.0   -0.56790
 FAMILY   -      N      H      CA     
 FAMILY   N      CA     C      CB     HA     
 FAMILY   CA     CB     CG     HB3    HB2    

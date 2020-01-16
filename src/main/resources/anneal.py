@@ -93,6 +93,7 @@ def getAnnealStages(dOpt, settings):
                             }
     }
     stages = [stage1, stage2, stage3, stage4, stage5]
+    stageDict = {}
     for i,stage in enumerate(stages):
 
         ''' The default settings have the lowest priority '''
@@ -109,6 +110,30 @@ def getAnnealStages(dOpt, settings):
         if userStage:
             stage['param'].strictUpdate(userStage.get('param'))
             stage['force'].strictUpdate(userStage.get('force'))
+        stageDict[i+1] = stage
+    for key in settings:
+        if len(key) > 7 and key[0:5] == "stage" and key[6] == ".":
+            index = float(key[5:])
+            index1 = int(round(index))
+            baseStage = stages[index1-1]
+
+            newStage = dict(baseStage)
+            newStage['param'] = createStrictDict(baseStage['param'],'param')
+            newStage['force'] = createStrictDict(baseStage['force'],'force')
+
+            userStage = settings.get(key, {})
+            if userStage:
+                for kk in userStage:
+                    if kk != 'param' and kk != 'force':
+                        newStage[kk] = userStage.get(kk)
+                    else:
+                        newStage[kk].strictUpdate(userStage.get(kk))
+                stageDict[index] = newStage
+    keys = stageDict.keys()
+    keys.sort()
+    stages=[]
+    for key in keys:
+        stages.append(stageDict[key])
     return stages
 
 
@@ -141,12 +166,25 @@ def runStage(stage, refiner, rDyn):
         refiner.gmin(nsteps=gminSteps, tolerance=1.0e-6)
     tempFunc = stage.get('tempVal')
     if tempFunc is not None:
-        try:
-            upTemp, downTemp, time = tempFunc
-            tempLambda = lambda f: (upTemp - downTemp) * pow((1.0 - f), time) + downTemp
-        except TypeError:
+        if callable(tempFunc):
             tempLambda = tempFunc
+        else:
+            if isinstance(tempFunc,float):
+                tempLambda = tempFunc
+            else:
+                if len(tempFunc) == 1:
+                    upTemp = tempFunc[0]
+                    downTemp = 1.0
+                    powVal = 4.0
+                elif len(tempFunc) == 2:
+                    upTemp, downTemp = tempFunc
+                    powVal = 4.0
+                else:
+                    upTemp, downTemp, powVal = tempFunc
+                tempLambda = lambda f: (upTemp - downTemp) * pow((1.0 - f), powVal) + downTemp
         econLambda = stage['econVal']
+        if econLambda == None:
+            econLambda = 0.001
         nSteps = stage['nStepVal']
         global initialize
         if initialize:

@@ -110,6 +110,15 @@ def readYaml(file):
     data = yaml.load(input)
     return data
 
+def readYamlString(yamlString):
+    from org.yaml.snakeyaml import Yaml
+
+    yaml = Yaml()
+    data = yaml.load(yamlString)
+    return data
+
+
+
 def loadResource(resourceName):
     cl = ClassLoader.getSystemClassLoader()
     istream = cl.getResourceAsStream(resourceName)
