@@ -181,7 +181,7 @@ public class Sequence {
 
     public enum PRFFields {
 
-        ATOM("ATOM", 6, 7) {
+        ATOM("ATOM", 7, 8) {
             @Override
             public void processLine(Sequence sequence, String[] fields, Residue residue, RES_POSITION resPos, String coordSetName)
                     throws MoleculeIOException {
@@ -191,10 +191,10 @@ public class Sequence {
                 if (aType.endsWith("cg") && !useCoarse) {
                     return;
                 }
-                if (fields.length > 6) {
-                    if (fields[6].equals("middle") && (resPos != RES_POSITION.MIDDLE)) {
+                if (fields.length > 7) {
+                    if (fields[7].equals("middle") && (resPos != RES_POSITION.MIDDLE)) {
                         return;
-                    } else if (fields[6].equals("start") && (resPos != RES_POSITION.START)) {
+                    } else if (fields[7].equals("start") && (resPos != RES_POSITION.START)) {
                         return;
                     }
                 }
@@ -225,6 +225,7 @@ public class Sequence {
                 atom.bondLength = Float.parseFloat(fields[3]);
                 atom.valanceAngle = (float) (Float.parseFloat(fields[4]) * Math.PI / 180.0);
                 atom.dihedralAngle = (float) (Float.parseFloat(fields[5]) * Math.PI / 180.0);
+                atom.charge = Float.parseFloat(fields[6]);
             }
         },
         FAMILY("FAMILY", 3, 10) {

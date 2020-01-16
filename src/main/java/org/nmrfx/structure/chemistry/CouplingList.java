@@ -29,11 +29,13 @@ public class CouplingList {
     ArrayList<JCoupling> tocsyLinks = new ArrayList<>();
     ArrayList<JCoupling> hmbcLinks = new ArrayList<>();
 
-    public void generateCouplings(Entity entity, int nShells, int minShells) {
+    public void generateCouplings(Entity entity, int nShells, int minShells,
+            int tocsyShells, int hmbcShells) {
         jCouplings.clear();
         tocsyLinks.clear();
         hmbcLinks.clear();
-        Molecule.getCouplings(entity, jCouplings, tocsyLinks, hmbcLinks, nShells, minShells);
+        Molecule.getCouplings(entity, jCouplings, tocsyLinks, hmbcLinks,
+                nShells, minShells, tocsyShells, hmbcShells);
     }
 
     public ArrayList<JCoupling> getJCouplings() {

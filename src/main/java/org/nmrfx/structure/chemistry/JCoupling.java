@@ -98,6 +98,10 @@ public class JCoupling {
         return spatialSets.get(index).atom;
     }
     
+    public int getNAtoms() {
+        return spatialSets.size();
+    }
+    
     public int getShell() {
         return shell;
     }

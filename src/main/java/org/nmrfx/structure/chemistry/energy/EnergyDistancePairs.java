@@ -8,7 +8,6 @@ package org.nmrfx.structure.chemistry.energy;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.Atom;
 import static org.nmrfx.structure.chemistry.energy.AtomMath.RADJ;
-import org.nmrfx.structure.chemistry.predict.Predictor;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 
 /**
@@ -45,7 +44,7 @@ public class EnergyDistancePairs extends EnergyPairs {
         }
     }
 
-    public double calcRepel(boolean calcDeriv, double weight) {
+    public double calcEnergy(boolean calcDeriv, double weight) {
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         double sum = 0.0;
         for (int i = 0; i < nPairs; i++) {

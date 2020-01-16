@@ -15,14 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.util.Arrays;
 import org.nmrfx.structure.chemistry.Atom;
 import java.util.HashMap;
+import java.util.List;
 import org.apache.commons.math3.util.FastMath;
 
 public class AtomEnergyProp {
+
+    private static boolean FILE_LOADED = false;
 
     final String name;
     //leonard-jones a parameter
@@ -46,38 +56,6 @@ public class AtomEnergyProp {
     private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
     private static double hbondDelta = 0.30;
 
-    static {
-        // AtomType, 
-        propMap.put("C1", new AtomEnergyProp("C1", 75142.00, 1900.00, 3.90, 1.6, -0.180, 0.00, 13.02, 0));
-        propMap.put("C2", new AtomEnergyProp("C2", 75142.00, 1900.00, 3.90, 1.6, -0.180, 0.00, 14.03, 0));
-        propMap.put("C3", new AtomEnergyProp("C3", 75142.00, 1900.00, 3.90, 1.6, -0.180, 0.00, 15.03, 0));
-        propMap.put("C'", new AtomEnergyProp("C", 12470.00, 355.00, 3.75, 1.5, -0.042, 0.46, 12.01, 0));
-        propMap.put("C-", new AtomEnergyProp("C-", 12470.00, 355.00, 3.75, 1.5, -0.042, 0.49, 12.01, 0));
-        propMap.put("A0", new AtomEnergyProp("A0", 17080.00, 540.00, 3.62, 1.6, -0.080, 0.00, 12.01, 0));
-        propMap.put("A1", new AtomEnergyProp("A1", 33396.00, 845.00, 3.90, 1.6, -0.080, 0.00, 13.02, 0));
-        propMap.put("CA", new AtomEnergyProp("CA", 17080.00, 540.00, 3.62, 1.6, -0.080, 0.39, 13.02, 0));
-        propMap.put("CB", new AtomEnergyProp("CB", 33396.00, 845.00, 3.90, 1.6, -0.080, 0.39, 13.02, 0));
-        propMap.put("N'", new AtomEnergyProp("N", 15037.00, 628.00, 3.30, 1.45, -0.162, -0.26, 14.01, -1));
-        propMap.put("N+", new AtomEnergyProp("N+", 15037.00, 628.00, 3.30, 1.5, -0.162, -0.52, 14.01, -1));
-        propMap.put("N*", new AtomEnergyProp("N*", 15037.00, 628.00, 3.30, 1.5, -0.162, 0.00, 14.01, 0));
-        propMap.put("S", new AtomEnergyProp("S", 104857.60, 2457.60, 4.00, 1.8, -0.200, 0.00, 32.06, 0));
-        propMap.put("P", new AtomEnergyProp("P", 104857.60, 2457.60, 4.00, 1.8, -0.200, 0.00, 32.06, 0));
-        propMap.put("H", new AtomEnergyProp("H", 0.00, 0.00, 0.00, 1.0, 0.000, 0.00, 0.00, 0));
-        propMap.put("M", new AtomEnergyProp("M", 0.00, 0.00, 0.00, 1.0, 0.000, 0.00, 0.00, 0));
-        propMap.put("H'", new AtomEnergyProp("H'", 9.99, 1.26, 2.28, 0.95, -0.003, 0.26, 1.01, 1));
-        propMap.put("H+", new AtomEnergyProp("H+", 9.99, 1.26, 2.28, 1.0, -0.003, 0.33, 1.01, 1));
-        propMap.put("HO", new AtomEnergyProp("HO", 9.99, 1.26, 2.28, 1.0, -0.003, 0.30, 1.01, 1));
-        propMap.put("O", new AtomEnergyProp("O", 45770.00, 1410.00, 3.65, 1.3, -0.200, -0.30, 16.00, -1));
-        propMap.put("O'", new AtomEnergyProp("O'", 45770.00, 1410.00, 3.65, 1.3, -0.200, -0.46, 16.00, -1));
-        propMap.put("O-", new AtomEnergyProp("O-", 45800.00, 1410.00, 3.65, 1.3, -0.200, -0.48, 16.00, -1));
-        propMap.put("FE", new AtomEnergyProp("FE", 32.82, 1.94, 2.94, -0.001, 1.8, 2.00, 55.85, 0));
-        propMap.put("ZN", new AtomEnergyProp("ZN", 32.82, 1.94, 2.94, -0.001, 1.8, 2.00, 65.37, 0));
-        propMap.put("Pcg", new AtomEnergyProp("Pcg", 0.0, 0.0, 0.0, 1.55, 0.0, 0.0, 0.0, 0));
-        propMap.put("Scg", new AtomEnergyProp("Scg", 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0));
-        propMap.put("Acg", new AtomEnergyProp("Acg", 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0));
-        propMap.put("Ccg", new AtomEnergyProp("Ccg", 0.0, 0.0, 0.0, 1.7, 0.0, 0.0, 0.0, 0));
-    }
-
     public AtomEnergyProp(final String name, final double a, final double b, final double r, final double rh, final double e, final double c, final double mass, final int hbondMode) {
         this.name = name;
         this.a = FastMath.sqrt(a);
@@ -88,6 +66,58 @@ public class AtomEnergyProp {
         this.c = c;
         this.mass = mass;
         this.hbondMode = hbondMode;
+    }
+
+    public static void readPropFile() throws FileNotFoundException, IOException {
+        if (!FILE_LOADED) {
+            readPropFile("reslib_iu/params.txt");
+        }
+    }
+
+    public static void readPropFile(String fileName) throws FileNotFoundException, IOException {
+        String string;
+        LineNumberReader lineReader;
+        FILE_LOADED = true;
+        BufferedReader bf;
+        if (fileName.startsWith("reslib_iu")) {
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+            InputStream istream = cl.getResourceAsStream(fileName);
+            bf = new BufferedReader(new InputStreamReader(istream));
+        } else {
+            bf = new BufferedReader(new FileReader(fileName));
+        }
+
+        lineReader = new LineNumberReader(bf);
+        List<String> headerS = Arrays.asList();
+        //AtomType        HardRadius      RMin    E       Mass    HBondType
+
+        while (true) {
+            string = lineReader.readLine();
+            if (string != null) {
+                List<String> stringS = Arrays.asList(string.split("\\s+"));
+                if (string.startsWith("AtomType")) {
+                    headerS = stringS;
+                } else {
+                    String aType = stringS.get(headerS.indexOf("AtomType"));
+                    double r = Double.parseDouble(stringS.get(headerS.indexOf("RMin")));
+                    double rh = Double.parseDouble(stringS.get(headerS.indexOf("HardRadius")));
+                    double e = Double.parseDouble(stringS.get(headerS.indexOf("E")));
+                    double m = Double.parseDouble(stringS.get(headerS.indexOf("Mass")));
+                    int hType = (int) Double.parseDouble(stringS.get(headerS.indexOf("HBondType")));
+                    
+                    e = -e;
+                    r = r * 2.0;
+                    double a = 1.0;
+                    double b = 1.0;
+                    double c = 0.0;
+                    AtomEnergyProp prop = new AtomEnergyProp(aType, a, b, r, rh, e, c, m, hType);
+                    AtomEnergyProp.add(aType, prop);
+                }
+            } else {
+                break;
+            }
+        }
+
     }
 
     public void clear() {
@@ -136,7 +166,7 @@ public class AtomEnergyProp {
     public double getMass() {
         return mass;
     }
-    
+
     public int getHBondMode() {
         return hbondMode;
     }
@@ -144,15 +174,18 @@ public class AtomEnergyProp {
     /**
      * computes interaction between two molecules based on table values
      * <p>
-     * This method calculates the interation between 2 molecules. It retrieves the ideal energy values from the table
-     * for both atoms It then calculates the radius or distance between both atoms. The rh value is calculating by
-     * simply adding both the radius. Hydrogen may be removed and substited by a certain number of Angstrom's indicated
-     * by AtomEnergyProp
+     * This method calculates the interation between 2 molecules. It retrieves
+     * the ideal energy values from the table for both atoms It then calculates
+     * the radius or distance between both atoms. The rh value is calculating by
+     * simply adding both the radius. Hydrogen may be removed and substited by a
+     * certain number of Angstrom's indicated by AtomEnergyProp
      *
      * @param AtomEnergy iProp Properties of atom 1
      * @param AtomEnergy jProp properties of atom 2
-     * @param boolean hardSphere determines if you want to calculate rh w/out hydrogen
-     * @param double hardSphere determines the value you want to add in substitution for hydrogen
+     * @param boolean hardSphere determines if you want to calculate rh w/out
+     * hydrogen
+     * @param double hardSphere determines the value you want to add in
+     * substitution for hydrogen
      */
     public static EnergyPair getInteraction(final Atom atom1, final Atom atom2, double hardSphere,
             boolean usehardSphere, double shrinkValue, double shrinkHValue) {

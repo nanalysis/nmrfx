@@ -1370,6 +1370,14 @@ public class Atom implements IAtom {
         return fcharge;
     }
 
+    public void setCharge(float charge) {
+        this.charge = charge;
+    }
+
+    public float getCharge() {
+        return charge;
+    }
+
     public List<Object> getEquivalency() {
         if (!entity.hasEquivalentAtoms()) {
             Molecule.findEquivalentAtoms(entity);
