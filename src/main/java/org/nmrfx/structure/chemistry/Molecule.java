@@ -861,41 +861,45 @@ public class Molecule implements Serializable, ITree {
     }
 
     public int genCoordsFast(final double[] dihedralAngles, boolean fillCoords, int iStructure) throws RuntimeException {
-        if (fillCoords) {
-            boolean anyInvalid = false;
-            for (Atom atom : atoms) {
-                if (!atom.getPointValidity(iStructure)) {
-                    anyInvalid = true;
-                    break;
+        if (!atoms.isEmpty()) {
+            if (fillCoords) {
+                boolean anyInvalid = false;
+                for (Atom atom : atoms) {
+                    if (!atom.getPointValidity(iStructure)) {
+                        anyInvalid = true;
+                        break;
+                    }
+                }
+                if (!anyInvalid) {
+                    structures.add(iStructure);
+                    resetActiveStructures();
+                    updateVecCoords();
+                    return 0;
                 }
             }
-            if (!anyInvalid) {
-                structures.add(iStructure);
-                resetActiveStructures();
-                updateVecCoords();
-                return 0;
-            }
-        }
 
-        if (genVecs == null) {
-            setupGenCoords();
-        }
-        List<Atom> atomList;
-        if (treeAtoms == null) {
-            atomList = atoms;
-        } else {
-            atomList = treeAtoms;
-        }
-        if (!fillCoords) {
-            for (Atom atom : atoms) {
-                atom.setPointValidity(iStructure, false);
+            if (genVecs == null) {
+                setupGenCoords();
             }
+            List<Atom> atomList;
+            if (treeAtoms == null) {
+                atomList = atoms;
+            } else {
+                atomList = treeAtoms;
+            }
+            if (!fillCoords) {
+                for (Atom atom : atoms) {
+                    atom.setPointValidity(iStructure, false);
+                }
+            }
+            int nAngles = CoordinateGenerator.genCoords(genVecs, atomList, iStructure, dihedralAngles);
+            structures.add(iStructure);
+            resetActiveStructures();
+            updateVecCoords();
+            return nAngles;
+        } else {
+            return 0;
         }
-        int nAngles = CoordinateGenerator.genCoords(genVecs, atomList, iStructure, dihedralAngles);
-        structures.add(iStructure);
-        resetActiveStructures();
-        updateVecCoords();
-        return nAngles;
     }
 
     public int genCoordsFastVec3D(final double[] dihedralAngles) throws RuntimeException {

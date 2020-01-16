@@ -554,43 +554,46 @@ public class Residue extends Compound {
 
     public void capLastResidue() {
         List<Atom> lastResidueAtoms = getAtoms();
+        if (!lastResidueAtoms.isEmpty() && lastResidueAtoms.size() > 1) {
+            Atom lastAtom = lastResidueAtoms.get(lastResidueAtoms.size() - 1);
+            Atom secondAtom = lastResidueAtoms.get(lastResidueAtoms.size() - 2);
+            if (lastAtom.getName().equals("O")) {
+                if ((secondAtom.getName().equals("C"))) {
+                    lastAtom.remove();
+                    String newRoot = "O";
+                    if (!isIUPACMode()) {
+                        newRoot = "OT";
+                    }
+                    Atom newAtom;
+                    if (!isIUPACMode()) {
+                        newAtom = secondAtom.add(newRoot + "2", "O", Order.DOUBLE);
+                    } else {
+                        newAtom = secondAtom.add(newRoot + "''", "O", Order.DOUBLE);
+                    }
+                    newAtom.bondLength = 1.24f;
+                    newAtom.dihedralAngle = (float) (180.0 * Math.PI / 180.0);
+                    newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
+                    newAtom.setType("O");
 
-        Atom lastAtom = lastResidueAtoms.get(lastResidueAtoms.size() - 1);
-        Atom secondAtom = lastResidueAtoms.get(lastResidueAtoms.size() - 2);
-        if (lastAtom.getName().equals("O")) {
-            if ((secondAtom.getName().equals("C"))) {
-                lastAtom.remove();
-                String newRoot = "O";
-                if (!isIUPACMode()) {
-                    newRoot = "OT";
+                    if (!isIUPACMode()) {
+                        newAtom = secondAtom.add(newRoot + "1", "O", Order.SINGLE);
+                    } else {
+                        newAtom = secondAtom.add(newRoot + "'", "O", Order.SINGLE);
+                    }
+                    newAtom.bondLength = 1.24f;
+                    newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
+                    newAtom.dihedralAngle = (float) (180.0 * Math.PI / 180.0);
+                    newAtom.setType("O");
                 }
-                Atom newAtom;
-                if (!isIUPACMode()) {
-                    newAtom = secondAtom.add(newRoot + "2", "O", Order.DOUBLE);
-                } else {
-                    newAtom = secondAtom.add(newRoot + "''", "O", Order.DOUBLE);
-                }
-                newAtom.bondLength = 1.24f;
-                newAtom.dihedralAngle = (float) (180.0 * Math.PI / 180.0);
+            } else if (lastAtom.getName().equals("O3'")) {
+                Atom newAtom = lastAtom.add("HO3'", "H", Order.SINGLE);
+                newAtom.setType("H");
+                newAtom.bondLength = 0.98f;
+                newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
                 newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
-                newAtom.setType("O");
-
-                if (!isIUPACMode()) {
-                    newAtom = secondAtom.add(newRoot + "1", "O", Order.SINGLE);
-                } else {
-                    newAtom = secondAtom.add(newRoot + "'", "O", Order.SINGLE);
-                }
-                newAtom.bondLength = 1.24f;
-                newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
-                newAtom.dihedralAngle = (float) (180.0 * Math.PI / 180.0);
-                newAtom.setType("O");
             }
-        } else if (lastAtom.getName().equals("O3'")) {
-            Atom newAtom = lastAtom.add("HO3'", "H", Order.SINGLE);
-            newAtom.setType("H");
-            newAtom.bondLength = 0.98f;
-            newAtom.dihedralAngle = (float) (109.0 * Math.PI / 180.0);
-            newAtom.valanceAngle = (float) (120.0 * Math.PI / 180.0);
+        } else {
+            System.out.println("\nUnable to get atoms for " + name);
         }
     }
 
