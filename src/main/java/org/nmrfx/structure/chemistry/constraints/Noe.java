@@ -178,6 +178,21 @@ public class Noe implements Constraint, Serializable {
 
     }
 
+    public String toString() {
+        char sepChar = '\t';
+        StringBuilder sBuild = new StringBuilder();
+        sBuild.append(spg1.getFullName()).append(sepChar);
+        sBuild.append(spg2.getFullName()).append(sepChar);
+        sBuild.append(String.format("%.1f",lower)).append(sepChar).append(String.format("%.1f",upper)).append(sepChar);
+        sBuild.append(peak != null ? peak.getName() : "").append(sepChar);
+        sBuild.append(idNum).append(sepChar);
+        sBuild.append(genType).append(sepChar);
+        sBuild.append(String.format("%.2f",contribution)).append(sepChar);
+        sBuild.append(String.format("%.2f",netWorkValue)).append(sepChar);
+        sBuild.append(String.format("%.2f",ppmError));
+        return sBuild.toString();
+    }
+
     public static ArrayList getPeakList(Peak peak) {
         ArrayList peakList = (ArrayList) activeSet.getConstraintsForPeak(peak);
         return peakList;
@@ -1021,7 +1036,7 @@ public class Noe implements Constraint, Serializable {
         HashMap<PeakList, ArrayList<Double>> medianMap = calcMedian(mMode, peakList);
         ArrayList<Double> valueList = medianMap.get(peakList);
         double referenceValue = valueList.get(2);
-        double referenceDist = 2.7;
+        double referenceDist = 3.0;
         double expValue = 6.0;
         double lower = 1.8;
         double minBound = 2.0;
@@ -1866,6 +1881,15 @@ public class Noe implements Constraint, Serializable {
             this.type = type;
             this.error = error;
         }
+
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append(sp1.atom.getShortName()).append("\t");
+            sBuilder.append(sp2.atom.getShortName()).append("\t");
+            sBuilder.append(type).append("\t");
+            sBuilder.append(error);
+            return sBuilder.toString();
+        }
     }
 
     public static List<String> extractNoePeaks2(final PeakList peakList, final int maxAmbig,
@@ -1893,7 +1917,11 @@ public class Noe implements Constraint, Serializable {
             if ((peak != null) && (peak.getStatus() >= 0)) {
                 map.clear();
                 PeakDim peakDim = peak.getPeakDim(matchCriteria[0].getDim());
-                double ppm = peakDim.getChemShift();
+                Float ppm = peakDim.getChemShift();
+                if (ppm == null) {
+                    System.out.println(peak.getName());
+                    continue;
+                }
                 matchCriteria[0].setPPM(ppm);
 //                ArrayList res1s = peakDim.getResonances();
                 ArrayList res1s = new ArrayList();
@@ -2035,44 +2063,6 @@ public class Noe implements Constraint, Serializable {
             }
         }
 
-//                Vector[] matchList = idPeak.scan3(matchCriteria);
-//                ArrayList<IdResult> idResults = idPeak.getResults2(matchList, matchCriteria);
-//                // fixme filter duplicates ( stereo specific )
-//                int nPossible = idResults.size();
-//                if (nPossible <= maxAmbig) {
-//                    nTotal += nPossible;
-//                    if (nPossible > 0) {
-//                        nAssigned++;
-//                        if (!getInfo) {
-//                            SpatialSetGroup[] spgSets = new SpatialSetGroup[2];
-//                            for (IdResult idResult : idResults) {
-//                                spgSets[0] = new SpatialSetGroup(idResult.spatialSets[matchCriteria[0].dim]);
-//                                spgSets[1] = new SpatialSetGroup(idResult.spatialSets[matchCriteria[1].dim]);
-//                                for (SpatialSetGroup spg : spgSets) {
-//                                    SpatialSet sp1 = spg.getFirstSet();
-//                                    Atom atom1 = sp1.atom;
-//                                    if (atom1.isMethyl()) {
-//                                        Atom[] partners = atom1.getPartners(1, 1);
-//                                        for (Atom partner : partners) {
-//                                            SpatialSet sp = partner.getSpatialSet(sp1.getName());
-//                                            spg.add(sp);
-//                                        }
-//                                    }
-//                                }
-//
-//                                Noe noe = new Noe(peak, spgSets[0], spgSets[1], scale);
-//                                noe.intensity = peak.getIntensity();
-//                                noe.volume = peak.getVolume1();
-//                                noe.ppmError = idResult.getPPMError(1.0);
-//                                noe.nPossible = nPossible;
-//                                noe.setGenType(Constraint.GenTypes.AUTOMATIC);
-//                                noeList.add(noe);
-//                            }
-//                        }
-//                    }
-//                } else {
-//                    nMaxAmbig++;
-//                }
         List<String> result = new ArrayList<>();
         result.add("nPeaks");
         result.add(String.valueOf(nPeaks));
