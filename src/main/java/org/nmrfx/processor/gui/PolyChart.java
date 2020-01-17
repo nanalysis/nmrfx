@@ -2046,6 +2046,8 @@ public class PolyChart implements PeakListener {
         double maxTextOffset = -1.0;
         ArrayList<DatasetAttributes> draw2DList = new ArrayList<>();
         updateDatasetAttributeBounds();
+        int nDatasets = datasetAttributesList.size();
+        int iTitle = 0;
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
             try {
                 DatasetAttributes firstAttr = datasetAttributesList.get(0);
@@ -2102,22 +2104,6 @@ public class PolyChart implements PeakListener {
                                         draw1DIntegral(datasetAttributes, gC);
                                     }
                                     drawBaseLine(gC, bcPath);
-                                    if (chartProps.getTitles()) {
-                                        double fontSize = chartProps.getTicFontSize();
-                                        gC.setFont(Font.font(fontSize));
-                                        double offset = drawSpectrum.getOffset(datasetAttributes);
-                                        if ((maxTextOffset >= 0) && (offset <= maxTextOffset)) {
-                                            offset = maxTextOffset + fontSize + 3;
-                                        }
-                                        if (offset > maxTextOffset) {
-                                            maxTextOffset = offset;
-                                        }
-                                        double zeroPos = axes[1].getDisplayPosition(0.0) - offset;
-                                        gC.setTextAlign(TextAlignment.LEFT);
-                                        gC.fillText(datasetAttributes.getDataset().getTitle(),
-                                                xPos + leftBorder + 10,
-                                                zeroPos - 20);
-                                    }
 
                                 } while (ok);
                             }
@@ -2127,6 +2113,9 @@ public class PolyChart implements PeakListener {
                             drawSpecLine(datasetAttributes, gC, 0, -1, nPoints, xy);
                         } finally {
                             gC.restore();
+                        }
+                        if (chartProps.getTitles()) {
+                            drawTitle(gC, datasetAttributes, iTitle++, nDatasets);
                         }
 
                     } else {
@@ -2157,7 +2146,7 @@ public class PolyChart implements PeakListener {
                     gC.setFill(datasetAttributes.getPosColor());
                     String title = datasetAttributes.getDataset().getTitle();
                     gC.fillText(title, textX, textY);
-                    textX += GUIUtils.getTextWidth(title) + 20;
+                    textX += GUIUtils.getTextWidth(title) + 10;
                 }
             }
             if (gC instanceof GraphicsContextProxy) {
@@ -2173,6 +2162,35 @@ public class PolyChart implements PeakListener {
         }
         return finished;
 
+    }
+
+    void drawTitle(GraphicsContextInterface gC, DatasetAttributes datasetAttributes,
+            int index, int nTitles) {
+        gC.setFill(datasetAttributes.getPosColor());
+        double fontSize = chartProps.getTicFontSize();
+        gC.setFont(Font.font(fontSize));
+        double textY;
+        if ((nTitles > 1) || fontSize > (topBorder - 2)) {
+            gC.setTextBaseline(VPos.TOP);
+            textY = yPos + topBorder + 2;
+            double offset = (nTitles - index - 1) * fontSize;
+            textY += offset;
+        } else {
+            gC.setTextBaseline(VPos.BOTTOM);
+            textY = yPos + topBorder - 2;
+        }
+
+//        double offset = drawSpectrum.getOffset(datasetAttributes);
+//        if ((maxTextOffset >= 0) && (offset <= maxTextOffset)) {
+//            offset = maxTextOffset + fontSize + 3;
+//        }
+//        if (offset > maxTextOffset) {
+//            maxTextOffset = offset;
+//        }
+//        double zeroPos = axes[1].getDisplayPosition(0.0) - offset;
+        gC.setTextAlign(TextAlignment.LEFT);
+        gC.fillText(datasetAttributes.getDataset().getTitle(),
+                xPos + leftBorder + 10, textY);
     }
 
     public int hitBorder(double x, double y) {
