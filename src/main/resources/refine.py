@@ -1227,10 +1227,13 @@ class refine:
 	"""
 	# constList is a list of dictionaries w/ keys: 'lower', 'upper', and 'atomPairs'
 	constList = self.nmrfxDistReader(fileName)
-	for constraint in constList:
+	for groupID in constList:
+            constraint = constList[groupID]
+            print constraint
 	    lower = constraint['lower']
             upper = constraint['upper']
             atomPairs = constraint['atomPairs']
+            print atomPairs,lower,upper
             firstAtomPair = atomPairs[0]
             if firstAtomPair not in self.constraints:
                 constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
@@ -1269,59 +1272,12 @@ class refine:
 		    checker[group]['atomPairs'].append(atomPair)
 		    continue
 
-		lower, upper = tuple(map(float, splitList[-2:]))
+		lower, upper = tuple(map(float, splitList[4:6]))
 		# checks lower and upper bound to make sure they are positive values
 		constraints = {'atomPairs': [],'lower': lower,'upper': upper}
 		constraints['atomPairs'].append(atomPair)
 		checker[group] = constraints
-        return constraintDicts 
-
-
-    def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
-	# constList is a list of dictionaries w/ keys: 'lower', 'upper', and 'atomPairs'
-	constList = self.nmrfxDistReader(fileName)
-	for constraint in constList:
-	    lower = constraint['lower']
-            upper = constraint['upper']
-            atomPairs = constraint['atomPairs']
-            firstAtomPair = atomPairs[0]
-            if firstAtomPair not in self.constraints:
-                constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
-                self.constraints[firstAtomPair] = constraint
-                for atomPair in atomPairs[1:]:
-                    self.constraints[atomPair] = constraint
-                    constraint.addPair(atomPair)
-                self.constraints[firstAtomPair].addBound(upper,'upper');
-            else:
-                self.constraints[firstAtomPair].addBound(lower, 'lower');
-                self.constraints[firstAtomPair].addBound(upper, 'upper');
-	
-
-
-    def nmrfxDistReader(self, fileName):
-        constraintDicts = []
-	checker = {}
-
-	with open(fileName, 'r') as fInput:
-            fRead = fInput.readlines()
-            for line in fRead:
-                splitList = line.split("\t")
-                group = splitList[1]
-                atomPair = tuple(splitList[2:4])
-		atomPair = ' '.join(atomPair) if atomPair[0] < atomPair[1] else ' '.join([atomPair[1], atomPair[0]])
-
-		if group in checker:
-		    checker[group]['atomPairs'].append(atomPair)
-		    continue
-
-		lower, upper = tuple(map(float, splitList[-2:]))
-		# checks lower and upper bound to make sure they are positive values
-		constraints = {'atomPairs': [],'lower': lower,'upper': upper}
-		constraints['atomPairs'].append(atomPair)
-		checker[group] = constraints
-        return constraintDicts 
-
-
+        return checker 
 
 #set dc [list 283.n3 698.h1 1.8 2.0]
 # 283  RCYT  H6          283  RCYT  H2'          4.00    1.00E+00
