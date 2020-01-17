@@ -19,6 +19,10 @@ peakList = None
 dataset = None
 pMap = None
 
+def setTypes(types):
+  global expTypes
+  expTypes = types 
+
 def processLine(line):
    global state
    m = r.match(line)
@@ -241,19 +245,21 @@ def makePeakList(ppms, labels):
 def addPeak():
     global spectrumData
     global peakList
+    global expTypes
     #print 'addpeak',peakList, ornaments
     
     widths = spectrumData['integrate.min_linewidth']
-    if ('peak','rs') in ornaments:
-        rs = ornaments['peak','rs']
+    if ('peak','pos') in ornaments:
         labels = []
-        for r in rs:
-            m = labelRE.match(r)
-            if m != None:
-                resName = m.group(1)
-                atomName = m.group(2)
-                atomSpec = resName+'.'+atomName
-                labels.append(atomSpec)
+        if ('peak','rs') in ornaments:
+            rs = ornaments['peak','rs']
+            for r in rs:
+                m = labelRE.match(r)
+                if m != None:
+                    resName = m.group(1)
+                    atomName = m.group(2)
+                    atomSpec = resName+'.'+atomName
+                    labels.append(atomSpec)
         #print labels
         ppms = ornaments['peak','pos']
         ppms = [float(ppm) for ppm in ppms]
@@ -261,7 +267,13 @@ def addPeak():
         widths = [float(width)*10.0 for width in widths]
         bounds = [width * 2.0  for width in widths]
         if peakList == None:
+            if len(labels) == 0:
+               if peakListName in expTypes:
+                   labels = expTypes[peakListName]['labels']
             makePeakList(ppms, labels)
+        if len(labels) == 0:
+            labels = ['']*len(ppms)
+        print labels
         peakgen.addPeak(peakList, ppms, eppms, widths, bounds, 1.0, labels)
     #print ornaments
 
