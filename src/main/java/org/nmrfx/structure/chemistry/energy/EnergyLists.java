@@ -1129,10 +1129,14 @@ public class EnergyLists {
                         Atom atom2 = atomDistancePair.atoms2[0];
                         int iAtom = atom1.eAtom;
                         int jAtom = atom2.eAtom;
-                        int iUnit = atom1.rotGroup.rotUnit;
-                        int jUnit = atom2.rotGroup.rotUnit;
-                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond,
-                                iGroup, weight / nPairs);
+                        if ((atom1.rotGroup == null) || (atom2.rotGroup == null)) {
+                            System.out.println("null rot group " + atom1.getShortName() + " " + atom2.getShortName());
+                        } else {
+                            int iUnit = atom1.rotGroup.rotUnit;
+                            int jUnit = atom2.rotGroup.rotUnit;
+                            eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond,
+                                    iGroup, weight / nPairs);
+                        }
 
                     }
                 }
