@@ -277,7 +277,7 @@ public class MainApp extends Application implements DatasetListener {
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
         deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().close());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
-        syncMenuItem.setOnAction(e -> PolyChart.activeChart.syncSceneMates());
+        syncMenuItem.setOnAction(e -> PolyChart.activeChart.get().syncSceneMates());
 
         Menu arrangeMenu = new Menu("Arrange");
         MenuItem horizItem = new MenuItem("Horizontal");

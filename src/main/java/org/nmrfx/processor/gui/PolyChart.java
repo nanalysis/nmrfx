@@ -49,11 +49,13 @@ import java.util.function.DoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
@@ -73,6 +75,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.PathElement;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
@@ -140,7 +143,12 @@ public class PolyChart implements PeakListener {
     double minMove = 20;
 
     public static final ObservableList<PolyChart> CHARTS = FXCollections.observableArrayList();
-    static PolyChart activeChart = null;
+    static final SimpleObjectProperty<PolyChart> activeChart = new SimpleObjectProperty<>(null);
+    static final SimpleBooleanProperty multipleCharts = new SimpleBooleanProperty(false);
+
+    static {
+        CHARTS.addListener((ListChangeListener) (e -> multipleCharts.set(CHARTS.size() > 1)));
+    }
 
     ArrayList<Double> dList = new ArrayList<>();
     ArrayList<Double> nList = new ArrayList<>();
@@ -150,6 +158,7 @@ public class PolyChart implements PeakListener {
     Canvas annoCanvas = null;
     Path bcPath = new Path();
     Line[][] crossHairLines = new Line[2][2];
+    Rectangle highlightRect = new Rectangle();
     double[][] crossHairPositions = new double[2][2];
     boolean[][] crossHairStates = new boolean[2][2];
     int crossHairNumH = 0;
@@ -344,13 +353,19 @@ public class PolyChart implements PeakListener {
                 }
             }
         }
+        highlightRect.setVisible(false);
+        highlightRect.setStroke(Color.BLUE);
+        highlightRect.setStrokeWidth(1.0);
+        highlightRect.setFill(null);
+        highlightRect.visibleProperty().bind(activeChart.isEqualTo(this).and(multipleCharts));
+        plotContent.getChildren().add(highlightRect);
         loadData();
         xAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 0, 0));
         xAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 0, 1));
         yAxis.lowerBoundProperty().addListener(new AxisChangeListener(this, 1, 0));
         yAxis.upperBoundProperty().addListener(new AxisChangeListener(this, 1, 1));
         CHARTS.add(this);
-        activeChart = this;
+        activeChart.set(this);
         canvas.setCursor(Cursor.CROSSHAIR);
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             purgeInvalidPeakListAttributes();
@@ -364,7 +379,7 @@ public class PolyChart implements PeakListener {
         peakMenu = new PeakMenu(this);
         regionMenu = new RegionMenu(this);
         integralMenu = new IntegralMenu(this);
-        crossHairs = new CrossHairs(activeChart, crossHairPositions, crossHairStates, crossHairLines);
+        crossHairs = new CrossHairs(activeChart.get(), crossHairPositions, crossHairStates, crossHairLines);
         setDragHandlers(canvas);
         canvas.requestFocus();
 
@@ -407,14 +422,16 @@ public class PolyChart implements PeakListener {
                 plotContent.getChildren().remove(crossHairLines[i][j]);
             }
         }
+        highlightRect.visibleProperty().unbind();
+        plotContent.getChildren().remove(highlightRect);
 
         CHARTS.remove(this);
         controller.removeChart(this);
-        if (this == activeChart) {
+        if (this == activeChart.get()) {
             if (CHARTS.isEmpty()) {
-                activeChart = null;
+                activeChart.set(null);
             } else {
-                activeChart = CHARTS.get(0);
+                activeChart.set(CHARTS.get(0));
             }
         }
         drawSpectrum.clearThreads();
@@ -478,12 +495,12 @@ public class PolyChart implements PeakListener {
     }
 
     public void setActiveChart() {
-        activeChart = this;
+        activeChart.set(this);
         controller.setActiveChart(this);
     }
 
     public static PolyChart getActiveChart() {
-        return activeChart;
+        return activeChart.get();
     }
 
     public FXMLController getController() {
@@ -1848,6 +1865,19 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    void highlightChart() {
+        boolean multipleCharts = CHARTS.size() > 1;
+        //if (multipleCharts && (activeChart.get() == this)) {
+        highlightRect.setX(xPos + 1);
+        highlightRect.setY(yPos + 1);
+        highlightRect.setWidth(width - 2);
+        highlightRect.setHeight(height - 2);
+//            highlightRect.setVisible(true);
+//        } else {
+//            highlightRect.setVisible(false);
+//        }
+    }
+
     protected void layoutPlotChildren() {
         if (disabled) {
             return;
@@ -1922,6 +1952,7 @@ public class PolyChart implements PeakListener {
             gC.setLineWidth(xAxis.getLineWidth());
             gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
             gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
+
             peakCanvas.setWidth(canvas.getWidth());
             peakCanvas.setHeight(canvas.getHeight());
             GraphicsContext peakGC = peakCanvas.getGraphicsContext2D();
@@ -1949,6 +1980,8 @@ public class PolyChart implements PeakListener {
             drawAnnotations(gCPeaks);
             crossHairs.refreshCrossHairs();
             gC.restore();
+            highlightChart();
+
         } catch (GraphicsIOException ioE) {
 
         }

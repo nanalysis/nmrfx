@@ -232,7 +232,7 @@ public class SpecAttrWindowController implements Initializable {
             @Override
             public void changed(ObservableValue<? extends Dataset> observable, Dataset oldValue, Dataset newValue) {
                 System.out.println("datasets changed");
-                PolyChart chart = PolyChart.activeChart;
+                PolyChart chart = PolyChart.getActiveChart();
                 if (chart != null) {
                     setChart(chart);
                 }

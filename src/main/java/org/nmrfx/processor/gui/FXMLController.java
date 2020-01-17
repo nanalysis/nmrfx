@@ -316,7 +316,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     public void setActiveChart(PolyChart chart) {
         activeChart = chart;
-        PolyChart.activeChart = chart;
+        PolyChart.activeChart.set(chart);
         if (specAttrWindowController != null) {
             specAttrWindowController.setChart(activeChart);
         }

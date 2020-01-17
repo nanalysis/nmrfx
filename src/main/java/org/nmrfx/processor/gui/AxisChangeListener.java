@@ -59,7 +59,7 @@ public class AxisChangeListener implements ChangeListener<Number> {
             chart.updateDatasetAttributeBounds();
             Double oldBound = (Double) oldValue;
             double newBound = newValue.doubleValue();
-            if (chart == PolyChart.activeChart) {
+            if (chart == PolyChart.getActiveChart()) {
                 if (FXMLController.specAttrWindowController != null) {
                     StringProperty limitProp = FXMLController.specAttrWindowController.limitFields[axNum][endNum];
                     limitProp.setValue(FORMATTER.format(newBound));
