@@ -106,6 +106,7 @@ import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakMenu;
 import org.nmrfx.processor.gui.spectra.RegionMenu;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
+import org.nmrfx.utils.GUIUtils;
 
 public class PolyChart implements PeakListener {
 
@@ -2156,7 +2157,7 @@ public class PolyChart implements PeakListener {
                     gC.setFill(datasetAttributes.getPosColor());
                     String title = datasetAttributes.getDataset().getTitle();
                     gC.fillText(title, textX, textY);
-                    textX += title.length() * fontSize * 0.8;  // fixme  need to calculate correct length
+                    textX += GUIUtils.getTextWidth(title) + 20;
                 }
             }
             if (gC instanceof GraphicsContextProxy) {
