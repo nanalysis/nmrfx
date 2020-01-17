@@ -3431,6 +3431,26 @@ public class Molecule implements Serializable, ITree {
         }
         for (Atom iAtom : atomList) {
             iAtom.rotUnit = -1;
+            Atom parent = iAtom.getParent();
+            Atom grandparent = null;
+            if (parent != null) {
+                grandparent = parent.getParent();
+            }
+            Atom daughter = iAtom.daughterAtom;
+            if ((parent != null) && (grandparent != null) && (daughter != null) && (iAtom.irpIndex > 0)) {
+                String aType = iAtom.getType();
+                String pType = parent.getType();
+                String gType = grandparent.getType();
+                String dType = daughter.getType();
+                String torsionType = gType + "-" + pType + "-" + aType + "-" + dType;
+                if (EnergyLists.torsionMap.keySet().contains(torsionType)) {
+                    iAtom.irpIndex = EnergyLists.torsionMap.get(torsionType) + 1;
+                } else {
+                    System.out.println(torsionType + " is not in keySet. Setting index to 1.");
+                    iAtom.irpIndex = 1;
+                }
+                
+            }
             if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
                 //if (iAtom.irpIndex > 0) {
                 iAtom.rotUnit = rotUnit++;
