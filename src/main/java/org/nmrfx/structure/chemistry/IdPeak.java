@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.utilities.NvUtil;
@@ -201,9 +200,13 @@ public class IdPeak {
                                 } else {
                                     String[] heavyPatterns = matchCriteria[iDim + 2].getAtomPats();
                                     Atom parent = sSet.atom.getParent();
-                                    SpatialSet sSet2 = parent.spatialSet;
-                                    if (checkPPM(sSet2, matchCriteria[iDim + 2], jFold)) {
-                                        atomMatch = matchName(parent.getName().toLowerCase(), heavyPatterns);
+                                    if (parent == null) {
+                                        System.out.println("null parent " + sSet.atom.getShortName());
+                                    } else {
+                                        SpatialSet sSet2 = parent.spatialSet;
+                                        if (checkPPM(sSet2, matchCriteria[iDim + 2], jFold)) {
+                                            atomMatch = matchName(parent.getName().toLowerCase(), heavyPatterns);
+                                        }
                                     }
                                 }
                                 if (atomMatch) {
@@ -223,9 +226,13 @@ public class IdPeak {
                                 } else {
                                     String[] heavyPatterns = matchCriteria[iDim + 2].getAtomPats();
                                     Atom parent = sSet.atom.getParent();
-                                    SpatialSet sSet2 = parent.spatialSet;
-                                    if (checkPPM(sSet2, matchCriteria[iDim + 2], jFold)) {
-                                        atomMatch = matchName(parent.getName().toLowerCase(), heavyPatterns);
+                                    if (parent == null) {
+                                        System.out.println("null parent " + sSet.atom.getShortName());
+                                    } else {
+                                        SpatialSet sSet2 = parent.spatialSet;
+                                        if (checkPPM(sSet2, matchCriteria[iDim + 2], jFold)) {
+                                            atomMatch = matchName(parent.getName().toLowerCase(), heavyPatterns);
+                                        }
                                     }
                                 }
                                 if (atomMatch) {
