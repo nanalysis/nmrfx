@@ -1808,7 +1808,8 @@ public class PolyChart implements PeakListener {
 
         yAxis.setTickFontSize(chartProps.getTicFontSize());
         yAxis.setLabelFontSize(chartProps.getLabelFontSize());
-        borders[0] = yAxis.getBorderSize();
+
+        borders[0] = is1D() ? 8 : yAxis.getBorderSize();
         borders[2] = xAxis.getBorderSize();
 
         borders[1] = borders[0] / 4;
@@ -1948,11 +1949,13 @@ public class PolyChart implements PeakListener {
                 yAxis.setGridLength(0.0);
 
             }
-            xAxis.draw(gC);
-            yAxis.draw(gC);
             gC.setLineWidth(xAxis.getLineWidth());
-            gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
-            gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
+            xAxis.draw(gC);
+            if (!is1D()) {
+                yAxis.draw(gC);
+                gC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
+                gC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
+            }
 
             peakCanvas.setWidth(canvas.getWidth());
             peakCanvas.setHeight(canvas.getHeight());
@@ -2031,9 +2034,11 @@ public class PolyChart implements PeakListener {
         }
 
         xAxis.draw(svgGC);
-        yAxis.draw(svgGC);
-        svgGC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
-        svgGC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
+        if (!is1D()) {
+            yAxis.draw(svgGC);
+            svgGC.strokeLine(xPos + leftBorder, yPos + topBorder, xPos + width - rightBorder, yPos + topBorder);
+            svgGC.strokeLine(xPos + width - rightBorder, yPos + topBorder, xPos + width - rightBorder, yPos + height - bottomBorder);
+        }
         drawDatasets(svgGC);
         if (!datasetAttributesList.isEmpty()) {
             drawPeakLists(true, svgGC);
