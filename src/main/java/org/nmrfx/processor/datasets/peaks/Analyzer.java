@@ -317,6 +317,9 @@ public class Analyzer {
     }
 
     public void removePeaksFromNonRegions() {
+        if (peakList == null) {
+            return;
+        }
         int n = peakList.size();
         for (int i = 0; i < n; i++) {
             Peak peak = peakList.getPeak(i);
@@ -447,7 +450,9 @@ public class Analyzer {
         });
         regions.clear();
         regions.addAll(newRegions);
-        removePeaksFromNonRegions();
+        if (peakList != null) {
+            removePeaksFromNonRegions();
+        }
     }
 
     public void groupPeaks() throws IOException {
