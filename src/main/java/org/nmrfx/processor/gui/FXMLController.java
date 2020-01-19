@@ -1422,11 +1422,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
         Image imageIcon = new Image("/images/Icon_NVJ_16.png", true);
         ImageView imageView = new ImageView(imageIcon);
-        bButton = new Button("NvJ", imageView);
-        bButton.disableProperty().bind(getActiveChart().datasetFileProp.isNull());
-
-        bButton.setOnAction(e -> viewDatasetInNvJAction(e));
-        buttons.add(bButton);
 
         for (Node node : buttons) {
             if (node instanceof Button) {
