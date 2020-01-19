@@ -631,7 +631,7 @@ public class Analyzer {
         int join = (int) Math.round(1.0 * joinWidth / sw * size);
         int extend = (int) Math.round(1.0 * regionExtend / sw * size);
 
-        double minThreshold = manThreshold.isPresent() ? manThreshold.get() : -1.0;
+        double minThreshold = manThreshold.isPresent() ? manThreshold.get() : threshold;
 
         RealMatrix rM = vec.idIntegrals(regionWindow, regionRatio, region, join, extend, minThreshold);
         Set<DatasetRegion> regions = getRegions();
