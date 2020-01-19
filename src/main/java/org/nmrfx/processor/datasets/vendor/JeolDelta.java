@@ -1038,4 +1038,9 @@ public class JeolDelta implements NMRData {
         offset = dataStart + sectionByteCount * iSection + 8 * offset;
         return offset;
     }
+
+    public double getTrim() {
+        return dspTrim;
+    }
+
 }

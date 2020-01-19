@@ -629,6 +629,10 @@ public interface NMRData {
     public default boolean isFrequencyDim(int iDim) {
         return true;
     }
+    
+    public default double getTrim() {
+        return 0.0;
+    }
 
     /**
      * Return an object describing the sample schedule used for non-uniform
