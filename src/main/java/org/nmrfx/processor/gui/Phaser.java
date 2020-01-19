@@ -37,6 +37,7 @@ import javafx.scene.layout.VBox;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetPhaser;
+import org.nmrfx.processor.operations.AutoPhase;
 import org.nmrfx.processor.operations.IDBaseline2;
 
 /**
@@ -339,6 +340,18 @@ public class Phaser {
         String phaseDim = String.valueOf(chart.datasetPhaseDim + 1);
         if (chart.hasData() && (controller.chartProcessor != null)) {
             if (chart.is1D()) {
+                List<String> listItems = controller.chartProcessor.getOperations("D" + phaseDim);
+                if (listItems != null) {
+                    Map<String, String> values = null;
+                    for (String s : listItems) {
+                        if (s.contains("AUTOPHASE")) {
+                            double aph0 = AutoPhase.lastPh0.get();
+                            double aph1 = AutoPhase.lastPh1.get();
+                            ph0 -= aph0;
+                            ph1 -= aph1;
+                        }
+                    }
+                }
                 String opString = String.format("PHASE(ph0=%.1f,ph1=%.1f,dimag=%s)", ph0, ph1, delImagString);
                 if (chart.processorController != null) {
                     setPhaseOp(opString);
@@ -371,9 +384,12 @@ public class Phaser {
         PolyChart chart = controller.getActiveChart();
         double ph0 = 0.0;
         double ph1 = 0.0;
+        double aph0 = 0.0;
+        double aph1 = 0.0;
         if (!chart.hasData()) {
             return;
         }
+        Dataset dataset = chart.getDataset();
         String phaseDim = "D" + String.valueOf(chart.datasetPhaseDim + 1);
         if (controller.chartProcessor != null) {
             List<String> listItems = controller.chartProcessor.getOperations(phaseDim);
@@ -382,6 +398,10 @@ public class Phaser {
                 for (String s : listItems) {
                     if (s.contains("PHASE")) {
                         values = PropertyManager.parseOpString(s);
+                    }
+                    if (s.contains("AUTOPHASE")) {
+                        aph0 = AutoPhase.lastPh0.get();
+                        aph1 = AutoPhase.lastPh1.get();
                     }
                 }
                 if (values != null) {
@@ -409,8 +429,9 @@ public class Phaser {
                 }
             }
         }
-        setPH1Slider(ph1);
-        setPH0Slider(ph0);
+
+        setPH1Slider(ph1 + aph1);
+        setPH0Slider(ph0 + aph0);
         chart.setPh0(0.0);
         chart.setPh1(0.0);
     }
