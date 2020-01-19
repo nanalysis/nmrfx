@@ -1233,7 +1233,6 @@ class refine:
 	    lower = constraint['lower']
             upper = constraint['upper']
             atomPairs = constraint['atomPairs']
-            print atomPairs,lower,upper
             firstAtomPair = atomPairs[0]
             if firstAtomPair not in self.constraints:
                 constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
