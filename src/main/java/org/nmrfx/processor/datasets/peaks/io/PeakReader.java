@@ -483,7 +483,7 @@ public class PeakReader {
             int nDim = listMap.get("label").size();
             PeakList peakList = new PeakList(listName, nDim);
             for (String field : listFields) {
-                if (!field.equals("dataset")) {
+                if (!field.equals("dataset") && !field.equals("condition")) {
                     for (int iDim = 0; iDim < nDim; iDim++) {
                         SpectralDim sDim = peakList.getSpectralDim(iDim);
                         String value = listMap.get(field).get(iDim);
@@ -503,6 +503,9 @@ public class PeakReader {
             }
             if (listMap.containsKey("dataset")) {
                 peakList.setDatasetName(listMap.get("dataset").get(0));
+            }
+            if (listMap.containsKey("condition")) {
+                peakList.setSampleConditionLabel(listMap.get("condition").get(0));
             }
             String[] data = null;
             while (true) {
