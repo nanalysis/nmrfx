@@ -603,6 +603,19 @@ public class Peak implements Comparable, PeakOrMulti {
         }
     }
 
+    public RegionData analyze() throws IOException {
+        Dataset dataset = Dataset.getDataset(getPeakList().getDatasetName());
+        if (dataset == null) {
+            throw new IllegalArgumentException("No dataset");
+        }
+        return analyze(dataset);
+    }
+
+    public RegionData analyze(Dataset dataset) throws IOException {
+        int[] planes = new int[0];
+        return analyzePeakRegion(dataset, planes);
+    }
+
     public RegionData analyzePeakRegion(Dataset theFile, int[] planes)
             throws IOException {
         int dataDim = theFile.getNDim();
