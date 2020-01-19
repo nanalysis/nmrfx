@@ -379,12 +379,14 @@ public class RegionController implements Initializable {
     }
 
     private void clearAnalysis() {
-        Analyzer analyzer = getAnalyzer();
-        if (analyzer != null) {
+        Analyzer regionAnalyzer = getAnalyzer();
+        if (regionAnalyzer != null) {
             if (affirm("Clear Analysis")) {
-                PeakList peakList = analyzer.getPeakList();
-                PeakList.remove(peakList.getName());
-                analyzer.getDataset().setRegions(null);
+                PeakList peakList = regionAnalyzer.getPeakList();
+                if (peakList != null) {
+                    peakList.remove();
+                }
+                regionAnalyzer.getDataset().setRegions(null);
                 chart.chartProps.setRegions(false);
                 chart.chartProps.setIntegrals(false);
                 chart.refresh();
@@ -447,7 +449,7 @@ public class RegionController implements Initializable {
             double center = (region.getRegionStart(0) + region.getRegionEnd(0)) / 2;
             multipletIdField.setText(String.format("%.3f", center));
             if (resetView) {
-                refreshPeakView(region);
+                resetRegionView(region);
             }
             double scale = getDataset().get().getNorm();
             double value = region.getIntegral() / scale;
@@ -754,8 +756,8 @@ public class RegionController implements Initializable {
         });
     }
 
-    public void refreshPeakView(DatasetRegion region) {
-        boolean resize = false;
+    public void resetRegionView(DatasetRegion region) {
+        boolean resize = true;
         if (region != null) {
             double start = region.getRegionStart(0);
             double end = region.getRegionEnd(0);
@@ -764,8 +766,13 @@ public class RegionController implements Initializable {
             double widthScale = 2.5;
             if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
+                double[][] limits = chart.getRegionLimits(dataAttr);
                 Double[] ppms = {center};
+                double currentWidth = Math.abs(limits[0][0] - limits[0][1]);
                 Double[] widths = {bounds * widthScale};
+                if (currentWidth > 3.0 * widths[0]) {
+                    resize = true;
+                }
                 if (resize && (widthScale > 0.0)) {
                     chart.moveTo(ppms, widths);
                 } else {
