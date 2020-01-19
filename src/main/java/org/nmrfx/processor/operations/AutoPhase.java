@@ -23,6 +23,7 @@
  */
 package org.nmrfx.processor.operations;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.processing.ProcessingException;
 
@@ -31,6 +32,9 @@ import org.nmrfx.processor.processing.ProcessingException;
  * @author johnsonb
  */
 public class AutoPhase extends Operation {
+    
+    public static AtomicDouble lastPh0 = new AtomicDouble(0.0);
+    public static AtomicDouble lastPh1 = new AtomicDouble(0.0);
 
     private final boolean firstOrder;
     private final boolean maxMode;
@@ -39,6 +43,7 @@ public class AutoPhase extends Operation {
     private final int mode;
     private final double ph1Limit;
     private final double negativePenalty;
+    
 
     public AutoPhase(boolean firstOrder, boolean maxMode, int winSize, double ratio, int mode, double ph1Limit, double negativePenalty) {
         this.firstOrder = firstOrder;
@@ -61,9 +66,12 @@ public class AutoPhase extends Operation {
         if (maxMode) {
             double phase = vector.autoPhaseByMax();
             vector.phase(phase, 0.0, false, false);
+            lastPh0.set(phase);
         } else {
             double[] phases = vector.autoPhase(firstOrder, winSize, ratio, mode, ph1Limit, negativePenalty);
             vector.phase(phases[0], phases[1], false, false);
+            lastPh0.set(phases[0]);
+            lastPh1.set(phases[1]);
         }
     }
 
