@@ -3656,6 +3656,9 @@ def genScript(arrayed=False):
         script += 'EXPD(lb=0.5)\n'
         script += 'ZF()\n'
         script += 'FT()\n'
+        trim = fidInfo.fidObj.getTrim()
+        if trim > 1.0e-3:
+            script += 'TRIM(ftrim=' + str(trim) +')\n'
         script += 'AUTOPHASE(firstOrder=True)\n'
     else:
         script += 'DIM(1)\n'
