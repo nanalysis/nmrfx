@@ -3,6 +3,11 @@ from org.nmrfx.processor.gui import MainApp
 from org.nmrfx.processor.gui import GUIScripter
 from org.nmrfx.processor.datasets.peaks import PeakList
 from org.nmrfx.processor.datasets import Dataset
+from javafx.stage import Stage
+from javafx.scene.layout import BorderPane
+from javafx.scene import Scene
+from javafx.scene.control import ToolBar
+
 import argparse
 import dscript
 
@@ -302,6 +307,32 @@ class NMRFxWindowScripting:
         self.drawAll()
         self.drawAll()
 
+    def createStage(self):
+        stage = Stage()
+        bPane = BorderPane()
+        scene = Scene(bpane)
+        stage.setScene(scene)
+        stage.show()
+        return bPane
+
+    def removeLastTool(self):
+        cntrl = self.cmd.getController()
+        box = cntrl.getBottomBox()
+        nTools = box.getChildren().size()
+        if nTools > 1:
+            lastTool = nTools - 1
+            box.getChildren().remove(lastTool)
+
+    def removeTool(self, toolBar):
+        cntrl = self.cmd.getController()
+        box = cntrl.getBottomBox()
+        box.getChildren().remove(toolBar)
+   
+    def addTool(self, toolBar):
+        cntrl = self.cmd.getController()
+        box = cntrl.getBottomBox()
+        box.getChildren().add(toolBar)
+
     def addPolyLine(self, x, y, color="black", width=1.0):
         self.cmd.addPolyLine(x , y, color, width)
             
@@ -326,3 +357,4 @@ def parseArgs(argv):
        iWin = i % nWins
        nw.active(iWin).cmd.addDataset(dataset)
        
+nw = NMRFxWindowScripting()
