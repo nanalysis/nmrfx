@@ -2886,7 +2886,7 @@ public class PolyChart implements PeakListener {
     double[][] getRegionLimits(DatasetAttributes dataAttr) {
         int nDataDim = dataAttr.nDim;
         double[][] limits = new double[nDataDim][2];
-        for (int i = 0; (i < axes.length); i++) {
+        for (int i = 0; ((i < axes.length) && (i < nDataDim)); i++) {
             if (axModes[i] == AXMODE.PPM) {
                 limits[i][0] = axes[i].getLowerBound();
                 limits[i][1] = axes[i].getUpperBound();
