@@ -791,24 +791,26 @@ public class PeakList {
      * @param listName
      */
     public static void remove(String listName) {
-        PeakDim peakdim;
         PeakList peakList = (PeakList) peakListTable.get(listName);
-
         if (peakList != null) {
-            for (Peak peak : peakList.peaks) {
-                for (PeakDim peakDim : peak.peakDims) {
-                    peakDim.remove();
-                    if (peakDim.hasMultiplet()) {
-                        Multiplet multiplet = peakDim.getMultiplet();
-                    }
-                }
-                peak.markDeleted();
-            }
-            peakList.peaks.clear();
-            peakList.peaks = null;
-            peakList.schedExecutor.shutdown();
-            peakList.schedExecutor = null;
+            peakList.remove();
         }
+    }
+
+    public void remove() {
+        for (Peak peak : peaks) {
+            for (PeakDim peakDim : peak.peakDims) {
+                peakDim.remove();
+                if (peakDim.hasMultiplet()) {
+                    Multiplet multiplet = peakDim.getMultiplet();
+                }
+            }
+            peak.markDeleted();
+        }
+        peaks.clear();
+        peaks = null;
+        schedExecutor.shutdown();
+        schedExecutor = null;
         peakListTable.remove(listName);
     }
 
