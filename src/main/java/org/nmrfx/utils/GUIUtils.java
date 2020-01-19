@@ -9,6 +9,7 @@ import java.util.Optional;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.text.Text;
 
 /**
  *
@@ -33,5 +34,11 @@ public class GUIUtils {
         alert.showAndWait();
         return;
 
+    }
+
+    public static double getTextWidth(String s) {
+        Text text = new Text(s);
+        final double width = text.getLayoutBounds().getWidth();
+        return width;
     }
 }
