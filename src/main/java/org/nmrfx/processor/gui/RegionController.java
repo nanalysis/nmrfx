@@ -158,16 +158,9 @@ public class RegionController implements Initializable {
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.FAST_FORWARD, "", iconSize, fontSize, ContentDisplay.GRAPHIC_ONLY);
         bButton.setOnAction(e -> firstRegion());
         buttons.add(bButton);
-        Button deleteButton = GlyphsDude.createIconButton(FontAwesomeIcon.BAN, "", fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
-
-        // prevent accidental activation when inspector gets focus after hitting space bar on peak in spectrum
-        // a second space bar hit would activate
-        deleteButton.setOnKeyPressed(e -> e.consume());
-        deleteButton.setOnAction(e -> deleteMultiplet());
 
         toolBar.getChildren().addAll(buttons);
         toolBar.getChildren().add(multipletIdField);
-        toolBar.getChildren().add(deleteButton);
         HBox spacer = new HBox();
         toolBar.getChildren().add(spacer);
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -414,10 +407,6 @@ public class RegionController implements Initializable {
         }
     }
 
-    void deleteMultiplet() {
-
-    }
-
     public void initMultiplet() {
         TreeSet<DatasetRegion> regions = getRegions();
         if (!regions.isEmpty()) {
@@ -635,7 +624,12 @@ public class RegionController implements Initializable {
 
     public void splitRegion() {
         double ppm = chart.getVerticalCrosshairPositions()[0];
-        activeRegion.ifPresent(r -> r.split(ppm - 0.01, ppm + 0.01));
+
+        activeRegion.ifPresent(r -> {
+            DatasetRegion newRegion = r.split(ppm - 0.001, ppm + 0.001);
+            getRegions().add(newRegion);
+            updateRegion();
+        });
         chart.refresh();
     }
 
