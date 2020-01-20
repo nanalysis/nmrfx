@@ -91,7 +91,7 @@ public class AnalystApp extends MainApp {
     public static MolSceneController molController;
     public static AtomBrowser atomBrowser;
     public static RNAPeakGeneratorSceneController rnaPeakGenController;
-
+    public static PeakTableController peakTableController;
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     RDCGUI rdcGUI = null;
@@ -405,6 +405,9 @@ public class AnalystApp extends MainApp {
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
         peakNavigatorMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakNavigator());
 
+        MenuItem peakTableMenuItem = new MenuItem("Show Peak Table");
+        peakTableMenuItem.setOnAction(e -> showPeakTable());
+
         MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
         linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
 
@@ -437,8 +440,9 @@ public class AnalystApp extends MainApp {
                 atomBrowserMenuItem, runAboutMenuItem);
 
         peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
-                linkPeakDimsMenuItem, peakSliderMenuItem, pathToolMenuItem,
-                multipletMenuItem, ligandScannerMenuItem, assignCascade);
+                peakTableMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem,
+                pathToolMenuItem, multipletMenuItem, ligandScannerMenuItem,
+                assignCascade);
 
         // Window Menu
         // TBD standard window menu items
@@ -663,6 +667,21 @@ public class AnalystApp extends MainApp {
             scannerController.getStage().show();
         } else {
             System.out.println("Coudn't make atom controller");
+        }
+    }
+
+    private void showPeakTable() {
+        if (peakTableController == null) {
+            peakTableController = PeakTableController.create();
+            List<PeakList> peakLists = PeakList.getLists();
+            if (!peakLists.isEmpty()) {
+                peakTableController.setPeakList(peakLists.get(0));
+            }
+        }
+        if (peakTableController != null) {
+            peakTableController.getStage().show();
+        } else {
+            System.out.println("Coudn't make peak table controller");
         }
     }
 
