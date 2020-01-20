@@ -102,7 +102,7 @@ import org.python.util.PythonInterpreter;
  *
  * @author johnsonb
  */
-public class PeakAttrController implements Initializable, PeakNavigable {
+public class PeakAttrController implements Initializable, PeakNavigable, PeakMenuTarget {
 
     static final DecimalFormat formatter = new DecimalFormat();
 
@@ -478,18 +478,20 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         peakNavigator.setPeakList();
     }
 
-    public void setPeakList(PeakList peakList) {
-        this.peakList = peakList;
-        if (peakList != null) {
-            currentPeak = peakList.getPeak(0);
-            stage.setTitle(peakList.getName());
-        } else {
-            stage.setTitle("Peak Inspector");
-        }
+    public PeakList getPeakList() {
+        return peakList;
+    }
 
+    public void setPeakList(PeakList peakList) {
+        peakNavigator.setPeakList(peakList);
     }
 
     void initMenuBar() {
+        PeakMenuBar peakMenuBar = new PeakMenuBar(this);
+        peakMenuBar.initMenuBar(menuBar);
+        if (true) {
+            return;
+        }
         MenuButton fileMenu = new MenuButton("File");
 
         MenuItem saveXPK2 = new MenuItem("Save XPK2...");
@@ -918,7 +920,7 @@ public class PeakAttrController implements Initializable, PeakNavigable {
         }
     }
 
-    boolean checkDataset() {
+    public boolean checkDataset() {
         boolean ok = false;
         String datasetName = peakList.getDatasetName();
         if ((datasetName == null) || datasetName.equals("")) {
