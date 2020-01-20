@@ -25,7 +25,6 @@ package org.nmrfx.processor.gui;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -47,7 +46,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
-import javafx.scene.control.ButtonBase;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
@@ -66,15 +64,17 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
  *
  * @author johnsonb
  */
-public class PeakTableController implements Initializable {
+public class PeakTableController implements PeakMenuTarget, Initializable {
 
     private Stage stage;
     @FXML
     private ToolBar toolBar;
     @FXML
     private TableView<Peak> tableView;
+    private PeakList peakList;
 
     private int currentDims = 0;
+    PeakMenuBar peakMenuBar;
     Button valueButton;
     Button saveParButton;
     Button closeButton;
@@ -114,24 +114,12 @@ public class PeakTableController implements Initializable {
     }
 
     void initToolBar() {
+
         peakListMenuButton = new MenuButton("List");
         toolBar.getItems().add(peakListMenuButton);
         updatePeakListMenu();
-        ArrayList<ButtonBase> buttons = new ArrayList<>();
-        Button bButton;
-
-        saveParButton = new Button("Save Par");
-        buttons.add(saveParButton);
-
-        closeButton = new Button("Close");
-        buttons.add(closeButton);
-        closeButton.setOnAction(e -> closePeak());
-        closeButton.setDisable(true);
-
-        for (ButtonBase button : buttons) {
-            button.getStyleClass().add("toolButton");
-        }
-        toolBar.getItems().addAll(buttons);
+        peakMenuBar = new PeakMenuBar(this);
+        peakMenuBar.initMenuBar(toolBar);
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             updatePeakListMenu();
         };
@@ -149,6 +137,16 @@ public class PeakTableController implements Initializable {
             });
             peakListMenuButton.getItems().add(menuItem);
         }
+    }
+
+    @Override
+    public void refreshPeakView() {
+        tableView.refresh();
+    }
+
+    @Override
+    public PeakList getPeakList() {
+        return peakList;
     }
 
     private class DimTableColumn<S, T> extends TableColumn<S, T> {
@@ -201,7 +199,6 @@ public class PeakTableController implements Initializable {
         ListChangeListener listener = (ListChangeListener) (ListChangeListener.Change c) -> {
             int nSelected = tableView.getSelectionModel().getSelectedItems().size();
             boolean state = nSelected == 1;
-            System.out.println("listen");
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(listener);
     }
@@ -218,6 +215,7 @@ public class PeakTableController implements Initializable {
         TableColumn<Peak, Integer> idNumCol = new TableColumn<>("id");
         idNumCol.setCellValueFactory(new PropertyValueFactory("IdNum"));
         idNumCol.setEditable(false);
+        idNumCol.setPrefWidth(50);
 
         TableColumn<Peak, Float> intensityCol = new TableColumn<>("intensity");
         intensityCol.setCellValueFactory(new PropertyValueFactory("Intensity"));
@@ -251,7 +249,6 @@ public class PeakTableController implements Initializable {
             @Override
             public void commitEdit(Color item) {
                 super.commitEdit(item);
-                System.out.println("commit " + item.toString() + " " + getTableRow().getItem());
                 Peak peak = (Peak) getTableRow().getItem();
                 peak.setColor(item.toString());
             }
@@ -287,13 +284,19 @@ public class PeakTableController implements Initializable {
     }
 
     public void setPeakList(PeakList peakList) {
+        this.peakList = peakList;
         if (tableView == null) {
             System.out.println("null table");
         } else {
-            ObservableList<Peak> peaks = FXCollections.observableList(peakList.peaks());
-            updateColumns(peakList.getNDim());
-            tableView.setItems(peaks);
-            stage.setTitle("Peaks: " + peakList.getName());
+            if (peakList == null) {
+                tableView.getItems().clear();
+                stage.setTitle("Peaks: ");
+            } else {
+                ObservableList<Peak> peaks = FXCollections.observableList(peakList.peaks());
+                updateColumns(peakList.getNDim());
+                tableView.setItems(peaks);
+                stage.setTitle("Peaks: " + peakList.getName());
+            }
         }
     }
 
