@@ -187,6 +187,8 @@ public class Multiplet implements PeakOrMulti, Comparable {
     public void updateCoupling(List<AbsMultipletComponent> comps) {
         if (comps.size() == 1) {
             coupling = new Singlet(this);
+            this.getPeakDim().setChemShift((float) comps.get(0).offset);
+            getOrigin().setIntensity((float) comps.get(0).getIntensity());
             getOrigin().setVolume1((float) comps.get(0).getVolume());
         } else {
             coupling = new ComplexCoupling(this, comps);
