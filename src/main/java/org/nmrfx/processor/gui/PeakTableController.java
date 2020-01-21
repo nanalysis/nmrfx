@@ -209,6 +209,14 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             boolean state = nSelected == 1;
         };
         tableView.getSelectionModel().getSelectedIndices().addListener(listener);
+        tableView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                if (!tableView.getSelectionModel().getSelectedItems().isEmpty()) {
+                    Peak peak = tableView.getSelectionModel().getSelectedItems().get(0);
+                    showPeakInfo(peak);
+                }
+            }
+        });
     }
 
     void updateColumns(int nDim) {
@@ -330,6 +338,13 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
                 peakList.registerListener(this);
             }
         }
+
+    }
+
+    void showPeakInfo(Peak peak) {
+        FXMLController.getActiveController().showPeakAttr();
+        FXMLController.peakAttrController.gotoPeak(peak);
+        FXMLController.peakAttrController.getStage().toFront();
 
     }
 
