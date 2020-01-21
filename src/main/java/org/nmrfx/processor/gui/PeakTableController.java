@@ -59,13 +59,15 @@ import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
 import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.PeakListener;
 
 /**
  *
  * @author johnsonb
  */
-public class PeakTableController implements PeakMenuTarget, Initializable {
+public class PeakTableController implements PeakMenuTarget, PeakListener, Initializable {
 
     private Stage stage;
     @FXML
@@ -148,6 +150,11 @@ public class PeakTableController implements PeakMenuTarget, Initializable {
     @Override
     public PeakList getPeakList() {
         return peakList;
+    }
+
+    @Override
+    public void peakListChanged(PeakEvent peakEvent) {
+        refreshPeakView();
     }
 
     private class DimTableColumn<S, T> extends TableColumn<S, T> {
@@ -303,7 +310,11 @@ public class PeakTableController implements PeakMenuTarget, Initializable {
         }
     }
 
+    @Override
     public void setPeakList(PeakList peakList) {
+        if (this.peakList != null) {
+            peakList.removeListener(this);
+        }
         this.peakList = peakList;
         if (tableView == null) {
             System.out.println("null table");
@@ -316,8 +327,10 @@ public class PeakTableController implements PeakMenuTarget, Initializable {
                 updateColumns(peakList.getNDim());
                 tableView.setItems(peaks);
                 stage.setTitle("Peaks: " + peakList.getName());
+                peakList.registerListener(this);
             }
         }
+
     }
 
     void closePeak() {
