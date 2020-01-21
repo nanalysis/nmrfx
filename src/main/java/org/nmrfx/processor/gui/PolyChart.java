@@ -2834,6 +2834,7 @@ public class PolyChart implements PeakListener {
         if (hit.isPresent()) {
             FXMLController.getActiveController().showPeakAttr();
             FXMLController.peakAttrController.gotoPeak(hit.get());
+            FXMLController.peakAttrController.getStage().toFront();
         }
     }
 
