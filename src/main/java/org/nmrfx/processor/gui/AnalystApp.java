@@ -628,6 +628,7 @@ public class AnalystApp extends MainApp {
         }
         if (rnaPeakGenController != null) {
             rnaPeakGenController.getStage().show();
+            rnaPeakGenController.getStage().toFront();
         } else {
             System.out.println("Coudn't make rnaPeakGenController ");
         }
@@ -640,6 +641,7 @@ public class AnalystApp extends MainApp {
         }
         if (atomController != null) {
             atomController.getStage().show();
+            atomController.getStage().toFront();
         } else {
             System.out.println("Coudn't make atom controller");
         }
@@ -665,6 +667,7 @@ public class AnalystApp extends MainApp {
         }
         if (scannerController != null) {
             scannerController.getStage().show();
+            scannerController.getStage().toFront();
         } else {
             System.out.println("Coudn't make atom controller");
         }
@@ -680,6 +683,7 @@ public class AnalystApp extends MainApp {
         }
         if (peakTableController != null) {
             peakTableController.getStage().show();
+            peakTableController.getStage().toFront();
         } else {
             System.out.println("Coudn't make peak table controller");
         }

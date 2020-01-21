@@ -57,6 +57,7 @@ import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import javafx.util.converter.DefaultStringConverter;
+import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 
@@ -280,6 +281,25 @@ public class PeakTableController implements PeakMenuTarget, Initializable {
 
             shiftCol.setPrefWidth(75);
             tableView.getColumns().addAll(shiftCol);
+        }
+        if (nDim == 1) {
+            TableColumn<Peak, String> multipletCol = new TableColumn<>("multiplet");
+            multipletCol.setCellFactory(tc -> new PeakStringFieldTableCell(sConverter));
+            multipletCol.setCellValueFactory((CellDataFeatures<Peak, String> p) -> {
+                Peak peak = p.getValue();
+                Multiplet multiplet = peak.getPeakDim(0).getMultiplet();
+                String couplingString = multiplet.getCouplingsAsSimpleString();
+                double normVal = 0.0;
+                if (peak.peakList.scale > 0.0) {
+                    normVal = multiplet.getVolume() / peak.peakList.scale;
+                }
+                String label = String.format("%.2f", normVal) + " " + multiplet.getMultiplicity() + " " + couplingString;
+
+                return new ReadOnlyObjectWrapper(label);
+            });
+            tableView.getColumns().add(multipletCol);
+            tableView.setPrefWidth(150);
+
         }
     }
 
