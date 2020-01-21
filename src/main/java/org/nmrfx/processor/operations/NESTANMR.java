@@ -130,7 +130,6 @@ public class NESTANMR extends MatrixOperation {
                 vector.set(i, real, imag);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new ProcessingException(e.getLocalizedMessage());
         }
         //PyObject obj = interpreter.get("a");
@@ -139,6 +138,9 @@ public class NESTANMR extends MatrixOperation {
 
     @Override
     public Operation evalMatrix(MatrixType matrix) {
+        if (sampleSchedule == null) {
+            throw new ProcessingException("No sample schedule");
+        }
         try {
             MatrixND matrixND = (MatrixND) matrix;
             for (int i = 0; i < matrixND.getNDim(); i++) {
@@ -153,6 +155,7 @@ public class NESTANMR extends MatrixOperation {
             NESTAMath nesta = new NESTAMath(matrixND, zeroList, outerIterations, innerIterations, tolFinal, muFinal, phase, zeroAtStart, threshold, logFile);
             nesta.doNESTA();
         } catch (Exception e) {
+            e.printStackTrace();
             throw new ProcessingException(e.getLocalizedMessage());
 
         }

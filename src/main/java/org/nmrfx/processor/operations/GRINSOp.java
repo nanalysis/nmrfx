@@ -128,6 +128,10 @@ public class GRINSOp extends MatrixOperation {
 
     @Override
     public Operation evalMatrix(MatrixType matrix) {
+        if (sampleSchedule == null) {
+            throw new ProcessingException("No sample schedule");
+        }
+
         try {
             MatrixND matrixND = (MatrixND) matrix;
             if (zfFactor > 0) {
