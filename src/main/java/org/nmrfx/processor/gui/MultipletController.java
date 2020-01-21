@@ -798,6 +798,7 @@ merge.png				region_adjust.png
             if (result.isPresent()) {
                 System.out.println("dev pos " + result.get());
                 Multiplets.addPeaksToMultiplet(m, result.get());
+                analyzer.fitMultiplet(m);
                 chart.refresh();
                 refresh();
 
@@ -825,6 +826,7 @@ merge.png				region_adjust.png
                 Multiplets.addPeaksToMultiplet(m, ppm1);
 
             }
+            analyzer.fitMultiplet(m);
             chart.refresh();
             refresh();
         });
