@@ -64,6 +64,7 @@ public class DrawPeaks {
     static double widthLimit = 0.0001;
     char[] anchorS = {'s', ' '};
     char[] anchorW = {' ', 'w'};
+    double frOffset = 0.05;
 
     /**
      * Creates a new instance of PeakRenderer
@@ -899,6 +900,8 @@ public class DrawPeaks {
         }
         float xM = (float) multiplet.getCenter();
         float yM = (float) multiplet.getMax();
+        double range = yAxis.getRange();
+        yM += range * frOffset;
         ArrayList<Line2D> lines = multiplet.getSplittingGraph();
         double max = 0.0;
         treeOn = true;
