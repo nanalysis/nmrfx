@@ -1558,8 +1558,10 @@ public class PolyChart implements PeakListener {
                         datasetAttributes.setHasLevel(true);
                     } else {
                         datasetAttributes = new DatasetAttributes(dataset);
-                        datasetAttributes.setLvl(dataset.getLvl());
-                        datasetAttributes.setHasLevel(true);
+                        if (datasetAttributes.getDataset().isLvlSet()) {
+                            datasetAttributes.setLvl(dataset.getLvl());
+                            datasetAttributes.setHasLevel(true);
+                        }
                     }
                 } else {
                     datasetAttributes = datasetAttributesList.get(0);
