@@ -1938,7 +1938,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public void setLvl(double lvl) {
         this.lvl = lvl;
-        lvlSet = true;
+        if (lvl > 1.0e-6) {
+            lvlSet = true;
+        }
     }
 
     /**
