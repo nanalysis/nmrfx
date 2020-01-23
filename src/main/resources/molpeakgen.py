@@ -387,6 +387,7 @@ class MolPeakGen:
         return peakList
 
     def genProteinPeaks(self, expType, dataset, listName="", condition="sim"):
+        expType = expType.lower()
         anames = {}
         anames['hsqc'] =  [['H',0,'N',0]]
         anames['hncaco'] =   [['H',0,'N',0,'C',0],['H',0,'N',0,'C',-1]]
@@ -398,6 +399,8 @@ class MolPeakGen:
 
         self.refMode = False
         expValues = anames[expType] 
+        if not isinstance(dataset,Dataset):
+            dataset = Dataset.getDataset(dataset)
 
         nDim = dataset.getNDim()
         peakList = self.getPeakList(dataset, listName)
