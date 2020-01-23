@@ -2986,10 +2986,12 @@ public class PolyChart implements PeakListener {
                         for (int iDim = 2; iDim < dim.length; iDim++) {
                             offsets[iDim] = 0.0;
                             if (limits[iDim][0] == limits[iDim][1]) {
+                                if (dim[iDim] >=0) {
                                 double ppm = peak.getPeakDim(dim[iDim]).getChemShiftValue();
                                 double pt = dataAttr.getDataset().ppmToDPoint(dataAttr.dim[iDim], ppm);
                                 double deltaPt = Math.abs(limits[iDim][0] - pt);
                                 offsets[iDim] = deltaPt;
+                                }
                             }
                         }
                         drawPeaks.drawPeak(peakListAttr, gC, peak, dim, offsets, false);
