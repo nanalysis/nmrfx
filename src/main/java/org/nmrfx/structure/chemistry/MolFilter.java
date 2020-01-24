@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.utilities.Util;
@@ -86,7 +85,7 @@ public class MolFilter {
             csAndENames.add(new CoordsetAndEntity(coordSetName, entityName));
         } else {
             csAndENames.add(new CoordsetAndEntity(molName));
-            if (molName != "*"){
+            if (molName != "*") {
                 entityName = molName;
             }
         }
