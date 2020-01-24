@@ -77,6 +77,9 @@ class NMRFxWindowScripting:
         else:
             self.cmd.datasets(datasetNames)
 
+    def openFID(self, fidName):
+        self.cmd.openFID(fidName)
+
     def peakLists(self, peakListNames=None):
         if peakListNames == None:
             return self.cmd.peakLists()
@@ -352,9 +355,12 @@ def parseArgs(argv):
     if (nWins > 1) and len(args.fileNames) != nWins:
         print "Number of files must equal number of windows if using a grid"
         exit(1)
-    for i,fileName in enumerate(args.fileNames):
-       dataset = dscript.nd.open(fileName)
-       iWin = i % nWins
-       nw.active(iWin).cmd.addDataset(dataset)
+    if len(args.fileNames) == 1 and (args.fileNames[0].endswith('ser') or args.fileNames[0].endswith('fid')):
+        nw.openFID(args.fileNames[0])
+    else:
+        for i,fileName in enumerate(args.fileNames):
+           dataset = dscript.nd.open(fileName)
+           iWin = i % nWins
+           nw.active(iWin).cmd.addDataset(dataset)
        
 nw = NMRFxWindowScripting()

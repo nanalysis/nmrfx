@@ -588,6 +588,13 @@ public class GUIScripter {
         });
     }
 
+    public void openFID(String fidName) {
+        ConsoleUtil.runOnFxThread(() -> {
+            FXMLController controller = getActiveController();
+            controller.openFile(fidName, true, false);
+        });
+    }
+
     public void datasets(List<String> datasetNames) {
         ConsoleUtil.runOnFxThread(() -> {
             PolyChart chart = getChart();
