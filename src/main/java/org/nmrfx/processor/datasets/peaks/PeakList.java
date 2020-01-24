@@ -225,7 +225,7 @@ public class PeakList {
      * @throws IllegalArgumentException if a peak with the input name doesn't
      * exist.
      */
-    public PeakList copy(final String name, final boolean allLinks, boolean merge) {
+    public PeakList copy(final String name, final boolean allLinks, boolean merge, boolean copyLabels) {
         PeakList newPeakList;
         if (merge) {
             newPeakList = get(name);
@@ -252,7 +252,7 @@ public class PeakList {
                 newPeak.setIdNum(peak.getIdNum());
             }
             newPeakList.addPeak(newPeak);
-            if (merge) {
+            if (merge || copyLabels) {
                 peak.copyLabels(newPeak);
             }
             if (!merge && allLinks) {

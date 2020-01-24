@@ -60,7 +60,7 @@ public class PeakListTest {
         Assert.assertNotNull(peakList);
         
         String name = peakList.getName();
-        PeakList peakListc = peakList.copy(name, true, true);
+        PeakList peakListc = peakList.copy(name, true, true, false);
         Assert.assertEquals(peakList, peakListc);
     }
     
