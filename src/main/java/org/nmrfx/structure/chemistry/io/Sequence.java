@@ -733,9 +733,10 @@ public class Sequence {
                 polymer = initMolFromSeqFile(molName, polymerName, coordSetNames, polymerType);
                 polymers.add(polymer);
                 molecule = polymer.molecule;
+                int coordID = 1;
                 for (String cName : coordSetNames) {
                     if (!molecule.coordSetExists(cName)) {
-                        molecule.addCoordSet(cName, polymer);
+                        molecule.addCoordSet(cName, coordID++, polymer);
                     }
                 }
 
@@ -864,10 +865,10 @@ public class Sequence {
             polymer.assemblyID = molecule.entityLabels.size() + 1;
 
             if (coordSetNames.isEmpty()) {
-                molecule.addEntity(polymer, "");
+                molecule.addEntity(polymer, "", polymer.assemblyID);
             } else {
                 //System.err.println("add entity named" + polymerName + " with cset " + ((String) coordSetNames.get(0)));
-                molecule.addEntity(polymer, (String) coordSetNames.get(0));
+                molecule.addEntity(polymer, (String) coordSetNames.get(0), polymer.assemblyID);
             }
         } else {
             polymer = (Polymer) entity;
