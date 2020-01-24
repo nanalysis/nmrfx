@@ -291,7 +291,7 @@ public class Molecule implements Serializable, ITree {
     public void setActive() {
         activeMol = this;
     }
-    
+
     public void reName(Molecule molecule, Compound compound, String name1, String name2) {
         molecule.name = name2;
         StructureProject.getActive().removeMolecule(name1);
@@ -399,10 +399,15 @@ public class Molecule implements Serializable, ITree {
     }
 
     public void addCoordSet(String setName, Entity entity) {
+        int id = coordSets.size() + 1;
+        addCoordSet(setName, id, entity);
+    }
+
+    public void addCoordSet(String setName, int id, Entity entity) {
         CoordSet coordSet = (CoordSet) coordSets.get(setName);
 
         if (coordSet == null) {
-            coordSet = new CoordSet(setName, entity);
+            coordSet = new CoordSet(setName, id, entity);
             coordSets.put(setName, coordSet);
             coordSet.addEntity(entity);
         } else {
@@ -435,13 +440,27 @@ public class Molecule implements Serializable, ITree {
 
     public void addEntity(Entity entity) {
         CoordSet coordSet = getFirstCoordSet();
+        int coordID;
         final String coordSetName;
         if (coordSet != null) {
             coordSetName = coordSet.getName();
+            coordID = coordSet.id;
         } else {
             coordSetName = "A";
+            coordID = 1;
         }
-        addEntity(entity, coordSetName);
+        addEntity(entity, coordSetName, coordID);
+    }
+
+    public void addEntity(Entity entity, String coordSetName, int coordID) {
+        entities.put(entity.name, entity);
+        entityLabels.put(entity.label, entity);
+        if (entity.entityID == 0) {
+            entity.setIDNum(entities.size());
+        }
+        entity.molecule = this;
+        addCoordSet(coordSetName, coordID, entity);
+        chains.put(entity.getPDBChain(), entity);
     }
 
     public void addEntity(Entity entity, String coordSetName) {
@@ -2876,7 +2895,7 @@ public class Molecule implements Serializable, ITree {
             while (entIterator.hasNext()) {
                 Entity entity = (Entity) entIterator.next();
                 Compound compound = null;
-                if (!molFilter.matchCoordSetAndEntity(coordSet.getName(), entity.getName())) {
+                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
                 }
                 if (entity instanceof Polymer) {
@@ -3011,7 +3030,7 @@ public class Molecule implements Serializable, ITree {
                 };
 
                 Compound compound = null;
-                if (!molFilter.matchCoordSetAndEntity(coordSet.getName(), entity.getName())) {
+                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
                 }
                 if (entity instanceof Polymer) {
@@ -3171,7 +3190,7 @@ public class Molecule implements Serializable, ITree {
             while (entIterator.hasNext()) {
                 Entity entity = (Entity) entIterator.next();
                 Compound compound = null;
-                if (!molFilter.matchCoordSetAndEntity(coordSet.getName(), entity.getName())) {
+                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
                 }
                 if (entity instanceof Polymer) {
@@ -3407,7 +3426,7 @@ public class Molecule implements Serializable, ITree {
 
             while (entIterator.hasNext()) {
                 Entity entity = (Entity) entIterator.next();
-                if (!molFilter.matchCoordSetAndEntity(coordSet.getName(), entity.getName())) {
+                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
                 }
 
@@ -3887,7 +3906,7 @@ public class Molecule implements Serializable, ITree {
                 sBuilder.append(iAtom).append("\n");
                 for (MNode node : pathNodes) {
                     sBuilder.append(" ").append(node.getAtom().getName());
-        }
+                }
                 sBuilder.append("\n");
                 for (Integer treeValue : treeValues) {
                     sBuilder.append(" ").append(treeValue);
@@ -4119,9 +4138,9 @@ public class Molecule implements Serializable, ITree {
                     jCouplings.add(jCoupling);
                 } else if ((shell > 1) && (atoms[shell].aNum == 6)) {
                     if (shell <= hmbcShells) {
-                    JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
-                    hmbcLinks.add(jCoupling);
-                }
+                        JCoupling jCoupling = JCoupling.couplingFromAtoms(atoms, shell + 1, shell);
+                        hmbcLinks.add(jCoupling);
+                    }
                 }
                 if (gotJ) {
                     if (!hashJ.containsKey(atomStart)) {
@@ -4144,10 +4163,10 @@ public class Molecule implements Serializable, ITree {
                     if ((iNodeBegin != null) && (iNodeEnd != null)) {
                         if (iNodeBegin.intValue() != iNodeEnd.intValue()) {
                             if (iNodeBegin < iNodeEnd) {
-                            mTreeJ.addEdge(iNodeBegin, iNodeEnd);
+                                mTreeJ.addEdge(iNodeBegin, iNodeEnd);
+                            }
                         }
                     }
-                }
                 }
 
             }

@@ -400,8 +400,9 @@ public class Atom implements IAtom {
 
     public String getFullName() {
         if (entity instanceof Residue) {
-            return ((Residue) entity).polymer.name + ":"
-                    + ((Residue) entity).number + "." + name;
+            Polymer polymer = ((Residue) entity).polymer;
+            String id = String.valueOf(polymer.getCoordSet().id);
+            return id + ":" + ((Residue) entity).number + "." + name;
         } else {
             return entity.name + ":." + name;
         }

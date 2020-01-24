@@ -304,6 +304,7 @@ public class NMRStarReader {
             if (chainCode.equals(".")) {
                 chainCode = "A";
             }
+            int chainID = chainCode.charAt(0) - 'A' + 1;
             if ((polymer == null) || (!chainCode.equals(lastChain))) {
                 lastChain = chainCode;
                 if (polymer != null) {
@@ -316,7 +317,7 @@ public class NMRStarReader {
                 polymer.setIDNum(entityID);
                 polymer.assemblyID = entityID++;
                 entities.put(chainCode, polymer);
-                molecule.addEntity(polymer, chainCode);
+                molecule.addEntity(polymer, chainCode, chainID);
 
             }
             String resName = (String) residueNameColumn.get(i);
@@ -483,10 +484,10 @@ public class NMRStarReader {
                 polymer.assemblyID = entityAssemblyID;
                 polymer.setPDBChain(pdbLabel);
                 entities.put(entityAssemblyIDString + "." + entityIDString, polymer);
-                molecule.addEntity(polymer, asymLabel);
+                molecule.addEntity(polymer, asymLabel, entityAssemblyID);
                 finishSaveFrameProcessing(polymer, saveframe, nomenclature, capped);
             } else {
-                molecule.addCoordSet(asymLabel, entity);
+                molecule.addCoordSet(asymLabel, entityAssemblyID, entity);
             }
         } else {
             Entity entity = molecule.getEntity(name);
@@ -496,7 +497,7 @@ public class NMRStarReader {
                 compound.assemblyID = entityAssemblyID;
                 compound.setPDBChain(pdbLabel);
                 entities.put(entityAssemblyIDString + "." + entityIDString, compound);
-                molecule.addEntity(compound, asymLabel);
+                molecule.addEntity(compound, asymLabel, entityAssemblyID);
                 String mapID = entityAssemblyID + "." + entityID + "." + 1;
                 finishSaveFrameProcessing(this, saveframe, compound, mapID);
             }
