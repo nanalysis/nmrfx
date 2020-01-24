@@ -353,8 +353,11 @@ public class AnalystApp extends MainApp {
         MenuItem readPDBItem = new MenuItem("Read PDB...");
         readPDBItem.setOnAction(e -> readMolecule("pdb"));
         molFileMenu.getItems().add(readPDBItem);
+        MenuItem readCoordinatesItem = new MenuItem("Read Coordinates ...");
+        readCoordinatesItem.setOnAction(e -> readMolecule("pdb xyz"));
+        molFileMenu.getItems().add(readCoordinatesItem);
         MenuItem readPDBxyzItem = new MenuItem("Read PDB XYZ...");
-        readPDBxyzItem.setOnAction(e -> readMolecule("pdb xyz"));
+        readPDBxyzItem.setOnAction(e -> readMolecule("pdbx"));
         molFileMenu.getItems().add(readPDBxyzItem);
         MenuItem readMolItem = new MenuItem("Read Mol...");
         readMolItem.setOnAction(e -> readMolecule("mol"));
@@ -903,11 +906,18 @@ public class AnalystApp extends MainApp {
         if (file != null) {
             try {
                 switch (type) {
-                    case "pdb":
+                    case "pdb": {
                         PDBFile pdbReader = new PDBFile();
                         pdbReader.readSequence(file.toString(), false);
                         System.out.println("read mol: " + file.toString());
                         break;
+                    }
+                    case "pdbx": {
+                        PDBFile pdbReader = new PDBFile();
+                        pdbReader.read(file.toString());
+                        System.out.println("read mol: " + file.toString());
+                        break;
+                    }
                     case "pdb xyz":
                         PDBFile pdb = new PDBFile();
                         pdb.readCoordinates(file.getPath(), 0, false, true);
