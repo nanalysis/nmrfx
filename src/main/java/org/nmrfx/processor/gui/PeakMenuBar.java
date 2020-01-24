@@ -164,7 +164,7 @@ public class PeakMenuBar {
             TextInputDialog dialog = new TextInputDialog();
             Optional<String> result = dialog.showAndWait();
             if (result.isPresent()) {
-                PeakList newPeakList = getPeakList().copy(result.get(), false, false);
+                PeakList newPeakList = getPeakList().copy(result.get(), false, false, true);
                 if (newPeakList != null) {
                     setPeakList(newPeakList);
                 }
