@@ -404,6 +404,15 @@ public class Atom implements IAtom {
         return entity;
     }
 
+    public Entity getTopEntity() {
+        if (entity instanceof Residue) {
+            Polymer polymer = ((Residue) entity).polymer;
+            return polymer;
+        } else {
+            return entity;
+        }
+    }
+
     public String getFullName() {
         if (entity instanceof Residue) {
             Polymer polymer = ((Residue) entity).polymer;
