@@ -447,7 +447,7 @@ public class NanoMol {
 
         for (int i = 0; i < nAtoms; i++) {
             String elementSymbol = AtomProperty.getElementName(atomElements[i]);
-            Atom atom = new Atom(elementSymbol);
+            Atom atom = Atom.genAtomWithElement(elementSymbol + (i + 1), elementSymbol);
             compound.addAtom(atom);
         }
 

@@ -28,6 +28,9 @@ import java.util.Arrays;
 import org.nmrfx.structure.chemistry.Atom;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.math3.util.FastMath;
 
 public class AtomEnergyProp {
@@ -35,6 +38,7 @@ public class AtomEnergyProp {
     private static boolean FILE_LOADED = false;
 
     final String name;
+    private final int aNum;
     //leonard-jones a parameter
     private final double a;
     //leonard-jones b parameter
@@ -55,9 +59,11 @@ public class AtomEnergyProp {
     private static double rscale = 0.68;
     private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
     private static double hbondDelta = 0.30;
+    private static final Map<Integer, AtomEnergyProp> DEFAULT_MAP = new HashMap<>();
 
-    public AtomEnergyProp(final String name, final double a, final double b, final double r, final double rh, final double e, final double c, final double mass, final int hbondMode) {
+    public AtomEnergyProp(final String name, int aNum, final double a, final double b, final double r, final double rh, final double e, final double c, final double mass, final int hbondMode) {
         this.name = name;
+        this.aNum = aNum;
         this.a = FastMath.sqrt(a);
         this.b = FastMath.sqrt(b);
         this.r = r;
@@ -100,23 +106,39 @@ public class AtomEnergyProp {
                 } else {
                     String aType = stringS.get(headerS.indexOf("AtomType"));
                     double r = Double.parseDouble(stringS.get(headerS.indexOf("RMin")));
+                    int aNum = Integer.parseInt(stringS.get(headerS.indexOf("AtomicNumber")));
                     double rh = Double.parseDouble(stringS.get(headerS.indexOf("HardRadius")));
                     double e = Double.parseDouble(stringS.get(headerS.indexOf("E")));
                     double m = Double.parseDouble(stringS.get(headerS.indexOf("Mass")));
                     int hType = (int) Double.parseDouble(stringS.get(headerS.indexOf("HBondType")));
-                    
+
                     e = -e;
                     r = r * 2.0;
                     double a = 1.0;
                     double b = 1.0;
                     double c = 0.0;
-                    AtomEnergyProp prop = new AtomEnergyProp(aType, a, b, r, rh, e, c, m, hType);
+                    AtomEnergyProp prop = new AtomEnergyProp(aType, aNum, a, b, r, rh, e, c, m, hType);
                     AtomEnergyProp.add(aType, prop);
                 }
             } else {
                 break;
             }
         }
+        DEFAULT_MAP.put(1, get("H"));
+        DEFAULT_MAP.put(6, get("CT"));
+        DEFAULT_MAP.put(7, get("N"));
+        DEFAULT_MAP.put(8, get("O"));
+        DEFAULT_MAP.put(9, get("F"));
+        DEFAULT_MAP.put(12, get("MG"));
+        DEFAULT_MAP.put(15, get("P"));
+        DEFAULT_MAP.put(16, get("S"));
+        DEFAULT_MAP.put(17, get("Cl"));
+        DEFAULT_MAP.put(20, get("C0"));
+        DEFAULT_MAP.put(26, get("FE"));
+        DEFAULT_MAP.put(29, get("CU"));
+        DEFAULT_MAP.put(30, get("Zn"));
+        DEFAULT_MAP.put(35, get("Br"));
+        DEFAULT_MAP.put(53, get("I"));
 
     }
 
@@ -129,11 +151,29 @@ public class AtomEnergyProp {
     }
 
     public static AtomEnergyProp get(final String atomType) {
+        try {
+            readPropFile();
+        } catch (IOException ex) {
+            Logger.getLogger(AtomEnergyProp.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return propMap.get(atomType);
+    }
+
+    public static AtomEnergyProp getDefault(final int aNum) {
+        try {
+            readPropFile();
+        } catch (IOException ex) {
+            Logger.getLogger(AtomEnergyProp.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return DEFAULT_MAP.get(aNum);
     }
 
     public String getName() {
         return name;
+    }
+
+    public int getAtomNumber() {
+        return aNum;
     }
 
     /**

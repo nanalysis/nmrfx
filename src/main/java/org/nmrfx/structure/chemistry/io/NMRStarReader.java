@@ -67,8 +67,8 @@ public class NMRStarReader {
     }
 
     public static void read(String starFileName) throws ParseException {
-         File file = new File(starFileName);
-         read(file);
+        File file = new File(starFileName);
+        read(file);
     }
 
     public static void read(File starFile) throws ParseException {
@@ -101,7 +101,7 @@ public class NMRStarReader {
         for (int i = 0; i < idColumn.size(); i++) {
             String aName = (String) idColumn.get(i);
             String aType = (String) typeColumn.get(i);
-            Atom atom = new Atom(aName, aType);
+            Atom atom = Atom.genAtomWithElement(aName, aType);
             compound.addAtom(atom);
         }
         compound.updateNames();
@@ -443,7 +443,7 @@ public class NMRStarReader {
         String entityAssemblyName = STAR3.getTokenFromMap(tagMap, "Entity_assembly_name");
         String asymLabel = STAR3.getTokenFromMap(tagMap, "Asym_ID", entityAssemblyName);
         if (asymLabel.equals(".")) {
-            asymLabel = String.valueOf((char) ('A'+index));
+            asymLabel = String.valueOf((char) ('A' + index));
         }
         String pdbLabel = STAR3.getTokenFromMap(tagMap, "PDB_chain_ID", "A");
         if (pdbLabel.equals(".")) {
@@ -1243,7 +1243,7 @@ public class NMRStarReader {
             rdcSet.add(aCon);
         }
     }
-    
+
     public void processGenDistConstraints(Saveframe saveframe) throws ParseException {
         Loop loop = saveframe.getLoop("_Gen_dist_constraint");
         if (loop == null) {
