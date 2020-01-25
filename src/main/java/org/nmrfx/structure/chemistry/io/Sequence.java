@@ -26,8 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
 import org.nmrfx.structure.chemistry.miner.NodeValidator;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
 
@@ -198,30 +201,13 @@ public class Sequence {
                         return;
                     }
                 }
-                String aTypeName = "H";
-                if (aType.substring(0, 1).equals("M") && aName.startsWith("H")) {
-                    aTypeName = "H";
-                } else if (aType.substring(0, 1).equals("A") && aName.startsWith("C")) {
-                    aTypeName = "C";
-                } else {
-                    // fixme wrong for two character elements
-                    aTypeName = aType.substring(0, 1);
-                }
-                Atom atom = new Atom(aName, aTypeName);
+                Atom atom = Atom.genAtomWithType(aName, aType);
                 // atom.setPointValidity(true);
                 atom.entity = residue;
                 atom.name = aName;
                 residue.addAtom(atom);
                 atom.setType(aType);
 
-                if (aType.substring(0, 1).equals("M") && atom.name.startsWith("H")) {
-                    atom.setAtomicNumber("H");
-                } else if (aType.substring(0, 1).equals("A") && atom.name.startsWith("C")) {
-                    atom.setAtomicNumber("C");
-                } else {
-                    // fixme wrong for two character elements
-                    atom.setAtomicNumber(aType.substring(0, 1));
-                }
                 atom.bondLength = Float.parseFloat(fields[3]);
                 atom.valanceAngle = (float) (Float.parseFloat(fields[4]) * Math.PI / 180.0);
                 atom.dihedralAngle = (float) (Float.parseFloat(fields[5]) * Math.PI / 180.0);
@@ -503,6 +489,13 @@ public class Sequence {
 
     public boolean addResidue(String fileName, Residue residue, RES_POSITION resPos, String coordSetName, boolean throwTclException)
             throws MoleculeIOException {
+        try {
+            // make sure parameters are in (if they are already this does nothing)
+            // so is quick to call
+            AtomEnergyProp.readPropFile();
+        } catch (IOException ex) {
+            throw new MoleculeIOException("Coudn't load energy parameter file" + ex.getMessage());
+        }
         ArrayList<String[]> fieldArray = loadResidue(fileName, throwTclException);
         boolean result = false;
         if (fieldArray.size() > 0) {
