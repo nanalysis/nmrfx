@@ -19,7 +19,6 @@ package org.nmrfx.structure.chemistry.constraints;
 
 import org.nmrfx.structure.chemistry.*;
 import org.nmrfx.processor.datasets.peaks.Peak;
-import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.structure.utilities.Util;
 import java.io.Serializable;
@@ -211,48 +210,33 @@ public class Noe implements Constraint, Serializable {
     }
 
     public void updatePPMError(MatchCriteria[] matchCriteria) {
-
-        PeakDim peakDim = peak.getPeakDim(matchCriteria[0].getDim());
-        double ppm = peakDim.getChemShift();
-        matchCriteria[0].setPPM(ppm);
-
-        peakDim = peak.getPeakDim(matchCriteria[1].getDim());
-        ppm = peakDim.getChemShift();
-        matchCriteria[1].setPPM(ppm);
-        SpatialSet[] spSets = new SpatialSet[4];
-        spSets[0] = spg1.getFirstSet();
-        spSets[1] = spg2.getFirstSet();
-
-        if (matchCriteria[2] != null) {
-            peakDim = peak.getPeakDim(matchCriteria[2].getDim());
-            ppm = peakDim.getChemShift();
-            matchCriteria[2].setPPM(ppm);
-            spSets[2] = spSets[0].atom.getParent().spatialSet;
-        }
-
-        if (matchCriteria[3] != null) {
-            peakDim = peak.getPeakDim(matchCriteria[3].getDim());
-            ppm = peakDim.getChemShift();
-            matchCriteria[3].setPPM(ppm);
-            spSets[3] = spSets[1].atom.getParent().spatialSet;
-        }
-        double[] dp = new double[4];
         double sum = 0.0;
-        for (int j = 0; j < 4; j++) {
-            if (spSets[j] != null) {
-                PPMv ppmv = spSets[j].getPPM(ppmSet);
+        int nCriteria = matchCriteria.length;
+        SpatialSet[] spSets = new SpatialSet[nCriteria];
+        for (int i = 0; i < nCriteria; i++) {
+            if (matchCriteria[i] != null) {
+                matchCriteria[i].setPPM(peak);
+                if (i == 0) {
+                    spSets[i] = spg1.getFirstSet();
+                } else if (i == 1) {
+                    spSets[i] = spg2.getFirstSet();
+                } else {
+                    spSets[i] = spSets[i - 2].atom.getParent().spatialSet;
+                }
+                PPMv ppmv = spSets[i].getPPM(ppmSet);
+                double dp;
 
                 if (ppmv != null) {
-                    double delta = IdPeak.getPPMDelta(ppmv.getValue(), matchCriteria[j]);
-                    dp[j] = delta / matchCriteria[j].getTol();
+                    double delta = IdPeak.getPPMDelta(ppmv.getValue(), matchCriteria[i]);
+                    dp = delta / matchCriteria[i].getTol();
                 } else {
-                    dp[j] = 1.0e30;
-                    System.out.println("no ppm for " + spSets[j].getFullName());
+                    dp = 1.0e30;
+                    System.out.println("no ppm for " + spSets[i].getFullName());
                 }
-                sum += dp[j] * dp[j];
-
+                sum += dp * dp;
             }
         }
+
         ppmError = Math.exp(-1.0 * sum / 2.0);
 
     }
