@@ -73,16 +73,19 @@ enum Flags {
 enum DisTypes {
 
     MINIMUM("minimum") {
+        @Override
         public double getDistance(Noe noe) {
             return noe.disStatAvg.getMin();
         }
     },
     MAXIMUM("maximum") {
+        @Override
         public double getDistance(Noe noe) {
             return noe.disStatAvg.getMax();
         }
     },
     MEAN("mean") {
+        @Override
         public double getDistance(Noe noe) {
             return noe.disStatAvg.getMean();
         }
@@ -173,6 +176,7 @@ public class Noe implements Constraint, Serializable {
 
     }
 
+    @Override
     public String toString() {
         char sepChar = '\t';
         StringBuilder sBuild = new StringBuilder();
@@ -193,6 +197,7 @@ public class Noe implements Constraint, Serializable {
         return peakList;
     }
 
+    @Override
     public int getID() {
         return idNum;
     }
@@ -276,7 +281,7 @@ public class Noe implements Constraint, Serializable {
     }
 
     public static void updateGenTypes() {
-        Map<String, NoeMatch> map = new HashMap<String, NoeMatch>();
+        Map<String, NoeMatch> map = new HashMap<>();
         MatchCriteria[] matchCriteria = null;
         PeakList lastList = null;
         for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
@@ -517,10 +522,10 @@ public class Noe implements Constraint, Serializable {
                 }
                 String name1 = noe.spg1.getFullName();
                 String name2 = noe.spg2.getFullName();
-                if (name1.indexOf(":") == -1) {
+                if (!name1.contains(":")) {
                     name1 = "*.*:" + name1;
                 }
-                if (name2.indexOf(":") == -1) {
+                if (!name2.contains(":")) {
                     name2 = "*.*:" + name2;
                 }
                 boolean addNoe = false;
@@ -700,7 +705,7 @@ public class Noe implements Constraint, Serializable {
             lastStruct = iStruct > lastStruct ? iStruct : lastStruct;
         }
         violCharArray = new char[lastStruct + 1];
-        if (activeSet.getPeakMapEntries().size() == 0) {
+        if (activeSet.getPeakMapEntries().isEmpty()) {
             ArrayList<Noe> noeList = activeSet.get();
             updateNOEListDistances(noeList);
         } else {
@@ -735,7 +740,7 @@ public class Noe implements Constraint, Serializable {
         }
         nStructures = structures.length;
         SummaryStatistics sumStat = new SummaryStatistics();
-        ArrayList<Double> dArray = new ArrayList<Double>();
+        ArrayList<Double> dArray = new ArrayList<>();
         int nInBounds = 0;
         BitSet violStructures = new BitSet(nStructures);
         for (int iStruct : structures) {
@@ -753,7 +758,7 @@ public class Noe implements Constraint, Serializable {
                     }
                 }
             }
-            if (dArray.size() == 0) {
+            if (dArray.isEmpty()) {
                 dArray.add(max);
             }
             double distance = avgDistance(dArray, -6, 1, sumAverage);
@@ -790,7 +795,7 @@ public class Noe implements Constraint, Serializable {
             lastStruct = iStruct > lastStruct ? iStruct : lastStruct;
         }
         violCharArray = new char[lastStruct + 1];
-        if (activeSet.getPeakMapEntries().size() == 0) {
+        if (activeSet.getPeakMapEntries().isEmpty()) {
             ArrayList<Noe> noeList = activeSet.get();
             for (Noe noe : noeList) {
                 noe.disStatAvg = noe.disStat;
@@ -834,14 +839,14 @@ public class Noe implements Constraint, Serializable {
             int k = 0;
             for (int j = 0; j < atoms[0].length; j++) {
                 int nProton = 0;
-                for (int i = 0; i < atoms.length; i++) {
-                    if ((atoms[i] != null) && (j < atoms[i].length)) {
-                        if (atoms[i][j].aNum == 1) {
+                for (Atom[] atom : atoms) {
+                    if ((atom != null) && (j < atom.length)) {
+                        if (atom[j].aNum == 1) {
                             if (nProton == 0) {
-                                protons[0][k] = atoms[i][j];
+                                protons[0][k] = atom[j];
                                 nProton++;
                             } else if (nProton == 1) {
-                                protons[1][k] = atoms[i][j];
+                                protons[1][k] = atom[j];
                                 k++;
                                 nProton++;
                             }
@@ -945,7 +950,7 @@ public class Noe implements Constraint, Serializable {
     }
 
     public static HashMap<PeakList, ArrayList<Double>> calcMedian(String mMode, PeakList whichList) {
-        Map<PeakList, ArrayList<Double>> valuesMap = new HashMap<PeakList, ArrayList<Double>>();
+        Map<PeakList, ArrayList<Double>> valuesMap = new HashMap<>();
         for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
             PeakList peakList = entry.getKey().peakList;
             if ((whichList != null) && (whichList != peakList)) {
@@ -960,7 +965,7 @@ public class Noe implements Constraint, Serializable {
                     continue;
                 }
                 double scale = 1.0;
-                double intensity = 0.0;
+                double intensity;
                 for (int i = 0; i < 2; i++) {
                     SpatialSetGroup sp = (i == 0) ? noe.spg1 : noe.spg2;
                     Atom atom = sp.getAnAtom();
@@ -999,11 +1004,11 @@ public class Noe implements Constraint, Serializable {
                 dList.add(scaledIntensity);
             }
         }
-        HashMap<PeakList, ArrayList<Double>> medianMap = new HashMap<PeakList, ArrayList<Double>>();
+        HashMap<PeakList, ArrayList<Double>> medianMap = new HashMap<>();
         for (Entry<PeakList, ArrayList<Double>> entry : valuesMap.entrySet()) {
             PeakList peakList = entry.getKey();
             ArrayList<Double> dList = entry.getValue();
-            ArrayList<Double> valueList = new ArrayList<Double>();
+            ArrayList<Double> valueList = new ArrayList<>();
             DescriptiveStatistics stat = new DescriptiveStatistics();
             dList.forEach(stat::addValue);
             double median = stat.getPercentile(50.0);
@@ -1095,7 +1100,7 @@ public class Noe implements Constraint, Serializable {
 
     public static void findSymmetrical() {
         int nNoe = activeSet.getSize();
-        Map<String, Noe> symMap = new HashMap<String, Noe>();
+        Map<String, Noe> symMap = new HashMap<>();
         for (int i = 0; i < nNoe; i++) {
             Noe iNoe = activeSet.get(i);
             iNoe.symmetrical = false;
@@ -1164,7 +1169,7 @@ public class Noe implements Constraint, Serializable {
             System.out.println("null mol");
             return;
         }
-        Map<String, Map<String, Noe>> resMap1 = new TreeMap<String, Map<String, Noe>>();
+        Map<String, Map<String, Noe>> resMap1 = new TreeMap<>();
 //
 //        for (CoordSet cSet : mol.coordSets.values()) {
 //            for (Entity entity : cSet.entities.values()) {
@@ -1248,7 +1253,7 @@ public class Noe implements Constraint, Serializable {
                 }
                 Map<String, Noe> resMap2 = resMap1.get(cName);
                 if (resMap2 == null) {
-                    resMap2 = new HashMap<String, Noe>();
+                    resMap2 = new HashMap<>();
                     resMap1.put(cName, resMap2);
                 }
                 Noe testNoe = resMap2.get(aName);
@@ -1260,7 +1265,7 @@ public class Noe implements Constraint, Serializable {
         }
         long mid = System.currentTimeMillis();
 
-        Map<Residue, Integer> countMap = new HashMap<Residue, Integer>();
+        Map<Residue, Integer> countMap = new HashMap<>();
         for (Noe iNoe : activeSet.get()) {
             Entity e1 = iNoe.spg1.getAnAtom().getEntity();
             Entity e2 = iNoe.spg2.getAnAtom().getEntity();
@@ -1279,13 +1284,13 @@ public class Noe implements Constraint, Serializable {
                     Integer count1 = countMap.get(r1);
                     if (count1 == null) {
                         int nAtoms1 = r1.getAtoms("H*").size();
-                        count1 = Integer.valueOf(nAtoms1);
+                        count1 = nAtoms1;
                         countMap.put(r1, count1);
                     }
                     Integer count2 = countMap.get(r2);
                     if (count2 == null) {
                         int nAtoms2 = r2.getAtoms("H*").size();
-                        count2 = Integer.valueOf(nAtoms2);
+                        count2 = nAtoms2;
                         countMap.put(r2, count2);
                     }
                     Map<String, Noe> resMap2 = iNoe.resMap;
@@ -1315,7 +1320,7 @@ public class Noe implements Constraint, Serializable {
             System.out.println("null mol");
             return;
         }
-        Map<String, ArrayList<Noe>> dupMap = new TreeMap<String, ArrayList<Noe>>();
+        Map<String, ArrayList<Noe>> dupMap = new TreeMap<>();
         StringBuilder cName1 = new StringBuilder();
         StringBuilder cName2 = new StringBuilder();
 
@@ -1387,7 +1392,7 @@ public class Noe implements Constraint, Serializable {
 
                 ArrayList<Noe> noeList = dupMap.get(cName);
                 if (noeList == null) {
-                    noeList = new ArrayList<Noe>();
+                    noeList = new ArrayList<>();
                     dupMap.put(cName, noeList);
                 }
                 noeList.add(iNoe);
@@ -1431,7 +1436,7 @@ public class Noe implements Constraint, Serializable {
 
     public boolean isActive() {
         boolean activeFlag = false;
-        if (activeFlags.size() == 0) {
+        if (activeFlags.isEmpty()) {
             activeFlag = true;
         } else if (activeFlags.size() == 1) {
             if (getActivityFlags().equals("f")) {
@@ -1441,6 +1446,7 @@ public class Noe implements Constraint, Serializable {
         return activeFlag;
     }
 
+    @Override
     public boolean isUserActive() {
         return (active > 0);
     }
@@ -1454,7 +1460,7 @@ public class Noe implements Constraint, Serializable {
     }
 
     public String getActivityFlags() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         for (Flags f : activeFlags) {
             result.append(f.getCharDesc());
         }
@@ -1477,10 +1483,12 @@ public class Noe implements Constraint, Serializable {
         return distanceType.getDistance(this);
     }
 
+    @Override
     public double getValue() {
         return getDistance();
     }
 
+    @Override
     public String toSTARString() {
         if (peak != NoeSet.lastPeakWritten) {
             NoeSet.ID++;
@@ -1576,7 +1584,6 @@ public class Noe implements Constraint, Serializable {
     }
 
     public static Atom[][] getAtoms(Peak peak) {
-        int nElems = -1;
         Atom[][] atoms = new Atom[peak.peakList.nDim][];
 
         for (int i = 0; i < peak.peakList.nDim; i++) {
@@ -1588,7 +1595,7 @@ public class Noe implements Constraint, Serializable {
                 continue;
             }
 
-            nElems = elems.length;
+            int nElems = elems.length;
             atoms[i] = new Atom[nElems];
 
             for (int j = 0; j < elems.length; j++) {
@@ -1613,6 +1620,7 @@ public class Noe implements Constraint, Serializable {
             this.error = error;
         }
 
+        @Override
         public String toString() {
             StringBuilder sBuilder = new StringBuilder();
             sBuilder.append(sp1.atom.getShortName()).append("\t");
