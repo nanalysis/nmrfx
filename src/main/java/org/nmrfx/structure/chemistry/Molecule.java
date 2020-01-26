@@ -3025,9 +3025,9 @@ public class Molecule implements Serializable, ITree {
 
             while (entIterator.hasNext()) {
                 Entity entity = (Entity) entIterator.next();
-                if (molFilter.entityName != null && !entity.getName().equalsIgnoreCase(molFilter.entityName)) {
-                    continue;
-                };
+//                if (molFilter.entityName != null && !entity.getName().equalsIgnoreCase(molFilter.entityName)) {
+//                    continue;
+//                };
 
                 Compound compound = null;
                 if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
