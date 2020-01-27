@@ -155,17 +155,17 @@ public class NOEAssign {
                             if (nAssign == 1) {
                                 if (nProtons == 2) {
                                     Noe noe = new Noe(peak, atoms[atomIndex[0]][iPos].spatialSet, atoms[atomIndex[1]][iPos].spatialSet, scale);
-                                    noe.intensity = peak.getIntensity();
-                                    noe.volume = peak.getVolume1();
-                                    noe.nPossible = nAssign;
+                                    noe.setIntensity(peak.getIntensity());
+                                    noe.setVolume(peak.getVolume1());
+                                    noe.setNPossible(nAssign);
                                     noeList.add(noe);
                                 }
                             } else if (mode == 1) {
                                 if (nProtons < 3) {
                                     Noe noe = new Noe(peak, atoms[atomIndex[0]][iPos].spatialSet, atoms[atomIndex[1]][iPos].spatialSet, scale);
-                                    noe.intensity = peak.getIntensity();
-                                    noe.volume = peak.getVolume1();
-                                    noe.nPossible = nAssign;
+                                    noe.setIntensity(peak.getIntensity());
+                                    noe.setVolume(peak.getVolume1());
+                                    noe.setNPossible(nAssign);
                                     noeList.add(noe);
                                 }
                             }
@@ -325,10 +325,10 @@ public class NOEAssign {
                         for (Map.Entry<String, Noe.NoeMatch> entry : map.entrySet()) {
                             Noe.NoeMatch nM = entry.getValue();
                             Noe noe = new Noe(peak, nM.sp1, nM.sp2, scale);
-                            noe.intensity = peak.getIntensity();
-                            noe.volume = peak.getVolume1();
-                            noe.ppmError = nM.error;
-                            noe.nPossible = nPossible;
+                            noe.setIntensity(peak.getIntensity());
+                            noe.setVolume(peak.getVolume1());
+                            noe.setPpmError(nM.error);
+                            noe.setNPossible(nPossible);
                             noe.setGenType(nM.type);
                             noeList.add(noe);
                         }
@@ -434,10 +434,10 @@ public class NOEAssign {
                 ArrayList noeList = Noe.getPeakList(peak);
                 for (IdResult idResult : idResults) {
                     Noe noe = new Noe(peak, idResult.getSpatialSet(protonDim1), idResult.getSpatialSet(protonDim2), scale);
-                    noe.intensity = peak.getIntensity();
-                    noe.volume = peak.getVolume1();
-                    noe.ppmError = idResult.getPPMError(1.0);
-                    noe.nPossible = nPossible;
+                    noe.setIntensity(peak.getIntensity());
+                    noe.setVolume(peak.getVolume1());
+                    noe.setPpmError(idResult.getPPMError(1.0));
+                    noe.setNPossible(nPossible);
                     noeList.add(noe);
                 }
             }
@@ -448,6 +448,9 @@ public class NOEAssign {
 
     public static double findMax(PeakList peakList, int dim, double mult) throws InvalidMoleculeException {
         boolean strict = true;
+        if (mult < 1.0e-6) {
+            mult = peakList.getSpectralDim(dim).getIdTol() / 4.0;
+        }
         int ppmSet = 0;
         boolean getInfo = true;
         int maxAmbig = 1;

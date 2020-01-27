@@ -72,7 +72,7 @@ public class NoeCalibrationBin extends NoeCalibration {
         // 2.2 100 3.0 20 5.0 
         double bound = bins[bins.length - 1];
         double intensity = Math.abs(mMode.measure(noe));
-        double I = intensity / noe.scale / noe.atomScale;
+        double I = intensity / noe.getScale() / noe.atomScale;
         if (I > bins[1]) {
             bound = bins[0];
         }
@@ -82,8 +82,8 @@ public class NoeCalibrationBin extends NoeCalibration {
                 break;
             }
         }
-        noe.upper = bound;
-        noe.lower = lower;
-        noe.target = (noe.lower + noe.upper) / 2.0;
+        noe.setUpper(bound);
+        noe.setLower(lower);
+        noe.target = (noe.getLower() + noe.getUpper()) / 2.0;
     }
 }

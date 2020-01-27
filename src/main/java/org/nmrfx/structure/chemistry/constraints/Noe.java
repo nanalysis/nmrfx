@@ -74,19 +74,19 @@ enum DisTypes {
     MINIMUM("minimum") {
         @Override
         public double getDistance(Noe noe) {
-            return noe.disStatAvg.getMin();
+            return noe.getDisStatAvg().getMin();
         }
     },
     MAXIMUM("maximum") {
         @Override
         public double getDistance(Noe noe) {
-            return noe.disStatAvg.getMax();
+            return noe.getDisStatAvg().getMax();
         }
     },
     MEAN("mean") {
         @Override
         public double getDistance(Noe noe) {
-            return noe.disStatAvg.getMean();
+            return noe.getDisStatAvg().getMean();
         }
     };
     private String description;
@@ -115,23 +115,23 @@ public class Noe implements Constraint, Serializable {
     public SpatialSetGroup spg1;
     public SpatialSetGroup spg2;
     public Peak peak = null;
-    public double intensity = 0.0;
-    public double volume = 0.0;
-    public double scale = 1.0;
+    private double intensity = 0.0;
+    private double volume = 0.0;
+    private double scale = 1.0;
     public double atomScale = 1.0;
     public DistanceStat disStat = defaultStat;
-    public DistanceStat disStatAvg = defaultStat;
-    public double lower = 0.0;
+    private DistanceStat disStatAvg = defaultStat;
+    private double lower = 0.0;
     public double target = 0.0;
-    public double upper = 0.0;
+    private double upper = 0.0;
     public int dcClass = 0;
-    public double ppmError = 0.0;
+    private double ppmError = 0.0;
     private short active = 1;
     public boolean symmetrical = false;
-    public double contribution = 1.0;
-    public double disContrib = 1.0;
-    public int nPossible = 0;
-    public double netWorkValue = 1;
+    private double contribution = 1.0;
+    private double disContrib = 1.0;
+    private int nPossible = 0;
+    private double networkValue = 1;
     private static boolean dirty = true;
     private static boolean calibratable = true;
     private boolean swapped = false;
@@ -186,7 +186,7 @@ public class Noe implements Constraint, Serializable {
         sBuild.append(idNum).append(sepChar);
         sBuild.append(genType).append(sepChar);
         sBuild.append(String.format("%.2f", contribution)).append(sepChar);
-        sBuild.append(String.format("%.2f", netWorkValue)).append(sepChar);
+        sBuild.append(String.format("%.2f", networkValue)).append(sepChar);
         sBuild.append(String.format("%.2f", ppmError));
         return sBuild.toString();
     }
@@ -629,7 +629,7 @@ public class Noe implements Constraint, Serializable {
         }
     }
 
-    public static void updateNOEListDistances(ArrayList<Noe> noeList) {
+    public static void updateNOEListDistances(List<Noe> noeList) {
         double sum = 0.0;
         Molecule mol = Molecule.getActive();
         int[] structures = mol.getActiveStructures();
@@ -690,7 +690,7 @@ public class Noe implements Constraint, Serializable {
         }
         violCharArray = new char[lastStruct + 1];
         if (activeSet.getPeakMapEntries().isEmpty()) {
-            ArrayList<Noe> noeList = activeSet.get();
+            List<Noe> noeList = activeSet.get();
             updateNOEListDistances(noeList);
         } else {
             for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
@@ -780,7 +780,7 @@ public class Noe implements Constraint, Serializable {
         }
         violCharArray = new char[lastStruct + 1];
         if (activeSet.getPeakMapEntries().isEmpty()) {
-            ArrayList<Noe> noeList = activeSet.get();
+            List<Noe> noeList = activeSet.get();
             for (Noe noe : noeList) {
                 noe.disStatAvg = noe.disStat;
             }
@@ -1122,7 +1122,7 @@ public class Noe implements Constraint, Serializable {
                     if (noe.symmetrical) {
                         value *= SYM_BONUS;
                     }
-                    value *= noe.netWorkValue;
+                    value *= noe.networkValue;
                     if (value > MAX_BONUS) {
                         value = MAX_BONUS;
                     }
@@ -1263,7 +1263,7 @@ public class Noe implements Constraint, Serializable {
             }
             if ((r1 != null) && (r2 != null)) {
                 if (r1 == r2) {
-                    iNoe.netWorkValue = 1.0;
+                    iNoe.networkValue = 1.0;
                 } else {
                     Integer count1 = countMap.get(r1);
                     if (count1 == null) {
@@ -1289,7 +1289,7 @@ public class Noe implements Constraint, Serializable {
                             }
                         }
                     }
-                    iNoe.netWorkValue = sum / scale;
+                    iNoe.networkValue = sum / scale;
                 }
             }
         }
@@ -1613,6 +1613,129 @@ public class Noe implements Constraint, Serializable {
             sBuilder.append(error);
             return sBuilder.toString();
         }
+    }
+
+    /**
+     * @return the intensity
+     */
+    public double getIntensity() {
+        return intensity;
+    }
+
+    /**
+     * @param intensity the intensity to set
+     */
+    public void setIntensity(double intensity) {
+        this.intensity = intensity;
+    }
+
+    /**
+     * @return the volume
+     */
+    public double getVolume() {
+        return volume;
+    }
+
+    /**
+     * @param volume the volume to set
+     */
+    public void setVolume(double volume) {
+        this.volume = volume;
+    }
+
+    /**
+     * @return the scale
+     */
+    public double getScale() {
+        return scale;
+    }
+
+    /**
+     * @param scale the scale to set
+     */
+    public void setScale(double scale) {
+        this.scale = scale;
+    }
+
+    /**
+     * @return the disStatAvg
+     */
+    public DistanceStat getDisStatAvg() {
+        return disStatAvg;
+    }
+
+    /**
+     * @return the lower
+     */
+    public double getLower() {
+        return lower;
+    }
+
+    /**
+     * @param lower the lower to set
+     */
+    public void setLower(double lower) {
+        this.lower = lower;
+    }
+
+    /**
+     * @return the upper
+     */
+    public double getUpper() {
+        return upper;
+    }
+
+    /**
+     * @param upper the upper to set
+     */
+    public void setUpper(double upper) {
+        this.upper = upper;
+    }
+
+    /**
+     * @return the contribution
+     */
+    public double getContribution() {
+        return contribution;
+    }
+
+    /**
+     * @return the disContrib
+     */
+    public double getDisContrib() {
+        return disContrib;
+    }
+
+    /**
+     * @return the nPossible
+     */
+    public int setNPossible() {
+        return nPossible;
+    }
+
+    public void setNPossible(int value) {
+        nPossible = value;
+    }
+
+    /**
+     * @return the netWorkValue
+     */
+    public double getNetworkValue() {
+        return networkValue;
+    }
+
+    /**
+     * @return the ppmError
+     */
+    public double getPpmError() {
+        return ppmError;
+    }
+
+    /**
+     * @param ppmError the ppmError to set
+     */
+    public void setPpmError(double ppmError) {
+        this.ppmError = ppmError;
     }
 
 }
