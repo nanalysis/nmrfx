@@ -3726,6 +3726,22 @@ public class PeakList {
 
     /**
      *
+     * @param iDim
+     * @return
+     */
+    public SpectralDim getSpectralDim(String name) {
+        SpectralDim specDim = null;
+        for (SpectralDim sDim : spectralDims) {
+            if (sDim.getDimName().equals(name)) {
+                specDim = sDim;
+                break;
+            }
+        }
+        return specDim;
+    }
+
+    /**
+     *
      * @param datasetName
      * @return
      */
