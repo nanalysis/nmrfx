@@ -87,6 +87,13 @@ public class PeakMenuBar {
 
         menuBar.getItems().add(editMenu);
 
+        MenuButton assignMenu = new MenuButton("Assign");
+        MenuItem clearAssignMenuItem = new MenuItem("Clear All");
+        clearAssignMenuItem.setOnAction(e -> clearAssignments());
+        assignMenu.getItems().add(clearAssignMenuItem);
+
+        menuBar.getItems().add(assignMenu);
+
         MenuButton measureMenu = new MenuButton("Measure");
         MenuItem measureIntensityItem = new MenuItem("Intensities");
         measureIntensityItem.setOnAction(e -> measureIntensities());
@@ -235,6 +242,17 @@ public class PeakMenuBar {
                     PeakList.remove(getPeakList().getName());
                     PeakList list = null;
                     setPeakList(list);
+                }
+            });
+        }
+    }
+
+    void clearAssignments() {
+        if (getPeakList() != null) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Clear Assignments");
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    getPeakList().clearAtomLabels();
                 }
             });
         }
