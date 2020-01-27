@@ -1274,7 +1274,7 @@ public class NMRStarReader {
         String[] resIDStr = new String[2];
         PeakList peakList = null;
         String lastPeakListIDStr = "";
-        NoeSet.addSet(saveframe.getName().substring(5));
+        NoeSet noeSet = NoeSet.addSet(saveframe.getName().substring(5));
         for (int i = 0; i < entityAssemblyIDColumns[0].size(); i++) {
             boolean okAtoms = true;
             for (int iAtom = 0; iAtom < 2; iAtom++) {
@@ -1351,7 +1351,6 @@ public class NMRStarReader {
                     int idNum = Integer.parseInt(peakID);
                     peak = peakList.getPeakByID(idNum);
                 }
-                List<Noe> noeList = Noe.getPeakList(peak);
                 Noe noe = new Noe(peak, spSets[0], spSets[1], 1.0);
                 double upper = 1000000.0;
                 if (upperValue.equals(".")) {
@@ -1368,11 +1367,11 @@ public class NMRStarReader {
                 noe.setPpmError(1.0);
                 noe.setIntensity(Math.pow(upper, -6.0) * 10000.0);
                 noe.setVolume(Math.pow(upper, -6.0) * 10000.0);
-                noeList.add(noe);
+                noeSet.add(noe);
             }
         }
-        Noe.updateNPossible(null);
-        Noe.setCalibratable(false);
+        noeSet.updateNPossible(null);
+        noeSet.setCalibratable(false);
     }
 
     public void processNEFDistanceRestraints(Saveframe saveframe, EnergyLists energyList) throws ParseException {

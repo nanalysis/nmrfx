@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Vector;
 import org.nmrfx.processor.datasets.peaks.AtomResonance;
 import org.nmrfx.processor.datasets.peaks.Peak;
@@ -97,7 +98,7 @@ public class NOEAssign {
 
     // mode == 0  only extract contraints for peaks with one assignment
     // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
-    public static void extractNoePeaks(PeakList peakList, int mode, boolean onlyFrozen) {
+    public static void extractNoePeaks(NoeSet noeSet, PeakList peakList, int mode, boolean onlyFrozen) {
         Peak peak;
         double scale = 1.0;
         int[] atomIndex = new int[2];
@@ -126,7 +127,6 @@ public class NOEAssign {
                     continue;
                 }
                 int nAssign = 0;
-                ArrayList noeList = Noe.getPeakList(peak);
                 for (int iPass = 0; iPass < 2; iPass++) {
                     for (int iPos = 0; iPos < atoms[0].length; iPos++) {
                         int nProtons = 0;
@@ -158,7 +158,7 @@ public class NOEAssign {
                                     noe.setIntensity(peak.getIntensity());
                                     noe.setVolume(peak.getVolume1());
                                     noe.setNPossible(nAssign);
-                                    noeList.add(noe);
+                                    noeSet.add(noe);
                                 }
                             } else if (mode == 1) {
                                 if (nProtons < 3) {
@@ -166,7 +166,7 @@ public class NOEAssign {
                                     noe.setIntensity(peak.getIntensity());
                                     noe.setVolume(peak.getVolume1());
                                     noe.setNPossible(nAssign);
-                                    noeList.add(noe);
+                                    noeSet.add(noe);
                                 }
                             }
                         }
@@ -178,7 +178,12 @@ public class NOEAssign {
     // mode == 0  only extract contraints for peaks with one assignment
     // mode == 1  extract constraints for peaks with one or more (ambiguous) assignments
 
-    public static AssignResult extractNoePeaks2(final PeakList peakList, final int maxAmbig, final boolean getInfo, final boolean strict, final int ppmSet) throws InvalidMoleculeException {
+    public static AssignResult extractNoePeaks2(NoeSet noeSet, final PeakList peakList, final int maxAmbig, final boolean strict, final int ppmSet) throws InvalidMoleculeException {
+        Optional<NoeSet> noeSetOpt = Optional.of(noeSet);
+        return extractNoePeaks2(noeSetOpt, peakList, maxAmbig, strict, ppmSet);
+    }
+
+    public static AssignResult extractNoePeaks2(Optional<NoeSet> noeSetOpt, final PeakList peakList, final int maxAmbig, final boolean strict, final int ppmSet) throws InvalidMoleculeException {
         Peak peak;
         double scale = 1.0;
         int nPeaks;
@@ -214,7 +219,6 @@ public class NOEAssign {
                 matchCriteria[1].setPPM(ppm);
                 //                ArrayList res2s = peakDim.getResonances();
                 ArrayList res2s = new ArrayList();
-                ArrayList noeList = Noe.getPeakList(peak);
                 int nRes1 = res1s.size();
                 int nRes2 = res2s.size();
                 if ((nRes1 > 0) && (nRes2 > 0)) {
@@ -321,19 +325,21 @@ public class NOEAssign {
                 } else if (nPossible > 0) {
                     nTotal += nPossible;
                     nAssigned++;
-                    if (!getInfo) {
+                    if (noeSetOpt.isPresent()) {
+                        NoeSet noeSet = noeSetOpt.get();
                         for (Map.Entry<String, Noe.NoeMatch> entry : map.entrySet()) {
                             Noe.NoeMatch nM = entry.getValue();
-                            Noe noe = new Noe(peak, nM.sp1, nM.sp2, scale);
+                            final Noe noe = new Noe(peak, nM.sp1, nM.sp2, scale);
                             noe.setIntensity(peak.getIntensity());
                             noe.setVolume(peak.getVolume1());
                             noe.setPpmError(nM.error);
                             noe.setNPossible(nPossible);
                             noe.setGenType(nM.type);
-                            noeList.add(noe);
+                            noeSet.add(noe);
                         }
                     }
                 }
+
             }
         }
         AssignResult result = new AssignResult(nPeaks, nAssigned, nMaxAmbig, nTotal);
@@ -361,7 +367,7 @@ public class NOEAssign {
 
     }
 
-    public static void extractNoePeaksSlow(PeakList peakList, int mode) throws InvalidMoleculeException {
+    public static void extractNoePeaksSlow(NoeSet noeSet, PeakList peakList, int mode) throws InvalidMoleculeException {
         Peak peak;
         double scale = 1.0;
         int nPeaks;
@@ -431,14 +437,13 @@ public class NOEAssign {
                 ArrayList<IdResult> idResults = idPeak.getIdResults(matchList, matchCriteria);
                 // fixme filter duplicates ( stereo specific )
                 int nPossible = idResults.size();
-                ArrayList noeList = Noe.getPeakList(peak);
                 for (IdResult idResult : idResults) {
                     Noe noe = new Noe(peak, idResult.getSpatialSet(protonDim1), idResult.getSpatialSet(protonDim2), scale);
                     noe.setIntensity(peak.getIntensity());
                     noe.setVolume(peak.getVolume1());
                     noe.setPpmError(idResult.getPPMError(1.0));
                     noe.setNPossible(nPossible);
-                    noeList.add(noe);
+                    noeSet.add(noe);
                 }
             }
         }
@@ -460,7 +465,8 @@ public class NOEAssign {
         for (int i = 0; i < nTries; i++) {
             double tol = i * mult;
             peakList.getSpectralDim(dim).setIdTol(tol);
-            AssignResult result = extractNoePeaks2(peakList, maxAmbig, getInfo, strict, ppmSet);
+            Optional<NoeSet> emptyOpt = Optional.empty();
+            AssignResult result = extractNoePeaks2(emptyOpt, peakList, maxAmbig, strict, ppmSet);
             if (result.nAssigned > bestScore) {
                 bestScore = result.nAssigned;
                 bestTol = tol;

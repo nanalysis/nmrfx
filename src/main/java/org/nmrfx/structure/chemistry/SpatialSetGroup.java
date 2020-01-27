@@ -42,7 +42,7 @@ public class SpatialSetGroup {
     public SpatialSetGroup(SpatialSet spSet) {
         spSets = new HashSet(1);
         spSets.add(spSet);
-        name = spSet.getFullName();
+        name = spSet.atom.getFullName();
         if (spSet.atom.isMethyl()) {
             name = name.substring(0, name.length() - 1) + "*";
         }
