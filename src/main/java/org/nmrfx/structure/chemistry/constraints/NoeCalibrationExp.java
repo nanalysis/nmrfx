@@ -56,7 +56,7 @@ public class NoeCalibrationExp extends NoeCalibration {
         double target = maxBound;
         double intensity = Math.abs(mMode.measure(noe));
         if (intensity > floor) {
-            double I = intensity / noe.scale / noe.atomScale / C;
+            double I = intensity / noe.getScale() / noe.atomScale / C;
             if (I > 0.0) {
                 target = Math.pow(I, -1.0 / expValue);
             }
@@ -68,7 +68,7 @@ public class NoeCalibrationExp extends NoeCalibration {
             bound = bound < minBound ? minBound : bound;
         }
         noe.target = target;
-        noe.upper = bound;
-        noe.lower = lower;
+        noe.setUpper(bound);
+        noe.setLower(lower);
     }
 }

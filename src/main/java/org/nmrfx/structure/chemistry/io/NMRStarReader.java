@@ -1359,15 +1359,15 @@ public class NMRStarReader {
                 } else {
                     upper = Double.parseDouble(upperValue);
                 }
-                noe.upper = upper;
+                noe.setUpper(upper);
                 double lower = 1.8;
                 if (!lowerValue.equals(".")) {
                     lower = Double.parseDouble(lowerValue);
                 }
-                noe.lower = lower;
-                noe.ppmError = 1.0;
-                noe.intensity = Math.pow(upper, -6.0) * 10000.0;
-                noe.volume = Math.pow(upper, -6.0) * 10000.0;
+                noe.setLower(lower);
+                noe.setPpmError(1.0);
+                noe.setIntensity(Math.pow(upper, -6.0) * 10000.0);
+                noe.setVolume(Math.pow(upper, -6.0) * 10000.0);
                 noeList.add(noe);
             }
         }

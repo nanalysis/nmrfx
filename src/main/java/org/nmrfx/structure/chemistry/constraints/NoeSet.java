@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.constraints;
 
 import org.nmrfx.processor.datasets.peaks.Peak;
@@ -29,10 +28,10 @@ import java.util.Map.Entry;
  */
 public class NoeSet implements ConstraintSet, Iterable {
 
-    private static HashMap<String, NoeSet> noeSets = new HashMap<String, NoeSet>();
-    private ArrayList<Noe> constraints = new ArrayList<Noe>(64);
-    private Map<Peak, ArrayList<Noe>> peakMap = new TreeMap<Peak, ArrayList<Noe>>();
-    private Map<PeakList, NoeCalibration> scaleMap = new HashMap<PeakList, NoeCalibration>();
+    public static final HashMap<String, NoeSet> NOE_SETS = new HashMap<String, NoeSet>();
+    private final List<Noe> constraints = new ArrayList<>(64);
+    private final Map<Peak, ArrayList<Noe>> peakMap = new TreeMap<>();
+    private final Map<PeakList, NoeCalibration> scaleMap = new HashMap<>();
     private final String name;
     public static Peak lastPeakWritten = null;
     public static int memberID = 0;
@@ -44,25 +43,24 @@ public class NoeSet implements ConstraintSet, Iterable {
 
     public static NoeSet addSet(String name) {
         NoeSet noeSet = new NoeSet(name);
-        noeSets.put(name, noeSet);
+        NOE_SETS.put(name, noeSet);
         Noe.setActive(noeSet);
         return noeSet;
-
     }
 
     public static void reset() {
-        for (Map.Entry<String, NoeSet> cSet : noeSets.entrySet()) {
+        for (Map.Entry<String, NoeSet> cSet : NOE_SETS.entrySet()) {
             cSet.getValue().clear();
         }
-        noeSets.clear();
+        NOE_SETS.clear();
         addSet("default");
     }
 
     public static void remove(final String name) {
-        NoeSet noeSet = noeSets.get(name);
+        NoeSet noeSet = NOE_SETS.get(name);
         if (noeSet != null) {
             noeSet.clear();
-            noeSets.remove(name);
+            NOE_SETS.remove(name);
         }
     }
 
@@ -83,16 +81,22 @@ public class NoeSet implements ConstraintSet, Iterable {
     }
 
     public static NoeSet getSet(String name) {
-        NoeSet noeSet = noeSets.get(name);
+        NoeSet noeSet = NOE_SETS.get(name);
         return noeSet;
     }
 
-    public static ArrayList<String> getNames() {
-        ArrayList<String> names = new ArrayList<String>();
-        for (String name : noeSets.keySet()) {
+    public static List<String> getNames() {
+        List<String> names = new ArrayList<String>();
+        for (String name : NOE_SETS.keySet()) {
             names.add(name);
         }
         return names;
+    }
+
+    public static List<NoeSet> getSets() {
+        List<NoeSet> sets = new ArrayList<NoeSet>();
+        sets.addAll(NOE_SETS.values());
+        return sets;
     }
 
     public int getSize() {
@@ -108,7 +112,7 @@ public class NoeSet implements ConstraintSet, Iterable {
         constraints.add((Noe) noe);
     }
 
-    public ArrayList<Noe> get() {
+    public List<Noe> get() {
         return constraints;
     }
 
