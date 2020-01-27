@@ -70,6 +70,7 @@ import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 import static javafx.application.Application.launch;
 import javafx.beans.property.IntegerProperty;
 import org.controlsfx.control.PropertySheet;
+import org.nmrfx.structure.chemistry.constraints.NoeSet;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.IntRangeOperationItem;
 import org.python.util.PythonInterpreter;
@@ -92,6 +93,7 @@ public class AnalystApp extends MainApp {
     public static AtomBrowser atomBrowser;
     public static RNAPeakGeneratorSceneController rnaPeakGenController;
     public static PeakTableController peakTableController;
+    public static NOETableController noeTableController;
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     RDCGUI rdcGUI = null;
@@ -426,6 +428,9 @@ public class AnalystApp extends MainApp {
         MenuItem ligandScannerMenuItem = new MenuItem("Show Ligand Scanner");
         ligandScannerMenuItem.setOnAction(e -> showLigandScanner(e));
 
+        MenuItem noeTableMenuItem = new MenuItem("Show NOE Table");
+        noeTableMenuItem.setOnAction(e -> showNOETable());
+
         Menu assignCascade = new Menu("Assign Tools");
 
         assignOnPick = new CheckMenuItem("Assign on Pick");
@@ -445,6 +450,7 @@ public class AnalystApp extends MainApp {
         peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
                 peakTableMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem,
                 pathToolMenuItem, multipletMenuItem, ligandScannerMenuItem,
+                noeTableMenuItem,
                 assignCascade);
 
         // Window Menu
@@ -689,6 +695,23 @@ public class AnalystApp extends MainApp {
             peakTableController.getStage().toFront();
         } else {
             System.out.println("Coudn't make peak table controller");
+        }
+    }
+
+    private void showNOETable() {
+        if (noeTableController == null) {
+            noeTableController = NOETableController.create();
+            List<NoeSet> noeSets = NoeSet.getSets();
+            if (!noeSets.isEmpty()) {
+                noeTableController.setNoeSet(noeSets.get(0));
+            }
+        }
+        if (noeTableController != null) {
+            noeTableController.getStage().show();
+            noeTableController.getStage().toFront();
+            noeTableController.updateNoeSetMenu();
+        } else {
+            System.out.println("Coudn't make NOE table controller");
         }
     }
 
