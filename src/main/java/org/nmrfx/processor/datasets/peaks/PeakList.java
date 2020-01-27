@@ -1986,6 +1986,14 @@ public class PeakList {
         }
     }
 
+    public void clearAtomLabels() {
+        for (Peak peak : peaks) {
+            for (PeakDim peakDim : peak.peakDims) {
+                peakDim.setLabel("");
+            }
+        }
+    }
+
     /**
      *
      * @param dims
