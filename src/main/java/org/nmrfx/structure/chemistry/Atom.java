@@ -894,7 +894,7 @@ public class Atom implements IAtom {
         return distance;
     }
 
-    public static void getDistances(SpatialSetGroup spg1, SpatialSetGroup spg2, int iStruct, ArrayList<Double> dArray) {
+    public static void getDistances(SpatialSetGroup spg1, SpatialSetGroup spg2, int iStruct, List<Double> dArray) {
         double x;
         double y;
         double z;

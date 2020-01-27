@@ -24,8 +24,6 @@ import org.nmrfx.structure.utilities.Util;
 import java.io.Serializable;
 import java.util.*;
 import java.util.Map.Entry;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 
 @SuppressWarnings({"UnusedDeclaration"})
 enum Flags {
@@ -100,17 +98,10 @@ enum DisTypes {
 
 public class Noe implements Constraint, Serializable {
 
-    private static NoeSet activeSet = NoeSet.addSet("default");
-    private static double SYM_BONUS = 10.0;
-    private static double CMAX = 5.5;
-    private static double CMAX_BONUS = 10.0;
-    private static double MAX_BONUS = 20.0;
     private static boolean useDistances = false;
     private static int nStructures = 0;
     private static double tolerance = 0.2;
-    private static char[] violCharArray = new char[0];
     private static DistanceStat defaultStat = new DistanceStat();
-    private static boolean sumAverage = true;
     private int idNum = 0;
     public SpatialSetGroup spg1;
     public SpatialSetGroup spg2;
@@ -132,8 +123,6 @@ public class Noe implements Constraint, Serializable {
     private double disContrib = 1.0;
     private int nPossible = 0;
     private double networkValue = 1;
-    private static boolean dirty = true;
-    private static boolean calibratable = true;
     private boolean swapped = false;
     private boolean filterSwapped = false;
     public Map resMap = null;
@@ -153,9 +142,6 @@ public class Noe implements Constraint, Serializable {
 
         peak = p;
         scale = newScale;
-        idNum = activeSet.getSize();
-        activeSet.add(this);
-        dirty = true;
         activeFlags = EnumSet.noneOf(Flags.class);
 
     }
@@ -168,11 +154,7 @@ public class Noe implements Constraint, Serializable {
         }
         peak = p;
         scale = newScale;
-        idNum = activeSet.getSize();
-        activeSet.add(this);
-        dirty = true;
         activeFlags = EnumSet.noneOf(Flags.class);
-
     }
 
     @Override
@@ -191,14 +173,13 @@ public class Noe implements Constraint, Serializable {
         return sBuild.toString();
     }
 
-    public static ArrayList getPeakList(Peak peak) {
-        ArrayList peakList = (ArrayList) activeSet.getConstraintsForPeak(peak);
-        return peakList;
-    }
-
     @Override
     public int getID() {
         return idNum;
+    }
+
+    public void setID(int id) {
+        this.idNum = id;
     }
 
     public static double getTolerance() {
@@ -241,10 +222,10 @@ public class Noe implements Constraint, Serializable {
 
     }
 
-    public static void updatePPMErrors() {
+    public static void updatePPMErrors(NoeSet noeSet) {
         MatchCriteria[] matchCriteria = null;
         PeakList lastList = null;
-        for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
+        for (Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
             Peak peak = entry.getKey();
             PeakList peakList = peak.getPeakList();
             if ((matchCriteria == null) || (lastList != peakList)) {
@@ -256,7 +237,7 @@ public class Noe implements Constraint, Serializable {
                 lastList = peakList;
             }
             if (matchCriteria != null) {
-                ArrayList<Noe> noeList = entry.getValue();
+                List<Noe> noeList = entry.getValue();
                 for (Noe noe : noeList) {
                     noe.updatePPMError(matchCriteria);
                 }
@@ -264,11 +245,11 @@ public class Noe implements Constraint, Serializable {
         }
     }
 
-    public static void updateGenTypes() {
+    public static void updateGenTypes(NoeSet noeSet) {
         Map<String, NoeMatch> map = new HashMap<>();
         MatchCriteria[] matchCriteria = null;
         PeakList lastList = null;
-        for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
+        for (Entry<Peak, List<Noe>> entry : noeSet.getPeakMapEntries()) {
             Peak peak = entry.getKey();
             PeakList peakList = peak.getPeakList();
             if ((matchCriteria == null) || (lastList != peakList)) {
@@ -280,7 +261,7 @@ public class Noe implements Constraint, Serializable {
                 lastList = peakList;
             }
             if (matchCriteria != null) {
-                ArrayList<Noe> noeList = entry.getValue();
+                List<Noe> noeList = entry.getValue();
                 for (Noe noe : noeList) {
 //                    noe.updateGenType(map, matchCriteria);
                 }
@@ -423,126 +404,21 @@ public class Noe implements Constraint, Serializable {
         return nStructures;
     }
 
-    public String getViolChars(DistanceStat dStat) {
-        for (int i = 0; i < violCharArray.length; i++) {
-            if (dStat.getViolStructures() == null) {
-                violCharArray[i] = 'x';
-            } else if (dStat.getViolStructures().get(i)) {
-                violCharArray[i] = (char) ((i % 10) + '0');
-            } else {
-                violCharArray[i] = '_';
-            }
-        }
-        return new String(violCharArray);
-    }
-
     @Override
     public DistanceStat getStat() {
         return disStat;
     }
 
-    public static void setActive(NoeSet noeSet) {
-        activeSet = noeSet;
+    public static int getSize(NoeSet noeSet) {
+        return noeSet.getSize();
     }
 
-    public static NoeSet getActiveSet() {
-        return activeSet;
+    public static void resetConstraints(NoeSet noeSet) {
+        noeSet.clear();
     }
 
-    public static int getSize() {
-        return activeSet.getSize();
-    }
-
-    public static void resetConstraints() {
-        activeSet.clear();
-    }
-
-    public static boolean isCalibratable() {
-        return calibratable;
-    }
-
-    public static void setCalibratable(final boolean state) {
-        calibratable = state;
-    }
-
-    public static void setSumAverage(boolean state) {
-        sumAverage = state;
-    }
-
-    public static boolean getSumAverage() {
-        return sumAverage;
-    }
-
-    public static void setDirty() {
-        dirty = true;
-    }
-
-    public static boolean isDirty() {
-        return dirty;
-    }
-
-    public static synchronized ArrayList<Noe> getConstraints(boolean requireActive) {
-        return getConstraints("", requireActive);
-    }
-
-    public static synchronized ArrayList<Noe> getConstraints(String filter, boolean requireActive) {
-        ArrayList listCopy = new ArrayList();
-        if (dirty) {
-            updateContributions(useDistances, requireActive);
-        }
-        if (filter.trim().length() == 0) {
-            for (Noe noe : activeSet.get()) {
-                if (requireActive && !noe.isActive()) {
-                    continue;
-                }
-                listCopy.add(noe);
-            }
-        } else {
-            String filterVals[] = filter.split("\\s");
-            for (Noe noe : activeSet.get()) {
-                noe.filterSwapped = false;
-                if (requireActive && !noe.isActive()) {
-                    continue;
-                }
-                String name1 = noe.spg1.getFullName();
-                String name2 = noe.spg2.getFullName();
-                if (!name1.contains(":")) {
-                    name1 = "*.*:" + name1;
-                }
-                if (!name2.contains(":")) {
-                    name2 = "*.*:" + name2;
-                }
-                boolean addNoe = false;
-                if (filterVals.length == 1) {
-                    if (Util.stringMatch(name1, filter)) {
-                        addNoe = true;
-                    } else if (Util.stringMatch(name2, filter)) {
-                        noe.filterSwapped = true;
-                        addNoe = true;
-                    }
-                } else if (filterVals.length > 1) {
-                    for (int iDir = 0; iDir < 2; iDir++) {
-                        int jDir = iDir == 0 ? 1 : 0;
-                        addNoe = true;
-                        if (!Util.stringMatch(name1, filterVals[iDir])) {
-                            addNoe = false;
-                        } else if (!Util.stringMatch(name2, filterVals[jDir])) {
-                            addNoe = false;
-                        } else if (jDir == 0) {
-                            noe.filterSwapped = true;
-                        }
-                        if (addNoe) {
-                            break;
-                        }
-                    }
-
-                }
-                if (addNoe) {
-                    listCopy.add(noe);
-                }
-            }
-        }
-        return listCopy;
+    public static synchronized List<Noe> getConstraints(NoeSet noeSet, boolean requireActive) {
+        return noeSet.getConstraints("", requireActive);
     }
 
     public String getPeakListName() {
@@ -561,30 +437,6 @@ public class Noe implements Constraint, Serializable {
         return peakNum;
     }
 
-    public static void updateContributions(boolean useDistances, boolean requireActive) {
-        Noe.useDistances = useDistances;
-        updateDistances(requireActive);
-        findSymmetrical();
-        findNetworks(false);
-        calculateContributions(useDistances);
-        findNetworks(true);
-        calculateContributions(useDistances);
-        findNetworks(true);
-        calculateContributions(useDistances);
-        calibrateExp(null);
-        findRedundant();
-        dirty = false;
-
-    }
-
-    public static Noe get(int i) {
-        if ((i < 0) || (i >= activeSet.getSize())) {
-            return null;
-        }
-
-        return activeSet.get(i);
-    }
-
     public String getEntity(SpatialSetGroup spg) {
         String value = "";
         if (spg != null) {
@@ -598,109 +450,7 @@ public class Noe implements Constraint, Serializable {
         return value;
     }
 
-    public static void inactivateDiagonal() {
-        for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
-            boolean hasDiagonal = false;
-            ArrayList<Noe> noeList = entry.getValue();
-            for (Noe noe : noeList) {
-                if (noe.spg1.getFirstSet() == noe.spg2.getFirstSet()) {  // don't include diagonal peaks
-                    hasDiagonal = true;
-                    break;
-                }
-            }
-            if (hasDiagonal) {
-                for (Noe noe : noeList) {
-                    noe.inactivate(Flags.DIAGONAL);
-                }
-            } else {
-                for (Noe noe : noeList) {
-                    noe.activate(Flags.DIAGONAL);
-                }
-
-            }
-
-        }
-    }
-
-    public static void convertToMethyls() {
-        for (Noe noe : activeSet.get()) {
-            noe.spg1.convertToMethyl();
-            noe.spg2.convertToMethyl();
-        }
-    }
-
-    public static void updateNOEListDistances(List<Noe> noeList) {
-        double sum = 0.0;
-        Molecule mol = Molecule.getActive();
-        int[] structures = mol.getActiveStructures();
-        if (structures.length == 0) {
-            structures = new int[1];
-        }
-        ArrayList<Double> dList = new ArrayList<>();
-        for (Noe noe : noeList) {
-            dList.clear();
-            double bound = noe.upper;
-            int nInBounds = 0;
-            nStructures = 1;
-            BitSet violStructures = noe.disStat.getViolStructures();
-            if (structures.length > 0) {
-                nStructures = structures.length;
-                if (violStructures == null) {
-                    violStructures = new BitSet(nStructures);
-                }
-                violStructures.clear();
-                for (int iStruct : structures) {
-                    double distance = Atom.calcWeightedDistance(noe.spg1, noe.spg2, iStruct, 6, false, sumAverage);
-                    if (distance < bound) {
-                        nInBounds++;
-                    } else {
-                        violStructures.set(iStruct);
-                    }
-                    dList.add(distance);
-                }
-            }
-            double fracInBound = (double) nInBounds / nStructures;
-            SummaryStatistics stat = new SummaryStatistics();
-            dList.stream().forEach(stat::addValue);
-            double minDis = stat.getMin();
-            double maxDis = stat.getMax();
-            double meanDis = stat.getMean();
-
-            double stdDevDis = 0.0;
-            if (dList.size() > 1) {
-                stdDevDis = stat.getStandardDeviation();
-            }
-            DistanceStat dStat = new DistanceStat(minDis, maxDis, meanDis, stdDevDis, fracInBound, violStructures);
-            noe.disStat = dStat;
-        }
-    }
-
-    public static void updateDistancesIndividual() {
-        Molecule mol = Molecule.getActive();
-        if (mol == null) {
-            return;
-        }
-        int[] structures = mol.getActiveStructures();
-        if (structures.length == 0) {
-            structures = new int[1];
-        }
-        int lastStruct = 0;
-        for (int iStruct : structures) {
-            lastStruct = iStruct > lastStruct ? iStruct : lastStruct;
-        }
-        violCharArray = new char[lastStruct + 1];
-        if (activeSet.getPeakMapEntries().isEmpty()) {
-            List<Noe> noeList = activeSet.get();
-            updateNOEListDistances(noeList);
-        } else {
-            for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
-                ArrayList<Noe> noeList = entry.getValue();
-                updateNOEListDistances(noeList);
-            }
-        }
-    }
-
-    public static double avgDistance(ArrayList<Double> dArray, double expValue, int nMonomers, boolean sumAverage) {
+    public static double avgDistance(List<Double> dArray, double expValue, int nMonomers, boolean sumAverage) {
         double sum = 0.0;
         int n = 0;
         for (Double dis : dArray) {
@@ -714,105 +464,6 @@ public class Noe implements Constraint, Serializable {
         double distance = Math.pow((sum / nMonomers), 1.0 / expValue);
         return distance;
 
-    }
-
-    public static void updateNOEListDistancesAvg(ArrayList<Noe> noeList, boolean requireActive) {
-        Molecule mol = Molecule.getActive();
-        int[] structures = mol.getActiveStructures();
-        if (structures.length == 0) {
-            structures = new int[1];
-        }
-        nStructures = structures.length;
-        SummaryStatistics sumStat = new SummaryStatistics();
-        ArrayList<Double> dArray = new ArrayList<>();
-        int nInBounds = 0;
-        BitSet violStructures = new BitSet(nStructures);
-        for (int iStruct : structures) {
-            dArray.clear();
-            double bound = 0.0;
-            double max = 10.0;
-            for (Noe noe : noeList) {
-                bound = noe.upper;
-                if (!requireActive || noe.isActive()) {
-                    Atom.getDistances(noe.spg1, noe.spg2, iStruct, dArray);
-                } else {
-                    double distance = noe.disStat.getMax();
-                    if (distance > max) {
-                        max = distance;
-                    }
-                }
-            }
-            if (dArray.isEmpty()) {
-                dArray.add(max);
-            }
-            double distance = avgDistance(dArray, -6, 1, sumAverage);
-
-            if (distance < bound) {
-                nInBounds++;
-            } else {
-                violStructures.set(iStruct);
-            }
-            sumStat.addValue(distance);
-        }
-        for (Noe noe : noeList) {
-            double stdDevDis = 0.0;
-            if (sumStat.getN() > 1) {
-                stdDevDis = Math.sqrt(sumStat.getVariance());
-            }
-            DistanceStat dStat = new DistanceStat(sumStat.getMin(), sumStat.getMax(), sumStat.getMean(), stdDevDis, (double) nInBounds / nStructures, violStructures);
-            noe.disStatAvg = dStat;
-        }
-    }
-
-    public static void updateDistances(boolean requireActive) {
-        Molecule mol = Molecule.getActive();
-        if (mol == null) {
-            return;
-        }
-        updateDistancesIndividual();
-        int[] structures = mol.getActiveStructures();
-        if (structures.length == 0) {
-            structures = new int[1];
-        }
-        int lastStruct = 0;
-        for (int iStruct : structures) {
-            lastStruct = iStruct > lastStruct ? iStruct : lastStruct;
-        }
-        violCharArray = new char[lastStruct + 1];
-        if (activeSet.getPeakMapEntries().isEmpty()) {
-            List<Noe> noeList = activeSet.get();
-            for (Noe noe : noeList) {
-                noe.disStatAvg = noe.disStat;
-            }
-        } else {
-            for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
-                ArrayList<Noe> noeList = entry.getValue();
-                updateNOEListDistancesAvg(noeList, requireActive);
-            }
-        }
-    }
-
-    public static void updateDistanceContribs() {
-        double expNum = 6.0;
-        double disMinLim = 2.2;
-        for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
-            ArrayList<Noe> noeList = entry.getValue();
-            double sum = 0.0;
-            for (Noe noe : noeList) {
-                double disMin = noe.disStat.getMin();
-                if (disMin < disMinLim) {
-                    disMin = disMinLim;
-                }
-                sum += Math.pow(disMin, -expNum);
-            }
-            for (Noe noe : noeList) {
-                double disMin = noe.disStat.getMin();
-                if (disMin < disMinLim) {
-                    disMin = disMinLim;
-                }
-                noe.disContrib = Math.pow(disMin, -expNum) / sum;
-            }
-        }
     }
 
     static Atom[][] getProtons(Atom[][] atoms) {
@@ -840,582 +491,6 @@ public class Noe implements Constraint, Serializable {
             }
         }
         return protons;
-    }
-
-    public static void limitToAssigned() {
-        for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
-            double sum = 0.0;
-            ArrayList<Noe> noeList = entry.getValue();
-            Peak peak = entry.getKey();
-            Atom[][] atoms = getAtoms(peak);
-            Atom[][] protons = getProtons(atoms);
-            boolean isAssigned = false;
-            for (int i = 0; i < protons[0].length; i++) {
-                if ((protons[0][i] != null) && (protons[1][i] != null)) {
-                    System.out.println(protons[0][i].spatialSet.getFullName());
-                    System.out.println(protons[1][i].spatialSet.getFullName());
-                    isAssigned = true;
-                    break;
-                }
-            }
-            System.out.println(protons[0].length + " " + isAssigned);
-            for (Noe noe : noeList) {
-                String spg1Name = noe.spg1.getFullName();
-                String spg2Name = noe.spg2.getFullName();
-                boolean consistent = false;
-                if (isAssigned) {
-                    for (int i = 0; i < protons[0].length; i++) {
-                        if ((protons[0][i] != null) && (protons[1][i] != null)) {
-                            if (protons[0][i].spatialSet.getFullName().equals(spg1Name) && protons[1][i].spatialSet.getFullName().equals(spg2Name)) {
-                                consistent = true;
-                                break;
-                            } else if (protons[1][i].spatialSet.getFullName().equals(spg1Name) && protons[0][i].spatialSet.getFullName().equals(spg2Name)) {
-                                consistent = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                System.out.println(spg1Name + " " + spg2Name + " " + consistent);
-                if (isAssigned && !consistent) {
-                    noe.inactivate(Flags.LABEL);
-                } else {
-                    noe.activate(Flags.LABEL);
-                }
-            }
-        }
-    }
-
-    public static void clearLimitToAssigned() {
-        for (Noe noe : activeSet.get()) {
-            noe.activate(Flags.LABEL);
-        }
-    }
-
-    public static void limitToMaxAmbig(int maxVal) {
-        for (Noe noe : activeSet.get()) {
-            if (noe.nPossible > maxVal) {
-                noe.inactivate(Flags.MAXAMBIG);
-            } else {
-                noe.activate(Flags.MAXAMBIG);
-            }
-        }
-    }
-
-    public static void limitToMinContrib(double minContrib) {
-        for (Noe noe : activeSet.get()) {
-            if (noe.contribution < minContrib) {
-                noe.inactivate(Flags.MINCONTRIB);
-            } else {
-                noe.activate(Flags.MINCONTRIB);
-            }
-        }
-    }
-
-    public static void limitToMinPPMError(double minPPM) {
-        for (Noe noe : activeSet.get()) {
-            if (noe.ppmError < minPPM) {
-                noe.inactivate(Flags.MINPPM);
-            } else {
-                noe.activate(Flags.MINPPM);
-            }
-        }
-    }
-
-    public static void limitToMaxViol(double maxViol) {
-        for (Noe noe : activeSet.get()) {
-            double disMin = noe.disStat.getMin();
-            if ((disMin - noe.upper) > maxViol) {
-                noe.inactivate(Flags.MAXVIOL);
-            } else {
-                noe.activate(Flags.MAXVIOL);
-            }
-        }
-    }
-
-    public static HashMap<PeakList, ArrayList<Double>> calcMedian(String mMode, PeakList whichList) {
-        Map<PeakList, ArrayList<Double>> valuesMap = new HashMap<>();
-        for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().peakList;
-            if ((whichList != null) && (whichList != peakList)) {
-                continue;
-            }
-            ArrayList<Noe> noeList = entry.getValue();
-            double maxContrib = 0.0;
-            double scaledIntensity = 1.0;
-            boolean foundActive = false;
-            for (Noe noe : noeList) {
-                if (!noe.isActive()) {
-                    continue;
-                }
-                double scale = 1.0;
-                double intensity;
-                for (int i = 0; i < 2; i++) {
-                    SpatialSetGroup sp = (i == 0) ? noe.spg1 : noe.spg2;
-                    Atom atom = sp.getAnAtom();
-                    Atom parent = atom.parent;
-                    String pName = "";
-                    if (parent != null) {
-                        pName = parent.getName();
-                    }
-                    if (atom.isMethyl()) {
-                        scale *= 3.0;
-                    } else if (pName.equals("N") || pName.equals("CA") || pName.equals("CB")) {
-                        scale *= 1.0;
-                    } else {
-                        scale *= 1.5;
-                    }
-                }
-                scale = Math.sqrt(scale);
-                noe.atomScale = scale;
-                if (noe.contribution > maxContrib) {
-                    if (mMode.startsWith("int")) {
-                        intensity = Math.abs(noe.intensity);
-                    } else {
-                        intensity = Math.abs(noe.volume);
-                    }
-                    maxContrib = noe.contribution;
-                    scaledIntensity = intensity / noe.scale / scale;
-                }
-                foundActive = true;
-            }
-            ArrayList<Double> dList = valuesMap.get(peakList);
-            if (dList == null) {
-                dList = new ArrayList<>();
-                valuesMap.put(peakList, dList);
-            }
-            if (foundActive) {
-                dList.add(scaledIntensity);
-            }
-        }
-        HashMap<PeakList, ArrayList<Double>> medianMap = new HashMap<>();
-        for (Entry<PeakList, ArrayList<Double>> entry : valuesMap.entrySet()) {
-            PeakList peakList = entry.getKey();
-            ArrayList<Double> dList = entry.getValue();
-            ArrayList<Double> valueList = new ArrayList<>();
-            DescriptiveStatistics stat = new DescriptiveStatistics();
-            dList.forEach(stat::addValue);
-            double median = stat.getPercentile(50.0);
-
-            int m = dList.size();
-            valueList.add(dList.get(0));
-            valueList.add(dList.get(m / 4));
-            valueList.add(median);
-            valueList.add(dList.get(3 * m / 4));
-            valueList.add(dList.get(m - 1));
-            medianMap.put(peakList, valueList);
-        }
-        return medianMap;
-    }
-
-    public static void clearScaleMap() {
-        activeSet.clearScaleMap();
-    }
-
-    public static void setScale(PeakList peakList, NoeCalibration noeCal) {
-        activeSet.setScale(peakList, noeCal);
-    }
-
-    public static NoeCalibration defaultCal(PeakList peakList) {
-        String mMode = "intensity";
-        HashMap<PeakList, ArrayList<Double>> medianMap = calcMedian(mMode, peakList);
-        ArrayList<Double> valueList = medianMap.get(peakList);
-        double referenceValue = valueList.get(2);
-        double referenceDist = 3.0;
-        double expValue = 6.0;
-        double lower = 1.8;
-        double minBound = 2.0;
-        double maxBound = 6.0;
-        double fError = 0.125;
-        NoeCalibration noeCal = new NoeCalibrationExp(mMode, lower, referenceValue, referenceDist, expValue, minBound, maxBound, fError, true);
-        setScale(peakList, noeCal);
-        return noeCal;
-    }
-
-    public static void calibrateExp(PeakList whichList) {
-        if (activeSet.getSize() == 0) {
-            return;
-        }
-        if (!calibratable) {
-            return;
-        }
-        double maxBound = 5.5;
-        double minBound = 2.0;
-        double floor = 1.0e-16;
-        double fError = 0.125;
-        double lower = 1.8;
-        for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().peakList;
-            if ((whichList != null) && (whichList != peakList)) {
-                continue;
-            }
-            ArrayList<Noe> noeList = entry.getValue();
-            NoeCalibration noeCal = activeSet.getCalibration(peakList);
-            if (noeCal == null) {
-                noeCal = defaultCal(peakList);
-            }
-            for (Noe noe : noeList) {
-                // fixme  what about negative NOE peaks?
-                if (!noe.isActive()) {
-
-                    continue;
-                }
-                noeCal.calibrate(noe);
-            }
-        }
-    }
-
-    public static void updateNPossible(PeakList whichList) {
-        for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
-            PeakList peakList = entry.getKey().peakList;
-            if ((whichList != null) && (whichList != peakList)) {
-                continue;
-            }
-            ArrayList<Noe> noeList = entry.getValue();
-            NoeCalibration noeCal = activeSet.getCalibration(peakList);
-            if (noeCal == null) {
-                noeCal = defaultCal(peakList);
-            }
-            for (Noe noe : noeList) {
-                noe.nPossible = noeList.size();
-            }
-        }
-    }
-
-    public static void findSymmetrical() {
-        int nNoe = activeSet.getSize();
-        Map<String, Noe> symMap = new HashMap<>();
-        for (int i = 0; i < nNoe; i++) {
-            Noe iNoe = activeSet.get(i);
-            iNoe.symmetrical = false;
-            Peak iPeak = iNoe.peak;
-            if (iPeak != null) {
-                String listName = iPeak.peakList.getName();
-                String spg1Name = iNoe.spg1.getFullName();
-                String spg2Name = iNoe.spg2.getFullName();
-                symMap.put(listName + "." + spg1Name + "." + spg2Name, iNoe);
-            }
-        }
-        for (int i = 0; i < nNoe; i++) {
-            Noe iNoe = activeSet.get(i);
-            Peak iPeak = iNoe.peak;
-            if ((iPeak != null) && (!iNoe.symmetrical)) {
-                String listName = iPeak.peakList.getName();
-                String spg1Name = iNoe.spg1.getFullName();
-                String spg2Name = iNoe.spg2.getFullName();
-                Noe jNoe = symMap.get(listName + "." + spg2Name + "." + spg1Name);
-                if (jNoe != null) {
-                    iNoe.symmetrical = true;
-                    jNoe.symmetrical = true;
-                }
-            }
-        }
-    }
-
-    public static void calculateContributions(boolean useDistances) {
-        for (Entry<Peak, ArrayList<Noe>> entry : activeSet.getPeakMapEntries()) {
-            double sum = 0.0;
-            ArrayList<Noe> noeList = entry.getValue();
-            for (Noe noe : noeList) {
-                if (!(noe.activeFlags.contains(Flags.DIAGONAL))) {
-                    double value = 1.0;
-                    if (noe.symmetrical) {
-                        value *= SYM_BONUS;
-                    }
-                    value *= noe.networkValue;
-                    if (value > MAX_BONUS) {
-                        value = MAX_BONUS;
-                    }
-                    value *= noe.ppmError;
-                    if (useDistances) {
-                        value *= noe.disContrib;
-                    }
-                    noe.contribution = value;
-
-                    sum += value;
-                }
-            }
-
-            for (Noe noe : noeList) {
-                if (sum == 0.0) {
-                    noe.contribution = 0.0;
-                } else {
-                    noe.contribution /= sum;
-                }
-            }
-        }
-    }
-
-    public static void findNetworks(boolean useContrib) {
-        int nNoe = activeSet.getSize();
-        Molecule mol = Molecule.getActive();
-        if (mol == null) {
-            System.out.println("null mol");
-            return;
-        }
-        Map<String, Map<String, Noe>> resMap1 = new TreeMap<>();
-//
-//        for (CoordSet cSet : mol.coordSets.values()) {
-//            for (Entity entity : cSet.entities.values()) {
-//                if (entity instanceof Polymer) {
-//                    Vector residues = ((Polymer) entity).getResidues();
-//                    for (int iRes = 0; iRes < residues.size(); iRes++) {
-//                        Residue residue = (Residue) residues.elementAt(iRes);
-//                        String cName = cSet.getName() + "." + entity.getName() + ":" + residue.getNumber();
-//                    }
-//                }
-//            }
-//        }
-//        ArrayList<String> aList = mol.getCompounds();
-//        for (String cmpdName: aList) {
-//            
-//        }
-        StringBuilder cName1 = new StringBuilder();
-        StringBuilder cName2 = new StringBuilder();
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < nNoe; i++) {
-            cName1.setLength(0);
-            cName2.setLength(0);
-            Noe iNoe = activeSet.get(i);
-            iNoe.spg1.getName();
-            if (iNoe.spg1.getFirstSet() == iNoe.spg2.getFirstSet()) {  // don't include diagonal peaks
-                continue;
-            }
-            Entity e1 = iNoe.spg1.getAnAtom().getEntity();
-            Entity e2 = iNoe.spg2.getAnAtom().getEntity();
-            Residue r1 = null;
-            Residue r2 = null;
-
-            if (e1 instanceof Residue) {
-                r1 = (Residue) e1;
-            } else {
-                System.out.println(e1.getName() + " not polymer");
-            }
-            if (e2 instanceof Residue) {
-                r2 = (Residue) e2;
-            } else {
-                System.out.println(e2.getName() + " not polymer");
-            }
-
-            if ((r1 != null) && (r2 != null)) {
-                String eName1, eName2;
-                if (e1 instanceof Residue) {
-                    eName1 = ((Residue) e1).polymer.name;
-                } else {
-                    eName1 = e1.getName();
-                }
-                if (e2 instanceof Residue) {
-                    eName2 = ((Residue) e2).polymer.name;
-                } else {
-                    eName2 = e2.getName();
-                }
-                cName1.append(iNoe.spg1.getName());
-                cName1.append('.');
-                cName1.append(eName1);
-                cName1.append(':');
-                cName1.append(r1.getNumber());
-                cName2.append(iNoe.spg2.getName());
-                cName2.append('.');
-                cName2.append(eName2);
-                cName2.append(':');
-                cName2.append(r2.getNumber());
-
-                String cName;
-                String aName;
-                String a1 = iNoe.spg1.getAnAtom().getName();
-                String a2 = iNoe.spg2.getAnAtom().getName();
-                if (cName1.toString().compareTo(cName2.toString()) < 0) {
-                    cName1.append('_');
-                    cName1.append(cName2);
-                    cName = cName1.toString();
-                    aName = a1 + ">" + a2;
-                } else {
-                    cName2.append('_');
-                    cName2.append(cName1);
-                    cName = cName2.toString();
-                    aName = a2 + "<" + a1;
-                }
-                Map<String, Noe> resMap2 = resMap1.get(cName);
-                if (resMap2 == null) {
-                    resMap2 = new HashMap<>();
-                    resMap1.put(cName, resMap2);
-                }
-                Noe testNoe = resMap2.get(aName);
-                if ((testNoe == null) || (testNoe.contribution < iNoe.contribution)) {
-                    resMap2.put(aName, iNoe);
-                }
-                iNoe.resMap = resMap2;
-            }
-        }
-        long mid = System.currentTimeMillis();
-
-        Map<Residue, Integer> countMap = new HashMap<>();
-        for (Noe iNoe : activeSet.get()) {
-            Entity e1 = iNoe.spg1.getAnAtom().getEntity();
-            Entity e2 = iNoe.spg2.getAnAtom().getEntity();
-            Residue r1 = null;
-            Residue r2 = null;
-            if (e1 instanceof Residue) {
-                r1 = (Residue) e1;
-            }
-            if (e2 instanceof Residue) {
-                r2 = (Residue) e2;
-            }
-            if ((r1 != null) && (r2 != null)) {
-                if (r1 == r2) {
-                    iNoe.networkValue = 1.0;
-                } else {
-                    Integer count1 = countMap.get(r1);
-                    if (count1 == null) {
-                        int nAtoms1 = r1.getAtoms("H*").size();
-                        count1 = nAtoms1;
-                        countMap.put(r1, count1);
-                    }
-                    Integer count2 = countMap.get(r2);
-                    if (count2 == null) {
-                        int nAtoms2 = r2.getAtoms("H*").size();
-                        count2 = nAtoms2;
-                        countMap.put(r2, count2);
-                    }
-                    Map<String, Noe> resMap2 = iNoe.resMap;
-                    double scale = Math.sqrt(count1 * count2);
-                    double sum = 0.01;
-                    if (resMap2 != null) {
-                        for (Noe jNoe : resMap2.values()) {
-                            if (useContrib) {
-                                sum += jNoe.contribution;
-                            } else {
-                                sum += 1.0;
-                            }
-                        }
-                    }
-                    iNoe.networkValue = sum / scale;
-                }
-            }
-        }
-        long done = System.currentTimeMillis();
-        System.out.println((mid - start) + " " + (done - mid));
-    }
-
-    public static void findRedundant() {
-        int nNoe = activeSet.getSize();
-        Molecule mol = Molecule.getActive();
-        if (mol == null) {
-            System.out.println("null mol");
-            return;
-        }
-        Map<String, ArrayList<Noe>> dupMap = new TreeMap<>();
-        StringBuilder cName1 = new StringBuilder();
-        StringBuilder cName2 = new StringBuilder();
-
-        for (int i = 0; i < nNoe; i++) {
-            cName1.setLength(0);
-            cName2.setLength(0);
-            Noe iNoe = activeSet.get(i);
-            iNoe.spg1.getName();
-            if (iNoe.spg1.getFirstSet() == iNoe.spg2.getFirstSet()) {  // don't include diagonal peaks
-                continue;
-            }
-            Entity e1 = iNoe.spg1.getAnAtom().getEntity();
-            Entity e2 = iNoe.spg2.getAnAtom().getEntity();
-            Residue r1 = null;
-            Residue r2 = null;
-
-            if (e1 instanceof Residue) {
-                r1 = (Residue) e1;
-            } else {
-                System.out.println(e1.getName() + " not polymer");
-            }
-            if (e2 instanceof Residue) {
-                r2 = (Residue) e2;
-            } else {
-                System.out.println(e2.getName() + " not polymer");
-            }
-
-            if ((r1 != null) && (r2 != null)) {
-                String eName1, eName2;
-                if (e1 instanceof Residue) {
-                    eName1 = ((Residue) e1).polymer.name;
-                } else {
-                    eName1 = e1.getName();
-                }
-                if (e2 instanceof Residue) {
-                    eName2 = ((Residue) e2).polymer.name;
-                } else {
-                    eName2 = e2.getName();
-                }
-                String a1 = iNoe.spg1.getAnAtom().getName();
-                String a2 = iNoe.spg2.getAnAtom().getName();
-
-                cName1.append(iNoe.spg1.getName());
-                cName1.append('.');
-                cName1.append(eName1);
-                cName1.append(':');
-                cName1.append(r1.getNumber());
-                cName1.append('.');
-                cName1.append(a1);
-
-                cName2.append(iNoe.spg2.getName());
-                cName2.append('.');
-                cName2.append(eName2);
-                cName2.append(':');
-                cName2.append(r2.getNumber());
-                cName2.append('.');
-                cName2.append(a2);
-
-                String cName;
-                if (cName1.toString().compareTo(cName2.toString()) < 0) {
-                    cName1.append('_');
-                    cName1.append(cName2);
-                    cName = cName1.toString();
-                } else {
-                    cName2.append('_');
-                    cName2.append(cName1);
-                    cName = cName2.toString();
-                }
-
-                ArrayList<Noe> noeList = dupMap.get(cName);
-                if (noeList == null) {
-                    noeList = new ArrayList<>();
-                    dupMap.put(cName, noeList);
-                }
-                noeList.add(iNoe);
-
-            }
-        }
-        for (Entry<String, ArrayList<Noe>> eSet : dupMap.entrySet()) {
-            String cName = eSet.getKey();
-            List<Noe> noeList = eSet.getValue();
-            Noe weakestNoe = null;
-            double maxBound = 0.0;
-            for (Noe noe : noeList) {
-                if (noe.upper >= maxBound) {
-                    maxBound = noe.upper;
-                    weakestNoe = noe;
-                }
-            }
-            for (Noe noe : noeList) {
-                noe.activate(Flags.REDUNDANT);
-            }
-            if (weakestNoe != null) {
-                for (Noe noe : noeList) {
-                    if (noe.peak == null) {
-                        continue;
-                    }
-                    PeakList peakList = noe.peak.getPeakList();
-                    NoeCalibration noeCal = activeSet.getCalibration(peakList);
-                    if (noeCal == null) {
-                        noeCal = defaultCal(peakList);
-                    }
-                    if (noeCal.removeRedundant()) {
-                        if (noe != weakestNoe) {
-                            noe.inactivate(Flags.REDUNDANT);
-                        }
-                    }
-                }
-            }
-
-        }
     }
 
     public boolean isActive() {
@@ -1664,6 +739,10 @@ public class Noe implements Constraint, Serializable {
         return disStatAvg;
     }
 
+    public void setDisStatAvg(DistanceStat disStatAvg) {
+        this.disStatAvg = disStatAvg;
+    }
+
     /**
      * @return the lower
      */
@@ -1699,6 +778,10 @@ public class Noe implements Constraint, Serializable {
         return contribution;
     }
 
+    public void setContribution(double contribution) {
+        this.contribution = contribution;
+    }
+
     /**
      * @return the disContrib
      */
@@ -1706,10 +789,14 @@ public class Noe implements Constraint, Serializable {
         return disContrib;
     }
 
+    public void setDisContrib(double value) {
+        disContrib = value;
+    }
+
     /**
      * @return the nPossible
      */
-    public int setNPossible() {
+    public int getNPossible() {
         return nPossible;
     }
 
@@ -1724,6 +811,10 @@ public class Noe implements Constraint, Serializable {
         return networkValue;
     }
 
+    public void setNetworkValue(double value) {
+        this.networkValue = value;
+    }
+
     /**
      * @return the ppmError
      */
@@ -1736,6 +827,14 @@ public class Noe implements Constraint, Serializable {
      */
     public void setPpmError(double ppmError) {
         this.ppmError = ppmError;
+    }
+
+    public void setFilterSwapped(boolean swapped) {
+        filterSwapped = swapped;
+    }
+
+    public Peak getPeak() {
+        return peak;
     }
 
 }
