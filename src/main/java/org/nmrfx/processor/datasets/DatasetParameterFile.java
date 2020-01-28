@@ -119,7 +119,7 @@ public class DatasetParameterFile {
             pStream.printf("poscolor %s\n", dataset.getPosColor());
             pStream.printf("negcolor %s\n", dataset.getNegColor());
             for (int i = 0; i < nDim; i++) {
-                pStream.printf("ref %d %.4f %.1f\n", (i + 1), dataset.getRefValue(i), dataset.getRefPt(i));
+                pStream.printf("ref %d %.4f %.1f\n", (i + 1), dataset.getRefValue(i), (dataset.getRefPt(i) + 1));
             }
             Map map = dataset.getPropertyList();
             for (Object obj : map.entrySet()) {
@@ -249,7 +249,7 @@ public class DatasetParameterFile {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 double value = Double.parseDouble(fields[2]);
                 double pt = Double.parseDouble(fields[3]);
-                dataset.setRefPt(iDim, pt);
+                dataset.setRefPt(iDim, pt - 1);
                 dataset.setRefValue(iDim, value);
                 break;
             }
