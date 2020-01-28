@@ -44,6 +44,7 @@ import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.SpinSystem;
 import org.nmrfx.processor.datasets.peaks.SpinSystems;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 
 /*
@@ -823,7 +824,15 @@ def getType(types, row, dDir):
                         if (widths[iChart][i] == null) {
                             chart.full(i);
                         } else {
-                            chart.moveTo(i, ppms[i], widths[iChart][i]);
+                            double pos;
+                            if (chart.getAxMode(i) == PPM) {
+                                pos = ppms[i];
+                            } else {
+                                int dDim = dataAttr.getDim(i);
+                                pos = dataAttr.getDataset().ppmToDPoint(dDim, ppms[i]);
+                                System.out.print(i + " " + aDim + " " + dDim + " " +ppms[i] + " " + pos);
+                            }
+                            chart.moveTo(i, pos, widths[iChart][i]);
                             System.out.println("goto " + ppms[i] + " " + widths[iChart][i]);
                         }
                     } else {
