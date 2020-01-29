@@ -266,7 +266,10 @@ class MolPeakGen:
             eppms.append(ppmV.getError())
             names.append(atom.getShortName())
             sym = atom.getSymbol()
-            width = self.elemWidths[sym]
+            if not sym in self.elemWidths:
+                width = 0.01
+            else:
+                width = self.elemWidths[sym]
             widths.append(width)
             bound = 1.5 * width
             bounds.append(bound)
@@ -402,12 +405,16 @@ class MolPeakGen:
         if not isinstance(dataset,Dataset):
             dataset = Dataset.getDataset(dataset)
 
-        nDim = dataset.getNDim()
         peakList = self.getPeakList(dataset, listName)
         peakList.setSampleConditionLabel(condition)
+        nDim = peakList.getNDim()
         nucNames = []
         for i in range(nDim):
-             nucNames.append(dataset.getNucleus(i).getName())
+             if dataset == None:
+                 nucName = peakList.getSpectralDim(i).getDimName()[0]
+             else:
+                 nucName = dataset.getNucleus(i).getName()
+             nucNames.append(nucName)
 
         polymers = self.mol.getPolymers()
         for polymer in polymers:
