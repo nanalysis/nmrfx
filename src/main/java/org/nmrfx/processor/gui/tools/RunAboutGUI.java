@@ -424,7 +424,7 @@ public class RunAboutGUI implements PeakListener {
         currentSpinSystem = 0;
         for (int resOffset : resOffsets) {
             SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-            Peak peak = spinSystem.getRootPeak();
+            Peak peak = spinSystem != null ? spinSystem.getRootPeak() : null;
             peaks.add(peak);
         }
         setPeaks(peaks);
@@ -437,7 +437,7 @@ public class RunAboutGUI implements PeakListener {
         currentSpinSystem = runAbout.getSpinSystems().getSize() - 1;
         for (int resOffset : resOffsets) {
             SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-            Peak peak = spinSystem.getRootPeak();
+            Peak peak = spinSystem != null ? spinSystem.getRootPeak() : null;
             peaks.add(peak);
         }
         System.out.println("last " + currentSpinSystem);
@@ -453,7 +453,7 @@ public class RunAboutGUI implements PeakListener {
             }
             for (int resOffset : resOffsets) {
                 SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-                Peak peak = spinSystem.getRootPeak();
+                Peak peak = spinSystem != null ? spinSystem.getRootPeak() : null;
                 peaks.add(peak);
             }
             setPeaks(peaks);
@@ -470,7 +470,7 @@ public class RunAboutGUI implements PeakListener {
             }
             for (int resOffset : resOffsets) {
                 SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-                Peak peak = spinSystem.getRootPeak();
+                Peak peak = spinSystem != null ? spinSystem.getRootPeak() : null;
                 peaks.add(peak);
             }
             setPeaks(peaks);
@@ -830,7 +830,7 @@ def getType(types, row, dDir):
                             } else {
                                 int dDim = dataAttr.getDim(i);
                                 pos = dataAttr.getDataset().ppmToDPoint(dDim, ppms[i]);
-                                System.out.print(i + " " + aDim + " " + dDim + " " +ppms[i] + " " + pos);
+                                System.out.print(i + " " + aDim + " " + dDim + " " + ppms[i] + " " + pos);
                             }
                             chart.moveTo(i, pos, widths[iChart][i]);
                             System.out.println("goto " + ppms[i] + " " + widths[iChart][i]);
