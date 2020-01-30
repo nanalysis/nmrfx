@@ -42,6 +42,7 @@ public class AtomParser {
     static HashMap<String, String> xplorToIUPAC = new HashMap<>();
     static HashMap<String, String> iupacToXPLOR = new HashMap<>();
     static Map<String, String> map1To3 = new HashMap<>();
+    static Map<String, String> map3To1 = new HashMap<>();
 
     static {
         map1To3.put("A", "ALA");
@@ -64,6 +65,9 @@ public class AtomParser {
         map1To3.put("G", "GLY");
         map1To3.put("S", "SER");
         map1To3.put("T", "THR");
+        for (String key : map1To3.keySet()) {
+            map3To1.put(map1To3.get(key), key);
+        }
 
         pdbToIUPAC.put("CYS,HB1", "HB2");
         pdbToIUPAC.put("CYS,HB2", "HB3");
@@ -587,5 +591,9 @@ public class AtomParser {
 
     public static String convert1To3(String s) {
         return map1To3.get(s);
+    }
+
+    public static String convert3To1(String s) {
+        return map3To1.get(s);
     }
 }
