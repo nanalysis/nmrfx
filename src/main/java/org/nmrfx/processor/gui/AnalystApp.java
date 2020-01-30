@@ -150,8 +150,8 @@ public class AnalystApp extends MainApp {
         interpreter.exec("parseArgs(argv)");
         Dataset.addObserver(this);
         PeakPicking.registerSinglePickAction((c) -> pickedPeakAction(c));
-        PeakMenuBar.addExtra("Add Sngl Res", PeakLabeller::labelWithSingleResidueChar);
-        PeakMenuBar.addExtra("Remove Sngl Res", PeakLabeller::removeSingleResidueChar);
+        PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
+        PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
     }
 
     private void updateScannerGUI(ScannerController scannerController) {
@@ -159,7 +159,6 @@ public class AnalystApp extends MainApp {
         MinerController minerController = new MinerController(scannerController);
     }
 
-    
     Object pickedPeakAction(Object peakObject) {
         if (assignOnPick.isSelected()) {
             Peak peak = (Peak) peakObject;
