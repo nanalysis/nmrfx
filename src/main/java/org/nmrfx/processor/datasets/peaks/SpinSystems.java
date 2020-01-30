@@ -96,6 +96,7 @@ public class SpinSystems {
         for (int i = 0; i < useDim.length; i++) {
             useDim[i] = true;
         }
+        int nPeakTypes = 0;
         for (PeakList peakList : peakLists) {
             if (peakList != refList) {
                 int[] aMatch = matchDims(refList, peakList);
@@ -105,7 +106,15 @@ public class SpinSystems {
                     }
                 }
             }
+            int totalCount = 1;
+            int[] counts = SpinSystem.getCounts(peakList);
+            for (int count : counts) {
+                totalCount *= count;
+            }
+            System.out.println("nt " + peakList.getName() + " " + totalCount);
+            nPeakTypes += totalCount;
         }
+        final int nExpected = nPeakTypes;
         for (PeakList peakList : peakLists) {
             peakList.clearSearchDims();
             int[] aMatch = matchDims(refList, peakList);
@@ -129,6 +138,8 @@ public class SpinSystems {
                     spinSys.addPeak(pkB, f);
                 }
             }
+            int nPeaks = spinSys.peakMatches.size();
+            System.out.println(pkA.getName() + " " + nExpected + " " + nPeaks);
         });
     }
 
@@ -227,7 +238,7 @@ public class SpinSystems {
     public void dump() {
         for (SpinSystem spinSys : spinSystems) {
             System.out.println(spinSys.toString());
-           // spinSys.calcCombinations();
+            // spinSys.calcCombinations();
         }
     }
 
