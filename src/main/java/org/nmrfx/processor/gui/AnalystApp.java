@@ -70,6 +70,7 @@ import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 import static javafx.application.Application.launch;
 import javafx.beans.property.IntegerProperty;
 import org.controlsfx.control.PropertySheet;
+import org.nmrfx.processor.datasets.peaks.PeakLabeller;
 import org.nmrfx.structure.chemistry.constraints.NoeSet;
 import org.nmrfx.utils.GUIUtils;
 import org.nmrfx.utils.properties.IntRangeOperationItem;
@@ -144,10 +145,13 @@ public class AnalystApp extends MainApp {
         interpreter.exec("from gscript import *\nnw=NMRFxWindowScripting()");
         interpreter.exec("from dscript import *");
         interpreter.exec("from mscript import *");
+        interpreter.exec("from pscript import *");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
         Dataset.addObserver(this);
         PeakPicking.registerSinglePickAction((c) -> pickedPeakAction(c));
+        PeakMenuBar.addExtra("Add Sngl Res", PeakLabeller::labelWithSingleResidueChar);
+        PeakMenuBar.addExtra("Remove Sngl Res", PeakLabeller::removeSingleResidueChar);
     }
 
     private void updateScannerGUI(ScannerController scannerController) {
@@ -155,6 +159,7 @@ public class AnalystApp extends MainApp {
         MinerController minerController = new MinerController(scannerController);
     }
 
+    
     Object pickedPeakAction(Object peakObject) {
         if (assignOnPick.isSelected()) {
             Peak peak = (Peak) peakObject;
