@@ -147,6 +147,20 @@ public class SpinSystem {
         peakMatches.add(peakMatch);
     }
 
+    public static int[] getCounts(PeakList peakList) {
+        int nDim = peakList.getNDim();
+        int[] counts = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            SpectralDim sDim = peakList.getSpectralDim(i);
+            String fullPattern = sDim.getPattern();
+            String[] resAtoms = fullPattern.split("\\.");
+            String[] resPats = resAtoms[0].split(",");
+            String[] atomPats = resAtoms[1].split(",");
+            counts[i] = resPats.length * atomPats.length;
+        }
+        return counts;
+    }
+
     List<ResAtomPattern> getPatterns(Peak peak) {
         int nDim = peak.getNDim();
         String[][] allResPats = new String[nDim][];
@@ -424,7 +438,7 @@ public class SpinSystem {
                     System.out.println("add");
                 } else {
                     System.out.println("fail");
-                    
+
                 }
             }
             // allow all peaks but root peak to be unused (artifact)
