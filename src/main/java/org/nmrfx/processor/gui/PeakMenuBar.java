@@ -6,7 +6,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Consumer;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.MenuButton;
@@ -30,6 +34,7 @@ import org.nmrfx.utils.GUIUtils;
 public class PeakMenuBar {
 
     final PeakMenuTarget menuTarget;
+    static Map<String, Consumer<PeakList>> extras = new LinkedHashMap<>();
 
     public PeakMenuBar(PeakMenuTarget menuTarget) {
         this.menuTarget = menuTarget;
@@ -108,11 +113,21 @@ public class PeakMenuBar {
         measureMenu.getItems().add(measureEVolumeItem);
 
         menuBar.getItems().add(measureMenu);
+
+        for (Entry<String, Consumer<PeakList>> entry : extras.entrySet()) {
+            MenuItem menuItem = new MenuItem(entry.getKey());
+            Consumer consumer = entry.getValue();
+            menuItem.setOnAction(e -> consumer.accept(getPeakList()));
+            editMenu.getItems().add(menuItem);
+        }
     }
 
     void refreshPeakView() {
         menuTarget.refreshPeakView();
+    }
 
+    public static void addExtra(String name, Consumer<PeakList> function) {
+        extras.put(name, function);
     }
 
     boolean checkDataset() {
