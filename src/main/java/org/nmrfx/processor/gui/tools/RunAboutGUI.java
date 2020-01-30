@@ -359,14 +359,15 @@ public class RunAboutGUI implements PeakListener {
         if (defaultBackground == null) {
             defaultBackground = peakIdField.getBackground();
         }
-        if (currentPeak.getStatus() < 0) {
-            deleteButton.setSelected(true);
-            peakIdField.setBackground(deleteBackground);
-        } else {
-            deleteButton.setSelected(false);
-            peakIdField.setBackground(defaultBackground);
+        if (!useSpinSystem && (currentPeak == null)) {
+            if (currentPeak.getStatus() < 0) {
+                deleteButton.setSelected(true);
+                peakIdField.setBackground(deleteBackground);
+            } else {
+                deleteButton.setSelected(false);
+                peakIdField.setBackground(defaultBackground);
+            }
         }
-
     }
 
     private void setPeakIdField() {
@@ -810,13 +811,13 @@ def getType(types, row, dDir):
             int iCol = iChart % resOffsets.length;
             int resOffset = resOffsets[iCol] - minOffset;
             resOffset = resOffset >= peaks.size() ? 0 : resOffset;
-            Peak peak = peaks.get(resOffset);
-            if ((chart != null) && !chart.getDatasetAttributes().isEmpty()) {
+            iCol = iCol >= peaks.size() ? 0 : iCol;
+            Peak peak = peaks.get(iCol);
+            if ((peak != null) && (chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                 DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
                 int cDim = chart.getNDim();
                 int aDim = dataAttr.nDim;
                 Double[] ppms = new Double[cDim];
-                System.out.println("chart " + iChart + " " + chart + " " + resOffset);
                 for (int i = 0; i < aDim; i++) {
                     PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
                     if (peakDim != null) {
@@ -833,7 +834,6 @@ def getType(types, row, dDir):
                                 System.out.print(i + " " + aDim + " " + dDim + " " + ppms[i] + " " + pos);
                             }
                             chart.moveTo(i, pos, widths[iChart][i]);
-                            System.out.println("goto " + ppms[i] + " " + widths[iChart][i]);
                         }
                     } else {
                         chart.full(i);
