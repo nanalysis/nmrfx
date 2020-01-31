@@ -214,6 +214,11 @@ public class PeakList {
         listNum = peakListTable.size();
     }
 
+    @Override
+    public String toString() {
+        return listName;
+    }
+
     /**
      * Copies an existing peak list.
      *
