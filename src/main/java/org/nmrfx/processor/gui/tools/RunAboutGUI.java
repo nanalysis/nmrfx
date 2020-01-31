@@ -4,6 +4,7 @@ import org.nmrfx.processor.tools.RunAbout;
 import org.nmrfx.processor.gui.*;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,6 +33,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
@@ -628,18 +630,24 @@ public class RunAboutGUI implements PeakListener {
 
     void loadYaml() {
         try {
-            runAbout.loadYaml("sandbox/runabout.yaml");
-            Map<String, Object> yamlData = runAbout.getYamlData();
-            arrangeMenu.getItems().clear();
-            Map<String, Map<String, List<String>>> arrangments = (Map<String, Map<String, List<String>>>) yamlData.get("arrangements");
-            for (String arrangment : arrangments.keySet()) {
-                MenuItem item = new MenuItem(arrangment);
-                arrangeMenu.getItems().add(item);
-                item.setOnAction(e -> genWin(arrangment));
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("RunAbout Yaml file");
+            File file = fileChooser.showOpenDialog(null);
+            if (file != null) {
+                runAbout.loadYaml(file.toString());
+                Map<String, Object> yamlData = runAbout.getYamlData();
+                arrangeMenu.getItems().clear();
+                Map<String, Map<String, List<String>>> arrangments = (Map<String, Map<String, List<String>>>) yamlData.get("arrangements");
+                for (String arrangment : arrangments.keySet()) {
+                    MenuItem item = new MenuItem(arrangment);
+                    arrangeMenu.getItems().add(item);
+                    item.setOnAction(e -> genWin(arrangment));
+                }
             }
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
+
     }
 
 
@@ -753,6 +761,7 @@ def getType(types, row, dDir):
                 resOffsets[iCol++] = del;
                 minOffset = Math.min(del, minOffset);
             }
+            System.out.println(datasetMap);
             int iChart = 0;
             for (String row : rows) {
                 for (String col : cols) {
@@ -762,6 +771,7 @@ def getType(types, row, dDir):
                     List<String> dimNames = dimLabels.get(colElems[1]);
                     if (typeName.isPresent()) {
                         Optional<String> dName = getDatasetName(datasetMap, typeName.get());
+                        System.out.println("type " + typeName + " " + dName);
                         if (dName.isPresent()) {
                             Dataset dataset = Dataset.getDataset(dName.get());
                             if (dataset != null) {
@@ -816,7 +826,7 @@ def getType(types, row, dDir):
                 Double[] ppms = new Double[cDim];
                 for (int i = 0; i < aDim; i++) {
                     PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
-                    if (peakDim != null) {
+                    if ((widths[iChart] != null) && (peakDim != null)) {
                         ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
                         if (widths[iChart][i] == null) {
                             chart.full(i);
