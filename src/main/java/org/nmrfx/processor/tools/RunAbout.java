@@ -76,7 +76,8 @@ public class RunAbout {
     public void assemble() {
         System.out.println("assemble " + peakLists);
         getSpinSystems().assembleWithClustering(peakLists);
-        // getSpinSystems().compare();
+        getSpinSystems().calcCombinations();
+        getSpinSystems().compare();
         getSpinSystems().dump();
     }
 }

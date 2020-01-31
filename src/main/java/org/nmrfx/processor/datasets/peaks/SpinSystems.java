@@ -1,7 +1,9 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -43,7 +45,7 @@ public class SpinSystems {
 
     }
 
-    int[] matchDims(PeakList peakListA, PeakList peakListB) {
+    public static int[] matchDims(PeakList peakListA, PeakList peakListB) {
         int nDimA = peakListA.getNDim();
         int nDimB = peakListB.getNDim();
         int[] aMatch = new int[nDimA];
@@ -60,7 +62,7 @@ public class SpinSystems {
         return aMatch;
     }
 
-    double comparePeaks(Peak peakA, Peak peakB, int[] aMatch) {
+    public static double comparePeaks(Peak peakA, Peak peakB, int[] aMatch) {
         boolean ok = true;
         double sum = 0.0;
         for (int i = 0; i < aMatch.length; i++) {
@@ -90,7 +92,28 @@ public class SpinSystems {
         return result;
     }
 
+    double[][] calcNormalization(List<PeakList> peakLists) {
+        PeakList refList = peakLists.get(0);
+        double[][] sums = new double[refList.peaks().size()][peakLists.size() - 1];
+        int i = 0;
+        for (Peak pkA : refList.peaks()) {
+            int j = 0;
+            for (PeakList peakListB : peakLists) {
+                int[] aMatch = matchDims(refList, peakListB);
+                if (peakListB != refList) {
+                    double sumF = peakListB.peaks().stream().filter(pkB -> pkB.getStatus() >= 0).
+                            mapToDouble(pkB -> comparePeaks(pkA, pkB, aMatch)).sum();
+                    sums[i][j] = sumF;
+                    j++;
+                }
+            }
+            i++;
+        }
+        return sums;
+    }
+
     public void assembleWithClustering(List<PeakList> peakLists) {
+        double[][] sums = calcNormalization(peakLists);
         PeakList refList = peakLists.get(0);
         boolean[] useDim = new boolean[refList.getNDim()];
         for (int i = 0; i < useDim.length; i++) {
@@ -115,7 +138,13 @@ public class SpinSystems {
             nPeakTypes += totalCount;
         }
         final int nExpected = nPeakTypes;
+        Map<PeakList, Integer> peakMap = new HashMap<>();
+        int j = 0;
         for (PeakList peakList : peakLists) {
+            if (peakList != refList) {
+                peakMap.put(peakList, j);
+                j++;
+            }
             peakList.clearSearchDims();
             int[] aMatch = matchDims(refList, peakList);
             for (int i = 0; i < aMatch.length; i++) {
@@ -124,23 +153,35 @@ public class SpinSystems {
                 }
             }
         }
+        System.out.println(peakMap.toString());
 
         PeakList.clusterPeaks(peakLists);
-
-        refList.peaks().stream().forEach(pkA -> {
+        int i = 0;
+        for (Peak pkA : refList.peaks()) {
             SpinSystem spinSys = new SpinSystem(pkA);
             spinSystems.add(spinSys);
-            for (Peak pkB : PeakList.getLinks(pkA, 0)) {
+            for (Peak pkB : PeakList.getLinks(pkA, 0)) {// fixme calculate correct dim
                 if (pkA != pkB) {
                     PeakList peakListB = pkB.getPeakList();
-                    int[] aMatch = matchDims(refList, peakListB);
-                    double f = comparePeaks(pkA, pkB, aMatch);
-                    spinSys.addPeak(pkB, f);
+                    if (refList != peakListB) {
+                        Integer jList = peakMap.get(peakListB);
+                        if (jList == null) {
+                            System.out.println("n peakListb " + peakListB);
+                        } else {
+                            int[] aMatch = matchDims(refList, peakListB);
+                            double f = comparePeaks(pkA, pkB, aMatch);
+                            if (f >= 0.0) {
+                                double p = f / sums[i][jList];
+                                spinSys.addPeak(pkB, p);
+                            }
+                        }
+                    }
                 }
             }
+            i++;
             int nPeaks = spinSys.peakMatches.size();
             System.out.println(pkA.getName() + " " + nExpected + " " + nPeaks);
-        });
+        }
     }
 
     public void assemble(List<PeakList> peakLists) {
@@ -238,7 +279,12 @@ public class SpinSystems {
     public void dump() {
         for (SpinSystem spinSys : spinSystems) {
             System.out.println(spinSys.toString());
-            // spinSys.calcCombinations();
+        }
+    }
+
+    public void calcCombinations() {
+        for (SpinSystem spinSys : spinSystems) {
+            spinSys.calcCombinations();
         }
     }
 
