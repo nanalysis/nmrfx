@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
+import org.nmrfx.processor.datasets.peaks.PeakList.SearchDim;
+import smile.clustering.KMeans;
 
 /**
  *
@@ -20,8 +22,8 @@ public class SpinSystem {
     List<SpinSystemMatch> spinMatchS = new ArrayList<>();
     static final String[] ATOM_TYPES = {"h", "n", "c", "ha", "ca", "cb"};
     static int[][] nAtmPeaks = {
-        {0, 0, 0, 0, 2, 2},
-        {7, 7, 0, 0, 1, 1}
+        {0, 0, 2, 0, 2, 2},
+        {7, 7, 1, 0, 1, 1}
     };
     static int[] RES_MTCH = {4, 5};
 
@@ -56,7 +58,7 @@ public class SpinSystem {
             for (String aName : ATOM_TYPES) {
                 int i = 0;
                 for (String atomType : atomTypes) {
-                    if (atomType.equals(aName)) {
+                    if (atomType.equalsIgnoreCase(aName)) {
                         atomTypeIndex[i] = iType;
                         break;
                     }
@@ -74,6 +76,9 @@ public class SpinSystem {
             }
             for (String atomType : atomTypes) {
                 sBuilder.append(atomType).append(" ");
+            }
+            for (int atomTypeI : atomTypeIndex) {
+                sBuilder.append(atomTypeI).append(" ");
             }
             sBuilder.append(positive).append(" ").append(requireSign);
             return sBuilder.toString();
@@ -366,16 +371,17 @@ public class SpinSystem {
             if (!resAtomPatterns[i].isEmpty()) {
                 ResAtomPattern resAtomPattern = resAtomPatterns[i].get(k);
                 if (resAtomPattern != null) {
+//                    System.out.println("Ip " + i + " " + resAtomPattern.toString());
                     int nDim = resAtomPattern.atomTypeIndex.length;
                     for (int iDim = 0; iDim < nDim; iDim++) {
                         int iAtom = resAtomPattern.atomTypeIndex[iDim];
                         int iRes = resAtomPattern.resType[iDim];
-                        //System.out.println(iAtom + " " + iRes + " " + iDim + " " + resAtomPattern.atomType);
                         List<Double> shifts = shiftList[iRes + 1][iAtom];
                         double newValue = (double) resAtomPattern.peak.getPeakDim(iDim).getChemShiftValue();
                         if (!shifts.isEmpty()) {
                             double current = shifts.get(0);
                             if (Math.abs(current - newValue) > 1.5 * tols[iAtom]) {
+//                                System.out.println("shi " + iAtom + " " + iRes + " " + iDim + " " + current + " " + newValue + " " + shifts.size());
                                 return false;
                             }
                         }
@@ -426,18 +432,19 @@ public class SpinSystem {
         int nCountable = 0;
         int iPeak = 0;
         int[] counts = new int[nPeaks];
+        System.out.println("calc comb " + rootPeak.getName() + " " + nPeaks);
         for (PeakMatch peakMatch : peakMatches) {
             Peak peak = peakMatch.peak;
             List<ResAtomPattern> patterns = getPatterns(peak);
             double intensity = intensities[iPeak];
             List<ResAtomPattern> okPats = new ArrayList<>();
             for (ResAtomPattern resAtomPattern : patterns) {
-                System.out.println(resAtomPattern.toString());
+//                System.out.println(resAtomPattern.toString());
                 if (checkPat(resAtomPattern, intensity)) {
                     okPats.add(resAtomPattern);
-                    System.out.println("add");
+                    // System.out.println("add");
                 } else {
-                    System.out.println("fail");
+                    // System.out.println("fail");
 
                 }
             }
@@ -455,7 +462,12 @@ public class SpinSystem {
         for (int i = 0; i < nPeaks; i++) {
             System.out.print(" " + counts[i]);
         }
-        System.out.println("");
+        System.out.println(" " + nCountable);
+//        for (int i = 0; i < resAtomPatterns.length; i++) {
+//            for (int j = 0; j < resAtomPatterns[i].size(); j++) {
+//                System.out.println(i + " " + j + " " + resAtomPatterns[i].get(j));
+//            }
+//        }
 
         if (nCountable == 0) {
             List<Double>[][] shiftList = new ArrayList[2][ATOM_TYPES.length];
@@ -559,6 +571,59 @@ public class SpinSystem {
             sBuilder.append(String.format("%.2f", peakMatch.prob));
         }
         return sBuilder.toString();
+    }
+
+    public SpinSystem split(int[] nExpected) {
+        double[][] values = new double[peakMatches.size()][];
+        int i = 0;
+        for (PeakMatch peakMatch : peakMatches) {
+            Peak peak = peakMatch.peak;
+            PeakList peakList = peak.getPeakList();
+            values[i] = new double[peakList.searchDims.size()];
+            int j = 0;
+            for (SearchDim sDim : peakList.searchDims) {
+                double shift = peak.getPeakDim(sDim.iDim).getChemShiftValue();
+                values[i][j] = shift;
+            }
+            i++;
+        }
+        KMeans kMeans = KMeans.lloyd(values, 2);
+        int[] labels = kMeans.getClusterLabel();
+        int origCluster = labels[0];
+        int newCluster = origCluster == 0 ? 1 : 0;
+        double[][] centroids = kMeans.centroids();
+        Peak newRoot = rootPeak.peakList.getNewPeak();
+        rootPeak.copyTo(newRoot);
+        int j = 0;
+        for (SearchDim sDim : rootPeak.peakList.searchDims) {
+            rootPeak.getPeakDim(sDim.iDim).setChemShiftValue((float) centroids[origCluster][j]);
+            newRoot.getPeakDim(sDim.iDim).setChemShiftValue((float) centroids[newCluster][j]);
+            j++;
+        }
+        SpinSystem newSys = new SpinSystem(newRoot);
+        List<PeakMatch> oldPeaks = new ArrayList<>();
+        oldPeaks.addAll(peakMatches);
+        peakMatches.clear();
+        addPeak(rootPeak, 1.0);
+        i = 0;
+        for (PeakMatch peakMatch : oldPeaks) {
+            if (peakMatch.peak != rootPeak) {
+                if (labels[i] == origCluster) {
+                    int[] aMatch = SpinSystems.matchDims(rootPeak.peakList, peakMatch.peak.peakList);
+                    double f = SpinSystems.comparePeaks(rootPeak, peakMatch.peak, aMatch);
+                    addPeak(peakMatch.peak, f);
+                } else {
+                    int[] aMatch = SpinSystems.matchDims(newRoot.peakList, peakMatch.peak.peakList);
+                    double f = SpinSystems.comparePeaks(newRoot, peakMatch.peak, aMatch);
+                    newSys.addPeak(peakMatch.peak, f);
+                }
+            }
+            i++;
+
+        }
+
+        return newSys;
+
     }
 
 }
