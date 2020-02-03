@@ -176,7 +176,7 @@ public class Molecule implements Serializable, ITree {
         shapeTypes.add("square");
         shapeTypes.add("triangle");
     }
-    public Set structures = new TreeSet();
+    public Set<Integer> structures = new TreeSet();
     private int[] activeStructures = null;
     public boolean labelsCurrent = false;
     public int nResidues;
@@ -371,6 +371,14 @@ public class Molecule implements Serializable, ITree {
         while (e.hasNext()) {
             Integer intStructure = (Integer) e.next();
             activeStructures[i++] = intStructure;
+        }
+    }
+
+    public void setActiveStructures() {
+        activeStructures = new int[structures.size()];
+        int i = 0;
+        for (int istruct : structures) {
+            activeStructures[i++] = istruct;
         }
     }
 
