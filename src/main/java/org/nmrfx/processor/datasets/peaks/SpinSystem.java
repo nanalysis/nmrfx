@@ -127,15 +127,40 @@ public class SpinSystem {
         }
     }
 
-    class PeakMatch {
+    public class PeakMatch {
 
         final Peak peak;
         final double prob;
+        final int[] atomIndexes;
+        final boolean[] intraResidue;
 
         PeakMatch(Peak peak, double prob) {
             this.peak = peak;
             this.prob = prob;
+            atomIndexes = new int[peak.getNDim()];
+            intraResidue = new boolean[peak.getNDim()];
         }
+
+        void setIntraResidue(int dim, boolean state) {
+            intraResidue[dim] = state;
+        }
+
+        void setIndex(int dim, int index) {
+            atomIndexes[dim] = index;
+        }
+
+        public boolean getIntraResidue(int dim) {
+            return intraResidue[dim];
+        }
+
+        public int getIndex(int dim) {
+            return atomIndexes[dim];
+        }
+
+        public Peak getPeak() {
+            return peak;
+        }
+
     }
 
     public SpinSystem(Peak peak) {
@@ -147,9 +172,21 @@ public class SpinSystem {
         return rootPeak;
     }
 
+    public List<PeakMatch> peakMatches() {
+        return peakMatches;
+    }
+
     public final void addPeak(Peak peak, double prob) {
         PeakMatch peakMatch = new PeakMatch(peak, prob);
         peakMatches.add(peakMatch);
+    }
+
+    public static String getAtomName(int index) {
+        return ATOM_TYPES[index];
+    }
+
+    public double getValue(int dir, int index) {
+        return values[dir][index];
     }
 
     public static int[] getCounts(PeakList peakList) {
@@ -512,8 +549,42 @@ public class SpinSystem {
             if (bestIndex >= 0) {
                 int[] pt = counter.getCounts(bestIndex);
                 boolean validShifts = getShifts(nPeaks, resAtomPatterns, shiftList, pt);
+                setUserFields(resAtomPatterns, shiftList, pt);
                 writeShifts(shiftList);
                 saveShifts(shiftList);
+            }
+        }
+    }
+
+    void setUserFields(List<ResAtomPattern>[] resAtomPatterns, List<Double>[][] shiftList, int[] pt) {
+        StringBuilder sBuilder = new StringBuilder();
+
+        int j = 0;
+        for (int i = 0; i < resAtomPatterns.length; i++) {
+            int k = 0;
+            if (resAtomPatterns[i].size() > 1) {
+                k = pt[j++];
+            }
+            if (!resAtomPatterns[i].isEmpty()) {
+                ResAtomPattern resAtomPattern = resAtomPatterns[i].get(k);
+                if (resAtomPattern != null) {
+//                    System.out.println("Ip " + i + " " + resAtomPattern.toString());
+                    int nDim = resAtomPattern.atomTypeIndex.length;
+                    for (int iDim = 0; iDim < nDim; iDim++) {
+                        int iAtom = resAtomPattern.atomTypeIndex[iDim];
+                        int iRes = resAtomPattern.resType[iDim];
+                        List<Double> shifts = shiftList[iRes + 1][iAtom];
+                        sBuilder.setLength(0);
+                        sBuilder.append("i");
+                        if (iRes < 0) {
+                            sBuilder.append("-1");
+                        }
+                        sBuilder.append(".").append(ATOM_TYPES[iAtom]);
+                        resAtomPattern.peak.getPeakDim(iDim).setUser(sBuilder.toString());
+                        peakMatches.get(i).setIndex(iDim, iAtom);
+                        peakMatches.get(i).setIntraResidue(iDim, iRes == 0);
+                    }
+                }
             }
         }
     }
