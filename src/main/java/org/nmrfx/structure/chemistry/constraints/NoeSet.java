@@ -143,7 +143,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     public List<Noe> get() {
         return constraints;
     }
-    
+
     public static NoeSet getActiveSet() {
         return ACTIVE_SET;
     }
@@ -254,6 +254,7 @@ public class NoeSet implements ConstraintSet, Iterable {
 
     public void updateContributions(boolean useDistances, boolean requireActive) {
         this.useDistances = useDistances;
+        inactivateDiagonal();
         updateDistances(requireActive);
         findSymmetrical();
         findNetworks(false);
