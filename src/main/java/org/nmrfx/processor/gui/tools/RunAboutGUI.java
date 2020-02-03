@@ -41,6 +41,9 @@ import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.SpinSystem;
+import org.nmrfx.processor.datasets.peaks.SpinSystem.PeakMatch;
+import org.nmrfx.processor.gui.annotations.AnnoLine;
+import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
@@ -84,6 +87,8 @@ public class RunAboutGUI implements PeakListener {
     boolean useSpinSystem = false;
     Double[][] widths;
     int[] resOffsets = null;
+    List<List<String>> winPatterns = new ArrayList<>();
+    boolean[] intraResidue = null;
     int minOffset = 0;
 
     private RunAboutGUI(PeakNavigable peakNavigable) {
@@ -309,6 +314,10 @@ public class RunAboutGUI implements PeakListener {
         return currentPeak;
     }
 
+    public void setSpinSystems(List<SpinSystem> spinSystems) {
+        drawSpinSystems(spinSystems);
+    }
+
     public void setPeaks(List<Peak> peaks) {
         if ((peaks == null) || peaks.isEmpty()) {
             currentPeak = null;
@@ -419,32 +428,30 @@ public class RunAboutGUI implements PeakListener {
     }
 
     public void firstSpinSystem() {
-        List<Peak> peaks = new ArrayList<>();
+        List<SpinSystem> spinSystems = new ArrayList<>();
         currentSpinSystem = 0;
         for (int resOffset : resOffsets) {
             SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-            Peak peak = spinSystem != null ? spinSystem.getRootPeak() : null;
-            peaks.add(peak);
+            spinSystems.add(spinSystem);
         }
-        setPeaks(peaks);
+        setSpinSystems(spinSystems);
         System.out.println("first " + currentSpinSystem);
 
     }
 
     public void lastSpinSystem() {
-        List<Peak> peaks = new ArrayList<>();
+        List<SpinSystem> spinSystems = new ArrayList<>();
         currentSpinSystem = runAbout.getSpinSystems().getSize() - 1;
         for (int resOffset : resOffsets) {
             SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-            Peak peak = spinSystem != null ? spinSystem.getRootPeak() : null;
-            peaks.add(peak);
+            spinSystems.add(spinSystem);
         }
         System.out.println("last " + currentSpinSystem);
-        setPeaks(peaks);
+        setSpinSystems(spinSystems);
     }
 
     public void nextSpinSystem() {
-        List<Peak> peaks = new ArrayList<>();
+        List<SpinSystem> spinSystems = new ArrayList<>();
         if (currentSpinSystem >= 0) {
             currentSpinSystem++;
             if (currentSpinSystem >= runAbout.getSpinSystems().getSize()) {
@@ -452,16 +459,15 @@ public class RunAboutGUI implements PeakListener {
             }
             for (int resOffset : resOffsets) {
                 SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-                Peak peak = spinSystem != null ? spinSystem.getRootPeak() : null;
-                peaks.add(peak);
+                spinSystems.add(spinSystem);
             }
-            setPeaks(peaks);
+            setSpinSystems(spinSystems);
         }
         System.out.println("next " + currentSpinSystem);
     }
 
     public void previousSpinSystem() {
-        List<Peak> peaks = new ArrayList<>();
+        List<SpinSystem> spinSystems = new ArrayList<>();
         if (currentSpinSystem >= 0) {
             currentSpinSystem--;
             if (currentSpinSystem < 0) {
@@ -469,10 +475,9 @@ public class RunAboutGUI implements PeakListener {
             }
             for (int resOffset : resOffsets) {
                 SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-                Peak peak = spinSystem != null ? spinSystem.getRootPeak() : null;
-                peaks.add(peak);
+                spinSystems.add(spinSystem);
             }
-            setPeaks(peaks);
+            setSpinSystems(spinSystems);
         }
         System.out.println("prev " + currentSpinSystem);
     }
@@ -666,20 +671,56 @@ def getType(types, row, dDir):
     return ""
 
      */
-    Optional<String> getTypeName(List<Map<String, String>> typeList, String row, String dDir) {
+    Optional<String> getTypeName(List<Map<String, Object>> typeList, String row, String dDir) {
         Optional<String> typeName = Optional.empty();
         dDir = dDir.replace("h", "i");
         dDir = dDir.replace("j", "i");
         dDir = dDir.replace("k", "i");
-        for (Map<String, String> typeMap : typeList) {
-            String typeRow = typeMap.get("row");
-            String typeDir = typeMap.get("dir");
+        for (Map<String, Object> typeMap : typeList) {
+            String typeRow = (String) typeMap.get("row");
+            String typeDir = (String) typeMap.get("dir");
             if (row.equals(typeRow) && dDir.equals(typeDir)) {
-                typeName = Optional.of(typeMap.get("name"));
+                typeName = Optional.of((String) typeMap.get("name"));
                 break;
             }
         }
         return typeName;
+    }
+
+    List<String> getPatterns(List<Map<String, Object>> typeList, String row, String dDir) {
+        Optional<String> typeName = Optional.empty();
+        dDir = dDir.replace("h", "i");
+        dDir = dDir.replace("j", "i");
+        dDir = dDir.replace("k", "i");
+        List<String> patElems = new ArrayList<>();
+        for (Map<String, Object> typeMap : typeList) {
+            String typeRow = (String) typeMap.get("row");
+            String typeDir = (String) typeMap.get("dir");
+            if (row.equals(typeRow) && dDir.equals(typeDir)) {
+                patElems = (List<String>) typeMap.get("patterns");
+                break;
+            }
+        }
+        return patElems;
+    }
+
+    List<List<String>> getAtomsFromPatterns(List<String> patElems) {
+        List<List<String>> allAtomPats = new ArrayList<>();
+        for (int i = 0; i < patElems.size(); i++) {
+            String pattern = patElems.get(i).trim();
+            String[] resAtoms = pattern.split("\\.");
+            String[] atomPats = resAtoms[1].split(",");
+            List<String> atomPatList = new ArrayList<>();
+            allAtomPats.add(atomPatList);
+            for (String atomPat : atomPats) {
+                if (atomPat.endsWith("-") || atomPat.endsWith("+")) {
+                    int len = atomPat.length();
+                    atomPat = atomPat.substring(0,len - 1);
+                }
+                atomPatList.add(atomPat.toUpperCase());
+            }
+        }
+        return allAtomPats;
     }
 
     Optional<String> getDatasetName(Map<String, String> typeMap, String typeName) {
@@ -745,12 +786,13 @@ def getType(types, row, dDir):
             controller.setNCharts(nCharts);
             controller.arrange(rows.size());
             List<PolyChart> charts = controller.getCharts();
-            List<Map<String, String>> typeList = (List<Map<String, String>>) yamlData.get("types");
+            List<Map<String, Object>> typeList = (List<Map<String, Object>>) yamlData.get("types");
             Map<String, String> datasetMap = (Map<String, String>) yamlData.get("datasets");
             Map<String, List<String>> dimLabels = (Map<String, List<String>>) yamlData.get("dims");
             widths = new Double[nCharts][];
             minOffset = 0;
             resOffsets = new int[cols.size()];
+            intraResidue = new boolean[cols.size()];
             int iCol = 0;
 
             for (String col : cols) {
@@ -758,16 +800,19 @@ def getType(types, row, dDir):
                 char resChar = colElems[0].charAt(0);
                 int del = resChar - 'i';
                 System.out.println("col " + col + " " + del);
+                intraResidue[iCol] = !colElems[0].endsWith("-1");
                 resOffsets[iCol++] = del;
                 minOffset = Math.min(del, minOffset);
             }
             System.out.println(datasetMap);
             int iChart = 0;
+            winPatterns.clear();
             for (String row : rows) {
                 for (String col : cols) {
                     System.out.println("row " + row + " col " + col);
                     String[] colElems = col.split("\\.");
                     Optional<String> typeName = getTypeName(typeList, row, colElems[0]);
+                    winPatterns.add(getPatterns(typeList, row, colElems[0]));
                     List<String> dimNames = dimLabels.get(colElems[1]);
                     if (typeName.isPresent()) {
                         Optional<String> dName = getDatasetName(datasetMap, typeName.get());
@@ -819,36 +864,117 @@ def getType(types, row, dDir):
             resOffset = resOffset >= peaks.size() ? 0 : resOffset;
             iCol = iCol >= peaks.size() ? 0 : iCol;
             Peak peak = peaks.get(iCol);
+            chart.clearAnnotations();
             if ((peak != null) && (chart != null) && !chart.getDatasetAttributes().isEmpty()) {
-                DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
-                int cDim = chart.getNDim();
-                int aDim = dataAttr.nDim;
-                Double[] ppms = new Double[cDim];
-                for (int i = 0; i < aDim; i++) {
-                    PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
-                    if ((widths[iChart] != null) && (peakDim != null)) {
-                        ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
-                        if (widths[iChart][i] == null) {
-                            chart.full(i);
-                        } else {
-                            double pos;
-                            if (chart.getAxMode(i) == PPM) {
-                                pos = ppms[i];
-                            } else {
-                                int dDim = dataAttr.getDim(i);
-                                pos = dataAttr.getDataset().ppmToDPoint(dDim, ppms[i]);
-                                System.out.print(i + " " + aDim + " " + dDim + " " + ppms[i] + " " + pos);
-                            }
-                            chart.moveTo(i, pos, widths[iChart][i]);
-                        }
-                    } else {
-                        chart.full(i);
-                    }
-                }
-                chart.refresh();
+                refreshChart(chart, iChart, peak);
             }
             iChart++;
         }
+    }
+
+    void drawSpinSystems(List<SpinSystem> spinSystems) {
+        List<PolyChart> charts = controller.getCharts();
+        int iChart = 0;
+        for (PolyChart chart : charts) {
+            int iCol = iChart % resOffsets.length;
+            int resOffset = resOffsets[iCol] - minOffset;
+            resOffset = resOffset >= spinSystems.size() ? 0 : resOffset;
+            iCol = iCol >= spinSystems.size() ? 0 : iCol;
+            SpinSystem spinSystem = spinSystems.get(iCol);
+            if (spinSystem == null) {
+                iChart++;
+                continue;
+            }
+            Peak peak = spinSystem.getRootPeak();
+            chart.clearAnnotations();
+            List<List<String>> atomPatterns = getAtomsFromPatterns(winPatterns.get(iChart));
+            if ((peak != null) && (chart != null) && !chart.getDatasetAttributes().isEmpty()) {
+                refreshChart(chart, iChart, peak);
+                DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
+
+                for (PeakMatch peakMatch : spinSystem.peakMatches()) {
+                    PeakDim peakDim = peakMatch.getPeak().getPeakDim(dataAttr.getLabel(1));
+                    if (peakDim != null) {
+                        int iDim = peakDim.getSpectralDim();
+                        int atomIndex = peakMatch.getIndex(iDim);
+                        String aName = SpinSystem.getAtomName(atomIndex).toUpperCase();
+                        System.out.println("aname " + aName + " " + atomPatterns.get(iDim).toString());
+                        if (!atomPatterns.get(iDim).contains(aName)) {
+                            continue;
+
+                        }
+                        boolean isIntra = peakMatch.getIntraResidue(iDim);
+                        final double f1;
+                        final double f2;
+                        Color color;
+                        if (intraResidue[iCol]) {
+                            if (isIntra) {
+                                color = Color.BLUE;
+                                f1 = 0.5;
+                                f2 = 1.0;
+                            } else {
+                                color = Color.GREEN;
+                                f1 = 0.0;
+                                f2 = 0.5;
+                            }
+
+                        } else {
+                            if (isIntra) {
+                                continue;
+                            } else {
+                                color = Color.GREEN;
+                                f1 = 0.0;
+                                f2 = 1.0;
+                            }
+                        }
+                        if (isIntra && !intraResidue[iCol]) {
+                            continue;
+                        }
+                        if (isIntra && intraResidue[iCol]) {
+
+                        }
+
+                        double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomIndex);
+                        AnnoLine annoLine = new AnnoLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
+                        annoLine.setStroke(color);
+                        System.out.println("draw at " + iDim + " " + aName + " " + +ppm);
+                        chart.addAnnotation(annoLine);
+                        chart.refresh();
+                    }
+                }
+            }
+            iChart++;
+        }
+    }
+
+    void refreshChart(PolyChart chart, int iChart, Peak peak) {
+        DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
+        int cDim = chart.getNDim();
+        int aDim = dataAttr.nDim;
+        Double[] ppms = new Double[cDim];
+        for (int i = 0; i < aDim; i++) {
+            PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
+            System.out.println(i + " " + peak.getName() + " " + dataAttr.getLabel(i) + " " + peakDim);
+            if ((widths[iChart] != null) && (peakDim != null)) {
+                ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
+                if (widths[iChart][i] == null) {
+                    chart.full(i);
+                } else {
+                    double pos;
+                    if (chart.getAxMode(i) == PPM) {
+                        pos = ppms[i];
+                    } else {
+                        int dDim = dataAttr.getDim(i);
+                        pos = dataAttr.getDataset().ppmToDPoint(dDim, ppms[i]);
+                        System.out.println(i + " " + aDim + " " + dDim + " " + ppms[i] + " " + pos);
+                    }
+                    chart.moveTo(i, pos, widths[iChart][i]);
+                }
+            } else {
+                chart.full(i);
+            }
+        }
+        chart.refresh();
     }
 
     /*
