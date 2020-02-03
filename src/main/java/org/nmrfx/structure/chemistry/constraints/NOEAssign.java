@@ -216,6 +216,9 @@ public class NOEAssign {
                 ArrayList res1s = new ArrayList();
                 peakDim = peak.getPeakDim(matchCriteria[1].getDim());
                 ppm = peakDim.getChemShift();
+                if (Math.abs(ppm-matchCriteria[0].getPpm()) < 0.01) {
+                    continue; // diagonal fixme
+                }
                 matchCriteria[1].setPPM(ppm);
                 //                ArrayList res2s = peakDim.getResonances();
                 ArrayList res2s = new ArrayList();
@@ -314,11 +317,11 @@ public class NOEAssign {
                             if (nMan > 0) {
                                 type = Constraint.GenTypes.AUTOPLUS;
                             }
-                            Noe.NoeMatch match = new Noe.NoeMatch(sp1, sp2, type, idResult.getPPMError(1.0));
-                            map.put(name, match);
+                                Noe.NoeMatch match = new Noe.NoeMatch(sp1, sp2, type, idResult.getPPMError(1.0));
+                                map.put(name, match);
+                            }
                         }
                     }
-                }
                 int nPossible = map.size();
                 if (nPossible > maxAmbig) {
                     nMaxAmbig++;
