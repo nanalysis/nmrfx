@@ -261,6 +261,7 @@ def addPeak():
                     atomSpec = resName+'.'+atomName
                     labels.append(atomSpec)
         #print labels
+        height = float(ornaments['peak','height'][1])
         ppms = ornaments['peak','pos']
         ppms = [float(ppm) for ppm in ppms]
         eppms = [0.0]*len(ppms)
@@ -274,7 +275,7 @@ def addPeak():
         if len(labels) == 0:
             labels = ['']*len(ppms)
         print labels
-        peakgen.addPeak(peakList, ppms, eppms, widths, bounds, 1.0, labels)
+        peakgen.addPeak(peakList, ppms, eppms, widths, bounds, height/1.0e-6, labels)
     #print ornaments
 
 def processParams(line):
