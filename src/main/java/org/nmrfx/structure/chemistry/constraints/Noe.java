@@ -167,9 +167,13 @@ public class Noe implements Constraint, Serializable {
         sBuild.append(peak != null ? peak.getName() : "").append(sepChar);
         sBuild.append(idNum).append(sepChar);
         sBuild.append(genType).append(sepChar);
-        sBuild.append(String.format("%.2f", contribution)).append(sepChar);
+        sBuild.append(String.format("%3d", getDeltaRes())).append(sepChar);
+        sBuild.append(String.format("%.2f", ppmError)).append(sepChar);
+        sBuild.append(String.format("%b", symmetrical)).append(sepChar);
         sBuild.append(String.format("%.2f", networkValue)).append(sepChar);
-        sBuild.append(String.format("%.2f", ppmError));
+        sBuild.append(String.format("%.2f", disContrib)).append(sepChar);
+        sBuild.append(String.format("%10s", getActivityFlags())).append(sepChar);
+        sBuild.append(String.format("%.2f", contribution));
         return sBuild.toString();
     }
 
@@ -837,4 +841,18 @@ public class Noe implements Constraint, Serializable {
         return peak;
     }
 
+    public int getDeltaRes() {
+        Entity e1 = spg1.getFirstSet().atom.getEntity();
+        Entity e2 = spg2.getFirstSet().atom.getEntity();
+        int iRes1 = 0;
+        int iRes2 = 0;
+        // fixme what about multiple polymers or other entities
+        if (e1 instanceof Residue) {
+            iRes1 = ((Residue) e1).iRes;
+        }
+        if (e2 instanceof Residue) {
+            iRes2 = ((Residue) e2).iRes;
+        }
+        return Math.abs(iRes1 - iRes2);
+    }
 }
