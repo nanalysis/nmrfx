@@ -67,8 +67,8 @@ public class NMRStarReader {
     }
 
     public static void read(String starFileName) throws ParseException {
-         File file = new File(starFileName);
-         read(file);
+        File file = new File(starFileName);
+        read(file);
     }
 
     public static void read(File starFile) throws ParseException {
@@ -94,15 +94,16 @@ public class NMRStarReader {
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
         Loop loop = saveframe.getLoop("_Chem_comp_atom");
         if (loop == null) {
-            throw new ParseException("No \"_Chem_comp_atom\" loop in \"" + saveframe.getName() + "\"");
-        }
-        List<String> idColumn = loop.getColumnAsList("Atom_ID");
-        List<String> typeColumn = loop.getColumnAsList("Type_symbol");
-        for (int i = 0; i < idColumn.size(); i++) {
-            String aName = (String) idColumn.get(i);
-            String aType = (String) typeColumn.get(i);
-            Atom atom = new Atom(aName, aType);
-            compound.addAtom(atom);
+            System.out.println("No \"_Chem_comp_atom\" loop in \"" + saveframe.getName() + "\"");
+        } else {
+            List<String> idColumn = loop.getColumnAsList("Atom_ID");
+            List<String> typeColumn = loop.getColumnAsList("Type_symbol");
+            for (int i = 0; i < idColumn.size(); i++) {
+                String aName = (String) idColumn.get(i);
+                String aType = (String) typeColumn.get(i);
+                Atom atom = new Atom(aName, aType);
+                compound.addAtom(atom);
+            }
         }
         compound.updateNames();
         loop = saveframe.getLoop("_Chem_comp_bond");
@@ -149,12 +150,14 @@ public class NMRStarReader {
                 ccSaveFrameName = "save_" + resName;
                 ccSaveframe = saveframe.getSTAR3().getSaveframe(ccSaveFrameName);
             }
-            if (ccSaveframe == null) {
-                throw new ParseException("No save frame: " + ccSaveFrameName);
+            if (ccSaveframe != null) {
+                compound.setNumber(seqNumber);
+                updateFromSTAR3ChemComp(ccSaveframe, compound);
+            } else {
+                System.out.println("No save frame: " + ccSaveFrameName);
             }
-            compound.setNumber(seqNumber);
-            updateFromSTAR3ChemComp(ccSaveframe, compound);
         }
+
     }
 
     public static void processLoop(STAR3 star3, List tagList) {
@@ -162,15 +165,17 @@ public class NMRStarReader {
 
     static void finishSaveFrameProcessing(final NMRStarReader nmrStar, Saveframe saveframe, Compound compound, String mapID) throws ParseException {
         Loop loop = saveframe.getLoop("_Entity_comp_index");
-        if (loop == null) {
-            throw new ParseException("No \"_Entity_comp_index\" loop");
+        if (loop != null) {
+            List<String> idColumn = loop.getColumnAsList("ID");
+            List<String> authSeqIDColumn = loop.getColumnAsList("Auth_seq_ID");
+            List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
+            List<String> compIDColumn = loop.getColumnAsList("Comp_ID");
+            nmrStar.addCompound(mapID, compound);
+            addComponents(saveframe, idColumn, authSeqIDColumn, compIDColumn, entityIDColumn, compound);
+        } else {
+            System.out.println("No \"_Entity_comp_index\" loop");
         }
-        List<String> idColumn = loop.getColumnAsList("ID");
-        List<String> authSeqIDColumn = loop.getColumnAsList("Auth_seq_ID");
-        List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
-        List<String> compIDColumn = loop.getColumnAsList("Comp_ID");
-        nmrStar.addCompound(mapID, compound);
-        addComponents(saveframe, idColumn, authSeqIDColumn, compIDColumn, entityIDColumn, compound);
+
     }
 
     public void finishSaveFrameProcessing(final Polymer polymer, final Saveframe saveframe, final String nomenclature, final boolean capped) throws ParseException {
@@ -186,7 +191,7 @@ public class NMRStarReader {
         }
         Loop loop = saveframe.getLoop("_Entity_comp_index");
         if (loop == null) {
-            throw new ParseException("No \"_Entity_comp_index\" loop");
+            System.out.println("No \"_Entity_comp_index\" loop");
         } else {
             List<String> idColumn = loop.getColumnAsList("ID");
             List<String> authSeqIDColumn = loop.getColumnAsList("Auth_seq_ID");
@@ -442,7 +447,7 @@ public class NMRStarReader {
         String entityAssemblyName = STAR3.getTokenFromMap(tagMap, "Entity_assembly_name");
         String asymLabel = STAR3.getTokenFromMap(tagMap, "Asym_ID", entityAssemblyName);
         if (asymLabel.equals(".")) {
-            asymLabel = String.valueOf((char) ('A'+index));
+            asymLabel = String.valueOf((char) ('A' + index));
         }
         String pdbLabel = STAR3.getTokenFromMap(tagMap, "PDB_chain_ID", "A");
         if (pdbLabel.equals(".")) {
@@ -461,45 +466,47 @@ public class NMRStarReader {
         String saveFrameName = "save_" + entitySaveFrameLabel;
         System.err.println("process entity " + saveFrameName);
         Saveframe saveframe = (Saveframe) star3.getSaveFrames().get(saveFrameName);
-        if (saveframe == null) {
-            throw new ParseException("Saveframe \"" + saveFrameName + "\" doesn't exist");
-        }
-        String type = saveframe.getValue("_Entity", "Type");
-        String name = saveframe.getValue("_Entity", "Name");
-        String nomenclature = saveframe.getValue("_Entity", "Nomenclature", "");
-        if (nomenclature.equals("")) {
-            nomenclature = "IUPAC";
-        }
-        String cappedString = saveframe.getValue("_Entity", "Capped", "");
-        boolean capped = true;
-        if (cappedString.equalsIgnoreCase("no")) {
-            capped = false;
-        }
-        if (type.equals("polymer")) {
-            Entity entity = molecule.getEntity(entityAssemblyName);
-            if (entity == null) {
-                Polymer polymer = new Polymer(entitySaveFrameLabel, entityAssemblyName);
-                polymer.setIDNum(entityID);
-                polymer.assemblyID = entityAssemblyID;
-                polymer.setPDBChain(pdbLabel);
-                entities.put(entityAssemblyIDString + "." + entityIDString, polymer);
-                molecule.addEntity(polymer, asymLabel);
-                finishSaveFrameProcessing(polymer, saveframe, nomenclature, capped);
+        if (saveframe != null) {
+
+            String type = saveframe.getValue("_Entity", "Type");
+            String name = saveframe.getValue("_Entity", "Name");
+            String nomenclature = saveframe.getValue("_Entity", "Nomenclature", "");
+            if (nomenclature.equals("")) {
+                nomenclature = "IUPAC";
+            }
+            String cappedString = saveframe.getValue("_Entity", "Capped", "");
+            boolean capped = true;
+            if (cappedString.equalsIgnoreCase("no")) {
+                capped = false;
+            }
+            if (type != null && type.equals("polymer")) {
+                Entity entity = molecule.getEntity(entityAssemblyName);
+                if (entity == null) {
+                    Polymer polymer = new Polymer(entitySaveFrameLabel, entityAssemblyName);
+                    polymer.setIDNum(entityID);
+                    polymer.assemblyID = entityAssemblyID;
+                    polymer.setPDBChain(pdbLabel);
+                    entities.put(entityAssemblyIDString + "." + entityIDString, polymer);
+                    molecule.addEntity(polymer, asymLabel);
+                    finishSaveFrameProcessing(polymer, saveframe, nomenclature, capped);
+                } else {
+                    molecule.addCoordSet(asymLabel, entity);
+                }
             } else {
-                molecule.addCoordSet(asymLabel, entity);
+                Entity entity = molecule.getEntity(name);
+                if (entity == null) {
+                    Compound compound = new Compound("1", entityAssemblyName, name);
+                    compound.setIDNum(1);
+                    compound.assemblyID = entityAssemblyID;
+                    compound.setPDBChain(pdbLabel);
+                    entities.put(entityAssemblyIDString + "." + entityIDString, compound);
+                    molecule.addEntity(compound, asymLabel);
+                    String mapID = entityAssemblyID + "." + entityID + "." + 1;
+                    finishSaveFrameProcessing(this, saveframe, compound, mapID);
+                }
             }
         } else {
-            Entity entity = molecule.getEntity(name);
-            if (entity == null) {
-                Compound compound = new Compound("1", entityAssemblyName, name);
-                compound.setIDNum(1);
-                compound.assemblyID = entityAssemblyID;
-                compound.setPDBChain(pdbLabel);
-                entities.put(entityAssemblyIDString + "." + entityIDString, compound);
-                molecule.addEntity(compound, asymLabel);
-                String mapID = entityAssemblyID + "." + entityID + "." + 1;
-                finishSaveFrameProcessing(this, saveframe, compound, mapID);
-            }
+            System.out.println("Saveframe \"" + saveFrameName + "\" doesn't exist");
         }
     }
 
@@ -669,7 +676,7 @@ public class NMRStarReader {
                     }
                 }
                 if (spg == null) {
-                    throw new ParseException("invalid spatial set in assignments saveframe \"" + mapID + "." + atomName + "\"");
+                    System.out.println("invalid spatial set in assignments saveframe \"" + mapID + "." + atomName + "\"");
                 }
             } else {
                 System.err.println("invalid compound in assignments saveframe \"" + mapID + "\"");
@@ -899,70 +906,76 @@ public class NMRStarReader {
             if (loop == null) {
                 throw new ParseException("No \"_Peak_char\" loop");
             }
-
-            List<String> peakIdColumn = loop.getColumnAsList("Peak_ID");
-            List<String> sdimColumn = loop.getColumnAsList("Spectral_dim_ID");
-            String[] peakCharStrings = Peak.getSTAR3CharStrings();
-            for (int j = 0; j < peakCharStrings.length; j++) {
-                String tag = peakCharStrings[j].substring(peakCharStrings[j].indexOf(".") + 1);
-                if (tag.equals("Sf_ID") || tag.equals("Entry_ID") || tag.equals("Spectral_peak_list_ID")) {
-                    continue;
-                }
-                if (tag.equals("Resonance_ID") || tag.equals("Resonance_count")) {
-                    continue;
-                }
-                List<String> column = loop.getColumnAsListIfExists(tag);
-                if (column != null) {
-                    for (int i = 0, n = column.size(); i < n; i++) {
-                        int idNum = Integer.parseInt((String) peakIdColumn.get(i));
-                        int sDim = Integer.parseInt((String) sdimColumn.get(i)) - 1;
-                        String value = (String) column.get(i);
-                        if (!value.equals(".") && !value.equals("?")) {
-                            Peak peak = peakList.getPeakByID(idNum);
-                            PeakDim peakDim = peak.getPeakDim(sDim);
-                            peakDim.setAttribute(tag, value);
+            if (loop != null) {
+                List<String> peakIdColumn = loop.getColumnAsList("Peak_ID");
+                List<String> sdimColumn = loop.getColumnAsList("Spectral_dim_ID");
+                String[] peakCharStrings = Peak.getSTAR3CharStrings();
+                for (int j = 0; j < peakCharStrings.length; j++) {
+                    String tag = peakCharStrings[j].substring(peakCharStrings[j].indexOf(".") + 1);
+                    if (tag.equals("Sf_ID") || tag.equals("Entry_ID") || tag.equals("Spectral_peak_list_ID")) {
+                        continue;
+                    }
+                    if (tag.equals("Resonance_ID") || tag.equals("Resonance_count")) {
+                        continue;
+                    }
+                    List<String> column = loop.getColumnAsListIfExists(tag);
+                    if (column != null) {
+                        for (int i = 0, n = column.size(); i < n; i++) {
+                            int idNum = Integer.parseInt((String) peakIdColumn.get(i));
+                            int sDim = Integer.parseInt((String) sdimColumn.get(i)) - 1;
+                            String value = (String) column.get(i);
+                            if (!value.equals(".") && !value.equals("?")) {
+                                Peak peak = peakList.getPeakByID(idNum);
+                                PeakDim peakDim = peak.getPeakDim(sDim);
+                                if (peakDim != null) {
+                                    peakDim.setAttribute(tag, value);
+                                }
+                            }
                         }
                     }
                 }
-            }
-            loop = saveframe.getLoop("_Assigned_peak_chem_shift");
-            if (loop != null) {
-                List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
-                List<String> spectralDimColumn = loop.getColumnAsList("Spectral_dim_ID");
-                List<String> valColumn = loop.getColumnAsList("Val");
-                List<String> resonanceColumn = loop.getColumnAsList("Resonance_ID");
-                for (int i = 0, n = peakidColumn.size(); i < n; i++) {
-                    String value = null;
-                    int idNum = 0;
-                    if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
-                        idNum = NvUtil.toInt(value);
-                    } else {
-                        //throw new TclException("Invalid peak id value at row \""+i+"\"");
-                        continue;
-                    }
-                    int sDim = 0;
-                    long resonanceID = -1;
-                    if ((value = NvUtil.getColumnValue(spectralDimColumn, i)) != null) {
-                        sDim = NvUtil.toInt(value) - 1;
-                    } else {
-                        throw new ParseException("Invalid spectral dim value at row \"" + i + "\"");
-                    }
-                    if ((value = NvUtil.getColumnValue(valColumn, i)) != null) {
-                        NvUtil.toFloat(value);  // fixme shouldn't we use this
-                    }
-                    if ((value = NvUtil.getColumnValue(resonanceColumn, i)) != null) {
-                        resonanceID = NvUtil.toLong(value);
-                    }
-                    Peak peak = peakList.getPeakByID(idNum);
-                    PeakDim peakDim = peak.getPeakDim(sDim);
-                    if (resonanceID != -1) {
-                        addResonance(resonanceID, peakDim);
-                    }
+                loop = saveframe.getLoop("_Assigned_peak_chem_shift");
+
+                if (loop != null) {
+                    List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
+                    List<String> spectralDimColumn = loop.getColumnAsList("Spectral_dim_ID");
+                    List<String> valColumn = loop.getColumnAsList("Val");
+                    List<String> resonanceColumn = loop.getColumnAsList("Resonance_ID");
+                    for (int i = 0, n = peakidColumn.size(); i < n; i++) {
+                        String value = null;
+                        int idNum = 0;
+                        if ((value = NvUtil.getColumnValue(peakidColumn, i)) != null) {
+                            idNum = NvUtil.toInt(value);
+                        } else {
+                            //throw new TclException("Invalid peak id value at row \""+i+"\"");
+                            continue;
+                        }
+                        int sDim = 0;
+                        long resonanceID = -1;
+                        if ((value = NvUtil.getColumnValue(spectralDimColumn, i)) != null) {
+                            sDim = NvUtil.toInt(value) - 1;
+                        } else {
+                            throw new ParseException("Invalid spectral dim value at row \"" + i + "\"");
+                        }
+                        if ((value = NvUtil.getColumnValue(valColumn, i)) != null) {
+                            NvUtil.toFloat(value);  // fixme shouldn't we use this
+                        }
+                        if ((value = NvUtil.getColumnValue(resonanceColumn, i)) != null) {
+                            resonanceID = NvUtil.toLong(value);
+                        }
+                        Peak peak = peakList.getPeakByID(idNum);
+                        PeakDim peakDim = peak.getPeakDim(sDim);
+                        if (resonanceID != -1) {
+                            addResonance(resonanceID, peakDim);
+                        }
 //                    Resonance res = resFactory.get(resonanceID);
 //                    if (res == null) {
 //                        resFactory.build(resonanceID);
 //                    }
 //                    peakDim.setResonance(resonanceID);
+                    }
+                } else {
+                    System.out.println("No \"Assigned Peak Chem Shift\" loop");
                 }
             }
         }
@@ -970,79 +983,82 @@ public class NMRStarReader {
 
     public void processChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_Atom_chem_shift");
-        if (loop == null) {
-            throw new ParseException("No \"_Atom_chem_shift\" loop");
-        }
-        List<String> entityAssemblyIDColumn = loop.getColumnAsList("Entity_assembly_ID");
-        List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
-        List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
-        List<String> atomColumn = loop.getColumnAsList("Atom_ID");
-        List<String> valColumn = loop.getColumnAsList("Val");
-        List<String> valErrColumn = loop.getColumnAsList("Val_err");
-        List<String> resColumn = loop.getColumnAsList("Resonance_ID");
-        ResonanceFactory resFactory = PeakDim.resFactory;
-        for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
-            String iEntity = (String) entityIDColumn.get(i);
-            String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
-            if (iEntity.equals("?")) {
-                continue;
-            }
-            String iRes = (String) compIdxIDColumn.get(i);
-            String atomName = (String) atomColumn.get(i);
-            String value = (String) valColumn.get(i);
-            String valueErr = (String) valErrColumn.get(i);
-            String resIDStr = ".";
-            if (resColumn != null) {
-                resIDStr = (String) resColumn.get(i);
-            }
-            if (entityAssemblyID.equals(".")) {
-                entityAssemblyID = "1";
-            }
-            String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
-            Compound compound = (Compound) Molecule.compoundMap.get(mapID);
-            if (compound == null) {
-                //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
-                System.err.println("invalid compound in assignments saveframe \"" + mapID + "\"");
-                continue;
-            }
-            Atom atom = compound.getAtomLoose(atomName);
-            if (atom == null) {
-                if (atomName.equals("H")) {
-                    atom = compound.getAtom(atomName + "1");
+        if (loop != null) {
+            List<String> entityAssemblyIDColumn = loop.getColumnAsList("Entity_assembly_ID");
+            List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
+            List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
+            List<String> atomColumn = loop.getColumnAsList("Atom_ID");
+            List<String> valColumn = loop.getColumnAsList("Val");
+            List<String> valErrColumn = loop.getColumnAsList("Val_err");
+            List<String> resColumn = loop.getColumnAsList("Resonance_ID");
+            ResonanceFactory resFactory = PeakDim.resFactory;
+            for (int i = 0; i < entityAssemblyIDColumn.size(); i++) {
+                String iEntity = (String) entityIDColumn.get(i);
+                String entityAssemblyID = (String) entityAssemblyIDColumn.get(i);
+                if (iEntity.equals("?")) {
+                    continue;
                 }
-            }
-            if (atom == null) {
-                throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
-            }
-            SpatialSet spSet = atom.spatialSet;
-            if (ppmSet < 0) {
-                ppmSet = 0;
-            }
-            int structureNum = ppmSet;
-            if (spSet == null) {
-                throw new ParseException("invalid spatial set in assignments saveframe \"" + mapID + "." + atomName + "\"");
-            }
-            try {
-                spSet.setPPM(structureNum, Double.parseDouble(value), false);
-                if (!valueErr.equals(".")) {
-                    spSet.setPPM(structureNum, Double.parseDouble(valueErr), true);
+                String iRes = (String) compIdxIDColumn.get(i);
+                String atomName = (String) atomColumn.get(i);
+                String value = (String) valColumn.get(i);
+                String valueErr = (String) valErrColumn.get(i);
+                String resIDStr = ".";
+                if (resColumn != null) {
+                    resIDStr = (String) resColumn.get(i);
                 }
-            } catch (NumberFormatException nFE) {
-                throw new ParseException("Invalid chemical shift value (not double) \"" + value + "\" error \"" + valueErr + "\"");
-            }
-            if (hasResonances && !resIDStr.equals(".")) {
-                long resID = Long.parseLong(resIDStr);
-                if (resID >= 0) {
-                    AtomResonance resonance = (AtomResonance) resFactory.get(resID);
-                    if (resonance == null) {
-                        throw new ParseException("atom elem resonance " + resIDStr + ": invalid resonance");
+                if (entityAssemblyID.equals(".")) {
+                    entityAssemblyID = "1";
+                }
+                String mapID = entityAssemblyID + "." + iEntity + "." + iRes;
+                Compound compound = (Compound) Molecule.compoundMap.get(mapID);
+                if (compound == null) {
+                    //throw new ParseException("invalid compound in assignments saveframe \""+mapID+"\"");
+                    System.err.println("invalid compound in assignments saveframe \"" + mapID + "\"");
+                    continue;
+                }
+                Atom atom = compound.getAtomLoose(atomName);
+                if (atom == null) {
+                    if (atomName.startsWith("H")) {
+                        atom = compound.getAtom(atomName + "1");
                     }
+                }
+                if (atom == null) {
+                    atom = new Atom(atomName);
+                    compound.addAtom(atom);
+                }
+                if (atom == null) {
+                    throw new ParseException("invalid atom in assignments saveframe \"" + mapID + "." + atomName + "\"");
+                }
+                SpatialSet spSet = atom.spatialSet;
+                if (ppmSet < 0) {
+                    ppmSet = 0;
+                }
+                int structureNum = ppmSet;
+                if (spSet == null) {
+                    throw new ParseException("invalid spatial set in assignments saveframe \"" + mapID + "." + atomName + "\"");
+                }
+                try {
+                    spSet.setPPM(structureNum, Double.parseDouble(value), false);
+                    if (!valueErr.equals(".")) {
+                        spSet.setPPM(structureNum, Double.parseDouble(valueErr), true);
+                    }
+                } catch (NumberFormatException nFE) {
+                    throw new ParseException("Invalid chemical shift value (not double) \"" + value + "\" error \"" + valueErr + "\"");
+                }
+                if (hasResonances && !resIDStr.equals(".")) {
+                    long resID = Long.parseLong(resIDStr);
+                    if (resID >= 0) {
+                        AtomResonance resonance = (AtomResonance) resFactory.get(resID);
+                        if (resonance == null) {
+                            throw new ParseException("atom elem resonance " + resIDStr + ": invalid resonance");
+                        }
 //                    ResonanceSet resonanceSet = resonance.getResonanceSet();
 //                    if (resonanceSet == null) {
 //                        resonanceSet = new ResonanceSet(resonance);
 //                    }
-                    atom.setResonance(resonance);
-                    resonance.setAtom(atom);
+                        atom.setResonance(resonance);
+                        resonance.setAtom(atom);
+                    }
                 }
             }
         }
@@ -1236,10 +1252,15 @@ public class NMRStarReader {
         for (int i = 0; i < entityAssemblyIDColumns[0].size(); i++) {
             SpatialSet[] spSets = new SpatialSet[4];
             for (int iAtom = 0; iAtom < 2; iAtom++) {
-                spSets[iAtom] = getSpatialSet(entityAssemblyIDColumns[iAtom], entityIDColumns[iAtom], compIdxIDColumns[iAtom], atomColumns[iAtom], resonanceColumns[iAtom], i).getFirstSet();
+                SpatialSetGroup spG = getSpatialSet(entityAssemblyIDColumns[iAtom], entityIDColumns[iAtom], compIdxIDColumns[iAtom], atomColumns[iAtom], resonanceColumns[iAtom], i);
+                if (spG != null) {
+                    spSets[iAtom] = spG.getFirstSet();
+                    if (errColumn.get(i) != null) {
+                        RDC aCon = new RDC(rdcSet, spSets[0], spSets[1], valColumn.get(i), errColumn.get(i));
+                        rdcSet.add(aCon);
+                    }
+                }
             }
-            RDC aCon = new RDC(rdcSet, spSets[0], spSets[1], valColumn.get(i), errColumn.get(i));
-            rdcSet.add(aCon);
         }
     }
     

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  * SpatialSet.java
  *
  * Created on October 3, 2003, 8:13 PM
@@ -262,15 +262,14 @@ public class SpatialSet {
             return (null);
         }
     }
-    
+
     public void setRefPPM(int structureNum, double value) {
         if (refPPMV == null) {
             refPPMV = new PPMv(value);
-        }
-        else{
+        } else {
             refPPMV.setValue(value);
         }
-        refPPMV.setValid(true,atom);
+        refPPMV.setValid(true, atom);
     }
 
     public void setRefError(int structureNum, double value) {
@@ -278,7 +277,7 @@ public class SpatialSet {
             refPPMV.setError(value);
         }
     }
-    
+
     public void setRefPPMValidity(boolean validity) {
         if (refPPMV == null) {
             refPPMV = new PPMv(0.0);
@@ -333,9 +332,11 @@ public class SpatialSet {
         if (atom.isMethyl()) {
             Atom[] partners = atom.getPartners(1, 1);
             for (Atom partner : partners) {
-                SpatialSet spatialSet = (SpatialSet) partner.spatialSet;
-                if ((spatialSet != null) && (spatialSet != this)) {
-                    spSets.add(spatialSet);
+                if (partner != null) {
+                    SpatialSet spatialSet = (SpatialSet) partner.spatialSet;
+                    if ((spatialSet != null) && (spatialSet != this)) {
+                        spSets.add(spatialSet);
+                    }
                 }
             }
         }
@@ -425,7 +426,7 @@ public class SpatialSet {
         this.green = green;
         this.blue = blue;
     }
-    
+
     /**
      * Creates a new instance of SpatialSet
      */

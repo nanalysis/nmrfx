@@ -151,10 +151,10 @@ public class Polymer extends Entity {
             renumber();
         }
     }
-    
+
     private void renumber() {
         int iRes = 0;
-        for (Residue res:residueList) {
+        for (Residue res : residueList) {
             res.iRes = iRes++;
         }
     }
@@ -162,7 +162,7 @@ public class Polymer extends Entity {
     public List<Residue> getResidues() {
         return Collections.unmodifiableList(residueList);
     }
-    
+
     public int renumberResidue(String oldNumber, String newNumber) {
         oldNumber = oldNumber.toLowerCase();
         newNumber = newNumber.toLowerCase();
@@ -263,21 +263,26 @@ public class Polymer extends Entity {
             String atom2Name = (String) atom2IDColumn.get(i);
             Residue residue1 = getResidue(comp1);
             Residue residue2 = getResidue(comp2);
-            Atom atom1 = residue1.getAtom(atom1Name);
-            Atom atom2 = residue2.getAtom(atom2Name);
-            Order order = Order.SINGLE;
-            if (orderString.toUpperCase().startsWith("SING")) {
-                order = Order.SINGLE;
-            } else if (orderString.toUpperCase().startsWith("DOUB")) {
-                order = Order.DOUBLE;
-            } else if (orderString.toUpperCase().startsWith("TRIP")) {
-                order = Order.TRIPLE;
-            } else {
-                order = Order.SINGLE;
-            }
 
-            Atom.addBond(atom1, atom2, order, true);
+            if (residue1 != null && residue2 != null) {
+
+                Atom atom1 = residue1.getAtom(atom1Name);
+                Atom atom2 = residue2.getAtom(atom2Name);
+                Order order = Order.SINGLE;
+                if (orderString.toUpperCase().startsWith("SING")) {
+                    order = Order.SINGLE;
+                } else if (orderString.toUpperCase().startsWith("DOUB")) {
+                    order = Order.DOUBLE;
+                } else if (orderString.toUpperCase().startsWith("TRIP")) {
+                    order = Order.TRIPLE;
+                } else {
+                    order = Order.SINGLE;
+                }
+
+                Atom.addBond(atom1, atom2, order, true);
+            }
         }
+        
     }
 
     public void removeAtoms(List<String> compIndexIDColumn, List<String> atomIDColumn) {
