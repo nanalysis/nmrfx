@@ -56,7 +56,6 @@ import org.nmrfx.structure.chemistry.predict.Predictor;
 
 public class EnergyLists {
 
-    private static boolean PARM_FILE_LOADED = false;
     public ArrayList<AtomPair> atomList = new ArrayList<AtomPair>();
     public ArrayList<AtomPair> atomList2 = new ArrayList<AtomPair>();
     public ArrayList<CompoundPair> compoundPairList = new ArrayList<>();
@@ -89,7 +88,6 @@ public class EnergyLists {
     boolean[] stochasticResidues = null;
     boolean constraintsSetup = false;
     public static double[][][] irpTable;
-    public static Map<String, Integer> torsionMap;
 
     public EnergyLists() {
     }
@@ -459,6 +457,7 @@ public class EnergyLists {
     public void makeCompoundList(Molecule molecule) {
         try {
             AtomEnergyProp.readPropFile();
+            AtomEnergyProp.makeIrpMap();
         } catch (IOException ex) {
             Logger.getLogger(EnergyLists.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -732,13 +731,13 @@ public class EnergyLists {
             }
             if (forceWeight.getIrp() > 0.0) {
                 for (Atom atom : angleAtoms) {
-                    if ((atom.irpIndex > 1) && atom.rotActive) {
-                        AtomEnergy energy = AtomMath.calcIrpEnergy(atom.daughterAtom, forceWeight, false);
-                        irpEnergy += energy.getEnergy();
+                    if ((atom.irpIndex > 1) && (atom.irpIndex < 9999) && atom.rotActive) {
+                        double eVal = calcIRP(atom);
+                        irpEnergy += eVal;
                         nIrp++;
-                        if (energy.getEnergy() > limitVal) {
+                        if (eVal > limitVal) {
                             writer.format("Irp: %10s %5.2f %5.2f\n", atom.getFullName(), toDeg * atom.dihedralAngle,
-                                    energy.getEnergy());
+                                    eVal);
                         }
                     }
                 }
@@ -822,75 +821,35 @@ public class EnergyLists {
 
     }
 
-    public static void makeIrpMap() throws FileNotFoundException, IOException {
-        if (!PARM_FILE_LOADED) {
-            makeIrpMap("reslib_iu/parm15ipq_10.3.dat");
-        }
-    }
-
-    public static void makeIrpMap(String fileName) throws FileNotFoundException, IOException {
-        LineNumberReader lineReader;
-        PARM_FILE_LOADED = true;
-        BufferedReader bf;
-        if (fileName.startsWith("reslib_iu")) {
-            ClassLoader cl = ClassLoader.getSystemClassLoader();
-            InputStream istream = cl.getResourceAsStream(fileName);
-            bf = new BufferedReader(new InputStreamReader(istream));
-        } else {
-            bf = new BufferedReader(new FileReader(fileName));
-        }
-
-        lineReader = new LineNumberReader(bf);
-        torsionMap = new HashMap<>();
-        List<List<double[]>> torsionMasterList = new ArrayList<>();
-        List<double[]> torsionList = new ArrayList<>();
-        int nVals = 1;
-        while (true) {
-            String line = lineReader.readLine();
-            if (line != null) {
-                if (line.length() > 40) {
-                    if (line.substring(0, 11).split("-").length == 4 & !line.substring(14, 15).equals(" ")) {
-                        String key = line.substring(0, 11).trim();
-                        String[] keyTrim = new String[4];
-                        for (int i=0; i<key.length(); i+=3) {
-                            if (i+2<key.length()) {
-                                keyTrim[i/3] = key.substring(i, i+2).trim();
-                            } else {
-                                keyTrim[i/3] = key.substring(i, key.length()).trim();
-                            }
-                        }
-                        key = String.join("-", keyTrim);
-                        double barrier = Double.parseDouble(line.substring(19, 28).trim());
-                        double phase = Double.parseDouble(line.substring(29, 34).trim());
-                        double periodicity = Math.abs(Double.parseDouble(line.substring(35, 40).trim()));
-                        if (!torsionMap.keySet().contains(key)) {
-                            torsionList = new ArrayList<>();
-                            torsionMasterList.add(torsionList);
-                            torsionMap.put(key, torsionMasterList.size() - 1);
-                        } else {
-                            int index = torsionMap.get(key);
-                            torsionList = torsionMasterList.get(index);
-                        }
-                        double[] vals = {barrier, periodicity, phase};
-                        nVals = vals.length;
-                        torsionList.add(vals);
-                    }
-                }
-            } else {
-                break;
+    public double calcIRP(Atom atom) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
+        double weight = forceWeight.getIrp();
+        double energyTotal = 0.0;
+        Atom[] atoms = new Atom[4];
+        atoms[3] = atom.daughterAtom;
+        if (atoms[3] != null) {
+            atoms[2] = atom;
+            atoms[1] = atom.parent;
+            if (atoms[1] != null) {
+                atoms[0] = atoms[1].parent;
             }
         }
-        
-        irpTable = new double[torsionMasterList.size()][][]; 
-        
-        for (int i=0; i<irpTable.length; i++) {
-            irpTable[i] = new double[torsionMasterList.get(i).size()][nVals]; 
-            for (int j=0; j<irpTable[i].length; j++) {
-                for (int k=0; k<nVals; k++) {
-                    irpTable[i][j][k] = torsionMasterList.get(i).get(j)[k];
+        if (atoms[0] != null) {
+            int irpIndex = atom.irpIndex;
+            if ((irpIndex > 0) && (irpIndex < 9999)) {
+                double angle = eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
+                angle = Dihedral.reduceAngle(angle);
+                double[][] irpValues = irpTable[irpIndex - 1];
+                for (double[] irpVal : irpValues) {
+                    double v = irpVal[0];
+                    double n = irpVal[1];
+                    double phi = irpVal[2];
+                    double energy = weight * v * (1.0 + Math.cos(n * angle - phi));
+                    energyTotal += energy;
                 }
             }
-        }        
+        }
+        return energyTotal;
     }
 
     public double calcIRPFast(double[] gradient) {
@@ -910,19 +869,21 @@ public class EnergyLists {
             }
             if (atoms[0] != null) {
                 int irpIndex = atom.irpIndex;
-                double angle = eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
-                angle = Dihedral.reduceAngle(angle);
-                double[][] irpValues = irpTable[irpIndex];
-                for (double[] irpVal : irpValues) {
-                    double v = irpVal[0];
-                    double n = irpVal[1];
-                    double phi = irpVal[2];
-                    double energy = weight * v * (1.0 + Math.cos(n * angle - phi));
-                    energyTotal += energy;
-                    double deriv = 0.0;
-                    if (gradient != null) {
-                        deriv = -weight * v * n * Math.sin(n * angle - phi);
-                        gradient[i] += deriv;
+                if ((irpIndex > 0) && (irpIndex < 9999)) {
+                    double angle = eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
+                    angle = Dihedral.reduceAngle(angle);
+                    double[][] irpValues = irpTable[irpIndex - 1];
+                    for (double[] irpVal : irpValues) {
+                        double v = irpVal[0];
+                        double n = irpVal[1];
+                        double phi = irpVal[2];
+                        double energy = weight * v * (1.0 + Math.cos(n * angle - phi));
+                        energyTotal += energy;
+                        double deriv = 0.0;
+                        if (gradient != null) {
+                            deriv = -weight * v * n * Math.sin(n * angle - phi);
+                            gradient[i] += deriv;
+                        }
                     }
                 }
             }
@@ -1279,7 +1240,7 @@ public class EnergyLists {
                 energyTotal += calcDihedralEnergyFast(gradient);
             }
             if (forceWeight.getIrp() > 0.0) {
-                if (false) {  // placeholder for new fast mode
+                if (true) {  // placeholder for new fast mode
                     if (forceWeight.getIrp() > 0.0) {
                         energyTotal += calcIRPFast(gradient);
                     }
