@@ -832,6 +832,7 @@ public class Molecule implements Serializable, ITree {
     public void setupEnergy(EnergyLists energyLists) {
         try {
             AtomEnergyProp.readPropFile();
+            AtomEnergyProp.makeIrpMap();
         } catch (FileNotFoundException ex) {
         } catch (IOException ex) {
             Logger.getLogger(Molecule.class.getName()).log(Level.SEVERE, null, ex);
@@ -3480,26 +3481,6 @@ public class Molecule implements Serializable, ITree {
         }
         for (Atom iAtom : atomList) {
             iAtom.rotUnit = -1;
-            Atom parent = iAtom.getParent();
-            Atom grandparent = null;
-            if (parent != null) {
-                grandparent = parent.getParent();
-            }
-            Atom daughter = iAtom.daughterAtom;
-            if ((parent != null) && (grandparent != null) && (daughter != null) && (iAtom.irpIndex > 0)) {
-                String aType = iAtom.getType();
-                String pType = parent.getType();
-                String gType = grandparent.getType();
-                String dType = daughter.getType();
-                String torsionType = gType + "-" + pType + "-" + aType + "-" + dType;
-                if (EnergyLists.torsionMap.keySet().contains(torsionType)) {
-                    iAtom.irpIndex = EnergyLists.torsionMap.get(torsionType) + 1;
-                } else {
-                    System.out.println(torsionType + " is not in keySet. Setting index to 1.");
-                    iAtom.irpIndex = 1;
-                }
-                
-            }
             if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
                 //if (iAtom.irpIndex > 0) {
                 iAtom.rotUnit = rotUnit++;
@@ -3517,6 +3498,38 @@ public class Molecule implements Serializable, ITree {
             }
         }
         genAngleBranches();
+        setupIRPTypes();
+    }
+
+    public void setupIRPTypes() {
+        try {
+            AtomEnergyProp.makeIrpMap();
+        } catch (IOException ex) {
+            Logger.getLogger(Molecule.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
+        for (Atom iAtom : atomList) {
+            Atom parent = iAtom.getParent();
+            Atom grandparent = parent != null ? parent.getParent() : null;
+            Atom daughter = iAtom.daughterAtom;
+            if ((parent != null) && (grandparent != null) && (daughter != null) && (iAtom.irpIndex > 0)) {
+                String aType = iAtom.getType();
+                String pType = parent.getType();
+                String gType = grandparent.getType();
+                String dType = daughter.getType();
+                String torsionType = gType + "-" + pType + "-" + aType + "-" + dType;
+                int irpIndex = AtomEnergyProp.getTorsionIndex(torsionType);
+                if (irpIndex == 0) {
+                    irpIndex = 9999;
+                }
+                iAtom.irpIndex = irpIndex;
+            }
+        }
     }
 
     public void setRingClosures(Map<Atom, Map<Atom, Double>> bonds) {
