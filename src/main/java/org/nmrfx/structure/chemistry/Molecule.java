@@ -899,41 +899,45 @@ public class Molecule implements Serializable, ITree {
     }
 
     public int genCoordsFast(final double[] dihedralAngles, boolean fillCoords, int iStructure) throws RuntimeException {
-        if (fillCoords) {
-            boolean anyInvalid = false;
-            for (Atom atom : atoms) {
-                if (!atom.getPointValidity(iStructure)) {
-                    anyInvalid = true;
-                    break;
+        if (!atoms.isEmpty()) {
+            if (fillCoords) {
+                boolean anyInvalid = false;
+                for (Atom atom : atoms) {
+                    if (!atom.getPointValidity(iStructure)) {
+                        anyInvalid = true;
+                        break;
+                    }
+                }
+                if (!anyInvalid) {
+                    structures.add(iStructure);
+                    resetActiveStructures();
+                    updateVecCoords();
+                    return 0;
                 }
             }
-            if (!anyInvalid) {
-                structures.add(iStructure);
-                resetActiveStructures();
-                updateVecCoords();
-                return 0;
-            }
-        }
 
-        if (genVecs == null) {
-            setupGenCoords();
-        }
-        List<Atom> atomList;
-        if (treeAtoms == null) {
-            atomList = atoms;
-        } else {
-            atomList = treeAtoms;
-        }
-        if (!fillCoords) {
-            for (Atom atom : atoms) {
-                atom.setPointValidity(iStructure, false);
+            if (genVecs == null) {
+                setupGenCoords();
             }
+            List<Atom> atomList;
+            if (treeAtoms == null) {
+                atomList = atoms;
+            } else {
+                atomList = treeAtoms;
+            }
+            if (!fillCoords) {
+                for (Atom atom : atoms) {
+                    atom.setPointValidity(iStructure, false);
+                }
+            }
+            int nAngles = CoordinateGenerator.genCoords(genVecs, atomList, iStructure, dihedralAngles);
+            structures.add(iStructure);
+            resetActiveStructures();
+            updateVecCoords();
+            return nAngles;
+        } else {
+            return 0;
         }
-        int nAngles = CoordinateGenerator.genCoords(genVecs, atomList, iStructure, dihedralAngles);
-        structures.add(iStructure);
-        resetActiveStructures();
-        updateVecCoords();
-        return nAngles;
     }
 
     public int genCoordsFastVec3D(final double[] dihedralAngles) throws RuntimeException {
@@ -3476,6 +3480,26 @@ public class Molecule implements Serializable, ITree {
         }
         for (Atom iAtom : atomList) {
             iAtom.rotUnit = -1;
+            Atom parent = iAtom.getParent();
+            Atom grandparent = null;
+            if (parent != null) {
+                grandparent = parent.getParent();
+            }
+            Atom daughter = iAtom.daughterAtom;
+            if ((parent != null) && (grandparent != null) && (daughter != null) && (iAtom.irpIndex > 0)) {
+                String aType = iAtom.getType();
+                String pType = parent.getType();
+                String gType = grandparent.getType();
+                String dType = daughter.getType();
+                String torsionType = gType + "-" + pType + "-" + aType + "-" + dType;
+                if (EnergyLists.torsionMap.keySet().contains(torsionType)) {
+                    iAtom.irpIndex = EnergyLists.torsionMap.get(torsionType) + 1;
+                } else {
+                    System.out.println(torsionType + " is not in keySet. Setting index to 1.");
+                    iAtom.irpIndex = 1;
+                }
+                
+            }
             if ((iAtom.getParent() != null) && (iAtom.irpIndex > 0) && iAtom.rotActive) {
                 //if (iAtom.irpIndex > 0) {
                 iAtom.rotUnit = rotUnit++;

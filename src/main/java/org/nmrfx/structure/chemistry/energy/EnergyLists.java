@@ -30,7 +30,13 @@ import org.nmrfx.structure.chemistry.SpatialSet;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -45,12 +51,12 @@ import java.util.logging.Logger;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import static org.nmrfx.structure.chemistry.energy.AtomMath.IrpParameters;
 import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 
 public class EnergyLists {
 
+    private static boolean PARM_FILE_LOADED = false;
     public ArrayList<AtomPair> atomList = new ArrayList<AtomPair>();
     public ArrayList<AtomPair> atomList2 = new ArrayList<AtomPair>();
     public ArrayList<CompoundPair> compoundPairList = new ArrayList<>();
@@ -82,6 +88,8 @@ public class EnergyLists {
     boolean stochasticMode = false;
     boolean[] stochasticResidues = null;
     boolean constraintsSetup = false;
+    public static double[][][] irpTable;
+    public static Map<String, Integer> torsionMap;
 
     public EnergyLists() {
     }
@@ -814,6 +822,77 @@ public class EnergyLists {
 
     }
 
+    public static void makeIrpMap() throws FileNotFoundException, IOException {
+        if (!PARM_FILE_LOADED) {
+            makeIrpMap("reslib_iu/parm15ipq_10.3.dat");
+        }
+    }
+
+    public static void makeIrpMap(String fileName) throws FileNotFoundException, IOException {
+        LineNumberReader lineReader;
+        PARM_FILE_LOADED = true;
+        BufferedReader bf;
+        if (fileName.startsWith("reslib_iu")) {
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+            InputStream istream = cl.getResourceAsStream(fileName);
+            bf = new BufferedReader(new InputStreamReader(istream));
+        } else {
+            bf = new BufferedReader(new FileReader(fileName));
+        }
+
+        lineReader = new LineNumberReader(bf);
+        torsionMap = new HashMap<>();
+        List<List<double[]>> torsionMasterList = new ArrayList<>();
+        List<double[]> torsionList = new ArrayList<>();
+        int nVals = 1;
+        while (true) {
+            String line = lineReader.readLine();
+            if (line != null) {
+                if (line.length() > 40) {
+                    if (line.substring(0, 11).split("-").length == 4 & !line.substring(14, 15).equals(" ")) {
+                        String key = line.substring(0, 11).trim();
+                        String[] keyTrim = new String[4];
+                        for (int i=0; i<key.length(); i+=3) {
+                            if (i+2<key.length()) {
+                                keyTrim[i/3] = key.substring(i, i+2).trim();
+                            } else {
+                                keyTrim[i/3] = key.substring(i, key.length()).trim();
+                            }
+                        }
+                        key = String.join("-", keyTrim);
+                        double barrier = Double.parseDouble(line.substring(19, 28).trim());
+                        double phase = Double.parseDouble(line.substring(29, 34).trim());
+                        double periodicity = Math.abs(Double.parseDouble(line.substring(35, 40).trim()));
+                        if (!torsionMap.keySet().contains(key)) {
+                            torsionList = new ArrayList<>();
+                            torsionMasterList.add(torsionList);
+                            torsionMap.put(key, torsionMasterList.size() - 1);
+                        } else {
+                            int index = torsionMap.get(key);
+                            torsionList = torsionMasterList.get(index);
+                        }
+                        double[] vals = {barrier, periodicity, phase};
+                        nVals = vals.length;
+                        torsionList.add(vals);
+                    }
+                }
+            } else {
+                break;
+            }
+        }
+        
+        irpTable = new double[torsionMasterList.size()][][]; 
+        
+        for (int i=0; i<irpTable.length; i++) {
+            irpTable[i] = new double[torsionMasterList.get(i).size()][nVals]; 
+            for (int j=0; j<irpTable[i].length; j++) {
+                for (int k=0; k<nVals; k++) {
+                    irpTable[i][j][k] = torsionMasterList.get(i).get(j)[k];
+                }
+            }
+        }        
+    }
+
     public double calcIRPFast(double[] gradient) {
         EnergyCoords eCoords = molecule.getEnergyCoords();
         double energyTotal = 0.0;
@@ -833,7 +912,7 @@ public class EnergyLists {
                 int irpIndex = atom.irpIndex;
                 double angle = eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
                 angle = Dihedral.reduceAngle(angle);
-                double[][] irpValues = new double[1][3];
+                double[][] irpValues = irpTable[irpIndex];
                 for (double[] irpVal : irpValues) {
                     double v = irpVal[0];
                     double n = irpVal[1];

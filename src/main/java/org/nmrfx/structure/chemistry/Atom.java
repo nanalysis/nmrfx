@@ -1305,33 +1305,37 @@ public class Atom implements IAtom {
     }
 
     public static int addBond(Atom atom1, Atom atom2, Order order, int stereo, final boolean record) {
-        Bond bond;
+        
+        if (atom1 != null && atom2 != null) {
 
-        bond = new Bond(atom1, atom2);
-        bond.order = order;
-        bond.stereo = stereo;
-        if (atom1.aNum == 1) {
-            atom1.parent = atom2;
-        } else if (atom2.aNum == 1) {
-            atom2.parent = atom1;
-        }
+            Bond bond;
 
-        atom1.addBond(bond);
-        atom2.addBond(bond);
+            bond = new Bond(atom1, atom2);
+            bond.order = order;
+            bond.stereo = stereo;
+            if (atom1.aNum == 1) {
+                atom1.parent = atom2;
+            } else if (atom2.aNum == 1) {
+                atom2.parent = atom1;
+            }
 
-        atom1.entity.addBond(bond);
-        if (record) {
-            Entity entity1 = atom1.getEntity();
-            Entity entity2 = atom2.getEntity();
-            if (entity1 instanceof Residue) {
-                Residue residue1 = (Residue) entity1;
-                Polymer polymer = residue1.polymer;
-                Residue residue2 = (Residue) entity2;
+            atom1.addBond(bond);
+            atom2.addBond(bond);
 
-                AtomSpecifier atomSp1 = new AtomSpecifier(residue1.getNumber(), residue1.getName(), atom1.getName());
-                AtomSpecifier atomSp2 = new AtomSpecifier(residue2.getNumber(), residue2.getName(), atom2.getName());
-                BondSpecifier bondSp = new BondSpecifier(atomSp1, atomSp2, order);
-                polymer.addedBonds.add(bondSp);
+            atom1.entity.addBond(bond);
+            if (record) {
+                Entity entity1 = atom1.getEntity();
+                Entity entity2 = atom2.getEntity();
+                if (entity1 instanceof Residue) {
+                    Residue residue1 = (Residue) entity1;
+                    Polymer polymer = residue1.polymer;
+                    Residue residue2 = (Residue) entity2;
+
+                    AtomSpecifier atomSp1 = new AtomSpecifier(residue1.getNumber(), residue1.getName(), atom1.getName());
+                    AtomSpecifier atomSp2 = new AtomSpecifier(residue2.getNumber(), residue2.getName(), atom2.getName());
+                    BondSpecifier bondSp = new BondSpecifier(atomSp1, atomSp2, order);
+                    polymer.addedBonds.add(bondSp);
+                }
             }
         }
 

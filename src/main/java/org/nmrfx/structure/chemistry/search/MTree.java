@@ -342,22 +342,27 @@ public class MTree {
 
     public int[] depthFirstPath(int start) {
         int nNodes = nodes.size();
+        int [] iPath;
+        if (nNodes != 0) {
+            for (int j = 0; j < nNodes; j++) {
+                MNode cNode = (MNode) nodes.elementAt(j);
+                cNode.shell = -1;
+            }
 
-        for (int j = 0; j < nNodes; j++) {
-            MNode cNode = (MNode) nodes.elementAt(j);
-            cNode.shell = -1;
+            MNode sNode = (MNode) nodes.elementAt(start);
+            pathNodes.add(sNode);
+            sNode.shell = 0;
+            depthFirstPath(sNode, pathNodes);
+
+            iPath = new int[pathNodes.size()];
+
+            for (int i = 0, n = pathNodes.size(); i < n; i++) {
+                MNode cNode = pathNodes.get(i);
+                iPath[i] = cNode.getID() + ((cNode.shell) << 8);
+            }
         }
-
-        MNode sNode = (MNode) nodes.elementAt(start);
-        pathNodes.add(sNode);
-        sNode.shell = 0;
-        depthFirstPath(sNode, pathNodes);
-
-        int[] iPath = new int[pathNodes.size()];
-
-        for (int i = 0, n = pathNodes.size(); i < n; i++) {
-            MNode cNode = pathNodes.get(i);
-            iPath[i] = cNode.getID() + ((cNode.shell) << 8);
+        else {
+            iPath = new int[0]; 
         }
 
         return iPath;
