@@ -849,15 +849,8 @@ public class BrukerData implements NMRData {
 
     private List<Double> getArrayValues() {
         List<Double> result = new ArrayList<>();
-        int smallDim = -1;
-        int smallSize = Integer.MAX_VALUE;
         // kluge  find smallest dimension.  This is the most likely one to use an array of values
-        for (int i = 0; i < getNDim(); i++) {
-            if (getSize(i) < smallSize) {
-                smallSize = getSize(i);
-                smallDim = i;
-            }
-        }
+        int smallDim = getMinDim();
         if (parMap != null) {
             String[] listTypes = {"vd", "vc", "vp", "fq3"};
 
@@ -918,6 +911,12 @@ public class BrukerData implements NMRData {
             }
             values.clear();
             values.addAll(newValues);
+        } else if (values.size() < dimSize) {
+            int n = values.size();
+            for (int i = n; i < dimSize; i++) {
+                int j = i % n;
+                values.add(values.get(j));
+            }
         }
         return values;
     }
@@ -1684,7 +1683,7 @@ public class BrukerData implements NMRData {
     @Override
     public List<Double> getValues(int dim) {
         List<Double> result;
-        if (!isFrequencyDim(dim)) {
+        if (dim == (getNDim() - 1)) {
             result = arrayValues;
         } else {
             result = new ArrayList<>();
