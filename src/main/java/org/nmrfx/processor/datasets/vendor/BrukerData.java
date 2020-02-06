@@ -1684,7 +1684,7 @@ public class BrukerData implements NMRData {
     @Override
     public List<Double> getValues(int dim) {
         List<Double> result;
-        if (dim == (getNDim() - 1)) {
+        if (!isFrequencyDim(dim)) {
             result = arrayValues;
         } else {
             result = new ArrayList<>();
@@ -1692,11 +1692,26 @@ public class BrukerData implements NMRData {
         return result;
     }
 
+    int getMinDim() {
+        int minSize = getSize(0);
+        int minDim = 0;
+        for (int i = 1; i < getNDim(); i++) {
+            if (getSize(i) < minSize) {
+                minSize = getSize(i);
+                minDim = i;
+            }
+        }
+        return minDim;
+    }
+
     @Override
     public boolean isFrequencyDim(int iDim) {
         boolean result = true;
-        if (!isComplex(iDim) && (iDim == getNDim() - 1)) {
-            if ((arrayValues != null) && (arrayValues.size() == getSize(iDim))) {
+        int minDim = getMinDim();
+        if (!isComplex(iDim)) {
+            // second test is because sometimes the vclist/vdlist can be smaller than the td for the dimension
+            // so we assume we assume if there are arrayed values the smallest dim is the one that is arrayed
+            if ((arrayValues != null) && ((arrayValues.size() == getSize(iDim)) || (iDim == minDim))) {
                 result = false;
             }
         }
