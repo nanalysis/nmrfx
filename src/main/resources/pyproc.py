@@ -861,7 +861,7 @@ def createDataset(nvFileName=None, datasetSize=None):
             print 'exists',os.path.exists(nvFileName)
 
         dataset = processor.getDataset()
-        updateValues(dataset)
+        psspecial.datasetMods(dataset, fidInfo)
 
     dataInfo.resizeable = False  # dataInfo.size is fixed, createNV has been run
     setDataInfo(datasetSize)
@@ -870,12 +870,6 @@ def closeDataset():
     if not processor.isDatasetOpen():
         print 'fexists',os.path.exists(nvFileName)
         processor.closeDataset()
-
-def updateValues(dataset):
-    global fidInfo
-    seq = fidInfo.fidObj.getSequence()
-    if seq == 'hsqct2etf3gpsi3d':
-        psspecial.adjustBrukerT2(dataset, fidInfo)
 
 def setDataInfo(dSize):
     global fidInfo
@@ -3672,9 +3666,7 @@ def genScript(arrayed=False):
             script += 'TRIM(ftrim=' + str(trim) +')\n'
         script += 'AUTOPHASE(firstOrder=True)\n'
     else:
-        if sequence == "hsqcnoef3gpsi":
-            script += "acqOrder('a2','p1','d1')\n"
-            script += "acqarray(0,2)\n"
+        script += psspecial.scriptMods(fidInfo, 0)
         script += 'DIM(1)\n'
         for iDim in range(2,fidInfo.nd+1):
             if not fidInfo.fidObj.isFrequencyDim(iDim-1):
