@@ -4,6 +4,7 @@ import os
 import runpy
 import os.path
 import argparse
+import psspecial
 from pyproc import *
 from string import Template
 
@@ -110,6 +111,7 @@ def autoGenScript(fidInfo, args=None, phases=None):
         script += 'FT()\n'
         script += 'AUTOPHASE(firstOrder=True)\n'
     else:
+        script += psspecial.scriptMods(fidInfo, 0)
         script += 'DIM(1)\n'
         script += 'TDSS()\n'
         gotTDComb = False
