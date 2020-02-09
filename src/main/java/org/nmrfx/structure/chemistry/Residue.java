@@ -66,7 +66,7 @@ public class Residue extends Compound {
         PSEUDO_MAP.put("THR:QG2", "MG");
         PSEUDO_MAP.put("VAL:QG1", "MG1");
         PSEUDO_MAP.put("VAL:QG2", "MG2");
-        PSEUDO_MAP.put("VAL:QG", "QQG");
+        PSEUDO_MAP.put("VAL:QQG", "QG");
 
     }
 
