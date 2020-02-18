@@ -449,6 +449,8 @@ public class SpatialSet {
 //                                                                             **  element          X
 //                                                                               ** charge          X
 // ATOM      1  N   TYR A 104      23.779   2.277  46.922  1.00 16.26           N                   X
+// TER    1272      HIS A  80                                                      
+
     public String toPDBString(int iAtom, int structureNum) {
         Point3 pt = getPoint(structureNum);
         if (pt == null) {
@@ -502,6 +504,33 @@ public class SpatialSet {
         sBuild.append("    "); // segment??
         sBuild.append(String.format("%2s", eName));
         return sBuild.toString();
+    }
+
+    public String toTERString(int iAtom) {
+        //TER    1272      HIS A  80
+
+        StringBuilder sBuild = new StringBuilder();
+        sBuild.append("TER   ");
+        sBuild.append(String.format("%5d", iAtom));
+        sBuild.append(' ');
+        sBuild.append(String.format("%-4s", " "));
+        sBuild.append(' ');
+        String resName = ((Compound) atom.entity).name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+        sBuild.append(String.format("%3s", resName));
+        sBuild.append(' ');
+        char chainID = ' ';
+        if (atom.entity instanceof Residue) {
+            String polymerName = ((Residue) atom.entity).polymer.getName();
+            chainID = polymerName.charAt(0);
+        }
+        sBuild.append(chainID);
+        sBuild.append(String.format("%4s", (((Compound) atom.entity).number)));
+        sBuild.append("                                                    ");
+        return sBuild.toString();
+
     }
 
     public void addToSTARString(StringBuilder result) {
