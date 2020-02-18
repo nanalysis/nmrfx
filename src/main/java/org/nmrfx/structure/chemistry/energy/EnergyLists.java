@@ -1091,6 +1091,7 @@ public class EnergyLists {
 
     public void updateNOEPairs() {
         EnergyCoords eCoords = molecule.getEnergyCoords();
+        molecule.updateVecCoords();
         eCoords.eConstraintPairs.clear();
         int iGroup = 0;
         for (DistancePair distancePair : distanceList) {
@@ -1606,15 +1607,16 @@ public class EnergyLists {
     }
 
     public void makeAtomListFast() {
-        if (!constraintsSetup) {
-            updateNOEPairs();
-        }
+       // molecule.updateVecCoords();
         EnergyCoords eCoords = molecule.getEnergyCoords();
         if (!eCoords.fixedCurrent()) {
             if (molecule.getDihedrals() == null) {
                 return;
             }
             updateFixed(molecule.getDihedrals());
+        }
+        if (!constraintsSetup) {
+            updateNOEPairs();
         }
         eCoords.setCells(eCoords.eDistancePairs, deltaEnd, distanceLimit, hardSphere,
                 includeH, shrinkValue, shrinkHValue, forceWeight.getRobson() > 0.0);
