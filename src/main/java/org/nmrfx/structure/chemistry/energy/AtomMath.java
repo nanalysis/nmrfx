@@ -457,31 +457,57 @@ public class AtomMath {
         dihedral = Dihedral.reduceAngle(dihedral);
 
         final AtomEnergy result;
-        if (upper > Math.PI) {
-            if (dihedral < 0.0) {
-                dihedral += 2.0 * Math.PI;
-            }
-        }
-        if ((dihedral < upper) && (dihedral > lower)) {
+//        if (upper > Math.PI) {
+//            if (dihedral < 0.0) {
+//                dihedral += 2.0 * Math.PI;
+//            }
+//        }
+
+        // 100  80   101 - 359 - 79
+        // 80  100   
+        if ((lower < upper) && ((dihedral <= upper) && (dihedral >= lower))) {
+            result = AtomEnergy.ZERO;
+        } else if ((lower > upper) && ((dihedral >= lower))) {
+            result = AtomEnergy.ZERO;
+        } else if ((lower > upper) && ((dihedral <= upper))) {
             result = AtomEnergy.ZERO;
         } else {
-            double range = upper - lower;
+            double range = lower < upper ? upper - lower : Math.PI - (lower - upper);
             double halfRange = Math.PI - (range / 2.0);
             double halfRange2 = halfRange * halfRange;
             double delta = 0.0;
-            if (dihedral > upper) {
-                delta = upper - dihedral;
-                double deltaR = 2.0 * Math.PI - (range - delta);
-                if (Math.abs(delta) > deltaR) {
-                    delta = deltaR;
-                }
-            } else {
-                delta = lower - dihedral;
-                double deltaR = 2.0 * Math.PI - (range + delta);
-                if (delta > deltaR) {
-                    delta = -deltaR;
-                }
+            double deltaU = upper - dihedral;
+            double deltaL = lower - dihedral;
+            if (deltaU > Math.PI) {
+                deltaU = deltaU - 2.0 * Math.PI;
             }
+            if (deltaL > Math.PI) {
+                deltaL = deltaL - 2.0 * Math.PI;
+            }
+            if (deltaU < -Math.PI) {
+                deltaU = deltaU + 2.0 * Math.PI;
+            }
+            if (deltaL < -Math.PI) {
+                deltaL = deltaL + 2.0 * Math.PI;
+            }
+            if (Math.abs(deltaU) < Math.abs(deltaL)) {
+                delta = deltaU;
+            } else {
+                delta = deltaL;
+            }
+//            if (dihedral > upper) {
+//                delta = upper - dihedral;
+//                double deltaR = 2.0 * Math.PI - (range - delta);
+//                if (Math.abs(delta) > deltaR) {
+//                    delta = deltaR;
+//                }
+//            } else {
+//                delta = lower - dihedral;
+//                double deltaR = 2.0 * Math.PI - (range + delta);
+//                if (delta > deltaR) {
+//                    delta = -deltaR;
+//                }
+//            }
             double delta2 = delta * delta;
             double energy = forceWeight.getDihedral() * (1.0 - 0.5 * delta2 / halfRange2) * delta2;
             //System.out.printf("%.3f %.3f %.3f %.3f %.3f %.3f %.3f\n",lower,dihedral,upper,delta, halfRange,(delta/halfRange),energy);
