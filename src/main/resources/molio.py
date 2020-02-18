@@ -74,7 +74,7 @@ def readSDF(fileName, newMolecule = False):
     updateAtomArray()
     return compound
 
-def readSequenceString(polymerName, sequence):
+def readSequenceString(polymerName, sequence, seqReader=None):
     ''' Creates a polymer from the sequence provided with the name of polymerName
         The sequence input can either be a chain of characters but will only work
         if the desired polymer is RNA. If creating a polymer for a protein,
@@ -82,20 +82,24 @@ def readSequenceString(polymerName, sequence):
     '''
     seqAList = ArrayList()
     seqAList.addAll(sequence)
-    seqReader = Sequence()
+    if (seqReader == None):
+        seqReader = Sequence()
+    seqReader.newPolymer()
     seqReader.read(polymerName, seqAList, "")
     updateAtomArray()
     mol = Molecule.getActive()
     return mol
 
 
-def readSequence(seqFile, convert=False, polymerName=None):
+def readSequence(seqFile, convert=False, polymerName=None,seqReader=None):
     if convert:
         import os
         import osfiles
         dir = os.path.dirname(seqFile)
         seqFile = osfiles.convertSeqFile(seqFile,dir)
-    seqReader = Sequence()
+    if (seqReader == None):
+        seqReader = Sequence()
+    seqReader.newPolymer()
     seqReader.read(seqFile, polymerName) if polymerName else seqReader.read(seqFile)
     updateAtomArray()
     mol = Molecule.getActive()
