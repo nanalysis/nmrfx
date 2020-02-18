@@ -299,6 +299,9 @@ public class NMRStarReader {
         Sequence sequence = new Sequence(molecule);
         int entityID = 1;
         String lastChain = "";
+        double linkLen = 5.0;
+        double valAngle = 90.0;
+        double dihAngle = 135.0;
         for (int i = 0; i < chainCodeColumn.size(); i++) {
             String linkType = linkingColumn.get(i);
             if (linkType.equals("dummy")) {
@@ -312,6 +315,7 @@ public class NMRStarReader {
             if ((polymer == null) || (!chainCode.equals(lastChain))) {
                 lastChain = chainCode;
                 if (polymer != null) {
+                    sequence.createLinker(9, linkLen, valAngle, dihAngle);
                     polymer.molecule.genCoords(false);
                     polymer.molecule.setupRotGroups();
                 }
@@ -1405,6 +1409,9 @@ public class NMRStarReader {
         List<String>[] sequenceColumns = new ArrayList[2];
         List<String>[] residueNameColumns = new ArrayList[2];
         List<String>[] atomNameColumns = new ArrayList[2];
+        List<Integer> indexColumn = new ArrayList<>();
+
+        indexColumn = loop.getColumnAsIntegerList("index", 0);
 
         chainCodeColumns[0] = loop.getColumnAsList("chain_code_1");
         sequenceColumns[0] = loop.getColumnAsList("sequence_code_1");
@@ -1452,7 +1459,12 @@ public class NMRStarReader {
             }
 
             Util.setStrictlyNEF(true);
-            energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper);
+            try {
+                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper);
+            } catch (IllegalArgumentException iaE) {
+                int index = indexColumn.get(i);
+                throw new ParseException("Error parsing NEF distance constraints at index  \"" + index + "\" " + iaE.getMessage());
+            }
             Util.setStrictlyNEF(false);
         }
     }

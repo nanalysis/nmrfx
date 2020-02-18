@@ -882,4 +882,31 @@ public class Sequence {
         }
         return newName;
     }
+
+    public void createLinker(int numLinks,
+            double linkLen, double valAngle, double dihAngle) {
+        /**
+         * createLinker is a method to create a link between atoms in two
+         * separate entities
+         *
+         * @param numLinks number of linker atoms to use
+         * @param atom1
+         * @param atom2
+         */
+
+        Atom newAtom;
+        String linkRoot = "X";
+        for (int i = 1; i <= numLinks; i++) {
+            newAtom = connectAtom.add(linkRoot + Integer.toString(i), "X", Order.SINGLE);
+            newAtom.bondLength = (float) linkLen;
+            newAtom.dihedralAngle = (float) (dihAngle * Math.PI / 180.0);
+            newAtom.valanceAngle = (float) (valAngle * Math.PI / 180.0);
+            newAtom.irpIndex = 1;
+            newAtom.setType("XX");
+            connectAtom = newAtom;
+        }
+
+        System.out.println("create linker " + numLinks);
+    }
+
 }
