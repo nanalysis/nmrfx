@@ -18,18 +18,19 @@
 package org.nmrfx.processor.star;
 
 import java.io.*;
+import org.nmrfx.processor.star.Saveframe.Category;
 
-public class STAR3 extends STAR3Base {
+public class MMCIF extends STAR3Base {
 
-    public STAR3(String name) {
+    public MMCIF(String name) {
         super(name);
     }
 
-    public STAR3(final String fileName, final String name) {
+    public MMCIF(final String fileName, final String name) {
         super(fileName, name);
     }
 
-    public STAR3(BufferedReader bfR, final String name) {
+    public MMCIF(BufferedReader bfR, final String name) {
         super(bfR, name);
     }
 
@@ -69,11 +70,52 @@ public class STAR3 extends STAR3Base {
         }
     }
 
+    public void dump(String fileName) throws ParseException, IOException {
+        try (FileWriter fileWriter = new FileWriter(fileName)) {
+            for (Saveframe saveFrame : getSaveFrames().values()) {
+                String name = saveFrame.name;
+                for (String catName : getCategories(name)) {
+                    Category category = saveFrame.getCategory(catName);
+                    //System.out.println("cat " + category + " " + category.isLoop);
+                    if (category.isLoop) {
+                        Loop loop = saveFrame.getLoop(catName);
+                        STAR3Base.writeLoopStrings(fileWriter, catName, loop.tags);
+                        int nRows = loop.getNRows();
+                        for (int i = 0; i < nRows; i++) {
+                            String[] values = loop.getRowValues(i);
+                            StringBuilder sBuilder = new StringBuilder();
+                            for (String value : values) {
+                                sBuilder.append(" ");
+                                sBuilder.append(STAR3Base.quote(value));
+                            }
+                            fileWriter.write(sBuilder.toString());
+                            fileWriter.write("\n");
+                        }
+                        fileWriter.write("#\n");
+
+                    } else {
+                        StringBuilder sBuilder = new StringBuilder();
+                        for (String tag : category.tagMap.keySet()) {
+                            sBuilder.setLength(0);
+                            sBuilder.append(catName).append(".").
+                                    append(tag).append(" ");
+                            fileWriter.write(sBuilder.toString());
+                            STAR3Base.writeString(fileWriter, category.get(tag), 128);
+                        }
+                        fileWriter.write("#\n");
+
+                    }
+
+                }
+            }
+        }
+    }
+
     public static void main(String[] argv) {
         if (argv.length != 1) {
             System.err.println("usage: fileName");
         } else {
-            STAR3 star3 = new STAR3(argv[0]);
+            MMCIF star3 = new MMCIF(argv[0]);
             while (true) {
                 String token = star3.getNextToken();
                 if (token == null) {

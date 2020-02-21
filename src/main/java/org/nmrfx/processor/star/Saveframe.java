@@ -26,8 +26,6 @@
  */
 package org.nmrfx.processor.star;
 
-import org.nmrfx.processor.utilities.NvUtil;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
@@ -40,7 +38,7 @@ import java.util.Map;
  */
 public class Saveframe {
 
-    final STAR3 star3;
+    final STAR3Base star3;
     final String name;
     String saveframeCategory;
     final LinkedHashMap loops = new LinkedHashMap();
@@ -85,18 +83,18 @@ public class Saveframe {
         return category;
     }
 
-    public Saveframe(STAR3 star3, String name) {
+    public Saveframe(STAR3Base star3, String name) {
         this.star3 = star3;
         this.name = name;
     }
 
-    public Saveframe(STAR3 star3, String name, String saveframeCategory) {
+    public Saveframe(STAR3Base star3, String name, String saveframeCategory) {
         this.star3 = star3;
         this.name = name;
         this.saveframeCategory = saveframeCategory;
     }
 
-    public STAR3 getSTAR3() {
+    public STAR3Base getSTAR3() {
         return star3;
     }
 
@@ -128,11 +126,18 @@ public class Saveframe {
 
     public void read() throws ParseException {
         //System.out.println("process save frame "+name+" with category "+saveframeCategory);
+        if (star3 instanceof MMCIF) {
+            saveframeCategory = name;
+        }
         Map tokenMap = new LinkedHashMap();
         String currentTagCategory = "";
         while (true) {
             String token = star3.getToken();
+
             if (token == null) {
+                if (star3 instanceof MMCIF) {
+                    return;
+                }
                 throw new ParseException("File exhausted before all tokens found in \"" + name + "\"");
             }
             if (token.equals("save_")) {
@@ -175,6 +180,7 @@ public class Saveframe {
                 } else {
                     processTokenMap(currentTagCategory, tokenMap);
                     tokenMap.clear();
+                    tokenMap.put(tokenPair[1], tagValue);
                 }
                 currentTagCategory = tokenPair[0];
                 //System.out.println("process entity "+tokenPair[0]+" "+tokenPair[1]+" "+tagValue);
