@@ -59,10 +59,24 @@ public class Loop {
     }
 
     public String[] getLoopRow(int nTokens) throws ParseException {
-        STAR3 star3 = saveFrame.getSTAR3();
+        STAR3Base star3 = saveFrame.getSTAR3();
         String token = star3.getToken();
-        if (token == null) {
-            throw new ParseException("File exhausted before all tokens found in loop of \"" + saveFrame.name + "\"");
+        if (star3 instanceof MMCIF) {
+            if (token == null) {
+                return null;
+            }
+            if (token.startsWith("_")) {
+                star3.unGetToken();
+                return null;
+            }
+            if (token.equals("loop_")) {
+                star3.unGetToken();
+                return null;
+            }
+        } else {
+            if (token == null) {
+                throw new ParseException("File exhausted before all tokens found in loop of \"" + saveFrame.name + "\"");
+            }
         }
         String[] tokenRow = null;
         if (!token.equals("stop_")) {
@@ -78,10 +92,11 @@ public class Loop {
                 }
             }
         }
+
         return tokenRow;
     }
 
-    public ArrayList<String> processLoopTags(STAR3 star3) throws ParseException {
+    public ArrayList<String> processLoopTags(STAR3Base star3) throws ParseException {
         ArrayList<String> tokens = new ArrayList();
         boolean firstTag = true;
         while (true) {
@@ -105,7 +120,7 @@ public class Loop {
     }
 
     public String processLoop() throws ParseException {
-        STAR3 star3 = saveFrame.getSTAR3();
+        STAR3Base star3 = saveFrame.getSTAR3();
         tags = processLoopTags(star3);
         nTags = tags.size();
         columns = new ArrayList[nTags];
@@ -234,6 +249,24 @@ public class Loop {
                     values.add(defaultValue);
                 } else {
                     values.add(Double.parseDouble(s));
+                }
+            }
+        }
+        return values;
+    }
+
+    public List<Integer> getColumnAsIntegerList(String tag, Integer defaultValue) throws ParseException {
+        ArrayList<String> column = loopTags.get(tag);
+        List<Integer> values;
+        if (column == null) {
+            values = Collections.nCopies(nRows, (Integer) null);
+        } else {
+            values = new ArrayList<>();
+            for (String s : column) {
+                if (s.equals(".")) {
+                    values.add(defaultValue);
+                } else {
+                    values.add(Integer.parseInt(s));
                 }
             }
         }
