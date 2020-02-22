@@ -39,6 +39,8 @@ public class MMCIF extends STAR3Base {
             String token = getNextToken();
             if (token == null) {
                 break;
+            } else if (token.startsWith("data_")) {
+                processSaveFrame(token);
             } else if (token.startsWith("save_")) {
                 processSaveFrame(token);
             }
@@ -53,19 +55,6 @@ public class MMCIF extends STAR3Base {
             } else if (token.startsWith(saveName)) {
                 processSaveFrame(token);
                 break;
-            }
-        }
-    }
-
-    public void scanMMcif() throws ParseException {
-        while (true) {
-            String token = getNextToken();
-            if (token == null) {
-                break;
-            } else if (token.startsWith("data_")) {
-                processSaveFrame(token);
-            } else {
-                System.out.println(token);
             }
         }
     }
