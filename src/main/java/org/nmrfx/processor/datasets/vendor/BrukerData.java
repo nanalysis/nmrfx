@@ -895,7 +895,7 @@ public class BrukerData implements NMRData {
                     }
                 }
             }
-            if (result != null) {
+            if ((result != null) && !result.isEmpty()) {
                 result = fixArraySize(result, smallDim);
             }
         }
@@ -913,9 +913,11 @@ public class BrukerData implements NMRData {
             values.addAll(newValues);
         } else if (values.size() < dimSize) {
             int n = values.size();
-            for (int i = n; i < dimSize; i++) {
-                int j = i % n;
-                values.add(values.get(j));
+            if (n != 0) {
+                for (int i = n; i < dimSize; i++) {
+                    int j = i % n;
+                    values.add(values.get(j));
+                }
             }
         }
         return values;
