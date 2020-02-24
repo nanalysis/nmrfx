@@ -63,7 +63,6 @@ import org.python.core.PyComplex;
 import org.python.core.PyObject;
 import org.python.core.PySequence;
 import org.python.core.PyType;
-import org.renjin.sexp.AttributeMap;
 import org.nmrfx.processor.datasets.DatasetStorageInterface;
 
 /**
@@ -86,8 +85,6 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
     static GaussianRandomGenerator randGen = new GaussianRandomGenerator(new SynchronizedRandomGenerator(new Well19937c()));
 
     public static final String TYPE_NAME = "nmrfxvector";
-
-    protected AttributeMap attributes;
 
     String name = "";
 
@@ -178,7 +175,6 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
     private Vec(int size, String name, boolean complex) {
         this(size, complex);
         this.name = name;
-        this.attributes = AttributeMap.EMPTY;
     }
 
     /**
@@ -189,7 +185,6 @@ public class Vec extends PySequence implements MatrixType, DatasetStorageInterfa
      */
     public Vec(int size, boolean complex) {
         super(ATYPE);
-        this.attributes = AttributeMap.EMPTY;
         this.isComplex = complex;
         useApache = true;
         rvec = new double[size];

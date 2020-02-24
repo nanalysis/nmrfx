@@ -42,11 +42,6 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.math.MatrixType;
 import org.nmrfx.processor.operations.IDBaseline2;
 import org.nmrfx.processor.processing.LineShapeCatalog;
-import org.renjin.sexp.AttributeMap;
-import org.renjin.sexp.DoubleVector;
-import org.renjin.sexp.DoubleArrayVector;
-import org.renjin.sexp.IntArrayVector;
-import org.renjin.sexp.SEXP;
 
 /**
  * Instances of this class represent NMR datasets. The class is typically used
@@ -56,7 +51,7 @@ import org.renjin.sexp.SEXP;
  *
  * @author brucejohnson
  */
-public class Dataset extends DoubleVector implements Comparable<Dataset> {
+public class Dataset implements Comparable<Dataset> {
 
 //    private static final Logger LOGGER = LogManager.getLogger();
 //    static {
@@ -138,47 +133,12 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     LineShapeCatalog simVecs = null;
     Map<String, double[]> buffers = new HashMap<>();
 
-    @Override
-    protected SEXP cloneWithNewAttributes(AttributeMap newAttributes) {
-        // fixme should clone to in-memory Dataset or Dataset pointing to same raFile etc. not DoubleArrayVector??
-        double[] arrayValues = toDoubleArray();
-        DoubleArrayVector clone = DoubleArrayVector.unsafe(arrayValues, newAttributes);
-        return clone;
-    }
-
-    private void setDimAttributes() {
-        unsafeSetAttributes(AttributeMap.builder().addAllFrom(getAttributes()).setDim(new IntArrayVector(getSizes())).build());
-    }
-
-    @Override
-    public double getElementAsDouble(int offset) {
-        int[] indices = new int[nDim];
-        double value;
-        for (int i = nDim - 1; i >= 0; i--) {
-            indices[i] = offset / strides[i];
-            offset = offset % strides[i];
-        }
-
-        try {
-            value = readPoint(indices);
-        } catch (IOException ioE) {
-            value = DoubleVector.NA;
-        }
-        return value;
-    }
-
-    @Override
     public int length() {
         int length = 1;
         for (int i = 0; i < nDim; i++) {
             length *= layout.getSize(i);
         }
         return length;
-    }
-
-    @Override
-    public boolean isConstantAccessTime() {
-        return true;
     }
 
     @Override
@@ -285,7 +245,6 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 
         setStrides();
         addFile(fileName);
-        setDimAttributes();
         loadLSCatalog();
     }
 
