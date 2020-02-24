@@ -27,7 +27,6 @@ import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,8 +35,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.*;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -179,7 +176,7 @@ public class Molecule implements Serializable, ITree {
         shapeTypes.add("square");
         shapeTypes.add("triangle");
     }
-    public Set structures = new TreeSet();
+    public Set<Integer> structures = new TreeSet();
     private int[] activeStructures = null;
     public boolean labelsCurrent = false;
     public int nResidues;
@@ -291,6 +288,10 @@ public class Molecule implements Serializable, ITree {
         return activeMol;
     }
 
+    public void setActive() {
+        activeMol = this;
+    }
+
     public void reName(Molecule molecule, Compound compound, String name1, String name2) {
         molecule.name = name2;
         StructureProject.getActive().removeMolecule(name1);
@@ -373,6 +374,14 @@ public class Molecule implements Serializable, ITree {
         }
     }
 
+    public void setActiveStructures() {
+        activeStructures = new int[structures.size()];
+        int i = 0;
+        for (int istruct : structures) {
+            activeStructures[i++] = istruct;
+        }
+    }
+
     public Set getStructures() {
         return structures;
     }
@@ -398,10 +407,15 @@ public class Molecule implements Serializable, ITree {
     }
 
     public void addCoordSet(String setName, Entity entity) {
+        int id = coordSets.size() + 1;
+        addCoordSet(setName, id, entity);
+    }
+
+    public void addCoordSet(String setName, int id, Entity entity) {
         CoordSet coordSet = (CoordSet) coordSets.get(setName);
 
         if (coordSet == null) {
-            coordSet = new CoordSet(setName, entity);
+            coordSet = new CoordSet(setName, id, entity);
             coordSets.put(setName, coordSet);
             coordSet.addEntity(entity);
         } else {
@@ -434,13 +448,27 @@ public class Molecule implements Serializable, ITree {
 
     public void addEntity(Entity entity) {
         CoordSet coordSet = getFirstCoordSet();
+        int coordID;
         final String coordSetName;
         if (coordSet != null) {
             coordSetName = coordSet.getName();
+            coordID = coordSet.id;
         } else {
             coordSetName = "A";
+            coordID = 1;
         }
-        addEntity(entity, coordSetName);
+        addEntity(entity, coordSetName, coordID);
+    }
+
+    public void addEntity(Entity entity, String coordSetName, int coordID) {
+        entities.put(entity.name, entity);
+        entityLabels.put(entity.label, entity);
+        if (entity.entityID == 0) {
+            entity.setIDNum(entities.size());
+        }
+        entity.molecule = this;
+        addCoordSet(coordSetName, coordID, entity);
+        chains.put(entity.getPDBChain(), entity);
     }
 
     public void addEntity(Entity entity, String coordSetName) {
@@ -488,7 +516,9 @@ public class Molecule implements Serializable, ITree {
         ArrayList<Compound> compounds = new ArrayList<>();
         for (Entity entity : entities.values()) {
             if (entity instanceof Compound) {
-                compounds.add((Compound) entity);
+                if (!entity.getName().equals("HOH")) {
+                    compounds.add((Compound) entity);
+                }
             }
         }
         return compounds;
@@ -802,6 +832,7 @@ public class Molecule implements Serializable, ITree {
     public void setupEnergy(EnergyLists energyLists) {
         try {
             AtomEnergyProp.readPropFile();
+            AtomEnergyProp.makeIrpMap();
         } catch (FileNotFoundException ex) {
         } catch (IOException ex) {
             Logger.getLogger(Molecule.class.getName()).log(Level.SEVERE, null, ex);
@@ -2877,7 +2908,7 @@ public class Molecule implements Serializable, ITree {
             while (entIterator.hasNext()) {
                 Entity entity = (Entity) entIterator.next();
                 Compound compound = null;
-                if (!molFilter.matchCoordSetAndEntity(coordSet.getName(), entity.getName())) {
+                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
                 }
                 if (entity instanceof Polymer) {
@@ -3007,12 +3038,12 @@ public class Molecule implements Serializable, ITree {
 
             while (entIterator.hasNext()) {
                 Entity entity = (Entity) entIterator.next();
-                if (molFilter.entityName != null && !entity.getName().equalsIgnoreCase(molFilter.entityName)) {
-                    continue;
-                };
+//                if (molFilter.entityName != null && !entity.getName().equalsIgnoreCase(molFilter.entityName)) {
+//                    continue;
+//                };
 
                 Compound compound = null;
-                if (!molFilter.matchCoordSetAndEntity(coordSet.getName(), entity.getName())) {
+                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
                 }
                 if (entity instanceof Polymer) {
@@ -3172,7 +3203,7 @@ public class Molecule implements Serializable, ITree {
             while (entIterator.hasNext()) {
                 Entity entity = (Entity) entIterator.next();
                 Compound compound = null;
-                if (!molFilter.matchCoordSetAndEntity(coordSet.getName(), entity.getName())) {
+                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
                 }
                 if (entity instanceof Polymer) {
@@ -3352,10 +3383,21 @@ public class Molecule implements Serializable, ITree {
     }
 
     public static Atom getAtomByName(String name) throws IllegalArgumentException {
+        Molecule molecule = Molecule.getActive();
+
+        if (molecule == null) {
+            throw new IllegalArgumentException("No active molecule");
+        }
+
+        return molecule.findAtom(name);
+
+    }
+
+    public Atom findAtom(String name) {
         MolFilter molFilter = null;
         molFilter = new MolFilter(name);
         Atom atom = null;
-        SpatialSet spSet = getSpatialSet(molFilter);
+        SpatialSet spSet = findSpatialSet(molFilter);
         if (spSet != null) {
             atom = spSet.atom;
         }
@@ -3375,17 +3417,21 @@ public class Molecule implements Serializable, ITree {
     }
 
     public static SpatialSet getSpatialSet(MolFilter molFilter) throws IllegalArgumentException {
-        Residue firstResidue = null;
-        Compound compound;
-        CoordSet coordSet;
-
         Molecule molecule = Molecule.getActive();
 
         if (molecule == null) {
             throw new IllegalArgumentException("No active molecule");
         }
+        return molecule.findSpatialSet(molFilter);
 
-        Iterator e = molecule.coordSets.values().iterator();
+    }
+
+    public SpatialSet findSpatialSet(MolFilter molFilter) throws IllegalArgumentException {
+        Residue firstResidue = null;
+        Compound compound;
+        CoordSet coordSet;
+
+        Iterator e = coordSets.values().iterator();
 
         while (e.hasNext()) {
             coordSet = (CoordSet) e.next();
@@ -3393,7 +3439,7 @@ public class Molecule implements Serializable, ITree {
 
             while (entIterator.hasNext()) {
                 Entity entity = (Entity) entIterator.next();
-                if (!molFilter.matchCoordSetAndEntity(coordSet.getName(), entity.getName())) {
+                if (!molFilter.matchCoordSetAndEntity(coordSet, entity)) {
                     continue;
                 }
 
@@ -3452,6 +3498,38 @@ public class Molecule implements Serializable, ITree {
             }
         }
         genAngleBranches();
+        setupIRPTypes();
+    }
+
+    public void setupIRPTypes() {
+        try {
+            AtomEnergyProp.makeIrpMap();
+        } catch (IOException ex) {
+            Logger.getLogger(Molecule.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        List<Atom> atomList;
+        if (treeAtoms == null) {
+            atomList = atoms;
+        } else {
+            atomList = treeAtoms;
+        }
+        for (Atom iAtom : atomList) {
+            Atom parent = iAtom.getParent();
+            Atom grandparent = parent != null ? parent.getParent() : null;
+            Atom daughter = iAtom.daughterAtom;
+            if ((parent != null) && (grandparent != null) && (daughter != null) && (iAtom.irpIndex > 0)) {
+                String aType = iAtom.getType();
+                String pType = parent.getType();
+                String gType = grandparent.getType();
+                String dType = daughter.getType();
+                String torsionType = gType + "-" + pType + "-" + aType + "-" + dType;
+                int irpIndex = AtomEnergyProp.getTorsionIndex(torsionType);
+                if (irpIndex == 0) {
+                    irpIndex = 9999;
+                }
+                iAtom.irpIndex = irpIndex;
+            }
+        }
     }
 
     public void setRingClosures(Map<Atom, Map<Atom, Double>> bonds) {

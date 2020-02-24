@@ -792,7 +792,7 @@ public class PDBFile {
                         }
                     } else {
                         if (iArgs == 0) {
-                            atom = new Atom("CA");
+                            atom = Atom.genAtomWithElement("CA", "C");
                             atom.setPointValidity(0, true);
                             atom.entity = residue;
                             atom.name = tokenizer.sval;

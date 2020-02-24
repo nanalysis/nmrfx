@@ -57,13 +57,13 @@ public class Bond implements IBond, Serializable {
     public String toString() {
         StringBuilder sBuilder = new StringBuilder();
         if (begin != null) {
-            sBuilder.append(begin.getName());
+            sBuilder.append(begin.getFullName());
         } else {
             sBuilder.append('-');
         }
         if (end != null) {
             sBuilder.append('-');
-            sBuilder.append(end.getName());
+            sBuilder.append(end.getFullName());
         } else {
             sBuilder.append('-');
         }

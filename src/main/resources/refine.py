@@ -109,7 +109,12 @@ def getSequenceArray(indexing,seqString,linkers,polyType):
     except ValueError:
         resNums = []
         for section in indexing.split():
-            startIndex, endIndex = [int(i) for i in section.split(':')]
+            indices = section.split(':')
+            if len(indices) == 1:
+               startIndex = int(indices[0])
+               endIndex = startIndex
+            else: 
+                startIndex, endIndex = [int(i) for i in indices]
             resNums += range(startIndex, endIndex+1)
 
     if len(resNums) != len(resNames):
@@ -334,7 +339,7 @@ class refine:
         self.molecule = None
         self.trajectoryWriter = None
         self.molecule = Molecule.getActive()
-        self.entityEntryDict = {} # map of entity name to linker
+        self.entityEntryDict = {} # map of entity to linker atom
         self.reportDump = False
         if self.molecule != None:
             self.molName = self.molecule.getName()
@@ -498,15 +503,17 @@ class refine:
         if not linkerDict:
             return
         if 'atoms' in linkerDict:
-            atom1, atom2 = linkerDict['atoms']
-            entName1, startAtom1 = atom1.split(':')
-            entName2, startAtom2 = atom2.split(':')
-            if self.entityEntryDict[entName1] == startAtom1:
-                startEntName, startAtom = (entName2, startAtom2)
-                endEntName, endAtom = (entName1, startAtom1)
+            atomName1, atomName2 = linkerDict['atoms']
+            atom1 = self.molecule.getAtomByName(atomName1)
+            atom2 = self.molecule.getAtomByName(atomName2)
+            entity1 = atom1.getTopEntity()
+            entity2 = atom2.getTopEntity()
+            if self.entityEntryDict[entity1] == atom1:
+                startEntity, startAtom = entity2, atom2
+                endEntity, endAtom = entity1, atom1
             else:
-                startEntName, startAtom = (entName1, startAtom1)
-                endEntName, endAtom = (entName2, startAtom2)
+                startEntity, startAtom = entity1, atom1
+                endEntity, endAtom = entity2, atom2
 
 	    # n is the number of rotational points within a link established between any 2 entities.
             # default is 6.
@@ -514,13 +521,6 @@ class refine:
             linkLen = linkerDict['length'] if 'length' in linkerDict else 5.0
             valAngle = linkerDict['valAngle'] if 'valAngle' in linkerDict else 90.0
             dihAngle = linkerDict['dihAngle'] if 'dihAngle' in linkerDict else 135.0
-            startEnt = self.molecule.getEntity(startEntName)
-            endEnt = self.molecule.getEntity(endEntName)
-
-            startTuple = (startEntName, startAtom)
-            endTuple = (endEntName, endAtom)
-            startAtom = self.getAtom(startTuple)
-            endAtom = self.getAtom(endTuple)
 
         else:
             if 'bond' not in linkerDict or 'cyclic' not in linkerDict['bond']:
@@ -546,7 +546,7 @@ class refine:
                 return []
 
             else:
-                sameEnt = startEnt == endEnt;
+                sameEnt = startEntity == endEntity;
                 length = bondDict['length'] if 'length' in bondDict else 1.08
                 order = bondDict['order'] if 'order' in bondDict else 'SINGLE'
                 if not sameEnt:
@@ -567,7 +567,6 @@ class refine:
                     self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
         else:
             self.molecule.createLinker(startAtom, endAtom, n, linkLen, valAngle, dihAngle)
-        return (startEnt, endEnt)
 
     def addCyclicBond(self, polymer):
         # to return a list atomName1, atomName2, distance
@@ -822,41 +821,45 @@ class refine:
         return entryAtom
 
     def setEntityEntryDict(self, linkerList, treeDict):
-        entityNames = [entity.getName() for entity in self.molecule.getEntities()]
+        entities = [entity for entity in self.molecule.getEntities()]
         visitedEntities = []
         if treeDict:
             entryAtomName = treeDict['start'] if 'start' in treeDict else None
         elif not treeDict or not entryAtomName:
             startEntity = self.molecule.getEntities()[0]
-            entryAtomName = self.getEntityTreeStartAtom(startEntity).getFullName()
-            treeDict = {'start':entryAtomName}
-        (entityName, atomName) = entryAtomName.split(':')
-        self.entityEntryDict[entityName] = atomName
-        visitedEntities.append(entityName)
+            entryAtom = self.getEntityTreeStartAtom(startEntity)
+            entryAtomName = entryAtom.getShortName()
+            treeDict = {'start':entryAtom}
+
+        self.entityEntryDict[startEntity] = entryAtom
+        visitedEntities.append(startEntity)
+
         if linkerList:
             import copy
             linkerList = copy.deepcopy(linkerList)
             linkerList = [linkerDict for linkerDict in linkerList if 'atoms' in linkerDict]
             while len(linkerList) > 0:
                 linkerDict = linkerList[0]
-                atoms = linkerDict['atoms']
-                entityNames = [atom.split(':')[0] for atom in atoms]
-                if entityNames[0] in visitedEntities and entityNames[1] in visitedEntities:
+                atomSpecs = linkerDict['atoms']
+                atoms = [self.molecule.getAtomByName(atom) for atom in atomSpecs]
+                linkerEntities = [atom.getTopEntity() for atom in atoms]
+
+                if linkerEntities[0] in visitedEntities and linkerEntities[1] in visitedEntities:
                     linkerList.pop(0)
                     continue
-                elif entityNames[0] in visitedEntities:
-                    entryAtomName = atoms[1]
+                elif linkerEntities[0] in visitedEntities:
+                    entryAtom = atoms[1]
                     linkerList.pop(0)
-                elif entityNames[1] in visitedEntities:
-                    entryAtomName = atoms[0]
+                elif linkerEntities[1] in visitedEntities:
+                    entryAtom = atoms[0]
                     linkerList.pop(0)
                 else:
                     linkerList.pop(0)
                     linkerList.append(linkerDict)
                     continue
-                (entityName, atomName) = entryAtomName.split(':')
-                self.entityEntryDict[entityName] = atomName
-                visitedEntities.append(entityName)
+                entity = entryAtom.getTopEntity()
+                self.entityEntryDict[entity] = entryAtom
+                visitedEntities.append(entity)
         return treeDict
 
     def getAtom(self, atomTuple):
@@ -1028,7 +1031,7 @@ class refine:
             resStrings = getSequenceArray(index, seqString, linkers, polyType)
             chain = molDict.get('chain')
             if chain == None:
-                chain = 'p'
+                chain = 'A'
             molio.readSequenceString(chain, resStrings)
         else:
             file = molDict['file']
@@ -1231,7 +1234,9 @@ class refine:
 	"""
 	# constList is a list of dictionaries w/ keys: 'lower', 'upper', and 'atomPairs'
 	constList = self.nmrfxDistReader(fileName)
-	for constraint in constList:
+	for groupID in constList:
+            constraint = constList[groupID]
+            print constraint
 	    lower = constraint['lower']
             upper = constraint['upper']
             atomPairs = constraint['atomPairs']
@@ -1273,59 +1278,12 @@ class refine:
 		    checker[group]['atomPairs'].append(atomPair)
 		    continue
 
-		lower, upper = tuple(map(float, splitList[-2:]))
+		lower, upper = tuple(map(float, splitList[4:6]))
 		# checks lower and upper bound to make sure they are positive values
 		constraints = {'atomPairs': [],'lower': lower,'upper': upper}
 		constraints['atomPairs'].append(atomPair)
 		checker[group] = constraints
-        return constraintDicts 
-
-
-    def readNMRFxDistanceConstraints(self, fileName, keepSetting=None):
-	# constList is a list of dictionaries w/ keys: 'lower', 'upper', and 'atomPairs'
-	constList = self.nmrfxDistReader(fileName)
-	for constraint in constList:
-	    lower = constraint['lower']
-            upper = constraint['upper']
-            atomPairs = constraint['atomPairs']
-            firstAtomPair = atomPairs[0]
-            if firstAtomPair not in self.constraints:
-                constraint = Constraint(firstAtomPair, lower, 'lower', setting=keepSetting)
-                self.constraints[firstAtomPair] = constraint
-                for atomPair in atomPairs[1:]:
-                    self.constraints[atomPair] = constraint
-                    constraint.addPair(atomPair)
-                self.constraints[firstAtomPair].addBound(upper,'upper');
-            else:
-                self.constraints[firstAtomPair].addBound(lower, 'lower');
-                self.constraints[firstAtomPair].addBound(upper, 'upper');
-	
-
-
-    def nmrfxDistReader(self, fileName):
-        constraintDicts = []
-	checker = {}
-
-	with open(fileName, 'r') as fInput:
-            fRead = fInput.readlines()
-            for line in fRead:
-                splitList = line.split("\t")
-                group = splitList[1]
-                atomPair = tuple(splitList[2:4])
-		atomPair = ' '.join(atomPair) if atomPair[0] < atomPair[1] else ' '.join([atomPair[1], atomPair[0]])
-
-		if group in checker:
-		    checker[group]['atomPairs'].append(atomPair)
-		    continue
-
-		lower, upper = tuple(map(float, splitList[-2:]))
-		# checks lower and upper bound to make sure they are positive values
-		constraints = {'atomPairs': [],'lower': lower,'upper': upper}
-		constraints['atomPairs'].append(atomPair)
-		checker[group] = constraints
-        return constraintDicts 
-
-
+        return checker 
 
 #set dc [list 283.n3 698.h1 1.8 2.0]
 # 283  RCYT  H6          283  RCYT  H2'          4.00    1.00E+00
@@ -1850,19 +1808,18 @@ class refine:
 
     def measureTree(self):
         for entity in [entity for entity in self.molecule.getEntities()]:
-            entityName = entity.getName()
             if type(entity) is Polymer:
                 prfStartAtom = self.getEntityTreeStartAtom(entity)
-                prfStartAtomName = prfStartAtom.getShortName()
-                treeStartAtomName = self.entityEntryDict[entityName]
-                if prfStartAtomName == treeStartAtomName:
+                treeStartAtom = self.entityEntryDict[entity]
+                if prfStartAtom == treeStartAtom:
                     continue
                 else:
                     ### To remeasure, coordinates should be generated for the entity ###
                     entity.genCoordinates(None)
             self.setupAtomProperties(entity)
-            if entityName in self.entityEntryDict:
-                entity.genMeasuredTree(self.getAtom((entityName, self.entityEntryDict[entityName])))
+            if entity in self.entityEntryDict:
+                atom = self.entityEntryDict[entity]
+                entity.genMeasuredTree(atom)
 
     def setupAtomProperties(self, compound):
         pI = PathIterator(compound)
@@ -1890,15 +1847,11 @@ class refine:
                                  if treeDict else (None, None))
 
         if start:
-            startEntityName, startAtomName = start.split(':')
-            startEntity = self.molecule.getEntity(startEntityName);
-            startAtom = self.getAtom((startEntityName, startAtomName))
+            startAtom = start
         else:
             startAtom = None
         if end:
-            endEntityName, endAtomName = end.split(':')
-            endEntity = self.molecule.getEntity(endEntityName)
-            endAtom = self.getAtom((endEntityName, endAtomName))
+            endAtom = end
         else:
             endAtom = None
         Molecule.makeAtomList()
@@ -2149,6 +2102,11 @@ class refine:
     def addRingClosures(self):
         """ Close ring structure using distance constraint on specified atoms within ring."""
         ringClosures = self.molecule.getRingClosures();
+        entityIDs = [entity.getIDNum() for entity in self.molecule.getEntities()] 
+        entityNames = [entity.getName() for entity in self.molecule.getEntities()] 
+        print entityIDs
+        print entityNames
+        
         if ringClosures:
             for atom1 in ringClosures:
                 atomName1 = atom1.getFullName()

@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.io;
 
 import java.util.*;
@@ -42,8 +41,34 @@ public class AtomParser {
     static HashMap<String, String> iupacToPDB = new HashMap<>();
     static HashMap<String, String> xplorToIUPAC = new HashMap<>();
     static HashMap<String, String> iupacToXPLOR = new HashMap<>();
+    static Map<String, String> map1To3 = new HashMap<>();
+    static Map<String, String> map3To1 = new HashMap<>();
 
     static {
+        map1To3.put("A", "ALA");
+        map1To3.put("D", "ASP");
+        map1To3.put("N", "ASN");
+        map1To3.put("R", "ARG");
+        map1To3.put("C", "CYS");
+        map1To3.put("E", "GLU");
+        map1To3.put("Q", "GLN");
+        map1To3.put("I", "ILE");
+        map1To3.put("V", "VAL");
+        map1To3.put("L", "LEU");
+        map1To3.put("P", "PRO");
+        map1To3.put("F", "PHE");
+        map1To3.put("Y", "TYR");
+        map1To3.put("W", "TRP");
+        map1To3.put("K", "LYS");
+        map1To3.put("M", "MET");
+        map1To3.put("H", "HIS");
+        map1To3.put("G", "GLY");
+        map1To3.put("S", "SER");
+        map1To3.put("T", "THR");
+        for (String key : map1To3.keySet()) {
+            map3To1.put(map1To3.get(key), key);
+        }
+
         pdbToIUPAC.put("CYS,HB1", "HB2");
         pdbToIUPAC.put("CYS,HB2", "HB3");
         pdbToIUPAC.put("CYS,HN", "H");
@@ -562,5 +587,13 @@ public class AtomParser {
             }
         }
         return resName;
+    }
+
+    public static String convert1To3(String s) {
+        return map1To3.get(s);
+    }
+
+    public static String convert3To1(String s) {
+        return map3To1.get(s);
     }
 }

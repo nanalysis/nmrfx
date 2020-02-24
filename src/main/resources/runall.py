@@ -189,7 +189,7 @@ def parseArgs():
         cleanDirs()
         if nStructures == 0:
             exit(0)
-    calcRetCode = 0
+    retCode = 0
     nKeep = int(options.nKeep)
     heapMemory = int(options.heapMemory)
     start = int(options.start)

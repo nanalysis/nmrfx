@@ -39,6 +39,7 @@ public class Residue extends Compound {
     private String firstBackBoneAtomName = null;
     public Residue pairedTo = null;
     public SecondaryStructure secStruct = null;
+    public final static Map<String, String> PSEUDO_MAP = new HashMap<>();
 
     static {
         String[] standardResidues = {
@@ -54,6 +55,19 @@ public class Residue extends Compound {
         for (int i = 0; i < standardResidues.length; i += 2) {
             standardResSet.put(standardResidues[i], standardResidues[i + 1]);
         }
+        PSEUDO_MAP.put("ALA:QB", "MB");
+        PSEUDO_MAP.put("ILE:QG2", "MG");
+        PSEUDO_MAP.put("ILE:QD1", "MD");
+        PSEUDO_MAP.put("ILE:QG1", "QG");
+        PSEUDO_MAP.put("LEU:QD1", "MD1");
+        PSEUDO_MAP.put("LEU:QD2", "MD2");
+        PSEUDO_MAP.put("LEU:QQD", "QD");
+        PSEUDO_MAP.put("MET:QE", "ME");
+        PSEUDO_MAP.put("THR:QG2", "MG");
+        PSEUDO_MAP.put("VAL:QG1", "MG1");
+        PSEUDO_MAP.put("VAL:QG2", "MG2");
+        PSEUDO_MAP.put("VAL:QG", "QQG");
+
     }
 
     public Residue(String number, String name) {
@@ -186,7 +200,12 @@ public class Residue extends Compound {
 
     public Atom[] getPseudo(String pseudoName) {
         pseudoName = pseudoName.toUpperCase();
-        return pseudoMap.get(pseudoName);
+        if (pseudoName.charAt(0) == 'M') {
+            pseudoName = PSEUDO_MAP.get(name.toUpperCase() + ":" + pseudoName);
+        } else if (!pseudoMap.containsKey(pseudoName)) {
+            pseudoName = PSEUDO_MAP.get(name.toUpperCase() + ":" + pseudoName);
+        }
+        return pseudoName != null ? pseudoMap.get(pseudoName) : null;
     }
 
     public void addBond(final Bond bond) {

@@ -94,16 +94,15 @@ public class NMRStarReader {
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
         Loop loop = saveframe.getLoop("_Chem_comp_atom");
         if (loop == null) {
-            System.out.println("No \"_Chem_comp_atom\" loop in \"" + saveframe.getName() + "\"");
-        } else {
-            List<String> idColumn = loop.getColumnAsList("Atom_ID");
-            List<String> typeColumn = loop.getColumnAsList("Type_symbol");
-            for (int i = 0; i < idColumn.size(); i++) {
-                String aName = (String) idColumn.get(i);
-                String aType = (String) typeColumn.get(i);
-                Atom atom = new Atom(aName, aType);
-                compound.addAtom(atom);
-            }
+            throw new ParseException("No \"_Chem_comp_atom\" loop in \"" + saveframe.getName() + "\"");
+        }
+        List<String> idColumn = loop.getColumnAsList("Atom_ID");
+        List<String> typeColumn = loop.getColumnAsList("Type_symbol");
+        for (int i = 0; i < idColumn.size(); i++) {
+            String aName = (String) idColumn.get(i);
+            String aType = (String) typeColumn.get(i);
+            Atom atom = Atom.genAtomWithElement(aName, aType);
+            compound.addAtom(atom);
         }
         compound.updateNames();
         loop = saveframe.getLoop("_Chem_comp_bond");
@@ -309,6 +308,7 @@ public class NMRStarReader {
             if (chainCode.equals(".")) {
                 chainCode = "A";
             }
+            int chainID = chainCode.charAt(0) - 'A' + 1;
             if ((polymer == null) || (!chainCode.equals(lastChain))) {
                 lastChain = chainCode;
                 if (polymer != null) {
@@ -321,7 +321,7 @@ public class NMRStarReader {
                 polymer.setIDNum(entityID);
                 polymer.assemblyID = entityID++;
                 entities.put(chainCode, polymer);
-                molecule.addEntity(polymer, chainCode);
+                molecule.addEntity(polymer, chainCode, chainID);
 
             }
             String resName = (String) residueNameColumn.get(i);
@@ -487,10 +487,10 @@ public class NMRStarReader {
                     polymer.assemblyID = entityAssemblyID;
                     polymer.setPDBChain(pdbLabel);
                     entities.put(entityAssemblyIDString + "." + entityIDString, polymer);
-                    molecule.addEntity(polymer, asymLabel);
+                    molecule.addEntity(polymer, asymLabel, entityAssemblyID);
                     finishSaveFrameProcessing(polymer, saveframe, nomenclature, capped);
                 } else {
-                    molecule.addCoordSet(asymLabel, entity);
+                    molecule.addCoordSet(asymLabel, entityAssemblyID, entity);
                 }
             } else {
                 Entity entity = molecule.getEntity(name);
@@ -500,7 +500,7 @@ public class NMRStarReader {
                     compound.assemblyID = entityAssemblyID;
                     compound.setPDBChain(pdbLabel);
                     entities.put(entityAssemblyIDString + "." + entityIDString, compound);
-                    molecule.addEntity(compound, asymLabel);
+                    molecule.addEntity(compound, asymLabel, entityAssemblyID);
                     String mapID = entityAssemblyID + "." + entityID + "." + 1;
                     finishSaveFrameProcessing(this, saveframe, compound, mapID);
                 }
@@ -988,6 +988,7 @@ public class NMRStarReader {
             List<String> entityIDColumn = loop.getColumnAsList("Entity_ID");
             List<String> compIdxIDColumn = loop.getColumnAsList("Comp_index_ID");
             List<String> atomColumn = loop.getColumnAsList("Atom_ID");
+            List<String> typeColumn = loop.getColumnAsList("Atom_type");
             List<String> valColumn = loop.getColumnAsList("Val");
             List<String> valErrColumn = loop.getColumnAsList("Val_err");
             List<String> resColumn = loop.getColumnAsList("Resonance_ID");
@@ -1000,6 +1001,7 @@ public class NMRStarReader {
                 }
                 String iRes = (String) compIdxIDColumn.get(i);
                 String atomName = (String) atomColumn.get(i);
+                String atomType = (String) typeColumn.get(i);
                 String value = (String) valColumn.get(i);
                 String valueErr = (String) valErrColumn.get(i);
                 String resIDStr = ".";
@@ -1023,7 +1025,7 @@ public class NMRStarReader {
                     }
                 }
                 if (atom == null) {
-                    atom = new Atom(atomName);
+                    atom = Atom.genAtomWithElement(atomName, atomType);
                     compound.addAtom(atom);
                 }
                 if (atom == null) {
@@ -1263,7 +1265,7 @@ public class NMRStarReader {
             }
         }
     }
-    
+
     public void processGenDistConstraints(Saveframe saveframe) throws ParseException {
         Loop loop = saveframe.getLoop("_Gen_dist_constraint");
         if (loop == null) {
@@ -1294,7 +1296,7 @@ public class NMRStarReader {
         String[] resIDStr = new String[2];
         PeakList peakList = null;
         String lastPeakListIDStr = "";
-        NoeSet.addSet(saveframe.getName().substring(5));
+        NoeSet noeSet = NoeSet.addSet(saveframe.getName().substring(5));
         for (int i = 0; i < entityAssemblyIDColumns[0].size(); i++) {
             boolean okAtoms = true;
             for (int iAtom = 0; iAtom < 2; iAtom++) {
@@ -1371,7 +1373,6 @@ public class NMRStarReader {
                     int idNum = Integer.parseInt(peakID);
                     peak = peakList.getPeakByID(idNum);
                 }
-                List<Noe> noeList = Noe.getPeakList(peak);
                 Noe noe = new Noe(peak, spSets[0], spSets[1], 1.0);
                 double upper = 1000000.0;
                 if (upperValue.equals(".")) {
@@ -1379,20 +1380,20 @@ public class NMRStarReader {
                 } else {
                     upper = Double.parseDouble(upperValue);
                 }
-                noe.upper = upper;
+                noe.setUpper(upper);
                 double lower = 1.8;
                 if (!lowerValue.equals(".")) {
                     lower = Double.parseDouble(lowerValue);
                 }
-                noe.lower = lower;
-                noe.ppmError = 1.0;
-                noe.intensity = Math.pow(upper, -6.0) * 10000.0;
-                noe.volume = Math.pow(upper, -6.0) * 10000.0;
-                noeList.add(noe);
+                noe.setLower(lower);
+                noe.setPpmError(1.0);
+                noe.setIntensity(Math.pow(upper, -6.0) * 10000.0);
+                noe.setVolume(Math.pow(upper, -6.0) * 10000.0);
+                noeSet.add(noe);
             }
         }
-        Noe.updateNPossible(null);
-        Noe.setCalibratable(false);
+        noeSet.updateNPossible(null);
+        noeSet.setCalibratable(false);
     }
 
     public void processNEFDistanceRestraints(Saveframe saveframe, EnergyLists energyList) throws ParseException {

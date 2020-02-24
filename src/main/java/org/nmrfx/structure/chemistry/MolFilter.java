@@ -15,11 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import org.nmrfx.structure.utilities.Util;
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,7 +25,7 @@ import java.util.regex.Pattern;
 public class MolFilter {
 
     public Vector atomNames = new Vector(4, 4);
-    ArrayList<CoordsetAndEntity> csAndENames = new ArrayList();
+    CoordsetAndEntity csAndE = null;
     String molName = "*";
     public String firstRes = "";
     public String lastRes = "";
@@ -42,22 +40,40 @@ public class MolFilter {
     private class CoordsetAndEntity {
 
         String entityName = "*";
+        int entityID = -1;
         String coordSetName = "*";
+        int coordID = -1;
         String oneName = "";
         boolean checkOneName = false;
+        int oneID = -1;
 
         CoordsetAndEntity(final String coordSetName, final String entityName) {
             if (entityName.length() != 0) {
-                this.entityName = entityName;
+                try {
+                    entityID = Integer.parseInt(entityName);
+                    this.entityName = "";
+                } catch (NumberFormatException nfE) {
+                    this.entityName = entityName;
+                }
+
             }
             if (coordSetName.length() != 0) {
-                this.coordSetName = coordSetName;
+                try {
+                    coordID = Integer.parseInt(entityName);
+                } catch (NumberFormatException nfE) {
+                    this.coordSetName = entityName;
+                    this.coordSetName = "";
+                }
             }
         }
 
         CoordsetAndEntity(final String oneName) {
-            this.oneName = oneName;
             checkOneName = true;
+            try {
+                oneID = Integer.parseInt(oneName);
+            } catch (NumberFormatException nfE) {
+                this.oneName = oneName;
+            }
         }
     }
 
@@ -83,10 +99,10 @@ public class MolFilter {
             String coordSetName = molName.substring(0, periodPos);
             String entityName = molName.substring(periodPos + 1);
             this.entityName = entityName;
-            csAndENames.add(new CoordsetAndEntity(coordSetName, entityName));
+            csAndE = new CoordsetAndEntity(coordSetName, entityName);
         } else {
-            csAndENames.add(new CoordsetAndEntity(molName));
-            if (molName != "*"){
+            csAndE = new CoordsetAndEntity(molName);
+            if (molName != "*") {
                 entityName = molName;
             }
         }
@@ -224,8 +240,7 @@ public class MolFilter {
 
     public String getCoordSetName() {
         String result = "*";
-        if (csAndENames.size() > 0) {
-            CoordsetAndEntity csAndE = csAndENames.get(0);
+        if (csAndE != null) {
             if (csAndE.checkOneName) {
                 result = csAndE.oneName;
             } else {
@@ -235,18 +250,20 @@ public class MolFilter {
         return result;
     }
 
-    public boolean matchCoordSetAndEntity(String cName, String eName) {
+    public boolean matchCoordSetAndEntity(CoordSet cSet, Entity entity) {
         boolean result = false;
-        for (CoordsetAndEntity csAndE : csAndENames) {
-            if (csAndE.checkOneName) {
-                if (Util.stringMatch(cName, csAndE.oneName) || Util.stringMatch(eName, csAndE.oneName)) {
-                    result = true;
-                    break;
-                }
-            } else if (Util.stringMatch(cName, csAndE.coordSetName) && Util.stringMatch(eName, csAndE.entityName)) {
+        if (csAndE.checkOneName) {
+            if ((csAndE.oneID != -1) && ((csAndE.oneID == cSet.id) || (csAndE.oneID == entity.entityID))) {
                 result = true;
-                break;
+            } else if ((csAndE.oneID == -1) && (Util.stringMatch(cSet.name, csAndE.oneName) || Util.stringMatch(entity.name, csAndE.oneName))) {
+                result = true;
             }
+        } else {
+
+            boolean csMatch = (csAndE.coordID == cSet.id) || Util.stringMatch(cSet.name, csAndE.coordSetName);
+            boolean eMatch = (csAndE.entityID == entity.entityID) || Util.stringMatch(cSet.name, csAndE.entityName);
+
+            result = csMatch && eMatch;
         }
         return result;
     }

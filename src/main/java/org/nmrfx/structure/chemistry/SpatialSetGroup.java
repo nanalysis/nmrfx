@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry;
 
 import java.util.HashSet;
@@ -43,7 +42,10 @@ public class SpatialSetGroup {
     public SpatialSetGroup(SpatialSet spSet) {
         spSets = new HashSet(1);
         spSets.add(spSet);
-        name = spSet.getFullName();
+        name = spSet.atom.getFullName();
+        if (spSet.atom.isMethyl()) {
+            name = name.substring(0, name.length() - 1) + "*";
+        }
     }
 
     public SpatialSetGroup(Atom[] atoms) {

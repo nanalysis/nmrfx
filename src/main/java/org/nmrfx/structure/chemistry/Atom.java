@@ -22,6 +22,7 @@ import java.util.*;
 import javax.vecmath.Point2d;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.processor.datasets.peaks.AtomResonance;
+import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
 import org.nmrfx.structure.chemistry.miner.IAtom;
 import org.nmrfx.structure.chemistry.miner.IBond;
 
@@ -96,7 +97,7 @@ public class Atom implements IAtom {
     public boolean rotActive = true;
     public int canonValue = 0;
     public Atom[] branchAtoms = new Atom[0];
-    public Object atomEnergyProp = null;
+    public AtomEnergyProp atomEnergyProp = null;
     boolean[] flags = new boolean[ATOMFLAGS.values().length];
     Optional<Map<String, Object>> properties = Optional.empty();
     public Atom daughterAtom = null;
@@ -106,31 +107,36 @@ public class Atom implements IAtom {
         initialize(atomParse);
     }
 
-    public Atom(String name) {
-        spatialSet = new SpatialSet(this);
+    private Atom(String name, AtomEnergyProp atomEnergyProp) {
         this.name = name;
-        aNum = getElementNumber(name);
-        atomProperty = AtomProperty.get(name);
-        radius = atomProperty.radius;
-        setColorByType();
+        spatialSet = new SpatialSet(this);
         bonds = new ArrayList<>(2);
-        iAtom = lastAtom;
+        iAtom = lastAtom++;
         origIndex = iAtom;
-        lastAtom++;
+        this.atomEnergyProp = atomEnergyProp;
+        if (atomEnergyProp == null) {
+            aNum = 0;
+        } else {
+            aNum = atomEnergyProp.getAtomNumber();
+        }
+        atomProperty = AtomProperty.get(aNum);
+        radius = atomProperty.radius;
+
+        setColorByType();
+
     }
 
-    public Atom(String name, String aType) {
-        spatialSet = new SpatialSet(this);
-        this.name = name;
-        aNum = getElementNumber(aType);
-        atomProperty = AtomProperty.get(aType);
-        radius = atomProperty.radius;
-        setColorByType();
-        bonds = new ArrayList<>(2);
-        iAtom = lastAtom;
-        origIndex = iAtom;
-        lastAtom++;
-        setAtomTypeFromNumber();
+    public static Atom genAtomWithType(String name, String aType) {
+        AtomEnergyProp atomEnergyProp = AtomEnergyProp.get(aType);
+        Atom atom = new Atom(name, atomEnergyProp);
+        return atom;
+    }
+
+    public static Atom genAtomWithElement(String name, String aType) {
+        int aNum = AtomProperty.getElementNumber(aType);
+        AtomEnergyProp eProp = AtomEnergyProp.getDefault(aNum);
+        Atom atom = new Atom(name, eProp);
+        return atom;
     }
 
     void initialize(AtomParser atomParse) {
@@ -199,7 +205,7 @@ public class Atom implements IAtom {
     }
 
     public Atom add(String name, String elementName, Order order) {
-        Atom newAtom = new Atom(name, elementName);
+        Atom newAtom = genAtomWithElement(name, elementName);
         newAtom.parent = this;
         if (entity != null) {
             Compound compound = (Compound) entity;
@@ -398,10 +404,20 @@ public class Atom implements IAtom {
         return entity;
     }
 
+    public Entity getTopEntity() {
+        if (entity instanceof Residue) {
+            Polymer polymer = ((Residue) entity).polymer;
+            return polymer;
+        } else {
+            return entity;
+        }
+    }
+
     public String getFullName() {
         if (entity instanceof Residue) {
-            return ((Residue) entity).polymer.name + ":"
-                    + ((Residue) entity).number + "." + name;
+            Polymer polymer = ((Residue) entity).polymer;
+            String id = String.valueOf(polymer.getCoordSet().id);
+            return id + ":" + ((Residue) entity).number + "." + name;
         } else {
             return entity.name + ":." + name;
         }
@@ -878,7 +894,7 @@ public class Atom implements IAtom {
         return distance;
     }
 
-    public static void getDistances(SpatialSetGroup spg1, SpatialSetGroup spg2, int iStruct, ArrayList<Double> dArray) {
+    public static void getDistances(SpatialSetGroup spg1, SpatialSetGroup spg2, int iStruct, List<Double> dArray) {
         double x;
         double y;
         double z;
