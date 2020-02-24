@@ -45,8 +45,6 @@ import static java.util.Comparator.comparing;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableMap;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.nmrfx.processor.datasets.Nuclei;
@@ -94,7 +92,8 @@ public class PeakList {
     /**
      *
      */
-    public static ObservableMap<String, PeakList> peakListTable = FXCollections.observableMap(new LinkedHashMap<>());
+    public static Map<String, PeakList> peakListTable = new LinkedHashMap<>();
+
 
     /**
      *

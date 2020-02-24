@@ -36,7 +36,6 @@ import java.util.logging.Logger;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.nmrfx.processor.optimization.Fitter;
-import org.renjin.nmath.pt;
 
 /**
  *
