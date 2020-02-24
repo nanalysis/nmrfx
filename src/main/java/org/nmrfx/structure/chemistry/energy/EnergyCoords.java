@@ -124,6 +124,10 @@ public class EnergyCoords {
     public void setupShifts() {
         eShiftPairs.setupShifts();
     }
+    
+    public void dumpRestraints() {
+        eConstraintPairs.dumpRestraints();
+    }
 
     public int getNNOE() {
         return eConstraintPairs.nPairs;
