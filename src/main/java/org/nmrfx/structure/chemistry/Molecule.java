@@ -2571,7 +2571,7 @@ public class Molecule implements Serializable, ITree {
         return bpMap;
     }
 
-    public char[] viennaSequence() { //pseudoknots
+    public char[] getViennaSequence() { //pseudoknots
         HashMap<Integer, List<BasePair>> bpMap = bpMap();
         List<BasePair> bps = pairList();
         List<Residue> RNAresidues = RNAresidues();
