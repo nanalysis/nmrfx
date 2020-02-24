@@ -33,9 +33,11 @@ public class CoordSet {
 
     public Map<String, Entity> entities = new LinkedHashMap<String, Entity>();
     String name;
+    int id = 0;
 
-    public CoordSet(String name, Entity entity) {
+    public CoordSet(String name, int id, Entity entity) {
         this.name = name;
+        this.id = id;
         addEntity(entity);
         entity.coordSet = this;
     }

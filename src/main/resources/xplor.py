@@ -201,6 +201,11 @@ class XPLOR:
                                 self.invalidDistAtomPairs.append(atom2)
                 lower, upper = getBounds(constraintValues, type)
                 constraint = {'atomPairs': atomPairs, 'lower': lower, 'upper': upper}
+            elif type == 'angles':
+                atomPairs = atoms
+                constraintValues = constraint[-1]
+                lower, upper = getBounds(constraintValues, type)
+                constraint = {'atomPairs': atomPairs, 'lower': lower, 'upper': upper}
             elif type == 'rdc':
                 atomPairs = [' '.join([atoms[0], atoms[1]])]
                 constraintValues = constraint[-1]
@@ -354,8 +359,8 @@ class XPLOR:
     def readXPLORAngleConstraints(self, dihedral, resNames):
         ''' readXPLORAngleConstraints parses an xplor angle file and adds in the
             constraints directly into the provided dihedral object '''
-        constraints = self.parseXPLORFile(resNames)
-        constraints = self.parseConstraints(constraints,'angles')
+        constraintInfo = self.parseXPLORFile(resNames, False)
+        constraints = self.parseConstraints(constraintInfo,'angles')
         for constraint in constraints:
             atomSels = constraint['atomPairs']
             bounds = [constraint['lower'],constraint['upper']]

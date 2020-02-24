@@ -55,6 +55,7 @@ import org.nmrfx.structure.chemistry.SpatialSet;
 import org.nmrfx.structure.chemistry.constraints.AngleConstraint;
 import org.nmrfx.structure.chemistry.constraints.ConstraintSet;
 import org.nmrfx.structure.chemistry.constraints.Noe;
+import org.nmrfx.structure.chemistry.constraints.NoeSet;
 import org.nmrfx.structure.utilities.Format;
 
 /**
@@ -815,7 +816,7 @@ public class NMRStarWriter {
             PeakList peakList = (PeakList) iter.next();
             peakWriter.writePeaksSTAR3(chan, peakList);
         }
-       
+
         AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory;
 
         resFactory.writeResonancesSTAR3(chan);
@@ -825,12 +826,13 @@ public class NMRStarWriter {
                 writeAssignmentsSTAR3(chan, iSet);
             }
             CoordinateSTARWriter.writeToSTAR3(chan, molecule, 1);
-            ConstraintSet cSet = Noe.getActiveSet();
             int setNum = 1;
-            if (cSet.getSize() > 0) {
-                ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet, setNum++);
+            for (ConstraintSet cSet : NoeSet.getSets()) {
+                if (cSet.getSize() > 0) {
+                    ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet, setNum++);
+                }
             }
-            cSet = AngleConstraint.getActiveSet();
+            ConstraintSet cSet = AngleConstraint.getActiveSet();
             setNum = 1;
             if (cSet.getSize() > 0) {
                 ConstraintSTARWriter.writeConstraintsSTAR3(chan, cSet, setNum++);
@@ -838,8 +840,8 @@ public class NMRStarWriter {
         }
         PeakPathWriter pathWriter = new PeakPathWriter();
         int iPath = 0;
-        for (PeakPath peakPath: PeakPath.get()) {
-            pathWriter.writeToSTAR3(chan, peakPath, iPath);            
+        for (PeakPath peakPath : PeakPath.get()) {
+            pathWriter.writeToSTAR3(chan, peakPath, iPath);
         }
     }
 

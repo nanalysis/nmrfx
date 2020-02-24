@@ -26,8 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
 import org.nmrfx.structure.chemistry.miner.NodeValidator;
 import org.nmrfx.structure.chemistry.miner.PathIterator;
 
@@ -198,30 +201,13 @@ public class Sequence {
                         return;
                     }
                 }
-                String aTypeName = "H";
-                if (aType.substring(0, 1).equals("M") && aName.startsWith("H")) {
-                    aTypeName = "H";
-                } else if (aType.substring(0, 1).equals("A") && aName.startsWith("C")) {
-                    aTypeName = "C";
-                } else {
-                    // fixme wrong for two character elements
-                    aTypeName = aType.substring(0, 1);
-                }
-                Atom atom = new Atom(aName, aTypeName);
+                Atom atom = Atom.genAtomWithType(aName, aType);
                 // atom.setPointValidity(true);
                 atom.entity = residue;
                 atom.name = aName;
                 residue.addAtom(atom);
                 atom.setType(aType);
 
-                if (aType.substring(0, 1).equals("M") && atom.name.startsWith("H")) {
-                    atom.setAtomicNumber("H");
-                } else if (aType.substring(0, 1).equals("A") && atom.name.startsWith("C")) {
-                    atom.setAtomicNumber("C");
-                } else {
-                    // fixme wrong for two character elements
-                    atom.setAtomicNumber(aType.substring(0, 1));
-                }
                 atom.bondLength = Float.parseFloat(fields[3]);
                 atom.valanceAngle = (float) (Float.parseFloat(fields[4]) * Math.PI / 180.0);
                 atom.dihedralAngle = (float) (Float.parseFloat(fields[5]) * Math.PI / 180.0);
@@ -503,6 +489,13 @@ public class Sequence {
 
     public boolean addResidue(String fileName, Residue residue, RES_POSITION resPos, String coordSetName, boolean throwTclException)
             throws MoleculeIOException {
+        try {
+            // make sure parameters are in (if they are already this does nothing)
+            // so is quick to call
+            AtomEnergyProp.readPropFile();
+        } catch (IOException ex) {
+            throw new MoleculeIOException("Coudn't load energy parameter file" + ex.getMessage());
+        }
         ArrayList<String[]> fieldArray = loadResidue(fileName, throwTclException);
         boolean result = false;
         if (fieldArray.size() > 0) {
@@ -608,7 +601,12 @@ public class Sequence {
         return molecule;
     }
 
-    public Molecule read(String polymerName, List<String> inputStrings, String parentDir)
+    public Molecule read(String polymerName, List<String> inputStrings, String parentDir) throws MoleculeIOException {
+        return read(polymerName, inputStrings, parentDir, "");
+
+    }
+
+    public Molecule read(String polymerName, List<String> inputStrings, String parentDir, String molName)
             throws MoleculeIOException {
         LineNumberReader lineReader = null;
         Polymer polymer = null;
@@ -617,7 +615,6 @@ public class Sequence {
         String iRes = "1";
         String[] stringArg = new String[3];
         Pattern pattern = Pattern.compile("[-/\\w/\\.]+");
-        String molName = "";
         String coordSetName = molName;
         ArrayList<String> coordSetNames = new ArrayList<>();
         ArrayList<Polymer> polymers = new ArrayList<>();
@@ -703,7 +700,6 @@ public class Sequence {
             } else {
                 resName = stringArg[0];
                 isResidue = true;
-
                 if (stringArg[1] != null) {
                     try {
                         iRes = stringArg[1];
@@ -732,9 +728,10 @@ public class Sequence {
                 polymer = initMolFromSeqFile(molName, polymerName, coordSetNames, polymerType);
                 polymers.add(polymer);
                 molecule = polymer.molecule;
+                int coordID = 1;
                 for (String cName : coordSetNames) {
                     if (!molecule.coordSetExists(cName)) {
-                        molecule.addCoordSet(cName, polymer);
+                        molecule.addCoordSet(cName, coordID++, polymer);
                     }
                 }
 
@@ -863,10 +860,10 @@ public class Sequence {
             polymer.assemblyID = molecule.entityLabels.size() + 1;
 
             if (coordSetNames.isEmpty()) {
-                molecule.addEntity(polymer, "");
+                molecule.addEntity(polymer, "", polymer.assemblyID);
             } else {
                 //System.err.println("add entity named" + polymerName + " with cset " + ((String) coordSetNames.get(0)));
-                molecule.addEntity(polymer, (String) coordSetNames.get(0));
+                molecule.addEntity(polymer, (String) coordSetNames.get(0), polymer.assemblyID);
             }
         } else {
             polymer = (Polymer) entity;

@@ -399,7 +399,7 @@ public class MMcifReader {
             }
 
             if (atom == null) {
-                atom = new Atom(atomName);
+                atom = Atom.genAtomWithElement(atomName, elemName);
                 atom.name = atomName;
                 compound.addAtom(atom);
             }
@@ -501,8 +501,7 @@ public class MMcifReader {
                     }
                 }
             }
-
-            atom = new Atom(atomName);
+            atom = Atom.genAtomWithElement(atomName, elemName);
             atom.name = atomName;
             compound.addAtom(atom);
 

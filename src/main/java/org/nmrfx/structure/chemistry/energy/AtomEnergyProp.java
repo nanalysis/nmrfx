@@ -24,17 +24,33 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import org.nmrfx.structure.chemistry.Atom;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.commons.math3.util.FastMath;
+import static org.nmrfx.structure.chemistry.energy.EnergyLists.irpTable;
 
 public class AtomEnergyProp {
 
+    // regexp patterns for parsing Amber parameter files
+    static final Pattern atomPattern = Pattern.compile("(^\\S\\S?)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
+    static final Pattern bondPattern = Pattern.compile("(^\\S.)-(\\S.)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
+    static final Pattern angPattern = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
+    static final Pattern dihPattern = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)-(\\S.)\\s+([\\d]+)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
+    static final Pattern imprPattern = Pattern.compile("(^\\S.)-(\\S.)-(\\S.)-(\\S.)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s+([-\\.0-9]+)\\s*(.*)");
+
     private static boolean FILE_LOADED = false;
+    private static boolean PARM_FILE_LOADED = false;
 
     final String name;
+    private final int aNum;
     //leonard-jones a parameter
     private final double a;
     //leonard-jones b parameter
@@ -55,9 +71,12 @@ public class AtomEnergyProp {
     private static double rscale = 0.68;
     private static final HashMap<String, AtomEnergyProp> propMap = new HashMap<String, AtomEnergyProp>();
     private static double hbondDelta = 0.30;
+    private static final Map<Integer, AtomEnergyProp> DEFAULT_MAP = new HashMap<>();
+    public static Map<String, Integer> torsionMap = new HashMap<>();
 
-    public AtomEnergyProp(final String name, final double a, final double b, final double r, final double rh, final double e, final double c, final double mass, final int hbondMode) {
+    public AtomEnergyProp(final String name, int aNum, final double a, final double b, final double r, final double rh, final double e, final double c, final double mass, final int hbondMode) {
         this.name = name;
+        this.aNum = aNum;
         this.a = FastMath.sqrt(a);
         this.b = FastMath.sqrt(b);
         this.r = r;
@@ -100,24 +119,149 @@ public class AtomEnergyProp {
                 } else {
                     String aType = stringS.get(headerS.indexOf("AtomType"));
                     double r = Double.parseDouble(stringS.get(headerS.indexOf("RMin")));
+                    int aNum = Integer.parseInt(stringS.get(headerS.indexOf("AtomicNumber")));
                     double rh = Double.parseDouble(stringS.get(headerS.indexOf("HardRadius")));
                     double e = Double.parseDouble(stringS.get(headerS.indexOf("E")));
                     double m = Double.parseDouble(stringS.get(headerS.indexOf("Mass")));
                     int hType = (int) Double.parseDouble(stringS.get(headerS.indexOf("HBondType")));
-                    
+
                     e = -e;
                     r = r * 2.0;
                     double a = 1.0;
                     double b = 1.0;
                     double c = 0.0;
-                    AtomEnergyProp prop = new AtomEnergyProp(aType, a, b, r, rh, e, c, m, hType);
+                    AtomEnergyProp prop = new AtomEnergyProp(aType, aNum, a, b, r, rh, e, c, m, hType);
                     AtomEnergyProp.add(aType, prop);
                 }
             } else {
                 break;
             }
         }
+        DEFAULT_MAP.put(1, get("H"));
+        DEFAULT_MAP.put(6, get("CT"));
+        DEFAULT_MAP.put(7, get("N"));
+        DEFAULT_MAP.put(8, get("O"));
+        DEFAULT_MAP.put(9, get("F"));
+        DEFAULT_MAP.put(12, get("MG"));
+        DEFAULT_MAP.put(15, get("P"));
+        DEFAULT_MAP.put(16, get("S"));
+        DEFAULT_MAP.put(17, get("Cl"));
+        DEFAULT_MAP.put(20, get("C0"));
+        DEFAULT_MAP.put(26, get("FE"));
+        DEFAULT_MAP.put(29, get("CU"));
+        DEFAULT_MAP.put(30, get("Zn"));
+        DEFAULT_MAP.put(35, get("Br"));
+        DEFAULT_MAP.put(53, get("I"));
 
+    }
+
+    public static void makeIrpMap() throws FileNotFoundException, IOException {
+        if (!PARM_FILE_LOADED) {
+            makeIrpMap("reslib_iu/parm15ipq_10.3.dat");
+        }
+    }
+
+    static String getAtomKey(Matcher matcher, int nAtoms) {
+        StringBuilder sBuilder = new StringBuilder();
+        for (int i = 0; i < nAtoms; i++) {
+            if (i > 0) {
+                sBuilder.append("-");
+            }
+            sBuilder.append(matcher.group(i + 1).trim());
+        }
+        return sBuilder.toString();
+    }
+
+    public static void makeIrpMap(String fileName) throws FileNotFoundException, IOException {
+        LineNumberReader lineReader;
+        PARM_FILE_LOADED = true;
+        BufferedReader bf;
+        if (fileName.startsWith("reslib_iu")) {
+            ClassLoader cl = ClassLoader.getSystemClassLoader();
+            InputStream istream = cl.getResourceAsStream(fileName);
+            bf = new BufferedReader(new InputStreamReader(istream));
+        } else {
+            bf = new BufferedReader(new FileReader(fileName));
+        }
+
+        lineReader = new LineNumberReader(bf);
+        torsionMap.clear();
+        List<List<double[]>> torsionMasterList = new ArrayList<>();
+        List<double[]> torsionList = new ArrayList<>();
+        int nVals = 1;
+        String lastKey = "";
+        while (true) {
+            String line = lineReader.readLine();
+            if (line != null) {
+                line = line.trim();
+                Matcher matcher = dihPattern.matcher(line);
+                if (matcher.matches()) {
+                    String key = getAtomKey(matcher, 4);
+                    int divider = Integer.parseInt(matcher.group(5));
+                    double barrier = Double.parseDouble(matcher.group(6));
+                    double phase = Double.parseDouble(matcher.group(7)) * Math.PI / 180.0;
+                    phase = Dihedral.reduceAngle(phase);
+                    double periodicity = Math.abs(Double.parseDouble(matcher.group(8)));
+
+                    if (!torsionMap.containsKey(key)) {
+                        torsionList = new ArrayList<>();
+                        torsionMasterList.add(torsionList);
+                        torsionMap.put(key, torsionMasterList.size() - 1);
+                    } else {
+                        int index = torsionMap.get(key);
+                        torsionList = torsionMasterList.get(index);
+                        if (!key.equals(lastKey)) {
+                            torsionList.clear();
+                        }
+                    }
+                    lastKey = key;
+                    double[] vals = {barrier, periodicity, phase};
+                    nVals = vals.length;
+                    torsionList.add(vals);
+                }
+            } else {
+                break;
+            }
+        }
+
+        irpTable = new double[torsionMasterList.size()][][];
+
+        for (int i = 0; i < irpTable.length; i++) {
+            irpTable[i] = new double[torsionMasterList.get(i).size()][nVals];
+            for (int j = 0; j < irpTable[i].length; j++) {
+                for (int k = 0; k < nVals; k++) {
+                    irpTable[i][j][k] = torsionMasterList.get(i).get(j)[k];
+                }
+            }
+        }
+    }
+
+    public static int getTorsionIndex(String torsionType) {
+        // H-N-CX-C
+        // 012345678
+        boolean[][] generics = {{false, false}, {true, false}, {false, true}, {true, true}};
+        StringBuilder sBuilder = new StringBuilder();
+        int firstDash = torsionType.indexOf('-');
+        int lastDash = torsionType.lastIndexOf('-');
+        for (boolean[] generic : generics) {
+            sBuilder.setLength(0);
+            if (generic[0]) {
+                sBuilder.append(("X"));
+            } else {
+                sBuilder.append(torsionType.substring(0, firstDash));
+            }
+            sBuilder.append(torsionType.substring(firstDash, lastDash + 1));
+            if (generic[1]) {
+                sBuilder.append(("X"));
+            } else {
+                sBuilder.append(torsionType.substring(7));
+            }
+            Integer index = torsionMap.get(sBuilder.toString());
+            if (index != null) {
+                return index + 1;
+            }
+        }
+        return 0;
     }
 
     public void clear() {
@@ -129,11 +273,29 @@ public class AtomEnergyProp {
     }
 
     public static AtomEnergyProp get(final String atomType) {
+        try {
+            readPropFile();
+        } catch (IOException ex) {
+            Logger.getLogger(AtomEnergyProp.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return propMap.get(atomType);
+    }
+
+    public static AtomEnergyProp getDefault(final int aNum) {
+        try {
+            readPropFile();
+        } catch (IOException ex) {
+            Logger.getLogger(AtomEnergyProp.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return DEFAULT_MAP.get(aNum);
     }
 
     public String getName() {
         return name;
+    }
+
+    public int getAtomNumber() {
+        return aNum;
     }
 
     /**
@@ -290,4 +452,5 @@ public class AtomEnergyProp {
         }
         return value;
     }
+
 }

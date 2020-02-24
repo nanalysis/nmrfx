@@ -29,13 +29,13 @@ public abstract class NoeCalibration {
         INTENSITY("intensity") {
             @Override
             public double measure(Noe noe) {
-                return noe.intensity;
+                return noe.getIntensity();
             }
         },
         VOLUME("volume") {
             @Override
             public double measure(Noe noe) {
-                return noe.volume;
+                return noe.getVolume();
             }
         };
         private String description;

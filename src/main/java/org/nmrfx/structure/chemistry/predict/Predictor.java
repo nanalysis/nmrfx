@@ -251,7 +251,7 @@ public class Predictor {
                 }
                 Atom atom = residue.getAtom(atomName);
                 if (atom != null) {
-                    Double value = predictor.predict(residue.getAtom(atomName), false);
+                    Double value = predictor.predict(atom, false);
                     if (value != null) {
                         atom.setRefPPM(iRef, value);
                     }

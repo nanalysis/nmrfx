@@ -169,7 +169,7 @@ public class SDFile {
             String atomSymbol = string.substring(31, 34).trim();
             String aname = atomSymbol + (iAtom + 1);
 
-            Atom atom = new Atom(aname, atomSymbol);
+            Atom atom = Atom.genAtomWithElement(aname, atomSymbol);
             // fixme should do this elsewhere
             atom.setPointValidity(structureNumber, true);
             Point3 pt = new Point3(x, y, z);

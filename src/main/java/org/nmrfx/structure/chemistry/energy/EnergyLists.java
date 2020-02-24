@@ -30,7 +30,13 @@ import org.nmrfx.structure.chemistry.SpatialSet;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -45,7 +51,6 @@ import java.util.logging.Logger;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
-import static org.nmrfx.structure.chemistry.energy.AtomMath.IrpParameters;
 import org.nmrfx.structure.chemistry.energy.RNARotamer.RotamerScore;
 import org.nmrfx.structure.chemistry.predict.Predictor;
 
@@ -82,6 +87,7 @@ public class EnergyLists {
     boolean stochasticMode = false;
     boolean[] stochasticResidues = null;
     boolean constraintsSetup = false;
+    public static double[][][] irpTable;
 
     public EnergyLists() {
     }
@@ -451,6 +457,7 @@ public class EnergyLists {
     public void makeCompoundList(Molecule molecule) {
         try {
             AtomEnergyProp.readPropFile();
+            AtomEnergyProp.makeIrpMap();
         } catch (IOException ex) {
             Logger.getLogger(EnergyLists.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -706,6 +713,12 @@ public class EnergyLists {
                 for (Polymer polymer : polymers) {
                     if (polymer.isRNA()) {
                         for (int i = 1; i < polymer.size(); i++) {
+                            Residue residue = polymer.getResidue(i);
+                            if (!residue.isStandard()) {
+                                i++;
+                                continue;
+                            }
+
                             nRotamers++;
                             RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
                             double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
@@ -718,13 +731,13 @@ public class EnergyLists {
             }
             if (forceWeight.getIrp() > 0.0) {
                 for (Atom atom : angleAtoms) {
-                    if ((atom.irpIndex > 1) && atom.rotActive) {
-                        AtomEnergy energy = AtomMath.calcIrpEnergy(atom.daughterAtom, forceWeight, false);
-                        irpEnergy += energy.getEnergy();
+                    if ((atom.irpIndex > 1) && (atom.irpIndex < 9999) && atom.rotActive) {
+                        double eVal = calcIRP(atom);
+                        irpEnergy += eVal;
                         nIrp++;
-                        if (energy.getEnergy() > limitVal) {
+                        if (eVal > limitVal) {
                             writer.format("Irp: %10s %5.2f %5.2f\n", atom.getFullName(), toDeg * atom.dihedralAngle,
-                                    energy.getEnergy());
+                                    eVal);
                         }
                     }
                 }
@@ -808,6 +821,37 @@ public class EnergyLists {
 
     }
 
+    public double calcIRP(Atom atom) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
+        double weight = forceWeight.getIrp();
+        double energyTotal = 0.0;
+        Atom[] atoms = new Atom[4];
+        atoms[3] = atom.daughterAtom;
+        if (atoms[3] != null) {
+            atoms[2] = atom;
+            atoms[1] = atom.parent;
+            if (atoms[1] != null) {
+                atoms[0] = atoms[1].parent;
+            }
+        }
+        if (atoms[0] != null) {
+            int irpIndex = atom.irpIndex;
+            if ((irpIndex > 0) && (irpIndex < 9999)) {
+                double angle = eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
+                angle = Dihedral.reduceAngle(angle);
+                double[][] irpValues = irpTable[irpIndex - 1];
+                for (double[] irpVal : irpValues) {
+                    double v = irpVal[0];
+                    double n = irpVal[1];
+                    double phi = irpVal[2];
+                    double energy = weight * v * (1.0 + Math.cos(n * angle - phi));
+                    energyTotal += energy;
+                }
+            }
+        }
+        return energyTotal;
+    }
+
     public double calcIRPFast(double[] gradient) {
         EnergyCoords eCoords = molecule.getEnergyCoords();
         double energyTotal = 0.0;
@@ -825,19 +869,21 @@ public class EnergyLists {
             }
             if (atoms[0] != null) {
                 int irpIndex = atom.irpIndex;
-                double angle = eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
-                angle = Dihedral.reduceAngle(angle);
-                double[][] irpValues = new double[1][3];
-                for (double[] irpVal : irpValues) {
-                    double v = irpVal[0];
-                    double n = irpVal[1];
-                    double phi = irpVal[2];
-                    double energy = weight * v * (1.0 + Math.cos(n * angle - phi));
-                    energyTotal += energy;
-                    double deriv = 0.0;
-                    if (gradient != null) {
-                        deriv = -weight * v * n * Math.sin(n * angle - phi);
-                        gradient[i] += deriv;
+                if ((irpIndex > 0) && (irpIndex < 9999)) {
+                    double angle = eCoords.calcDihedral(atoms[0].eAtom, atoms[1].eAtom, atoms[2].eAtom, atoms[3].eAtom);
+                    angle = Dihedral.reduceAngle(angle);
+                    double[][] irpValues = irpTable[irpIndex - 1];
+                    for (double[] irpVal : irpValues) {
+                        double v = irpVal[0];
+                        double n = irpVal[1];
+                        double phi = irpVal[2];
+                        double energy = weight * v * (1.0 + Math.cos(n * angle - phi));
+                        energyTotal += energy;
+                        double deriv = 0.0;
+                        if (gradient != null) {
+                            deriv = -weight * v * n * Math.sin(n * angle - phi);
+                            gradient[i] += deriv;
+                        }
                     }
                 }
             }
@@ -944,6 +990,11 @@ public class EnergyLists {
         for (Polymer polymer : polymers) {
             if (polymer.isRNA()) {
                 for (int i = 1; i < polymer.size(); i++) {
+                    Residue residue = polymer.getResidue(i);
+                    if (!residue.isStandard()) {
+                        i++;
+                        continue;
+                    }
                     RotamerScore[] rotamerScores = RNARotamer.getNBest(polymer, i, 3, eCoords);
                     double rotamerEnergy = RNARotamer.calcEnergy(rotamerScores);
                     //System.out.printf("%5.3g  ", rotamerEnergy);
@@ -1118,10 +1169,14 @@ public class EnergyLists {
                         Atom atom2 = atomDistancePair.atoms2[0];
                         int iAtom = atom1.eAtom;
                         int jAtom = atom2.eAtom;
-                        int iUnit = atom1.rotGroup.rotUnit;
-                        int jUnit = atom2.rotGroup.rotUnit;
-                        eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond,
-                                iGroup, weight / nPairs);
+                        if ((atom1.rotGroup == null) || (atom2.rotGroup == null)) {
+                            System.out.println("null rot group " + atom1.getShortName() + " " + atom2.getShortName());
+                        } else {
+                            int iUnit = atom1.rotGroup.rotUnit;
+                            int jUnit = atom2.rotGroup.rotUnit;
+                            eCoords.addPair(iAtom, jAtom, iUnit, jUnit, distancePair.rLow, distancePair.rUp, distancePair.isBond,
+                                    iGroup, weight / nPairs);
+                        }
 
                     }
                 }
@@ -1185,7 +1240,7 @@ public class EnergyLists {
                 energyTotal += calcDihedralEnergyFast(gradient);
             }
             if (forceWeight.getIrp() > 0.0) {
-                if (false) {  // placeholder for new fast mode
+                if (true) {  // placeholder for new fast mode
                     if (forceWeight.getIrp() > 0.0) {
                         energyTotal += calcIRPFast(gradient);
                     }
