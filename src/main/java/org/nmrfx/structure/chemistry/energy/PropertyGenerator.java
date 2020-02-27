@@ -40,6 +40,9 @@ public class PropertyGenerator {
     Map<String, Double> contactMap = null;
     Map<String, Double> valueMap = new HashMap<>();
     private Molecule molecule;
+    String[] residueNames = {"ALA", "ARG", "ASN", "ASP", "CYS", "GLU", "GLN",
+        "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR",
+        "TRP", "TYR", "VAL"};
 
     static {
         formatter.setMinimumFractionDigits(4);
@@ -253,10 +256,9 @@ public class PropertyGenerator {
     }
 
     public double getOccupancy(String name) {
-        MolFilter molFilter = new MolFilter(name);
-        SpatialSet spatialSet = Molecule.getSpatialSet(molFilter);
-        return spatialSet.getOccupancy();
-
+        Atom atom = molecule.findAtom(name);
+        double occupancy = atom != null ? atom.getOccupancy() : 0.0;
+        return occupancy;
     }
 
     public int getFirstRes() {
@@ -478,6 +480,10 @@ public class PropertyGenerator {
         Residue prevResidue = residue.previous;
         Residue nextResidue = residue.next;
         int resNum = residue.getResNum();
+        for (String residueName : residueNames) {
+            valueMap.put(residueName, 0.0);
+        }
+        valueMap.put(residue.getName(), 1.0);
         valueMap.put("N1", 0.0);
         valueMap.put("N2", 0.0);
         valueMap.put("C1", 0.0);
@@ -567,12 +573,21 @@ public class PropertyGenerator {
     }
 
     public boolean getAtomProperties(Polymer polymer, int res, String resName, String atomName) {
+        atomName = atomName.toUpperCase();
+        String atomSpec = polymer.getName() + ":" + Integer.toString(res) + "." + atomName;
+        Atom atom = molecule.findAtom(atomSpec);
+        return getAtomProperties(atom);
+
+    }
+
+    public boolean getAtomProperties(Atom atom) {
+        String atomName = atom.getName();
+        String atomSpec = atom.getFullName();
+        String hAtomSpec = "";
+        if (atomName.charAt(0) == 'N') {
+            hAtomSpec = atomSpec.substring(0, atomSpec.length()) + 'H';
+        }
         try {
-            atomName = atomName.toUpperCase();
-            String polyName = polymer.getName();
-            String atomSpec = polyName + ":" + Integer.toString(res) + "." + atomName;
-            String hAtomSpec = polyName + ":" + Integer.toString(res) + "." + "H";
-            Atom atom = molecule.findAtom(atomSpec);
             double contactSum = getContactSum(atomSpec);
             valueMap.put("contacts", contactSum);
             valueMap.put("fRandom", getFRandom(atomName, contactSum));
@@ -581,7 +596,7 @@ public class PropertyGenerator {
             if (atomName.charAt(0) == 'H') {
                 eInteractionShift = calcEInteractionShift(eShiftMap, atomSpec);
             } else if (atomName.charAt(0) == 'N') {
-                eInteractionShift = calcEInteractionShift(eShiftMap, polyName + ":" + Integer.toString(res) + ".H");
+                eInteractionShift = calcEInteractionShift(eShiftMap, hAtomSpec);
             }
             valueMap.put("eshift", eInteractionShift);
             double hbondShift = 0.0;
@@ -633,11 +648,7 @@ public class PropertyGenerator {
             acs = getOccupancy(atomSpec);
             valueMap.put("cs", cs);
             valueMap.put("acs", acs);
-            int firstRes = getFirstRes(polymer);
-            int lastRes = getLastRes(polymer);
 
-            acs = getCorrectedRandomShift(polyName, firstRes, res, lastRes, atomName);
-            valueMap.put("acscorr", acs);
             double h3 = 0.0;
             if (atomName.startsWith("H") && !atom.isMethyl() && atomName.endsWith("3")) {
                 h3 = 1.0;
