@@ -669,7 +669,7 @@ public class Molecule implements Serializable, ITree {
 
     }
 
-    public static double calcDihedral(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3,
+    public double calcDihedral(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3,
             MolFilter molFilter4) throws IllegalArgumentException {
         MolFilter[] molFilters = new MolFilter[4];
         molFilters[0] = molFilter1;
@@ -680,7 +680,7 @@ public class Molecule implements Serializable, ITree {
         Point3[] pts = new Point3[4];
         int i = 0;
         for (MolFilter molFilter : molFilters) {
-            spSets[i] = getSpatialSet(molFilter);
+            spSets[i] = findSpatialSet(molFilter);
             if (spSets[i] == null) {
                 throw new IllegalArgumentException("No atom for " + molFilter.getString());
             }
@@ -3686,22 +3686,19 @@ public class Molecule implements Serializable, ITree {
          */
     }
 
-    public static boolean isDisulfide(Atom sg1, int iStruct) {
+    public boolean isDisulfide(Atom sg1, int iStruct) {
         boolean result = false;
         if (sg1.getName().equals("SG")) {
-            if (Molecule.atomList == null) {
-                Molecule.makeAtomList();
-            }
             Point3 pt1 = sg1.getPoint(iStruct);
-
-            for (int i = 0; i < Molecule.atomList.size(); i++) {
-                Atom sg2 = Molecule.atomList.get(i);
+            for (Atom sg2 : atoms) {
                 if ((sg1 != sg2) && sg2.getName().equals("SG")) {
                     Point3 pt2 = sg2.getPoint(iStruct);
-                    double distance = Atom.calcDistance(pt1, pt2);
-                    if (distance < 3.0) {
-                        result = true;
-                        break;
+                    if (pt2 != null) {
+                        double distance = Atom.calcDistance(pt1, pt2);
+                        if (distance < 3.0) {
+                            result = true;
+                            break;
+                        }
                     }
                 }
             }
