@@ -26,7 +26,6 @@ public class ProteinPredictor {
     double[][] values = null;
 
     public void init(Molecule mol) throws InvalidMoleculeException, IOException {
-        PropertyGenerator.initVars("resprops.txt");
         propertyGenerator = new PropertyGenerator();
         propertyGenerator.init(mol);
     }
@@ -40,7 +39,7 @@ public class ProteinPredictor {
     }
 
     void loadCoefficients() throws IOException {
-        InputStream iStream = this.getClass().getResourceAsStream("/data/protein_pred.txt");
+        InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/coefs3d.txt");
         List<String[]> lines = new ArrayList<>();
         boolean firstLine = true;
         System.out.println("resource " + iStream);
@@ -123,25 +122,23 @@ public class ProteinPredictor {
         }
     }
 
-    private void initMinMax() {
-        double[] minMaxC = {800.0, 1100.0};
-        minMaxMap.put("C", minMaxC);
-        double[] minMaxH = {483.33, 1788.89};
-        minMaxMap.put("H", minMaxH);
-        double[] minMaxHB = {500.0, 2000.0};
-        minMaxMap.put("HB", minMaxHB);
-        double[] minMaxCB = {209.09, 1254.55};
-        minMaxMap.put("CB", minMaxCB);
-        double[] minMaxCA = {191.66, 1550.0};
-        minMaxMap.put("CA", minMaxCA);
-        double[] minMaxHA = {431.58, 3178.95};
-        minMaxMap.put("HA", minMaxHA);
-        double[] minMaxCG = {500.0, 2000.0};
-        minMaxMap.put("CG", minMaxCG);
-        double[] minMaxHG = {500.0, 2000.0};
-        minMaxMap.put("HG", minMaxHG);
-        double[] minMaxN = {97.37, 752.63};
-        minMaxMap.put("N", minMaxN);
+    private void initMinMax() throws IOException {
+        InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/contact_minmax.txt");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                String[] fields = line.split("\t");
+                double[] minmax = new double[2];
+                String name = fields[0];
+                minmax[0] = Double.parseDouble(fields[1]);
+                minmax[1] = Double.parseDouble(fields[2]);
+                minMaxMap.put(name, minmax);
+            }
+        }
+
     }
 
     public static double predict(Map<String, Double> valueMap, double[] coefs, double[] minMax) {

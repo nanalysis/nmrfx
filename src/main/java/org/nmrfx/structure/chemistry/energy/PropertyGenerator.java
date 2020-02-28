@@ -446,14 +446,13 @@ public class PropertyGenerator {
         return molecule.calcDihedral(mf1, mf2, mf3, mf4);
     }
 
-    public static void initVars(String propFile) throws IOException {
-        properties = loadPropertyFile(propFile);
-    }
-
     public void init(Molecule molecule) throws InvalidMoleculeException, IOException {
         //NvShell nvShell = new NvShell(interp);
+        if (properties == null) {
+            properties = loadPropertyFile();
+        }
         HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data = new HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>>();
-        offsetTable = loadCorrTable("corrtable.txt");
+       // offsetTable = loadCorrTable("corrtable.txt");
         this.molecule = molecule;
         contactMap = molecule.calcContactSum(0, true);
         hBondMap = new HashMap<>();
@@ -580,12 +579,12 @@ public class PropertyGenerator {
     }
 
     public boolean getAtomProperties(Polymer polymer, int res, String resName, String atomName) {
-            atomName = atomName.toUpperCase();
+        atomName = atomName.toUpperCase();
         String atomSpec = polymer.getName() + ":" + Integer.toString(res) + "." + atomName;
-            Atom atom = molecule.findAtom(atomSpec);
+        Atom atom = molecule.findAtom(atomSpec);
         return getAtomProperties(atom);
 
-            }
+    }
 
     public boolean getAtomProperties(Atom atom) {
         String atomName = atom.getName();
@@ -815,21 +814,28 @@ public class PropertyGenerator {
         return ret;
     }
 
-    private static HashMap<String, HashMap<String, Double>> loadPropertyFile(String fn) throws FileNotFoundException, IOException {
+    private static HashMap<String, HashMap<String, Double>> loadPropertyFile() throws FileNotFoundException, IOException {
+        InputStream iStream = PropertyGenerator.class.getResourceAsStream("/data/predict/protein/resprops.txt");
         HashMap<String, HashMap<String, Double>> properties = new HashMap<String, HashMap<String, Double>>();
-        BufferedReader b = new BufferedReader(new FileReader(fn));
-        String line = b.readLine();
-        String[] keys = line.split(",");
-// the first column is assumed to be the amino acid so we ignore its header
-        line = b.readLine();
-        while (line != null) {
-            HashMap<String, Double> map = new HashMap<String, Double>();
-            String[] values = line.split(",");
-            for (int i = 1; i < keys.length; ++i) {
-                map.put(keys[i].trim(), Double.parseDouble(values[i].trim()));
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
+            String[] keys = null;
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                if (keys == null) {
+                    keys = line.split("\t");
+                } else {
+                    HashMap<String, Double> map = new HashMap<String, Double>();
+                    String[] values = line.split("\t");
+                    for (int i = 1; i < keys.length; ++i) {
+                        map.put(keys[i].trim(), Double.parseDouble(values[i].trim()));
+                    }
+                    properties.put(values[0], map);
+                }
             }
-            properties.put(values[0], map);
-            line = b.readLine();
         }
         return properties;
     }
