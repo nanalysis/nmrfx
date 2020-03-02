@@ -245,7 +245,8 @@ public class PropertyGenerator {
         if (spatialSet == null) {
             return Double.NaN;
         } else {
-            return spatialSet.getBFactor();
+            PPMv ppmV = spatialSet.getRefPPM();
+            return ppmV != null && ppmV.isValid() ? ppmV.getValue() : Double.NaN;
         }
     }
 
@@ -254,7 +255,8 @@ public class PropertyGenerator {
         if (spatialSet == null) {
             return Double.NaN;
         } else {
-            return spatialSet.getBFactor();
+            PPMv ppmV = spatialSet.getRefPPM();
+            return ppmV != null && ppmV.isValid() ? ppmV.getValue() : Double.NaN;
         }
     }
 
@@ -392,58 +394,55 @@ public class PropertyGenerator {
         }
     }
 
-    public double calculateChi2(String polyName, int res) {
-        String rs = polyName + ":" + Integer.toString(res);
-        String resName = molecule.findAtom(rs + ".N").getEntity().name;
-        final MolFilter mf1;
-        final MolFilter mf2;
-        final MolFilter mf3;
-        final MolFilter mf4;
+    public double calculateChi2(Residue residue) throws MissingCoordinatesException {
+        String resName = residue.getName();
+        Atom[] atoms = new Atom[4];
         if (resName.equals("PHE")
                 || resName.equals("TRP")
                 || resName.equals("TYR")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".CD1");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("CD1");
         } else if (resName.equals("HIS")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".CD2");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("CD2");
         } else if (resName.equals("ASN")
                 || resName.equals("ASP")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".OD1");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("OD1");
         } else if (resName.equals("GLN")
                 || resName.equals("GLU")
                 || resName.equals("LYS")
                 || resName.equals("ARG")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".CD");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("CD");
         } else if (resName.equals("MET")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".SD");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("SD");
         } else if (resName.equals("ILE")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG1");
-            mf4 = new MolFilter(rs + ".CD1");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG1");
+            atoms[3] = residue.getAtom("CD1");
+
         } else if (resName.equals("LEU")) {
-            mf1 = new MolFilter(rs + ".CA");
-            mf2 = new MolFilter(rs + ".CB");
-            mf3 = new MolFilter(rs + ".CG");
-            mf4 = new MolFilter(rs + ".CD1");
+            atoms[0] = residue.getAtom("CA");
+            atoms[1] = residue.getAtom("CB");
+            atoms[2] = residue.getAtom("CG");
+            atoms[3] = residue.getAtom("CD1");
         } else {
             return Double.NaN;
         }
-        return molecule.calcDihedral(mf1, mf2, mf3, mf4);
+        return Molecule.calcDihedral(atoms);
     }
 
     public void init(Molecule molecule) throws InvalidMoleculeException, IOException {
@@ -452,7 +451,7 @@ public class PropertyGenerator {
             properties = loadPropertyFile();
         }
         HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>> data = new HashMap<String, TreeMap<Integer, LinkedHashMap<String, String>>>();
-       // offsetTable = loadCorrTable("corrtable.txt");
+        // offsetTable = loadCorrTable("corrtable.txt");
         this.molecule = molecule;
         contactMap = molecule.calcContactSum(0, true);
         hBondMap = new HashMap<>();
@@ -501,19 +500,19 @@ public class PropertyGenerator {
             valueMap.put("chiP", null);
             valueMap.put("psiP", null);
             valueMap.put("omega", null);
-            valueMap.put("phi", null);
-            valueMap.put("psi", null);
+            valueMap.put("phiC", null);
+            valueMap.put("psiC", null);
             valueMap.put("phiS", null);
             valueMap.put("chiS", null);
             valueMap.put("psiS", null);
             String[] suffixes = {"_P", "_S"};
             for (String suffix : suffixes) {
-                valueMap.put("HPHB" + suffix, null);
-                valueMap.put("BULK" + suffix, null);
-                valueMap.put("CHRG" + suffix, null);
-                valueMap.put("PRO" + suffix, null);
-                valueMap.put("ARO" + suffix, null);
-                valueMap.put("DIS" + suffix, null);
+                valueMap.put("HPHB" + suffix, 0.0);
+                valueMap.put("BULK" + suffix, 0.0);
+                valueMap.put("CHRG" + suffix, 0.0);
+                valueMap.put("PRO" + suffix, 0.0);
+                valueMap.put("ARO" + suffix, 0.0);
+                valueMap.put("DIS" + suffix, 0.0);
             }
 
             if (prevResidue != null) {
@@ -526,7 +525,7 @@ public class PropertyGenerator {
                 valueMap.put("psiP", calculatePsi(polyName, prevResidue));
                 valueMap.put("omega", calculateOmega(polyName, residue));
                 if (nextResidue != null) {
-                    valueMap.put("phi", calculatePhi(polyName, residue));
+                    valueMap.put("phiC", calculatePhi(polyName, residue));
                 }
                 if (!getResProps(prevResidue, "_P")) {
                     return false;
@@ -534,13 +533,13 @@ public class PropertyGenerator {
             } else {
                 valueMap.put("N1", 1.0);
             }
-            valueMap.put("chi", calculateChi(polyName, residue));
-            valueMap.put("chi2", calculateChi2(polyName, resNum));
+            valueMap.put("chiC", calculateChi(polyName, residue));
+            valueMap.put("chi2C", calculateChi2(residue));
             if (!getResProps(residue, "")) {
                 return false;
             }
             if (nextResidue != null) {
-                valueMap.put("psi", calculatePsi(polyName, residue));
+                valueMap.put("psiC", calculatePsi(polyName, residue));
                 valueMap.put("chiS", calculateChi(polyName, nextResidue));
                 if (nextResidue.next != null) {
                     valueMap.put("phiS", calculatePhi(polyName, nextResidue));
@@ -590,14 +589,14 @@ public class PropertyGenerator {
         String atomName = atom.getName();
         String atomSpec = atom.getFullName();
         String hAtomSpec = "";
-        if (atomName.charAt(0) == 'N') {
-            hAtomSpec = atomSpec.substring(0, atomSpec.length()) + 'H';
+        if (atomName.equals("N")) {
+            hAtomSpec = atomSpec.substring(0, atomSpec.length() - 1) + "H";
         }
         try {
             double contactSum = getContactSum(atomSpec);
             valueMap.put("contacts", contactSum);
             valueMap.put("fRandom", getFRandom(atomName, contactSum));
-            valueMap.put("ringShift", calcRingShift(atomSpec));
+            valueMap.put("ring", calcRingShift(atomSpec));
             double eInteractionShift = 0.0;
             if (atomName.charAt(0) == 'H') {
                 eInteractionShift = calcEInteractionShift(eShiftMap, atomSpec);
@@ -659,6 +658,11 @@ public class PropertyGenerator {
                 h3 = 1.0;
             }
             valueMap.put("h3", h3);
+            double methyl = 0.0;
+            if (atom.isMethyl()) {
+                methyl = 1.0;
+            }
+            valueMap.put("methyl", methyl);
         } catch (Exception e) {
             e.printStackTrace();
             return false;
