@@ -45,6 +45,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -538,7 +540,7 @@ public class AtomController implements Initializable, FreezeListener {
         if (mol != null) {
             try {
                 predictor.predictMolecule(mol, 0);
-            } catch (InvalidMoleculeException ex) {
+            } catch (InvalidMoleculeException | IOException ex) {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
             }
