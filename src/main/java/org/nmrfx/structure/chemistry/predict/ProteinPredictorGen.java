@@ -4,7 +4,7 @@ import java.util.Map;
 
 public class ProteinPredictorGen {
 public static ProteinPredictorResult predict(Map<String, Double> valueMap, double[] coefs, double[] minMax, boolean explain) {
-double[] attrValue = new double[110];Double GLN= valueMap.get("GLN");
+double[] attrValue = new double[108];Double GLN= valueMap.get("GLN");
 Double psiC= valueMap.get("psiC");
 Double h3= valueMap.get("h3");
 Double psiS= valueMap.get("psiS");
@@ -36,7 +36,6 @@ Double intercept= valueMap.get("intercept");
 Double phiS= valueMap.get("phiS");
 Double phiP= valueMap.get("phiP");
 Double TRP= valueMap.get("TRP");
-Double omega= valueMap.get("omega");
 Double PHE= valueMap.get("PHE");
 Double MET= valueMap.get("MET");
 Double LEU= valueMap.get("LEU");
@@ -234,285 +233,275 @@ Double TYR= valueMap.get("TYR");
     } else {
         attrValue[46] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(omega)) {
-        attrValue[47] = Math.sin(omega);
+    if (ProteinPredictor.checkAngles(chiC,chi2C)) {
+        attrValue[47] = Math.cos(chiC)*Math.cos(chi2C);
     } else {
         attrValue[47] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(chiC,chi2C)) {
-        attrValue[48] = Math.cos(chiC)*Math.cos(chi2C);
+    if (ProteinPredictor.checkAngles(psiC)) {
+        attrValue[48] = Math.cos(3*psiC);
     } else {
         attrValue[48] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC)) {
-        attrValue[49] = Math.cos(3*psiC);
+    if (ProteinPredictor.checkAngles(psiS)) {
+        attrValue[49] = Math.sin(psiS);
     } else {
         attrValue[49] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiS)) {
-        attrValue[50] = Math.sin(psiS);
+    if (ProteinPredictor.checkAngles(psiP)) {
+        attrValue[50] = Math.cos(2*psiP);
     } else {
         attrValue[50] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiP)) {
-        attrValue[51] = Math.cos(2*psiP);
-    } else {
-        attrValue[51] = 0.0;
-    }
-    attrValue[52] = 0.0;
-int interceptCoef = 52;
-    attrValue[53] = TRP;
+    attrValue[51] = 0.0;
+int interceptCoef = 51;
+    attrValue[52] = TRP;
     if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[54] = Math.cos(2*phiC);
+        attrValue[53] = Math.cos(2*phiC);
+    } else {
+        attrValue[53] = 0.0;
+    }
+    if (ProteinPredictor.checkAngles(psiC,chiC)) {
+        attrValue[54] = Math.sin(psiC)*Math.sin(chiC);
     } else {
         attrValue[54] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC,chiC)) {
-        attrValue[55] = Math.sin(psiC)*Math.sin(chiC);
+    if (ProteinPredictor.checkAngles(psiC)) {
+        attrValue[55] = Math.sin(psiC)*HPHB_S;
     } else {
         attrValue[55] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC)) {
-        attrValue[56] = Math.sin(psiC)*HPHB_S;
+    if (ProteinPredictor.checkAngles(phiS)) {
+        attrValue[56] = Math.cos(2*phiS);
     } else {
         attrValue[56] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiS)) {
-        attrValue[57] = Math.cos(2*phiS);
+    if (ProteinPredictor.checkAngles(psiS)) {
+        attrValue[57] = Math.sin(2*psiS);
     } else {
         attrValue[57] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(omega)) {
-        attrValue[58] = Math.cos(omega);
+    if (ProteinPredictor.checkAngles(phiS)) {
+        attrValue[58] = Math.sin(phiS);
     } else {
         attrValue[58] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiS)) {
-        attrValue[59] = Math.sin(2*psiS);
+    if (ProteinPredictor.checkAngles(phiC,chi2C)) {
+        attrValue[59] = Math.cos(phiC)*Math.sin(chi2C);
     } else {
         attrValue[59] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiS)) {
-        attrValue[60] = Math.sin(phiS);
-    } else {
-        attrValue[60] = 0.0;
-    }
-    if (ProteinPredictor.checkAngles(phiC,chi2C)) {
-        attrValue[61] = Math.cos(phiC)*Math.sin(chi2C);
+    attrValue[60] = GLN;
+    if (ProteinPredictor.checkAngles(phiP)) {
+        attrValue[61] = Math.sin(2*phiP);
     } else {
         attrValue[61] = 0.0;
     }
-    attrValue[62] = GLN;
-    if (ProteinPredictor.checkAngles(phiP)) {
-        attrValue[63] = Math.sin(2*phiP);
+    if (ProteinPredictor.checkAngles(psiP)) {
+        attrValue[62] = Math.sin(psiP);
+    } else {
+        attrValue[62] = 0.0;
+    }
+    if (ProteinPredictor.checkAngles(phiS)) {
+        attrValue[63] = Math.cos(phiS);
     } else {
         attrValue[63] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiP)) {
-        attrValue[64] = Math.sin(psiP);
+    if (ProteinPredictor.checkAngles(phiS)) {
+        attrValue[64] = Math.cos(3*phiS);
     } else {
         attrValue[64] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiS)) {
-        attrValue[65] = Math.cos(phiS);
+    if (ProteinPredictor.checkAngles(psiC,chi2C)) {
+        attrValue[65] = Math.cos(psiC)*Math.sin(chi2C);
     } else {
         attrValue[65] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiS)) {
-        attrValue[66] = Math.cos(3*phiS);
+    if (ProteinPredictor.checkAngles(phiC,chi2C)) {
+        attrValue[66] = Math.sin(phiC)*Math.cos(chi2C);
     } else {
         attrValue[66] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC,chi2C)) {
-        attrValue[67] = Math.cos(psiC)*Math.sin(chi2C);
+    if (ProteinPredictor.checkAngles(phiC,chiC)) {
+        attrValue[67] = Math.sin(phiC)*Math.sin(chiC);
     } else {
         attrValue[67] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiC,chi2C)) {
-        attrValue[68] = Math.sin(phiC)*Math.cos(chi2C);
+    if (ProteinPredictor.checkAngles(phiC)) {
+        attrValue[68] = Math.sin(2*phiC);
     } else {
         attrValue[68] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiC,chiC)) {
-        attrValue[69] = Math.sin(phiC)*Math.sin(chiC);
+    if (ProteinPredictor.checkAngles(psiC,chiC)) {
+        attrValue[69] = Math.cos(psiC)*Math.sin(chiC);
     } else {
         attrValue[69] = 0.0;
     }
     if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[70] = Math.sin(2*phiC);
+        attrValue[70] = Math.cos(phiC);
     } else {
         attrValue[70] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC,chiC)) {
-        attrValue[71] = Math.cos(psiC)*Math.sin(chiC);
+    if (ProteinPredictor.checkAngles(phiC)) {
+        attrValue[71] = Math.sin(phiC);
     } else {
         attrValue[71] = 0.0;
     }
+    attrValue[72] = SER;
     if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[72] = Math.cos(phiC);
-    } else {
-        attrValue[72] = 0.0;
-    }
-    if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[73] = Math.sin(phiC);
+        attrValue[73] = Math.cos(3*phiC);
     } else {
         attrValue[73] = 0.0;
     }
-    attrValue[74] = SER;
-    if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[75] = Math.cos(3*phiC);
+    if (ProteinPredictor.checkAngles(chiC,chi2C)) {
+        attrValue[74] = Math.sin(chiC)*Math.sin(chi2C);
+    } else {
+        attrValue[74] = 0.0;
+    }
+    if (ProteinPredictor.checkAngles(psiC)) {
+        attrValue[75] = Math.cos(psiC)*PRO_S;
     } else {
         attrValue[75] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(chiC,chi2C)) {
-        attrValue[76] = Math.sin(chiC)*Math.sin(chi2C);
+    if (ProteinPredictor.checkAngles(psiC,chiC)) {
+        attrValue[76] = Math.sin(psiC)*Math.cos(chiC);
     } else {
         attrValue[76] = 0.0;
     }
     if (ProteinPredictor.checkAngles(psiC)) {
-        attrValue[77] = Math.cos(psiC)*PRO_S;
+        attrValue[77] = Math.sin(psiC);
     } else {
         attrValue[77] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC,chiC)) {
-        attrValue[78] = Math.sin(psiC)*Math.cos(chiC);
+    if (ProteinPredictor.checkAngles(chiC,chi2C)) {
+        attrValue[78] = Math.sin(chiC)*Math.cos(chi2C);
     } else {
         attrValue[78] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC)) {
-        attrValue[79] = Math.sin(psiC);
+    if (ProteinPredictor.checkAngles(phiC)) {
+        attrValue[79] = Math.cos(phiC)*HPHB_P;
     } else {
         attrValue[79] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(chiC,chi2C)) {
-        attrValue[80] = Math.sin(chiC)*Math.cos(chi2C);
+    if (ProteinPredictor.checkAngles(psiC)) {
+        attrValue[80] = Math.cos(psiC);
     } else {
         attrValue[80] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[81] = Math.cos(phiC)*HPHB_P;
+    if (ProteinPredictor.checkAngles(phiS)) {
+        attrValue[81] = Math.sin(2*phiS);
     } else {
         attrValue[81] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC)) {
-        attrValue[82] = Math.cos(psiC);
+    if (ProteinPredictor.checkAngles(chiC)) {
+        attrValue[82] = Math.cos(chiC);
     } else {
         attrValue[82] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiS)) {
-        attrValue[83] = Math.sin(2*phiS);
+    if (ProteinPredictor.checkAngles(phiC)) {
+        attrValue[83] = Math.cos(phiC)*PRO_P;
     } else {
         attrValue[83] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(chiC)) {
-        attrValue[84] = Math.cos(chiC);
+    attrValue[84] = ASN;
+    attrValue[85] = MET;
+    attrValue[86] = LEU;
+    if (ProteinPredictor.checkAngles(phiC)) {
+        attrValue[87] = Math.sin(phiC)*CHRG_P;
     } else {
-        attrValue[84] = 0.0;
+        attrValue[87] = 0.0;
+    }
+    if (ProteinPredictor.checkAngles(psiC,phiC)) {
+        attrValue[88] = Math.cos(psiC)*Math.sin(phiC);
+    } else {
+        attrValue[88] = 0.0;
     }
     if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[85] = Math.cos(phiC)*PRO_P;
-    } else {
-        attrValue[85] = 0.0;
-    }
-    attrValue[86] = ASN;
-    attrValue[87] = MET;
-    attrValue[88] = LEU;
-    if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[89] = Math.sin(phiC)*CHRG_P;
+        attrValue[89] = Math.sin(3*phiC);
     } else {
         attrValue[89] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC,phiC)) {
-        attrValue[90] = Math.cos(psiC)*Math.sin(phiC);
+    if (ProteinPredictor.checkAngles(psiP)) {
+        attrValue[90] = Math.cos(3*psiP);
     } else {
         attrValue[90] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[91] = Math.sin(3*phiC);
-    } else {
-        attrValue[91] = 0.0;
-    }
+    attrValue[91] = DIS;
+    if (eshift != null) attrValue[92] = eshift;
     if (ProteinPredictor.checkAngles(psiP)) {
-        attrValue[92] = Math.cos(3*psiP);
+        attrValue[93] = Math.sin(2*psiP);
     } else {
-        attrValue[92] = 0.0;
+        attrValue[93] = 0.0;
     }
-    attrValue[93] = DIS;
-    if (eshift != null) attrValue[94] = eshift;
-    if (ProteinPredictor.checkAngles(psiP)) {
-        attrValue[95] = Math.sin(2*psiP);
+    if (ProteinPredictor.checkAngles(psiC,phiC)) {
+        attrValue[94] = Math.sin(psiC)*Math.sin(phiC);
+    } else {
+        attrValue[94] = 0.0;
+    }
+    if (ProteinPredictor.checkAngles(chiC)) {
+        attrValue[95] = Math.sin(chiC);
     } else {
         attrValue[95] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC,phiC)) {
-        attrValue[96] = Math.sin(psiC)*Math.sin(phiC);
+    if (ProteinPredictor.checkAngles(phiC)) {
+        attrValue[96] = Math.sin(phiC)*BULK_P;
     } else {
         attrValue[96] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(chiC)) {
-        attrValue[97] = Math.sin(chiC);
+    if (ProteinPredictor.checkAngles(psiC,phiC)) {
+        attrValue[97] = Math.sin(psiC)*Math.cos(phiC);
     } else {
         attrValue[97] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[98] = Math.sin(phiC)*BULK_P;
+    if (ProteinPredictor.checkAngles(psiC,chi2C)) {
+        attrValue[98] = Math.sin(psiC)*Math.sin(chi2C);
     } else {
         attrValue[98] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC,phiC)) {
-        attrValue[99] = Math.sin(psiC)*Math.cos(phiC);
+    if (ProteinPredictor.checkAngles(psiC,chi2C)) {
+        attrValue[99] = Math.cos(psiC)*Math.cos(chi2C);
     } else {
         attrValue[99] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC,chi2C)) {
-        attrValue[100] = Math.sin(psiC)*Math.sin(chi2C);
+    if (ProteinPredictor.checkAngles(chi2C)) {
+        attrValue[100] = Math.cos(2*chi2C);
     } else {
         attrValue[100] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC,chi2C)) {
-        attrValue[101] = Math.cos(psiC)*Math.cos(chi2C);
+    if (ProteinPredictor.checkAngles(phiC)) {
+        attrValue[101] = Math.sin(phiC)*HPHB_P;
     } else {
         attrValue[101] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(chi2C)) {
-        attrValue[102] = Math.cos(2*chi2C);
+    if (ProteinPredictor.checkAngles(psiC)) {
+        attrValue[102] = Math.sin(psiC)*BULK_S;
     } else {
         attrValue[102] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiC)) {
-        attrValue[103] = Math.sin(phiC)*HPHB_P;
+    if (ProteinPredictor.checkAngles(phiP)) {
+        attrValue[103] = Math.cos(3*phiP);
     } else {
         attrValue[103] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(psiC)) {
-        attrValue[104] = Math.sin(psiC)*BULK_S;
+    if (ProteinPredictor.checkAngles(phiC,chiC)) {
+        attrValue[104] = Math.cos(phiC)*Math.sin(chiC);
     } else {
         attrValue[104] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiP)) {
-        attrValue[105] = Math.cos(3*phiP);
+    if (ProteinPredictor.checkAngles(chiC)) {
+        attrValue[105] = Math.sin(2*chiC);
     } else {
         attrValue[105] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(phiC,chiC)) {
-        attrValue[106] = Math.cos(phiC)*Math.sin(chiC);
+    if (ProteinPredictor.checkAngles(phiS)) {
+        attrValue[106] = Math.sin(3*phiS);
     } else {
         attrValue[106] = 0.0;
     }
-    if (ProteinPredictor.checkAngles(chiC)) {
-        attrValue[107] = Math.sin(2*chiC);
+    if (ProteinPredictor.checkAngles(psiC)) {
+        attrValue[107] = Math.sin(psiC)*CHRG_S;
     } else {
         attrValue[107] = 0.0;
-    }
-    if (ProteinPredictor.checkAngles(phiS)) {
-        attrValue[108] = Math.sin(3*phiS);
-    } else {
-        attrValue[108] = 0.0;
-    }
-    if (ProteinPredictor.checkAngles(psiC)) {
-        attrValue[109] = Math.sin(psiC)*CHRG_S;
-    } else {
-        attrValue[109] = 0.0;
     }
 
         double contactSum = valueMap.get("contacts");

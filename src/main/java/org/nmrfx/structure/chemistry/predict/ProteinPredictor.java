@@ -10,24 +10,27 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
-import org.nmrfx.structure.chemistry.predict.ProteinPredictorResult;
 
 public class ProteinPredictor {
 
+    static final List<String> atomNames = Arrays.asList("N", "CA", "CB", "CG", "C", "H", "HA", "HB", "HG");
+
     PropertyGenerator propertyGenerator;
     Map<String, Integer> aaMap = new HashMap<>();
+    Map<String, Double> rmsMap = new HashMap<>();
     Map<String, double[]> minMaxMap = new HashMap<>();
     ArrayList<String> attrNames = new ArrayList<>();
     Molecule molecule = null;
 
     double[][] values = null;
-    
+
     String reportAtom = null;
 
     public void init(Molecule mol) throws InvalidMoleculeException, IOException {
@@ -35,7 +38,7 @@ public class ProteinPredictor {
         propertyGenerator.init(mol);
         this.molecule = mol;
     }
-    
+
     public void setReportAtom(String name) {
         reportAtom = name;
     }
@@ -71,11 +74,12 @@ public class ProteinPredictor {
         values = new double[nTypes][nCoef];
         for (int j = 0; j < nCoef; j++) {
             attrNames.add(lines.get(j)[0].trim());
-            for (int i = 1; i < nTypes; i++) {
-                values[i - 1][j] = Double.parseDouble(lines.get(j)[i]);
+            for (int i = 0; i < nTypes; i++) {
+                values[i][j] = Double.parseDouble(lines.get(j)[i + 1]);
             }
         }
         initMinMax();
+        initRMS();
     }
 
     public static double calcDisorderScale(double contactSum, double[] minMax) {
@@ -94,22 +98,34 @@ public class ProteinPredictor {
     }
 
     public void predict(int iRef) throws InvalidMoleculeException, IOException {
-        List<String> atomNames = Arrays.asList("N", "CA", "CB", "CG", "C", "H", "HA", "HB", "HG");
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isPeptide()) {
-                predict(polymer, atomNames, iRef);
+                predict(polymer, iRef);
             }
         }
     }
 
-    public void predict(Polymer polymer, List<String> atomNames, int iRef) throws IOException {
+    public void predict(Polymer polymer, int iRef) throws IOException {
         for (Residue residue : polymer.getResidues()) {
-            predict(residue, atomNames, iRef);
+            predict(residue, iRef);
         }
 
     }
 
-    public void predict(Residue residue, List<String> atomNames, int iRef) throws IOException {
+    Optional<String> getAtomType(String aName) {
+        int len = aName.length();
+        Optional<String> atomName = Optional.empty();
+        if (len > 2) {
+            aName = aName.substring(0, 2);
+        }
+        if (atomNames.contains(aName)) {
+            atomName = Optional.of(aName);
+        }
+        return atomName;
+
+    }
+
+    public void predict(Residue residue, int iRef) throws IOException {
         if (values == null) {
             loadCoefficients();
         }
@@ -117,31 +133,31 @@ public class ProteinPredictor {
         String[] subTypes = {"", "2", "3"};
         Polymer polymer = residue.getPolymer();
         if (propertyGenerator.getResidueProperties(polymer, residue)) {
-
-            for (String atomName : atomNames) {
-                for (String subType : subTypes) {
-                    String subName = atomName + subType;
-                    Atom atom = residue.getAtom(subName);
-                    if (atom != null) {
-                        propertyGenerator.getAtomProperties(atom);
-                        String type = atomName + '_' + residue.getName();
-                        Integer jType = aaMap.get(type);
-                        if (jType != null) {
-                            double[] coefs = values[jType];
-                            double[] minMax = minMaxMap.get(atomName);
-                            ProteinPredictorResult predResult =
-                                    ProteinPredictorGen.predict(valueMap,
-                                            coefs, minMax, reportAtom != null);
-                            double value = predResult.ppm;
-                            atom.setRefPPM(iRef, value);
-                            if ((reportAtom != null) && atom.getFullName().equals(reportAtom)) {
-                                dumpResult(predResult);
-                            }
-                            //System.out.println(residue.getNumber() + " " + residue.getName() + " " + subName + " " + atom + " " + value);
+            for (Atom atom : residue.getAtoms()) {
+                String aName = atom.getName();
+                Optional<String> atomNameOpt = getAtomType(aName);
+                atomNameOpt.ifPresent(atomName -> {
+                    propertyGenerator.getAtomProperties(atom);
+                    String type = atomName + '_' + residue.getName();
+                    Integer jType = aaMap.get(type);
+                    if (jType != null) {
+                        double[] coefs = values[jType];
+                        double[] minMax = minMaxMap.get(atomName);
+                        ProteinPredictorResult predResult
+                                = ProteinPredictorGen.predict(valueMap,
+                                        coefs, minMax, reportAtom != null);
+                        double value = predResult.ppm;
+                        atom.setRefPPM(iRef, value);
+                        double rms = getRMS(atomName);
+                        atom.setRefError(rms);
+                        if ((reportAtom != null) && atom.getFullName().equals(reportAtom)) {
+                            dumpResult(predResult);
                         }
+                        //System.out.println(residue.getNumber() + " " + residue.getName() + " " + subName + " " + atom + " " + value);
                     }
-                }
+                });
             }
+
         }
     }
 
@@ -167,6 +183,44 @@ public class ProteinPredictor {
                 minMaxMap.put(name, minmax);
             }
         }
-
     }
+
+    double getRMS(String aName) {
+        double rms = 1.0;
+        String aRoot = aName.length() > 2 ? aName.substring(0, 2) : aName;
+        if (rmsMap.containsKey(aRoot)) {
+            rms = rmsMap.get(aRoot);
+        } else {
+            if (aName.startsWith(("H"))) {
+                rms = 0.5;
+            } else if (aName.startsWith("C")) {
+                rms = 1.0;
+            } else if (aName.startsWith("N")) {
+                rms = 3.0;
+            }
+        }
+        return rms;
+    }
+
+    private void initRMS() throws IOException {
+        InputStream iStream = this.getClass().getResourceAsStream("/data/predict/protein/rms.txt");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(iStream))) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                line = line.trim();
+                if ((line.length() > 2) && !line.startsWith("#")) {
+                    String[] fields = line.split("\t");
+                    if (fields.length > 1) {
+                        String name = fields[0];
+                        Double rms = Double.parseDouble(fields[1]);
+                        rmsMap.put(name, rms);
+                    }
+                }
+            }
+        }
+    }
+
 }

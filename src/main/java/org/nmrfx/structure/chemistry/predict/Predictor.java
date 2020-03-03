@@ -224,6 +224,14 @@ public class Predictor {
         return alphas[alphaClass][nAlpha - 4 + index];
     }
 
+    public void predictProtein(Molecule mol, int iRef) throws InvalidMoleculeException, IOException {
+        if (proteinPredictor == null) {
+            proteinPredictor = new ProteinPredictor();
+        }
+        proteinPredictor.init(mol);
+        proteinPredictor.predict(iRef);
+    }
+
     public void predictMolecule(Molecule mol, int iRef) throws InvalidMoleculeException, IOException {
 
         boolean hasPeptide = false;
