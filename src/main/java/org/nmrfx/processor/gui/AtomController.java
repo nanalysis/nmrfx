@@ -78,7 +78,6 @@ import org.nmrfx.structure.chemistry.MolFilter;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.Polymer;
-import org.nmrfx.structure.chemistry.ProteinPredictor;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
 import org.nmrfx.structure.chemistry.io.PDBFile;
@@ -469,7 +468,22 @@ public class AtomController implements Initializable, FreezeListener {
 
     @FXML
     void predictProteinWithStructure(ActionEvent e) {
-        predictShiftsWithStructure(false);
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
+            alert.showAndWait();
+        } else if (molecule.structures.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule coordinates", ButtonType.CLOSE);
+            alert.showAndWait();
+        } else {
+            try {
+                predictProtein(molecule, 0);
+            } catch (Exception ex) {
+                ExceptionDialog dialog = new ExceptionDialog(ex);
+                dialog.showAndWait();
+            }
+        }
+        atomTableView.refresh();
     }
 
     void predictShiftsWithStructure(boolean isRNA) {
@@ -512,23 +526,10 @@ public class AtomController implements Initializable, FreezeListener {
 
     }
 
-    void predictProtein(Molecule molecule, int ppmSet) throws InvalidMoleculeException {
-        List<Polymer> polymers = molecule.getPolymers();
-        for (Polymer polymer : polymers) {
-            ProteinPredictor predictor = new ProteinPredictor(polymer);
-            for (Residue residue : polymer.getResidues()) {
-                for (Atom atom : residue.getAtoms()) {
-                    int aNum = atom.getAtomicNumber();
-                    if ((aNum == 1) || (aNum == 6) || (aNum == 7)) {
-                        Double value = predictor.predict(atom, false);
-                        if (value != null) {
-                            atom.setRefPPM(ppmSet, value);
-                        }
-                    }
-                }
+    void predictProtein(Molecule molecule, int ppmSet) throws InvalidMoleculeException, IOException {
+        Predictor predictor = new Predictor();
+        predictor.predictProtein(molecule, ppmSet);
 
-            }
-        }
         atomTableView.refresh();
 
     }
