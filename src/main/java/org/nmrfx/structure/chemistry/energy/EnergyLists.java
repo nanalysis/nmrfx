@@ -383,10 +383,10 @@ public class EnergyLists {
 
         ArrayList<Atom> atoms1 = Molecule.getMatchedAtoms(molFilter1, molecule);
         ArrayList<Atom> atoms2 = Molecule.getMatchedAtoms(molFilter2, molecule);
-
+        
         if (atoms1.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString1);
-        }
+        }        
         if (atoms2.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString2);
         }
@@ -410,7 +410,7 @@ public class EnergyLists {
         constraintsSetup = false;
     }
 
-    public void addDistanceConstraint(final ArrayList<String> filterStrings1, final ArrayList<String> filterStrings2,
+    public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
             final double rLow, final double rUp) throws IllegalArgumentException {
         if (filterStrings1.size() != filterStrings2.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
