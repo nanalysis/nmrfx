@@ -147,6 +147,7 @@ public class ProteinPredictor {
                                 = ProteinPredictorGen.predict(valueMap,
                                         coefs, minMax, reportAtom != null);
                         double value = predResult.ppm;
+                        value = Math.round(value*100)/100.0;
                         atom.setRefPPM(iRef, value);
                         double rms = getRMS(atomName);
                         atom.setRefError(rms);
