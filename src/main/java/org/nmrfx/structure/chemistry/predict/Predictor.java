@@ -23,6 +23,7 @@ import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.Polymer;
+import org.nmrfx.structure.chemistry.ProteinPredictor;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords;
 import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
@@ -36,8 +37,6 @@ import org.python.util.PythonInterpreter;
  * @author Bruce Johnson
  */
 public class Predictor {
-
-    ProteinPredictor proteinPredictor = null;
 
     /**
      * @return the rMax
@@ -224,32 +223,14 @@ public class Predictor {
         return alphas[alphaClass][nAlpha - 4 + index];
     }
 
-    public void predictProtein(Molecule mol, int iRef) throws InvalidMoleculeException, IOException {
-        if (proteinPredictor == null) {
-            proteinPredictor = new ProteinPredictor();
-        }
-        proteinPredictor.init(mol);
-        proteinPredictor.predict(iRef);
-    }
+    public void predictMolecule(Molecule mol, int iRef) throws InvalidMoleculeException {
 
-    public void predictMolecule(Molecule mol, int iRef) throws InvalidMoleculeException, IOException {
-
-        boolean hasPeptide = false;
         for (Polymer polymer : mol.getPolymers()) {
-            if (isRNA(polymer)) {
-                predictRNAWithDistances(polymer, 0, iRef, false);
-            } else if (polymer.isPeptide()) {
-                hasPeptide = true;
+            if (!isRNA(polymer)) {
+                predictPeptidePolymer(polymer, iRef);
+            } else {
+                predictRNAWithRingCurrent(polymer, 0, iRef);
             }
-        }
-
-        if (hasPeptide) {
-            if (proteinPredictor == null) {
-                proteinPredictor = new ProteinPredictor();
-            }
-            proteinPredictor.init(mol);
-            proteinPredictor.predict(iRef);
-
         }
         boolean hasPolymer = !mol.getPolymers().isEmpty();
         for (Entity entity : mol.getLigands()) {
@@ -258,6 +239,25 @@ public class Predictor {
                 predictLigandWithRingCurrent(entity, iRef);
             }
         }
+    }
+
+    public void predictPeptidePolymer(Polymer polymer, int iRef) throws InvalidMoleculeException {
+        String[] atomNames = {"N", "CA", "CB", "C", "H", "HA", "HA3"};
+        ProteinPredictor predictor = new ProteinPredictor(polymer);
+        polymer.getResidues().forEach((residue) -> {
+            for (String atomName : atomNames) {
+                if (residue.getName().equals("GLY") && atomName.equals("HA")) {
+                    atomName = "HA2";
+                }
+                Atom atom = residue.getAtom(atomName);
+                if (atom != null) {
+                    Double value = predictor.predict(atom, false);
+                    if (value != null) {
+                        atom.setRefPPM(iRef, value);
+                    }
+                }
+            }
+        });
     }
 
     public void predictRNAWithAttributes() {
