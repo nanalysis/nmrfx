@@ -8,6 +8,7 @@ import xplor
 import molio
 import os
 
+import pdb
 from org.nmrfx.structure.chemistry.energy import EnergyCoords
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import Atom
@@ -25,6 +26,7 @@ from org.nmrfx.structure.chemistry.io import Sequence
 from org.nmrfx.structure.chemistry.io import TrajectoryWriter
 from org.nmrfx.structure.chemistry import SSLayout
 from org.nmrfx.structure.chemistry import Polymer
+from org.nmrfx.structure.chemistry import AllBasePairs
 
 from org.nmrfx.structure.chemistry.miner import PathIterator
 from org.nmrfx.structure.chemistry.miner import NodeValidator
@@ -1122,7 +1124,20 @@ class refine:
             self.addSuiteAngles(rnaDict['suite'])
         if 'vienna' in rnaDict:
             self.findHelices(rnaDict['vienna'])
-
+        if 'bp' in rnaDict:
+	    polymers = self.molecule.getPolymers()
+            bps = rnaDict['bp']
+            for bp in bps:
+		res1, res2 = bp['res1'].split(":"), bp['res2'].split(":")
+		resNum1, resNum2 = res1[1], res2[1]
+		polymer1, polymer2 = self.molecule.getEntity(res1[0]), self.molecule.getEntity(res2[0])
+		residue1, residue2 = polymer1.getResidue(str(resNum1)), polymer2.getResidue(str(resNum2))
+		types = bp['type']
+		if len(types) == 1:
+		    self.addBasePair(residue1, residue2, types[0])
+		else:
+		    self.addBasePairs(residue1, residue2, types)    
+	  	
     def readAnnealDict(self, annealDict):
         dynDict = annealDict.get('dynOptions')
         dOpt = dynOptions(dynDict)
@@ -1737,45 +1752,76 @@ class refine:
                 self.addSuiteBoundary(polymer, res4,"1a")
                 self.addSuiteBoundary(polymer, res5,"1c")
 
-    def addBasePair(self, residueI, residueJ):
+    def addBasePair(self, residueI, residueJ, type=1):
         resNameI = residueI.getName()
         resNameJ = residueJ.getName()
-        dHN = 1.89
-        dHNlow = 1.8
-        dHO = 1.89
-        dHOlow = 1.8
-        dNN = 3.0
-        dNNlow = 2.9
-        dNO = 3.0
-        dNOlow = 2.9
-        namePairs = {}
-        namePairs['CG'] = (("N3","H1", dHNlow,dHN), ("N3","N1",dNNlow,dNN),("O2","H21",dHOlow,dHO),("O2","N2", dNOlow,dNO),
-                           ("H41","O6",dHOlow,dHO),("N4","O6",dNOlow,dNO),
-                           ("C6","C4",8.3,11.3),("H6","N9",10.75,13.75))
-        namePairs['GC'] = (("H1","N3", dHNlow,dHN),("N1","N3",dNNlow,dNN),("H21","O2",dHOlow,dHO),("N2","O2", dNOlow,dNO),
-                           ("O6","H41",dHOlow,dHO), ("O6","N4",dNOlow,dNO),
-                           ("C4","C6",8.3,11.3),("N9","H6",10.75,13.75))
-        namePairs['UA'] = (("H3","N1", dHNlow,dHN), ("N3","N1",dNNlow,dNN),("O4","H61",dHOlow,dHO),("O4","N6",dNOlow,dNO),
-                           ("C6","C4",8.3,11.3),("H6","N9",10.75,13.75))
-        namePairs['AU'] = (("N1","H3", dHNlow,dHN), ("N1","N3",dNNlow,dNN),("H61","O4",dHOlow,dHO),("N6","O4",dNOlow,dNO),
-                           ("C4","C6",8.3,11.3),("N9","H6",10.75,13.75))
-        namePairs['UG'] = (("O2","H1", dHOlow,dHO), ("O2","N1",dNOlow,dNO),("H3","O6",dHOlow,dHO),("N3","O6",dNOlow,dNO),
-                           ("C6","C8",9.8,12.8),("C5","N9",9.5,12.5))
-        namePairs['GU'] = (("H1","O2", dHOlow,dHO), ("N1","O2",dNOlow,dNO),("O6","H3",dHOlow,dHO),("O6","N3",dNOlow,dNO),
-                           ("C8","C6",9.8,12.8),("N9","C5",9.5,12.5))
+	bp = AllBasePairs.getBP(type, resNameI, resNameJ)
+   	numBp = len(bp.atomPairs)
+	for i in range(0, numBp):
+	    restraints = bp.distances[i].split(":")
+	    atoms = bp.atomPairs[i].split(":")
+	    atomI = atoms[0].split("/")[0]
+            atom1 = self.getAtomName(residueI, atomI)						
+	    atomJ = atoms[1].split("/")[0]
+            atom2 = self.getAtomName(residueJ, atomJ)						
+	    atomAtomDis= float(restraints[1])
+	    lowAtomAtomDis= float(restraints[0])
+            atomParentDis= float(restraints[3])
+            lowAtomParentDis= float(restraints[2])
+	    if atomI.startswith("H"):
+	        parentAtomName = residueI.getAtom(atomI).parent.getName()
+                parentAtom = self.getAtomName(residueI,parentAtomName)
+		self.energyLists.addDistanceConstraint(parentAtom, atom2 ,lowAtomParentDis,atomParentDis)
+	    elif atomJ.startswith("H"):
+	        parentAtomName = residueJ.getAtom(atomJ).parent.getName()
+                parentAtom = self.getAtomName(residueJ,parentAtomName)
+		self.energyLists.addDistanceConstraint(parentAtom, atom1 ,lowAtomParentDis,atomParentDis) 
+	    self.energyLists.addDistanceConstraint(atom1, atom2 ,lowAtomAtomDis,atomAtomDis)
 
-
-
-        pairName = resNameI+resNameJ
-        if not pairName in namePairs:
-            print("No data for pair " + pairName)
-        else:
-            pairs = namePairs[pairName]
-            for pair in pairs:
-                aNameI, aNameJ,lower,upper = pair
-                atomNameI = self.getAtomName(residueI, aNameI)
-                atomNameJ = self.getAtomName(residueJ, aNameJ)
-                self.energyLists.addDistanceConstraint(atomNameI,atomNameJ,lower,upper)
+    def addBasePairs(self, residueI, residueJ, types):
+        resNameI = residueI.getName()
+        resNameJ = residueJ.getName()
+	typeAtomPairs = [AllBasePairs.getBP(int(typee), residueI.getName(), residueJ.getName()).atomPairs for typee in types]
+	restraints =  [AllBasePairs.getBP(int(typee), residueI.getName(), residueJ.getName()).distances for typee in types]
+	atomPairNum = len(max(len, typeAtomPairs))
+	pairTypesNum = len(typeAtomPairs)
+	atoms = [[typeAtomPairs[iPair][iType] for iPair in range(atomPairNum)] for iType in range(pairTypesNum)]
+	disRes = [[restraints[iPair][iType] for iPair in range(atomPairNum)] for iType in range(pairTypesNum)] 
+	for i in range(atomPairNum):
+            atomList1 = []
+            atomList2 = []
+	    parentAtomList1 = []
+	    parentAtomList2 = []
+	    distances = []
+	    parentDistances = []
+            for j in range(pairTypesNum):
+		atomPair = atoms[i][j].split(":")
+                atom1, atom2 = atomPair[0].split("/")[0], atomPair[1].split("/")[0]
+		aaRes = disRes[i][j].split(":") 
+		distances.append(float(aaRes[0]))
+		distances.append(float(aaRes[1]))
+		parentDistances.append(float(aaRes[2]))
+		parentDistances.append(float(aaRes[3]))
+                atom1Name, atom2Name = self.getAtomName(residueI, atom1), self.getAtomName(residueJ, atom2)
+                atomList1.append(str(atom1Name))
+                atomList2.append(str(atom2Name))
+		if atom1.startswith("H"):
+                    parentAtomName = residueI.getAtom(atom1).parent.getName()
+                    parentAtom = self.getAtomName(residueI,parentAtomName)
+		    parentAtomList1.append(parentAtom)
+		    parentAtomList2.append(atom2Name)
+                elif atom2.startswith("H"):
+                    parentAtomName = residueJ.getAtom(atom2).parent.getName()
+                    parentAtom = self.getAtomName(residueJ,parentAtomName)
+		    parentAtomList1.append(atom1Name)
+		    parentAtomList2.append(parentAtom)
+            self.energyLists.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
+	    self.energyLists.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))		
+    def addStackPair(self, polymer, resNumI, resNumJ):
+        resNumI = str(resNumI)
+        resNumJ = str(resNumJ)
+        resI = polymer.getResidue(resNumI)
+        resJ = polymer.getResidue(resNumJ)
 
     def addStackPair(self, resI, resJ):
         resNameI = resI.getName()
