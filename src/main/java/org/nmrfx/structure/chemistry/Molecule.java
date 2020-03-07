@@ -2574,7 +2574,7 @@ public class Molecule implements Serializable, ITree {
         return bpList;
     }
 
-    public HashMap<Integer, List<BasePair>> bpMap() {
+    public HashMap<Integer, List<BasePair>> allBasePairsMap() {
         HashMap<Integer, List<BasePair>> bpMap = new HashMap<Integer, List<BasePair>>();
         BasePair currentBp = null;
         int i = 0;
@@ -2602,8 +2602,8 @@ public class Molecule implements Serializable, ITree {
         return bpMap;
     }
 
-    public char[] viennaSequence() { //pseudoknots
-        HashMap<Integer, List<BasePair>> bpMap = bpMap();
+    public char[] getViennaSequence() { //pseudoknots
+        HashMap<Integer, List<BasePair>> allBpMap = allBasePairsMap();
         List<BasePair> bps = pairList();
         List<Residue> RNAresidues = RNAresidues();
         char[] vienna = new char[RNAresidues.size()];
@@ -2616,8 +2616,8 @@ public class Molecule implements Serializable, ITree {
             vienna[bp.res1.iRes] = '(';
             vienna[bp.res2.iRes] = ')';
         }
-        if (!bpMap.isEmpty()) {
-            for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
+        if (!allBpMap.isEmpty()) {
+            for (Map.Entry<Integer, List<BasePair>> crossMap : allBpMap.entrySet()) {
                 for (BasePair bp : crossMap.getValue()) {
                     vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
                     vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
@@ -2629,7 +2629,7 @@ public class Molecule implements Serializable, ITree {
     }
 
     public char[] testViennaSequence() { //for testing
-        HashMap<Integer, List<BasePair>> bpMap = bpMap();
+        HashMap<Integer, List<BasePair>> bpMap = allBasePairsMap();
         List<Residue> RNAresidues = RNAresidues();
         char[] vienna = new char[RNAresidues.size()];
         String leftBrackets = "[{";
