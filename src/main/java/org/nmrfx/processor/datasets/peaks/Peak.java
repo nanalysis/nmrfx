@@ -93,8 +93,11 @@ public class Peak implements Comparable, PeakOrMulti {
     private int idNum;
     private int index = -1;
     private float volume1;
+    private float volume1Err;
     private float intensity;
+    private float intensityErr;
     private float volume2;
+    private float volume2Err;
     private int type = COMPOUND;
     private int status;
     private Color color;
@@ -314,6 +317,9 @@ public class Peak implements Comparable, PeakOrMulti {
         newPeak.volume1 = volume1;
         newPeak.intensity = intensity;
         newPeak.volume2 = volume2;
+        newPeak.volume1Err = volume1Err;
+        newPeak.intensityErr = intensityErr;
+        newPeak.volume2Err = volume2Err;
         newPeak.type = type;
         newPeak.status = status;
         newPeak.comment = comment;
@@ -331,6 +337,9 @@ public class Peak implements Comparable, PeakOrMulti {
         targetPeak.volume1 = volume1;
         targetPeak.intensity = intensity;
         targetPeak.volume2 = volume2;
+        targetPeak.volume1Err = volume1Err;
+        targetPeak.intensityErr = intensityErr;
+        targetPeak.volume2Err = volume2Err;
         targetPeak.type = type;
         targetPeak.status = status;
         targetPeak.comment = comment;
@@ -349,6 +358,9 @@ public class Peak implements Comparable, PeakOrMulti {
         newPeak.volume1 = volume1;
         newPeak.intensity = intensity;
         newPeak.volume2 = volume2;
+        newPeak.volume1Err = volume1Err;
+        newPeak.intensityErr = intensityErr;
+        newPeak.volume2Err = volume2Err;
         newPeak.type = type;
         newPeak.status = status;
         newPeak.comment = comment;
@@ -531,10 +543,17 @@ public class Peak implements Comparable, PeakOrMulti {
                 + ((iUpDown * peakList.getSpectralDim(iDim).getSw()) / peakList.getSpectralDim(iDim).getSf())));
     }
 
-    public double measurePeak(Dataset dataset, int[] pdim, int[] planes, Function<RegionData, Double> f) throws IOException {
+    public double[] measurePeak(Dataset dataset, int[] pdim, int[] planes, Function<RegionData, Double> f, String mode) throws IOException {
         RegionData regionData = analyzePeakRegion(dataset, planes, pdim);
         double value = f.apply(regionData);
-        return value;
+        Double noise = dataset.getNoiseLevel();
+        double err = 0.0;
+        if (noise != null) {
+            int nPoints = regionData.getNpoints(mode);
+            err = nPoints == 1 ? noise.floatValue() : Math.sqrt(nPoints) * noise.floatValue();
+        }
+        double[] result = {value, err};
+        return result;
     }
 
     public void setMeasures(double[] values) {
@@ -551,10 +570,18 @@ public class Peak implements Comparable, PeakOrMulti {
         double value = f.apply(regionData);
         if (mode.contains("volume")) {
             volume1 = (float) value;
+            Double noise = dataset.getNoiseLevel();
+            if (noise != null) {
+                int nPoints = mode.equals("evolume") ? regionData.getNEllipticalPoints() : regionData.getNpoints();
+                volume1Err = (float) Math.sqrt(nPoints) * noise.floatValue();
+            }
         } else {
             intensity = (float) value;
+            Double noise = dataset.getNoiseLevel();
+            if (noise != null) {
+                intensityErr = noise.floatValue();
+            }
         }
-
     }
 
     public static Function<RegionData, Double> getMeasureFunction(String mode) {
@@ -829,19 +856,19 @@ public class Peak implements Comparable, PeakOrMulti {
             case 0:
                 result.append(String.valueOf(getIdNum())).append(sep);
                 result.append(String.valueOf(getIntensity())).append(sep);
-                result.append("0.0").append(sep);
+                result.append(getIntensityErr()).append(sep);
                 result.append("height");
                 break;
             case 1:
                 result.append(String.valueOf(getIdNum())).append(sep);
                 result.append(String.valueOf(getVolume1())).append(sep);
-                result.append("0.0").append(sep);
+                result.append(getVolume1Err()).append(sep);
                 result.append("volume");
                 break;
             case 2:
                 result.append(String.valueOf(getIdNum())).append(sep);
                 result.append(String.valueOf(getVolume2())).append(sep);
-                result.append("0.0").append(sep);
+                result.append(getVolume2Err()).append(sep);
                 result.append("volume2");
                 break;
             default:
@@ -857,9 +884,17 @@ public class Peak implements Comparable, PeakOrMulti {
         result.append(String.valueOf(getIdNum())).append(sep);
         result.append(String.valueOf(getIdNum())).append(sep);
         result.append(String.valueOf(getVolume1())).append(sep);
-        result.append(".").append(sep); // uncertainty fixme
+        if (getVolume1Err() == 0.0) {
+            result.append(".").append(sep); // uncertainty fixme            
+        } else {
+            result.append(getVolume1Err()).append(sep); // uncertainty fixme            
+        }
         result.append(String.valueOf(getIntensity())).append(sep);
-        result.append(".").append(sep); // uncertainty fixme
+        if (getIntensityErr() == 0.0) {
+            result.append(".").append(sep); // uncertainty fixme            
+        } else {
+            result.append(getIntensityErr()).append(sep); // uncertainty fixme            
+        }
         for (PeakDim apeakDim : peakDims) {
             result.append(apeakDim.toNEFString(COMPOUND));
             result.append(sep);
@@ -999,7 +1034,9 @@ public class Peak implements Comparable, PeakOrMulti {
             result.append(frozen).append(sep);
         }
         result.append(String.valueOf(getVolume1())).append(sep);
+        result.append(String.valueOf(getVolume1Err())).append(sep);
         result.append(String.valueOf(getIntensity())).append(sep);
+        result.append(String.valueOf(getIntensityErr())).append(sep);
         result.append(String.valueOf(getType())).append(sep);
         result.append(String.valueOf(getComment())).append(sep);
         String colorString = color == null ? "" : ColorUtil.toRGBCode(color);
@@ -1283,6 +1320,10 @@ public class Peak implements Comparable, PeakOrMulti {
         return volume1;
     }
 
+    public float getVolume1Err() {
+        return volume1Err;
+    }
+
     public void setVolume1(float volume1) {
         this.volume1 = volume1;
         peakUpdated(this);
@@ -1292,6 +1333,10 @@ public class Peak implements Comparable, PeakOrMulti {
         return intensity;
     }
 
+    public float getIntensityErr() {
+        return intensityErr;
+    }
+
     public void setIntensity(float intensity) {
         this.intensity = intensity;
         peakUpdated(this);
@@ -1299,6 +1344,10 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public float getVolume2() {
         return volume2;
+    }
+
+    public float getVolume2Err() {
+        return volume2Err;
     }
 
     public void setVolume2(float volume2) {

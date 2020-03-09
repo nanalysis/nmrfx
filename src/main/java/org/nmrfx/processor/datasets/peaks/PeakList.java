@@ -906,7 +906,9 @@ public class PeakList {
             result.append(dimName).append(".F").append(sep);
         }
         result.append("volume").append(sep);
+        result.append("volume_err").append(sep);
         result.append("intensity").append(sep);
+        result.append("intensity_err").append(sep);
         result.append("type").append(sep);
         result.append("comment").append(sep);
         result.append("color").append(sep);
@@ -2819,11 +2821,13 @@ public class PeakList {
 
         peaks.stream().forEach(peak -> {
             double[] values = new double[nPlanes];
+            double[] errs = new double[nPlanes];
             for (int i = 0; i < nPlanes; i++) {
                 planes[0] = i;
                 try {
-                    double value = peak.measurePeak(dataset, pdim, planes, f);
-                    values[i] = value;
+                    double[] value = peak.measurePeak(dataset, pdim, planes, f, mode);
+                    values[i] = value[0];
+                    errs[i] = value[1];
                 } catch (IOException ex) {
                     System.out.println(ex.getMessage());
                 }
