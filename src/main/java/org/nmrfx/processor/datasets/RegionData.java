@@ -24,7 +24,8 @@
 package org.nmrfx.processor.datasets;
 
 /**
- * Instances of this class can calculate and store statistical information about a region of the dataset.
+ * Instances of this class can calculate and store statistical information about
+ * a region of the dataset.
  *
  * @author brucejohnson
  */
@@ -33,6 +34,7 @@ public class RegionData {
     static final private String[] FIELDS = {"Min", "Max", "Extreme", "Center", "RVolume", "EVolume", "Mean", "RMS", "N", "MaxPt"};
 
     protected int npoints = 0;
+    protected int nEllipse = 0;
     protected double value = 0.0;
     protected double center = 0.0;
     protected double jitter = 0.0;
@@ -116,6 +118,7 @@ public class RegionData {
         }
         if (r2 < 1.0) {
             volume_e += value;
+            nEllipse++;
         }
         if (Math.abs(value) > Math.abs(i_extreme)) {
             i_extreme = value;
@@ -134,8 +137,34 @@ public class RegionData {
      *
      * @return the number of points
      */
+    public int getNpoints(String mode) {
+        int n = 1;
+        if (mode.startsWith("evol")) {
+            n = nEllipse;
+        } else if (mode.startsWith("vol")) {
+            n = npoints;
+        } else {
+            n = 1;
+        }
+        return n;
+    }
+
+    /**
+     * Return the number of data points in the region
+     *
+     * @return the number of points
+     */
     public int getNpoints() {
         return npoints;
+    }
+
+    /**
+     * Return the number of data points in the elliptical region
+     *
+     * @return the number of points
+     */
+    public int getNEllipticalPoints() {
+        return nEllipse;
     }
 
     /**
@@ -259,7 +288,8 @@ public class RegionData {
     }
 
     /**
-     * Return the position in points (in double precision) of the maximum intensity in region
+     * Return the position in points (in double precision) of the maximum
+     * intensity in region
      *
      * @return array of double valued indices of the maximum
      */
