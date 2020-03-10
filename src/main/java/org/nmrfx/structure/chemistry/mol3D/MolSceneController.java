@@ -254,7 +254,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
             alert.showAndWait();
         } else {
-            char[] vienna = molecule.viennaSequence();
+            char[] vienna = molecule.getViennaSequence();
             String newDotBracket = new String(vienna);
             molecule.setDotBracket(newDotBracket);
 

@@ -528,7 +528,7 @@ public class AtomController implements Initializable, FreezeListener {
 
     void predictProtein(Molecule molecule, int ppmSet) throws InvalidMoleculeException, IOException {
         Predictor predictor = new Predictor();
-        predictor.predictProtein(molecule, ppmSet);
+        predictor.predictMolecule(molecule, ppmSet);
 
         atomTableView.refresh();
 
