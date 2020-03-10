@@ -171,14 +171,15 @@ public class PeakWriter {
             }
             if (peak.getMeasures().isPresent()) {
                 if (!wroteHeader) {
-                    int nMeasure = peak.getMeasures().get().length;
+                    double[][] values = peak.getMeasures().get();
+                    int nMeasure = values[0].length;
                     double[] xValues = null;
                     if (peakList.hasMeasures()) {
                         xValues = peakList.getMeasureValues();
                     }
                     for (int j = 0; j < nMeasure; j++) {
                         if ((xValues != null) && (xValues.length == nMeasure)) {
-                            result.append(xValues[j]).append(sep);
+                            result.append(xValues[j]).append(sep).append("err").append(sep);
                         } else {
                             result.append("val").append((j + 1)).append(sep);
                         }

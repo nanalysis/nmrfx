@@ -103,7 +103,7 @@ public class Peak implements Comparable, PeakOrMulti {
     private Color color;
     private String comment;
     private boolean[] flag;
-    private Optional<double[]> measures = Optional.empty();
+    private Optional<double[][]> measures = Optional.empty();
     public PeakDim[] peakDims;
     private Corner corner = new Corner("ne");
     public PeakList peakList;
@@ -556,11 +556,11 @@ public class Peak implements Comparable, PeakOrMulti {
         return result;
     }
 
-    public void setMeasures(double[] values) {
+    public void setMeasures(double[][] values) {
         measures = Optional.of(values);
     }
 
-    public Optional<double[]> getMeasures() {
+    public Optional<double[][]> getMeasures() {
         return measures;
     }
 
@@ -1058,9 +1058,10 @@ public class Peak implements Comparable, PeakOrMulti {
             result.append(label).append(sep);
         }
         if (measures.isPresent()) {
-            double[] values = measures.get();
-            for (int i = 0; i < values.length; i++) {
-                result.append(String.format(formatString, values[i])).append(sep);
+            double[][] values = measures.get();
+            for (int i = 0; i < values[0].length; i++) {
+                result.append(String.format(formatString, values[0][i])).append(sep);
+                result.append(String.format(formatString, values[1][i])).append(sep);
             }
         }
         return (result.toString().trim());
@@ -1329,6 +1330,11 @@ public class Peak implements Comparable, PeakOrMulti {
         peakUpdated(this);
     }
 
+    public void setVolume1Err(float err) {
+        this.volume1Err = err;
+        peakUpdated(this);
+    }
+
     public float getIntensity() {
         return intensity;
     }
@@ -1339,6 +1345,11 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public void setIntensity(float intensity) {
         this.intensity = intensity;
+        peakUpdated(this);
+    }
+
+    public void setIntensityErr(float err) {
+        this.intensityErr = err;
         peakUpdated(this);
     }
 

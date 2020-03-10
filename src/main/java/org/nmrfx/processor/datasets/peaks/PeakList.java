@@ -2820,22 +2820,23 @@ public class PeakList {
         int[] pdim = getDimsForDataset(dataset, true);
 
         peaks.stream().forEach(peak -> {
-            double[] values = new double[nPlanes];
-            double[] errs = new double[nPlanes];
+            double[][] values = new double[2][nPlanes];
             for (int i = 0; i < nPlanes; i++) {
                 planes[0] = i;
                 try {
                     double[] value = peak.measurePeak(dataset, pdim, planes, f, mode);
-                    values[i] = value[0];
-                    errs[i] = value[1];
+                    values[0][i] = value[0];
+                    values[1][i] = value[1];
                 } catch (IOException ex) {
                     System.out.println(ex.getMessage());
                 }
             }
             if (mode.contains("vol")) {
-                peak.setVolume1((float) values[0]);
+                peak.setVolume1((float) values[0][0]);
+                peak.setVolume1Err((float) values[1][0]);
             } else {
-                peak.setIntensity((float) values[0]);
+                peak.setIntensity((float) values[0][0]);
+                peak.setIntensityErr((float) values[1][0]);
             }
             peak.setMeasures(values);
         });
@@ -3357,10 +3358,10 @@ public class PeakList {
                         peak.setComment(String.format("T %.4f", values[index++]));
                     }
                 } else if (nPlanes > 1) {
-                    double[] measures = new double[nPlanes];
+                    double[][] measures = new double[2][nPlanes];
                     index--;
                     for (int iPlane = 0; iPlane < nPlanes; iPlane++) {
-                        measures[iPlane] = values[index++];
+                        measures[0][iPlane] = values[index++];
                     }
                     peak.setMeasures(measures);
                 }
