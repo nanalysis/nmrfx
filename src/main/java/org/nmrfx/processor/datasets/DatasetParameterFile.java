@@ -114,6 +114,9 @@ public class DatasetParameterFile {
             pStream.printf("posneg %d\n", dataset.getPosneg());
             pStream.printf("lvl %f\n", dataset.getLvl());
             pStream.printf("scale %g\n", dataset.getScale());
+            if (dataset.getNoiseLevel() != null) {
+                pStream.printf("scale %g\n", dataset.getNoiseLevel());
+            }
             pStream.printf("rdims %d\n", dataset.getNFreqDims());
             pStream.printf("datatype %d\n", dataset.getDataType());
             pStream.printf("poscolor %s\n", dataset.getPosColor());
@@ -208,6 +211,11 @@ public class DatasetParameterFile {
             case "scale": {
                 double value = Double.parseDouble(fields[1]);
                 dataset.setScale(value);
+                break;
+            }
+            case "noise": {
+                double value = Double.parseDouble(fields[1]);
+                dataset.setNoiseLevel(value);
                 break;
             }
             case "rdims": {
