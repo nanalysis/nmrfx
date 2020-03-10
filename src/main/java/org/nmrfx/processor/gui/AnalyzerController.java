@@ -40,6 +40,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.RegionData;
 
 /**
@@ -58,6 +59,8 @@ public class AnalyzerController implements Initializable {
     private AutoComplete autoComplete;
 
     private final Map<String, TextField> fieldMap = new HashMap<>();
+    Optional<RegionData> result = Optional.empty();
+    Dataset dataset = null;
 
     /*
     protected int npoints = 0;
@@ -122,7 +125,8 @@ public class AnalyzerController implements Initializable {
 
     @FXML
     private void analyze(ActionEvent event) {
-        Optional<RegionData> result = PolyChart.getActiveChart().analyzeFirst();
+        dataset = PolyChart.getActiveChart().getDataset();
+        result = PolyChart.getActiveChart().analyzeFirst();
         String[] fields = RegionData.getFields();
         if (result.isPresent()) {
             RegionData rData = result.get();
@@ -130,31 +134,38 @@ public class AnalyzerController implements Initializable {
                 String sValue;
                 TextField textField = fieldMap.get(field);
                 switch (field) {
-                    case "N":
-                        {
-                            int value = rData.getNpoints();
-                            sValue = String.valueOf(value);
-                            break;
+                    case "N": {
+                        int value = rData.getNpoints();
+                        sValue = String.valueOf(value);
+                        break;
+                    }
+                    case "MaxPt": {
+                        int[] value = rData.getMaxPoint();
+                        StringBuilder sBuilder = new StringBuilder();
+                        for (int val : value) {
+                            sBuilder.append(val);
+                            sBuilder.append(" ");
                         }
-                    case "MaxPt":
-                        {
-                            int[] value = rData.getMaxPoint();
-                            StringBuilder sBuilder = new StringBuilder();
-                            for (int val : value) {
-                                sBuilder.append(val);
-                                sBuilder.append(" ");
-                            }       sValue = sBuilder.toString().trim();
-                            break;
-                        }
-                    default:
-                        {
-                            double value = rData.getValue(field);
-                            sValue = String.format("%f", value);
-                            break;
-                        }
+                        sValue = sBuilder.toString().trim();
+                        break;
+                    }
+                    default: {
+                        double value = rData.getValue(field);
+                        sValue = String.format("%f", value);
+                        break;
+                    }
                 }
                 textField.setText(sValue);
             }
         }
+    }
+
+    @FXML
+    private void setRMS(ActionEvent event) {
+        result.ifPresent(regionData -> {
+            if (dataset != null) {
+                dataset.setNoiseLevel(regionData.getRMS());
+            }
+        });
     }
 }
