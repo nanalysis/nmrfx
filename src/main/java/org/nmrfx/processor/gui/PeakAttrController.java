@@ -107,7 +107,11 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
     @FXML
     private TextField intensityField;
     @FXML
+    private TextField intensityErrField;
+    @FXML
     private TextField volumeField;
+    @FXML
+    private TextField volumeErrField;
     @FXML
     private TextField commentField;
     @FXML
@@ -348,8 +352,10 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                 peakTableView.setItems(peakDimList);
             }
             peakTableView.refresh();
-            intensityField.setText(String.valueOf(peak.getIntensity()));
-            volumeField.setText(String.valueOf(peak.getVolume1()));
+            intensityField.setText(String.format("%.5f", peak.getIntensity()));
+            intensityErrField.setText(String.format("%.5f", peak.getIntensityErr()));
+            volumeField.setText(String.format("%.5f", peak.getVolume1()));
+            volumeErrField.setText(String.format("%.5f", peak.getVolume1Err()));
             commentField.setText(peak.getComment());
             clearIt = false;
         }
@@ -366,7 +372,9 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
             Series series = new Series<>();
             data.add(series);
             PEAK_NORM normMode = normChoice.getValue();
-            double[] yValues = currentPeak.getMeasures().get();
+            double[][] values = currentPeak.getMeasures().get();
+            double[] yValues = values[0];
+            double[] errs = values[1];
             double[] xValues = currentPeak.getPeakList().getMeasureValues();
             for (int i = 0; i < yValues.length; i++) {
                 double xValue = xValues != null ? xValues[i] : 1.0 * i;
@@ -375,7 +383,11 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
                 }
                 Optional<Double> yValue = normMode.normalize(yValues[0], yValues[i]);
                 if (yValue.isPresent()) {
-                    XYChart.Data value = new XYChart.Data(xValue, yValue.get());
+                    double err = 0.0;
+                    if (normMode == PEAK_NORM.NO_NORM) {
+                        err = errs[i];
+                    }
+                    XYChart.Data value = new XYChart.Data(xValue, yValue.get(), err);
                     series.getData().add(value);
                 }
             }
