@@ -299,9 +299,15 @@ public class PeakReader {
                             case "intensity":
                                 peak.setIntensity(Float.valueOf(value));
                                 break;
+                            case "intensity_err":
+                                peak.setIntensityErr(Float.valueOf(value));
+                                break;
                             case "vol":
                             case "volume":
                                 peak.setVolume1(Float.valueOf(value));
+                                break;
+                            case "volume_err":
+                                peak.setVolume1Err(Float.valueOf(value));
                                 break;
                             case "status":
                                 peak.setStatus(Integer.valueOf(value));
@@ -340,6 +346,7 @@ public class PeakReader {
     public void readMPK2(PeakList peakList, String fileName) throws IOException {
         Path path = Paths.get(fileName);
         boolean gotHeader = false;
+        boolean hasErrors = false;
         int valStart = -1;
         int nValues = -1;
         int nDim = peakList.nDim;
@@ -360,13 +367,22 @@ public class PeakReader {
                 String[] data = line.split("\t", -1);
                 if (!gotHeader) {
                     gotHeader = true;
-                    nValues = data.length - (nDim + 1);
                     valStart = nDim + 1;
+                    if ((data.length > (valStart + 1)) && (data[valStart + 1].equals("err"))) {
+                        hasErrors = true;
+                    }
+                    nValues = data.length - (nDim + 1);
+                    if (hasErrors) {
+                        nValues /= 2;
+                    }
                     xValues = new double[nValues];
                     boolean ok = true;
                     for (int i = valStart, j = 0; i < data.length; i++) {
                         try {
                             xValues[j++] = Double.parseDouble(data[i]);
+                            if (hasErrors) {
+                                i++;
+                            }
                         } catch (NumberFormatException nfE) {
                             ok = false;
                             break;
@@ -380,9 +396,14 @@ public class PeakReader {
                     int peakId = Integer.parseInt(data[0]);
                     Peak peak = peakList.getPeakByID(peakId);
                     if (peak != null) {
-                        double[] values = new double[nValues];
+                        double[][] values = new double[2][nValues];
                         for (int i = valStart, j = 0; i < data.length; i++) {
-                            values[j++] = Double.parseDouble(data[i]);
+                            values[0][j] = Double.parseDouble(data[i]);
+                            if (hasErrors) {
+                                values[1][j] = Double.parseDouble(data[i+1]);
+                                i++;
+                            }
+                            j++;
                         }
                         peak.setMeasures(values);
                     }
