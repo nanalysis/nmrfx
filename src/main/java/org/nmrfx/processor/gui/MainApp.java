@@ -475,6 +475,7 @@ public class MainApp extends Application implements DatasetListener {
             datasetController = DatasetsController.create();
             datasetController.setDatasetList(FXMLController.datasetList);
         }
+        datasetController.refresh();
         datasetController.getStage().show();
         datasetController.getStage().toFront();
     }
