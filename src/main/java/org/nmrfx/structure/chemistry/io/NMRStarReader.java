@@ -916,7 +916,7 @@ public class NMRStarReader {
                 List<String> peakidColumn = loop.getColumnAsList("Peak_ID");
                 List<String> methodColumn = loop.getColumnAsList("Measurement_method");
                 List<String> intensityColumn = loop.getColumnAsList("Intensity_val");
-                //  fixme, unused: ArrayList errorColumn = loop.getColumnAsList("Intensity_val_err");
+                List<String> errorColumn = loop.getColumnAsList("Intensity_val_err");
                 for (int i = 0, n = peakidColumn.size(); i < n; i++) {
                     String value = null;
                     int idNum = 0;
@@ -941,6 +941,20 @@ public class NMRStarReader {
                         } else {
                             // FIXME throw error if don't know type, or add new type dynamically?
                             peak.setIntensity(iValue);
+                        }
+                    }
+                    if ((value = NvUtil.getColumnValue(errorColumn, i)) != null) {
+                        if (!value.equals(".")) {
+                            float iValue = NvUtil.toFloat(value);
+                            if (method.equals("height")) {
+                                peak.setIntensityErr(iValue);
+                            } else if (method.equals("volume")) {
+                                // FIXME should set volume/evolume 
+                                peak.setVolume1Err(iValue);
+                            } else {
+                                // FIXME throw error if don't know type, or add new type dynamically?
+                                peak.setIntensityErr(iValue);
+                            }
                         }
                     }
                     // FIXME set error value
