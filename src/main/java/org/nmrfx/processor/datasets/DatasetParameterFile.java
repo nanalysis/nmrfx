@@ -115,7 +115,7 @@ public class DatasetParameterFile {
             pStream.printf("lvl %f\n", dataset.getLvl());
             pStream.printf("scale %g\n", dataset.getScale());
             if (dataset.getNoiseLevel() != null) {
-                pStream.printf("scale %g\n", dataset.getNoiseLevel());
+                pStream.printf("noise %g\n", dataset.getNoiseLevel());
             }
             pStream.printf("rdims %d\n", dataset.getNFreqDims());
             pStream.printf("datatype %d\n", dataset.getDataType());
