@@ -230,6 +230,10 @@ public class DatasetsController implements Initializable {
         scaleCol.setCellValueFactory(new PropertyValueFactory("scale"));
         scaleCol.setCellFactory(tc -> new DatasetDoubleFieldTableCell(dsConverter));
 
+        TableColumn<Dataset, Double> noiseCol = new TableColumn<>("noise");
+        noiseCol.setCellValueFactory(new PropertyValueFactory("noiseLevel"));
+        noiseCol.setCellFactory(tc -> new DatasetDoubleFieldTableCell(dsConverter));
+
         TableColumn<Dataset, Integer> nDimCol = new TableColumn<>("nD");
         nDimCol.setCellValueFactory(new PropertyValueFactory("nDim"));
         nDimCol.setPrefWidth(25);
@@ -401,7 +405,7 @@ public class DatasetsController implements Initializable {
             menu.getItems().add(dimItem);
         }
         dim1Column.setContextMenu(menu);
-        tableView.getColumns().setAll(fileNameCol, nDimCol, levelCol, scaleCol, positiveColumn, negativeColumn, dim1Column);
+        tableView.getColumns().setAll(fileNameCol, nDimCol, levelCol, scaleCol, noiseCol, positiveColumn, negativeColumn, dim1Column);
         tableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         ListChangeListener listener = new ListChangeListener() {
             @Override
@@ -602,5 +606,9 @@ public class DatasetsController implements Initializable {
                 dataset.close();
             }
         }
+    }
+    
+    void refresh() {
+        tableView.refresh();
     }
 }
