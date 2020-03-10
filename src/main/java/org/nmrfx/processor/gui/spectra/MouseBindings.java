@@ -22,7 +22,6 @@ import javafx.event.Event;
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.gui.PolyChart;
-import org.nmrfx.processor.gui.spectra.IntegralHit;
 import static org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION.DRAG_VIEW;
 import static org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION.DRAG_VIEWX;
 import static org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION.DRAG_VIEWY;
@@ -95,7 +94,7 @@ public class MouseBindings {
                 || mouseAction == MOUSE_ACTION.DRAG_VIEWX
                 || mouseAction == MOUSE_ACTION.DRAG_VIEWY;
         boolean altShift = mouseEvent.isShiftDown() && mouseEvent.isAltDown();
-        if (!mouseEvent.isControlDown()) {
+        if (!mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
             if (!draggingView && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
                 chart.handleCrossHair(mouseEvent, false);
             } else {
@@ -229,11 +228,12 @@ public class MouseBindings {
     public void mouseReleased(Event event) {
         mouseDown = false;
         MouseEvent mouseEvent = (MouseEvent) event;
-        boolean altShift = mouseEvent.isShiftDown() && mouseEvent.isAltDown();
-        boolean draggingView = mouseAction == MOUSE_ACTION.DRAG_VIEW
-                || mouseAction == MOUSE_ACTION.DRAG_VIEWX
-                || mouseAction == MOUSE_ACTION.DRAG_VIEWY;
-        if (!mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
+        boolean menuShowing = chart.getSpectrumMenu().chartMenu.isShowing();
+        if (!menuShowing && !mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
+            boolean altShift = mouseEvent.isShiftDown() && mouseEvent.isAltDown();
+            boolean draggingView = mouseAction == MOUSE_ACTION.DRAG_VIEW
+                    || mouseAction == MOUSE_ACTION.DRAG_VIEWX
+                    || mouseAction == MOUSE_ACTION.DRAG_VIEWY;
             if (!draggingView && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
                 chart.handleCrossHair(mouseEvent, false);
                 if (!chart.getCursor().toString().equals("CROSSHAIR")) {
