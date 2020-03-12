@@ -76,7 +76,7 @@ public class NUSConScore {
     public void calculate(double dMax) {
         peakWidths = new double[peakListM.getNDim()];
         for (int i = 0; i < peakWidths.length; i++) {
-            DoubleSummaryStatistics widthStats = peakListM.widthStatsPPM(0);
+            DoubleSummaryStatistics widthStats = peakListM.widthStatsPPM(i);
             peakWidths[i] = widthStats.getAverage();
         }
 
@@ -93,7 +93,7 @@ public class NUSConScore {
     }
 
     public static double normSymHausDorff(List<Peak> peaksM, List<Peak> peaksR, double[] scale, double dMax) {
-        return symHausDorff(peaksM, peaksR, scale, dMax) / dMax;
+        return 1.0 - (symHausDorff(peaksM, peaksR, scale, dMax) / dMax);
     }
 
     public static double symHausDorff(List<Peak> peaksM, List<Peak> peaksR, double[] scale, double dMax) {
@@ -109,8 +109,8 @@ public class NUSConScore {
             for (Peak peakR : peaksR) {
                 double dis = Math.min(peakM.distance(peakR, scale), dMax);
                 disMin = Math.min(dis, disMin);
-                sumSq += disMin * disMin;
             }
+            sumSq += disMin * disMin;
         }
         double score = Math.sqrt(sumSq / peaksM.size());
         return score;
@@ -172,7 +172,7 @@ public class NUSConScore {
                 result[i] = -1;
             }
         }
-        return matching;
+        return result;
     }
 
     public static double[] getRates(int[] matching, int nM, int nR) {
@@ -191,6 +191,9 @@ public class NUSConScore {
         int nDim = dataset.getNDim();
         int[] pt = new int[nDim];
         int[] dim = new int[nDim];
+        for (int i = 0; i < nDim; i++) {
+            dim[i] = i;
+        }
         int first = 0;
         int last = 0;
         double int1 = peakM1.getIntensity();
@@ -207,7 +210,7 @@ public class NUSConScore {
                     last = hold;
                 }
             } else {
-                pt[i] = dataset.ppmToPoint(iDim, p1);
+                pt[i] = dataset.ppmToPoint(i, p1);
             }
         }
         double min = Double.MAX_VALUE;
