@@ -52,6 +52,7 @@ public class GRINS {
      * Calculate statistics.
      */
     boolean calcStats = true;
+    boolean tdMode = false;  // only freq mode is currently functional
 
     public GRINS(MatrixND matrix, double noise, double scale, double[] phase, boolean preserve, boolean synthetic, int[] zeroList, int[] srcTargetMap, String logFileName) {
         this.matrix = matrix;
@@ -132,7 +133,7 @@ public class GRINS {
                 }
                 int nPeaksTemp = peaks.size();
                 nPeaks += peaks.size();
-                if (!peaks.isEmpty()) {
+                if (!tdMode && !peaks.isEmpty()) {
                     subtractSignals(matrix, peaks, addBuffer, fileWriter);
                 }
                 double[] measure2 = matrix.measure(false, 0.0, Double.MAX_VALUE);
@@ -148,6 +149,9 @@ public class GRINS {
                 if (iteration < iterations - 1) {
                     matrix.doHIFT(0.5);
                     matrix.zeroValues(zeroList);
+                }
+                if (tdMode && !peaks.isEmpty()) {
+                    doPeaks(peaks, matrix);
                 }
             }
 //        System.out.println("GRINS with " + nPeaks + " peaks");
