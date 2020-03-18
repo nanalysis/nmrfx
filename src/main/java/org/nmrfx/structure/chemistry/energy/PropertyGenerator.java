@@ -654,7 +654,16 @@ public class PropertyGenerator {
             valueMap.put("cs", cs);
             valueMap.put("acscorr", acs);
             double h3 = 0.0;
+            String resName = atom.getResidueName();
             if (atomName.startsWith("H") && !atom.isMethyl() && atomName.endsWith("3")) {
+                h3 = 1.0;
+            } else if (resName.equals("LEU") && atomName.startsWith("CD") && atom.isMethylCarbon() && (atomName.charAt(2) == '2')) {
+                h3 = 1.0;
+            } else if (resName.equals("LEU") && atomName.startsWith("HD") && atom.isMethyl() && (atomName.charAt(2) == '2')) {
+                h3 = 1.0;
+            } else if (resName.equals("VAL") && atomName.startsWith("CG") && atom.isMethylCarbon() && (atomName.charAt(2) == '2')) {
+                h3 = 1.0;
+            } else if (resName.equals("VAL") && atomName.startsWith("HG") && atom.isMethyl() && (atomName.charAt(2) == '2')) {
                 h3 = 1.0;
             }
             valueMap.put("h3", h3);
