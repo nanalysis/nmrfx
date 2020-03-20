@@ -6,11 +6,13 @@ import java.io.InputStreamReader;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -20,8 +22,13 @@ import org.nmrfx.structure.chemistry.energy.PropertyGenerator;
 
 public class ProteinPredictor {
 
-    static final List<String> atomNames = Arrays.asList("N", "CA", "CB", "CG", "C", "H", "HA", "HB", "HG");
+    static final Set<String> atomTypes = new HashSet<>();
 
+    static {
+        Collections.addAll(atomTypes, "MHB", "MHG", "MHD", "MCB",
+                "MCG", "MCD", "C", "CA", "CB", "N", "H", "HA", "HB", "HG", "HD",
+                "HE", "CG", "CD", "CE");
+    }
     PropertyGenerator propertyGenerator;
     Map<String, Integer> aaMap = new HashMap<>();
     Map<String, Double> rmsMap = new HashMap<>();
@@ -112,17 +119,29 @@ public class ProteinPredictor {
 
     }
 
-    Optional<String> getAtomType(String aName) {
-        int len = aName.length();
-        Optional<String> atomName = Optional.empty();
-        if (len > 2) {
-            aName = aName.substring(0, 2);
+    Optional<String> getAtomNameType(Atom atom) {
+        Optional<String> atomType = Optional.empty();
+        String aName = atom.getName();
+        String useName = null;
+        if (atom.isMethyl()) {
+            if (atom.getAtomicNumber() == 1) {
+                if (atom.isFirstInMethyl()) {
+                    useName = "MH" + aName.charAt(1);
+                }
+            }
+        } else if (atom.isMethylCarbon()) {
+            useName = "MC" + aName.charAt(1);
+        } else {
+            int aLen = aName.length();
+            if (aLen > 2) {
+                aName = aName.substring(0, 2);
+            }
+            useName = aName;
         }
-        if (atomNames.contains(aName)) {
-            atomName = Optional.of(aName);
+        if ((useName != null) && atomTypes.contains(useName)) {
+            atomType = Optional.of(useName);
         }
-        return atomName;
-
+        return atomType;
     }
 
     public void predict(Residue residue, int iRef) throws IOException {
@@ -130,26 +149,24 @@ public class ProteinPredictor {
             loadCoefficients();
         }
         Map<String, Double> valueMap = propertyGenerator.getValues();
-        String[] subTypes = {"", "2", "3"};
         Polymer polymer = residue.getPolymer();
         if (propertyGenerator.getResidueProperties(polymer, residue)) {
             for (Atom atom : residue.getAtoms()) {
-                String aName = atom.getName();
-                Optional<String> atomNameOpt = getAtomType(aName);
-                atomNameOpt.ifPresent(atomName -> {
+                Optional<String> atomTypeOpt = getAtomNameType(atom);
+                atomTypeOpt.ifPresent(atomType -> {
                     propertyGenerator.getAtomProperties(atom);
-                    String type = atomName + '_' + residue.getName();
+                    String type = atomType + '_' + residue.getName();
                     Integer jType = aaMap.get(type);
                     if (jType != null) {
                         double[] coefs = values[jType];
-                        double[] minMax = minMaxMap.get(atomName);
+                        double[] minMax = minMaxMap.get(atomType);
                         ProteinPredictorResult predResult
                                 = ProteinPredictorGen.predict(valueMap,
                                         coefs, minMax, reportAtom != null);
                         double value = predResult.ppm;
-                        value = Math.round(value*100)/100.0;
+                        value = Math.round(value * 100) / 100.0;
                         atom.setRefPPM(iRef, value);
-                        double rms = getRMS(atomName);
+                        double rms = getRMS(atomType);
                         atom.setRefError(rms);
                         if ((reportAtom != null) && atom.getFullName().equals(reportAtom)) {
                             dumpResult(predResult);
