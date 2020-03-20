@@ -203,18 +203,21 @@ public class ProteinPredictor {
         }
     }
 
-    double getRMS(String aName) {
+    double getRMS(String atomType) {
         double rms = 1.0;
-        String aRoot = aName.length() > 2 ? aName.substring(0, 2) : aName;
-        if (rmsMap.containsKey(aRoot)) {
-            rms = rmsMap.get(aRoot);
+        if (rmsMap.containsKey(atomType)) {
+            rms = rmsMap.get(atomType);
         } else {
-            if (aName.startsWith(("H"))) {
+            if (atomType.startsWith(("H"))) {
                 rms = 0.5;
-            } else if (aName.startsWith("C")) {
+            } else if (atomType.startsWith("C")) {
                 rms = 1.0;
-            } else if (aName.startsWith("N")) {
+            } else if (atomType.startsWith("N")) {
                 rms = 3.0;
+            } else if (atomType.startsWith("MH")) {
+                rms = 0.5;
+            } else if (atomType.startsWith("MC")) {
+                rms = 1.0;
             }
         }
         return rms;
