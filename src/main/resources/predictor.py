@@ -7,7 +7,9 @@ import rnapred
 import molio
 from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
-from org.nmrfx.structure.chemistry import ProteinPredictor
+from org.nmrfx.structure.chemistry.predict import ProteinPredictor
+
+
 
 
 
@@ -18,13 +20,16 @@ outDir = os.path.join(homeDir,'output')
 argFile = sys.argv[-1]
 
 def predictProtein(mol, tableMode=False):
+    pred=ProteinPredictor()
+    pred.init(mol)
+    pred.predict(0)
+
     polymers = mol.getPolymers()
     if tableMode:
         for atomName in ('N','CA','CB','C','H','HA(2)','HA3'):
             print atomName,
         print ""
     for polymer in polymers:
-        predictor = ProteinPredictor(polymer)
         for residue in polymer.iterator():
             if tableMode:
                 print residue.getNumber(), residue.getName(),
@@ -35,7 +40,7 @@ def predictProtein(mol, tableMode=False):
                     if atom == None:
                         print "  _   ",
                     else:
-                        value = predictor.predict(residue.getAtom(atomName), False)
+                        value = residue.getAtom(atomName).getRefPPM()
                         if value != None:
                             valueStr = "%6.2f" % (value)
                             print valueStr,
@@ -43,17 +48,14 @@ def predictProtein(mol, tableMode=False):
                             print "  _   ",
                 print ""
             else:
-                for atomName in ('N','CA','CB','C','H','HA','HA3'):
-                    if residue.getName() == "GLY" and atomName == 'HA':
-                        atomName = 'HA2'
-                    atom = residue.getAtom(atomName)
-                    if atom != None:
-                        value = predictor.predict(residue.getAtom(atomName), False)
-                        if value != None:
-                            valueStr = "%s.%s %.2f" % (residue.getNumber(),atomName,value)
-                            print valueStr
-
-
+                atoms = residue.getAtoms()
+                for atom in atoms:
+                    atomName = atom.getName()
+                    value = atom.getRefPPM()
+                    valueErr = atom.getSDevRefPPM()
+                    if value != None:
+                        valueStr = "%s.%s %.2f %.2f" % (residue.getNumber(),atomName,value,valueErr)
+                        print valueStr
 
 
 def isRNA(mol):
