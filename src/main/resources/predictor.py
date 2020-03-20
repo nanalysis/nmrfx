@@ -9,10 +9,6 @@ from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
 from org.nmrfx.structure.chemistry.predict import ProteinPredictor
 
-
-
-
-
 homeDir =  os.getcwd( )
 dataDir = homeDir + '/'
 outDir = os.path.join(homeDir,'output')
@@ -57,7 +53,6 @@ def predictProtein(mol, tableMode=False):
                         valueStr = "%s.%s %.2f %.2f" % (residue.getNumber(),atomName,value,valueErr)
                         print valueStr
 
-
 def isRNA(mol):
     polymers = mol.getPolymers()
     rna = False
@@ -69,9 +64,6 @@ def isRNA(mol):
                 break
     return rna
                 
-
-
-
 if argFile.endswith('.yaml'):
     input = FileInputStream(argFile)
     yaml = Yaml()
