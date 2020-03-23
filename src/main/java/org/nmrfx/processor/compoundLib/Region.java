@@ -26,7 +26,11 @@ public class Region {
     private final int maxPt;
     private PolynomialSplineFunction pSF = null;
 
-    Region(CompoundData cData, double[] intensities, int start, int end, double startPPM, double endPPM, double intMax, double max) {
+    public Region(CompoundData cData, double[] intensities, int start, int end, double startPPM, double endPPM) {
+        this(cData, intensities, start, end, startPPM, endPPM, 1.0, 1.0);
+    }
+
+    public Region(CompoundData cData, double[] intensities, int start, int end, double startPPM, double endPPM, double intMax, double max) {
         this.cData = cData;
         this.intensities = intensities.clone();
         this.start = start;
@@ -37,6 +41,30 @@ public class Region {
         maxPt = (int) scaleResult[2];
         ppm1 = startPPM;
         ppm2 = endPPM;
+        System.out.println(toString());
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sBuilder = new StringBuilder();
+        sBuilder.append("n ");
+        sBuilder.append(intensities.length);
+        sBuilder.append(" start ");
+        sBuilder.append(start);
+        sBuilder.append(" end ");
+        sBuilder.append(end);
+        sBuilder.append(" ppm1 ");
+        sBuilder.append(ppm1);
+        sBuilder.append(" ppm2 ");
+        sBuilder.append(ppm2);
+        sBuilder.append(" regionMax ");
+        sBuilder.append(regionMax);
+        sBuilder.append(" sum ");
+        sBuilder.append(sum);
+        sBuilder.append(" maxPt ");
+        sBuilder.append(maxPt);
+
+        return sBuilder.toString();
     }
 
     public double[] getIntensities() {
@@ -154,6 +182,10 @@ public class Region {
     }
 
     public double[] getInterpolated(double fraction) {
+        if (Math.abs(fraction) < 1.0e-3) {
+            return intensities.clone();
+        }
+
         int n = intensities.length;
         double[] interpIntensities = new double[n];
         if (pSF == null) {

@@ -24,6 +24,7 @@ public class CompoundData {
     private final double sf;
     private final double sw;
     private final int n;
+    private final int nProtons;
     private final String name;
     private final double refConc;
     private final double cmpdConc;
@@ -31,7 +32,7 @@ public class CompoundData {
     private double regionNorm = 0.0;
     List<Region> regions = new ArrayList<>();
 
-    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, double refNProtons) {
+    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, int nProtons, double refNProtons) {
         this.id = cmpdID;
         this.name = name;
         this.ref = ref;
@@ -40,9 +41,12 @@ public class CompoundData {
         this.n = n;
         this.refConc = refConc;
         this.cmpdConc = cmpdConc;
+        this.nProtons = nProtons;
         this.refNProtons = refNProtons;
-        cmpdMap.put(cmpdID, this);
+    }
 
+    public static void put(CompoundData cData, String id) {
+        cmpdMap.put(id, cData);
     }
 
     public static CompoundData get(String id) {
@@ -70,6 +74,10 @@ public class CompoundData {
 
     public double search(String vecName, double[] vData, double[] ppms, double[] tols) {
         Vec vec = Vec.get(vecName);
+        return search(vec, vData, ppms, tols);
+    }
+
+    public double search(Vec vec, double[] vData, double[] ppms, double[] tols) {
         int nMatch = 0;
         int[] used = new int[ppms.length];
         for (int i = 0; i < ppms.length; i++) {
@@ -150,7 +158,7 @@ public class CompoundData {
     }
 
     public void addRegion(double[] intensities, int first, int last, double startPPM, double endPPM) {
-        Region region = new Region(this, intensities, first, last, startPPM, endPPM, 1.0, 1.0);
+        Region region = new Region(this, intensities, first, last, startPPM, endPPM);
         regions.add(region);
         regionNorm = 0.0;
     }
@@ -181,12 +189,13 @@ public class CompoundData {
         return region.getStart() + region.getMaxPt();
     }
 
-    public double[] addToArray(double[] array, int iRegion, double shift) {
-        return addToArray(array, iRegion, shift, 1.0);
+    public void addToArray(Vec vec, int iRegion, double shift) {
+        addToArray(vec, iRegion, shift, 1.0);
     }
 
-    public double[] addToArray(double[] array, int iRegion, double shift, double scale) {
+    public void addToArray(Vec vec, int iRegion, double shift, double scale) {
         Region region = regions.get(iRegion);
+        System.out.println("add region " + iRegion + " " + region.toString());
         int iShift = (int) Math.floor(shift);
         double frac = shift - iShift;
         if (frac > 0.0) {
@@ -198,9 +207,8 @@ public class CompoundData {
 
         for (int i = region.getStart(), j = 0; i <= end; i++) {
             int k = i + iShift;
-            array[k] += iData[j++] * scale;
+            vec.add(k, iData[j++] * scale);
         }
-        return array;
     }
 
     public double[] addToMappedArray(double[] array, int[] rmap, int iRegion, double shift, double scale) {
@@ -243,35 +251,28 @@ public class CompoundData {
 
     }
 
-    public void addToVec(String name, double scale) {
-        int[] shifts = new int[regions.size()];
+    public void addToVec(Vec vec, double scale) {
 
-        Vec vec = getVec(name);
-        for (int i = 0; i < shifts.length; i++) {
-            addToArray(vec.getReal(), i, shifts[i], scale);
+        for (int i = 0; i < regions.size(); i++) {
+            addToArray(vec, i, 0, scale);
         }
 
     }
 
-    public void addToVec(String name, double[] shifts, double scale) {
-        Vec vec = getVec(name);
+    public void addToVec(Vec vec, double[] shifts, double scale) {
         vec.resize(n, false);
         for (int i = 0; i < shifts.length; i++) {
-            addToArray(vec.getReal(), i, shifts[i], scale);
+            addToArray(vec, i, shifts[i], scale);
         }
     }
 
-    public void addToVec(String name, int iRegion, double shift, double scale) {
-        Vec vec = getVec(name);
+    public void addToVec(Vec vec, int iRegion, double shift, double scale) {
         vec.resize(n, false);
-        addToArray(vec.getReal(), iRegion, shift, scale);
-
+        addToArray(vec, iRegion, shift, scale);
     }
 
-    public void addToVec(String name, int iRegion, double shift) {
-        Vec vec = getVec(name);
-        addToArray(vec.getReal(), iRegion, shift, 1.0);
-
+    public void addToVec(Vec vec, int iRegion, double shift) {
+        addToArray(vec, iRegion, shift, 1.0);
     }
 
     /**

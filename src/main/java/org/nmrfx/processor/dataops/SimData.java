@@ -6,8 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.nmrfx.processor.compoundLib.CompoundData;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.math.Vec;
+import org.nmrfx.processor.math.Vec.IndexValue;
 import org.yaml.snakeyaml.Yaml;
 
 /**
@@ -118,28 +120,51 @@ public class SimData {
         return names;
     }
 
-    public static Dataset genDataset(String name, int n, double sf, double sw, double centerPPM, double lb, String label) {
+    public static Vec prepareVec(String name, int n, double sf, double sw, double centerPPM, double lb) {
         Vec vec = new Vec(n);
         vec.setSF(sf);
         vec.setSW(sw);
         double ref = sw / sf / 2 + centerPPM;
         vec.setRef(ref);
-        genVec(name, vec, lb);
         vec.setName(name);
+        return vec;
+    }
+
+    public static Dataset genDataset(String name, int n, double sf, double sw, double centerPPM, double lb, String label) {
+        Vec vec = prepareVec(name, n, sf, sw, centerPPM, lb);
+        genVec(name, vec, lb);
         Dataset dataset = new Dataset(vec);
         dataset.setLabel(0, label);
         return dataset;
     }
+//    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, double refNProtons) {
 
-    public static void genVec(String name, Vec vec, double lb) throws IllegalArgumentException {
+    public static CompoundData genCompoundData(String cmpdID, String name, int n,
+            double refConc, double cmpdConc,
+            double sf, double sw, double centerPPM, double lb, double frac) {
+        Vec vec = new Vec(n);
+        vec.setSF(sf);
+        vec.setSW(sw);
+        double ref = sw / sf / 2 + centerPPM;
+        vec.setRef(ref);
+        int nProtons = genVec(name, vec, lb);
+        double refNProtons = 9.0;
+        CompoundData cData = new CompoundData(cmpdID, name, ref, sf, sw, n, refConc, cmpdConc, nProtons, refNProtons);
+        genRegions(cData, vec, frac);
+        return cData;
+    }
+
+    public static int genVec(String name, Vec vec, double lb) throws IllegalArgumentException {
         SimData data = simDataMap.get(name);
         if (data == null) {
             throw new IllegalArgumentException("Can't find data for \"" + name + "\"");
         }
         vec.zeros();
         int nBlocks = data.ppms.length;
+        int nProtons = 0;
         for (int i = 0; i < nBlocks; i++) {
             double[] shifts = data.getPPMs(i);
+            nProtons += shifts.length;
             double[] couplings = data.getJValues(i);
             int[] pairs = data.getJPairs(i);
             SimShifts simShifts = new SimShifts(shifts, couplings, pairs, vec.getSF());
@@ -151,7 +176,38 @@ public class SimData {
         vec.decay(lb, 0.0, 1.0);
         vec.fft();
         vec.phase(45.0, 0.0);
+        return nProtons;
+    }
 
+    public static void genRegions(CompoundData cData, Vec vec, double frac) {
+        IndexValue indexValue = vec.maxIndex();
+        double maxIntensity = indexValue.getValue();
+        double threshold = maxIntensity * frac;
+        int n = vec.getSize();
+        boolean inSignal = false;
+        int start = 0;
+        int end = 0;
+        List<Double> values = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            double value = vec.getReal(i);
+            if (value > threshold) {
+                if (!inSignal) {
+                    inSignal = true;
+                    start = i;
+                }
+                values.add(value);
+            } else {
+                if (inSignal) {
+                    inSignal = false;
+                    end = i - 1;
+                    double[] intensities = values.stream().mapToDouble(d -> d).toArray();
+                    values.clear();
+                    double startPPM = vec.pointToPPM(start);
+                    double endPPM = vec.pointToPPM(end);
+                    cData.addRegion(intensities, start, end, startPPM, endPPM);
+                }
+            }
+        }
     }
 
     public static void load() {
