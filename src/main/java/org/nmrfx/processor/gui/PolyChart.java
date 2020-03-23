@@ -1529,6 +1529,17 @@ public class PolyChart implements PeakListener {
         setDataset(dataset, false);
     }
 
+    public boolean containsDataset(Dataset dataset) {
+        boolean result = false;
+        for (DatasetAttributes dataAttr : datasetAttributesList) {
+            if (dataAttr.getDataset() == dataset) {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
     DatasetAttributes setDataset(Dataset dataset, boolean append) {
         SpectrumStatusBar statusBar = controller.getStatusBar();
         DatasetAttributes datasetAttributes = null;
@@ -2986,11 +2997,11 @@ public class PolyChart implements PeakListener {
                         for (int iDim = 2; iDim < dim.length; iDim++) {
                             offsets[iDim] = 0.0;
                             if (limits[iDim][0] == limits[iDim][1]) {
-                                if (dim[iDim] >=0) {
-                                double ppm = peak.getPeakDim(dim[iDim]).getChemShiftValue();
-                                double pt = dataAttr.getDataset().ppmToDPoint(dataAttr.dim[iDim], ppm);
-                                double deltaPt = Math.abs(limits[iDim][0] - pt);
-                                offsets[iDim] = deltaPt;
+                                if (dim[iDim] >= 0) {
+                                    double ppm = peak.getPeakDim(dim[iDim]).getChemShiftValue();
+                                    double pt = dataAttr.getDataset().ppmToDPoint(dataAttr.dim[iDim], ppm);
+                                    double deltaPt = Math.abs(limits[iDim][0] - pt);
+                                    offsets[iDim] = deltaPt;
                                 }
                             }
                         }
