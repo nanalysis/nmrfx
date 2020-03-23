@@ -27,6 +27,7 @@ import org.controlsfx.control.textfield.TextFields;
 import org.nmrfx.processor.compoundLib.CompoundMatcher;
 import org.nmrfx.processor.compoundLib.CompoundData;
 import org.nmrfx.processor.dataops.SimData;
+import org.nmrfx.processor.dataops.SimDataVecPars;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
@@ -56,19 +57,6 @@ public class SimMolController implements ControllerTool {
 
     public SimMolController(FXMLController controller) {
         this.controller = controller;
-    }
-
-    public static SimMolController create() {
-        System.out.println("create");
-        FXMLController controller = FXMLController.getActiveController();
-
-        ToolBar navBar = new ToolBar();
-        controller.getBottomBox().getChildren().add(navBar);
-        SimMolController simMolController = new SimMolController(controller);
-
-        simMolController.initialize(navBar);
-        simMolController.controller = controller;
-        return simMolController;
     }
 
     public ToolBar getToolBar() {
@@ -146,18 +134,14 @@ public class SimMolController implements ControllerTool {
                         break;
                     }
                 }
-                String label = currData != null ? currData.getLabel(0) : "1H";
-                double sf = currData != null
-                        ? currData.getSf(0) : AnalystPrefs.getLibraryVectorSF();
+                SimDataVecPars pars;
+                if (currData != null) {
+                    pars = new SimDataVecPars(currData);
+                } else {
+                    pars = defaultPars();
+                }
                 double lb = AnalystPrefs.getLibraryVectorLB();
-                double sw = currData != null
-                        ? currData.getSw(0) : AnalystPrefs.getLibraryVectorSW();
-                int size = currData != null
-                        ? currData.getSize(0)
-                        : (int) Math.pow(2, AnalystPrefs.getLibraryVectorSize());
-                double ref = currData != null
-                        ? currData.pointToPPM(0, size / 2) : AnalystPrefs.getLibraryVectorREF();
-                newDataset = SimData.genDataset(name, size, sf, sw, ref, lb, label);
+                newDataset = SimData.genDataset(name, pars, lb);
                 newDataset.addProperty("SIM", name);
             }
             controller.getStatusBar().setMode(1);
@@ -167,6 +151,17 @@ public class SimMolController implements ControllerTool {
             molNameField.setText("");
             chart.refresh();
         }
+    }
+
+    SimDataVecPars defaultPars() {
+        String label = "1H";
+        double sf = AnalystPrefs.getLibraryVectorSF();
+        double sw = AnalystPrefs.getLibraryVectorSW();
+        int size = (int) Math.pow(2, AnalystPrefs.getLibraryVectorSize());
+        double ref = AnalystPrefs.getLibraryVectorREF();
+        SimDataVecPars pars = new SimDataVecPars(sf, sw, size, ref, label);
+        return pars;
+
     }
 
     public void createCmpdData() {
@@ -187,17 +182,13 @@ public class SimMolController implements ControllerTool {
                     break;
                 }
             }
-            String label = currData != null ? currData.getLabel(0) : "1H";
-            double sf = currData != null
-                    ? currData.getSf(0) : AnalystPrefs.getLibraryVectorSF();
+            SimDataVecPars pars;
+            if (currData != null) {
+                pars = new SimDataVecPars(currData);
+            } else {
+                pars = defaultPars();
+            }
             double lb = AnalystPrefs.getLibraryVectorLB();
-            double sw = currData != null
-                    ? currData.getSw(0) : AnalystPrefs.getLibraryVectorSW();
-            int size = currData != null
-                    ? currData.getSize(0)
-                    : (int) Math.pow(2, AnalystPrefs.getLibraryVectorSize());
-            double ref = currData != null
-                    ? currData.pointToPPM(0, size / 2) : AnalystPrefs.getLibraryVectorREF();
 
             /*
                 public static CompoundData genCompoundData(String cmpdID, String name, int n,
@@ -208,17 +199,16 @@ public class SimMolController implements ControllerTool {
             double refConc = 1.0;
             double cmpdConc = 1.0;
             double frac = 1.0e-3;
-            CompoundData cData = SimData.genCompoundData(name, name, size, refConc, cmpdConc, sf, sw, ref, lb, frac);
+            CompoundData cData = SimData.genCompoundData(name, name, pars, lb, refConc, cmpdConc, frac);
             CompoundData.put(cData, name);
             cmpdMatcher.addMatch(cData);
             for (int iDataset = 0; iDataset < datasets.length; iDataset++) {
                 if (datasets[iDataset] == null) {
-                    Vec vec = SimData.prepareVec(names[iDataset], size, sf, sw, ref, lb);
+                    Vec vec = SimData.prepareVec(names[iDataset], pars);
                     vec.setFreqDomain(true);
-                    double vRef = sw / sf / 2 + ref;
-                    vec.setRef(vRef);
+                    vec.setRef(pars.getVref());
                     datasets[iDataset] = new Dataset(vec);
-                    datasets[iDataset].setLabel(0, label);
+                    datasets[iDataset].setLabel(0, pars.getLabel());
                 }
             }
             Vec sumVec = datasets[0].getVec();
