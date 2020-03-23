@@ -36,6 +36,7 @@ public class SimData {
         jPairs = new short[nBlocks][];
     }
 
+
     public static boolean loaded() {
         return !simDataMap.isEmpty();
     }
@@ -120,36 +121,31 @@ public class SimData {
         return names;
     }
 
-    public static Vec prepareVec(String name, int n, double sf, double sw, double centerPPM, double lb) {
-        Vec vec = new Vec(n);
-        vec.setSF(sf);
-        vec.setSW(sw);
-        double ref = sw / sf / 2 + centerPPM;
+    public static Vec prepareVec(String name, SimDataVecPars pars) {
+        Vec vec = new Vec(pars.getN());
+        vec.setSF(pars.getSf());
+        vec.setSW(pars.getSw());
+        double ref = pars.getSw() / pars.getSf() / 2 + pars.getRef();
         vec.setRef(ref);
         vec.setName(name);
         return vec;
     }
 
-    public static Dataset genDataset(String name, int n, double sf, double sw, double centerPPM, double lb, String label) {
-        Vec vec = prepareVec(name, n, sf, sw, centerPPM, lb);
+    public static Dataset genDataset(String name, SimDataVecPars pars, double lb) {
+        Vec vec = prepareVec(name, pars);
         genVec(name, vec, lb);
         Dataset dataset = new Dataset(vec);
-        dataset.setLabel(0, label);
+        dataset.setLabel(0, pars.getLabel());
         return dataset;
     }
 //    public CompoundData(String cmpdID, String name, double ref, double sf, double sw, int n, double refConc, double cmpdConc, double refNProtons) {
 
-    public static CompoundData genCompoundData(String cmpdID, String name, int n,
-            double refConc, double cmpdConc,
-            double sf, double sw, double centerPPM, double lb, double frac) {
-        Vec vec = new Vec(n);
-        vec.setSF(sf);
-        vec.setSW(sw);
-        double ref = sw / sf / 2 + centerPPM;
-        vec.setRef(ref);
+    public static CompoundData genCompoundData(String cmpdID, String name, SimDataVecPars pars, double lb,
+            double refConc, double cmpdConc, double frac) {
+        Vec vec = prepareVec(name, pars);
         int nProtons = genVec(name, vec, lb);
         double refNProtons = 9.0;
-        CompoundData cData = new CompoundData(cmpdID, name, ref, sf, sw, n, refConc, cmpdConc, nProtons, refNProtons);
+        CompoundData cData = new CompoundData(cmpdID, name, pars.getRef(), pars.getSf(), pars.getSw(), pars.getN(), refConc, cmpdConc, nProtons, refNProtons);
         genRegions(cData, vec, frac);
         return cData;
     }
