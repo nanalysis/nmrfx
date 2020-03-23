@@ -28,6 +28,10 @@ import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import java.util.Arrays;
+import org.apache.commons.math3.analysis.solvers.BisectionSolver;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
+import org.apache.commons.math3.exception.MathIllegalArgumentException;
 import static org.nmrfx.processor.math.Vec.apache_ift;
 
 /**
@@ -84,6 +88,98 @@ public class VecUtil {
         double aic = nRows * Math.log(rss / nRows) + 2 * k + (2 * k * (k + 1) / (nRows - k - 1));
         AmplitudeFitResult afR = new AmplitudeFitResult(norm, rss, aic, XR, nCols, maxIndex, maxValue);
         return afR;
+    }
+
+    public static double[] fitLinear(double[] x, double[] y, double[] sigmaY) {
+
+        double s = 0.0;
+        double sumX = 0.0;
+        double sumY = 0.0;
+        double sumXX = 0.0;
+        double sumXY = 0.0;
+
+        for (int i = 0; i < x.length; i++) {
+            double sigma2 = sigmaY == null ? 1.0 : sigmaY[i] * sigmaY[i];
+            s += 1.0 / sigma2;
+            sumX += x[i] / sigma2;
+            sumY += y[i] / sigma2;
+            sumXX += (x[i] * x[i]) / sigma2;
+            sumXY += (x[i] * y[i]) / sigma2;
+        }
+
+        double delta = s * sumXX - sumX * sumX;
+
+        double intercept = (sumXX * sumY - sumX * sumXY) / delta;
+        double slope = (s * sumXY - sumX * sumY) / delta;
+
+        double interceptErr = sumXX / delta;
+        double slopeErr = s / delta;
+
+        double[] result = {intercept, slope, interceptErr, slopeErr};
+        return result;
+    }
+
+    static class AbsDevBFunc implements UnivariateFunction {
+
+        double[] x = null;
+        double[] y = null;
+        int n = 0;
+        double a = 0.0;
+        double sumAbsDev = 0.0;
+
+        AbsDevBFunc(double[] x, double[] y, int numPoints) {
+            this.n = numPoints;
+            this.x = x;
+            this.y = y;
+        }
+
+        public double value(double b) {
+            double sum = 0;
+            for (int i = 0; i < n; i++) {
+                double delta = y[i] - (x[i] * b);
+                sumAbsDev += Math.abs(delta);
+                sum += x[i] * Math.signum(delta);
+            }
+            return sum;
+
+        }
+
+        public double getA() {
+            return a;
+        }
+
+        public double getMeanDev() {
+            return sumAbsDev / n;
+        }
+    }
+
+    public static double[] fitAbsDev(double[] x, double[] y, double[] sigmaY) {
+        double[] parameters = fitLinear(x, y, sigmaY);
+
+        double b = parameters[1];
+        double b1Dev = parameters[3];
+        double b1 = b - 2.0 * b1Dev - Math.abs(b) * 0.1;
+        double b2 = b + 2.0 * b1Dev + Math.abs(b) * 0.1;
+
+        AbsDevBFunc abF = new AbsDevBFunc(x, y, x.length);
+        double f1 = abF.value(b1);
+        double f2 = abF.value(b2);
+        double a = 0.0;
+        try {
+            if (f1 * f2 > 0) {
+                double[] brackets = UnivariateSolverUtils.bracket(abF, b, -1.0e6, 1.0e6, 1000);
+                b1 = brackets[0];
+                b2 = brackets[1];
+            }
+            BisectionSolver bisect = new BisectionSolver();
+            b = bisect.solve(100, abF, b1, b2);
+            a = abF.getA();
+        } catch (MathIllegalArgumentException fE) {
+            System.out.println("function evaluation failure " + fE.getMessage());
+        }
+        parameters[0] = a;
+        parameters[1] = b;
+        return parameters;
     }
 
     /**
