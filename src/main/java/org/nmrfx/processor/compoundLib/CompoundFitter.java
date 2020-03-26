@@ -8,6 +8,8 @@ import java.io.PrintWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.apache.commons.math3.analysis.MultivariateFunction;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.exception.DimensionMismatchException;
@@ -48,12 +50,16 @@ import org.nmrfx.processor.math.VecUtil;
  */
 public class CompoundFitter implements MultivariateFunction {
 
+    public static int MAX_SHIFT = 15;
+
     ArrayList<CompoundRegion> cList = new ArrayList<>();
-    ;
+    List<CompoundMatch> cMatches = new ArrayList<>();
+
     private RealMatrix A;
     private RealVector B;
     private RealVector X;
     private SingularValueDecomposition svd;
+    Vec vec;
     private double[] vData = new double[0];
     private double[] maskData = new double[0];
     private int[] map = null;
@@ -85,10 +91,10 @@ public class CompoundFitter implements MultivariateFunction {
      *
      * @param vecName
      */
-    public void setVec(String vecName) {
-        Vec vec = Vec.get(vecName);
+    public void setVec(Vec vec) {
+        this.vec = vec;
         if (vec == null) {
-            throw new IllegalArgumentException("Vector \"" + vecName + "\" does not exist");
+            throw new IllegalArgumentException("Vector  does not exist");
         }
         vData = vec.getReal();
         maskData = new double[vData.length];
@@ -156,14 +162,14 @@ public class CompoundFitter implements MultivariateFunction {
 
     class CompoundRegion {
 
-        private final CompoundData cData;
+        private final CompoundMatch cMatch;
         private final int[] regions;
         private final double[] shifts;
         private final int[] minShifts;
         private final int[] maxShifts;
 
-        CompoundRegion(String cmpdID, int[] regions, double[] shifts, int[] minShifts, int[] maxShifts) {
-            cData = CompoundData.get(cmpdID);
+        CompoundRegion(CompoundMatch cMatch, int[] regions, double[] shifts, int[] minShifts, int[] maxShifts) {
+            this.cMatch = cMatch;
             this.regions = regions;
             this.shifts = shifts;
             this.minShifts = minShifts;
@@ -207,7 +213,7 @@ public class CompoundFitter implements MultivariateFunction {
      * @param minShift
      * @param maxShift
      */
-    public void addCompoundRegion(String cmpdID, int region, double shift, int minShift, int maxShift) {
+    public void addCompoundRegion(CompoundMatch cMatch, int region, double shift, int minShift, int maxShift) {
         int[] regions = new int[1];
         double[] shifts = new double[1];
         int[] minShifts = new int[1];
@@ -216,7 +222,7 @@ public class CompoundFitter implements MultivariateFunction {
         shifts[0] = shift;
         minShifts[0] = minShift;
         maxShifts[0] = maxShift;
-        CompoundRegion cRegion = new CompoundRegion(cmpdID, regions, shifts, minShifts, maxShifts);
+        CompoundRegion cRegion = new CompoundRegion(cMatch, regions, shifts, minShifts, maxShifts);
         cList.add(cRegion);
     }
 
@@ -228,16 +234,17 @@ public class CompoundFitter implements MultivariateFunction {
      * @param minShifts
      * @param maxShifts
      */
-    public void addCompound(String cmpdID, int[] regions, double[] shifts, int[] minShifts, int[] maxShifts) {
-        CompoundRegion cRegion = new CompoundRegion(cmpdID, regions, shifts, minShifts, maxShifts);
+    public void addCompound(CompoundMatch cMatch, String cmpdID, int[] regions, double[] shifts, int[] minShifts, int[] maxShifts) {
+        CompoundRegion cRegion = new CompoundRegion(cMatch, regions, shifts, minShifts, maxShifts);
         cList.add(cRegion);
+        cMatches.add(cMatch);
     }
 
     private boolean[] zeroRegions(double[] data, int padding) {
         int n = data.length;
         boolean[] mask = new boolean[n];
         for (CompoundRegion cR : cList) {
-            CompoundData cData = cR.cData;
+            CompoundData cData = cR.cMatch.cData;
             for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                 Region region = cData.getRegion(cR.regions[iRegion]);
                 double shift = cR.shifts[iRegion];
@@ -387,7 +394,7 @@ public class CompoundFitter implements MultivariateFunction {
     public int countSize() {
         int size = 0;
         for (CompoundRegion cR : cList) {
-            CompoundData cData = cR.cData;
+            CompoundData cData = cR.cMatch.cData;
             size += cR.regions.length;
         }
         return size;
@@ -401,7 +408,7 @@ public class CompoundFitter implements MultivariateFunction {
         int j = 0;
         double[] current = new double[countSize()];
         for (CompoundRegion cR : cList) {
-            CompoundData cData = cR.cData;
+            CompoundData cData = cR.cMatch.cData;
             for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                 current[j++] = cR.shifts[iRegion];
 
@@ -664,6 +671,7 @@ public class CompoundFitter implements MultivariateFunction {
                 upper[i] = 1.0e-3;
             }
             inputSigma[i] = Math.abs(upper[i] - lower[i]) * 0.4;
+            System.out.println(i + " " + lower[i] + " " + start[i] + " " + upper[i]);
         }
 
         try {
@@ -676,6 +684,11 @@ public class CompoundFitter implements MultivariateFunction {
                     new InitialGuess(start));
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        System.out.println(optimizer.getEvaluations() + " " + result.getValue());
+        double[] scales = result.getPoint();
+        for (int i = 0; i < scales.length; i++) {
+            cMatches.get(i).setScale(scales[i]);
         }
         return result.getPoint();
     }
@@ -695,7 +708,7 @@ public class CompoundFitter implements MultivariateFunction {
 
         double[] refData = new double[nPoints];
         for (CompoundRegion cR : cList) {
-            CompoundData cData = cR.cData;
+            CompoundData cData = cR.cMatch.cData;
             for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                 Region region = cData.getRegion(cR.regions[iRegion]);
                 double shift = cR.shifts[iRegion];
@@ -736,7 +749,7 @@ public class CompoundFitter implements MultivariateFunction {
         double minFrac = 1.0e6;
 
         for (CompoundRegion cR : cList) {
-            CompoundData cData = cR.cData;
+            CompoundData cData = cR.cMatch.cData;
             for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                 Region region = cData.getRegion(cR.regions[iRegion]);
                 double shift = cR.shifts[iRegion];
@@ -804,13 +817,15 @@ public class CompoundFitter implements MultivariateFunction {
             }
             iCol++;
         }
+        System.out.println("bc " + bcNum + " " + iCol + " np " + nPoints + " vdlen " + vData.length);
         //System.out.println("cList " + nPoints + " " + cList.size());
         for (CompoundRegion cR : cList) {
             double[] aCol = new double[nPoints];
-            CompoundData cData = cR.cData;
+            CompoundData cData = cR.cMatch.cData;
             for (int iRow = 0; iRow < nPoints; iRow++) {
                 aCol[iRow] = 0.0;
             }
+            System.out.println("fit " + cR.cMatch.cData.getId() + " " + cR.regions.length);
             for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                 Region region = cData.getRegion(cR.regions[iRegion]);
                 double shift = cR.shifts[iRegion];
@@ -836,7 +851,9 @@ public class CompoundFitter implements MultivariateFunction {
             for (int iRow = 0; iRow < nPoints; iRow++) {
                 A.setEntry(iRow, iCol, aCol[iRow]);
             }
-            iCol++;
+            if (cR.regions.length > 0) {
+                iCol++;
+            }
         }
         // for (int i=0;i<b.length;i++) {
         //   System.out.printf("%5d %7.4f %7.4f\n",i,A.get(i,0),b[i]);
@@ -853,7 +870,8 @@ public class CompoundFitter implements MultivariateFunction {
             try (PrintWriter out = new PrintWriter(outFile)) {
                 int nPoints = map.length;
                 int nCols = A.getColumnDimension();
-                for (int iRow = 0; iRow < nPoints; iRow++) {
+                int nRows = A.getRowDimension();
+                for (int iRow = 0; iRow < nRows; iRow++) {
                     out.printf("%5d %5d", iRow, map[iRow]);
                     for (int iCol = 0; iCol < nCols; iCol++) {
                         out.printf("%12.5f", A.getEntry(iRow, iCol));
@@ -948,7 +966,7 @@ public class CompoundFitter implements MultivariateFunction {
         ArrayList<FitResult> bestShifts = new ArrayList<>();
         double sumDev = 0.0;
         for (CompoundRegion cR : cList) {
-            CompoundData cData = cR.cData;
+            CompoundData cData = cR.cMatch.cData;
             for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                 Region region = cData.getRegion(cR.regions[iRegion]);
                 int startShift = (int) cR.shifts[iRegion];
@@ -993,7 +1011,7 @@ public class CompoundFitter implements MultivariateFunction {
         int nRegions = 0;
         double sumSlope = 0.0;
         for (CompoundRegion cR : cList) {
-            CompoundData cData = cR.cData;
+            CompoundData cData = cR.cMatch.cData;
             for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                 Region region = cData.getRegion(cR.regions[iRegion]);
                 double[] values = region.getInterpolated(0);
@@ -1016,9 +1034,10 @@ public class CompoundFitter implements MultivariateFunction {
      * @return
      */
     public ArrayList<FitResult> optimizeAlignment() {
+        genMaps();
         ArrayList<FitResult> bestShifts = new ArrayList<>();
         for (CompoundRegion cR : cList) {
-            CompoundData cData = cR.cData;
+            CompoundData cData = cR.cMatch.cData;
             for (int iRegion = 0; iRegion < cR.regions.length; iRegion++) {
                 Region region = cData.getRegion(cR.regions[iRegion]);
                 int startShift = (int) cR.shifts[iRegion];
@@ -1026,6 +1045,7 @@ public class CompoundFitter implements MultivariateFunction {
                 int maxShift = cR.maxShifts[iRegion];
                 FitResult fitResult = optimizeRegion(region, minShift, startShift, maxShift);
                 bestShifts.add(fitResult);
+                cR.cMatch.setShift(cR.regions[iRegion], fitResult.getShift());
                 cR.shifts[iRegion] = fitResult.getShift();
             }
         }
@@ -1045,15 +1065,17 @@ public class CompoundFitter implements MultivariateFunction {
             values = Interpolator.getInterpolated(values, vecRegionSize);
         }
         double max2 = StatUtils.max(values);
+
         int start = region.getStart();
         double minDev = Double.MAX_VALUE;
         FitResult bestFit = null;
-
+        double max4 = StatUtils.max(vData);
         for (int shift = minShift; shift <= maxShift; shift++) {
+            int aShift = shift + startShift;
             double[] x = new double[vecRegionSize];
 
-            ppm1 = region.pointToPPM(start + shift);
-            ppm2 = region.pointToPPM(start + shift + nValues - 1);
+            ppm1 = region.pointToPPM(start + aShift);
+            ppm2 = region.pointToPPM(start + aShift + nValues - 1);
             int vecStart = vecPPMToIntPoint((ppm1 + ppm2) / 2) - vecRegionSize / 2;
             System.arraycopy(vData, vecStart, x, 0, vecRegionSize);
             double max3 = StatUtils.max(x);
@@ -1064,11 +1086,87 @@ public class CompoundFitter implements MultivariateFunction {
 //System.out.println(avgAbsDev);
             if (avgAbsDev < minDev) {
                 minDev = avgAbsDev;
-                minShift = shift;
+                minShift = aShift;
                 bestFit = fitResult;
                 bestFit.setShift(minShift);
             }
         }
         return bestFit;
     }
+
+    public static CompoundFitter setup(Collection<CompoundMatch> matches) {
+        CompoundFitter fitter = new CompoundFitter();
+        for (CompoundMatch cMatch : matches) {
+            CompoundData cData = cMatch.getData();
+            int nRegions = cMatch.getData().getRegionCount();
+            int nActive = cMatch.getNActive();
+            if (nActive > 0) {
+                double[] shifts = new double[nActive];
+                int[] jRegions = new int[nActive];
+                int[] jMins = new int[nActive];
+                int[] jMaxes = new int[nActive];
+                int j = 0;
+                for (int i = 0; i < nRegions; i++) {
+                    if (cMatch.getActive(i)) {
+                        jRegions[j] = i;
+                        shifts[j] = cMatch.getShift(i);
+                        jMins[j] = -MAX_SHIFT;
+                        jMaxes[j] = MAX_SHIFT;
+                        j++;
+                    }
+                }
+                fitter.addCompound(cMatch, cData.getId(), jRegions, shifts, jMins, jMaxes);
+            }
+        }
+
+        return fitter;
+    }
+    /*
+    proc ::dcs::standards::setupCmpdFit {cmpdIDs} {
+    global cFitter
+    variable prefs
+    variable pars
+    variable cmpdRanges
+    set cFitter [java::new com.onemoonsci.datachord.compoundLib.CompoundFitter]
+    set nBC 0
+    if {![info exists pars(maxshift)]  || ($pars(maxshift) eq "")} {
+        set pars(maxshift) 15
+    }
+    set defaultShift $pars(maxshift)
+    foreach cmpdID $cmpdIDs {
+        if {![string match BC* $cmpdID]} {
+            set cData [::dcs::standards::getCData $cmpdID]
+            $cData createCompoundData
+            set regions [::dcs::standards::getActiveRegionsList $cmpdID]
+            set nRegions [expr {[llength $regions]/4}]
+            set jShifts [java::new double\[\] $nRegions]
+            set jRegions [java::new int\[\] $nRegions]
+            set jMins [java::new int\[\] $nRegions]
+            set jMaxes [java::new int\[\] $nRegions]
+
+            set iR 0
+            foreach "jRegion jShift j1 j2" $regions {
+                if {![info exists cmpdRanges($cmpdID)]} {
+                     set minShift -$defaultShift
+                     set maxShift $defaultShift
+                } else {
+                     set minShift [lindex $cmpdRanges($cmpdID) [= jRegion*2]]
+                     set maxShift [lindex $cmpdRanges($cmpdID) [= jRegion*2+1]]
+                }
+                $jRegions set $iR $jRegion
+                $jShifts set $iR $jShift
+                $jMins set $iR $minShift
+                $jMaxes set $iR $maxShift
+                incr iR
+            }
+            $cFitter addCompound $cmpdID $jRegions $jShifts $jMins $jMaxes
+        } else {
+            incr nBC
+        }
+    }
+    $cFitter setBC $nBC
+    return $cFitter
+}
+
+     */
 }
