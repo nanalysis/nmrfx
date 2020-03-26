@@ -195,7 +195,6 @@ public class CompoundData {
 
     public void addToArray(Vec vec, int iRegion, double shift, double scale) {
         Region region = regions.get(iRegion);
-        System.out.println("add region " + iRegion + " " + region.toString());
         int iShift = (int) Math.floor(shift);
         double frac = shift - iShift;
         if (frac > 0.0) {
@@ -204,6 +203,7 @@ public class CompoundData {
         }
         double[] iData = region.getInterpolated(frac);
         int end = region.getEnd();
+      //  System.out.println("add region " + iRegion + " " + region.toString() + " " + iShift + " " + frac);
 
         for (int i = region.getStart(), j = 0; i <= end; i++) {
             int k = i + iShift;
