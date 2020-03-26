@@ -59,6 +59,9 @@ public class SimMolController implements ControllerTool {
         this.controller = controller;
     }
 
+    public SimMolController() {
+    }
+
     public ToolBar getToolBar() {
         return browserToolBar;
     }
@@ -84,19 +87,12 @@ public class SimMolController implements ControllerTool {
         molNameField.setPrefWidth(300);
         molNameField.setOnKeyReleased(e -> {
             if (e.getCode() == KeyCode.ENTER) {
-                // setMol();
+                setMol();
             }
         });
         toolBar.getItems().add(atomFieldLabel);
         toolBar.getItems().add(molNameField);
         addFiller(toolBar);
-        Button addButton = new Button("Show");
-        addButton.setOnAction(e -> setMol());
-        toolBar.getItems().add(addButton);
-
-        Button stdButton = new Button("Std");
-        stdButton.setOnAction(e -> createCmpdData());
-        toolBar.getItems().add(stdButton);
 
         Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>> suggestionProvider = new Callback<AutoCompletionBinding.ISuggestionRequest, Collection<String>>() {
             @Override
@@ -162,74 +158,6 @@ public class SimMolController implements ControllerTool {
         SimDataVecPars pars = new SimDataVecPars(sf, sw, size, ref, label);
         return pars;
 
-    }
-
-    public void createCmpdData() {
-        String name = molNameField.getText().toLowerCase();
-        String[] names = {"sum", "current"};
-        Dataset[] datasets = new Dataset[names.length];
-        System.out.println("Mol Name: " + name);
-        if (SimData.contains(name)) {
-            PolyChart chart = controller.getActiveChart();
-            for (int iDataset = 0; iDataset < datasets.length; iDataset++) {
-                datasets[iDataset] = Dataset.getDataset(names[iDataset]);
-            }
-
-            Dataset currData = null;
-            for (PolyChart pChart : controller.getCharts()) {
-                currData = pChart.getDataset();
-                if (currData != null) {
-                    break;
-                }
-            }
-            SimDataVecPars pars;
-            if (currData != null) {
-                pars = new SimDataVecPars(currData);
-            } else {
-                pars = defaultPars();
-            }
-            double lb = AnalystPrefs.getLibraryVectorLB();
-
-            /*
-                public static CompoundData genCompoundData(String cmpdID, String name, int n,
-            double refConc, double cmpdConc,
-            double sf, double sw, double centerPPM, double lb, double frac) {
-
-             */
-            double refConc = 1.0;
-            double cmpdConc = 1.0;
-            double frac = 1.0e-3;
-            CompoundData cData = SimData.genCompoundData(name, name, pars, lb, refConc, cmpdConc, frac);
-            CompoundData.put(cData, name);
-            cmpdMatcher.addMatch(cData);
-            for (int iDataset = 0; iDataset < datasets.length; iDataset++) {
-                if (datasets[iDataset] == null) {
-                    Vec vec = SimData.prepareVec(names[iDataset], pars);
-                    vec.setFreqDomain(true);
-                    vec.setRef(pars.getVref());
-                    datasets[iDataset] = new Dataset(vec);
-                    datasets[iDataset].setLabel(0, pars.getLabel());
-                }
-            }
-            Vec sumVec = datasets[0].getVec();
-            cmpdMatcher.updateVec(sumVec);
-            Vec currentVec = datasets[1].getVec();
-            currentVec.zeros();
-            cData.addToVec(currentVec, 1.0);
-            if (currData != null) {
-                Vec expVec = currData.getVec();
-            }
-
-            controller.getStatusBar().setMode(1);
-            for (Dataset dataset : datasets) {
-                if (!chart.containsDataset(dataset)) {
-                    chart.setDataset(dataset, true);
-                }
-            }
-            updateColors(chart);
-            molNameField.setText("");
-            chart.refresh();
-        }
     }
 
     void updateColors(PolyChart chart) {

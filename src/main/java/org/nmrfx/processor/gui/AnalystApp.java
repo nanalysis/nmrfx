@@ -69,6 +69,7 @@ import org.nmrfx.structure.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 import static javafx.application.Application.launch;
 import javafx.beans.property.IntegerProperty;
+import javafx.scene.layout.VBox;
 import org.controlsfx.control.PropertySheet;
 import org.nmrfx.processor.datasets.peaks.PeakLabeller;
 import org.nmrfx.structure.chemistry.constraints.NoeSet;
@@ -339,12 +340,9 @@ public class AnalystApp extends MainApp {
         compareMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumComparator());
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
-        MenuItem regionsMenuItem = new MenuItem("Show Regions Analyzer");
-        regionsMenuItem.setOnAction(e -> showRegionAnalyzer(e));
-
         spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem,
                 alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem,
-                regionsMenuItem, copyItem);
+                copyItem);
 
         // Format (items TBD)
 //        Menu formatMenu = new Menu("Format");
@@ -380,10 +378,7 @@ public class AnalystApp extends MainApp {
         MenuItem rdcMenuItem = new MenuItem("RDC Analysis...");
         rdcMenuItem.setOnAction(e -> showRDCGUI());
 
-        MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
-        spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
-
-        molMenu.getItems().addAll(molFileMenu, seqGUIMenuItem, atomsMenuItem, molMenuItem, rdcMenuItem, spectrumLibraryMenuItem);
+        molMenu.getItems().addAll(molFileMenu, seqGUIMenuItem, atomsMenuItem, molMenuItem, rdcMenuItem);
 
         Menu viewMenu = new Menu("View");
         MenuItem dataMenuItem = new MenuItem("Show Datasets");
@@ -426,9 +421,6 @@ public class AnalystApp extends MainApp {
         MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
         pathToolMenuItem.setOnAction(e -> FXMLController.getActiveController().showPathTool());
 
-        MenuItem multipletMenuItem = new MenuItem("Show Multiplet Analyzer");
-        multipletMenuItem.setOnAction(e -> showMultipletAnalyzer(e));
-
         MenuItem ligandScannerMenuItem = new MenuItem("Show Ligand Scanner");
         ligandScannerMenuItem.setOnAction(e -> showLigandScanner(e));
 
@@ -453,9 +445,26 @@ public class AnalystApp extends MainApp {
 
         peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
                 peakTableMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem,
-                pathToolMenuItem, multipletMenuItem, ligandScannerMenuItem,
+                pathToolMenuItem, ligandScannerMenuItem,
                 noeTableMenuItem,
                 assignCascade);
+
+        Menu oneDMenu = new Menu("Analysis (1D)");
+
+        MenuItem regionsMenuItem = new MenuItem("Show Regions Analyzer");
+        regionsMenuItem.setOnAction(e -> showRegionAnalyzer(e));
+
+        MenuItem multipletMenuItem = new MenuItem("Show Multiplet Analyzer");
+        multipletMenuItem.setOnAction(e -> showMultipletAnalyzer(e));
+
+        MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
+        spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
+
+        MenuItem spectrumFitLibraryMenuItem = new MenuItem("Show Spectrum Fitter");
+        spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
+
+        oneDMenu.getItems().addAll(regionsMenuItem, multipletMenuItem,
+                spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
 
         // Window Menu
         // TBD standard window menu items
@@ -488,7 +497,7 @@ public class AnalystApp extends MainApp {
             Menu windowMenu = new Menu("Window");
             windowMenu.getItems().addAll(tk.createMinimizeMenuItem(), tk.createZoomMenuItem(), tk.createCycleWindowsItem(),
                     new SeparatorMenuItem(), tk.createBringAllToFrontItem());
-            menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, windowMenu, helpMenu);
+            menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, oneDMenu, peakMenu, windowMenu, helpMenu);
             tk.autoAddWindowMenuItems(windowMenu);
             tk.setGlobalMenuBar(menuBar);
         } else {
@@ -1016,6 +1025,27 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(SimMolController.class);
         controller.getBottomBox().getChildren().remove(simMolController.getToolBar());
+    }
+
+    public void showSpectrumFitter() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(SimFitMolController.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            ToolBar navBar = new ToolBar();
+            ToolBar fitBar = new ToolBar();
+            vBox.getChildren().add(navBar);
+            vBox.getChildren().add(fitBar);
+            SimFitMolController simFit = new SimFitMolController(controller, this::removeMolFitter);
+            simFit.initialize(vBox, navBar, fitBar);
+            controller.addTool(simFit);
+        }
+    }
+
+    public void removeMolFitter(SimFitMolController simMolController) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(SimFitMolController.class);
+        controller.getBottomBox().getChildren().remove(simMolController.getBox());
     }
 
     void addPrefs() {
