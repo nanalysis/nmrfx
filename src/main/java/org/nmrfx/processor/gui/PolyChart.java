@@ -1053,6 +1053,22 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    public boolean isInView(int axis, double position, double edgeFrac) {
+        double lim1 = axes[axis].getLowerBound();
+        double lim2 = axes[axis].getUpperBound();
+        double lower;
+        double upper;
+        double range = Math.abs(lim2 - lim1);
+        if (lim1 < lim2) {
+            lower = lim1 + range * edgeFrac / 2.0;
+            upper = lim2 - range * edgeFrac / 2.0;
+        } else {
+            lower = lim2 + range * edgeFrac / 2.0;
+            upper = lim1 - range * edgeFrac / 2.0;
+        }
+        return position > lower && position < upper;
+    }
+
     protected void moveTo(Double[] positions) {
         for (int axis = 0; axis < positions.length; axis++) {
             if (positions[axis] != null) {
