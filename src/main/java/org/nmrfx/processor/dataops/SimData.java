@@ -145,7 +145,7 @@ public class SimData {
         Vec vec = prepareVec(name, pars);
         int nProtons = genVec(name, vec, lb);
         double refNProtons = 9.0;
-        CompoundData cData = new CompoundData(cmpdID, name, pars.getRef(), pars.getSf(), pars.getSw(), pars.getN(), refConc, cmpdConc, nProtons, refNProtons);
+        CompoundData cData = new CompoundData(cmpdID, name, pars.getVref(), pars.getSf(), pars.getSw(), pars.getN(), refConc, cmpdConc, nProtons, refNProtons);
         genRegions(cData, vec, frac);
         return cData;
     }
