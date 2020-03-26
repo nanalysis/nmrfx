@@ -1060,11 +1060,11 @@ public class PolyChart implements PeakListener {
         double upper;
         double range = Math.abs(lim2 - lim1);
         if (lim1 < lim2) {
-            lower = lim1 + range * edgeFrac / 2.0;
-            upper = lim2 - range * edgeFrac / 2.0;
+            lower = lim1 + range * edgeFrac;
+            upper = lim2 - range * edgeFrac;
         } else {
-            lower = lim2 + range * edgeFrac / 2.0;
-            upper = lim1 - range * edgeFrac / 2.0;
+            lower = lim2 + range * edgeFrac;
+            upper = lim1 - range * edgeFrac;
         }
         return position > lower && position < upper;
     }
