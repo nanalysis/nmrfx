@@ -1761,32 +1761,67 @@ class refine:
 	    restraints = bp.distances[i].split(":")
 	    atoms = bp.atomPairs[i].split(":")
 	    atomI = atoms[0].split("/")[0]
-            atom1 = self.getAtomName(residueI, atomI)						
+            atom1Name = self.getAtomName(residueI, atomI)						
 	    atomJ = atoms[1].split("/")[0]
-            atom2 = self.getAtomName(residueJ, atomJ)						
+            atom2Name = self.getAtomName(residueJ, atomJ)						
 	    atomAtomDis= float(restraints[1])
 	    lowAtomAtomDis= float(restraints[0])
             atomParentDis= float(restraints[3])
             lowAtomParentDis= float(restraints[2])
 	    if atomI.startswith("H"):
-	        parentAtomName = residueI.getAtom(atomI).parent.getName()
-                parentAtom = self.getAtomName(residueI,parentAtomName)
-		self.energyLists.addDistanceConstraint(parentAtom, atom2 ,lowAtomParentDis,atomParentDis)
+	        parentAtom = residueI.getAtom(atomI).parent.getName()
+                parentAtomName = self.getAtomName(residueI,parentAtom)
+		self.energyLists.addDistanceConstraint(parentAtomName, atom2Name ,lowAtomParentDis,atomParentDis)
 	    elif atomJ.startswith("H"):
-	        parentAtomName = residueJ.getAtom(atomJ).parent.getName()
-                parentAtom = self.getAtomName(residueJ,parentAtomName)
-		self.energyLists.addDistanceConstraint(parentAtom, atom1 ,lowAtomParentDis,atomParentDis) 
-	    self.energyLists.addDistanceConstraint(atom1, atom2 ,lowAtomAtomDis,atomAtomDis)
-
+	        parentAtom = residueJ.getAtom(atomJ).parent.getName()
+                parentAtomName = self.getAtomName(residueJ,parentAtom)
+		self.energyLists.addDistanceConstraint(parentAtomName, atom1Name ,lowAtomParentDis,atomParentDis) 
+	    self.energyLists.addDistanceConstraint(atom1Name, atom2Name ,lowAtomAtomDis,atomAtomDis)
+    def atomListGen(self, atomPair, residueI, residueJ):
+	atoms = atomPair.split(":")
+	atom1 = atoms[0].split("/")[0]
+	atom2 = atoms[1].split("/")[1]
+	atom1Name = self.getAtomName(residueI, atom1)
+	atom2Name = self.getAtomName(residueJ, atom2)
+	atomList1 = []
+	atomList2 = []
+	parentAtomList1 = []
+	parentAtomList2 = []
+	if atom1.startswith("H"):
+            parentAtom = residueI.getAtom(atom1).parent.getName()
+            parentAtomName = self.getAtomName(residueI,parentAtomName)
+            parentAtomList1.append(parentAtomName)
+            parentAtomList2.append(atom2Name)
+        elif atom2.startswith("H"):
+            parentAtom = residueJ.getAtom(atom2).parent.getName()
+            parentAtomName = self.getAtomName(residueJ,parentAtom)
+            parentAtomList1.append(atom1Name)
+            parentAtomList2.append(parentAtomName)
+	atomList1.append(atom1Name)
+	atomList2.append(atom2Name)
+	return atomList1, atomList2, parentAtomList1, parentAtomList2
     def addBasePairs(self, residueI, residueJ, types):
         resNameI = residueI.getName()
         resNameJ = residueJ.getName()
 	typeAtomPairs = [AllBasePairs.getBP(int(typee), residueI.getName(), residueJ.getName()).atomPairs for typee in types]
 	restraints =  [AllBasePairs.getBP(int(typee), residueI.getName(), residueJ.getName()).distances for typee in types]
-	atomPairNum = len(max(len, typeAtomPairs))
+	typeAtomPairs.sort(key = lambda x:len(x), reverse = True)
+	restraints.sort(key = lambda x:len(x), reverse = True)
+	atomPairNum = len(max(typeAtomPairs, key=lambda item: len(item)))
 	pairTypesNum = len(typeAtomPairs)
-	atoms = [[typeAtomPairs[iPair][iType] for iPair in range(atomPairNum)] for iType in range(pairTypesNum)]
-	disRes = [[restraints[iPair][iType] for iPair in range(atomPairNum)] for iType in range(pairTypesNum)] 
+	atoms = []
+	disRes = []
+        for iPair in range(atomPairNum):
+	    pairs = []
+	    dis = []
+	    for iType in range(pairTypesNum):
+	        try:
+		    dis.append(restraints[iType][iPair])
+	            pairs.append(typeAtomPairs[iType][iPair])
+		except:
+		    continue
+	    atoms.append(pairs)
+	    disRes.append(dis)
 	for i in range(atomPairNum):
             atomList1 = []
             atomList2 = []
@@ -1795,33 +1830,48 @@ class refine:
 	    distances = []
 	    parentDistances = []
             for j in range(pairTypesNum):
-		atomPair = atoms[i][j].split(":")
-                atom1, atom2 = atomPair[0].split("/")[0], atomPair[1].split("/")[0]
-		aaRes = disRes[i][j].split(":") 
-		distances.append(float(aaRes[0]))
-		distances.append(float(aaRes[1]))
-		parentDistances.append(float(aaRes[2]))
-		parentDistances.append(float(aaRes[3]))
-                atom1Name, atom2Name = self.getAtomName(residueI, atom1), self.getAtomName(residueJ, atom2)
-                atomList1.append(str(atom1Name))
-                atomList2.append(str(atom2Name))
-		if atom1.startswith("H"):
-                    parentAtomName = residueI.getAtom(atom1).parent.getName()
-                    parentAtom = self.getAtomName(residueI,parentAtomName)
-		    parentAtomList1.append(parentAtom)
-		    parentAtomList2.append(atom2Name)
-                elif atom2.startswith("H"):
-                    parentAtomName = residueJ.getAtom(atom2).parent.getName()
-                    parentAtom = self.getAtomName(residueJ,parentAtomName)
-		    parentAtomList1.append(atom1Name)
-		    parentAtomList2.append(parentAtom)
-            self.energyLists.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
-	    self.energyLists.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))		
+		try:
+		    atomPair = atoms[i][j].split(":")
+		    atom1, atom2 = atomPair[0].split("/")[0], atomPair[1].split("/")[0]
+		    aaRes = disRes[i][j].split(":") 
+		    distances.append(float(aaRes[0]))
+		    distances.append(float(aaRes[1]))
+		    parentDistances.append(float(aaRes[2]))
+		    parentDistances.append(float(aaRes[3]))
+		    atom1Name, atom2Name = self.getAtomName(residueI, atom1), self.getAtomName(residueJ, atom2)
+		    atomList1.append(str(atom1Name))
+		    atomList2.append(str(atom2Name))
+		    if atom1.startswith("H"):
+			parentAtomName = residueI.getAtom(atom1).parent.getName()
+			parentAtom = self.getAtomName(residueI,parentAtomName)
+			parentAtomList1.append(parentAtom)
+			parentAtomList2.append(atom2Name)
+		    elif atom2.startswith("H"):
+			parentAtomName = residueJ.getAtom(atom2).parent.getName()
+			parentAtom = self.getAtomName(residueJ,parentAtomName)
+			parentAtomList1.append(atom1Name)
+		 	parentAtomList2.append(parentAtom)
+		except:
+		    continue
+	    if len(atomList1) != 1: 
+                self.energyLists.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
+	        self.energyLists.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
+	    else: 
+		atomPair = typeAtomPairs[0][0]
+	        atomLists = self.atomListGen(atomPair, residueI, residueJ)
+		atomList1.extend(atomLists[0])
+		atomList2.extend(atomLists[1])
+		parentAtomList1.extend(atomLists[2])
+                parentAtomList2.extend(atomLists[3])
+		self.energyLists.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
+                self.energyLists.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))
+		
     def addStackPair(self, polymer, resNumI, resNumJ):
         resNumI = str(resNumI)
         resNumJ = str(resNumJ)
         resI = polymer.getResidue(resNumI)
         resJ = polymer.getResidue(resNumJ)
+
 
     def addStackPair(self, resI, resJ):
         resNameI = resI.getName()
@@ -2234,9 +2284,6 @@ class refine:
             self.gmin(nsteps=steps,tolerance=1.0e-6)
         if self.eFileRoot != None and self.reportDump:
             self.dump(-1.0,-1.0,self.eFileRoot+'_prep.txt')
-        ec = self.molecule.getEnergyCoords()
-	ec.setupShifts()
-	#ec.exportConstraintPairs('constraints.txt')
 	#exit()
 
     def anneal(self,dOpt=None,stage1={},stage2={}):
@@ -2255,6 +2302,7 @@ class refine:
         self.gmin(nsteps=dOpt['polishSteps'],tolerance=1.0e-6)
         if dOpt['dfreeSteps']> 0:
             self.refine(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
+        ec = self.molecule.getEnergyCoords()
 
     def cdynamics(self, steps, hiTemp, medTemp, timeStep=1.0e-3):
         self.updateAt(20)

@@ -25,9 +25,9 @@ public class ProteinPredictor {
     static final Set<String> atomTypes = new HashSet<>();
 
     static {
-        Collections.addAll(atomTypes, "MHB", "MHG", "MHD", "MCB",
-                "MCG", "MCD", "C", "CA", "CB", "N", "H", "HA", "HB", "HG", "HD",
-                "HE", "CG", "CD", "CE");
+        Collections.addAll(atomTypes, "MHB", "MHG", "MHD","MHE", "MCB",
+                "MCG", "MCD","MCE", "C", "CA", "CB", "N", "H", "HA", "HB", "HG", "HD",
+                "HE", "HZ", "CG", "CD", "CE","CZ");
     }
     PropertyGenerator propertyGenerator;
     Map<String, Integer> aaMap = new HashMap<>();
