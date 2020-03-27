@@ -102,6 +102,7 @@ public class DatasetParameterFile {
                 pStream.printf("dlabel %d %s\n", (i + 1), dataset.getDlabel(i));
                 pStream.printf("nucleus %d %s\n", (i + 1), dataset.getNucleus(i).getNameNumber());
                 pStream.printf("complex %d %d\n", (i + 1), dataset.getComplex(i) ? 1 : 0);
+                pStream.printf("fdomain %d %d\n", (i + 1), dataset.getFreqDomain(i) ? 1 : 0);
                 double[] values = dataset.getValues(i);
                 if (values != null) {
                     pStream.printf("values %d", (i + 1));
@@ -173,6 +174,12 @@ public class DatasetParameterFile {
                 int iDim = Integer.parseInt(fields[1]) - 1;
                 int value = Integer.parseInt(fields[2]);
                 dataset.setComplex(iDim, value == 1);
+                break;
+            }
+            case "fdomain": {
+                int iDim = Integer.parseInt(fields[1]) - 1;
+                int value = Integer.parseInt(fields[2]);
+                dataset.setFreqDomain(iDim, value == 1);
                 break;
             }
 
