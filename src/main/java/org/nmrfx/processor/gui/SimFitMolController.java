@@ -159,6 +159,10 @@ public class SimFitMolController extends SimMolController {
 
     }
 
+    public void close() {
+        closeAction.accept(this);
+    }
+
     Dataset getExpDataset() {
         PolyChart chart = controller.getActiveChart();
 
