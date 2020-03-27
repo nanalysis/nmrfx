@@ -505,7 +505,7 @@ public class AnalystApp extends MainApp {
         } else {
             fileMenu.getItems().add(prefsItem);
             fileMenu.getItems().add(quitItem);
-            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, helpMenu);
+            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, oneDMenu, peakMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
         return menuBar;
