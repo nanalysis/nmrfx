@@ -338,11 +338,13 @@ public class AnalystApp extends MainApp {
         measureMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumMeasureBar());
         MenuItem compareMenuItem = new MenuItem("Show Comparator");
         compareMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumComparator());
+        MenuItem stripsMenuItem = new MenuItem("Show Strips");
+        stripsMenuItem.setOnAction(e -> showStripsBar());
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
         spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem,
                 alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem,
-                copyItem);
+                stripsMenuItem, copyItem);
 
         // Format (items TBD)
 //        Menu formatMenu = new Menu("Format");
@@ -1046,6 +1048,29 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(SimFitMolController.class);
         controller.getBottomBox().getChildren().remove(simMolController.getBox());
+    }
+
+    public void showStripsBar() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(StripController.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            StripController stripsController = new StripController(controller, this::removeStripsBar);
+            stripsController.initialize(vBox);
+            controller.addTool(stripsController);
+        }
+    }
+
+    public StripController getStripsTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        StripController stripsController = (StripController) controller.getTool(StripController.class);
+        return stripsController;
+    }
+
+    public void removeStripsBar(StripController stripsController) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(StripController.class);
+        controller.getBottomBox().getChildren().remove(stripsController.getBox());
     }
 
     void addPrefs() {
