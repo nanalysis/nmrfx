@@ -35,6 +35,9 @@ class NMRFxWindowScripting:
         chart=activeController.getActiveChart()
         return chart
 
+    def getActiveController(self):
+        return self.cmd.getController()
+
     def getCursor(self):
         return self.cmd.getCursor()
 
