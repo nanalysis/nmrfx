@@ -25,13 +25,11 @@ import javafx.util.Callback;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import org.nmrfx.processor.compoundLib.CompoundMatcher;
-import org.nmrfx.processor.compoundLib.CompoundData;
 import org.nmrfx.processor.dataops.SimData;
 import org.nmrfx.processor.dataops.SimDataVecPars;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
-import org.nmrfx.processor.math.Vec;
 
 public class SimMolController implements ControllerTool {
 
