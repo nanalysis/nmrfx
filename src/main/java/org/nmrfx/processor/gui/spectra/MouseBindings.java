@@ -21,6 +21,7 @@ import java.util.Optional;
 import javafx.event.Event;
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import static org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION.DRAG_VIEW;
 import static org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION.DRAG_VIEWX;
@@ -81,6 +82,14 @@ public class MouseBindings {
         return mouseDown;
     }
 
+    boolean isPopupTrigger(MouseEvent mouseEvent) {
+        boolean popUpTrigger = mouseEvent.isPopupTrigger();
+        if (MainApp.isMac()) {
+            popUpTrigger = popUpTrigger || mouseEvent.isControlDown();
+        }
+        return popUpTrigger;
+    }
+
     public void mouseDragged(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
@@ -93,8 +102,7 @@ public class MouseBindings {
         boolean draggingView = mouseAction == MOUSE_ACTION.DRAG_VIEW
                 || mouseAction == MOUSE_ACTION.DRAG_VIEWX
                 || mouseAction == MOUSE_ACTION.DRAG_VIEWY;
-        boolean altShift = mouseEvent.isShiftDown() && mouseEvent.isAltDown();
-        if (!mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
+        if (!isPopupTrigger(mouseEvent)) {
             if (!draggingView && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
                 chart.handleCrossHair(mouseEvent, false);
             } else {
@@ -164,9 +172,12 @@ public class MouseBindings {
         dragStart[1] = y;
         moved = false;
         mouseAction = MOUSE_ACTION.NOTHING;
-        boolean altShift = mouseEvent.isShiftDown() && mouseEvent.isAltDown();
+
+//        System.out.println("sh " + mouseEvent.isShiftDown() + " alt " + mouseEvent.isAltDown()
+//                + " meta " + mouseEvent.isMetaDown() + " cntrl " + mouseEvent.isControlDown());
+        boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
         int border = chart.hitBorder(x, y);
-        if (!mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
+        if (!isPopupTrigger(mouseEvent)) {
             if (!(altShift || (border != 0)) && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
                 if (!chart.getCursor().toString().equals("CROSSHAIR")) {
                     chart.getCrossHairs().setCrossHairState(true);
@@ -190,7 +201,7 @@ public class MouseBindings {
                         if (mouseEvent.isShiftDown()) {
                             mouseAction = MOUSE_ACTION.DRAG_SELECTION;
                             chart.selectPeaks(x, y, true);
-                        } else if (mouseEvent.isAltDown()) {
+                        } else if (mouseEvent.isAltDown() || mouseEvent.isControlDown()) {
                             if (hit.isPresent()) {
                                 mouseAction = MOUSE_ACTION.DRAG_PEAK_WIDTH;
                             } else {
@@ -229,8 +240,7 @@ public class MouseBindings {
         mouseDown = false;
         MouseEvent mouseEvent = (MouseEvent) event;
         boolean menuShowing = chart.getSpectrumMenu().chartMenu.isShowing();
-        if (!menuShowing && !mouseEvent.isPopupTrigger() && !mouseEvent.isControlDown()) {
-            boolean altShift = mouseEvent.isShiftDown() && mouseEvent.isAltDown();
+        if (!menuShowing && !mouseEvent.isPopupTrigger()) {
             boolean draggingView = mouseAction == MOUSE_ACTION.DRAG_VIEW
                     || mouseAction == MOUSE_ACTION.DRAG_VIEWX
                     || mouseAction == MOUSE_ACTION.DRAG_VIEWY;
