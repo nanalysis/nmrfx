@@ -2490,15 +2490,17 @@ public class PolyChart implements PeakListener {
 
     }
 
-    void setupPeakListAttributes(PeakList peakList) {
+    PeakListAttributes setupPeakListAttributes(PeakList peakList) {
         purgeInvalidPeakListAttributes();
         boolean present = false;
         String listName = peakList.getName();
+        PeakListAttributes newPeakListAttr = null;
         for (PeakListAttributes peakListAttr : peakListAttributesList) {
             if (peakListAttr.peakListNameProperty().get().equals(listName)) {
                 if (peakListAttr.getPeakList().peaks() == null) {
                     peakListAttr.setPeakList(peakList);
                 }
+                newPeakListAttr = peakListAttr;
                 present = true;
                 break;
             }
@@ -2522,8 +2524,11 @@ public class PolyChart implements PeakListener {
                 PeakListAttributes peakListAttr = new PeakListAttributes(this, matchData, peakList);
                 peakListAttributesList.add(peakListAttr);
                 peakList.registerListener(this);
+                newPeakListAttr = peakListAttr;
+
             }
         }
+        return newPeakListAttr;
     }
 
     public void removeUnusedPeakLists(List<String> targets) {
