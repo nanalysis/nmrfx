@@ -277,6 +277,11 @@ class NMRFxWindowScripting:
 
         self.strips(datasets, x, xwidth, dims=dims, row=row, z=z)
 
+    def stripTool(self):
+        aC=self.getActiveController() 
+        tool = aC.getTool("rg.nmrfx.processor.gui.StripController")
+        return tool
+
     def strips(self, datasets, x, xwidth=0.2, dims=None, row=0, **kwargs):
         nDatasets = len(datasets)
         nX = len(x)

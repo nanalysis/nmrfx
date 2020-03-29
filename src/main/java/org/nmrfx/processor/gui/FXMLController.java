@@ -1925,6 +1925,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         return bottomBox;
     }
 
+    public Set<ControllerTool> getTools() {
+        return tools;
+    }
+
     public void addTool(ControllerTool tool) {
         tools.add(tool);
     }
