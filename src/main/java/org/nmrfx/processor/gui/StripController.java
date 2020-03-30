@@ -90,6 +90,8 @@ public class StripController implements ControllerTool {
     ChangeListener limitListener;
     Pattern resPat = Pattern.compile("([A-Z]*)([0-9]+)\\.(.*)");
     PeakList controlList = null;
+    int currentRows = 0;
+    int currentColumns = 0;
     int currentLow = 0;
     int currentHigh = 0;
     int frozen = -1;
@@ -256,6 +258,8 @@ public class StripController implements ControllerTool {
         updateCells();
         currentLow = -1;
         currentHigh = -1;
+        currentRows = 0;
+        currentColumns = 0;
         updateView();
     }
 
@@ -284,12 +288,9 @@ public class StripController implements ControllerTool {
     }
 
     public void updateDatasetNames() {
-        System.out.println("update datset names");
         itemDatasetMenuButton.getItems().clear();
         Dataset.names().stream().forEach(nm -> {
             MenuItem item = new MenuItem(nm);
-            System.out.println("dataset " + nm);
-
             itemDatasetMenuButton.getItems().add(item);
             item.setOnAction(e -> setItemDataset(nm));
         });
@@ -297,7 +298,15 @@ public class StripController implements ControllerTool {
 
     void setPeakList(String peakListName) {
         controlList = PeakList.get(peakListName);
+        StripItem item = getCurrentItem();
+        item.peakList = controlList;
+        controlList.getDatasetName();
+        item.dataset = Dataset.getDataset(controlList.getDatasetName());
+        item.row = 0;
+        item.offset = 0;
+        showItem();
         addPeaks(controlList.peaks());
+        updateView();
     }
 
     void setItemPeakList(String peakListName) {
@@ -403,21 +412,25 @@ public class StripController implements ControllerTool {
                 dims[i] = i;
             }
         } else {
+            for (int i = 0; i < dims.length; i++) {
+                dims[i] = -1;
+            }
             dims[0] = getDim(dataset, dimNames[X]);
-            dims[1] = getDim(dataset, dimNames[Z]);
+            dims[2] = getDim(dataset, dimNames[Z]);
 
-            for (int i = 2; i < dims.length; i++) {
-                for (int k = 0; k < dims.length; k++) {
-                    boolean unused = true;
-                    for (int j = 0; j < i; j++) {
-                        if (dims[j] == k) {
-                            unused = false;
-                            break;
+            for (int i = 0; i < dims.length; i++) {
+                if (dims[i] == -1) {
+                    for (int k = 0; k < dims.length; k++) {
+                        boolean unused = true;
+                        for (int j = 0; j < dims.length; j++) {
+                            if (dims[j] == k) {
+                                unused = false;
+                                break;
+                            }
                         }
-                    }
-
-                    if (unused) {
-                        dims[i] = k;
+                        if (unused) {
+                            dims[i] = k;
+                        }
                     }
                 }
             }
@@ -425,7 +438,7 @@ public class StripController implements ControllerTool {
         return dims;
     }
 
-    double[] getPositions(Dataset dataset, Peak peak, String[] dimNames) {
+    double[] getPositions(Peak peak, String[] dimNames) {
         double[] positions = new double[dimNames.length];
         for (int i = 0; i < positions.length; i++) {
             PeakDim peakDim = peak.getPeakDim(dimNames[i]);
@@ -483,7 +496,6 @@ public class StripController implements ControllerTool {
             Dataset dataset = Dataset.getDataset(peak.getPeakList().getDatasetName());
             if (dataset != null) {
                 if (firstPeak) {
-                    System.out.println("update menus");
                     updateDimMenus("X", dataset);
                     updateDimMenus("Z", dataset);
                     if (dimNames[0] == null) {
@@ -494,9 +506,8 @@ public class StripController implements ControllerTool {
                     }
                     firstPeak = false;
                 }
-                int[] dims = getDims(dataset);
-                double[] positions = getPositions(dataset, peak, dimNames);
-                Cell cell = new Cell(dataset, peak, dims, positions);
+                double[] positions = getPositions(peak, dimNames);
+                Cell cell = new Cell(peak, positions);
                 cells.add(cell);
             }
         }
@@ -534,34 +545,34 @@ public class StripController implements ControllerTool {
 
     class Cell {
 
-        Dataset dataset;
         Peak peak;
-        int[] dims;
         double[] positions;
 
-        public Cell(Dataset dataset, Peak peak, int[] dims) {
+        public Cell(Dataset dataset, Peak peak) {
 
         }
 
-        public Cell(Dataset dataset, Peak peak, int[] dims, double[] positions) {
-            this.dataset = dataset;
+        public Cell(Peak peak, double[] positions) {
             this.peak = peak;
-            this.dims = dims;
             this.positions = positions;
         }
 
         void updateCell() {
-            dims = getDims(dataset);
-            positions = getPositions(dataset, peak, dimNames);
+            positions = getPositions(peak, dimNames);
         }
 
-        void updateChart(PolyChart chart, StripItem item) {
+        void updateChart(PolyChart chart, StripItem item, boolean init) {
             controller.setActiveChart(chart);
             if (item.dataset != null) {
+                if (init) {
+                    controller.addDataset(item.dataset, false, false);
+                }
                 chart.setDataset(item.dataset);
                 DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                dataAttr.setDim("X", dimNames[X]);
-                dataAttr.setDim("Z", dimNames[Z]);
+                int[] dims = getDims(dataAttr.getDataset());
+                for (int i = 0; i < dims.length; i++) {
+                    dataAttr.setDim(i, dims[i]);
+                }
                 chart.setAxis(0, positions[0] - xWidth / 2.0, positions[0] + xWidth / 2.0);
                 if (item.peakList != null) {
                     PeakListAttributes peakAttr = chart.setupPeakListAttributes(item.peakList);
@@ -579,6 +590,9 @@ public class StripController implements ControllerTool {
     public void updateView() {
         int low = (int) posSlider.getValue();
         int nActive = (int) nSlider.getValue();
+        if (nActive > cells.size()) {
+            nActive = cells.size();
+        }
         if (low < 0) {
             low = 0;
         }
@@ -596,7 +610,7 @@ public class StripController implements ControllerTool {
             int maxOffset = getMaxOffset();
             int maxRow = getMaxRow();
             int nCols = nItems * (maxOffset + 1);
-            grid(maxRow + 1, nCols);
+            boolean updated = grid(maxRow + 1, nCols);
             List<PolyChart> charts = controller.getCharts();
             for (int iCell = low; iCell <= high; iCell++) {
                 Cell cell = cells.get(iCell);
@@ -611,8 +625,12 @@ public class StripController implements ControllerTool {
                     int iRow = item.row;
                     int iChart = iRow * nCols + iCol;
                     PolyChart chart = charts.get(iChart);
-                    cell.updateChart(chart, item);
+                    cell.updateChart(chart, item, updated && (iCol == 0));
+                    if (iCol == 0) {
+                        chart.updateAxisType();
+                    }
                 }
+                updated = false;
             }
             currentLow = low;
             currentHigh = high;
@@ -624,16 +642,23 @@ public class StripController implements ControllerTool {
         }
     }
 
-    public void grid(int rows, int columns) {
-        int nCharts = rows * columns;
-        if (nCharts > 0) {
-            FractionPane.ORIENTATION orient = FractionPane.getOrientation("grid");
-            controller.setNCharts(nCharts);
-            controller.arrange(rows);
-            controller.setBorderState(true);
-            PolyChart chartActive = controller.charts.get(0);
-            controller.setActiveChart(chartActive);
+    public boolean grid(int rows, int columns) {
+        boolean result = false;
+        if ((currentRows != rows) || (currentColumns != columns)) {
+            int nCharts = rows * columns;
+            if (nCharts > 0) {
+                FractionPane.ORIENTATION orient = FractionPane.getOrientation("grid");
+                controller.setNCharts(nCharts);
+                controller.arrange(rows);
+                controller.setBorderState(true);
+                PolyChart chartActive = controller.charts.get(0);
+                controller.setActiveChart(chartActive);
+                currentRows = rows;
+                currentColumns = columns;
+                result = true;
+            }
         }
+        return result;
     }
 
     void freezeChart() {
