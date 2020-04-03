@@ -1,3 +1,4 @@
+import os
 from org.yaml.snakeyaml import Yaml
 from java.io import FileInputStream
 import gscript
@@ -49,6 +50,13 @@ def loadYamlWin(yamlFile, createNewStage=True):
     yaml = Yaml()
     if createNewStage > 0:
         nw.new()
+        pathComps = os.path.split(yamlFile)
+        title = pathComps[1]
+        if title.endswith('_fav.yaml')
+            title = title[0:-9]
+        if title.endswith('.yaml')
+            title = title[0:-5]
+        nw.setTitle(title)
     data = yaml.load(inputData)
     if 'geometry' in data:
         (x,y,w,h) = data['geometry']
