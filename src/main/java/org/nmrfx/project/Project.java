@@ -53,7 +53,7 @@ public class Project {
         setActive();
     }
 
-    class FileComparator implements Comparator<Path> {
+    public static class FileComparator implements Comparator<Path> {
 
         @Override
         public int compare(Path p1, Path p2) {
@@ -92,8 +92,12 @@ public class Project {
     public boolean hasDirectory() {
         return projectDir != null;
     }
+    
+    public Path getDirectory() {
+        return projectDir;
+    }
 
-    static Optional<Integer> getIndex(String s) {
+    public static Optional<Integer> getIndex(String s) {
         Optional<Integer> fileNum = Optional.empty();
         Matcher matcher = INDEX_PATTERN.matcher(s);
         if (matcher.matches()) {
