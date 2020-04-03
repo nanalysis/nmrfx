@@ -6,9 +6,9 @@
 package org.nmrfx.utils;
 
 import java.util.Optional;
-import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.text.Text;
 
 /**
@@ -32,7 +32,16 @@ public class GUIUtils {
         alert.setTitle(title);
         alert.setContentText(content);
         alert.showAndWait();
-        return;
+    }
+
+    public static String input(String message) {
+        TextInputDialog textDialog = new TextInputDialog(message);
+        Optional<String> result = textDialog.showAndWait();
+        if (result.isPresent()) {
+            return result.get();
+        } else {
+            return "";
+        }
 
     }
 
