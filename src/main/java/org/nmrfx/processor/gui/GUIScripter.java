@@ -705,6 +705,12 @@ public class GUIScripter {
         });
     }
 
+    public void setTitle(String title) {
+        ConsoleUtil.runOnFxThread(() -> {
+            getActiveController().getStage().setTitle(title);
+        });
+    }
+
     public static void showPeak(String peakSpecifier) {
         ConsoleUtil.runOnFxThread(() -> {
             FXMLController activeController = getActiveController();
