@@ -13,27 +13,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import javafx.concurrent.Task;
 
-import javafx.stage.Stage;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.nmrfx.processor.gui.FXMLController;
-import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.AnalystApp;
 import org.nmrfx.processor.gui.PreferencesController;
+import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
-import org.python.util.PythonInterpreter;
 
 /**
  *
@@ -131,7 +124,7 @@ public class GUIStructureProject extends StructureProject {
             throw new IllegalArgumentException("Project directory not set");
         }
         super.saveProject();
-        saveWindows();
+        saveWindows(projectDir);
         gitCommitOnThread();
         PreferencesController.saveRecentProjects(projectDir.toString());
 
@@ -220,40 +213,11 @@ public class GUIStructureProject extends StructureProject {
 
     }
 
-    void loadWindows(Path directory) throws IOException {
-        Pattern pattern = Pattern.compile("(.+)\\.(yaml)");
-        Predicate<String> predicate = pattern.asPredicate();
-        final PythonInterpreter interp = AnalystApp.getInterpreter();
-        interp.exec("import nwyaml\\n");
-        if (Files.isDirectory(directory)) {
-            Files.list(directory).sequential().filter(path -> predicate.test(path.getFileName().toString())).
-                    sorted(new Project.FileComparator()).
-                    forEach(path -> {
-                        String fileName = path.getFileName().toString();
-                        Optional<Integer> fileNum = getIndex(fileName);
-                        if (fileNum.isPresent()) {
-                            interp.exec("nwyaml.loadYamlWin('" + path.toString() + "'" + "," + String.valueOf(fileNum.get()) + ")");
-                        }
-                    });
-        }
+    void loadWindows(Path dir) throws IOException {
+        WindowIO.loadWindows(dir);
     }
 
-    void saveWindows() throws IOException {
-        if (projectDir == null) {
-            throw new IllegalArgumentException("Project directory not set");
-        }
-        PythonInterpreter interp = AnalystApp.getInterpreter();
-        int i = 0;
-        interp.exec("import nwyaml\\n");
-        FXMLController activeController = GUIScripter.getController();
-        List<FXMLController> controllers = FXMLController.getControllers();
-        for (FXMLController controller : controllers) {
-            GUIScripter.setController(controller);
-            String fileName = i + "_stage.yaml";
-            Path path = Paths.get(projectDir.toString(), "windows", fileName);
-            interp.exec("nwyaml.dumpYamlWin('" + path.toString() + "')");
-            i++;
-        }
-        GUIScripter.setController(activeController);
+    void saveWindows(Path dir) throws IOException {
+        WindowIO.saveWindows(dir);
     }
 }

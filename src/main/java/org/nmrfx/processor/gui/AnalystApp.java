@@ -68,13 +68,11 @@ import org.nmrfx.structure.chemistry.io.SDFile;
 import org.nmrfx.structure.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 import static javafx.application.Application.launch;
-import javafx.beans.property.IntegerProperty;
 import javafx.scene.layout.VBox;
-import org.controlsfx.control.PropertySheet;
 import org.nmrfx.processor.datasets.peaks.PeakLabeller;
+import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.structure.chemistry.constraints.NoeSet;
 import org.nmrfx.utils.GUIUtils;
-import org.nmrfx.utils.properties.IntRangeOperationItem;
 import org.python.util.PythonInterpreter;
 
 public class AnalystApp extends MainApp {
@@ -96,6 +94,7 @@ public class AnalystApp extends MainApp {
     public static RNAPeakGeneratorSceneController rnaPeakGenController;
     public static PeakTableController peakTableController;
     public static NOETableController noeTableController;
+    public static WindowIO windowIO = null;
     PeakAtomPicker peakAtomPicker = null;
     CheckMenuItem assignOnPick;
     RDCGUI rdcGUI = null;
@@ -340,9 +339,11 @@ public class AnalystApp extends MainApp {
         compareMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumComparator());
         MenuItem stripsMenuItem = new MenuItem("Show Strips");
         stripsMenuItem.setOnAction(e -> showStripsBar());
+        MenuItem favoritesMenuItem = new MenuItem("Favorites");
+        favoritesMenuItem.setOnAction(e -> showFavorites());
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
-        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem,
+        spectraMenu.getItems().addAll(deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem,
                 alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem,
                 stripsMenuItem, copyItem);
 
@@ -1076,4 +1077,25 @@ public class AnalystApp extends MainApp {
     void addPrefs() {
         AnalystPrefs.addPrefs();
     }
+
+    void showFavorites() {
+        if (windowIO == null) {
+            windowIO = new WindowIO();
+            windowIO.create();
+        }
+        Stage stage = windowIO.getStage();
+        stage.show();
+        stage.toFront();
+        windowIO.updateFavorites();
+        try {
+            Project project = Project.getActive();
+            if (project != null) {
+                Path projectDir = project.getDirectory();
+                Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows");
+                windowIO.setupWatcher(path);
+            }
+        } catch (IOException ex) {
+        }
+    }
+
 }
