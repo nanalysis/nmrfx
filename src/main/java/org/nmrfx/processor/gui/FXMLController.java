@@ -118,9 +118,11 @@ import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
+import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.tools.PathTool;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
+import org.nmrfx.project.Project;
 import org.nmrfx.utilities.DictionarySort;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
@@ -716,6 +718,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         } else {
             System.out.println("Coudn't make controller");
         }
+    }
+    
+    public void saveAsFavorite() {
+        WindowIO.saveFavorite();
     }
 
     void showAttributesPopOver(ActionEvent event) {
@@ -1324,7 +1330,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.WRENCH, "Attributes", iconSize, fontSize, ContentDisplay.TOP);
         bButton.setOnAction(e -> showSpecAttrAction(e));
         buttons.add(bButton);
+        bButton = GlyphsDude.createIconButton(FontAwesomeIcon.HEART, "Favorite", iconSize, fontSize, ContentDisplay.TOP);
+        bButton.setOnAction(e -> saveAsFavorite());
+        buttons.add(bButton);
         buttons.add(new Separator(Orientation.VERTICAL));
+       // bButton.disableProperty().bind(Project.getActive());
 
         /* Disabled till clipping problem fixed
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.PRINT, "Print", iconSize, fontSize, ContentDisplay.TOP);
