@@ -67,17 +67,17 @@ public class NMRStarReader {
 //        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
-    public static void read(String starFileName) throws ParseException {
+    public static STAR3 read(String starFileName) throws ParseException {
         File file = new File(starFileName);
-        read(file);
+        return read(file);
     }
 
-    public static void read(File starFile) throws ParseException {
+    public static STAR3 read(File starFile) throws ParseException {
         FileReader fileReader;
         try {
             fileReader = new FileReader(starFile);
         } catch (FileNotFoundException ex) {
-            return;
+            return null;
         }
         BufferedReader bfR = new BufferedReader(fileReader);
 
@@ -90,6 +90,7 @@ public class NMRStarReader {
         }
         NMRStarReader reader = new NMRStarReader(starFile, star);
         reader.process();
+        return star;
     }
 
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
