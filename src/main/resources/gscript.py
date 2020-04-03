@@ -44,6 +44,9 @@ class NMRFxWindowScripting:
     def setCursor(self, name):
         self.cmd.setCursor(name)
 
+    def setTitle(self, title):
+        self.cmd.setTitle(title)
+
     def new(self):
         self.cmd.newStage()
         return self
