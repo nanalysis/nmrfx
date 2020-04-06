@@ -52,9 +52,9 @@ def loadYamlWin(yamlFile, createNewStage=True):
         nw.new()
         pathComps = os.path.split(yamlFile)
         title = pathComps[1]
-        if title.endswith('_fav.yaml')
+        if title.endswith('_fav.yaml'):
             title = title[0:-9]
-        if title.endswith('.yaml')
+        elif title.endswith('.yaml'):
             title = title[0:-5]
         nw.setTitle(title)
     data = yaml.load(inputData)
