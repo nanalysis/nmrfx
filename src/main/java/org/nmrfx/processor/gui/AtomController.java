@@ -48,14 +48,19 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
@@ -128,6 +133,7 @@ public class AtomController implements Initializable, FreezeListener {
     private TextField molFilterTextField;
     @FXML
     private ToolBar atomReferenceToolBar;
+    ChoiceBox<Integer> ppmSetChoice;
     ObservableList<Atom> atoms = FXCollections.observableArrayList();
 
     Atom currentAtom;
@@ -251,6 +257,15 @@ public class AtomController implements Initializable, FreezeListener {
         MenuItem universalItem = new MenuItem("Universal");
         universalItem.setOnAction(e -> predictAll(e));
         predictMenu.getItems().addAll(rnaAttributesItem, rna3DRCItem, rna3DDistItem, protein3DItem, universalItem);
+
+        ppmSetChoice = new ChoiceBox();
+        ppmSetChoice.getItems().add(0);
+        ppmSetChoice.getItems().add(1);
+        ppmSetChoice.getItems().add(2);
+        ppmSetChoice.getItems().add(3);
+        ppmSetChoice.setValue(0);
+        menuBar.getItems().addAll(new Label("PPM Set:"), ppmSetChoice);
+        ppmSetChoice.setOnAction(e -> atomTableView.refresh());
     }
 
     @Override
@@ -295,6 +310,22 @@ public class AtomController implements Initializable, FreezeListener {
         }
     };
 
+    class TextFieldTableCellNumber extends TextFieldTableCell<Atom, Number> {
+
+        public TextFieldTableCellNumber(StringConverter s) {
+            super(s);
+        }
+
+        @Override
+        public void updateItem(Number item, boolean empty) {
+            super.updateItem(item, empty);
+            if (item != null) {
+                setText(String.valueOf(item));
+            } else {
+            }
+        }
+    };
+
     class ComboTableCell<SpectralDim, String> extends ComboBoxTableCell<SpectralDim, String> {
 
         @Override
@@ -302,6 +333,10 @@ public class AtomController implements Initializable, FreezeListener {
             super.updateItem(item, empty);
         }
     };
+
+    int getPPMSet() {
+        return ppmSetChoice.getValue();
+    }
 
     void initTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
@@ -331,14 +366,28 @@ public class AtomController implements Initializable, FreezeListener {
         residueNameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
         residueNameColumn.setEditable(false);
 
-        TableColumn<Atom, Double> ppmCol = new TableColumn<>("PPM");
-        ppmCol.setCellValueFactory(new PropertyValueFactory("PPM"));
-        ppmCol.setCellFactory(tc -> new TextFieldTableCellDouble(dsConverter));
+        TableColumn<Atom, Number> ppmCol = new TableColumn<>("PPM");
+
+        ppmCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
+            Atom atom = p.getValue();
+            int ppmSet = getPPMSet();
+            PPMv ppmVal = atom.getPPM(ppmSet);
+            ObservableValue<Number> ov;
+            if ((ppmVal != null) && ppmVal.isValid()) {
+                ov = new SimpleDoubleProperty(ppmVal.getValue());
+            } else {
+                ov = null;
+            }
+            return ov;
+        });
+
+        ppmCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter));
         ppmCol.setOnEditCommit(
-                (CellEditEvent<Atom, Double> t) -> {
-                    Double value = t.getNewValue();
+                (CellEditEvent<Atom, Number> t) -> {
+                    Number value = t.getNewValue();
                     if (value != null) {
-                        t.getRowValue().setPPM(value);
+                        int ppmSet = getPPMSet();
+                        t.getRowValue().setPPM(ppmSet, value.doubleValue());
                     }
                 });
 
@@ -352,9 +401,20 @@ public class AtomController implements Initializable, FreezeListener {
         sdevCol.setCellValueFactory(new PropertyValueFactory("SDevRefPPM"));
         sdevCol.setEditable(false);
         sdevCol.setCellFactory(tc -> new TextFieldTableCellDouble(dsConverter));
-        TableColumn<Atom, Double> deltaCol = new TableColumn<>("Delta");
-        deltaCol.setCellValueFactory(new PropertyValueFactory("DeltaPPM"));
-        deltaCol.setCellFactory(tc -> new TextFieldTableCellDouble(dsConverter));
+        TableColumn<Atom, Number> deltaCol = new TableColumn<>("Delta");
+        deltaCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
+            int ppmSet = getPPMSet();
+            Atom atom = p.getValue();
+            Double delta = atom.getDeltaPPM(ppmSet);
+            ObservableValue<Number> ov;
+            if (delta != null) {
+                ov = new SimpleDoubleProperty(delta);
+            } else {
+                ov = null;
+            }
+            return ov;
+        });
+
         deltaCol.setEditable(false);
 
         atomTableView.getColumns().setAll(indexColumn, entityNameColumn,
