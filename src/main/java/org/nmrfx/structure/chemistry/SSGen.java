@@ -30,7 +30,7 @@ public class SSGen {
     public String viennaSeq;
     public Molecule molecule;
     public static String type;
-    public List<SecondaryStructure> structures = new ArrayList<SecondaryStructure>();
+    public List<SecondaryStructure> structures = new ArrayList<>();
     public List<Residue> residues;
 
     public SSGen(Molecule mol, String vienna) {
@@ -52,21 +52,29 @@ public class SSGen {
         secondaryStructGen();
     }
 
-    public void genRNAResidues() {
-        List<Residue> resList = new ArrayList<>();
+    public final void genRNAResidues() {
+        residues = new ArrayList<>();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isRNA()) {
                 for (Residue residue : polymer.getResidues()) {
-                    resList.add(residue);
+                    residues.add(residue);
                 }
             }
-            residues = resList;
         }
     }
 
-    public void pairTo() {
+    public final void pairTo() {
         SSLayout ssLay = new SSLayout(viennaSeq.length());
         ssLay.interpVienna(viennaSeq, residues);
+        for (Residue residue : residues) {
+            System.out.print(residue.getPolymer().getName() + ":" + residue.getName() + residue.getNumber());
+            if (residue.pairedTo == null) {
+                System.out.println("");
+            } else {
+                Residue pairRes = residue.pairedTo;
+                System.out.println("    " + pairRes.getPolymer().getName() + ":" + pairRes.getName() + pairRes.getNumber());
+            }
+        }
     }
 
     public static SecondaryStructure classifyRes(List<Residue> residues) {
@@ -152,9 +160,20 @@ public class SSGen {
                 ssType.addAll(currentSS);
             }
             return ssType;
-        } else if (residues.get(tracker).pairedTo != null) {
+        } else {
             while (tracker < residues.size() && residues.get(tracker).pairedTo != null) {
-                if (residues.get(tracker).iRes < residues.get(tracker).pairedTo.iRes) {
+                Residue res1 = residues.get(tracker);
+                Residue res2 = res1.pairedTo;
+                Polymer poly1 = res1.getPolymer();
+                Polymer poly2 = res2.getPolymer();
+                int polyID1 = poly1.getIDNum();
+                int polyID2 = poly2.getIDNum();
+                System.out.println(polyID1 + " " + res1.iRes + " " + polyID2 + " " + res2.iRes);
+                boolean firstInstance = polyID1 < polyID2;
+                if (polyID1 == polyID2) {
+                    firstInstance = res1.iRes < res2.iRes;
+                }
+                if (firstInstance) {
                     ssType.add(residues.get(tracker));
                     ssType.add(residues.get(tracker).pairedTo);
                     tracker++;
@@ -166,10 +185,9 @@ public class SSGen {
 
             return ssType;
         }
-        return null;
     }
 
-    public void secondaryStructGen() {
+    public final void secondaryStructGen() {
         while (tracker < residues.size()) {
             SecondaryStructure ss = classifyRes(resList());
             if (ss != null) {
