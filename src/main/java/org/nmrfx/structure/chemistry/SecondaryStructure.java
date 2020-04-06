@@ -51,7 +51,7 @@ public abstract class SecondaryStructure {
 
     public void getInvolvedRes() {
         for (Residue residue : secResidues) {
-            System.out.print(residue.getName() + residue.resNum);
+            System.out.print(residue.getPolymer().getName() + ":" + residue.getName() + residue.resNum);
         }
     }
 }
