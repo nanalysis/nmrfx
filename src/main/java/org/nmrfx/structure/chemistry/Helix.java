@@ -43,7 +43,9 @@ public class Helix extends SecondaryStructure {
         while (i < secResidues.size()) {
             Residue res1 = secResidues.get(i);
             Residue res2 = secResidues.get(i + 1);
-            System.out.print(res1.getName() + res1.resNum + ":" + res2.getName() + res2.resNum + " ");
+            System.out.print(res1.getPolymer().getName() + ":" + res1.getName()
+                    + res1.resNum + ":" + res2.getPolymer().getName()
+                    + ":" + res2.getName() + res2.resNum + " ");
             i += 2;
         }
     }
