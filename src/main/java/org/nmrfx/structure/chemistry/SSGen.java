@@ -66,15 +66,6 @@ public class SSGen {
     public final void pairTo() {
         SSLayout ssLay = new SSLayout(viennaSeq.length());
         ssLay.interpVienna(viennaSeq, residues);
-        for (Residue residue : residues) {
-            System.out.print(residue.getPolymer().getName() + ":" + residue.getName() + residue.getNumber());
-            if (residue.pairedTo == null) {
-                System.out.println("");
-            } else {
-                Residue pairRes = residue.pairedTo;
-                System.out.println("    " + pairRes.getPolymer().getName() + ":" + pairRes.getName() + pairRes.getNumber());
-            }
-        }
     }
 
     public static SecondaryStructure classifyRes(List<Residue> residues) {
@@ -168,7 +159,6 @@ public class SSGen {
                 Polymer poly2 = res2.getPolymer();
                 int polyID1 = poly1.getIDNum();
                 int polyID2 = poly2.getIDNum();
-                System.out.println(polyID1 + " " + res1.iRes + " " + polyID2 + " " + res2.iRes);
                 boolean firstInstance = polyID1 < polyID2;
                 if (polyID1 == polyID2) {
                     firstInstance = res1.iRes < res2.iRes;
