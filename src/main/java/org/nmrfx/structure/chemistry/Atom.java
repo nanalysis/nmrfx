@@ -648,13 +648,13 @@ public class Atom implements IAtom {
         }
     }
 
-    public Double getDeltaPPM() {
-        Double value = getPPM();
+    public Double getDeltaPPM(int ppmSet) {
+        PPMv ppmV = getPPM(ppmSet);
         Double ref = getRefPPM();
         Double sdev = getSDevRefPPM();
         Double delta;
-        if ((value != null) && (ref != null) && (sdev != null)) {
-            delta = (value - ref) / sdev;
+        if ((ppmV != null) && ppmV.isValid() && (ref != null) && (sdev != null)) {
+            delta = (ppmV.getValue() - ref) / sdev;
             delta = Math.round(delta * 100.0) / 100.0;
         } else {
             delta = null;
