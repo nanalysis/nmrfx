@@ -70,6 +70,7 @@ import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 import static javafx.application.Application.launch;
 import javafx.scene.layout.VBox;
 import org.nmrfx.processor.datasets.peaks.PeakLabeller;
+import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.structure.chemistry.constraints.NoeSet;
 import org.nmrfx.utils.GUIUtils;
@@ -152,6 +153,7 @@ public class AnalystApp extends MainApp {
         PeakPicking.registerSinglePickAction((c) -> pickedPeakAction(c));
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
+        KeyBindings.registerGlobalKeyAction("pa", this::assignPeak);
     }
 
     private void updateScannerGUI(ScannerController scannerController) {
@@ -849,6 +851,9 @@ public class AnalystApp extends MainApp {
         }
     }
 
+    public void assignPeak(Object object) {
+        assignPeak();
+    }
     public void assignPeak() {
         if (peakAtomPicker == null) {
             peakAtomPicker = new PeakAtomPicker();
