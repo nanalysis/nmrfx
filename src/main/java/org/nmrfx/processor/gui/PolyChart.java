@@ -767,6 +767,18 @@ public class PolyChart implements PeakListener {
 //        setXAxis(limits[0], limits[1]);
     }
 
+    public void swapView() {
+        if (!is1D()) {
+            double minX = xAxis.getLowerBound();
+            double maxX = xAxis.getUpperBound();
+            double minY = yAxis.getLowerBound();
+            double maxY = yAxis.getUpperBound();
+            setXAxis(minY, maxY);
+            setYAxis(minX, maxX);
+            refresh();
+        }
+    }
+
     protected double[] getRange(int axis, double min, double max) {
         double[] limits = getRange(axis);
         if (min > limits[0]) {

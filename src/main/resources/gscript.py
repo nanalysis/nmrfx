@@ -47,6 +47,9 @@ class NMRFxWindowScripting:
     def setTitle(self, title):
         self.cmd.setTitle(title)
 
+    def bindKeys(self, keyStr, actionStr) :
+        self.cmd.bindKeys(keyStr, actionStr)
+
     def new(self):
         self.cmd.newStage()
         return self

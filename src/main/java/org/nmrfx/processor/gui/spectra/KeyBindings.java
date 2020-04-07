@@ -20,6 +20,7 @@ package org.nmrfx.processor.gui.spectra;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,13 +42,13 @@ public class KeyBindings {
     KeyMonitor keyMonitor = new KeyMonitor();
     PolyChart chart;
     Map<String, Consumer> keyActionMap = new HashMap<>();
-    static Map<String, Consumer> globalKeyActionMap = new HashMap<>();
+    static Map<String, BiConsumer<String, PolyChart>> globalKeyActionMap = new HashMap<>();
 
     public KeyBindings(PolyChart chart) {
         this.chart = chart;
     }
 
-    public static void registerGlobalKeyAction(String keyString, Consumer action) {
+    public static void registerGlobalKeyAction(String keyString, BiConsumer<String, PolyChart> action) {
         // add firstchar so that key processing doesn't clear keyMonitor before a two key string is typed
         String firstChar = keyString.substring(0, 1);
         if (!globalKeyActionMap.containsKey(firstChar)) {
@@ -152,9 +153,9 @@ public class KeyBindings {
             }
             return;
         } else if (globalKeyActionMap.containsKey(shortString)) {
-            Consumer action = globalKeyActionMap.get(shortString);
+            BiConsumer<String, PolyChart> action = globalKeyActionMap.get(shortString);
             if (action != null) {
-                action.accept(chart);
+                action.accept(shortString, chart);
                 keyMonitor.clear();
             }
             return;
@@ -271,6 +272,10 @@ public class KeyBindings {
                 break;
             case "vo":
                 chart.zoom(0.8);
+                keyMonitor.clear();
+                break;
+            case "vs":
+                chart.swapView();
                 keyMonitor.clear();
                 break;
             case "j":
