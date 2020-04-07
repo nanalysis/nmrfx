@@ -19,7 +19,9 @@ import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.controls.FractionPane;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
+import org.nmrfx.processor.gui.spectra.KeyBindings;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.python.util.InteractiveInterpreter;
 
 /**
  *
@@ -29,6 +31,7 @@ public class GUIScripter {
 
     final PolyChart useChart;
     static FXMLController controller = FXMLController.getActiveController();
+    static Map<String, String> keyActions = new HashMap<>();
 
     public GUIScripter() {
         useChart = null;
@@ -744,4 +747,18 @@ public class GUIScripter {
 
     }
 
+    public void bindKeys(String keyStr, String actionStr) {
+        ConsoleUtil.runOnFxThread(() -> {
+            KeyBindings.registerGlobalKeyAction(keyStr, GUIScripter::chartCommand);
+            keyActions.put(keyStr, actionStr);
+        });
+    }
+
+    public static void chartCommand(String keyStr, PolyChart chart) {
+        PolyChart currentActive = PolyChart.getActiveChart();
+        chart.setActiveChart();
+        InteractiveInterpreter interp = MainApp.getInterpreter();
+        interp.exec(keyActions.get(keyStr));
+        currentActive.setActiveChart();
+    }
 }
