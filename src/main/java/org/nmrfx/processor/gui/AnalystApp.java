@@ -851,9 +851,10 @@ public class AnalystApp extends MainApp {
         }
     }
 
-    public void assignPeak(Object object) {
+    public void assignPeak(String keyStr, PolyChart chart) {
         assignPeak();
     }
+
     public void assignPeak() {
         if (peakAtomPicker == null) {
             peakAtomPicker = new PeakAtomPicker();
