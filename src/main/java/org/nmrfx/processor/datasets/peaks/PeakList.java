@@ -1675,7 +1675,7 @@ public class PeakList {
         if (getNDim() == 2) {
             double min = 4.0 / getSpectralDim(0).getSf();
             double max = 18.0 / getSpectralDim(0).getSf();
-            double[] minTol = {min, min};
+            double[] minTol = {0.0, 0.0};
             double[] maxTol = {max, min};
             couple(minTol, maxTol, PhaseRelationship.INPHASE, 0);
             maxTol[0] = min;
