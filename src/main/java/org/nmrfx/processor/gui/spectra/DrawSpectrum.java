@@ -1187,6 +1187,7 @@ public class DrawSpectrum {
                     if (annoEnd >= ve.length) {
                         annoEnd = ve.length - 1;
                     }
+                    System.out.println(vecStartPoint + " " + annoEnd + " " + vecEndPoint);
                     nPoints = drawScaledLine(ve, vecStartPoint, annoEnd, vecEndPoint);
                 }
             }
@@ -1222,10 +1223,34 @@ public class DrawSpectrum {
         double width = axes[0].getWidth();
         double height = axes[1].getHeight();
         double delta = width / (end - start);
+        double xOrigin = axes[0].getXOrigin();
+        double yOrigin = axes[1].getYOrigin();
 
-        return speedSpectrum(ve, 0, start, annoEnd, 0.0, delta, 4, xy, (index, intensity) -> index,
-                (index, intensity) -> (1.0 - intensity) * height);
+        return drawFullLine(ve, start, annoEnd, 0.0, delta, xy,
+                (index, intensity) -> xOrigin + index,
+                (index, intensity) -> yOrigin - intensity * (height-1) + 1);
 
+    }
+
+    public int drawFullLine(double[] ve, int start, int end, double dValue, double delta, double[][] xy, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction) {
+
+        nPoints = 0;
+        int maxPoints = end - start + 1;
+        if ((xy[0] == null) || (xy[0].length < maxPoints)) {
+            xy[0] = new double[maxPoints];
+            xy[1] = new double[maxPoints];
+        }
+        int iLine = 0;
+        for (int i = start; i <= end; i++) {
+            double intensity = ve[i];
+            if (intensity != Double.MAX_VALUE) {
+                xy[0][iLine] = xFunction.applyAsDouble(dValue, intensity);
+                xy[1][iLine++] = yFunction.applyAsDouble(dValue, intensity);
+            }
+            dValue += delta;
+        }
+        nPoints = iLine;
+        return iLine;
     }
 
     static int speedSpectrum(double[] ve, int vStart, int start, int end, double dValue, double delta, int nIncr, double[][] xy, DoubleBinaryOperator xFunction, DoubleBinaryOperator yFunction) {
