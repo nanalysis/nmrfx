@@ -946,9 +946,10 @@ public class DrawSpectrum {
         result = Optional.of(integralValue);
         double scale = dataAttributes.getIntegralScale();
         double height = axes[1].getHeight();
+        double yOrigin = axes[1].getYOrigin();
         drawSubVector(specVec, orientation, 0, axMode,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> (1.0 - high) * height + (high - low) * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
+                (index, intensity) ->  yOrigin - height + (1.0 - high) * height + (high - low) * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
 
         return result;
     }
@@ -1187,7 +1188,6 @@ public class DrawSpectrum {
                     if (annoEnd >= ve.length) {
                         annoEnd = ve.length - 1;
                     }
-                    System.out.println(vecStartPoint + " " + annoEnd + " " + vecEndPoint);
                     nPoints = drawScaledLine(ve, vecStartPoint, annoEnd, vecEndPoint);
                 }
             }
