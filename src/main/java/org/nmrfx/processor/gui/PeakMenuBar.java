@@ -90,6 +90,10 @@ public class PeakMenuBar {
         clusterMenuItem.setOnAction(e -> clusterPeakList());
         editMenu.getItems().add(clusterMenuItem);
 
+        MenuItem mirrorMenuItem = new MenuItem("Mirror 2D List");
+        mirrorMenuItem.setOnAction(e -> mirror2DList());
+        editMenu.getItems().add(mirrorMenuItem);
+
         menuBar.getItems().add(editMenu);
 
         MenuButton assignMenu = new MenuButton("Assign");
@@ -157,6 +161,13 @@ public class PeakMenuBar {
     void unLinkPeakList() {
         if (getPeakList() != null) {
             getPeakList().unLinkPeaks();
+        }
+    }
+
+    void mirror2DList() {
+        PeakList peakList = getPeakList();
+        if (peakList != null) {
+            peakList.addMirroredPeaks();
         }
     }
 
