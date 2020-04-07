@@ -1671,6 +1671,19 @@ public class PeakList {
         }
     }
 
+    public void autoCouple() {
+        if (getNDim() == 2) {
+            double min = 4.0;
+            double max = 18.0;
+            double[] minTol = {min, min};
+            double[] maxTol = {max, min};
+            couple(minTol, maxTol, PhaseRelationship.INPHASE, 0);
+            maxTol[0] = min;
+            maxTol[1] = max;
+            couple(minTol, maxTol, PhaseRelationship.INPHASE, 1);
+        }
+    }
+
     /**
      *
      * @param minTol
