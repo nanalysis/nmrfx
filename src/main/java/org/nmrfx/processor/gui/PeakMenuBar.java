@@ -90,6 +90,10 @@ public class PeakMenuBar {
         clusterMenuItem.setOnAction(e -> clusterPeakList());
         editMenu.getItems().add(clusterMenuItem);
 
+        MenuItem coupleMenuItems = new MenuItem("AutoCouple (2D 1H)");
+        coupleMenuItems.setOnAction(e -> autoCouplePeakList());
+        editMenu.getItems().add(coupleMenuItems);
+
         MenuItem mirrorMenuItem = new MenuItem("Mirror 2D List");
         mirrorMenuItem.setOnAction(e -> mirror2DList());
         editMenu.getItems().add(mirrorMenuItem);
@@ -168,6 +172,13 @@ public class PeakMenuBar {
         PeakList peakList = getPeakList();
         if (peakList != null) {
             peakList.addMirroredPeaks();
+        }
+    }
+
+    void autoCouplePeakList() {
+        PeakList peakList = getPeakList();
+        if (peakList != null) {
+            peakList.autoCoupleHomoNuclear();
         }
     }
 
