@@ -121,9 +121,10 @@ public class PeakAtomPicker {
                 selPeak = selected.get(0);
             }
             // fixme if more than one peak selected figure out if they're in row or column and set label
-            // for a single (appropriate) dimension
+            // for a single (appropriate) dimension"
         }
         if (selPeak != null) {
+            stage.setTitle("Peak Assigner: " + selPeak.getName());
             PeakListAttributes usePeakAttr = null;
             List<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
             for (PeakListAttributes peakAttr : peakAttrs) {
