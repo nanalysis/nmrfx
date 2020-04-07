@@ -128,6 +128,25 @@ public class Atom implements IAtom {
 
     }
 
+    public class AtomComparator implements Comparator<Atom> {
+
+        @Override
+        public int compare(Atom atom1, Atom atom2) {
+            int entityID1 = atom1.getTopEntity().entityID;
+            int entityID2 = atom2.getTopEntity().entityID;
+            int result = Integer.compare(entityID1, entityID2);
+            if (result == 0) {
+                entityID1 = atom1.getEntity().entityID;
+                entityID2 = atom2.getEntity().entityID;
+                result = Integer.compare(entityID1, entityID2);
+                if (result == 0) {
+                    result = atom1.getName().compareTo(atom2.getName());
+                }
+            }
+            return result;
+        }
+    }
+
     public static Atom genAtomWithType(String name, String aType) {
         AtomEnergyProp atomEnergyProp = AtomEnergyProp.get(aType);
         Atom atom = new Atom(name, atomEnergyProp);
