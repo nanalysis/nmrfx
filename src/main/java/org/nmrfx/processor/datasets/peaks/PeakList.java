@@ -1654,6 +1654,23 @@ public class PeakList {
         reNumber();
     }
 
+    public void addMirroredPeaks() {
+        if (getNDim() == 2) {
+            int n = peaks.size();
+            for (int i = 0; i < n; i++) {
+                Peak peak = peaks.get(i);
+                if (!peak.isDeleted()) {
+                    Peak newPeak = getNewPeak();
+                    peak.copyTo(newPeak);
+                    newPeak.getPeakDim(1).setChemShiftValue(peak.getPeakDim(0).getChemShiftValue());
+                    newPeak.getPeakDim(0).setChemShiftValue(peak.getPeakDim(1).getChemShiftValue());
+                    newPeak.getPeakDim(1).setLabel(peak.getPeakDim(0).getLabel());
+                    newPeak.getPeakDim(0).setLabel(peak.getPeakDim(1).getLabel());
+                }
+            }
+        }
+    }
+
     /**
      *
      * @param minTol
