@@ -1671,10 +1671,10 @@ public class PeakList {
         }
     }
 
-    public void autoCouple() {
+    public void autoCoupleHomoNuclear() {
         if (getNDim() == 2) {
-            double min = 4.0;
-            double max = 18.0;
+            double min = 4.0 / getSpectralDim(0).getSf();
+            double max = 18.0 / getSpectralDim(0).getSf();
             double[] minTol = {min, min};
             double[] maxTol = {max, min};
             couple(minTol, maxTol, PhaseRelationship.INPHASE, 0);
