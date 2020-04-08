@@ -98,11 +98,13 @@ public class PeakPicking {
             } else {
                 peakList = picker.peakPick();
             }
-            chart.setupPeakListAttributes(peakList);
-            if (saveFile) {
-                try (final FileWriter writer = new FileWriter(listFileName)) {
-                    PeakWriter peakWriter = new PeakWriter();
-                    peakWriter.writePeaksXPK2(writer, peakList);
+            if (peakList != null) {
+                chart.setupPeakListAttributes(peakList);
+                if (saveFile) {
+                    try (final FileWriter writer = new FileWriter(listFileName)) {
+                        PeakWriter peakWriter = new PeakWriter();
+                        peakWriter.writePeaksXPK2(writer, peakList);
+                    }
                 }
             }
         } catch (IOException | InvalidPeakException ioE) {
