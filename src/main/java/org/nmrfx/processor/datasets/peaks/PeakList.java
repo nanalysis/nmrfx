@@ -1015,7 +1015,7 @@ public class PeakList {
         return foldAmount;
     }
 
-    double foldPPM(double ppm, double fDelta, double min, double max) {
+    public static double foldPPM(double ppm, double fDelta, double min, double max) {
         if (min > max) {
             double hold = min;
             min = max;
