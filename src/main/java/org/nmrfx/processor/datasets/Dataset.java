@@ -1598,6 +1598,36 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         return foldDown[iDim];
     }
 
+    public double[] getLimits(int iDim) {
+        double[] limits = {
+            pointToPPM(iDim, size(iDim) - 1),
+            pointToPPM(iDim, 0)
+        };
+        return limits;
+    }
+
+    public static double foldPPM(double ppm, double[] foldLimits) {
+        double min = foldLimits[0];
+        double max = foldLimits[1];
+        if (min > max) {
+            double hold = min;
+            min = max;
+            max = hold;
+        }
+        if ((ppm < min) || (ppm > max)) {
+            double fDelta = max - min;
+            if (min != max) {
+                while (ppm > max) {
+                    ppm -= fDelta;
+                }
+                while (ppm < min) {
+                    ppm += fDelta;
+                }
+            }
+        }
+        return ppm;
+    }
+
     /**
      * Set the folding down value for the specified dimension.
      *
