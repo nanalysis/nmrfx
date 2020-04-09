@@ -1135,8 +1135,8 @@ public class DrawPeaks {
             return;
         }
         String label = getLabel(peak, peakAttr);
-        float ctr0;
-        float ctr1;
+        double ctr0;
+        double ctr1;
         int jx = 1;
         int jy = 1;
         float j0 = 0.0f;
@@ -1188,9 +1188,8 @@ public class DrawPeaks {
          */
         ctr0 = peak.peakDims[dim[0]].getChemShiftValue();
         ctr1 = peak.peakDims[dim[1]].getChemShiftValue();
-        // fixme fold
-//        ctr0 = (float) specPar.foldPPM(ctr0, 0);
-//        ctr1 = (float) specPar.foldPPM(ctr1, 1);
+        ctr0 = peakAttr.foldShift(0, ctr0);
+        ctr1 = peakAttr.foldShift(1, ctr1);
 
         for (int kx = 0; kx < jx; kx++) {
             for (int ky = 0; ky < jy; ky++) {

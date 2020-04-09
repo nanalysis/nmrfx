@@ -48,6 +48,7 @@ import javafx.collections.ObservableSet;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
 import org.nmrfx.processor.datasets.peaks.Coupling;
 import org.nmrfx.processor.datasets.peaks.CouplingPattern;
@@ -72,6 +73,7 @@ public class PeakListAttributes implements PeakListener {
     Set<MultipletSelection> selectedMultiplets = FXCollections.observableSet();
     NMRAxis xAxis = null;
     NMRAxis yAxis = null;
+    double[][] foldLimits = null;
 
     private IntegerProperty nplanes;
 
@@ -273,6 +275,15 @@ public class PeakListAttributes implements PeakListener {
         return peakListNameProperty().get();
     }
 
+    void updateFoldingLimits(DatasetAttributes dataAttr) {
+        int nDataDim = dataAttr.nDim;
+        foldLimits = new double[nDataDim][2];
+        for (int i = 0; i < nDataDim; i++) {
+            Dataset dataset = dataAttr.getDataset();
+            foldLimits[i] = dataset.getLimits(dataAttr.getDim(i));
+        }
+    }
+
     double[][] getRegionLimits(DatasetAttributes dataAttr) {
         int nDataDim = dataAttr.nDim;
         double[][] limits = new double[nDataDim][2];
@@ -369,13 +380,14 @@ public class PeakListAttributes implements PeakListener {
 
     public void findPeaksInRegion() {
         peaksInRegion = Optional.empty();
+        updateFoldingLimits(dataAttr);
         if ((peakList != null) && (peakList.peaks() != null)) {
             double[][] limits = getRegionLimits(dataAttr);
             int[] peakDim = getPeakDim();
             List<Peak> peaks = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, null, peakDim))
+                    .filter(peak -> peak.inRegion(limits, foldLimits, peakDim))
                     .collect(Collectors.toList());
             peaksInRegion = Optional.of(peaks);
         }
@@ -383,6 +395,7 @@ public class PeakListAttributes implements PeakListener {
 
     public void findPeaksInRegion(double[][] crossLimits) {
         peaksInRegion = Optional.empty();
+        updateFoldingLimits(dataAttr);
         if ((peakList != null) && (peakList.peaks() != null)) {
             double[][] limits = getRegionLimits(dataAttr);
             limits[0][0] = crossLimits[0][0];
@@ -395,7 +408,7 @@ public class PeakListAttributes implements PeakListener {
             List<Peak> peaks = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, null, peakDim))
+                    .filter(peak -> peak.inRegion(limits, foldLimits, peakDim))
                     .collect(Collectors.toList());
             peaksInRegion = Optional.of(peaks);
         }
@@ -403,6 +416,7 @@ public class PeakListAttributes implements PeakListener {
 
     public List<Peak> selectPeaksInRegion(double[][] crossLimits) {
         if ((peakList != null) && (peakList.peaks() != null)) {
+            updateFoldingLimits(dataAttr);
             double[][] limits = getRegionLimits(dataAttr);
             limits[0][0] = crossLimits[0][0];
             limits[0][1] = crossLimits[0][1];
@@ -414,12 +428,19 @@ public class PeakListAttributes implements PeakListener {
             List<Peak> peaks = peakList.peaks()
                     .stream()
                     .parallel()
-                    .filter(peak -> peak.inRegion(limits, null, peakDim))
+                    .filter(peak -> peak.inRegion(limits, foldLimits, peakDim))
                     .collect(Collectors.toList());
             selectedPeaks.addAll(peaks);
             return (peaks);
         }
         return new ArrayList<Peak>();
+    }
+
+    public double foldShift(int iDim, double shift) {
+        if (foldLimits != null) {
+            shift = Dataset.foldPPM(shift, foldLimits[iDim]);
+        }
+        return shift;
     }
 
     public Optional<Peak> hitPeak(DrawPeaks drawPeaks, double pickX, double pickY) {
@@ -616,6 +637,8 @@ public class PeakListAttributes implements PeakListener {
         bou[1] = peak.peakDims[peakDim[1]].getBoundsValue();
         ctr[0] = peak.peakDims[peakDim[0]].getChemShiftValue();
         ctr[1] = peak.peakDims[peakDim[1]].getChemShiftValue();
+        ctr[0] = foldShift(0, ctr[0]);
+        ctr[1] = foldShift(1, ctr[1]);
         Rectangle box = getBox(ctr, bou);
         boolean result = box.contains(x, y);
 //        System.out.println(box.toString() + " " + x + " " + y + " " + result);
