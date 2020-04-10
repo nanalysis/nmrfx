@@ -95,8 +95,10 @@ public class MainApp extends Application implements DatasetListener {
         synchronized (stages) {
             stages.remove(stage);
             if (stages.isEmpty()) {
-                Platform.exit();
-                System.exit(0);
+                if (!isMac()) {
+                    Platform.exit();
+                    System.exit(0);
+                }
             }
         }
     }
