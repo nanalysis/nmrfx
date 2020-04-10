@@ -1086,8 +1086,12 @@ public class PolyChart implements PeakListener {
             if (positions[axis] != null) {
                 if (axis > 1) {
                     DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-                    int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, positions[axis]);
-                    setAxis(axis, plane, plane);
+                    if (axModes[axis] == AXMODE.PTS) {
+                        int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, positions[axis]);
+                        setAxis(axis, plane, plane);
+                    } else {
+                        setAxis(axis, positions[axis], positions[axis]);
+                    }
                 } else {
                     double lower = axes[axis].getLowerBound();
                     double upper = axes[axis].getUpperBound();
@@ -1106,7 +1110,12 @@ public class PolyChart implements PeakListener {
             if (positions[axis] != null) {
                 if (axis > 1) {
                     DatasetAttributes datasetAttributes = datasetAttributesList.get(0);
-                    setAxis(axis, positions[axis], positions[axis]);
+                    if (axModes[axis] == AXMODE.PTS) {
+                        int plane = AXMODE.PPM.getIndex(datasetAttributes, axis, positions[axis]);
+                        setAxis(axis, plane, plane);
+                    } else {
+                        setAxis(axis, positions[axis], positions[axis]);
+                    }
                 } else {
                     double range = widths[axis];
                     double newLower = positions[axis] - range / 2;
