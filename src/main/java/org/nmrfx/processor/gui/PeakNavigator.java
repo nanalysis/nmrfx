@@ -277,10 +277,17 @@ public class PeakNavigator implements PeakListener {
     void updateAtomLabels(Peak peak) {
         if (showAtoms) {
             if (peak != null) {
-                atomXLabel.setText(peak.getPeakDim(0).getLabel());
-                intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
-                if (peak.getPeakDims().length > 1) {
-                    atomYLabel.setText(peak.getPeakDim(1).getLabel());
+                FXMLController controller = FXMLController.getActiveController();
+                PolyChart chart = controller.getActiveChart();
+                ObservableList<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
+                if (!peakAttrs.isEmpty()) {
+                    PeakListAttributes peakAttr = peakAttrs.get(0);
+                    int pdims[] = peakAttr.getPeakDim();
+                    atomXLabel.setText(peak.getPeakDim(pdims[0]).getLabel());
+                    intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
+                    if (peak.getPeakDims().length > 1) {
+                        atomYLabel.setText(peak.getPeakDim(pdims[1]).getLabel());
+                    }
                 }
             } else {
                 if (showAtoms) {
