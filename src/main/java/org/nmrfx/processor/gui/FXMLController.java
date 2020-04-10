@@ -196,7 +196,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     SimpleObjectProperty<List<Peak>> selPeaks = new SimpleObjectProperty<>();
     UndoManager undoManager = new UndoManager();
-    double widthScale = 5.0;
+    double widthScale = 10.0;
     Canvas canvas = new Canvas();
     Canvas peakCanvas = new Canvas();
     Canvas annoCanvas = new Canvas();
@@ -719,7 +719,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             System.out.println("Coudn't make controller");
         }
     }
-    
+
     public void saveAsFavorite() {
         WindowIO.saveFavorite();
     }
@@ -1154,8 +1154,9 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                         }
                         PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
                         if (peakDim != null) {
+                            double peakWidth = peakDim.getSpectralDimObj().getMeanWidthPPM();
                             ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
-                            widths[i] = widthScale * Double.valueOf(peakDim.getLineWidthValue());
+                            widths[i] = widthScale * peakWidth;
                         }
                     }
                     if (widthScale > 0.0) {
@@ -1334,7 +1335,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         bButton.setOnAction(e -> saveAsFavorite());
         buttons.add(bButton);
         buttons.add(new Separator(Orientation.VERTICAL));
-       // bButton.disableProperty().bind(Project.getActive());
+        // bButton.disableProperty().bind(Project.getActive());
 
         /* Disabled till clipping problem fixed
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.PRINT, "Print", iconSize, fontSize, ContentDisplay.TOP);
@@ -1463,7 +1464,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     public void addScaleBox(PeakNavigator navigator, ToolBar navBar) {
         ObservableList<Double> scaleList = FXCollections.observableArrayList(0.0, 2.5, 5.0, 7.5, 10.0, 15.0, 20.0);
         ChoiceBox<Double> scaleBox = new ChoiceBox(scaleList);
-        scaleBox.setValue(5.0);
+        scaleBox.setValue(widthScale);
         scaleBox.setOnAction(e -> {
             widthScale = scaleBox.getValue();
             Peak peak = navigator.getPeak();
