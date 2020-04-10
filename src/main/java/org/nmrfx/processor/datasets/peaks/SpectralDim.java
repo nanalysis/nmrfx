@@ -26,6 +26,9 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
+import java.util.DoubleSummaryStatistics;
+import java.util.Optional;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.nmrfx.processor.datasets.Nuclei;
 
 /**
@@ -78,11 +81,13 @@ public class SpectralDim {
     private int foldCount = 0;
     private boolean acqDim = false;
     private boolean absPos = false;
+    private Optional<Double> meanWidthPPM = Optional.empty();
 
     /**
      * Creates a new instance of SpectralDim
+     *
      * @param peakList The Peak List that this spectral dimension is part of
-     * @param iDim  The dimension number of this spectral dimension
+     * @param iDim The dimension number of this spectral dimension
      */
     public SpectralDim(PeakList peakList, int iDim) {
         this.peakList = peakList;
@@ -553,5 +558,13 @@ public class SpectralDim {
 
     public void setAbsPosition(boolean state) {
         absPos = state;
+    }
+
+    public double getMeanWidthPPM() {
+        if (!meanWidthPPM.isPresent()) {
+            DoubleSummaryStatistics stats = peakList.widthStatsPPM(dataDim);
+            meanWidthPPM = Optional.of(stats.getAverage());
+        }
+        return meanWidthPPM.get();
     }
 }
