@@ -29,9 +29,11 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
+import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 
 /*
@@ -280,15 +282,28 @@ public class PeakNavigator implements PeakListener {
                 FXMLController controller = FXMLController.getActiveController();
                 PolyChart chart = controller.getActiveChart();
                 ObservableList<PeakListAttributes> peakAttrs = chart.getPeakListAttributes();
+                ObservableList<DatasetAttributes> dataAttrs = chart.getDatasetAttributes();
+                PeakDim peakDimX = null;
+                PeakDim peakDimY = null;
                 if (!peakAttrs.isEmpty()) {
                     PeakListAttributes peakAttr = peakAttrs.get(0);
                     int pdims[] = peakAttr.getPeakDim();
-                    atomXLabel.setText(peak.getPeakDim(pdims[0]).getLabel());
-                    intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
+                    peakDimX = peak.getPeakDim(pdims[0]);
                     if (peak.getPeakDims().length > 1) {
-                        atomYLabel.setText(peak.getPeakDim(pdims[1]).getLabel());
+                        peakDimY = peak.getPeakDim(pdims[1]);
+                    }
+                } else if (!dataAttrs.isEmpty()) {
+                    DatasetAttributes dataAttr = dataAttrs.get(0);
+                    peakDimX = peak.getPeakDim(dataAttr.getLabel(0));
+                    if (peak.getPeakDims().length > 1) {
+                        peakDimY = peak.getPeakDim(dataAttr.getLabel(1));
                     }
                 }
+                atomXLabel.setText(peakDimX.getLabel());
+                if (peakDimY != null) {
+                    atomYLabel.setText(peakDimY.getLabel());
+                }
+                intensityLabel.setText(String.format("%.2f", peak.getIntensity()));
             } else {
                 if (showAtoms) {
                     atomXLabel.setText("");
