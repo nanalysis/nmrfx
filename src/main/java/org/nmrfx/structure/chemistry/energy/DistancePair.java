@@ -26,8 +26,17 @@ public class DistancePair {
     final double rLow;
     final double rUp;
     final boolean isBond;
-
-    public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond) {
+    final String filterString1;
+    final String filterString2;
+    final String resName1;
+    final String resName2;
+    final double weight;
+    final double targetValue;
+    final double targetErr;
+    
+    public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond, 
+            final String filterString1, final String filterString2, final String resName1, final String resName2, 
+            final double weight, final double targetValue, final double targetErr) {
         if (atoms1.length != atoms2.length) {
             throw new IllegalArgumentException("atom arrays are not of equal length");
         }
@@ -40,6 +49,13 @@ public class DistancePair {
         this.rLow = rLow;
         this.rUp = rUp;
         this.isBond = isBond;
+        this.filterString1 = filterString1;
+        this.filterString2 = filterString2;
+        this.resName1 = resName1;
+        this.resName2 = resName2;
+        this.weight = weight;
+        this.targetValue = targetValue;
+        this.targetErr = targetErr;
     }
 
     @Override
@@ -50,9 +66,63 @@ public class DistancePair {
             sBuilder.append(aPair.toString());
             sBuilder.append(" ");
         }
+        sBuilder.append(filterString1);
+        sBuilder.append(" ");
+        sBuilder.append(filterString2);
+        sBuilder.append(" ");
+        sBuilder.append(resName1);
+        sBuilder.append(" ");
+        sBuilder.append(resName2);
+        sBuilder.append(" ");
+        sBuilder.append(weight);
+        sBuilder.append(" ");
+        sBuilder.append(targetValue);
+        sBuilder.append(" ");
+        sBuilder.append(targetErr);
+        sBuilder.append(" ");
         sBuilder.append(rLow);
         sBuilder.append(" ");
         sBuilder.append(rUp);
         return sBuilder.toString();
+    }
+    
+    public AtomDistancePair[] getAtomPairs() {
+        return atomPairs;
+    }
+    
+    public String getAtomFilter1() {
+        return filterString1;
+    }
+    
+    public String getAtomFilter2() {
+        return filterString2;
+    }
+    
+    public String getResName1() {
+        return resName1;
+    }
+    
+    public String getResName2() {
+        return resName2;
+    }
+    
+    public double getWeight() {
+        return weight;
+    }
+    
+    public double getTargetValue() {
+        return targetValue;
+    }
+    
+    public double getTargetError() {
+        return targetErr;
+    }
+    
+    public double getLower() {
+        return rLow;
+    }
+    
+    public double getUpper() {
+        return rUp;
     }
 }

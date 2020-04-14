@@ -88,6 +88,7 @@ public class EnergyLists {
     boolean[] stochasticResidues = null;
     boolean constraintsSetup = false;
     public static double[][][] irpTable;
+    public ArrayList<DistancePair> distanceList2 = new ArrayList<DistancePair>();
 
     public EnergyLists() {
     }
@@ -372,12 +373,13 @@ public class EnergyLists {
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
-            final double rUp) throws IllegalArgumentException {
-        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false);
+            final double rUp, boolean nef, String resName1, String resName2, double weight, double targetValue, double targetErr) throws IllegalArgumentException {
+        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, nef, resName1, resName2, weight, targetValue, targetErr);
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
-            final double rUp, boolean isBond) throws IllegalArgumentException {
+            final double rUp, boolean isBond, boolean nef, String resName1, String resName2, double weight, 
+            double targetValue, double targetErr) throws IllegalArgumentException {
         MolFilter molFilter1 = new MolFilter(filterString1);
         MolFilter molFilter2 = new MolFilter(filterString2);
 
@@ -405,24 +407,33 @@ public class EnergyLists {
         Atom[] atomsA2 = new Atom[atoms2m.size()];
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
-        distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond));
+        if (nef) {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, filterString1, filterString2, resName1, resName2, weight, targetValue, targetErr));
+            distanceList2.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, filterString1, filterString2, resName1, resName2, weight, targetValue, targetErr));
+        } else {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, "", "", "", "", 0.0, 0.0, 0.0));
+            distanceList2.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, "", "", "", "", 0.0, 0.0, 0.0));
+        }
         distanceMap.clear();
         constraintsSetup = false;
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
-            final double rLow, final double rUp) throws IllegalArgumentException {
+            final double rLow, final double rUp, boolean nef, String resName1, String resName2, double weight, 
+            double targetValue, double targetErr) throws IllegalArgumentException {
         if (filterStrings1.size() != filterStrings2.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
         }
         ArrayList<Atom> atoms1m = new ArrayList<>();
         ArrayList<Atom> atoms2m = new ArrayList<>();
+        String filterString1 = "";
+        String filterString2 = "";
         for (int i = 0; i < filterStrings1.size(); i++) {
-            String filterString1 = filterStrings1.get(i);
-            String filterString2 = filterStrings2.get(i);
+            filterString1 = filterStrings1.get(i);
+            filterString2 = filterStrings2.get(i);
             MolFilter molFilter1 = new MolFilter(filterString1);
             MolFilter molFilter2 = new MolFilter(filterString2);
-
+ 
             List<Atom> group1 = Molecule.getNEFMatchedAtoms(molFilter1, molecule);
             List<Atom> group2 = Molecule.getNEFMatchedAtoms(molFilter2, molecule);
 
@@ -447,7 +458,13 @@ public class EnergyLists {
         }
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
-        distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false));
+        if (nef) {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, filterString1, filterString2, resName1, resName2, weight, targetValue, targetErr));
+            distanceList2.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, filterString1, filterString2, resName1, resName2, weight, targetValue, targetErr));
+        } else {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, "", "", "", "", 0.0, 0.0, 0.0));
+            distanceList2.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, "", "", "", "", 0.0, 0.0, 0.0));
+        }
         distanceMap.clear();
         constraintsSetup = false;
 
