@@ -116,11 +116,12 @@ public class SSGen {
             Residue lastRes = residues.get(residues.size() - 1);
             Residue resBefore = ssFirstRes.getPrevious();
             Residue resAfter = ssLastRes.getNext();
+            boolean samePoly = ssFirstRes.getPolymer() == ssLastRes.getPolymer();
 
             if (ssLastRes == lastRes || ssFirstRes == firstRes) { //last residue or first residue (string of non pairing all the way to end)
                 add = true;
                 type = "nonloop"; //instead of calling first residue, call last residue
-            } else if (resBefore.pairedTo == resAfter) { //loop
+            } else if (samePoly && (resBefore.pairedTo == resAfter)) { //loop
                 add = true;
                 type = "loop";
             } else if (resBefore.pairedTo.iRes < resAfter.pairedTo.iRes) { //junction
@@ -134,18 +135,11 @@ public class SSGen {
                 }
                 add = true;
                 type = "internalLoop";
-            } else if (resBefore.iRes < resBefore.pairedTo.iRes) { //left side 
-                boolean leftBulge = resBefore.pairedTo.getPrevious().pairedTo != null;
-                if (leftBulge) {
-                    add = true;
-                    type = "bulge";
-                }
-            } else if (resBefore.iRes > resBefore.pairedTo.iRes) { //right side
-                boolean rightBulge = resAfter.pairedTo.getNext().pairedTo != null;
-                if (rightBulge) {
-                    add = true;
-                    type = "bulge";
-                }
+            } else if (resBefore.pairedTo.getPrevious() == resAfter.pairedTo) {
+                add = true;
+                type = "bulge";
+            } else {
+                System.out.println("notype");
             }
             if (add) {
                 ssType.addAll(currentSS);
