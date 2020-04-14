@@ -15,6 +15,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.renjin</groupId>
+            <artifactId>studiofx</artifactId>
+            <version>0.1</version>
+        </dependency>
+        <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>processor</artifactId>
             <version>10.3.80</version>
@@ -30,11 +35,6 @@
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
             <version>4.9.2.201712150930-r</version>
-        </dependency>
-        <dependency>
-            <groupId>org.renjin</groupId>
-            <artifactId>studiofx</artifactId>
-            <version>0.1</version>
         </dependency>
         <dependency>
             <groupId>org.jfxplot</groupId>
