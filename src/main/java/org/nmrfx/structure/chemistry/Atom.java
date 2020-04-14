@@ -653,7 +653,7 @@ public class Atom implements IAtom {
         PPMv ppmV = null;
         if (spatialSet == null) {
         } else if (spatialSet != null) {
-            ppmV = spatialSet.getRefPPM();
+            ppmV = spatialSet.getRefPPM(i);
         }
         return ppmV;
     }
@@ -667,13 +667,13 @@ public class Atom implements IAtom {
         }
     }
 
-    public Double getDeltaPPM(int ppmSet) {
+    public Double getDeltaPPM(int ppmSet, int refSet) {
         PPMv ppmV = getPPM(ppmSet);
-        Double ref = getRefPPM();
-        Double sdev = getSDevRefPPM();
+        PPMv refV = getRefPPM(refSet);
         Double delta;
-        if ((ppmV != null) && ppmV.isValid() && (ref != null) && (sdev != null)) {
-            delta = (ppmV.getValue() - ref) / sdev;
+        if ((ppmV != null) && ppmV.isValid() && (refV != null)
+                && refV.isValid()) {
+            delta = (ppmV.getValue() - refV.getValue()) / refV.getError();
             delta = Math.round(delta * 100.0) / 100.0;
         } else {
             delta = null;
@@ -689,6 +689,10 @@ public class Atom implements IAtom {
         spatialSet.setPPM(i, value, false);
     }
 
+    public void setPPMError(int i, double value) {
+        spatialSet.setPPM(i, value, true);
+    }
+
     public void setRefPPM(double value) {
         spatialSet.setRefPPM(0, value);
     }
@@ -699,6 +703,10 @@ public class Atom implements IAtom {
 
     public void setRefError(double value) {
         spatialSet.setRefError(0, value);
+    }
+
+    public void setRefError(int i, double value) {
+        spatialSet.setRefError(i, value);
     }
 
     public void setPPMValidity(int i, boolean validity) {
