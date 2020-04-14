@@ -1133,6 +1133,22 @@ public class Molecule implements Serializable, ITree {
         return maxCount;
     }
 
+    public int getRefPPMSetCount() {
+        Iterator e = getSpatialSetIterator();
+        int maxCount = 1;
+        while (e.hasNext()) {
+            SpatialSet spatialSet = (SpatialSet) e.next();
+            if (spatialSet == null) {
+                continue;
+            }
+            int nSets = spatialSet.getRefPPMSetCount();
+            if (nSets > maxCount) {
+                maxCount = nSets;
+            }
+        }
+        return maxCount;
+    }
+
     public int selectResidues() {
         List<SpatialSet> selected = new ArrayList<>(256);
         TreeSet completedResidues = new TreeSet();
