@@ -50,9 +50,6 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
@@ -61,7 +58,6 @@ import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
@@ -80,13 +76,10 @@ import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.MolFilter;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.PPMv;
-import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.io.MoleculeIOException;
 import org.nmrfx.structure.chemistry.io.PDBFile;
 import org.nmrfx.structure.chemistry.io.PPMFiles;
 import org.nmrfx.structure.chemistry.predict.BMRBStats;
-import org.nmrfx.structure.chemistry.predict.Predictor;
-import org.python.util.PythonInterpreter;
 
 /**
  *
@@ -96,6 +89,7 @@ public class AtomController implements Initializable, FreezeListener {
 
     static final DecimalFormat formatter = new DecimalFormat();
     static Map<String, String> filterMap = new HashMap<>();
+    PredictorSceneController predictorController = null;
 
     static {
         filterMap.put("Backbone", "*.H,N,HN,C,CA,CB");
@@ -131,6 +125,7 @@ public class AtomController implements Initializable, FreezeListener {
     @FXML
     private ToolBar atomReferenceToolBar;
     ChoiceBox<Integer> ppmSetChoice;
+    ChoiceBox<Integer> refSetChoice;
     ObservableList<Atom> atoms = FXCollections.observableArrayList();
 
     Atom currentAtom;
@@ -190,6 +185,10 @@ public class AtomController implements Initializable, FreezeListener {
 
     }
 
+    public void refreshAtomTable() {
+        atomTableView.refresh();
+    }
+
     void initMenuBar() {
         MenuButton fileMenu = new MenuButton("File");
 
@@ -243,26 +242,22 @@ public class AtomController implements Initializable, FreezeListener {
 
         MenuButton predictMenu = new MenuButton("Predict");
         menuBar.getItems().add(predictMenu);
-        MenuItem rnaAttributesItem = new MenuItem("RNA - Attributes");
-        rnaAttributesItem.setOnAction(e -> predictRNAWithAttributes(e));
-        MenuItem rna3DRCItem = new MenuItem("RNA - 3D - RC");
-        rna3DRCItem.setOnAction(e -> predictRNAWithStructure(e, false));
-        MenuItem rna3DDistItem = new MenuItem("RNA - 3D - Dist");
-        rna3DDistItem.setOnAction(e -> predictRNAWithStructure(e, true));
-        MenuItem protein3DItem = new MenuItem("Protein - 3D");
-        protein3DItem.setOnAction(e -> predictProteinWithStructure(e));
-        MenuItem universalItem = new MenuItem("Universal");
-        universalItem.setOnAction(e -> predictAll(e));
-        predictMenu.getItems().addAll(rnaAttributesItem, rna3DRCItem, rna3DDistItem, protein3DItem, universalItem);
+        MenuItem preditorMenuItem = new MenuItem("Predictor");
+        preditorMenuItem.setOnAction(e -> showPredictor());
+        predictMenu.getItems().addAll(preditorMenuItem);
 
         ppmSetChoice = new ChoiceBox();
-        ppmSetChoice.getItems().add(0);
-        ppmSetChoice.getItems().add(1);
-        ppmSetChoice.getItems().add(2);
-        ppmSetChoice.getItems().add(3);
+        refSetChoice = new ChoiceBox();
+        for (int iSet = 0; iSet < 5; iSet++) {
+            ppmSetChoice.getItems().add(iSet);
+            refSetChoice.getItems().add(iSet);
+        }
         ppmSetChoice.setValue(0);
-        menuBar.getItems().addAll(new Label("PPM Set:"), ppmSetChoice);
+        refSetChoice.setValue(0);
+        menuBar.getItems().addAll(new Label("PPM Set:"), ppmSetChoice,
+                new Label("Ref Set:"), refSetChoice);
         ppmSetChoice.setOnAction(e -> atomTableView.refresh());
+        refSetChoice.setOnAction(e -> atomTableView.refresh());
     }
 
     @Override
@@ -275,6 +270,20 @@ public class AtomController implements Initializable, FreezeListener {
             }
             );
         }
+    }
+
+    class DoubleStringConverter4 extends DoubleStringConverter {
+
+        @Override
+        public String toString(Double v) {
+            if (v == null) {
+                return "";
+            } else {
+                return String.format("%.4f", v);
+            }
+
+        }
+
     }
 
     class FloatStringConverter2 extends FloatStringConverter {
@@ -335,8 +344,13 @@ public class AtomController implements Initializable, FreezeListener {
         return ppmSetChoice.getValue();
     }
 
+    int getRefSet() {
+        return refSetChoice.getValue();
+    }
+
     void initTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
+        DoubleStringConverter dsConverter4 = new DoubleStringConverter4();
         FloatStringConverter fsConverter = new FloatStringConverter2();
         atomTableView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
@@ -378,7 +392,6 @@ public class AtomController implements Initializable, FreezeListener {
             return ov;
         });
 
-        ppmCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter));
         ppmCol.setOnEditCommit(
                 (CellEditEvent<Atom, Number> t) -> {
                     Number value = t.getNewValue();
@@ -388,21 +401,49 @@ public class AtomController implements Initializable, FreezeListener {
                     }
                 });
 
+        ppmCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter4));
         ppmCol.setEditable(true);
 
-        TableColumn<Atom, Double> refCol = new TableColumn<>("Ref");
-        refCol.setCellValueFactory(new PropertyValueFactory("RefPPM"));
-        refCol.setCellFactory(tc -> new TextFieldTableCellDouble(dsConverter));
+        TableColumn<Atom, Number> refCol = new TableColumn<>("Ref");
+        refCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
+            Atom atom = p.getValue();
+            int refSet = getRefSet();
+            PPMv ppmVal = atom.getRefPPM(refSet);
+            ObservableValue<Number> ov;
+            if ((ppmVal != null) && ppmVal.isValid()) {
+                ov = new SimpleDoubleProperty(ppmVal.getValue());
+            } else {
+                ov = null;
+            }
+            return ov;
+        });
+
+        refCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter4));
         refCol.setEditable(false);
-        TableColumn<Atom, Double> sdevCol = new TableColumn<>("SDev");
-        sdevCol.setCellValueFactory(new PropertyValueFactory("SDevRefPPM"));
+
+        TableColumn<Atom, Number> sdevCol = new TableColumn<>("SDev");
+        sdevCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
+            Atom atom = p.getValue();
+            int ppmSet = getRefSet();
+            PPMv ppmVal = atom.getRefPPM(ppmSet);
+            ObservableValue<Number> ov;
+            if ((ppmVal != null) && ppmVal.isValid()) {
+                ov = new SimpleDoubleProperty(ppmVal.getError());
+            } else {
+                ov = null;
+            }
+            return ov;
+        });
+
+        sdevCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter4));
         sdevCol.setEditable(false);
-        sdevCol.setCellFactory(tc -> new TextFieldTableCellDouble(dsConverter));
+
         TableColumn<Atom, Number> deltaCol = new TableColumn<>("Delta");
         deltaCol.setCellValueFactory((CellDataFeatures<Atom, Number> p) -> {
             int ppmSet = getPPMSet();
+            int refSet = getRefSet();
             Atom atom = p.getValue();
-            Double delta = atom.getDeltaPPM(ppmSet);
+            Double delta = atom.getDeltaPPM(ppmSet, refSet);
             ObservableValue<Number> ov;
             if (delta != null) {
                 ov = new SimpleDoubleProperty(delta);
@@ -411,6 +452,7 @@ public class AtomController implements Initializable, FreezeListener {
             }
             return ov;
         });
+        deltaCol.setCellFactory(tc -> new TextFieldTableCellNumber(dsConverter4));
 
         deltaCol.setEditable(false);
 
@@ -478,141 +520,13 @@ public class AtomController implements Initializable, FreezeListener {
         }
     }
 
-    @FXML
-    void predictRNAWithAttributes(ActionEvent e) {
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
-            alert.showAndWait();
-        } else {
-            if (molecule.getDotBracket().equals("")) {
-                TextInputDialog textDialog = new TextInputDialog("Enter dot-bracket sequence");
-                Optional<String> result = textDialog.showAndWait();
-                if (result.isPresent()) {
-                    String dotBracket = result.get().trim();
-                    if (dotBracket.equals("")) {
-                        return;
-                    }
-                    molecule.setDotBracket(dotBracket);
-                } else {
-                    return;
-                }
-            }
-            PythonInterpreter interp = AnalystApp.getInterpreter();
-            interp.exec("import rnapred\nrnapred.predictFromSequence()");
-            atomTableView.refresh();
-        }
-    }
-
-    @FXML
-    void predictRNAWithStructure(ActionEvent e, boolean useDist) {
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
-            alert.showAndWait();
-        } else if (molecule.structures.isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule coordinates", ButtonType.CLOSE);
-            alert.showAndWait();
-        } else {
-            try {
-                predictRNA3D(molecule, 0, useDist);
-            } catch (Exception ex) {
-                ExceptionDialog dialog = new ExceptionDialog(ex);
-                dialog.showAndWait();
-            }
-        }
-    }
-
-    @FXML
-    void predictProteinWithStructure(ActionEvent e) {
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
-            alert.showAndWait();
-        } else if (molecule.structures.isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule coordinates", ButtonType.CLOSE);
-            alert.showAndWait();
-        } else {
-            try {
-                predictProtein(molecule, 0);
-            } catch (Exception ex) {
-                ExceptionDialog dialog = new ExceptionDialog(ex);
-                dialog.showAndWait();
-            }
-        }
-        atomTableView.refresh();
-    }
-
-    void predictShiftsWithStructure(boolean isRNA) {
-        Molecule molecule = Molecule.getActive();
-        if (molecule == null) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
-            alert.showAndWait();
-        } else if (molecule.structures.isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule coordinates", ButtonType.CLOSE);
-            alert.showAndWait();
-        } else {
-            try {
-                if (isRNA) {
-                    PythonInterpreter interp = AnalystApp.getInterpreter();
-                    interp.exec("import refine\nrefiner=refine.refine()\nrefiner.predictShifts()");
-                } else {
-                    predictProtein(molecule, 0);
-                }
-            } catch (Exception ex) {
-                ExceptionDialog dialog = new ExceptionDialog(ex);
-                dialog.showAndWait();
-            }
-        }
-        atomTableView.refresh();
-    }
-
-    void predictRNA3D(Molecule molecule, int ppmSet, boolean useDist) throws InvalidMoleculeException {
-        List<Polymer> polymers = molecule.getPolymers();
-        Predictor predictor = new Predictor();
-        for (Polymer polymer : polymers) {
-            if (polymer.isRNA()) {
-                if (useDist) {
-                    predictor.predictRNAWithDistances(polymer, 0, ppmSet, false);
-                } else {
-                    predictor.predictRNAWithRingCurrent(polymer, 0, ppmSet);
-                }
-            }
-        }
-        atomTableView.refresh();
-
-    }
-
-    void predictProtein(Molecule molecule, int ppmSet) throws InvalidMoleculeException, IOException {
-        Predictor predictor = new Predictor();
-        predictor.predictMolecule(molecule, ppmSet);
-
-        atomTableView.refresh();
-
-    }
-
-    @FXML
-    void predictAll(ActionEvent e) {
-        Predictor predictor = new Predictor();
-        Molecule mol = Molecule.getActive();
-        if (mol != null) {
-            try {
-                predictor.predictMolecule(mol, 0);
-            } catch (InvalidMoleculeException | IOException ex) {
-                ExceptionDialog dialog = new ExceptionDialog(ex);
-                dialog.showAndWait();
-            }
-        }
-        atomTableView.refresh();
-
-    }
-
     void clearPPMs() {
+        int ppmSet = ppmSetChoice.getValue();
         Molecule mol = Molecule.getActive();
         if (mol != null) {
             List<Atom> atoms = mol.getAtoms();
             for (Atom atom : atoms) {
-                atom.setPPMValidity(0, false);
+                atom.setPPMValidity(ppmSet, false);
             }
         }
         atomTableView.refresh();
@@ -640,11 +554,12 @@ public class AtomController implements Initializable, FreezeListener {
     }
 
     void clearRefPPMs() {
+        int refSet = refSetChoice.getValue();
         Molecule mol = Molecule.getActive();
         if (mol != null) {
             List<Atom> atoms = mol.getAtoms();
             for (Atom atom : atoms) {
-                PPMv ppmV = atom.getRefPPM(0);
+                PPMv ppmV = atom.getRefPPM(refSet);
                 if (ppmV != null) {
                     ppmV.setValid(false, atom);
                 }
@@ -665,6 +580,18 @@ public class AtomController implements Initializable, FreezeListener {
                 dialog.showAndWait();
             }
             setFilterString("");
+        }
+    }
+
+    private void showPredictor() {
+        if (predictorController == null) {
+            predictorController = PredictorSceneController.create(this);
+        }
+        if (predictorController != null) {
+            predictorController.getStage().show();
+            predictorController.getStage().toFront();
+        } else {
+            System.out.println("Coudn't make predictor controller");
         }
     }
 
