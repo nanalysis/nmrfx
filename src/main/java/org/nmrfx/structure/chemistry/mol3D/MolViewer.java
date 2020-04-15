@@ -543,9 +543,13 @@ public class MolViewer extends Pane {
             if (type.equals("rdc")) {
                 System.out.println("add RDC axes");
                 axes = mol.getRDCAxes(endPts);
+                if (axes == null) {
+                    return;
+                }
                 colors[0] = Color.CORAL;
                 colors[1] = Color.LIGHTGREEN;
                 colors[2] = Color.LIGHTBLUE;
+                scale = 30.0;
 
             } else if (type.equals("svd")) {
                 System.out.println("add SVD axes");
@@ -585,9 +589,9 @@ public class MolViewer extends Pane {
         }
         double[][] rotMat = new double[3][3];
         if (type.equals("rdc")) {
-            rotMat = mol.getRDCRotationMatrix().getData();
+            rotMat = mol.getRDCRotationMatrix(false).getData();
         } else if (type.equals("svd")) {
-            rotMat = mol.getSVDRotationMatrix().getData();
+            rotMat = mol.getSVDRotationMatrix(false).getData();
         }
         double mxx = rotMat[0][0];
         double mxy = rotMat[0][1];
