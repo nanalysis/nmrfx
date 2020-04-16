@@ -88,6 +88,7 @@ public class EnergyLists {
     boolean[] stochasticResidues = null;
     boolean constraintsSetup = false;
     public static double[][][] irpTable;
+    public ArrayList<DistancePairNEF> distanceList2 = new ArrayList<DistancePairNEF>();
 
     public EnergyLists() {
     }
@@ -383,10 +384,10 @@ public class EnergyLists {
 
         ArrayList<Atom> atoms1 = Molecule.getMatchedAtoms(molFilter1, molecule);
         ArrayList<Atom> atoms2 = Molecule.getMatchedAtoms(molFilter2, molecule);
-        
+
         if (atoms1.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString1);
-        }        
+        }
         if (atoms2.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString2);
         }
@@ -448,6 +449,90 @@ public class EnergyLists {
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
         distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false));
+        distanceMap.clear();
+        constraintsSetup = false;
+
+    }
+
+    public void addNEFDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
+            final double rUp, double weight, double targetValue, double targetErr) throws IllegalArgumentException {
+        addNEFDistanceConstraint(filterString1, filterString2, rLow, rUp, false, weight, targetValue, targetErr);
+    }
+
+    public void addNEFDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
+            final double rUp, boolean isBond, double weight,
+            double targetValue, double targetErr) throws IllegalArgumentException {
+        MolFilter molFilter1 = new MolFilter(filterString1);
+        MolFilter molFilter2 = new MolFilter(filterString2);
+
+        ArrayList<Atom> atoms1 = Molecule.getMatchedAtoms(molFilter1, molecule);
+        ArrayList<Atom> atoms2 = Molecule.getMatchedAtoms(molFilter2, molecule);
+
+        if (atoms1.size() == 0) {
+            throw new IllegalArgumentException("atom null " + filterString1);
+        }
+        if (atoms2.size() == 0) {
+            throw new IllegalArgumentException("atom null " + filterString2);
+        }
+
+        ArrayList<Atom> atoms1m = new ArrayList<>();
+        ArrayList<Atom> atoms2m = new ArrayList<>();
+
+        for (Atom atom1 : atoms1) {
+            for (Atom atom2 : atoms2) {
+                atoms1m.add(atom1);
+                atoms2m.add(atom2);
+            }
+        }
+
+        Atom[] atomsA1 = new Atom[atoms1m.size()];
+        Atom[] atomsA2 = new Atom[atoms2m.size()];
+        atoms1m.toArray(atomsA1);
+        atoms2m.toArray(atomsA2);
+        distanceList2.add(new DistancePairNEF(atomsA1, atomsA2, rLow, rUp, isBond, weight, targetValue, targetErr));
+        distanceMap.clear();
+        constraintsSetup = false;
+    }
+
+    public void addNEFDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
+            final double rLow, final double rUp, double weight,
+            double targetValue, double targetErr) throws IllegalArgumentException {
+        if (filterStrings1.size() != filterStrings2.size()) {
+            throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
+        }
+        ArrayList<Atom> atoms1m = new ArrayList<>();
+        ArrayList<Atom> atoms2m = new ArrayList<>();
+        for (int i = 0; i < filterStrings1.size(); i++) {
+            String filterString1 = filterStrings1.get(i);
+            String filterString2 = filterStrings2.get(i);
+            MolFilter molFilter1 = new MolFilter(filterString1);
+            MolFilter molFilter2 = new MolFilter(filterString2);
+
+            List<Atom> group1 = Molecule.getNEFMatchedAtoms(molFilter1, molecule);
+            List<Atom> group2 = Molecule.getNEFMatchedAtoms(molFilter2, molecule);
+
+            if (group1.size() == 0) {
+                throw new IllegalArgumentException("atoms1 null " + filterString1);
+            }
+            if (group2.size() == 0) {
+                throw new IllegalArgumentException("atoms2 null " + filterString2);
+            }
+
+            for (Atom atom1 : group1) {
+                for (Atom atom2 : group2) {
+                    atoms1m.add(atom1);
+                    atoms2m.add(atom2);
+                }
+            }
+        }
+        Atom[] atomsA1 = new Atom[atoms1m.size()];
+        Atom[] atomsA2 = new Atom[atoms2m.size()];
+        if (atoms1m.size() != atoms2m.size()) {
+            throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
+        }
+        atoms1m.toArray(atomsA1);
+        atoms2m.toArray(atomsA2);
+        distanceList2.add(new DistancePairNEF(atomsA1, atomsA2, rLow, rUp, false, weight, targetValue, targetErr));
         distanceMap.clear();
         constraintsSetup = false;
 
@@ -1607,7 +1692,7 @@ public class EnergyLists {
     }
 
     public void makeAtomListFast() {
-       // molecule.updateVecCoords();
+        // molecule.updateVecCoords();
         EnergyCoords eCoords = molecule.getEnergyCoords();
         if (!eCoords.fixedCurrent()) {
             if (molecule.getDihedrals() == null) {
