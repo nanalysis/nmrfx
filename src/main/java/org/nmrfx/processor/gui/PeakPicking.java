@@ -133,7 +133,11 @@ public class PeakPicking {
                 double pos = iDim == 0 ? x : y;
                 peakPickPar.limit(jDim, pos, pos);
             } else {
-                peakPickPar.limit(jDim, (int) chart.axes[iDim].getLowerBound(), (int) chart.axes[iDim].getUpperBound());
+                if (chart.axModes[iDim] == DatasetAttributes.AXMODE.PTS) {
+                    peakPickPar.limit(jDim, (int) chart.axes[iDim].getLowerBound(), (int) chart.axes[iDim].getUpperBound());
+                } else {
+                    peakPickPar.limit(jDim, chart.axes[iDim].getLowerBound(), chart.axes[iDim].getUpperBound());
+                }
             }
         }
         PeakPicker picker = new PeakPicker(peakPickPar);
