@@ -1507,6 +1507,12 @@ public class PolyChart implements PeakListener {
         processorController.propertyManager.clearBaselineRegions();
     }
 
+    public void clearDataAndPeaks() {
+        datasetAttributesList.clear();
+        peakListAttributesList.clear();
+        refresh();
+    }
+
     public void updateDatasets(List<String> targets) {
         ObservableList<DatasetAttributes> datasetAttrs = getDatasetAttributes();
         List<DatasetAttributes> newList = new ArrayList<>();
