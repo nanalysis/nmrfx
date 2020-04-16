@@ -14,10 +14,10 @@ import org.nmrfx.structure.chemistry.io.NMRNEFWriter;
  * @author Martha
  */
 public class NEFFileTest {
-    
-    String fileName = "C:/Users/Martha/Desktop/ASRC/PDBStats_NEW/PDBStats_NEW/1pqx/1pqx.nef";
-    String outFile = "C:/Users/Martha/Desktop/ASRC/1pqx_nef_outTest.txt";
-    
+
+    String fileName = "/home/mbeckwith/Desktop/1pqx.nef";
+    String outFile = "/home/mbeckwith/Desktop/1pqx_nef_outTest.txt";
+
 //    @Test
 //    public void readNEF() {  
 //        try {
@@ -27,16 +27,15 @@ public class NEFFileTest {
 //        }
 //        
 //    }
-    
     @Test
-    public void writeNEF() {  
+    public void writeNEF() {
         try {
             NMRNEFReader.read(fileName);
             NMRNEFWriter.writeAll(outFile);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        
+
     }
-   
+
 }
