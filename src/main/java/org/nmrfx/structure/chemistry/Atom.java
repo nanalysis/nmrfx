@@ -1126,6 +1126,114 @@ public class Atom implements IAtom {
         return (sBuilder.toString());
     }
 
+    public String toNEFSequenceString(Atom atom, String link) {
+        StringBuilder result = new StringBuilder();
+        String sep = "    ";
+        String sepN = "   ";
+
+        Entity entity = atom.getEntity();
+        int number = 1;
+        char chainID = ' ';
+        if (entity instanceof Residue) {
+            number = entity.getIDNum();
+            String polymerName = ((Residue) atom.entity).polymer.getName();
+            chainID = polymerName.charAt(0);
+        }
+        String resName = ((Compound) atom.entity).name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+
+        if (number < 10) {
+            sepN = "   ";
+        } else if (number >= 10 && number < 100) {
+            sepN = "  ";
+        } else if (number >= 100 && number < 1000) {
+            sepN = " ";
+        }
+
+        //  index
+        result.append(sep);
+        result.append(sepN);
+        result.append(number);
+        result.append(sep);
+        //  chain code
+        result.append(sep);
+        result.append(chainID);
+        result.append(sep);
+        result.append(sepN);
+        //  sequence code
+        result.append(number);
+        result.append(sep);
+        result.append("   ");
+        //  residue name
+        result.append(String.format("%3s", resName));
+        result.append(" ");
+        //  linking 
+        result.append(link);
+        result.append(sep);
+        result.append(sep);
+        result.append(" ");
+        //residue variant
+        result.append(".");
+        result.append(sep);
+        result.append(sep);
+        result.append("   ");
+
+        return result.toString();
+    }
+
+    public String ppmToNEFString(int iStruct, int iAtom) {
+        return ppmToNEFString(spatialSet, iStruct, iAtom);
+    }
+
+    public String ppmToNEFString(SpatialSet spatialSet,
+            int iStruct, int iAtom) {
+        PPMv ppmv = spatialSet.getPPM(iStruct);
+
+        if (ppmv == null) {
+            return null;
+        }
+
+        StringBuilder sBuilder = new StringBuilder();
+        String sep = "\t\t ";
+        if (entity instanceof Residue) {
+            String polymerName = ((Residue) entity).polymer.getName();
+            char chainID = polymerName.charAt(0);
+            //  chain code
+            sBuilder.append(sep);
+            sBuilder.append(chainID);
+            sBuilder.append(sep);
+
+            // sequence code
+            sBuilder.append(((Residue) entity).getIDNum());
+            sBuilder.append(sep);
+
+            // residue name
+            sBuilder.append(((Residue) entity).name);
+            sBuilder.append(sep);
+
+            // atom name
+            sBuilder.append(name);
+            sBuilder.append(sep);
+
+            // value
+            if (((Residue) entity).getIDNum() == 1 && spatialSet.getFullName().contains("H")) {
+                System.out.println("writer Atom.ppmToNEFString: " + spatialSet.getFullName() + " " + ppmv.getValue());
+            }
+            sBuilder.append(ppmv.getValue());
+            sBuilder.append(sep);
+
+            // value uncertainty
+            sBuilder.append(ppmv.getError());
+            sBuilder.append(sep);
+
+//            System.out.println("wrote " + ((Residue) entity).getIDNum() + " " + name + " " + ppmv.getValue());
+        }
+
+        return (sBuilder.toString());
+    }
+
     public String xyzToXMLString(int iStruct, int iAtom) {
         return xyzToXMLString(spatialSet, iStruct, iAtom);
     }

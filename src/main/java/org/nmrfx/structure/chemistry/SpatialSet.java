@@ -364,6 +364,9 @@ public class SpatialSet {
                 }
                 spSet.atom.changed();
             }
+            if (atom.entity.getIDNum() == 1 && atom.name.contains("H")) {
+                System.out.println("reader spSet setPPM: " + atom.name + " " + ppmv.getValue());
+            }
         }
     }
 
@@ -450,7 +453,6 @@ public class SpatialSet {
 //                                                                               ** charge          X
 // ATOM      1  N   TYR A 104      23.779   2.277  46.922  1.00 16.26           N                   X
 // TER    1272      HIS A  80                                                      
-
     public String toPDBString(int iAtom, int structureNum) {
         Point3 pt = getPoint(structureNum);
         if (pt == null) {
