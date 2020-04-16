@@ -1757,8 +1757,10 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
                         nucScaleY = dataAttr.getDataset().getNucleus(dataAttr.getDim(1)).getFreqRatio();
                     }
                 }
-                bordersGrid[4][iCol] = Math.max(bordersGrid[4][iCol], Math.abs(ppmX0 - ppmX1)) * nucScaleX;
-                bordersGrid[5][iRow] = Math.max(bordersGrid[5][iRow], Math.abs(ppmY0 - ppmY1)) * nucScaleY;
+                if (!chart.getDatasetAttributes().isEmpty()) {
+                    bordersGrid[4][iCol] = Math.max(bordersGrid[4][iCol], Math.abs(ppmX0 - ppmX1)) * nucScaleX;
+                    bordersGrid[5][iRow] = Math.max(bordersGrid[5][iRow], Math.abs(ppmY0 - ppmY1)) * nucScaleY;
+                }
             } else {
                 bordersGrid[4][iCol] = 100.0;
                 bordersGrid[5][iRow] = 100.0;
