@@ -671,39 +671,6 @@ def getType(types, row, dDir):
     return ""
 
      */
-    Optional<String> getTypeName(List<Map<String, Object>> typeList, String row, String dDir) {
-        Optional<String> typeName = Optional.empty();
-        dDir = dDir.replace("h", "i");
-        dDir = dDir.replace("j", "i");
-        dDir = dDir.replace("k", "i");
-        for (Map<String, Object> typeMap : typeList) {
-            String typeRow = (String) typeMap.get("row");
-            String typeDir = (String) typeMap.get("dir");
-            if (row.equals(typeRow) && dDir.equals(typeDir)) {
-                typeName = Optional.of((String) typeMap.get("name"));
-                break;
-            }
-        }
-        return typeName;
-    }
-
-    List<String> getPatterns(List<Map<String, Object>> typeList, String row, String dDir) {
-        Optional<String> typeName = Optional.empty();
-        dDir = dDir.replace("h", "i");
-        dDir = dDir.replace("j", "i");
-        dDir = dDir.replace("k", "i");
-        List<String> patElems = new ArrayList<>();
-        for (Map<String, Object> typeMap : typeList) {
-            String typeRow = (String) typeMap.get("row");
-            String typeDir = (String) typeMap.get("dir");
-            if (row.equals(typeRow) && dDir.equals(typeDir)) {
-                patElems = (List<String>) typeMap.get("patterns");
-                break;
-            }
-        }
-        return patElems;
-    }
-
     List<List<String>> getAtomsFromPatterns(List<String> patElems) {
         List<List<String>> allAtomPats = new ArrayList<>();
         for (int i = 0; i < patElems.size(); i++) {
@@ -715,7 +682,7 @@ def getType(types, row, dDir):
             for (String atomPat : atomPats) {
                 if (atomPat.endsWith("-") || atomPat.endsWith("+")) {
                     int len = atomPat.length();
-                    atomPat = atomPat.substring(0,len - 1);
+                    atomPat = atomPat.substring(0, len - 1);
                 }
                 atomPatList.add(atomPat.toUpperCase());
             }
@@ -729,30 +696,6 @@ def getType(types, row, dDir):
             dName = Optional.of(typeMap.get(typeName));
         }
         return dName;
-    }
-
-    int[] getIDims(String datasetName, List<String> dims) {
-        Dataset dataset = Dataset.getDataset(datasetName);
-        int nDim = dataset.getNDim();
-        int[] iDims = new int[dims.size()];
-        int j = 0;
-        for (String dim : dims) {
-            String dimName;
-            int sepPos = dim.indexOf("_");
-            if (sepPos != -1) {
-                dimName = dim.substring(0, sepPos);
-            } else {
-                dimName = dim;
-            }
-            for (int iDim = 0; iDim < nDim; iDim++) {
-                // fixme need more sophisticated test of label match
-                if (dimName.charAt(0) == dataset.getLabel(iDim).charAt(0)) {
-                    iDims[j] = iDim;
-                }
-            }
-            j++;
-        }
-        return iDims;
     }
 
     Double[] getDimWidth(List<String> dims) {
@@ -774,21 +717,14 @@ def getType(types, row, dDir):
     }
 
     void genWin(String arrangeName) {
-        Map<String, Object> yamlData = runAbout.getYamlData();
-        if (yamlData == null) {
-
-        } else {
-            Map<String, Map<String, List<String>>> arrange = (Map<String, Map<String, List<String>>>) yamlData.get("arrangements");
-            Map<String, List<String>> rowCols = arrange.get(arrangeName);
+        if (runAbout.isActive()) {
+            Map<String, List<String>> rowCols = runAbout.getArrangements().get(arrangeName);
             List<String> rows = rowCols.get("rows");
             List<String> cols = rowCols.get("cols");
             int nCharts = rows.size() * cols.size();
             controller.setNCharts(nCharts);
             controller.arrange(rows.size());
             List<PolyChart> charts = controller.getCharts();
-            List<Map<String, Object>> typeList = (List<Map<String, Object>>) yamlData.get("types");
-            Map<String, String> datasetMap = (Map<String, String>) yamlData.get("datasets");
-            Map<String, List<String>> dimLabels = (Map<String, List<String>>) yamlData.get("dims");
             widths = new Double[nCharts][];
             minOffset = 0;
             resOffsets = new int[cols.size()];
@@ -799,45 +735,43 @@ def getType(types, row, dDir):
                 String[] colElems = col.split("\\.");
                 char resChar = colElems[0].charAt(0);
                 int del = resChar - 'i';
-                System.out.println("col " + col + " " + del);
                 intraResidue[iCol] = !colElems[0].endsWith("-1");
                 resOffsets[iCol++] = del;
                 minOffset = Math.min(del, minOffset);
             }
-            System.out.println(datasetMap);
             int iChart = 0;
             winPatterns.clear();
             for (String row : rows) {
                 for (String col : cols) {
-                    System.out.println("row " + row + " col " + col);
+                    PolyChart chart = charts.get(iChart);
+                    chart.clearDataAndPeaks();
                     String[] colElems = col.split("\\.");
-                    Optional<String> typeName = getTypeName(typeList, row, colElems[0]);
-                    winPatterns.add(getPatterns(typeList, row, colElems[0]));
-                    List<String> dimNames = dimLabels.get(colElems[1]);
+                    Optional<String> typeName = runAbout.getTypeName(row, colElems[0]);
+                    winPatterns.add(runAbout.getPatterns(row, colElems[0]));
+                    List<String> dimNames = runAbout.getDimLabel(colElems[1]);
+                    System.out.println(typeName);
                     if (typeName.isPresent()) {
-                        Optional<String> dName = getDatasetName(datasetMap, typeName.get());
-                        System.out.println("type " + typeName + " " + dName);
-                        if (dName.isPresent()) {
-                            Dataset dataset = Dataset.getDataset(dName.get());
-                            if (dataset != null) {
-                                List<String> datasets = Collections.singletonList(dName.get());
-                                PolyChart chart = charts.get(iChart);
-                                chart.setActiveChart();
-                                System.out.println("add " + dName.get() + " " + chart);
-                                chart.updateDatasets(datasets);
-                                System.out.println("nda " + chart.getDatasetAttributes().size());
-                                DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
-                                int[] iDims = getIDims(dName.get(), dimNames);
-                                widths[iChart] = getDimWidth(dimNames);
-                                for (int id = 0; id < widths[iChart].length; id++) {
-                                    System.out.println(id + " " + widths[iChart][id]);
-                                }
-                                dataAttr.setDims(iDims);
-                                PeakList peakList = PeakList.getPeakListForDataset(dName.get());
-                                if (peakList != null) {
-                                    List<String> peakLists = Collections.singletonList(peakList.getName());
-                                    chart.updatePeakLists(peakLists);
-                                }
+
+                        Optional<Dataset> datasetOpt = runAbout.getDataset(typeName.get());
+                        System.out.println(datasetOpt);
+                        if (datasetOpt.isPresent()) {
+                            Dataset dataset = datasetOpt.get();
+                            PeakList peakList = runAbout.getPeakList(typeName.get());
+                            String dName = dataset.getName();
+                            List<String> datasets = Collections.singletonList(dName);
+                            chart.setActiveChart();
+                            chart.updateDatasets(datasets);
+                            DatasetAttributes dataAttr = chart.getDatasetAttributes().get(0);
+
+                            int[] iDims = runAbout.getIDims(dataset, typeName.get(), dimNames);
+                            widths[iChart] = getDimWidth(dimNames);
+                            for (int id = 0; id < widths[iChart].length; id++) {
+                                System.out.println(id + " " + widths[iChart][id]);
+                            }
+                            dataAttr.setDims(iDims);
+                            if (peakList != null) {
+                                List<String> peakLists = Collections.singletonList(peakList.getName());
+                                chart.updatePeakLists(peakLists);
                             }
                         }
                     }
