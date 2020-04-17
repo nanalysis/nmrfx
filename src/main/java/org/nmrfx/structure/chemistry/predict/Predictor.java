@@ -260,12 +260,12 @@ public class Predictor {
         }
     }
 
-    public void predictRNAWithAttributes() {
+    public void predictRNAWithAttributes(int ppmSet) {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             if (!molecule.getDotBracket().equals("")) {
                 PythonInterpreter interp = new PythonInterpreter();
-                interp.exec("import rnapred\nrnapred.predictFromSequence()");
+                interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
             }
         }
     }
@@ -285,7 +285,11 @@ public class Predictor {
                 double basePPM = RNA_REF_SHIFTS.get(nucName + "." + aName);
                 double ringPPM = ringShifts.calcRingContributions(atom.getSpatialSet(), iStruct, ringRatio);
                 double ppm = basePPM + ringPPM;
-                atom.setRefPPM(iRef, ppm);
+                if (iRef < 0) {
+                    atom.setRefPPM(-iRef - 1, ppm);
+                } else {
+                    atom.setPPM(iRef, ppm);
+                }
             }
         }
     }
@@ -304,7 +308,11 @@ public class Predictor {
             if (ppmV != null) {
                 double basePPM = ppmV.getValue();
                 double ppm = basePPM + ringPPM;
-                atom.setRefPPM(iRef, ppm);
+                if (iRef < 0) {
+                    atom.setRefPPM(-iRef - 1, ppm);
+                } else {
+                    atom.setPPM(iRef, ppm);
+                }
             }
         }
     }
@@ -386,7 +394,11 @@ public class Predictor {
                             distPPM += shiftContrib;
                         }
                         double ppm = basePPM + distPPM;
-                        atom.setRefPPM(iRef, ppm);
+                        if (iRef < 0) {
+                            atom.setRefPPM(-iRef - 1, ppm);
+                        } else {
+                            atom.setPPM(iRef, ppm);
+                        }
                     }
                 }
             }
@@ -430,7 +442,11 @@ public class Predictor {
                     double shift = hoseStat.dStat.getPercentile(50);
                     shift = Math.round(shift * roundScale) / roundScale;
                     System.out.println(atom.getShortName() + " " + predResult.getShell() + " " + shift);
-                    atom.setRefPPM(iRef, shift);
+                    if (iRef < 0) {
+                        atom.setRefPPM(-iRef - 1, shift);
+                    } else {
+                        atom.setPPM(iRef, shift);
+                    }
                 }
             }
         }

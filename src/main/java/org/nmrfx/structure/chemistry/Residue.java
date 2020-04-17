@@ -660,5 +660,15 @@ public class Residue extends Compound {
         }
         return 0;
     }
+    
+    public String getSSType() {
+        String type;
+        if (secStruct != null) {
+            type = secStruct.getName();
+        } else {
+            type = "";
+        }
+        return type;
+    }
 
 }

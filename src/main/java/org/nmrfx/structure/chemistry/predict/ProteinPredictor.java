@@ -25,9 +25,9 @@ public class ProteinPredictor {
     static final Set<String> atomTypes = new HashSet<>();
 
     static {
-        Collections.addAll(atomTypes, "MHB", "MHG", "MHD","MHE", "MCB",
-                "MCG", "MCD","MCE", "C", "CA", "CB", "N", "H", "HA", "HB", "HG", "HD",
-                "HE", "HZ", "CG", "CD", "CE","CZ");
+        Collections.addAll(atomTypes, "MHB", "MHG", "MHD", "MHE", "MCB",
+                "MCG", "MCD", "MCE", "C", "CA", "CB", "N", "H", "HA", "HB", "HG", "HD",
+                "HE", "HZ", "CG", "CD", "CE", "CZ");
     }
     PropertyGenerator propertyGenerator;
     Map<String, Integer> aaMap = new HashMap<>();
@@ -165,9 +165,15 @@ public class ProteinPredictor {
                                         coefs, minMax, reportAtom != null);
                         double value = predResult.ppm;
                         value = Math.round(value * 100) / 100.0;
-                        atom.setRefPPM(iRef, value);
                         double rms = getRMS(atomType);
-                        atom.setRefError(rms);
+                        if (iRef < 0) {
+                            atom.setRefPPM(-iRef - 1, value);
+                            atom.setRefError(-iRef - 1, rms);
+                        } else {
+                            atom.setPPM(iRef, value);
+                            atom.setPPMError(iRef, rms);
+                        }
+
                         if ((reportAtom != null) && atom.getFullName().equals(reportAtom)) {
                             dumpResult(predResult);
                         }

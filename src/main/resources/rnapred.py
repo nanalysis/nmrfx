@@ -353,7 +353,7 @@ def getFullSequence(molecule):
             seqList.append(polymer.getName() + ':' + residue.getName() + residue.getNumber())
     return seqList
 
-def setPredictions(molecule, predPPMs, refMode=True):
+def setPredictions(molecule, predPPMs, ppmSet=-1):
     molecule.updateAtomArray()
     for atomName in predPPMs:
         ppm,errorVal = predPPMs[atomName]
@@ -362,12 +362,12 @@ def setPredictions(molecule, predPPMs, refMode=True):
             if atomName[-2] == 'p':
                 atomName = atomName[0:-2] + "''"
         atom = Molecule.getAtomByName(atomName)
-        if refMode:
-            atom.setRefPPM(ppm)
-            atom.setRefError(errorVal)
+        if ppmSet < 0:
+            atom.setRefPPM(-ppmSet - 1, ppm)
+            atom.setRefError(-ppmSet - 1, errorVal)
         else:
-            atom.setPPM(ppm)
-
+            atom.setPPM(ppmSet, ppm)
+            atom.setPPMError(ppmSet, ppm)
 
 def dumpPredictions(molecule, refMode=True):
     polymers = molecule.getPolymers()
@@ -390,7 +390,7 @@ def dumpPredictions(molecule, refMode=True):
                              name = atom.getShortName()
                          print "%s %.2f %s %s" % (name,ppmV.getValue(),RNAAttributes.getStats(atom),RNAAttributes.get(atom))
 
-def predictFromSequence(molecule = None, vienna = None):
+def predictFromSequence(molecule = None, vienna = None, ppmSet=-1):
     if molecule == None:
         molecule = Molecule.getActive()
     if vienna == None:
@@ -399,7 +399,7 @@ def predictFromSequence(molecule = None, vienna = None):
     seqList = getFullSequence(molecule)
     outLines = genRNAData(seqList, pairs)
     predPPMs = predictFromAttr(seqList, outLines)
-    setPredictions(molecule, predPPMs)
+    setPredictions(molecule, predPPMs, ppmSet)
 
 def predictRCShifts(mol, structureNum=0, refShifts=None, ringRatio=None, ringTypes=None):
     defaultRefShifts = {

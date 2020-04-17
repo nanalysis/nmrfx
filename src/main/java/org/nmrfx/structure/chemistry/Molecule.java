@@ -1133,6 +1133,22 @@ public class Molecule implements Serializable, ITree {
         return maxCount;
     }
 
+    public int getRefPPMSetCount() {
+        Iterator e = getSpatialSetIterator();
+        int maxCount = 1;
+        while (e.hasNext()) {
+            SpatialSet spatialSet = (SpatialSet) e.next();
+            if (spatialSet == null) {
+                continue;
+            }
+            int nSets = spatialSet.getRefPPMSetCount();
+            if (nSets > maxCount) {
+                maxCount = nSets;
+            }
+        }
+        return maxCount;
+    }
+
     public int selectResidues() {
         List<SpatialSet> selected = new ArrayList<>(256);
         TreeSet completedResidues = new TreeSet();
@@ -1897,7 +1913,7 @@ public class Molecule implements Serializable, ITree {
      * @return RealMatrix coordinates of the rotated axes
      */
     public RealMatrix calcSVDAxes(double[][] inputAxes) {
-        RealMatrix rotMat = getSVDRotationMatrix();
+        RealMatrix rotMat = getSVDRotationMatrix(true);
         RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
         RealMatrix axes = rotMat.multiply(inputAxesM);
 
@@ -1912,20 +1928,43 @@ public class Molecule implements Serializable, ITree {
      * @return RealMatrix coordinates of the rotated axes
      */
     public RealMatrix getRDCAxes(double[][] inputAxes) {
-        RealMatrix rotMat = getRDCRotationMatrix();
-        RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
-        RealMatrix axes = rotMat.multiply(inputAxesM);
-
-        return axes;
+        RealMatrix rotMat = getRDCRotationMatrix(true);
+        if (rotMat == null) {
+            return null;
+        } else {
+            RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
+            RealMatrix axes = rotMat.multiply(inputAxesM);
+            return axes;
+        }
     }
 
-    public RealMatrix getRDCRotationMatrix() {
-        EigenDecomposition rdcEig = rdcResults.getEig();
-        RealMatrix rotMat = rdcEig.getVT();
-        return rotMat;
+    public RealMatrix getRDCRotationMatrix(boolean scaleMat) {
+        if (rdcResults == null) {
+            return null;
+        } else {
+            EigenDecomposition rdcEig = rdcResults.getEig();
+            double[] eigValues = rdcEig.getRealEigenvalues();
+            double maxEig = Double.NEGATIVE_INFINITY;
+            for (int i = 0; i < 3; i++) {
+                if (Math.abs(eigValues[i]) > maxEig) {
+                    maxEig = Math.abs(eigValues[i]);
+                }
+            }
+
+            RealMatrix rotMat = rdcEig.getVT().copy();
+            if (scaleMat) {
+                for (int i = 0; i < 3; i++) {
+                    double scale = eigValues[i] / maxEig;
+                    rotMat.setEntry(i, 0, rotMat.getEntry(i, 0) * scale);
+                    rotMat.setEntry(i, 1, rotMat.getEntry(i, 1) * scale);
+                    rotMat.setEntry(i, 2, rotMat.getEntry(i, 2) * scale);
+                }
+            }
+            return rotMat;
+        }
     }
 
-    public RealMatrix getSVDRotationMatrix() {
+    public RealMatrix getSVDRotationMatrix(boolean scaleMat) {
         Point3 pt;
         double[] c = new double[3];
         try {
@@ -1963,7 +2002,9 @@ public class Molecule implements Serializable, ITree {
         for (int i = 0; i < s.length; i++) {
             sMat.setEntry(i, i, sMat.getEntry(i, i) * maxX);
         }
-        rotMat = rotMat.preMultiply(sMat);
+        if (scaleMat) {
+            rotMat = rotMat.preMultiply(sMat);
+        }
         return rotMat;
     }
 
