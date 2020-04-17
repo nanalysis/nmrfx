@@ -36,7 +36,7 @@ public class SpatialSet {
     private Point3 pt = null;
     public ArrayList<Point3> points;
     public Vector ppms;
-    public PPMv refPPMV = null;
+    public List<PPMv> refPPMVs = null;
     public boolean[] properties;
     public float occupancy = 1.0f;
     public float bfactor = 1.0f;
@@ -256,31 +256,53 @@ public class SpatialSet {
     }
 
     public PPMv getRefPPM() {
-        if ((refPPMV != null) && refPPMV.isValid()) {
-            return (refPPMV);
+        return getRefPPM(0);
+    }
+
+    public PPMv getRefPPM(int ppmSet) {
+        PPMv refPPMv = null;
+        if ((refPPMVs != null) && (refPPMVs.size() > ppmSet)) {
+            refPPMv = refPPMVs.get(ppmSet);
+        }
+        if ((refPPMv != null) && refPPMv.isValid()) {
+            return (refPPMv);
         } else {
             return (null);
         }
     }
 
     public void setRefPPM(int structureNum, double value) {
+        if (refPPMVs == null) {
+            refPPMVs = new ArrayList<>();
+        }
+        if (refPPMVs.size() <= structureNum) {
+            for (int i = 0; i <= structureNum; i++) {
+                refPPMVs.add(null);
+            }
+        }
+        PPMv refPPMV = refPPMVs.get(structureNum);
         if (refPPMV == null) {
             refPPMV = new PPMv(value);
         } else {
             refPPMV.setValue(value);
         }
         refPPMV.setValid(true, atom);
+        refPPMVs.set(structureNum, refPPMV);
     }
 
     public void setRefError(int structureNum, double value) {
+        PPMv refPPMV = getRefPPM(structureNum);
         if (refPPMV != null) {
             refPPMV.setError(value);
         }
+
     }
 
     public void setRefPPMValidity(boolean validity) {
+        PPMv refPPMV = getRefPPM(0);
         if (refPPMV == null) {
-            refPPMV = new PPMv(0.0);
+            setRefPPM(0, 0.0);
+            refPPMV = getRefPPM(0);
         }
         refPPMV.setValid(validity, atom);
     }
@@ -289,6 +311,17 @@ public class SpatialSet {
         int last = 0;
         for (int i = 0; i < ppms.size(); i++) {
             PPMv ppmv = (PPMv) ppms.elementAt(i);
+            if ((ppmv != null) && ppmv.isValid()) {
+                last = i;
+            }
+        }
+        return last + 1;
+    }
+
+    public int getRefPPMSetCount() {
+        int last = 0;
+        for (int i = 0; i < refPPMVs.size(); i++) {
+            PPMv ppmv = (PPMv) refPPMVs.get(i);
             if ((ppmv != null) && ppmv.isValid()) {
                 last = i;
             }

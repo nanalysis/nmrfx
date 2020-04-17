@@ -1632,14 +1632,15 @@ class refine:
             if ((i+1) < nRes):
                 resINext = strandI[i+1]
                 resJPrev = strandJ[i+1]
-                self.addStackPair(resI, resINext)
-                self.addStackPair(resJPrev, resJ)
-                resJName = resJ.getName()
-                if (resJName == "A"):
-                    resINext = strandI[i+1]
-                    atomNameI = self.getAtomName(resINext,"H1'")
-                    atomNameJ = self.getAtomName(resJ,"H2")
-                    self.energyLists.addDistanceConstraint(atomNameI, atomNameJ, 1.8, 5.0)
+                #  make sure we're not in bulge before adding stack
+                if resINext.getPrevious() == resI and resJPrev.getNext() == resJ:
+                    self.addStackPair(resI, resINext)
+                    self.addStackPair(resJPrev, resJ)
+                    resJName = resJ.getName()
+                    if (resJName == "A"):
+                        atomNameI = self.getAtomName(resINext,"H1'")
+                        atomNameJ = self.getAtomName(resJ,"H2")
+                        self.energyLists.addDistanceConstraint(atomNameI, atomNameJ, 1.8, 5.0)
 
 
     def addHelixPP(self, helixResidues):
