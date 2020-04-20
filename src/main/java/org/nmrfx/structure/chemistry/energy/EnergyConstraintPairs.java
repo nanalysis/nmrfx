@@ -334,7 +334,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         return stat;
     }
 
-    public void dumpRestraints() {
+    public void dumpRestraints(String fileName) {
         DecimalFormat doubFormatter = new DecimalFormat("#.0");
         ArrayList<String[]> groupLineElements = new ArrayList<>();
         String prevGroup = "";
@@ -342,7 +342,7 @@ public class EnergyConstraintPairs extends EnergyDistancePairs {
         String prevJAtom = "";
         Atom[] atoms = eCoords.atoms;
         try {
-            FileWriter writerFile = new FileWriter("nmrfxsRestraints.txt");
+            FileWriter writerFile = new FileWriter(fileName);
             for (int i = 0; i < nPairs; i++) {
                 String iIndex = Integer.toString(i);
                 String iGroup = Integer.toString(iGroups[i]);

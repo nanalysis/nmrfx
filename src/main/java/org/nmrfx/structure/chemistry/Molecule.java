@@ -2574,7 +2574,7 @@ public class Molecule implements Serializable, ITree {
         return bpList;
     }
 
-    public HashMap<Integer, List<BasePair>> bpMap() {
+    public HashMap<Integer, List<BasePair>> allBasePairsMap() {
         HashMap<Integer, List<BasePair>> bpMap = new HashMap<Integer, List<BasePair>>();
         BasePair currentBp = null;
         int i = 0;
@@ -2603,7 +2603,7 @@ public class Molecule implements Serializable, ITree {
     }
 
     public char[] getViennaSequence() { //pseudoknots
-        HashMap<Integer, List<BasePair>> bpMap = bpMap();
+        HashMap<Integer, List<BasePair>> allBpMap = allBasePairsMap();
         List<BasePair> bps = pairList();
         List<Residue> RNAresidues = RNAresidues();
         char[] vienna = new char[RNAresidues.size()];
@@ -2616,8 +2616,8 @@ public class Molecule implements Serializable, ITree {
             vienna[bp.res1.iRes] = '(';
             vienna[bp.res2.iRes] = ')';
         }
-        if (!bpMap.isEmpty()) {
-            for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
+        if (!allBpMap.isEmpty()) {
+            for (Map.Entry<Integer, List<BasePair>> crossMap : allBpMap.entrySet()) {
                 for (BasePair bp : crossMap.getValue()) {
                     vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
                     vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
@@ -2629,7 +2629,7 @@ public class Molecule implements Serializable, ITree {
     }
 
     public char[] testViennaSequence() { //for testing
-        HashMap<Integer, List<BasePair>> bpMap = bpMap();
+        HashMap<Integer, List<BasePair>> bpMap = allBasePairsMap();
         List<Residue> RNAresidues = RNAresidues();
         char[] vienna = new char[RNAresidues.size()];
         String leftBrackets = "[{";
@@ -4467,13 +4467,15 @@ public class Molecule implements Serializable, ITree {
             ArrayList<Atom> bondList = new ArrayList<Atom>();
             StringBuilder outString = new StringBuilder();
             ArrayList<Integer> iAtoms = new ArrayList<Integer>();
+            Atom lastAtom = null;
             for (int iStruct : structureList) {
                 if ((whichStruct >= 0) && (iStruct != whichStruct)) {
                     continue;
                 }
                 bondList.clear();
                 i = 0;
-                for (Atom atom : atoms) {
+                for (int j = 0, n = atoms.size(); j < n; j++) {
+                    Atom atom = atoms.get(j);
                     SpatialSet spSet = atom.spatialSet;
                     if (atom.isCoarse()) {
                         continue;
@@ -4481,13 +4483,21 @@ public class Molecule implements Serializable, ITree {
                     atom.iAtom = i;
                     String result = spSet.toPDBString(i + 1, iStruct);
                     if (result != null) {
+                        if ((lastAtom != null) && (atom.getTopEntity() != lastAtom.getTopEntity())) {
+                            out.print(lastAtom.spatialSet.toTERString(i + 1) + "\n");
+                            i++;
+                            result = spSet.toPDBString(i + 1, iStruct);
+                        }
                         if (!(spSet.atom.entity instanceof Residue) || !((Residue) spSet.atom.entity).isStandard()) {
                             bondList.add(spSet.atom);
                         }
                         out.print(result + "\n");
                         i++;
+                        lastAtom = atom;
                     }
                 }
+                out.print(lastAtom.spatialSet.toTERString(i + 1) + "\n");
+
                 for (Atom bAtom : bondList) {
                     List<Atom> bondedAtoms = bAtom.getConnected();
                     if (bondedAtoms.size() > 0) {
@@ -4888,7 +4898,7 @@ public class Molecule implements Serializable, ITree {
         }
         Atom.addBond(atom1, atom2, bond, 0, false);
         if (bond.equals(Order.SINGLE)) {
-            atom2.irpIndex = 2;
+            atom2.irpIndex = 9999;
         }
         atom2.parent = atom1;
         atom2.setProperty("linker", true);
@@ -4919,13 +4929,24 @@ public class Molecule implements Serializable, ITree {
             newAtom.bondLength = (float) linkLen;
             newAtom.dihedralAngle = (float) (dihAngle * Math.PI / 180.0);
             newAtom.valanceAngle = (float) (valAngle * Math.PI / 180.0);
+            newAtom.irpIndex = 1;
+            newAtom.setType("XX");
 
             curAtom = newAtom;
-            if (i == numLinks) {
+            if ((i == numLinks) && (atom2 != null)) {
                 Atom.addBond(curAtom, atom2, Order.SINGLE, 0, false);
                 atom2.parent = curAtom;
                 curAtom.daughterAtom = atom2;
             }
         }
+
+        if (atom2 != null) {
+            invalidateAtomTree();
+            invalidateAtomArray();
+            //List<Atom> ats = getAtomArray();
+            updateVecCoords();
+            resetGenCoords();
+        }
+        // setupAngles();
     }
 }
