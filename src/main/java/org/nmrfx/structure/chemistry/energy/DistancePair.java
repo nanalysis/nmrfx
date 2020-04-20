@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.Atom;
@@ -26,8 +25,13 @@ public class DistancePair {
     final double rLow;
     final double rUp;
     final boolean isBond;
+    final int restraintID;
+    final double weight;
+    final double targetValue;
+    final double targetErr;
 
-    public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond) {
+    public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond,
+            final int restraintID, final double weight, final double targetValue, final double targetErr) {
         if (atoms1.length != atoms2.length) {
             throw new IllegalArgumentException("atom arrays are not of equal length");
         }
@@ -40,6 +44,16 @@ public class DistancePair {
         this.rLow = rLow;
         this.rUp = rUp;
         this.isBond = isBond;
+        this.restraintID = restraintID;
+        this.weight = weight;
+        this.targetValue = targetValue;
+        this.targetErr = targetErr;
+    }
+
+    public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond) {
+
+        this(atoms1, atoms2, rLow, rUp, isBond, 0, 1.0, (rLow + rUp) / 2.0, rUp - rLow);
+
     }
 
     @Override
@@ -53,6 +67,45 @@ public class DistancePair {
         sBuilder.append(rLow);
         sBuilder.append(" ");
         sBuilder.append(rUp);
+        sBuilder.append(" ");
+        sBuilder.append(weight);
+        sBuilder.append(" ");
+        sBuilder.append(targetValue);
+        sBuilder.append(" ");
+        sBuilder.append(targetErr);
         return sBuilder.toString();
     }
+
+    public AtomDistancePair[] getAtomPairs() {
+        return atomPairs;
+    }
+
+    public double getLower() {
+        return rLow;
+    }
+
+    public double getUpper() {
+        return rUp;
+    }
+
+    public boolean getIsBond() {
+        return isBond;
+    }
+
+    public int getRestraintID() {
+        return restraintID;
+    }
+
+    public double getWeight() {
+        return weight;
+    }
+
+    public double getTargetValue() {
+        return targetValue;
+    }
+
+    public double getTargetError() {
+        return targetErr;
+    }
+
 }

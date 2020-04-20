@@ -23,6 +23,7 @@ import javax.vecmath.Point2d;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.processor.datasets.peaks.AtomResonance;
 import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
+import org.nmrfx.structure.chemistry.energy.DistancePair;
 import org.nmrfx.structure.chemistry.miner.IAtom;
 import org.nmrfx.structure.chemistry.miner.IBond;
 
@@ -1134,20 +1135,19 @@ public class Atom implements IAtom {
         return (sBuilder.toString());
     }
 
-    public String toNEFSequenceString(Atom atom, String link) {
+    public String toNEFSequenceString(String link) {
         StringBuilder result = new StringBuilder();
         String sep = "    ";
         String sepN = "   ";
 
-        Entity entity = atom.getEntity();
         int number = 1;
         char chainID = ' ';
         if (entity instanceof Residue) {
             number = entity.getIDNum();
-            String polymerName = ((Residue) atom.entity).polymer.getName();
+            String polymerName = ((Residue) entity).polymer.getName();
             chainID = polymerName.charAt(0);
         }
-        String resName = ((Compound) atom.entity).name;
+        String resName = ((Compound) entity).name;
         if (resName.length() > 3) {
             resName = resName.substring(0, 3);
         }
@@ -1191,6 +1191,31 @@ public class Atom implements IAtom {
         return result.toString();
     }
 
+    public String formatNEFAtomName(Atom atom, boolean distances) {
+        String writeName = atom.name;
+        switch (atom.stereo) {
+            case 0:
+                if (atom.isMethyl()) {
+                    writeName = null;
+                }
+                break;
+            case 1: //x changes
+                writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
+                break;
+            case 2: //y changes
+                writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
+                break;
+            case 3: //% changes
+                if (!distances || (distances && atom.isMethyl())) {
+                    writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
+                }
+                break;
+            default:
+                break;
+        }
+        return writeName;
+    }
+
     public String ppmToNEFString(int iStruct, int iAtom) {
         return ppmToNEFString(spatialSet, iStruct, iAtom);
     }
@@ -1199,7 +1224,8 @@ public class Atom implements IAtom {
             int iStruct, int iAtom) {
         PPMv ppmv = spatialSet.getPPM(iStruct);
 
-        if (ppmv == null) {
+        String writeName = formatNEFAtomName(this, false);
+        if (ppmv == null || writeName == null) {
             return null;
         }
 
@@ -1222,13 +1248,10 @@ public class Atom implements IAtom {
             sBuilder.append(sep);
 
             // atom name
-            sBuilder.append(name);
+            sBuilder.append(writeName);
             sBuilder.append(sep);
 
             // value
-            if (((Residue) entity).getIDNum() == 1 && spatialSet.getFullName().contains("H")) {
-                System.out.println("writer Atom.ppmToNEFString: " + spatialSet.getFullName() + " " + ppmv.getValue());
-            }
             sBuilder.append(ppmv.getValue());
             sBuilder.append(sep);
 
@@ -1236,7 +1259,100 @@ public class Atom implements IAtom {
             sBuilder.append(ppmv.getError());
             sBuilder.append(sep);
 
-//            System.out.println("wrote " + ((Residue) entity).getIDNum() + " " + name + " " + ppmv.getValue());
+//            System.out.println("wrote " + ((Residue) entity).getIDNum() + " " + writeName + " " + ppmv.getValue());
+        }
+
+        return (sBuilder.toString());
+    }
+
+    public String toNEFDistanceString(int index, DistancePair distPair, Atom atom2, Atom prevAtom1, Atom prevAtom2) {
+        String writeName1 = formatNEFAtomName(this, true);
+        String writeName2 = formatNEFAtomName(atom2, true);
+        if (writeName1 == null || writeName2 == null
+                || (this.isMethyl() && this.equals(prevAtom1))
+                || (atom2.isMethyl() && atom2.equals(prevAtom2))) {
+            return null;
+        }
+        StringBuilder sBuilder = new StringBuilder();
+        String sep = "\t\t";
+        if (entity instanceof Residue) {
+            //index
+            sBuilder.append(index);
+            sBuilder.append(sep);
+
+            //restraint ID
+            int restraintID = distPair.getRestraintID();
+            sBuilder.append(restraintID);
+            sBuilder.append(sep);
+
+            //restraint combo ID
+            sBuilder.append("."); //fixme should be combo ID
+            sBuilder.append(sep);
+
+            // chain code 1
+            String polymerName = ((Residue) entity).polymer.getName();
+            char chainID = polymerName.charAt(0);
+            sBuilder.append(chainID);
+            sBuilder.append(sep);
+
+            // sequence code 1
+            sBuilder.append(((Residue) entity).getIDNum());
+            sBuilder.append(sep);
+
+            // residue name 1
+            sBuilder.append(((Residue) entity).name);
+            sBuilder.append(sep);
+
+            // atom name 1
+            sBuilder.append(writeName1);
+            sBuilder.append(sep);
+
+            // chain code 2
+            polymerName = ((Residue) atom2.entity).polymer.getName();
+            chainID = polymerName.charAt(0);
+            sBuilder.append(chainID);
+            sBuilder.append(sep);
+
+            // sequence code 2
+            sBuilder.append(((Residue) atom2.entity).getIDNum());
+            sBuilder.append(sep);
+
+            // residue name 2
+            sBuilder.append(((Residue) atom2.entity).name);
+            sBuilder.append(sep);
+
+            // atom name 2
+            sBuilder.append(writeName2);
+            sBuilder.append(sep);
+
+            // weight
+            double weight = distPair.getWeight();
+            sBuilder.append(weight);
+            sBuilder.append(sep);
+
+            // target value
+            double target = distPair.getTargetValue();
+            sBuilder.append(target);
+            sBuilder.append(sep);
+
+            // target value uncertainty
+            String targetErr = String.valueOf(distPair.getTargetError());
+            if (Double.parseDouble(targetErr) == 0) {
+                targetErr = ".";
+            }
+            sBuilder.append(targetErr);
+            sBuilder.append(sep);
+
+            // lower limit
+            double lower = distPair.getLower();
+            sBuilder.append(lower);
+            sBuilder.append(sep);
+
+            // upper limit
+            double upper = distPair.getUpper();
+            sBuilder.append(upper);
+            sBuilder.append(sep);
+
         }
 
         return (sBuilder.toString());
