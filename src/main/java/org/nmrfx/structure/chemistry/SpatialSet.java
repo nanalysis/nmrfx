@@ -397,9 +397,6 @@ public class SpatialSet {
                 }
                 spSet.atom.changed();
             }
-            if (atom.entity.getIDNum() == 1 && atom.name.contains("H")) {
-                System.out.println("reader spSet setPPM: " + atom.name + " " + ppmv.getValue());
-            }
         }
     }
 

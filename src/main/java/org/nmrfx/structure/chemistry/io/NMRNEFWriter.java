@@ -20,7 +20,6 @@ package org.nmrfx.structure.chemistry.io;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -32,7 +31,6 @@ import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.energy.AtomDistancePair;
 import org.nmrfx.structure.chemistry.energy.DistancePair;
-import org.nmrfx.structure.chemistry.energy.DistancePairNEF;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
 
 /**
@@ -78,7 +76,7 @@ public class NMRNEFWriter {
                 if (idx > 0) {
                     link = "middle"; //fixme needs to be "end" for the last residue
                 }
-                String result = atom.toNEFSequenceString(atom, link);
+                String result = atom.toNEFSequenceString(link);
                 if (result != null) {
                     chan.write(result + "\n");
                 }
@@ -140,58 +138,13 @@ public class NMRNEFWriter {
         for (Atom atom : atomArray) {
             String result = atom.ppmToNEFString(iPPM, i);
             if (result != null) {
-                if (i < 9 && atom.getName().contains("H")) {
 //                    System.out.println("writer writePPM: iPPM = " + iPPM + " i = " + i);
-                    System.out.println(result);
-                }
                 chan.write(result + "\n");
                 i++;
             }
         }
         chan.write("\tstop_\n");
         chan.write("save_\n");
-    }
-
-    public static String[] formatDistanceAtoms(AtomDistancePair[] pairAtoms) {
-        String atom1 = "";
-        String atom2 = "";
-        ArrayList<String> atom1List = new ArrayList<>();
-        ArrayList<String> atom2List = new ArrayList<>();
-        for (AtomDistancePair pair : pairAtoms) {
-            Atom[] a1List = pair.getAtoms1();
-            Atom[] a2List = pair.getAtoms2();
-            for (Atom atom : a1List) {
-//                System.out.println("a1: " + atom);
-                atom1List.add(atom.getShortName());
-            }
-            for (Atom atom : a2List) {
-//                System.out.println("a2: " + atom);
-                atom2List.add(atom.getShortName());
-            }
-        }
-//        System.out.println(atom1List);
-//        System.out.println(atom2List);
-        long nDistinctA1 = atom1List.stream().distinct().count();
-        long nDistinctA2 = atom2List.stream().distinct().count();
-        String a1Name = atom1List.stream().distinct().findFirst().get();
-        String a2Name = atom2List.stream().distinct().findFirst().get();
-        if (!atom1List.isEmpty() && !atom2List.isEmpty() && nDistinctA1 <= 1 && nDistinctA2 > 1) {
-            atom1 = a1Name;
-            atom2 = a2Name.substring(0, a2Name.length() - 1) + "%";
-        } else if (!atom1List.isEmpty() && !atom2List.isEmpty() && nDistinctA1 > 1 && nDistinctA2 <= 1) {
-            atom1 = a1Name.substring(0, a1Name.length() - 1) + "%";
-            atom2 = a2Name;
-        } else if (!atom1List.isEmpty() && !atom2List.isEmpty() && nDistinctA1 > 1 && nDistinctA2 > 1) {
-            atom1 = a1Name.substring(0, a1Name.length() - 1) + "%";
-            atom2 = a2Name.substring(0, a2Name.length() - 1) + "%";
-        } else {
-            atom1 = a1Name;
-            atom2 = a2Name;
-        }
-        String[] atoms = {atom1, atom2};
-//        System.out.println("atoms: " + atoms[0] + " " + atoms[1]);
-
-        return atoms;
     }
 
     public static void writeDistances(FileWriter chan) throws IOException, InvalidMoleculeException {
@@ -217,115 +170,30 @@ public class NMRNEFWriter {
             throw new InvalidMoleculeException("No active mol");
         }
         molecule.updateAtomArray();
-        List<Atom> atomArray = molecule.getAtomArray();
-//        List<String> atomArrayNames = new ArrayList<>();
-//        for (Atom atom : atomArray) {
-//            String atomStr = atom.toString();
-//            atomArrayNames.add(atomStr.substring(2, atomStr.length()));
-//        }
-//        System.out.println(atomArrayNames.toString());
         EnergyLists eLists = NMRNEFReader.energyList;
-        List<DistancePairNEF> distList = eLists.distanceList2;
+        List<DistancePair> distList = eLists.distanceList2;
+        int idx = 1;
+        Atom prevAtom1 = null;
+        Atom prevAtom2 = null;
         for (int i = 0; i < distList.size(); i++) {
-            DistancePairNEF distPair = distList.get(i);
+            DistancePair distPair = distList.get(i);
             AtomDistancePair[] pairAtoms = distPair.getAtomPairs();
-//            for (AtomDistancePair atom : pairAtoms) {
-//                System.out.println(atom + " ");
-//            }
-//            System.out.println();
-            String[] atoms = formatDistanceAtoms(pairAtoms); //{distPair.getAtomFilter1(), distPair.getAtomFilter2()};
-            char[] chainIDs = new char[atoms.length];
-            String[] sequenceCodes = new String[atoms.length];
-            Atom atom1 = atomArray.get(atomArray.indexOf(atoms[0]));
-            Atom atom2 = atomArray.get(atomArray.indexOf(atoms[1]));
-            String[] resNames = {atom1.getResidueName(), atom2.getResidueName()};
-            String[] atomNames = new String[atoms.length];
-
-            String weight = String.valueOf(distPair.getWeight());// distInfo[distInfo.length - 5];
-            String target = String.valueOf(distPair.getTargetValue());
-            String targetErr = String.valueOf(distPair.getTargetError());
-            if (Double.parseDouble(targetErr) == 0) {
-                targetErr = ".";
-            }
-            String lower = String.valueOf(distPair.getLower());
-            String upper = String.valueOf(distPair.getUpper());
-//            if (distPairs.length > 1) {
-//                System.out.println(atoms[0] + " " + atoms[1] + " " + weight + " " + target + " " + targetErr + " " + lower + " " + upper);
-//                System.out.println(distPairs.length + " " + distPair + "\n");
-//            }
-
-            StringBuilder sBuilder = new StringBuilder();
-            String sep = "\t";
-
-            //  index
-            sBuilder.append(sep);
-            sBuilder.append(i + 1); //fixme need to read in index
-            sBuilder.append(sep);
-
-            //  restraint ID
-            sBuilder.append(sep);
-            sBuilder.append(i + 1); //fixme need to read in resID
-            sBuilder.append(sep);
-
-            //  restraint combo ID
-            sBuilder.append(sep);
-            sBuilder.append(".");
-            sBuilder.append(sep);
-
-            for (int j = 0; j < atoms.length; j++) {
-                String[] atomSplit = atoms[j].split("\\.");
-                String[] polymerSplit = atomSplit[0].split(":");
-                chainIDs[j] = polymerSplit[0].charAt(0);
-                sequenceCodes[j] = polymerSplit[1];
-                atomNames[j] = atomSplit[1];
-
-                //chain code
-                sBuilder.append(sep);
-                sBuilder.append(chainIDs[j]);
-
-                // sequence code
-                sBuilder.append(sep);
-                sBuilder.append(sequenceCodes[j]);
-
-                // residue name
-                sBuilder.append(sep);
-                sBuilder.append(resNames[j]);
-
-                // atom name
-                sBuilder.append(sep);
-                sBuilder.append(atomNames[j]);
-//                System.out.println(chainIDs[j] + " " + sequenceCodes[j] + " " + resNames[j] + " " + atomNames[j]);
-
-            }
-
-            // weight
-            sBuilder.append(sep);
-            sBuilder.append(weight);
-            sBuilder.append(sep);
-
-            // target value
-            sBuilder.append(target + "0");
-            sBuilder.append(sep);
-
-            // target value uncertainty
-            if (!targetErr.equals(".")) {
-                sBuilder.append(targetErr + "0");
-            } else {
-                sBuilder.append(targetErr);
-            }
-            sBuilder.append(sep);
-
-            // lower limit
-            sBuilder.append(lower + "0");
-            sBuilder.append(sep);
-
-            // upper limit
-            sBuilder.append(upper + "0");
-            sBuilder.append(sep);
-
-            String result = sBuilder.toString();
-            if (result != null) {
-                chan.write(result + "\n");
+            for (AtomDistancePair pair : pairAtoms) {
+                Atom[] a1List = pair.getAtoms1();
+                Atom[] a2List = pair.getAtoms2();
+                for (Atom atom1 : a1List) {
+//                    System.out.println("a1: " + atom1);
+                    for (Atom atom2 : a2List) {
+//                        System.out.println("a2: " + atom2);
+                        String result = atom1.toNEFDistanceString(idx, distPair, atom2, prevAtom1, prevAtom2);
+                        if (result != null) {
+                            prevAtom1 = atom1;
+                            prevAtom2 = atom2;
+                            chan.write(result + "\n");
+                            idx++;
+                        }
+                    }
+                }
             }
         }
         chan.write("\tstop_\n");

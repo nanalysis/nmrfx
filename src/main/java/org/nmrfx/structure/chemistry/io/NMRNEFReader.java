@@ -264,35 +264,17 @@ public class NMRNEFReader {
                     continue;
                 }
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
+                Atom atom = Molecule.getNEFMatchedAtoms(new MolFilter(fullAtom), Molecule.getActive()).get(0);
                 if (atomName.contains("x")) {
-                    String subName = atomName.substring(0, atomName.length() - 1) + "2";
-                    fullAtom = chainCode + ":" + sequenceCode + "." + subName;
-                } else if (atomName.contains("y")) {
-                    String change = "3";
-                    if (atomName.contains("D2") || atomName.contains("E2")) {
-                        change = "1";
-                    }
-                    String subName = atomName.substring(0, atomName.length() - 1) + change;
-                    fullAtom = chainCode + ":" + sequenceCode + "." + subName;
-                } else if (atomName.contains("%")) { //fixme needs to be multiple atoms
-                    String change = "3";
-                    if (atomName.contains("D")) {
-                        change = "21";
-                        if (atomName.endsWith("1%")) {
-                            change = "1";
-                        }
-                    } 
-                    String subName = atomName.substring(0, atomName.length() - 1) + change;
-                    fullAtom = chainCode + ":" + sequenceCode + "." + subName;
-                }
-                Atom atom = Molecule.getAtomByName(fullAtom);
-                System.out.println(atomName);
-                System.out.println(atom.getFullName());
-                if (atomName.contains("x") || atomName.contains("y") || atomName.contains("%")) {
-                    atom.setStereo(0);
-                } else {
                     atom.setStereo(1);
+                } else if (atomName.contains("y")) {
+                    atom.setStereo(2);
+                } else if (atomName.contains("%")) {
+                    atom.setStereo(3);
+                } else {
+                    atom.setStereo(0);
                 }
+//                System.out.println(atomName + " " + atom.getFullName() + " " + atom.getStereo());
 
 //                if (atom == null) {
 //                    if (atomName.startsWith("H")) {
@@ -315,10 +297,6 @@ public class NMRNEFReader {
                     spSet.setPPM(structureNum, Double.parseDouble(value), false);
                     if (!valueErr.equals(".")) {
                         spSet.setPPM(structureNum, Double.parseDouble(valueErr), true);
-                    }
-                    if (i < 9 && atomName.contains("H")) {
-                        System.out.println("reader " + structureNum + " " + sequenceCode + "." + atomName + " "
-                                + value + " " + spSet.getPPM(structureNum).getValue());
                     }
                 } catch (NumberFormatException nFE) {
                     throw new ParseException("Invalid chemical shift value (not double) \"" + value + "\" error \"" + valueErr + "\"");
@@ -396,8 +374,10 @@ public class NMRNEFReader {
         List<String>[] residueNameColumns = new ArrayList[2];
         List<String>[] atomNameColumns = new ArrayList[2];
         List<Integer> indexColumn = new ArrayList<>();
+        List<Integer> restraintIDColumn = new ArrayList<>();
 
         indexColumn = loop.getColumnAsIntegerList("index", 0);
+        restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
 
         chainCodeColumns[0] = loop.getColumnAsList("chain_code_1");
         sequenceColumns[0] = loop.getColumnAsList("sequence_code_1");
@@ -436,6 +416,7 @@ public class NMRNEFReader {
                 atomNames[iAtom].add(chainCode + ":" + seqNum + "." + atomName);
                 resNames[iAtom] = resName;
             }
+            int restraintID = restraintIDColumn.get(i);
             String weightValue = (String) weightColumn.get(i);
             String targetValue = (String) targetValueColumn.get(i);
             String targetErrValue = (String) targetErrColumn.get(i);
@@ -466,7 +447,7 @@ public class NMRNEFReader {
 
             Util.setStrictlyNEF(true);
             try {
-                energyList.addNEFDistanceConstraint(atomNames[0], atomNames[1], lower, upper, weight, target, targetErr);
+                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, restraintID, weight, target, targetErr);
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);
                 throw new ParseException("Error parsing NEF distance constraints at index  \"" + index + "\" " + iaE.getMessage());
