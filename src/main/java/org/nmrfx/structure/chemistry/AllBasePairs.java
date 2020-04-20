@@ -83,11 +83,11 @@ public class AllBasePairs {
                     for (int i = 0; i < nPairs; i++) {
                         atomPairs[i] = arrOfStr[firstindex] + ":" + arrOfStr[secondindex];
                         String[] restraints = arrOfStr[secondindex + 1].split("/");
-                        upperALim = restraints[0];
-                        lowerALim = restraints[1];
-                        upperPLim = restraints[2];
-                        lowerPLim = restraints[3];
-                        distances[i] = upperALim + ":" + lowerALim + ":" + upperPLim + ":" + lowerPLim;
+                        lowerALim = restraints[0];
+                        upperALim = restraints[1];
+                        lowerPLim = restraints[2];
+                        upperPLim = restraints[3];
+                        distances[i] = lowerALim + ":" + upperALim + ":" + lowerPLim + ":" + upperPLim;
                         firstindex += 3;
                         secondindex += 3;
                     }
