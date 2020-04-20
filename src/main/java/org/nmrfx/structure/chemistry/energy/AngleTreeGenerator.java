@@ -247,7 +247,7 @@ public class AngleTreeGenerator {
 
     public void measureAtomTree(ITree itree, List<List<Atom>> atomTree) {
         // get Atom array --> getAtomList() difference?
-        for (Atom atom : itree.getAtomArray()) {
+    for (Atom atom : itree.getAtomArray()) {
             atom.parent = null;
         }
         Map<Atom, List<Bond>> bondMap = new HashMap<>();

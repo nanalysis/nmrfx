@@ -56,23 +56,38 @@ public class AngleBoundary {
             throw new IllegalArgumentException("Second atom must be parent of first atom, or vice versa");
         }
         /*Changed from Original*/
-        if (((lower < -180.0) && (upper < 0.0)) || (upper > 360.0) || (upper < lower)) {
-            throw new IllegalArgumentException("Invalid angle bounds: " + lower + " " + upper);
+//        if (((lower < -180.0) && (upper < 0.0)) || (upper > 360.0) || (upper < lower)) {
+//            throw new IllegalArgumentException("Invalid angle bounds: " + lower + " " + upper);
+//        }
+//        if ((lower > 180) && (upper > 180)) {
+//            lower = lower - 360.0;
+//            upper = upper - 360.0;
+//        }
+
+        /*
+                if (lower < 0.0) {
+            lower += 360.0;
         }
-        if ((lower > 180) && (upper > 180)) {
-            lower = lower - 360.0;
-            upper = upper - 360.0;
+        if (upper < 0.0) {
+            upper += 360.0;
+        }
+        if (lower > 360.0) {
+            lower -= 360.0;
+        }
+        if (upper > 360.0) {
+            upper -= 360.0;
         }
 
-        this.lower = lower * toRad;
-        this.upper = upper * toRad;
+         */
+        this.lower = Dihedral.reduceAngle(lower * toRad);
+        this.upper = Dihedral.reduceAngle(upper * toRad);
         this.scale = scale;
         this.atoms = new Atom[atoms.length];
         System.arraycopy(atoms, 0, this.atoms, 0, atoms.length);
     }
-    
+
     public AngleBoundary(List<Atom> atoms, double lower, double upper, final double scale) throws InvalidMoleculeException {
-        for (Atom atom:atoms) {
+        for (Atom atom : atoms) {
             if (atom == null) {
                 throw new InvalidMoleculeException("null atom");
             }
@@ -98,9 +113,9 @@ public class AngleBoundary {
         this.atoms = new Atom[atoms.size()];
         atoms.toArray(this.atoms);
     }
-    
-        public static boolean allowRotation(List<String> atomNames) {
-            
+
+    public static boolean allowRotation(List<String> atomNames) {
+
         int arrayLength = atomNames.size();
         if (arrayLength != 4) {
             throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
@@ -111,9 +126,8 @@ public class AngleBoundary {
         }
 
         return !((atoms[2].parent != atoms[1]) && (atoms[1].parent != atoms[2]));
-    }   
-        
-        
+    }
+
     public void setIndex(final int index) {
         this.index = index;
     }

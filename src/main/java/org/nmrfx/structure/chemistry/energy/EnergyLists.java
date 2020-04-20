@@ -383,10 +383,10 @@ public class EnergyLists {
 
         ArrayList<Atom> atoms1 = Molecule.getMatchedAtoms(molFilter1, molecule);
         ArrayList<Atom> atoms2 = Molecule.getMatchedAtoms(molFilter2, molecule);
-
+        
         if (atoms1.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString1);
-        }
+        }        
         if (atoms2.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString2);
         }
@@ -410,7 +410,7 @@ public class EnergyLists {
         constraintsSetup = false;
     }
 
-    public void addDistanceConstraint(final ArrayList<String> filterStrings1, final ArrayList<String> filterStrings2,
+    public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
             final double rLow, final double rUp) throws IllegalArgumentException {
         if (filterStrings1.size() != filterStrings2.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
@@ -1091,6 +1091,7 @@ public class EnergyLists {
 
     public void updateNOEPairs() {
         EnergyCoords eCoords = molecule.getEnergyCoords();
+        molecule.updateVecCoords();
         eCoords.eConstraintPairs.clear();
         int iGroup = 0;
         for (DistancePair distancePair : distanceList) {
@@ -1606,15 +1607,16 @@ public class EnergyLists {
     }
 
     public void makeAtomListFast() {
-        if (!constraintsSetup) {
-            updateNOEPairs();
-        }
+       // molecule.updateVecCoords();
         EnergyCoords eCoords = molecule.getEnergyCoords();
         if (!eCoords.fixedCurrent()) {
             if (molecule.getDihedrals() == null) {
                 return;
             }
             updateFixed(molecule.getDihedrals());
+        }
+        if (!constraintsSetup) {
+            updateNOEPairs();
         }
         eCoords.setCells(eCoords.eDistancePairs, deltaEnd, distanceLimit, hardSphere,
                 includeH, shrinkValue, shrinkHValue, forceWeight.getRobson() > 0.0);

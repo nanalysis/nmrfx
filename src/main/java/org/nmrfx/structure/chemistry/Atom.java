@@ -116,8 +116,10 @@ public class Atom implements IAtom {
         this.atomEnergyProp = atomEnergyProp;
         if (atomEnergyProp == null) {
             aNum = 0;
+            type = "XX";
         } else {
             aNum = atomEnergyProp.getAtomNumber();
+            type = atomEnergyProp.getName();
         }
         atomProperty = AtomProperty.get(aNum);
         radius = atomProperty.radius;
@@ -1305,7 +1307,7 @@ public class Atom implements IAtom {
     }
 
     public static int addBond(Atom atom1, Atom atom2, Order order, int stereo, final boolean record) {
-        
+
         if (atom1 != null && atom2 != null) {
 
             Bond bond;

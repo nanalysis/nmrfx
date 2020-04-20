@@ -8,6 +8,7 @@ import xplor
 import molio
 import os
 
+import pdb
 from org.nmrfx.structure.chemistry.energy import EnergyCoords
 from org.nmrfx.structure.chemistry import Molecule
 from org.nmrfx.structure.chemistry import Atom
@@ -956,16 +957,21 @@ class refine:
 
 		# Different entities can be specified. Via sequence files
 		# or input residues.
+                if not 'link' in molData:
+                    seqReader = Sequence()
+                else:
+                    seqReader = None
                 if 'entities' in molData:
                     molList = molData['entities']
                     molList = prioritizePolymers(molList)
                     for molDict in molList:
                         residues = ",".join(molDict['residues'].split()) if 'residues' in molDict else None
-                        self.readMoleculeDict(molDict)
+                        print molDict
+                        self.readMoleculeDict(seqReader, molDict)
                 else:
                     #Only one entity in the molecule
                     residues = ",".join(molData['residues'].split()) if 'residues' in molData else None
-                    self.readMoleculeDict(molData)
+                    self.readMoleculeDict(seqReader, molData)
 
         
         self.molecule = Molecule.getActive()
@@ -982,7 +988,13 @@ class refine:
             self.measureTree()
         else:
             if len(self.molecule.getEntities()) > 1:
-                raise TypeError("Tree mode must be run on molecules with more than one entity")
+	        if not 'nef' in data:
+                    print 'multiseq'
+                    self.molecule.invalidateAtomTree()
+                    self.molecule.setupGenCoords()
+                    self.molecule.genCoords(False)
+                    self.molecule.setupRotGroups()
+                    #raise TypeError("Tree mode must be run on molecules with more than one entity")
 
         if linkerList:
             self.addLinkers(linkerList)
@@ -1021,7 +1033,13 @@ class refine:
             self.dOpt = self.readAnnealDict(data['anneal'])
         self.energy()
 
-    def readMoleculeDict(self,molDict):
+    def readMoleculeDict(self,seqReader, molDict):
+        linkLen = 5.0;
+        valAngle = 90.0;
+        dihAngle = 135.0;
+        if seqReader != None and seqReader.getMolecule() != None:
+            print 'createlink'
+            seqReader.createLinker(7, linkLen, valAngle, dihAngle);
         #if sequence exists it takes priority over the file and the sequence will be used instead
         polyType = molDict.get('ptype','protein').upper()
         if 'sequence' in molDict:
@@ -1032,7 +1050,7 @@ class refine:
             chain = molDict.get('chain')
             if chain == None:
                 chain = 'A'
-            molio.readSequenceString(chain, resStrings)
+            molio.readSequenceString(chain, resStrings, seqReader=seqReader)
         else:
             file = molDict['file']
             type = molDict.get('type','nv')
@@ -1046,9 +1064,9 @@ class refine:
             else:
                 if 'chain' in molDict:
                     pName = molDict['chain']
-                    molio.readSequence(file, polymerName=pName)
+                    molio.readSequence(file, polymerName=pName,seqReader=seqReader)
                 else:
-                    molio.readSequence(file)
+                    molio.readSequence(file,seqReader=seqReader)
             resNum = molDict.get('resnum')
             if resNum and compound:
                 compound.setNumber(str(resNum))
@@ -1110,10 +1128,15 @@ class refine:
 	    polymers = self.molecule.getPolymers()
             bps = rnaDict['bp']
             for bp in bps:
-		resNum1 = bp['res1']
-		resNum2 = bp['res2']
-		type = bp['type']
-		self.addBasePair(polymers[0], resNum1, resNum2, type) 
+		res1, res2 = bp['res1'].split(":"), bp['res2'].split(":")
+		resNum1, resNum2 = res1[1], res2[1]
+		polymer1, polymer2 = self.molecule.getEntity(res1[0]), self.molecule.getEntity(res2[0])
+		residue1, residue2 = polymer1.getResidue(str(resNum1)), polymer2.getResidue(str(resNum2))
+		types = bp['type']
+		if len(types) == 1:
+		    self.addBasePair(residue1, residue2, types[0])
+		else:
+		    self.addBasePairs(residue1, residue2, types)    
 	  	
     def readAnnealDict(self, annealDict):
         dynDict = annealDict.get('dynOptions')
@@ -1152,11 +1175,13 @@ class refine:
             wt = shiftDict['weight']
         return wt
 
+    def getAtomName(self, residue, aName):
+        return residue.getPolymer().getName() +':' + str(residue.getNumber()) + '.' + aName
+
     def addRiboseRestraints(self,polymer):
         for residue in polymer.getResidues():
             if not residue.isStandard():
                 continue
-            resNum = residue.getNumber()
             resName = residue.getName()
             upper = 1.46
             lower = 1.44
@@ -1168,8 +1193,8 @@ class refine:
             restraints.append(("O4'", "H4'", 2.05, 2.2))
             for restraint in restraints:
                 (a1,a2,lower,upper) = restraint
-                atomName1 = str(resNum)+'.'+a1
-                atomName2 = str(resNum)+'.'+a2
+                atomName1 = self.getAtomName(residue, a1)
+                atomName2 = self.getAtomName(residue, a2)
                 try:
                     self.energyLists.addDistanceConstraint(atomName1,atomName2,lower,upper,True)
                 except:
@@ -1194,7 +1219,8 @@ class refine:
                      upper += 360
                 fullAtoms = []
                 for aName in a1:
-                    fullAtoms.append(str(resNum)+'.'+aName)
+                    atomName = self.getAtomName(residue, aName)
+                    fullAtoms.append(atomName)
 
                 scale = 1.0
                 try:
@@ -1600,8 +1626,7 @@ class refine:
             endPairRes = residues[endPair].getNumber()
             self.addHelix(polymer,int(startRes),int(startPairRes),int(endRes),int(endPairRes))
 
-    def addHelix(self, polymer, hStart, hStartPair, hEnd, hEndPair,convertNums=True):
-        residues = polymer.getResidues()
+    def addHelix(self, residues, hStart, hStartPair, hEnd, hEndPair,convertNums=True):
         if not convertNums:
             iStart = hStart
             iEnd = hEnd
@@ -1624,33 +1649,50 @@ class refine:
                     iEndPair = i
         length = iEnd-iStart+1
         for i in range(length):
+            residueI = residues[iStart+i]
             resI = residues[iStart+i].getNumber()
+            polymerI = residueI.getPolymer()
+
+            residueJ = residues[iStartPair-i]
             resJ = residues[iStartPair-i].getNumber()
-            self.addSuiteBoundary(polymer, resI,"1a")
+            polymerJ = residueJ.getPolymer()
+
+            self.addSuiteBoundary(polymerI, resI,"1a")
             import java.lang
             try:
-                self.addSuiteBoundary(polymer, resJ,"1a")
+                self.addSuiteBoundary(polymerJ, resJ,"1a")
             except:
                 print "Preceding residue is not defined"
             resJName = residues[iStartPair-i].getName()
-            self.addBasePair(polymer, resI, resJ)
+            self.addBasePair(residueI, residueJ)
+            polyI = residueI.getPolymer().getName()
             if (i != 0) and ((i+3) < length):
-                resJ = residues[iStart+i+3].getNumber()
-                self.energyLists.addDistanceConstraint(str(resI)+'.P', str(resJ)+'.P',16.5, 20.0)
+                residueJ = residues[iStart+i+3]
+                atomNameI = self.getAtomName(residueI,"P")
+                atomNameJ = self.getAtomName(residueJ,"P")
+                if residueI.getPolymer() == residueJ.getPolymer():
+                    if residueI.getAtom("P") != None:
+                        if residueJ.getAtom("P") != None:
+                            self.energyLists.addDistanceConstraint(atomNameI, atomNameJ, 16.5, 20.0)
             if (i != 0) and ((i+5) < length):
-                resJ = residues[iStartPair-i-5].getNumber()
-                self.energyLists.addDistanceConstraint(str(resI)+'.P', str(resJ)+'.P',10.0, 12.0)
+                residueJ = residues[iStartPair-i-5]
+                if residueI.getPolymer() != residueJ.getPolymer():
+                    atomNameI = self.getAtomName(residueI,"P")
+                    atomNameJ = self.getAtomName(residueJ,"P")
+                    self.energyLists.addDistanceConstraint(atomNameI, atomNameJ, 10.0, 12.0)
             if (i+1) < length:
-                resJ = residues[iStart+i+1].getNumber()
-                self.addStackPair(polymer, resI, resJ)
-                resI = residues[iEndPair+i].getNumber()
-                resJ = residues[iEndPair+i+1].getNumber()
-                self.addStackPair(polymer, resI, resJ)
-                resI = residues[iEnd-i].getNumber()
-                resJ = residues[iEndPair+i+1].getNumber()
-                resJName = residues[iEndPair+i+1].getName()
+                residueJ = residues[iStart+i+1]
+                self.addStackPair(residueI, residueJ)
+                residueI = residues[iEndPair+i]
+                residueJ = residues[iEndPair+i+1]
+                self.addStackPair(residueI, residueJ)
+                residueI = residues[iEnd-i]
+                residueJ = residues[iEndPair+i+1]
+                resJName = residueJ.getName()
+                atomNameI = self.getAtomName(residueI,"H1'")
+                atomNameJ = self.getAtomName(residueJ,"H2")
                 if (resJName == "A"):
-                    self.energyLists.addDistanceConstraint(str(resI)+".H1'", str(resJ)+".H2",1.8, 5.0)
+                    self.energyLists.addDistanceConstraint(atomNameI, atomNameJ, 1.8, 5.0)
     def findHelices(self,vienna):
         gnraPat = re.compile('G[AGUC][AG]A')
         uncgPat = re.compile('U[AGUC]CG')
@@ -1681,12 +1723,16 @@ class refine:
                     beginSet = []
                     endSet = []
             i+=1
+        if helix:
+            beginSet.append(i-1)
+            endSet.insert(0,pairs[i-1])
+            sets.append(beginSet+endSet)
         polymers = self.molecule.getPolymers()
         allResidues = []
         for polymer in polymers:
             allResidues += polymer.getResidues()
-            for set in sets:
-                self.addHelix(polymer,set[0],set[3],set[1],set[2],False)
+        for set in sets:
+            self.addHelix(allResidues,set[0],set[3],set[1],set[2],False)
         pat = re.compile('\(\(\.\.\.\.\)\)')
         for m in pat.finditer(vienna):
             gnraStart = m.start()+2
@@ -1706,47 +1752,86 @@ class refine:
                 self.addSuiteBoundary(polymer, res4,"1a")
                 self.addSuiteBoundary(polymer, res5,"1c")
 
-    def addBasePair(self, polymer, resNumI, resNumJ, type=1):
-	resNumI = str(resNumI)
-        resNumJ = str(resNumJ)
-        resI = polymer.getResidue(resNumI)
-        resJ = polymer.getResidue(resNumJ)
-        resNameI = resI.getName()
-        resNameJ = resJ.getName()
-	basePairs = AllBasePairs.basePairList();
-	for bp in basePairs:
-	    bpType = bp.type
-	    resName1 = bp.res1
-	    resName2 = bp.res2
-   	    numBp = len(bp.atomPairs)
-	    if resNameI == resName1 and resNameJ == resName2 and bpType == type:
-	        for i in range(0, numBp):
-		    restraints = bp.distances[i].split(":")
-		    atoms = bp.atomPairs[i].split(":")
-		    atomI = atoms[0].split("/")[0]
-		    atom1 = resNumI+'.'+atomI
-		    atomJ = atoms[1].split("/")[0]
-		    atom2 = resNumJ+ '.'+ atomJ						
-		    atomAtomDis= float(restraints[1])
-	            lowAtomAtomDis= float(restraints[0])
-                    atomParentDis= float(restraints[3])
-                    lowAtomParentDis= float(restraints[2])
-  		    if atomI.startswith("H"):
-			parentAtom = resI.getAtom(atomI).parent.getName()
-                        parentAtom = resNumI+'.'+parentAtom
-			self.energyLists.addDistanceConstraint(parentAtom, atom2 ,lowAtomParentDis,atomParentDis)
-		    elif atomJ.startswith("H"):
-			parentAtom = resJ.getAtom(atomJ).parent.getName()
-			parentAtom = resNumJ+'.'+parentAtom
-			self.energyLists.addDistanceConstraint(parentAtom, atom1 ,lowAtomParentDis,atomParentDis) 
-		    self.energyLists.addDistanceConstraint(atom1, atom2 ,lowAtomAtomDis,atomAtomDis)	
+    def addBasePair(self, residueI, residueJ, type=1):
+        resNameI = residueI.getName()
+        resNameJ = residueJ.getName()
+	bp = AllBasePairs.getBP(type, resNameI, resNameJ)
+   	numBp = len(bp.atomPairs)
+	for i in range(0, numBp):
+	    restraints = bp.distances[i].split(":")
+	    atoms = bp.atomPairs[i].split(":")
+	    atomI = atoms[0].split("/")[0]
+            atom1 = self.getAtomName(residueI, atomI)						
+	    atomJ = atoms[1].split("/")[0]
+            atom2 = self.getAtomName(residueJ, atomJ)						
+	    atomAtomDis= float(restraints[1])
+	    lowAtomAtomDis= float(restraints[0])
+            atomParentDis= float(restraints[3])
+            lowAtomParentDis= float(restraints[2])
+	    if atomI.startswith("H"):
+	        parentAtomName = residueI.getAtom(atomI).parent.getName()
+                parentAtom = self.getAtomName(residueI,parentAtomName)
+		self.energyLists.addDistanceConstraint(parentAtom, atom2 ,lowAtomParentDis,atomParentDis)
+	    elif atomJ.startswith("H"):
+	        parentAtomName = residueJ.getAtom(atomJ).parent.getName()
+                parentAtom = self.getAtomName(residueJ,parentAtomName)
+		self.energyLists.addDistanceConstraint(parentAtom, atom1 ,lowAtomParentDis,atomParentDis) 
+	    self.energyLists.addDistanceConstraint(atom1, atom2 ,lowAtomAtomDis,atomAtomDis)
+
+    def addBasePairs(self, residueI, residueJ, types):
+        resNameI = residueI.getName()
+        resNameJ = residueJ.getName()
+	typeAtomPairs = [AllBasePairs.getBP(int(typee), residueI.getName(), residueJ.getName()).atomPairs for typee in types]
+	restraints =  [AllBasePairs.getBP(int(typee), residueI.getName(), residueJ.getName()).distances for typee in types]
+	atomPairNum = len(max(len, typeAtomPairs))
+	pairTypesNum = len(typeAtomPairs)
+	atoms = [[typeAtomPairs[iPair][iType] for iPair in range(atomPairNum)] for iType in range(pairTypesNum)]
+	disRes = [[restraints[iPair][iType] for iPair in range(atomPairNum)] for iType in range(pairTypesNum)] 
+	for i in range(atomPairNum):
+            atomList1 = []
+            atomList2 = []
+	    parentAtomList1 = []
+	    parentAtomList2 = []
+	    distances = []
+	    parentDistances = []
+            for j in range(pairTypesNum):
+		atomPair = atoms[i][j].split(":")
+                atom1, atom2 = atomPair[0].split("/")[0], atomPair[1].split("/")[0]
+		aaRes = disRes[i][j].split(":") 
+		distances.append(float(aaRes[0]))
+		distances.append(float(aaRes[1]))
+		parentDistances.append(float(aaRes[2]))
+		parentDistances.append(float(aaRes[3]))
+                atom1Name, atom2Name = self.getAtomName(residueI, atom1), self.getAtomName(residueJ, atom2)
+                atomList1.append(str(atom1Name))
+                atomList2.append(str(atom2Name))
+		if atom1.startswith("H"):
+                    parentAtomName = residueI.getAtom(atom1).parent.getName()
+                    parentAtom = self.getAtomName(residueI,parentAtomName)
+		    parentAtomList1.append(parentAtom)
+		    parentAtomList2.append(atom2Name)
+                elif atom2.startswith("H"):
+                    parentAtomName = residueJ.getAtom(atom2).parent.getName()
+                    parentAtom = self.getAtomName(residueJ,parentAtomName)
+		    parentAtomList1.append(atom1Name)
+		    parentAtomList2.append(parentAtom)
+            self.energyLists.addDistanceConstraint(atomList1, atomList2, min(distances),max(distances))
+	    self.energyLists.addDistanceConstraint(parentAtomList1, parentAtomList2, min(parentDistances),max(parentDistances))		
     def addStackPair(self, polymer, resNumI, resNumJ):
         resNumI = str(resNumI)
         resNumJ = str(resNumJ)
         resI = polymer.getResidue(resNumI)
         resJ = polymer.getResidue(resNumJ)
+
+    def addStackPair(self, resI, resJ):
         resNameI = resI.getName()
         resNameJ = resJ.getName()
+        resNumI = resI.getNumber()
+        resNumJ = resJ.getNumber()
+        polyI = resI.getPolymer()
+        polyJ = resJ.getPolymer()
+        if polyI != polyJ:
+            return
         dHN = 1.89
         dHO = 1.89
         dNN = 3.0
@@ -1783,16 +1868,16 @@ class refine:
         for stack in stacks:
             aNameI, aNameJ,intra,inter = stack
             lowerIntra = intra - 1.0
-            atomNameI = resNumI+'.'+aNameI
-            atomNameJ = resNumI+'.'+aNameJ
+            atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
+            atomNameJ = polyI.getName()+':'+resNumI+'.'+aNameJ
             self.energyLists.addDistanceConstraint(atomNameI,atomNameJ,lowerIntra,intra)
 
         stacks = stackTo[resNameJ]
         for stack in stacks:
             aNameI, aNameJ,intra,inter = stack
             lowerInter = inter - 1.0
-            atomNameI = resNumI+'.'+aNameI
-            atomNameJ = resNumJ+'.'+aNameJ
+            atomNameI = polyI.getName()+':'+resNumI+'.'+aNameI
+            atomNameJ = polyJ.getName()+':'+resNumJ+'.'+aNameJ
             self.energyLists.addDistanceConstraint(atomNameI,atomNameJ,lowerInter,inter)
 
         pairName = resNameI+resNameJ
@@ -2104,8 +2189,6 @@ class refine:
         ringClosures = self.molecule.getRingClosures();
         entityIDs = [entity.getIDNum() for entity in self.molecule.getEntities()] 
         entityNames = [entity.getName() for entity in self.molecule.getEntities()] 
-        print entityIDs
-        print entityNames
         
         if ringClosures:
             for atom1 in ringClosures:
@@ -2137,7 +2220,6 @@ class refine:
         ranfact=20.0
         self.setSeed(self.seed)
         #self.putPseudo(18.0,45.0)
-        ec = self.molecule.getEnergyCoords()
         #raise ValueError()
         self.randomizeAngles()
         energy = self.energy()
@@ -2171,7 +2253,6 @@ class refine:
         if dOpt['dfreeSteps']> 0:
             self.refine(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
         ec = self.molecule.getEnergyCoords()
-	ec.dumpRestraints()
 
     def cdynamics(self, steps, hiTemp, medTemp, timeStep=1.0e-3):
         self.updateAt(20)
