@@ -128,6 +128,25 @@ public class Atom implements IAtom {
 
     }
 
+    public class AtomComparator implements Comparator<Atom> {
+
+        @Override
+        public int compare(Atom atom1, Atom atom2) {
+            int entityID1 = atom1.getTopEntity().entityID;
+            int entityID2 = atom2.getTopEntity().entityID;
+            int result = Integer.compare(entityID1, entityID2);
+            if (result == 0) {
+                entityID1 = atom1.getEntity().entityID;
+                entityID2 = atom2.getEntity().entityID;
+                result = Integer.compare(entityID1, entityID2);
+                if (result == 0) {
+                    result = atom1.getName().compareTo(atom2.getName());
+                }
+            }
+            return result;
+        }
+    }
+
     public static Atom genAtomWithType(String name, String aType) {
         AtomEnergyProp atomEnergyProp = AtomEnergyProp.get(aType);
         Atom atom = new Atom(name, atomEnergyProp);
@@ -634,7 +653,7 @@ public class Atom implements IAtom {
         PPMv ppmV = null;
         if (spatialSet == null) {
         } else if (spatialSet != null) {
-            ppmV = spatialSet.getRefPPM();
+            ppmV = spatialSet.getRefPPM(i);
         }
         return ppmV;
     }
@@ -648,13 +667,13 @@ public class Atom implements IAtom {
         }
     }
 
-    public Double getDeltaPPM() {
-        Double value = getPPM();
-        Double ref = getRefPPM();
-        Double sdev = getSDevRefPPM();
+    public Double getDeltaPPM(int ppmSet, int refSet) {
+        PPMv ppmV = getPPM(ppmSet);
+        PPMv refV = getRefPPM(refSet);
         Double delta;
-        if ((value != null) && (ref != null) && (sdev != null)) {
-            delta = (value - ref) / sdev;
+        if ((ppmV != null) && ppmV.isValid() && (refV != null)
+                && refV.isValid()) {
+            delta = (ppmV.getValue() - refV.getValue()) / refV.getError();
             delta = Math.round(delta * 100.0) / 100.0;
         } else {
             delta = null;
@@ -670,6 +689,10 @@ public class Atom implements IAtom {
         spatialSet.setPPM(i, value, false);
     }
 
+    public void setPPMError(int i, double value) {
+        spatialSet.setPPM(i, value, true);
+    }
+
     public void setRefPPM(double value) {
         spatialSet.setRefPPM(0, value);
     }
@@ -680,6 +703,10 @@ public class Atom implements IAtom {
 
     public void setRefError(double value) {
         spatialSet.setRefError(0, value);
+    }
+
+    public void setRefError(int i, double value) {
+        spatialSet.setRefError(i, value);
     }
 
     public void setPPMValidity(int i, boolean validity) {

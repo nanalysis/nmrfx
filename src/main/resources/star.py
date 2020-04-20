@@ -4,7 +4,8 @@ from java.io import File
 
 def read(fileName):
     file = File(fileName)
-    NMRStarReader.read(file)
+    star3 = NMRStarReader.read(file)
+    return star3
 
 def write(fileName):
     NMRStarWriter.writeAll(fileName)

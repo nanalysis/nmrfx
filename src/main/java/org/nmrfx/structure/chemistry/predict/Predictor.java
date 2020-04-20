@@ -23,7 +23,6 @@ import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.Polymer;
-import org.nmrfx.structure.chemistry.ProteinPredictor;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.chemistry.energy.EnergyCoords;
 import org.nmrfx.structure.chemistry.energy.RingCurrentShift;
@@ -37,6 +36,8 @@ import org.python.util.PythonInterpreter;
  * @author Bruce Johnson
  */
 public class Predictor {
+
+    ProteinPredictor proteinPredictor = null;
 
     /**
      * @return the rMax
@@ -223,14 +224,32 @@ public class Predictor {
         return alphas[alphaClass][nAlpha - 4 + index];
     }
 
-    public void predictMolecule(Molecule mol, int iRef) throws InvalidMoleculeException {
+    public void predictProtein(Molecule mol, int iRef) throws InvalidMoleculeException, IOException {
+        if (proteinPredictor == null) {
+            proteinPredictor = new ProteinPredictor();
+        }
+        proteinPredictor.init(mol);
+        proteinPredictor.predict(iRef);
+    }
 
+    public void predictMolecule(Molecule mol, int iRef) throws InvalidMoleculeException, IOException {
+
+        boolean hasPeptide = false;
         for (Polymer polymer : mol.getPolymers()) {
-            if (!isRNA(polymer)) {
-                predictPeptidePolymer(polymer, iRef);
-            } else {
-                predictRNAWithRingCurrent(polymer, 0, iRef);
+            if (isRNA(polymer)) {
+                predictRNAWithDistances(polymer, 0, iRef, false);
+            } else if (polymer.isPeptide()) {
+                hasPeptide = true;
             }
+        }
+
+        if (hasPeptide) {
+            if (proteinPredictor == null) {
+                proteinPredictor = new ProteinPredictor();
+            }
+            proteinPredictor.init(mol);
+            proteinPredictor.predict(iRef);
+
         }
         boolean hasPolymer = !mol.getPolymers().isEmpty();
         for (Entity entity : mol.getLigands()) {
@@ -241,31 +260,12 @@ public class Predictor {
         }
     }
 
-    public void predictPeptidePolymer(Polymer polymer, int iRef) throws InvalidMoleculeException {
-        String[] atomNames = {"N", "CA", "CB", "C", "H", "HA", "HA3"};
-        ProteinPredictor predictor = new ProteinPredictor(polymer);
-        polymer.getResidues().forEach((residue) -> {
-            for (String atomName : atomNames) {
-                if (residue.getName().equals("GLY") && atomName.equals("HA")) {
-                    atomName = "HA2";
-                }
-                Atom atom = residue.getAtom(atomName);
-                if (atom != null) {
-                    Double value = predictor.predict(atom, false);
-                    if (value != null) {
-                        atom.setRefPPM(iRef, value);
-                    }
-                }
-            }
-        });
-    }
-
-    public void predictRNAWithAttributes() {
+    public void predictRNAWithAttributes(int ppmSet) {
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             if (!molecule.getDotBracket().equals("")) {
                 PythonInterpreter interp = new PythonInterpreter();
-                interp.exec("import rnapred\nrnapred.predictFromSequence()");
+                interp.exec("import rnapred\nrnapred.predictFromSequence(ppmSet=" + ppmSet + ")");
             }
         }
     }
@@ -285,7 +285,11 @@ public class Predictor {
                 double basePPM = RNA_REF_SHIFTS.get(nucName + "." + aName);
                 double ringPPM = ringShifts.calcRingContributions(atom.getSpatialSet(), iStruct, ringRatio);
                 double ppm = basePPM + ringPPM;
-                atom.setRefPPM(iRef, ppm);
+                if (iRef < 0) {
+                    atom.setRefPPM(-iRef - 1, ppm);
+                } else {
+                    atom.setPPM(iRef, ppm);
+                }
             }
         }
     }
@@ -304,7 +308,11 @@ public class Predictor {
             if (ppmV != null) {
                 double basePPM = ppmV.getValue();
                 double ppm = basePPM + ringPPM;
-                atom.setRefPPM(iRef, ppm);
+                if (iRef < 0) {
+                    atom.setRefPPM(-iRef - 1, ppm);
+                } else {
+                    atom.setPPM(iRef, ppm);
+                }
             }
         }
     }
@@ -386,7 +394,11 @@ public class Predictor {
                             distPPM += shiftContrib;
                         }
                         double ppm = basePPM + distPPM;
-                        atom.setRefPPM(iRef, ppm);
+                        if (iRef < 0) {
+                            atom.setRefPPM(-iRef - 1, ppm);
+                        } else {
+                            atom.setPPM(iRef, ppm);
+                        }
                     }
                 }
             }
@@ -430,7 +442,11 @@ public class Predictor {
                     double shift = hoseStat.dStat.getPercentile(50);
                     shift = Math.round(shift * roundScale) / roundScale;
                     System.out.println(atom.getShortName() + " " + predResult.getShell() + " " + shift);
-                    atom.setRefPPM(iRef, shift);
+                    if (iRef < 0) {
+                        atom.setRefPPM(-iRef - 1, shift);
+                    } else {
+                        atom.setPPM(iRef, shift);
+                    }
                 }
             }
         }

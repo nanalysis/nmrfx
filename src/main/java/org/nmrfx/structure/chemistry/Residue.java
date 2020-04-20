@@ -200,10 +200,11 @@ public class Residue extends Compound {
 
     public Atom[] getPseudo(String pseudoName) {
         pseudoName = pseudoName.toUpperCase();
-        if (pseudoName.charAt(0) == 'M') {
-            pseudoName = PSEUDO_MAP.get(name.toUpperCase() + ":" + pseudoName);
-        } else if (!pseudoMap.containsKey(pseudoName)) {
-            pseudoName = PSEUDO_MAP.get(name.toUpperCase() + ":" + pseudoName);
+        if (!pseudoMap.containsKey(pseudoName)) {
+            String testName = name.toUpperCase() + ":" + pseudoName;
+            if (PSEUDO_MAP.containsKey(testName)) {
+                pseudoName = PSEUDO_MAP.get(testName);
+            }
         }
         return pseudoName != null ? pseudoMap.get(pseudoName) : null;
     }
@@ -658,6 +659,16 @@ public class Residue extends Compound {
             }
         }
         return 0;
+    }
+    
+    public String getSSType() {
+        String type;
+        if (secStruct != null) {
+            type = secStruct.getName();
+        } else {
+            type = "";
+        }
+        return type;
     }
 
 }

@@ -187,7 +187,9 @@ public class Polymer extends Entity {
     public String getPolymerType() {
         if ((polymerType == null) || (polymerType.equals(""))) {
             if (isRNA()) {
-                return "nucleicacid";
+                return "polyribonucleotide";
+            } else if (isDNA()) {
+                return "polynucleotide";
             } else {
                 return "polypeptide";
             }
@@ -302,6 +304,10 @@ public class Polymer extends Entity {
         });
         molecule.setupRotGroups();
         molecule.setupAngles();
+    }
+
+    public boolean isPeptide() {
+        return !isRNA() && !isDNA();
     }
 
     public boolean isRNA() {
