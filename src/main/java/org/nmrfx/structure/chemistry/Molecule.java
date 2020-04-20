@@ -669,7 +669,7 @@ public class Molecule implements Serializable, ITree {
 
     }
 
-    public static double calcDihedral(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3,
+    public double calcDihedral(MolFilter molFilter1, MolFilter molFilter2, MolFilter molFilter3,
             MolFilter molFilter4) throws IllegalArgumentException {
         MolFilter[] molFilters = new MolFilter[4];
         molFilters[0] = molFilter1;
@@ -680,7 +680,7 @@ public class Molecule implements Serializable, ITree {
         Point3[] pts = new Point3[4];
         int i = 0;
         for (MolFilter molFilter : molFilters) {
-            spSets[i] = getSpatialSet(molFilter);
+            spSets[i] = findSpatialSet(molFilter);
             if (spSets[i] == null) {
                 throw new IllegalArgumentException("No atom for " + molFilter.getString());
             }
@@ -1126,6 +1126,22 @@ public class Molecule implements Serializable, ITree {
                 continue;
             }
             int nSets = spatialSet.getPPMSetCount();
+            if (nSets > maxCount) {
+                maxCount = nSets;
+            }
+        }
+        return maxCount;
+    }
+
+    public int getRefPPMSetCount() {
+        Iterator e = getSpatialSetIterator();
+        int maxCount = 1;
+        while (e.hasNext()) {
+            SpatialSet spatialSet = (SpatialSet) e.next();
+            if (spatialSet == null) {
+                continue;
+            }
+            int nSets = spatialSet.getRefPPMSetCount();
             if (nSets > maxCount) {
                 maxCount = nSets;
             }
@@ -1897,7 +1913,7 @@ public class Molecule implements Serializable, ITree {
      * @return RealMatrix coordinates of the rotated axes
      */
     public RealMatrix calcSVDAxes(double[][] inputAxes) {
-        RealMatrix rotMat = getSVDRotationMatrix();
+        RealMatrix rotMat = getSVDRotationMatrix(true);
         RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
         RealMatrix axes = rotMat.multiply(inputAxesM);
 
@@ -1912,20 +1928,43 @@ public class Molecule implements Serializable, ITree {
      * @return RealMatrix coordinates of the rotated axes
      */
     public RealMatrix getRDCAxes(double[][] inputAxes) {
-        RealMatrix rotMat = getRDCRotationMatrix();
-        RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
-        RealMatrix axes = rotMat.multiply(inputAxesM);
-
-        return axes;
+        RealMatrix rotMat = getRDCRotationMatrix(true);
+        if (rotMat == null) {
+            return null;
+        } else {
+            RealMatrix inputAxesM = new Array2DRowRealMatrix(inputAxes);
+            RealMatrix axes = rotMat.multiply(inputAxesM);
+            return axes;
+        }
     }
 
-    public RealMatrix getRDCRotationMatrix() {
-        EigenDecomposition rdcEig = rdcResults.getEig();
-        RealMatrix rotMat = rdcEig.getVT();
-        return rotMat;
+    public RealMatrix getRDCRotationMatrix(boolean scaleMat) {
+        if (rdcResults == null) {
+            return null;
+        } else {
+            EigenDecomposition rdcEig = rdcResults.getEig();
+            double[] eigValues = rdcEig.getRealEigenvalues();
+            double maxEig = Double.NEGATIVE_INFINITY;
+            for (int i = 0; i < 3; i++) {
+                if (Math.abs(eigValues[i]) > maxEig) {
+                    maxEig = Math.abs(eigValues[i]);
+                }
+            }
+
+            RealMatrix rotMat = rdcEig.getVT().copy();
+            if (scaleMat) {
+                for (int i = 0; i < 3; i++) {
+                    double scale = eigValues[i] / maxEig;
+                    rotMat.setEntry(i, 0, rotMat.getEntry(i, 0) * scale);
+                    rotMat.setEntry(i, 1, rotMat.getEntry(i, 1) * scale);
+                    rotMat.setEntry(i, 2, rotMat.getEntry(i, 2) * scale);
+                }
+            }
+            return rotMat;
+        }
     }
 
-    public RealMatrix getSVDRotationMatrix() {
+    public RealMatrix getSVDRotationMatrix(boolean scaleMat) {
         Point3 pt;
         double[] c = new double[3];
         try {
@@ -1963,7 +2002,9 @@ public class Molecule implements Serializable, ITree {
         for (int i = 0; i < s.length; i++) {
             sMat.setEntry(i, i, sMat.getEntry(i, i) * maxX);
         }
-        rotMat = rotMat.preMultiply(sMat);
+        if (scaleMat) {
+            rotMat = rotMat.preMultiply(sMat);
+        }
         return rotMat;
     }
 
@@ -3686,22 +3727,19 @@ public class Molecule implements Serializable, ITree {
          */
     }
 
-    public static boolean isDisulfide(Atom sg1, int iStruct) {
+    public boolean isDisulfide(Atom sg1, int iStruct) {
         boolean result = false;
         if (sg1.getName().equals("SG")) {
-            if (Molecule.atomList == null) {
-                Molecule.makeAtomList();
-            }
             Point3 pt1 = sg1.getPoint(iStruct);
-
-            for (int i = 0; i < Molecule.atomList.size(); i++) {
-                Atom sg2 = Molecule.atomList.get(i);
+            for (Atom sg2 : atoms) {
                 if ((sg1 != sg2) && sg2.getName().equals("SG")) {
                     Point3 pt2 = sg2.getPoint(iStruct);
-                    double distance = Atom.calcDistance(pt1, pt2);
-                    if (distance < 3.0) {
-                        result = true;
-                        break;
+                    if (pt2 != null) {
+                        double distance = Atom.calcDistance(pt1, pt2);
+                        if (distance < 3.0) {
+                            result = true;
+                            break;
+                        }
                     }
                 }
             }

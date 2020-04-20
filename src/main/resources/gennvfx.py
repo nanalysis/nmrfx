@@ -5,6 +5,31 @@ import os
 import osfiles
 import runpy
 from optparse import OptionParser
+from org.yaml.snakeyaml import Yaml
+
+yamlStr = '''  
+anneal :
+    dynOptions :
+        steps : 15000
+        highTemp : 5000.0
+    param :
+        swap : 20
+    force :
+        irp : 0.05
+'''
+
+
+def genNEFYaml(fileName):
+
+    input = 'nef : ' + fileName + '\n'
+    input += yamlStr
+
+    print input
+    
+    yaml = Yaml()
+    data = yaml.load(input)
+    return data
+
 
 def parseArgs():
     homeDir = os.getcwd()
@@ -29,8 +54,13 @@ def parseArgs():
     if not os.path.exists(outDir):
         os.mkdir(outDir)
 
+    data = None
     if argFile.endswith('.yaml'):
         data = readYaml(argFile)
+    elif argFile.endswith('.nef'):
+        data = genNEFYaml(argFile)
+
+    if data != None:
         global refiner
         refiner=refine()
         osfiles.setOutFiles(refiner,dataDir, seed)
