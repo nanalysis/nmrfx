@@ -309,9 +309,17 @@ public class Axis {
         ticFont = new Font(ticFontSize);
     }
 
+    public double getTickFontSize() {
+        return ticFontSize;
+    }
+
     public void setLabelFontSize(double size) {
         labelFontSize = size;
         labelFont = new Font(labelFontSize);
+    }
+
+    public double getLabelFontSize() {
+        return labelFontSize;
     }
 
     class TickInfo {
@@ -564,12 +572,36 @@ public class Axis {
         tickLabelsVisible = state;
     }
 
+    public boolean getTickLabelsVisible() {
+        return tickLabelsVisible;
+    }
+
     public void setLabelVisible(boolean state) {
         labelVisible = state;
     }
 
+    public boolean getLabelVisible() {
+        return labelVisible;
+    }
+
     public void setVisible(boolean state) {
 
+    }
+
+    public boolean isVisible() {
+        return true;
+    }
+
+    public void copyTo(Axis newAxis) {
+        newAxis.setColor(getColor());
+        newAxis.setLabel(getLabel());
+        newAxis.setLabelFontSize(getLabelFontSize());
+        newAxis.setAutoRanging(isAutoRanging());
+        newAxis.setLabelVisible(getLabelVisible());
+        newAxis.setReverse(isReversed());
+        newAxis.setTickFontSize(getTickFontSize());
+        newAxis.setTickLabelsVisible(getTickLabelsVisible());
+        newAxis.setVisible(isVisible());
     }
 
 }
