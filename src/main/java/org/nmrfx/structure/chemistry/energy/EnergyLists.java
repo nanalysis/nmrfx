@@ -88,7 +88,6 @@ public class EnergyLists {
     boolean[] stochasticResidues = null;
     boolean constraintsSetup = false;
     public static double[][][] irpTable;
-    public ArrayList<DistancePair> distanceList2 = new ArrayList<DistancePair>();
 
     public EnergyLists() {
     }
@@ -407,7 +406,7 @@ public class EnergyLists {
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
         if (restraintID != 0 && weight != null && targetValue != null && targetErr != null) {
-            distanceList2.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond, restraintID, weight, targetValue, targetErr));
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond, restraintID, weight, targetValue, targetErr));
         } else {
             distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond));
         }
@@ -453,7 +452,7 @@ public class EnergyLists {
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
         if (restraintID != 0 && weight != null && targetValue != null && targetErr != null) {
-            distanceList2.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, restraintID, weight, targetValue, targetErr));
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, restraintID, weight, targetValue, targetErr));
         } else {
             distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false));
         }
@@ -462,6 +461,10 @@ public class EnergyLists {
 
     }
 
+    public ArrayList<DistancePair> getDistanceList() {
+        return distanceList;
+    }
+    
     //calculates distance between center of the residues. If center is far away, no need to check atoms of residue
     public void makeCompoundList(Molecule molecule) {
         try {
