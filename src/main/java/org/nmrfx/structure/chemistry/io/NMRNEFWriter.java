@@ -171,7 +171,7 @@ public class NMRNEFWriter {
         }
         molecule.updateAtomArray();
         EnergyLists eLists = NMRNEFReader.energyList;
-        List<DistancePair> distList = eLists.distanceList2;
+        List<DistancePair> distList = eLists.getDistanceList();
         int idx = 1;
         Atom prevAtom1 = null;
         Atom prevAtom2 = null;
