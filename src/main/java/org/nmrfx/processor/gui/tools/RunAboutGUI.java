@@ -252,7 +252,7 @@ public class RunAboutGUI implements PeakListener {
 
     void assemble() {
         runAbout.assemble();
-        useSpinSystem = true;
+       // useSpinSystem = true;
     }
 
     public void updatePeakListMenu() {
@@ -295,6 +295,7 @@ public class RunAboutGUI implements PeakListener {
 
     public void setPeakList(String listName) {
         refPeakList = PeakList.get(listName);
+        PeakList.clusterOrigin = refPeakList;
         RunAboutGUI.this.setPeakList(refPeakList);
     }
 
