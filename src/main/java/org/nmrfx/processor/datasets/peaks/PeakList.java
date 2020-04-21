@@ -17,8 +17,6 @@
  */
 package org.nmrfx.processor.datasets.peaks;
 
-import org.nmrfx.processor.cluster.Clusters;
-import org.nmrfx.processor.cluster.Datum;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.optimization.*;
 import org.nmrfx.processor.utilities.Util;
@@ -48,7 +46,8 @@ import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.nmrfx.processor.cluster.Clusters;
+import org.nmrfx.processor.cluster.Clusters.ClusterItem;
 import org.nmrfx.processor.datasets.Nuclei;
 import org.nmrfx.processor.datasets.RegionData;
 import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
@@ -2314,6 +2313,8 @@ public class PeakList {
         double[] tol = null;
 
         for (PeakList peakList : peakLists) {
+            // fixme  should remove unlink and properly support links below
+            peakList.unLinkPeaks();
             peakList.peaks.stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0));
             int fDim = peakList.searchDims.size();
             if (fDim == 0) {
@@ -2321,11 +2322,10 @@ public class PeakList {
             }
         }
 
-        final int nGroups = peakLists.size();
-
         boolean firstList = true;
         int ii = 0;
         int fDim = 0;
+        int iList = 0;
         for (PeakList peakList : peakLists) {
 
             if (firstList) {
@@ -2347,65 +2347,53 @@ public class PeakList {
                 }
 
                 clustPeaks.add(peak);
-                final Datum datum = new Datum(peakList.searchDims.size());
-                datum.act = true;
-                datum.proto[0] = ii;
-                datum.idNum = ii;
-
-                if (firstList && (nGroups > 1)) {
-                    datum.group = 0;
-                }
 
                 ii++;
-
+                double[] v = new double[peakList.searchDims.size()];
                 for (int k = 0; k < peakList.searchDims.size(); k++) {
                     SearchDim sDim = peakList.searchDims.get(k);
-                    datum.v[k] = 0.0;
+                    v[k] = 0.0;
 
                     for (int iPeak = 0; iPeak < linkedPeaks.size(); iPeak++) {
                         Peak peak2 = linkedPeaks.get(iPeak);
                         peak2.setStatus(1);
-                        datum.v[k] += peak2.peakDims[sDim.iDim].getChemShiftValue();
+                        v[k] += peak2.peakDims[sDim.iDim].getChemShiftValue();
                     }
 
-                    datum.v[k] /= linkedPeaks.size();
+                    v[k] /= linkedPeaks.size();
 
                     //datum.n = linkedPeaks.size();
                     tol[k] = sDim.tol;
                 }
+                ClusterItem clusterItem = new ClusterItem(peak, v, iList);
 
-                clusters.data.add(datum);
+                clusters.addDatum(clusterItem);
             }
+            iList++;
             firstList = false;
         }
-
         clusters.doCluster(fDim, tol);
+        clusters.testDuplicates();
 
         int nClusters = 0;
         for (int i = 0; i < clusters.data.size(); i++) {
-            Datum iDatum = (Datum) clusters.data.get(i);
-
-            if (iDatum.act) {
-                nClusters++;
-                for (int j = 0; j < clusters.data.size(); j++) {
-                    if (i == j) {
-                        continue;
-                    }
-
-                    Datum jDatum = (Datum) clusters.data.get(j);
-
-                    if (iDatum.proto[0] == jDatum.proto[0]) {
-                        for (int iDim = 0; iDim < fDim; iDim++) {
-                            Peak iPeak = clustPeaks.get(iDatum.idNum);
-                            Peak jPeak = clustPeaks.get(jDatum.idNum);
-                            SearchDim iSDim = iPeak.peakList.searchDims.get(iDim);
-                            SearchDim jSDim = jPeak.peakList.searchDims.get(iDim);
-
-                            linkPeaks(iPeak, iSDim.iDim, jPeak, jSDim.iDim);
-                        }
+            ClusterItem iDatum = clusters.data.get(i);
+            if (iDatum.isActive()) {
+                List<Object> objs = iDatum.getObjects();
+                Peak iPeak = (Peak) objs.get(0);
+                PeakList.unLinkPeak(iPeak);
+                for (int iObj = 1; iObj < objs.size(); iObj++) {
+                    Peak jPeak = (Peak) objs.get(iObj);
+                    PeakList.unLinkPeak(jPeak);
+                    for (int iDim = 0; iDim < fDim; iDim++) {
+                        SearchDim iSDim = iPeak.peakList.searchDims.get(iDim);
+                        SearchDim jSDim = jPeak.peakList.searchDims.get(iDim);
+                        linkPeaks(iPeak, iSDim.iDim, jPeak, jSDim.iDim);
                     }
                 }
+                nClusters++;
             }
+
         }
         return nClusters;
     }
