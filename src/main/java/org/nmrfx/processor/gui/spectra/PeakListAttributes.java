@@ -742,6 +742,18 @@ public class PeakListAttributes implements PeakListener {
         peaksInRegion = Optional.empty();
     }
 
+    public void copyTo(PeakListAttributes peakAttr) {
+        peakAttr.setLabelType(getLabelType());
+        peakAttr.setDisplayType(getDisplayType());
+        peakAttr.setSimPeaks(getSimPeaks());
+        peakAttr.setNplanes(getNplanes());
+        peakAttr.setDrawPeaks(getDrawPeaks());
+        peakAttr.setColorType(getColorType());
+        peakAttr.setDrawLinks(getDrawLinks());
+        peakAttr.setOffColor(getOffColor());
+        peakAttr.setOnColor(getOnColor());
+    }
+
     public void config(String name, Object value) {
         ConsoleUtil.runOnFxThread(() -> {
             try {

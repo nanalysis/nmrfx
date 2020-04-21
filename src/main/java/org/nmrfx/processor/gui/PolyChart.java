@@ -779,6 +779,32 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    public void popView() {
+        FXMLController newController = FXMLController.create();
+        PolyChart newChart = newController.getActiveChart();
+        copyTo(newChart);
+        newController.getStatusBar().setMode(controller.getStatusBar().getMode());
+        newChart.refresh();
+    }
+
+    public void copyTo(PolyChart newChart) {
+        for (DatasetAttributes dataAttr : datasetAttributesList) {
+            DatasetAttributes newDataAttr = newChart.setDataset(dataAttr.getDataset(), true);
+            dataAttr.copyTo(newDataAttr);
+        }
+        for (PeakListAttributes peakAttr : peakListAttributesList) {
+            PeakListAttributes newPeakAttr = newChart.setupPeakListAttributes(peakAttr.getPeakList());
+            peakAttr.copyTo(newPeakAttr);
+        }
+        for (int iAxis = 0; iAxis < axes.length; iAxis++) {
+            newChart.axModes[iAxis] = axModes[iAxis];
+            newChart.setAxis(iAxis, axes[iAxis].getLowerBound(), axes[iAxis].getUpperBound());
+            newChart.axes[iAxis].setLabel(axes[iAxis].getLabel());
+            axes[iAxis].copyTo(newChart.axes[iAxis]);
+        }
+        newChart.refresh();
+    }
+
     protected double[] getRange(int axis, double min, double max) {
         double[] limits = getRange(axis);
         if (min > limits[0]) {

@@ -65,6 +65,11 @@ public class SpectrumMenu extends ChartMenu {
             chart.zoom(0.8);
         });
         viewMenu.getItems().add(zoomOutItem);
+        MenuItem popOutItem = new MenuItem("Pop View Out");
+        popOutItem.setOnAction((ActionEvent e) -> {
+            chart.popView();
+        });
+        viewMenu.getItems().add(popOutItem);
 
         Menu baselineMenu = new Menu("Baseline");
         MenuItem addBaselineItem = new MenuItem("Add Baseline Region");

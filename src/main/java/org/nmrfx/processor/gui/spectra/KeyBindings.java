@@ -278,6 +278,10 @@ public class KeyBindings {
                 chart.swapView();
                 keyMonitor.clear();
                 break;
+            case "vp":
+                chart.popView();
+                keyMonitor.clear();
+                break;
             case "j":
                 break;
             case "jx":

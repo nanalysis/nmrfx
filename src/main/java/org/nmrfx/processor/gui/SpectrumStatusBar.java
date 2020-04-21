@@ -110,6 +110,7 @@ public class SpectrumStatusBar {
     static Background errorBackground = new Background(new BackgroundFill(Color.ORANGE, CornerRadii.EMPTY, Insets.EMPTY));
     Background defaultBackground = null;
     boolean arrayMode = false;
+    int currentMode = 0;
 
     public SpectrumStatusBar(FXMLController controller) {
         this.controller = controller;
@@ -547,8 +548,13 @@ public class SpectrumStatusBar {
         updateRowSpinner(0, 1);
 
     }
+    
+    public int getMode() {
+        return currentMode;
+    }
 
     public void setMode(int mode) {
+        currentMode = mode;
         arrayMode = false;
         List<Node> nodes = new ArrayList<>();
         if (mode == 0) {
