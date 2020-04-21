@@ -86,7 +86,7 @@ public class RunAbout {
                 List<String> aTypes = new ArrayList<>();
                 for (int i = 0; i < patElems.size(); i++) {
                     peakList.getSpectralDim(i).setPattern(patElems.get(i).trim());
-                    peakList.getSpectralDim(i).setTol(tols[i]);
+                    peakList.getSpectralDim(i).setIdTol(tols[i]);
                     String patElem = patElems.get(i);
                     int dotPos = patElem.indexOf(".");
                     String aType = patElem.substring(dotPos + 1, dotPos + 2);
@@ -179,7 +179,13 @@ public class RunAbout {
     public void assemble() {
         System.out.println("assemble " + peakListMap.keySet().toString());
         getSpinSystems().assembleWithClustering(peakLists);
+    }
+
+    public void calcCombinations() {
         getSpinSystems().calcCombinations();
+    }
+
+    public void compare() {
         getSpinSystems().compare();
         getSpinSystems().dump();
     }
