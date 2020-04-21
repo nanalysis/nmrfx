@@ -20,16 +20,20 @@ package org.nmrfx.structure.chemistry.io;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
+import org.nmrfx.structure.chemistry.energy.AngleBoundary;
 import org.nmrfx.structure.chemistry.energy.AtomDistancePair;
+import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.DistancePair;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
 
@@ -181,22 +185,67 @@ public class NMRNEFWriter {
             for (AtomDistancePair pair : pairAtoms) {
                 Atom[] a1List = pair.getAtoms1();
                 Atom[] a2List = pair.getAtoms2();
-                for (Atom atom1 : a1List) {
-//                    System.out.println("a1: " + atom1);
-                    for (Atom atom2 : a2List) {
-//                        System.out.println("a2: " + atom2);
-                        String result = atom1.toNEFDistanceString(idx, distPair, atom2, prevAtom1, prevAtom2);
-                        if (result != null) {
-                            prevAtom1 = atom1;
-                            prevAtom2 = atom2;
-                            chan.write(result + "\n");
-                            idx++;
-                        }
-                    }
+                Atom atom1 = a1List[0];
+                Atom atom2 = a2List[0];
+                String result = atom1.toNEFDistanceString(idx, distPair, atom2, prevAtom1, prevAtom2);
+                if (result != null) {
+                    prevAtom1 = atom1;
+                    prevAtom2 = atom2;
+                    chan.write(result + "\n");
+                    idx++;
                 }
             }
         }
         chan.write("\tstop_\n");
+        chan.write("save_\n");
+    }
+
+    public static void writeDihedrals(FileWriter chan) throws IOException, InvalidMoleculeException {
+        chan.write("\n");
+        chan.write("save_nef_dihedral_restraint_list_1pqx.mr\n"); //fixme dynamically get framecode
+        chan.write("    _nef_dihedral_restraint_list.sf_category       ");
+        chan.write("nef_dihedral_restraint_list\n");
+        chan.write("    _nef_dihedral_restraint_list.sf_framecode      ");
+        chan.write("nef_dihedral_restraint_list_1pqx.mr\n"); //fixme dynamically get framecode
+        chan.write("    _nef_dihedral_restraint_list.potential_type    ");
+        chan.write(".\n");
+        chan.write("    _nef_dihedral_restraint_list.restraint_origin  ");
+        chan.write(".\n");
+        chan.write("\n");
+
+        chan.write("    loop_\n");
+        for (String loopString : dihedralRestraintLoopStrings) {
+            chan.write("          " + loopString + "\n");
+        }
+        chan.write("\n");
+        Molecule molecule = Molecule.getActive();
+        if (molecule == null) {
+            throw new InvalidMoleculeException("No active mol");
+        }
+        molecule.updateAtomArray();
+        Dihedral dihedral = NMRNEFReader.dihedral;
+        HashMap<Integer, AngleBoundary> angleBoundsMap = dihedral.getAngleBoundariesNEF();
+        Comparator<AngleBoundary> angleCmp = new Comparator<AngleBoundary>() {
+            @Override
+            public int compare(AngleBoundary bound1, AngleBoundary bound2) {
+                int restraintID1 = bound1.getRestraintID();
+                int restraintID2 = bound2.getRestraintID();
+                int result = Integer.compare(restraintID1, restraintID2);
+                return result;
+            }
+        };
+        List<AngleBoundary> angleBounds = new ArrayList(angleBoundsMap.values());
+        Collections.sort(angleBounds, angleCmp);
+        int i = 1;
+        for (AngleBoundary bound : angleBounds) {
+            Atom[] atoms = bound.getAtoms();
+            String result = atoms[0].toNEFDihedralString(bound, atoms, i);
+            if (result != null) {
+                chan.write(result + "\n");
+                i++;
+            }
+        }
+        chan.write("    stop_\n");
         chan.write("save_\n");
     }
 
@@ -222,6 +271,7 @@ public class NMRNEFWriter {
             writeMolSys(chan);
             writePPM(chan);
             writeDistances(chan);
+            writeDihedrals(chan);
 //            writeMoleculeSTAR3(chan, molecule, 1);
         }
 //        // fixme Dataset.writeDatasetsToSTAR3(channelName);

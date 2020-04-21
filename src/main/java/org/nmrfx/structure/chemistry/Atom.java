@@ -22,6 +22,7 @@ import java.util.*;
 import javax.vecmath.Point2d;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.processor.datasets.peaks.AtomResonance;
+import org.nmrfx.structure.chemistry.energy.AngleBoundary;
 import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
 import org.nmrfx.structure.chemistry.energy.DistancePair;
 import org.nmrfx.structure.chemistry.miner.IAtom;
@@ -1274,7 +1275,7 @@ public class Atom implements IAtom {
             return null;
         }
         StringBuilder sBuilder = new StringBuilder();
-        String sep = "\t\t";
+        String sep = "        ";
         if (entity instanceof Residue) {
             //index
             sBuilder.append(index);
@@ -1351,6 +1352,87 @@ public class Atom implements IAtom {
             // upper limit
             double upper = distPair.getUpper();
             sBuilder.append(upper);
+            sBuilder.append(sep);
+
+        }
+
+        return (sBuilder.toString());
+    }
+
+    public String toNEFDihedralString(AngleBoundary bound, Atom[] atoms, int iBound) {
+//        String writeName1 = formatNEFAtomName(this, true);
+//        String writeName2 = formatNEFAtomName(atom2, true);
+//        if (writeName1 == null || writeName2 == null
+//                || (this.isMethyl() && this.equals(prevAtom1))
+//                || (atom2.isMethyl() && atom2.equals(prevAtom2))) {
+//            return null;
+//        }
+        StringBuilder sBuilder = new StringBuilder();
+        String sep = "        ";
+        if (entity instanceof Residue) {
+            //index
+            sBuilder.append(iBound);
+            sBuilder.append(sep);
+
+            //restraint ID
+            int restraintID = bound.getRestraintID();
+            sBuilder.append(restraintID);
+            sBuilder.append(sep);
+
+            //restraint combo ID
+            sBuilder.append("."); //fixme should be combo ID
+            sBuilder.append(sep);
+
+            for (Atom atom : atoms) {
+                // chain code 
+                String polymerName = ((Residue) atom.entity).polymer.getName();
+                char chainID = polymerName.charAt(0);
+                sBuilder.append(chainID);
+                sBuilder.append(sep);
+
+                // sequence code 
+                sBuilder.append(((Residue) atom.entity).getIDNum());
+                sBuilder.append(sep);
+
+                // residue name 
+                sBuilder.append(((Residue) atom.entity).name);
+                sBuilder.append(sep);
+
+                // atom name 
+                sBuilder.append(atom.name);
+                sBuilder.append(sep);
+            }
+
+            // weight
+            double weight = bound.getWeight();
+            sBuilder.append(weight);
+            sBuilder.append(sep);
+
+            // target value
+            double target = bound.getTargetValue();
+            sBuilder.append(target);
+            sBuilder.append(sep);
+
+            // target value uncertainty
+            double targetErr = bound.getTargetError();
+            sBuilder.append(targetErr);
+            sBuilder.append(sep);
+
+            // lower limit
+            double lower1 = Math.toDegrees(bound.getLower());
+            double lower = Math.round(lower1 * 100000d) / 100000d;
+            sBuilder.append(lower);
+            sBuilder.append(sep);
+
+            // upper limit
+            double upper1 = Math.toDegrees(bound.getUpper());
+            double upper = Math.round(upper1 * 100000d) / 100000d;
+            sBuilder.append(upper);
+            sBuilder.append(sep);
+            
+            // name
+            String name = bound.getName();
+            sBuilder.append(name);
             sBuilder.append(sep);
 
         }
