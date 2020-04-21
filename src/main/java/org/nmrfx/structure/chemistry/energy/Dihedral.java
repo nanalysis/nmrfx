@@ -70,6 +70,7 @@ public class Dihedral {
     static double initPuckerAmplitude = 45 * toRad;
     static double initPseudoAngle = 18 * toRad;
     public static double backBoneScale = 4.0;
+    static HashMap<Integer, AngleBoundary> angleBoundariesNEF = new HashMap<Integer, AngleBoundary>();
 
     double maxSigma = 20;
 
@@ -399,7 +400,29 @@ public class Dihedral {
         AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale);
         angleBoundaries.put(angleBoundary.getRefAtom().getFullName(), angleBoundary);
     }
+    
+    public void addBoundary(final Atom[] atoms, double lower, double upper, double scale,
+            int restraintID, double weight, double target, double targetErr, String name) throws InvalidMoleculeException {
+        if (atoms.length != 4) {
+            throw new IllegalArgumentException("Error adding dihedral boundary, must provide four atoms");
+        }
+        for (Atom atom : atoms) {
+            if (atom == null) {
+                throw new IllegalArgumentException("Error adding dihedral boundary, invalid atom");
+            }
+        }
+        AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale, restraintID, weight, target, targetErr, name);
+        angleBoundariesNEF.put(restraintID, angleBoundary);
+    }
 
+    public HashMap<String, AngleBoundary> getAngleBoundaries() {
+        return angleBoundaries;
+    }
+    
+    public HashMap<Integer, AngleBoundary> getAngleBoundariesNEF() {
+        return angleBoundariesNEF;
+    }
+    
     public void clearBoundaries() {
         angleBoundaries.clear();
     }

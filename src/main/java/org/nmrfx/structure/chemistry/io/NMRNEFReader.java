@@ -50,6 +50,7 @@ public class NMRNEFReader {
     Map<Long, List<PeakDim>> resMap = new HashMap<>();
     public static boolean DEBUG = false;
     public static EnergyLists energyList;
+    public static Dihedral dihedral;
 
     public NMRNEFReader(final File nefFile, final STAR3 nef) {
         this.nef = nef;
@@ -329,22 +330,52 @@ public class NMRNEFReader {
         List<String>[] sequenceCodeColumns = new ArrayList[4];
         List<String>[] residueNameColumns = new ArrayList[4];
         List<String>[] atomNameColumns = new ArrayList[4];
+        List<Integer> indexColumn = new ArrayList<>();
+        List<Integer> restraintIDColumn = new ArrayList<>();
+
+        indexColumn = loop.getColumnAsIntegerList("index", 0);
+        restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
         for (int i = 1; i <= 4; i++) {
             chainCodeColumns[i - 1] = loop.getColumnAsList("chain_code_" + i);
             sequenceCodeColumns[i - 1] = loop.getColumnAsList("sequence_code_" + i);
             residueNameColumns[i - 1] = loop.getColumnAsList("residue_name_" + i);
             atomNameColumns[i - 1] = loop.getColumnAsList("atom_name_" + i);
         }
+        List<String> weightColumn = loop.getColumnAsList("weight");
+        List<String> targetValueColumn = loop.getColumnAsList("target_value");
+        List<String> targetErrColumn = loop.getColumnAsList("target_value_uncertainty");
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
+        List<String> nameColumn = loop.getColumnAsList("name");
         for (int i = 0; i < atomNameColumns[0].size(); i++) {
+            int restraintID = restraintIDColumn.get(i);
+            String weightValue = (String) weightColumn.get(i);
+            String targetValue = (String) targetValueColumn.get(i);
+            String targetErrValue = (String) targetErrColumn.get(i);
             String upperValue = (String) upperColumn.get(i);
             String lowerValue = (String) lowerColumn.get(i);
+            String nameValue = (String) nameColumn.get(i);
             double upper = Double.parseDouble(upperValue);
             double lower = Double.parseDouble(lowerValue);
             if (lower < -180) {
                 lower += 360;
                 upper += 360;
+            }
+            double weight = 0.0;
+            if (!weightValue.equals(".")) {
+                weight = Double.parseDouble(weightValue);
+            }
+            double target = 0.0;
+            if (!targetValue.equals(".")) {
+                target = Double.parseDouble(targetValue);
+            }
+            double targetErr = 0.0;
+            if (!targetErrValue.equals(".")) {
+                targetErr = Double.parseDouble(targetErrValue);
+            }
+            String name = " ";
+            if (!nameValue.equals(".")) {
+                name = nameValue;
             }
             Atom[] atoms = new Atom[4];
             for (int atomIndex = 0; atomIndex < 4; atomIndex++) {
@@ -356,7 +387,7 @@ public class NMRNEFReader {
             }
             double scale = 1.0;
             try {
-                dihedral.addBoundary(atoms, lower, upper, scale);
+                dihedral.addBoundary(atoms, lower, upper, scale, restraintID, weight, target, targetErr, name);
             } catch (InvalidMoleculeException imE) {
 
             }
@@ -466,7 +497,7 @@ public class NMRNEFReader {
             throw new IllegalArgumentException("?shifts fromSet toSet?");
         }
         AtomResonanceFactory resFactory = (AtomResonanceFactory) PeakDim.resFactory;
-        Dihedral dihedral = null;
+        dihedral = null;
         if (argv.length == 0) {
             hasResonances = false;
             Molecule.compoundMap.clear();
