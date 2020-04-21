@@ -67,7 +67,7 @@ public class SpinSystems {
         double sum = 0.0;
         for (int i = 0; i < aMatch.length; i++) {
             if (aMatch[i] != -1) {
-                double tolA = peakA.getPeakList().getSpectralDim(i).getTol();
+                double tolA = peakA.getPeakList().getSpectralDim(i).getIdTol();
                 Float valueA = peakA.peakDims[i].getChemShift();
                 Float valueB = peakB.peakDims[aMatch[i]].getChemShift();
                 if ((valueA != null) && (valueB != null)) {
@@ -115,12 +115,14 @@ public class SpinSystems {
     public void assembleWithClustering(List<PeakList> peakLists) {
         double[][] sums = calcNormalization(peakLists);
         PeakList refList = peakLists.get(0);
+        PeakList.clusterOrigin = refList;
         boolean[] useDim = new boolean[refList.getNDim()];
         for (int i = 0; i < useDim.length; i++) {
             useDim[i] = true;
         }
         int nPeakTypes = 0;
         for (PeakList peakList : peakLists) {
+            peakList.unLinkPeaks();
             if (peakList != refList) {
                 int[] aMatch = matchDims(refList, peakList);
                 for (int i = 0; i < aMatch.length; i++) {
@@ -149,11 +151,11 @@ public class SpinSystems {
             int[] aMatch = matchDims(refList, peakList);
             for (int i = 0; i < aMatch.length; i++) {
                 if (useDim[i] && (aMatch[i] != -1)) {
-                    peakList.addSearchDim(aMatch[i], peakList.getSpectralDim(aMatch[i]).getIdTol());
+                    double tol = peakList.getSpectralDim(aMatch[i]).getIdTol();
+                    peakList.addSearchDim(aMatch[i], tol);
                 }
             }
         }
-        System.out.println(peakMap.toString());
 
         PeakList.clusterPeaks(peakLists);
         int i = 0;
@@ -180,20 +182,21 @@ public class SpinSystems {
             }
             i++;
             int nPeaks = spinSys.peakMatches.size();
-            System.out.println(pkA.getName() + " " + nExpected + " " + nPeaks);
+            System.out.println("cluster " + pkA.getName() + " " + nExpected + " " + nPeaks);
         }
     }
 
     public void assemble(List<PeakList> peakLists) {
         spinSystems.clear();
         peakLists.forEach(peakListA -> {
+            peakListA.unLinkPeaks();
+        });
+        peakLists.forEach(peakListA -> {
             // set status to 0 for all active (status >= 0) peaks
             peakListA.peaks().stream().filter(p -> p.getStatus() >= 0).forEach(p -> p.setStatus(0));
             int nDim = peakListA.getNDim();
-            System.out.println(peakListA.getName());
             for (int i = 0; i < nDim; i++) {
                 SpectralDim sDim = peakListA.getSpectralDim(i);
-                System.out.println(sDim.getPattern() + " " + sDim.getTol());
             }
         });
 
@@ -205,18 +208,12 @@ public class SpinSystems {
                 pkA.setStatus(1);
                 peakLists.stream().filter(peakListB -> peakListB != peakListA).forEach(peakListB -> {
                     int[] aMatch = matchDims(peakListA, peakListB);
-                    for (int ii = 0; ii < aMatch.length; ii++) {
-                        System.out.print(" " + aMatch[ii] + " " + pkA.getPeakDim(ii).getChemShiftValue());
-                    }
-                    System.out.println("");
                     double sumF = peakListB.peaks().stream().filter(pkB -> pkB.getStatus() >= 0).
                             mapToDouble(pkB -> comparePeaks(pkA, pkB, aMatch)).sum();
-                    System.out.println(peakListB.getName() + " " + pkA.getName() + " " + sumF);
                     peakListB.peaks().stream().filter(pkB -> pkB.getStatus() == 0).
                             forEach(pkB -> {
                                 double f = comparePeaks(pkA, pkB, aMatch);
                                 if (f > 0.0) {
-                                    System.out.println(pkA.getName() + " " + pkB.getName() + " " + f);
                                     double p = f / sumF;
                                     if (p > 0.0) {
                                         spinSys.addPeak(pkB, p);
