@@ -187,7 +187,7 @@ public class NMRNEFWriter {
                 Atom[] a2List = pair.getAtoms2();
                 Atom atom1 = a1List[0];
                 Atom atom2 = a2List[0];
-                String result = atom1.toNEFDistanceString(idx, distPair, atom2, prevAtom1, prevAtom2);
+                String result = Atom.toNEFDistanceString(idx, distPair, atom1, atom2, prevAtom1, prevAtom2);
                 if (result != null) {
                     prevAtom1 = atom1;
                     prevAtom2 = atom2;
@@ -239,7 +239,7 @@ public class NMRNEFWriter {
         int i = 1;
         for (AngleBoundary bound : angleBounds) {
             Atom[] atoms = bound.getAtoms();
-            String result = atoms[0].toNEFDihedralString(bound, atoms, i);
+            String result = Atom.toNEFDihedralString(bound, atoms, i);
             if (result != null) {
                 chan.write(result + "\n");
                 i++;
