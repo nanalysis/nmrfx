@@ -319,11 +319,13 @@ public class SpatialSet {
     }
 
     public int getRefPPMSetCount() {
-        int last = 0;
-        for (int i = 0; i < refPPMVs.size(); i++) {
-            PPMv ppmv = (PPMv) refPPMVs.get(i);
-            if ((ppmv != null) && ppmv.isValid()) {
-                last = i;
+        int last = -1;
+        if (refPPMVs != null) {
+            for (int i = 0; i < refPPMVs.size(); i++) {
+                PPMv ppmv = (PPMv) refPPMVs.get(i);
+                if ((ppmv != null) && ppmv.isValid()) {
+                    last = i;
+                }
             }
         }
         return last + 1;
