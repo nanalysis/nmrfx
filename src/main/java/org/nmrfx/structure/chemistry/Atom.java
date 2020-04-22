@@ -1192,22 +1192,25 @@ public class Atom implements IAtom {
         return result.toString();
     }
 
-    public String formatNEFAtomName(Atom atom, boolean distances) {
+    public static String formatNEFAtomName(Atom atom, boolean distances) {
         String writeName = atom.name;
+        System.out.println(writeName + " " + atom.stereo + " " + atom.getBMRBAmbiguity() + " " + atom.isMethyl());
         switch (atom.stereo) {
-            case 0:
+            case 0: //x or y changes
                 if (atom.isMethyl()) {
                     writeName = null;
+                } else { 
+                    if (writeName.endsWith("2")) {
+                        writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
+                    } else if (writeName.endsWith("3") || writeName.endsWith("1")) {
+                        writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
+                    }
                 }
                 break;
-            case 1: //x changes
-                writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
-                break;
-            case 2: //y changes
-                writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
-                break;
-            case 3: //% changes
-                if (!distances || (distances && atom.isMethyl())) {
+            case 1: //no change or % changes
+                if (atom.isMethyl() || (!distances && !atom.isMethyl() && atom.getBMRBAmbiguity() != 1
+                        && (writeName.contains("HB3") || writeName.contains("HG3")
+                        || writeName.contains("HD2")))) { //fixme this is too specific
                     writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
                 }
                 break;
@@ -1241,6 +1244,7 @@ public class Atom implements IAtom {
             sBuilder.append(sep);
 
             // sequence code
+//            System.out.println(((Residue) entity).getIDNum() + ": " + writeName);
             sBuilder.append(((Residue) entity).getIDNum());
             sBuilder.append(sep);
 
@@ -1266,17 +1270,17 @@ public class Atom implements IAtom {
         return (sBuilder.toString());
     }
 
-    public String toNEFDistanceString(int index, DistancePair distPair, Atom atom2, Atom prevAtom1, Atom prevAtom2) {
-        String writeName1 = formatNEFAtomName(this, true);
-        String writeName2 = formatNEFAtomName(atom2, true);
-        if (writeName1 == null || writeName2 == null
-                || (this.isMethyl() && this.equals(prevAtom1))
+    public static String toNEFDistanceString(int index, DistancePair distPair, Atom atom1, Atom atom2, Atom prevAtom1, Atom prevAtom2) {
+        Atom[] atoms = {atom1, atom2};
+
+        if (formatNEFAtomName(atom1, true) == null || formatNEFAtomName(atom2, true) == null
+                || (atom1.isMethyl() && atom1.equals(prevAtom1))
                 || (atom2.isMethyl() && atom2.equals(prevAtom2))) {
             return null;
         }
         StringBuilder sBuilder = new StringBuilder();
         String sep = "        ";
-        if (entity instanceof Residue) {
+        if (atom1.entity instanceof Residue && atom2.entity instanceof Residue) {
             //index
             sBuilder.append(index);
             sBuilder.append(sep);
@@ -1290,41 +1294,26 @@ public class Atom implements IAtom {
             sBuilder.append("."); //fixme should be combo ID
             sBuilder.append(sep);
 
-            // chain code 1
-            String polymerName = ((Residue) entity).polymer.getName();
-            char chainID = polymerName.charAt(0);
-            sBuilder.append(chainID);
-            sBuilder.append(sep);
+            for (Atom atom : atoms) {
+                // chain code 
+                String polymerName = ((Residue) atom.entity).polymer.getName();
+                char chainID = polymerName.charAt(0);
+                sBuilder.append(chainID);
+                sBuilder.append(sep);
 
-            // sequence code 1
-            sBuilder.append(((Residue) entity).getIDNum());
-            sBuilder.append(sep);
+                // sequence code 
+                sBuilder.append(((Residue) atom.entity).getIDNum());
+                sBuilder.append(sep);
 
-            // residue name 1
-            sBuilder.append(((Residue) entity).name);
-            sBuilder.append(sep);
+                // residue name 
+                sBuilder.append(((Residue) atom.entity).name);
+                sBuilder.append(sep);
 
-            // atom name 1
-            sBuilder.append(writeName1);
-            sBuilder.append(sep);
-
-            // chain code 2
-            polymerName = ((Residue) atom2.entity).polymer.getName();
-            chainID = polymerName.charAt(0);
-            sBuilder.append(chainID);
-            sBuilder.append(sep);
-
-            // sequence code 2
-            sBuilder.append(((Residue) atom2.entity).getIDNum());
-            sBuilder.append(sep);
-
-            // residue name 2
-            sBuilder.append(((Residue) atom2.entity).name);
-            sBuilder.append(sep);
-
-            // atom name 2
-            sBuilder.append(writeName2);
-            sBuilder.append(sep);
+                // atom name 
+                System.out.println(((Residue) atom.entity).getIDNum() + ": " + formatNEFAtomName(atom, true));
+                sBuilder.append(formatNEFAtomName(atom, true));
+                sBuilder.append(sep);
+            }
 
             // weight
             double weight = distPair.getWeight();
@@ -1359,17 +1348,12 @@ public class Atom implements IAtom {
         return (sBuilder.toString());
     }
 
-    public String toNEFDihedralString(AngleBoundary bound, Atom[] atoms, int iBound) {
-//        String writeName1 = formatNEFAtomName(this, true);
-//        String writeName2 = formatNEFAtomName(atom2, true);
-//        if (writeName1 == null || writeName2 == null
-//                || (this.isMethyl() && this.equals(prevAtom1))
-//                || (atom2.isMethyl() && atom2.equals(prevAtom2))) {
-//            return null;
-//        }
+    public static String toNEFDihedralString(AngleBoundary bound, Atom[] atoms, int iBound) {
+
         StringBuilder sBuilder = new StringBuilder();
         String sep = "        ";
-        if (entity instanceof Residue) {
+        if (atoms[0].entity instanceof Residue && atoms[1].entity instanceof Residue
+                && atoms[2].entity instanceof Residue && atoms[3].entity instanceof Residue) {
             //index
             sBuilder.append(iBound);
             sBuilder.append(sep);
@@ -1429,7 +1413,7 @@ public class Atom implements IAtom {
             double upper = Math.round(upper1 * 100000d) / 100000d;
             sBuilder.append(upper);
             sBuilder.append(sep);
-            
+
             // name
             String name = bound.getName();
             sBuilder.append(name);

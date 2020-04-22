@@ -265,18 +265,36 @@ public class NMRNEFReader {
                     continue;
                 }
                 String fullAtom = chainCode + ":" + sequenceCode + "." + atomName;
-                Atom atom = Molecule.getNEFMatchedAtoms(new MolFilter(fullAtom), Molecule.getActive()).get(0);
+//                System.out.println(fullAtom);
+//                System.out.println(Molecule.getNEFMatchedAtoms(new MolFilter(fullAtom), Molecule.getActive()).get(0));
                 if (atomName.contains("x")) {
-                    atom.setStereo(1);
+                    String change = "2";
+                    String subName = atomName.substring(0, atomName.length() - 1) + change;
+                    fullAtom = chainCode + ":" + sequenceCode + "." + subName;
                 } else if (atomName.contains("y")) {
-                    atom.setStereo(2);
+                    String change = "3";
+                    if (atomName.contains("D2") || atomName.contains("E2")) {
+                        change = "1";
+                    }
+                    String subName = atomName.substring(0, atomName.length() - 1) + change;
+                    fullAtom = chainCode + ":" + sequenceCode + "." + subName;
                 } else if (atomName.contains("%")) {
-                    atom.setStereo(3);
-                } else {
-                    atom.setStereo(0);
+                    String change = "3";
+                    if (atomName.equals("HD%")) {
+                        change = "2";
+                    } 
+                    String subName = atomName.substring(0, atomName.length() - 1) + change;
+                    fullAtom = chainCode + ":" + sequenceCode + "." + subName;
                 }
-//                System.out.println(atomName + " " + atom.getFullName() + " " + atom.getStereo());
+                Atom atom = Molecule.getAtomByName(fullAtom);
+//                System.out.println(atom.getFullName());
+                if (atomName.contains("x") || atomName.contains("y")) {
+                    atom.setStereo(0);
+                } else {
+                    atom.setStereo(1);
+                }
 
+//                System.out.println(atomName + " " + atom.getFullName() + " " + atom.getStereo());
 //                if (atom == null) {
 //                    if (atomName.startsWith("H")) {
 //                        atom = compound.getAtom(atomName + "1");
