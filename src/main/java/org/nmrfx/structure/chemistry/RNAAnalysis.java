@@ -30,6 +30,7 @@ public class RNAAnalysis {
 
     /**
      * Generates a list of RNA residues in the given molecule
+     *
      * @param molecule
      * @return
      */
@@ -46,18 +47,31 @@ public class RNAAnalysis {
     }
 
     /**
-     * Generates a list of RNA basepairs for the given molecule
-     * @param molecule
-     * @return
+     * Generates a list of type 1 (Watson-Crick) RNA basepairs for the given
+     * molecule
+     *
+     * @param molecule The molecule to analyze for base pairing
+     * @return A list of BasePairs found in the molecule
      */
     public static List<BasePair> pairList(Molecule molecule) { //for RNA only
+        return pairList(molecule, 1);
+    }
+
+    /**
+     * Generates a list of RNA basepairs for the given molecule
+     *
+     * @param molecule The molecule to analyze for base pairing
+     * @param typeTarget The type of basepair to return in list
+     * @return A list of BasePairs found in the molecule
+     */
+    public static List<BasePair> pairList(Molecule molecule, int typeTarget) { //for RNA only
         List<BasePair> bpList = new ArrayList();
         List<Residue> RNAresidues = RNAresidues(molecule);
         for (Residue residueA : RNAresidues) {
             for (Residue residueB : RNAresidues) {
                 if (residueA.getResNum() < residueB.getResNum()) {
                     int type = residueA.basePairType(residueB);
-                    if (type == 1) {
+                    if (type == typeTarget) {
                         BasePair bp = new BasePair(residueA, residueB);
                         bpList.add(bp);
 
@@ -69,7 +83,9 @@ public class RNAAnalysis {
     }
 
     /**
-     * Generates a map which determines which pairs overlap and create pseudoknots
+     * Generates a map which determines which pairs overlap and create
+     * pseudoknots
+     *
      * @param molecule
      * @return
      */
@@ -103,10 +119,11 @@ public class RNAAnalysis {
 
     /**
      * Generates vienna (dot-bracket) sequence for RNA residues within molecule
+     *
      * @param molecule
      * @return
      */
-    public static char[] getViennaSequence(Molecule molecule) { 
+    public static char[] getViennaSequence(Molecule molecule) {
         HashMap<Integer, List<BasePair>> allBpMap = allBasePairsMap(molecule);
         List<BasePair> bps = pairList(molecule);
         List<Residue> RNAresidues = RNAresidues(molecule);
@@ -133,11 +150,13 @@ public class RNAAnalysis {
     }
 
     /**
-     * Generates vienna (dot-bracket) sequence for RNA residues within molecule to test functionality of SSGen class
+     * Generates vienna (dot-bracket) sequence for RNA residues within molecule
+     * to test functionality of SSGen class
+     *
      * @param molecule
      * @return
      */
-    public static char[] testViennaSequence(Molecule molecule) { 
+    public static char[] testViennaSequence(Molecule molecule) {
         HashMap<Integer, List<BasePair>> bpMap = allBasePairsMap(molecule);
         List<Residue> RNAresidues = RNAresidues(molecule);
         char[] vienna = new char[RNAresidues.size()];
