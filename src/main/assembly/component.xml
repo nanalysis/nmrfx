@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component>
+    
+    <fileSets>
+        <fileSet>
+            <directory>src/main/config</directory>
+            <outputDirectory>config/</outputDirectory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <excludes>
+                <exclude>CVS</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/licenses</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/readmes</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>target</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>${artifactId}-${version}.jar</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <source>src/main/scripts/nmrfxs.bat</source>
+            <filtered>true</filtered>
+        </file>
+        <file>
+            <source>src/main/scripts/nmrfxs</source>
+            <filtered>true</filtered>
+            <fileMode>0744</fileMode>
+        </file>
+        <file>
+            <source>target/Manifest.jar</source>
+            <filtered>false</filtered>
+            <outputDirectory>lib</outputDirectory>
+        </file>
+
+    </files>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <excludes>
+            </excludes>
+            <unpack>false</unpack>
+        </dependencySet>
+    </dependencySets>
+</component>
