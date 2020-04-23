@@ -93,6 +93,8 @@ public class MouseBindings {
     public void mouseDragged(MouseEvent mouseEvent) {
         double x = mouseEvent.getX();
         double y = mouseEvent.getY();
+        mouseX = x;
+        mouseY = y;
         double deltaX = Math.abs(x - dragStart[0]);
         double deltaY = Math.abs(y - dragStart[1]);
         double tol = 3;

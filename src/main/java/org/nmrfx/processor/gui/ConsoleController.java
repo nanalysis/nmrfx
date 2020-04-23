@@ -20,19 +20,24 @@ package org.nmrfx.processor.gui;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.Optional;
 import java.util.ResourceBundle;
+
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
-import javafx.stage.Screen;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
+import javafx.stage.*;
 import org.fxmisc.richtext.InlineCssTextArea;
 import org.python.util.InteractiveInterpreter;
 import org.renjin.parser.RParser;
@@ -40,6 +45,7 @@ import org.renjin.sexp.Environment;
 import org.renjin.sexp.SEXP;
 import org.renjin.studiofx.StudioSession;
 import org.renjin.studiofx.console.ConsoleFx;
+import static org.nmrfx.utils.GUIUtils.affirm;
 
 /**
  * FXML Controller class
@@ -90,7 +96,7 @@ public class ConsoleController implements Initializable {
             stage.toFront();
             stage.setY(screenSize.getHeight() - stage.getHeight());
             ConsoleController consoleController = controller;
-            stage.setOnCloseRequest(e -> consoleController.close());
+            stage.setOnCloseRequest(consoleController.close);
         } catch (IOException ioE) {
             ioE.printStackTrace();
             System.out.println(ioE.getMessage());
@@ -125,9 +131,14 @@ public class ConsoleController implements Initializable {
 
     }
 
-    void close() {
-        stage.hide();
-    }
+    EventHandler<WindowEvent> close = event -> {
+        if (affirm("Are you sure you want to exit?")) {
+            Platform.exit();
+            System.exit(0);
+        } else {
+            event.consume();
+        }
+    };
 
     public void show() {
         stage.show();

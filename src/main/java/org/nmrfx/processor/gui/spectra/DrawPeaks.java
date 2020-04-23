@@ -1358,26 +1358,41 @@ public class DrawPeaks {
         PeakDim peakDim0 = peak.peakDims[dim[0]];
         PeakDim peakDim1 = peak.peakDims[dim[1]];
 
+        double edge1x = xAxis.getLowerBound();
+        double edge2x = xAxis.getUpperBound();
+        double edge1y = yAxis.getLowerBound();
+        double edge2y = yAxis.getUpperBound();
+
+
         if (ignoreLinkDrawn || !peakDim1.isLinkDrawn()) {
             List<PeakDim> linkedPeakDims = peakDim1.getLinkedPeakDims();
             if (linkedPeakDims.size() > 1) {
                 double minX = Double.MAX_VALUE;
                 double maxX = Double.NEGATIVE_INFINITY;
-                double edge1 = xAxis.getLowerBound();
-                double edge2 = xAxis.getUpperBound();
                 double sumY = 0.0;
                 int nY = 0;
+                double minYdiag = Double.MAX_VALUE;
+                double maxYdiag = Double.NEGATIVE_INFINITY;
+                double sumXdiag = 0.0;
+                int nXdiag = 0;
                 for (PeakDim peakDim : linkedPeakDims) {
                     Peak peak0 = peakDim.getPeak();
                     if (peak0.getPeakList() == peakList) { // FIXME: use equal method for comparison
                         peakDim.setLinkDrawn(true);
                         double shiftX = peak0.peakDims[0].getChemShift();
                         double shiftY = peak0.peakDims[1].getChemShift();
-                        if ((shiftX > edge1) && (shiftX < edge2)) {
+                        if ((shiftX > edge1x) && (shiftX < edge2x) && (shiftY > edge1y) && (shiftY < edge2y)) {
                             minX = Math.min(shiftX, minX);
                             maxX = Math.max(shiftX, maxX);
-                            sumY += shiftY;
-                            nY++;
+                            minYdiag = Math.min(shiftY, minYdiag);
+                            maxYdiag = Math.max(shiftY, maxYdiag);
+                            if (peak0.getPeakDim(1)==peakDim) {
+                                sumY += shiftY;
+                                nY++;
+                            } else {
+                                sumXdiag += shiftX;
+                                nXdiag++;
+                            }
                         }
                     }
                 }
@@ -1385,8 +1400,9 @@ public class DrawPeaks {
 
                 double x1 = xAxis.getDisplayPosition(minX);
                 double x2 = xAxis.getDisplayPosition(maxX);
-                if (peakDim0.isFrozen()) {
-                    g2.setStroke(Peak.FREEZE_COLORS[0]);
+
+                if (peakDim1.isFrozen()) {
+                    g2.setStroke(Peak.FREEZE_COLORS[1]);
                 } else {
                     g2.setStroke(Color.BLACK);
 
@@ -1395,6 +1411,17 @@ public class DrawPeaks {
                 g2.moveTo(x1, posY);
                 g2.lineTo(x2, posY);
                 g2.stroke();
+
+                if (nXdiag>0) {
+                    double posXdiag = xAxis.getDisplayPosition(sumXdiag / nXdiag);
+                    double y1diag = yAxis.getDisplayPosition(minYdiag);
+                    double y2diag = yAxis.getDisplayPosition(maxYdiag);
+
+                    g2.beginPath();
+                    g2.moveTo(posXdiag,y1diag);
+                    g2.lineTo(posXdiag,y2diag);
+                    g2.stroke();
+                }
             }
         }
         if (ignoreLinkDrawn || !peakDim0.isLinkDrawn()) {
@@ -1402,29 +1429,39 @@ public class DrawPeaks {
             if (linkedPeakDims.size() > 1) {
                 double minY = Double.MAX_VALUE;
                 double maxY = Double.NEGATIVE_INFINITY;
-                double edge1 = yAxis.getLowerBound();
-                double edge2 = yAxis.getUpperBound();
                 double sumX = 0.0;
                 int nX = 0;
+                double minXdiag = Double.MAX_VALUE;
+                double maxXdiag = Double.NEGATIVE_INFINITY;
+                double sumYdiag = 0.0;
+                int nYdiag = 0;
                 for (PeakDim peakDim : linkedPeakDims) {
                     Peak peak1 = peakDim.getPeak();
                     if (peak1.getPeakList() == peakList) {
                         peakDim.setLinkDrawn(true);
                         double shiftY = peak1.peakDims[1].getChemShift();
                         double shiftX = peak1.peakDims[0].getChemShift();
-                        if ((shiftY > edge1) && (shiftY < edge2)) {
+                        if ((shiftX > edge1x) && (shiftX < edge2x) && (shiftY > edge1y) && (shiftY < edge2y)) {
                             minY = Math.min(shiftY, minY);
                             maxY = Math.max(shiftY, maxY);
-                            sumX += shiftX;
-                            nX++;
+                            minXdiag = Math.min(shiftX, minXdiag);
+                            maxXdiag = Math.max(shiftX, maxXdiag);
+                            if (peak1.getPeakDim(0)==peakDim) {
+                                sumX += shiftX;
+                                nX++;
+                            } else {
+                                sumYdiag += shiftY;
+                                nYdiag++;
+                            }
                         }
                     }
                 }
                 double y1 = yAxis.getDisplayPosition(minY);
                 double y2 = yAxis.getDisplayPosition(maxY);
                 double posX = xAxis.getDisplayPosition(sumX / nX);
-                if (peakDim1.isFrozen()) {
-                    g2.setStroke(Peak.FREEZE_COLORS[1]);
+
+                if (peakDim0.isFrozen()) {
+                    g2.setStroke(Peak.FREEZE_COLORS[0]);
                 } else {
                     g2.setStroke(Color.BLACK);
                 }
@@ -1432,6 +1469,16 @@ public class DrawPeaks {
                 g2.moveTo(posX, y1);
                 g2.lineTo(posX, y2);
                 g2.stroke();
+                if (nYdiag>0) {
+                    double x1diag = xAxis.getDisplayPosition(minXdiag);
+                    double x2diag = xAxis.getDisplayPosition(maxXdiag);
+                    double posYdiag = yAxis.getDisplayPosition(sumYdiag / nYdiag);
+
+                    g2.beginPath();
+                    g2.moveTo(x1diag, posYdiag);
+                    g2.lineTo(x2diag, posYdiag);
+                    g2.stroke();
+                }
             }
         }
     }
