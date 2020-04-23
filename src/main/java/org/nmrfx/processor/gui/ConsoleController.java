@@ -45,6 +45,7 @@ import org.renjin.sexp.Environment;
 import org.renjin.sexp.SEXP;
 import org.renjin.studiofx.StudioSession;
 import org.renjin.studiofx.console.ConsoleFx;
+import static org.nmrfx.utils.GUIUtils.affirm;
 
 /**
  * FXML Controller class
@@ -131,22 +132,11 @@ public class ConsoleController implements Initializable {
     }
 
     EventHandler<WindowEvent> close = event -> {
-        Alert closeConfirmation = new Alert(
-                Alert.AlertType.CONFIRMATION,
-                "Are you sure you want to exit?"
-        );
-        Button exitButton = (Button) closeConfirmation.getDialogPane().lookupButton(
-                ButtonType.OK
-        );
-        exitButton.setText("Exit");
-        closeConfirmation.setHeaderText("Confirm Exit");
-        closeConfirmation.initModality(Modality.APPLICATION_MODAL);
-        Optional<ButtonType> closeResponse = closeConfirmation.showAndWait();
-        if (!ButtonType.OK.equals(closeResponse.get())) {
-            event.consume();
-        } else {
+        if (affirm("Are you sure you want to exit?")) {
             Platform.exit();
             System.exit(0);
+        } else {
+            event.consume();
         }
     };
 
