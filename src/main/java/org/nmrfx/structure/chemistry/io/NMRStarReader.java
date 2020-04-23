@@ -30,7 +30,7 @@ import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
 import org.nmrfx.processor.star.Loop;
-import org.nmrfx.processor.star.ParseException;
+ import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.processor.star.STAR3;
 import org.nmrfx.processor.star.Saveframe;
 import java.io.File;

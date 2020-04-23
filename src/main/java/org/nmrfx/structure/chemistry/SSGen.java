@@ -44,7 +44,7 @@ public class SSGen {
 
     public SSGen(Molecule mol) {
         molecule = mol;
-        char[] vSeq = mol.getViennaSequence();
+        char[] vSeq = RNAAnalysis.getViennaSequence(mol);
         String vienna = new String(vSeq);
         viennaSeq = vienna;
         genRNAResidues();
