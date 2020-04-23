@@ -65,7 +65,7 @@ public class SequenceGUI {
     void create() {
         //Create new Stage for popup window
         stage = new Stage();
-        stage.setTitle("RDC Analysis");
+        stage.setTitle("Sequence GUI");
         textArea.setPrefHeight(200);
         ToolBar toolBar = new ToolBar();
         polymerType = new ChoiceBox();
