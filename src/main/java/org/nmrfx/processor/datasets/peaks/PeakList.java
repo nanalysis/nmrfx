@@ -719,7 +719,7 @@ public class PeakList {
             Peak peak = peaks.get(i);
             peak.setIdNum(i);
         }
-
+        idLast=peaks.size()-1;
         reIndex();
     }
 
