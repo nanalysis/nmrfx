@@ -649,11 +649,11 @@ public class Residue extends Compound {
                             }
                             if (valid) {
                                 bpCount++;
+                                }
+                                }
                             }
                         }
                     }
-                }
-            }
             if (bpCount == bp.atomPairs.length) {
                 return bp.type;
             }
