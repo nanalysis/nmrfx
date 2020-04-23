@@ -68,6 +68,7 @@ import org.nmrfx.structure.chemistry.Compound;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Polymer;
+import org.nmrfx.structure.chemistry.RNAAnalysis;
 import org.nmrfx.structure.chemistry.RNALabels;
 import org.nmrfx.structure.chemistry.SSLayout;
 import org.nmrfx.structure.chemistry.SSViewer;
@@ -254,7 +255,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             Alert alert = new Alert(Alert.AlertType.ERROR, "No molecule present", ButtonType.CLOSE);
             alert.showAndWait();
         } else {
-            char[] vienna = molecule.getViennaSequence();
+            char[] vienna = RNAAnalysis.getViennaSequence(molecule);
             String newDotBracket = new String(vienna);
             molecule.setDotBracket(newDotBracket);
 
