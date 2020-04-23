@@ -96,6 +96,9 @@ public class MouseBindings {
         double deltaX = Math.abs(x - dragStart[0]);
         double deltaY = Math.abs(y - dragStart[1]);
         double tol = 3;
+        if (mouseAction == MOUSE_ACTION.NOTHING) {
+            return;
+        }
         if ((deltaX > tol) || (deltaY > tol)) {
             moved = true;
         }
