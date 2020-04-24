@@ -29,6 +29,7 @@ import java.io.BufferedReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import org.apache.commons.math3.optim.PointValuePair;
 import org.apache.commons.math3.optim.SimpleValueChecker;
@@ -419,7 +420,7 @@ public class Dihedral {
         return angleBoundaries;
     }
     
-    public HashMap<Integer, AngleBoundary> getAngleBoundariesNEF() {
+    public Map<Integer, AngleBoundary> getAngleBoundariesNEF() {
         return angleBoundariesNEF;
     }
     
