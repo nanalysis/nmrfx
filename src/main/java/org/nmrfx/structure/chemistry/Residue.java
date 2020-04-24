@@ -649,18 +649,18 @@ public class Residue extends Compound {
                             }
                             if (valid) {
                                 bpCount++;
-                                }
-                                }
                             }
                         }
                     }
+                }
+            }
             if (bpCount == bp.atomPairs.length) {
                 return bp.type;
             }
         }
         return 0;
     }
-    
+
     public String getSSType() {
         String type;
         if (secStruct != null) {
@@ -669,6 +669,10 @@ public class Residue extends Compound {
             type = "";
         }
         return type;
+    }
+
+    public String toString() {
+        return polymer.getName() + ":" + getName() + getNumber();
     }
 
 }
