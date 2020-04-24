@@ -5,6 +5,9 @@
  */
 package org.nmrfx.structure.chemistry;
 
+import java.io.File;
+import org.apache.logging.log4j.core.util.FileUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.nmrfx.structure.chemistry.io.NMRNEFReader;
 import org.nmrfx.structure.chemistry.io.NMRNEFWriter;
@@ -15,8 +18,11 @@ import org.nmrfx.structure.chemistry.io.NMRNEFWriter;
  */
 public class NEFFileTest {
 
-    String fileName = "/home/mbeckwith/Desktop/1pqx.nef";
-    String outFile = "/home/mbeckwith/Desktop/1pqx_nef_outTest.txt";
+    String classPath = this.getClass().getResource("NEFFileTest.class").getPath();
+    String program = "nmrfxstructure";
+    String mainPath = classPath.substring(0, classPath.indexOf(program) + program.length());
+    String fileName = String.join(File.separator, mainPath, "sandbox", "1pqx.nef");
+    String outFile = String.join(File.separator, mainPath, "sandbox", "1pqx_nef_outTest.txt");
 
 //    @Test
 //    public void readNEF() {  
@@ -35,7 +41,9 @@ public class NEFFileTest {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-
+//        File origFile = new File(fileName);
+//        File writtenFile = new File(outFile);
+        // fixme add test for file equality
     }
 
 }
