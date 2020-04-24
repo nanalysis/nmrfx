@@ -127,6 +127,9 @@ public class SSGen {
             } else if (resBefore.pairedTo.iRes < resAfter.pairedTo.iRes) { //junction
                 add = true;
                 type = "junction";
+            } else if (resBefore.pairedTo.getPrevious() == resAfter.pairedTo) {
+                add = true;
+                type = "bulge";
             } else if (resBefore.pairedTo.getPrevious().pairedTo == null && (resBefore.iRes < resBefore.pairedTo.iRes)) { //second half of internal loop
                 Residue otherLoopRes = resBefore.pairedTo.getPrevious();
                 while (otherLoopRes.pairedTo == null) {
@@ -135,11 +138,17 @@ public class SSGen {
                 }
                 add = true;
                 type = "internalLoop";
-            } else if (resBefore.pairedTo.getPrevious() == resAfter.pairedTo) {
-                add = true;
-                type = "bulge";
             } else {
-                System.out.println("notype");
+                boolean hasType = true;
+                for (Residue res : currentSS) {
+                    if (res.secStruct == null) {
+                        hasType = false;
+                    }
+                }
+                if (!hasType) {
+                    add = true;
+                    type = "bulge";
+                }
             }
             if (add) {
                 ssType.addAll(currentSS);
@@ -166,7 +175,6 @@ public class SSGen {
                 }
             }
             type = "helix";
-
             return ssType;
         }
     }
