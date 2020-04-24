@@ -61,6 +61,7 @@ public class NMRNEFReader {
     public static void read(String nefFileName) throws ParseException {
         File file = new File(nefFileName);
         read(file);
+        System.out.println("read " + nefFileName);
     }
 
     public static void read(File nefFile) throws ParseException {
@@ -83,7 +84,7 @@ public class NMRNEFReader {
         reader.processNEF();
     }
 
-    public void buildNEFChains(final Saveframe saveframe, Molecule molecule, final String nomenclature) throws ParseException {
+    void buildNEFChains(final Saveframe saveframe, Molecule molecule, final String nomenclature) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_sequence");
         if (loop == null) {
             throw new ParseException("No \"_nef_sequence\" loop");
@@ -99,7 +100,7 @@ public class NMRNEFReader {
         }
     }
 
-    public void addNEFResidues(Saveframe saveframe, Molecule molecule, List<String> indexColumn, List<String> chainCodeColumn, List<String> seqCodeColumn, List<String> residueNameColumn, List<String> linkingColumn, List<String> variantColumn) throws ParseException {
+    void addNEFResidues(Saveframe saveframe, Molecule molecule, List<String> indexColumn, List<String> chainCodeColumn, List<String> seqCodeColumn, List<String> residueNameColumn, List<String> linkingColumn, List<String> variantColumn) throws ParseException {
         String reslibDir = PDBFile.getReslibDir("IUPAC");
         Polymer polymer = null;
         Sequence sequence = new Sequence(molecule);
@@ -165,11 +166,11 @@ public class NMRNEFReader {
         sequence.removeBadBonds();
     }
 
-    public void addCompound(String id, Compound compound) {
+    void addCompound(String id, Compound compound) {
         Molecule.compoundMap.put(id, compound);
     }
 
-    public void buildNEFChemShifts(int fromSet, final int toSet) throws ParseException {
+    void buildNEFChemShifts(int fromSet, final int toSet) throws ParseException {
         Iterator iter = nef.getSaveFrames().values().iterator();
         int iSet = 0;
         while (iter.hasNext()) {
@@ -189,10 +190,8 @@ public class NMRNEFReader {
         }
     }
 
-    public void buildNEFDihedralConstraints(Dihedral dihedral) throws ParseException {
-        Iterator iter = nef.getSaveFrames().values().iterator();
-        while (iter.hasNext()) {
-            Saveframe saveframe = (Saveframe) iter.next();
+    void buildNEFDihedralConstraints(Dihedral dihedral) throws ParseException {
+        for (Saveframe saveframe : nef.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("nef_dihedral_restraint_list")) {
                 if (DEBUG) {
                     System.err.println("process nef_dihedral_restraint_list " + saveframe.getName());
@@ -202,10 +201,8 @@ public class NMRNEFReader {
         }
     }
 
-    public void buildNEFDistanceRestraints(EnergyLists energyList) throws ParseException {
-        Iterator iter = nef.getSaveFrames().values().iterator();
-        while (iter.hasNext()) {
-            Saveframe saveframe = (Saveframe) iter.next();
+    void buildNEFDistanceRestraints(EnergyLists energyList) throws ParseException {
+        for (Saveframe saveframe : nef.getSaveFrames().values()) {
             if (saveframe.getCategoryName().equals("nef_distance_restraint_list")) {
                 if (DEBUG) {
                     System.err.println("process nef_distance_restraint_list " + saveframe.getName());
@@ -215,7 +212,7 @@ public class NMRNEFReader {
         }
     }
 
-    public Molecule buildNEFMolecule() throws ParseException {
+    Molecule buildNEFMolecule() throws ParseException {
         Molecule molecule = null;
         for (Saveframe saveframe : nef.getSaveFrames().values()) {
             if (DEBUG) {
@@ -236,7 +233,7 @@ public class NMRNEFReader {
         return molecule;
     }
 
-    public void processNEFChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
+    void processNEFChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_chemical_shift");
         if (loop != null) {
             List<String> chainCodeColumn = loop.getColumnAsList("chain_code");
@@ -339,24 +336,21 @@ public class NMRNEFReader {
         }
     }
 
-    public void processNEFDihedralConstraints(Saveframe saveframe, Dihedral dihedral) throws ParseException {
+    void processNEFDihedralConstraints(Saveframe saveframe, Dihedral dihedral) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_dihedral_restraint");
         if (loop == null) {
             throw new ParseException("No \"_nef_dihedral_restraint\" loop");
         }
         List<String>[] chainCodeColumns = new ArrayList[4];
         List<String>[] sequenceCodeColumns = new ArrayList[4];
-        List<String>[] residueNameColumns = new ArrayList[4];
+//        List<String>[] residueNameColumns = new ArrayList[4];
         List<String>[] atomNameColumns = new ArrayList[4];
-        List<Integer> indexColumn = new ArrayList<>();
-        List<Integer> restraintIDColumn = new ArrayList<>();
 
-        indexColumn = loop.getColumnAsIntegerList("index", 0);
-        restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
+        List<Integer> restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
         for (int i = 1; i <= 4; i++) {
             chainCodeColumns[i - 1] = loop.getColumnAsList("chain_code_" + i);
             sequenceCodeColumns[i - 1] = loop.getColumnAsList("sequence_code_" + i);
-            residueNameColumns[i - 1] = loop.getColumnAsList("residue_name_" + i);
+//            residueNameColumns[i - 1] = loop.getColumnAsList("residue_name_" + i);
             atomNameColumns[i - 1] = loop.getColumnAsList("atom_name_" + i);
         }
         List<String> weightColumn = loop.getColumnAsList("weight");
@@ -413,7 +407,7 @@ public class NMRNEFReader {
         }
     }
 
-    public void processNEFDistanceRestraints(Saveframe saveframe, EnergyLists energyList) throws ParseException {
+    void processNEFDistanceRestraints(Saveframe saveframe, EnergyLists energyList) throws ParseException {
         Loop loop = saveframe.getLoop("_nef_distance_restraint");
         if (loop == null) {
             throw new ParseException("No \"_nef_distance_restraint\" loop");
@@ -422,11 +416,9 @@ public class NMRNEFReader {
         List<String>[] sequenceColumns = new ArrayList[2];
         List<String>[] residueNameColumns = new ArrayList[2];
         List<String>[] atomNameColumns = new ArrayList[2];
-        List<Integer> indexColumn = new ArrayList<>();
-        List<Integer> restraintIDColumn = new ArrayList<>();
 
-        indexColumn = loop.getColumnAsIntegerList("index", 0);
-        restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
+        List<Integer> indexColumn = loop.getColumnAsIntegerList("index", 0);
+        List<Integer> restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
 
         chainCodeColumns[0] = loop.getColumnAsList("chain_code_1");
         sequenceColumns[0] = loop.getColumnAsList("sequence_code_1");
@@ -444,7 +436,7 @@ public class NMRNEFReader {
         List<String> lowerColumn = loop.getColumnAsList("lower_limit");
         List<String> upperColumn = loop.getColumnAsList("upper_limit");
         ArrayList<String> atomNames[] = new ArrayList[2];
-        String[] resNames = new String[2];
+//        String[] resNames = new String[2];
         atomNames[0] = new ArrayList<>();
         atomNames[1] = new ArrayList<>();
 
@@ -463,7 +455,7 @@ public class NMRNEFReader {
                 String resName = (String) residueNameColumns[iAtom].get(i);
                 String atomName = (String) atomNameColumns[iAtom].get(i);
                 atomNames[iAtom].add(chainCode + ":" + seqNum + "." + atomName);
-                resNames[iAtom] = resName;
+//                resNames[iAtom] = resName;
             }
             int restraintID = restraintIDColumn.get(i);
             String weightValue = (String) weightColumn.get(i);
@@ -519,7 +511,6 @@ public class NMRNEFReader {
         if (argv.length == 0) {
             hasResonances = false;
             Molecule.compoundMap.clear();
-//            buildExperiments();
             if (DEBUG) {
                 System.err.println("process molecule");
             }
@@ -529,16 +520,10 @@ public class NMRNEFReader {
             dihedral = new Dihedral(energyList, false);
 
             energyList.makeCompoundList(molecule);
-//            System.err.println("process peak lists");
-//            buildPeakLists();
-//            System.err.println("process resonance lists");
-//            buildResonanceLists();
             if (DEBUG) {
                 System.err.println("process chem shifts");
             }
             buildNEFChemShifts(-1, 0);
-//            System.err.println("process conformers");
-//            buildConformers();
             if (DEBUG) {
                 System.err.println("process dist constraints");
             }
@@ -547,12 +532,7 @@ public class NMRNEFReader {
                 System.err.println("process angle constraints");
             }
             buildNEFDihedralConstraints(dihedral);
-//            System.err.println("process runabout");
-//            buildRunAbout();
-//            System.err.println("clean resonances");
-//            resFactory.clean();
-//            System.err.println("process done");
-        } else if ("shifts".startsWith(argv[2].toString())) {
+        } else if ("shifts".startsWith(argv[2])) {
             int fromSet = Integer.parseInt(argv[3]);
             int toSet = Integer.parseInt(argv[4]);
             buildNEFChemShifts(fromSet, toSet);
