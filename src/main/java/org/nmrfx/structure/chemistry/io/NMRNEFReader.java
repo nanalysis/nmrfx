@@ -537,6 +537,7 @@ public class NMRNEFReader {
             int toSet = Integer.parseInt(argv[4]);
             buildNEFChemShifts(fromSet, toSet);
         }
+        NMRNEFWriter.setNEF(nef);
         return dihedral;
     }
 

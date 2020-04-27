@@ -1137,70 +1137,31 @@ public class Atom implements IAtom {
     }
 
     public String toNEFSequenceString(Molecule molecule) {
-        StringBuilder result = new StringBuilder();
-        String sep = "    ";
-        String sepN = "   ";
-
+        //index and sequence code
         int number = 1;
+        //chain ID
         char chainID = ' ';
         if (entity instanceof Residue) {
             number = entity.getIDNum();
             String polymerName = ((Residue) entity).polymer.getName();
             chainID = polymerName.charAt(0);
         }
+        //residue name
         String resName = ((Compound) entity).name;
         if (resName.length() > 3) {
             resName = resName.substring(0, 3);
         }
-
-        if (number >= 0 && number < 10) {
-            sepN = "   ";
-        } else if (number >= 10 && number < 100) {
-            sepN = "  ";
-        } else if (number >= 100 && number < 1000) {
-            sepN = " ";
-        }
+        //linking
         String link = "middle";
         if (number == 1) {
             link = "start";
         } else if (number == molecule.nResidues) {
             link = "end";
         }
-
-        //  index
-        result.append(sep);
-        result.append(sepN);
-        result.append(number);
-        result.append(sep);
-        //  chain code
-        result.append(sep);
-        result.append(chainID);
-        result.append(sep);
-        result.append(sepN);
-        //  sequence code
-        result.append(number);
-        result.append(sep);
-        result.append("   ");
-        //  residue name
-        result.append(String.format("%3s", resName));
-        result.append(" ");
-        //  linking 
-        result.append(link);
-        result.append(sep);
-        result.append(sep);
-        result.append(" ");
-        if (link.equals("start")) {
-            result.append(" ");
-        } else if (link.equals("end")) {
-            result.append("   ");
-        }
         //residue variant
-        result.append(".");
-        result.append(sep);
-        result.append(sep);
-        result.append("   ");
+        String resVar = ".";
 
-        return result.toString();
+        return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
     }
 
     public static String formatNEFAtomName(Atom atom, boolean distances) {
@@ -1229,17 +1190,6 @@ public class Atom implements IAtom {
         return writeName;
     }
 
-    static String formatSeparator(int var, String sep) {
-        String newSep = sep;
-        if (var >= 0 && var < 10) {
-            newSep = sep + "  ";
-        } else if ((var >= 10 && var < 100)) {
-            newSep = sep + " ";
-        } else if (var >= 100 && var < 1000) {
-            newSep = sep;
-        }
-        return newSep;
-    }
 
     public String ppmToNEFString(int iStruct, int iAtom) {
         return ppmToNEFString(spatialSet, iStruct, iAtom);
@@ -1247,76 +1197,39 @@ public class Atom implements IAtom {
 
     public String ppmToNEFString(SpatialSet spatialSet,
             int iStruct, int iAtom) {
+        //chemical shift
         PPMv ppmv = spatialSet.getPPM(iStruct);
 
+        //atom name
         String writeName = formatNEFAtomName(this, false);
         if (ppmv == null || writeName == null) {
             return null;
         }
 
-        StringBuilder sBuilder = new StringBuilder();
-        String sep = "     ";
+        String line = "";
         if (entity instanceof Residue) {
             String polymerName = ((Residue) entity).polymer.getName();
-            char chainID = polymerName.charAt(0);
             //  chain code
-            sBuilder.append("         ");
-            sBuilder.append(chainID);
-            sBuilder.append(sep);
-            sBuilder.append("    ");
+            char chainID = polymerName.charAt(0);
 
             // sequence code
 //            System.out.println(((Residue) entity).getIDNum() + ": " + writeName);
             int seqCode = ((Residue) entity).getIDNum();
-            sBuilder.append(seqCode);
-            sBuilder.append(sep);
-            sBuilder.append(formatSeparator(seqCode, "  "));
 
             // residue name
-            sBuilder.append(((Residue) entity).name);
-            sBuilder.append(sep);
-            sBuilder.append("  ");
-
-            // atom name
-            sBuilder.append(writeName);
-            sBuilder.append(sep);
-            switch (writeName.length()) {
-                case 1:
-                    sBuilder.append("    ");
-                    break;
-                case 2:
-                    sBuilder.append("   ");
-                    break;
-                case 3:
-                    sBuilder.append("  ");
-                    break;
-                case 4:
-                    sBuilder.append(" ");
-                    break;
-                default:
-                    break;
-            }
+            String resName = ((Residue) entity).name;
 
             // value
             double shift = ppmv.getValue();
-            sBuilder.append(String.format("%3.3f", shift));
-            if (shift >= 0 && shift < 10) {
-                sBuilder.append(sep);
-            } else if ((shift >= 10 && shift < 100) || (shift > -10 && shift < 0)) {
-                sBuilder.append("    ");
-            } else if (shift >= 100 && shift < 1000) {
-                sBuilder.append("   ");
-            }
 
             // value uncertainty
             double shiftErr = ppmv.getError();
-            sBuilder.append(String.format("%3.3f", shiftErr));
-            sBuilder.append(sep);
 
 //            System.out.println("wrote " + ((Residue) entity).getIDNum() + " " + writeName + " " + ppmv.getValue());
+            line = String.format("         %-9s %-9d %-9s %-9s %-9.3f %-4.3f", chainID, seqCode, resName, writeName, shift, shiftErr);
         }
 
-        return (sBuilder.toString());
+        return line;
     }
 
     public static String toNEFDistanceString(int index, DistancePair distPair, Atom atom1, Atom atom2) {
@@ -1326,80 +1239,45 @@ public class Atom implements IAtom {
             return null;
         }
         StringBuilder sBuilder = new StringBuilder();
-        String sep = "     ";
         if (atom1.entity instanceof Residue && atom2.entity instanceof Residue) {
             //index
-            sBuilder.append(sep);
-            sBuilder.append("    ");
-            sBuilder.append(index);
-            sBuilder.append(sep);
-            if (index >= 0 && index < 10) {
-                sBuilder.append("  ");
-            } else if (index >= 10 && index < 100) {
-                sBuilder.append(" ");
-            }
+            sBuilder.append("         ");
+            sBuilder.append(String.format("%-8d", index));
 
             //restraint ID
             int restraintID = distPair.getRestraintID();
-            sBuilder.append(restraintID);
-            sBuilder.append(sep);
-            sBuilder.append(formatSeparator(restraintID, ""));
+            sBuilder.append(String.format("%-8d", restraintID));
 
             //restraint combo ID
-            sBuilder.append("."); //fixme should be combo ID
-            sBuilder.append(sep);
-            sBuilder.append("  ");
+            String comboID = "."; //fixme should be combo ID
+            sBuilder.append(String.format("%-8s", comboID));
 
             for (Atom atom : atoms) {
                 // chain code 
                 String polymerName = ((Residue) atom.entity).polymer.getName();
                 char chainID = polymerName.charAt(0);
-                sBuilder.append(chainID);
-                sBuilder.append(sep);
-                sBuilder.append("  ");
+                sBuilder.append(String.format("%-8s", chainID));
 
                 // sequence code 
                 int seqCode = ((Residue) atom.entity).getIDNum();
-                sBuilder.append(seqCode);
-                sBuilder.append(sep);
-                sBuilder.append(formatSeparator(seqCode, ""));
+                sBuilder.append(String.format("%-8d", seqCode));
 
                 // residue name 
-                sBuilder.append(((Residue) atom.entity).name);
-                sBuilder.append(sep);
+                String resName = ((Residue) atom.entity).name;
+                sBuilder.append(String.format("%-8s", resName));
 
                 // atom name 
                 String writeName = formatNEFAtomName(atom, true);
-                sBuilder.append(writeName);
-                switch (writeName.length()) {
-                    case 1:
-                        sBuilder.append(sep);
-                        sBuilder.append("  ");
-                        break;
-                    case 2:
-                        sBuilder.append(sep);
-                        sBuilder.append(" ");
-                        break;
-                    case 3:
-                        sBuilder.append(sep);
-                        break;
-                    case 4:
-                        sBuilder.append("    ");
-                        break;
-                    default:
-                        break;
-                }
+                sBuilder.append(String.format("%-8s", writeName));
             }
 
             // weight
             double weight = distPair.getWeight();
-            sBuilder.append(weight);
-            sBuilder.append(sep);
+            sBuilder.append(String.format("%-8.1f", weight));
 
             // target value
             double target = distPair.getTargetValue();
-            sBuilder.append(String.format("%3.2f", target));
-            sBuilder.append("    ");
+            sBuilder.append(String.format("%-8.2f", target));
 
             // target value uncertainty
             String targetErr = String.valueOf(distPair.getTargetError());
@@ -1407,101 +1285,86 @@ public class Atom implements IAtom {
                 targetErr = ".";
             }
             sBuilder.append(targetErr);
-            sBuilder.append(sep);
-            sBuilder.append("  ");
+            sBuilder.append(String.format("%-8s", target));
 
             // lower limit
             double lower = distPair.getLower();
-            sBuilder.append(String.format("%3.2f", lower));
-            sBuilder.append("    ");
+            sBuilder.append(String.format("%-8.2f", lower));
 
             // upper limit
             double upper = distPair.getUpper();
-            sBuilder.append(String.format("%3.2f", upper));
-            sBuilder.append(sep);
+            sBuilder.append(String.format("%-8.2f", upper));
 
         }
 
-        return (sBuilder.toString());
+        return sBuilder.toString();
     }
 
     public static String toNEFDihedralString(AngleBoundary bound, Atom[] atoms, int iBound) {
 
         StringBuilder sBuilder = new StringBuilder();
-        String sep = "     ";
         if (atoms[0].entity instanceof Residue && atoms[1].entity instanceof Residue
                 && atoms[2].entity instanceof Residue && atoms[3].entity instanceof Residue) {
 
             //index
-            sBuilder.append(formatSeparator(iBound, " "));
-            sBuilder.append(iBound);
+            sBuilder.append(String.format("%6d", iBound));
 
             //restraint ID
             int restraintID = bound.getRestraintID();
-            sBuilder.append(formatSeparator(restraintID, "  "));
-            sBuilder.append(restraintID);
-            sBuilder.append(sep);
+            sBuilder.append(String.format("%6d", restraintID));
 
             //restraint combo ID
-            sBuilder.append("."); //fixme should be combo ID
-            sBuilder.append(sep);
+            String comboID = "."; //fixme should be combo ID
+            sBuilder.append(String.format("%6s", comboID));
 
             for (Atom atom : atoms) {
                 // chain code 
                 String polymerName = ((Residue) atom.entity).polymer.getName();
                 char chainID = polymerName.charAt(0);
-                sBuilder.append(chainID);
+                sBuilder.append(String.format("%6s", chainID));
 
                 // sequence code 
                 int seqCode = ((Residue) atom.entity).getIDNum();
-                sBuilder.append(formatSeparator(seqCode, "   "));
-                sBuilder.append(seqCode);
-                sBuilder.append("   ");
+                sBuilder.append(String.format("%6d", seqCode));
 
                 // residue name 
-                sBuilder.append(((Residue) atom.entity).name);
-                sBuilder.append(sep);
+                String resName = ((Residue) atom.entity).name;
+                sBuilder.append(String.format("%6s", resName));
 
                 // atom name 
-                sBuilder.append(atom.name);
-                sBuilder.append(sep);
+                String aName = atom.name;
+                sBuilder.append(String.format("%6s", aName));
             }
 
             // weight
             double weight = bound.getWeight();
-            sBuilder.append(weight);
-            sBuilder.append(sep);
+            sBuilder.append(String.format("%6.2f", weight));
 
             // target value
             double target = bound.getTargetValue();
-            sBuilder.append(target);
-            sBuilder.append(sep);
+            sBuilder.append(String.format("%9.3f", target));
 
             // target value uncertainty
             double targetErr = bound.getTargetError();
-            sBuilder.append(targetErr);
-            sBuilder.append(sep);
+            sBuilder.append(String.format("%9.3f", targetErr));
 
             // lower limit
             double lower1 = Math.toDegrees(bound.getLower());
             double lower = Math.round(lower1 * 100000d) / 100000d;
-            sBuilder.append(lower);
-            sBuilder.append(sep);
+            sBuilder.append(String.format("%9.3f", lower));
 
             // upper limit
             double upper1 = Math.toDegrees(bound.getUpper());
             double upper = Math.round(upper1 * 100000d) / 100000d;
-            sBuilder.append(upper);
-            sBuilder.append(sep);
+            sBuilder.append(String.format("%9.3f", upper));
 
             // name
             String name = bound.getName();
-            sBuilder.append(name);
-            sBuilder.append(sep);
+            sBuilder.append(String.format("%6s", name));
 
         }
 
-        return (sBuilder.toString());
+        return sBuilder.toString();
     }
 
     public String xyzToXMLString(int iStruct, int iAtom) {
