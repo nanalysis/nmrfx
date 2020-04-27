@@ -124,7 +124,7 @@ public class EnergyCoords {
     public void setupShifts() {
         eShiftPairs.setupShifts();
     }
-    
+
     public void exportConstraintPairs(String fileName) {
         if (eConstraintPairs != null) {
             eConstraintPairs.dumpRestraints(fileName);
