@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.star.ParseException;
+import org.nmrfx.processor.star.STAR3;
+import org.nmrfx.processor.star.Saveframe;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -43,23 +45,47 @@ import org.nmrfx.structure.chemistry.energy.EnergyLists;
  */
 public class NMRNEFWriter {
 
-    private static final String[] SEQUENCE_LOOP_STRINGS = {"_nef_sequence.index", "_nef_sequence.chain_code", "_nef_sequence.sequence_code", "_nef_sequence.residue_name", "_nef_sequence.linking", "_nef_sequence.residue_variant"};
-    private static final String[] CHEM_SHIFT_LOOP_STRINGS = {"_nef_chemical_shift.chain_code", "_nef_chemical_shift.sequence_code", "_nef_chemical_shift.residue_name", "_nef_chemical_shift.atom_name", "_nef_chemical_shift.value", "_nef_chemical_shift.value_uncertainty"};
-    private static final String[] DISTANCE_RESTRAINT_LOOP_STRINGS = {"_nef_distance_restraint.index", "_nef_distance_restraint.restraint_id", "_nef_distance_restraint.restraint_combination_id", "_nef_distance_restraint.chain_code_1", "_nef_distance_restraint.sequence_code_1", "_nef_distance_restraint.residue_name_1", "_nef_distance_restraint.atom_name_1", "_nef_distance_restraint.chain_code_2", "_nef_distance_restraint.sequence_code_2", "_nef_distance_restraint.residue_name_2", "_nef_distance_restraint.atom_name_2", "_nef_distance_restraint.weight", "_nef_distance_restraint.target_value", "_nef_distance_restraint.target_value_uncertainty", "_nef_distance_restraint.lower_limit", "_nef_distance_restraint.upper_limit"};
-    private static final String[] DIHEDRAL_RESTRAINT_LOOP_STRINGS = {"_nef_dihedral_restraint.index", "_nef_dihedral_restraint.restraint_id", "_nef_dihedral_restraint.restraint_combination_id", "_nef_dihedral_restraint.chain_code_1", "_nef_dihedral_restraint.sequence_code_1", "_nef_dihedral_restraint.residue_name_1", "_nef_dihedral_restraint.atom_name_1", "_nef_dihedral_restraint.chain_code_2", "_nef_dihedral_restraint.sequence_code_2", "_nef_dihedral_restraint.residue_name_2", "_nef_dihedral_restraint.atom_name_2", "_nef_dihedral_restraint.chain_code_3", "_nef_dihedral_restraint.sequence_code_3", "_nef_dihedral_restraint.residue_name_3", "_nef_dihedral_restraint.atom_name_3", "_nef_dihedral_restraint.chain_code_4", "_nef_dihedral_restraint.sequence_code_4", "_nef_dihedral_restraint.residue_name_4", "_nef_dihedral_restraint.atom_name_4", "_nef_dihedral_restraint.weight", "_nef_dihedral_restraint.target_value", "_nef_dihedral_restraint.target_value_uncertainty", "_nef_dihedral_restraint.lower_limit", "_nef_dihedral_restraint.upper_limit", "_nef_dihedral_restraint.name"};
+    static STAR3 nef = null;
 
-    static void writeMolSys(FileWriter chan) throws IOException, InvalidMoleculeException {
-        chan.write("\n\n");
-        chan.write("save_nef_molecular_system\n");
+    static void setNEF(STAR3 nefObj) {
+        nef = nefObj;
+    }
+
+    static void writeMetaData(FileWriter chan) throws IOException, ParseException {
+        String frameName = "save_nef_nmr_meta_data";
+        chan.write(frameName + "\n");
+        chan.write("    _nef_nmr_meta_data.sf_category           "); //fixme figure out why sf_category isn't in the tag list
+        chan.write("nef_nmr_meta_data\n");
+        Saveframe frame = nef.getSaveframe(frameName);
+        String categoryName = frame.getCategories().get(0);
+        List<String> tags = frame.getCategory(categoryName).getTags();
+        for (String tag : tags) {
+            String value = frame.getValue(categoryName, tag);
+            String result = String.format("    %s.%-21s %s", categoryName, tag, value);
+            chan.write(result + "\n");
+        }
+        chan.write("save_" + "\n");
+    }
+
+    static void writeMolSys(FileWriter chan) throws IOException, ParseException, InvalidMoleculeException {
+        String frameName = "save_nef_molecular_system";
+        chan.write("\n\n\n" + frameName + "\n");
         chan.write("    _nef_molecular_system.sf_category   ");
         chan.write("nef_molecular_system\n");
-        chan.write("    _nef_molecular_system.sf_framecode  ");
-        chan.write("nef_molecular_system\n");
-        chan.write("\n");
+        Saveframe frame = nef.getSaveframe(frameName);
+        String categoryName = frame.getCategories().get(0);
+        List<String> tags = frame.getCategory(categoryName).getTags();
+        for (String tag : tags) {
+            String value = frame.getValue(categoryName, tag);
+            String result = String.format("    %s.%-13s %s", categoryName, tag, value);
+            chan.write(result + "\n");
+        }
 
-        chan.write("    loop_\n");
-        for (String loopString : SEQUENCE_LOOP_STRINGS) {
-            chan.write("         " + loopString + "\n");
+        chan.write("\n    loop_\n");
+        String loopName = "_nef_sequence";
+        List<String> loopStrings = frame.getLoopTags(loopName);
+        for (String loopString : loopStrings) {
+            chan.write("          " + loopName + "." + loopString + "\n");
         }
         chan.write("\n\n");
         Molecule molecule = Molecule.getActive();
@@ -82,19 +108,26 @@ public class NMRNEFWriter {
         chan.write("save_\n");
     }
 
-    static void writePPM(FileWriter chan) throws IOException, InvalidMoleculeException {
-        chan.write("\n");
-        chan.write("save_nef_chemical_shift_list_1pqx.mr\n"); //fixme dynamically get framecode
+    static void writePPM(FileWriter chan) throws IOException, ParseException, InvalidMoleculeException {
+        String frameName = nef.getSaveFrameNames().get(4);
+        chan.write("\n" + frameName + "\n");
         chan.write("    _nef_chemical_shift_list.sf_category                ");
         chan.write("nef_chemical_shift_list\n");
-        chan.write("    _nef_chemical_shift_list.sf_framecode               ");
-        chan.write("nef_chemical_shift_list_1pqx.mr\n"); //fixme dynamically get framecode
-        chan.write("\n");
+        Saveframe frame = nef.getSaveframe(frameName);
+        String categoryName = frame.getCategories().get(0);
+        List<String> tags = frame.getCategory(categoryName).getTags();
+        for (String tag : tags) {
+            String value = frame.getValue(categoryName, tag);
+            String result = String.format("    %s.%-26s %s", categoryName, tag, value);
+            chan.write(result + "\n");
+        }
 
         int i;
-        chan.write("    loop_\n");
-        for (String loopString : CHEM_SHIFT_LOOP_STRINGS) {
-            chan.write("         " + loopString + "\n");
+        chan.write("\n    loop_\n");
+        String loopName = "_nef_chemical_shift";
+        List<String> loopStrings = frame.getLoopTags(loopName);
+        for (String loopString : loopStrings) {
+            chan.write("         " + loopName + "." + loopString + "\n");
         }
         chan.write("\n");
         Molecule molecule = Molecule.getActive();
@@ -139,22 +172,25 @@ public class NMRNEFWriter {
         chan.write("save_\n");
     }
 
-    static void writeDistances(FileWriter chan) throws IOException, InvalidMoleculeException {
-        chan.write("\n");
-        chan.write("save_nef_distance_restraint_list_1pqx.mr\n"); //fixme dynamically get framecode
+    static void writeDistances(FileWriter chan) throws IOException, ParseException, InvalidMoleculeException {
+        String frameName = nef.getSaveFrameNames().get(6);
+        chan.write("\n" + frameName + "\n");
         chan.write("    _nef_distance_restraint_list.sf_category       ");
         chan.write("nef_distance_restraint_list\n");
-        chan.write("    _nef_distance_restraint_list.sf_framecode      ");
-        chan.write("nef_distance_restraint_list_1pqx.mr\n"); //fixme dynamically get framecode
-        chan.write("    _nef_distance_restraint_list.potential_type    ");
-        chan.write(".\n");
-        chan.write("    _nef_distance_restraint_list.restraint_origin  ");
-        chan.write("noe\n");
-        chan.write("\n");
+        Saveframe frame = nef.getSaveframe(frameName);
+        String categoryName = frame.getCategories().get(0);
+        List<String> tags = frame.getCategory(categoryName).getTags();
+        for (String tag : tags) {
+            String value = frame.getValue(categoryName, tag);
+            String result = String.format("    %s.%-17s %s", categoryName, tag, value);
+            chan.write(result + "\n");
+        }
 
-        chan.write("     loop_\n");
-        for (String loopString : DISTANCE_RESTRAINT_LOOP_STRINGS) {
-            chan.write("         " + loopString + "\n");
+        chan.write("\n     loop_\n");
+        String loopName = "_nef_distance_restraint";
+        List<String> loopStrings = frame.getLoopTags(loopName);
+        for (String loopString : loopStrings) {
+            chan.write("         " + loopName + "." + loopString + "\n");
         }
         chan.write("\n");
         Molecule molecule = Molecule.getActive();
@@ -184,22 +220,25 @@ public class NMRNEFWriter {
         chan.write("save_\n");
     }
 
-    static void writeDihedrals(FileWriter chan) throws IOException, InvalidMoleculeException {
-        chan.write("\n");
-        chan.write("save_nef_dihedral_restraint_list_1pqx.mr\n"); //fixme dynamically get framecode
+    static void writeDihedrals(FileWriter chan) throws IOException, ParseException, InvalidMoleculeException {
+        String frameName = nef.getSaveFrameNames().get(8);
+        chan.write("\n" + frameName + "\n");
         chan.write("    _nef_dihedral_restraint_list.sf_category       ");
         chan.write("nef_dihedral_restraint_list\n");
-        chan.write("    _nef_dihedral_restraint_list.sf_framecode      ");
-        chan.write("nef_dihedral_restraint_list_1pqx.mr\n"); //fixme dynamically get framecode
-        chan.write("    _nef_dihedral_restraint_list.potential_type    ");
-        chan.write(".\n");
-        chan.write("    _nef_dihedral_restraint_list.restraint_origin  ");
-        chan.write(".\n");
-        chan.write("\n");
+        Saveframe frame = nef.getSaveframe(frameName);
+        String categoryName = frame.getCategories().get(0);
+        List<String> tags = frame.getCategory(categoryName).getTags();
+        for (String tag : tags) {
+            String value = frame.getValue(categoryName, tag);
+            String result = String.format("    %s.%-17s %s", categoryName, tag, value);
+            chan.write(result + "\n");
+        }
 
-        chan.write("     loop_\n");
-        for (String loopString : DIHEDRAL_RESTRAINT_LOOP_STRINGS) {
-            chan.write("          " + loopString + "\n");
+        chan.write("\n     loop_\n");
+        String loopName = "_nef_dihedral_restraint";
+        List<String> loopStrings = frame.getLoopTags(loopName);
+        for (String loopString : loopStrings) {
+            chan.write("         " + loopName + "." + loopString + "\n");
         }
         chan.write("\n");
         Molecule molecule = Molecule.getActive();
@@ -250,6 +289,7 @@ public class NMRNEFWriter {
         chan.write("    ######################################\n");
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
+            writeMetaData(chan);
             writeMolSys(chan);
             writePPM(chan);
             writeDistances(chan);
