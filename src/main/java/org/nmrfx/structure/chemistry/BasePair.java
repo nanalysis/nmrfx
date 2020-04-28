@@ -37,7 +37,7 @@ public class BasePair {
     }
     public static boolean isCanonical(Residue res1, Residue res2) {
         boolean canon = false;
-        if (res1.basePairType(res2) == 1) {
+        if (res1.getBasePairType(res2) == 1) {
             canon = true;
         }
         return canon;

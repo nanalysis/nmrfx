@@ -65,12 +65,13 @@ public class RNAAnalysis {
      * @return A list of BasePairs found in the molecule
      */
     public static List<BasePair> pairList(Molecule molecule, int typeTarget) { //for RNA only
+        AllBasePairs.basePairList();
         List<BasePair> bpList = new ArrayList();
         List<Residue> RNAresidues = RNAresidues(molecule);
         for (Residue residueA : RNAresidues) {
             for (Residue residueB : RNAresidues) {
                 if (residueA.getResNum() < residueB.getResNum()) {
-                    int type = residueA.basePairType(residueB);
+                    int type = residueA.getBasePairType(residueB);
                     if (type == typeTarget) {
                         BasePair bp = new BasePair(residueA, residueB);
                         bpList.add(bp);
