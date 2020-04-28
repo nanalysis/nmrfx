@@ -231,7 +231,7 @@ public class StripController implements ControllerTool {
                 itemPeakListMenuButton, peakLabel,
                 offsetLabel, offsetBox, rowLabel, rowBox);
 
-        PeakList.peakListTable.addListener(mapChangeListener);
+        PeakList.peakListTable().addListener(mapChangeListener);
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();
@@ -272,7 +272,7 @@ public class StripController implements ControllerTool {
         });
         itemPeakListMenuButton.getItems().add(emptyPeakListMenuItem);
 
-        for (String peakListName : PeakList.peakListTable.keySet()) {
+        for (String peakListName : PeakList.peakListTable().keySet()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 setPeakList(peakListName);

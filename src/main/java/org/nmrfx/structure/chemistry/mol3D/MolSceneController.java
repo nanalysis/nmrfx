@@ -170,7 +170,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable.addListener(mapChangeListener);
+        PeakList.peakListTable().addListener(mapChangeListener);
         updatePeakListMenu();
         modeMenuButton.getItems().add(numbersCheckBox);
         modeMenuButton.getItems().add(activeCheckBox);
@@ -690,7 +690,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : PeakList.peakListTable.keySet()) {
+        for (String peakListName : PeakList.peakListTable().keySet()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 PeakList peakList = PeakList.get(peakListName);

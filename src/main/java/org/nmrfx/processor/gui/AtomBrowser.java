@@ -416,7 +416,7 @@ public class AtomBrowser {
         final boolean useOrder = true;
         List<Peak> peaks = new ArrayList<>();
 
-        PeakList.peakListTable.values().stream().forEach(peakList -> {
+        PeakList.peakListTable().values().stream().forEach(peakList -> {
             if (Util.stringMatch(peakList.getName(), listPattern)) {
                 List<Peak> listPeaks = peakList.matchPeaks(matchStrings, useRegexp, useOrder);
                 peaks.addAll(listPeaks);

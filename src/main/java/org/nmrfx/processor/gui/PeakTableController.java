@@ -127,13 +127,13 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable.addListener(mapChangeListener);
+        PeakList.peakListTable().addListener(mapChangeListener);
     }
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : PeakList.peakListTable.keySet()) {
+        for (String peakListName : PeakList.peakListTable().keySet()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 setPeakList(PeakList.get(peakListName));
