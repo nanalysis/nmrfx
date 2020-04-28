@@ -52,7 +52,6 @@ public class AllBasePairs {
     }
 
     public static AllBasePairs getBP(int type, String res1, String res2) {
-        basePairList();
         String strType = String.valueOf(type);
         return bpMap.get(strType + res1 + res2);
     }
@@ -67,7 +66,6 @@ public class AllBasePairs {
             if (!data.isEmpty()) {
                 String[] arrOfStr = data.split(",");
                 if (arrOfStr.length >= 1) {
-
                     int type = Integer.parseInt(arrOfStr[0]);
                     String res1 = arrOfStr[1];
                     String res2 = arrOfStr[2];
