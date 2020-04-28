@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Entity;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -44,9 +45,13 @@ public class NoeSet implements ConstraintSet, Iterable {
     private static double CMAX_BONUS = 10.0;
     private static double MAX_BONUS = 20.0;
 
-    public static final HashMap<String, NoeSet> NOE_SETS = new HashMap<String, NoeSet>();
+    public static final HashMap<String, NoeSet> NOE_SETS () {
+        return StructureProject.getActive().NOE_SETS;
+    }
     private static boolean sumAverage = true;
-    static NoeSet ACTIVE_SET = null;
+    static NoeSet ACTIVE_SET () {
+        return StructureProject.getActive().ACTIVE_SET;
+    }
     private final List<Noe> constraints = new ArrayList<>(64);
     private final Map<Peak, List<Noe>> peakMap = new TreeMap<>();
     private final Map<PeakList, NoeCalibration> scaleMap = new HashMap<>();
@@ -65,24 +70,24 @@ public class NoeSet implements ConstraintSet, Iterable {
 
     public static NoeSet addSet(String name) {
         NoeSet noeSet = new NoeSet(name);
-        NOE_SETS.put(name, noeSet);
-        ACTIVE_SET = noeSet;
+        NOE_SETS().put(name, noeSet);
+        StructureProject.getActive().ACTIVE_SET = noeSet;
         return noeSet;
     }
 
     public static void reset() {
-        for (Map.Entry<String, NoeSet> cSet : NOE_SETS.entrySet()) {
+        for (Map.Entry<String, NoeSet> cSet : NOE_SETS().entrySet()) {
             cSet.getValue().clear();
         }
-        NOE_SETS.clear();
+        NOE_SETS().clear();
         addSet("default");
     }
 
     public static void remove(final String name) {
-        NoeSet noeSet = NOE_SETS.get(name);
+        NoeSet noeSet = NOE_SETS().get(name);
         if (noeSet != null) {
             noeSet.clear();
-            NOE_SETS.remove(name);
+            NOE_SETS().remove(name);
         }
     }
 
@@ -103,13 +108,13 @@ public class NoeSet implements ConstraintSet, Iterable {
     }
 
     public static NoeSet getSet(String name) {
-        NoeSet noeSet = NOE_SETS.get(name);
+        NoeSet noeSet = NOE_SETS().get(name);
         return noeSet;
     }
 
     public static List<String> getNames() {
         List<String> names = new ArrayList<String>();
-        for (String name : NOE_SETS.keySet()) {
+        for (String name : NOE_SETS().keySet()) {
             names.add(name);
         }
         return names;
@@ -117,7 +122,7 @@ public class NoeSet implements ConstraintSet, Iterable {
 
     public static List<NoeSet> getSets() {
         List<NoeSet> sets = new ArrayList<NoeSet>();
-        sets.addAll(NOE_SETS.values());
+        sets.addAll(NOE_SETS().values());
         return sets;
     }
 
@@ -145,7 +150,7 @@ public class NoeSet implements ConstraintSet, Iterable {
     }
 
     public static NoeSet getActiveSet() {
-        return ACTIVE_SET;
+        return ACTIVE_SET();
     }
 
     public Noe get(int i) {
