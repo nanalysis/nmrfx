@@ -657,7 +657,7 @@ public class AnalystApp extends MainApp {
             rnaPeakGenController.getStage().show();
             rnaPeakGenController.getStage().toFront();
         } else {
-            System.out.println("Coudn't make rnaPeakGenController ");
+            System.out.println("Couldn't make rnaPeakGenController ");
         }
     }
 
@@ -670,7 +670,7 @@ public class AnalystApp extends MainApp {
             atomController.getStage().show();
             atomController.getStage().toFront();
         } else {
-            System.out.println("Coudn't make atom controller");
+            System.out.println("Couldn't make atom controller");
         }
     }
 
@@ -683,7 +683,7 @@ public class AnalystApp extends MainApp {
             molController.getStage().show();
             molController.getStage().toFront();
         } else {
-            System.out.println("Coudn't make molController");
+            System.out.println("Couldn't make molController");
         }
     }
 
@@ -696,7 +696,7 @@ public class AnalystApp extends MainApp {
             scannerController.getStage().show();
             scannerController.getStage().toFront();
         } else {
-            System.out.println("Coudn't make atom controller");
+            System.out.println("Couldn't make atom controller");
         }
     }
 
@@ -712,7 +712,7 @@ public class AnalystApp extends MainApp {
             peakTableController.getStage().show();
             peakTableController.getStage().toFront();
         } else {
-            System.out.println("Coudn't make peak table controller");
+            System.out.println("Couldn't make peak table controller");
         }
     }
 
@@ -729,7 +729,7 @@ public class AnalystApp extends MainApp {
             noeTableController.getStage().toFront();
             noeTableController.updateNoeSetMenu();
         } else {
-            System.out.println("Coudn't make NOE table controller");
+            System.out.println("Couldn't make NOE table controller");
         }
     }
 
