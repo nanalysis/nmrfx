@@ -20,26 +20,16 @@ package org.nmrfx.processor.datasets.peaks;
 import org.nmrfx.processor.star.STAR3;
 import org.nmrfx.processor.utilities.ConvUtil;
 import org.nmrfx.processor.utilities.Format;
+import org.nmrfx.project.Project;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PeakDim {
 
-    public static ResonanceFactory resFactory;
-
-    static {
-        try {
-            Class c = Class.forName("org.nmrfx.processor.datasets.peaks.AtomResonanceFactory");
-            try {
-                resFactory = (ResonanceFactory) c.newInstance();
-            } catch (InstantiationException | IllegalAccessException ex) {
-                resFactory = new ResonanceFactory();
-            }
-        } catch (ClassNotFoundException ex) {
-            resFactory = new ResonanceFactory();
-        }
-        resFactory.init();
+    public static ResonanceFactory resFactory() {
+        return Project.getActive().resFactory;
     }
+
     public static List<PeakDim> EMPTY_LIST = new ArrayList<>();
 
     private int spectralDim = 0;
@@ -75,7 +65,7 @@ public class PeakDim {
     }
 
     public static void setResonanceFactory(ResonanceFactory newFactory) {
-        resFactory = newFactory;
+        Project.getActive().resFactory = newFactory;
     }
 
     public PeakDim copy(Peak peak) {
@@ -147,7 +137,7 @@ public class PeakDim {
     }
 
     public void initResonance() {
-        resonance = resFactory.build();
+        resonance = resFactory().build();
         resonance.add(this);
     }
 
@@ -205,7 +195,7 @@ public class PeakDim {
 
     public void setResonance(long resID) {
         remove();
-        resonance = resFactory.get(resID);
+        resonance = resFactory().get(resID);
     }
 
     public void setResonance(Resonance newResonance) {

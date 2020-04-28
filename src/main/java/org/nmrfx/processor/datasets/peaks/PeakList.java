@@ -53,6 +53,7 @@ import org.nmrfx.processor.datasets.RegionData;
 import static org.nmrfx.processor.datasets.peaks.Peak.getMeasureFunction;
 import smile.clustering.HierarchicalClustering;
 import smile.clustering.linkage.CompleteLinkage;
+import org.nmrfx.project.Project;
 
 /**
  *
@@ -93,7 +94,9 @@ public class PeakList {
     /**
      *
      */
-    public static ObservableMap<String, PeakList> peakListTable = FXCollections.observableMap(new LinkedHashMap<>());
+    public static ObservableMap<String, PeakList> peakListTable () {
+        return Project.getActive().peakListTable;
+    }
 
     /**
      *
@@ -209,8 +212,8 @@ public class PeakList {
         peaks = new ArrayList<>();
         indexMap.clear();
 
-        peakListTable.put(listName, this);
-        listNum = peakListTable.size();
+        peakListTable().put(listName, this);
+        listNum = peakListTable().size();
     }
 
     @Override
@@ -305,7 +308,7 @@ public class PeakList {
      * @return
      */
     public static Iterator iterator() {
-        return peakListTable.values().iterator();
+        return peakListTable().values().iterator();
     }
 
     /**
@@ -330,9 +333,9 @@ public class PeakList {
      * @param newName
      */
     public void setName(String newName) {
-        peakListTable.remove(listName);
+        peakListTable().remove(listName);
         listName = newName;
-        peakListTable.put(newName, this);
+        peakListTable().put(newName, this);
     }
 
     /**
@@ -535,7 +538,7 @@ public class PeakList {
      */
     public static boolean isAnyChanged() {
         boolean anyChanged = false;
-        for (PeakList checkList : peakListTable.values()) {
+        for (PeakList checkList : peakListTable().values()) {
             if (checkList.isChanged()) {
                 anyChanged = true;
                 break;
@@ -549,7 +552,7 @@ public class PeakList {
      *
      */
     public static void clearAllChanged() {
-        for (Object checkList : peakListTable.values()) {
+        for (Object checkList : peakListTable().values()) {
             ((PeakList) checkList).clearChanged();
         }
     }
@@ -760,7 +763,7 @@ public class PeakList {
      * @return
      */
     public static List<PeakList> getLists() {
-        List<PeakList> peakLists = PeakList.peakListTable.values().stream().collect(Collectors.toList());
+        List<PeakList> peakLists = peakListTable().values().stream().collect(Collectors.toList());
         return peakLists;
     }
 
@@ -770,7 +773,7 @@ public class PeakList {
      * @return
      */
     public static PeakList get(String listName) {
-        return ((PeakList) peakListTable.get(listName));
+        return ((PeakList) peakListTable().get(listName));
     }
 
     /**
@@ -795,7 +798,7 @@ public class PeakList {
      * @param listName
      */
     public static void remove(String listName) {
-        PeakList peakList = (PeakList) peakListTable.get(listName);
+        PeakList peakList = (PeakList) peakListTable().get(listName);
         if (peakList != null) {
             peakList.remove();
         }
@@ -815,7 +818,7 @@ public class PeakList {
         peaks = null;
         schedExecutor.shutdown();
         schedExecutor = null;
-        peakListTable.remove(listName);
+        peakListTable().remove(listName);
     }
 
     void swap(double[] limits) {
@@ -1289,7 +1292,7 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable.get(peakSpecifier.substring(
+        PeakList peakList = (PeakList) peakListTable().get(peakSpecifier.substring(
                 0, dot));
 
         if (peakList == null) {
@@ -1329,7 +1332,7 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable.get(peakSpecifier.substring(
+        PeakList peakList = (PeakList) peakListTable().get(peakSpecifier.substring(
                 0, dot));
 
         if (peakList == null) {
@@ -1369,7 +1372,7 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable.get(peakSpecifier.substring(
+        PeakList peakList = (PeakList) peakListTable().get(peakSpecifier.substring(
                 0, dot));
 
         if (peakList == null) {
@@ -1498,7 +1501,7 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable.get(peakSpecifier.substring(
+        PeakList peakList = (PeakList) peakListTable().get(peakSpecifier.substring(
                 0, dot));
 
         if (peakList == null) {
@@ -3796,7 +3799,7 @@ public class PeakList {
      * @return
      */
     public static PeakList getPeakListForDataset(String datasetName) {
-        for (PeakList peakList : peakListTable.values()) {
+        for (PeakList peakList : peakListTable().values()) {
             if (peakList.fileName.equals(datasetName)) {
                 return peakList;
             }

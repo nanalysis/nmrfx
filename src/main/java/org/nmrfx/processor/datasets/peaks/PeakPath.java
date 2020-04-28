@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import org.apache.commons.math3.optimization.PointVectorValuePair;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.project.Project;
 import smile.interpolation.KrigingInterpolation;
 import smile.interpolation.variogram.PowerVariogram;
 import smile.interpolation.variogram.Variogram;
@@ -44,7 +45,9 @@ public class PeakPath implements PeakListener {
     static String[] PRESURE_NAMES = {"Ha", "Hb", "Hc", "Xa", "Xb", "Xc"};
     static String[] TITRATION_NAMES = {"K", "C"};
 
-    static Map<String, PeakPath> peakPaths = new HashMap<>();
+    static Map<String, PeakPath> peakPaths () {
+        return Project.getActive().peakPaths;
+    }
 
     public enum PATHMODE {
         TITRATION,
@@ -482,20 +485,20 @@ public class PeakPath implements PeakListener {
     }
 
     public void store() {
-        peakPaths.put(name, this);
+        peakPaths().put(name, this);
     }
 
     public void store(String name) {
         this.name = name;
-        peakPaths.put(name, this);
+        peakPaths().put(name, this);
     }
 
     public static Collection<PeakPath> get() {
-        return peakPaths.values();
+        return peakPaths().values();
     }
 
     public static PeakPath get(String name) {
-        return peakPaths.get(name);
+        return peakPaths().get(name);
     }
 
     public String getName() {

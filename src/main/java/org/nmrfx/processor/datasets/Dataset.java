@@ -47,6 +47,7 @@ import org.renjin.sexp.DoubleVector;
 import org.renjin.sexp.DoubleArrayVector;
 import org.renjin.sexp.IntArrayVector;
 import org.renjin.sexp.SEXP;
+import org.nmrfx.project.Project;
 
 /**
  * Instances of this class represent NMR datasets. The class is typically used
@@ -65,7 +66,9 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 //        } catch (IOException ioE) {
 //        }
 //    }
-    private static HashMap<String, Dataset> theFiles = new HashMap<>();
+    private static HashMap<String, Dataset> theFiles () {
+        return Project.getActive().datasetList;
+    }
     public final static int NV_HEADER_SIZE = 2048;
     public final static int UCSF_HEADER_SIZE = 180;
     public final static int LABEL_MAX_BYTES = 16;
@@ -524,7 +527,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      */
     public static boolean checkExistingName(final String name) {
         boolean exists = false;
-        Dataset existingFile = (Dataset) theFiles.get(name);
+        Dataset existingFile = (Dataset) theFiles().get(name);
         if (existingFile != null) {
             exists = true;
         }
@@ -543,7 +546,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         String testPath;
         testPath = file.getCanonicalPath();
         ArrayList<String> names = new ArrayList<>();
-        theFiles.values().stream().filter((dataset) -> (dataset.canonicalName.equals(testPath))).forEach((dataset) -> {
+        theFiles().values().stream().filter((dataset) -> (dataset.canonicalName.equals(testPath))).forEach((dataset) -> {
             names.add(dataset.getName());
         });
         return names;
@@ -569,7 +572,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         do {
             index++;
             newName = rootName + "_" + index + ext;
-        } while (theFiles.get(newName) != null);
+        } while (theFiles().get(newName) != null);
         return newName;
     }
 
@@ -765,7 +768,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     private void addFile(String fileName) {
-        theFiles.put(fileName, this);
+        theFiles().put(fileName, this);
         for (DatasetListener observer : observers) {
             try {
                 observer.datasetAdded(this);
@@ -776,7 +779,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     }
 
     private void removeFile(String fileName) {
-        theFiles.remove(fileName);
+        theFiles().remove(fileName);
         for (DatasetListener observer : observers) {
             try {
                 observer.datasetRemoved(this);
@@ -792,10 +795,10 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @param newName the name to be used.
      */
     synchronized public void rename(String newName) {
-        if (null != theFiles.remove(fileName)) {
+        if (null != theFiles().remove(fileName)) {
             fileName = newName;
             title = fileName;
-            theFiles.put(newName, this);
+            theFiles().put(newName, this);
             for (DatasetListener observer : observers) {
                 try {
                     observer.datasetRenamed(this);
@@ -3508,7 +3511,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
         if (fileName == null) {
             return null;
         } else {
-            return ((Dataset) theFiles.get(fileName));
+            return ((Dataset) theFiles().get(fileName));
         }
     }
 
@@ -3518,7 +3521,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @return List of names.
      */
     synchronized public static List<String> names() {
-        List<String> names = theFiles.keySet().stream().sorted().collect(Collectors.toList());
+        List<String> names = theFiles().keySet().stream().sorted().collect(Collectors.toList());
         return names;
     }
 
@@ -3528,7 +3531,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
      * @return List of datasets.
      */
     synchronized public static List<Dataset> datasets() {
-        List<Dataset> datasets = theFiles.values().stream().collect(Collectors.toList());
+        List<Dataset> datasets = theFiles().values().stream().collect(Collectors.toList());
         return datasets;
     }
 
@@ -3575,7 +3578,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
     public static TreeSet getPropertyNames() {
         TreeSet nameSet = new TreeSet();
 
-        for (Dataset dataset : theFiles.values()) {
+        for (Dataset dataset : theFiles().values()) {
             Iterator iter = dataset.properties.keySet().iterator();
             while (iter.hasNext()) {
                 String propName = (String) iter.next();
