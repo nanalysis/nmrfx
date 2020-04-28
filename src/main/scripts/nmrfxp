@@ -25,6 +25,8 @@ else
     HEAP_MEM="2048"
 fi
 
+JAVA=java
+
 # get the directory path of this script
 # resolve script symlink, if any
 pgm="$0"
