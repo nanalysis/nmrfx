@@ -409,7 +409,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     public void updateConditionNames() {
         conditionField.getItems().clear();
-        Set<String> conditions = PeakList.peakListTable.values().stream().
+        Set<String> conditions = PeakList.peakListTable().values().stream().
                 map(peakList -> peakList.getSampleConditionLabel()).
                 filter(label -> label != null).collect(Collectors.toSet());
         conditions.stream().sorted().forEach(s -> {

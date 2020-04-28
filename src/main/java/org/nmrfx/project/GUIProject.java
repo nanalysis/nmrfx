@@ -50,6 +50,10 @@ public class GUIProject extends Project {
 
     public static GUIProject replace(String name, GUIProject project) {
         GUIProject newProject = new GUIProject(name);
+        newProject.datasetList=project.datasetList;
+        newProject.peakListTable=project.peakListTable;
+        newProject.resFactory=project.resFactory;
+        newProject.peakPaths=project.peakPaths;
         return newProject;
     }
 

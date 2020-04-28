@@ -246,7 +246,7 @@ public class RunAboutGUI implements PeakListener {
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable.addListener(mapChangeListener);
+        PeakList.peakListTable().addListener(mapChangeListener);
 
     }
 
@@ -258,7 +258,7 @@ public class RunAboutGUI implements PeakListener {
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : PeakList.peakListTable.keySet()) {
+        for (String peakListName : PeakList.peakListTable().keySet()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 RunAboutGUI.this.setPeakList(peakListName);
