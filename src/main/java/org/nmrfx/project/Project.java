@@ -30,8 +30,13 @@ import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.DatasetParameterFile;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.PeakPath;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
+import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
+import java.util.LinkedHashMap;
 
 /**
  *
@@ -47,10 +52,34 @@ public class Project {
     Path projectDir = null;
     final String name;
     public final Map<String, PeakList> peakLists = new HashMap<>();
+    public HashMap<String, Dataset> datasetList;
+    public ObservableMap<String, PeakList> peakListTable;
+    public ResonanceFactory resFactory;
+    public Map<String, PeakPath> peakPaths;
+
 
     public Project(String name) {
         this.name = name;
+        this.datasetList = new HashMap<>();
+        this.peakListTable = FXCollections.observableMap(new LinkedHashMap<>());
+        this.resFactory=getNewResFactory();
+        this.resFactory.init();
+        peakPaths = new HashMap<>();
         setActive();
+    }
+    private ResonanceFactory getNewResFactory() {
+        ResonanceFactory resFact;
+        try {
+            Class c = Class.forName("org.nmrfx.processor.datasets.peaks.AtomResonanceFactory");
+            try {
+                resFact = (ResonanceFactory) c.newInstance();
+            } catch (InstantiationException | IllegalAccessException ex) {
+                resFact = new ResonanceFactory();
+            }
+        } catch (ClassNotFoundException ex) {
+            resFact = new ResonanceFactory();
+        }
+        return resFact;
     }
 
     public static class FileComparator implements Comparator<Path> {
@@ -122,7 +151,44 @@ public class Project {
     }
 
     public static Project getActive() {
-        return activeProject;
+        Project project = activeProject;
+        if (project == null) {
+            project = getNewProject("Untitled 1");
+        }
+        return project;
+    }
+
+    private static Project getNewProject(String name) {
+        Project project=null;
+        try {
+            Class c = Class.forName("org.nmrfx.project.GUIStructureProject");
+            project = (Project) c.getDeclaredConstructor(String.class).newInstance(name);
+        } catch (Exception ex) {
+            project = getNewStructureProject(name);
+        }
+        return project;
+    }
+
+    private static Project getNewStructureProject(String name) {
+        Project project=null;
+        try {
+            Class c = Class.forName("org.nmrfx.project.StructureProject");
+            project = (Project) c.getDeclaredConstructor(String.class).newInstance(name);
+        } catch (Exception ex) {
+            project = getNewGUIProject(name);
+        }
+        return project;
+    }
+
+    private static Project getNewGUIProject(String name) {
+        Project project=null;
+        try {
+            Class c = Class.forName("org.nmrfx.project.GUIProject");
+            project = (Project) c.getDeclaredConstructor(String.class).newInstance(name);
+        } catch (Exception ex) {
+            project = new Project(name);
+        }
+        return project;
     }
 
     public void createProject(Path projectDir) throws IOException {
@@ -148,6 +214,8 @@ public class Project {
     }
 
     public void loadProject(Path projectDir, String subDir) throws IOException, IllegalStateException {
+        Project currentProject=getActive();
+        setActive();
         FileSystem fileSystem = FileSystems.getDefault();
         if (projectDir != null) {
             Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
@@ -166,14 +234,18 @@ public class Project {
 
         }
         this.projectDir = projectDir;
+        currentProject.setActive();
     }
 
     public void saveProject() throws IOException {
+        Project currentProject=getActive();
+        setActive();
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         savePeakLists();
         saveDatasets();
+        currentProject.setActive();
     }
 
     void loadDatasets(Path directory) throws IOException {
@@ -269,7 +341,7 @@ public class Project {
             }
         });
 
-        PeakList.peakListTable.values().stream().forEach(peakList -> {
+        peakListTable.values().stream().forEach(peakList -> {
             Path peakFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".xpk2");
             Path measureFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".mpk2");
             // fixme should only write if file doesn't already exist or peaklist changed since read
