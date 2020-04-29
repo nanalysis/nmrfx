@@ -90,40 +90,51 @@ public class GUIProject extends Project {
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, IllegalStateException {
+        Project currentProject=getActive();
+        setActive();
+
         loadProject(projectDir);
-        FileSystem fileSystem = FileSystems.getDefault();
 
-        String[] subDirTypes = {"windows"};
-        if (projectDir != null) {
-            for (String subDir : subDirTypes) {
-                Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
-                if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
-                    switch (subDir) {
-                        case "windows":
-                            loadWindows(subDirectory);
-                            break;
-                        default:
-                            throw new IllegalStateException("Invalid subdir type");
+        if(currentProject==this) {
+            FileSystem fileSystem = FileSystems.getDefault();
+
+            String[] subDirTypes = {"windows"};
+            if (projectDir != null) {
+                for (String subDir : subDirTypes) {
+                    Path subDirectory = fileSystem.getPath(projectDir.toString(), subDir);
+                    if (Files.exists(subDirectory) && Files.isDirectory(subDirectory) && Files.isReadable(subDirectory)) {
+                        switch (subDir) {
+                            case "windows":
+                                loadWindows(subDirectory);
+                                break;
+                            default:
+                                throw new IllegalStateException("Invalid subdir type");
+                        }
                     }
-                }
 
+                }
             }
         }
         this.projectDir = projectDir;
         PreferencesController.saveRecentProjects(projectDir.toString());
-
+        currentProject.setActive();
     }
 
     @Override
     public void saveProject() throws IOException {
+        Project currentProject=getActive();
+        setActive();
+
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         super.saveProject();
-        saveWindows();
+        if(currentProject==this) {
+            saveWindows();
+        }
         gitCommitOnThread();
         PreferencesController.saveRecentProjects(projectDir.toString());
-
+        currentProject.setActive();
     }
 
     void gitCommitOnThread() {
