@@ -25,8 +25,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
+import org.nmrfx.processor.star.Loop;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.processor.star.STAR3;
 import org.nmrfx.processor.star.Saveframe;
@@ -52,12 +52,13 @@ public class NMRNEFWriter {
     }
 
     static void writeMetaData(FileWriter chan) throws IOException, ParseException {
-        String frameName = "save_nef_nmr_meta_data";
-        chan.write(frameName + "\n");
-        chan.write("    _nef_nmr_meta_data.sf_category           "); //fixme figure out why sf_category isn't in the tag list
-        chan.write("nef_nmr_meta_data\n");
+        String frameName = nef.getSaveFrameNames().get(0);
         Saveframe frame = nef.getSaveframe(frameName);
+        String frameCategoryName = frame.getCategoryName();
         String categoryName = frame.getCategories().get(0);
+        chan.write("\n\n\n" + frameName + "\n");
+        chan.write("    " + categoryName + ".sf_category           ");
+        chan.write(frameCategoryName + "\n");
         List<String> tags = frame.getCategory(categoryName).getTags();
         for (String tag : tags) {
             String value = frame.getValue(categoryName, tag);
@@ -68,12 +69,13 @@ public class NMRNEFWriter {
     }
 
     static void writeMolSys(FileWriter chan) throws IOException, ParseException, InvalidMoleculeException {
-        String frameName = "save_nef_molecular_system";
-        chan.write("\n\n\n" + frameName + "\n");
-        chan.write("    _nef_molecular_system.sf_category   ");
-        chan.write("nef_molecular_system\n");
+        String frameName = nef.getSaveFrameNames().get(2);
         Saveframe frame = nef.getSaveframe(frameName);
+        String frameCategoryName = frame.getCategoryName();
         String categoryName = frame.getCategories().get(0);
+        chan.write("\n" + frameName + "\n");
+        chan.write("    " + categoryName + ".sf_category   ");
+        chan.write(frameCategoryName + "\n");
         List<String> tags = frame.getCategory(categoryName).getTags();
         for (String tag : tags) {
             String value = frame.getValue(categoryName, tag);
@@ -82,7 +84,7 @@ public class NMRNEFWriter {
         }
 
         chan.write("\n    loop_\n");
-        String loopName = "_nef_sequence";
+        String loopName = frame.getCategories().get(1);
         List<String> loopStrings = frame.getLoopTags(loopName);
         for (String loopString : loopStrings) {
             chan.write("          " + loopName + "." + loopString + "\n");
@@ -110,11 +112,12 @@ public class NMRNEFWriter {
 
     static void writePPM(FileWriter chan) throws IOException, ParseException, InvalidMoleculeException {
         String frameName = nef.getSaveFrameNames().get(4);
-        chan.write("\n" + frameName + "\n");
-        chan.write("    _nef_chemical_shift_list.sf_category                ");
-        chan.write("nef_chemical_shift_list\n");
         Saveframe frame = nef.getSaveframe(frameName);
+        String frameCategoryName = frame.getCategoryName();
         String categoryName = frame.getCategories().get(0);
+        chan.write("\n" + frameName + "\n");
+        chan.write("    " + categoryName + ".sf_category                ");
+        chan.write(frameCategoryName + "\n");
         List<String> tags = frame.getCategory(categoryName).getTags();
         for (String tag : tags) {
             String value = frame.getValue(categoryName, tag);
@@ -122,9 +125,8 @@ public class NMRNEFWriter {
             chan.write(result + "\n");
         }
 
-        int i;
         chan.write("\n    loop_\n");
-        String loopName = "_nef_chemical_shift";
+        String loopName = frame.getCategories().get(1);
         List<String> loopStrings = frame.getLoopTags(loopName);
         for (String loopString : loopStrings) {
             chan.write("         " + loopName + "." + loopString + "\n");
@@ -134,8 +136,7 @@ public class NMRNEFWriter {
         if (molecule == null) {
             throw new InvalidMoleculeException("No active mol");
         }
-        int iPPM = 0;
-        i = 0;
+
         molecule.updateAtomArray();
         Comparator<Atom> aCmp = (Atom atom1, Atom atom2) -> { //sort by chain code
             int entityID1 = atom1.getTopEntity().entityID;
@@ -159,7 +160,8 @@ public class NMRNEFWriter {
 
         List<Atom> atomArray = molecule.getAtomArray();
         Collections.sort(atomArray, aCmp);
-
+        int iPPM = 0;
+        int i = 0;
         for (Atom atom : atomArray) {
             String result = atom.ppmToNEFString(iPPM, i);
             if (result != null) {
@@ -174,11 +176,12 @@ public class NMRNEFWriter {
 
     static void writeDistances(FileWriter chan) throws IOException, ParseException, InvalidMoleculeException {
         String frameName = nef.getSaveFrameNames().get(6);
-        chan.write("\n" + frameName + "\n");
-        chan.write("    _nef_distance_restraint_list.sf_category       ");
-        chan.write("nef_distance_restraint_list\n");
         Saveframe frame = nef.getSaveframe(frameName);
+        String frameCategoryName = frame.getCategoryName();
         String categoryName = frame.getCategories().get(0);
+        chan.write("\n" + frameName + "\n");
+        chan.write("    " + categoryName + ".sf_category       ");
+        chan.write(frameCategoryName + "\n");
         List<String> tags = frame.getCategory(categoryName).getTags();
         for (String tag : tags) {
             String value = frame.getValue(categoryName, tag);
@@ -187,7 +190,7 @@ public class NMRNEFWriter {
         }
 
         chan.write("\n     loop_\n");
-        String loopName = "_nef_distance_restraint";
+        String loopName = frame.getCategories().get(1);
         List<String> loopStrings = frame.getLoopTags(loopName);
         for (String loopString : loopStrings) {
             chan.write("         " + loopName + "." + loopString + "\n");
@@ -199,20 +202,44 @@ public class NMRNEFWriter {
         }
         molecule.updateAtomArray();
         EnergyLists eLists = NMRNEFReader.energyList;
-        List<DistancePair> distList = eLists.getDistanceList();
-        int idx = 1;
-        for (int i = 0; i < distList.size(); i++) {
-            DistancePair distPair = distList.get(i);
-            AtomDistancePair[] pairAtoms = distPair.getAtomPairs();
-            for (AtomDistancePair pair : pairAtoms) {
-                Atom[] a1List = pair.getAtoms1();
-                Atom[] a2List = pair.getAtoms2();
-                Atom atom1 = a1List[0];
-                Atom atom2 = a2List[0];
-                String result = Atom.toNEFDistanceString(idx, distPair, atom1, atom2);
-                if (result != null) {
-                    chan.write(result + "\n");
-                    idx++;
+        Loop loop = frame.getLoop(loopName);
+        if (eLists != null && loop != null) {
+            List<DistancePair> distList = eLists.getDistanceList();
+            List<Integer> restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
+            List<String> restraintComboIDColumn = loop.getColumnAsList("restraint_combination_id");
+            int idx = 1;
+            for (int i = 0; i < distList.size(); i++) {
+                DistancePair distPair = distList.get(i);
+                AtomDistancePair[] pairAtoms = distPair.getAtomPairs();
+                List<Integer> allA1Stereo = new ArrayList<>();
+                List<Integer> allA2Stereo = new ArrayList<>();
+                //make lists of the stereo flags for all the atoms in the pairs
+                for (AtomDistancePair pairAtom : pairAtoms) {
+                    int stereo1 = pairAtom.getAtoms1()[0].getStereo();
+                    int stereo2 = pairAtom.getAtoms2()[0].getStereo();
+                    allA1Stereo.add(stereo1);
+                    allA2Stereo.add(stereo2);
+                }
+                for (AtomDistancePair pair : pairAtoms) {
+                    Atom atom1 = pair.getAtoms1()[0];
+                    Atom atom2 = pair.getAtoms2()[0];
+                    String result;
+                    // collapse % atoms that aren't methyls: don't write out atoms 
+                    // whose stereo flags are 0, and for which succeeding atoms have
+                    // stereo flags of 1
+                    if (pairAtoms.length >= 2 && ((!atom1.isMethyl() && atom1.getStereo() == 0
+                            && allA1Stereo.contains(1)) || (!atom2.isMethyl()
+                            && atom2.getStereo() == 0 && allA2Stereo.contains(1)))) {
+                        result = null;
+                    } else {
+                        int restraintID = restraintIDColumn.get(i);
+                        String restraintComboID = restraintComboIDColumn.get(i);
+                        result = Atom.toNEFDistanceString(idx, restraintID, restraintComboID, distPair, atom1, atom2);
+                    }
+                    if (result != null) {
+                        chan.write(result + "\n");
+                        idx++;
+                    }
                 }
             }
         }
@@ -222,11 +249,12 @@ public class NMRNEFWriter {
 
     static void writeDihedrals(FileWriter chan) throws IOException, ParseException, InvalidMoleculeException {
         String frameName = nef.getSaveFrameNames().get(8);
-        chan.write("\n" + frameName + "\n");
-        chan.write("    _nef_dihedral_restraint_list.sf_category       ");
-        chan.write("nef_dihedral_restraint_list\n");
         Saveframe frame = nef.getSaveframe(frameName);
+        String frameCategoryName = frame.getCategoryName();
         String categoryName = frame.getCategories().get(0);
+        chan.write("\n" + frameName + "\n");
+        chan.write("    " + categoryName + ".sf_category       ");
+        chan.write(frameCategoryName + "\n");
         List<String> tags = frame.getCategory(categoryName).getTags();
         for (String tag : tags) {
             String value = frame.getValue(categoryName, tag);
@@ -235,7 +263,7 @@ public class NMRNEFWriter {
         }
 
         chan.write("\n     loop_\n");
-        String loopName = "_nef_dihedral_restraint";
+        String loopName = frame.getCategories().get(1);
         List<String> loopStrings = frame.getLoopTags(loopName);
         for (String loopString : loopStrings) {
             chan.write("         " + loopName + "." + loopString + "\n");
@@ -247,22 +275,21 @@ public class NMRNEFWriter {
         }
         molecule.updateAtomArray();
         Dihedral dihedral = NMRNEFReader.dihedral;
-        Map<Integer, AngleBoundary> angleBoundsMap = dihedral.getAngleBoundariesNEF();
-        Comparator<AngleBoundary> angleCmp = (AngleBoundary bound1, AngleBoundary bound2) -> {
-            int restraintID1 = bound1.getRestraintID();
-            int restraintID2 = bound2.getRestraintID();
-            int result = Integer.compare(restraintID1, restraintID2);
-            return result;
-        };
-        List<AngleBoundary> angleBounds = new ArrayList(angleBoundsMap.values());
-        Collections.sort(angleBounds, angleCmp);
+        List<AngleBoundary> angleBounds = dihedral.getAngleBoundariesNEF();
         int i = 1;
-        for (AngleBoundary bound : angleBounds) {
-            Atom[] atoms = bound.getAtoms();
-            String result = Atom.toNEFDihedralString(bound, atoms, i);
-            if (result != null) {
-                chan.write(result + "\n");
-                i++;
+        Loop loop = frame.getLoop(loopName);
+        if (angleBounds != null && loop != null) {
+            List<Integer> restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
+            List<String> restraintComboIDColumn = loop.getColumnAsList("restraint_combination_id");
+            for (AngleBoundary bound : angleBounds) {
+                Atom[] atoms = bound.getAtoms();
+                int restraintID = restraintIDColumn.get(i - 1);
+                String restraintComboID = restraintComboIDColumn.get(i - 1);
+                String result = Atom.toNEFDihedralString(bound, atoms, i, restraintID, restraintComboID);
+                if (result != null) {
+                    chan.write(result + "\n");
+                    i++;
+                }
             }
         }
         chan.write("    stop_\n");
@@ -271,8 +298,8 @@ public class NMRNEFWriter {
 
     public static void writeAll(String fileName) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(fileName)) {
-            System.out.println("wrote " + fileName);
             writeAll(writer);
+            System.out.println("wrote " + fileName);
         }
     }
 
@@ -288,7 +315,7 @@ public class NMRNEFWriter {
         chan.write("    # Saved " + date.toString() + " #\n");
         chan.write("    ######################################\n");
         Molecule molecule = Molecule.getActive();
-        if (molecule != null) {
+        if (molecule != null && nef != null) {
             writeMetaData(chan);
             writeMolSys(chan);
             writePPM(chan);

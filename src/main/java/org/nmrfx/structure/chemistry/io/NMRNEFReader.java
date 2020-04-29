@@ -399,7 +399,7 @@ public class NMRNEFReader {
             }
             double scale = 1.0;
             try {
-                dihedral.addBoundary(atoms, lower, upper, scale, restraintID, weight, target, targetErr, name);
+                dihedral.addBoundary(atoms, lower, upper, scale, weight, target, targetErr, name);
             } catch (InvalidMoleculeException imE) {
 
             }
@@ -418,7 +418,6 @@ public class NMRNEFReader {
         List<String>[] atomNameColumns = new ArrayList[2];
 
         List<Integer> indexColumn = loop.getColumnAsIntegerList("index", 0);
-        List<Integer> restraintIDColumn = loop.getColumnAsIntegerList("restraint_id", 0);
 
         chainCodeColumns[0] = loop.getColumnAsList("chain_code_1");
         sequenceColumns[0] = loop.getColumnAsList("sequence_code_1");
@@ -457,7 +456,6 @@ public class NMRNEFReader {
                 atomNames[iAtom].add(chainCode + ":" + seqNum + "." + atomName);
 //                resNames[iAtom] = resName;
             }
-            int restraintID = restraintIDColumn.get(i);
             String weightValue = (String) weightColumn.get(i);
             String targetValue = (String) targetValueColumn.get(i);
             String targetErrValue = (String) targetErrColumn.get(i);
@@ -488,7 +486,7 @@ public class NMRNEFReader {
 
             Util.setStrictlyNEF(true);
             try {
-                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, restraintID, weight, target, targetErr);
+                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, weight, target, targetErr);
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);
                 throw new ParseException("Error parsing NEF distance constraints at index  \"" + index + "\" " + iaE.getMessage());

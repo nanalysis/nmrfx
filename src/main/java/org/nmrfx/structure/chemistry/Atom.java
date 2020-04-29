@@ -1171,14 +1171,16 @@ public class Atom implements IAtom {
             case 0: //x or y changes
                 if (atom.isMethyl()) {
                     writeName = null;
-                } else if (writeName.endsWith("2")) {
+                } else if ((!distances && writeName.endsWith("2")) || 
+                        (distances && writeName.endsWith("3") || writeName.endsWith("1"))) {
                     writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
-                } else if (writeName.endsWith("3") || writeName.endsWith("1")) {
+                } else if ((!distances && writeName.endsWith("3") || writeName.endsWith("1")) || 
+                        (distances && writeName.endsWith("2"))) {
                     writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
                 }
                 break;
             case 1: //no change or % changes
-                if (atom.isMethyl() || (!distances && !atom.isMethyl() && atom.getBMRBAmbiguity() != 1
+                if (atom.isMethyl() || (!atom.isMethyl() && atom.getBMRBAmbiguity() != 1
                         && (writeName.contains("HB3") || writeName.contains("HG3")
                         || writeName.contains("HD2")))) { //fixme this is too specific
                     writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
@@ -1232,7 +1234,7 @@ public class Atom implements IAtom {
         return line;
     }
 
-    public static String toNEFDistanceString(int index, DistancePair distPair, Atom atom1, Atom atom2) {
+    public static String toNEFDistanceString(int index, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2) {
         Atom[] atoms = {atom1, atom2};
 
         if (formatNEFAtomName(atom1, true) == null || formatNEFAtomName(atom2, true) == null) {
@@ -1245,12 +1247,10 @@ public class Atom implements IAtom {
             sBuilder.append(String.format("%-8d", index));
 
             //restraint ID
-            int restraintID = distPair.getRestraintID();
             sBuilder.append(String.format("%-8d", restraintID));
 
             //restraint combo ID
-            String comboID = "."; //fixme should be combo ID
-            sBuilder.append(String.format("%-8s", comboID));
+            sBuilder.append(String.format("%-8s", restraintComboID));
 
             for (Atom atom : atoms) {
                 // chain code 
@@ -1284,8 +1284,7 @@ public class Atom implements IAtom {
             if (Double.parseDouble(targetErr) == 0) {
                 targetErr = ".";
             }
-            sBuilder.append(targetErr);
-            sBuilder.append(String.format("%-8s", target));
+            sBuilder.append(String.format("%-8s", targetErr));
 
             // lower limit
             double lower = distPair.getLower();
@@ -1300,7 +1299,7 @@ public class Atom implements IAtom {
         return sBuilder.toString();
     }
 
-    public static String toNEFDihedralString(AngleBoundary bound, Atom[] atoms, int iBound) {
+    public static String toNEFDihedralString(AngleBoundary bound, Atom[] atoms, int iBound, int restraintID, String restraintComboID) {
 
         StringBuilder sBuilder = new StringBuilder();
         if (atoms[0].entity instanceof Residue && atoms[1].entity instanceof Residue
@@ -1310,12 +1309,10 @@ public class Atom implements IAtom {
             sBuilder.append(String.format("%6d", iBound));
 
             //restraint ID
-            int restraintID = bound.getRestraintID();
             sBuilder.append(String.format("%6d", restraintID));
 
             //restraint combo ID
-            String comboID = "."; //fixme should be combo ID
-            sBuilder.append(String.format("%6s", comboID));
+            sBuilder.append(String.format("%6s", restraintComboID));
 
             for (Atom atom : atoms) {
                 // chain code 
