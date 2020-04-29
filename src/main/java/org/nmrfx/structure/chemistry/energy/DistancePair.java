@@ -25,13 +25,12 @@ public class DistancePair {
     final double rLow;
     final double rUp;
     final boolean isBond;
-    final int restraintID;
     final double weight;
     final double targetValue;
     final double targetErr;
 
     public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond,
-            final int restraintID, final double weight, final double targetValue, final double targetErr) {
+            final double weight, final double targetValue, final double targetErr) {
         if (atoms1.length != atoms2.length) {
             throw new IllegalArgumentException("atom arrays are not of equal length");
         }
@@ -44,7 +43,6 @@ public class DistancePair {
         this.rLow = rLow;
         this.rUp = rUp;
         this.isBond = isBond;
-        this.restraintID = restraintID;
         this.weight = weight;
         this.targetValue = targetValue;
         this.targetErr = targetErr;
@@ -52,7 +50,7 @@ public class DistancePair {
 
     public DistancePair(final Atom[] atoms1, final Atom[] atoms2, final double rLow, final double rUp, final boolean isBond) {
 
-        this(atoms1, atoms2, rLow, rUp, isBond, 0, 1.0, (rLow + rUp) / 2.0, rUp - rLow);
+        this(atoms1, atoms2, rLow, rUp, isBond, 1.0, (rLow + rUp) / 2.0, rUp - rLow);
 
     }
 
@@ -92,9 +90,6 @@ public class DistancePair {
         return isBond;
     }
 
-    public int getRestraintID() {
-        return restraintID;
-    }
 
     public double getWeight() {
         return weight;
