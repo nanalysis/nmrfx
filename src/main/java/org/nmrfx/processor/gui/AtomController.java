@@ -88,7 +88,7 @@ import org.nmrfx.structure.chemistry.predict.BMRBStats;
 public class AtomController implements Initializable, FreezeListener {
 
     static final DecimalFormat formatter = new DecimalFormat();
-    static Map<String, String> filterMap = new HashMap<>();
+    static final Map<String, String> filterMap = new HashMap<>();
     PredictorSceneController predictorController = null;
 
     static {
@@ -169,7 +169,6 @@ public class AtomController implements Initializable, FreezeListener {
             stage.setTitle("Atom Attributes");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
 
@@ -288,6 +287,7 @@ public class AtomController implements Initializable, FreezeListener {
 
     class FloatStringConverter2 extends FloatStringConverter {
 
+        @Override
         public Float fromString(String s) {
             Float v;
             try {
@@ -353,6 +353,7 @@ public class AtomController implements Initializable, FreezeListener {
         DoubleStringConverter dsConverter4 = new DoubleStringConverter4();
         FloatStringConverter fsConverter = new FloatStringConverter2();
         atomTableView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        atomTableView.setEditable(true);
 
         TableColumn<Atom, String> atomNameCol = new TableColumn<>("Atom");
         atomNameCol.setCellValueFactory(new PropertyValueFactory("Name"));
@@ -524,8 +525,8 @@ public class AtomController implements Initializable, FreezeListener {
         int ppmSet = ppmSetChoice.getValue();
         Molecule mol = Molecule.getActive();
         if (mol != null) {
-            List<Atom> atoms = mol.getAtoms();
-            for (Atom atom : atoms) {
+            List<Atom> molAtoms = mol.getAtoms();
+            for (Atom atom : molAtoms) {
                 atom.setPPMValidity(ppmSet, false);
             }
         }
@@ -557,8 +558,8 @@ public class AtomController implements Initializable, FreezeListener {
         int refSet = refSetChoice.getValue();
         Molecule mol = Molecule.getActive();
         if (mol != null) {
-            List<Atom> atoms = mol.getAtoms();
-            for (Atom atom : atoms) {
+            List<Atom> molAtoms = mol.getAtoms();
+            for (Atom atom : molAtoms) {
                 PPMv ppmV = atom.getRefPPM(refSet);
                 if (ppmV != null) {
                     ppmV.setValid(false, atom);
