@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class AllBasePairs {
@@ -35,7 +36,7 @@ public class AllBasePairs {
     public String res2;
     public String[] atomPairs;
     public String[] distances;
-    public static HashMap<String, AllBasePairs> bpMap = new HashMap<>();
+    public static Map<String, AllBasePairs> bpMap = new HashMap<>();
 
     public AllBasePairs(int type, String res1, String res2, String[] atomPairs, String[] distances) {
         this.res1 = res1;
@@ -56,7 +57,7 @@ public class AllBasePairs {
         return bpMap.get(strType + res1 + res2);
     }
 
-    public static List<AllBasePairs> basePairList() {
+    public static List<AllBasePairs> genBasePairList() {
         List<AllBasePairs> basePairs = new ArrayList<>();
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         InputStream istream = cl.getResourceAsStream("data/basepair.csv");
