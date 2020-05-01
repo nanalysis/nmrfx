@@ -36,7 +36,8 @@ public class AllBasePairs {
     public String res2;
     public String[] atomPairs;
     public String[] distances;
-    public static Map<String, AllBasePairs> bpMap = new HashMap<>();
+    private final static Map<String, AllBasePairs> bpMap = new HashMap<>();
+    private final static List<AllBasePairs> basePairs = new ArrayList<>();
 
     public AllBasePairs(int type, String res1, String res2, String[] atomPairs, String[] distances) {
         this.res1 = res1;
@@ -52,13 +53,24 @@ public class AllBasePairs {
         return type + ", " + res1 + ", " + res2 + ", " + Arrays.toString(atomPairs);
     }
 
-    public static AllBasePairs getBP(int type, String res1, String res2) {
+    public static AllBasePairs getBasePair(int type, String res1, String res2) {
+        if (bpMap.isEmpty()) {
+            loadBasePairs();
+        }
         String strType = String.valueOf(type);
         return bpMap.get(strType + res1 + res2);
     }
 
-    public static List<AllBasePairs> genBasePairList() {
-        List<AllBasePairs> basePairs = new ArrayList<>();
+    public static List<AllBasePairs> getBasePairs() {
+        if (basePairs.isEmpty()) {
+            loadBasePairs();
+        }
+        return basePairs;
+    }
+
+    static void loadBasePairs() {
+        bpMap.clear();
+        basePairs.clear();
         ClassLoader cl = ClassLoader.getSystemClassLoader();
         InputStream istream = cl.getResourceAsStream("data/basepair.csv");
         Scanner inputStream = new Scanner(istream);
@@ -97,7 +109,6 @@ public class AllBasePairs {
                 }
             }
         }
-        return basePairs;
     }
 
 }

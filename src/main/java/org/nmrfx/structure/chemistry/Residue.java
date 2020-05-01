@@ -622,10 +622,10 @@ public class Residue extends Compound {
         boolean valid = false;
         List<AllBasePairs> basePairs = new ArrayList<>();
         if (!name.matches("[GCAU]") || !residue.name.matches("[GCAU]")) {
-            basePairs = AllBasePairs.genBasePairList();
+            basePairs = AllBasePairs.getBasePairs();
         } else {
             for (int type = 0; type <= 12; type++) {
-                AllBasePairs bp = AllBasePairs.getBP(type, name, residue.name);
+                AllBasePairs bp = AllBasePairs.getBasePair(type, name, residue.name);
                 if (bp != null) {
                     basePairs.add(bp);
                 }
@@ -643,21 +643,21 @@ public class Residue extends Compound {
                         Atom atom2 = residue.getAtom(atom2Str);
                         if (atom1 != null && atom2 != null) {
                             if (atom1Str.contains("H")) {
-                                    valid = HydrogenBond.validateRNA(atom1.getSpatialSet(), atom2.getSpatialSet(), 0);
-                                } else if (atom2Str.contains("H")) {
-                                    valid = HydrogenBond.validateRNA(atom2.getSpatialSet(), atom1.getSpatialSet(), 0);
-                                }
-                                if (valid) {
+                                valid = HydrogenBond.validateRNA(atom1.getSpatialSet(), atom2.getSpatialSet(), 0);
+                            } else if (atom2Str.contains("H")) {
+                                valid = HydrogenBond.validateRNA(atom2.getSpatialSet(), atom1.getSpatialSet(), 0);
+                            }
+                            if (valid) {
                                 bpCount++;
-                                }
                             }
                         }
-                        }
                     }
-                if (bpCount == bp.atomPairs.length) {
-                    return bp.type;
                 }
             }
+            if (bpCount == bp.atomPairs.length) {
+                return bp.type;
+            }
+        }
         return 0;
     }
 

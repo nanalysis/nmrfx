@@ -65,12 +65,8 @@ public class RNAAnalysis {
      * @return A list of BasePairs found in the molecule
      */
     public static List<BasePair> getPairList(Molecule molecule, int typeTarget) { //for RNA only
-        Map<String, AllBasePairs> basePairMap = AllBasePairs.bpMap;
         List<BasePair> bpList = new ArrayList();
         List<Residue> rnaResidues = genRnaResidues(molecule);
-        if (basePairMap.isEmpty()) {
-            AllBasePairs.genBasePairList();
-        }
         for (Residue residueA : rnaResidues) {
             for (Residue residueB : rnaResidues) {
                 if (residueA.getResNum() < residueB.getResNum()) {
