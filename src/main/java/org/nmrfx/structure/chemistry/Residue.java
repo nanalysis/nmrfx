@@ -622,13 +622,13 @@ public class Residue extends Compound {
         boolean valid = false;
         List<AllBasePairs> basePairs = AllBasePairs.basePairList();
         for (AllBasePairs bp : basePairs) {
-            bpCount = 0;
-            for (int iPair = 0; iPair < bp.atomPairs.length; iPair++) {
-                String[] atoms = bp.atomPairs[iPair].split(":");
-                String[] atoms0 = atoms[0].split("/");
-                String[] atoms1 = atoms[1].split("/");
-                for (String atom1Str : atoms0) {
-                    for (String atom2Str : atoms1) {
+                bpCount = 0;
+                for (int iPair = 0; iPair < bp.atomPairs.length; iPair++) {
+                    String[] atoms = bp.atomPairs[iPair].split(":");
+                    String[] atoms0 = atoms[0].split("/");
+                    String[] atoms1 = atoms[1].split("/");
+                    for (String atom1Str : atoms0) {
+                        for (String atom2Str : atoms1) {
                         if (!name.matches("[GCAU]")) {
                             if (atom1Str.contains("H")) {
                                 atom1Str = atom1Str.replace("H", "HN");
@@ -639,25 +639,25 @@ public class Residue extends Compound {
                                 atom2Str = atom2Str.replace("H", "HN");
                             }
                         }
-                        Atom atom1 = getAtom(atom1Str);
-                        Atom atom2 = residue.getAtom(atom2Str);
-                        if (atom1 != null && atom2 != null) {
+                            Atom atom1 = getAtom(atom1Str);
+                            Atom atom2 = residue.getAtom(atom2Str);
+                            if (atom1 != null && atom2 != null) {
                             if (atom1Str.contains("H")) {
-                                valid = HydrogenBond.validateRNA(atom1.getSpatialSet(), atom2.getSpatialSet(), 0);
-                            } else if (atom2Str.contains("H")) {
-                                valid = HydrogenBond.validateRNA(atom2.getSpatialSet(), atom1.getSpatialSet(), 0);
-                            }
-                            if (valid) {
+                                    valid = HydrogenBond.validateRNA(atom1.getSpatialSet(), atom2.getSpatialSet(), 0);
+                                } else if (atom2Str.contains("H")) {
+                                    valid = HydrogenBond.validateRNA(atom2.getSpatialSet(), atom1.getSpatialSet(), 0);
+                                }
+                                if (valid) {
                                 bpCount++;
+                                }
                             }
                         }
+                        }
                     }
+                if (bpCount == bp.atomPairs.length) {
+                    return bp.type;
                 }
             }
-            if (bpCount == bp.atomPairs.length) {
-                return bp.type;
-            }
-        }
         return 0;
     }
 
