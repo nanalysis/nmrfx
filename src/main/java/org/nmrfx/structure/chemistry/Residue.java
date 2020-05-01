@@ -617,28 +617,28 @@ public class Residue extends Compound {
         }
     }
 
-    public int basePairType(Residue residue) {
-        int bpCount = 0;
+    public int getBasePairType(Residue residue) {
+        int bpCount;
         boolean valid = false;
-        List<AllBasePairs> basePairs = AllBasePairs.basePairList();
+        List<AllBasePairs> basePairs = new ArrayList<>();
+        if (!name.matches("[GCAU]") || !residue.name.matches("[GCAU]")) {
+            basePairs = AllBasePairs.genBasePairList();
+        } else {
+            for (int type = 0; type <= 12; type++) {
+                AllBasePairs bp = AllBasePairs.getBP(type, name, residue.name);
+                if (bp != null) {
+                    basePairs.add(bp);
+                }
+            }
+        }
         for (AllBasePairs bp : basePairs) {
             bpCount = 0;
-            for (int iPair = 0; iPair < bp.atomPairs.length; iPair++) {
-                String[] atoms = bp.atomPairs[iPair].split(":");
-                String[] atoms0 = atoms[0].split("/");
-                String[] atoms1 = atoms[1].split("/");
+            for (String atomPair : bp.atomPairs) {
+                String[] atomPairs = atomPair.split(":");
+                String[] atoms0 = atomPairs[0].split("/");
+                String[] atoms1 = atomPairs[1].split("/");
                 for (String atom1Str : atoms0) {
                     for (String atom2Str : atoms1) {
-                        if (!name.matches("[GCAU]")) {
-                            if (atom1Str.contains("H")) {
-                                atom1Str = atom1Str.replace("H", "HN");
-                            }
-                        }
-                        if (!residue.name.matches("[GCAU]")) {
-                            if (atom2Str.contains("H")) {
-                                atom2Str = atom2Str.replace("H", "HN");
-                            }
-                        }
                         Atom atom1 = getAtom(atom1Str);
                         Atom atom2 = residue.getAtom(atom2Str);
                         if (atom1 != null && atom2 != null) {

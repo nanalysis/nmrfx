@@ -1126,6 +1126,7 @@ class refine:
         if 'vienna' in rnaDict:
             self.findHelices(rnaDict['vienna'])
         if 'bp' in rnaDict:
+	    AllBasePairs.basePairList()
 	    polymers = self.molecule.getPolymers()
             bps = rnaDict['bp']
             for bp in bps:
@@ -1669,6 +1670,7 @@ class refine:
                     self.energyLists.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
                     
     def findHelices(self,vienna):
+	AllBasePairs.basePairList()
         polymers = self.molecule.getPolymers()
         allResidues = []
         for polymer in polymers:
