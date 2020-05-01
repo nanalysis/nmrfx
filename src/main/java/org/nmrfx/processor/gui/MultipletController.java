@@ -142,11 +142,8 @@ public class MultipletController implements Initializable, SetChangeListener<Mul
         initMenus();
         initNavigator(toolBar);
         initTools();
-        patternListener = new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                couplingChanged();
-            }
+        patternListener = (ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
+            couplingChanged();
         };
         addPatternListener();
         FXMLController controller = FXMLController.getActiveController();
@@ -357,7 +354,7 @@ merge.png				region_adjust.png
          */
     }
 
-    public Analyzer getAnalyzer() {
+    public void getAnalyzer() {
         if (analyzer == null) {
             chart = PolyChart.getActiveChart();
             Dataset dataset = chart.getDataset();
@@ -365,15 +362,14 @@ merge.png				region_adjust.png
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("Chart must have a 1D dataset");
                 alert.showAndWait();
-                return null;
+                analyzer = null;
             }
             analyzer = new Analyzer(dataset);
         }
-        return analyzer;
     }
 
     private void analyze1D() {
-        Analyzer analyzer = getAnalyzer();
+        getAnalyzer();
         if (analyzer != null) {
             try {
                 analyzer.analyze();
@@ -390,7 +386,7 @@ merge.png				region_adjust.png
     }
 
     private void pickRegions() {
-        Analyzer analyzer = getAnalyzer();
+        getAnalyzer();
         if (analyzer != null) {
             analyzer.peakPickRegions();
             PeakList peakList = analyzer.getPeakList();
@@ -403,7 +399,7 @@ merge.png				region_adjust.png
     }
 
     private void clearAnalysis() {
-        Analyzer analyzer = getAnalyzer();
+        getAnalyzer();
         if (analyzer != null) {
             if (affirm("Clear Analysis")) {
                 PeakList peakList = analyzer.getPeakList();
@@ -422,7 +418,7 @@ merge.png				region_adjust.png
     }
 
     private void setThreshold() {
-        Analyzer analyzer = getAnalyzer();
+        getAnalyzer();
         if (analyzer != null) {
             CrossHairs crossHairs = chart.getCrossHairs();
             if (!crossHairs.hasCrosshairState("h0")) {
@@ -660,7 +656,7 @@ merge.png				region_adjust.png
         if (!attrs.isEmpty()) {
             peakListOpt = Optional.of(attrs.get(0).getPeakList());
         } else {
-            Analyzer analyzer = getAnalyzer();
+        getAnalyzer();
             PeakList peakList = analyzer.getPeakList();
             if (peakList != null) {
                 List<String> peakListNames = new ArrayList<>();
@@ -693,7 +689,7 @@ merge.png				region_adjust.png
     }
 
     public void fitSelected() {
-        Analyzer analyzer = getAnalyzer();
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             Optional<Double> result = analyzer.fitMultiplet(m);
         });
@@ -713,7 +709,7 @@ merge.png				region_adjust.png
 
     public void splitRegion() {
         double ppm = chart.getVerticalCrosshairPositions()[0];
-        Analyzer analyzer = getAnalyzer();
+        getAnalyzer();
         try {
             List<Multiplet> multiplets = analyzer.splitRegion(ppm);
             if (!multiplets.isEmpty()) {
@@ -728,7 +724,7 @@ merge.png				region_adjust.png
     }
 
     public void adjustRegion() {
-        Analyzer analyzer = getAnalyzer();
+        getAnalyzer();
         double ppm0 = chart.getVerticalCrosshairPositions()[0];
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
         analyzer.removeRegion((ppm0 + ppm1) / 2);
@@ -742,7 +738,7 @@ merge.png				region_adjust.png
     }
 
     public void addRegion() {
-        Analyzer analyzer = getAnalyzer();
+        getAnalyzer();
         double ppm0 = chart.getVerticalCrosshairPositions()[0];
         double ppm1 = chart.getVerticalCrosshairPositions()[1];
         analyzer.addRegion(ppm0, ppm1);
@@ -768,7 +764,6 @@ merge.png				region_adjust.png
         activeMultiplet.ifPresent(m -> {
             int id = m.getIDNum();
             double ppm = m.getCenter();
-            Analyzer analyzer = getAnalyzer();
             analyzer.removeRegion(ppm);
             gotoPrevious(id);
             chart.refresh();
@@ -921,7 +916,6 @@ merge.png				region_adjust.png
             String multOrig = m.getMultiplicity();
             System.out.println("convert " + multOrig + " " + multNew);
             if (!multNew.equals(multOrig)) {
-                Analyzer analyzer = getAnalyzer();
                 Multiplets.convertMultiplicity(m, multOrig, multNew);
                 analyzer.fitMultiplet(m);
                 refresh();

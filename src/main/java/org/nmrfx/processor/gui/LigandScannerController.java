@@ -127,7 +127,6 @@ public class LigandScannerController implements Initializable {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setContentText("Error: Fit must first be performed.");
             alert.showAndWait();
-            return;
         }
     }
 
@@ -149,7 +148,6 @@ public class LigandScannerController implements Initializable {
             stage.setTitle("Ligand Scanner");
             stage.show();
         } catch (IOException ioE) {
-            ioE.printStackTrace();
             System.out.println(ioE.getMessage());
         }
 

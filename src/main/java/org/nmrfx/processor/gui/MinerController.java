@@ -98,7 +98,7 @@ public class MinerController {
             int pt2 = axMode.getIndex(dataAttr, 0, ppms[1]);
             Align aligner = new Align();
             try {
-                List<Double> valueList = null;
+                List<Double> valueList;
                 if (scannerController.hasColumn("offset")) {
                     valueList = scannerController.getValues("offset");
                 } else {
