@@ -35,6 +35,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -122,7 +123,6 @@ import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.processor.gui.tools.PathTool;
 import org.nmrfx.processor.gui.tools.SpectrumComparator;
 import org.nmrfx.processor.gui.undo.UndoManager;
-import org.nmrfx.project.Project;
 import org.nmrfx.utilities.DictionarySort;
 import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
@@ -1359,13 +1359,13 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         bButton.disableProperty().bind(undoManager.redoable.not());
 
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.EXPAND, "Full", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> getActiveChart().full());
+        bButton.setOnMouseClicked(e -> doFull(e));
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH, "Expand", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> getActiveChart().expand());
+        bButton.setOnMouseClicked(e -> doExpand(e));
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_MINUS, "In", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> getActiveChart().zoom(1.2));
+        bButton.setOnMouseClicked(e -> doZoom(e, 1.2));
         bButton.setOnScroll((ScrollEvent event) -> {
             double x = event.getDeltaX();
             double y = event.getDeltaY();
@@ -1378,7 +1378,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         });
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.SEARCH_PLUS, "Out", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> getActiveChart().zoom(0.8));
+        bButton.setOnMouseClicked(e -> doZoom(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
             double x = event.getDeltaX();
             double y = event.getDeltaY();
@@ -1393,32 +1393,34 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
         buttons.add(new Separator(Orientation.VERTICAL));
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROWS_V, "Auto", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> getActiveChart().autoScale());
+        bButton.setOnMouseClicked(e -> doScale(e, 0.0));
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_UP, "Higher", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> getActiveChart().adjustScale(0.8));
+        bButton.setOnMouseClicked(e -> doScale(e, 0.8));
         bButton.setOnScroll((ScrollEvent event) -> {
             double x = event.getDeltaX();
             double y = event.getDeltaY();
-            if (y < 0.0) {
-                getActiveChart().adjustScale(0.9);
-            } else {
-                getActiveChart().adjustScale(1.1);
-
+            for (PolyChart applyChart : getCharts(event.isShiftDown())) {
+                if (y < 0.0) {
+                    applyChart.adjustScale(0.9);
+                } else {
+                    applyChart.adjustScale(1.1);
+                }
             }
         });
         buttons.add(bButton);
         bButton = GlyphsDude.createIconButton(FontAwesomeIcon.ARROW_DOWN, "Lower", iconSize, fontSize, ContentDisplay.TOP);
-        bButton.setOnAction(e -> getActiveChart().adjustScale(1.2));
+        bButton.setOnMouseClicked(e -> doScale(e, 1.2));
 
         bButton.setOnScroll((ScrollEvent event) -> {
             double x = event.getDeltaX();
             double y = event.getDeltaY();
-            if (y < 0.0) {
-                getActiveChart().adjustScale(0.9);
-            } else {
-                getActiveChart().adjustScale(1.1);
-
+            for (PolyChart applyChart : getCharts(event.isShiftDown())) {
+                if (y < 0.0) {
+                    applyChart.adjustScale(0.9);
+                } else {
+                    applyChart.adjustScale(1.1);
+                }
             }
         });
 
@@ -1449,6 +1451,43 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);
 
+    }
+
+     List<PolyChart> getCharts(boolean all) {
+        if (all) {
+            return charts;
+        } else {
+            return Collections.singletonList(getActiveChart());
+        }
+    }
+
+    public void doScale(MouseEvent e, double value) {
+        for (PolyChart chart : getCharts(e.isShiftDown())) {
+            if (value == 0.0) {
+                chart.autoScale();
+            } else {
+                chart.adjustScale(value);
+
+            }
+        }
+    }
+
+    public void doFull(MouseEvent e) {
+        for (PolyChart chart : getCharts(e.isShiftDown())) {
+            chart.full();
+        }
+    }
+
+    public void doExpand(MouseEvent e) {
+        for (PolyChart chart : getCharts(e.isShiftDown())) {
+            chart.expand();
+        }
+    }
+
+    public void doZoom(MouseEvent e, double value) {
+        for (PolyChart chart : getCharts(e.isShiftDown())) {
+            chart.zoom(value);
+        }
     }
 
     public void showPeakNavigator() {
