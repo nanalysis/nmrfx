@@ -90,6 +90,7 @@ import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.processor.datasets.Nuclei;
 import org.nmrfx.processor.datasets.peaks.PeakList.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.spectra.ChartMenu;
 import org.nmrfx.processor.gui.spectra.ConnectPeakAttributes;
@@ -1907,7 +1908,44 @@ public class PolyChart implements PeakListener {
         borders[0] = Math.max(borders[0], chartProps.getLeftBorderSize());
         borders[2] = Math.max(borders[2], minBottomBorder);
         borders[2] = Math.max(borders[2], chartProps.getBottomBorderSize());
+        if (chartProps.getAspect() && !is1D()) {
+            adjustAspect(borders);
+        }
         return borders;
+    }
+
+    void adjustAspect(double[] borders) {
+        if ((axModes[0] == AXMODE.PPM) && (axModes[1] == AXMODE.PPM)) {
+            if (!datasetAttributesList.isEmpty()) {
+                DatasetAttributes dAttr = datasetAttributesList.get(0);
+                Dataset dataset = dAttr.getDataset();
+                if (dataset.getNDim() > 1) {
+                    Nuclei nuc0 = dataset.getNucleus(dAttr.getDim(0));
+                    Nuclei nuc1 = dataset.getNucleus(dAttr.getDim(1));
+                    if ((nuc0 != null) && (nuc1 != null)) {
+                        double fRatio0 = dataset.getNucleus(dAttr.getDim(0)).getFreqRatio();
+                        double fRatio1 = dataset.getNucleus(dAttr.getDim(1)).getFreqRatio();
+                        double dXAxis = Math.abs(xAxis.getUpperBound() - xAxis.getLowerBound());
+                        double dYAxis = Math.abs(yAxis.getUpperBound() - yAxis.getLowerBound());
+
+                        double ppmRatio = dXAxis / dYAxis;
+                        double ppmRatioF = fRatio1 / fRatio0;
+                        double chartAspectRatio = chartProps.getAspectRatio();
+                        double aspectRatio = chartAspectRatio * (ppmRatio / ppmRatioF);
+                        double dX = width - borders[0] - borders[1];
+                        double dY = height - (borders[2] + borders[3]);
+                        double newDX = dY * aspectRatio;
+
+                        if (newDX > dX) {
+                            double newDY = dX / aspectRatio;
+                            borders[3] = height - borders[2] - newDY;
+                        } else {
+                            borders[1] = width - borders[0] - newDX;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void setDisable(boolean state) {

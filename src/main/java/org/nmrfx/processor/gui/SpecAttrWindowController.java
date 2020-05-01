@@ -66,6 +66,7 @@ import javafx.stage.StageStyle;
 import javafx.util.converter.DoubleStringConverter;
 import java.text.DecimalFormat;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.List;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -138,6 +139,12 @@ public class SpecAttrWindowController implements Initializable {
     private Label integralHighValue;
     @FXML
     private CheckBox regionCheckBox;
+    @FXML
+    CheckBox aspectCheckBox;
+    @FXML
+    Slider aspectSlider;
+    @FXML
+    Label aspectRatioValue;
     @FXML
     private TabPane tabPane;
     @FXML
@@ -216,6 +223,7 @@ public class SpecAttrWindowController implements Initializable {
     ListChangeListener<String> peakTargetListener;
     ListChangeListener<String> datasetTargetListener;
     Node columnMenuNode;
+    boolean shiftState = false;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -287,6 +295,14 @@ public class SpecAttrWindowController implements Initializable {
         integralCheckBox.selectedProperty().addListener(e -> updateIntegralState());
         regionCheckBox.selectedProperty().addListener(e -> updateIntegralState());
 
+        aspectCheckBox.selectedProperty().addListener(e -> updateAspectRatio());
+        aspectSlider.setMin(0.1);
+        aspectSlider.setMax(3.0);
+        aspectSlider.setValue(1.0);
+        aspectSlider.setBlockIncrement(0.01);
+        aspectSlider.setOnMousePressed(e -> shiftState = e.isShiftDown());
+        aspectSlider.valueProperty().addListener(e -> updateAspectRatio());
+
     }
 
     void updateIntegralState() {
@@ -299,6 +315,25 @@ public class SpecAttrWindowController implements Initializable {
         integralLowValue.setText(String.format("%.2f", lowValue));
         integralHighValue.setText(String.format("%.2f", highValue));
         chart.refresh();
+    }
+
+    List<PolyChart> getCharts(boolean all) {
+        if (all) {
+            return chart.getController().getCharts();
+        } else {
+            return Collections.singletonList(chart);
+        }
+    }
+
+    void updateAspectRatio() {
+        List<PolyChart> applyCharts = getCharts(shiftState);
+        for (PolyChart applyChart : applyCharts) {
+            applyChart.chartProps.setAspect(aspectCheckBox.isSelected());
+            double aspectRatio = aspectSlider.getValue();
+            applyChart.chartProps.setAspectRatio(aspectRatio);
+            aspectRatioValue.setText(String.format("%.2f", aspectRatio));
+            applyChart.refresh();
+        }
     }
 
     public boolean isShowing() {
@@ -1319,6 +1354,7 @@ public class SpecAttrWindowController implements Initializable {
         titlesCheckBox.setSelected(polyChart.chartProps.getTitles());
         DISDIM curDisDim = polyChart.disDimProp.get();
         disDimCombo.setValue(curDisDim);
+        aspectSlider.setValue(polyChart.chartProps.getAspectRatio());
         // polyChart.disDimProp.bindBidirectional(disDimCombo.valueProperty());
     }
 

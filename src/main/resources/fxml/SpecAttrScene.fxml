@@ -86,6 +86,11 @@
 
                                                 </HBox>
                                                 <CheckBox fx:id="regionCheckBox" text="Regions"/>
+                                                <CheckBox fx:id="aspectCheckBox" text="Aspect"/>
+                                                <HBox>
+                                                    <Slider fx:id="aspectSlider" prefWidth="200"/>
+                                                    <Label fx:id="aspectRatioValue" minWidth="35" maxWidth="35"/>
+                                                </HBox>
                                             </children>
                                         </VBox>
                                         
