@@ -1126,7 +1126,6 @@ class refine:
         if 'vienna' in rnaDict:
             self.findHelices(rnaDict['vienna'])
         if 'bp' in rnaDict:
-	    AllBasePairs.basePairList()
 	    polymers = self.molecule.getPolymers()
             bps = rnaDict['bp']
             for bp in bps:
@@ -1670,7 +1669,6 @@ class refine:
                     self.energyLists.addDistanceConstraint(atomNameI, atomNameJ5, 10, 12.0)
                     
     def findHelices(self,vienna):
-	AllBasePairs.basePairList()
         polymers = self.molecule.getPolymers()
         allResidues = []
         for polymer in polymers:
@@ -1709,7 +1707,7 @@ class refine:
         resNameJ = residueJ.getName()
         resNumI = residueI.getNumber()
         resNumJ = residueJ.getNumber()
-	bp = AllBasePairs.getBP(type, resNameI, resNameJ)
+	bp = AllBasePairs.getBasePair(type, resNameI, resNameJ)
    	numBp = len(bp.atomPairs)
 	for i in range(0, numBp):
 	    restraints = bp.distances[i].split(":")
@@ -1771,8 +1769,8 @@ class refine:
     def addBasePairs(self, residueI, residueJ, types):
         resNameI = residueI.getName()
         resNameJ = residueJ.getName()
-	typeAtomPairs = [AllBasePairs.getBP(int(typee), residueI.getName(), residueJ.getName()).atomPairs for typee in types]
-	restraints =  [AllBasePairs.getBP(int(typee), residueI.getName(), residueJ.getName()).distances for typee in types]
+	typeAtomPairs = [AllBasePairs.getBasePair(int(typee), residueI.getName(), residueJ.getName()).atomPairs for typee in types]
+	restraints =  [AllBasePairs.getBasePair(int(typee), residueI.getName(), residueJ.getName()).distances for typee in types]
 	typeAtomPairs.sort(key = lambda x:len(x), reverse = True)
 	restraints.sort(key = lambda x:len(x), reverse = True)
 	atomPairNum = len(max(typeAtomPairs, key=lambda item: len(item)))
