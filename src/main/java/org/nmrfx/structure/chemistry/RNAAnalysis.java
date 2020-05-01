@@ -34,16 +34,16 @@ public class RNAAnalysis {
      * @param molecule
      * @return
      */
-    public static List<Residue> RNAresidues(Molecule molecule) { //list of only rna residues 
-        List<Residue> RNAresidues = new ArrayList();
+    public static List<Residue> genRnaResidues(Molecule molecule) { //list of only rna residues 
+        List<Residue> rnaResidues = new ArrayList();
         for (Polymer polymer : molecule.getPolymers()) {
             if (polymer.isRNA()) {
                 for (Residue res : polymer.getResidues()) {
-                    RNAresidues.add(res);
+                    rnaResidues.add(res);
                 }
             }
         }
-        return RNAresidues;
+        return rnaResidues;
     }
 
     /**
@@ -53,8 +53,8 @@ public class RNAAnalysis {
      * @param molecule The molecule to analyze for base pairing
      * @return A list of BasePairs found in the molecule
      */
-    public static List<BasePair> pairList(Molecule molecule) { //for RNA only
-        return pairList(molecule, 1);
+    public static List<BasePair> getPairList(Molecule molecule) { //for RNA only
+        return RNAAnalysis.getPairList(molecule, 1);
     }
 
     /**
@@ -64,13 +64,17 @@ public class RNAAnalysis {
      * @param typeTarget The type of basepair to return in list
      * @return A list of BasePairs found in the molecule
      */
-    public static List<BasePair> pairList(Molecule molecule, int typeTarget) { //for RNA only
+    public static List<BasePair> getPairList(Molecule molecule, int typeTarget) { //for RNA only
+        Map<String, AllBasePairs> basePairMap = AllBasePairs.bpMap;
         List<BasePair> bpList = new ArrayList();
-        List<Residue> RNAresidues = RNAresidues(molecule);
-        for (Residue residueA : RNAresidues) {
-            for (Residue residueB : RNAresidues) {
+        List<Residue> rnaResidues = genRnaResidues(molecule);
+        if (basePairMap.isEmpty()) {
+            AllBasePairs.genBasePairList();
+        }
+        for (Residue residueA : rnaResidues) {
+            for (Residue residueB : rnaResidues) {
                 if (residueA.getResNum() < residueB.getResNum()) {
-                    int type = residueA.basePairType(residueB);
+                    int type = residueA.getBasePairType(residueB);
                     if (type == typeTarget) {
                         BasePair bp = new BasePair(residueA, residueB);
                         bpList.add(bp);
@@ -89,12 +93,12 @@ public class RNAAnalysis {
      * @param molecule
      * @return
      */
-    public static HashMap<Integer, List<BasePair>> allBasePairsMap(Molecule molecule) {
-        HashMap<Integer, List<BasePair>> bpMap = new HashMap<Integer, List<BasePair>>();
+    public static Map<Integer, List<BasePair>> getBasePairs(Molecule molecule) {
+        Map<Integer, List<BasePair>> bpMap = new HashMap<>();
         BasePair currentBp = null;
         int i = 0;
         List<BasePair> crossedPairs = new ArrayList();
-        List<BasePair> bpList = pairList(molecule);
+        List<BasePair> bpList = getPairList(molecule);
         for (BasePair bp1 : bpList) {
             for (BasePair bp2 : bpList) {
                 if (bp1.res1.iRes < bp2.res1.iRes && bp1.res2.iRes < bp2.res2.iRes && bp1.res2.iRes > bp2.res1.iRes) {
@@ -124,10 +128,10 @@ public class RNAAnalysis {
      * @return
      */
     public static char[] getViennaSequence(Molecule molecule) {
-        HashMap<Integer, List<BasePair>> allBpMap = allBasePairsMap(molecule);
-        List<BasePair> bps = pairList(molecule);
-        List<Residue> RNAresidues = RNAresidues(molecule);
-        char[] vienna = new char[RNAresidues.size()];
+        Map<Integer, List<BasePair>> bpMap = getBasePairs(molecule);
+        List<BasePair> bps = getPairList(molecule);
+        List<Residue> rnaResidues = genRnaResidues(molecule);
+        char[] vienna = new char[rnaResidues.size()];
         String leftBrackets = "[{";
         String rightBrackets = "]}";
         for (int i = 0; i < vienna.length; i++) {
@@ -137,8 +141,8 @@ public class RNAAnalysis {
             vienna[bp.res1.iRes] = '(';
             vienna[bp.res2.iRes] = ')';
         }
-        if (!allBpMap.isEmpty()) {
-            for (Map.Entry<Integer, List<BasePair>> crossMap : allBpMap.entrySet()) {
+        if (!bpMap.isEmpty()) {
+            for (Map.Entry<Integer, List<BasePair>> crossMap : bpMap.entrySet()) {
                 for (BasePair bp : crossMap.getValue()) {
                     vienna[bp.res1.iRes] = leftBrackets.charAt(crossMap.getKey());
                     vienna[bp.res2.iRes] = rightBrackets.charAt(crossMap.getKey());
@@ -157,15 +161,15 @@ public class RNAAnalysis {
      * @return
      */
     public static char[] testViennaSequence(Molecule molecule) {
-        HashMap<Integer, List<BasePair>> bpMap = allBasePairsMap(molecule);
-        List<Residue> RNAresidues = RNAresidues(molecule);
-        char[] vienna = new char[RNAresidues.size()];
+        Map<Integer, List<BasePair>> bpMap = getBasePairs(molecule);
+        List<Residue> rnaResidues = genRnaResidues(molecule);
+        char[] vienna = new char[rnaResidues.size()];
         String leftBrackets = "[{";
         String rightBrackets = "]}";
         for (int i = 0; i < vienna.length; i++) {
             vienna[i] = '.';
         }
-        for (Residue residueA : RNAresidues) {
+        for (Residue residueA : rnaResidues) {
             if (residueA.pairedTo != null && residueA.iRes < residueA.pairedTo.iRes) {
                 vienna[residueA.iRes] = '(';
                 vienna[residueA.pairedTo.iRes] = ')';

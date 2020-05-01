@@ -2573,7 +2573,7 @@ public class Molecule implements Serializable, ITree {
                     for (Residue residueB : polymerB.getResidues()) {
                         if (residueA != residueB) {
 
-                            int paired = residueA.basePairType(residueB);
+                            int paired = residueA.getBasePairType(residueB);
                             if (paired != 0) {
                                 System.out.println(paired + " " + residueA.getName() + " " + residueB.getName());
                             }
