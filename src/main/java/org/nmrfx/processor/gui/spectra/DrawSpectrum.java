@@ -858,7 +858,7 @@ public class DrawSpectrum {
         iChunk = dataAttributes.getLastChunk(0);
     }
 
-    public boolean draw1DSpectrum(DatasetAttributes dataAttributes, int orientation, AXMODE axMode, double ph0, double ph1, Path bcPath) {
+    public boolean draw1DSpectrum(DatasetAttributes dataAttributes, double firstOffset, int orientation, AXMODE axMode, double ph0, double ph1, Path bcPath) {
         Vec specVec = new Vec(32);
         boolean drawReal = dataAttributes.getDrawReal();
         boolean offsetMode = true;
@@ -878,7 +878,7 @@ public class DrawSpectrum {
                 return false;
             }
         }
-        double offset = getOffset(dataAttributes);
+        double offset = getOffset(dataAttributes, firstOffset);
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
                 (index, intensity) -> axes[1].getDisplayPosition(intensity) - offset, offsetMode, false);
@@ -890,10 +890,10 @@ public class DrawSpectrum {
 
     }
 
-    public double getOffset(DatasetAttributes dataAttributes) {
+    public double getOffset(DatasetAttributes dataAttributes, double firstOffset) {
         double height = axes[1].getHeight();
         double mapOffset = height * dataAttributes.getMapOffset(rowIndex);
-        double dataOffset = height * dataAttributes.getOffset();
+        double dataOffset = height * (dataAttributes.getOffset() - firstOffset);
         double offset = dataOffset + mapOffset;
         return offset;
     }
@@ -949,7 +949,7 @@ public class DrawSpectrum {
         double yOrigin = axes[1].getYOrigin();
         drawSubVector(specVec, orientation, 0, axMode,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) ->  yOrigin - height + (1.0 - high) * height + (high - low) * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
+                (index, intensity) -> yOrigin - height + (1.0 - high) * height + (high - low) * height * (1.0 - (intensity / integralMax)), ppm1, ppm2);
 
         return result;
     }
@@ -1228,7 +1228,7 @@ public class DrawSpectrum {
 
         return drawFullLine(ve, start, annoEnd, 0.0, delta, xy,
                 (index, intensity) -> xOrigin + index,
-                (index, intensity) -> yOrigin - intensity * (height-1) + 1);
+                (index, intensity) -> yOrigin - intensity * (height - 1) + 1);
 
     }
 

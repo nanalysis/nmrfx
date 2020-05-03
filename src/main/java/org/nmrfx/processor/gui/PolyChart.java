@@ -857,11 +857,14 @@ public class PolyChart implements PeakListener {
         double center = (max + min) / 2.0;
 
         if (is1D()) {
-            center += y / scale;
-            min = center - range / 2.0;
-            max = center + range / 2.0;
-            double f = (0.0 - min) / (max - min);
-            setYAxis(min, max);
+            if (!datasetAttributesList.isEmpty()) {
+                datasetAttributesList.stream().forEach(dataAttr -> {
+                    double fOffset = dataAttr.getOffset();
+                    fOffset -= y / height;
+                    dataAttr.setOffset(fOffset);
+                });
+                setYAxisByLevel();
+            }
         } else {
             center -= y / scale;
             min = center - range / 2.0;
@@ -885,16 +888,10 @@ public class PolyChart implements PeakListener {
     protected void adjustScale(DatasetAttributes dataAttr, double factor) {
         Dataset dataset = dataAttr.getDataset();
         if (is1D()) {
-            double min = yAxis.getLowerBound();
-            double max = yAxis.getUpperBound();
-            double range = max - min;
-            double f = (0.0 - min) / range;
-            range = range * factor;
-            min = -f * range;
-            max = min + range;
             double oldLevel = dataAttr.getLvl();
-            dataAttr.setLvl(oldLevel * factor);
-            setYAxis(min, max);
+            double newLevel = oldLevel * factor;
+            dataAttr.setLvl(newLevel);
+            setYAxisByLevel();
         } else if (dataset != null) {
             double scale = factor;
             if (scale > 2.0) {
@@ -911,17 +908,11 @@ public class PolyChart implements PeakListener {
         datasetAttributesList.stream().forEach(dataAttr -> {
             Dataset dataset = dataAttr.getDataset();
             if (is1D()) {
-                double min = yAxis.getLowerBound();
-                double max = yAxis.getUpperBound();
-                double scale = yAxis.getScale();
-                double range = max - min;
-                double f = (0.0 - min) / range;
-                range -= y / scale;
-                min = -f * range;
-                max = min + range;
+                double factor = y;
                 double oldLevel = dataAttr.getLvl();
-                dataAttr.setLvl(oldLevel * scale);
-                setYAxis(min, max);
+                double newLevel = oldLevel * factor;
+                dataAttr.setLvl(newLevel);
+                setYAxisByLevel();
             } else if (dataset != null) {
                 double scale = (y / 100.0 + 1.0);
                 if (scale > 2.0) {
@@ -987,8 +978,6 @@ public class PolyChart implements PeakListener {
     }
 
     protected void setYAxis(double min, double max) {
-        double range = max - min;
-        double delta = range / 10;
         yAxis.setMinMax(min, max);
     }
 
@@ -1269,9 +1258,12 @@ public class PolyChart implements PeakListener {
             }
             max += range / 20.0;
             min -= range / 20.0;
+
             double delta = max - min;
-            dataAttr.setLvl(delta / 10.0);
-            setYAxis(min, max);
+            double fOffset = (0.0 - min) / delta;
+            dataAttr.setOffset(fOffset);
+            dataAttr.setLvl(delta);
+            setYAxisByLevel();
         } else {
             Dataset dataset = dataAttr.getDataset();
             Double sdev = dataset.guessNoiseLevel();
@@ -1293,6 +1285,18 @@ public class PolyChart implements PeakListener {
                 level = value;
             }
         }
+    }
+
+    protected void setYAxisByLevel() {
+        if (!datasetAttributesList.isEmpty()) {
+            DatasetAttributes dataAttr = datasetAttributesList.get(0);
+            double delta = dataAttr.getLvl();
+            double fOffset = dataAttr.getOffset();
+            double min = -fOffset * delta;
+            double max = min + delta;
+            setYAxis(min, max);
+        }
+
     }
 
     protected void setPhaseDim(int phaseDim) {
@@ -2014,7 +2018,9 @@ public class PolyChart implements PeakListener {
         GraphicsContext gCC = canvas.getGraphicsContext2D();
         GraphicsContextInterface gC = new GraphicsContextProxy(gCC);
         GraphicsContextInterface gCPeaks = new GraphicsContextProxy(peakCanvas.getGraphicsContext2D());
-
+        if (is1D()) {
+            setYAxisByLevel();
+        }
         try {
             gC.save();
             gC.clearRect(xPos, yPos, width, height);
@@ -2141,6 +2147,9 @@ public class PolyChart implements PeakListener {
                 axesColorLocal = chooseBlackWhite(fillColor);
             }
         }
+        if (is1D()) {
+            setYAxisByLevel();
+        }
         svgGC.setStroke(axesColorLocal);
         xAxis.setColor(axesColorLocal);
         yAxis.setColor(axesColorLocal);
@@ -2173,6 +2182,7 @@ public class PolyChart implements PeakListener {
         updateDatasetAttributeBounds();
         int nDatasets = datasetAttributesList.size();
         int iTitle = 0;
+        double firstOffset = 0.0;
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
             try {
                 DatasetAttributes firstAttr = datasetAttributesList.get(0);
@@ -2183,6 +2193,7 @@ public class PolyChart implements PeakListener {
                     if (datasetAttributes != firstAttr) {
                         datasetAttributes.syncDims(firstAttr);
                     } else {
+                        firstOffset = datasetAttributes.getOffset();
                         updateAxisType();
 
                         if (controller.getStatusBar() != null) {
@@ -2219,7 +2230,7 @@ public class PolyChart implements PeakListener {
                                 boolean ok;
                                 do {
                                     bcPath.getElements().clear();
-                                    ok = drawSpectrum.draw1DSpectrum(datasetAttributes, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
+                                    ok = drawSpectrum.draw1DSpectrum(datasetAttributes, firstOffset, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
                                     double[][] xy = drawSpectrum.getXY();
                                     int nPoints = drawSpectrum.getNPoints();
                                     int rowIndex = drawSpectrum.getRowIndex();
