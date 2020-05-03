@@ -122,7 +122,12 @@ public class SpecAttrWindowController implements Initializable {
     @FXML
     private ToolBar styleToolBar;
     @FXML
+    private BorderPane datasetPane;
+    @FXML
     private TableView<DatasetAttributes> datasetTableView;
+    private HBox datasetTableParHBox = new HBox();
+    private Slider datasetTableParSlider = new Slider();
+    private Label datasetTableParLabel = new Label();
     @FXML
     private TableView<PeakListAttributes> peakListTableView;
     @FXML
@@ -225,6 +230,39 @@ public class SpecAttrWindowController implements Initializable {
     Node columnMenuNode;
     boolean shiftState = false;
 
+    ParSliderListener parSliderListener = new ParSliderListener();
+
+    public class ParSliderListener implements ChangeListener<Number> {
+
+        String mode;
+
+        void setMode(String mode) {
+            this.mode = mode;
+        }
+
+        @Override
+        public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+            List<DatasetAttributes> dataAttrs = datasetTableView.getSelectionModel().getSelectedItems();
+            if (dataAttrs.isEmpty()) {
+                dataAttrs = datasetTableView.getItems();
+            }
+            for (DatasetAttributes dataAttr : dataAttrs) {
+                if (mode.equals("offset")) {
+                    dataAttr.setOffset(newValue.doubleValue());
+                } else if (mode.equals("lvl")) {
+                    dataAttr.setLvl(newValue.doubleValue());
+                } else if (mode.equals("clm")) {
+                    dataAttr.setClm(newValue.doubleValue());
+                } else if (mode.equals("nlvl")) {
+                    dataAttr.setNlvls(newValue.intValue());
+                }
+            }
+            datasetTableView.refresh();
+            chart.refresh();
+        }
+
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         tabPane.setStyle("-fx-font-size:8pt;");
@@ -232,6 +270,7 @@ public class SpecAttrWindowController implements Initializable {
         initViewToolBar();
         initStyleToolBar();
         initTable();
+        initParSlider();
         initPeakListTable();
         createViewGrid();
         datasetView = new ListSelectionView<>();
@@ -472,7 +511,8 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     public static SpecAttrWindowController create() {
-        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/SpecAttrScene.fxml"));
+        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class
+                .getResource("/fxml/SpecAttrScene.fxml"));
         Stage stage = new Stage(StageStyle.DECORATED);
         try {
             Pane pane = (Pane) loader.load();
@@ -495,7 +535,8 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     public static SpecAttrWindowController createPane() {
-        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class.getResource("/fxml/SpecAttrScene.fxml"));
+        FXMLLoader loader = new FXMLLoader(SpecAttrWindowController.class
+                .getResource("/fxml/SpecAttrScene.fxml"));
         SpecAttrWindowController controller = null;
         try {
             Pane pane = (Pane) loader.load();
@@ -715,6 +756,75 @@ public class SpecAttrWindowController implements Initializable {
         styleToolBar.getItems().addAll(buttons);
     }
 
+    void initParSlider() {
+        Button button = new Button("Close ");
+        button.getStyleClass().add("toolButton");
+        button.setOnAction(e -> hideParSlider());
+        Pane spacer1 = new Pane();
+        spacer1.setMinWidth(15.0);
+        Pane spacer2 = new Pane();
+        spacer2.setMinWidth(15.0);
+
+        datasetTableParHBox.getChildren().addAll(button, spacer1, datasetTableParLabel, spacer2, datasetTableParSlider);
+        HBox.setHgrow(datasetTableParSlider, Priority.ALWAYS);
+        datasetTableParSlider.valueProperty().addListener(parSliderListener);
+    }
+
+    void showParSlider(String type) {
+
+        datasetPane.setBottom(datasetTableParHBox);
+        datasetTableParLabel.setText(type);
+        List<DatasetAttributes> dataAttrs = datasetTableView.getSelectionModel().getSelectedItems();
+        if (dataAttrs.isEmpty()) {
+            dataAttrs = datasetTableView.getItems();
+        }
+        parSliderListener.setMode("");
+        if (!dataAttrs.isEmpty()) {
+            DatasetAttributes dataAttr = dataAttrs.get(0);
+            double min;
+            double max;
+            double value;
+            double incrValue;
+            switch (type) {
+                case "offset":
+                    min = 0.0;
+                    max = 1.0;
+                    incrValue = 0.01;
+                    value = dataAttr.getOffset();
+                    break;
+                case "clm":
+                    min = 1.01;
+                    max = 4.0;
+                    incrValue = 0.01;
+                    value = dataAttr.getClm();
+                    break;
+                case "lvl":
+                    value = dataAttr.getLvl();
+                    min = value / 5.0;
+                    max = value * 5.0;
+                    incrValue = value / 100.0;
+                    break;
+                case "nlvl":
+                    value = dataAttr.getNlvls();
+                    min = 1;
+                    max = 50;
+                    incrValue = 1.0;
+                    break;
+                default:
+                    return;
+            }
+            datasetTableParSlider.setMin(min);
+            datasetTableParSlider.setMax(max);
+            datasetTableParSlider.setBlockIncrement(incrValue);
+            datasetTableParSlider.setValue(value);
+            parSliderListener.setMode(type);
+        }
+    }
+
+    void hideParSlider() {
+        datasetPane.setBottom(null);
+    }
+
     void initTable() {
         DoubleStringConverter dsConverter = new DoubleStringConverter();
         IntegerStringConverter isConverter = new IntegerStringConverter();
@@ -729,21 +839,25 @@ public class SpecAttrWindowController implements Initializable {
         levelCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
 
         ContextMenu levelMenu = new ContextMenu();
+        MenuItem adjustLvlItem = new MenuItem("Adjust");
+        adjustLvlItem.setOnAction(e -> showParSlider("lvl"));
         MenuItem unifyLevelItem = new MenuItem("unify");
         unifyLevelItem.setOnAction(e -> unifyLevel());
         levelCol.setContextMenu(levelMenu);
-        levelMenu.getItems().addAll(unifyLevelItem);
+        levelMenu.getItems().addAll(adjustLvlItem, unifyLevelItem);
 
         TableColumn<DatasetAttributes, String> offsetCol = new TableColumn<>("offset");
         offsetCol.setCellValueFactory(new PropertyValueFactory("offset"));
         offsetCol.setCellFactory(tc -> new TextFieldTableCell(dsConverter));
 
         ContextMenu offsetMenu = new ContextMenu();
+        MenuItem adjustOffsetItem = new MenuItem("Adjust");
+        adjustOffsetItem.setOnAction(e -> showParSlider("offset"));
         MenuItem unifyOffsetItem = new MenuItem("unify");
         unifyOffsetItem.setOnAction(e -> unifyOffset());
         MenuItem rampOffsetItem = new MenuItem("ramp");
         rampOffsetItem.setOnAction(e -> rampOffset());
-        offsetMenu.getItems().addAll(unifyOffsetItem, rampOffsetItem);
+        offsetMenu.getItems().addAll(adjustOffsetItem, unifyOffsetItem, rampOffsetItem);
         offsetCol.setContextMenu(offsetMenu);
         offsetCol.setPrefWidth(50);
 
@@ -753,10 +867,12 @@ public class SpecAttrWindowController implements Initializable {
         nLevelsCol.setPrefWidth(35);
 
         ContextMenu nLvlMenu = new ContextMenu();
+        MenuItem adjustNLvlItem = new MenuItem("Adjust");
+        adjustNLvlItem.setOnAction(e -> showParSlider("nlvl"));
         MenuItem unifyNLvlItem = new MenuItem("unify");
         unifyNLvlItem.setOnAction(e -> unifyNLvl());
         nLevelsCol.setContextMenu(nLvlMenu);
-        nLvlMenu.getItems().addAll(unifyNLvlItem);
+        nLvlMenu.getItems().addAll(adjustNLvlItem, unifyNLvlItem);
 
         TableColumn<DatasetAttributes, String> clmCol = new TableColumn<>("clm");
         clmCol.setCellValueFactory(new PropertyValueFactory("clm"));
@@ -764,10 +880,12 @@ public class SpecAttrWindowController implements Initializable {
         clmCol.setPrefWidth(50);
 
         ContextMenu clmlMenu = new ContextMenu();
+        MenuItem adjustCLMItem = new MenuItem("Adjust");
+        adjustCLMItem.setOnAction(e -> showParSlider("clm"));
         MenuItem unifyCLMItem = new MenuItem("unify");
         unifyCLMItem.setOnAction(e -> unifyCLM());
         clmCol.setContextMenu(clmlMenu);
-        clmlMenu.getItems().addAll(unifyCLMItem);
+        clmlMenu.getItems().addAll(adjustCLMItem, unifyCLMItem);
 
         TableColumn<DatasetAttributes, Boolean> posDrawOnCol = new TableColumn<>("on");
         posDrawOnCol.setCellValueFactory(new PropertyValueFactory("pos"));

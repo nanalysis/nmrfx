@@ -40,7 +40,7 @@
 
                 <Tab text="Datasets">
                     <content>
-                        <BorderPane layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
+                        <BorderPane fx:id="datasetPane" layoutX="126.0" layoutY="70.0" prefHeight="200.0" prefWidth="400.0">
                             <top>
                                 <ToolBar fx:id="viewToolBar" orientation="HORIZONTAL" BorderPane.alignment="CENTER">
                                     <items>
