@@ -417,6 +417,12 @@ public class PolyChart implements PeakListener {
     public NMRAxis getYAxis() {
         return axes[1];
     }
+    
+    public void removeSelected() {
+        if (controller.charts.size() > 1) {
+            close();
+        }
+    }
 
     public void close() {
         for (int i = 0; i < 2; i++) {
