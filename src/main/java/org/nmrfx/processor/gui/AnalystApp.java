@@ -259,9 +259,11 @@ public class AnalystApp extends MainApp {
         PreferencesController.setupRecentMenus(recentFIDMenuItem, recentDatasetMenuItem);
 
         MenuItem pdfMenuItem = new MenuItem("Export PDF...");
+        pdfMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
         MenuItem svgMenuItem = new MenuItem("Export SVG...");
         svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
+        svgMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
         MenuItem portMenuItem = new MenuItem("New NMRFx Server...");
@@ -311,6 +313,7 @@ public class AnalystApp extends MainApp {
                 recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
+        spectraMenu.disableProperty().bind(FXMLController.activeController.isNull());
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
         deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().close());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
@@ -421,12 +424,15 @@ public class AnalystApp extends MainApp {
         linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
 
         MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
+        peakSliderMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         peakSliderMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakSlider());
 
         MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
+        pathToolMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         pathToolMenuItem.setOnAction(e -> FXMLController.getActiveController().showPathTool());
 
         MenuItem ligandScannerMenuItem = new MenuItem("Show Ligand Scanner");
+        ligandScannerMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         ligandScannerMenuItem.setOnAction(e -> showLigandScanner(e));
 
         MenuItem noeTableMenuItem = new MenuItem("Show NOE Table");
@@ -437,9 +443,11 @@ public class AnalystApp extends MainApp {
         assignOnPick = new CheckMenuItem("Assign on Pick");
 
         MenuItem peakAssignerItem = new MenuItem("Show Peak Assigner");
+        peakAssignerItem.disableProperty().bind(FXMLController.activeController.isNull());
         peakAssignerItem.setOnAction(e -> assignPeak());
 
         MenuItem atomBrowserMenuItem = new MenuItem("Show Atom Browser");
+        atomBrowserMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         atomBrowserMenuItem.setOnAction(e -> showAtomBrowser());
 
         MenuItem runAboutMenuItem = new MenuItem("Show RunAboutX");
@@ -457,15 +465,19 @@ public class AnalystApp extends MainApp {
         Menu oneDMenu = new Menu("Analysis (1D)");
 
         MenuItem regionsMenuItem = new MenuItem("Show Regions Analyzer");
+        regionsMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         regionsMenuItem.setOnAction(e -> showRegionAnalyzer(e));
 
         MenuItem multipletMenuItem = new MenuItem("Show Multiplet Analyzer");
+        multipletMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         multipletMenuItem.setOnAction(e -> showMultipletAnalyzer(e));
 
         MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
+        spectrumLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
 
         MenuItem spectrumFitLibraryMenuItem = new MenuItem("Show Spectrum Fitter");
+        spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
 
         oneDMenu.getItems().addAll(regionsMenuItem, multipletMenuItem,
