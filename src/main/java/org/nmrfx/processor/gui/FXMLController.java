@@ -277,7 +277,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             chart.close();
         }
         controllers.remove(this);
-        System.out.println("close controller " + controllers.size());
         PolyChart activeChart = PolyChart.getActiveChart();
         if (activeChart == null) {
             if (!PolyChart.CHARTS.isEmpty()) {
@@ -288,7 +287,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             activeController.set(activeChart.getController());
             activeController.get().setActiveChart(activeChart);
         } else {
-            System.out.println("set active null");
             activeController.set(null);
         }
     }
