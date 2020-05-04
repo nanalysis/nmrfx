@@ -315,7 +315,7 @@ public class AnalystApp extends MainApp {
         Menu spectraMenu = new Menu("Spectra");
         spectraMenu.disableProperty().bind(FXMLController.activeController.isNull());
         MenuItem deleteItem = new MenuItem("Delete Spectrum");
-        deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().close());
+        deleteItem.setOnAction(e -> FXMLController.getActiveController().getActiveChart().removeSelected());
         MenuItem syncMenuItem = new MenuItem("Sync Axes");
         syncMenuItem.setOnAction(e -> PolyChart.activeChart.get().syncSceneMates());
 
