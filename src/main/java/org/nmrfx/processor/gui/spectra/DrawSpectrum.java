@@ -858,7 +858,7 @@ public class DrawSpectrum {
         iChunk = dataAttributes.getLastChunk(0);
     }
 
-    public boolean draw1DSpectrum(DatasetAttributes dataAttributes, double firstOffset, int orientation, AXMODE axMode, double ph0, double ph1, Path bcPath) {
+    public boolean draw1DSpectrum(DatasetAttributes dataAttributes, double firstLvl, double firstOffset, int orientation, AXMODE axMode, double ph0, double ph1, Path bcPath) {
         Vec specVec = new Vec(32);
         boolean drawReal = dataAttributes.getDrawReal();
         boolean offsetMode = true;
@@ -879,9 +879,10 @@ public class DrawSpectrum {
             }
         }
         double offset = getOffset(dataAttributes, firstOffset);
+        double lvlMult = dataAttributes.getLvl() / firstLvl;
         drawVector(specVec, orientation, 0, axMode, drawReal, ph0, ph1, bcPath,
                 (index, intensity) -> axes[0].getDisplayPosition(index),
-                (index, intensity) -> axes[1].getDisplayPosition(intensity) - offset, offsetMode, false);
+                (index, intensity) -> axes[1].getDisplayPosition(intensity / lvlMult) - offset, offsetMode, false);
 
         if (iChunk < 0) {
             return false;
