@@ -170,8 +170,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     SimpleObjectProperty<ScannerController> scannerController = new SimpleObjectProperty(null);
     Stage stage = null;
     boolean isFID = true;
-
-    static FXMLController activeController = null;
+    static SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
     static String docString = null;
     static ObservableList<Dataset> datasetList = FXCollections.observableArrayList();
     static List<FXMLController> controllers = new ArrayList<>();
@@ -278,6 +277,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             chart.close();
         }
         controllers.remove(this);
+        System.out.println("close controller " + controllers.size());
         PolyChart activeChart = PolyChart.getActiveChart();
         if (activeChart == null) {
             if (!PolyChart.CHARTS.isEmpty()) {
@@ -285,8 +285,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
         }
         if (activeChart != null) {
-            activeController = activeChart.getController();
-            activeController.setActiveChart(activeChart);
+            activeController.set(activeChart.getController());
+            activeController.get().setActiveChart(activeChart);
+        } else {
+            System.out.println("set active null");
+            activeController.set(null);
         }
     }
 
@@ -1077,14 +1080,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void setActiveController() {
-        activeController = this;
+        activeController.set(this);
         if (specAttrWindowController != null) {
             specAttrWindowController.update();
         }
     }
 
     public static FXMLController getActiveController() {
-        return activeController;
+        return activeController.get();
     }
 
     public SpectrumStatusBar getStatusBar() {
@@ -1221,7 +1224,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (consoleController == null) {
             consoleController = ConsoleController.create();
         }
-        activeController = this;
+        activeController.set(this);
         for (int iCross = 0; iCross < 2; iCross++) {
             for (int jOrient = 0; jOrient < 2; jOrient++) {
                 crossHairStates[iCross][jOrient] = true;

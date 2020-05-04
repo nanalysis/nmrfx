@@ -241,6 +241,7 @@ public class MainApp extends Application implements DatasetListener {
         pdfMenuItem.setOnAction(e -> FXMLController.getActiveController().exportPDFAction(e));
         MenuItem svgMenuItem = new MenuItem("Export SVG...");
         svgMenuItem.setOnAction(e -> FXMLController.getActiveController().exportSVGAction(e));
+        svgMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         MenuItem loadPeakListMenuItem = new MenuItem("Load PeakLists");
         loadPeakListMenuItem.setOnAction(e -> loadPeakLists());
 

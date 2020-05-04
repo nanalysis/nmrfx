@@ -642,7 +642,7 @@ public class PolyChart implements PeakListener {
                 List<Peak> peaks = peakAttr.selectPeaksInRegion(limits);
                 drawSelectedPeaks(peakAttr);
             }
-            if (controller == FXMLController.activeController) {
+            if (controller == FXMLController.activeController.get()) {
                 List<Peak> allSelPeaks = new ArrayList<>();
                 for (PolyChart chart : controller.charts) {
                     allSelPeaks.addAll(chart.getSelectedPeaks());
@@ -2183,6 +2183,7 @@ public class PolyChart implements PeakListener {
         int nDatasets = datasetAttributesList.size();
         int iTitle = 0;
         double firstOffset = 0.0;
+        double firstLvl = 1.0;
         for (DatasetAttributes datasetAttributes : datasetAttributesList) {
             try {
                 DatasetAttributes firstAttr = datasetAttributesList.get(0);
@@ -2194,6 +2195,7 @@ public class PolyChart implements PeakListener {
                         datasetAttributes.syncDims(firstAttr);
                     } else {
                         firstOffset = datasetAttributes.getOffset();
+                        firstLvl = datasetAttributes.getLvl();
                         updateAxisType();
 
                         if (controller.getStatusBar() != null) {
@@ -2230,7 +2232,7 @@ public class PolyChart implements PeakListener {
                                 boolean ok;
                                 do {
                                     bcPath.getElements().clear();
-                                    ok = drawSpectrum.draw1DSpectrum(datasetAttributes, firstOffset, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
+                                    ok = drawSpectrum.draw1DSpectrum(datasetAttributes, firstLvl, firstOffset, HORIZONTAL, axModes[0], getPh0(), getPh1(), bcPath);
                                     double[][] xy = drawSpectrum.getXY();
                                     int nPoints = drawSpectrum.getNPoints();
                                     int rowIndex = drawSpectrum.getRowIndex();
@@ -3010,7 +3012,7 @@ public class PolyChart implements PeakListener {
                 }
             }
         }
-        if (controller == FXMLController.activeController) {
+        if (controller == FXMLController.activeController.get()) {
             List<Peak> allSelPeaks = new ArrayList<>();
             for (PolyChart chart : controller.charts) {
                 allSelPeaks.addAll(chart.getSelectedPeaks());
