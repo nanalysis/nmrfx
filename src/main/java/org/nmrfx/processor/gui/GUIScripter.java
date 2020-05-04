@@ -502,6 +502,7 @@ public class GUIScripter {
         FractionCanvas.ORIENTATION orient = FractionCanvas.getOrientation(orientName);
         ConsoleUtil.runOnFxThread(() -> {
             controller.arrange(orient);
+            controller.draw();
         });
     }
 
@@ -518,6 +519,7 @@ public class GUIScripter {
             PolyChart chartActive = controller.charts.get(0);
             controller.setActiveChart(chartActive);
             controller.setChartDisable(false);
+            controller.draw();
         });
     }
 
@@ -532,7 +534,7 @@ public class GUIScripter {
             PolyChart chartActive = controller.charts.get(0);
             controller.setActiveChart(chartActive);
             controller.setChartDisable(false);
-
+            controller.draw();
         });
     }
 
