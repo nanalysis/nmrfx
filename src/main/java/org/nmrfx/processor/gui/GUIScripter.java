@@ -71,6 +71,18 @@ public class GUIScripter {
         if (useChart != null) {
             chart = useChart;
         } else {
+            if (getActiveController() == null) {
+                try {
+                    FutureTask<Boolean> future = new FutureTask(() -> {
+                        newStage();
+                        return true;
+                    });
+                    ConsoleUtil.runOnFxThread(future);
+                    future.get();
+                } catch (InterruptedException | ExecutionException iE) {
+
+                }
+            }
             chart = getActiveController().getActiveChart();
         }
         return chart;
