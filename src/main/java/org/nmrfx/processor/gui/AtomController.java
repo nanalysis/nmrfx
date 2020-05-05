@@ -220,7 +220,7 @@ public class AtomController implements Initializable, FreezeListener {
         );
         MenuItem getPPMItem = new MenuItem("Get Frozen PPM");
         getPPMItem.setOnAction(e -> {
-            ((AtomResonanceFactory) PeakDim.resFactory).assignFrozenAtoms("sim");
+            ((AtomResonanceFactory) PeakDim.resFactory()).assignFrozenAtoms("sim");
             atomTableView.refresh();
         }
         );

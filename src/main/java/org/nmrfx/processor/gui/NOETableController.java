@@ -90,7 +90,7 @@ public class NOETableController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         initToolBar();
         initTable();
-        noeSetMap = FXCollections.observableMap(NoeSet.NOE_SETS);
+        noeSetMap = FXCollections.observableMap(NoeSet.NOE_SETS());
         MapChangeListener<String, NoeSet> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends NoeSet> change) -> {
             updateNoeSetMenu();
         };
@@ -100,7 +100,7 @@ public class NOETableController implements Initializable {
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable.addListener(peakmapChangeListener);
+        PeakList.peakListTable().addListener(peakmapChangeListener);
         updateNoeSetMenu();
         updatePeakListMenu();
 
@@ -155,7 +155,7 @@ public class NOETableController implements Initializable {
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : PeakList.peakListTable.keySet()) {
+        for (String peakListName : PeakList.peakListTable().keySet()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 extractPeakList(PeakList.get(peakListName));

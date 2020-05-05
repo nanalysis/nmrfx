@@ -25,7 +25,7 @@ public class MoleculeCanvas extends Canvas {
     List<CanvasMolecule> canvasMolecules = new ArrayList<>();
 
     public void setupMolecules() {
-        Molecule molecule = Molecule.activeMol;
+        Molecule molecule = Molecule.activeMol();
         if (molecule != null) {
             CanvasMolecule canvasMol = new CanvasMolecule();
             canvasMol.setMolName(molecule.getName());
