@@ -71,7 +71,7 @@ public class Dihedral {
     static double initPuckerAmplitude = 45 * toRad;
     static double initPseudoAngle = 18 * toRad;
     public static double backBoneScale = 4.0;
-    static List<AngleBoundary> angleBoundariesNEF = new ArrayList<>();
+    static Map<String, AngleBoundary> angleBoundariesNEF = new HashMap<String, AngleBoundary>();
 
     double maxSigma = 20;
 
@@ -413,14 +413,14 @@ public class Dihedral {
             }
         }
         AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale, weight, target, targetErr, name);
-        angleBoundariesNEF.add(angleBoundary);
+        angleBoundariesNEF.put(angleBoundary.getRefAtom().getFullName(), angleBoundary);
         }
 
     public HashMap<String, AngleBoundary> getAngleBoundaries() {
         return angleBoundaries;
     }
     
-    public List<AngleBoundary> getAngleBoundariesNEF() {
+    public Map<String, AngleBoundary> getAngleBoundariesNEF() {
         return angleBoundariesNEF;
     }
     

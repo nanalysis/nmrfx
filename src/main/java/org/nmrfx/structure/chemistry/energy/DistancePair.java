@@ -18,6 +18,8 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.Atom;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DistancePair {
 
@@ -101,6 +103,28 @@ public class DistancePair {
 
     public double getTargetError() {
         return targetErr;
+    }
+    
+    public List<Atom> getUniqueAtoms1(AtomDistancePair[] pairs) {
+        List<Atom> atoms1 = new ArrayList<>();
+        for (int p=0; p<pairs.length; p++) {
+            Atom a1 = pairs[p].getAtoms1()[0];
+            if (!atoms1.contains(a1)) {
+                atoms1.add(a1);
+            }
+        }
+        return atoms1;
+    }
+    
+    public List<Atom> getUniqueAtoms2(AtomDistancePair[] pairs) {
+        List<Atom> atoms2 = new ArrayList<>();
+        for (int p=0; p<pairs.length; p++) {
+            Atom a2 = pairs[p].getAtoms2()[0];
+            if (!atoms2.contains(a2)) {
+                atoms2.add(a2);
+            }
+        }
+        return atoms2;
     }
 
 }
