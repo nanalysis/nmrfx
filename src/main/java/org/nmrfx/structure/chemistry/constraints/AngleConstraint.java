@@ -18,6 +18,7 @@
 
 package org.nmrfx.structure.chemistry.constraints;
 
+import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.SpatialSet;
 
 /**
@@ -26,7 +27,9 @@ import org.nmrfx.structure.chemistry.SpatialSet;
  */
 public class AngleConstraint implements Constraint {
 
-    private static AngleConstraintSet activeSet = AngleConstraintSet.addSet("default");
+    private static AngleConstraintSet activeSet () {
+        return StructureProject.getActive().activeSet;
+    }
     private static DistanceStat defaultStat = new DistanceStat();
 
     /**
@@ -49,8 +52,8 @@ public class AngleConstraint implements Constraint {
         this.lower = lower;
         this.upper = upper;
         this.name = name;
-        idNum = activeSet.getSize();
-        activeSet.setDirty();
+        idNum = activeSet().getSize();
+        activeSet().setDirty();
     }
 
     public SpatialSet getSpatialSet(int i) {
@@ -82,7 +85,7 @@ public class AngleConstraint implements Constraint {
     }
 
     public static void setActive(AngleConstraintSet noeSet) {
-        activeSet = noeSet;
+        StructureProject.getActive().activeSet = noeSet;
     }
 
     public void setActive(int state) {
@@ -94,15 +97,15 @@ public class AngleConstraint implements Constraint {
     }
 
     public static AngleConstraintSet getActiveSet() {
-        return activeSet;
+        return activeSet();
     }
 
     public static int getSize() {
-        return activeSet.getSize();
+        return activeSet().getSize();
     }
 
     public static void resetConstraints() {
-        activeSet.clear();
+        activeSet().clear();
     }
 
     public String getViolChars(DistanceStat dStat) {

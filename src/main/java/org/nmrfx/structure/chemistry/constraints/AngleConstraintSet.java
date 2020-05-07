@@ -18,6 +18,7 @@
 
 package org.nmrfx.structure.chemistry.constraints;
 
+import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Point3;
@@ -30,7 +31,9 @@ import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
  */
 public class AngleConstraintSet implements ConstraintSet, Iterable {
 
-    private static HashMap<String, AngleConstraintSet> angleSets = new HashMap<String, AngleConstraintSet>();
+    private static HashMap<String, AngleConstraintSet> angleSets () {
+        return StructureProject.getActive().angleSets;
+    }
     private ArrayList<AngleConstraint> constraints = new ArrayList<AngleConstraint>(64);
     int nStructures = 0;
     private final String name;
@@ -44,7 +47,7 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
 
     public static AngleConstraintSet addSet(String name) {
         AngleConstraintSet angleSet = new AngleConstraintSet(name);
-        angleSets.put(name, angleSet);
+        angleSets().put(name, angleSet);
         AngleConstraint.setActive(angleSet);
         return angleSet;
 
@@ -55,10 +58,10 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
     }
 
     public static void reset() {
-        for (Map.Entry<String, AngleConstraintSet> cSet : angleSets.entrySet()) {
+        for (Map.Entry<String, AngleConstraintSet> cSet : angleSets().entrySet()) {
             cSet.getValue().clear();
         }
-        angleSets.clear();
+        angleSets().clear();
         addSet("default");
     }
 
@@ -75,13 +78,13 @@ public class AngleConstraintSet implements ConstraintSet, Iterable {
     }
 
     public static AngleConstraintSet getSet(String name) {
-        AngleConstraintSet noeSet = angleSets.get(name);
+        AngleConstraintSet noeSet = angleSets().get(name);
         return noeSet;
     }
 
     public static ArrayList<String> getNames() {
         ArrayList<String> names = new ArrayList<String>();
-        for (String name : angleSets.keySet()) {
+        for (String name : angleSets().keySet()) {
             names.add(name);
         }
         return names;
