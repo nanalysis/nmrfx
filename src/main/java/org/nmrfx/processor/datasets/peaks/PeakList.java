@@ -94,13 +94,6 @@ public class PeakList {
     /**
      *
      */
-    public static ObservableMap<String, PeakList> peakListTable () {
-        return Project.getActive().peakListTable;
-    }
-
-    /**
-     *
-     */
     public static PeakList clusterOrigin = null;
     private String listName;
 
@@ -211,9 +204,8 @@ public class PeakList {
 
         peaks = new ArrayList<>();
         indexMap.clear();
-
-        peakListTable().put(listName, this);
-        listNum = peakListTable().size();
+        Project.getActive().addPeakList(this, listName);
+        listNum = Project.getActive().getPeakLists().size();
     }
 
     @Override
@@ -308,7 +300,7 @@ public class PeakList {
      * @return
      */
     public static Iterator iterator() {
-        return peakListTable().values().iterator();
+        return Project.getActive().getPeakLists().iterator();
     }
 
     /**
@@ -333,9 +325,10 @@ public class PeakList {
      * @param newName
      */
     public void setName(String newName) {
-        peakListTable().remove(listName);
+        Project project = Project.getActive();
+        project.removePeakList(listName);
         listName = newName;
-        peakListTable().put(newName, this);
+        project.addPeakList(this, newName);
     }
 
     /**
@@ -538,7 +531,7 @@ public class PeakList {
      */
     public static boolean isAnyChanged() {
         boolean anyChanged = false;
-        for (PeakList checkList : peakListTable().values()) {
+        for (PeakList checkList : Project.getActive().getPeakLists()) {
             if (checkList.isChanged()) {
                 anyChanged = true;
                 break;
@@ -552,8 +545,8 @@ public class PeakList {
      *
      */
     public static void clearAllChanged() {
-        for (Object checkList : peakListTable().values()) {
-            ((PeakList) checkList).clearChanged();
+        for (PeakList checkList : Project.getActive().getPeakLists()) {
+            checkList.clearChanged();
         }
     }
 
@@ -721,7 +714,7 @@ public class PeakList {
             Peak peak = peaks.get(i);
             peak.setIdNum(i);
         }
-        idLast=peaks.size()-1;
+        idLast = peaks.size() - 1;
         reIndex();
     }
 
@@ -762,9 +755,8 @@ public class PeakList {
      *
      * @return
      */
-    public static List<PeakList> getLists() {
-        List<PeakList> peakLists = peakListTable().values().stream().collect(Collectors.toList());
-        return peakLists;
+    public static Collection<PeakList> getLists() {
+        return Project.getActive().getPeakLists();
     }
 
     /**
@@ -773,7 +765,7 @@ public class PeakList {
      * @return
      */
     public static PeakList get(String listName) {
-        return ((PeakList) peakListTable().get(listName));
+        return Project.getActive().getPeakList(listName);
     }
 
     /**
@@ -798,7 +790,7 @@ public class PeakList {
      * @param listName
      */
     public static void remove(String listName) {
-        PeakList peakList = (PeakList) peakListTable().get(listName);
+        PeakList peakList = Project.getActive().getPeakList(listName);
         if (peakList != null) {
             peakList.remove();
         }
@@ -818,7 +810,7 @@ public class PeakList {
         peaks = null;
         schedExecutor.shutdown();
         schedExecutor = null;
-        peakListTable().remove(listName);
+        Project.getActive().removePeakList(listName);
     }
 
     void swap(double[] limits) {
@@ -1292,8 +1284,8 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable().get(peakSpecifier.substring(
-                0, dot));
+        PeakList peakList = Project.getActive().
+                getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
             return null;
@@ -1332,8 +1324,8 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable().get(peakSpecifier.substring(
-                0, dot));
+        PeakList peakList = Project.getActive().
+                getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
             return null;
@@ -1372,8 +1364,8 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable().get(peakSpecifier.substring(
-                0, dot));
+        PeakList peakList = Project.getActive().
+                getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
             return null;
@@ -1501,8 +1493,8 @@ public class PeakList {
 
         int lastDot = peakSpecifier.lastIndexOf('.');
 
-        PeakList peakList = (PeakList) peakListTable().get(peakSpecifier.substring(
-                0, dot));
+        PeakList peakList = Project.getActive().
+                getPeakList(peakSpecifier.substring(0, dot));
 
         if (peakList == null) {
             return null;
@@ -3799,7 +3791,7 @@ public class PeakList {
      * @return
      */
     public static PeakList getPeakListForDataset(String datasetName) {
-        for (PeakList peakList : peakListTable().values()) {
+        for (PeakList peakList : Project.getActive().getPeakLists()) {
             if (peakList.fileName.equals(datasetName)) {
                 return peakList;
             }

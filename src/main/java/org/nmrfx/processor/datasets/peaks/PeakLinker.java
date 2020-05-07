@@ -6,9 +6,11 @@
 package org.nmrfx.processor.datasets.peaks;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.nmrfx.project.Project;
 
 /**
  *
@@ -17,10 +19,10 @@ import java.util.Map;
 public class PeakLinker {
 
     public void linkAllPeakListsByLabel() {
-        linkPeakListsByLabel(PeakList.getLists());
+        linkPeakListsByLabel(Project.getActive().getPeakLists());
     }
 
-    public void linkPeakListsByLabel(List<PeakList> peakLists) {
+    public void linkPeakListsByLabel(Collection<PeakList> peakLists) {
         Map<String, List<PeakDim>> peakDimMap = new HashMap<>();
         peakLists.forEach((peakList) -> {
             if (peakList.valid()) {
