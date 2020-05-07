@@ -50,10 +50,10 @@ public class GUIProject extends Project {
 
     public static GUIProject replace(String name, GUIProject project) {
         GUIProject newProject = new GUIProject(name);
-        newProject.datasetList=project.datasetList;
-        newProject.peakListTable=project.peakListTable;
-        newProject.resFactory=project.resFactory;
-        newProject.peakPaths=project.peakPaths;
+        newProject.datasetMap = project.datasetMap;
+        newProject.peakListTable = project.peakListTable;
+        newProject.resFactory = project.resFactory;
+        newProject.peakPaths = project.peakPaths;
         return newProject;
     }
 
@@ -90,12 +90,12 @@ public class GUIProject extends Project {
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, IllegalStateException {
-        Project currentProject=getActive();
+        Project currentProject = getActive();
         setActive();
 
         loadProject(projectDir);
 
-        if(currentProject==this) {
+        if (currentProject == this) {
             FileSystem fileSystem = FileSystems.getDefault();
 
             String[] subDirTypes = {"windows"};
@@ -122,14 +122,14 @@ public class GUIProject extends Project {
 
     @Override
     public void saveProject() throws IOException {
-        Project currentProject=getActive();
+        Project currentProject = getActive();
         setActive();
 
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         super.saveProject();
-        if(currentProject==this) {
+        if (currentProject == this) {
             saveWindows();
         }
         gitCommitOnThread();
