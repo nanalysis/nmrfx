@@ -34,10 +34,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakPath;
 import org.nmrfx.processor.datasets.peaks.io.PeakReader;
 import org.nmrfx.processor.datasets.peaks.io.PeakWriter;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableMap;
 import org.nmrfx.processor.datasets.peaks.ResonanceFactory;
-import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -53,18 +50,17 @@ public class Project {
     static Project activeProject = null;
     Path projectDir = null;
     final String name;
-    public final Map<String, PeakList> peakLists = new HashMap<>();
+    protected Map<String, PeakList> peakLists;
     protected Map<String, Dataset> datasetMap;
-    public ObservableMap<String, PeakList> peakListTable;
     public ResonanceFactory resFactory;
     public Map<String, PeakPath> peakPaths;
 
     public Project(String name) {
         this.name = name;
         this.datasetMap = new HashMap<>();
-        this.peakListTable = FXCollections.observableMap(new LinkedHashMap<>());
         this.resFactory = getNewResFactory();
         this.resFactory.init();
+        peakLists = new HashMap<>();
         peakPaths = new HashMap<>();
         setActive();
     }
@@ -386,7 +382,7 @@ public class Project {
             }
         });
 
-        peakListTable.values().stream().forEach(peakList -> {
+        peakLists.values().stream().forEach(peakList -> {
             Path peakFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".xpk2");
             Path measureFilePath = fileSystem.getPath(projectDir.toString(), "peaks", peakList.getName() + ".mpk2");
             // fixme should only write if file doesn't already exist or peaklist changed since read
@@ -408,8 +404,16 @@ public class Project {
         });
     }
 
+    public void addPeakList(PeakList peakList, String name) {
+        peakLists.put(name, peakList);
+    }
+
     public Collection<PeakList> getPeakLists() {
         return peakLists.values();
+    }
+
+    public List<String> getPeakListNames() {
+        return peakLists.keySet().stream().sorted().collect(Collectors.toList());
     }
 
     public PeakList getPeakList(String name) {
@@ -426,6 +430,9 @@ public class Project {
 
     public void removePeakList(String name) {
         peakLists.remove(name);
+    }
+
+    public void addPeakListListener(Object mapChangeListener) {
     }
 
 }
