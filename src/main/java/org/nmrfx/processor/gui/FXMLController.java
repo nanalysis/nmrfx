@@ -172,7 +172,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     boolean isFID = true;
     static SimpleObjectProperty<FXMLController> activeController = new SimpleObjectProperty<>(null);
     static String docString = null;
-    static ObservableList<Dataset> datasetList = FXCollections.observableArrayList();
     static List<FXMLController> controllers = new ArrayList<>();
     static ConsoleController consoleController = null;
 
@@ -665,11 +664,6 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             }
         }
         getActiveChart().layoutPlotChildren();
-    }
-
-    public static void updateDatasetList() {
-        datasetList.clear();
-        datasetList.addAll(Dataset.datasets());
     }
 
     public void closeFile(File target) {

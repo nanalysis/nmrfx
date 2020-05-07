@@ -30,6 +30,7 @@ import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
@@ -50,11 +51,13 @@ public class GUIProject extends Project {
     public GUIProject(String name) {
         super(name);
         peakLists = FXCollections.observableHashMap();
+        datasetMap = FXCollections.observableHashMap();
+        datasets = FXCollections.observableArrayList();
     }
 
     public static GUIProject replace(String name, GUIProject project) {
         GUIProject newProject = new GUIProject(name);
-        newProject.datasetMap = project.datasetMap;
+        newProject.datasetMap.putAll(project.datasetMap);
         newProject.peakLists.putAll(project.peakLists);
 
         newProject.resFactory = project.resFactory;
@@ -259,5 +262,15 @@ public class GUIProject extends Project {
     public void addPeakListListener(Object mapChangeListener) {
         ObservableMap obsMap = (ObservableMap) peakLists;
         obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
+    }
+
+    public void addDatasetListListener(Object mapChangeListener) {
+        ObservableMap obsMap = (ObservableMap) datasetMap;
+        obsMap.addListener((MapChangeListener<String, Dataset>) mapChangeListener);
+    }
+
+    public ObservableMap<String, Dataset> getObservableDatasetMap() {
+        ObservableMap obsMap = (ObservableMap) datasetMap;
+        return obsMap;
     }
 }

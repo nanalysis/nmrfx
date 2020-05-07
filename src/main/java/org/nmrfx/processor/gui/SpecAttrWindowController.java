@@ -100,6 +100,7 @@ import org.nmrfx.processor.gui.PolyChart.DISDIM;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.OneDX;
 import static org.nmrfx.processor.gui.PolyChart.DISDIM.TwoD;
 import org.nmrfx.processor.gui.utils.ColorSchemes;
+import org.nmrfx.project.Project;
 import org.nmrfx.utilities.DictionarySort;
 
 /**
@@ -632,7 +633,7 @@ public class SpecAttrWindowController implements Initializable {
             datasetsTarget.add(dataAttr.getDataset().getName());
         }
         DictionarySort<Dataset> sorter = new DictionarySort<>();
-        FXMLController.datasetList.stream().sorted(sorter).forEach(d -> {
+        Project.getActive().getDatasets().stream().sorted(sorter).forEach(d -> {
             if (!datasetsTarget.contains(d.getName())) {
                 datasetsSource.add(d.getName());
             }

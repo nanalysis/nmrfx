@@ -59,7 +59,7 @@ import org.nmrfx.project.Project;
 import org.nmrfx.server.Server;
 import static javafx.application.Application.launch;
 
-public class MainApp extends Application implements DatasetListener {
+public class MainApp extends Application  {
 
     public static ArrayList<Stage> stages = new ArrayList<>();
     public static PreferencesController preferencesController;
@@ -139,7 +139,6 @@ public class MainApp extends Application implements DatasetListener {
         interpreter.exec("from pyproc import *\ninitLocal()\nfrom gscript import *\nnw=NMRFxWindowScripting()\nfrom dscript import *\nfrom pscript import *\nimport os");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
-        Dataset.addObserver(this);
     }
 
     public static boolean isMac() {
@@ -476,7 +475,6 @@ public class MainApp extends Application implements DatasetListener {
     void showDatasetsTable(ActionEvent event) {
         if (datasetController == null) {
             datasetController = DatasetsController.create();
-            datasetController.setDatasetList(FXMLController.datasetList);
         }
         datasetController.refresh();
         datasetController.getStage().show();
@@ -590,46 +588,6 @@ public class MainApp extends Application implements DatasetListener {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
             }
-        }
-    }
-
-    @Override
-    public void datasetAdded(Dataset dataset) {
-        if (Platform.isFxApplicationThread()) {
-            FXMLController.updateDatasetList();
-        } else {
-            Platform.runLater(() -> {
-                FXMLController.updateDatasetList();
-            }
-            );
-        }
-    }
-
-    @Override
-    public void datasetModified(Dataset dataset) {
-    }
-
-    @Override
-    public void datasetRemoved(Dataset dataset) {
-        if (Platform.isFxApplicationThread()) {
-            FXMLController.updateDatasetList();
-        } else {
-            Platform.runLater(() -> {
-                FXMLController.updateDatasetList();
-            }
-            );
-        }
-    }
-
-    @Override
-    public void datasetRenamed(Dataset dataset) {
-        if (Platform.isFxApplicationThread()) {
-            FXMLController.updateDatasetList();
-        } else {
-            Platform.runLater(() -> {
-                FXMLController.updateDatasetList();
-            }
-            );
         }
     }
 
