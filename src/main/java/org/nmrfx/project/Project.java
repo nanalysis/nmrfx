@@ -15,6 +15,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -52,6 +53,7 @@ public class Project {
     final String name;
     protected Map<String, PeakList> peakLists;
     protected Map<String, Dataset> datasetMap;
+    protected List<Dataset> datasets = new ArrayList<Dataset>();
     public ResonanceFactory resFactory;
     public Map<String, PeakPath> peakPaths;
 
@@ -248,10 +250,21 @@ public class Project {
 
     public void addDataset(Dataset dataset, String datasetName) {
         datasetMap.put(datasetName, dataset);
+        datasets.clear();
+        datasets.addAll(getDatasetList());
     }
 
     public boolean removeDataset(String datasetName) {
-        return datasetMap.remove(datasetName) != null;
+        boolean result = datasetMap.remove(datasetName) != null;
+        datasets.clear();
+        datasets.addAll(getDatasetList());
+        return result;
+    }
+
+    List<Dataset> getDatasetList() {
+        return datasetMap.values().stream().
+                sorted((a, b) -> a.getName().compareTo(b.getName())).
+                collect(Collectors.toList());
     }
 
     public List<Dataset> getDatasetsWithFile(File file) {
@@ -286,8 +299,8 @@ public class Project {
         return datasetMap.keySet().stream().sorted().collect(Collectors.toList());
     }
 
-    public Collection<Dataset> getDatasets() {
-        return datasetMap.values();
+    public List<Dataset> getDatasets() {
+        return datasets;
     }
 
     void loadDatasets(Path directory) throws IOException {
@@ -433,6 +446,9 @@ public class Project {
     }
 
     public void addPeakListListener(Object mapChangeListener) {
+    }
+
+    public void addDatasetListListener(Object mapChangeListener) {
     }
 
 }
