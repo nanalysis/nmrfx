@@ -1136,53 +1136,25 @@ public class Atom implements IAtom {
         return (sBuilder.toString());
     }
 
-    public String toNEFSequenceString(Molecule molecule) {
-        //index and sequence code
-        int number = 1;
-        //chain ID
-        char chainID = ' ';
-        if (entity instanceof Residue) {
-            number = entity.getIDNum();
-            String polymerName = ((Residue) entity).polymer.getName();
-            chainID = polymerName.charAt(0);
-        }
-        //residue name
-        String resName = ((Compound) entity).name;
-        if (resName.length() > 3) {
-            resName = resName.substring(0, 3);
-        }
-        //linking
-        String link = "middle";
-        if (number == 1) {
-            link = "start";
-        } else if (number == molecule.nResidues) {
-            link = "end";
-        }
-        //residue variant
-        String resVar = ".";
-
-        return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
-    }
 
     public static String formatNEFAtomName(Atom atom, boolean distances) {
         String writeName = atom.name;
-//        System.out.println(writeName + " " + atom.stereo + " " + atom.getBMRBAmbiguity() + " " + atom.isMethyl());
+//        if (!distances) {
+//            System.out.println(writeName + " " + atom.stereo + " " + atom.getBMRBAmbiguity() + " " + atom.isMethyl());
+//        }
         switch (atom.stereo) {
             case 0: //x or y changes
-                if (atom.isMethyl()) {
-                    writeName = null;
-                } else if ((!distances && writeName.endsWith("2")) || 
-                        (distances && writeName.endsWith("3") || writeName.endsWith("1"))) {
+                if ((!distances && writeName.endsWith("2"))
+                        || (distances && (writeName.endsWith("3") || writeName.endsWith("1")))) {
                     writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
-                } else if ((!distances && writeName.endsWith("3") || writeName.endsWith("1")) || 
-                        (distances && writeName.endsWith("2"))) {
+                } else if ((!distances && (writeName.endsWith("3") || writeName.endsWith("1")))
+                        || (distances && writeName.endsWith("2"))) {
                     writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
                 }
                 break;
             case 1: //no change or % changes
-                if (atom.isMethyl() || (!atom.isMethyl() && atom.getBMRBAmbiguity() != 1
-                        && (writeName.contains("HB3") || writeName.contains("HG3")
-                        || writeName.contains("HD2")))) { //fixme this is too specific
+                if (atom.getBMRBAmbiguity() != 1 && 
+                        (atom.isMethylene() || (!atom.isMethyl() && writeName.contains("HD2")))) { //fixme this is too specific
                     writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
                 }
                 break;
@@ -1192,20 +1164,24 @@ public class Atom implements IAtom {
         return writeName;
     }
 
-
-    public String ppmToNEFString(int iStruct, int iAtom) {
-        return ppmToNEFString(spatialSet, iStruct, iAtom);
+    public String ppmToNEFString(int iStruct, int iAtom, boolean collapse) {
+        return ppmToNEFString(spatialSet, iStruct, iAtom, collapse);
     }
 
     public String ppmToNEFString(SpatialSet spatialSet,
-            int iStruct, int iAtom) {
+            int iStruct, int iAtom, boolean collapse) {
         //chemical shift
         PPMv ppmv = spatialSet.getPPM(iStruct);
+        if (ppmv == null) {
+            return null;
+        }
 
         //atom name
-        String writeName = formatNEFAtomName(this, false);
-        if (ppmv == null || writeName == null) {
-            return null;
+        String writeName;
+        if (collapse) {
+            writeName = this.name.substring(0, this.name.length() - 1) + "%";
+        } else {
+            writeName = formatNEFAtomName(this, false);
         }
 
         String line = "";
@@ -1234,12 +1210,9 @@ public class Atom implements IAtom {
         return line;
     }
 
-    public static String toNEFDistanceString(int index, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2) {
+    public static String toNEFDistanceString(int index, boolean[] aCollapse, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2) {
         Atom[] atoms = {atom1, atom2};
 
-        if (formatNEFAtomName(atom1, true) == null || formatNEFAtomName(atom2, true) == null) {
-            return null;
-        }
         StringBuilder sBuilder = new StringBuilder();
         if (atom1.entity instanceof Residue && atom2.entity instanceof Residue) {
             //index
@@ -1267,7 +1240,13 @@ public class Atom implements IAtom {
                 sBuilder.append(String.format("%-8s", resName));
 
                 // atom name 
-                String writeName = formatNEFAtomName(atom, true);
+                boolean collapse = aCollapse[Arrays.asList(atoms).indexOf(atom)];
+                String writeName;
+                if (collapse) {
+                    writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
+                } else {
+                    writeName = formatNEFAtomName(atom, true);
+                }
                 sBuilder.append(String.format("%-8s", writeName));
             }
 
