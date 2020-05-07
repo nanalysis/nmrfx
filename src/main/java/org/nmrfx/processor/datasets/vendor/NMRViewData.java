@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import org.apache.commons.math3.complex.Complex;
+import org.nmrfx.project.Project;
 
 /**
  * @author bfetler
@@ -602,10 +603,12 @@ public class NMRViewData implements NMRData {
     // open NMRView data file, read header
     private void openDataFile(String datapath) throws IOException {
         System.out.println("open data file " + datapath);
-        ArrayList<String> existingFiles = Dataset.checkExistingFile(datapath);
-        if (!existingFiles.isEmpty()) {
+        File file = new File(datapath);
+
+        List<Dataset> currentDatasets = Project.getActive().getDatasetsWithFile(file);
+        if (!currentDatasets.isEmpty()) {
             System.out.println("already open");
-            dataset = Dataset.getDataset(existingFiles.get(0));
+            dataset = currentDatasets.get(0);
         } else {
             dataset = new Dataset(datapath, datapath, true, false);
         }
