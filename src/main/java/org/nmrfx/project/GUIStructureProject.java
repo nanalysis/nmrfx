@@ -44,6 +44,8 @@ public class GUIStructureProject extends StructureProject {
     public GUIStructureProject(String name) {
         super(name);
         peakLists = FXCollections.observableHashMap();
+        datasetMap = FXCollections.observableHashMap();
+        datasets = FXCollections.observableArrayList();
     }
 
     public static GUIStructureProject replace(String name, StructureProject project) {
@@ -53,7 +55,7 @@ public class GUIStructureProject extends StructureProject {
         project.molecules.clear();
         newProject.peakLists.putAll(project.peakLists);
         project.peakLists.clear();
-        newProject.datasetMap = project.datasetMap;
+        newProject.datasetMap.putAll(project.datasetMap);
         newProject.resFactory = project.resFactory;
         newProject.peakPaths = project.peakPaths;
         newProject.compoundMap.putAll(project.compoundMap);

@@ -215,7 +215,7 @@ public class StripController implements ControllerTool {
         itemSpinner.getValueFactory().valueProperty().addListener(e -> showItem());
         itemPeakListMenuButton = new MenuButton("List");
         itemDatasetMenuButton = new MenuButton("Dataset");
-        FXMLController.datasetList.addListener((ListChangeListener) (e -> updateDatasetNames()));
+        Project.getActive().addDatasetListListener((MapChangeListener) (e -> updateDatasetNames()));
 
         Label offsetLabel = new Label("Offset:");
         offsetBox = new ChoiceBox();

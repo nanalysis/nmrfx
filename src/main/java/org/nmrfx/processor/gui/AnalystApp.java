@@ -68,6 +68,7 @@ import org.nmrfx.structure.chemistry.io.SDFile;
 import org.nmrfx.structure.chemistry.io.Sequence;
 import org.nmrfx.structure.chemistry.mol3D.MolSceneController;
 import static javafx.application.Application.launch;
+import javafx.collections.ObservableList;
 import javafx.scene.layout.VBox;
 import org.nmrfx.processor.datasets.peaks.PeakLabeller;
 import org.nmrfx.processor.gui.spectra.KeyBindings;
@@ -149,7 +150,6 @@ public class AnalystApp extends MainApp {
         interpreter.exec("from pscript import *");
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
-        Dataset.addObserver(this);
         PeakPicking.registerSinglePickAction((c) -> pickedPeakAction(c));
         PeakMenuBar.addExtra("Add Residue Prefix", PeakLabeller::labelWithSingleResidueChar);
         PeakMenuBar.addExtra("Remove Residue Prefix", PeakLabeller::removeSingleResidueChar);
@@ -608,7 +608,9 @@ public class AnalystApp extends MainApp {
     void showDatasetsTable(ActionEvent event) {
         if (datasetController == null) {
             datasetController = DatasetsController.create();
-            datasetController.setDatasetList(FXMLController.datasetList);
+            GUIStructureProject project = (GUIStructureProject) Project.getActive();
+            ObservableList datasetObs = (ObservableList) project.getDatasets();
+            datasetController.setDatasetList(datasetObs);
         }
         datasetController.getStage().show();
         datasetController.getStage().toFront();
@@ -802,46 +804,6 @@ public class AnalystApp extends MainApp {
                 ExceptionDialog dialog = new ExceptionDialog(ex);
                 dialog.showAndWait();
             }
-        }
-    }
-
-    @Override
-    public void datasetAdded(Dataset dataset) {
-        if (Platform.isFxApplicationThread()) {
-            FXMLController.updateDatasetList();
-        } else {
-            Platform.runLater(() -> {
-                FXMLController.updateDatasetList();
-            }
-            );
-        }
-    }
-
-    @Override
-    public void datasetModified(Dataset dataset) {
-    }
-
-    @Override
-    public void datasetRemoved(Dataset dataset) {
-        if (Platform.isFxApplicationThread()) {
-            FXMLController.updateDatasetList();
-        } else {
-            Platform.runLater(() -> {
-                FXMLController.updateDatasetList();
-            }
-            );
-        }
-    }
-
-    @Override
-    public void datasetRenamed(Dataset dataset) {
-        if (Platform.isFxApplicationThread()) {
-            FXMLController.updateDatasetList();
-        } else {
-            Platform.runLater(() -> {
-                FXMLController.updateDatasetList();
-            }
-            );
         }
     }
 
