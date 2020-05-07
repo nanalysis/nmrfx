@@ -48,7 +48,7 @@ public class GUIStructureProject extends StructureProject {
         project.molecules.clear();
         newProject.peakLists.putAll(project.peakLists);
         project.peakLists.clear();
-        newProject.datasetList=project.datasetList;
+        newProject.datasetMap=project.datasetMap;
         newProject.peakListTable=project.peakListTable;
         newProject.resFactory=project.resFactory;
         newProject.peakPaths=project.peakPaths;
