@@ -33,6 +33,8 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.project.GUIProject;
+import org.nmrfx.project.Project;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -196,14 +198,14 @@ public class PeakNavigator implements PeakListener {
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable().addListener(mapChangeListener);
+        Project.getActive().addPeakListListener(mapChangeListener);
 
     }
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : PeakList.peakListTable().keySet()) {
+        for (String peakListName : Project.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 PeakNavigator.this.setPeakList(peakListName);

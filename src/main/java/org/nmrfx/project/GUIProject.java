@@ -20,14 +20,17 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
 
-import javafx.stage.Stage;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.GUIScripter;
 import org.nmrfx.processor.gui.MainApp;
@@ -46,12 +49,14 @@ public class GUIProject extends Project {
 
     public GUIProject(String name) {
         super(name);
+        peakLists = FXCollections.observableHashMap();
     }
 
     public static GUIProject replace(String name, GUIProject project) {
         GUIProject newProject = new GUIProject(name);
         newProject.datasetMap = project.datasetMap;
-        newProject.peakListTable = project.peakListTable;
+        newProject.peakLists.putAll(project.peakLists);
+
         newProject.resFactory = project.resFactory;
         newProject.peakPaths = project.peakPaths;
         return newProject;
@@ -251,4 +256,8 @@ public class GUIProject extends Project {
         GUIScripter.setController(activeController);
     }
 
+    public void addPeakListListener(Object mapChangeListener) {
+        ObservableMap obsMap = (ObservableMap) peakLists;
+        obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
+    }
 }

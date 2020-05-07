@@ -107,6 +107,8 @@ import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakMenu;
 import org.nmrfx.processor.gui.spectra.RegionMenu;
 import org.nmrfx.processor.gui.undo.ChartUndoScale;
+import org.nmrfx.project.GUIProject;
+import org.nmrfx.project.Project;
 import org.nmrfx.utils.GUIUtils;
 
 public class PolyChart implements PeakListener {
@@ -372,7 +374,7 @@ public class PolyChart implements PeakListener {
         MapChangeListener<String, PeakList> mapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             purgeInvalidPeakListAttributes();
         };
-        PeakList.peakListTable().addListener(mapChangeListener);
+        Project.getActive().addPeakListListener(mapChangeListener);
         keyBindings = new KeyBindings(this);
         mouseBindings = new MouseBindings(this);
         gestureBindings = new GestureBindings(this);

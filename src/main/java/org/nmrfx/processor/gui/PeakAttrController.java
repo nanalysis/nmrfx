@@ -85,6 +85,7 @@ import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.project.Project;
 import org.python.util.PythonInterpreter;
 
 /**
@@ -409,7 +410,7 @@ public class PeakAttrController implements Initializable, PeakNavigable, PeakMen
 
     public void updateConditionNames() {
         conditionField.getItems().clear();
-        Set<String> conditions = PeakList.peakListTable().values().stream().
+        Set<String> conditions = Project.getActive().getPeakLists().stream().
                 map(peakList -> peakList.getSampleConditionLabel()).
                 filter(label -> label != null).collect(Collectors.toSet());
         conditions.stream().sorted().forEach(s -> {

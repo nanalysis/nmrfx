@@ -47,6 +47,8 @@ import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.project.GUIProject;
+import org.nmrfx.project.Project;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -246,19 +248,19 @@ public class RunAboutGUI implements PeakListener {
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable().addListener(mapChangeListener);
+        Project.getActive().addPeakListListener(mapChangeListener);
 
     }
 
     void assemble() {
         runAbout.assemble();
-       // useSpinSystem = true;
+        // useSpinSystem = true;
     }
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : PeakList.peakListTable().keySet()) {
+        for (String peakListName : Project.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 RunAboutGUI.this.setPeakList(peakListName);
