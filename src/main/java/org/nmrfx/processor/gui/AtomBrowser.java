@@ -8,7 +8,6 @@ package org.nmrfx.processor.gui;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -46,8 +44,8 @@ import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
-import org.nmrfx.processor.gui.controls.FractionPane;
 import org.nmrfx.processor.utilities.Util;
+import org.nmrfx.project.Project;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Compound;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -416,7 +414,7 @@ public class AtomBrowser {
         final boolean useOrder = true;
         List<Peak> peaks = new ArrayList<>();
 
-        PeakList.peakListTable().values().stream().forEach(peakList -> {
+        Project.getActive().getPeakLists().stream().forEach(peakList -> {
             if (Util.stringMatch(peakList.getName(), listPattern)) {
                 List<Peak> listPeaks = peakList.matchPeaks(matchStrings, useRegexp, useOrder);
                 peaks.addAll(listPeaks);

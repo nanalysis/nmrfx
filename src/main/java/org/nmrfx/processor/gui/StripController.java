@@ -54,6 +54,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.project.Project;
 
 /**
  *
@@ -231,7 +232,7 @@ public class StripController implements ControllerTool {
                 itemPeakListMenuButton, peakLabel,
                 offsetLabel, offsetBox, rowLabel, rowBox);
 
-        PeakList.peakListTable().addListener(mapChangeListener);
+        Project.getActive().addPeakListListener(mapChangeListener);
         updatePeakListMenu();
         updateDatasetNames();
         StripItem item = new StripItem();
@@ -272,7 +273,7 @@ public class StripController implements ControllerTool {
         });
         itemPeakListMenuButton.getItems().add(emptyPeakListMenuItem);
 
-        for (String peakListName : PeakList.peakListTable().keySet()) {
+        for (String peakListName : Project.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 setPeakList(peakListName);

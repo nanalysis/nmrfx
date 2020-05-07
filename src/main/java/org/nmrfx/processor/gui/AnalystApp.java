@@ -715,9 +715,9 @@ public class AnalystApp extends MainApp {
     private void showPeakTable() {
         if (peakTableController == null) {
             peakTableController = PeakTableController.create();
-            List<PeakList> peakLists = PeakList.getLists();
-            if (!peakLists.isEmpty()) {
-                peakTableController.setPeakList(peakLists.get(0));
+            List<String> names = Project.getActive().getPeakListNames();
+            if (!names.isEmpty()) {
+                peakTableController.setPeakList(Project.getActive().getPeakList(names.get(0)));
             }
         }
         if (peakTableController != null) {

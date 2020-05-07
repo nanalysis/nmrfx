@@ -16,6 +16,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.collections.FXCollections;
+import javafx.collections.MapChangeListener;
+import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
 
 import org.eclipse.jgit.api.Git;
@@ -23,6 +26,7 @@ import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.dircache.DirCache;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.AnalystApp;
 import org.nmrfx.processor.gui.PreferencesController;
 import org.nmrfx.processor.gui.spectra.WindowIO;
@@ -39,6 +43,7 @@ public class GUIStructureProject extends StructureProject {
 
     public GUIStructureProject(String name) {
         super(name);
+        peakLists = FXCollections.observableHashMap();
     }
 
     public static GUIStructureProject replace(String name, StructureProject project) {
@@ -48,10 +53,9 @@ public class GUIStructureProject extends StructureProject {
         project.molecules.clear();
         newProject.peakLists.putAll(project.peakLists);
         project.peakLists.clear();
-        newProject.datasetMap=project.datasetMap;
-        newProject.peakListTable=project.peakListTable;
-        newProject.resFactory=project.resFactory;
-        newProject.peakPaths=project.peakPaths;
+        newProject.datasetMap = project.datasetMap;
+        newProject.resFactory = project.resFactory;
+        newProject.peakPaths = project.peakPaths;
         newProject.compoundMap.putAll(project.compoundMap);
         newProject.activeMol = project.activeMol;
         newProject.NOE_SETS.putAll(project.NOE_SETS);
@@ -106,12 +110,12 @@ public class GUIStructureProject extends StructureProject {
     }
 
     public void loadGUIProject(Path projectDir) throws IOException, IllegalStateException, MoleculeIOException {
-        Project currentProject=getActive();
+        Project currentProject = getActive();
         setActive();
 
         loadStructureProject(projectDir);
 
-        if (currentProject==this) {
+        if (currentProject == this) {
             FileSystem fileSystem = FileSystems.getDefault();
 
             String[] subDirTypes = {"windows"};
@@ -138,14 +142,14 @@ public class GUIStructureProject extends StructureProject {
 
     @Override
     public void saveProject() throws IOException {
-        Project currentProject=getActive();
+        Project currentProject = getActive();
         setActive();
 
         if (projectDir == null) {
             throw new IllegalArgumentException("Project directory not set");
         }
         super.saveProject();
-        if(currentProject==this) {
+        if (currentProject == this) {
             saveWindows(projectDir);
         }
         gitCommitOnThread();
@@ -242,5 +246,10 @@ public class GUIStructureProject extends StructureProject {
 
     void saveWindows(Path dir) throws IOException {
         WindowIO.saveWindows(dir);
+    }
+
+    public void addPeakListListener(Object mapChangeListener) {
+        ObservableMap obsMap = (ObservableMap) peakLists;
+        obsMap.addListener((MapChangeListener<String, PeakList>) mapChangeListener);
     }
 }

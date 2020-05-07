@@ -62,6 +62,7 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
+import org.nmrfx.project.Project;
 
 /**
  *
@@ -127,13 +128,13 @@ public class PeakTableController implements PeakMenuTarget, PeakListener, Initia
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable().addListener(mapChangeListener);
+        Project.getActive().addPeakListListener(mapChangeListener);
     }
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : PeakList.peakListTable().keySet()) {
+        for (String peakListName : Project.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 setPeakList(PeakList.get(peakListName));

@@ -51,7 +51,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.apache.commons.lang3.SystemUtils;
 import org.controlsfx.control.StatusBar;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
@@ -61,7 +60,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.AtomController;
 import org.nmrfx.processor.gui.molecule.MoleculeCanvas;
 import org.nmrfx.processor.processing.ProgressUpdater;
-import org.nmrfx.project.GUIProject;
+import org.nmrfx.project.Project;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.Bond;
 import org.nmrfx.structure.chemistry.Compound;
@@ -170,7 +169,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable().addListener(mapChangeListener);
+        Project.getActive().addPeakListListener(mapChangeListener);
         updatePeakListMenu();
         modeMenuButton.getItems().add(numbersCheckBox);
         modeMenuButton.getItems().add(activeCheckBox);
@@ -690,7 +689,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : PeakList.peakListTable().keySet()) {
+        for (String peakListName : Project.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 PeakList peakList = PeakList.get(peakListName);

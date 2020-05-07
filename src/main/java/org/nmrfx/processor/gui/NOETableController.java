@@ -60,6 +60,7 @@ import javafx.util.converter.DefaultStringConverter;
 import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.project.Project;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.SpatialSetGroup;
 import org.nmrfx.structure.chemistry.constraints.NOEAssign;
@@ -99,8 +100,8 @@ public class NOETableController implements Initializable {
         MapChangeListener<String, PeakList> peakmapChangeListener = (MapChangeListener.Change<? extends String, ? extends PeakList> change) -> {
             updatePeakListMenu();
         };
+        Project.getActive().addPeakListListener(peakmapChangeListener);
 
-        PeakList.peakListTable().addListener(peakmapChangeListener);
         updateNoeSetMenu();
         updatePeakListMenu();
 
@@ -155,7 +156,7 @@ public class NOETableController implements Initializable {
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
 
-        for (String peakListName : PeakList.peakListTable().keySet()) {
+        for (String peakListName : Project.getActive().getPeakListNames()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 extractPeakList(PeakList.get(peakListName));
