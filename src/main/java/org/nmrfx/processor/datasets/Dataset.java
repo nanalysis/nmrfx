@@ -160,7 +160,7 @@ public class Dataset extends DoubleVector implements Comparable<Dataset> {
 
         try {
             value = readPoint(indices);
-        } catch (IOException ioE) {
+        } catch (IOException | NullPointerException ioE) {
             value = DoubleVector.NA;
         }
         return value;
