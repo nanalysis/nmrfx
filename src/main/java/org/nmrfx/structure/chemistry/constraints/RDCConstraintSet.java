@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
+import org.nmrfx.project.StructureProject;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Point3;
 import java.util.*;
@@ -34,8 +35,12 @@ import org.nmrfx.structure.chemistry.Atom;
  */
 public class RDCConstraintSet implements ConstraintSet, Iterable {
 
-    private static HashMap<String, RDCConstraintSet> rdcSets = new HashMap<String, RDCConstraintSet>();
-    private static RDCConstraintSet activeSet = null;
+    private static HashMap<String, RDCConstraintSet> rdcSets () {
+        return StructureProject.getActive().rdcSets;
+    }
+    private static RDCConstraintSet activeSet () {
+        return StructureProject.getActive().activeRDCSet;
+    }
     private ArrayList<RDC> constraints = new ArrayList<>(64);
     int nStructures = 0;
     private final String name;
@@ -49,8 +54,8 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
 
     public static RDCConstraintSet addSet(String name) {
         RDCConstraintSet rdcSet = new RDCConstraintSet(name);
-        rdcSets.put(name, rdcSet);
-        activeSet = rdcSet;
+        rdcSets().put(name, rdcSet);
+        StructureProject.getActive().activeRDCSet = rdcSet;
         return rdcSet;
 
     }
@@ -60,10 +65,10 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
     }
 
     public static void reset() {
-        for (Map.Entry<String, RDCConstraintSet> cSet : rdcSets.entrySet()) {
+        for (Map.Entry<String, RDCConstraintSet> cSet : rdcSets().entrySet()) {
             cSet.getValue().clear();
         }
-        rdcSets.clear();
+        rdcSets().clear();
         addSet("default");
     }
 
@@ -80,13 +85,13 @@ public class RDCConstraintSet implements ConstraintSet, Iterable {
     }
 
     public static RDCConstraintSet getSet(String name) {
-        RDCConstraintSet noeSet = rdcSets.get(name);
+        RDCConstraintSet noeSet = rdcSets().get(name);
         return noeSet;
     }
 
     public static ArrayList<String> getNames() {
         ArrayList<String> names = new ArrayList<String>();
-        for (String name : rdcSets.keySet()) {
+        for (String name : rdcSets().keySet()) {
             names.add(name);
         }
         return names;
