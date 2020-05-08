@@ -372,21 +372,21 @@ public class EnergyLists {
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
-            final double rUp) throws IllegalArgumentException {
-        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false);
+            final double rUp, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
+        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, weight, targetValue, targetErr);
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
-            final double rUp, boolean isBond) throws IllegalArgumentException {
+            final double rUp, boolean isBond, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
         MolFilter molFilter1 = new MolFilter(filterString1);
         MolFilter molFilter2 = new MolFilter(filterString2);
 
         ArrayList<Atom> atoms1 = Molecule.getMatchedAtoms(molFilter1, molecule);
         ArrayList<Atom> atoms2 = Molecule.getMatchedAtoms(molFilter2, molecule);
-        
+
         if (atoms1.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString1);
-        }        
+        }
         if (atoms2.size() == 0) {
             throw new IllegalArgumentException("atom null " + filterString2);
         }
@@ -405,13 +405,17 @@ public class EnergyLists {
         Atom[] atomsA2 = new Atom[atoms2m.size()];
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
-        distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond));
+        if (weight != null && targetValue != null && targetErr != null) {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond, weight, targetValue, targetErr));
+        } else {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, isBond));
+        }
         distanceMap.clear();
         constraintsSetup = false;
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
-            final double rLow, final double rUp) throws IllegalArgumentException {
+            final double rLow, final double rUp, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
         if (filterStrings1.size() != filterStrings2.size()) {
             throw new IllegalArgumentException("atoms group 1 and atoms group 2 should be same size");
         }
@@ -447,10 +451,18 @@ public class EnergyLists {
         }
         atoms1m.toArray(atomsA1);
         atoms2m.toArray(atomsA2);
-        distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false));
+        if (weight != null && targetValue != null && targetErr != null) {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false, weight, targetValue, targetErr));
+        } else {
+            distanceList.add(new DistancePair(atomsA1, atomsA2, rLow, rUp, false));
+        }
         distanceMap.clear();
         constraintsSetup = false;
 
+    }
+
+    public ArrayList<DistancePair> getDistanceList() {
+        return distanceList;
     }
 
     //calculates distance between center of the residues. If center is far away, no need to check atoms of residue
@@ -1607,7 +1619,7 @@ public class EnergyLists {
     }
 
     public void makeAtomListFast() {
-       // molecule.updateVecCoords();
+        // molecule.updateVecCoords();
         EnergyCoords eCoords = molecule.getEnergyCoords();
         if (!eCoords.fixedCurrent()) {
             if (molecule.getDihedrals() == null) {
