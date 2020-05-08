@@ -464,7 +464,7 @@ public class EnergyLists {
     public ArrayList<DistancePair> getDistanceList() {
         return distanceList;
     }
-    
+
     //calculates distance between center of the residues. If center is far away, no need to check atoms of residue
     public void makeCompoundList(Molecule molecule) {
         try {
