@@ -71,7 +71,7 @@ public class Dihedral {
     static double initPuckerAmplitude = 45 * toRad;
     static double initPseudoAngle = 18 * toRad;
     public static double backBoneScale = 4.0;
-    static Map<String, AngleBoundary> angleBoundariesNEF = new HashMap<String, AngleBoundary>();
+    static Map<String, List<AngleBoundary>> angleBoundariesNEF = new HashMap<>();
 
     double maxSigma = 20;
 
@@ -401,7 +401,7 @@ public class Dihedral {
         AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale);
         angleBoundaries.put(angleBoundary.getRefAtom().getFullName(), angleBoundary);
     }
-    
+
     public void addBoundary(final Atom[] atoms, double lower, double upper, double scale,
             double weight, double target, double targetErr, String name) throws InvalidMoleculeException {
         if (atoms.length != 4) {
@@ -413,17 +413,23 @@ public class Dihedral {
             }
         }
         AngleBoundary angleBoundary = new AngleBoundary(atoms, lower, upper, scale, weight, target, targetErr, name);
-        angleBoundariesNEF.put(angleBoundary.getRefAtom().getFullName(), angleBoundary);
+        String key = angleBoundary.getRefAtom().getFullName();
+        if (!angleBoundariesNEF.containsKey(key)) {
+            angleBoundariesNEF.put(key, new ArrayList<>());
         }
+        List<AngleBoundary> angleBoundList = angleBoundariesNEF.get(key);
+        angleBoundList.add(angleBoundary);
+        angleBoundariesNEF.put(key, angleBoundList);
+    }
 
     public HashMap<String, AngleBoundary> getAngleBoundaries() {
         return angleBoundaries;
     }
-    
-    public Map<String, AngleBoundary> getAngleBoundariesNEF() {
+
+    public Map<String, List<AngleBoundary>> getAngleBoundariesNEF() {
         return angleBoundariesNEF;
     }
-    
+
     public void clearBoundaries() {
         angleBoundaries.clear();
     }

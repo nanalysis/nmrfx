@@ -18,8 +18,11 @@
 package org.nmrfx.structure.chemistry.energy;
 
 import org.nmrfx.structure.chemistry.Atom;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import org.nmrfx.structure.chemistry.Residue;
 
 public class DistancePair {
 
@@ -92,7 +95,6 @@ public class DistancePair {
         return isBond;
     }
 
-
     public double getWeight() {
         return weight;
     }
@@ -104,27 +106,29 @@ public class DistancePair {
     public double getTargetError() {
         return targetErr;
     }
-    
-    public List<Atom> getUniqueAtoms1(AtomDistancePair[] pairs) {
-        List<Atom> atoms1 = new ArrayList<>();
-        for (int p=0; p<pairs.length; p++) {
-            Atom a1 = pairs[p].getAtoms1()[0];
-            if (!atoms1.contains(a1)) {
-                atoms1.add(a1);
+
+    public Map<String, Set<Atom>> getUniqueAtoms(AtomDistancePair[] pairs, int atomNum) {
+        Map<String, Set<Atom>> atomsMap = new HashMap<>();
+        Set<Atom> atoms = new HashSet<>();
+        for (AtomDistancePair pair : pairs) {
+            Atom a = null;
+            if (atomNum == 1) {
+                a = pair.getAtoms1()[0];
+            } else if (atomNum == 2) {
+                a = pair.getAtoms2()[0];
+            }
+            if (a != null) {
+                int polymerID = ((Residue) a.entity).polymer.entityID;
+                int seqCode = ((Residue) a.entity).getIDNum();
+                String key = polymerID + ":" + seqCode;
+                if (!atomsMap.containsKey(key) && !atoms.isEmpty()) {
+                    atoms.clear();
+                }
+                atoms.add(a);
+                atomsMap.put(key, atoms);
             }
         }
-        return atoms1;
-    }
-    
-    public List<Atom> getUniqueAtoms2(AtomDistancePair[] pairs) {
-        List<Atom> atoms2 = new ArrayList<>();
-        for (int p=0; p<pairs.length; p++) {
-            Atom a2 = pairs[p].getAtoms2()[0];
-            if (!atoms2.contains(a2)) {
-                atoms2.add(a2);
-            }
-        }
-        return atoms2;
+        return atomsMap;
     }
 
 }
