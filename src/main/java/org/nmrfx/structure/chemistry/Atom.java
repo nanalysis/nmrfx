@@ -1225,27 +1225,27 @@ public class Atom implements IAtom {
             //restraint combo ID
             sBuilder.append(String.format("%-8s", restraintComboID));
 
-            for (Atom atom : atoms) {
+            for (int a=0; a<atoms.length; a++) {
                 // chain code 
-                String polymerName = ((Residue) atom.entity).polymer.getName();
+                String polymerName = ((Residue) atoms[a].entity).polymer.getName();
                 char chainID = polymerName.charAt(0);
                 sBuilder.append(String.format("%-8s", chainID));
 
                 // sequence code 
-                int seqCode = ((Residue) atom.entity).getIDNum();
+                int seqCode = ((Residue) atoms[a].entity).getIDNum();
                 sBuilder.append(String.format("%-8d", seqCode));
 
                 // residue name 
-                String resName = ((Residue) atom.entity).name;
+                String resName = ((Residue) atoms[a].entity).name;
                 sBuilder.append(String.format("%-8s", resName));
 
                 // atom name 
-                boolean collapse = aCollapse[Arrays.asList(atoms).indexOf(atom)];
+                boolean collapse = aCollapse[a];
                 String writeName;
                 if (collapse) {
-                    writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
+                    writeName = atoms[a].name.substring(0, atoms[a].name.length() - 1) + "%";
                 } else {
-                    writeName = formatNEFAtomName(atom, true);
+                    writeName = formatNEFAtomName(atoms[a], true);
                 }
                 sBuilder.append(String.format("%-8s", writeName));
             }

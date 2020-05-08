@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.structure.chemistry.Atom;
@@ -196,32 +197,36 @@ public class NMRNEFWriter {
         for (int i = 0; i < distList.size(); i++) {
             DistancePair distPair = distList.get(i);
             AtomDistancePair[] pairAtoms = distPair.getAtomPairs();
-            List<Atom> uniqA1 = distPair.getUniqueAtoms1(pairAtoms);
-            List<Atom> uniqA2 = distPair.getUniqueAtoms2(pairAtoms);
+            Map<String, Set<Atom>> uniqA1Map = distPair.getUniqueAtoms(pairAtoms, 1);
+            Map<String, Set<Atom>> uniqA2Map = distPair.getUniqueAtoms(pairAtoms, 2);
             for (AtomDistancePair pair : pairAtoms) {
                 Atom atom1 = pair.getAtoms1()[0];
                 Atom atom2 = pair.getAtoms2()[0];
+                int[] polymerIDs = {((Residue) atom1.entity).polymer.entityID, ((Residue) atom2.entity).polymer.entityID};
+                int[] seqCodes = {((Residue) atom1.entity).getIDNum(), ((Residue) atom2.entity).getIDNum()};
+                String[] keys = {polymerIDs[0] + ":" + seqCodes[0], polymerIDs[1] + ":" + seqCodes[1]};
+                Set<Atom> uniqA1 = uniqA1Map.get(keys[0]);
+                Set<Atom> uniqA2 = uniqA2Map.get(keys[1]);
                 boolean[] collapse = {false, false};
                 boolean writeLine = false;
                 if (uniqA1.size() == 1 && uniqA2.size() == 1) {
                     writeLine = true;
-                // if distPair has > 1 unique entry for atom1 or atom2, or both 
-                // (e.g. methyls, some methylenes), collapse into one line with 
-                // % in atom name(s)
-                } else { 
+                    // if distPair has > 1 unique entry for atom1 or atom2, or both 
+                    // (e.g. methyls, some methylenes), collapse into one line with 
+                    // % in atom name(s)
+                } else {
                     boolean[] isFirstMethyl = {atom1.isFirstInMethyl(), atom2.isFirstInMethyl()};
                     boolean[] isNonMethylHD = {!atom1.isMethyl() && atom1.name.contains("HD"), !atom2.isMethyl() && atom2.name.contains("HD")};
-                    int[] uniqAIdx = {uniqA1.indexOf(atom1), uniqA2.indexOf(atom2)};
-                    boolean a1FirstMethylene = ((atom1.isMethylene() || isNonMethylHD[0]) && uniqA1.size() > 1 && uniqAIdx[0] == 0);
-                    boolean a2FirstMethylene = ((atom2.isMethylene() || isNonMethylHD[1]) && uniqA2.size() > 1 && uniqAIdx[1] == 0);
-                    if ((isFirstMethyl[0] || a1FirstMethylene) && uniqA2.size() == 1) {
+                    boolean a1WriteMethylene = ((atom1.isMethylene() || isNonMethylHD[0]) && uniqA1.size() > 1 && atom1.getStereo() == 1);
+                    boolean a2WriteMethylene = ((atom2.isMethylene() || isNonMethylHD[1]) && uniqA2.size() > 1 && atom2.getStereo() == 1);
+                    if ((isFirstMethyl[0] || a1WriteMethylene) && uniqA2.size() == 1) {
                         collapse[0] = true;
                         writeLine = true;
-                    } else if ((isFirstMethyl[1] || a2FirstMethylene) && uniqA1.size() == 1) {
+                    } else if ((isFirstMethyl[1] || a2WriteMethylene) && uniqA1.size() == 1) {
                         collapse[1] = true;
                         writeLine = true;
-                    } else if ((isFirstMethyl[0] && isFirstMethyl[1]) || (a1FirstMethylene && a2FirstMethylene)
-                            || (isFirstMethyl[0] && a2FirstMethylene) || (a1FirstMethylene && isFirstMethyl[1])) {
+                    } else if ((isFirstMethyl[0] && isFirstMethyl[1]) || (a1WriteMethylene && a2WriteMethylene)
+                            || (isFirstMethyl[0] && a2WriteMethylene) || (a1WriteMethylene && isFirstMethyl[1])) {
                         collapse[0] = true;
                         collapse[1] = true;
                         writeLine = true;
@@ -264,22 +269,50 @@ public class NMRNEFWriter {
         }
         molecule.updateAtomArray();
         Dihedral dihedral = NMRNEFReader.dihedral;
-        Map<String, AngleBoundary> angleBoundsMap = dihedral.getAngleBoundariesNEF();
-//        Comparator<AngleBoundary> angleCmp = (AngleBoundary bound1, AngleBoundary bound2) -> {
-//            int restraintID1 = bound1.getRestraintID();
-//            int restraintID2 = bound2.getRestraintID();
-//            int result = Integer.compare(restraintID1, restraintID2);
-//            return result;
-//        };
-        List<AngleBoundary> angleBounds = new ArrayList(angleBoundsMap.values());
-//        Collections.sort(angleBounds, angleCmp);
+        Map<String, List<AngleBoundary>> angleBoundsMap = dihedral.getAngleBoundariesNEF();
+        List<AngleBoundary> angleBlock1 = new ArrayList<>();
+        List<AngleBoundary> angleBlock2 = new ArrayList<>();
+        for (List<AngleBoundary> boundList : angleBoundsMap.values()) {
+            for (AngleBoundary bound : boundList) {
+                if (bound.getTargetValue() % 1 == 0 || bound.getTargetValue() % 0.5 == 0) {
+                    angleBlock1.add(bound);
+                } else {
+                    angleBlock2.add(bound);
+                }
+            }
+        }
+
+        Comparator<AngleBoundary> aCmp = (AngleBoundary bound1, AngleBoundary bound2) -> { //sort atom1 sequence code
+            int i = 0;
+            int result = -1;
+            //sort by successive atom ID numbers
+            while (i >= 0 && i < 4) {
+                int bound1AtomIDNum = bound1.getAtoms()[i].entity.getIDNum();
+                int bound2AtomIDNum = bound2.getAtoms()[i].entity.getIDNum();
+                result = Integer.compare(bound1AtomIDNum, bound2AtomIDNum);
+                if (result == 0) {
+                    i++;
+                } else {
+                    break;
+                }
+            }
+            return result;
+        };
+
+        Collections.sort(angleBlock1, aCmp);
+        Collections.sort(angleBlock2, aCmp);
+        List<List<AngleBoundary>> boundBlocks = new ArrayList<>();
+        boundBlocks.add(angleBlock1);
+        boundBlocks.add(angleBlock2);
         int i = 1;
-        for (AngleBoundary bound : angleBounds) {
-            Atom[] atoms = bound.getAtoms();
-            String result = Atom.toNEFDihedralString(bound, atoms, i, i, ".");
-            if (result != null) {
-                chan.write(result + "\n");
-                i++;
+        for (List<AngleBoundary> block : boundBlocks) {
+            for (AngleBoundary bound : block) {
+                Atom[] atoms = bound.getAtoms();
+                String result = Atom.toNEFDihedralString(bound, atoms, i, i, ".");
+                if (result != null) {
+                    chan.write(result + "\n");
+                    i++;
+                }
             }
         }
         chan.write("    stop_\n");
