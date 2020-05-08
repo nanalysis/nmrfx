@@ -67,17 +67,17 @@ public class NMRStarReader {
 //        PeakDim.setResonanceFactory(new AtomResonanceFactory());
     }
 
-    public static STAR3 read(String starFileName) throws ParseException {
+    public static void read(String starFileName) throws ParseException {
         File file = new File(starFileName);
-        return read(file);
+        read(file);
     }
 
-    public static STAR3 read(File starFile) throws ParseException {
+    public static void read(File starFile) throws ParseException {
         FileReader fileReader;
         try {
             fileReader = new FileReader(starFile);
         } catch (FileNotFoundException ex) {
-            return null;
+            return;
         }
         BufferedReader bfR = new BufferedReader(fileReader);
 
@@ -90,7 +90,6 @@ public class NMRStarReader {
         }
         NMRStarReader reader = new NMRStarReader(starFile, star);
         reader.process();
-        return star;
     }
 
     static void updateFromSTAR3ChemComp(Saveframe saveframe, Compound compound) throws ParseException {
@@ -1516,7 +1515,7 @@ public class NMRStarReader {
 
             Util.setStrictlyNEF(true);
             try {
-                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper);
+                energyList.addDistanceConstraint(atomNames[0], atomNames[1], lower, upper, null, null, null);
             } catch (IllegalArgumentException iaE) {
                 int index = indexColumn.get(i);
                 throw new ParseException("Error parsing NEF distance constraints at index  \"" + index + "\" " + iaE.getMessage());

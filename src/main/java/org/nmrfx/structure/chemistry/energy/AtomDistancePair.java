@@ -73,6 +73,14 @@ public class AtomDistancePair {
         methylCorrection = corrValue;
     }
 
+    public Atom[] getAtoms1() {
+        return atoms1;
+    }
+
+    public Atom[] getAtoms2() {
+        return atoms2;
+    }
+
     public double getDistance() {
 //        return getDistanceToClosest();
         return getSumAvgDistance();

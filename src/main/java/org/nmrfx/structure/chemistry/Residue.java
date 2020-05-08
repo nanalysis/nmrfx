@@ -674,5 +674,23 @@ public class Residue extends Compound {
     public String toString() {
         return polymer.getName() + ":" + getName() + getNumber();
     }
+    
+    public String toNEFSequenceString(Molecule molecule, String link, String resVar) {
+        //index and sequence code
+        int number = 1;
+        //chain ID
+        char chainID = ' ';
+        number = this.getIDNum();
+        String polymerName = this.polymer.getName();
+        chainID = polymerName.charAt(0);
+
+        //residue name
+        String resName = this.name;
+        if (resName.length() > 3) {
+            resName = resName.substring(0, 3);
+        }
+
+        return String.format("%8d %7s %7d %9s %-14s %-7s", number, chainID, number, resName, link, resVar);
+    }
 
 }

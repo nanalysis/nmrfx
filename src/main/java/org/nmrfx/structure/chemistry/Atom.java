@@ -22,7 +22,9 @@ import java.util.*;
 import javax.vecmath.Point2d;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.nmrfx.processor.datasets.peaks.AtomResonance;
+import org.nmrfx.structure.chemistry.energy.AngleBoundary;
 import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
+import org.nmrfx.structure.chemistry.energy.DistancePair;
 import org.nmrfx.structure.chemistry.miner.IAtom;
 import org.nmrfx.structure.chemistry.miner.IBond;
 
@@ -1132,6 +1134,213 @@ public class Atom implements IAtom {
         }
 
         return (sBuilder.toString());
+    }
+
+
+    public static String formatNEFAtomName(Atom atom, boolean distances) {
+        String writeName = atom.name;
+//        if (!distances) {
+//            System.out.println(writeName + " " + atom.stereo + " " + atom.getBMRBAmbiguity() + " " + atom.isMethyl());
+//        }
+        switch (atom.stereo) {
+            case 0: //x or y changes
+                if ((!distances && writeName.endsWith("2"))
+                        || (distances && (writeName.endsWith("3") || writeName.endsWith("1")))) {
+                    writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
+                } else if ((!distances && (writeName.endsWith("3") || writeName.endsWith("1")))
+                        || (distances && writeName.endsWith("2"))) {
+                    writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
+                }
+                break;
+            case 1: //no change or % changes
+                if (atom.getBMRBAmbiguity() != 1 && 
+                        (atom.isMethylene() || (!atom.isMethyl() && writeName.contains("HD2")))) { //fixme this is too specific
+                    writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
+                }
+                break;
+            default:
+                break;
+        }
+        return writeName;
+    }
+
+    public String ppmToNEFString(int iStruct, int iAtom, boolean collapse) {
+        return ppmToNEFString(spatialSet, iStruct, iAtom, collapse);
+    }
+
+    public String ppmToNEFString(SpatialSet spatialSet,
+            int iStruct, int iAtom, boolean collapse) {
+        //chemical shift
+        PPMv ppmv = spatialSet.getPPM(iStruct);
+        if (ppmv == null) {
+            return null;
+        }
+
+        //atom name
+        String writeName;
+        if (collapse) {
+            writeName = this.name.substring(0, this.name.length() - 1) + "%";
+        } else {
+            writeName = formatNEFAtomName(this, false);
+        }
+
+        String line = "";
+        if (entity instanceof Residue) {
+            String polymerName = ((Residue) entity).polymer.getName();
+            //  chain code
+            char chainID = polymerName.charAt(0);
+
+            // sequence code
+//            System.out.println(((Residue) entity).getIDNum() + ": " + writeName);
+            int seqCode = ((Residue) entity).getIDNum();
+
+            // residue name
+            String resName = ((Residue) entity).name;
+
+            // value
+            double shift = ppmv.getValue();
+
+            // value uncertainty
+            double shiftErr = ppmv.getError();
+
+//            System.out.println("wrote " + ((Residue) entity).getIDNum() + " " + writeName + " " + ppmv.getValue());
+            line = String.format("         %-9s %-9d %-9s %-9s %-9.3f %-4.3f", chainID, seqCode, resName, writeName, shift, shiftErr);
+        }
+
+        return line;
+    }
+
+    public static String toNEFDistanceString(int index, boolean[] aCollapse, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2) {
+        Atom[] atoms = {atom1, atom2};
+
+        StringBuilder sBuilder = new StringBuilder();
+        if (atom1.entity instanceof Residue && atom2.entity instanceof Residue) {
+            //index
+            sBuilder.append("         ");
+            sBuilder.append(String.format("%-8d", index));
+
+            //restraint ID
+            sBuilder.append(String.format("%-8d", restraintID));
+
+            //restraint combo ID
+            sBuilder.append(String.format("%-8s", restraintComboID));
+
+            for (int a=0; a<atoms.length; a++) {
+                // chain code 
+                String polymerName = ((Residue) atoms[a].entity).polymer.getName();
+                char chainID = polymerName.charAt(0);
+                sBuilder.append(String.format("%-8s", chainID));
+
+                // sequence code 
+                int seqCode = ((Residue) atoms[a].entity).getIDNum();
+                sBuilder.append(String.format("%-8d", seqCode));
+
+                // residue name 
+                String resName = ((Residue) atoms[a].entity).name;
+                sBuilder.append(String.format("%-8s", resName));
+
+                // atom name 
+                boolean collapse = aCollapse[a];
+                String writeName;
+                if (collapse) {
+                    writeName = atoms[a].name.substring(0, atoms[a].name.length() - 1) + "%";
+                } else {
+                    writeName = formatNEFAtomName(atoms[a], true);
+                }
+                sBuilder.append(String.format("%-8s", writeName));
+            }
+
+            // weight
+            double weight = distPair.getWeight();
+            sBuilder.append(String.format("%-8.1f", weight));
+
+            // target value
+            double target = distPair.getTargetValue();
+            sBuilder.append(String.format("%-8.2f", target));
+
+            // target value uncertainty
+            String targetErr = String.valueOf(distPair.getTargetError());
+            if (Double.parseDouble(targetErr) == 0) {
+                targetErr = ".";
+            }
+            sBuilder.append(String.format("%-8s", targetErr));
+
+            // lower limit
+            double lower = distPair.getLower();
+            sBuilder.append(String.format("%-8.2f", lower));
+
+            // upper limit
+            double upper = distPair.getUpper();
+            sBuilder.append(String.format("%-8.2f", upper));
+
+        }
+
+        return sBuilder.toString();
+    }
+
+    public static String toNEFDihedralString(AngleBoundary bound, Atom[] atoms, int iBound, int restraintID, String restraintComboID) {
+
+        StringBuilder sBuilder = new StringBuilder();
+        if (atoms[0].entity instanceof Residue && atoms[1].entity instanceof Residue
+                && atoms[2].entity instanceof Residue && atoms[3].entity instanceof Residue) {
+
+            //index
+            sBuilder.append(String.format("%6d", iBound));
+
+            //restraint ID
+            sBuilder.append(String.format("%6d", restraintID));
+
+            //restraint combo ID
+            sBuilder.append(String.format("%6s", restraintComboID));
+
+            for (Atom atom : atoms) {
+                // chain code 
+                String polymerName = ((Residue) atom.entity).polymer.getName();
+                char chainID = polymerName.charAt(0);
+                sBuilder.append(String.format("%6s", chainID));
+
+                // sequence code 
+                int seqCode = ((Residue) atom.entity).getIDNum();
+                sBuilder.append(String.format("%6d", seqCode));
+
+                // residue name 
+                String resName = ((Residue) atom.entity).name;
+                sBuilder.append(String.format("%6s", resName));
+
+                // atom name 
+                String aName = atom.name;
+                sBuilder.append(String.format("%6s", aName));
+            }
+
+            // weight
+            double weight = bound.getWeight();
+            sBuilder.append(String.format("%6.2f", weight));
+
+            // target value
+            double target = bound.getTargetValue();
+            sBuilder.append(String.format("%9.3f", target));
+
+            // target value uncertainty
+            double targetErr = bound.getTargetError();
+            sBuilder.append(String.format("%9.3f", targetErr));
+
+            // lower limit
+            double lower1 = Math.toDegrees(bound.getLower());
+            double lower = Math.round(lower1 * 100000d) / 100000d;
+            sBuilder.append(String.format("%9.3f", lower));
+
+            // upper limit
+            double upper1 = Math.toDegrees(bound.getUpper());
+            double upper = Math.round(upper1 * 100000d) / 100000d;
+            sBuilder.append(String.format("%9.3f", upper));
+
+            // name
+            String name = bound.getName();
+            sBuilder.append(String.format("%6s", name));
+
+        }
+
+        return sBuilder.toString();
     }
 
     public String xyzToXMLString(int iStruct, int iAtom) {
