@@ -336,12 +336,6 @@ public class AnalystApp extends MainApp {
         arrangeMenu.getItems().addAll(horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
         MenuItem alignMenuItem = new MenuItem("Align Spectra");
         alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
-        MenuItem analyzeMenuItem = new MenuItem("Analyzer...");
-        analyzeMenuItem.setOnAction(e -> showAnalyzer(e));
-        MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
-        measureMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumMeasureBar());
-        MenuItem compareMenuItem = new MenuItem("Show Comparator");
-        compareMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumComparator());
         MenuItem stripsMenuItem = new MenuItem("Show Strips");
         stripsMenuItem.setOnAction(e -> showStripsBar());
         MenuItem favoritesMenuItem = new MenuItem("Favorites");
@@ -349,7 +343,7 @@ public class AnalystApp extends MainApp {
         MenuItem copyItem = new MenuItem("Copy Spectrum as SVG Text");
         copyItem.setOnAction(e -> FXMLController.getActiveController().copySVGAction(e));
         spectraMenu.getItems().addAll(deleteItem, arrangeMenu, favoritesMenuItem, syncMenuItem,
-                alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem,
+                alignMenuItem,
                 stripsMenuItem, copyItem);
 
         // Format (items TBD)
@@ -414,22 +408,11 @@ public class AnalystApp extends MainApp {
         MenuItem peakAttrMenuItem = new MenuItem("Show Peak Tool");
         peakAttrMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakAttrAction(e));
 
-        MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
-        peakNavigatorMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakNavigator());
-
         MenuItem peakTableMenuItem = new MenuItem("Show Peak Table");
         peakTableMenuItem.setOnAction(e -> showPeakTable());
 
         MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
         linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
-
-        MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
-        peakSliderMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        peakSliderMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakSlider());
-
-        MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
-        pathToolMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        pathToolMenuItem.setOnAction(e -> FXMLController.getActiveController().showPathTool());
 
         MenuItem ligandScannerMenuItem = new MenuItem("Show Ligand Scanner");
         ligandScannerMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
@@ -456,9 +439,9 @@ public class AnalystApp extends MainApp {
         assignCascade.getItems().addAll(peakAssignerItem, assignOnPick,
                 atomBrowserMenuItem, runAboutMenuItem);
 
-        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem,
-                peakTableMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem,
-                pathToolMenuItem, ligandScannerMenuItem,
+        peakMenu.getItems().addAll(peakAttrMenuItem,
+                peakTableMenuItem, linkPeakDimsMenuItem,
+                ligandScannerMenuItem,
                 noeTableMenuItem,
                 assignCascade);
 
@@ -874,19 +857,6 @@ public class AnalystApp extends MainApp {
         }
         peakAtomPicker.show(300, 300, null);
 
-    }
-
-    @FXML
-    private void showAnalyzer(ActionEvent event) {
-        if (analyzerController == null) {
-            analyzerController = new AnalyzerController();
-        }
-        try {
-            analyzerController.load();
-        } catch (IOException ex) {
-            ExceptionDialog dialog = new ExceptionDialog(ex);
-            dialog.showAndWait();
-        }
     }
 
     @FXML
