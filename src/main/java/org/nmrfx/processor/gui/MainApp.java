@@ -65,7 +65,6 @@ public class MainApp extends Application implements DatasetListener {
     public static PreferencesController preferencesController;
     public static DocWindowController docWindowController;
     public static DatasetsController datasetController;
-    public static AnalyzerController analyzerController;
     public static HostServices hostServices;
     private static String version = null;
     static String appName = "NMRFx Processor";
@@ -299,15 +298,9 @@ public class MainApp extends Application implements DatasetListener {
         arrangeMenu.getItems().addAll(horizItem, vertItem, gridItem, overlayItem, minimizeItem, normalizeItem);
         MenuItem alignMenuItem = new MenuItem("Align Spectra");
         alignMenuItem.setOnAction(e -> FXMLController.getActiveController().alignCenters());
-        MenuItem analyzeMenuItem = new MenuItem("Analyzer...");
-        analyzeMenuItem.setOnAction(e -> showAnalyzer(e));
-        MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
-        measureMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumMeasureBar());
-        MenuItem compareMenuItem = new MenuItem("Show Comparator");
-        compareMenuItem.setOnAction(e -> FXMLController.getActiveController().showSpectrumComparator());
 
         spectraMenu.getItems().addAll(deleteItem, arrangeMenu, syncMenuItem,
-                alignMenuItem, analyzeMenuItem, measureMenuItem, compareMenuItem, copyItem);
+                alignMenuItem, copyItem);
 
         // Format (items TBD)
 //        Menu formatMenu = new Menu("Format");
@@ -336,21 +329,13 @@ public class MainApp extends Application implements DatasetListener {
         MenuItem peakAttrMenuItem = new MenuItem("Show Peak Tool");
         peakAttrMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakAttrAction(e));
 
-        MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
-        peakNavigatorMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakNavigator());
         MenuItem runAboutMenuItem = new MenuItem("Show RunAbout");
         runAboutMenuItem.setOnAction(e -> showRunAbout());
 
         MenuItem linkPeakDimsMenuItem = new MenuItem("Link by Labels");
         linkPeakDimsMenuItem.setOnAction(e -> FXMLController.getActiveController().linkPeakDims());
 
-        MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
-        peakSliderMenuItem.setOnAction(e -> FXMLController.getActiveController().showPeakSlider());
-
-        MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
-        pathToolMenuItem.setOnAction(e -> FXMLController.getActiveController().showPathTool());
-
-        peakMenu.getItems().addAll(peakAttrMenuItem, peakNavigatorMenuItem, linkPeakDimsMenuItem, peakSliderMenuItem, pathToolMenuItem);
+        peakMenu.getItems().addAll(peakAttrMenuItem, linkPeakDimsMenuItem);
 
         // Window Menu
         // TBD standard window menu items
@@ -630,19 +615,6 @@ public class MainApp extends Application implements DatasetListener {
                 FXMLController.updateDatasetList();
             }
             );
-        }
-    }
-
-    @FXML
-    private void showAnalyzer(ActionEvent event) {
-        if (analyzerController == null) {
-            analyzerController = new AnalyzerController();
-        }
-        try {
-            analyzerController.load();
-        } catch (IOException ex) {
-            ExceptionDialog dialog = new ExceptionDialog(ex);
-            dialog.showAndWait();
         }
     }
 

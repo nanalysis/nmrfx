@@ -88,6 +88,7 @@ public class SpectrumStatusBar {
     CheckBox sliceStatus = new CheckBox("Slices");
     CheckBox complexStatus = new CheckBox("Complex");
     CheckBox phaserStatus = new CheckBox("Phasing");
+    MenuButton toolButton = new MenuButton("Tools");
     private Spinner vecSpinner = new Spinner();
     TextField[] planePPMField = new TextField[maxSpinners];
     Spinner[] planeSpinner = new Spinner[maxSpinners];
@@ -118,6 +119,7 @@ public class SpectrumStatusBar {
 
     public void buildBar(ToolBar btoolBar) {
         this.btoolBar = btoolBar;
+        setupTools();
         spinFactory = new SpinnerValueFactory.ListSpinnerValueFactory(FXCollections.observableArrayList());
         vecSpinner.setEditable(false);
         vecSpinner.setValueFactory(spinFactory);
@@ -281,6 +283,26 @@ public class SpectrumStatusBar {
                 };
             }
         };
+    }
+
+    public void setupTools() {
+        MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
+        measureMenuItem.setOnAction(e -> controller.showSpectrumMeasureBar());
+        MenuItem analyzerMenuItem = new MenuItem("Show Analyzer Bar");
+        analyzerMenuItem.setOnAction(e -> controller.showAnalyzerBar());
+        MenuItem compareMenuItem = new MenuItem("Show Comparator");
+        compareMenuItem.setOnAction(e -> controller.showSpectrumComparator());
+        MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
+        peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
+        MenuItem peakSliderMenuItem = new MenuItem("Show Peak Slider");
+        peakSliderMenuItem.setOnAction(e -> controller.showPeakSlider());
+        MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
+        pathToolMenuItem.setOnAction(e -> controller.showPathTool());
+
+        toolButton.getItems().addAll(measureMenuItem, analyzerMenuItem,
+                compareMenuItem, peakNavigatorMenuItem, peakSliderMenuItem,
+                pathToolMenuItem);
+
     }
 
     public void setCursor(Cursor cursor) {
@@ -548,7 +570,7 @@ public class SpectrumStatusBar {
         updateRowSpinner(0, 1);
 
     }
-    
+
     public int getMode() {
         return currentMode;
     }
@@ -556,11 +578,13 @@ public class SpectrumStatusBar {
     public void setMode(int mode) {
         currentMode = mode;
         arrayMode = false;
+        System.out.println("set mode");
         List<Node> nodes = new ArrayList<>();
         if (mode == 0) {
             nodes.add(vecSpinner);
         } else {
             nodes.add(cursorMenuButton);
+            nodes.add(toolButton);
         }
         HBox.setHgrow(filler1, Priority.ALWAYS);
         HBox.setHgrow(filler2, Priority.ALWAYS);

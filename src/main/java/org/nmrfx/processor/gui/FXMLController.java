@@ -1454,7 +1454,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
     }
 
-     List<PolyChart> getCharts(boolean all) {
+    List<PolyChart> getCharts(boolean all) {
         if (all) {
             return charts;
         } else {
@@ -1596,6 +1596,27 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         if (measureBar != null) {
             bottomBox.getChildren().remove(measureBar.getToolBar());
             measureBar = null;
+        }
+    }
+    AnalyzerBar analyzerBar = null;
+
+    public AnalyzerBar getSpectrumAnalyzerBar() {
+        return analyzerBar;
+    }
+
+    public void showAnalyzerBar() {
+        if (analyzerBar == null) {
+            GridPane navBar = new GridPane();
+            analyzerBar = new AnalyzerBar(this, this::removeAnalyzerBar);
+            analyzerBar.buildBar(navBar);
+            bottomBox.getChildren().add(navBar);
+        }
+    }
+
+    public void removeAnalyzerBar(Object o) {
+        if (analyzerBar != null) {
+            bottomBox.getChildren().remove(analyzerBar.getToolBar());
+            analyzerBar = null;
         }
     }
 
