@@ -250,14 +250,13 @@ public class Project {
 
     public void addDataset(Dataset dataset, String datasetName) {
         datasetMap.put(datasetName, dataset);
-        datasets.clear();
-        datasets.addAll(getDatasetList());
+        datasets.add(dataset);
     }
 
     public boolean removeDataset(String datasetName) {
+        Dataset toRemove=datasetMap.get(datasetName);
         boolean result = datasetMap.remove(datasetName) != null;
-        datasets.clear();
-        datasets.addAll(getDatasetList());
+        datasets.remove(toRemove);
         return result;
     }
 
