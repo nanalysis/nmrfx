@@ -250,7 +250,9 @@ public class Project {
 
     public void addDataset(Dataset dataset, String datasetName) {
         datasetMap.put(datasetName, dataset);
-        datasets.add(dataset);
+        if (!datasets.contains(dataset)) {
+            datasets.add(dataset);
+        }
     }
 
     public boolean removeDataset(String datasetName) {
