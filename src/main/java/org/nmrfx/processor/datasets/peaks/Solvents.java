@@ -13,12 +13,12 @@ import org.yaml.snakeyaml.Yaml;
 public class Solvents {
 
     private static final String SOLVENT_FILE_NAME = "solvents.yaml";
-    Map<String, Solvent> solvents = new HashMap<>();
+    static Map<String, Solvent> solvents = new HashMap<>();
 
-    public void loadYaml() {
+    public static void loadYaml() {
         int max = 0;
         Yaml yaml = new Yaml();
-        InputStream stream = this.getClass().getClassLoader().getResourceAsStream(SOLVENT_FILE_NAME);
+        InputStream stream = Solvents.class.getClassLoader().getResourceAsStream(SOLVENT_FILE_NAME);
         List dataMap = (List) yaml.load(stream);
         for (Object map : dataMap) {
             Map<String, Object> solventMap = (Map<String, Object>) map;
@@ -27,6 +27,9 @@ public class Solvents {
             String isoname = (String) solventMap.get("isocanon");
             Double h2oShift = (Double) solventMap.get("h2oShift");
             Solvent solvent = new Solvent(name, isoname, synonyms, h2oShift);
+            for (String synonym : synonyms) {
+                solvents.put(synonym, solvent);
+            }
             max = Math.max(max, name.length());
 
             if (solventMap.containsKey("Hshifts")) {
@@ -38,11 +41,24 @@ public class Solvents {
                 solvent.addShifts("C", cShifts);
             }
             solvents.put(name, solvent);
+            for (String synonym : synonyms) {
+                solvents.put(synonym, solvent);
+            }
         }
     }
 
     public Solvent getSolvent(String name) {
         return solvents.get(name);
+    }
+
+    public static String canonicalIso(String name) {
+        Solvent solvent = solvents.get(name);
+        return solvent.isoname;
+    }
+
+    public static String canonical(String name) {
+        Solvent solvent = solvents.get(name);
+        return solvent.name;
     }
 
 }

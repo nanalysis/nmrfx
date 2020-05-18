@@ -56,7 +56,7 @@ public class Analyzer {
     public Analyzer(Dataset dataset) {
         this.dataset = dataset;
         solvents = new Solvents();
-        solvents.loadYaml();
+        Solvents.loadYaml();
     }
 
     public Dataset getDataset() {
