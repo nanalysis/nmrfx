@@ -557,7 +557,9 @@ public class Axis {
             gC.save();
             gC.translate(xOrigin - width + gap2, yOrigin - height / 2);
             gC.rotate(270);
+            gC.nativeCoords(true);
             gC.fillText(label, 0, 0);
+            gC.nativeCoords(false);
             gC.restore();
 
             //gC.drawText(label, labelRight, bottomBorder - height / 2, "s", 90.0);
