@@ -149,6 +149,9 @@ public class MainApp extends Application implements DatasetListener {
         return mainApp.makeMenuBar(appName);
     }
 
+    public void addStatusBarTools(SpectrumStatusBar statusBar) {
+    }
+
     public void quit() {
         waitForCommit();
         Platform.exit();

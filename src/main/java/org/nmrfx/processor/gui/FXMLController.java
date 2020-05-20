@@ -1456,6 +1456,7 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
 
         statusBar = new SpectrumStatusBar(this);
         statusBar.buildBar(btoolBar);
+        MainApp.getMainApp().addStatusBarTools(statusBar);
 
     }
 

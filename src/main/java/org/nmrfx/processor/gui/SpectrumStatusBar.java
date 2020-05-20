@@ -45,6 +45,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Spinner;
@@ -285,12 +286,25 @@ public class SpectrumStatusBar {
         };
     }
 
+    public void addToToolMenu(MenuItem menuItem) {
+        toolButton.getItems().add(menuItem);
+    }
+
     public void setupTools() {
+        Menu specToolMenu = new Menu("Spectrum Tools");
+
         MenuItem measureMenuItem = new MenuItem("Show Measure Bar");
         measureMenuItem.setOnAction(e -> controller.showSpectrumMeasureBar());
         MenuItem analyzerMenuItem = new MenuItem("Show Analyzer Bar");
         analyzerMenuItem.setOnAction(e -> controller.showAnalyzerBar());
         MenuItem compareMenuItem = new MenuItem("Show Comparator");
+
+        specToolMenu.getItems().addAll(measureMenuItem, analyzerMenuItem,
+                compareMenuItem);
+        addToToolMenu(specToolMenu);
+
+        Menu peakToolMenu = new Menu("Peak Tools");
+
         compareMenuItem.setOnAction(e -> controller.showSpectrumComparator());
         MenuItem peakNavigatorMenuItem = new MenuItem("Show Peak Navigator");
         peakNavigatorMenuItem.setOnAction(e -> controller.showPeakNavigator());
@@ -299,10 +313,10 @@ public class SpectrumStatusBar {
         MenuItem pathToolMenuItem = new MenuItem("Show Path Tool");
         pathToolMenuItem.setOnAction(e -> controller.showPathTool());
 
-        toolButton.getItems().addAll(measureMenuItem, analyzerMenuItem,
-                compareMenuItem, peakNavigatorMenuItem, peakSliderMenuItem,
+        peakToolMenu.getItems().addAll(peakNavigatorMenuItem, peakSliderMenuItem,
                 pathToolMenuItem);
-
+        
+        addToToolMenu(peakToolMenu);
     }
 
     public void setCursor(Cursor cursor) {
