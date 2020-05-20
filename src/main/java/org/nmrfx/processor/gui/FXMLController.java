@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -910,11 +911,11 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
             svgGC.saveFile();
             final Clipboard clipboard = Clipboard.getSystemClipboard();
             final ClipboardContent content = new ClipboardContent();
-//            DataFormat svgFormat = DataFormat.lookupMimeType("image/svg+xml");
-//            if (svgFormat == null) {
-//                svgFormat = new DataFormat("image/svg+xml");
-//            }
-//            content.put(svgFormat, stream.toString());
+            DataFormat svgFormat = DataFormat.lookupMimeType("image/svg+xml");
+            if (svgFormat == null) {
+                svgFormat = new DataFormat("image/svg+xml");
+            }
+            content.put(svgFormat, stream.toString().getBytes(StandardCharsets.UTF_8));
             content.put(DataFormat.PLAIN_TEXT, stream.toString());
             clipboard.setContent(content);
         } catch (GraphicsIOException ex) {
