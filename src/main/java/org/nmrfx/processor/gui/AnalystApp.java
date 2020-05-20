@@ -310,7 +310,7 @@ public class AnalystApp extends MainApp {
                 openSTARMenuItem, saveSTARMenuItem, openSparkyMenuItem);
 
         fileMenu.getItems().addAll(openMenuItem, openDatasetMenuItem, addMenuItem,
-                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), svgMenuItem, loadPeakListMenuItem);
+                recentFIDMenuItem, recentDatasetMenuItem, newMenuItem, portMenuItem, new SeparatorMenuItem(), svgMenuItem, pdfMenuItem, loadPeakListMenuItem);
 
         Menu spectraMenu = new Menu("Spectra");
         spectraMenu.disableProperty().bind(FXMLController.activeController.isNull());
@@ -445,27 +445,6 @@ public class AnalystApp extends MainApp {
                 noeTableMenuItem,
                 assignCascade);
 
-        Menu oneDMenu = new Menu("Analysis (1D)");
-
-        MenuItem regionsMenuItem = new MenuItem("Show Regions Analyzer");
-        regionsMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        regionsMenuItem.setOnAction(e -> showRegionAnalyzer(e));
-
-        MenuItem multipletMenuItem = new MenuItem("Show Multiplet Analyzer");
-        multipletMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        multipletMenuItem.setOnAction(e -> showMultipletAnalyzer(e));
-
-        MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
-        spectrumLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
-
-        MenuItem spectrumFitLibraryMenuItem = new MenuItem("Show Spectrum Fitter");
-        spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
-
-        oneDMenu.getItems().addAll(regionsMenuItem, multipletMenuItem,
-                spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
-
         // Window Menu
         // TBD standard window menu items
         // Help Menu (items TBD)
@@ -497,13 +476,13 @@ public class AnalystApp extends MainApp {
             Menu windowMenu = new Menu("Window");
             windowMenu.getItems().addAll(tk.createMinimizeMenuItem(), tk.createZoomMenuItem(), tk.createCycleWindowsItem(),
                     new SeparatorMenuItem(), tk.createBringAllToFrontItem());
-            menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, oneDMenu, peakMenu, windowMenu, helpMenu);
+            menuBar.getMenus().addAll(appMenu, fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, windowMenu, helpMenu);
             tk.autoAddWindowMenuItems(windowMenu);
             tk.setGlobalMenuBar(menuBar);
         } else {
             fileMenu.getItems().add(prefsItem);
             fileMenu.getItems().add(quitItem);
-            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, oneDMenu, peakMenu, helpMenu);
+            menuBar.getMenus().addAll(fileMenu, projectMenu, spectraMenu, molMenu, viewMenu, peakMenu, helpMenu);
             helpMenu.getItems().add(0, aboutItem);
         }
         return menuBar;
@@ -534,6 +513,34 @@ public class AnalystApp extends MainApp {
             }
         }
         return version;
+    }
+
+    @Override
+    public void addStatusBarTools(SpectrumStatusBar statusBar) {
+        Menu oneDMenu = new Menu("Analysis (1D)");
+        MenuItem multipletToolItem = new MenuItem("Show Multiplet Tool");
+        multipletToolItem.setOnAction(e -> showMultipletTool());
+
+        MenuItem regionsMenuItem = new MenuItem("Show Regions Analyzer");
+        regionsMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        regionsMenuItem.setOnAction(e -> showRegionAnalyzer(e));
+
+        MenuItem multipletMenuItem = new MenuItem("Show Multiplet Analyzer");
+        multipletMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        multipletMenuItem.setOnAction(e -> showMultipletAnalyzer(e));
+
+        MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
+        spectrumLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        spectrumLibraryMenuItem.setOnAction(e -> showSpectrumLibrary());
+
+        MenuItem spectrumFitLibraryMenuItem = new MenuItem("Show Spectrum Fitter");
+        spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
+        spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
+
+        oneDMenu.getItems().addAll(regionsMenuItem, multipletMenuItem, multipletToolItem,
+                spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
+        statusBar.addToToolMenu(oneDMenu);
+
     }
 
     static void showDocAction(ActionEvent event) {
@@ -1060,6 +1067,30 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         controller.removeTool(StripController.class);
         controller.getBottomBox().getChildren().remove(stripsController.getBox());
+    }
+
+    public void showMultipletTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(MultipletTool.class)) {
+            VBox vBox = new VBox();
+            System.out.println("add box");
+            controller.getBottomBox().getChildren().add(vBox);
+            MultipletTool multipletTool = new MultipletTool(controller, this::removeMultipletToolBar);
+            multipletTool.initialize(vBox);
+            controller.addTool(multipletTool);
+        }
+    }
+
+    public MultipletTool getMultipletTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        MultipletTool multipletTool = (MultipletTool) controller.getTool(MultipletTool.class);
+        return multipletTool;
+    }
+
+    public void removeMultipletToolBar(MultipletTool multipletTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(MultipletTool.class);
+        controller.getBottomBox().getChildren().remove(multipletTool.getBox());
     }
 
     void addPrefs() {
