@@ -417,7 +417,7 @@ public class PolyChart implements PeakListener {
     public NMRAxis getYAxis() {
         return axes[1];
     }
-    
+
     public void removeSelected() {
         if (controller.charts.size() > 1) {
             close();
@@ -2134,7 +2134,7 @@ public class PolyChart implements PeakListener {
         }
     }
 
-    protected void exportVectorGraphics(SVGGraphicsContext svgGC) throws GraphicsIOException {
+    protected void exportVectorGraphics(GraphicsContextInterface svgGC) throws GraphicsIOException {
         Color fillColor = Color.WHITE;
         if (chartProps.getBgColor() != null) {
             fillColor = chartProps.getBgColor();
@@ -3110,10 +3110,10 @@ public class PolyChart implements PeakListener {
         if (peakListAttr.getDrawPeaks()) {
             gC.save();
             try {
-                gC.beginPath();
+         gC.beginPath();
                 gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
                 gC.clip();
-                gC.beginPath();
+         gC.beginPath();
                 DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
                 List<Peak> peaks = peakListAttr.getPeaksInRegion();
                 int[] dim = peakListAttr.getPeakDim();

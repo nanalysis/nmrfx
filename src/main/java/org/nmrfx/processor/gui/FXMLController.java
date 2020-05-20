@@ -115,6 +115,7 @@ import org.nmrfx.processor.datasets.peaks.PeakNeighbors;
 import org.nmrfx.processor.gui.controls.FractionCanvas;
 import org.nmrfx.processor.gui.controls.LayoutControlCanvas;
 import org.nmrfx.graphicsio.GraphicsIOException;
+import org.nmrfx.graphicsio.PDFGraphicsContext;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
 import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
@@ -862,10 +863,14 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
         File selectedFile = fileChooser.showSaveDialog(null);
         if (selectedFile != null) {
             try {
-                getActiveChart().exportVectorGraphics(selectedFile.toString(), "pdf");
-            } catch (IOException ex) {
-                ExceptionDialog eDialog = new ExceptionDialog(ex);
-                eDialog.showAndWait();
+                PDFGraphicsContext pdfGC = new PDFGraphicsContext();
+                pdfGC.create(true, canvas.getWidth(), canvas.getHeight(), selectedFile.toString());
+                for (PolyChart chart : charts) {
+                    chart.exportVectorGraphics(pdfGC);
+                }
+                pdfGC.saveFile();
+            } catch (GraphicsIOException ex) {
+                Logger.getLogger(FXMLController.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
         stage.setResizable(true);
