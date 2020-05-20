@@ -36,7 +36,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontSmoothingType;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
-import org.apache.pdfbox.contentstream.PDContentStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -254,7 +253,10 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
 
     @Override
     public void bezierCurveTo(double xc1, double yc1, double xc2, double yc2, double x1, double y1) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            contentStream.curveTo(tX(xc1), tY(yc1), tX(xc2), tY(yc2), tX(x1), tY(y1));
+        } catch (IOException ex) {
+        }
     }
 
     @Override
@@ -342,24 +344,11 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         float dX = getTextAnchor(text);
         try {
             startText();
-            //showText(text, (float) x - dX, (float) y - dY);
             showText(text, tX(x) - dX, tY(y) - dY);
             endText();
         } catch (GraphicsIOException ex) {
             Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-//        float dY = getTextDY();
-//        float dX = getTextAnchor(text);
-//        try {
-//            contentStream.beginText();
-//            contentStream.setTextMatrix(Matrix.getTranslateInstance(tX(x) - dX, tY(y) - dY));
-//            contentStream.showText(text);
-//            contentStream.endText();
-//            // fixme throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//        } catch (IOException ex) {
-//            Logger.getLogger(PDFGraphicsContext.class.getName()).log(Level.SEVERE, null, ex);
-//        }
     }
 
     @Override
