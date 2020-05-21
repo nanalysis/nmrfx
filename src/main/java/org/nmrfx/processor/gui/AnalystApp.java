@@ -75,6 +75,7 @@ import org.nmrfx.processor.gui.spectra.WindowIO;
 import org.nmrfx.structure.chemistry.constraints.NoeSet;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
+import org.nmrfx.processor.gui.molecule.CanvasMolecule;
 
 public class AnalystApp extends MainApp {
 
@@ -521,13 +522,9 @@ public class AnalystApp extends MainApp {
         MenuItem multipletToolItem = new MenuItem("Show Multiplet Tool");
         multipletToolItem.setOnAction(e -> showMultipletTool());
 
-        MenuItem regionsMenuItem = new MenuItem("Show Regions Analyzer");
+        MenuItem regionsMenuItem = new MenuItem("Show Regions Tool");
         regionsMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        regionsMenuItem.setOnAction(e -> showRegionAnalyzer(e));
-
-        MenuItem multipletMenuItem = new MenuItem("Show Multiplet Analyzer");
-        multipletMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
-        multipletMenuItem.setOnAction(e -> showMultipletAnalyzer(e));
+        regionsMenuItem.setOnAction(e -> showRegionTool());
 
         MenuItem spectrumLibraryMenuItem = new MenuItem("Show Spectrum Library");
         spectrumLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
@@ -537,9 +534,18 @@ public class AnalystApp extends MainApp {
         spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
 
-        oneDMenu.getItems().addAll(regionsMenuItem, multipletMenuItem, multipletToolItem,
+        oneDMenu.getItems().addAll(regionsMenuItem, multipletToolItem,
                 spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
+
+        Menu molMenu = new Menu("Molecule");
+        MenuItem canvasMolMenuItem = new MenuItem("Show Molecule");
+        canvasMolMenuItem.setOnAction(e -> addMolecule());
+        MenuItem delCanvasMolMenuItem = new MenuItem("Remove Molecule");
+        delCanvasMolMenuItem.setOnAction(e -> removeMolecule());
+        molMenu.getItems().addAll(canvasMolMenuItem, delCanvasMolMenuItem);
+
         statusBar.addToToolMenu(oneDMenu);
+        statusBar.addToToolMenu(molMenu);
 
     }
 
@@ -1073,7 +1079,6 @@ public class AnalystApp extends MainApp {
         FXMLController controller = FXMLController.getActiveController();
         if (!controller.containsTool(MultipletTool.class)) {
             VBox vBox = new VBox();
-            System.out.println("add box");
             controller.getBottomBox().getChildren().add(vBox);
             MultipletTool multipletTool = new MultipletTool(controller, this::removeMultipletToolBar);
             multipletTool.initialize(vBox);
@@ -1093,6 +1098,29 @@ public class AnalystApp extends MainApp {
         controller.getBottomBox().getChildren().remove(multipletTool.getBox());
     }
 
+    public void showRegionTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        if (!controller.containsTool(RegionTool.class)) {
+            VBox vBox = new VBox();
+            controller.getBottomBox().getChildren().add(vBox);
+            RegionTool regionTool = new RegionTool(controller, this::removeRegionTool);
+            regionTool.initialize(vBox);
+            controller.addTool(regionTool);
+        }
+    }
+
+    public RegionTool getRegionTool() {
+        FXMLController controller = FXMLController.getActiveController();
+        RegionTool regionTool = (RegionTool) controller.getTool(RegionTool.class);
+        return regionTool;
+    }
+
+    public void removeRegionTool(RegionTool regionTool) {
+        FXMLController controller = FXMLController.getActiveController();
+        controller.removeTool(RegionTool.class);
+        controller.getBottomBox().getChildren().remove(regionTool.getBox());
+    }
+
     void addPrefs() {
         AnalystPrefs.addPrefs();
     }
@@ -1110,11 +1138,34 @@ public class AnalystApp extends MainApp {
             Project project = Project.getActive();
             if (project != null) {
                 Path projectDir = project.getDirectory();
-                Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows");
-                windowIO.setupWatcher(path);
+                if (projectDir != null) {
+                    Path path = projectDir.getFileSystem().getPath(projectDir.toString(), "windows");
+                    windowIO.setupWatcher(path);
+                }
             }
         } catch (IOException ex) {
         }
+    }
+
+    void addMolecule() {
+        Molecule activeMol = Molecule.getActive();
+        if (activeMol != null) {
+            CanvasMolecule cMol = new CanvasMolecule();
+            cMol.setMolName(activeMol.getName());
+            activeMol.label = 0;
+            activeMol.clearSelected();
+
+            cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
+            PolyChart chart = FXMLController.getActiveController().getActiveChart();
+            chart.addAnnotation(cMol);
+            chart.refresh();
+        }
+    }
+
+    void removeMolecule() {
+        PolyChart chart = FXMLController.getActiveController().getActiveChart();
+        chart.clearAnnoType(CanvasMolecule.class);
+        chart.refresh();
     }
 
 }
