@@ -2719,7 +2719,17 @@ public class PolyChart implements PeakListener {
                 refresh();
             }
         }
+    }
 
+    public void dragAnno(double[] dragStart, double x, double y, CanvasAnnotation anno) {
+        double[] dragPos = {x, y};
+        anno.move(dragStart, dragPos);
+        drawPeakLists(false);
+    }
+
+    public void finishAnno(double[] dragStart, double x, double y, CanvasAnnotation anno) {
+        double[] dragPos = {x, y};
+        anno.move(dragStart, dragPos);
     }
 
     public void dragPeak(double[] dragStart, double x, double y, boolean widthMode) {
@@ -2941,6 +2951,7 @@ public class PolyChart implements PeakListener {
                 if (!peakPaths.isEmpty()) {
                     drawPeakPaths();
                 }
+                drawAnnotations(peakGC);
 
 //                peakGC.restore();
             } catch (Exception ioE) {
@@ -3110,10 +3121,10 @@ public class PolyChart implements PeakListener {
         if (peakListAttr.getDrawPeaks()) {
             gC.save();
             try {
-         gC.beginPath();
+                gC.beginPath();
                 gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
                 gC.clip();
-         gC.beginPath();
+                gC.beginPath();
                 DatasetAttributes dataAttr = peakListAttr.getDatasetAttributes();
                 List<Peak> peaks = peakListAttr.getPeaksInRegion();
                 int[] dim = peakListAttr.getPeakDim();
@@ -3273,12 +3284,33 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    public Optional<CanvasAnnotation> hitAnnotation(double x, double y) {
+        Optional<CanvasAnnotation> result = Optional.empty();
+        for (CanvasAnnotation anno : canvasAnnotations) {
+            if (anno.hit(x, y)) {
+                result = Optional.of(anno);
+                break;
+            }
+        }
+        return result;
+    }
+
     public void clearAnnotations() {
         canvasAnnotations.clear();
     }
 
     public void addAnnotation(CanvasAnnotation anno) {
         canvasAnnotations.add(anno);
+    }
+
+    public void clearAnnoType(Class annoClass) {
+        Iterator<CanvasAnnotation> iter = canvasAnnotations.iterator();
+        while (iter.hasNext()) {
+            CanvasAnnotation anno = iter.next();
+            if (anno.getClass() == annoClass) {
+                iter.remove();
+            }
+        }
     }
 
     void drawAnnotations(GraphicsContextInterface gC) {

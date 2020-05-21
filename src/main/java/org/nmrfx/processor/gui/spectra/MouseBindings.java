@@ -21,6 +21,7 @@ import java.util.Optional;
 import javafx.event.Event;
 import javafx.scene.input.MouseEvent;
 import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.PolyChart;
 import static org.nmrfx.processor.gui.spectra.MouseBindings.MOUSE_ACTION.DRAG_VIEW;
@@ -44,6 +45,7 @@ public class MouseBindings {
         DRAG_PEAK_WIDTH,
         DRAG_REGION,
         DRAG_ADDREGION,
+        DRAG_ANNO,
         CROSSHAIR
     }
 
@@ -57,6 +59,7 @@ public class MouseBindings {
     double mouseY;
     double mousePressX;
     double mousePressY;
+    Optional<CanvasAnnotation> activeAnno = Optional.empty();
 
     public MouseBindings(PolyChart chart) {
         this.chart = chart;
@@ -138,6 +141,11 @@ public class MouseBindings {
                         case DRAG_REGION:
                             chart.dragRegion(dragStart, x, y, true);
                             break;
+                        case DRAG_ANNO:
+                            if (activeAnno.isPresent()) {
+                                chart.dragAnno(dragStart, x, y, activeAnno.get());
+                            }
+                            break;
                         case DRAG_VIEW:
                         case DRAG_VIEWX:
                         case DRAG_VIEWY:
@@ -177,11 +185,13 @@ public class MouseBindings {
         dragStart[1] = y;
         moved = false;
         mouseAction = MOUSE_ACTION.NOTHING;
+        activeAnno = Optional.empty();
 
 //        System.out.println("sh " + mouseEvent.isShiftDown() + " alt " + mouseEvent.isAltDown()
 //                + " meta " + mouseEvent.isMetaDown() + " cntrl " + mouseEvent.isControlDown());
         boolean altShift = mouseEvent.isShiftDown() && (mouseEvent.isAltDown() || mouseEvent.isControlDown());
         int border = chart.hitBorder(x, y);
+
         if (!isPopupTrigger(mouseEvent)) {
             if (!(altShift || (border != 0)) && (mouseEvent.isMetaDown() || chart.getCursor().toString().equals("CROSSHAIR"))) {
                 if (!chart.getCursor().toString().equals("CROSSHAIR")) {
@@ -191,7 +201,12 @@ public class MouseBindings {
                 mouseAction = MOUSE_ACTION.CROSSHAIR;
             } else {
                 if (mouseEvent.isPrimaryButtonDown()) {
-                    if (border != 0) {
+                    Optional<CanvasAnnotation> anno = chart.hitAnnotation(x, y);
+                    if (anno.isPresent()) {
+                        chart.refresh();
+                        activeAnno = anno;
+                        mouseAction = MOUSE_ACTION.DRAG_ANNO;
+                    } else if (border != 0) {
                         mouseAction = border == 1 ? MOUSE_ACTION.DRAG_VIEWY : MOUSE_ACTION.DRAG_VIEWX;
                     } else if (altShift) {
                         mouseAction = DRAG_VIEW;
@@ -266,6 +281,11 @@ public class MouseBindings {
                         break;
                     case DRAG_SELECTION:
                         chart.finishBox(mouseAction, dragStart, x, y);
+                        break;
+                    case DRAG_ANNO:
+                        if (activeAnno.isPresent()) {
+                            chart.finishAnno(dragStart, x, y, activeAnno.get());
+                        }
                         break;
                     case DRAG_PEAK:
                         dragStart[0] = x;

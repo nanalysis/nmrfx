@@ -60,4 +60,11 @@ public interface CanvasAnnotation {
 
     public POSTYPE getYPosType();
 
+    public default boolean hit(double x, double y) {
+        return false;
+    }
+    
+    public default void move(double[] start, double[] pos) {
+    }
+
 }
