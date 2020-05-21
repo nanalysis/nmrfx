@@ -44,7 +44,7 @@ public class MoleculeCanvas extends Canvas {
         double[][] world = {{0, 1.0}, {0, 1.0}};
 
         GraphicsContext gC = getGraphicsContext2D();
-        gC.setFill(Color.DARKGRAY);
+        gC.setFill(Color.LIGHTGRAY);
         gC.fillRect(0, 0, getWidth(), getHeight());
         GraphicsContextProxy gCProxy = new GraphicsContextProxy(gC);
         for (CanvasMolecule canvasMol : canvasMolecules) {
