@@ -152,7 +152,38 @@ public class Multiplets {
         return result;
     }
 
-    public static Optional<Multiplet> mergePeaks(List<RelMultipletComponent> comps) {
+    public static Optional<Multiplet> mergePeaks(List<Peak> peaks) {
+        Optional<Multiplet> result = Optional.empty();
+        if (peaks.size() > 0) {
+            Set<PeakDim> peakDims = new HashSet<>();
+            for (Peak peak : peaks) {
+                peakDims.add(peak.getPeakDim(0).getMultiplet().getPeakDim());
+            }
+            List<AbsMultipletComponent> comps = new ArrayList<>();
+            for (PeakDim peakDim : peakDims) {
+                Multiplet multiplet = peakDim.getMultiplet();
+                comps.addAll(multiplet.getAbsComponentList());
+            }
+            PeakDim firstPeakDim = null;
+            for (PeakDim peakDim : peakDims) {
+                if (firstPeakDim == null) {
+                    firstPeakDim = peakDim;
+                } else {
+                    peakDim.getPeak().setStatus(-1);
+                }
+            }
+            firstPeakDim.getMultiplet().updateCoupling(comps);
+
+            PeakList peakList = firstPeakDim.getPeak().getPeakList();
+            peakList.compress();
+            peakList.sortPeaks(0, true);
+            peakList.reNumber();
+            result = Optional.of(firstPeakDim.getMultiplet());
+        }
+        return result;
+    }
+
+    public static Optional<Multiplet> mergeMultipletComponents(List<RelMultipletComponent> comps) {
         Optional<Multiplet> result = Optional.empty();
         if (comps.size() > 0) {
             Set<PeakDim> peakDims = new HashSet<>();
@@ -311,7 +342,7 @@ public class Multiplets {
 //    }
     public static void splitToMultiplicity(Multiplet multiplet, String couplingType) {
         List<AbsMultipletComponent> comps = getSortedMultipletPeaks(multiplet, "1.P");
-        double width = comps.get(0).getLineWidth();
+        double width = comps.get(0).getLineWidth() * multiplet.getPeakList().getSpectralDim(0).getSf();
         int nNew = "sdtqphsp".indexOf(couplingType);
         double jValue = width / (nNew + 1);
         Coupling oldCoupling = multiplet.getCoupling();

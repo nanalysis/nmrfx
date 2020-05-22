@@ -699,15 +699,18 @@ public class Analyzer {
             }
             if (!peaks.isEmpty()) {
                 Multiplet multiplet = peaks.get(0).getPeakDim(0).getMultiplet();
-                Multiplet newMultiplet = multiplet.split(ppm);
+                Optional<Multiplet> splitResult = multiplet.split(ppm);
                 setVolumesFromIntegrals();
                 PeakFitting peakFitting = new PeakFitting(dataset);
                 peakFitting.fitLinkedPeak(multiplet.getOrigin(), true);
                 peakFitting.jfitLinkedPeak(multiplet.getOrigin(), "all");
-                peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), true);
-                peakFitting.jfitLinkedPeak(newMultiplet.getOrigin(), "all");
+                if (splitResult.isPresent()) {
+                    Multiplet newMultiplet = splitResult.get();
+                    peakFitting.fitLinkedPeak(newMultiplet.getOrigin(), true);
+                    peakFitting.jfitLinkedPeak(newMultiplet.getOrigin(), "all");
+                }
+                renumber();
             }
-            renumber();
         }
         return result;
     }
@@ -1104,6 +1107,14 @@ public class Analyzer {
         }
     }
 
+    private void findRegions() throws IOException {
+        calculateThreshold();
+        getThreshold();
+        autoSetRegions();
+        integrate();
+
+    }
+
     public void analyze() throws IOException {
         // clear
         //baselineCorrect();
@@ -1113,11 +1124,16 @@ public class Analyzer {
         // auto set regions
         calculateThreshold();
         double thresh = getThreshold();
-        autoSetRegions();
-        integrate();
-        PeakList pList = peakPick();
-        purgeNonPeakRegions();
-        renumber();
+        if (getRegions().isEmpty()) {
+            autoSetRegions();
+            integrate();
+            peakList = null;
+        }
+        if (peakList == null) {
+            PeakList pList = peakPick();
+            purgeNonPeakRegions();
+            renumber();
+        }
         groupPeaks();
         renumber();
         setVolumesFromIntegrals();
