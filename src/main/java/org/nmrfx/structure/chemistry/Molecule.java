@@ -86,6 +86,7 @@ public class Molecule implements Serializable, ITree {
     public static final int LABEL_NAME = 16;
     public static final int LABEL_HPPM = 17;
     public static final int LABEL_PPM = 18;
+    public static final int LABEL_NONHC = 19;
     public static final LinkedHashMap labelTypes = new LinkedHashMap();
     public static final LinkedHashSet displayTypes = new LinkedHashSet();
     public static final LinkedHashSet colorTypes = new LinkedHashSet();
@@ -116,6 +117,7 @@ public class Molecule implements Serializable, ITree {
         labelTypes.put(Integer.valueOf(LABEL_NAME), "name");
         labelTypes.put(Integer.valueOf(LABEL_HPPM), "hppm");
         labelTypes.put(Integer.valueOf(LABEL_PPM), "ppm");
+        labelTypes.put(Integer.valueOf(LABEL_NONHC), "nonhc");
 
         labelTypes.put("none", Integer.valueOf(LABEL_NONE));
         labelTypes.put("fc", Integer.valueOf(LABEL_FC));
@@ -137,6 +139,7 @@ public class Molecule implements Serializable, ITree {
         labelTypes.put("name", Integer.valueOf(LABEL_NAME));
         labelTypes.put("hppm", Integer.valueOf(LABEL_HPPM));
         labelTypes.put("ppm", Integer.valueOf(LABEL_PPM));
+        labelTypes.put("nonhc", Integer.valueOf(LABEL_NONHC));
 
         displayTypes.add("none");
         displayTypes.add("wire");
@@ -4735,6 +4738,17 @@ public class Molecule implements Serializable, ITree {
                         atom.label = atom.getName().substring(1);
                     } else {
                         atom.label = atom.getName();
+                    }
+
+                    break;
+                }
+                case LABEL_NONHC: {
+                    if (atom.aNum == 6) {
+                        atom.label = "";
+                    } else if (atom.aNum == 1) {
+                        atom.label = "";
+                    } else {
+                        atom.label = Atom.getElementName(atom.aNum);
                     }
 
                     break;
