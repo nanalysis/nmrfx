@@ -122,7 +122,7 @@ public class ComplexCoupling extends Coupling {
     }
 
     @Override
-    List<AbsMultipletComponent> getAbsComponentList() {
+    public List<AbsMultipletComponent> getAbsComponentList() {
         PeakDim peakDimRef = multiplet.getPeakDim();
         double sf = peakDimRef.getPeak().peakList.getSpectralDim(peakDimRef.getSpectralDim()).getSf();
         double centerPPM = peakDimRef.getChemShiftValue();

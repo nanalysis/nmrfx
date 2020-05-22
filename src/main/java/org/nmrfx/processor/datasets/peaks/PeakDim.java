@@ -261,10 +261,18 @@ public class PeakDim {
         result.append(getUser()); // fixme only quote if more than one
         result.append(stringQuote);
         result.append(sep);
-        result.append(stringQuote);
-        // result.append(getCouplingsAsString()); // fixme only quote if more than one
-        result.append("0.0");
-        result.append(stringQuote);
+        if (multiplet != null) {
+            Coupling coupling = multiplet.getCoupling();
+            if (coupling instanceof Singlet) {
+                result.append("s");
+            } else if (coupling instanceof ComplexCoupling) {
+                result.append("m");
+            } else {
+                result.append(stringQuote);
+                result.append(multiplet.getCouplingsAsString()); // fixme only quote if more than one
+                result.append(stringQuote);
+            }
+        }
         result.append(sep);
         result.append(isFrozen() ? "1" : "0");
 

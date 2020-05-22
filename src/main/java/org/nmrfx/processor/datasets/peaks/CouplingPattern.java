@@ -147,24 +147,19 @@ public class CouplingPattern extends Coupling {
 
     @Override
     public String getCouplingsAsString() {
-
-        if ((couplingItems.length == 1) && (couplingItems[0].getNSplits() == 2)) {
-            return String.valueOf(couplingItems[0].getCoupling());
-        } else {
-            StringBuilder sbuf = new StringBuilder();
-
-            for (int i = 0; i < couplingItems.length; i++) {
-                if (i > 0) {
-                    sbuf.append(" ");
-                }
-
-                sbuf.append(couplingItems[i].getCoupling());
+        StringBuilder sbuf = new StringBuilder();
+        for (int i = 0; i < couplingItems.length; i++) {
+            if (i > 0) {
                 sbuf.append(" ");
-                sbuf.append(couplingItems[i].getNSplits() - 1);
             }
 
-            return sbuf.toString();
+            sbuf.append(String.format("%.2f", couplingItems[i].getCoupling()));
+            sbuf.append(" ");
+            sbuf.append(couplingItems[i].getNSplits() - 1);
+            sbuf.append(" ");
+            sbuf.append(String.format("%.2f", couplingItems[i].getSin2Theta()));
         }
+        return sbuf.toString();
     }
 
     @Override
