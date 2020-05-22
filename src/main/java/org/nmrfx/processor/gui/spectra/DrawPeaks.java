@@ -989,6 +989,8 @@ public class DrawPeaks {
 
         float xM = (float) multiplet.getCenter();
         float yM = (float) multiplet.getMax();
+        double range = yAxis.getRange();
+        yM += range * frOffset;
         ArrayList<Line2D> lines = multiplet.getSplittingGraph();
         double max = 0.0;
         treeOn = true;
@@ -1363,7 +1365,6 @@ public class DrawPeaks {
         double edge1y = yAxis.getLowerBound();
         double edge2y = yAxis.getUpperBound();
 
-
         if (ignoreLinkDrawn || !peakDim1.isLinkDrawn()) {
             List<PeakDim> linkedPeakDims = peakDim1.getLinkedPeakDims();
             if (linkedPeakDims.size() > 1) {
@@ -1386,7 +1387,7 @@ public class DrawPeaks {
                             maxX = Math.max(shiftX, maxX);
                             minYdiag = Math.min(shiftY, minYdiag);
                             maxYdiag = Math.max(shiftY, maxYdiag);
-                            if (peak0.getPeakDim(1)==peakDim) {
+                            if (peak0.getPeakDim(1) == peakDim) {
                                 sumY += shiftY;
                                 nY++;
                             } else {
@@ -1412,14 +1413,14 @@ public class DrawPeaks {
                 g2.lineTo(x2, posY);
                 g2.stroke();
 
-                if (nXdiag>0) {
+                if (nXdiag > 0) {
                     double posXdiag = xAxis.getDisplayPosition(sumXdiag / nXdiag);
                     double y1diag = yAxis.getDisplayPosition(minYdiag);
                     double y2diag = yAxis.getDisplayPosition(maxYdiag);
 
                     g2.beginPath();
-                    g2.moveTo(posXdiag,y1diag);
-                    g2.lineTo(posXdiag,y2diag);
+                    g2.moveTo(posXdiag, y1diag);
+                    g2.lineTo(posXdiag, y2diag);
                     g2.stroke();
                 }
             }
@@ -1446,7 +1447,7 @@ public class DrawPeaks {
                             maxY = Math.max(shiftY, maxY);
                             minXdiag = Math.min(shiftX, minXdiag);
                             maxXdiag = Math.max(shiftX, maxXdiag);
-                            if (peak1.getPeakDim(0)==peakDim) {
+                            if (peak1.getPeakDim(0) == peakDim) {
                                 sumX += shiftX;
                                 nX++;
                             } else {
@@ -1469,7 +1470,7 @@ public class DrawPeaks {
                 g2.moveTo(posX, y1);
                 g2.lineTo(posX, y2);
                 g2.stroke();
-                if (nYdiag>0) {
+                if (nYdiag > 0) {
                     double x1diag = xAxis.getDisplayPosition(minXdiag);
                     double x2diag = xAxis.getDisplayPosition(maxXdiag);
                     double posYdiag = yAxis.getDisplayPosition(sumYdiag / nYdiag);
@@ -1529,6 +1530,8 @@ public class DrawPeaks {
         if (angle != 0.0) {
             xOffset = -useBounds.getHeight() / 2.0;
             yOffset = 0.0;
+        } else {
+            useBounds = new BoundingBox(useBounds.getMinX(), useBounds.getMinY()-useBounds.getHeight(), useBounds.getWidth(), useBounds.getHeight()*2.0);
         }
 
         Bounds trBds = aT.transform(useBounds);

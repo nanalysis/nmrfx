@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.DoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -213,6 +214,7 @@ public class PolyChart implements PeakListener {
     double phaseFraction = 0.0;
     boolean useImmediateMode = true;
     private final List<ConnectPeakAttributes> peakPaths = new ArrayList<>();
+    Consumer<DatasetRegion> newRegionConsumer = null;
 
     @Override
     public void peakListChanged(final PeakEvent peakEvent) {
@@ -585,6 +587,10 @@ public class PolyChart implements PeakListener {
         }
     }
 
+    public void setRegionConsumer(Consumer<DatasetRegion> consumer) {
+        newRegionConsumer = consumer;
+    }
+
     public void addRegion(double min, double max) {
         Dataset dataset = getDataset();
         if (dataset != null) {
@@ -596,6 +602,9 @@ public class PolyChart implements PeakListener {
             }
             chartProps.setRegions(false);
             chartProps.setIntegrals(true);
+            if (newRegionConsumer != null) {
+                newRegionConsumer.accept(newRegion);
+            }
         }
     }
 

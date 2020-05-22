@@ -21,7 +21,6 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakList.ARRAYED_FIT_MODE;
 import org.nmrfx.processor.gui.PeakPicking;
 import org.nmrfx.processor.gui.PolyChart;
@@ -36,7 +35,7 @@ public class SpectrumMenu extends ChartMenu {
         super(chart);
     }
 
-    void makeChartMenu() {
+    public void makeChartMenu() {
         chartMenu = new ContextMenu();
         MenuItem attrItem = new MenuItem("Attributes");
         attrItem.setOnAction((ActionEvent e) -> {

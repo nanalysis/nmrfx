@@ -27,6 +27,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.RotateEvent;
 import javafx.scene.input.ScrollEvent;
 import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.processor.gui.FXMLController;
 import org.nmrfx.processor.gui.PolyChart;
 
@@ -69,6 +70,12 @@ public class CanvasBindings {
                     if (hitIntegral.isPresent()) {
                         menu = chart.getIntegralMenu();
                         ((IntegralMenu) menu).setHit(hitIntegral.get());
+                    } else {
+                        Optional<CanvasAnnotation> hitAnno = chart.hitAnnotation(x, y);
+                        if (hitAnno.isPresent()) {
+                            System.out.println("hit int " + hitAnno.isPresent());
+                            menu = hitAnno.get().getMenu();
+                        }
                     }
                 }
             }

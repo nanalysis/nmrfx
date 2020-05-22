@@ -19,6 +19,7 @@ package org.nmrfx.processor.gui;
 
 import javafx.scene.canvas.Canvas;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
+import org.nmrfx.processor.gui.spectra.ChartMenu;
 
 /**
  *
@@ -63,8 +64,12 @@ public interface CanvasAnnotation {
     public default boolean hit(double x, double y) {
         return false;
     }
-    
+
     public default void move(double[] start, double[] pos) {
+    }
+
+    public default ChartMenu getMenu() {
+        return null;
     }
 
 }

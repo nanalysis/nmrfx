@@ -33,7 +33,7 @@ public class PeakMenu extends ChartMenu {
     }
 
     @Override
-    void makeChartMenu() {
+    public void makeChartMenu() {
         chartMenu = new ContextMenu();
     }
 

@@ -33,7 +33,7 @@ public class RegionMenu extends ChartMenu {
     }
 
     @Override
-    void makeChartMenu() {
+    public void makeChartMenu() {
         chartMenu = new ContextMenu();
     }
 

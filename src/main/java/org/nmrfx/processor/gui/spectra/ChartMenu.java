@@ -28,14 +28,14 @@ import org.nmrfx.processor.gui.PolyChart;
 public abstract class ChartMenu {
 
     PolyChart chart;
-    ContextMenu chartMenu;
+    public ContextMenu chartMenu;
 
     public ChartMenu(PolyChart chart) {
         this.chart = chart;
         makeChartMenu();
     }
 
-    abstract void makeChartMenu();
+    public abstract void makeChartMenu();
 
     public void show(Window window, double x, double y) {
         chartMenu.show(window, x, y);
