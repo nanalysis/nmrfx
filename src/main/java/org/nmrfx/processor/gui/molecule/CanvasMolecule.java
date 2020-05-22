@@ -13,13 +13,19 @@ import java.util.logging.Logger;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.geometry.Rectangle2D;
+import javafx.geometry.VPos;
 import javafx.scene.paint.Color;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.CanvasAnnotation;
+import org.nmrfx.processor.gui.PolyChart;
+import org.nmrfx.processor.gui.spectra.ChartMenu;
 
 public class CanvasMolecule implements CanvasAnnotation {
 
+    PolyChart chart = null;
+    ChartMenu menu = null;
     private static final int BY_ATOM = 0;
     private static final int BY_VALUE = 1;
     private static final int CIRCLE_SHAPE = 0;
@@ -73,6 +79,10 @@ public class CanvasMolecule implements CanvasAnnotation {
     POSTYPE yPosType;
 
     public CanvasMolecule() {
+    }
+
+    public CanvasMolecule(PolyChart chart) {
+        this.chart = chart;
     }
 
     public void setPosition(double x1, double y1, double x2, double y2, POSTYPE xPosType, POSTYPE yPosType) {
@@ -293,6 +303,16 @@ public class CanvasMolecule implements CanvasAnnotation {
         return true;
     }
 
+    @Override
+    public ChartMenu getMenu() {
+        if (chart != null) {
+            if (menu == null) {
+                menu = new MoleculeMenu(chart, this);
+            }
+        }
+        return menu;
+    }
+
     String getHit() {
         if (hitAtom == -1) {
             return ("");
@@ -313,7 +333,6 @@ public class CanvasMolecule implements CanvasAnnotation {
     public boolean hit(double x, double y) {
         if (!bounds2D.contains(x, y)) {
             hitAtom = -1;
-
             return false;
         } else {
             hitAtom = pick(null, x, y);
@@ -326,9 +345,8 @@ public class CanvasMolecule implements CanvasAnnotation {
                 Molecule molecule = Molecule.get(molName);
                 if (!molecule.globalSelected.isEmpty()) {
                     molecule.clearSelected();
-                    //chart.refresh();
                 }
-                return false;
+                return true;
             } else {
                 System.out.println(getHit());
                 String aName = getHit();
@@ -352,6 +370,19 @@ public class CanvasMolecule implements CanvasAnnotation {
         by1 = startBy1 + deltaBy;
         bx2 = startBx2 + deltaBx;
         by2 = startBy2 + deltaBy;
+    }
+
+    public void zoom(double factor) {
+        double deltaBx = (factor - 1.0) * (bx2 - bx1);
+        double deltaBy = (factor - 1.0) * (by2 - by1);
+        bx1 = bx1 + deltaBx;
+        by1 = by1 + deltaBy;
+        bx2 = bx2 - deltaBx;
+        by2 = by2 - deltaBy;
+        if (chart != null) {
+            chart.drawPeakLists(false);
+        }
+
     }
 
     public void draw(GraphicsContextInterface gC, double[][] canvasBounds, double[][] worldBounds) {
@@ -659,6 +690,8 @@ public class CanvasMolecule implements CanvasAnnotation {
             if ((label != null) && !label.equals("C") && !label.equals("")) {
                 try {
                     gC.setStroke(Color.BLACK);
+                    gC.setTextAlign(TextAlignment.CENTER);
+                    gC.setTextBaseline(VPos.CENTER);
                     gC.strokeText(label, x, y);
                 } catch (Exception ex) {
                     Logger.getLogger(CanvasMolecule.class.getName()).log(Level.SEVERE, null, ex);

@@ -20,14 +20,13 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Orientation;
-import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Separator;
@@ -36,15 +35,16 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.DatasetRegion;
+import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
 import org.nmrfx.processor.datasets.peaks.Analyzer;
 import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
 import org.nmrfx.processor.datasets.peaks.Coupling;
@@ -135,6 +135,13 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             couplingFields[iRow] = new TextField();
             slopeFields[iRow] = new TextField();
             couplingFields[iRow].setPrefWidth(width3);
+            final int couplingIndex = iRow;
+            couplingFields[iRow].setOnKeyReleased(e -> {
+                System.out.println(e.getCode());
+                if (e.getCode() == KeyCode.ENTER) {
+                    couplingValueTyped(couplingIndex);
+                }
+            });
             slopeFields[iRow].setPrefWidth(width3);
             gridPane.add(patternChoices[iRow], iRow * 3 + 0, 0);
             gridPane.add(couplingFields[iRow], iRow * 3 + 1, 0);
@@ -169,17 +176,30 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         chart = controller.getActiveChart();
         chart.addMultipletListener(this);
         initMultiplet();
+        chart.setRegionConsumer(e -> regionAdded(e));
 
+    }
+
+    public void regionAdded(DatasetRegion region) {
+        addRegion(region);
     }
 
     public void initMenus(ToolBar toolBar) {
         MenuButton menu = new MenuButton("Actions");
         toolBar.getItems().add(menu);
         MenuItem analyzeMenuItem = new MenuItem("Analyze");
-        analyzeMenuItem.setOnAction(e -> analyze1D());
+        analyzeMenuItem.setOnAction(e -> analyze1D(true));
+
+        Menu stepMenu = new Menu("Steps");
+
+        MenuItem findRegionsMenuItem = new MenuItem("Find Regions");
+        findRegionsMenuItem.setOnAction(e -> findRegions());
 
         MenuItem pickRegionsMenuItem = new MenuItem("Pick Regions");
         pickRegionsMenuItem.setOnAction(e -> pickRegions());
+
+        MenuItem analyzePeaksMenuItem = new MenuItem("Analyze Peaks");
+        analyzePeaksMenuItem.setOnAction(e -> analyze1D(false));
 
         MenuItem clearMenuItem = new MenuItem("Clear");
         clearMenuItem.setOnAction(e -> clearAnalysis());
@@ -190,7 +210,8 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         MenuItem clearThresholdMenuItem = new MenuItem("Clear Threshold");
         clearThresholdMenuItem.setOnAction(e -> clearThreshold());
 
-        menu.getItems().addAll(analyzeMenuItem, pickRegionsMenuItem, clearMenuItem, thresholdMenuItem, clearThresholdMenuItem);
+        menu.getItems().addAll(analyzeMenuItem, stepMenu, clearMenuItem, thresholdMenuItem, clearThresholdMenuItem);
+        stepMenu.getItems().addAll(findRegionsMenuItem, pickRegionsMenuItem, analyzePeaksMenuItem);
     }
 
     public void initNavigator(ToolBar toolBar) {
@@ -259,7 +280,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         Button button;
 
         button = new Button("Add", getIcon("region_add"));
-        button.setOnAction(e -> addRegion());
+        button.setOnAction(e -> addRegion(null));
         regionButtons.add(button);
 
         button = new Button("Adjust", getIcon("region_adjust"));
@@ -302,7 +323,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         button.setOnAction(e -> transferPeaks());
         multipletButtons.add(button);
 
-        Button doubletButton = new Button("Doublets", getIcon("transfer"));
+        Button doubletButton = new Button("Doublets", getIcon("tree"));
         doubletButton.setOnAction(e -> toDoublets());
         multipletButtons.add(doubletButton);
 
@@ -405,9 +426,12 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         }
     }
 
-    private void analyze1D() {
+    private void analyze1D(boolean clear) {
         getAnalyzer();
         if (analyzer != null) {
+            if (clear) {
+                clearAnalysis();
+            }
             try {
                 analyzer.analyze();
                 PeakList peakList = analyzer.getPeakList();
@@ -419,6 +443,25 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             } catch (IOException ex) {
                 Logger.getLogger(AnalystApp.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+    }
+
+    private void findRegions() {
+        getAnalyzer();
+        if (analyzer != null) {
+            analyzer.calculateThreshold();
+            analyzer.getThreshold();
+            analyzer.autoSetRegions();
+            try {
+                analyzer.integrate();
+            } catch (IOException ex) {
+                ExceptionDialog eDialog = new ExceptionDialog(ex);
+                eDialog.showAndWait();
+                return;
+            }
+            chart.chartProps.setRegions(false);
+            chart.chartProps.setIntegrals(true);
+            chart.refresh();
         }
     }
 
@@ -440,7 +483,10 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         if (analyzer != null) {
             if (affirm("Clear Analysis")) {
                 PeakList peakList = analyzer.getPeakList();
-                PeakList.remove(peakList.getName());
+                if (peakList != null) {
+                    PeakList.remove(peakList.getName());
+                }
+                analyzer.clearRegions();
                 chart.chartProps.setRegions(false);
                 chart.chartProps.setIntegrals(false);
                 chart.refresh();
@@ -469,6 +515,12 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     void deleteMultiplet() {
+        activeMultiplet.ifPresent(m -> {
+            double shift = m.getCenter();
+            getAnalyzer();
+            analyzer.removeRegion(shift);
+        });
+        refresh();
 
     }
 
@@ -746,11 +798,20 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         }
     }
 
-    public void addRegion() {
+    public void addRegion(DatasetRegion region) {
         getAnalyzer();
-        double ppm0 = chart.getVerticalCrosshairPositions()[0];
-        double ppm1 = chart.getVerticalCrosshairPositions()[1];
-        analyzer.addRegion(ppm0, ppm1);
+        double ppm0;
+        double ppm1;
+        if (region == null) {
+            ppm0 = chart.getVerticalCrosshairPositions()[0];
+            ppm1 = chart.getVerticalCrosshairPositions()[1];
+            analyzer.addRegion(ppm0, ppm1);
+        } else {
+            ppm0 = region.getRegionStart(0);
+            ppm1 = region.getRegionEnd(0);
+            analyzer.peakPickRegion(ppm0, ppm1);
+
+        }
         try {
             activeMultiplet = analyzer.analyzeRegion((ppm0 + ppm1) / 2);
             // this will force updating peaklist and adding to chart if not there
@@ -857,21 +918,45 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         refresh();
     }
 
+    List<Multiplet> getSelMultiplets(List<MultipletSelection> mSet) {
+        List<Multiplet> multiplets = new ArrayList<>();
+        for (MultipletSelection mSel : mSet) {
+            if (!multiplets.contains(mSel.getMultiplet())) {
+                multiplets.add(mSel.getMultiplet());
+            }
+        }
+        return multiplets;
+    }
+
     public void extractMultiplet() {
-        // fixme
-//        List<Peak> peaks = chart.getSelectedPeaks();
-//        if (peaks.size() > 0) {
-//            Peak peak0 = peaks.get(0);
-//            List<PeakDim> peakDims = peak0.getPeakDim(0).getCoupledPeakDims();
-//            if (peaks.size() == peakDims.size()) {
-//                Alert alert = new Alert(Alert.AlertType.ERROR);
-//                alert.setContentText("Can't extract all peaks in multiplet");
-//                alert.showAndWait();
-//                return;
-//            }
-//            activeMultiplet = Multiplets.extractMultiplet(peaks);
-//            refresh();
-//        }
+        List<MultipletSelection> mSet = chart.getSelectedMultiplets();
+        List<Multiplet> multiplets = getSelMultiplets(mSet);
+        if (multiplets.size() > 1) {
+
+        } else if (!multiplets.isEmpty()) {
+
+            Multiplet multiplet = multiplets.get(0);
+            List<AbsMultipletComponent> comps1 = new ArrayList<>();
+            List<AbsMultipletComponent> comps2 = new ArrayList<>();
+
+            List<AbsMultipletComponent> comps = multiplet.getAbsComponentList();
+
+            for (MultipletSelection mSel : mSet) {
+                comps1.add(comps.get(mSel.getLine()));
+            }
+            for (AbsMultipletComponent comp : comps) {
+                if (!comps1.contains(comp)) {
+                    comps2.add(comp);
+                }
+            }
+            PeakList peakList = multiplet.getPeakList();
+            multiplet.updateCoupling(comps1);
+            Peak newPeak = multiplet.getOrigin().copy(peakList);
+            peakList.addPeak(newPeak);
+            Multiplet newMultiplet = newPeak.getPeakDim(0).getMultiplet();
+            newMultiplet.updateCoupling(comps2);
+            refresh();
+        }
     }
 
     public void transferPeaks() {
@@ -887,7 +972,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     public void mergePeaks() {
         List<Peak> peaks = chart.getSelectedPeaks();
         if (peaks.size() > 0) {
-            // fixme  activeMultiplet = Multiplets.mergePeaks(peaks);
+            activeMultiplet = Multiplets.mergePeaks(peaks);
             refresh();
         }
     }
@@ -930,6 +1015,29 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
                 refresh();
             }
         });
+    }
+
+    private void couplingValueTyped(int iRow) {
+        if (activeMultiplet.isPresent()) {
+            String couplingStr = couplingFields[iRow].getText();
+            String couplingType = patternChoices[iRow].getValue();
+            if ((couplingType != null) && !couplingType.equals("")) {
+                try {
+                    double newValue = Double.parseDouble(couplingStr);
+                    if (newValue > 0.1) {
+                        Multiplet multiplet = activeMultiplet.get();
+                        Coupling coupling = multiplet.getCoupling();
+                        if (coupling instanceof CouplingPattern) {
+                            CouplingPattern cPattern = (CouplingPattern) coupling;
+                            cPattern.adjustCouplings(iRow, newValue);
+                        }
+                        refresh();
+                    }
+                } catch (NumberFormatException nfE) {
+
+                }
+            }
+        }
     }
 
     @Override

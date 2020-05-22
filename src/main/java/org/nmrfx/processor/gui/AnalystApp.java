@@ -1150,9 +1150,9 @@ public class AnalystApp extends MainApp {
     void addMolecule() {
         Molecule activeMol = Molecule.getActive();
         if (activeMol != null) {
-            CanvasMolecule cMol = new CanvasMolecule();
+            CanvasMolecule cMol = new CanvasMolecule(FXMLController.getActiveController().getActiveChart());
             cMol.setMolName(activeMol.getName());
-            activeMol.label = 0;
+            activeMol.label = Molecule.LABEL_NONHC;
             activeMol.clearSelected();
 
             cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
