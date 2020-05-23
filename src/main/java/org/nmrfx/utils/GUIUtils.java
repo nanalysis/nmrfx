@@ -9,6 +9,7 @@ import java.util.Optional;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
 /**
@@ -45,8 +46,9 @@ public class GUIUtils {
 
     }
 
-    public static double getTextWidth(String s) {
+    public static double getTextWidth(String s, Font font) {
         Text text = new Text(s);
+        text.setFont(font);
         final double width = text.getLayoutBounds().getWidth();
         return width;
     }
