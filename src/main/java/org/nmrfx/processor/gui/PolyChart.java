@@ -2299,7 +2299,7 @@ public class PolyChart implements PeakListener {
                     gC.setFill(datasetAttributes.getPosColor());
                     String title = datasetAttributes.getDataset().getTitle();
                     gC.fillText(title, textX, textY);
-                    textX += GUIUtils.getTextWidth(title) + 10;
+                    textX += GUIUtils.getTextWidth(title, gC.getFont()) + 10;
                 }
             }
             if (gC instanceof GraphicsContextProxy) {
