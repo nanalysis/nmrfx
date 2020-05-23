@@ -34,6 +34,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -49,11 +52,14 @@ import org.nmrfx.processor.datasets.peaks.Analyzer;
 import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
 import org.nmrfx.processor.datasets.peaks.Coupling;
 import org.nmrfx.processor.datasets.peaks.CouplingPattern;
+import org.nmrfx.processor.datasets.peaks.JournalFormat;
+import org.nmrfx.processor.datasets.peaks.JournalFormatPeaks;
 import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Multiplets;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.Singlet;
+import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
@@ -202,7 +208,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         analyzePeaksMenuItem.setOnAction(e -> analyze1D(false));
 
         MenuItem clearMenuItem = new MenuItem("Clear");
-        clearMenuItem.setOnAction(e -> clearAnalysis());
+        clearMenuItem.setOnAction(e -> clearAnalysis(true));
 
         MenuItem thresholdMenuItem = new MenuItem("Set Threshold");
         thresholdMenuItem.setOnAction(e -> setThreshold());
@@ -250,6 +256,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         HBox spacer = new HBox();
         toolBar.getItems().add(spacer);
         HBox.setHgrow(spacer, Priority.ALWAYS);
+        Button copyButton = GlyphsDude.createIconButton(FontAwesomeIcon.CLIPBOARD, "To Clipboard", fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
+        copyButton.setOnAction(e -> journalFormatToClipboard());
+        toolBar.getItems().add(copyButton);
 
         multipletIdField.setOnKeyReleased(kE -> {
             if (null != kE.getCode()) {
@@ -430,7 +439,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         getAnalyzer();
         if (analyzer != null) {
             if (clear) {
-                clearAnalysis();
+                clearAnalysis(false);
             }
             try {
                 analyzer.analyze();
@@ -478,10 +487,10 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         }
     }
 
-    private void clearAnalysis() {
+    private void clearAnalysis(boolean prompt) {
         getAnalyzer();
         if (analyzer != null) {
-            if (affirm("Clear Analysis")) {
+            if (!prompt || affirm("Clear Analysis")) {
                 PeakList peakList = analyzer.getPeakList();
                 if (peakList != null) {
                     PeakList.remove(peakList.getName());
@@ -1070,6 +1079,30 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             Peak peak = peaks.get(0);
             activeMultiplet = Optional.of(peak.getPeakDim(0).getMultiplet());
             updateMultipletField(false);
+        }
+    }
+
+    public void journalFormatToClipboard() {
+        JournalFormat format = JournalFormatPeaks.getFormat("JMedCh");
+        getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            String journalText = format.genOutput(peakList);
+            String plainText = JournalFormatPeaks.formatToPlain(journalText);
+            String rtfText = JournalFormatPeaks.formatToRTF(journalText);
+
+            Clipboard clipBoard = Clipboard.getSystemClipboard();
+            ClipboardContent content = new ClipboardContent();
+            content.put(DataFormat.PLAIN_TEXT, plainText);
+            content.put(DataFormat.RTF, rtfText);
+            clipBoard.setContent(content);
+            AnnoText annoText = new AnnoText(0.1, -0.2, 0.9, 0.0,
+                    CanvasAnnotation.POSTYPE.FRACTION,
+                    CanvasAnnotation.POSTYPE.FRACTION,
+                    plainText);
+
+            chart.clearAnnoType(AnnoText.class);
+            chart.addAnnotation(annoText);
         }
     }
 }
