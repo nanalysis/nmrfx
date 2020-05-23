@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.text.TextStringBuilder;
 import org.yaml.snakeyaml.Yaml;
 
 /**
@@ -21,7 +22,6 @@ import org.yaml.snakeyaml.Yaml;
 public class JournalFormatPeaks {
 
     static Map<String, JournalFormat> journalFormats = new HashMap<>();
-
 
     static JournalFormat parseYamlMap(Map<String, Object> map) {
         JournalFormat jformat = new JournalFormat();
@@ -66,8 +66,47 @@ public class JournalFormatPeaks {
             journalFormats.put(journalFormat.name, journalFormat);
         }
     }
-    
+
     public static JournalFormat getFormat(String journal) {
+        if (journalFormats.isEmpty()) {
+            loadYaml();
+        }
         return journalFormats.get(journal);
+    }
+
+    public static String formatToRTF(String s) {
+        TextStringBuilder sBuilder = new TextStringBuilder(s);
+        sBuilder.replaceAll("<html>", "");
+        sBuilder.replaceAll("</html>", "");
+        sBuilder.replaceAll("<p>", "");
+        sBuilder.replaceAll("</p>", "");
+        sBuilder.replaceAll("<b>", "\\b ");
+        sBuilder.replaceAll("</b>", "\\b0 ");
+        sBuilder.replaceAll("<i>", "\\i ");
+        sBuilder.replaceAll("</i>", "\\i0 ");
+        sBuilder.replaceAll("<sup>", "\\super ");
+        sBuilder.replaceAll("</sup>", "\\nosupersub ");
+        sBuilder.replaceAll("<sub>", "\\sub ");
+        sBuilder.replaceAll("</sub>", "\\nosupersub ");
+        sBuilder.replaceAll("\u03b4", "\\uc0\\u948");
+        sBuilder.replaceAll("\u03bc", "\\uc0\\u956");
+        return sBuilder.toString();
+    }
+
+    public static String formatToPlain(String s) {
+        TextStringBuilder sBuilder = new TextStringBuilder(s);
+        sBuilder.replaceAll("<html>", "");
+        sBuilder.replaceAll("</html>", "");
+        sBuilder.replaceAll("<p>", "");
+        sBuilder.replaceAll("</p>", "");
+        sBuilder.replaceAll("<b>", "");
+        sBuilder.replaceAll("</b>", "");
+        sBuilder.replaceAll("<i>", "");
+        sBuilder.replaceAll("</i>", "");
+        sBuilder.replaceAll("<sup>", "");
+        sBuilder.replaceAll("</sup>", "");
+        sBuilder.replaceAll("<sub>", "");
+        sBuilder.replaceAll("</sub>", "");
+        return sBuilder.toString();
     }
 }
