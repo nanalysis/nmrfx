@@ -17,7 +17,9 @@
  */
 package org.nmrfx.graphicsio;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -41,6 +43,7 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.util.Matrix;
 
@@ -124,6 +127,16 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
         this.landScape = landScape;
         this.fileName = fileName;
         doc = new PDDocument();
+        InputStream iStream = PDFGraphicsContext.class.getResourceAsStream("/LiberationSans-Regular.ttf");
+        if (iStream == null) {
+            System.out.println("null stream");
+        } else {
+            try {
+                font = PDType0Font.load(doc, iStream);
+            } catch (IOException ex) {
+            }
+        }
+
         try {
             PDPage page = new PDPage(PDRectangle.LETTER);
             doc.addPage(page);
@@ -342,6 +355,8 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     public void fillText(String text, double x, double y) {
         float dY = getTextDY();
         float dX = getTextAnchor(text);
+        System.out.println(font.getName());
+
         try {
             startText();
             showText(text, tX(x) - dX, tY(y) - dY);
@@ -555,17 +570,17 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     @Override
     public void setFont(Font fxfont) {
         this.fxFont = fxfont;
-        switch (fxfont.getFamily().toUpperCase()) {
-            case "HELVETICA":
-                font = PDType1Font.HELVETICA;
-                break;
-            case "COURIER":
-                font = PDType1Font.COURIER;
-                break;
-            default:
-                font = PDType1Font.HELVETICA;
-        }
-        fontSize = (float) fxfont.getSize();
+//        switch (fxfont.getFamily().toUpperCase()) {
+//            case "HELVETICA":
+//                font = PDType1Font.HELVETICA;
+//                break;
+//            case "COURIER":
+//                font = PDType1Font.COURIER;
+//                break;
+//            default:
+//                font = PDType1Font.HELVETICA;
+//        }
+        fontSize = (float) Math.round(fxfont.getSize() * scaleX);
         try {
             contentStream.setFont(font, fontSize);
         } catch (IOException ex) {
