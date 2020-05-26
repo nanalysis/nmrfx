@@ -3186,7 +3186,6 @@ public class PolyChart implements PeakListener {
                         } catch (GraphicsIOException ex) {
                             System.out.println("draw peak exception " + ex.getMessage());
                         } catch (Exception ex2) {
-                            ex2.printStackTrace();
                         }
                     });
 
