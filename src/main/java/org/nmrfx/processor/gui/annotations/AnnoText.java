@@ -17,10 +17,10 @@
  */
 package org.nmrfx.processor.gui.annotations;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javafx.geometry.VPos;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.processor.gui.CanvasAnnotation;
 import org.nmrfx.utils.GUIUtils;
@@ -38,7 +38,7 @@ public class AnnoText implements CanvasAnnotation {
     POSTYPE xPosType;
     POSTYPE yPosType;
     String text;
-    Font font = Font.font("Helvetica", 12);
+    Font font = Font.font("Liberation Sans", 12);
 
     Color fill = Color.BLACK;
 
@@ -80,6 +80,8 @@ public class AnnoText implements CanvasAnnotation {
         try {
             gC.setFill(fill);
             gC.setFont(font);
+            gC.setTextAlign(TextAlignment.LEFT);
+            gC.setTextBaseline(VPos.BASELINE);
             double width = GUIUtils.getTextWidth(text, font);
 
             double xp1 = xPosType.transform(x1, bounds[0], world[0]);
@@ -109,7 +111,6 @@ public class AnnoText implements CanvasAnnotation {
                 gC.fillText(text, xp1, yp1);
             }
         } catch (Exception ex) {
-            Logger.getLogger(AnnoText.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 

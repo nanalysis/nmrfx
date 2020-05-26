@@ -23,6 +23,7 @@ import de.codecentric.centerdevice.MenuToolkit;
 import de.codecentric.centerdevice.dialogs.about.AboutStageBuilder;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +59,8 @@ import org.nmrfx.project.GUIProject;
 import org.nmrfx.project.Project;
 import org.nmrfx.server.Server;
 import static javafx.application.Application.launch;
+import javafx.scene.text.Font;
+import org.nmrfx.graphicsio.PDFGraphicsContext;
 
 public class MainApp extends Application implements DatasetListener {
 
@@ -77,6 +80,7 @@ public class MainApp extends Application implements DatasetListener {
     static boolean isAnalyst = false;
     Consumer<String> socketFunction = null;
     static NMRFxServer server = null;
+    static Font defaultFont;
 
     public static void setAnalyst() {
         isAnalyst = true;
@@ -121,6 +125,11 @@ public class MainApp extends Application implements DatasetListener {
         return stages;
     }
 
+    static void loadFont() {
+        InputStream iStream = MainApp.class.getResourceAsStream("/LiberationSans-Regular.ttf");
+        defaultFont = Font.loadFont(iStream, 12);
+    }
+
     @Override
     public void start(Stage stage) throws Exception {
         mainApp = this;
@@ -139,6 +148,9 @@ public class MainApp extends Application implements DatasetListener {
         interpreter.set("argv", parameters.getRaw());
         interpreter.exec("parseArgs(argv)");
         Dataset.addObserver(this);
+        if (defaultFont == null) {
+            loadFont();
+        }
     }
 
     public static boolean isMac() {

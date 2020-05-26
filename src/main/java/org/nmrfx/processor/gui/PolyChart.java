@@ -189,7 +189,8 @@ public class PolyChart implements PeakListener {
     double bottomBorder = 0.0;
     double minLeftBorder = 0.0;
     double minBottomBorder = 0.0;
-    Font peakFont = new Font(12);
+    String fontFamily = "Liberation Sans";
+    Font peakFont = new Font(fontFamily, 12);
     boolean disabled = false;
     public ChartProperties chartProps = new ChartProperties(this);
 
@@ -2934,7 +2935,7 @@ public class PolyChart implements PeakListener {
                     peakGC.clearRect(xPos, yPos, width, height);
                 }
                 if (peakFont.getSize() != PreferencesController.getPeakFontSize()) {
-                    peakFont = new Font(PreferencesController.getPeakFontSize());
+                    peakFont = new Font(fontFamily, PreferencesController.getPeakFontSize());
                 }
                 peakGC.setFont(peakFont);
 
@@ -3327,7 +3328,7 @@ public class PolyChart implements PeakListener {
             gC.save();
             try {
                 gC.beginPath();
-                gC.rect(xPos + leftBorder, yPos + topBorder, xAxis.getWidth(), yAxis.getHeight());
+                gC.rect(xPos, yPos, xAxis.getWidth() + leftBorder + rightBorder, yAxis.getHeight() + topBorder + bottomBorder);
                 gC.clip();
                 gC.beginPath();
                 double[][] bounds = {{xPos + leftBorder, xPos + width - rightBorder}, {yPos + topBorder, yPos + height - bottomBorder}};
