@@ -3143,6 +3143,7 @@ public class PolyChart implements PeakListener {
                 for (int iDim = 2; iDim < dim.length; iDim++) {
                     limits[iDim] = getPlotLimits(dataAttr, iDim);
                 }
+                drawPeaks.clear1DBounds();
 
                 peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
                     try {
@@ -3177,12 +3178,15 @@ public class PolyChart implements PeakListener {
                 }
                 if (dim.length == 1) { // only draw multiples for 1D 
                     List<Peak> roots = new ArrayList<>();
+                    drawPeaks.clear1DBounds();
                     peaks.stream().filter(peak -> peak.getStatus() >= 0).forEach((peak) -> {
                         try {
                             drawPeaks.drawMultiplet(peakListAttr, gC, peak.getPeakDim(0).getMultiplet(), dim, offsets, false, 0);
                             roots.add(peak);
                         } catch (GraphicsIOException ex) {
                             System.out.println("draw peak exception " + ex.getMessage());
+                        } catch (Exception ex2) {
+                            ex2.printStackTrace();
                         }
                     });
 

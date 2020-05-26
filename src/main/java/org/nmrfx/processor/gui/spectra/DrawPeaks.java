@@ -46,6 +46,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
+import org.apache.commons.collections4.list.TreeList;
 import org.nmrfx.graphicsio.GraphicsContextInterface;
 import org.nmrfx.graphicsio.GraphicsContextProxy;
 import org.nmrfx.graphicsio.GraphicsIOException;
@@ -121,7 +122,7 @@ public class DrawPeaks {
     HashSet[] regions = null;
     Color selectFill = new Color(1.0f, 1.0f, 0.0f, 0.4f);
     private boolean multipletMode = false;
-    Bounds lastTextBox = null;
+    List<Bounds> lastTextBoxes = new TreeList<>();
     GraphicsContextInterface g2;
 
     public DrawPeaks(PolyChart chart, Canvas peakCanvas) {
@@ -141,6 +142,10 @@ public class DrawPeaks {
         for (int i = 0; i < regions.length; i++) {
             regions[i].clear();
         }
+    }
+
+    public void clear1DBounds() {
+        lastTextBoxes.clear();
     }
 
 //    protected void setParameters(PeakDisplayParameters pdPar) {
@@ -940,7 +945,7 @@ public class DrawPeaks {
             }
             if (!selected) {
                 try {
-                renderMultipletLabel(g2, label, strokeColor, xM, yM, max);
+                    renderMultipletLabel(g2, label, strokeColor, xM, yM, max);
                 } catch (Exception e) {
                 }
             }
@@ -1048,18 +1053,35 @@ public class DrawPeaks {
         double yText = y1 - deltaY;
         g2.setTextAlign(TextAlignment.CENTER);
         Bounds bounds = measureText(label, g2.getFont(), 0, x1, yText);
-        int nTries = 5;
-        if (lastTextBox != null) {
+        int nTries = 15;
+        boolean noOverlap = true;
+        if (!lastTextBoxes.isEmpty()) {
+            noOverlap = false;
+            int nBoxes = lastTextBoxes.size();
             for (int i = 0; i < nTries; i++) {
-                bounds = measureText(label, g2.getFont(), 0, x1, yText);
-                if (!lastTextBox.intersects(bounds)) {
+                boolean ok = true;
+                for (int iBox = nBoxes - 1; iBox >= 0; iBox--) {
+                    Bounds lastTextBox = lastTextBoxes.get(iBox);
+                    if (bounds.getMinX() > lastTextBox.getMaxX()) {
+                        break;
+                    }
+
+                    bounds = measureText(label, g2.getFont(), 0, x1, yText);
+                    if (lastTextBox.intersects(bounds)) {
+                        ok = false;
+                    }
+                }
+                if (!ok) {
+                    yText -= deltaY;
+                } else {
+                    noOverlap = true;
                     break;
                 }
-                yText -= bounds.getHeight();
+
             }
         }
-        if ((lastTextBox == null) || (!lastTextBox.intersects(bounds))) {
-            lastTextBox = bounds;
+        if (noOverlap) {
+            lastTextBoxes.add(bounds);
             g2.setTextBaseline(VPos.BOTTOM);
             String[] segments = label.split("\n");
             double lineIncr = g2.getFont().getSize();
@@ -1515,8 +1537,8 @@ public class DrawPeaks {
     public static Bounds measureText(String s, Font font, double angle, double x, double y) {
         Text text = new Text(s);
         text.setFont(font);
-//        text.setTextAlignment(TextAlignment.CENTER);
-//        text.setTextOrigin(VPos.TOP);
+        text.setTextAlignment(TextAlignment.CENTER);
+        text.setTextOrigin(VPos.TOP);
         Bounds textBounds = text.getBoundsInLocal();
         Rectangle stencil = new Rectangle(
                 textBounds.getMinX(), textBounds.getMinY(), textBounds.getWidth(), textBounds.getHeight()
@@ -1540,7 +1562,7 @@ public class DrawPeaks {
             xOffset = -useBounds.getHeight() / 2.0;
             yOffset = 0.0;
         } else {
-            useBounds = new BoundingBox(useBounds.getMinX(), useBounds.getMinY() - useBounds.getHeight(), useBounds.getWidth(), useBounds.getHeight() * 2.0);
+            useBounds = new BoundingBox(useBounds.getMinX(), useBounds.getMinY() - useBounds.getHeight(), useBounds.getWidth(), useBounds.getHeight() * 1.2);
         }
 
         Bounds trBds = aT.transform(useBounds);
@@ -1712,11 +1734,12 @@ public class DrawPeaks {
             g2.setLineWidth(peak1DStroke);
             double x1 = xAxis.getDisplayPosition(x);
             double y1 = yAxis.getDisplayPosition(height);
+            int lastBox = lastTextBoxes.size() - 1;
 
             if (peakAttr.getLabelType() == PPM) {
                 Bounds bounds = measureText(label, g2.getFont(), -90, x1, y1 + 35);
-                if ((lastTextBox == null) || (!lastTextBox.intersects(bounds))) {
-                    lastTextBox = bounds;
+                if (lastTextBoxes.isEmpty() || (!lastTextBoxes.get(lastBox).intersects(bounds))) {
+                    lastTextBoxes.add(bounds);
 
                     g2.save();
                     g2.setTextAlign(TextAlignment.LEFT);
@@ -1737,8 +1760,8 @@ public class DrawPeaks {
             } else {
                 g2.setTextAlign(TextAlignment.CENTER);
                 Bounds bounds = measureText(label, g2.getFont(), 0, x1, textY);
-                if ((lastTextBox == null) || (!lastTextBox.intersects(bounds))) {
-                    lastTextBox = bounds;
+                if (lastTextBoxes.isEmpty() || (!lastTextBoxes.get(lastBox).intersects(bounds))) {
+                    lastTextBoxes.add(bounds);
 
                     g2.setTextBaseline(VPos.TOP);
                     g2.fillText(label, x1, textY);
