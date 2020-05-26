@@ -29,6 +29,10 @@ public class JournalFormat {
     Integer jPrec;
     Integer ppmPrec;
     Double broad;
+    
+    public String getName() {
+        return name;
+    }
 
     public String genOutput(PeakList peakList) {
         boolean ascending = true;
