@@ -1096,9 +1096,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             content.put(DataFormat.PLAIN_TEXT, plainText);
             content.put(DataFormat.RTF, rtfText);
             clipBoard.setContent(content);
-            AnnoText annoText = new AnnoText(0.1, -0.2, 0.9, 0.0,
+            AnnoText annoText = new AnnoText(0.1, 20, 0.9, 100,
                     CanvasAnnotation.POSTYPE.FRACTION,
-                    CanvasAnnotation.POSTYPE.FRACTION,
+                    CanvasAnnotation.POSTYPE.PIXEL,
                     plainText);
 
             chart.clearAnnoType(AnnoText.class);
