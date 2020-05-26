@@ -96,6 +96,8 @@ public class SDFile {
         } else {
             molecule = new Molecule(molName);
             this.compound = new Compound("1", molName);
+            this.compound.entityID = 1;
+            this.compound.assemblyID = 1;
             this.compound.molecule = molecule;
             molecule.addEntity(this.compound, molName);
             molecule.structures.add(0);
