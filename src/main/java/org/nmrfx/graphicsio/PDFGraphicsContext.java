@@ -355,8 +355,6 @@ public class PDFGraphicsContext implements GraphicsContextInterface {
     public void fillText(String text, double x, double y) {
         float dY = getTextDY();
         float dX = getTextAnchor(text);
-        System.out.println(font.getName());
-
         try {
             startText();
             showText(text, tX(x) - dX, tY(y) - dY);
