@@ -534,7 +534,7 @@ public class AnalystApp extends MainApp {
         spectrumFitLibraryMenuItem.disableProperty().bind(FXMLController.activeController.isNull());
         spectrumFitLibraryMenuItem.setOnAction(e -> showSpectrumFitter());
 
-        oneDMenu.getItems().addAll(regionsMenuItem, multipletToolItem,
+        oneDMenu.getItems().addAll(multipletToolItem, regionsMenuItem,
                 spectrumLibraryMenuItem, spectrumFitLibraryMenuItem);
 
         Menu molMenu = new Menu("Molecule");

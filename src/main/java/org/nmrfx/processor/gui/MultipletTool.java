@@ -23,6 +23,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Orientation;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
@@ -57,14 +58,18 @@ import org.nmrfx.processor.datasets.peaks.JournalFormatPeaks;
 import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Multiplets;
 import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.Singlet;
-import org.nmrfx.processor.gui.annotations.AnnoText;
+import org.nmrfx.processor.gui.annotations.AnnoJournalFormat;
+import org.nmrfx.processor.gui.molecule.CanvasMolecule;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import org.nmrfx.processor.gui.spectra.MultipletSelection;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
+import org.nmrfx.structure.chemistry.Molecule;
 import static org.nmrfx.utils.GUIUtils.affirm;
 import static org.nmrfx.utils.GUIUtils.warn;
 
@@ -72,7 +77,7 @@ import static org.nmrfx.utils.GUIUtils.warn;
  *
  * @author brucejohnson
  */
-public class MultipletTool implements SetChangeListener<MultipletSelection>, ControllerTool {
+public class MultipletTool implements SetChangeListener<MultipletSelection>, ControllerTool, PeakListener {
 
     Stage stage = null;
     VBox vBox;
@@ -102,6 +107,9 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     boolean ignoreCouplingChanges = false;
     ChangeListener<String> patternListener;
     Analyzer analyzer = null;
+    CheckBox journalCheckBox;
+    CheckBox molButton;
+    CanvasMolecule cMol = null;
 
     public MultipletTool(FXMLController controller, Consumer<MultipletTool> closeAction) {
         this.controller = controller;
@@ -164,6 +172,18 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         initNavigator(toolBar1);
         ToolBarUtils.addFiller(toolBar1, 10, 20);
         initIntegralType(toolBar1);
+        ToolBarUtils.addFiller(toolBar1, 25, 50);
+
+        journalCheckBox = new CheckBox("Text");
+        journalCheckBox.setOnAction(e -> toggleJournalFormatDisplay());
+        journalCheckBox.getStyleClass().add("toolButton");
+
+        molButton = new CheckBox("Molecule");
+        molButton.getStyleClass().add("toolButton");
+        molButton.setOnAction(e -> toggleMoleculeDisplay());
+
+        toolBar1.getItems().addAll(journalCheckBox, molButton);
+
         ToolBarUtils.addFiller(toolBar1, 10, 500);
 
         ToolBar toolBar2 = new ToolBar();
@@ -196,7 +216,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         MenuItem analyzeMenuItem = new MenuItem("Analyze");
         analyzeMenuItem.setOnAction(e -> analyze1D(true));
 
-        Menu stepMenu = new Menu("Steps");
+        Menu stepMenu = new Menu("Stepwise");
 
         MenuItem findRegionsMenuItem = new MenuItem("Find Regions");
         findRegionsMenuItem.setOnAction(e -> findRegions());
@@ -210,13 +230,23 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         MenuItem clearMenuItem = new MenuItem("Clear");
         clearMenuItem.setOnAction(e -> clearAnalysis(true));
 
+        Menu thresholdMenu = new Menu("Threshold");
+
         MenuItem thresholdMenuItem = new MenuItem("Set Threshold");
         thresholdMenuItem.setOnAction(e -> setThreshold());
 
         MenuItem clearThresholdMenuItem = new MenuItem("Clear Threshold");
         clearThresholdMenuItem.setOnAction(e -> clearThreshold());
 
-        menu.getItems().addAll(analyzeMenuItem, stepMenu, clearMenuItem, thresholdMenuItem, clearThresholdMenuItem);
+        thresholdMenu.getItems().addAll(thresholdMenuItem, clearThresholdMenuItem);
+
+        Menu reportMenu = new Menu("Report");
+        MenuItem copyJournalFormatMenuItem = new MenuItem("Copy");
+
+        copyJournalFormatMenuItem.setOnAction(e -> journalFormatToClipboard());
+        reportMenu.getItems().addAll(copyJournalFormatMenuItem);
+
+        menu.getItems().addAll(analyzeMenuItem, stepMenu, clearMenuItem, thresholdMenu, reportMenu);
         stepMenu.getItems().addAll(findRegionsMenuItem, pickRegionsMenuItem, analyzePeaksMenuItem);
     }
 
@@ -256,9 +286,6 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         HBox spacer = new HBox();
         toolBar.getItems().add(spacer);
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        Button copyButton = GlyphsDude.createIconButton(FontAwesomeIcon.CLIPBOARD, "To Clipboard", fontSize, iconSize, ContentDisplay.GRAPHIC_ONLY);
-        copyButton.setOnAction(e -> journalFormatToClipboard());
-        toolBar.getItems().add(copyButton);
 
         multipletIdField.setOnKeyReleased(kE -> {
             if (null != kE.getCode()) {
@@ -1096,13 +1123,91 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
             content.put(DataFormat.PLAIN_TEXT, plainText);
             content.put(DataFormat.RTF, rtfText);
             clipBoard.setContent(content);
-            AnnoText annoText = new AnnoText(0.1, 20, 0.9, 100,
-                    CanvasAnnotation.POSTYPE.FRACTION,
-                    CanvasAnnotation.POSTYPE.PIXEL,
-                    plainText);
-
-            chart.clearAnnoType(AnnoText.class);
-            chart.addAnnotation(annoText);
         }
     }
+
+    public void toggleMoleculeDisplay() {
+        if (molButton.isSelected()) {
+            addMolecule();
+        } else {
+            removeMolecule();
+        }
+    }
+
+    void addMolecule() {
+        Molecule activeMol = Molecule.getActive();
+        if (activeMol == null) {
+            ((AnalystApp) AnalystApp.mainApp).readMolecule("mol");
+            activeMol = Molecule.getActive();
+        }
+        if (activeMol != null) {
+            if (cMol == null) {
+                cMol = new CanvasMolecule(FXMLController.getActiveController().getActiveChart());
+                cMol.setPosition(0.1, 0.1, 0.3, 0.3, "FRACTION", "FRACTION");
+            }
+
+            cMol.setMolName(activeMol.getName());
+            activeMol.label = Molecule.LABEL_NONHC;
+            activeMol.clearSelected();
+
+            PolyChart chart = FXMLController.getActiveController().getActiveChart();
+            chart.clearAnnoType(CanvasMolecule.class);
+            chart.addAnnotation(cMol);
+            chart.refresh();
+        }
+    }
+
+    void removeMolecule() {
+        PolyChart chart = FXMLController.getActiveController().getActiveChart();
+        chart.clearAnnoType(CanvasMolecule.class);
+        chart.refresh();
+    }
+
+    public void toggleJournalFormatDisplay() {
+        if (journalCheckBox.isSelected()) {
+            showJournalFormatOnChart();
+        } else {
+            removeJournalFormatOnChart();
+        }
+    }
+
+    public void showJournalFormatOnChart() {
+        getAnalyzer();
+        if (analyzer != null) {
+            PeakList peakList = analyzer.getPeakList();
+            if (peakList == null) {
+                removeJournalFormatOnChart();
+            } else {
+                peakList.registerListener(this);
+                AnnoJournalFormat annoText = new AnnoJournalFormat(0.1, 20, 0.9, 100,
+                        CanvasAnnotation.POSTYPE.FRACTION,
+                        CanvasAnnotation.POSTYPE.PIXEL,
+                        peakList.getName());
+                chart.chartProps.setTopBorderSize(50);
+
+                chart.clearAnnoType(AnnoJournalFormat.class);
+                chart.addAnnotation(annoText);
+                chart.refresh();
+            }
+        }
+    }
+
+    public void removeJournalFormatOnChart() {
+        PeakList peakList = analyzer.getPeakList();
+        if (peakList != null) {
+            peakList.removeListener(this);
+        }
+
+        chart.chartProps.setTopBorderSize(7);
+        chart.clearAnnoType(AnnoJournalFormat.class);
+        chart.refresh();
+    }
+
+    @Override
+    public void peakListChanged(PeakEvent peakEvent) {
+        if (journalCheckBox.isSelected()) {
+            showJournalFormatOnChart();
+        }
+    }
+
 }
