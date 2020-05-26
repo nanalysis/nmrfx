@@ -171,7 +171,7 @@ public class CouplingPattern extends Coupling {
                 sbuf.append(" ");
             }
 
-            sbuf.append(Format.format2(couplingItems[i].getCoupling()));
+            sbuf.append(Format.format1(couplingItems[i].getCoupling()));
 //            sbuf.append(" ");
 //            sbuf.append(couplingItems[i].getNSplits() - 1);
 //            sbuf.append(" ");
