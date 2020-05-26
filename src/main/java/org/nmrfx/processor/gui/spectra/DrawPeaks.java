@@ -561,8 +561,14 @@ public class DrawPeaks {
                 if (peak.peakList.scale > 0.0) {
                     normVal = multiplet.getVolume() / peak.peakList.scale;
                 }
-                label = Format.format2(normVal) + " " + multiplet.getMultiplicity() + " " + couplings
-                        + "\n" + Format.format3(multiplet.getCenter());
+                StringBuilder sBuilder = new StringBuilder();
+                sBuilder.append(Format.format2(normVal)).append(' ').
+                        append(multiplet.getMultiplicity()).append('\n');
+                if ((couplings != null) && (couplings.length() > 0)) {
+                    sBuilder.append(couplings).append('\n');
+                }
+                sBuilder.append((Format.format3(multiplet.getCenter())));
+                label = sBuilder.toString();
 
                 break;
             case PeakDisplayParameters.MULTIPLET_LABEL_PPM:
@@ -933,7 +939,10 @@ public class DrawPeaks {
                 i++;
             }
             if (!selected) {
+                try {
                 renderMultipletLabel(g2, label, strokeColor, xM, yM, max);
+                } catch (Exception e) {
+                }
             }
 //            chart.myDrawLine(g2, xM, (yM + dY * (1.0 + max + 1.2)), xM, (yM + dY * (1.0 + max + 0.5)));
         }
@@ -1531,7 +1540,7 @@ public class DrawPeaks {
             xOffset = -useBounds.getHeight() / 2.0;
             yOffset = 0.0;
         } else {
-            useBounds = new BoundingBox(useBounds.getMinX(), useBounds.getMinY()-useBounds.getHeight(), useBounds.getWidth(), useBounds.getHeight()*2.0);
+            useBounds = new BoundingBox(useBounds.getMinX(), useBounds.getMinY() - useBounds.getHeight(), useBounds.getWidth(), useBounds.getHeight() * 2.0);
         }
 
         Bounds trBds = aT.transform(useBounds);
