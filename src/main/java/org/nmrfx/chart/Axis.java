@@ -17,6 +17,7 @@
  */
 package org.nmrfx.chart;
 
+import java.io.InputStream;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -58,6 +59,8 @@ public class Axis {
     private double ticFontSize = 12;
     private double lineWidth = 1.0;
     private Color color = Color.BLACK;
+    private static Font defaultFont = null;
+    private String fontFamily = "Liberation Sans";
     private Font ticFont = new Font(ticFontSize);
     private Font labelFont = new Font(labelFontSize);
     public static double targetPix = 85.0;
@@ -70,6 +73,11 @@ public class Axis {
     double autoRangeScale = 10.0;
     private double gridLength = 0.0;
     TickInfo tInfo = new TickInfo();
+
+    static void loadFont() {
+        InputStream iStream = Axis.class.getResourceAsStream("/LiberationSans-Regular.ttf");
+        defaultFont = Font.loadFont(iStream, 12);
+    }
 
     public void setColor(Color value) {
         color = value;
@@ -85,6 +93,11 @@ public class Axis {
         this.defaultUpper = upperBound;
         this.width = width;
         this.height = height;
+        if (defaultFont == null) {
+            loadFont();
+        }
+        ticFont = new Font("Liberation Sans", ticFontSize);
+        labelFont = new Font("Liberation Sans", labelFontSize);
     }
     private DoubleProperty lowerBound;
 
@@ -306,7 +319,7 @@ public class Axis {
 
     public void setTickFontSize(double size) {
         ticFontSize = size;
-        ticFont = new Font(ticFontSize);
+        ticFont = new Font(fontFamily, ticFontSize);
     }
 
     public double getTickFontSize() {
@@ -315,7 +328,7 @@ public class Axis {
 
     public void setLabelFontSize(double size) {
         labelFontSize = size;
-        labelFont = new Font(labelFontSize);
+        labelFont = new Font(fontFamily, labelFontSize);
     }
 
     public double getLabelFontSize() {
