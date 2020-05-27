@@ -279,6 +279,84 @@ public class PeakDim {
         return result.toString();
     }
 
+    public List<String> toSTAR3ComplexCouplingString(int index) {
+        List<String> values = new ArrayList<>();
+        Multiplet multiplet = getMultiplet();
+        if (multiplet != null) {
+            Coupling coupling = multiplet.getCoupling();
+            if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
+                ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                int nComps = coupling.getRelComponentList().size();
+                for (int iComp = 0; iComp < nComps; iComp++) {
+                    String s = toSTAR3LoopMultipletCharString(spectralDim, complexCoupling, iComp, index);
+                    values.add(s);
+                    index++;
+                }
+            }
+
+        }
+        return values;
+    }
+
+    public List<String> toSTAR3CouplingPatternString(int index) {
+        List<String> values = new ArrayList<>();
+        Multiplet multiplet = getMultiplet();
+        if (multiplet != null) {
+            Coupling coupling = multiplet.getCoupling();
+            if ((coupling != null) && (coupling instanceof CouplingPattern)) {
+                CouplingPattern couplingPattern = (CouplingPattern) coupling;
+                int nComps = couplingPattern.getNCouplingValues();
+                for (int iComp = 0; iComp < nComps; iComp++) {
+                    String s = toSTAR3LoopMultipletCharString(spectralDim, couplingPattern, iComp, index);
+                    values.add(s);
+                    index++;
+                }
+            }
+
+        }
+        return values;
+    }
+
+    public String toSTAR3LoopMultipletCharString(int contributionID, ComplexCoupling coupling, int iComp, int index) {
+        RelMultipletComponent comp = coupling.getRelComponentList().get(iComp);
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        char stringQuote = '"';
+        result.append(index).append(sep);
+        result.append(getPeak().getIdNum()).append(sep);
+        result.append((spectralDim + 1)).append(sep);
+        result.append((iComp + 1)).append(sep);
+        result.append(STAR3.valueOf(comp.getOffset())).append(sep);
+        result.append(".").append(sep);
+        result.append(STAR3.valueOf(comp.getIntensity())).append(sep);
+        result.append(".").append(sep);
+        result.append(STAR3.valueOf(comp.getVolume())).append(sep);
+        result.append(".").append(sep);
+        result.append(STAR3.valueOf(comp.getLineWidth())).append(sep);
+        result.append(".");
+
+        return result.toString();
+    }
+
+    public String toSTAR3LoopMultipletCharString(int contributionID, CouplingPattern coupling, int iComp, int index) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        char stringQuote = '"';
+        result.append(index).append(sep);
+        result.append(getPeak().getIdNum()).append(sep);
+        result.append((spectralDim + 1)).append(sep);
+        result.append((iComp + 1)).append(sep);
+        result.append(CouplingPattern.toCouplingChar(coupling.getNValue(iComp))).append(sep);
+        result.append(STAR3.valueOf(coupling.getValueAt(iComp))).append(sep);
+        result.append(".").append(sep);
+        result.append(STAR3.valueOf(coupling.getSin2Theta(iComp))).append(sep);
+        result.append(".").append(sep);
+        result.append(STAR3.valueOf(coupling.getIntensity())).append(sep);
+        result.append(".").append(sep);
+        result.append(".");
+        return result.toString();
+    }
+
     String toNEFString(int contributionID) {
         StringBuilder result = new StringBuilder();
         String sep = " ";
