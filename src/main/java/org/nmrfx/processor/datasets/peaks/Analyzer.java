@@ -501,12 +501,14 @@ public class Analyzer {
 
     public static Optional<DatasetRegion> getRegion(Set<DatasetRegion> dRegions, int rDim, double shift) {
         Optional<DatasetRegion> found = Optional.empty();
-        for (DatasetRegion region : dRegions) {
-            double start = region.getRegionStart(rDim);
-            double end = region.getRegionEnd(rDim);
-            if ((start < shift) && (end >= shift)) {
-                found = Optional.of(region);
-                break;
+        if (dRegions != null) {
+            for (DatasetRegion region : dRegions) {
+                double start = region.getRegionStart(rDim);
+                double end = region.getRegionEnd(rDim);
+                if ((start < shift) && (end >= shift)) {
+                    found = Optional.of(region);
+                    break;
+                }
             }
         }
         return found;
