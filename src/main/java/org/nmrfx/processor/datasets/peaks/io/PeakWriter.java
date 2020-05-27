@@ -20,12 +20,20 @@ package org.nmrfx.processor.datasets.peaks.io;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
 import java.util.Map;
+import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
+import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
+import org.nmrfx.processor.datasets.peaks.Coupling;
+import org.nmrfx.processor.datasets.peaks.CouplingPattern;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
+import org.nmrfx.processor.datasets.peaks.Multiplet;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.RelMultipletComponent;
 import org.nmrfx.processor.datasets.peaks.Resonance;
+import org.nmrfx.processor.datasets.peaks.Singlet;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
 
 /**
@@ -399,6 +407,66 @@ public class PeakWriter {
             }
         }
         chan.write("stop_\n");
+        chan.write("\n");
+        loopStrings = Peak.getSTAR3ComplexCouplingStrings();
+        chan.write("loop_\n");
+        for (String loopString : loopStrings) {
+            chan.write(loopString + "\n");
+        }
+        chan.write("\n");
+        int index = 1;
+        for (int i = 0; i < nPeaks; i++) {
+            Peak peak = peakList.getPeak(i);
+            if (peak == null) {
+                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+            }
+            PeakDim[] peakDims = peak.getPeakDims();
+            for (PeakDim peakDim : peakDims) {
+                Multiplet multiplet = peakDim.getMultiplet();
+                if (multiplet != null) {
+                    Coupling coupling = multiplet.getCoupling();
+                    if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
+                        List<String> values = peakDim.toSTAR3ComplexCouplingString(index);
+                        for (String value : values) {
+                            chan.write(value);
+                            chan.write('\n');
+                            index++;
+                        }
+                    }
+                }
+            }
+        }
+        chan.write("stop_\n");
+        loopStrings = Peak.getSTAR3CouplingPatternStrings();
+        chan.write("loop_\n");
+        for (String loopString : loopStrings) {
+            chan.write(loopString + "\n");
+        }
+        chan.write("\n");
+        index = 1;
+        for (int i = 0; i < nPeaks; i++) {
+            Peak peak = peakList.getPeak(i);
+            if (peak == null) {
+                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+            }
+            PeakDim[] peakDims = peak.getPeakDims();
+            for (PeakDim peakDim : peakDims) {
+                Multiplet multiplet = peakDim.getMultiplet();
+                if (multiplet != null) {
+                    Coupling coupling = multiplet.getCoupling();
+                    if ((coupling != null) && (coupling instanceof CouplingPattern)) {
+                        List<String> values = peakDim.toSTAR3CouplingPatternString(index);
+                        for (String value : values) {
+                            chan.write(value);
+                            chan.write('\n');
+                            index++;
+                        }
+                    }
+                }
+            }
+        }
+        chan.write("stop_\n");
+
         chan.write("\nsave_\n\n");
     }
 

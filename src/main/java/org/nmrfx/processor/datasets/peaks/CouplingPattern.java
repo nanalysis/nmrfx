@@ -67,6 +67,23 @@ public class CouplingPattern extends Coupling {
         // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
     }
 
+    public CouplingPattern(final Multiplet multiplet, final List<Double> values, final List<String> types,  final List<Double> sin2thetas, final double intensity) {
+        this.multiplet = multiplet;
+
+        couplingItems = new CouplingItem[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+            double sin2theta = 0.0;
+            if (i < sin2thetas.size()) {
+                sin2theta = sin2thetas.get(i);
+            }
+            int nSplits = COUPLING_CHARS.indexOf(types.get(i)) + 1;
+            couplingItems[i] = new CouplingItem(values.get(i), sin2theta, nSplits);
+        }
+        this.intensity = intensity;
+        multiplet.setIntensity(intensity);
+        // fixme  should count lines and make sure values.length, n.length and intensities.length are appropriate
+    }
+
     @Override
     public String getMultiplicity() {
         StringBuilder sBuilder = new StringBuilder();
@@ -79,6 +96,10 @@ public class CouplingPattern extends Coupling {
             }
         }
         return sBuilder.toString();
+    }
+
+    public static char toCouplingChar(int nSplits) {
+        return COUPLING_CHARS.charAt(nSplits - 1);
     }
 
     @Override

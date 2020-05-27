@@ -65,6 +65,34 @@ public class Peak implements Comparable, PeakOrMulti {
         "_Peak_char.Detail",
         "_Peak_char.Coupling_detail",
         "_Peak_char.Frozen"};
+
+    static String peakComplexCouplingStrings[] = {
+        "_Peak_complex_multiplet.ID",
+        "_Peak_complex_multiplet.Peak_ID",
+        "_Peak_complex_multiplet.Spectral_dim_ID",
+        "_Peak_complex_multiplet.Multiplet_component_ID",
+        "_Peak_complex_multiplet.Offset_val",
+        "_Peak_complex_multiplet.Offset_val_err",
+        "_Peak_complex_multiplet.Intensity_val",
+        "_Peak_complex_multiplet.Intensity_val_err",
+        "_Peak_complex_multiplet.Volume_val",
+        "_Peak_complex_multiplet.Volume_val_err",
+        "_Peak_complex_multiplet.Line_width_val",
+        "_Peak_complex_multiplet.Line_width_val_err"};
+    static String peakCouplingPatternStrings[] = {
+        "_Peak_coupling.ID",
+        "_Peak_coupling.Peak_ID",
+        "_Peak_coupling.Spectral_dim_ID",
+        "_Peak_coupling.Multiplet_component_ID",
+        "_Peak_coupling.Type",
+        "_Peak_coupling.Coupling_val",
+        "_Peak_coupling.Coupling_val_err",
+        "_Peak_coupling.Sin2theta_val",
+        "_Peak_coupling.Sin2theta_val_err",
+        "_Peak_coupling.Intensity_val",
+        "_Peak_coupling.Intensity_val_err",
+        "_Peak_coupling.Coupling_partner_peak_ID"
+    };
     static final public int NFLAGS = 16;
     static final public int COMPOUND = 1;
     static final public int MINOR = 2;
@@ -413,6 +441,14 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public static String[] getSTAR3CharStrings() {
         return peakCharStrings;
+    }
+
+    public static String[] getSTAR3ComplexCouplingStrings() {
+        return peakComplexCouplingStrings;
+    }
+
+    public static String[] getSTAR3CouplingPatternStrings() {
+        return peakCouplingPatternStrings;
     }
 
     public static String[] getPeakTypes() {
