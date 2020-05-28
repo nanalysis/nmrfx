@@ -770,6 +770,7 @@ public class NMRStarReader {
         String dataFormat = saveframe.getOptionalValue("_Spectral_peak_list", "Text_data_format");
         String details = saveframe.getOptionalValue("_Spectral_peak_list", "Details");
         String slidable = saveframe.getOptionalValue("_Spectral_peak_list", "Slidable");
+        String scaleStr = saveframe.getOptionalValue("_Spectral_peak_list", "Scale");
 
         if (dataFormat.equals("text")) {
             System.out.println("Aaaack, peak list is in text format, skipping list");
@@ -796,6 +797,9 @@ public class NMRStarReader {
         peakList.setDatasetName(datasetName);
         peakList.setDetails(details);
         peakList.setSlideable(slidable.equals("yes"));
+        if (scaleStr.length() > 0) {
+            peakList.setScale(NvUtil.toDouble(scaleStr));
+        }
 
         for (int i = 0; i < nSpectralDim; i++) {
             SpectralDim sDim = peakList.getSpectralDim(i);
