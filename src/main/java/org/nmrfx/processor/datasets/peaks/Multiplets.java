@@ -340,13 +340,16 @@ public class Multiplets {
 //        Multiplet multiplet = getMultiplet(mSpec);
 //        convertMultiplicity(multiplet, multOrig, multNew);
 //    }
-    public static void splitToMultiplicity(Multiplet multiplet, String couplingType) {
-        List<AbsMultipletComponent> comps = getSortedMultipletPeaks(multiplet, "1.P");
-        double width = comps.get(0).getLineWidth() * multiplet.getPeakList().getSpectralDim(0).getSf();
-        int nNew = "sdtqphsp".indexOf(couplingType);
-        double jValue = width / (nNew + 1);
-        Coupling oldCoupling = multiplet.getCoupling();
-        addCoupling(multiplet, oldCoupling, couplingType, jValue);
+    public static void splitToMultiplicity(Multiplet multiplet, String fullCouplingType) {
+        for (int i = 0; i < fullCouplingType.length(); i++) {
+            String couplingType = fullCouplingType.substring(i, i + 1);
+            List<AbsMultipletComponent> comps = getSortedMultipletPeaks(multiplet, "1.P");
+            double width = comps.get(0).getLineWidth() * multiplet.getPeakList().getSpectralDim(0).getSf();
+            int nNew = "sdtqphsp".indexOf(couplingType);
+            double jValue = width / (nNew + 1);
+            Coupling oldCoupling = multiplet.getCoupling();
+            addCoupling(multiplet, oldCoupling, couplingType, jValue);
+        }
     }
 
     public static void setCouplingPattern(Multiplet multiplet, String multNew) {
@@ -387,9 +390,9 @@ public class Multiplets {
         if (newLen == 0) {
             return;
         }
-        if (multNew.equals("m")) {
-            // multiplet.setCouplingValues("0.0");
-        } else if (multNew.equals("s")) {
+        if (multNew.charAt(0) == 'm') {
+            multiplet.setGenericMultiplet();
+        } else if (multNew.charAt(0) == 's') {
             if (multOrig.equals("d")) {
                 removeSplittingInMultiplet(multiplet, "d");
             } else {
