@@ -272,6 +272,8 @@ public class PeakDim {
                 result.append(multiplet.getCouplingsAsString()); // fixme only quote if more than one
                 result.append(stringQuote);
             }
+        } else {
+            result.append(".");
         }
         result.append(sep);
         result.append(isFrozen() ? "1" : "0");
