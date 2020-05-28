@@ -63,6 +63,7 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.Singlet;
 import org.nmrfx.processor.gui.annotations.AnnoJournalFormat;
+import org.nmrfx.processor.gui.controls.ConsoleUtil;
 import org.nmrfx.processor.gui.molecule.CanvasMolecule;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
@@ -1033,6 +1034,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     private void couplingChanged() {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             StringBuilder sBuilder = new StringBuilder();
             for (ChoiceBox<String> choice : patternChoices) {
@@ -1205,9 +1207,10 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
 
     @Override
     public void peakListChanged(PeakEvent peakEvent) {
-        if (journalCheckBox.isSelected()) {
-            showJournalFormatOnChart();
-        }
+        ConsoleUtil.runOnFxThread(() -> {
+            if (journalCheckBox.isSelected()) {
+                showJournalFormatOnChart();
+            }
+        });
     }
-
 }
