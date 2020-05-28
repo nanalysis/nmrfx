@@ -306,6 +306,8 @@ public class PeakWriter {
         chan.write("_Spectral_peak_list.Slidable                      ");
         String slidable = peakList.isSlideable() ? "yes" : "no";
         chan.write(slidable + "\n");
+        chan.write("_Spectral_peak_list.Scale ");
+        chan.write(String.valueOf(peakList.getScale()) + "\n");
 
         chan.write("_Spectral_peak_list.Experiment_ID                 ");
         chan.write(".\n");
