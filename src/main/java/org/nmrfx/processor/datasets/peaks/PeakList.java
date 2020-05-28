@@ -353,6 +353,13 @@ public class PeakList {
 
     /**
      *
+     */
+    public void setScale(double scale) {
+        this.scale = scale;
+    }
+
+    /**
+     *
      * @param sampleLabel
      */
     public void setSampleLabel(String sampleLabel) {
@@ -718,7 +725,7 @@ public class PeakList {
             Peak peak = peaks.get(i);
             peak.setIdNum(i);
         }
-        idLast=peaks.size()-1;
+        idLast = peaks.size() - 1;
         reIndex();
     }
 
