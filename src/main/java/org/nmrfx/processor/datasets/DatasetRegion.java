@@ -1,8 +1,14 @@
 package org.nmrfx.processor.datasets;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -16,6 +22,132 @@ public class DatasetRegion implements Comparator, Comparable {
     double min;
     double max;
     boolean isAuto = true;
+
+    public static TreeSet<DatasetRegion> loadRegions(File file) throws IOException {
+        List<String> lines = Files.readAllLines(file.toPath());
+        boolean firstLine = true;
+        TreeSet<DatasetRegion> regions = new TreeSet<>();
+        int nDim = 0;
+        for (String line : lines) {
+            line = line.trim();
+            if (line.length() > 0) {
+                String[] fields = line.split("\t");
+                if (firstLine) {
+                    int nPos = 0;
+                    for (String field : fields) {
+                        if (field.startsWith("pos")) {
+                            nPos++;
+                        } else {
+                            break;
+                        }
+                    }
+                    nDim = nPos / 2;
+                    firstLine = false;
+
+                } else {
+                    double[] x = new double[nDim * 2];
+                    double[] startIntensity = new double[nDim];
+                    double[] endIntensity = new double[nDim];
+                    int k = 0;
+                    for (int i = 0; i < nDim; i++) {
+                        for (int j = 0; j < 2; j++) {
+                            x[k] = Double.parseDouble(fields[k]);
+                            k++;
+                        }
+                    }
+                    for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
+                        startIntensity[i] = Double.parseDouble(fields[k++]);
+                    }
+                    for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
+                        endIntensity[i] = Double.parseDouble(fields[k++]);
+                    }
+                    DatasetRegion region = new DatasetRegion(x, startIntensity, endIntensity);
+                    region.setIntegral(Double.parseDouble(fields[k++]));
+                    region.setMin(Double.parseDouble(fields[k++]));
+                    region.setMax(Double.parseDouble(fields[k++]));
+                    region.setAuto(fields[k].equals("1"));
+                    regions.add(region);
+                }
+            }
+
+        }
+        return regions;
+    }
+
+    public static void saveRegions(File file, TreeSet<DatasetRegion> regions) {
+        if (regions != null) {
+            try (FileWriter writer = new FileWriter(file)) {
+                boolean firstLine = true;
+                for (DatasetRegion region : regions) {
+                    if (firstLine) {
+                        writer.write(region.getHeader());
+                        firstLine = false;
+                    }
+                    writer.write('\n');
+                    writer.write(region.toString());
+                }
+
+            } catch (IOException ioE) {
+            }
+        } else {
+            if (file.canWrite()) {
+                file.delete();
+            }
+        }
+    }
+
+    public static File getRegionFile(String fileName) {
+        int len = fileName.length();
+        String parFileName;
+        int extLen = 0;
+        if (fileName.endsWith(".nv")) {
+            extLen = 3;
+        } else if (fileName.endsWith(".ucsf")) {
+            extLen = 5;
+        }
+        parFileName = fileName.substring(0, len - extLen) + "_regions.txt";
+        return new File(parFileName);
+    }
+
+    public String getHeader() {
+        char sepChar = '\t';
+        StringBuilder sBuilder = new StringBuilder();
+        int nDim = x.length / 2;
+        for (int i = 0; i < nDim; i++) {
+            for (int j = 0; j < 2; j++) {
+                sBuilder.append("pos").append(j).append('_').append(i).append(sepChar);
+            }
+        }
+        for (int i = 0; i < Math.pow(2, nDim - 1); i++) {
+            for (int j = 0; j < 2; j++) {
+                sBuilder.append("int").append(j).append('_').append(i).append(sepChar);
+            }
+        }
+        sBuilder.append("integral").append(sepChar);
+        sBuilder.append("min").append(sepChar);
+        sBuilder.append("max").append(sepChar);
+        sBuilder.append("auto");
+        return sBuilder.toString();
+    }
+
+    public String toString() {
+        char sepChar = '\t';
+        StringBuilder sBuilder = new StringBuilder();
+        for (double value : x) {
+            sBuilder.append(value).append(sepChar);
+        }
+        for (double value : startIntensity) {
+            sBuilder.append(value).append(sepChar);
+        }
+        for (double value : endIntensity) {
+            sBuilder.append(value).append(sepChar);
+        }
+        sBuilder.append(integral).append(sepChar);
+        sBuilder.append(min).append(sepChar);
+        sBuilder.append(max).append(sepChar);
+        sBuilder.append(isAuto ? 1 : 0);
+        return sBuilder.toString();
+    }
 
     public DatasetRegion() {
         x = null;
@@ -60,6 +192,13 @@ public class DatasetRegion implements Comparator, Comparable {
             startIntensity[i / 2] = newIntensities[2 * i];
             endIntensity[i / 2] = newIntensities[2 * i + 1];
         }
+        sortEachDim();
+    }
+
+    public DatasetRegion(final double[] newRegion, final double[] startIntensity, final double[] endIntensity) {
+        x = newRegion.clone();
+        this.startIntensity = startIntensity.clone();
+        this.endIntensity = endIntensity.clone();
         sortEachDim();
     }
 
@@ -134,16 +273,6 @@ public class DatasetRegion implements Comparator, Comparable {
             throw new IllegalArgumentException("Invalid dimension");
         }
         endIntensity[dim * 2] = value;
-    }
-
-    @Override
-    public String toString() {
-        if (x == null) {
-            return "";
-        } else {
-            // fixme only works for x.length = 2;
-            return x[0] + " " + x[1];
-        }
     }
 
     @Override
