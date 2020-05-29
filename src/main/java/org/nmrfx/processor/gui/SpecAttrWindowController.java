@@ -234,26 +234,30 @@ public class SpecAttrWindowController implements Initializable {
 
     public class ParSliderListener implements ChangeListener<Number> {
 
+        boolean active = true;
+
         @Override
         public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-            List<DatasetAttributes> dataAttrs = datasetTableView.getSelectionModel().getSelectedItems();
-            if (dataAttrs.isEmpty()) {
-                dataAttrs = datasetTableView.getItems();
-            }
-            String mode = datasetTableParChoice.getValue();
-            for (DatasetAttributes dataAttr : dataAttrs) {
-                if (mode.equals("offset")) {
-                    dataAttr.setOffset(newValue.doubleValue());
-                } else if (mode.equals("lvl")) {
-                    dataAttr.setLvl(newValue.doubleValue());
-                } else if (mode.equals("clm")) {
-                    dataAttr.setClm(newValue.doubleValue());
-                } else if (mode.equals("nlvl")) {
-                    dataAttr.setNlvls(newValue.intValue());
+            if (active) {
+                List<DatasetAttributes> dataAttrs = datasetTableView.getSelectionModel().getSelectedItems();
+                if (dataAttrs.isEmpty()) {
+                    dataAttrs = datasetTableView.getItems();
                 }
+                String mode = datasetTableParChoice.getValue();
+                for (DatasetAttributes dataAttr : dataAttrs) {
+                    if (mode.equals("offset")) {
+                        dataAttr.setOffset(newValue.doubleValue());
+                    } else if (mode.equals("lvl")) {
+                        dataAttr.setLvl(newValue.doubleValue());
+                    } else if (mode.equals("clm")) {
+                        dataAttr.setClm(newValue.doubleValue());
+                    } else if (mode.equals("nlvl")) {
+                        dataAttr.setNlvls(newValue.intValue());
+                    }
+                }
+                datasetTableView.refresh();
+                chart.refresh();
             }
-            datasetTableView.refresh();
-            chart.refresh();
         }
 
     }
@@ -772,6 +776,7 @@ public class SpecAttrWindowController implements Initializable {
     }
 
     void updateParSlider() {
+        parSliderListener.active = false;
         String type = datasetTableParChoice.getValue();
         datasetPane.setBottom(datasetTableParHBox);
         List<DatasetAttributes> dataAttrs = datasetTableView.getSelectionModel().getSelectedItems();
@@ -817,6 +822,7 @@ public class SpecAttrWindowController implements Initializable {
             datasetTableParSlider.setBlockIncrement(incrValue);
             datasetTableParSlider.setValue(value);
         }
+        parSliderListener.active = true;
     }
 
     void datasetSelectionChanged() {
