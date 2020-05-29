@@ -39,6 +39,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.util.*;
+import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
 import org.nmrfx.processor.datasets.peaks.ComplexCoupling;
 import org.nmrfx.processor.datasets.peaks.CouplingPattern;
 import org.nmrfx.processor.datasets.peaks.Multiplet;
@@ -1050,7 +1051,7 @@ public class NMRStarReader {
                 List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
                 List<Integer> compIDColumn = loop.getColumnAsIntegerList("Multiplet_component_ID", null);
                 List<Double> couplingColumn = loop.getColumnAsDoubleList("Coupling_val", null);
-                List<Double> sin2ThetaColumn = loop.getColumnAsDoubleList("Sin2theta_val", null);
+                List<Double> strongCouplingColumn = loop.getColumnAsDoubleList("Strong_coupling_effect_val", null);
                 List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
                 List<String> couplingTypeColumn = loop.getColumnAsList("Type");
                 int from = 0;
@@ -1067,7 +1068,7 @@ public class NMRStarReader {
                         CouplingPattern couplingPattern = new CouplingPattern(multiplet,
                                 couplingColumn.subList(from, to),
                                 couplingTypeColumn.subList(from, to),
-                                sin2ThetaColumn.subList(from, to),
+                                strongCouplingColumn.subList(from, to),
                                 intensityColumn.get(from)
                         );
                         multiplet.setCoupling(couplingPattern);
@@ -1075,39 +1076,78 @@ public class NMRStarReader {
                     }
                 }
             }
-            loop = saveframe.getLoop("_Peak_complex_multiplet");
+            processTransitions(saveframe, peakList);
+        }
+    }
+
+    void processTransitions(Saveframe saveframe, PeakList peakList) throws ParseException {
+        Loop loop = saveframe.getLoop("_Spectral_transition");
+        if (loop != null) {
+            List<Integer> idColumn = loop.getColumnAsIntegerList("ID", null);
+            List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+            List<Double> fomColumn = loop.getColumnAsDoubleList("Figure_of_merit", null);
+
+            for (int i = 0, n = idColumn.size(); i < n; i++) {
+                int idNum = idColumn.get(i);
+                int peakIdNum = peakIdColumn.get(i);
+                Peak peak = peakList.getPeakByID(peakIdNum);
+                peak.setIdNum(idNum);
+            }
+            loop = saveframe.getLoop("_Spectral_transition_general_char");
+
             if (loop != null) {
-                List<Integer> peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
-                List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
-                List<Integer> compIDColumn = loop.getColumnAsIntegerList("Multiplet_component_ID", null);
-                List<Double> offsetColumn = loop.getColumnAsDoubleList("Offset_val", null);
+                Map<Integer, Double> intMap = new HashMap<>();
+                Map<Integer, Double> volMap = new HashMap<>();
+                idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
+                peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
                 List<Double> intensityColumn = loop.getColumnAsDoubleList("Intensity_val", null);
-                List<Double> volumeColumn = loop.getColumnAsDoubleList("Volume_val", null);
-                List<Double> lineWidthColumn = loop.getColumnAsDoubleList("Line_width_val", null);
-                List<Integer> couplingTypeColumn = loop.getColumnAsIntegerList("Type", null);
-                int from = 0;
-                int to = 0;
-                for (int i = 0; i < peakIdColumn.size(); i++) {
-                    int currentID = peakIdColumn.get(from);
-                    int currentDim = sdimColumn.get(i) - 1;
-                    if ((i == (peakIdColumn.size() - 1))
-                            || (peakIdColumn.get(i + 1) != currentID)
-                            || (sdimColumn.get(i + 1) - 1 != currentDim)) {
+                List<String> methodColumn = loop.getColumnAsList("Measurement_method");
+
+                for (int i = 0, n = idColumn.size(); i < n; i++) {
+                    int idNum = idColumn.get(i);
+                    Double value = intensityColumn.get(i);
+                    if (value != null) {
+                        String mode = methodColumn.get(i);
+                        if (mode.equals("height")) {
+                            intMap.put(idNum, value);
+                        } else {
+                            volMap.put(idNum, value);
+                        }
+                    }
+
+                }
+
+                loop = saveframe.getLoop("_Spectral_transition_char");
+                if (loop != null) {
+                    idColumn = loop.getColumnAsIntegerList("Spectral_transition_ID", null);
+                    peakIdColumn = loop.getColumnAsIntegerList("Peak_ID", null);
+                    List<Double> shiftColumn = loop.getColumnAsDoubleList("Chem_shift_val", null);
+                    List<Double> lwColumn = loop.getColumnAsDoubleList("Line_width_val", null);
+                    List<Integer> sdimColumn = loop.getColumnAsIntegerList("Spectral_dim_ID", null);
+
+                    List<AbsMultipletComponent> comps = new ArrayList<>();
+                    for (int i = 0; i < peakIdColumn.size(); i++) {
+                        int currentID = peakIdColumn.get(i);
+                        int transID = idColumn.get(i);
+                        int currentDim = sdimColumn.get(i) - 1;
+                        double sf = peakList.getSpectralDim(currentDim).getSf();
                         Peak peak = peakList.getPeakByID(currentID);
-                        to = i + 1;
                         Multiplet multiplet = peak.getPeakDim(currentDim).getMultiplet();
-                        ComplexCoupling complexCoupling = new ComplexCoupling(multiplet,
-                                offsetColumn.subList(from, to),
-                                intensityColumn.subList(from, to),
-                                volumeColumn.subList(from, to),
-                                lineWidthColumn.subList(from, to));
-                        multiplet.setCoupling(complexCoupling);
-                        from = to;
+                        AbsMultipletComponent comp = new AbsMultipletComponent(
+                                multiplet, shiftColumn.get(i), intMap.get(transID), volMap.get(transID), lwColumn.get(i) / sf);
+                        comps.add(comp);
+                        if ((i == (peakIdColumn.size() - 1))
+                                || (peakIdColumn.get(i + 1) != currentID)
+                                || (sdimColumn.get(i + 1) - 1 != currentDim)) {
+                            ComplexCoupling complexCoupling = new ComplexCoupling(multiplet, comps);
+                            multiplet.setCoupling(complexCoupling);
+                            comps.clear();
+                        }
                     }
                 }
             }
-
         }
+
     }
 
     public void processChemicalShifts(Saveframe saveframe, int ppmSet) throws ParseException {
