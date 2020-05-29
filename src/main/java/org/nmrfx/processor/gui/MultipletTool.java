@@ -513,6 +513,12 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
         getAnalyzer();
         if (analyzer != null) {
             analyzer.peakPickRegions();
+            analyzer.renumber();
+            analyzer.setVolumesFromIntegrals();
+            try {
+                analyzer.fitRegions();
+            } catch (Exception ex) {
+            }
             PeakList peakList = analyzer.getPeakList();
             List<String> peakListNames = new ArrayList<>();
             peakListNames.add(peakList.getName());
