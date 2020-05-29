@@ -446,20 +446,27 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void getAnalyzer() {
+        Dataset dataset = chart.getDataset();
+        PeakList activePeaklist = null;
+        if (!chart.getPeakListAttributes().isEmpty()) {
+            activePeaklist = chart.getPeakListAttributes().get(0).getPeakList();
+        }
         if (analyzer == null) {
-            chart = PolyChart.getActiveChart();
-            Dataset dataset = chart.getDataset();
             if ((dataset == null) || (dataset.getNDim() > 1)) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setContentText("Chart must have a 1D dataset");
                 alert.showAndWait();
                 analyzer = null;
+                return;
             }
             analyzer = new Analyzer(dataset);
-            if (!chart.getPeakListAttributes().isEmpty()) {
-                PeakList peakList = chart.getPeakListAttributes().get(0).getPeakList();
-                analyzer.setPeakList(peakList);
+        } else {
+            if (analyzer.getDataset() != dataset) {
+                analyzer = new Analyzer(dataset);
             }
+        }
+        if (activePeaklist != null) {
+            analyzer.setPeakList(activePeaklist);
         }
     }
 
@@ -562,6 +569,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void initMultiplet() {
+        getAnalyzer();
         if (!gotoSelectedMultiplet()) {
             List<Peak> peaks = getPeaks();
             if (!peaks.isEmpty()) {
@@ -573,6 +581,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public boolean gotoSelectedMultiplet() {
+        getAnalyzer();
         boolean result = false;
         List<MultipletSelection> multiplets = chart.getSelectedMultiplets();
         if (!multiplets.isEmpty()) {
@@ -599,6 +608,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     void updateMultipletField(boolean resetView) {
+        getAnalyzer();
         if (activeMultiplet.isPresent()) {
             Multiplet multiplet = activeMultiplet.get();
             multipletIdField.setText(String.valueOf(multiplet.getIDNum()));
@@ -624,6 +634,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     void setPeakType() {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             String peakType = peakTypeChoice.getValue();
             m.getOrigin().setType(Peak.getType(peakType));
@@ -868,6 +879,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void removeRegion() {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             int id = m.getIDNum();
             double ppm = m.getCenter();
@@ -887,6 +899,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void objectiveDeconvolution() {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             analyzer.objectiveDeconvolution(m);
             chart.refresh();
@@ -895,6 +908,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void addAuto() {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             Optional<Double> result = Multiplets.deviation(m);
             if (result.isPresent()) {
@@ -919,6 +933,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void addPeaks(boolean both) {
+        getAnalyzer();
         activeMultiplet.ifPresent(m -> {
             double ppm1 = chart.getVerticalCrosshairPositions()[0];
             double ppm2 = chart.getVerticalCrosshairPositions()[1];
@@ -1195,6 +1210,7 @@ public class MultipletTool implements SetChangeListener<MultipletSelection>, Con
     }
 
     public void removeJournalFormatOnChart() {
+        getAnalyzer();
         PeakList peakList = analyzer.getPeakList();
         if (peakList != null) {
             peakList.removeListener(this);
