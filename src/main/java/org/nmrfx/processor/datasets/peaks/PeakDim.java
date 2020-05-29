@@ -281,6 +281,59 @@ public class PeakDim {
         return result.toString();
     }
 
+    /*
+        static String spectralTransitionCharStrings[] = {
+        "_Spectral_transition_char.Bounding_box_val",
+        "_Spectral_transition_char.Bounding_box_val_err",
+        "_Spectral_transition_char.Line_width_val",
+        "_Spectral_transition_char.Line_width_val_err",
+        "_Spectral_transition_char.Phase_val",
+        "_Spectral_transition_char.Phase_val_err",
+        "_Spectral_transition_char.Decay_rate_val",
+        "_Spectral_transition_char.Decay_rate_val_err",
+        "_Spectral_transition_char.Derivation_method_ID",};
+
+     */
+    public String toSTAR3LoopSpectralTransitionCharString(AbsMultipletComponent comp, int specTransID) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        double sf = getSpectralDimObj().getSf();
+        result.append(specTransID).append(sep);
+        result.append(getPeak().getIdNum()).append(sep);
+        result.append((spectralDim + 1)).append(sep);
+        result.append(comp.offset).append(sep).append(".").append(sep);
+        result.append(".").append(sep).append(".").append(sep);
+        result.append(comp.lineWidth * sf).append(sep).append(".").append(sep);
+        result.append(".").append(sep).append(".").append(sep);
+        result.append(".").append(sep).append(".").append(sep);
+        result.append(".");
+        return result.toString();
+    }
+
+    /*
+            "_Spectral_transition_char.Spectral_transition_ID",
+        "_Spectral_transition_general_char.Peak_ID",
+        "_Spectral_transition_general_char.Intensity_val",
+        "_Spectral_transition_general_char.Intensity_val_err",
+        "_Spectral_transition_general_char.Measurement_method",};
+
+     */
+    public String toSTAR3LoopSpectralTransitionGeneralCharString(AbsMultipletComponent comp, int specTransID, boolean intensityMode) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        result.append(specTransID).append(sep);
+        result.append(getPeak().getIdNum()).append(sep);
+        if (intensityMode) {
+            result.append(comp.intensity).append(sep).append(".").append(sep);
+            result.append("height");
+        } else {
+            result.append(comp.volume).append(sep).append(".").append(sep);
+            result.append("volume");
+
+        }
+        return result.toString();
+    }
+
     public List<String> toSTAR3ComplexCouplingString(int index) {
         List<String> values = new ArrayList<>();
         Multiplet multiplet = getMultiplet();

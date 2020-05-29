@@ -410,12 +410,14 @@ public class PeakWriter {
         }
         chan.write("stop_\n");
         chan.write("\n");
-        loopStrings = Peak.getSTAR3ComplexCouplingStrings();
+
+        loopStrings = Peak.getSTAR3SpectralTransitionStrings();
         chan.write("loop_\n");
         for (String loopString : loopStrings) {
             chan.write(loopString + "\n");
         }
         chan.write("\n");
+
         int index = 1;
         for (int i = 0; i < nPeaks; i++) {
             Peak peak = peakList.getPeak(i);
@@ -428,8 +430,40 @@ public class PeakWriter {
                 if (multiplet != null) {
                     Coupling coupling = multiplet.getCoupling();
                     if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
-                        List<String> values = peakDim.toSTAR3ComplexCouplingString(index);
-                        for (String value : values) {
+                        ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                        for (AbsMultipletComponent comp : complexCoupling.getAbsComponentList()) {
+                            String value = peak.toSTAR3LoopSpectralTransitionString(index++);
+                            chan.write(value);
+                            chan.write('\n');
+                        }
+                    }
+                }
+            }
+        }
+        chan.write("stop_\n");
+
+        loopStrings = Peak.getSTAR3SpectralTransitionCharStrings();
+        chan.write("loop_\n");
+        for (String loopString : loopStrings) {
+            chan.write(loopString + "\n");
+        }
+        chan.write("\n");
+
+        index = 1;
+        for (int i = 0; i < nPeaks; i++) {
+            Peak peak = peakList.getPeak(i);
+            if (peak == null) {
+                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+            }
+            PeakDim[] peakDims = peak.getPeakDims();
+            for (PeakDim peakDim : peakDims) {
+                Multiplet multiplet = peakDim.getMultiplet();
+                if (multiplet != null) {
+                    Coupling coupling = multiplet.getCoupling();
+                    if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
+                        ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                        for (AbsMultipletComponent comp : complexCoupling.getAbsComponentList()) {
+                            String value = peakDim.toSTAR3LoopSpectralTransitionCharString(comp, index);
                             chan.write(value);
                             chan.write('\n');
                             index++;
@@ -439,6 +473,44 @@ public class PeakWriter {
             }
         }
         chan.write("stop_\n");
+        chan.write("\n");
+
+        loopStrings = Peak.getSTAR3SpectralTransitionGeneralCharStrings();
+        chan.write("loop_\n");
+        for (String loopString : loopStrings) {
+            chan.write(loopString + "\n");
+        }
+        chan.write("\n");
+
+        index = 1;
+        for (int i = 0; i < nPeaks; i++) {
+            Peak peak = peakList.getPeak(i);
+            if (peak == null) {
+                throw new InvalidPeakException("PeakList.writePeaks: peak null at " + i);
+            }
+            PeakDim[] peakDims = peak.getPeakDims();
+            for (PeakDim peakDim : peakDims) {
+                Multiplet multiplet = peakDim.getMultiplet();
+                if (multiplet != null) {
+                    Coupling coupling = multiplet.getCoupling();
+                    if ((coupling != null) && (coupling instanceof ComplexCoupling)) {
+                        ComplexCoupling complexCoupling = (ComplexCoupling) coupling;
+                        for (AbsMultipletComponent comp : complexCoupling.getAbsComponentList()) {
+                            String value = peakDim.toSTAR3LoopSpectralTransitionGeneralCharString(comp, index, true);
+                            chan.write(value);
+                            chan.write('\n');
+                            value = peakDim.toSTAR3LoopSpectralTransitionGeneralCharString(comp, index, false);
+                            chan.write(value);
+                            chan.write('\n');
+                            index++;
+                        }
+                    }
+                }
+            }
+        }
+        chan.write("stop_\n");
+        chan.write("\n");
+
         loopStrings = Peak.getSTAR3CouplingPatternStrings();
         chan.write("loop_\n");
         for (String loopString : loopStrings) {

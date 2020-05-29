@@ -28,6 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.scene.paint.Color;
 import org.nmrfx.processor.datasets.RegionData;
+import org.nmrfx.processor.star.STAR3;
 import org.nmrfx.processor.utilities.ColorUtil;
 
 public class Peak implements Comparable, PeakOrMulti {
@@ -66,6 +67,35 @@ public class Peak implements Comparable, PeakOrMulti {
         "_Peak_char.Coupling_detail",
         "_Peak_char.Frozen"};
 
+    static String spectralTransitionStrings[] = {
+        "_Spectral_transition.ID",
+        "_Spectral_transition.Peak_ID",
+        "_Spectral_transition.Figure_of_merit",
+        "_Spectral_transition.Details",};
+
+    static String spectralTransitionGeneralCharStrings[] = {
+        "_Spectral_transition_general_char.Spectral_transition_ID",
+        "_Spectral_transition_general_char.Peak_ID",
+        "_Spectral_transition_general_char.Intensity_val",
+        "_Spectral_transition_general_char.Intensity_val_err",
+        "_Spectral_transition_general_char.Measurement_method",};
+
+    static String spectralTransitionCharStrings[] = {
+        "_Spectral_transition_char.Spectral_transition_ID",
+        "_Spectral_transition_char.Peak_ID",
+        "_Spectral_transition_char.Spectral_dim_ID",
+        "_Spectral_transition_char.Chem_shift_val",
+        "_Spectral_transition_char.Chem_shift_val_err",
+        "_Spectral_transition_char.Bounding_box_val",
+        "_Spectral_transition_char.Bounding_box_val_err",
+        "_Spectral_transition_char.Line_width_val",
+        "_Spectral_transition_char.Line_width_val_err",
+        "_Spectral_transition_char.Phase_val",
+        "_Spectral_transition_char.Phase_val_err",
+        "_Spectral_transition_char.Decay_rate_val",
+        "_Spectral_transition_char.Decay_rate_val_err",
+        "_Spectral_transition_char.Derivation_method_ID",};
+
     static String peakComplexCouplingStrings[] = {
         "_Peak_complex_multiplet.ID",
         "_Peak_complex_multiplet.Peak_ID",
@@ -87,11 +117,11 @@ public class Peak implements Comparable, PeakOrMulti {
         "_Peak_coupling.Type",
         "_Peak_coupling.Coupling_val",
         "_Peak_coupling.Coupling_val_err",
-        "_Peak_coupling.Sin2theta_val",
-        "_Peak_coupling.Sin2theta_val_err",
+        "_Peak_coupling.Strong_coupling_effect_val",
+        "_Peak_coupling.Strong_coupling_effect_err",
         "_Peak_coupling.Intensity_val",
         "_Peak_coupling.Intensity_val_err",
-        "_Peak_coupling.Coupling_partner_peak_ID"
+        "_Peak_coupling.Partner_Peak_coupling_ID"
     };
     static final public int NFLAGS = 16;
     static final public int COMPOUND = 1;
@@ -441,6 +471,18 @@ public class Peak implements Comparable, PeakOrMulti {
 
     public static String[] getSTAR3CharStrings() {
         return peakCharStrings;
+    }
+
+    public static String[] getSTAR3SpectralTransitionStrings() {
+        return spectralTransitionStrings;
+    }
+
+    public static String[] getSTAR3SpectralTransitionGeneralCharStrings() {
+        return spectralTransitionGeneralCharStrings;
+    }
+
+    public static String[] getSTAR3SpectralTransitionCharStrings() {
+        return spectralTransitionCharStrings;
     }
 
     public static String[] getSTAR3ComplexCouplingStrings() {
@@ -881,6 +923,17 @@ public class Peak implements Comparable, PeakOrMulti {
         result.append(stringQuote);
         result.append(String.valueOf(getCorner()));
         result.append(stringQuote);
+        return result.toString();
+    }
+
+    public String toSTAR3LoopSpectralTransitionString(int id) {
+        StringBuilder result = new StringBuilder();
+        String sep = " ";
+        char stringQuote = '"';
+        result.append(id).append(sep);
+        result.append(String.valueOf(getIdNum())).append(sep);
+        result.append(".").append(sep);
+        result.append(".");
         return result.toString();
     }
 
