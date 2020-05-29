@@ -1053,7 +1053,7 @@ public class DrawPeaks {
         double yText = y1 - deltaY;
         g2.setTextAlign(TextAlignment.CENTER);
         Bounds bounds = measureText(label, g2.getFont(), 0, x1, yText);
-        int nTries = 15;
+        int nTries = 10;
         boolean noOverlap = true;
         if (!lastTextBoxes.isEmpty()) {
             noOverlap = false;
@@ -1072,7 +1072,7 @@ public class DrawPeaks {
                     }
                 }
                 if (!ok) {
-                    yText -= deltaY;
+                    yText -= (1.5 * deltaY);
                 } else {
                     noOverlap = true;
                     break;
@@ -1539,34 +1539,36 @@ public class DrawPeaks {
         text.setFont(font);
         text.setTextAlignment(TextAlignment.CENTER);
         text.setTextOrigin(VPos.TOP);
+        // GUIUtils.getTextWidth(s, font);
         Bounds textBounds = text.getBoundsInLocal();
-        Rectangle stencil = new Rectangle(
-                textBounds.getMinX(), textBounds.getMinY(), textBounds.getWidth(), textBounds.getHeight()
-        );
-
-        Shape intersection = Shape.intersect(text, stencil);
-        Affine aT = new Affine();
-        aT.appendTranslation(x, y);
-        aT.appendRotation(angle);
-
-        Bounds trimBounds = intersection.getBoundsInLocal();
         Bounds useBounds;
         if (false) {
+            Rectangle stencil = new Rectangle(
+                    textBounds.getMinX(), textBounds.getMinY(), textBounds.getWidth(), textBounds.getHeight()
+            );
+            Shape intersection = Shape.intersect(text, stencil);
+            useBounds = intersection.getBoundsInLocal();
+        } else {
             useBounds = textBounds;
-        } else {
-            useBounds = trimBounds;
-        }
-        double xOffset = useBounds.getWidth() / 2.0;
-        double yOffset = textBounds.getHeight() - 3;
-        if (angle != 0.0) {
-            xOffset = -useBounds.getHeight() / 2.0;
-            yOffset = 0.0;
-        } else {
-            useBounds = new BoundingBox(useBounds.getMinX(), useBounds.getMinY() - useBounds.getHeight(), useBounds.getWidth(), useBounds.getHeight() * 1.2);
         }
 
-        Bounds trBds = aT.transform(useBounds);
-        Bounds ab = new BoundingBox(trBds.getMinX() - xOffset, trBds.getMinY() + yOffset, trBds.getWidth(), trBds.getHeight());
+        double xOffset = useBounds.getWidth() / 2.0;
+        double yOffset = textBounds.getHeight() - 3;
+        Bounds ab;
+        if (angle != 0.0) {
+            Affine aT = new Affine();
+            aT.appendTranslation(x, y);
+            aT.appendRotation(angle);
+            xOffset = -useBounds.getHeight() / 2.0;
+            yOffset = 0.0;
+            Bounds trBds = aT.transform(useBounds);
+            ab = new BoundingBox(trBds.getMinX() - xOffset, trBds.getMinY() + yOffset, trBds.getWidth(), trBds.getHeight());
+        } else {
+            ab = new BoundingBox(x + useBounds.getMinX() - xOffset,
+                    y + useBounds.getMinY() - useBounds.getHeight() + yOffset,
+                    useBounds.getWidth(),
+                    useBounds.getHeight() * 1.2);
+        }
 
         return ab;
     }
