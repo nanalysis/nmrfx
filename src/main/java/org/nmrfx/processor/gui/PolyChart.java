@@ -921,21 +921,20 @@ public class PolyChart implements PeakListener {
     }
 
     public void scaleY(double y) {
+        double factor = (y / 200.0 + 1.0);
+        if (factor > 2.0) {
+            factor = 2.0;
+        } else if (factor < 0.5) {
+            factor = 0.5;
+        }
+        final double scale = factor;
         datasetAttributesList.stream().forEach(dataAttr -> {
             Dataset dataset = dataAttr.getDataset();
             if (is1D()) {
-                double factor = y;
                 double oldLevel = dataAttr.getLvl();
-                double newLevel = oldLevel * factor;
-                dataAttr.setLvl(newLevel);
+                dataAttr.setLvl(oldLevel * scale);
                 setYAxisByLevel();
             } else if (dataset != null) {
-                double scale = (y / 100.0 + 1.0);
-                if (scale > 2.0) {
-                    scale = 2.0;
-                } else if (scale < 0.5) {
-                    scale = 0.5;
-                }
                 double oldLevel = dataAttr.getLvl();
                 dataAttr.setLvl(oldLevel * scale);
             }
