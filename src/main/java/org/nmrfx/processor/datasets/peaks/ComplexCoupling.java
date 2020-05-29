@@ -45,7 +45,7 @@ public class ComplexCoupling extends Coupling {
         return true;
     }
 
-    ComplexCoupling(final Multiplet multiplet, List<AbsMultipletComponent> absComponents) {
+    public ComplexCoupling(final Multiplet multiplet, List<AbsMultipletComponent> absComponents) {
         this.multiplet = multiplet;
         double sumpPPM = 0.0;
         double sumVolume = 0.0;
