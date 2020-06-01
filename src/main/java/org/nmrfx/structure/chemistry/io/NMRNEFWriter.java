@@ -17,20 +17,26 @@
  */
 package org.nmrfx.structure.chemistry.io;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.nmrfx.processor.datasets.peaks.InvalidPeakException;
 import org.nmrfx.processor.star.ParseException;
 import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.structure.chemistry.Compound;
 import org.nmrfx.structure.chemistry.Entity;
 import org.nmrfx.structure.chemistry.InvalidMoleculeException;
 import org.nmrfx.structure.chemistry.Molecule;
@@ -41,6 +47,7 @@ import org.nmrfx.structure.chemistry.energy.AtomDistancePair;
 import org.nmrfx.structure.chemistry.energy.Dihedral;
 import org.nmrfx.structure.chemistry.energy.DistancePair;
 import org.nmrfx.structure.chemistry.energy.EnergyLists;
+import org.nmrfx.structure.utilities.Util;
 
 /**
  *
@@ -98,13 +105,77 @@ public class NMRNEFWriter {
         chan.write("save_\n");
     }
 
+    static int checkPartnerInGroup(Atom atom, List<List<Atom>> partners, Set<String> pairNames, boolean first) {
+        int commonLevel = 0;
+        for (List<Atom> shellAtoms : partners) {
+            boolean shellSame = true;
+            for (Atom atom2 : shellAtoms) {
+                String pairName;
+                if (first) {
+                    pairName = atom2.getFullName() + "_" + atom.getFullName();
+                } else {
+                    pairName = atom.getFullName() + "_" + atom2.getFullName();
+
+                }
+                if (!pairNames.contains(pairName)) {
+                    shellSame = false;
+                    break;
+                }
+            }
+            if (shellSame) {
+                commonLevel++;
+            } else {
+                break;
+            }
+        }
+        return commonLevel;
+    }
+
+    static int checkPartnerShifts(Atom atom, List<List<Atom>> partners) {
+        int commonLevel = 0;
+        for (List<Atom> shellAtoms : partners) {
+            boolean shellSame = true;
+            for (Atom atom2 : shellAtoms) {
+                if (!Util.hasSameShift(atom, atom2)) {
+                    shellSame = false;
+                    break;
+                }
+            }
+            if (shellSame) {
+                commonLevel++;
+            } else {
+                break;
+            }
+        }
+        return commonLevel;
+    }
+
+    static boolean checkFirstPartner(Atom atom, List<List<Atom>> partners, int level) {
+        boolean isFirst = true;
+        for (int iLevel = 0; iLevel < level; iLevel++) {
+            List<Atom> shellAtoms = partners.get(iLevel);
+            boolean firstAtom = true;
+            for (Atom atom2 : shellAtoms) {
+                if (atom.getIndex() > atom2.getIndex()) {
+                    firstAtom = false;
+                    break;
+                }
+            }
+            if (!firstAtom) {
+                isFirst = false;
+                break;
+            }
+        }
+        return isFirst;
+    }
+
     static void writePPM(FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("\n");
-        chan.write("save_nef_chemical_shift_list_1pqx.mr\n"); //fixme dynamically get framecode
+        chan.write("save_nef_chemical_shift_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_chemical_shift_list.sf_category                ");
         chan.write("nef_chemical_shift_list\n");
         chan.write("    _nef_chemical_shift_list.sf_framecode               ");
-        chan.write("nef_chemical_shift_list_1pqx.mr\n"); //fixme dynamically get framecode
+        chan.write("nef_chemical_shift_list\n"); //fixme dynamically get framecode
         chan.write("\n");
 
         int i;
@@ -120,41 +191,67 @@ public class NMRNEFWriter {
         int iPPM = 0;
         i = 0;
         molecule.updateAtomArray();
-        Comparator<Atom> aCmp = (Atom atom1, Atom atom2) -> { //sort by chain code
-            int entityID1 = atom1.getTopEntity().entityID;
-            int entityID2 = atom2.getTopEntity().entityID;
-            int result = Integer.compare(entityID1, entityID2);
-            if (result == 0) { // sort by sequence code
-                entityID1 = atom1.getEntity().getIDNum();
-                entityID2 = atom2.getEntity().getIDNum();
-                result = Integer.compare(entityID1, entityID2);
-                if (result == 0) { // sort by atomic number
-                    int aNum1 = atom1.getAtomicNumber();
-                    int aNum2 = atom2.getAtomicNumber();
-                    result = Integer.compare(aNum1, aNum2);
-                    if (result == 0) { // sort by atom name
-                        result = atom1.getName().compareTo(atom2.getName());
+        List<Atom> atomArray = molecule.getAtomArray();
+        for (Atom atom : atomArray) {
+            boolean writeLine = true;
+            int collapse = atom.getStereo() == 0 ? 1 : 0;
+            int sameShift = 0;
+            Optional<Atom> methylPartnerOpt = Optional.empty();
+            Optional<Atom> partnerOpt = Optional.empty();
+            if (atom.isMethyl()) {
+                if (!atom.isFirstInMethyl()) {
+                    continue;
+                }
+                collapse = 0;
+                methylPartnerOpt = atom.getParent().getMethylCarbonPartner();
+                if (methylPartnerOpt.isPresent()) {
+                    if (atom.getParent().getStereo() == 0) {
+                        collapse = 1;
+                    }
+                }
+            } else if (atom.isMethylene()) {
+//                System.out.println(atom.getFullName() + " " + atom.getPartners(1).toString());
+                List<List<Atom>> partners = atom.getPartners(1);
+                sameShift = checkPartnerShifts(atom, partners);
+                if (sameShift > 0) {
+                    if (!checkFirstPartner(atom, partners, sameShift)) {
+                        continue;
+                    }
+                }
+                //partnerOpt = atom.getMethylenePartner();
+            } else {
+                // check for aromatic atoms
+                List<Object> equiv = atom.getEquivalency();
+                //   System.out.println(atom.getFullName());
+                if (equiv.size() > 3) {
+                    Object obj = equiv.get(2);
+                    int shell = (Integer) obj;
+                    if ((shell == 5) || (shell == 4) || (shell == 2)) { // fixme  aromatic HE aren't getting right shells
+                        List<String> names = (List<String>) equiv.get(3);
+                        if (names.size() == 1) {
+                            String partnerName = names.get(0);
+                            Compound compound = (Compound) atom.getEntity();
+                            Atom partnerAtom = compound.getAtom(partnerName);
+                            partnerOpt = Optional.of(partnerAtom);
+                        }
+                    }
+                }
+//                for (Object obj : equiv) {
+//                    System.out.println(obj.toString());
+//                }
+            }
+
+            if (partnerOpt.isPresent()) {
+                Atom partnerAtom = partnerOpt.get();
+                sameShift = Util.hasSameShift(atom, partnerAtom) ? 1 : 0;
+                if (sameShift > 0) {
+                    if (atom.getIndex() > partnerAtom.getIndex()) {
+                        continue;
                     }
                 }
             }
-            return result;
-        };
-
-        List<Atom> atomArray = molecule.getAtomArray();
-        Collections.sort(atomArray, aCmp);
-
-        for (Atom atom : atomArray) {
-            boolean isFirstMethyl = atom.isFirstInMethyl();
-            boolean collapse = false;
-            boolean writeLine = true;
-            if (isFirstMethyl) {
-                collapse = true;
-            } else if (atom.isMethyl() && !isFirstMethyl) {
-                writeLine = false;
-            }
-
             if (writeLine) {
-                String result = atom.ppmToNEFString(iPPM, i, collapse);
+                String result = atom.ppmToNEFString(iPPM, i, collapse, sameShift);
                 if (result != null) {
 //                    System.out.println("writer writePPM: iPPM = " + iPPM + " i = " + i);
                     chan.write(result + "\n");
@@ -168,11 +265,11 @@ public class NMRNEFWriter {
 
     static void writeDistances(FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("\n");
-        chan.write("save_nef_distance_restraint_list_1pqx.mr\n"); //fixme dynamically get framecode
+        chan.write("save_nef_distance_restraint_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_distance_restraint_list.sf_category       ");
         chan.write("nef_distance_restraint_list\n");
         chan.write("    _nef_distance_restraint_list.sf_framecode      ");
-        chan.write("nef_distance_restraint_list_1pqx.mr\n"); //fixme dynamically get framecode
+        chan.write("nef_distance_restraint_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_distance_restraint_list.potential_type    ");
         chan.write(".\n");
         chan.write("    _nef_distance_restraint_list.restraint_origin  ");
@@ -197,61 +294,128 @@ public class NMRNEFWriter {
         for (int i = 0; i < distList.size(); i++) {
             DistancePair distPair = distList.get(i);
             AtomDistancePair[] pairAtoms = distPair.getAtomPairs();
-            Map<String, Set<Atom>> uniqA1Map = distPair.getUniqueAtoms(pairAtoms, 1);
-            Map<String, Set<Atom>> uniqA2Map = distPair.getUniqueAtoms(pairAtoms, 2);
-            for (AtomDistancePair pair : pairAtoms) {
+            int nPairs = pairAtoms.length;
+            int[][] collapse = new int[nPairs][2];
+            boolean[] skipPair = new boolean[nPairs];
+            Set<String> pairNames = new HashSet<>();
+            for (int iPair = 0; iPair < nPairs; iPair++) {
+                AtomDistancePair pair = pairAtoms[iPair];
                 Atom atom1 = pair.getAtoms1()[0];
                 Atom atom2 = pair.getAtoms2()[0];
-                int[] polymerIDs = {((Residue) atom1.entity).polymer.entityID, ((Residue) atom2.entity).polymer.entityID};
-                int[] seqCodes = {((Residue) atom1.entity).getIDNum(), ((Residue) atom2.entity).getIDNum()};
-                String[] keys = {polymerIDs[0] + ":" + seqCodes[0], polymerIDs[1] + ":" + seqCodes[1]};
-                Set<Atom> uniqA1 = uniqA1Map.get(keys[0]);
-                Set<Atom> uniqA2 = uniqA2Map.get(keys[1]);
-                boolean[] collapse = {false, false};
-                boolean writeLine = false;
-                if (uniqA1.size() == 1 && uniqA2.size() == 1) {
-                    writeLine = true;
-                    // if distPair has > 1 unique entry for atom1 or atom2, or both 
-                    // (e.g. methyls, some methylenes), collapse into one line with 
-                    // % in atom name(s)
+                String pairName = atom1.getFullName() + "_" + atom2.getFullName();
+                pairNames.add(pairName);
+            }
+            // System.out.println(pairNames.toString());
+
+            for (int iPair = 0; iPair < nPairs; iPair++) {
+                AtomDistancePair pair = pairAtoms[iPair];
+                Atom atom1 = pair.getAtoms1()[0];
+                Atom atom2 = pair.getAtoms2()[0];
+                if (atom1.isMethyl()) {
+                    if (!atom1.isFirstInMethyl()) {
+                        skipPair[iPair] = true;
+                    } else {
+                        Atom[] partners = atom1.getPartners(1, 2);
+                        collapse[iPair][0] = 1;
+                        if (partners != null) {
+                            if (partners.length > 5) {
+                                Atom otherMethyl = partners[2];
+                                String otherMethylName = otherMethyl.getFullName();  // fixme assumes first Methyl proton of other methyl always in pos 2         
+                                String pairName = otherMethylName + "_" + atom2.getFullName();
+                                if (pairNames.contains(pairName)) {
+                                    collapse[iPair][0] = 2;
+                                    if (atom1.getIndex() > otherMethyl.getIndex()) {
+                                        skipPair[iPair] = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                 } else {
-                    boolean[] isFirstMethyl = {atom1.isFirstInMethyl(), atom2.isFirstInMethyl()};
-                    boolean[] isNonMethylHD = {!atom1.isMethyl() && atom1.name.contains("HD"), !atom2.isMethyl() && atom2.name.contains("HD")};
-                    boolean a1WriteMethylene = ((atom1.isMethylene() || isNonMethylHD[0]) && uniqA1.size() > 1 && atom1.getStereo() == 1);
-                    boolean a2WriteMethylene = ((atom2.isMethylene() || isNonMethylHD[1]) && uniqA2.size() > 1 && atom2.getStereo() == 1);
-                    if ((isFirstMethyl[0] || a1WriteMethylene) && uniqA2.size() == 1) {
-                        collapse[0] = true;
-                        writeLine = true;
-                    } else if ((isFirstMethyl[1] || a2WriteMethylene) && uniqA1.size() == 1) {
-                        collapse[1] = true;
-                        writeLine = true;
-                    } else if ((isFirstMethyl[0] && isFirstMethyl[1]) || (a1WriteMethylene && a2WriteMethylene)
-                            || (isFirstMethyl[0] && a2WriteMethylene) || (a1WriteMethylene && isFirstMethyl[1])) {
-                        collapse[0] = true;
-                        collapse[1] = true;
-                        writeLine = true;
+                    List<List<Atom>> partners = atom1.getPartners(1);
+                    if (partners.size() > 0) {
+                        int commonLevel = checkPartnerInGroup(atom2, partners, pairNames, true);
+//                        System.out.println(atom2.getFullName() + " " + pairNames);
+//                        System.out.println(partners + " " + commonLevel);
+                        if (commonLevel > 0) {
+                            if (!checkFirstPartner(atom1, partners, commonLevel)) {
+                                skipPair[iPair] = true;
+                            } else {
+                                collapse[iPair][0] = commonLevel;
+
+                            }
+                        }
+
+                    }
+
+                }
+                if (atom2.isMethyl()) {
+                    if (!atom2.isFirstInMethyl()) {
+                        skipPair[iPair] = true;
+                    } else {
+                        Atom[] partners = atom2.getPartners(1, 2);
+                        collapse[iPair][1] = 1;
+                        if (partners != null) {
+                            if (partners.length > 5) {
+                                Atom otherMethyl = partners[2];
+                                String otherMethylName = otherMethyl.getFullName();  // fixme assumes first Methyl proton of other methyl always in pos 2         
+                                String pairName = atom1.getFullName() + "_" + otherMethylName;
+                                if (pairNames.contains(pairName)) {
+                                    collapse[iPair][1] = 2;
+                                    if (atom2.getIndex() > otherMethyl.getIndex()) {
+                                        skipPair[iPair] = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    List<List<Atom>> partners = atom2.getPartners(1);
+                    if (partners.size() > 0) {
+                        int commonLevel = checkPartnerInGroup(atom1, partners, pairNames, false);
+//                        System.out.println(atom2.getFullName() + " " + pairNames);
+//                        System.out.println(partners + " " + commonLevel);
+                        if (commonLevel > 0) {
+                            if (!checkFirstPartner(atom2, partners, commonLevel)) {
+                                skipPair[iPair] = true;
+                            } else {
+                                collapse[iPair][1] = commonLevel;
+
+                            }
+                        }
+
                     }
                 }
-
-                if (writeLine) {
-                    result = Atom.toNEFDistanceString(idx, collapse, restraintID, ".", distPair, atom1, atom2);
-                    chan.write(result + "\n");
-                    idx++;
+            }
+            for (int iPair = 0; iPair < nPairs; iPair++) {
+                AtomDistancePair pair = pairAtoms[iPair];
+                if (skipPair[iPair]) {
+                    continue;
                 }
+                Atom atom1 = pair.getAtoms1()[0];
+                Atom atom2 = pair.getAtoms2()[0];
+                result = Atom.toNEFDistanceString(idx, collapse[iPair], restraintID, ".", distPair, atom1, atom2);
+                chan.write(result + "\n");
+                idx++;
+
             }
             restraintID++;
         }
-        chan.write("     stop_\n");
-        chan.write("save_\n");
+
+        chan.write(
+                "     stop_\n");
+        chan.write(
+                "save_\n");
     }
 
     static void writeDihedrals(FileWriter chan) throws IOException, InvalidMoleculeException {
         chan.write("\n");
-        chan.write("save_nef_dihedral_restraint_list_1pqx.mr\n"); //fixme dynamically get framecode
+        chan.write("save_nef_dihedral_restraint_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_dihedral_restraint_list.sf_category       ");
         chan.write("nef_dihedral_restraint_list\n");
         chan.write("    _nef_dihedral_restraint_list.sf_framecode      ");
-        chan.write("nef_dihedral_restraint_list_1pqx.mr\n"); //fixme dynamically get framecode
+        chan.write("nef_dihedral_restraint_list\n"); //fixme dynamically get framecode
         chan.write("    _nef_dihedral_restraint_list.potential_type    ");
         chan.write(".\n");
         chan.write("    _nef_dihedral_restraint_list.restraint_origin  ");
@@ -319,24 +483,99 @@ public class NMRNEFWriter {
         chan.write("save_\n");
     }
 
+    /**
+     * Write molecular system, chemical shift, distance, and dihedral
+     * information to a NEF formatted file.
+     *
+     * @param fileName String. Name of the file to write.
+     * @throws IOException
+     * @throws ParseException
+     * @throws InvalidPeakException
+     * @throws InvalidMoleculeException
+     */
     public static void writeAll(String fileName) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(fileName)) {
+            File file = new File(fileName);
+            file.getParentFile().mkdirs(); //create file if it doesn't already exist
             System.out.println("wrote " + fileName);
             writeAll(writer);
         }
     }
 
+    /**
+     * Write molecular system, chemical shift, distance, and dihedral
+     * information to a NEF formatted file.
+     *
+     * @param file File. File to write.
+     * @throws IOException
+     * @throws ParseException
+     * @throws InvalidPeakException
+     * @throws InvalidMoleculeException
+     */
     public static void writeAll(File file) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         try (FileWriter writer = new FileWriter(file)) {
             writeAll(writer);
         }
     }
 
+    /**
+     * Write molecular system, chemical shift, distance, and dihedral
+     * information to a NEF formatted file.
+     *
+     * @param chan FileWriter. Writer used for writing the file.
+     * @throws IOException
+     * @throws ParseException
+     * @throws InvalidPeakException
+     * @throws InvalidMoleculeException
+     */
     public static void writeAll(FileWriter chan) throws IOException, ParseException, InvalidPeakException, InvalidMoleculeException {
         Date date = new Date(System.currentTimeMillis());
-        chan.write("    ######################################\n");
-        chan.write("    # Saved " + date.toString() + " #\n");
-        chan.write("    ######################################\n");
+        String programName = NMRNEFWriter.class
+                .getPackage().getName();
+        String programVersion = NMRNEFWriter.class
+                .getPackage().getImplementationVersion();
+
+        String[] programNameS = programName.split("\\.");
+        int nameIdx1 = Arrays.asList(programNameS).indexOf("nmrfx");
+        int nameIdx2 = Arrays.asList(programNameS).indexOf("structure");
+        programName = programNameS[nameIdx1] + programNameS[nameIdx2];
+        if (programVersion == null) {
+            BufferedReader reader = new BufferedReader(new FileReader("pom.xml"));
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                String lineS = line.trim();
+                String match = "<version>";
+                if (lineS.startsWith(match)) {
+                    programVersion = lineS.substring(match.length(), lineS.indexOf("/") - 1);
+                    break;
+                }
+            }
+        }
+
+        chan.write("\n");
+        chan.write("save_nef_nmr_meta_data\n");
+        chan.write("    _nef_nmr_meta_data.sf_category           ");
+        chan.write("nef_nmr_meta_data\n");
+        chan.write("    _nef_nmr_meta_data.sf_framecode          ");
+        chan.write("nef_nmr_meta_data\n");
+        chan.write("    _nef_nmr_meta_data.format_name           ");
+        chan.write("nmr_exchange_format\n");
+        chan.write("    _nef_nmr_meta_data.format_version        ");
+        chan.write("1.1\n");
+        chan.write("    _nef_nmr_meta_data.program_name          ");
+        chan.write(programName + "\n");
+        chan.write("    _nef_nmr_meta_data.program_version       ");
+        chan.write(programVersion + "\n");
+        chan.write("    _nef_nmr_meta_data.creation_date         ");
+        chan.write(date.toString() + "\n");
+        chan.write("    _nef_nmr_meta_data.uuid                  ");
+        chan.write(".\n");
+        chan.write("    _nef_nmr_meta_data.coordinate_file_name  ");
+        chan.write(".\n");
+        chan.write("\n");
         Molecule molecule = Molecule.getActive();
         if (molecule != null) {
             writeMolSys(chan);
