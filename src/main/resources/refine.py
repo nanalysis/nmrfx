@@ -55,6 +55,17 @@ bondOrders = ('SINGLE','DOUBLE','TRIPLE','QUAD')
 
 protein1To3 = {protein3To1[key]: key for key in protein3To1}
 
+
+rnaBPPlanarity = {
+    'GC':[['C6p','C4',0.5],['C2','C2p',0.5]],
+    'CG':[['C4','C6p',0.5],['C2p','C2',0.5]],
+    'AU':[['C6p','C4',0.5],['C2','C2p',0.5]],
+    'UA':[['C4','C6p',0.5],['C2p','C2',0.5]]
+}
+
+addPlanarity = False
+
+
 def getHelix(pairs,vie):
     inHelix = False
     iHelix = -1
@@ -1729,12 +1740,22 @@ class refine:
                 parentAtomName = self.getAtomName(residueJ,parentAtom)
 		self.energyLists.addDistanceConstraint(parentAtomName, atom1Name ,lowAtomParentDis,atomParentDis) 
 	    self.energyLists.addDistanceConstraint(atom1Name, atom2Name ,lowAtomAtomDis,atomAtomDis)
-        atomPI = residueI.getAtom("P")
-        atomPJ = residueJ.getAtom("P")
-        if (atomPI != None) and (atomPJ != None):
-            atomPIName = self.getAtomName(residueI, "P")						
-            atomPJName = self.getAtomName(residueJ, "P")						
-            self.energyLists.addDistanceConstraint(atomPIName, atomPJName ,14.0, 20.0)
+        if type == 1:
+            atomPI = residueI.getAtom("P")
+            atomPJ = residueJ.getAtom("P")
+            if (atomPI != None) and (atomPJ != None):
+                atomPIName = self.getAtomName(residueI, "P")						
+                atomPJName = self.getAtomName(residueJ, "P")						
+                self.energyLists.addDistanceConstraint(atomPIName, atomPJName ,14.0, 20.0)
+            if addPlanarity:
+                bpRes = resNameI+resNameJ
+                if bpRes in rnaBPPlanarity:
+                    planeValues = rnaBPPlanarity[bpRes]
+                    for (aNameI,aNameJ,dis) in planeValues:
+                        atomIName = self.getAtomName(residueI, aNameI)						
+                        atomJName = self.getAtomName(residueJ, aNameJ)						
+                        self.energyLists.addDistanceConstraint(atomIName, atomJName ,0.0, dis)
+        
            
 
     def atomListGen(self, atomPair, restraints, residueI, residueJ):
