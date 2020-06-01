@@ -30,13 +30,7 @@ import org.nmrfx.structure.chemistry.SpatialSet;
 import org.nmrfx.structure.fastlinear.FastVector;
 import org.nmrfx.structure.fastlinear.FastVector3D;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -372,6 +366,16 @@ public class EnergyLists {
     }
 
     public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
+            final double rUp) throws IllegalArgumentException {
+        addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, 1.0, null, null);
+    }
+
+    public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
+            final double rUp, boolean isBond) throws IllegalArgumentException {
+        addDistanceConstraint(filterString1, filterString2, rLow, rUp, isBond, 1.0, null, null);
+    }
+
+    public void addDistanceConstraint(final String filterString1, final String filterString2, final double rLow,
             final double rUp, Double weight, Double targetValue, Double targetErr) throws IllegalArgumentException {
         addDistanceConstraint(filterString1, filterString2, rLow, rUp, false, weight, targetValue, targetErr);
     }
@@ -412,6 +416,11 @@ public class EnergyLists {
         }
         distanceMap.clear();
         constraintsSetup = false;
+    }
+
+    public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
+            final double rLow, final double rUp) throws IllegalArgumentException {
+        addDistanceConstraint(filterStrings1, filterStrings2, rLow, rUp, 1.0, null, null);
     }
 
     public void addDistanceConstraint(final List<String> filterStrings1, final List<String> filterStrings2,
