@@ -27,6 +27,7 @@ import org.nmrfx.structure.chemistry.energy.AtomEnergyProp;
 import org.nmrfx.structure.chemistry.energy.DistancePair;
 import org.nmrfx.structure.chemistry.miner.IAtom;
 import org.nmrfx.structure.chemistry.miner.IBond;
+import org.nmrfx.structure.utilities.Util;
 
 public class Atom implements IAtom {
 
@@ -1136,40 +1137,77 @@ public class Atom implements IAtom {
         return (sBuilder.toString());
     }
 
-
+    /**
+     * Change atom names to NEF format.
+     *
+     * @param atom Atom to format.
+     * @param distances boolean. True if the atom is in the distances block.
+     * @return writename. String. The formatted atom name.
+     */
     public static String formatNEFAtomName(Atom atom, boolean distances) {
         String writeName = atom.name;
 //        if (!distances) {
-//            System.out.println(writeName + " " + atom.stereo + " " + atom.getBMRBAmbiguity() + " " + atom.isMethyl());
+//            System.out.println(((Residue) atom.entity).getIDNum() + " " +writeName + " " + atom.stereo + " " + atom.getBMRBAmbiguity() + " " + atom.isMethyl());
 //        }
-        switch (atom.stereo) {
-            case 0: //x or y changes
-                if ((!distances && writeName.endsWith("2"))
-                        || (distances && (writeName.endsWith("3") || writeName.endsWith("1")))) {
-                    writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
-                } else if ((!distances && (writeName.endsWith("3") || writeName.endsWith("1")))
-                        || (distances && writeName.endsWith("2"))) {
-                    writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
+        if (!atom.isMethyl()) {
+            if (atom.getStereo() == 0) { //x or y changes
+                Atom[] partners = atom.getPartners(1, 1);
+                if (partners.length == 1) {
+                    if (atom.getIndex() < partners[0].getIndex()) {
+                        writeName = atom.name.substring(0, atom.name.length() - 1) + "x";
+                    } else {
+                        writeName = atom.name.substring(0, atom.name.length() - 1) + "y";
+                    }
                 }
-                break;
-            case 1: //no change or % changes
-                if (atom.getBMRBAmbiguity() != 1 && 
-                        (atom.isMethylene() || (!atom.isMethyl() && writeName.contains("HD2")))) { //fixme this is too specific
+            }
+        } else {
+            if (atom.getParent().getStereo() == 0) {
+                Atom parent = atom.getParent();
+                Optional<Atom> methylCarbonPartner = parent.getMethylCarbonPartner();
+                if (methylCarbonPartner.isPresent()) {
+                    if (atom.getParent().getIndex() < methylCarbonPartner.get().getIndex()) {
+                        writeName = atom.name.substring(0, atom.name.length() - 2) + "x%";
+                    } else {
+                        writeName = atom.name.substring(0, atom.name.length() - 2) + "y%";
+                    }
+                } else {
                     writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
                 }
-                break;
-            default:
-                break;
+            } else {
+                writeName = atom.name.substring(0, atom.name.length() - 1) + "%";
+
+            }
         }
+
         return writeName;
     }
 
-    public String ppmToNEFString(int iStruct, int iAtom, boolean collapse) {
-        return ppmToNEFString(spatialSet, iStruct, iAtom, collapse);
+    /**
+     * Converts chemical shift information to a String in NEF format.
+     *
+     * @param iStruct int. Index of molecular structure.
+     * @param iAtom int. Index of atom.
+     * @param collapse boolean. Whether to collapse methyl/methylene atoms into
+     * a single entry with a % in the atom name.
+     * @return ppmToNEFString(spSet, iStruct, iAtom, collapse).
+     */
+    public String ppmToNEFString(int iStruct, int iAtom, int collapse,
+            int sameShift) {
+        return ppmToNEFString(spatialSet, iStruct, iAtom, collapse, sameShift);
     }
 
+    /**
+     * Converts chemical shift information to a String in NEF format.
+     *
+     * @param spatialSet SpatialSet of the molecule.
+     * @param iStruct int. Index of molecular structure.
+     * @param iAtom int. Index of atom.
+     * @param collapse boolean. Whether to collapse methyl/methylene atoms into
+     * a single entry with a % in the atom name.
+     * @return String in NEF format.
+     */
     public String ppmToNEFString(SpatialSet spatialSet,
-            int iStruct, int iAtom, boolean collapse) {
+            int iStruct, int iAtom, int collapse, int sameShift) {
         //chemical shift
         PPMv ppmv = spatialSet.getPPM(iStruct);
         if (ppmv == null) {
@@ -1178,10 +1216,23 @@ public class Atom implements IAtom {
 
         //atom name
         String writeName;
-        if (collapse) {
-            writeName = this.name.substring(0, this.name.length() - 1) + "%";
+        if (isMethyl()) {
+            int nameLen = name.length();
+            if (collapse > 0) {
+                String xy = name.charAt(nameLen - 2) == '2' ? "y" : "x";
+                writeName = name.substring(0, nameLen - 2) + xy + "%";
+            } else {
+                writeName = name.substring(0, nameLen - 1) + "%";
+            }
+        } else if (sameShift > 0) {
+            int nameLen = name.length();
+            writeName = name.substring(0, nameLen - sameShift) + "%";
         } else {
-            writeName = formatNEFAtomName(this, false);
+            if (collapse > 0) {
+                writeName = Util.getXYName(this);
+            } else {
+                writeName = getName();
+            }
         }
 
         String line = "";
@@ -1210,7 +1261,21 @@ public class Atom implements IAtom {
         return line;
     }
 
-    public static String toNEFDistanceString(int index, boolean[] aCollapse, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2) {
+    /**
+     * Converts distance information to a String in NEF format.
+     *
+     * @param index int. Index of the line in the file.
+     * @param aCollapse boolean[]. Whether to collapse methyl/methylene atoms in
+     * the distance pair into a single entry with a % in the atom name.
+     * @param restraintID int. Restraint ID number.
+     * @param restraintComboID String. Restraint combination ID. Default is ".".
+     * @param distPair DistancePair. The DistancePair object for the
+     * restraintID.
+     * @param atom1 Atom. First atom in the AtomDistancePair object.
+     * @param atom2 Atom. Second atom in the AtomDistancePair object.
+     * @return String in NEF format.
+     */
+    public static String toNEFDistanceString(int index, int[] aCollapse, int restraintID, String restraintComboID, DistancePair distPair, Atom atom1, Atom atom2) {
         Atom[] atoms = {atom1, atom2};
 
         StringBuilder sBuilder = new StringBuilder();
@@ -1225,7 +1290,7 @@ public class Atom implements IAtom {
             //restraint combo ID
             sBuilder.append(String.format("%-8s", restraintComboID));
 
-            for (int a=0; a<atoms.length; a++) {
+            for (int a = 0; a < atoms.length; a++) {
                 // chain code 
                 String polymerName = ((Residue) atoms[a].entity).polymer.getName();
                 char chainID = polymerName.charAt(0);
@@ -1240,13 +1305,27 @@ public class Atom implements IAtom {
                 sBuilder.append(String.format("%-8s", resName));
 
                 // atom name 
-                boolean collapse = aCollapse[a];
+                int collapse = aCollapse[a];
                 String writeName;
-                if (collapse) {
-                    writeName = atoms[a].name.substring(0, atoms[a].name.length() - 1) + "%";
+                if (atoms[a].isMethyl()) {
+                    if (collapse == 2) {
+                        writeName = atoms[a].name.substring(0, atoms[a].name.length() - collapse) + "%";
+                    } else {
+                        writeName = formatNEFAtomName(atoms[a], true);
+
+                    }
                 } else {
-                    writeName = formatNEFAtomName(atoms[a], true);
+                    if (collapse > 0) {
+                        if (collapse == 2) {
+                            writeName = atoms[a].name.substring(0, atoms[a].name.length() - 2) + "%";
+                        } else {
+                            writeName = atoms[a].name.substring(0, atoms[a].name.length() - collapse) + "%";
+                        }
+                    } else {
+                        writeName = formatNEFAtomName(atoms[a], true);
+                    }
                 }
+//                System.out.println(chainID + " " + seqCode + " " + resName + " " + atoms[a].name + " " + writeName);
                 sBuilder.append(String.format("%-8s", writeName));
             }
 
@@ -1278,6 +1357,17 @@ public class Atom implements IAtom {
         return sBuilder.toString();
     }
 
+    /**
+     * Converts dihedral angle information into a String in NEF format.
+     *
+     * @param bound AngleBoundary. The dihedral angle object.
+     * @param atoms Atom[]. List of atoms that form the dihedral angle.
+     * @param iBound int. Index of the dihedral angle.
+     * @param restraintID int. The restraint ID.
+     * @param restraintComboID String. The restraint combination ID. Default is
+     * ".".
+     * @return String in NEF format.
+     */
     public static String toNEFDihedralString(AngleBoundary bound, Atom[] atoms, int iBound, int restraintID, String restraintComboID) {
 
         StringBuilder sBuilder = new StringBuilder();
@@ -1764,6 +1854,29 @@ public class Atom implements IAtom {
                 for (Atom equivAtom : aEquiv.getAtoms()) {
                     if (!equivAtom.getName().equals(getName())) {
                         result[j++] = equivAtom;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    public List<List<Atom>> getPartners(int targetANum) {
+        List<List<Atom>> result = new ArrayList<>();
+        if (!entity.hasEquivalentAtoms()) {
+            Molecule.findEquivalentAtoms(entity);
+        }
+        int shells = 2;
+        if ((aNum == targetANum) && (equivAtoms != null) && (equivAtoms.size() > 0)) {
+            for (int i = 0; (i < equivAtoms.size()) && (i < shells); i++) {
+                AtomEquivalency aEquiv = equivAtoms.get(i);
+                if (!aEquiv.getAtoms().isEmpty()) {
+                    List<Atom> shellAtoms = new ArrayList<>();
+                    result.add(shellAtoms);
+                    for (Atom equivAtom : aEquiv.getAtoms()) {
+                        if (!equivAtom.getName().equals(getName())) {
+                            shellAtoms.add(equivAtom);
+                        }
                     }
                 }
             }
