@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.nmrfx.structure.chemistry.Atom;
+import org.nmrfx.structure.chemistry.PPMv;
 
 /**
  *
@@ -41,6 +42,54 @@ public class Util {
         return strictlyNEF;
     }
 
+    public static boolean hasSameShift(Atom atom, Atom partnerAtom) {
+        PPMv ppmV = atom.getPPM(0);
+        boolean result = false;
+        Double ppm1 = null;
+        Double ppm2 = null;
+        PPMv ppmVPartner = partnerAtom.getPPM(0);
+        if ((ppmV != null) && ppmV.isValid()) {
+            ppm1 = ppmV.getValue();
+        }
+        if ((ppmVPartner != null) && ppmVPartner.isValid()) {
+            ppm2 = ppmVPartner.getValue();
+        }
+        if ((ppm1 != null) && (ppm2 != null)) {
+            double delta = Math.abs(ppm1 - ppm2);
+            if (delta < 1.0e-5) {
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
+    public static final String getXYName(Atom atom) {
+        Optional<Atom> partner = Optional.empty();
+        String result;
+        Atom atom1 = atom;
+        String aName = atom.getName();
+        if (atom.isMethylene()) {
+            partner = atom.getMethylenePartner();
+        } else if ((atom.getAtomicNumber() == 1) && (atom.parent != null) && atom.parent.isMethylCarbon()) {
+            atom1 = atom.parent;
+            partner = atom1.getMethylCarbonPartner();
+        } else if ((atom.getAtomicNumber() == 6) && atom.isMethylCarbon()) {
+            partner = atom.getMethylCarbonPartner();
+        }
+        if (partner.isPresent()) {
+            Atom partnerAtom = partner.get();
+            boolean lessThan = atom1.getIndex() < partnerAtom.getIndex();
+            String xy = lessThan ? "x" : "y";
+            int nameLen = aName.length();
+            result = aName.substring(0, nameLen - 1) + xy;
+        } else {
+            result = aName;
+        }
+
+        return result;
+    }
+
     public static final boolean nefMatch(Atom atom, String pat) {
         boolean result = nefMatch(atom.name.toLowerCase(), pat);
         if (result && (pat.contains("x") || pat.contains("y"))) {
@@ -51,6 +100,8 @@ public class Util {
             } else if ((atom.getAtomicNumber() == 1) && (atom.parent != null) && atom.parent.isMethylCarbon()) {
                 atom1 = atom.parent;
                 partner = atom1.getMethylCarbonPartner();
+            } else if ((atom.getAtomicNumber() == 6) && atom.isMethylCarbon()) {
+                partner = atom.getMethylCarbonPartner();
             }
             if (partner.isPresent()) {
                 Atom partnerAtom = partner.get();
