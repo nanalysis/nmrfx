@@ -36,41 +36,37 @@ public class NEFFileTest {
     List<List<Object>> orig = new ArrayList<>();
     List<List<Object>> written = new ArrayList<>();
 
-    @Test
-    public void testFile2KO1() throws IOException {
-        loadData("2ko1");
-        testAll();
-    }
-
-    @Test
-    public void testFile2PNG() throws IOException {
-        loadData("2png");
-        testAll();
-    }
-
-    @Test
-    public void testFile2KZN() throws IOException {
-        loadData("2kzn");
-        testAll();
-    }
-
-    @Test
-    public void testFile2KKO() throws IOException {
-        loadData("2kko");
-        testAll();
-    }
-
+//    @Test
+//    public void testFile2KO1() throws IOException {
+//        loadData("2ko1");
+//        testAll();
+//    }
+//    @Test
+//    public void testFile2PNG() throws IOException {
+//        loadData("2png");
+//        testAll();
+//    }
+//    @Test
+//    public void testFile2KZN() throws IOException {
+//        loadData("2kzn");
+//        testAll();
+//    }
+//    @Test
+//    public void testFile2KKO() throws IOException {
+//        loadData("2kko");
+//        testAll();
+//    }
     @Test
     public void testFile2JUW() throws IOException {
         loadData("2juw");
         testAll();
     }
-
-    @Test
-    public void testFile2JR2() throws IOException {
-        loadData("2jr2");
-        testAll();
-    }
+//
+//    @Test
+//    public void testFile2JR2() throws IOException {
+//        loadData("2jr2");
+//        testAll();
+//    }
 
     @Test
     public void testFile1PQX() throws IOException {
@@ -96,12 +92,11 @@ public class NEFFileTest {
         testAll();
     }
 
-    @Test
-    public void testFile2LOY() throws IOException {
-        loadData("2loy");
-        testAll();
-    }
-
+//    @Test
+//    public void testFile2LOY() throws IOException {
+//        loadData("2loy");
+//        testAll();
+//    }
     @Test
     public void testFile2LUZ() throws IOException {
         loadData("2luz");
@@ -271,9 +266,9 @@ public class NEFFileTest {
     }
 
     public void loadData(String nefFileName) {
-        String fileName = String.join(File.separator, "src", "test", "data","neffiles", nefFileName + ".nef");
+        String fileName = String.join(File.separator, "src", "test", "data", "neffiles", nefFileName + ".nef");
         String outPath = "tmp";
-        String outFile = String.join(File.separator, outPath,  nefFileName + "_nef_outTest.txt");
+        String outFile = String.join(File.separator, outPath, nefFileName + "_nef_outTest.txt");
         try {
             if (orig.isEmpty()) {
                 NMRNEFReader.read(fileName);
