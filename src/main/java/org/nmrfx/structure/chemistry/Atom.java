@@ -35,7 +35,8 @@ public class Atom implements IAtom {
         VISITED(0),
         AROMATIC(1),
         RESONANT(2),
-        RING(3);
+        AMIDE(3),
+        RING(4);
         int index;
 
         ATOMFLAGS(int index) {
@@ -59,6 +60,7 @@ public class Atom implements IAtom {
     static final public int VISITED = ATOMFLAGS.VISITED.index;
     static final public int AROMATIC = ATOMFLAGS.AROMATIC.index;
     static final public int RESONANT = ATOMFLAGS.RESONANT.index;
+    static final public int AMIDE = ATOMFLAGS.AMIDE.index;
     static final public int RING = ATOMFLAGS.RING.index;
     static final public double NULL_PPM = -9990.0;
     static int lastAtom = 0;
@@ -161,6 +163,19 @@ public class Atom implements IAtom {
         AtomEnergyProp eProp = AtomEnergyProp.getDefault(aNum);
         Atom atom = new Atom(name, eProp);
         return atom;
+    }
+
+    public void setEnergyProp() {
+        this.atomEnergyProp = AtomEnergyProp.getDefault(aNum);
+        System.out.println(getFullName() + " " + aNum + " " + atomEnergyProp);
+        if (atomEnergyProp == null) {
+            aNum = 0;
+            type = "XX";
+        } else {
+            aNum = atomEnergyProp.getAtomNumber();
+            type = atomEnergyProp.getName();
+        }
+
     }
 
     void initialize(AtomParser atomParse) {
