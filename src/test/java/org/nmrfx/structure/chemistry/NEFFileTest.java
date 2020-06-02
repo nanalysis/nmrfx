@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -265,9 +266,13 @@ public class NEFFileTest {
         return dihedralMap;
     }
 
-    public void loadData(String nefFileName) {
+    public void loadData(String nefFileName) throws IOException {
         String fileName = String.join(File.separator, "src", "test", "data", "neffiles", nefFileName + ".nef");
         String outPath = "tmp";
+        File tmpDir = new File(outPath);
+        if (!tmpDir.exists()) {
+            Files.createDirectory(tmpDir.toPath());
+        }
         String outFile = String.join(File.separator, outPath, nefFileName + "_nef_outTest.txt");
         try {
             if (orig.isEmpty()) {
