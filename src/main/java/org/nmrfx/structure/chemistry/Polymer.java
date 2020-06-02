@@ -284,7 +284,7 @@ public class Polymer extends Entity {
                 Atom.addBond(atom1, atom2, order, true);
             }
         }
-        
+
     }
 
     public void removeAtoms(List<String> compIndexIDColumn, List<String> atomIDColumn) {
