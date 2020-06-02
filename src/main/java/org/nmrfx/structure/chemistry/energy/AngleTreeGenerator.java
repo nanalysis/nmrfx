@@ -28,6 +28,7 @@ public class AngleTreeGenerator {
     Map<Atom, Map<Atom, Double>> ringClosures;
     List<Bond> closureBonds = new ArrayList<>();
     List<Atom> atomPathList = new ArrayList<>();
+
     class BondSort implements Comparable<BondSort> {
 
         final Bond bond;
@@ -247,13 +248,13 @@ public class AngleTreeGenerator {
 
     public void measureAtomTree(ITree itree, List<List<Atom>> atomTree) {
         // get Atom array --> getAtomList() difference?
-    for (Atom atom : itree.getAtomArray()) {
+        for (Atom atom : itree.getAtomArray()) {
             atom.parent = null;
         }
         Map<Atom, List<Bond>> bondMap = new HashMap<>();
         HanserRingFinder ringFinder = new HanserRingFinder();
         Molecule mol;
-        if (itree instanceof Molecule){
+        if (itree instanceof Molecule) {
             mol = (Molecule) itree;
         } else {
             mol = Molecule.activeMol;
@@ -332,7 +333,7 @@ public class AngleTreeGenerator {
                     rotatable = true;
                 } else if ((a3.getAtomicNumber() == 15) && (a2.getAtomicNumber() == 8)) {
                     rotatable = true;
-                } else if (a3.getFlag(Atom.RESONANT) && a2.getFlag(Atom.RESONANT)) {
+                } else if (a3.getFlag(Atom.AMIDE)) {
                     rotatable = false;
                 } else if (a3.getFlag(Atom.AROMATIC) && a2.getFlag(Atom.AROMATIC)) { // wrong if connecting two rings
                     rotatable = false;
@@ -451,8 +452,8 @@ public class AngleTreeGenerator {
             }
         }
     }
-    
-    public List<Atom> getPathList(){
+
+    public List<Atom> getPathList() {
         return atomPathList;
     }
 
