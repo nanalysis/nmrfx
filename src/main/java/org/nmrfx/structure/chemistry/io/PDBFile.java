@@ -136,6 +136,7 @@ public class PDBFile {
                     Molecule.makeAtomList();
                     molecule.structures.add(Integer.valueOf(structureNumber));
                     Molecule.calcAllBonds();
+                    molecule.getAtomTypes();
                     lineReader.close();
                     return molecule;
                 }
@@ -185,6 +186,7 @@ public class PDBFile {
                     Atom atom = new Atom(atomParse);
                     atom.setPointValidity(structureNumber, true);
                     atom.entity = residue;
+                    atom.setEnergyProp();
                     pt = atom.getPoint(structureNumber);
                     pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
                     atom.setPoint(structureNumber, pt);
@@ -222,6 +224,7 @@ public class PDBFile {
                     }
 
                     Atom atom = new Atom(atomParse);
+                    atom.setEnergyProp();
                     atom.setPointValidity(structureNumber, true);
                     pt = atom.getPoint(structureNumber);
                     pt = new Point3(atomParse.x, atomParse.y, atomParse.z);
@@ -1061,6 +1064,7 @@ public class PDBFile {
                 String atomNum = atomParse.atomNum;
                 String atomName = atomParse.atomName;
                 Atom atom = new Atom(atomParse);
+                atom.setEnergyProp();
                 atomMap.put(atomNum, atom);
                 atom.setPointValidity(structureNumber, true);
 
