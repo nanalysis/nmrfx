@@ -355,9 +355,20 @@ public class Polymer extends Entity {
         for (int i = 0; i < cyclicClosers.length; i += 3) {
             Atom atom1 = getLastResidue().getAtom(cyclicClosers[i]);
             Atom atom2 = getFirstResidue().getAtom(cyclicClosers[i + 1]);
+            if (atom1 == null) {
+                System.out.println("no atom1 " + cyclicClosers[i]);
+                atom1 = getLastResidue().getAtom("H1");
+            }
+            if (atom2 == null) {
+                atom2 = getFirstResidue().getAtom("H1");
+            }
+            if (atom2 == null) {
+                System.out.println("no atom2 " + cyclicClosers[i + 1]);
+            }
             String distance = cyclicClosers[i + 2];
             String constraint = atom1.getFullName() + " " + atom2.getFullName() + " " + distance;
             constraints.add(constraint);
+
         }
         return constraints;
     }
