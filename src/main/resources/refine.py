@@ -633,12 +633,6 @@ class refine:
         else:
             energyLists = eList
         self.energyLists = energyLists
-        if self.bondConstraints:
-            for bondConstraint in self.bondConstraints:
-                atomName1, atomName2, distance = bondConstraint.split()
-                distance = float(distance)
-                self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
-
         self.setForces({'repel':0.5,'dis':1})
         energyLists.setCourseGrain(useCourseGrain)
         energyLists.setIncludeH(useH)
@@ -978,7 +972,6 @@ class refine:
                     molList = prioritizePolymers(molList)
                     for molDict in molList:
                         residues = ",".join(molDict['residues'].split()) if 'residues' in molDict else None
-                        print molDict
                         self.readMoleculeDict(seqReader, molDict)
                 else:
                     #Only one entity in the molecule
@@ -1001,7 +994,6 @@ class refine:
         else:
             if len(self.molecule.getEntities()) > 1:
 	        if not 'nef' in data:
-                    print 'multiseq'
                     self.molecule.invalidateAtomTree()
                     self.molecule.setupGenCoords()
                     self.molecule.genCoords(False)
@@ -1031,6 +1023,12 @@ class refine:
                             self.setPeptideDihedrals(-60,-60)
                         elif type == "sheet":
                             self.setPeptideDihedrals(-120,120)
+        if self.bondConstraints:
+            for bondConstraint in self.bondConstraints:
+                atomName1, atomName2, distance = bondConstraint.split()
+                distance = float(distance)
+                self.energyLists.addDistanceConstraint(atomName1, atomName2, distance - .0001, distance + .0001, True)
+
         if 'shifts' in data:
             self.readShiftDict(data['shifts'],residues)
 
@@ -1071,6 +1069,8 @@ class refine:
                 molio.readSequence(file, True)
             elif type == 'pdb':
                 compound = molio.readPDB(file, not 'ptype' in molDict)
+            elif type == 'pdbx':
+                compound = molio.readPDBX(file, not 'ptype' in molDict)
             elif type == 'sdf' or type == 'mol':
                 compound = molio.readSDF(file)
             else:
@@ -1355,7 +1355,7 @@ class refine:
                         # FIXME : Sometimes molecule name should be polymer name, or vice versa. ('A' instead of '2MQN')
                         # During NEF testing, the full name of atom was prefixed using the polymer name instead of the 
                         # molecule name. Thus, it required the quick fix below. Same had to be done in 'readCYANAAngles(..)' 
-	    	        #molName = 'A'
+                        molName = 'A'
                         fullAtom1 = molName+':'+res1+'.'+atom1
                         fullAtom2 = molName+':'+res2+'.'+atom2
                         fullAtom1 = fullAtom1.replace('"',"''")
@@ -1520,7 +1520,7 @@ class refine:
                    atom = split_atom[1]
                else:
                    dRes = 0
-	       #molName = 'A' #Teddy 
+	       molName = 'A' #Teddy 
                fullAtom = molName + ':' + str(res + dRes) + '.' + atom
                fullAtom = fullAtom.replace('"',"''")
                fullAtoms.append(fullAtom)
@@ -1919,7 +1919,8 @@ class refine:
                 prfStartAtom = self.getEntityTreeStartAtom(entity)
                 treeStartAtom = self.entityEntryDict[entity]
                 if prfStartAtom == treeStartAtom:
-                    continue
+                    pass
+                   # continue
                 else:
                     ### To remeasure, coordinates should be generated for the entity ###
                     entity.genCoordinates(None)
@@ -1935,6 +1936,7 @@ class refine:
         pI.processPatterns()
         pI.setProperties("ar", "AROMATIC");
         pI.setProperties("res", "RESONANT");
+        pI.setProperties("namide", "AMIDE");
         pI.setProperties("r", "RING");
         pI.setHybridization();
 
