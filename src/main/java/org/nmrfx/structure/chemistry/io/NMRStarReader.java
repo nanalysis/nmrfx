@@ -1726,6 +1726,7 @@ public class NMRStarReader {
             molecule.setMethylRotationActive(true);
             EnergyLists energyList = new EnergyLists(molecule);
             dihedral = new Dihedral(energyList, false);
+            dihedral.clearBoundaries();
 
             energyList.makeCompoundList(molecule);
 //            System.err.println("process peak lists");
