@@ -15,6 +15,13 @@ if len(sys.argv) > 0:
         import gennvfx
     elif sys.argv[0] == "predict":
         import predictor
+    elif sys.argv[0] == "super":
+        import super
+        files = sys.argv[1:]
+        if len(files) > 1:
+            super.runSuper(files)
+
+     
     elif sys.argv[0] == "train":
         print sys.argv
         if (len(sys.argv) > 2) and (sys.argv[1] == "rna"):
