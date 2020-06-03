@@ -1274,7 +1274,6 @@ class refine:
 	constList = self.nmrfxDistReader(fileName)
 	for groupID in constList:
             constraint = constList[groupID]
-            print constraint
 	    lower = constraint['lower']
             upper = constraint['upper']
             atomPairs = constraint['atomPairs']
@@ -1919,8 +1918,8 @@ class refine:
                 prfStartAtom = self.getEntityTreeStartAtom(entity)
                 treeStartAtom = self.entityEntryDict[entity]
                 if prfStartAtom == treeStartAtom:
-                    pass
-                   # continue
+                    if len(self.molecule.getEntities()) > 1:
+                        continue
                 else:
                     ### To remeasure, coordinates should be generated for the entity ###
                     entity.genCoordinates(None)
