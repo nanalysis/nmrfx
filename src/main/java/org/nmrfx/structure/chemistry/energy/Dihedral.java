@@ -433,6 +433,10 @@ public class Dihedral {
     public void clearBoundaries() {
         angleBoundaries.clear();
     }
+    
+    public void clearNEFBoundaries() {
+        angleBoundariesNEF.clear();
+    }
 
     public void setBoundaries(final double sigma, boolean useDegrees) {
         setBoundaries(sigma, useDegrees, 2.0 * Math.PI);

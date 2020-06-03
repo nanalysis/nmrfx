@@ -1155,14 +1155,10 @@ public class Atom implements IAtom {
      * Change atom names to NEF format.
      *
      * @param atom Atom to format.
-     * @param distances boolean. True if the atom is in the distances block.
      * @return writename. String. The formatted atom name.
      */
-    public static String formatNEFAtomName(Atom atom, boolean distances) {
+    public static String formatNEFAtomName(Atom atom) {
         String writeName = atom.name;
-//        if (!distances) {
-//            System.out.println(((Residue) atom.entity).getIDNum() + " " +writeName + " " + atom.stereo + " " + atom.getBMRBAmbiguity() + " " + atom.isMethyl());
-//        }
         if (!atom.isMethyl()) {
             if (atom.getStereo() == 0) { //x or y changes
                 Atom[] partners = atom.getPartners(1, 1);
@@ -1325,18 +1321,14 @@ public class Atom implements IAtom {
                     if (collapse == 2) {
                         writeName = atoms[a].name.substring(0, atoms[a].name.length() - collapse) + "%";
                     } else {
-                        writeName = formatNEFAtomName(atoms[a], true);
+                        writeName = formatNEFAtomName(atoms[a]);
 
                     }
                 } else {
                     if (collapse > 0) {
-                        if (collapse == 2) {
-                            writeName = atoms[a].name.substring(0, atoms[a].name.length() - 2) + "%";
-                        } else {
-                            writeName = atoms[a].name.substring(0, atoms[a].name.length() - collapse) + "%";
-                        }
+                        writeName = atoms[a].name.substring(0, atoms[a].name.length() - collapse) + "%";
                     } else {
-                        writeName = formatNEFAtomName(atoms[a], true);
+                        writeName = formatNEFAtomName(atoms[a]);
                     }
                 }
 //                System.out.println(chainID + " " + seqCode + " " + resName + " " + atoms[a].name + " " + writeName);
