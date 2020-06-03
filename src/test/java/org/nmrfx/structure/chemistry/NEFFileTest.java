@@ -323,6 +323,7 @@ public class NEFFileTest {
         testSeqBlock();
         testChemShiftBlock();
         testDistanceBlock();
+        testDihedralBlock();
     }
 
     public void testSeqBlock() throws IOException {
@@ -357,33 +358,16 @@ public class NEFFileTest {
             ex.printStackTrace();
         }
     }
-    /*
-    @Test
+    
     public void testDihedralBlock() throws IOException {
         try {
-            List<List<Object>> orig = convertFileLines(fileName);
-            List<List<Object>> written = convertFileLines(outFile);
             Map<String, List<Object>> origDihedral = buildDihedralMap(orig);
             Map<String, List<Object>> writtenDihedral = buildDihedralMap(written);
-            for (int i = 0; i < writtenDihedral.keySet().size(); i++) {
-                String origKey = (String) origDihedral.keySet().toArray()[i];
-                String writtenKey = (String) writtenDihedral.keySet().toArray()[i];
-                if (!origDihedral.keySet().contains(writtenKey)) {
-                    System.out.println("dihedral written: " + writtenKey + " " + writtenDihedral.get(writtenKey));
-                }
-                if (!writtenDihedral.keySet().contains(origKey)) {
-                    System.out.println("dihedral orig: " + origKey + " " + origDihedral.get(origKey));
-                }
-                if (origDihedral.keySet().equals(writtenDihedral.keySet()) && !origDihedral.get(writtenKey).equals(writtenDihedral.get(writtenKey))) {
-                    System.out.println(writtenKey + ": " + origDihedral.get(writtenKey) + " " + writtenDihedral.get(writtenKey));
-                }
-            }
-            Assert.assertTrue(writtenDihedral.equals(origDihedral));
+            boolean ok = compareMaps(origDihedral, writtenDihedral);
+            Assert.assertTrue(ok);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
-
-
-     */
+  
 }
