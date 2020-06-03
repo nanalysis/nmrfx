@@ -420,11 +420,11 @@ public class EnergyCoords {
                                         double adjustClose = 0.0;
                                         // fixme could we have invalid jAtom-iAtom-1, if res test inappropriate
                                         if ((iRes == jRes) || (deltaRes == 1)) {
-                                            notFixed = !getFixed(iAtom, jAtom);
                                             if (checkCloseAtoms(atom1, atom2)) {
                                                 adjustClose = 0.2;
                                             }
                                         }
+                                        notFixed = !getFixed(iAtom, jAtom);
                                         boolean interactable1 = (contactRadii[iAtom] > 1.0e-6) && (contactRadii[jAtom] > 1.0e-6);
                                         // fixme  this is fast, but could miss interactions for atoms that are not bonded
                                         // as it doesn't test for an explicit bond between the pairs
