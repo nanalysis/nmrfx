@@ -47,6 +47,7 @@ public class Polymer extends Entity {
     ArrayList<AtomSpecifier> deletedAtoms = new ArrayList<AtomSpecifier>();
     ArrayList<BondSpecifier> addedBonds = new ArrayList<BondSpecifier>();
     static String[] cyclicClosers = {
+        "CA", "N", "2.5",
         "C", "N", "1.32",
         "C", "H", "2.044",
         "C", "CA", "2.452",
@@ -366,7 +367,7 @@ public class Polymer extends Entity {
                 System.out.println("no atom2 " + cyclicClosers[i + 1]);
             }
             String distance = cyclicClosers[i + 2];
-            String constraint = atom1.getFullName() + " " + atom2.getFullName() + " " + distance;
+            String constraint = atom2.getFullName() + " " + atom1.getFullName() + " " + distance;
             constraints.add(constraint);
 
         }
