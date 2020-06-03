@@ -167,7 +167,6 @@ public class Atom implements IAtom {
 
     public void setEnergyProp() {
         this.atomEnergyProp = AtomEnergyProp.getDefault(aNum);
-        System.out.println(getFullName() + " " + aNum + " " + atomEnergyProp);
         if (atomEnergyProp == null) {
             aNum = 0;
             type = "XX";
@@ -1576,6 +1575,22 @@ public class Atom implements IAtom {
         return children;
     }
 
+    public int getTotalBondOrder() {
+        int totalOrder = 0;
+        for (int iBond = 0; iBond < bonds.size(); iBond++) {
+            Bond bond = bonds.get(iBond);
+            if (bond.order.getOrderNum() < 5) {
+                totalOrder += bond.order.getOrderNum();
+            } else if ((bond.order.getOrderNum() == 8)) {
+                totalOrder += 2;
+            } else if ((bond.order.getOrderNum() == 7)) {
+                totalOrder += 1;
+            }
+        }
+        return totalOrder;
+
+    }
+
     public static int calcBond(Atom atom1, Atom atom2, Order order) {
         return calcBond(atom1, atom2, order, 0);
     }
@@ -1620,16 +1635,59 @@ public class Atom implements IAtom {
         if (atom1.name.startsWith("H") || atom2.name.startsWith("H")) {
             dLim = 1.2;
         }
+        int anumA = atom1.getAtomicNumber();
+        int anumB = atom2.getAtomicNumber();
+        int totalOrder1 = atom1.getTotalBondOrder();
+        int totalOrder2 = atom2.getTotalBondOrder();
+        int nPossibleA = 2;
+        if (anumA == 6) {
+            nPossibleA = 4;
+        } else if (anumA == 7) {
+            nPossibleA = 3;
+        } else if (anumA == 8) {
+            nPossibleA = 2;
+        }
+        int nPossibleB = 2;
+        if (anumB == 6) {
+            nPossibleB = 4;
+        } else if (anumB == 7) {
+            nPossibleB = 3;
+        } else if (anumA == 8) {
+            nPossibleB = 2;
+        }
+        boolean doubleOK = true;
+        if ((nPossibleA - totalOrder1) < 2) {
+            doubleOK = false;
+        }
+        if ((nPossibleB - totalOrder2) < 2) {
+            doubleOK = false;
+        }
+
+        if (anumA > anumB) {
+            int hold = anumA;
+            anumA = anumB;
+            anumB = hold;
+        }
+
+        double dBondLim = 0.0;
+        if ((anumA == 6) && (anumB == 6)) { // C C
+            dBondLim = 1.4;
+        } else if ((anumA == 6) && (anumB == 8)) { // C O
+            dBondLim = 1.3;
+        }
 
         pt1 = atom1.getPoint();
         pt2 = atom2.getPoint();
 
         if ((pt1 != null) && (pt2 != null)) {
             dis = Atom.calcDistance(pt1, pt2);
-
             if (dis < dLim) {
                 bond = new Bond(atom1, atom2);
-                bond.order = order;
+                if ((dis < dBondLim) && doubleOK) {
+                    bond.order = Order.DOUBLE;
+                } else {
+                    bond.order = Order.SINGLE;
+                }
                 bond.stereo = stereo;
 
                 atom1.addBond(bond);
