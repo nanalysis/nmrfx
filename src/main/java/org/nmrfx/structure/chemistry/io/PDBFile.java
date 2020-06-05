@@ -557,7 +557,9 @@ public class PDBFile {
                     if (!thisChain.equals(lastChain)) {
                         lastChain = thisChain;
                     } else {
-                        hetAtom = false;
+                        if (!atomParse.resName.equals("HOH")) {
+                            hetAtom = false;
+                        }
                     }
                     if (!hetAtom) {
 
