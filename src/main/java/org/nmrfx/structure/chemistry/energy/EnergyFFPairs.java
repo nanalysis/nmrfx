@@ -28,8 +28,8 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         if (i != j) {
             addPair(i, j, iUnit, jUnit);
             int iPair = nPairs - 1;
-            this.rLow[iPair] = r0;
-            rLow2[iPair] = r0 * r0;
+            this.rDis[iPair] = r0;
+            rDis2[iPair] = r0 * r0;
             this.aValues[iPair] = a;
             this.bValues[iPair] = b;
             this.charge[iPair] = charge;
@@ -132,7 +132,7 @@ public class EnergyFFPairs extends EnergyDistancePairs {
             double c = charge[i]; // fixme
 
             double lambda = 1;  // fixme
-            double sigma = rLow[i]; // fixme
+            double sigma = rDis[i]; // fixme
             double alpha = 1.0;
 
             FastVector3D iV = vecCoords[iAtom];
@@ -207,15 +207,15 @@ public class EnergyFFPairs extends EnergyDistancePairs {
         double r2 = disSq[i];
         double r = FastMath.sqrt(r2);
         double dif = 0.0;
-        if (r2 <= rLow2[i]) {
+        if (r2 <= rDis2[i]) {
             r = FastMath.sqrt(r2);
-            dif = rLow[i] - r;
+            dif = rDis[i] - r;
         }
         String result = "";
         ViolationStats stat = null;
         double energy = getEnergy(i, r2, weights[i] * weight);
         if (Math.abs(dif) > limitVal) {
-            stat = new ViolationStats(2, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rLow[i], 0.0, energy, eCoords);
+            stat = new ViolationStats(2, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], 0.0, energy, eCoords);
         }
 
         return stat;

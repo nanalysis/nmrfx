@@ -48,6 +48,7 @@ public class EnergyCoords {
     EnergyDistancePairs eDistancePairs;
     EnergyConstraintPairs eConstraintPairs;
     EnergyShiftPairs eShiftPairs;
+    EnergyBaseStacking eBaseStackingPairs;
     int[] resNums = null;
     Atom[] atoms = null;
     int[] mAtoms = null;
@@ -73,6 +74,8 @@ public class EnergyCoords {
         eDistancePairs = new EnergyDistancePairs(this);
         eConstraintPairs = new EnergyConstraintPairs(this);
         eShiftPairs = new EnergyShiftPairs(this);
+        eBaseStackingPairs = new EnergyBaseStacking(this);
+
     }
 
     public FastVector3D[] getVecCoords(int size) {
@@ -409,7 +412,16 @@ public class EnergyCoords {
                                     Atom atom2 = atoms[jAtom];
                                     double disSq = vecCoords[iAtom].disSq(vecCoords[jAtom]);
 //                                    System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
-                                    if (disSq < limit2) {
+
+                                    double limit2R = limit2;
+                                    if (atom1.getFlag(Atom.RNABASE) && atom2.getFlag(Atom.RNABASE)) {
+                                        limit2R = 36.0;
+
+                                    }
+                                    if (disSq < limit2R) {
+                                        if (atom1.getFlag(Atom.RNABASE) && atom2.getFlag(Atom.RNABASE)) {
+
+                                        }
                                         int iRes = resNums[iAtom];
                                         int jRes = resNums[jAtom];
                                         int deltaRes = Math.abs(jRes - iRes);
@@ -447,26 +459,29 @@ public class EnergyCoords {
 
                                             //double rH = ePair.getRh();
                                             double rH = contactRadii[iAtom] + contactRadii[jAtom];
-
-                                            if (useFF) {
-                                                double a = Math.sqrt(aValues[iAtom] * aValues[jAtom]);
-                                                double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
-                                                double c = cValues[iAtom] * cValues[jAtom];
-                                                c *= 322.0 / 6.0;
-                                                if (adjustClose > 0.01) {
-                                                    a *= 0.5;
-                                                    b *= 0.5;
+                                            if (disSq < limit2) {
+                                                if (useFF) {
+                                                    double a = Math.sqrt(aValues[iAtom] * aValues[jAtom]);
+                                                    double b = Math.sqrt(bValues[iAtom] * bValues[jAtom]);
+                                                    double c = cValues[iAtom] * cValues[jAtom];
+                                                    c *= 322.0 / 6.0;
+                                                    if (adjustClose > 0.01) {
+                                                        a *= 0.5;
+                                                        b *= 0.5;
+                                                    }
+                                                    ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH,
+                                                            a, b, c);
+                                                } else {
+                                                    if (hBondable[iAtom] * hBondable[jAtom] < 0) {
+                                                        rH -= hbondDelta;
+                                                    }
+                                                    rH -= adjustClose;
+                                                    ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
                                                 }
-                                                ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH,
-                                                        a, b, c);
-                                            } else {
-                                                if (hBondable[iAtom] * hBondable[jAtom] < 0) {
-                                                    rH -= hbondDelta;
-                                                }
-                                                rH -= adjustClose;
-                                                ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
                                             }
-
+                                            if (atom1.getFlag(Atom.RNABASE) && atom2.getFlag(Atom.RNABASE)) {
+                                                eBaseStackingPairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
+                                            }
                                         }
                                     }
                                 }

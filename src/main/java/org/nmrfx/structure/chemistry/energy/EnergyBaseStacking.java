@@ -14,37 +14,13 @@ import org.nmrfx.structure.fastlinear.FastVector3D;
  *
  * @author brucejohnson
  */
-public class EnergyDistancePairs extends EnergyPairs {
+public class EnergyBaseStacking extends EnergyDistancePairs {
 
-    double[] disSq;
-    double[] rDis2;
-    double[] rDis;
-
-    public EnergyDistancePairs(EnergyCoords eCoords) {
+    public EnergyBaseStacking(EnergyCoords eCoords) {
         super(eCoords);
     }
 
     @Override
-    public void addPair(int i, int j, int iUnit, int jUnit, double r0) {
-        if (i != j) {
-            addPair(i, j, iUnit, jUnit);
-            int iPair = nPairs - 1;
-            this.rDis[iPair] = r0;
-            rDis2[iPair] = r0 * r0;
-        }
-    }
-
-    @Override
-    void resize(int size) {
-        if ((iAtoms == null) || (iAtoms.length < size)) {
-            super.resize(size);
-            int newSize = iAtoms.length;
-            disSq = resize(disSq, newSize);
-            rDis = resize(rDis, newSize);
-            rDis2 = resize(rDis2, newSize);
-        }
-    }
-
     public double calcEnergy(boolean calcDeriv, double weight) {
         FastVector3D[] vecCoords = eCoords.getVecCoords();
         double sum = 0.0;
@@ -57,16 +33,26 @@ public class EnergyDistancePairs extends EnergyPairs {
             disSq[i] = r2;
             derivs[i] = 0.0;
             viol[i] = 0.0;
-            if (r2 <= rDis2[i]) {
+            if ((r2 > 16.0) && (r2 < 36.0)) {
                 double r = FastMath.sqrt(r2);
-                double dif = rDis[i] - r;
-                viol[i] = weights[i] * weight * dif * dif;
+                double du = (r - 4.0) / 2.0;
+                double g = -0.2 * (2.0 * (Math.pow(du, 3.0) - 3.0 * Math.pow(du, 2.0)) + 1.0);
+
+                viol[i] = weights[i] * weight * g;
                 sum += viol[i];
                 if (calcDeriv) {
                     //  what is needed is actually the derivative/r, therefore
                     // we divide by r
                     // fixme problems if r near 0.0 so we add small adjustment.  Is there a better way???
-                    derivs[i] = -2.0 * weights[i] * weight * dif / (r + RADJ);
+                    /*  MATLAB code for deriv
+                    f= -0.2*(2.0*((r-4.0)/2.0)^3 - 3.0*((r-4.0)/2.0)^2.0 + 1.0)
+                    df=diff(f,r)
+                    df =
+                       (3*r)/10 - (3*(r/2 - 2)^2)/5 - 6/5
+                     */
+                    double diff = (3.0 * r) / 10.0 - (3.0 * Math.pow(du, 2)) / 5.0 - 1.2;
+                    derivs[i] = weights[i] * weight * diff / (r + RADJ);
+
                 }
             }
         }
@@ -75,8 +61,22 @@ public class EnergyDistancePairs extends EnergyPairs {
         return sum;
     }
 
+    public static double getEnergy(int i, double r2, double weight) {
+        double energy = 0.0;
+        if ((r2 > 16.0) && (r2 < 36.0)) {
+            double r = FastMath.sqrt(r2);
+            double du = (r - 4.0) / 2.0;
+            double g = -0.2 * (2.0 * (Math.pow(du, 3.0) - 3.0 * Math.pow(du, 2.0)) + 1.0);
+
+            energy = weight * g;
+        }
+        return energy;
+
+    }
+
+    @Override
     public ViolationStats getError(int i, double limitVal, double weight) {
-        String modeType = "Rep";
+        String modeType = "FF";
         Atom[] atoms = eCoords.atoms;
         int iAtom = iAtoms[i];
         int jAtom = jAtoms[i];
@@ -89,9 +89,9 @@ public class EnergyDistancePairs extends EnergyPairs {
         }
         String result = "";
         ViolationStats stat = null;
+        double energy = getEnergy(i, r2, weights[i] * weight);
         if (Math.abs(dif) > limitVal) {
-            double energy = weights[i] * weight * dif * dif;
-            stat = new ViolationStats(1, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], 0.0, energy, eCoords);
+            stat = new ViolationStats(2, atoms[iAtom].getFullName(), atoms[jAtom].getFullName(), r, rDis[i], 0.0, energy, eCoords);
         }
 
         return stat;
