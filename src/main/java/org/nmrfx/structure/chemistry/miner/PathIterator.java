@@ -349,14 +349,18 @@ public class PathIterator implements Iterator {
                     if (debug) {
                         System.out.println("test atom " + getAtomIndex(atom));
                     }
-                    if (!atom.getFlag(Atom.VISITED)) {
-                        if (debug) {
-                            System.out.println("add atom indexed " + getAtomIndex(atom) + " with symbol " + atom.getSymbol() + " to sphere at path pos " + pathPos);
+                    if (atom.getAtomicNumber() > 0) {
+                        if (!atom.getFlag(Atom.VISITED)) {
+                            if (debug) {
+                                System.out.println("add atom indexed " + getAtomIndex(atom) + " with symbol " + atom.getSymbol() + " to sphere at path pos " + pathPos);
+                            }
+                            int bondNumber = ac.getBondNumber(bond);
+                            if (bondNumber >= 0) {
+                                localSphere.add(ac.getAtomNumber(atom));
+                                localBonds.add(ac.getBondNumber(bond));
+                                addedAtom = true;
+                            }
                         }
-
-                        localSphere.add(ac.getAtomNumber(atom));
-                        localBonds.add(ac.getBondNumber(bond));
-                        addedAtom = true;
                     }
                 }
             }
