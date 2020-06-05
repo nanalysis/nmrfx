@@ -36,7 +36,8 @@ public class Atom implements IAtom {
         AROMATIC(1),
         RESONANT(2),
         AMIDE(3),
-        RING(4);
+        RING(4),
+        RNABASE(5);
         int index;
 
         ATOMFLAGS(int index) {
@@ -62,6 +63,7 @@ public class Atom implements IAtom {
     static final public int RESONANT = ATOMFLAGS.RESONANT.index;
     static final public int AMIDE = ATOMFLAGS.AMIDE.index;
     static final public int RING = ATOMFLAGS.RING.index;
+    static final public int RNABASE = ATOMFLAGS.RNABASE.index;
     static final public double NULL_PPM = -9990.0;
     static int lastAtom = 0;
     public int iAtom = 1;
