@@ -317,6 +317,27 @@ public class Atom implements IAtom {
         return connected;
     }
 
+    public Atom[] getPlaneAtoms() {
+        Atom[] planeAtoms = new Atom[2];
+        List<Atom> connected = getConnected();
+        int j = 0;
+        for (Atom atom : connected) {
+            if (atom.getFlag(RING)) {
+                planeAtoms[j] = atom;
+                j++;
+                if (j == 2) {
+                    break;
+                }
+            }
+        }
+        if (j == 2) {
+            return planeAtoms;
+        } else {
+            return null;
+
+        }
+    }
+
     public void setFlag(int flag, boolean state) throws IllegalArgumentException {
         if (flag > flags.length) {
             throw new IllegalArgumentException("Invalid flag");

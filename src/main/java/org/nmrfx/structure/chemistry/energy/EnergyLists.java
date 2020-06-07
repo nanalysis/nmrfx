@@ -630,7 +630,9 @@ public class EnergyLists {
         double repelEnergy = 0.0;
         int nRepel = 0;
         double distanceEnergy = 0.0;
+        double stackingEnergy = 0.0;
         int nDistance = 0;
+        int nStack = 0;
         double maxDis = 0.0;
         double irpEnergy = 0.0;
         int nIrp = 0;
@@ -728,6 +730,18 @@ public class EnergyLists {
                     }
                 }
             }
+            if (forceWeight.getStacking() > 0.0) {
+                EnergyCoords eCoords = molecule.getEnergyCoords();
+                stackingEnergy = eCoords.calcStacking(false, forceWeight.getStacking());
+                nStack = eCoords.getNStacking();
+                for (int i = 0; i < nStack; i++) {
+                    ViolationStats stat = eCoords.getStackError(i, limitVal, forceWeight.getStacking());
+                    if (stat != null) {
+                        String errMsg = stat.toString();
+                        writer.print(errMsg);
+                    }
+                }
+            }
             if (forceWeight.getDihedralProb() > 0.0) {
                 EnergyCoords eCoords = molecule.getEnergyCoords();
                 List<Polymer> polymers = molecule.getPolymers();
@@ -767,9 +781,9 @@ public class EnergyLists {
 
             double energySum = dihEnergy + robsonEnergy + repelEnergy + distanceEnergy + irpEnergy + shiftTotEnergy + probDih;
             writer.format(
-                    "Irp %5d %8.3f Dih %5d %8.3f Robson %5d %8.3f Repel %5d %8.3f Distance %5d %8.3f %8.3f Shift %5d %8.3f ProbT %5d %8.3f Total %8.3f\n",
+                    "Irp %5d %8.3f Dih %5d %8.3f Robson %5d %8.3f Repel %5d %8.3f Distance %5d %8.3f %8.3f Shift %5d %8.3f ProbT %5d %8.3f Stack %5d %8.3f Total %8.3f\n",
                     nIrp, irpEnergy, nDih, dihEnergy, nRobson, robsonEnergy, nRepel, repelEnergy, nDistance, distanceEnergy,
-                    maxDis, nShift, shiftTotEnergy, nRotamers, probDih, energySum);
+                    maxDis, nShift, shiftTotEnergy, nRotamers, probDih, nStack, stackingEnergy, energySum);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1051,6 +1065,17 @@ public class EnergyLists {
         return energy;
     }
 
+    public double calcStackingFast(boolean calcDeriv) {
+        EnergyCoords eCoords = molecule.getEnergyCoords();
+        double weight = forceWeight.getStacking();
+        double energy = eCoords.calcStacking(calcDeriv, weight);
+        if (calcDeriv) {
+            eCoords.addStackingDerivs(branches);
+        }
+
+        return energy;
+    }
+
     public double calcNOE(boolean calcDeriv) {
         double totalEnergy = 0.0;
         for (DistancePair distancePair : distanceList) {
@@ -1246,6 +1271,9 @@ public class EnergyLists {
 
             if (forceWeight.getNOE() > 0.0) {
                 energyTotal += calcNOEFast(calcDeriv);
+            }
+            if (forceWeight.getStacking() > 0.0) {
+                energyTotal += calcStackingFast(calcDeriv);
             }
             if (calcDeriv) {
                 gradient = recurrentDerivative();

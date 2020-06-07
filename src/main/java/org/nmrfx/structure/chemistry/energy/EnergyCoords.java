@@ -138,6 +138,10 @@ public class EnergyCoords {
         return eConstraintPairs.nPairs;
     }
 
+    public int getNStacking() {
+        return eBaseStackingPairs.nPairs;
+    }
+
     public int getNContacts() {
         return eDistancePairs.nPairs;
     }
@@ -170,6 +174,10 @@ public class EnergyCoords {
         return eDistancePairs.calcEnergy(calcDeriv, weight);
     }
 
+    public double calcStacking(boolean calcDeriv, double weight) {
+        return eBaseStackingPairs.calcEnergy(calcDeriv, weight);
+    }
+
     public double calcDistShifts(boolean calcDeriv, double rMax, double intraScale, double weight) {
         return eShiftPairs.calcDistShifts(calcDeriv, rMax, intraScale, weight);
     }
@@ -180,6 +188,10 @@ public class EnergyCoords {
 
     public ViolationStats getNOEError(int i, double limitVal, double weight) {
         return eConstraintPairs.getError(i, limitVal, weight);
+    }
+
+    public ViolationStats getStackError(int i, double limitVal, double weight) {
+        return eBaseStackingPairs.getError(i, limitVal, weight);
     }
 
     private char ijWild(String iAtomOld, String jAtomOld, String iAtomNew, String jAtomNew) {
@@ -217,6 +229,10 @@ public class EnergyCoords {
 
     public void addNOEDerivs(AtomBranch[] branches) {
         eConstraintPairs.addDerivs(branches);
+    }
+
+    public void addStackingDerivs(AtomBranch[] branches) {
+        eBaseStackingPairs.addDerivs(branches);
     }
 
     public double calcDihedral(int a, int b, int c, int d) {
@@ -317,6 +333,7 @@ public class EnergyCoords {
 //        System.out.println("set cells");
 
         ePairs.clear();
+        eBaseStackingPairs.clear();
 
         for (int j = 0; j < 3; j++) {
             nCells[j] = 1 + (int) Math.floor(bounds[j][1] / limit);
@@ -414,14 +431,16 @@ public class EnergyCoords {
 //                                    System.out.println("i " + i + " j " + j + " iCell " + iCell + " " + jCell + " " + iOff + " atom " + iAtom + " " + (jAtom - iAtom - 1) + " " + atom1.getShortName() + " " + atom2.getShortName() + " " + disSq);
 
                                     double limit2R = limit2;
-                                    if (atom1.getFlag(Atom.RNABASE) && atom2.getFlag(Atom.RNABASE)) {
+                                    boolean stackCheck = (atom1.getEntity() != atom2.getEntity()) && atom1.getFlag(Atom.RING) && !atom1.getName().contains("'")
+                                            && atom2.getFlag(Atom.RING) && !atom2.getName().contains("'");
+                                    Atom[] planeAtoms1 = null;
+                                    Atom[] planeAtoms2 = null;
+                                    if (stackCheck) {
                                         limit2R = 36.0;
-
+                                        planeAtoms1 = atom1.getPlaneAtoms();
+                                        planeAtoms2 = atom2.getPlaneAtoms();
                                     }
                                     if (disSq < limit2R) {
-                                        if (atom1.getFlag(Atom.RNABASE) && atom2.getFlag(Atom.RNABASE)) {
-
-                                        }
                                         int iRes = resNums[iAtom];
                                         int jRes = resNums[jAtom];
                                         int deltaRes = Math.abs(jRes - iRes);
@@ -479,8 +498,15 @@ public class EnergyCoords {
                                                     ePairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
                                                 }
                                             }
-                                            if (atom1.getFlag(Atom.RNABASE) && atom2.getFlag(Atom.RNABASE)) {
-                                                eBaseStackingPairs.addPair(iAtom, jAtom, iUnit, jUnit, rH);
+                                            if (stackCheck && (planeAtoms1 != null) && (planeAtoms2 != null)) {
+
+                                                eBaseStackingPairs.addPair(iAtom,
+                                                        jAtom, iUnit, jUnit, rH,
+                                                        planeAtoms1[0].eAtom,
+                                                        planeAtoms1[1].eAtom,
+                                                        planeAtoms2[0].eAtom,
+                                                        planeAtoms2[1].eAtom
+                                                );
                                             }
                                         }
                                     }
