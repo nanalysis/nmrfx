@@ -59,6 +59,7 @@ import org.nmrfx.processor.datasets.peaks.FreezeListener;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.gui.AtomController;
+import org.nmrfx.processor.gui.MainApp;
 import org.nmrfx.processor.gui.molecule.MoleculeCanvas;
 import org.nmrfx.processor.processing.ProgressUpdater;
 import org.nmrfx.project.GUIProject;
@@ -170,7 +171,7 @@ public class MolSceneController implements Initializable, MolSelectionListener, 
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable.addListener(mapChangeListener);
+        MainApp.peakListTable.addListener(mapChangeListener);
         updatePeakListMenu();
         modeMenuButton.getItems().add(numbersCheckBox);
         modeMenuButton.getItems().add(activeCheckBox);

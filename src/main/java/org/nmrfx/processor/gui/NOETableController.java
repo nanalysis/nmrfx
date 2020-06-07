@@ -100,7 +100,7 @@ public class NOETableController implements Initializable {
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable.addListener(peakmapChangeListener);
+        MainApp.peakListTable.addListener(peakmapChangeListener);
         updateNoeSetMenu();
         updatePeakListMenu();
 
