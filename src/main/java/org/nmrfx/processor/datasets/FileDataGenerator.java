@@ -19,9 +19,9 @@ package org.nmrfx.processor.datasets;
 
 import org.nmrfx.processor.math.Vec;
 import org.nmrfx.processor.utilities.NvUtil;
-import java.awt.Color;
 import java.io.IOException;
 import java.util.*;
+import org.nmrfx.processor.utilities.NMRFxColor;
 
 public class FileDataGenerator extends DataGenerator implements Cloneable {
 
@@ -32,7 +32,7 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
     public double clm = 1.2;
     public int nlevels = 20;
     public int mChunk = 0;
-    public Color[] color = {Color.black, Color.red};
+    public NMRFxColor[] color = {NMRFxColor.BLACK, NMRFxColor.RED};
     public boolean[] drawOn = {true, false};
     public boolean masked = false;
     public float[] lineWidth = {0.5f, 0.5f};
@@ -68,10 +68,10 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
 
         try {
             o = super.clone();
-            ((FileDataGenerator) o).color = new Color[2];
-            ((FileDataGenerator) o).color[0] = new Color(color[0].getRed(),
+            ((FileDataGenerator) o).color = new NMRFxColor[2];
+            ((FileDataGenerator) o).color[0] = new NMRFxColor(color[0].getRed(),
                     color[0].getGreen(), color[0].getBlue());
-            ((FileDataGenerator) o).color[1] = new Color(color[1].getRed(),
+            ((FileDataGenerator) o).color[1] = new NMRFxColor(color[1].getRed(),
                     color[1].getGreen(), color[1].getBlue());
             ((FileDataGenerator) o).lineWidth = lineWidth.clone();
             ((FileDataGenerator) o).level = level;
@@ -145,7 +145,7 @@ public class FileDataGenerator extends DataGenerator implements Cloneable {
         color[1] = NvUtil.color(theFile.getColor(false));
 
         if ((theFile.getPosneg() & 2) == 2) {
-            color[1] = Color.red;
+            color[1] = NMRFxColor.RED;
             drawOn[1] = true;
         }
 
