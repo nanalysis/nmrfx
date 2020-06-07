@@ -53,6 +53,7 @@ import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.processor.datasets.peaks.AbsMultipletComponent;
 import org.nmrfx.processor.datasets.peaks.Peak.Corner;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
+import org.nmrfx.processor.gui.utils.GUIColorUtils;
 
 /**
  *
@@ -674,9 +675,9 @@ public class DrawPeaks {
         if (colorMode == 1) {
             color = peakAttr.getOffColor();
         }
-        Color peakColor = peak.getColor();
+        int[] peakColor = peak.getColor();
         if (peakColor != null) {
-            color = peakColor;
+            color = GUIColorUtils.toColor(peakColor);
         }
         g2.setStroke(color);
         return colorMode;
@@ -1433,8 +1434,8 @@ public class DrawPeaks {
                 double x1 = xAxis.getDisplayPosition(minX);
                 double x2 = xAxis.getDisplayPosition(maxX);
 
-                if (peakDim1.isFrozen()) {
-                    g2.setStroke(Peak.FREEZE_COLORS[1]);
+                if (peakDim0.isFrozen()) {
+                    g2.setStroke(GUIColorUtils.toColor(Peak.FREEZE_COLORS[0]));
                 } else {
                     g2.setStroke(Color.BLACK);
 
@@ -1492,8 +1493,8 @@ public class DrawPeaks {
                 double y2 = yAxis.getDisplayPosition(maxY);
                 double posX = xAxis.getDisplayPosition(sumX / nX);
 
-                if (peakDim0.isFrozen()) {
-                    g2.setStroke(Peak.FREEZE_COLORS[0]);
+                if (peakDim1.isFrozen()) {
+                    g2.setStroke(GUIColorUtils.toColor(Peak.FREEZE_COLORS[1]));
                 } else {
                     g2.setStroke(Color.BLACK);
                 }

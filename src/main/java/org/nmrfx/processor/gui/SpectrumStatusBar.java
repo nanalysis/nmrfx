@@ -592,7 +592,6 @@ public class SpectrumStatusBar {
     public void setMode(int mode) {
         currentMode = mode;
         arrayMode = false;
-        System.out.println("set mode");
         List<Node> nodes = new ArrayList<>();
         if (mode == 0) {
             nodes.add(vecSpinner);

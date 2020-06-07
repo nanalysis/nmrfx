@@ -196,7 +196,7 @@ public class PeakNavigator implements PeakListener {
             updatePeakListMenu();
         };
 
-        PeakList.peakListTable.addListener(mapChangeListener);
+        MainApp.peakListTable.addListener(mapChangeListener);
 
     }
 

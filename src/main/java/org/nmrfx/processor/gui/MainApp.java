@@ -59,8 +59,9 @@ import org.nmrfx.project.GUIProject;
 import org.nmrfx.project.Project;
 import org.nmrfx.server.Server;
 import static javafx.application.Application.launch;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
 import javafx.scene.text.Font;
-import org.nmrfx.graphicsio.PDFGraphicsContext;
 
 public class MainApp extends Application implements DatasetListener {
 
@@ -81,6 +82,7 @@ public class MainApp extends Application implements DatasetListener {
     Consumer<String> socketFunction = null;
     static NMRFxServer server = null;
     static Font defaultFont;
+    public static ObservableMap<String, PeakList> peakListTable = FXCollections.observableMap(PeakList.peakListTable);
 
     public static void setAnalyst() {
         isAnalyst = true;
