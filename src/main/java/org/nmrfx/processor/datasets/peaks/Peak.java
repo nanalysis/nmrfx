@@ -26,9 +26,7 @@ import static java.util.Comparator.comparing;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.paint.Color;
 import org.nmrfx.processor.datasets.RegionData;
-import org.nmrfx.processor.star.STAR3;
 import org.nmrfx.processor.utilities.ColorUtil;
 
 public class Peak implements Comparable, PeakOrMulti {
@@ -136,7 +134,7 @@ public class Peak implements Comparable, PeakOrMulti {
     static final private int N_TYPES = 9;
     static private String[] peakTypes = new String[N_TYPES];
 
-    static final public Color[] FREEZE_COLORS = {Color.ORANGE, Color.MAGENTA, Color.RED};
+    static final public int[][] FREEZE_COLORS = {{255, 165, 0}, {255, 0, 255}, {255, 0, 0}};
 
     static {
         int j = 1;
@@ -158,7 +156,7 @@ public class Peak implements Comparable, PeakOrMulti {
     private float volume2Err;
     private int type = COMPOUND;
     private int status;
-    private Color color;
+    private int[] colorArray = null;
     private String comment;
     private boolean[] flag;
     private Optional<double[][]> measures = Optional.empty();
@@ -1128,7 +1126,7 @@ public class Peak implements Comparable, PeakOrMulti {
         result.append(String.valueOf(getIntensityErr())).append(sep);
         result.append(String.valueOf(getType())).append(sep);
         result.append(String.valueOf(getComment())).append(sep);
-        String colorString = color == null ? "" : ColorUtil.toRGBCode(color);
+        String colorString = colorArray == null ? "" : ColorUtil.toRGBCode(colorArray);
         result.append(colorString).append(sep);
         result.append(getFlag2()).append(sep);
         result.append(String.valueOf(getStatus()));
@@ -1474,28 +1472,31 @@ public class Peak implements Comparable, PeakOrMulti {
         peakUpdated(this);
     }
 
-    public Color getColor() {
-        return color;
-    }
-
     public String getColorName() {
-        return color == null ? "" : color.toString();
+        String colorString = colorArray == null ? "" : ColorUtil.toRGBCode(colorArray);
+        return colorString;
     }
 
-    public void setColor(Color color) {
-        this.color = color;
+    public int[] getColor() {
+        return colorArray;
+    }
+
+    public void setColorInt(int[] colors) {
+        if (colors != null) {
+            colorArray = colors.clone();
+        }
         peakUpdated(this);
     }
 
     public void setColor(String colorName) {
-        if (colorName != null && (colorName.length() != 0)) {
-            colorName = colorName.trim();
+        if (colorName != null) {
+            colorArray = ColorUtil.fromRGBCode(colorName);
         }
-        if ((colorName == null) || (colorName.length() == 0)) {
-            color = null;
-        } else {
-            color = Color.web(colorName);
-        }
+        peakUpdated(this);
+    }
+
+    public void unSetColor() {
+        colorArray = null;
         peakUpdated(this);
     }
 
@@ -1517,9 +1518,9 @@ public class Peak implements Comparable, PeakOrMulti {
             colorIndex += 2;
         }
         if (colorIndex == 0) {
-            color = null;
+            colorArray = null;
         } else {
-            color = FREEZE_COLORS[colorIndex - 1];
+            colorArray = FREEZE_COLORS[colorIndex - 1].clone();
         }
     }
 
