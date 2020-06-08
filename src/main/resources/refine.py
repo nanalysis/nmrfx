@@ -321,7 +321,7 @@ def createStrictDict(initDict, type):
         initDict = {}
     allowedKeys = {}
     allowedKeys['param'] = ['coarse', 'useh', 'hardSphere', 'start', 'end', 'shrinkValue', 'shrinkHValue', 'dislim', 'swap'] 
-    allowedKeys['force'] = ['elec', 'robson', 'repel', 'dis', 'tors', 'dih', 'irp', 'shift', 'bondWt']
+    allowedKeys['force'] = ['elec', 'robson', 'repel', 'dis', 'tors', 'dih', 'irp', 'shift', 'bondWt','stack']
     allowedKeys = allowedKeys[type]
 
     strictDict = StrictDict(defaultErr=type+'s')
@@ -390,7 +390,6 @@ class refine:
 
     def numericalDerivatives(self,delta,report):
         grefine = GradientRefinement(self.dihedral)
-
         grefine.numericalDerivatives(delta,report)
 
     def setReportDump(self, value):
@@ -453,6 +452,7 @@ class refine:
         * dih (_);
         * shift (_);
         * bondWt (_);
+        * stack (_);
         """
 
         if not forceDict:
@@ -467,9 +467,10 @@ class refine:
             'dih'    : forceWeightOrig.getDihedral(),
             'irp'    : forceWeightOrig.getIrp(),
             'shift'  : forceWeightOrig.getShift(),
+            'stack'  : forceWeightOrig.getStacking(),
             'bondWt' : forceWeightOrig.getBondWt()
         }
-        forces = ('elec','robson','repel','dis','tors','dih','irp','shift','bondWt')
+        forces = ('elec','robson','repel','dis','tors','dih','irp','shift','bondWt','stack')
         forceWeights = []
         for force in forces:
             forceWeight = forceDict[force] if force in forceDict else getOrigWeight[force]
@@ -488,7 +489,7 @@ class refine:
         """
 
         fW = self.energyLists.getForceWeight()
-        output = "robson %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f shift %5.2f bondWt %5.2f" % (fW.getRobson(),fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp(), fW.getShift(), fW.getBondWt())
+        output = "robson %5.2f repel %5.2f elec %5.2f dis %5.2f dprob %5.2f dih %5.2f irp %5.2f shift %5.2f bondWt %5.2f stack %5.2f" % (fW.getRobson(),fW.getRepel(),fW.getElectrostatic(),fW.getNOE(),fW.getDihedralProb(),fW.getDihedral(),fW.getIrp(), fW.getShift(), fW.getBondWt(), fW.getStacking())
         return output
 
     def dump(self,limit,shiftLim, fileName):
@@ -1048,6 +1049,9 @@ class refine:
         valAngle = 90.0;
         dihAngle = 135.0;
         if seqReader != None and seqReader.getMolecule() != None:
+            mol = seqReader.getMolecule()
+            for entity in mol.getEntities():
+                self.setupAtomProperties(entity)
             print 'createlink'
             seqReader.createLinker(7, linkLen, valAngle, dihAngle);
         #if sequence exists it takes priority over the file and the sequence will be used instead
@@ -2276,6 +2280,7 @@ class refine:
         if dOpt['dfreeSteps']> 0:
             self.refine(nsteps=dOpt['dfreeSteps'],radius=20, alg=dOpt['dfreeAlg']);
         ec = self.molecule.getEnergyCoords()
+        #ec.exportConstraintPairs('constraints.txt')
 
     def cdynamics(self, steps, hiTemp, medTemp, timeStep=1.0e-3):
         self.updateAt(20)
