@@ -558,7 +558,7 @@ public class PDBFile {
                         lastChain = thisChain;
                     } else {
                         if (!atomParse.resName.equals("HOH")) {
-                            hetAtom = false;
+                            //hetAtom = false;
                         }
                     }
                     if (!hetAtom) {
@@ -588,9 +588,9 @@ public class PDBFile {
                         residue = polymer.getResidue(atomParse.resNum);
 
                         if (residue == null) {
-                            for (Residue resi : polymer.getResidues()) {
-                                System.out.println(resi.getName() + " " + resi.getNumber());
-                            }
+                            //for (Residue resi : polymer.getResidues()) {
+                                //System.out.println(resi.getName() + " " + resi.getNumber());
+                            //}
                             System.err.println("null residue " + atomParse.resNum + " for polymer " + polymerName);
                             System.err.println(string);
                             continue;
