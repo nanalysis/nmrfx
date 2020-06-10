@@ -392,6 +392,10 @@ class refine:
         grefine = GradientRefinement(self.dihedral)
         grefine.numericalDerivatives(delta,report)
 
+    def calcDerivError(self,delta):
+        grefine = GradientRefinement(self.dihedral)
+        return grefine.calcDerivError(delta)
+
     def setReportDump(self, value):
         self.reportDump = value
 
