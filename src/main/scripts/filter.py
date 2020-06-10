@@ -14,8 +14,8 @@ if 'windows' in get_os_version():
     props = props.replace('.\\','')
     elems = props.split(';')
 else:
-    props = props.replace('./','')
-    elems = props.split(':')
+props = props.replace('./','')
+elems = props.split(':')
 firstElem = elems[0].replace('classpath=','')
 with open('target/Manifest.txt','w') as f1:
     f1.write('Class-Path:')
