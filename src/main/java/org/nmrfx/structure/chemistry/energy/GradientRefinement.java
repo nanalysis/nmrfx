@@ -161,6 +161,35 @@ public class GradientRefinement extends Refinement {
         return energy;
     }
 
+    public double calcDeriv(final double delta, int i) {
+        double origValue = dihedrals.angleValues[i];
+
+        dihedrals.angleValues[i] = origValue - 2.0 * delta;
+        putDihedrals();
+        molecule.genCoords(false, null);
+        double energy1 = energy();
+
+        dihedrals.angleValues[i] = origValue - delta;
+        putDihedrals();
+        molecule.genCoords(false, null);
+        double energy2 = energy();
+
+        dihedrals.angleValues[i] = origValue + delta;
+        putDihedrals();
+        molecule.genCoords(false, null);
+        double energy3 = energy();
+
+        dihedrals.angleValues[i] = origValue + 2.0 * delta;
+        putDihedrals();
+        molecule.genCoords(false, null);
+        double energy4 = energy();
+
+        dihedrals.angleValues[i] = origValue;
+        double deriv = (energy1 / 12.0 - 2.0 * energy2 / 3.0 + 2.0 * energy3 / 3.0 - energy4 / 12.0) / delta;
+        return deriv;
+
+    }
+
     public double[] numericalDerivatives(final double delta, boolean report) {
         prepareAngles(false);
         getDihedrals();
@@ -174,36 +203,31 @@ public class GradientRefinement extends Refinement {
         }
         molecule.resetGenCoords();
         for (int i = 0; i < nAngles; i++) {
-            double origValue = dihedrals.angleValues[i];
-
-            dihedrals.angleValues[i] = origValue - 2.0 * delta;
-            putDihedrals();
-            molecule.genCoords(false, null);
-            double energy1 = energy();
-
-            dihedrals.angleValues[i] = origValue - delta;
-            putDihedrals();
-            molecule.genCoords(false, null);
-            double energy2 = energy();
-
-            dihedrals.angleValues[i] = origValue + delta;
-            putDihedrals();
-            molecule.genCoords(false, null);
-            double energy3 = energy();
-
-            dihedrals.angleValues[i] = origValue + 2.0 * delta;
-            putDihedrals();
-            molecule.genCoords(false, null);
-            double energy4 = energy();
-
-            dihedrals.angleValues[i] = origValue;
-            double deriv = (energy1 / 12.0 - 2.0 * energy2 / 3.0 + 2.0 * energy3 / 3.0 - energy4 / 12.0) / delta;
+            double deriv = calcDeriv(delta, i);
             nDerivatives[i] = deriv;
             if (report) {
-                System.out.printf("%4d %10s %12.7f %12.7f %12.7f %12.7f\n", i, dihedrals.energyList.branches[i].atom.getFullName(), energy2, energy3, deriv, derivatives[i]);
+                System.out.printf("%4d %10s %12.7f %12.7f %12.7f %12.7f\n", i, dihedrals.energyList.branches[i].atom.getFullName(), 0.0, 0.0, deriv, derivatives[i]);
             }
         }
         return nDerivatives;
+    }
+
+    public double calcDerivError(final double delta) {
+        prepareAngles(false);
+        getDihedrals();
+        int nAngles = dihedrals.angleValues.length;
+        EnergyDeriv eDeriv = eDeriv();
+        double[] derivatives = eDeriv.getDerivatives();
+        double maxError = Double.NEGATIVE_INFINITY;
+        molecule.resetGenCoords();
+        for (int i = 0; i < nAngles; i++) {
+            double deriv = calcDeriv(delta, i);
+            double deltaDeriv = Math.abs(derivatives[i] - deriv);
+            if (deltaDeriv > maxError) {
+                maxError = deltaDeriv;
+            }
+        }
+        return maxError;
     }
 
 }
