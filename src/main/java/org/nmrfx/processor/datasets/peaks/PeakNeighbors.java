@@ -73,6 +73,15 @@ public class PeakNeighbors {
         setCells(0);
         setCells(1);
     }
+    public PeakNeighbors(PeakList peakListA, PeakList peakListB, int nCells, List<String> dimNameList) {
+        this.peakLists[0] = peakListA;
+        this.peakLists[1] = peakListB;
+        this.dimNames = dimNameList.toArray(new String[0]);
+        this.nCells = nCells;
+        cellSizes = new double[dimNameList.size()];
+        setCells(0);
+        setCells(1);
+    }
 
     double[][] getBoundaries() {
         int nDim = dimNames.length;
