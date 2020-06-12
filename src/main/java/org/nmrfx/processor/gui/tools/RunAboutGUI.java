@@ -798,7 +798,6 @@ def getType(types, row, dDir):
             resOffset = resOffset >= peaks.size() ? 0 : resOffset;
             iCol = iCol >= peaks.size() ? 0 : iCol;
             Peak peak = peaks.get(iCol);
-//            System.out.println("draw chart " + chart.getName() + " " + iCol + " " + iChart + " at " + peak.getName());
             chart.clearAnnotations();
             if ((peak != null) && (chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                 refreshChart(chart, iChart, peak);
