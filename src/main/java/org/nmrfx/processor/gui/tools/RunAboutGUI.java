@@ -251,7 +251,7 @@ public class RunAboutGUI implements PeakListener {
 
     void assemble() {
         runAbout.assemble();
-       // useSpinSystem = true;
+        // useSpinSystem = true;
     }
 
     public void updatePeakListMenu() {
@@ -798,6 +798,7 @@ def getType(types, row, dDir):
             resOffset = resOffset >= peaks.size() ? 0 : resOffset;
             iCol = iCol >= peaks.size() ? 0 : iCol;
             Peak peak = peaks.get(iCol);
+//            System.out.println("draw chart " + chart.getName() + " " + iCol + " " + iChart + " at " + peak.getName());
             chart.clearAnnotations();
             if ((peak != null) && (chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                 refreshChart(chart, iChart, peak);
@@ -888,7 +889,7 @@ def getType(types, row, dDir):
         Double[] ppms = new Double[cDim];
         for (int i = 0; i < aDim; i++) {
             PeakDim peakDim = peak.getPeakDim(dataAttr.getLabel(i));
-            System.out.println(i + " " + peak.getName() + " " + dataAttr.getLabel(i) + " " + peakDim);
+//            System.out.println(i + " " + iChart + " " + widths[iChart] + " " + peak.getName() + " " + dataAttr.getLabel(i) + " " + peakDim.getName());
             if ((widths[iChart] != null) && (peakDim != null)) {
                 ppms[i] = Double.valueOf(peakDim.getChemShiftValue());
                 if (widths[iChart][i] == null) {
@@ -897,10 +898,11 @@ def getType(types, row, dDir):
                     double pos;
                     if (chart.getAxMode(i) == PPM) {
                         pos = ppms[i];
+//                        System.out.println(i + " " + aDim + " " + i + " " + ppms[i] + " " + pos);
                     } else {
                         int dDim = dataAttr.getDim(i);
                         pos = dataAttr.getDataset().ppmToDPoint(dDim, ppms[i]);
-                        System.out.println(i + " " + aDim + " " + dDim + " " + ppms[i] + " " + pos);
+//                        System.out.println(i + " " + aDim + " " + dDim + " " + ppms[i] + " " + pos);
                     }
                     chart.moveTo(i, pos, widths[iChart][i]);
                 }
