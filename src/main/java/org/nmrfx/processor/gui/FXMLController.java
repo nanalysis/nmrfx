@@ -118,6 +118,7 @@ import org.nmrfx.processor.gui.controls.LayoutControlCanvas;
 import org.nmrfx.graphicsio.GraphicsIOException;
 import org.nmrfx.graphicsio.PDFGraphicsContext;
 import org.nmrfx.graphicsio.SVGGraphicsContext;
+import org.nmrfx.processor.datasets.peaks.PeakListAlign;
 import org.nmrfx.processor.gui.spectra.CanvasBindings;
 import org.nmrfx.processor.gui.spectra.ColorProperty;
 import org.nmrfx.processor.gui.spectra.CrossHairs;
@@ -1884,6 +1885,26 @@ public class FXMLController implements FractionPaneChild, Initializable, PeakNav
     }
 
     public void alignCenters() {
+        DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
+        if (activeChart.peakListAttributesList.isEmpty()) {
+            alignCentersWithTempLists();
+        } else {
+            PeakList refList = activeChart.peakListAttributesList.get(0).getPeakList();
+            List<String> dimNames = new ArrayList<>();
+            dimNames.add(activeAttr.getLabel(0));
+            dimNames.add(activeAttr.getLabel(1));
+            List<PeakList> movingLists = new ArrayList<>();
+            for (PolyChart chart : charts) {
+                if (chart != activeChart) {
+                    PeakList movingList = chart.peakListAttributesList.get(0).getPeakList();
+                    movingLists.add(movingList);
+                }
+            }
+            PeakListAlign.alignCenters(refList, dimNames, movingLists);
+        }
+    }
+
+    public void alignCentersWithTempLists() {
         DatasetAttributes activeAttr = (DatasetAttributes) activeChart.datasetAttributesList.get(0);
         // any peak lists created just for alignmnent should be deleted
         PeakList refList = PeakPicking.peakPickActive(activeChart, activeAttr, false, false, false, "refList");
