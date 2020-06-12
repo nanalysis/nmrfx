@@ -315,7 +315,7 @@ public class SpectrumStatusBar {
 
         peakToolMenu.getItems().addAll(peakNavigatorMenuItem, peakSliderMenuItem,
                 pathToolMenuItem);
-        
+
         addToToolMenu(peakToolMenu);
     }
 
@@ -429,7 +429,9 @@ public class SpectrumStatusBar {
                 int indexU = chart.axModes[axNum].getIndex(dataAttr, axNum, axis.getUpperBound());
 
                 int center = (indexL + indexU) / 2;
-
+                int dDim = dataAttr.dim[axNum];
+                int size = dataAttr.getDataset().getSize(dDim);
+                setPlaneRanges(axNum, size);
                 updatePlaneSpinner(center, axNum);
             }
         }

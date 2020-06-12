@@ -2212,14 +2212,6 @@ public class PolyChart implements PeakListener {
                         firstOffset = datasetAttributes.getOffset();
                         firstLvl = datasetAttributes.getLvl();
                         updateAxisType();
-
-                        if (controller.getStatusBar() != null) {
-                            SpectrumStatusBar statusBar = controller.getStatusBar();
-                            for (int iDim = 2; iDim < datasetAttributes.nDim; iDim++) {
-                                int[] maxLimits = datasetAttributes.getMaxLimitsPt(iDim);
-                                controller.getStatusBar().setPlaneRanges(iDim, maxLimits[1]);
-                            }
-                        }
                     }
 
                     if (disDimProp.get() != DISDIM.TwoD) {
