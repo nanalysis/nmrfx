@@ -271,6 +271,7 @@ public class Entity implements AtomContainer, Serializable, ITree {
     }
 
     public void removeAtom(final Atom atom) {
+        atom.removeBonds();
         atoms.remove(atom);
         molecule.invalidateAtomArray();
     }
