@@ -46,6 +46,7 @@ import org.nmrfx.processor.gui.annotations.AnnoLine;
 import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
+import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 
 /*
@@ -104,6 +105,7 @@ public class RunAboutGUI implements PeakListener {
         FXMLController controller = FXMLController.create();
         controller.getStage();
 
+        
         ToolBar navBar = new ToolBar();
         controller.getBottomBox().getChildren().add(navBar);
         RunAboutGUI runAbout = new RunAboutGUI(controller);
@@ -196,6 +198,16 @@ public class RunAboutGUI implements PeakListener {
             assemble();
         });
         actionMenuButton.getItems().add(assembleItem);
+        MenuItem calcCombItem = new MenuItem("Combinations");
+        calcCombItem.setOnAction(e -> {
+            runAbout.calcCombinations();
+        });
+        actionMenuButton.getItems().add(calcCombItem);
+        MenuItem compareItem = new MenuItem("Compare");
+        compareItem.setOnAction(e -> {
+            runAbout.compare();
+        });
+        actionMenuButton.getItems().add(compareItem);
 
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(peakIdField);
@@ -251,16 +263,25 @@ public class RunAboutGUI implements PeakListener {
 
     void assemble() {
         runAbout.assemble();
-        // useSpinSystem = true;
+        updatePeakListMenu();
+        useSpinSystem = true;
     }
 
     public void updatePeakListMenu() {
         peakListMenuButton.getItems().clear();
+        if (runAbout.getSpinSystems().getSize() > 0) {
+            MenuItem spinSysMenuItem = new MenuItem("spinsystems");
+            spinSysMenuItem.setOnAction(e -> {
+                RunAboutGUI.this.useSpinSystem = true;
+            });
+            peakListMenuButton.getItems().add(spinSysMenuItem);
+        }
 
         for (String peakListName : PeakList.peakListTable.keySet()) {
             MenuItem menuItem = new MenuItem(peakListName);
             menuItem.setOnAction(e -> {
                 RunAboutGUI.this.setPeakList(peakListName);
+                RunAboutGUI.this.useSpinSystem = false;
             });
             peakListMenuButton.getItems().add(menuItem);
         }
@@ -316,6 +337,7 @@ public class RunAboutGUI implements PeakListener {
 
     public void setSpinSystems(List<SpinSystem> spinSystems) {
         drawSpinSystems(spinSystems);
+        setPeakIdField();
     }
 
     public void setPeaks(List<Peak> peaks) {
@@ -793,6 +815,11 @@ def getType(types, row, dDir):
         List<PolyChart> charts = controller.getCharts();
         int iChart = 0;
         for (PolyChart chart : charts) {
+            chart.chartProps.setTitles(true);
+            if (!chart.getPeakListAttributes().isEmpty()) {
+                PeakListAttributes peakAttr = chart.getPeakListAttributes().get(0);
+                peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.Number);
+            }
             int iCol = iChart % resOffsets.length;
             int resOffset = resOffsets[iCol] - minOffset;
             resOffset = resOffset >= peaks.size() ? 0 : resOffset;
@@ -810,6 +837,7 @@ def getType(types, row, dDir):
         List<PolyChart> charts = controller.getCharts();
         int iChart = 0;
         for (PolyChart chart : charts) {
+            chart.chartProps.setTitles(true);
             int iCol = iChart % resOffsets.length;
             int resOffset = resOffsets[iCol] - minOffset;
             resOffset = resOffset >= spinSystems.size() ? 0 : resOffset;
@@ -825,6 +853,10 @@ def getType(types, row, dDir):
             if ((peak != null) && (chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                 refreshChart(chart, iChart, peak);
                 DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
+                if (!chart.getPeakListAttributes().isEmpty()) {
+                    PeakListAttributes peakAttr = chart.getPeakListAttributes().get(0);
+                    peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.Cluster);
+                }
 
                 for (PeakMatch peakMatch : spinSystem.peakMatches()) {
                     PeakDim peakDim = peakMatch.getPeak().getPeakDim(dataAttr.getLabel(1));
@@ -832,7 +864,7 @@ def getType(types, row, dDir):
                         int iDim = peakDim.getSpectralDim();
                         int atomIndex = peakMatch.getIndex(iDim);
                         String aName = SpinSystem.getAtomName(atomIndex).toUpperCase();
-                        System.out.println("aname " + aName + " " + atomPatterns.get(iDim).toString());
+//                        System.out.println("aname " + aName + " " + atomPatterns.get(iDim).toString());
                         if (!atomPatterns.get(iDim).contains(aName)) {
                             continue;
 
@@ -871,7 +903,7 @@ def getType(types, row, dDir):
                         double ppm = spinSystem.getValue(isIntra ? 1 : 0, atomIndex);
                         AnnoLine annoLine = new AnnoLine(f1, ppm, f2, ppm, CanvasAnnotation.POSTYPE.FRACTION, CanvasAnnotation.POSTYPE.WORLD);
                         annoLine.setStroke(color);
-                        System.out.println("draw at " + iDim + " " + aName + " " + +ppm);
+//                        System.out.println("draw at " + iDim + " " + aName + " " + +ppm);
                         chart.addAnnotation(annoLine);
                         chart.refresh();
                     }
