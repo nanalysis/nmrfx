@@ -20,12 +20,14 @@ public class SpinSystem {
     List<PeakMatch> peakMatches = new ArrayList<>();
     List<SpinSystemMatch> spinMatchP = new ArrayList<>();
     List<SpinSystemMatch> spinMatchS = new ArrayList<>();
+    Optional<SpinSystemMatch> confirmP = Optional.empty();
+    Optional<SpinSystemMatch> confirmS = Optional.empty();
     static final String[] ATOM_TYPES = {"h", "n", "c", "ha", "ca", "cb"};
     static int[][] nAtmPeaks = {
         {0, 0, 2, 0, 2, 2},
         {7, 7, 1, 0, 1, 1}
     };
-    static int[] RES_MTCH = {4, 5};
+    static int[] RES_MTCH = {2, 4, 5};
 
     static final int CA_INDEX = ATOM_TYPES.length - 2;
     static final int CB_INDEX = ATOM_TYPES.length - 1;
@@ -603,11 +605,12 @@ public class SpinSystem {
 
     }
 
-    public Optional<Double> compare(SpinSystem spinSysB, boolean prev) {
+    public Optional<SpinSystemMatch> compare(SpinSystem spinSysB, boolean prev) {
         int idxB = prev ? 1 : 0;
         int idxA = prev ? 0 : 1;
         double sum = 0.0;
         boolean ok = false;
+        int nMatch = 0;
         for (int i : RES_MTCH) {
             double vA = values[idxA][i];
             double vB = spinSysB.values[idxB][i];
@@ -621,13 +624,21 @@ public class SpinSystem {
                 } else {
                     delta /= tolA;
                     sum += delta * delta;
+                    nMatch++;
                 }
             }
         }
-        Optional<Double> result = Optional.empty();
+        Optional<SpinSystemMatch> result = Optional.empty();
         if (ok) {
             double dis = Math.sqrt(sum);
-            result = Optional.of(Math.exp(-dis));
+            double score = Math.exp(-dis);
+            SpinSystemMatch spinMatch;
+            if (prev) {
+                spinMatch = new SpinSystemMatch(spinSysB, this, score, nMatch);
+            } else {
+                spinMatch = new SpinSystemMatch(this, spinSysB, score, nMatch);
+            }
+            result = Optional.of(spinMatch);
         }
         return result;
     }
@@ -695,6 +706,14 @@ public class SpinSystem {
 
         return newSys;
 
+    }
+
+    public List<SpinSystemMatch> getMatchToPrevious() {
+        return spinMatchP;
+    }
+
+    public List<SpinSystemMatch> getMatchToNext() {
+        return spinMatchS;
     }
 
 }

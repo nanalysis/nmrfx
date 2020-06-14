@@ -22,24 +22,28 @@ public class SpinSystems {
         return spinSystems.get(i);
     }
 
-    public SpinSystem get(int i, int dir) {
+    public SpinSystem get(int i, int dir, int pIndex, int sIndex) {
         SpinSystem spinSystem = spinSystems.get(i);
-        System.out.println("get " + i + " " + dir);
         System.out.println(spinSystem);
         if (dir == -1) {
             if (!spinSystem.spinMatchP.isEmpty()) {
-                spinSystem = spinSystem.spinMatchP.get(0).spinSystemA;
+                if (pIndex >= spinSystem.spinMatchP.size()) {
+                    pIndex = spinSystem.spinMatchP.size() - 1;
+                }
+                spinSystem = spinSystem.spinMatchP.get(pIndex).spinSystemA;
             } else {
                 spinSystem = null;
             }
         } else if (dir == 1) {
             if (!spinSystem.spinMatchS.isEmpty()) {
-                spinSystem = spinSystem.spinMatchS.get(0).spinSystemB;
+                if (sIndex >= spinSystem.spinMatchS.size()) {
+                    sIndex = spinSystem.spinMatchS.size() - 1;
+                }
+                spinSystem = spinSystem.spinMatchS.get(sIndex).spinSystemB;
             } else {
                 spinSystem = null;
             }
         }
-        System.out.println(spinSystem);
 
         return spinSystem;
 
@@ -229,43 +233,36 @@ public class SpinSystems {
     public void compare() {
         int n = spinSystems.size();
         System.out.println("compare " + n);
-        double[] sumsP = new double[n];
-        double[] sumsS = new double[n];
 
         for (int i = 0; i < n; i++) {
 
             SpinSystem spinSysA = spinSystems.get(i);
             spinSysA.spinMatchP.clear();
             spinSysA.spinMatchS.clear();
+            double sumsP = 0.0;
+            double sumsS = 0.0;
             for (int j = 0; j < n; j++) {
                 if (i != j) {
                     SpinSystem spinSysB = spinSystems.get(j);
-                    Optional<Double> result = spinSysA.compare(spinSysB, true);
+                    Optional<SpinSystemMatch> result = spinSysA.compare(spinSysB, true);
                     if (result.isPresent()) {
-                        sumsP[i] += result.get();
+                        spinSysA.spinMatchP.add(result.get());
+                        sumsP += result.get().score;
                     }
                     result = spinSysA.compare(spinSysB, false);
                     if (result.isPresent()) {
-                        sumsS[i] += result.get();
+                        spinSysA.spinMatchS.add(result.get());
+                        sumsS += result.get().score;
                     }
                 }
             }
-            for (int j = 0; j < n; j++) {
-                if (i != j) {
-                    SpinSystem spinSysB = spinSystems.get(j);
-                    Optional<Double> result = spinSysA.compare(spinSysB, true);
-                    if (result.isPresent()) {
-                        double score = result.get() / sumsP[i];
-                        spinSysA.spinMatchP.add(new SpinSystemMatch(spinSysB, spinSysA, score));
-                    }
-                    result = spinSysA.compare(spinSysB, false);
-                    if (result.isPresent()) {
-                        double score = result.get() / sumsS[i];
-                        spinSysA.spinMatchS.add(new SpinSystemMatch(spinSysA, spinSysB, score));
+            for (SpinSystemMatch spinMatch : spinSysA.spinMatchP) {
+                spinMatch.norm(sumsP);
+            }
+            for (SpinSystemMatch spinMatch : spinSysA.spinMatchS) {
+                spinMatch.norm(sumsS);
+            }
 
-                    }
-                }
-            }
             spinSysA.spinMatchP.sort((s1, s2) -> Double.compare(s2.score, s1.score));
             System.out.println(i + " " + spinSysA.spinMatchP);
             spinSysA.spinMatchS.sort((s1, s2) -> Double.compare(s2.score, s1.score));
