@@ -9,21 +9,49 @@ package org.nmrfx.processor.datasets.peaks;
  *
  * @author brucejohnson
  */
-class SpinSystemMatch {
+public class SpinSystemMatch implements Comparable<SpinSystemMatch> {
 
-    final double score;
+    double score;
+    final int n;
+
     final SpinSystem spinSystemA;
     final SpinSystem spinSystemB;
 
-    SpinSystemMatch(SpinSystem spinSystemA, SpinSystem spinSystemB, double score) {
+    public int getN() {
+        return n;
+    }
+
+    public void norm(double normValue) {
+        score /= normValue;
+    }
+
+    public double getScore() {
+        return score;
+    }
+
+    public SpinSystem getSpinSystemA() {
+        return spinSystemA;
+    }
+
+    public SpinSystem getSpinSystemB() {
+        return spinSystemB;
+    }
+
+    public SpinSystemMatch(SpinSystem spinSystemA, SpinSystem spinSystemB, double score, int nMatch) {
         this.spinSystemA = spinSystemA;
         this.spinSystemB = spinSystemB;
         this.score = score;
+        this.n = nMatch;
     }
 
     public String toString() {
         String result = String.format("%s %s %.4f", spinSystemA.rootPeak.getName(), spinSystemB.rootPeak.getName(), score);
         return result;
+    }
+
+    @Override
+    public int compareTo(SpinSystemMatch o) {
+        return Double.compare(score, o.score);
     }
 
 }
