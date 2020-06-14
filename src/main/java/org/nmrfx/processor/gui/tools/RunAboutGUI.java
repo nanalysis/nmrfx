@@ -17,12 +17,17 @@ import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
@@ -32,7 +37,9 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.Peak;
@@ -42,8 +49,8 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
 import org.nmrfx.processor.datasets.peaks.SpinSystem;
 import org.nmrfx.processor.datasets.peaks.SpinSystem.PeakMatch;
+import org.nmrfx.processor.datasets.peaks.SpinSystemMatch;
 import org.nmrfx.processor.gui.annotations.AnnoLine;
-import org.nmrfx.processor.gui.annotations.AnnoPolyLine;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
@@ -84,6 +91,8 @@ public class RunAboutGUI implements PeakListener {
     Label intensityLabel;
     RunAbout runAbout = new RunAbout();
     int currentSpinSystem = -1;
+    SpinStatus spinStatus;
+    Canvas seqCanvas;
 
     boolean useSpinSystem = false;
     Double[][] widths;
@@ -105,13 +114,10 @@ public class RunAboutGUI implements PeakListener {
         FXMLController controller = FXMLController.create();
         controller.getStage();
 
-        
-        ToolBar navBar = new ToolBar();
-        controller.getBottomBox().getChildren().add(navBar);
+        VBox vBox = new VBox();
         RunAboutGUI runAbout = new RunAboutGUI(controller);
-
-        runAbout.initialize(navBar);
         runAbout.controller = controller;
+        runAbout.initialize(vBox);
         return runAbout;
     }
 
@@ -133,8 +139,19 @@ public class RunAboutGUI implements PeakListener {
         closeAction.accept(this);
     }
 
-    RunAboutGUI initialize(ToolBar toolBar) {
-        initPeakNavigator(toolBar);
+    RunAboutGUI initialize(VBox vBox) {
+        ToolBar navBar = new ToolBar();
+        vBox.getChildren().add(navBar);
+        controller.getBottomBox().getChildren().add(vBox);
+        spinStatus = new SpinStatus();
+        vBox.getChildren().add(spinStatus.build());
+        seqCanvas = new Canvas();
+        seqCanvas.setHeight(30);
+        seqCanvas.setWidth(vBox.getWidth());
+        seqCanvas.widthProperty().bind(vBox.widthProperty());
+        vBox.getChildren().add(seqCanvas);
+
+        initPeakNavigator(navBar);
         return this;
     }
 
@@ -259,6 +276,141 @@ public class RunAboutGUI implements PeakListener {
         };
 
         MainApp.peakListTable.addListener(mapChangeListener);
+    }
+
+    class SpinStatus {
+
+        int nFields = 2;
+        HBox hBox;
+        Spinner<Integer>[] spinners = new Spinner[2];
+        Label[] scoreFields = new Label[nFields];
+        Label[] sysFields = new Label[nFields];
+        Label[] nMatchFields = new Label[nFields];
+        Label[] labels = new Label[nFields];
+        CheckBox[] selectedButtons = new CheckBox[nFields];
+
+        List<SpinSystem> spinSystems;
+
+        void valueChanged(Spinner spinner) {
+            System.out.println("value chnaged " + spinner.getValue());
+            gotoSpinSystems(spinners[0].getValue(), spinners[1].getValue());
+        }
+
+        HBox build() {
+            String iconSize = "12px";
+            String fontSize = "7pt";
+            hBox = new HBox();
+            for (int i = 0; i < nFields; i++) {
+                Pane pane1 = new Pane();
+                HBox.setHgrow(pane1, Priority.ALWAYS);
+                hBox.getChildren().add(pane1);
+                Spinner spinner = new Spinner(0, 0, 0);
+                spinners[i] = spinner;
+                spinners[i].valueProperty().addListener(e -> valueChanged(spinner));
+                scoreFields[i] = new Label();
+                sysFields[i] = new Label();
+                nMatchFields[i] = new Label();
+                labels[i] = new Label();
+                labels[i].setTextAlignment(TextAlignment.CENTER);
+                scoreFields[i].setTextAlignment(TextAlignment.CENTER);
+                nMatchFields[i].setTextAlignment(TextAlignment.CENTER);
+                labels[i].setAlignment(Pos.CENTER);
+                selectedButtons[i] = new CheckBox();
+
+                spinners[i].setMaxWidth(60);
+
+                sysFields[i].setMaxWidth(50);
+                scoreFields[i].setMaxWidth(50);
+                nMatchFields[i].setMaxWidth(25);
+                labels[i].setMaxWidth(40);
+
+                sysFields[i].setMinWidth(50);
+                scoreFields[i].setMinWidth(50);
+                nMatchFields[i].setMinWidth(25);
+                labels[i].setMinWidth(40);
+
+                hBox.getChildren().add(spinners[i]);
+                Label sysLabel = new Label(" Sys:");
+                hBox.getChildren().addAll(sysLabel, sysFields[i]);
+                Label scoreLabel = new Label(" Score:");
+                hBox.getChildren().addAll(scoreLabel, scoreFields[i]);
+                Label nLabel = new Label(" N:");
+                hBox.getChildren().addAll(nLabel, nMatchFields[i]);
+                Label recipLabel = new Label(" Recip:");
+                hBox.getChildren().addAll(recipLabel, labels[i]);
+                hBox.getChildren().add(selectedButtons[i]);
+
+                Pane pane2 = new Pane();
+                HBox.setHgrow(pane2, Priority.ALWAYS);
+                hBox.getChildren().add(pane2);
+            }
+
+            return hBox;
+        }
+
+        void score(List<SpinSystem> spinSystems) {
+            this.spinSystems = spinSystems;
+            System.out.println("nspin " + spinSystems.size());
+            if (!spinSystems.isEmpty()) {
+                SpinSystem spinSys = spinSystems.size() > 2 ? spinSystems.get(2) : spinSystems.get(0);
+                for (int i = 0; i < resOffsets.length; i++) {
+                    System.out.println(i + " " + resOffsets[i]);
+                }
+                for (int i = 0; i < nFields; i++) {
+                    boolean ok = false;
+                    if (spinSys != null) {
+                        List<SpinSystemMatch> matches = i == 0 ? spinSys.getMatchToPrevious() : spinSys.getMatchToNext();
+                        SpinnerValueFactory.IntegerSpinnerValueFactory factory
+                                = (SpinnerValueFactory.IntegerSpinnerValueFactory) spinners[i].getValueFactory();
+                        factory.setMax(matches.size() - 1);
+
+                    }
+                }
+                for (int i = 0; i < nFields; i++) {
+                    boolean ok = false;
+                    if (spinSys != null) {
+                        List<SpinSystemMatch> matches = i == 0 ? spinSys.getMatchToPrevious() : spinSys.getMatchToNext();
+                        SpinSystemMatch spinMatch = null;
+                        if (!matches.isEmpty()) {
+                            SpinSystem otherSys;
+                            SpinSystem matchSys;
+                            int index = spinners[i].getValue();
+                            System.out.println("i " + i + " index " + index);
+                            spinMatch = matches.get(index);
+                            if (i == 0) {
+                                otherSys = spinMatch.getSpinSystemA();
+                                matchSys = otherSys.getMatchToNext().get(0).getSpinSystemB();
+                            } else {
+                                otherSys = spinMatch.getSpinSystemB();
+                                matchSys = otherSys.getMatchToPrevious().get(0).getSpinSystemA();
+                            }
+                            boolean reciprocal = matchSys == spinSys;
+                            if (reciprocal) {
+                                labels[i].setText("R");
+                                labels[i].setStyle("");
+                                labels[i].setStyle("-fx-background-color:GREEN");
+                            } else {
+                                String matchLabel = "";
+                                if (matchSys != null) {
+                                    matchLabel = String.valueOf(matchSys.getRootPeak().getIdNum());
+                                }
+                                labels[i].setText(matchLabel);
+                                labels[i].setStyle("-fx-background-color:YELLOW");
+                            }
+                            sysFields[i].setText(String.valueOf(otherSys.getRootPeak().getIdNum()));
+                            nMatchFields[i].setText(String.valueOf(spinMatch.getN()));
+                            scoreFields[i].setText(String.format("%4.2f", spinMatch.getScore()));
+                            ok = true;
+                        }
+                    }
+                    if (!ok) {
+                        sysFields[i].setText("");
+                    }
+//scoreField[i].setText(String.format("%4.2f", spinMatch.score));
+                }
+            }
+
+        }
     }
 
     void assemble() {
@@ -450,41 +602,27 @@ public class RunAboutGUI implements PeakListener {
     }
 
     public void firstSpinSystem() {
-        List<SpinSystem> spinSystems = new ArrayList<>();
         currentSpinSystem = 0;
-        for (int resOffset : resOffsets) {
-            SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-            spinSystems.add(spinSystem);
-        }
-        setSpinSystems(spinSystems);
+        gotoSpinSystems();
         System.out.println("first " + currentSpinSystem);
 
     }
 
     public void lastSpinSystem() {
-        List<SpinSystem> spinSystems = new ArrayList<>();
         currentSpinSystem = runAbout.getSpinSystems().getSize() - 1;
-        for (int resOffset : resOffsets) {
-            SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-            spinSystems.add(spinSystem);
-        }
-        System.out.println("last " + currentSpinSystem);
-        setSpinSystems(spinSystems);
+        gotoSpinSystems();
     }
 
     public void nextSpinSystem() {
-        List<SpinSystem> spinSystems = new ArrayList<>();
         if (currentSpinSystem >= 0) {
             currentSpinSystem++;
             if (currentSpinSystem >= runAbout.getSpinSystems().getSize()) {
                 currentSpinSystem = runAbout.getSpinSystems().getSize() - 1;
             }
-            for (int resOffset : resOffsets) {
-                SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-                spinSystems.add(spinSystem);
-            }
-            setSpinSystems(spinSystems);
+        } else {
+            currentSpinSystem = 0;
         }
+        gotoSpinSystems();
         System.out.println("next " + currentSpinSystem);
     }
 
@@ -495,13 +633,24 @@ public class RunAboutGUI implements PeakListener {
             if (currentSpinSystem < 0) {
                 currentSpinSystem = 0;
             }
-            for (int resOffset : resOffsets) {
-                SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset);
-                spinSystems.add(spinSystem);
-            }
-            setSpinSystems(spinSystems);
+        } else {
+            currentSpinSystem = 0;
         }
+        gotoSpinSystems();
         System.out.println("prev " + currentSpinSystem);
+    }
+
+    public void gotoSpinSystems() {
+        gotoSpinSystems(0, 0);
+    }
+
+    public void gotoSpinSystems(int pIndex, int sIndex) {
+        List<SpinSystem> spinSystems = new ArrayList<>();
+        for (int resOffset : resOffsets) {
+            SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem, resOffset, pIndex, sIndex);
+            spinSystems.add(spinSystem);
+        }
+        setSpinSystems(spinSystems);
     }
 
     void firstPeak() {
@@ -834,8 +983,14 @@ def getType(types, row, dDir):
     }
 
     void drawSpinSystems(List<SpinSystem> spinSystems) {
+        drawSpinSystems(spinSystems, 0, 0);
+    }
+
+    void drawSpinSystems(List<SpinSystem> spinSystems, int leftIndex, int rightIndex) {
         List<PolyChart> charts = controller.getCharts();
         int iChart = 0;
+
+        spinStatus.score(spinSystems);
         for (PolyChart chart : charts) {
             chart.chartProps.setTitles(true);
             int iCol = iChart % resOffsets.length;
