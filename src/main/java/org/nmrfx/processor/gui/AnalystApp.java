@@ -76,6 +76,7 @@ import org.nmrfx.structure.chemistry.constraints.NoeSet;
 import org.nmrfx.utils.GUIUtils;
 import org.python.util.PythonInterpreter;
 import org.nmrfx.processor.gui.molecule.CanvasMolecule;
+import org.nmrfx.processor.gui.tools.RunAboutGUI;
 
 public class AnalystApp extends MainApp {
 
@@ -1166,6 +1167,10 @@ public class AnalystApp extends MainApp {
         PolyChart chart = FXMLController.getActiveController().getActiveChart();
         chart.clearAnnoType(CanvasMolecule.class);
         chart.refresh();
+    }
+
+    void showRunAbout() {
+        RunAboutGUI.create();
     }
 
 }
