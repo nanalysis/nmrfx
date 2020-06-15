@@ -164,7 +164,7 @@ public class PeakList {
         }
     }
 
-    class SearchDim {
+    public class SearchDim {
 
         final int iDim;
         final double tol;
@@ -172,6 +172,10 @@ public class PeakList {
         SearchDim(int iDim, double tol) {
             this.iDim = iDim;
             this.tol = tol;
+        }
+        
+        public int getDim() {
+            return iDim;
         }
     }
 
@@ -410,6 +414,10 @@ public class PeakList {
      */
     public void setDetails(String details) {
         this.details = details;
+    }
+
+    public List<SearchDim> getSearchDims() {
+        return searchDims;
     }
 
     /**

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.nmrfx.processor.datasets.peaks;
+package org.nmrfx.processor.seqassign;
 
 /**
  *
