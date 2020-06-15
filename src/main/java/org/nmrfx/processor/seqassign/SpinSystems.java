@@ -1,10 +1,13 @@
-package org.nmrfx.processor.datasets.peaks;
+package org.nmrfx.processor.seqassign;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.SpectralDim;
 
 /**
  *

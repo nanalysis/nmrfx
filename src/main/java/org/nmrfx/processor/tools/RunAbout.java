@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.processor.datasets.peaks.SpinSystems;
+import org.nmrfx.processor.seqassign.SpinSystems;
 import org.yaml.snakeyaml.Yaml;
 
 /**

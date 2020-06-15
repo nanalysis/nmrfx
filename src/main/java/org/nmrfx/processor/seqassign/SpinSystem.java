@@ -1,4 +1,4 @@
-package org.nmrfx.processor.datasets.peaks;
+package org.nmrfx.processor.seqassign;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,7 +7,10 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
+import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakList.SearchDim;
+import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import smile.clustering.KMeans;
 
 /**
@@ -661,10 +664,11 @@ public class SpinSystem {
         for (PeakMatch peakMatch : peakMatches) {
             Peak peak = peakMatch.peak;
             PeakList peakList = peak.getPeakList();
-            values[i] = new double[peakList.searchDims.size()];
+            List<SearchDim> searchDims = peakList.getSearchDims();
+            values[i] = new double[searchDims.size()];
             int j = 0;
-            for (SearchDim sDim : peakList.searchDims) {
-                double shift = peak.getPeakDim(sDim.iDim).getChemShiftValue();
+            for (SearchDim sDim : searchDims) {
+                double shift = peak.getPeakDim(sDim.getDim()).getChemShiftValue();
                 values[i][j] = shift;
             }
             i++;
@@ -677,9 +681,10 @@ public class SpinSystem {
         Peak newRoot = rootPeak.peakList.getNewPeak();
         rootPeak.copyTo(newRoot);
         int j = 0;
-        for (SearchDim sDim : rootPeak.peakList.searchDims) {
-            rootPeak.getPeakDim(sDim.iDim).setChemShiftValue((float) centroids[origCluster][j]);
-            newRoot.getPeakDim(sDim.iDim).setChemShiftValue((float) centroids[newCluster][j]);
+        List<SearchDim> searchDims = rootPeak.peakList.getSearchDims();
+        for (SearchDim sDim : searchDims) {
+            rootPeak.getPeakDim(sDim.getDim()).setChemShiftValue((float) centroids[origCluster][j]);
+            newRoot.getPeakDim(sDim.getDim()).setChemShiftValue((float) centroids[newCluster][j]);
             j++;
         }
         SpinSystem newSys = new SpinSystem(newRoot);
