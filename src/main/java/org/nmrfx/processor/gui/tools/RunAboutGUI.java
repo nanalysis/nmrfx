@@ -59,6 +59,7 @@ import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
 import org.nmrfx.processor.gui.spectra.PeakListAttributes;
+import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Polymer;
 
@@ -223,6 +224,8 @@ public class RunAboutGUI implements PeakListener {
 
         MenuButton actionMenuButton = new MenuButton("Actions");
         navigatorToolBar.getItems().add(actionMenuButton);
+        ToolBarUtils.addFiller(navigatorToolBar, 40, 300);
+
         actionMenuButton.getStyleClass().add("toolButton");
 
         MenuItem loadItem = new MenuItem("Load");
@@ -253,6 +256,8 @@ public class RunAboutGUI implements PeakListener {
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(peakIdField);
         toolBar.getItems().add(deleteButton);
+        ToolBarUtils.addFiller(navigatorToolBar, 40, 300);
+        ToolBarUtils.addFiller(navigatorToolBar, 70, 70);
 
         if (showAtoms) {
             atomXFieldLabel = new Label("X:");
@@ -308,16 +313,35 @@ public class RunAboutGUI implements PeakListener {
         HBox hBox;
         Spinner<Integer>[] spinners = new Spinner[2];
         Label[] scoreFields = new Label[nFields];
-        Label[] sysFields = new Label[nFields];
+        Button[] sysFields = new Button[nFields];
         Label[] nMatchFields = new Label[nFields];
-        Label[] labels = new Label[nFields];
+        Label[] recipLabels = new Label[nFields];
+        Label[] availLabels = new Label[nFields];
+        Label[] viableLabels = new Label[nFields];
         CheckBox[] selectedButtons = new CheckBox[nFields];
 
         List<SpinSystem> spinSystems;
+        SpinSystem spinSys;
 
         void valueChanged(Spinner spinner) {
             System.out.println("value chnaged " + spinner.getValue());
             gotoSpinSystems(spinners[0].getValue(), spinners[1].getValue());
+        }
+
+        void activationChanged(CheckBox checkBox, Spinner<Integer> spinner, boolean prevState) {
+            List<SpinSystemMatch> matches = prevState ? spinSys.getMatchToPrevious() : spinSys.getMatchToNext();
+            int index = spinner.getValue();
+            SpinSystemMatch spinMatch = matches.get(index);
+            if (checkBox.isSelected()) {
+                spinSys.confirm(spinMatch, prevState);
+            } else {
+                spinSys.unconfirm(spinMatch, prevState);
+            }
+        }
+
+        void gotoSystem(int index) {
+            currentSpinSystem = Integer.parseInt(sysFields[index].getText());
+            gotoSpinSystems();
         }
 
         HBox build() {
@@ -325,6 +349,7 @@ public class RunAboutGUI implements PeakListener {
             String fontSize = "7pt";
             hBox = new HBox();
             for (int i = 0; i < nFields; i++) {
+                final int index = i;
                 Pane pane1 = new Pane();
                 HBox.setHgrow(pane1, Priority.ALWAYS);
                 hBox.getChildren().add(pane1);
@@ -332,26 +357,40 @@ public class RunAboutGUI implements PeakListener {
                 spinners[i] = spinner;
                 spinners[i].valueProperty().addListener(e -> valueChanged(spinner));
                 scoreFields[i] = new Label();
-                sysFields[i] = new Label();
+                sysFields[i] = new Button();
+                sysFields[i].setOnAction(e -> gotoSystem(index));
                 nMatchFields[i] = new Label();
-                labels[i] = new Label();
-                labels[i].setTextAlignment(TextAlignment.CENTER);
+                recipLabels[i] = new Label();
+                recipLabels[i].setTextAlignment(TextAlignment.CENTER);
+                recipLabels[i].setAlignment(Pos.CENTER);
+                availLabels[i] = new Label();
+                availLabels[i].setTextAlignment(TextAlignment.CENTER);
+                availLabels[i].setAlignment(Pos.CENTER);
+                viableLabels[i] = new Label();
+                viableLabels[i].setTextAlignment(TextAlignment.CENTER);
+                viableLabels[i].setAlignment(Pos.CENTER);
                 scoreFields[i].setTextAlignment(TextAlignment.CENTER);
                 nMatchFields[i].setTextAlignment(TextAlignment.CENTER);
-                labels[i].setAlignment(Pos.CENTER);
-                selectedButtons[i] = new CheckBox();
+                CheckBox checkBox = new CheckBox();
+                selectedButtons[i] = checkBox;
+                final boolean prevState = i == 0;
+                selectedButtons[i].setOnAction(e -> activationChanged(checkBox, spinner, prevState));
 
                 spinners[i].setMaxWidth(60);
 
                 sysFields[i].setMaxWidth(50);
                 scoreFields[i].setMaxWidth(50);
                 nMatchFields[i].setMaxWidth(25);
-                labels[i].setMaxWidth(40);
+                recipLabels[i].setMaxWidth(40);
+                availLabels[i].setMaxWidth(20);
+                viableLabels[i].setMaxWidth(20);
 
                 sysFields[i].setMinWidth(50);
                 scoreFields[i].setMinWidth(50);
                 nMatchFields[i].setMinWidth(25);
-                labels[i].setMinWidth(40);
+                recipLabels[i].setMinWidth(40);
+                availLabels[i].setMinWidth(20);
+                viableLabels[i].setMinWidth(20);
 
                 hBox.getChildren().add(spinners[i]);
                 Label sysLabel = new Label(" Sys:");
@@ -360,8 +399,9 @@ public class RunAboutGUI implements PeakListener {
                 hBox.getChildren().addAll(scoreLabel, scoreFields[i]);
                 Label nLabel = new Label(" N:");
                 hBox.getChildren().addAll(nLabel, nMatchFields[i]);
-                Label recipLabel = new Label(" Recip:");
-                hBox.getChildren().addAll(recipLabel, labels[i]);
+                Label recipLabel = new Label(" RAV:");
+                hBox.getChildren().addAll(recipLabel, recipLabels[i],
+                        availLabels[i], viableLabels[i]);
                 hBox.getChildren().add(selectedButtons[i]);
 
                 Pane pane2 = new Pane();
@@ -372,11 +412,11 @@ public class RunAboutGUI implements PeakListener {
             return hBox;
         }
 
-        void score(List<SpinSystem> spinSystems) {
+        void showScore(List<SpinSystem> spinSystems) {
             this.spinSystems = spinSystems;
             System.out.println("nspin " + spinSystems.size());
             if (!spinSystems.isEmpty()) {
-                SpinSystem spinSys = spinSystems.size() > 2 ? spinSystems.get(2) : spinSystems.get(0);
+                spinSys = spinSystems.size() > 2 ? spinSystems.get(2) : spinSystems.get(0);
                 for (int i = 0; i < resOffsets.length; i++) {
                     System.out.println(i + " " + resOffsets[i]);
                 }
@@ -396,11 +436,15 @@ public class RunAboutGUI implements PeakListener {
                         List<SpinSystemMatch> matches = i == 0 ? spinSys.getMatchToPrevious() : spinSys.getMatchToNext();
                         SpinSystemMatch spinMatch = null;
                         if (!matches.isEmpty()) {
+                            selectedButtons[i].setDisable(false);
+                            sysFields[i].setDisable(false);
+                            spinners[i].setDisable(false);
                             SpinSystem otherSys;
                             SpinSystem matchSys;
                             int index = spinners[i].getValue();
                             System.out.println("i " + i + " index " + index);
                             spinMatch = matches.get(index);
+
                             if (i == 0) {
                                 otherSys = spinMatch.getSpinSystemA();
                                 matchSys = otherSys.getMatchToNext().get(0).getSpinSystemB();
@@ -408,23 +452,50 @@ public class RunAboutGUI implements PeakListener {
                                 otherSys = spinMatch.getSpinSystemB();
                                 matchSys = otherSys.getMatchToPrevious().get(0).getSpinSystemA();
                             }
+                            boolean available = !otherSys.confirmed(i == 0);
+                            boolean confirmed = spinSys.confirmed(spinMatch, i == 0);
+                            selectedButtons[i].setSelected(confirmed);
+
                             boolean reciprocal = matchSys == spinSys;
                             if (reciprocal) {
-                                labels[i].setText("R");
-                                labels[i].setStyle("");
-                                labels[i].setStyle("-fx-background-color:GREEN");
+                                recipLabels[i].setText("R");
+                                recipLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
                             } else {
                                 String matchLabel = "";
                                 if (matchSys != null) {
                                     matchLabel = String.valueOf(matchSys.getRootPeak().getIdNum());
                                 }
-                                labels[i].setText(matchLabel);
-                                labels[i].setStyle("-fx-background-color:YELLOW");
+                                recipLabels[i].setText(matchLabel);
+                                recipLabels[i].setStyle("-fx-background-color:YELLOW");
                             }
+                            if (available) {
+                                availLabels[i].setText("A");
+                                availLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
+                            } else {
+                                availLabels[i].setText("a");
+                                availLabels[i].setStyle("-fx-background-color:YELLOW");
+                            }
+                            viableLabels[i].setText("V");
+                            viableLabels[i].setStyle("-fx-background-color:LIGHTGREEN");
+
                             sysFields[i].setText(String.valueOf(otherSys.getRootPeak().getIdNum()));
                             nMatchFields[i].setText(String.valueOf(spinMatch.getN()));
                             scoreFields[i].setText(String.format("%4.2f", spinMatch.getScore()));
                             ok = true;
+                        } else {
+                            sysFields[i].setText("");
+                            sysFields[i].setDisable(true);
+                            nMatchFields[i].setText("0");
+                            scoreFields[i].setText("0.0");
+                            selectedButtons[i].setSelected(false);
+                            selectedButtons[i].setDisable(true);
+                            spinners[i].setDisable(true);
+                            recipLabels[i].setText("");
+                            recipLabels[i].setStyle("");
+                            availLabels[i].setText("");
+                            availLabels[i].setStyle("");
+                            viableLabels[i].setText("");
+                            viableLabels[i].setStyle("");
                         }
                     }
                     if (!ok) {
@@ -1059,7 +1130,7 @@ def getType(types, row, dDir):
         List<PolyChart> charts = controller.getCharts();
         int iChart = 0;
 
-        spinStatus.score(spinSystems);
+        spinStatus.showScore(spinSystems);
         for (PolyChart chart : charts) {
             chart.chartProps.setTitles(true);
             int iCol = iChart % resOffsets.length;
