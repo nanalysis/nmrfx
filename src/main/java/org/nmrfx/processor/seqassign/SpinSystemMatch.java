@@ -13,6 +13,7 @@ public class SpinSystemMatch implements Comparable<SpinSystemMatch> {
 
     double score;
     final int n;
+    final boolean[] matched;
 
     final SpinSystem spinSystemA;
     final SpinSystem spinSystemB;
@@ -37,11 +38,12 @@ public class SpinSystemMatch implements Comparable<SpinSystemMatch> {
         return spinSystemB;
     }
 
-    public SpinSystemMatch(SpinSystem spinSystemA, SpinSystem spinSystemB, double score, int nMatch) {
+    public SpinSystemMatch(SpinSystem spinSystemA, SpinSystem spinSystemB, double score, int nMatch, boolean[] matched) {
         this.spinSystemA = spinSystemA;
         this.spinSystemB = spinSystemB;
         this.score = score;
         this.n = nMatch;
+        this.matched = matched;
     }
 
     public String toString() {

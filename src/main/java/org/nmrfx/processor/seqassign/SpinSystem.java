@@ -25,6 +25,7 @@ public class SpinSystem {
     List<SpinSystemMatch> spinMatchS = new ArrayList<>();
     Optional<SpinSystemMatch> confirmP = Optional.empty();
     Optional<SpinSystemMatch> confirmS = Optional.empty();
+    Optional<SeqFragment> fragment = Optional.empty();
     static final String[] ATOM_TYPES = {"h", "n", "c", "ha", "ca", "cb"};
     static int[][] nAtmPeaks = {
         {0, 0, 2, 0, 2, 2},
@@ -192,6 +193,68 @@ public class SpinSystem {
 
     public double getValue(int dir, int index) {
         return values[dir][index];
+    }
+
+    public boolean confirmed(SpinSystemMatch spinSys, boolean prev) {
+        boolean result = false;
+        if (prev) {
+            if (confirmP.isPresent()) {
+                result = confirmP.get().spinSystemB == this;
+            }
+        } else {
+            if (confirmS.isPresent()) {
+                result = confirmS.get().spinSystemA == this;
+            }
+        }
+        return result;
+    }
+
+    public boolean confirmed(boolean prev) {
+        return prev ? confirmP.isPresent() : confirmS.isPresent();
+    }
+
+    public void confirm(SpinSystemMatch spinSysMatch, boolean prev) {
+        if (confirmed(prev)) {
+            return;
+        }
+        if (prev) {
+            SpinSystem target = spinSysMatch.spinSystemA;
+            confirmP = Optional.of(spinSysMatch);
+            System.out.println("confirm P " + spinSysMatch.toString() + " " + spinSysMatch.spinSystemA.getRootPeak().getName());
+            target.confirmS = Optional.of(spinSysMatch);
+        } else {
+            SpinSystem target = spinSysMatch.spinSystemB;
+            confirmS = Optional.of(spinSysMatch);
+            System.out.println("confirm S " + spinSysMatch.toString() + " " + spinSysMatch.spinSystemB.getRootPeak().getName());
+            target.confirmP = Optional.of(spinSysMatch);
+        }
+        SeqFragment fragment = SeqFragment.join(spinSysMatch, false);
+        fragment.dump();
+        fragment.getShifts();
+    }
+
+    public void unconfirm(SpinSystemMatch spinSysMatch, boolean prev) {
+        if (!confirmed(spinSysMatch, prev)) {
+            return;
+        }
+        if (prev) {
+            SpinSystem target = spinSysMatch.spinSystemA;
+            confirmP = Optional.empty();
+            target.confirmS = Optional.empty();
+        } else {
+            SpinSystem target = spinSysMatch.spinSystemB;
+            confirmS = Optional.empty();
+            target.confirmP = Optional.empty();
+        }
+        List<SeqFragment> fragments = SeqFragment.remove(spinSysMatch, false);
+        for (SeqFragment fragment : fragments) {
+
+            if (fragment != null) {
+                System.out.println("FRrag");
+                fragment.dump();
+                fragment.getShifts();
+            }
+        }
     }
 
     public static int[] getCounts(PeakList peakList) {
@@ -614,6 +677,8 @@ public class SpinSystem {
         double sum = 0.0;
         boolean ok = false;
         int nMatch = 0;
+        boolean[] matched = new boolean[RES_MTCH.length];
+        int j = 0;
         for (int i : RES_MTCH) {
             double vA = values[idxA][i];
             double vB = spinSysB.values[idxB][i];
@@ -625,11 +690,13 @@ public class SpinSystem {
                     ok = false;
                     break;
                 } else {
+                    matched[j] = true;
                     delta /= tolA;
                     sum += delta * delta;
                     nMatch++;
                 }
             }
+            j++;
         }
         Optional<SpinSystemMatch> result = Optional.empty();
         if (ok) {
@@ -637,9 +704,9 @@ public class SpinSystem {
             double score = Math.exp(-dis);
             SpinSystemMatch spinMatch;
             if (prev) {
-                spinMatch = new SpinSystemMatch(spinSysB, this, score, nMatch);
+                spinMatch = new SpinSystemMatch(spinSysB, this, score, nMatch, matched);
             } else {
-                spinMatch = new SpinSystemMatch(this, spinSysB, score, nMatch);
+                spinMatch = new SpinSystemMatch(this, spinSysB, score, nMatch, matched);
             }
             result = Optional.of(spinMatch);
         }
