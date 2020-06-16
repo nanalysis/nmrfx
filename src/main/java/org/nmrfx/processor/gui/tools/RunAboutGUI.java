@@ -1,6 +1,6 @@
 package org.nmrfx.processor.gui.tools;
 
-import org.nmrfx.processor.tools.RunAbout;
+import org.nmrfx.structure.seqassign.RunAbout;
 import org.nmrfx.processor.gui.*;
 import de.jensd.fx.glyphs.GlyphsDude;
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
@@ -51,9 +51,9 @@ import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakEvent;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakListener;
-import org.nmrfx.processor.seqassign.SpinSystem;
-import org.nmrfx.processor.seqassign.SpinSystem.PeakMatch;
-import org.nmrfx.processor.seqassign.SpinSystemMatch;
+import org.nmrfx.structure.seqassign.SpinSystem;
+import org.nmrfx.structure.seqassign.SpinSystem.PeakMatch;
+import org.nmrfx.structure.seqassign.SpinSystemMatch;
 import org.nmrfx.processor.gui.annotations.AnnoLine;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
