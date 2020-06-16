@@ -11,7 +11,7 @@
 
     <groupId>org.nmrfx</groupId>
     <artifactId>processorgui</artifactId>
-    <version>10.3.91</version>
+    <version>10.3.92</version>
     <name>nmrfxprocessorgui</name>
     <packaging>jar</packaging>
 
@@ -29,13 +29,13 @@
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>processor</artifactId>
-            <version>10.3.91</version>
+            <version>10.3.92</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.nmrfx</groupId>
             <artifactId>nmrfxutils</artifactId>
-            <version>10.3.91</version>
+            <version>10.3.92</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
