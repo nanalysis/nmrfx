@@ -3,6 +3,8 @@ package org.nmrfx.structure.seqassign;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.nmrfx.structure.chemistry.Polymer;
+import org.nmrfx.structure.chemistry.Residue;
 
 /**
  *
@@ -142,10 +144,6 @@ public class SeqFragment {
             }
             int j = 0;
             for (int idx : SpinSystem.RES_MTCH) {
-                if (iSys == 0) {
-                    result[iSys][j] = spinSysA.getValue(0, idx);
-                    iSys++;
-                }
                 if (spinMatch.matched[j]) {
                     double vA = spinSysA.getValue(1, idx);
                     double vB = spinSysB.getValue(0, idx);
@@ -175,4 +173,57 @@ public class SeqFragment {
         return result;
     }
 
+    List<List<AtomShiftValue>> getShiftValues(double[][] shifts) {
+        List<List<AtomShiftValue>> result = new ArrayList<>();
+        for (int i = 0; i < shifts.length; i++) {
+            List<AtomShiftValue> values = new ArrayList<>();
+            for (int k = 0; k < shifts[i].length; k++) {
+                String aName = SpinSystem.getAtomName(SpinSystem.RES_MTCH[k]);
+                double value = shifts[i][k];
+                if (value != Double.NaN) {
+                    AtomShiftValue atomValue = new AtomShiftValue(aName, value, null);
+                    values.add(atomValue);
+                }
+            }
+            result.add(values);
+        }
+        return result;
+    }
+
+    public List<ResidueSeqScore> scoreFragment(Polymer polymer) {
+        double sDevMul = 2.0;
+        double pOK = 0.05;
+        double[][] shifts = getShifts();
+        List<ResidueSeqScore> result = new ArrayList<>();
+        List<List<AtomShiftValue>> atomShiftValues = getShiftValues(shifts);
+        int winSize = atomShiftValues.size();
+        List<Residue> residues = polymer.getResidues();
+        int nResidues = residues.size();
+        int n = nResidues - winSize + 1;
+        for (int i = 0; i < n; i++) {
+            boolean ok = true;
+            double pScore = 1.0;
+            for (int j = 0; j < winSize; j++) {
+                Residue residue = residues.get(i + j);
+                PPMScore ppmScore = FragmentScoring.scoreAtomPPM(pOK, sDevMul, residue, atomShiftValues.get(j));
+                if (!ppmScore.ok()) {
+                    ok = false;
+                    break;
+                }
+                pScore *= ppmScore.getTotalScore();
+            }
+            if (ok) {
+                System.out.println(i + " " + residues.get(i).getName() + residues.get(i).getNumber());
+                ResidueSeqScore resScore = new ResidueSeqScore(residues.get(i), winSize, pScore);
+                result.add(resScore);
+            }
+        }
+
+        if (!result.isEmpty()) {
+            ResidueSeqScore.norm(result);
+            result.sort(null);
+        }
+        return result;
+
+    }
 }

@@ -257,6 +257,10 @@ public class SpinSystem {
         }
     }
 
+    public Optional<SeqFragment> getFragment() {
+        return fragment;
+    }
+
     public static int[] getCounts(PeakList peakList) {
         int nDim = peakList.getNDim();
         int[] counts = new int[nDim];
