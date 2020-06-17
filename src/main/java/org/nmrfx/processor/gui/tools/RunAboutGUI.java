@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContentDisplay;
@@ -62,6 +64,9 @@ import org.nmrfx.processor.gui.spectra.PeakListAttributes;
 import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Polymer;
+import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.structure.seqassign.ResidueSeqScore;
+import org.nmrfx.structure.seqassign.SeqFragment;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -102,6 +107,7 @@ public class RunAboutGUI implements PeakListener {
     SpinStatus spinStatus;
     SeqPane seqPane;
     Group drawingGroup;
+    Map<String, ResidueLabel> residueLabelMap = new HashMap<>();
 
     boolean useSpinSystem = false;
     Double[][] widths;
@@ -337,6 +343,26 @@ public class RunAboutGUI implements PeakListener {
             } else {
                 spinSys.unconfirm(spinMatch, prevState);
             }
+            Optional<SeqFragment> fragmentOpt = spinSys.getFragment();
+            Molecule molecule = Molecule.getActive();
+            for (ResidueLabel resLabel : residueLabelMap.values()) {
+                resLabel.setColor(Color.WHITE);
+            }
+            fragmentOpt.ifPresent(frag -> {
+                for (Polymer polymer : molecule.getPolymers()) {
+                    List<ResidueSeqScore> resSeqScores = frag.scoreFragment(polymer);
+                    for (ResidueSeqScore resSeqScore : resSeqScores) {
+                        System.out.println(resSeqScore.getFirstResidue().getNumber() + " " + resSeqScore.getScore());
+                        Residue residue = resSeqScore.getFirstResidue();
+                        for (int iRes = 0; iRes < resSeqScore.getNResidues(); iRes++) {
+                            String key = polymer.getName() + residue.getNumber();
+                            ResidueLabel resLabel = residueLabelMap.get(key);
+                            resLabel.setColor(Color.LIGHTGREEN);
+                            residue = residue.getNext();
+                        }
+                    }
+                }
+            });
         }
 
         void gotoSystem(int index) {
@@ -508,47 +534,77 @@ public class RunAboutGUI implements PeakListener {
         }
     }
 
-    void updateSeqCanvas() {
-        Molecule molecule = Molecule.getActive();
+    class ResidueLabel extends StackPane {
+
         double fontSize = 14;
         double width = 20;
-        double height = 20;
-        drawingGroup.getChildren().clear();
-        System.out.println("update " + vBox.getWidth() + " " + seqPane.getWidth());
-        if (molecule != null) {
-            double y = 25.0;
-            double x = 25.0;
-            for (Polymer polymer : molecule.getPolymers()) {
-                if (polymer.isPeptide()) {
-                    String oneLetterCode = polymer.getOneLetterCode();
-                    for (int i = 0; i < oneLetterCode.length(); i++) {
-                        if ((i % 10) == 0) {
-                            x += width / 2.0;
-                        }
-                        String resChar = String.valueOf(oneLetterCode.charAt(i));
-                        Text textItem = new Text(resChar);
-                        Rectangle rect = new Rectangle(width, height, Color.WHITE);
-                        rect.setStroke(null);
-                        rect.setFill(Color.WHITE);
-                        textItem.setFill(Color.BLACK);
-                        textItem.setFont(Font.font(fontSize));
-                        textItem.setMouseTransparent(true);
-                        StackPane stack = new StackPane();
-                        stack.getChildren().addAll(rect, textItem);
-                        stack.setAlignment(Pos.CENTER);
-                        stack.setTranslateX(x - width / 2 + 1);
-                        stack.setTranslateY(y - width / 2 + 1);
+        Rectangle rect;
+        Text textItem;
 
-                        drawingGroup.getChildren().add(stack);
-                        x += width;
-                        if (x > (seqPane.getWidth() - 2.0 * width)) {
-                            System.out.println("resize " + x);
-                            x = 25.0;
-                            y += width;
+        ResidueLabel(Group group, Residue residue) {
+            super();
+            StackPane stack = this;
+            char resChar = residue.getOneLetter();
+            textItem = new Text(String.valueOf(resChar));
+            rect = new Rectangle(width, width, Color.WHITE);
+            rect.setStroke(null);
+            rect.setFill(Color.WHITE);
+            textItem.setFill(Color.BLACK);
+            textItem.setFont(Font.font(fontSize));
+            textItem.setMouseTransparent(true);
+            stack.getChildren().addAll(rect, textItem);
+            stack.setAlignment(Pos.CENTER);
+            group.getChildren().add(stack);
+        }
+
+        void place(double x, double y) {
+            setTranslateX(x - width / 2 + 1);
+            setTranslateY(y - width / 2 + 1);
+        }
+
+        void add(Group group) {
+            group.getChildren().add(this);
+        }
+
+        void setColor(Color color) {
+            rect.setFill(color);
+        }
+    }
+
+    void updateSeqCanvas() {
+        Molecule molecule = Molecule.getActive();
+        if (molecule != null) {
+            double width = 20;
+            if (drawingGroup.getChildren().isEmpty()) {
+                for (Polymer polymer : molecule.getPolymers()) {
+                    if (polymer.isPeptide()) {
+                        for (Residue residue : polymer.getResidues()) {
+                            ResidueLabel resLabel = new ResidueLabel(drawingGroup, residue);
+                            String key = polymer.getName() + residue.getNumber();
+                            residueLabelMap.put(key, resLabel);
                         }
                     }
+
                 }
             }
+            double y = 25.0;
+            double x = 25.0;
+            int i = 0;
+            for (Node node : drawingGroup.getChildren()) {
+                ResidueLabel resLabel = (ResidueLabel) node;
+                if ((i % 10) == 0) {
+                    x += width / 2.0;
+                }
+                resLabel.place(x, y);
+
+                x += width;
+                if (x > (seqPane.getWidth() - 2.0 * width)) {
+                    x = 25.0;
+                    y += width;
+                }
+                i++;
+            }
+
         }
     }
 
