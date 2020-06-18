@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,7 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.PeakList;
-import org.nmrfx.structure.seqassign.SpinSystems;
 import org.yaml.snakeyaml.Yaml;
 
 /**
@@ -28,6 +28,7 @@ public class RunAbout {
     Map<String, Map<String, List<String>>> arrange;
     Map<String, List<String>> dimLabels;
     Map<String, Dataset> datasetMap = new HashMap<>();
+    Map<String, Integer> typeCountMap = new HashMap<>();
     Map<String, List<String>> aTypeMap = new HashMap<>();
     boolean active = false;
 
@@ -77,12 +78,13 @@ public class RunAbout {
         return dimLabels.get(dimType);
     }
 
-    void setPatterns(List<Map<String, Object>> typeList, String typeName, PeakList peakList) {
+    List<String> setPatterns(List<Map<String, Object>> typeList, String typeName, PeakList peakList) {
         double[] tols = {0.04, 0.5, 0.6}; // fixme
+        List<String> patElems = new ArrayList<>();
         for (Map<String, Object> type : typeList) {
             String thisName = (String) type.get("name");
             if (typeName.equals(thisName)) {
-                List<String> patElems = (List<String>) type.get("patterns");
+                patElems = (List<String>) type.get("patterns");
                 List<String> aTypes = new ArrayList<>();
                 for (int i = 0; i < patElems.size(); i++) {
                     peakList.getSpectralDim(i).setPattern(patElems.get(i).trim());
@@ -93,12 +95,63 @@ public class RunAbout {
                     aTypes.add(aType);
                 }
                 aTypeMap.put(typeName, aTypes);
-
+                break;
             }
         }
+        return patElems;
+    }
+
+    int setAtomCount(List<String> patElems, int[][] counts, List<String> stdNames) {
+        int[] dimCount = new int[patElems.size()];
+        int i = 0;
+        for (String elem : patElems) {
+            String[] parts = elem.split("\\.");
+            if (parts.length == 2) {
+                String[] types = parts[0].split(",");
+                String[] aNames = parts[1].split(",");
+                dimCount[i] = types.length * aNames.length;
+            }
+            i++;
+        }
+        int total = 1;
+        int[] dimMult = new int[dimCount.length];
+        for (i = 0; i < dimCount.length; i++) {
+            dimMult[i] = 1;
+            for (int j = 0; j < dimCount.length; j++) {
+                if (i != j) {
+                    dimMult[i] *= dimCount[j];
+                }
+            }
+            total *= dimMult[i];
+        }
+        i = 0;
+        for (String elem : patElems) {
+            String[] parts = elem.split("\\.");
+            System.out.println("elem " + elem + " " + parts.length);
+            if (parts.length == 2) {
+                String[] types = parts[0].split(",");
+                String[] aNames = parts[1].split(",");
+
+                for (String type : types) {
+                    int iDir = type.endsWith("-1") ? 0 : 1;
+                    for (String aName : aNames) {
+                        if (aName.endsWith("-") || aName.endsWith("+")) {
+                            aName = aName.substring(0, aName.length() - 1);
+                        }
+                        aName = aName.toLowerCase();
+                        int nameIdx = stdNames.indexOf(aName);
+                        counts[iDir][nameIdx] += dimMult[i];
+                    }
+                }
+            }
+            i++;
+        }
+        return total;
     }
 
     void setupPeakLists() {
+        List<String> stdNames = Arrays.asList(SpinSystem.ATOM_TYPES);
+        int[][] counts = new int[2][stdNames.size()];
         arrange = (Map<String, Map<String, List<String>>>) yamlData.get("arrangements");
         dimLabels = (Map<String, List<String>>) yamlData.get("dims");
 
@@ -117,11 +170,16 @@ public class RunAbout {
             String datasetName = datasetNameMap.get(typeName);
             PeakList peakList = PeakList.getPeakListForDataset(datasetName);
             if (peakList != null) {
-                setPatterns(typeList, typeName, peakList);
+                List<String> patElems = setPatterns(typeList, typeName, peakList);
                 peakListMap.put(typeName, peakList);
                 peakLists.add(peakList);
+                if (!patElems.isEmpty()) {
+                    int nPeaks = setAtomCount(patElems, counts, stdNames);
+                    typeCountMap.put(typeName, nPeaks);
+                }
             }
         }
+        SpinSystem.nAtmPeaks = counts;
     }
 
     public Optional<String> getTypeName(String row, String dDir) {
