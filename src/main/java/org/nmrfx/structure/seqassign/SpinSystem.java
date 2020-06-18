@@ -167,6 +167,15 @@ public class SpinSystem {
             return peak;
         }
 
+        public String toString() {
+            StringBuilder sBuilder = new StringBuilder();
+            sBuilder.append(peak.getName()).append(" ").append(prob);
+            for (int i = 0; i < atomIndexes.length; i++) {
+                sBuilder.append(" ").append(atomIndexes[i]).append(" ").append(intraResidue[i]);
+            }
+            return sBuilder.toString();
+        }
+
     }
 
     public SpinSystem(Peak peak) {
@@ -790,6 +799,12 @@ public class SpinSystem {
 
     public List<SpinSystemMatch> getMatchToNext() {
         return spinMatchS;
+    }
+
+    public void dumpPeakMatches() {
+        for (PeakMatch peakMatch : peakMatches) {
+            System.out.println(peakMatch.toString());
+        }
     }
 
 }
