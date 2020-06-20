@@ -57,6 +57,7 @@ import org.nmrfx.structure.seqassign.SpinSystem;
 import org.nmrfx.structure.seqassign.SpinSystem.PeakMatch;
 import org.nmrfx.structure.seqassign.SpinSystemMatch;
 import org.nmrfx.processor.gui.annotations.AnnoLine;
+import org.nmrfx.processor.gui.annotations.AnnoText;
 import org.nmrfx.processor.gui.spectra.DatasetAttributes;
 import static org.nmrfx.processor.gui.spectra.DatasetAttributes.AXMODE.PPM;
 import org.nmrfx.processor.gui.spectra.PeakDisplayParameters;
@@ -66,7 +67,10 @@ import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
 import org.nmrfx.structure.seqassign.ResidueSeqScore;
+import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import org.nmrfx.structure.seqassign.SeqFragment;
+import org.nmrfx.structure.seqassign.SpinSystem.AtomPresent;
+import org.nmrfx.utils.GUIUtils;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -108,6 +112,7 @@ public class RunAboutGUI implements PeakListener {
     SeqPane seqPane;
     Group drawingGroup;
     Map<String, ResidueLabel> residueLabelMap = new HashMap<>();
+    Map<Integer, String> chartTypes = new HashMap<>();
 
     boolean useSpinSystem = false;
     Double[][] widths;
@@ -158,7 +163,6 @@ public class RunAboutGUI implements PeakListener {
 
         @Override
         public void layoutChildren() {
-            System.out.println("vBox wid " + vBox.getWidth());
             setWidth(vBox.getWidth());
             setPrefHeight(60.0);
             super.layoutChildren();
@@ -262,6 +266,9 @@ public class RunAboutGUI implements PeakListener {
         toolBar.getItems().addAll(buttons);
         toolBar.getItems().add(peakIdField);
         toolBar.getItems().add(deleteButton);
+        Button analyzeButton = new Button("Analyze");
+        analyzeButton.setOnAction(e -> analyzeSystem());
+        toolBar.getItems().add(analyzeButton);
         ToolBarUtils.addFiller(navigatorToolBar, 40, 300);
         ToolBarUtils.addFiller(navigatorToolBar, 70, 70);
 
@@ -680,6 +687,11 @@ public class RunAboutGUI implements PeakListener {
 
     public Peak getPeak() {
         return currentPeak;
+    }
+
+    void analyzeSystem() {
+        SpinSystem spinSys = runAbout.getSpinSystems().get(currentSpinSystem);
+        spinSys.calcCombinations(true);
     }
 
     public void setSpinSystems(List<SpinSystem> spinSystems) {
@@ -1117,11 +1129,12 @@ def getType(types, row, dDir):
                     List<String> dimNames = runAbout.getDimLabel(colElems[1]);
                     System.out.println(typeName);
                     if (typeName.isPresent()) {
-
+                        chartTypes.put(iChart, typeName.get());
                         Optional<Dataset> datasetOpt = runAbout.getDataset(typeName.get());
                         System.out.println(datasetOpt);
                         if (datasetOpt.isPresent()) {
                             Dataset dataset = datasetOpt.get();
+                            dataset.setTitle(typeName.get());
                             PeakList peakList = runAbout.getPeakList(typeName.get());
                             String dName = dataset.getName();
                             List<String> datasets = Collections.singletonList(dName);
@@ -1185,9 +1198,13 @@ def getType(types, row, dDir):
         updateSeqCanvas();
         List<PolyChart> charts = controller.getCharts();
         int iChart = 0;
+        Font font = Font.font(12.0);
+        double textWidth = GUIUtils.getTextWidth("CB", font);
 
         spinStatus.showScore(spinSystems);
+
         for (PolyChart chart : charts) {
+            chart.chartProps.setTopBorderSize(25);
             chart.chartProps.setTitles(true);
             int iCol = iChart % resOffsets.length;
             int resOffset = resOffsets[iCol] - minOffset;
@@ -1198,24 +1215,29 @@ def getType(types, row, dDir):
                 iChart++;
                 continue;
             }
+            if (iChart == 0) {
+                spinSystem.dumpPeakMatches();
+            }
+            // spinSystem.dumpPeakMatches();
             Peak peak = spinSystem.getRootPeak();
             chart.clearAnnotations();
             List<List<String>> atomPatterns = getAtomsFromPatterns(winPatterns.get(iChart));
             if ((peak != null) && (chart != null) && !chart.getDatasetAttributes().isEmpty()) {
                 refreshChart(chart, iChart, peak);
                 DatasetAttributes dataAttr = (DatasetAttributes) chart.getDatasetAttributes().get(0);
+                PeakList currentList = null;
                 if (!chart.getPeakListAttributes().isEmpty()) {
                     PeakListAttributes peakAttr = chart.getPeakListAttributes().get(0);
                     peakAttr.setLabelType(PeakDisplayParameters.LabelTypes.Cluster);
+                    currentList = peakAttr.getPeakList();
                 }
-
+                int nPeaks = spinSystem.getNPeaksWithList(currentList);
                 for (PeakMatch peakMatch : spinSystem.peakMatches()) {
                     PeakDim peakDim = peakMatch.getPeak().getPeakDim(dataAttr.getLabel(1));
                     if (peakDim != null) {
                         int iDim = peakDim.getSpectralDim();
                         int atomIndex = peakMatch.getIndex(iDim);
                         String aName = SpinSystem.getAtomName(atomIndex).toUpperCase();
-//                        System.out.println("aname " + aName + " " + atomPatterns.get(iDim).toString());
                         if (!atomPatterns.get(iDim).contains(aName)) {
                             continue;
 
@@ -1256,9 +1278,42 @@ def getType(types, row, dDir):
                         annoLine.setStroke(color);
 //                        System.out.println("draw at " + iDim + " " + aName + " " + +ppm);
                         chart.addAnnotation(annoLine);
-                        chart.refresh();
                     }
                 }
+                String typeName = chartTypes.get(iChart);
+                if (typeName != null) {
+                    int nExpected = runAbout.getTypeCount(typeName);
+
+
+                    TypeInfo typeInfo = runAbout.getTypeInfo(typeName);
+                    int dim = currentList.getSpectralDim(dataAttr.getLabel(1)).getDataDim();
+                    List<AtomPresent> typesPresent = spinSystem.getTypesPresent(typeInfo, currentList, dim);
+                    double x = 100.0;
+                    double delta = textWidth + 5.0;
+                    for (AtomPresent typePresent : typesPresent) {
+                        String text = typePresent.getName();
+                        if (!typePresent.isIntraResidue()) {
+                            text = text.toLowerCase();
+                        }
+                        AnnoText annoText = new AnnoText(x, -8, x + delta, -8,
+                                CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, text);
+                        annoText.setFont(font);
+                        chart.addAnnotation(annoText);
+                        Color presentColor = typePresent.isPresent() ? Color.LIGHTGREEN : Color.RED;
+                        AnnoLine annoLine2 = new AnnoLine(x, -2, x + textWidth, -2, CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL);
+                        annoLine2.setStroke(presentColor);
+                        annoLine2.setLineWidth(6);
+                        chart.addAnnotation(annoLine2);
+                        x += delta;
+                    }
+                    AnnoText annoText = new AnnoText(x, -8, x + textWidth, -8,
+                            CanvasAnnotation.POSTYPE.PIXEL, CanvasAnnotation.POSTYPE.PIXEL, String.valueOf(nPeaks - nExpected));
+                    annoText.setFont(font);
+                    chart.addAnnotation(annoText);
+
+                }
+                chart.refresh();
+
             }
             iChart++;
         }
