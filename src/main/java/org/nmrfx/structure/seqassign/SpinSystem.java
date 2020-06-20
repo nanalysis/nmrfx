@@ -11,6 +11,7 @@ import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakList.SearchDim;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
+import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import smile.clustering.KMeans;
 
 /**
@@ -159,12 +160,35 @@ public class SpinSystem {
             return intraResidue[dim];
         }
 
+        public boolean getPositive() {
+            return peak.getIntensity() > 0.0;
+        }
+
         public int getIndex(int dim) {
             return atomIndexes[dim];
         }
 
         public Peak getPeak() {
             return peak;
+        }
+
+        public boolean isType(PeakList peakList, String aName, boolean intraMode) {
+            boolean ok = true;
+            if (peak.getPeakList() != peakList) {
+                ok = false;
+            } else {
+                boolean dimOK = false;
+                for (int i = 0; i < atomIndexes.length; i++) {
+                    String curName = ATOM_TYPES[atomIndexes[i]];
+                    if (aName.equalsIgnoreCase(curName) && (intraMode == intraResidue[i])) {
+                        dimOK = true;
+                        break;
+                    }
+                }
+                ok = dimOK;
+            }
+            return ok;
+
         }
 
         public String toString() {
@@ -189,6 +213,37 @@ public class SpinSystem {
 
     public List<PeakMatch> peakMatches() {
         return peakMatches;
+    }
+
+    public int getNPeaksWithList(PeakList peakList) {
+        int n = 0;
+        for (PeakMatch match : peakMatches) {
+            if (peakList == match.getPeak().getPeakList()) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    public List<String> getTypesPresent(TypeInfo typeInfo, PeakList peakList, int iDim) {
+        String[] names = typeInfo.getNames(iDim);
+        List<String> result = new ArrayList<>();
+        boolean[] intraResidue = typeInfo.getIntraResidue(iDim);
+        for (int i = 0; i < names.length; i++) {
+            boolean ok = false;
+            for (PeakMatch peakMatch : peakMatches) {
+                if (peakMatch.isType(peakList, names[i], intraResidue[i])) {
+                    ok = true;
+                    break;
+                }
+            }
+            if (ok) {
+                result.add(names[i].toUpperCase());
+            } else {
+                result.add(names[i].toLowerCase());
+            }
+        }
+        return result;
     }
 
     public final void addPeak(Peak peak, double prob) {
@@ -341,7 +396,7 @@ public class SpinSystem {
     }
 
     double getProb(String aName, double ppm) {
-        if (aName.equals("ca")) {
+        if (aName.equalsIgnoreCase("ca")) {
             if (ppm < 38.0) {
                 return 0.0;
             }
@@ -357,9 +412,17 @@ public class SpinSystem {
         } else if (pattern.requireSign && !pattern.positive && (intensity > 0.0)) {
             ok = false;
         }
+        boolean isGly = false;
         if (ok) {
             for (int i = 0; i < pattern.atomTypes.length; i++) {
-                double ppmProb = getProb(pattern.atomTypes[i], pattern.peak.getPeakDim(i).getAdjustedChemShiftValue());
+                String aName = pattern.atomTypes[i];
+                double shift = pattern.peak.getPeakDim(i).getAdjustedChemShiftValue();
+                if (aName.equalsIgnoreCase("ca")) {
+                    if (shift < 50.0) {
+                        isGly = true;
+                    }
+                }
+                double ppmProb = getProb(aName, shift);
                 if (ppmProb < 1.0e-6) {
                     ok = false;
                     break;
@@ -375,8 +438,10 @@ public class SpinSystem {
                         break;
                     }
                 }
+                // 
+                double limit = isGly ? 1.2 : 0.95;
 
-                if (isInter && (intensity > 0.95)) {
+                if (isInter && (Math.abs(intensity) >limit)) {
                     ok = false;
                 }
             }
@@ -399,37 +464,83 @@ public class SpinSystem {
         return result;
     }
 
+    void dumpShifts(List<Double>[][] shiftList) {
+        double score = analyzeShifts(shiftList);
+        if (score > 0.0) {
+            double pMissing = Math.exp(-1.0);
+            int nAtoms = 0;
+            double pCum = 1.0;
+            boolean[] isGly = new boolean[2];
+            for (int k = 0; k < 2; k++) {
+                if (!shiftList[k][CA_INDEX].isEmpty()) {
+                    double caShift = shiftRange(shiftList[k][CA_INDEX])[0];
+                    if (caShift < 50.0) {
+                        isGly[k] = true;
+                    }
+                }
+            }
+            for (int k = 0; k < 2; k++) {
+                for (int i = 0; i < ATOM_TYPES.length; i++) {
+                    int nExpected = nAtmPeaks[k][i];
+                    if (isGly[k] && (i == CB_INDEX)) {
+                        nExpected = 0;
+                    }
+                    if (!shiftList[k][i].isEmpty()) {
+                        int nShifts = shiftList[k][i].size();
+                        if (nShifts < nExpected) {
+                            pCum *= Math.pow(pMissing, nExpected - nShifts);
+                        }
+                        double shift = shiftRange(shiftList[k][i])[0];
+                        System.out.printf("%3s %5.1f %2d %2d ", ATOM_TYPES[i], shift, nShifts, nExpected);
+                    } else {
+                        System.out.printf("%3s %5.1f %2d %2d ", ATOM_TYPES[i], 0.0, 0, nExpected);
+                    }
+                }
+                if (k == 0) {
+                    System.out.print("     ");
+                } else {
+                    System.out.println(" " + score + " " + pCum + " " + isGly[0] + " " + isGly[1]);
+                }
+            }
+        }
+    }
+
     double analyzeShifts(List<Double>[][] shiftList) {
         double pMissing = Math.exp(-1.0);
         int nAtoms = 0;
         double pCum = 1.0;
+        boolean[] isGly = new boolean[2];
         for (int k = 0; k < 2; k++) {
-            boolean isGLY = false;
+            if (!shiftList[k][CA_INDEX].isEmpty()) {
+                double caShift = shiftRange(shiftList[k][CA_INDEX])[0];
+                if (caShift < 50.0) {
+                    isGly[k] = true;
+                }
+            }
+        }
+        for (int k = 0; k < 2; k++) {
             for (int i = 0; i < ATOM_TYPES.length; i++) {
                 int nShifts = shiftList[k][i].size();
                 int nExpected = nAtmPeaks[k][i];
-                if (nExpected > 0) {
-                    if (nShifts > 0) {
-                        double[] range = shiftRange(shiftList[k][i]);
-                        double mean = range[0];
-                        for (double shift : shiftList[k][i]) {
-                            double delta = Math.abs(mean - shift);
-                            pCum *= Math.exp(-delta / tols[i]);
-                        }
-                        if (i == CA_INDEX) {
-                            if (mean < 50.0) {
-                                isGLY = true;
+                if (isGly[k] && (i == CB_INDEX)) {
+                    nExpected = 0;
+                }
+                if ((nExpected == 0) && (nShifts > 0)) {
+                    pCum = 0.0;
+                    break;
+                } else {
+                    if (nExpected > 0) {
+                        if (nShifts > 0) {
+                            double[] range = shiftRange(shiftList[k][i]);
+                            double mean = range[0];
+                            for (double shift : shiftList[k][i]) {
+                                double delta = Math.abs(mean - shift);
+                                pCum *= Math.exp(-delta / tols[i]);
                             }
-                        } else if (i == CB_INDEX) {
-                            if (isGLY) {
-                                // shouldn't have a beta
-                                pCum = 0.0;
-                            }
-
                         }
-                    }
-                    if (nShifts < nExpected) {
-                        pCum *= Math.pow(pMissing, nExpected - nShifts);
+                        if (nShifts < nExpected) {
+                            pCum *= Math.pow(pMissing, nExpected - nShifts);
+                        }
                     }
                 }
             }
@@ -518,11 +629,11 @@ public class SpinSystem {
         for (PeakMatch peakMatch : peakMatches) {
             Peak peak = peakMatch.peak;
             String peakListName = peak.getPeakList().getName();
-            double maxIntensity = Double.NEGATIVE_INFINITY;
+            double maxIntensity = 0.0;
             if (intensityMap.containsKey(peakListName)) {
                 maxIntensity = intensityMap.get(peakListName);
             }
-            maxIntensity = Math.max(maxIntensity, peak.getIntensity());
+            maxIntensity = Math.max(maxIntensity, Math.abs(peak.getIntensity()));
             intensityMap.put(peakListName, maxIntensity);
         }
         int iPeak = 0;
@@ -543,7 +654,7 @@ public class SpinSystem {
         return result;
     }
 
-    void calcCombinations() {
+    public void calcCombinations(boolean display) {
         double[] intensities = getNormalizedIntensities();
         int nPeaks = peakMatches.size();
         List<ResAtomPattern>[] resAtomPatterns = new List[nPeaks];
@@ -558,11 +669,18 @@ public class SpinSystem {
             List<ResAtomPattern> okPats = new ArrayList<>();
             for (ResAtomPattern resAtomPattern : patterns) {
 //                System.out.println(resAtomPattern.toString());
+                boolean added;
                 if (checkPat(resAtomPattern, intensity)) {
                     okPats.add(resAtomPattern);
                     // System.out.println("add");
+                    added = true;
                 } else {
+                    added = false;
                     // System.out.println("fail");
+
+                }
+                if (display) {
+                    System.out.println(resAtomPattern.toString() + " " + intensity + " " + added);
 
                 }
             }
@@ -581,11 +699,11 @@ public class SpinSystem {
             System.out.print(" " + counts[i]);
         }
         System.out.println(" " + nCountable);
-//        for (int i = 0; i < resAtomPatterns.length; i++) {
-//            for (int j = 0; j < resAtomPatterns[i].size(); j++) {
-//                System.out.println(i + " " + j + " " + resAtomPatterns[i].get(j));
-//            }
-//        }
+        for (int i = 0; i < resAtomPatterns.length; i++) {
+            for (int j = 0; j < resAtomPatterns[i].size(); j++) {
+                System.out.println(i + " " + j + " " + resAtomPatterns[i].get(j));
+            }
+        }
 
         if (nCountable == 0) {
             List<Double>[][] shiftList = new ArrayList[2][ATOM_TYPES.length];
@@ -618,6 +736,9 @@ public class SpinSystem {
                 iter.next();
                 int[] pt = iter.getCounts();
                 boolean validShifts = getShifts(nPeaks, resAtomPatterns, shiftList, pt);
+                if (display) {
+                    dumpShifts(shiftList);
+                }
                 if (validShifts) {
 //                    writeShifts(shiftList);
                     double prob = analyzeShifts(shiftList);
@@ -627,7 +748,7 @@ public class SpinSystem {
                     }
                 }
             }
-            if (bestIndex >= 0) {
+            if (!display && (bestIndex >= 0)) {
                 int[] pt = counter.getCounts(bestIndex);
                 boolean validShifts = getShifts(nPeaks, resAtomPatterns, shiftList, pt);
                 setUserFields(resAtomPatterns, shiftList, pt);
