@@ -31,7 +31,7 @@ public interface CanvasAnnotation {
         PIXEL {
             @Override
             public double transform(double v, double[] b, double[] w) {
-                return v;
+                return v + b[0];
             }
 
         },
