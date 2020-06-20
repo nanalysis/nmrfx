@@ -661,7 +661,6 @@ public class SpinSystem {
         int nCountable = 0;
         int iPeak = 0;
         int[] counts = new int[nPeaks];
-        System.out.println("calc comb " + rootPeak.getName() + " " + nPeaks);
         for (PeakMatch peakMatch : peakMatches) {
             Peak peak = peakMatch.peak;
             List<ResAtomPattern> patterns = getPatterns(peak);
@@ -695,15 +694,15 @@ public class SpinSystem {
             counts[iPeak] = okPats.size();
             iPeak++;
         }
-        for (int i = 0; i < nPeaks; i++) {
-            System.out.print(" " + counts[i]);
-        }
-        System.out.println(" " + nCountable);
-        for (int i = 0; i < resAtomPatterns.length; i++) {
-            for (int j = 0; j < resAtomPatterns[i].size(); j++) {
-                System.out.println(i + " " + j + " " + resAtomPatterns[i].get(j));
-            }
-        }
+//        for (int i = 0; i < nPeaks; i++) {
+ //           System.out.print(" " + counts[i]);
+ //       }
+ //       System.out.println(" " + nCountable);
+ //       for (int i = 0; i < resAtomPatterns.length; i++) {
+ //           for (int j = 0; j < resAtomPatterns[i].size(); j++) {
+ //               System.out.println(i + " " + j + " " + resAtomPatterns[i].get(j));
+ //           }
+ //       }
 
         if (nCountable == 0) {
             List<Double>[][] shiftList = new ArrayList[2][ATOM_TYPES.length];

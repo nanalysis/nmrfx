@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.nmrfx.processor.datasets.Dataset;
+import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.yaml.snakeyaml.Yaml;
 
@@ -28,8 +30,8 @@ public class RunAbout {
     Map<String, Map<String, List<String>>> arrange;
     Map<String, List<String>> dimLabels;
     Map<String, Dataset> datasetMap = new HashMap<>();
-    Map<String, Integer> typeCountMap = new HashMap<>();
     Map<String, List<String>> aTypeMap = new HashMap<>();
+    Map<String, TypeInfo> typeInfoMap = new HashMap<>();
     boolean active = false;
 
     List<Map<String, Object>> typeList;
@@ -78,6 +80,10 @@ public class RunAbout {
         return dimLabels.get(dimType);
     }
 
+    public int getTypeCount(String typeName) {
+        return typeInfoMap.get(typeName).nTotal;
+    }
+
     List<String> setPatterns(List<Map<String, Object>> typeList, String typeName, PeakList peakList) {
         double[] tols = {0.04, 0.5, 0.6}; // fixme
         List<String> patElems = new ArrayList<>();
@@ -101,7 +107,47 @@ public class RunAbout {
         return patElems;
     }
 
-    int setAtomCount(List<String> patElems, int[][] counts, List<String> stdNames) {
+    public class TypeInfo {
+
+        final boolean[][] intraResidue;
+        final String[][] names;
+        final int[][] signs;
+        final int nTotal;
+
+        TypeInfo(int nDim, int nTotal) {
+            intraResidue = new boolean[nDim][];
+            names = new String[nDim][];
+            signs = new int[nDim][];
+            this.nTotal = nTotal;
+        }
+
+        void setIntraResidue(int iDim, boolean[] values) {
+            intraResidue[iDim] = values;
+        }
+
+        void setNames(int iDim, String[] values) {
+            names[iDim] = values;
+        }
+
+        void setSigns(int iDim, int[] values) {
+            signs[iDim] = values;
+        }
+
+        String[] getNames(int iDim) {
+            return names[iDim];
+        }
+
+        boolean[] getIntraResidue(int iDim) {
+            return intraResidue[iDim];
+        }
+
+    }
+
+    public TypeInfo getTypeInfo(String typeName) {
+        return typeInfoMap.get(typeName);
+    }
+
+    int setAtomCount(String typeName, List<String> patElems, int[][] counts, List<String> stdNames) {
         int[] dimCount = new int[patElems.size()];
         int i = 0;
         for (String elem : patElems) {
@@ -113,7 +159,6 @@ public class RunAbout {
             }
             i++;
         }
-        int total = 1;
         int[] dimMult = new int[dimCount.length];
         for (i = 0; i < dimCount.length; i++) {
             dimMult[i] = 1;
@@ -122,27 +167,50 @@ public class RunAbout {
                     dimMult[i] *= dimCount[j];
                 }
             }
-            total *= dimMult[i];
+        }
+        int total = 1;
+        for (i = 0; i < dimCount.length; i++) {
+            total *= dimCount[i];
         }
         i = 0;
+        TypeInfo typeInfo = new TypeInfo(patElems.size(), total);
         for (String elem : patElems) {
             String[] parts = elem.split("\\.");
             System.out.println("elem " + elem + " " + parts.length);
             if (parts.length == 2) {
                 String[] types = parts[0].split(",");
                 String[] aNames = parts[1].split(",");
+                int nTypes = types.length * aNames.length;
+                boolean[] intraResidue = new boolean[nTypes];
+                String[] allNames = new String[nTypes];
+                int[] signs = new int[nTypes];
+
+                int j = 0;
 
                 for (String type : types) {
                     int iDir = type.endsWith("-1") ? 0 : 1;
                     for (String aName : aNames) {
-                        if (aName.endsWith("-") || aName.endsWith("+")) {
+                        int sign = 0;
+                        if (aName.endsWith("-")) {
                             aName = aName.substring(0, aName.length() - 1);
+                            sign = -1;
+                        } else if (aName.endsWith("+")) {
+                            aName = aName.substring(0, aName.length() - 1);
+                            sign = 1;
                         }
                         aName = aName.toLowerCase();
                         int nameIdx = stdNames.indexOf(aName);
                         counts[iDir][nameIdx] += dimMult[i];
+                        intraResidue[j] = iDir == 1;
+                        allNames[j] = aName;
+                        signs[j] = sign;
+                        j++;
                     }
                 }
+                typeInfo.setIntraResidue(i, intraResidue);
+                typeInfo.setSigns(i, signs);
+                typeInfo.setNames(i, allNames);
+                typeInfoMap.put(typeName, typeInfo);
             }
             i++;
         }
@@ -174,8 +242,7 @@ public class RunAbout {
                 peakListMap.put(typeName, peakList);
                 peakLists.add(peakList);
                 if (!patElems.isEmpty()) {
-                    int nPeaks = setAtomCount(patElems, counts, stdNames);
-                    typeCountMap.put(typeName, nPeaks);
+                    int nPeaks = setAtomCount(typeName, patElems, counts, stdNames);
                 }
             }
         }
@@ -240,6 +307,14 @@ public class RunAbout {
     }
 
     public void calcCombinations() {
+        for (PeakList peakList : peakLists) {
+            for (Peak peak : peakList.peaks()) {
+                for (PeakDim peakDim : peak.getPeakDims()) {
+                    peakDim.setUser("");
+                }
+
+            }
+        }
         getSpinSystems().calcCombinations();
     }
 

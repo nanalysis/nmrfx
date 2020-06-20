@@ -281,7 +281,7 @@ public class SpinSystems {
 
     public void calcCombinations() {
         for (SpinSystem spinSys : spinSystems) {
-            spinSys.calcCombinations();
+            spinSys.calcCombinations(false);
         }
     }
 
