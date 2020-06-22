@@ -33,9 +33,11 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToolBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -109,9 +111,11 @@ public class RunAboutGUI implements PeakListener {
     RunAbout runAbout = new RunAbout();
     int currentSpinSystem = -1;
     SpinStatus spinStatus;
+    ClusterStatus clusterStatus;
     SeqPane seqPane;
     Group drawingGroup;
     Map<String, ResidueLabel> residueLabelMap = new HashMap<>();
+    Map<String, ResidueLabel> aaLabelMap = new HashMap<>();
     Map<Integer, String> chartTypes = new HashMap<>();
 
     boolean useSpinSystem = false;
@@ -161,10 +165,30 @@ public class RunAboutGUI implements PeakListener {
 
     class SeqPane extends Pane {
 
+        double resWidth = 15.0;
+        Font font = Font.font(12.0);
+
+        int getNRows() {
+            int totalRows = 0;
+            Molecule mol = Molecule.getActive();
+            for (Polymer polymer : mol.getPolymers()) {
+                if (polymer.isPeptide()) {
+                    int nRes = polymer.getResidues().size();
+                    double width = (resWidth * (10 + 1)) * nRes / 10.0;
+                    int rows = (int) Math.ceil(vBox.getWidth() / width);
+                    totalRows += rows;
+
+                }
+            }
+            return totalRows;
+
+        }
+
         @Override
         public void layoutChildren() {
             setWidth(vBox.getWidth());
-            setPrefHeight(60.0);
+            int rows = getNRows();
+            setPrefHeight(rows * resWidth);
             super.layoutChildren();
             updateSeqCanvas();
         }
@@ -178,13 +202,17 @@ public class RunAboutGUI implements PeakListener {
         controller.getBottomBox().getChildren().add(vBox);
         spinStatus = new SpinStatus();
         vBox.getChildren().add(spinStatus.build());
+
         seqPane = new SeqPane();
         drawingGroup = new Group();
         seqPane.getChildren().add(drawingGroup);
-
-        vBox.getChildren().add(seqPane);
         seqPane.setMinHeight(60.0);
         seqPane.setMinWidth(500.0);
+
+        clusterStatus = new ClusterStatus();
+
+        vBox.getChildren().add(clusterStatus.build());
+        vBox.getChildren().add(seqPane);
 
         initPeakNavigator(navBar);
         return this;
@@ -250,6 +278,7 @@ public class RunAboutGUI implements PeakListener {
         MenuItem assembleItem = new MenuItem("Assemble");
         assembleItem.setOnAction(e -> {
             assemble();
+            clusterStatus.refresh();
         });
         actionMenuButton.getItems().add(assembleItem);
         MenuItem calcCombItem = new MenuItem("Combinations");
@@ -318,6 +347,128 @@ public class RunAboutGUI implements PeakListener {
         };
 
         MainApp.peakListTable.addListener(mapChangeListener);
+    }
+
+    class ClusterStatus {
+
+        HBox hBox;
+        GridPane pane1;
+        Pane leftPane;
+        Group leftGroup;
+        Pane rightPane;
+        Group rightGroup;
+        Map<String, Label> labelMap = new HashMap<>();
+
+        HBox build() {
+            String iconSize = "12px";
+            String fontSize = "7pt";
+            hBox = new HBox();
+            pane1 = new GridPane();
+            leftPane = new Pane();
+            rightPane = new Pane();
+            leftPane.setPrefWidth(150);
+            rightPane.setPrefWidth(150);
+            leftPane.setPrefHeight(30);
+            rightPane.setPrefWidth(30);
+            leftGroup = new Group();
+            rightGroup = new Group();
+            leftPane.getChildren().add(leftGroup);
+            rightPane.getChildren().add(rightGroup);
+            HBox.setHgrow(pane1, Priority.ALWAYS);
+            hBox.getChildren().addAll(leftPane, pane1, rightPane);
+            return hBox;
+        }
+
+        void refresh() {
+            pane1.getChildren().clear();
+            labelMap.clear();
+            int nTypes = SpinSystem.getNAtomTypes();
+            int nCols = 2 * nTypes - 2; // only use H/N once
+            int col = 0;
+            for (int k = 0; k < 2; k++) {
+                for (int i = 0; i < nTypes; i++) {
+                    int j = k == 1 ? i : nTypes - i - 1;
+                    int n = SpinSystem.getNPeaksForType(k, j);
+                    if (n != 0) {
+                        String aName = SpinSystem.getAtomName(j);
+                        if (k == 0) {
+                            aName = aName.toLowerCase();
+                        } else {
+                            aName = aName.toUpperCase();
+                        }
+                        Label label = new Label(aName);
+                        label.setMinWidth(45.0);
+                        pane1.add(label, col, 0);
+                        Label labelPPM = new Label(String.valueOf(n));
+                        labelPPM.setMinWidth(45.0);
+                        labelMap.put(aName, labelPPM);
+                        pane1.add(labelPPM, col, 1);
+                        col++;
+                    }
+                }
+            }
+            String[] aaNames = {"A", "G", "P"};
+            double x = 10.0;
+            double y = 15.0;
+            for (String aaChar : aaNames) {
+                ResidueLabel resLabel = new ResidueLabel(drawingGroup, aaChar.charAt(0));
+                aaLabelMap.put(aaChar, resLabel);
+                leftGroup.getChildren().add(resLabel);
+                resLabel.place(x, y);
+                x += resLabel.width;
+            }
+
+        }
+
+        void clearLabels() {
+            for (Label label : labelMap.values()) {
+                label.setText("");
+                Tooltip toolTip = label.getTooltip();
+                if (toolTip == null) {
+                    toolTip = new Tooltip();
+                    label.setTooltip(toolTip);
+                    toolTip.setText("");
+                }
+            }
+        }
+
+        void setLabel(String aName, double value, double range, int nValues) {
+            Label label = labelMap.get(aName);
+            if (!Double.isNaN(value)) {
+                label.setText(String.format("%.1f", value));
+                Tooltip toolTip = label.getTooltip();
+                if (toolTip == null) {
+                    toolTip = new Tooltip();
+                    label.setTooltip(toolTip);
+                }
+                toolTip.setText(String.format("%.1f : %2d", range, nValues));
+            }
+        }
+
+        void setLabels() {
+            clearLabels();
+            SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem);
+            int nTypes = SpinSystem.getNAtomTypes();
+            for (int k = 0; k < 2; k++) {
+                for (int i = 0; i < nTypes; i++) {
+                    int n = SpinSystem.getNPeaksForType(k, i);
+                    if (n != 0) {
+                        String aName = SpinSystem.getAtomName(i);
+                        if (k == 0) {
+                            aName = aName.toLowerCase();
+                        } else {
+                            aName = aName.toUpperCase();
+                        }
+                        double value = spinSystem.getValue(k, i);
+                        double range = spinSystem.getRange(k, i);
+                        int nValues = spinSystem.getNValues(k, i);
+                        if (!Double.isNaN(value)) {
+                            setLabel(aName, value, range, nValues);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     class SpinStatus {
@@ -549,9 +700,12 @@ public class RunAboutGUI implements PeakListener {
         Text textItem;
 
         ResidueLabel(Group group, Residue residue) {
+            this(group, residue.getOneLetter());
+        }
+
+        ResidueLabel(Group group, char resChar) {
             super();
             StackPane stack = this;
-            char resChar = residue.getOneLetter();
             textItem = new Text(String.valueOf(resChar));
             rect = new Rectangle(width, width, Color.WHITE);
             rect.setStroke(null);
@@ -849,6 +1003,7 @@ public class RunAboutGUI implements PeakListener {
 
     public void gotoSpinSystems() {
         gotoSpinSystems(0, 0);
+        clusterStatus.setLabels();
     }
 
     public void gotoSpinSystems(int pIndex, int sIndex) {
@@ -936,31 +1091,42 @@ public class RunAboutGUI implements PeakListener {
     }
 
     public void gotoPeakId(TextField idField) {
-        if (refPeakList != null) {
-            matchPeaks = Optional.empty();
-            int id = Integer.MIN_VALUE;
-            String idString = idField.getText().trim();
-            if (idString.length() != 0) {
-                try {
-                    id = Integer.parseInt(idString);
-                } catch (NumberFormatException nfE) {
-                    List<Peak> peaks = matchPeaks(idString);
-                    if (!peaks.isEmpty()) {
-                        setPeak(peaks.get(0));
-                        matchPeaks = Optional.of(peaks);
-                        matchIndex = 0;
-                    } else {
-                        idField.setText("");
+        String idString = idField.getText().trim();
+        if (useSpinSystem) {
+            try {
+                int id = Integer.parseInt(idString);
+                currentSpinSystem = id;
+                gotoSpinSystems();
+            } catch (NumberFormatException nfE) {
+
+            }
+
+        } else {
+            if (refPeakList != null) {
+                matchPeaks = Optional.empty();
+                int id = Integer.MIN_VALUE;
+                if (idString.length() != 0) {
+                    try {
+                        id = Integer.parseInt(idString);
+                    } catch (NumberFormatException nfE) {
+                        List<Peak> peaks = matchPeaks(idString);
+                        if (!peaks.isEmpty()) {
+                            setPeak(peaks.get(0));
+                            matchPeaks = Optional.of(peaks);
+                            matchIndex = 0;
+                        } else {
+                            idField.setText("");
+                        }
                     }
-                }
-                if (id != Integer.MIN_VALUE) {
-                    if (id < 0) {
-                        id = 0;
-                    } else if (id >= refPeakList.size()) {
-                        id = refPeakList.size() - 1;
+                    if (id != Integer.MIN_VALUE) {
+                        if (id < 0) {
+                            id = 0;
+                        } else if (id >= refPeakList.size()) {
+                            id = refPeakList.size() - 1;
+                        }
+                        Peak peak = refPeakList.getPeakByID(id);
+                        setPeak(peak);
                     }
-                    Peak peak = refPeakList.getPeakByID(id);
-                    setPeak(peak);
                 }
             }
         }
@@ -1283,7 +1449,6 @@ def getType(types, row, dDir):
                 String typeName = chartTypes.get(iChart);
                 if (typeName != null) {
                     int nExpected = runAbout.getTypeCount(typeName);
-
 
                     TypeInfo typeInfo = runAbout.getTypeInfo(typeName);
                     int dim = currentList.getSpectralDim(dataAttr.getLabel(1)).getDataDim();
