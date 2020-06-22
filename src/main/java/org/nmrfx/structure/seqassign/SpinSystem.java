@@ -39,6 +39,8 @@ public class SpinSystem {
 
     static double[] tols = {0.04, 0.5, 0.6, 0.04, 0.6, 0.6};
     double[][] values = new double[2][ATOM_TYPES.length];
+    double[][] ranges = new double[2][ATOM_TYPES.length];
+    int[][] nValues = new int[2][ATOM_TYPES.length];
 
     class ResAtomPattern {
 
@@ -225,9 +227,35 @@ public class SpinSystem {
         return n;
     }
 
-    public List<String> getTypesPresent(TypeInfo typeInfo, PeakList peakList, int iDim) {
+    public class AtomPresent {
+
+        final String name;
+        final boolean intraResidue;
+        final boolean present;
+
+        public String getName() {
+            return name;
+        }
+
+        public boolean isIntraResidue() {
+            return intraResidue;
+        }
+
+        public boolean isPresent() {
+            return present;
+        }
+
+        public AtomPresent(String name, boolean intraResidue, boolean present) {
+            this.name = name.toUpperCase();
+            this.intraResidue = intraResidue;
+            this.present = present;
+        }
+
+    }
+
+    public List<AtomPresent> getTypesPresent(TypeInfo typeInfo, PeakList peakList, int iDim) {
         String[] names = typeInfo.getNames(iDim);
-        List<String> result = new ArrayList<>();
+        List<AtomPresent> result = new ArrayList<>();
         boolean[] intraResidue = typeInfo.getIntraResidue(iDim);
         for (int i = 0; i < names.length; i++) {
             boolean ok = false;
@@ -237,11 +265,8 @@ public class SpinSystem {
                     break;
                 }
             }
-            if (ok) {
-                result.add(names[i].toUpperCase());
-            } else {
-                result.add(names[i].toLowerCase());
-            }
+            AtomPresent atomPresent = new AtomPresent(names[i], intraResidue[i], ok);
+            result.add(atomPresent);
         }
         return result;
     }
@@ -251,12 +276,40 @@ public class SpinSystem {
         peakMatches.add(peakMatch);
     }
 
+    public static int getNAtomTypes() {
+        return ATOM_TYPES.length;
+    }
+
+    public static int getNPeaksForType(int k, int i) {
+        return nAtmPeaks[k][i];
+    }
+
     public static String getAtomName(int index) {
         return ATOM_TYPES[index];
     }
 
     public double getValue(int dir, int index) {
         return values[dir][index];
+    }
+
+    public void setValue(int dir, int index, double value) {
+        values[dir][index] = value;
+    }
+
+    public double getRange(int dir, int index) {
+        return ranges[dir][index];
+    }
+
+    public void setRange(int dir, int index, double value) {
+        ranges[dir][index] = value;
+    }
+
+    public int getNValues(int dir, int index) {
+        return nValues[dir][index];
+    }
+
+    public void setNValues(int dir, int index, int value) {
+        nValues[dir][index] = value;
     }
 
     public boolean confirmed(SpinSystemMatch spinSys, boolean prev) {
@@ -441,7 +494,7 @@ public class SpinSystem {
                 // 
                 double limit = isGly ? 1.2 : 0.95;
 
-                if (isInter && (Math.abs(intensity) >limit)) {
+                if (isInter && (Math.abs(intensity) > limit)) {
                     ok = false;
                 }
             }
@@ -554,9 +607,13 @@ public class SpinSystem {
                 int nShifts = shiftList[k][i].size();
                 if (nShifts > 0) {
                     double[] range = shiftRange(shiftList[k][i]);
-                    values[k][i] = range[0];
+                    setValue(k, i, range[0]);
+                    setRange(k, i, range[1]);
+                    setNValues(k, i, nShifts);
                 } else {
-                    values[k][i] = Double.NaN;
+                    setValue(k, i, Double.NaN);
+                    setRange(k, i, 0.0);
+                    setNValues(k, i, 0);
                 }
             }
         }
@@ -695,14 +752,14 @@ public class SpinSystem {
             iPeak++;
         }
 //        for (int i = 0; i < nPeaks; i++) {
- //           System.out.print(" " + counts[i]);
- //       }
- //       System.out.println(" " + nCountable);
- //       for (int i = 0; i < resAtomPatterns.length; i++) {
- //           for (int j = 0; j < resAtomPatterns[i].size(); j++) {
- //               System.out.println(i + " " + j + " " + resAtomPatterns[i].get(j));
- //           }
- //       }
+        //           System.out.print(" " + counts[i]);
+        //       }
+        //       System.out.println(" " + nCountable);
+        //       for (int i = 0; i < resAtomPatterns.length; i++) {
+        //           for (int j = 0; j < resAtomPatterns[i].size(); j++) {
+        //               System.out.println(i + " " + j + " " + resAtomPatterns[i].get(j));
+        //           }
+        //       }
 
         if (nCountable == 0) {
             List<Double>[][] shiftList = new ArrayList[2][ATOM_TYPES.length];
@@ -813,8 +870,8 @@ public class SpinSystem {
         boolean[] matched = new boolean[RES_MTCH.length];
         int j = 0;
         for (int i : RES_MTCH) {
-            double vA = values[idxA][i];
-            double vB = spinSysB.values[idxB][i];
+            double vA = getValue(idxA, i);
+            double vB = spinSysB.getValue(idxB, i);
             double tolA = tols[i];
             if (Double.isFinite(vA) && Double.isFinite(vB)) {
                 double delta = Math.abs(vA - vB);
