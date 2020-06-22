@@ -1,16 +1,110 @@
 package org.nmrfx.structure.seqassign;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.nmrfx.structure.chemistry.Atom;
 import org.nmrfx.structure.chemistry.PPMv;
 import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.structure.chemistry.io.AtomParser;
+import org.nmrfx.structure.chemistry.predict.BMRBStats;
 import smile.stat.distribution.ChiSquareDistribution;
+import smile.stat.distribution.MultivariateGaussianDistribution;
 
 /**
  *
  * @author brucejohnson
  */
 public class FragmentScoring {
+
+    static Map<String, MultivariateGaussianDistribution> aaDistMap = new HashMap<>();
+
+    public static class AAScore {
+
+        final double score;
+        final String name;
+        double norm;
+
+        public AAScore(String name, double score) {
+            this.score = score;
+            this.name = name;
+        }
+
+        public Double getScore() {
+            return score;
+        }
+
+        public Double getNorm() {
+            return norm;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void normalize(double sum) {
+            norm = score / sum;
+        }
+
+    }
+
+    static void initAADistMap() {
+        BMRBStats.loadAllIfEmpty();
+        for (String aaName : AtomParser.getAANames()) {
+
+            double[] means;
+            double[] vars;
+            if (aaName.equalsIgnoreCase("gly")) {
+                means = new double[1];
+                vars = new double[1];
+            } else {
+                means = new double[2];
+                vars = new double[2];
+            }
+            String[] aNames = {"CA", "CB"};
+            for (String aName : aNames) {
+                Optional<PPMv> ppmVOpt = BMRBStats.getValue(aaName, aName);
+                ppmVOpt.ifPresent(ppmV -> {
+                    int i = aName.equals("CA") ? 0 : 1;
+                    means[i] = ppmV.getValue();
+                    vars[i] = ppmV.getError() * ppmV.getError();
+                });
+            }
+            MultivariateGaussianDistribution dist = new MultivariateGaussianDistribution(means, vars);
+            aaDistMap.put(aaName, dist);
+        }
+    }
+
+    public static List<AAScore> scoreAA(double[] ppms) {
+        if (aaDistMap.isEmpty()) {
+            initAADistMap();
+        }
+        List<AAScore> scores = new ArrayList<>();
+        for (Map.Entry<String, MultivariateGaussianDistribution> entry : aaDistMap.entrySet()) {
+            double p;
+            if (entry.getKey().equalsIgnoreCase("gly")) {
+                double[] ppmGly = new double[1];
+                ppmGly[0] = ppms[0];
+                p = entry.getValue().p(ppmGly);
+            } else {
+                p = entry.getValue().p(ppms);
+            }
+            AAScore score = new AAScore(entry.getKey(), p);
+            scores.add(score);
+        }
+        double sum = 0.0;
+        for (AAScore aaScore : scores) {
+            sum += aaScore.score;
+        }
+        for (AAScore aaScore : scores) {
+            aaScore.normalize(sum);
+        }
+
+        scores.sort((o1, o2) -> o2.getScore().compareTo(o1.getScore()));
+        return scores;
+    }
 
     public static Double scoreAtomPPM(final Residue residue, final String atomName,
             final double ppm, final double sdevMul) {
