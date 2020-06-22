@@ -68,6 +68,9 @@ import org.nmrfx.processor.gui.utils.ToolBarUtils;
 import org.nmrfx.structure.chemistry.Molecule;
 import org.nmrfx.structure.chemistry.Polymer;
 import org.nmrfx.structure.chemistry.Residue;
+import org.nmrfx.structure.chemistry.io.AtomParser;
+import org.nmrfx.structure.seqassign.FragmentScoring;
+import org.nmrfx.structure.seqassign.FragmentScoring.AAScore;
 import org.nmrfx.structure.seqassign.ResidueSeqScore;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
 import org.nmrfx.structure.seqassign.SeqFragment;
@@ -358,6 +361,8 @@ public class RunAboutGUI implements PeakListener {
         Pane rightPane;
         Group rightGroup;
         Map<String, Label> labelMap = new HashMap<>();
+        List<ResidueLabel> leftResidues = new ArrayList<>();
+        List<ResidueLabel> rightResidues = new ArrayList<>();
 
         HBox build() {
             String iconSize = "12px";
@@ -366,16 +371,23 @@ public class RunAboutGUI implements PeakListener {
             pane1 = new GridPane();
             leftPane = new Pane();
             rightPane = new Pane();
-            leftPane.setPrefWidth(150);
-            rightPane.setPrefWidth(150);
-            leftPane.setPrefHeight(30);
-            rightPane.setPrefWidth(30);
+            leftPane.setMinWidth(220);
+            rightPane.setMinWidth(220);
+            leftPane.setPrefHeight(40);
+            rightPane.setPrefWidth(40);
             leftGroup = new Group();
             rightGroup = new Group();
             leftPane.getChildren().add(leftGroup);
             rightPane.getChildren().add(rightGroup);
-            HBox.setHgrow(pane1, Priority.ALWAYS);
-            hBox.getChildren().addAll(leftPane, pane1, rightPane);
+            Pane filler0 = new Pane();
+            HBox.setHgrow(filler0, Priority.ALWAYS);
+            Pane filler1 = new Pane();
+            HBox.setHgrow(filler1, Priority.ALWAYS);
+            Pane filler2 = new Pane();
+            HBox.setHgrow(filler2, Priority.ALWAYS);
+            Pane filler3 = new Pane();
+            HBox.setHgrow(filler3, Priority.ALWAYS);
+            hBox.getChildren().addAll(filler0, leftPane, filler1, pane1, filler2, rightPane, filler3);
             return hBox;
         }
 
@@ -407,15 +419,26 @@ public class RunAboutGUI implements PeakListener {
                     }
                 }
             }
-            String[] aaNames = {"A", "G", "P"};
             double x = 10.0;
             double y = 15.0;
-            for (String aaChar : aaNames) {
-                ResidueLabel resLabel = new ResidueLabel(drawingGroup, aaChar.charAt(0));
-                aaLabelMap.put(aaChar, resLabel);
-                leftGroup.getChildren().add(resLabel);
-                resLabel.place(x, y);
-                x += resLabel.width;
+            int i = 0;
+            for (String aaName : AtomParser.getAANames()) {
+                String aaChar = AtomParser.convert3To1(aaName);
+                ResidueLabel leftLabel = new ResidueLabel(drawingGroup, aaChar.charAt(0));
+                ResidueLabel rightLabel = new ResidueLabel(drawingGroup, aaChar.charAt(0));
+                leftResidues.add(leftLabel);
+                rightResidues.add(rightLabel);
+                leftGroup.getChildren().add(leftLabel);
+                rightGroup.getChildren().add(rightLabel);
+                leftLabel.place(x, y);
+                rightLabel.place(x, y);
+                x += leftLabel.width;
+                i++;
+                if (i >= 10) {
+                    i = 0;
+                    x = 10.0;
+                    y = y + 20.0;
+                }
             }
 
         }
@@ -449,6 +472,7 @@ public class RunAboutGUI implements PeakListener {
             clearLabels();
             SpinSystem spinSystem = runAbout.getSpinSystems().get(currentSpinSystem);
             int nTypes = SpinSystem.getNAtomTypes();
+            double[][] ppms = new double[2][2];
             for (int k = 0; k < 2; k++) {
                 for (int i = 0; i < nTypes; i++) {
                     int n = SpinSystem.getNPeaksForType(k, i);
@@ -463,9 +487,28 @@ public class RunAboutGUI implements PeakListener {
                         double range = spinSystem.getRange(k, i);
                         int nValues = spinSystem.getNValues(k, i);
                         if (!Double.isNaN(value)) {
+                            if (aName.equalsIgnoreCase("ca")) {
+                                ppms[k][0] = value;
+                            } else if (aName.equalsIgnoreCase("cb")) {
+                                ppms[k][1] = value;
+                            }
                             setLabel(aName, value, range, nValues);
                         }
                     }
+                }
+                List<AAScore> scores = FragmentScoring.scoreAA(ppms[k]);
+                int iScore = 0;
+                for (AAScore aaScore : scores) {
+                    String name = AtomParser.convert3To1(aaScore.getName());
+                    ResidueLabel resLabel = k == 0 ? leftResidues.get(iScore) : rightResidues.get(iScore);
+                    Color color = Color.WHITE;
+                    if (aaScore.getNorm() < 1.0e-3) {
+                        name = name.toLowerCase();
+                        color = Color.LIGHTGRAY;
+                    }
+                    resLabel.setText(name);
+                    resLabel.setColor(color);
+                    iScore++;
                 }
             }
         }
@@ -488,7 +531,6 @@ public class RunAboutGUI implements PeakListener {
         SpinSystem spinSys;
 
         void valueChanged(Spinner spinner) {
-            System.out.println("value chnaged " + spinner.getValue());
             gotoSpinSystems(spinners[0].getValue(), spinners[1].getValue());
         }
 
@@ -598,7 +640,6 @@ public class RunAboutGUI implements PeakListener {
 
         void showScore(List<SpinSystem> spinSystems) {
             this.spinSystems = spinSystems;
-            System.out.println("nspin " + spinSystems.size());
             if (!spinSystems.isEmpty()) {
                 spinSys = spinSystems.size() > 2 ? spinSystems.get(2) : spinSystems.get(0);
                 for (int i = 0; i < resOffsets.length; i++) {
@@ -729,6 +770,10 @@ public class RunAboutGUI implements PeakListener {
 
         void setColor(Color color) {
             rect.setFill(color);
+        }
+
+        void setText(String text) {
+            textItem.setText(text);
         }
     }
 
@@ -965,7 +1010,6 @@ public class RunAboutGUI implements PeakListener {
     public void firstSpinSystem() {
         currentSpinSystem = 0;
         gotoSpinSystems();
-        System.out.println("first " + currentSpinSystem);
 
     }
 
@@ -998,7 +1042,6 @@ public class RunAboutGUI implements PeakListener {
             currentSpinSystem = 0;
         }
         gotoSpinSystems();
-        System.out.println("prev " + currentSpinSystem);
     }
 
     public void gotoSpinSystems() {
