@@ -11,10 +11,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.nmrfx.processor.datasets.Dataset;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
+import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.yaml.snakeyaml.Yaml;
 
 /**
@@ -29,6 +31,7 @@ public class RunAbout {
     List<PeakList> peakLists = new ArrayList<>();
     Map<String, Map<String, List<String>>> arrange;
     Map<String, List<String>> dimLabels;
+    Map<String, String> peakListTypes = new HashMap<>();
     Map<String, Dataset> datasetMap = new HashMap<>();
     Map<String, List<String>> aTypeMap = new HashMap<>();
     Map<String, TypeInfo> typeInfoMap = new HashMap<>();
@@ -232,12 +235,13 @@ public class RunAbout {
             datasetMap.put(entry.getKey(), dataset);
         }
 
-        List<String> peakListTypes = (List<String>) yamlData.get("peakLists");
+        List<String> peakListNames = (List<String>) yamlData.get("peakLists");
         typeList = (List<Map<String, Object>>) yamlData.get("types");
-        for (String typeName : peakListTypes) {
+        for (String typeName : peakListNames) {
             String datasetName = datasetNameMap.get(typeName);
             PeakList peakList = PeakList.getPeakListForDataset(datasetName);
             if (peakList != null) {
+                peakListTypes.put(peakList.getName(), typeName);
                 List<String> patElems = setPatterns(typeList, typeName, peakList);
                 peakListMap.put(typeName, peakList);
                 peakLists.add(peakList);
@@ -322,4 +326,69 @@ public class RunAbout {
         getSpinSystems().compare();
         getSpinSystems().dump();
     }
+
+    public static String getHDimName(PeakList peakList) {
+        String result = null;
+        for (int i = 0; i < peakList.getNDim(); i++) {
+            String dimName = peakList.getSpectralDim(i).getDimName();
+            if (dimName.contains("H") && !dimName.contains("N")) {
+                result = dimName;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public static String getNDimName(PeakList peakList) {
+        String result = null;
+        for (int i = 0; i < peakList.getNDim(); i++) {
+            String dimName = peakList.getSpectralDim(i).getDimName();
+            if (dimName.contains("N") && !dimName.contains("H")) {
+                result = dimName;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public void filterPeaks() {
+        double tolScale = 3.0;
+        PeakList refList = peakLists.get(0);
+        refList.clearSearchDims();
+        List<String> commonDimNames = new ArrayList<>();
+        commonDimNames.add(getHDimName(refList));
+        commonDimNames.add(getNDimName(refList));
+        for (String dimName : commonDimNames) {
+            SpectralDim sDim = refList.getSpectralDim(dimName);
+            refList.addSearchDim(dimName, sDim.getIdTol() * tolScale);
+        }
+
+        for (PeakList peakList : peakLists) {
+            AtomicInteger nFiltered = new AtomicInteger();
+            if (refList != peakList) {
+                int[] dims = new int[commonDimNames.size()];
+                int j = 0;
+                for (String dimName : commonDimNames) {
+                    SpectralDim sDim = peakList.getSpectralDim(dimName);
+                    dims[j++] = sDim.getDataDim();
+                }
+                double[] ppms = new double[dims.length];
+                peakList.peaks().stream().forEach(peak -> {
+                    int jDim = 0;
+                    for (int dim : dims) {
+                        ppms[jDim++] = peak.getPeakDim(dim).getChemShiftValue();
+                    }
+                    List<Peak> peaks = refList.findPeaks(ppms);
+                    if (peaks.isEmpty()) {
+                        peak.setStatus(-1);
+                        nFiltered.incrementAndGet();
+                    }
+                });
+                peakList.compress();
+                peakList.reNumber();
+            }
+            System.out.println(peakList.getName() + " " + nFiltered.toString());
+        }
+    }
+
 }
