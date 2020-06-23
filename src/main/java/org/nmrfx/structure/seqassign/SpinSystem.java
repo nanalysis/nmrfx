@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
 import org.nmrfx.processor.datasets.peaks.Peak;
+import org.nmrfx.processor.datasets.peaks.PeakDim;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakList.SearchDim;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
@@ -28,6 +29,14 @@ public class SpinSystem {
     Optional<SpinSystemMatch> confirmS = Optional.empty();
     Optional<SeqFragment> fragment = Optional.empty();
     static final String[] ATOM_TYPES = {"h", "n", "c", "ha", "ca", "cb"};
+    static final Map<String, Integer> atomIndexMap = new HashMap<>();
+
+    static {
+        int atomIndex = 0;
+        for (String atomType : ATOM_TYPES) {
+            atomIndexMap.put(atomType, atomIndex++);
+        }
+    }
     static int[][] nAtmPeaks = {
         {0, 0, 2, 0, 2, 2},
         {7, 7, 1, 0, 1, 1}
@@ -806,16 +815,55 @@ public class SpinSystem {
             }
             if (!display && (bestIndex >= 0)) {
                 int[] pt = counter.getCounts(bestIndex);
-                boolean validShifts = getShifts(nPeaks, resAtomPatterns, shiftList, pt);
-                setUserFields(resAtomPatterns, shiftList, pt);
-                writeShifts(shiftList);
-                saveShifts(shiftList);
+//                boolean validShifts = getShifts(nPeaks, resAtomPatterns, shiftList, pt);
+                setUserFields(resAtomPatterns, pt);
+                updateSpinSystem();
             }
         }
     }
 
-    void setUserFields(List<ResAtomPattern>[] resAtomPatterns, List<Double>[][] shiftList, int[] pt) {
+    void updateSpinSystem() {
+        List<Double>[][] shiftList = new ArrayList[2][ATOM_TYPES.length];
+        for (int i = 0; i < ATOM_TYPES.length; i++) {
+            shiftList[0][i] = new ArrayList<>();
+            shiftList[1][i] = new ArrayList<>();
+        }
+        for (PeakMatch peakMatch : peakMatches) {
+            Peak peak = peakMatch.peak;
+            int iDim = 0;
+            for (PeakDim peakDim : peak.getPeakDims()) {
+                String userField = peakDim.getUser();
+                if (userField.contains(".")) {
+                    int dotIndex = userField.indexOf('.');
+                    String resType = userField.substring(0, dotIndex);
+                    String atomType = userField.substring(dotIndex + 1).toLowerCase();
+                    int k = resType.endsWith("-1") ? 0 : 1;
+                    Integer iAtom = atomIndexMap.get(atomType);
+                    if (iAtom != null) {
+                        shiftList[k][iAtom].add(peakDim.getChemShift().doubleValue());
+
+                        peakMatch.setIndex(iDim, iAtom);
+                        peakMatch.setIntraResidue(iDim, k == 1);
+                    }
+                }
+                iDim++;
+
+            }
+        }
+        writeShifts(shiftList);
+        saveShifts(shiftList);
+    }
+
+    void setUserFields(List<ResAtomPattern>[] resAtomPatterns, int[] pt) {
         StringBuilder sBuilder = new StringBuilder();
+        String linkDim = RunAbout.getNDimName(rootPeak.getPeakList()); // fixme
+        List<Peak> linkedPeaks = PeakList.getLinks(rootPeak,
+                rootPeak.getPeakList().getSpectralDim(linkDim).getDataDim());
+        for (Peak peak : linkedPeaks) {
+            for (PeakDim peakDim : peak.getPeakDims()) {
+                peakDim.setUser("");
+            }
+        }
 
         int j = 0;
         for (int i = 0; i < resAtomPatterns.length; i++) {
@@ -831,7 +879,6 @@ public class SpinSystem {
                     for (int iDim = 0; iDim < nDim; iDim++) {
                         int iAtom = resAtomPattern.atomTypeIndex[iDim];
                         int iRes = resAtomPattern.resType[iDim];
-                        List<Double> shifts = shiftList[iRes + 1][iAtom];
                         sBuilder.setLength(0);
                         sBuilder.append("i");
                         if (iRes < 0) {
@@ -839,8 +886,6 @@ public class SpinSystem {
                         }
                         sBuilder.append(".").append(ATOM_TYPES[iAtom]);
                         resAtomPattern.peak.getPeakDim(iDim).setUser(sBuilder.toString());
-                        peakMatches.get(i).setIndex(iDim, iAtom);
-                        peakMatches.get(i).setIntraResidue(iDim, iRes == 0);
                     }
                 }
             }
