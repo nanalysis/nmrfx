@@ -278,6 +278,12 @@ public class RunAboutGUI implements PeakListener {
         arrangeMenu = new Menu("Arrangement");
         actionMenuButton.getItems().add(arrangeMenu);
 
+        MenuItem filterItem = new MenuItem("Filter");
+        filterItem.setOnAction(e -> {
+            runAbout.filterPeaks();
+        });
+        actionMenuButton.getItems().add(filterItem);
+
         MenuItem assembleItem = new MenuItem("Assemble");
         assembleItem.setOnAction(e -> {
             assemble();
