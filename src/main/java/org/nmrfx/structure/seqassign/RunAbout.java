@@ -25,7 +25,7 @@ import org.yaml.snakeyaml.Yaml;
  */
 public class RunAbout {
 
-    SpinSystems spinSystems = new SpinSystems();
+    SpinSystems spinSystems = new SpinSystems(this);
     Map<String, Object> yamlData = null;
     Map<String, PeakList> peakListMap = new LinkedHashMap<>();
     List<PeakList> peakLists = new ArrayList<>();
@@ -331,7 +331,7 @@ public class RunAbout {
         String result = null;
         for (int i = 0; i < peakList.getNDim(); i++) {
             String dimName = peakList.getSpectralDim(i).getDimName();
-            if (dimName.contains("H") && !dimName.contains("N")) {
+            if (dimName.contains("H")) {
                 result = dimName;
                 break;
             }
