@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import org.apache.commons.math3.util.MultidimensionalCounter;
 import org.apache.commons.math3.util.MultidimensionalCounter.Iterator;
@@ -13,6 +14,8 @@ import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.PeakList.SearchDim;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
 import org.nmrfx.structure.seqassign.RunAbout.TypeInfo;
+import static org.nmrfx.structure.seqassign.SpinSystems.comparePeaks;
+import static org.nmrfx.structure.seqassign.SpinSystems.matchDims;
 import smile.clustering.KMeans;
 
 /**
@@ -21,6 +24,7 @@ import smile.clustering.KMeans;
  */
 public class SpinSystem {
 
+    SpinSystems spinSystems;
     final Peak rootPeak;
     List<PeakMatch> peakMatches = new ArrayList<>();
     List<SpinSystemMatch> spinMatchP = new ArrayList<>();
@@ -213,7 +217,8 @@ public class SpinSystem {
 
     }
 
-    public SpinSystem(Peak peak) {
+    public SpinSystem(Peak peak, SpinSystems spinSystems) {
+        this.spinSystems = spinSystems;
         this.rootPeak = peak;
         addPeak(peak, 1.0);
     }
@@ -692,8 +697,11 @@ public class SpinSystem {
     double[] getNormalizedIntensities() {
         double[] intensities = new double[peakMatches.size()];
         Map<String, Double> intensityMap = new HashMap<>();
+        Map<String, List<PeakMatch>> listOfMatches = new HashMap<>();
+
         for (PeakMatch peakMatch : peakMatches) {
             Peak peak = peakMatch.peak;
+            peak.setFlag(1, false);
             String peakListName = peak.getPeakList().getName();
             double maxIntensity = 0.0;
             if (intensityMap.containsKey(peakListName)) {
@@ -701,6 +709,27 @@ public class SpinSystem {
             }
             maxIntensity = Math.max(maxIntensity, Math.abs(peak.getIntensity()));
             intensityMap.put(peakListName, maxIntensity);
+            List<PeakMatch> listMatches = listOfMatches.get(peakListName);
+            if (listMatches == null) {
+                listMatches = new ArrayList<>();
+                listOfMatches.put(peakListName, listMatches);
+            }
+            listMatches.add(peakMatch);
+        }
+        for (Entry<String, List<PeakMatch>> entry : listOfMatches.entrySet()) {
+            String peakListName = entry.getKey();
+            String typeName = spinSystems.runAbout.peakListTypes.get(peakListName);
+            TypeInfo typeInfo = spinSystems.runAbout.typeInfoMap.get(typeName);
+            int nExpected = typeInfo.nTotal;
+            List<PeakMatch> matches = entry.getValue();
+            matches.sort((a, b)
+                    -> Double.compare(Math.abs(a.getPeak().getIntensity()),
+                            Math.abs(b.getPeak().getIntensity())));
+            int nExtra = matches.size() - nExpected;
+            for (int i = 0; i < nExtra; i++) {
+                matches.get(i).getPeak().setFlag(1, true);
+            }
+
         }
         int iPeak = 0;
         for (PeakMatch peakMatch : peakMatches) {
@@ -711,7 +740,9 @@ public class SpinSystem {
         return intensities;
     }
 
-    boolean getShifts(int nPeaks, List<ResAtomPattern>[] resAtomPatterns, List<Double>[][] shiftList, int[] pt) {
+    boolean getShifts(int nPeaks, List<ResAtomPattern>[] resAtomPatterns,
+            List<Double>[][] shiftList, int[] pt
+    ) {
         for (int i = 0; i < ATOM_TYPES.length; i++) {
             shiftList[0][i].clear();
             shiftList[1][i].clear();
@@ -728,25 +759,27 @@ public class SpinSystem {
         int iPeak = 0;
         int[] counts = new int[nPeaks];
         for (PeakMatch peakMatch : peakMatches) {
-            Peak peak = peakMatch.peak;
-            List<ResAtomPattern> patterns = getPatterns(peak);
-            double intensity = intensities[iPeak];
             List<ResAtomPattern> okPats = new ArrayList<>();
-            for (ResAtomPattern resAtomPattern : patterns) {
+            Peak peak = peakMatch.peak;
+            if (!peak.getFlag(1)) {
+                List<ResAtomPattern> patterns = getPatterns(peak);
+                double intensity = intensities[iPeak];
+                for (ResAtomPattern resAtomPattern : patterns) {
 //                System.out.println(resAtomPattern.toString());
-                boolean added;
-                if (checkPat(resAtomPattern, intensity)) {
-                    okPats.add(resAtomPattern);
-                    // System.out.println("add");
-                    added = true;
-                } else {
-                    added = false;
-                    // System.out.println("fail");
+                    boolean added;
+                    if (checkPat(resAtomPattern, intensity)) {
+                        okPats.add(resAtomPattern);
+                        // System.out.println("add");
+                        added = true;
+                    } else {
+                        added = false;
+                        // System.out.println("fail");
 
-                }
-                if (display) {
-                    System.out.println(resAtomPattern.toString() + " " + intensity + " " + added);
+                    }
+                    if (display) {
+                        System.out.println(resAtomPattern.toString() + " " + intensity + " " + added);
 
+                    }
                 }
             }
             // allow all peaks but root peak to be unused (artifact)
@@ -820,6 +853,26 @@ public class SpinSystem {
                 updateSpinSystem();
             }
         }
+    }
+
+    void getLinkedPeaks() {
+        PeakList refList = rootPeak.getPeakList();
+        for (Peak pkB : PeakList.getLinks(rootPeak, 0)) {// fixme calculate correct dim
+            if (rootPeak != pkB) {
+                PeakList peakListB = pkB.getPeakList();
+                if (refList != peakListB) {
+                    int[] aMatch = matchDims(refList, peakListB);
+                    double f = comparePeaks(rootPeak, pkB, aMatch);
+                    if (f >= 0.0) {
+                        double p = f;
+                        addPeak(pkB, p);
+                    }
+                }
+            }
+        }
+        int nPeaks = peakMatches.size();
+        System.out.println("cluster " + rootPeak.getName() + " " + nPeaks);
+
     }
 
     void updateSpinSystem() {
@@ -989,7 +1042,7 @@ public class SpinSystem {
             newRoot.getPeakDim(sDim.getDim()).setChemShiftValue((float) centroids[newCluster][j]);
             j++;
         }
-        SpinSystem newSys = new SpinSystem(newRoot);
+        SpinSystem newSys = new SpinSystem(newRoot, spinSystems);
         List<PeakMatch> oldPeaks = new ArrayList<>();
         oldPeaks.addAll(peakMatches);
         peakMatches.clear();
@@ -1027,6 +1080,38 @@ public class SpinSystem {
         for (PeakMatch peakMatch : peakMatches) {
             System.out.println(peakMatch.toString());
         }
+    }
+
+    public void compare() {
+        spinMatchP.clear();
+        spinMatchS.clear();
+        double sumsP = 0.0;
+        double sumsS = 0.0;
+        for (SpinSystem spinSysB : spinSystems.systems) {
+            if (this != spinSysB) {
+                Optional<SpinSystemMatch> result = compare(spinSysB, true);
+                if (result.isPresent()) {
+                    spinMatchP.add(result.get());
+                    sumsP += result.get().score;
+                }
+                result = compare(spinSysB, false);
+                if (result.isPresent()) {
+                    spinMatchS.add(result.get());
+                    sumsS += result.get().score;
+                }
+            }
+        }
+        for (SpinSystemMatch spinMatch : spinMatchP) {
+            spinMatch.norm(sumsP);
+        }
+        for (SpinSystemMatch spinMatch : spinMatchS) {
+            spinMatch.norm(sumsS);
+        }
+
+        spinMatchP.sort((s1, s2) -> Double.compare(s2.score, s1.score));
+        System.out.println(rootPeak.getName() + " " + spinMatchP);
+        spinMatchS.sort((s1, s2) -> Double.compare(s2.score, s1.score));
+        System.out.println(rootPeak.getName() + " " + spinMatchS);
     }
 
 }

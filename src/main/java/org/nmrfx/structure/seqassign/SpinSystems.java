@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
@@ -15,18 +14,23 @@ import org.nmrfx.processor.datasets.peaks.SpectralDim;
  */
 public class SpinSystems {
 
-    List<SpinSystem> spinSystems = new ArrayList<>();
+    RunAbout runAbout;
+    List<SpinSystem> systems = new ArrayList<>();
+
+    public SpinSystems(RunAbout runAbout) {
+        this.runAbout = runAbout;
+    }
 
     public int getSize() {
-        return spinSystems.size();
+        return systems.size();
     }
 
     public SpinSystem get(int i) {
-        return spinSystems.get(i);
+        return systems.get(i);
     }
 
     public SpinSystem get(int i, int dir, int pIndex, int sIndex) {
-        SpinSystem spinSystem = spinSystems.get(i);
+        SpinSystem spinSystem = systems.get(i);
         System.out.println(spinSystem);
         if (dir == -1) {
             if (!spinSystem.spinMatchP.isEmpty()) {
@@ -167,8 +171,8 @@ public class SpinSystems {
         PeakList.clusterPeaks(peakLists);
         int i = 0;
         for (Peak pkA : refList.peaks()) {
-            SpinSystem spinSys = new SpinSystem(pkA);
-            spinSystems.add(spinSys);
+            SpinSystem spinSys = new SpinSystem(pkA, this);
+            systems.add(spinSys);
             for (Peak pkB : PeakList.getLinks(pkA, 0)) {// fixme calculate correct dim
                 if (pkA != pkB) {
                     PeakList peakListB = pkB.getPeakList();
@@ -194,7 +198,7 @@ public class SpinSystems {
     }
 
     public void assemble(List<PeakList> peakLists) {
-        spinSystems.clear();
+        systems.clear();
         peakLists.forEach(peakListA -> {
             peakListA.unLinkPeaks();
         });
@@ -210,8 +214,8 @@ public class SpinSystems {
         int spinID = 0;
         peakLists.forEach(peakListA -> {
             peakListA.peaks().stream().filter(pkA -> pkA.getStatus() == 0).forEach(pkA -> {
-                SpinSystem spinSys = new SpinSystem(pkA);
-                spinSystems.add(spinSys);
+                SpinSystem spinSys = new SpinSystem(pkA, this);
+                systems.add(spinSys);
                 pkA.setStatus(1);
                 peakLists.stream().filter(peakListB -> peakListB != peakListA).forEach(peakListB -> {
                     int[] aMatch = matchDims(peakListA, peakListB);
@@ -234,55 +238,32 @@ public class SpinSystems {
     }
 
     public void compare() {
-        int n = spinSystems.size();
-        System.out.println("compare " + n);
-
-        for (int i = 0; i < n; i++) {
-
-            SpinSystem spinSysA = spinSystems.get(i);
-            spinSysA.spinMatchP.clear();
-            spinSysA.spinMatchS.clear();
-            double sumsP = 0.0;
-            double sumsS = 0.0;
-            for (int j = 0; j < n; j++) {
-                if (i != j) {
-                    SpinSystem spinSysB = spinSystems.get(j);
-                    Optional<SpinSystemMatch> result = spinSysA.compare(spinSysB, true);
-                    if (result.isPresent()) {
-                        spinSysA.spinMatchP.add(result.get());
-                        sumsP += result.get().score;
-                    }
-                    result = spinSysA.compare(spinSysB, false);
-                    if (result.isPresent()) {
-                        spinSysA.spinMatchS.add(result.get());
-                        sumsS += result.get().score;
-                    }
-                }
-            }
-            for (SpinSystemMatch spinMatch : spinSysA.spinMatchP) {
-                spinMatch.norm(sumsP);
-            }
-            for (SpinSystemMatch spinMatch : spinSysA.spinMatchS) {
-                spinMatch.norm(sumsS);
-            }
-
-            spinSysA.spinMatchP.sort((s1, s2) -> Double.compare(s2.score, s1.score));
-            System.out.println(i + " " + spinSysA.spinMatchP);
-            spinSysA.spinMatchS.sort((s1, s2) -> Double.compare(s2.score, s1.score));
-            System.out.println(i + " " + spinSysA.spinMatchS);
+        for (SpinSystem spinSysA : systems) {
+            spinSysA.compare();
         }
     }
 
     public void dump() {
-        for (SpinSystem spinSys : spinSystems) {
+        for (SpinSystem spinSys : systems) {
             System.out.println(spinSys.toString());
         }
     }
 
     public void calcCombinations() {
-        for (SpinSystem spinSys : spinSystems) {
+        for (SpinSystem spinSys : systems) {
             spinSys.calcCombinations(false);
         }
+    }
+
+    public void buildSpinSystems(List<PeakList> peakLists) {
+        PeakList refList = peakLists.get(0);
+        for (Peak pkA : refList.peaks()) {
+            SpinSystem spinSys = new SpinSystem(pkA, this);
+            systems.add(spinSys);
+            spinSys.getLinkedPeaks();
+            spinSys.updateSpinSystem();
+        }
+        compare();
     }
 
 }
