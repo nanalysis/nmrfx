@@ -2,8 +2,11 @@ package org.nmrfx.structure.seqassign;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.nmrfx.processor.datasets.peaks.Peak;
 import org.nmrfx.processor.datasets.peaks.PeakList;
 import org.nmrfx.processor.datasets.peaks.SpectralDim;
@@ -19,6 +22,10 @@ public class SpinSystems {
 
     public SpinSystems(RunAbout runAbout) {
         this.runAbout = runAbout;
+    }
+
+    public List<SpinSystem> getSystems() {
+        return systems;
     }
 
     public int getSize() {
@@ -264,6 +271,27 @@ public class SpinSystems {
             spinSys.updateSpinSystem();
         }
         compare();
+    }
+
+    public List<SpinSystem> getSortedSystems() {
+        Set<SeqFragment> fragments = new HashSet<>();
+        List<SpinSystem> unconnectedSystems = new ArrayList<>();
+        for (SpinSystem spinSys : systems) {
+            if (spinSys.fragment.isPresent()) {
+                fragments.add(spinSys.fragment.get());
+            } else {
+                unconnectedSystems.add(spinSys);
+            }
+        }
+
+        List<SpinSystem> uniqueSystems = fragments.stream().sorted((e1, e2)
+                -> Integer.compare(e2.spinSystemMatches.size(),
+                        e1.spinSystemMatches.size())).
+                map(frag -> frag.spinSystemMatches.get(0).spinSystemA).
+                collect(Collectors.toList());
+
+        uniqueSystems.addAll(unconnectedSystems);
+        return uniqueSystems;
     }
 
 }
